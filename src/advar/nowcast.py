@@ -1,0 +1,410 @@
+"""Simple three-frame radar echo nowcasting.
+
+The analysis estimates one global translation and one global growth rate.
+Each forecast lead directly applies differentiable semi-Lagrangian advection.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+import math
+
+import torch
+import torch.nn.functional as F
+from torch import Tensor
+
+
+@dataclass(frozen=True)
+class NowcastConfig:
+    """Configuration for three-frame, 10-minute radar nowcasting."""
+
+    interval_minutes: int = 10
+    horizon_minutes: int = 180
+    min_dbz: float = -10.0
+    max_dbz: float = 70.0
+    echo_threshold_dbz: float = 5.0
+    recent_weight: float = 2.0 / 3.0
+    max_displacement_px: float = 20.0
+    max_log_growth_per_step: float = math.log(1.35)
+    growth_decay_minutes: float = 60.0
+    epsilon: float = 1.0e-6
+
+    def __post_init__(self) -> None:
+        if type(self.interval_minutes) is not int:
+            raise TypeError("interval_minutes must be an integer")
+        if type(self.horizon_minutes) is not int:
+            raise TypeError("horizon_minutes must be an integer")
+        if self.interval_minutes <= 0:
+            raise ValueError("interval_minutes must be positive")
+        if self.horizon_minutes <= 0:
+            raise ValueError("horizon_minutes must be positive")
+        if self.horizon_minutes % self.interval_minutes:
+            raise ValueError("horizon_minutes must be divisible by interval_minutes")
+        numeric_values = (
+            self.min_dbz,
+            self.max_dbz,
+            self.echo_threshold_dbz,
+            self.recent_weight,
+            self.max_displacement_px,
+            self.max_log_growth_per_step,
+            self.growth_decay_minutes,
+            self.epsilon,
+        )
+        if not all(math.isfinite(value) for value in numeric_values):
+            raise ValueError("all numeric configuration values must be finite")
+        if self.min_dbz >= self.max_dbz:
+            raise ValueError("min_dbz must be smaller than max_dbz")
+        if not self.min_dbz <= self.echo_threshold_dbz <= self.max_dbz:
+            raise ValueError("echo_threshold_dbz must be inside the dBZ range")
+        if not 0.0 <= self.recent_weight <= 1.0:
+            raise ValueError("recent_weight must be between 0 and 1")
+        if self.max_displacement_px <= 0:
+            raise ValueError("max_displacement_px must be positive")
+        if self.max_log_growth_per_step < 0:
+            raise ValueError("max_log_growth_per_step cannot be negative")
+        if self.growth_decay_minutes <= 0:
+            raise ValueError("growth_decay_minutes must be positive")
+        if self.epsilon <= 0:
+            raise ValueError("epsilon must be positive")
+
+    @property
+    def forecast_steps(self) -> int:
+        """Number of output frames."""
+
+        return self.horizon_minutes // self.interval_minutes
+
+
+@dataclass(frozen=True)
+class RadarState:
+    """Low-dimensional state inferred from the three input frames."""
+
+    echo_amplitude: Tensor
+    displacement_yx: Tensor
+    log_growth_per_step: Tensor
+    pair_displacements_yx: Tensor
+    pair_log_growth: Tensor
+    provenance: str = "p0_fft_latest"
+
+    @property
+    def echo_linear(self) -> Tensor:
+        """Latest non-negative linear echo amount."""
+
+        return self.echo_amplitude.square()
+
+    @property
+    def motion_disagreement_px(self) -> Tensor:
+        """Difference between the two independently estimated motions."""
+
+        return torch.linalg.vector_norm(
+            self.pair_displacements_yx[1] - self.pair_displacements_yx[0]
+        )
+
+    @property
+    def growth_disagreement(self) -> Tensor:
+        """Absolute difference between the two growth estimates."""
+
+        return torch.abs(self.pair_log_growth[1] - self.pair_log_growth[0])
+
+
+def dbz_to_linear(dbz: Tensor, config: NowcastConfig) -> Tensor:
+    """Convert dBZ to a non-negative linear echo amount."""
+
+    clean = torch.nan_to_num(
+        dbz,
+        nan=config.min_dbz,
+        posinf=config.max_dbz,
+        neginf=config.min_dbz,
+    ).clamp(config.min_dbz, config.max_dbz)
+    floor = 10.0 ** (config.min_dbz / 10.0)
+    return (torch.pow(10.0, clean / 10.0) - floor).clamp_min(0.0)
+
+
+def linear_to_dbz(echo: Tensor, config: NowcastConfig) -> Tensor:
+    """Convert the non-negative internal echo amount back to dBZ."""
+
+    floor = 10.0 ** (config.min_dbz / 10.0)
+    dbz = 10.0 * torch.log10(echo.clamp_min(0.0) + floor)
+    return dbz.clamp(config.min_dbz, config.max_dbz)
+
+
+def advect(echo: Tensor, displacement_yx: Tensor) -> Tensor:
+    """Move non-negative echo through its square-root amplitude."""
+
+    if echo.ndim != 2:
+        raise ValueError("echo must have shape [height, width]")
+    if displacement_yx.shape != (2,):
+        raise ValueError("displacement_yx must have shape [2]")
+
+    height, width = echo.shape
+    if height < 2 or width < 2:
+        raise ValueError("echo height and width must both be at least 2")
+
+    amplitude = torch.sqrt(echo.clamp_min(0.0))
+    return _shift_amplitude(amplitude, displacement_yx).square()
+
+
+def estimate_state(frames_dbz: Tensor, config: NowcastConfig) -> RadarState:
+    """Infer the latest echo, global motion, and global growth from 3 frames."""
+
+    _validate_frames(frames_dbz)
+    frames = torch.nan_to_num(
+        frames_dbz,
+        nan=config.min_dbz,
+        posinf=config.max_dbz,
+        neginf=config.min_dbz,
+    ).clamp(config.min_dbz, config.max_dbz)
+
+    pair_motion = torch.stack(
+        (
+            _phase_correlation_shift(frames[0], frames[1], config),
+            _phase_correlation_shift(frames[1], frames[2], config),
+        )
+    )
+
+    linear = dbz_to_linear(frames, config)
+    pair_growth = torch.stack(
+        (
+            _log_aligned_growth(
+                linear[0],
+                linear[1],
+                pair_motion[0],
+                config,
+            ),
+            _log_aligned_growth(
+                linear[1],
+                linear[2],
+                pair_motion[1],
+                config,
+            ),
+        )
+    )
+
+    weight = config.recent_weight
+    displacement = (1.0 - weight) * pair_motion[0] + weight * pair_motion[1]
+    growth = (1.0 - weight) * pair_growth[0] + weight * pair_growth[1]
+
+    return RadarState(
+        echo_amplitude=torch.sqrt(linear[2]),
+        displacement_yx=displacement,
+        log_growth_per_step=growth,
+        pair_displacements_yx=pair_motion,
+        pair_log_growth=pair_growth,
+    )
+
+
+def forecast_linear_from_state(
+    state: RadarState,
+    config: NowcastConfig,
+) -> Tensor:
+    """Forecast non-negative linear echo before output clipping."""
+
+    return torch.stack(
+        [
+            forecast_linear_at_step(state, step, config)
+            for step in range(1, config.forecast_steps + 1)
+        ]
+    )
+
+
+def forecast_linear_at_step(
+    state: RadarState,
+    step: int,
+    config: NowcastConfig,
+) -> Tensor:
+    """Forecast one lead in linear echo space."""
+
+    if not 1 <= step <= config.forecast_steps:
+        raise ValueError("step must be inside the configured forecast horizon")
+    retention = math.exp(-config.interval_minutes / config.growth_decay_minutes)
+    growth_sum = sum(retention**power for power in range(step))
+    amplitude = _shift_amplitude(
+        state.echo_amplitude,
+        step * state.displacement_yx,
+    )
+    amplitude = amplitude * torch.exp(
+        0.5 * state.log_growth_per_step * growth_sum
+    )
+    return amplitude.square()
+
+
+def forecast_from_state(state: RadarState, config: NowcastConfig) -> Tensor:
+    """Forecast output dBZ frames from an already estimated state."""
+
+    return linear_to_dbz(forecast_linear_from_state(state, config), config)
+
+
+def nowcast(
+    frames_dbz: Tensor,
+    config: NowcastConfig | None = None,
+) -> tuple[Tensor, RadarState]:
+    """Estimate state from 3 frames and return the next 3 hours of dBZ."""
+
+    config = config or NowcastConfig()
+    state = estimate_state(frames_dbz, config)
+    return forecast_from_state(state, config), state
+
+
+def _validate_frames(frames: Tensor) -> None:
+    if frames.ndim != 3 or frames.shape[0] != 3:
+        raise ValueError("frames_dbz must have shape [3, height, width]")
+    if frames.shape[1] < 2 or frames.shape[2] < 2:
+        raise ValueError("frame height and width must both be at least 2")
+    if not frames.is_floating_point():
+        raise TypeError("frames_dbz must be a floating-point tensor")
+
+
+def _shift_amplitude(amplitude: Tensor, displacement_yx: Tensor) -> Tensor:
+    """Translate a square-root echo field with a smooth Fourier phase shift."""
+
+    height, width = amplitude.shape
+    padded = F.pad(amplitude, (0, width, 0, height))
+    frequency_y = torch.fft.fftfreq(
+        2 * height,
+        dtype=amplitude.dtype,
+        device=amplitude.device,
+    )
+    frequency_x = torch.fft.fftfreq(
+        2 * width,
+        dtype=amplitude.dtype,
+        device=amplitude.device,
+    )
+    dy, dx = displacement_yx
+    phase = torch.exp(
+        -2j
+        * math.pi
+        * (frequency_y[:, None] * dy + frequency_x[None, :] * dx)
+    )
+    shifted = torch.fft.ifft2(torch.fft.fft2(padded) * phase).real
+    gate = _domain_gate(dy, height) * _domain_gate(dx, width)
+    return shifted[:height, :width] * gate
+
+
+def _domain_gate(displacement: Tensor, size: int) -> Tensor:
+    """Smoothly turn off a field before periodic padding can re-enter."""
+
+    transition = (torch.abs(displacement) - (size - 1)).clamp(0.0, 1.0)
+    smoother_step = transition**3 * (
+        10.0 - 15.0 * transition + 6.0 * transition**2
+    )
+    return 1.0 - smoother_step
+
+
+def _log_aligned_growth(
+    previous: Tensor,
+    current: Tensor,
+    displacement_yx: Tensor,
+    config: NowcastConfig,
+) -> Tensor:
+    aligned = advect(previous, displacement_yx).clamp_min(0.0)
+    valid = _valid_advection_mask(previous.shape, displacement_yx)
+    if int(valid.sum()) < 4:
+        return previous.new_zeros(())
+
+    previous_mass = aligned[valid].sum()
+    current_mass = current[valid].sum()
+
+    if float(previous_mass.detach()) <= config.epsilon:
+        if float(current_mass.detach()) <= config.epsilon:
+            return previous_mass.new_zeros(())
+        return previous_mass.new_tensor(config.max_log_growth_per_step)
+
+    growth = torch.log(
+        (current_mass + config.epsilon) / (previous_mass + config.epsilon)
+    )
+    return growth.clamp(
+        -config.max_log_growth_per_step,
+        config.max_log_growth_per_step,
+    )
+
+
+def _valid_advection_mask(
+    shape: torch.Size,
+    displacement_yx: Tensor,
+) -> Tensor:
+    height, width = shape
+    y = torch.arange(
+        height,
+        dtype=displacement_yx.dtype,
+        device=displacement_yx.device,
+    )
+    x = torch.arange(
+        width,
+        dtype=displacement_yx.dtype,
+        device=displacement_yx.device,
+    )
+    source_y = y[:, None] - displacement_yx[0]
+    source_x = x[None, :] - displacement_yx[1]
+    return (
+        (source_y >= 0.0)
+        & (source_y <= height - 1)
+        & (source_x >= 0.0)
+        & (source_x <= width - 1)
+    )
+
+
+def _phase_correlation_shift(
+    previous_dbz: Tensor,
+    current_dbz: Tensor,
+    config: NowcastConfig,
+) -> Tensor:
+    """Estimate the translation from ``previous`` to ``current``."""
+
+    previous = (previous_dbz - config.echo_threshold_dbz).clamp_min(0.0)
+    current = (current_dbz - config.echo_threshold_dbz).clamp_min(0.0)
+
+    energy = torch.linalg.vector_norm(previous) * torch.linalg.vector_norm(current)
+    if float(energy.detach()) <= config.epsilon:
+        return previous.new_zeros(2)
+
+    height, width = previous.shape
+    previous = previous - previous.mean()
+    current = current - current.mean()
+    centered_energy = (
+        torch.linalg.vector_norm(previous) * torch.linalg.vector_norm(current)
+    )
+    if float(centered_energy.detach()) <= config.epsilon:
+        return previous.new_zeros(2)
+
+    padded_shape = (2 * height, 2 * width)
+    cross_power = torch.fft.fft2(current, s=padded_shape) * torch.conj(
+        torch.fft.fft2(previous, s=padded_shape)
+    )
+    cross_power = cross_power / cross_power.abs().clamp_min(config.epsilon)
+    correlation = torch.fft.ifft2(cross_power).real
+
+    peak_index = int(torch.argmax(correlation).item())
+    correlation_height, correlation_width = correlation.shape
+    peak_y, peak_x = divmod(peak_index, correlation_width)
+    offset_y = _parabolic_peak_offset(correlation[:, peak_x], peak_y, config)
+    offset_x = _parabolic_peak_offset(correlation[peak_y, :], peak_x, config)
+
+    shift_y = peak_y + offset_y
+    shift_x = peak_x + offset_x
+    if shift_y > correlation_height / 2:
+        shift_y -= correlation_height
+    if shift_x > correlation_width / 2:
+        shift_x -= correlation_width
+
+    shift = correlation.new_tensor((shift_y, shift_x))
+    limits = correlation.new_tensor(
+        (
+            min(config.max_displacement_px, (height - 1) / 2.0),
+            min(config.max_displacement_px, (width - 1) / 2.0),
+        )
+    )
+    return torch.maximum(torch.minimum(shift, limits), -limits)
+
+
+def _parabolic_peak_offset(
+    values: Tensor,
+    peak: int,
+    config: NowcastConfig,
+) -> float:
+    left = values[(peak - 1) % values.numel()]
+    center = values[peak]
+    right = values[(peak + 1) % values.numel()]
+    denominator = left - 2.0 * center + right
+    if abs(float(denominator.detach())) <= config.epsilon:
+        return 0.0
+    offset = 0.5 * (left - right) / denominator
+    return float(offset.clamp(-0.5, 0.5).detach())
