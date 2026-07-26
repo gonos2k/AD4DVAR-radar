@@ -7,6 +7,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar.nowcast import (  # noqa: E402
+    ForecastStatus,
     NowcastConfig,
     advect,
     dbz_to_linear,
@@ -179,12 +180,101 @@ class NowcastTests(unittest.TestCase):
             places=3,
         )
 
-    def test_nan_input_produces_finite_forecast(self) -> None:
+    def test_missing_pixel_is_not_published_as_observed_clear(self) -> None:
         dbz = linear_to_dbz(self.echo, self.config)
         frames = torch.stack((dbz, dbz, dbz))
         frames[:, 0, 0] = torch.nan
-        forecast, _ = nowcast(frames, self.config)
+        forecast, state = nowcast(frames, self.config)
+
+        self.assertEqual(
+            state.forecast_status,
+            ForecastStatus.PARTIAL_OBSERVATION,
+        )
+        self.assertTrue(bool(torch.all(torch.isnan(forecast[:, 0, 0]))))
+        self.assertTrue(bool(torch.all(torch.isfinite(forecast[:, 1:, 1:]))))
+
+    def test_all_missing_without_background_is_unavailable(self) -> None:
+        frames = torch.full((3, 8, 8), torch.nan)
+        forecast, state = nowcast(frames, self.config)
+
+        self.assertEqual(state.forecast_status, ForecastStatus.UNAVAILABLE)
+        self.assertEqual(state.data_coverage_fraction, 0.0)
+        self.assertTrue(bool(torch.all(torch.isnan(forecast))))
+
+    def test_all_missing_uses_time_aligned_stale_background(self) -> None:
+        frames = torch.full((3, 8, 8), torch.nan)
+        background = torch.full((3, 8, 8), 20.0)
+        forecast, state = nowcast(
+            frames,
+            self.config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+
+        self.assertEqual(
+            state.forecast_status,
+            ForecastStatus.STALE_BACKGROUND,
+        )
+        self.assertTrue(state.background_used)
+        self.assertEqual(state.background_age_minutes, 10.0)
         self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
+        torch.testing.assert_close(forecast[0], background[-1])
+
+    def test_old_background_without_latest_source_is_unavailable(self) -> None:
+        frames = torch.full((3, 8, 8), torch.nan)
+        background = torch.full((3, 8, 8), torch.nan)
+        background[0] = 20.0
+        forecast, state = nowcast(
+            frames,
+            self.config,
+            background_frames_dbz=background,
+            background_age_minutes=20.0,
+        )
+
+        self.assertTrue(state.background_used)
+        self.assertEqual(state.forecast_status, ForecastStatus.UNAVAILABLE)
+        self.assertTrue(bool(torch.all(torch.isnan(forecast))))
+
+    def test_unused_background_does_not_publish_stale_age(self) -> None:
+        frames = torch.full((3, 8, 8), 20.0)
+        background = torch.full_like(frames, 25.0)
+        _, state = nowcast(
+            frames,
+            self.config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+
+        self.assertFalse(state.background_used)
+        self.assertIsNone(state.background_age_minutes)
+        self.assertEqual(state.forecast_status, ForecastStatus.OBSERVED)
+
+    def test_missing_first_frame_uses_neighboring_observation_only_as_fill(
+        self,
+    ) -> None:
+        dbz = linear_to_dbz(self.echo, self.config)
+        frames = torch.stack((torch.full_like(dbz, torch.nan), dbz, dbz))
+        forecast, state = nowcast(frames, self.config)
+
+        self.assertEqual(
+            state.forecast_status,
+            ForecastStatus.PARTIAL_OBSERVATION,
+        )
+        self.assertEqual(state.latest_data_coverage_fraction, 1.0)
+        self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
+
+    def test_missing_latest_frame_uses_mask_aware_persistence(self) -> None:
+        dbz = linear_to_dbz(self.echo, self.config)
+        frames = torch.stack((dbz, dbz, torch.full_like(dbz, torch.nan)))
+        forecast, state = nowcast(frames, self.config)
+
+        self.assertEqual(
+            state.forecast_status,
+            ForecastStatus.PARTIAL_OBSERVATION,
+        )
+        self.assertEqual(state.latest_data_coverage_fraction, 0.0)
+        self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
+        torch.testing.assert_close(forecast[0], dbz, atol=0.02, rtol=0.0)
 
     def test_empty_echo_uses_persistence_fallback(self) -> None:
         frames = torch.full((3, 32, 32), self.config.min_dbz)

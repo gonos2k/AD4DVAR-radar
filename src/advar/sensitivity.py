@@ -603,6 +603,14 @@ def _state_from_control(
         pair_displacements_yx=template.pair_displacements_yx,
         pair_log_growth=template.pair_log_growth,
         provenance=template.provenance,
+        forecast_status=template.forecast_status,
+        data_coverage_fraction=template.data_coverage_fraction,
+        latest_data_coverage_fraction=(
+            template.latest_data_coverage_fraction
+        ),
+        background_used=template.background_used,
+        background_age_minutes=template.background_age_minutes,
+        forecast_source_mask=template.forecast_source_mask,
     )
 
 

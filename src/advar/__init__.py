@@ -7,6 +7,7 @@ from .ledger import (
     SensitivityEpisode,
 )
 from .nowcast import (
+    ForecastStatus,
     NowcastConfig,
     RadarState,
     RemapCell,
@@ -50,6 +51,7 @@ __all__ = [
     "AnalysisResult",
     "AnalysisTrajectory",
     "EpisodeLedger",
+    "ForecastStatus",
     "FrozenOuterState",
     "LoadedEpisode",
     "ModelContract",

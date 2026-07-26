@@ -7,6 +7,7 @@ Each forecast lead directly applies a local conservative echo remap.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 import math
 
 import torch
@@ -85,6 +86,33 @@ class RemapCell:
             raise TypeError("remap cell coordinates must be integers")
 
 
+class ForecastStatus(str, Enum):
+    """Operational meaning of the data used to initialize a forecast."""
+
+    OBSERVED = "OBSERVED"
+    PARTIAL_OBSERVATION = "PARTIAL_OBSERVATION"
+    STALE_BACKGROUND = "STALE_BACKGROUND"
+    UNAVAILABLE = "UNAVAILABLE"
+    BASELINE_FALLBACK = "BASELINE_FALLBACK"
+
+
+@dataclass(frozen=True)
+class _PreparedRadarInput:
+    """Dense calculation frames plus the original observation semantics."""
+
+    frames_dbz: Tensor
+    observed_mask: Tensor
+    missing_mask: Tensor
+    qc_rejected_mask: Tensor
+    observed_clear_mask: Tensor
+    available_mask: Tensor
+    forecast_status: ForecastStatus
+    data_coverage_fraction: float
+    latest_data_coverage_fraction: float
+    background_used: bool
+    background_age_minutes: float | None
+
+
 @dataclass(frozen=True)
 class RadarState:
     """Low-dimensional state inferred from the three input frames."""
@@ -95,6 +123,12 @@ class RadarState:
     pair_displacements_yx: Tensor
     pair_log_growth: Tensor
     provenance: str = "p0_fft_latest"
+    forecast_status: ForecastStatus = ForecastStatus.OBSERVED
+    data_coverage_fraction: float = 1.0
+    latest_data_coverage_fraction: float = 1.0
+    background_used: bool = False
+    background_age_minutes: float | None = None
+    forecast_source_mask: Tensor | None = None
 
     @property
     def echo_linear(self) -> Tensor:
@@ -191,16 +225,155 @@ def advect(
     )
 
 
-def estimate_state(frames_dbz: Tensor, config: NowcastConfig) -> RadarState:
-    """Infer the latest echo, global motion, and global growth from 3 frames."""
+def _prepare_radar_input(
+    frames_dbz: Tensor,
+    config: NowcastConfig,
+    *,
+    accepted_mask: Tensor | None = None,
+    background_frames_dbz: Tensor | None = None,
+    background_age_minutes: float | None = None,
+) -> _PreparedRadarInput:
+    """Preserve missing/QC meaning while making dense calculation frames."""
 
     _validate_frames(frames_dbz)
-    frames = torch.nan_to_num(
+    finite = torch.isfinite(frames_dbz)
+    if accepted_mask is None:
+        accepted = torch.ones_like(frames_dbz, dtype=torch.bool)
+    else:
+        if (
+            accepted_mask.shape != frames_dbz.shape
+            or accepted_mask.dtype != torch.bool
+        ):
+            raise ValueError(
+                "accepted_mask must be boolean with the frame shape"
+            )
+        accepted = accepted_mask.to(device=frames_dbz.device)
+
+    observed = finite & accepted
+    missing = ~finite
+    qc_rejected = finite & ~accepted
+    clean_observations = torch.nan_to_num(
         frames_dbz,
         nan=config.min_dbz,
         posinf=config.max_dbz,
         neginf=config.min_dbz,
     ).clamp(config.min_dbz, config.max_dbz)
+    dense = torch.where(
+        observed,
+        clean_observations,
+        clean_observations.new_full((), config.min_dbz),
+    )
+    available = observed.clone()
+    background_used_mask = torch.zeros_like(observed)
+
+    if background_age_minutes is not None:
+        if background_frames_dbz is None:
+            raise ValueError(
+                "background_age_minutes requires background_frames_dbz"
+            )
+        if (
+            not math.isfinite(background_age_minutes)
+            or background_age_minutes < 0
+        ):
+            raise ValueError(
+                "background_age_minutes must be finite and non-negative"
+            )
+
+    if background_frames_dbz is not None:
+        if (
+            background_frames_dbz.shape != frames_dbz.shape
+            or not background_frames_dbz.is_floating_point()
+        ):
+            raise ValueError(
+                "background_frames_dbz must be floating with the frame shape"
+            )
+        background = background_frames_dbz.to(
+            dtype=frames_dbz.dtype,
+            device=frames_dbz.device,
+        )
+        background_finite = torch.isfinite(background)
+        clean_background = torch.nan_to_num(
+            background,
+            nan=config.min_dbz,
+            posinf=config.max_dbz,
+            neginf=config.min_dbz,
+        ).clamp(config.min_dbz, config.max_dbz)
+        background_used_mask = ~available & background_finite
+        dense = torch.where(background_used_mask, clean_background, dense)
+        available = available | background_used_mask
+
+    # A same-pixel observation from a neighboring input time is a transparent
+    # persistence fill, not evidence that the target time was observed.
+    source_orders = ((1, 2), (0, 2), (1, 0))
+    for target, sources in enumerate(source_orders):
+        for source in sources:
+            fill = ~available[target] & observed[source]
+            dense[target] = torch.where(
+                fill,
+                clean_observations[source],
+                dense[target],
+            )
+            available[target] = available[target] | fill
+
+    observed_count = int(observed.sum())
+    observation_count = observed.numel()
+    coverage = observed_count / observation_count
+    latest_coverage = float(observed[-1].to(torch.float64).mean())
+    background_used = bool(torch.any(background_used_mask))
+    if observed_count == 0:
+        status = (
+            ForecastStatus.STALE_BACKGROUND
+            if bool(torch.any(available[-1]))
+            else ForecastStatus.UNAVAILABLE
+        )
+    elif observed_count < observation_count:
+        status = ForecastStatus.PARTIAL_OBSERVATION
+    else:
+        status = ForecastStatus.OBSERVED
+
+    return _PreparedRadarInput(
+        frames_dbz=dense,
+        observed_mask=observed,
+        missing_mask=missing,
+        qc_rejected_mask=qc_rejected,
+        observed_clear_mask=observed
+        & (clean_observations < config.echo_threshold_dbz),
+        available_mask=available,
+        forecast_status=status,
+        data_coverage_fraction=coverage,
+        latest_data_coverage_fraction=latest_coverage,
+        background_used=background_used,
+        background_age_minutes=(
+            background_age_minutes if background_used else None
+        ),
+    )
+
+
+def estimate_state(
+    frames_dbz: Tensor,
+    config: NowcastConfig,
+    *,
+    qc_mask: Tensor | None = None,
+    background_frames_dbz: Tensor | None = None,
+    background_age_minutes: float | None = None,
+) -> RadarState:
+    """Infer the latest echo, global motion, and global growth from 3 frames."""
+
+    prepared = _prepare_radar_input(
+        frames_dbz,
+        config,
+        accepted_mask=qc_mask,
+        background_frames_dbz=background_frames_dbz,
+        background_age_minutes=background_age_minutes,
+    )
+    return _estimate_prepared_state(prepared, config)
+
+
+def _estimate_prepared_state(
+    prepared: _PreparedRadarInput,
+    config: NowcastConfig,
+) -> RadarState:
+    frames = prepared.frames_dbz
 
     pair_motion = torch.stack(
         (
@@ -237,6 +410,18 @@ def estimate_state(frames_dbz: Tensor, config: NowcastConfig) -> RadarState:
         log_growth_per_step=growth,
         pair_displacements_yx=pair_motion,
         pair_log_growth=pair_growth,
+        forecast_status=prepared.forecast_status,
+        data_coverage_fraction=prepared.data_coverage_fraction,
+        latest_data_coverage_fraction=(
+            prepared.latest_data_coverage_fraction
+        ),
+        background_used=prepared.background_used,
+        background_age_minutes=prepared.background_age_minutes,
+        forecast_source_mask=(
+            None
+            if bool(torch.all(prepared.available_mask[-1]))
+            else prepared.available_mask[-1].detach().clone()
+        ),
     )
 
 
@@ -277,17 +462,51 @@ def forecast_linear_at_step(
 def forecast_from_state(state: RadarState, config: NowcastConfig) -> Tensor:
     """Forecast output dBZ frames from an already estimated state."""
 
-    return linear_to_dbz(forecast_linear_from_state(state, config), config)
+    forecast = linear_to_dbz(
+        forecast_linear_from_state(state, config),
+        config,
+    )
+    if state.forecast_status == ForecastStatus.UNAVAILABLE:
+        return torch.full_like(forecast, torch.nan)
+    if state.forecast_source_mask is None:
+        return forecast
+
+    source = state.forecast_source_mask.to(
+        dtype=state.echo_amplitude.dtype,
+        device=state.echo_amplitude.device,
+    )
+    available = torch.stack(
+        [
+            advect(source, step * state.displacement_yx)
+            > config.epsilon
+            for step in range(1, config.forecast_steps + 1)
+        ]
+    )
+    return torch.where(
+        available,
+        forecast,
+        forecast.new_full((), torch.nan),
+    )
 
 
 def nowcast(
     frames_dbz: Tensor,
     config: NowcastConfig | None = None,
+    *,
+    qc_mask: Tensor | None = None,
+    background_frames_dbz: Tensor | None = None,
+    background_age_minutes: float | None = None,
 ) -> tuple[Tensor, RadarState]:
     """Estimate state from 3 frames and return the next 3 hours of dBZ."""
 
     config = config or NowcastConfig()
-    state = estimate_state(frames_dbz, config)
+    state = estimate_state(
+        frames_dbz,
+        config,
+        qc_mask=qc_mask,
+        background_frames_dbz=background_frames_dbz,
+        background_age_minutes=background_age_minutes,
+    )
     return forecast_from_state(state, config), state
 
 
