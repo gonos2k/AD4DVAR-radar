@@ -15,12 +15,14 @@ from torch import Tensor
 
 from .matrix_free import gauss_newton_hvp, pcg
 from .nowcast import (
+    ForecastStatus,
     NowcastConfig,
     RadarState,
     RemapCell,
+    _estimate_prepared_state,
+    _prepare_radar_input,
     advect,
     dbz_to_linear,
-    estimate_state,
     freeze_remap_cell,
     forecast_from_state,
     linear_to_dbz,
@@ -109,6 +111,9 @@ class AnalysisObservations:
     valid_mask: Tensor
     detected_mask: Tensor
     censored_mask: Tensor
+    missing_mask: Tensor | None = None
+    qc_rejected_mask: Tensor | None = None
+    observed_clear_mask: Tensor | None = None
 
 
 @dataclass(frozen=True)
@@ -122,6 +127,7 @@ class FrozenOuterState:
     nowcast_config: NowcastConfig
     analysis_config: AnalysisConfig
     analysis_remap_cells: tuple[RemapCell, RemapCell] | None = None
+    baseline_frames_dbz: Tensor | None = None
 
 
 @dataclass(frozen=True)
@@ -147,6 +153,7 @@ class AnalysisResult:
     converged: bool
     used_fallback: bool
     reason: str
+    degraded: bool = False
 
 
 def prepare_analysis(
@@ -157,6 +164,8 @@ def prepare_analysis(
     observation_std_dbz: float | Tensor | None = None,
     quality_weight: float | Tensor | None = None,
     qc_mask: Tensor | None = None,
+    background_frames_dbz: Tensor | None = None,
+    background_age_minutes: float | None = None,
 ) -> tuple[AnalysisObservations, FrozenOuterState]:
     """Freeze observation masks, errors, FFT background, and initial IRLS."""
 
@@ -185,41 +194,56 @@ def prepare_analysis(
     )
     quality = _quality_weight(frames_dbz, quality_weight)
     valid = finite & qc & (quality > 0)
-    clean = torch.nan_to_num(
+    observed_dbz = torch.nan_to_num(
         frames_dbz,
         nan=nowcast_config.min_dbz,
         posinf=nowcast_config.max_dbz,
         neginf=nowcast_config.min_dbz,
     ).clamp(nowcast_config.min_dbz, nowcast_config.max_dbz)
-    clean = torch.where(
+    observed_dbz = torch.where(
         valid,
-        clean,
-        clean.new_full((), nowcast_config.min_dbz),
+        observed_dbz,
+        observed_dbz.new_full((), nowcast_config.min_dbz),
     )
-    detected = valid & (clean >= analysis_config.detection_limit_dbz)
+    prepared = _prepare_radar_input(
+        frames_dbz,
+        nowcast_config,
+        accepted_mask=valid,
+        background_frames_dbz=background_frames_dbz,
+        background_age_minutes=background_age_minutes,
+    )
+    detected = valid & (
+        observed_dbz >= analysis_config.detection_limit_dbz
+    )
     censored = valid & ~detected
     observations = AnalysisObservations(
-        dbz=clean.detach().clone(),
+        dbz=observed_dbz.detach().clone(),
         std_dbz=std.detach().clone(),
         quality_weight=quality.detach().clone(),
         valid_mask=valid.detach().clone(),
         detected_mask=detected.detach().clone(),
         censored_mask=censored.detach().clone(),
+        missing_mask=prepared.missing_mask.detach().clone(),
+        qc_rejected_mask=prepared.qc_rejected_mask.detach().clone(),
+        observed_clear_mask=censored.detach().clone(),
     )
 
-    baseline_state = _detach_state(estimate_state(clean, nowcast_config))
+    baseline_state = _detach_state(
+        _estimate_prepared_state(prepared, nowcast_config)
+    )
     remap_cells = tuple(
         freeze_remap_cell(step * baseline_state.displacement_yx)
         for step in (1, 2)
     )
     initial_frozen = FrozenOuterState(
-        initial_background_dbz=clean[0].detach().clone(),
+        initial_background_dbz=prepared.frames_dbz[0].detach().clone(),
         initial_support_mask=detected[0].detach().clone(),
         baseline_state=baseline_state,
         analysis_remap_cells=remap_cells,
         irls_sqrt_weight=valid.to(dtype=frames_dbz.dtype).detach().clone(),
         nowcast_config=nowcast_config,
         analysis_config=analysis_config,
+        baseline_frames_dbz=prepared.frames_dbz.detach().clone(),
     )
     control = initial_control(observations)
     return observations, freeze_irls_weights(
@@ -485,6 +509,19 @@ def solve_analysis(
         gradient = pullback(residual)[0]
         gradient_norm = float(torch.linalg.vector_norm(gradient).detach())
         if not math.isfinite(gradient_norm):
+            if accepted_any:
+                return _analysis_result(
+                    control,
+                    frozen_outer_state,
+                    initial_cost,
+                    current_cost,
+                    completed_iterations,
+                    total_pcg_iterations,
+                    False,
+                    False,
+                    "nonfinite_gradient",
+                    degraded=True,
+                )
             return _fallback_result(
                 observations,
                 frozen_outer_state,
@@ -598,16 +635,30 @@ def solve_analysis(
             damping = min(config.maximum_damping, 4.0 * damping)
 
         if not accepted_this_outer:
+            failure_reason = (
+                "no_accepted_step"
+                if linear_system_solved
+                else "pcg_failed"
+            )
+            if accepted_any:
+                return _analysis_result(
+                    control,
+                    frozen_outer_state,
+                    initial_cost,
+                    current_cost,
+                    completed_iterations,
+                    total_pcg_iterations,
+                    False,
+                    False,
+                    failure_reason,
+                    degraded=True,
+                )
             return _fallback_result(
                 observations,
                 frozen_outer_state,
                 control,
                 initial_cost,
-                (
-                    "no_accepted_step"
-                    if linear_system_solved
-                    else "pcg_failed"
-                ),
+                failure_reason,
                 completed_iterations,
                 total_pcg_iterations,
             )
@@ -635,6 +686,7 @@ def solve_analysis(
         converged,
         False,
         reason,
+        degraded=not converged,
     )
 
 
@@ -646,6 +698,8 @@ def variational_nowcast(
     observation_std_dbz: float | Tensor | None = None,
     quality_weight: float | Tensor | None = None,
     qc_mask: Tensor | None = None,
+    background_frames_dbz: Tensor | None = None,
+    background_age_minutes: float | None = None,
 ) -> tuple[Tensor, AnalysisResult]:
     """Analyze three frames, then forecast 18 leads from analyzed q(0)."""
 
@@ -657,6 +711,8 @@ def variational_nowcast(
         observation_std_dbz=observation_std_dbz,
         quality_weight=quality_weight,
         qc_mask=qc_mask,
+        background_frames_dbz=background_frames_dbz,
+        background_age_minutes=background_age_minutes,
     )
     result = solve_analysis(observations, frozen)
     return forecast_from_state(result.state, nowcast_config), result
@@ -672,6 +728,8 @@ def _analysis_result(
     converged: bool,
     used_fallback: bool,
     reason: str,
+    *,
+    degraded: bool = False,
 ) -> AnalysisResult:
     frozen = _freeze_analysis_remap_cells(control, frozen)
     trajectory = analysis_trajectory(control, frozen)
@@ -683,6 +741,14 @@ def _analysis_result(
         pair_displacements_yx=baseline.pair_displacements_yx,
         pair_log_growth=baseline.pair_log_growth,
         provenance="p1_variational_analysis",
+        forecast_status=baseline.forecast_status,
+        data_coverage_fraction=baseline.data_coverage_fraction,
+        latest_data_coverage_fraction=(
+            baseline.latest_data_coverage_fraction
+        ),
+        background_used=baseline.background_used,
+        background_age_minutes=baseline.background_age_minutes,
+        forecast_source_mask=baseline.forecast_source_mask,
     )
     return AnalysisResult(
         control=control.detach(),
@@ -695,6 +761,7 @@ def _analysis_result(
         converged=converged,
         used_fallback=used_fallback,
         reason=reason,
+        degraded=degraded,
     )
 
 
@@ -707,13 +774,27 @@ def _fallback_result(
     outer_iterations: int = 0,
     pcg_iterations: int = 0,
 ) -> AnalysisResult:
+    baseline_frames = (
+        observations.dbz
+        if frozen.baseline_frames_dbz is None
+        else frozen.baseline_frames_dbz
+    )
     frames_linear = dbz_to_linear(
-        observations.dbz,
+        baseline_frames,
         frozen.nowcast_config,
     )
+    baseline_state = frozen.baseline_state
+    if baseline_state.forecast_status not in (
+        ForecastStatus.STALE_BACKGROUND,
+        ForecastStatus.UNAVAILABLE,
+    ):
+        baseline_state = replace(
+            baseline_state,
+            forecast_status=ForecastStatus.BASELINE_FALLBACK,
+        )
     return AnalysisResult(
         control=torch.zeros_like(control),
-        state=_detach_state(frozen.baseline_state),
+        state=_detach_state(baseline_state),
         analyzed_frames_linear=frames_linear.detach(),
         initial_objective=initial_objective,
         final_objective=initial_objective,
@@ -722,6 +803,7 @@ def _fallback_result(
         converged=False,
         used_fallback=True,
         reason=reason,
+        degraded=False,
     )
 
 
@@ -895,6 +977,26 @@ def _validate_observations(observations: AnalysisObservations) -> None:
         )
     ):
         raise ValueError("detected and censored masks cannot overlap")
+    for name in (
+        "missing_mask",
+        "qc_rejected_mask",
+        "observed_clear_mask",
+    ):
+        value = getattr(observations, name)
+        if value is not None and (
+            value.shape != shape
+            or value.dtype != torch.bool
+            or value.device != observations.dbz.device
+        ):
+            raise ValueError(f"{name} must be boolean with observation shape")
+    if observations.missing_mask is not None and bool(
+        torch.any(observations.missing_mask & observations.valid_mask)
+    ):
+        raise ValueError("missing observations cannot be valid")
+    if observations.qc_rejected_mask is not None and bool(
+        torch.any(observations.qc_rejected_mask & observations.valid_mask)
+    ):
+        raise ValueError("QC-rejected observations cannot be valid")
 
 
 def _validate_control(
@@ -923,4 +1025,16 @@ def _detach_state(state: RadarState) -> RadarState:
         pair_displacements_yx=state.pair_displacements_yx.detach(),
         pair_log_growth=state.pair_log_growth.detach(),
         provenance=state.provenance,
+        forecast_status=state.forecast_status,
+        data_coverage_fraction=state.data_coverage_fraction,
+        latest_data_coverage_fraction=(
+            state.latest_data_coverage_fraction
+        ),
+        background_used=state.background_used,
+        background_age_minutes=state.background_age_minutes,
+        forecast_source_mask=(
+            None
+            if state.forecast_source_mask is None
+            else state.forecast_source_mask.detach()
+        ),
     )

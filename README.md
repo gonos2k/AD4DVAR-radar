@@ -2,7 +2,8 @@
 
 10분 간격 레이더 dBZ 3장으로 다음 3시간을 10분 간격으로 예측하는
 작고 해석 가능한 matrix-free 변분 구현이다. 기존 FFT 기준예측은 항상
-fallback으로 유지한다.
+수치 분석 실패 시 fallback으로 유지한다. 단, 관측과 이전 주기 배경이
+모두 없으면 맑음장을 만들지 않고 `UNAVAILABLE`을 반환한다.
 
 ## 모델
 
@@ -91,8 +92,26 @@ detected 또는 censored residual
 
 잔차벡터에는 표준화된 제어 prior도 그대로 포함한다. 따라서
 Gauss–Newton HVP는 `J.T @ (J @ v)`로 계산되고, LM 증분은 PCG로 푼다.
-행렬이나 Jacobian은 생성하지 않는다. PCG 실패, 비유한값, 수용할 수 없는
-증분이 반복되면 QC가 적용된 FFT 기준예측으로 자동 복귀한다.
+행렬이나 Jacobian은 생성하지 않는다. 첫 분석 증분 전 PCG 실패,
+비유한값, 수용할 수 없는 증분은 FFT 기준예측으로 복귀한다. 한 번이라도
+목적함수를 낮춘 분석이 수용된 뒤 후속 반복이 실패하면 그 최선 분석을
+`degraded=True`로 보존한다.
+
+결측, QC 탈락, 관측된 무에코는 서로 다른 mask로 보존한다. 결측 또는
+QC 탈락 화소는 관측잔차에 들어가지 않는다. 선택적으로 이전 주기의
+시간 정렬된 3장 배경을 제공할 수 있다.
+
+```python
+forecast_dbz, analysis = variational_nowcast(
+    frames,
+    qc_mask=qc_mask,
+    background_frames_dbz=previous_cycle_background,
+    background_age_minutes=10.0,
+)
+```
+
+관측이 전혀 없으면 이전 주기 배경을 `STALE_BACKGROUND`으로 사용한다.
+배경도 없으면 결과 상태는 `UNAVAILABLE`이고 예측장은 `NaN`이다.
 
 현재 P1에는 이전 분석주기의 독립 배경장이 없다. 따라서 `Y(-20)`을 초기장
 anchor이자 첫 관측으로 함께 사용한다. 이는 완전한 Bayesian 4D-Var가 아니라
@@ -105,6 +124,10 @@ CLI:
 ```bash
 advar-nowcast three_frames.npy forecast.npz
 advar-nowcast three_frames.npy forecast.npz --variational
+advar-nowcast three_frames.npy forecast.npz \
+  --qc-mask qc.npy \
+  --background previous_cycle.npy \
+  --background-age-minutes 10
 ```
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
@@ -115,6 +138,14 @@ advar-nowcast three_frames.npy forecast.npz --variational
 - `log_growth_per_step`: 10분당 로그 성장률
 - `motion_disagreement_px`: 두 프레임 쌍의 이동 추정 불일치
 - `growth_disagreement`: 두 프레임 쌍의 성장 추정 불일치
+- `forecast_status`: `OBSERVED`, `PARTIAL_OBSERVATION`,
+  `STALE_BACKGROUND`, `UNAVAILABLE`, `BASELINE_FALLBACK` 중 하나
+- `data_coverage_fraction`, `latest_data_coverage_fraction`
+- `background_used`, `background_age_minutes`
+- `analysis_converged`, `analysis_degraded`, `analysis_used_fallback`
+
+NPZ는 같은 디렉터리의 임시 파일을 완전히 기록한 뒤 원자적으로
+교체한다. 기록 실패 시 기존 출력은 그대로 유지한다.
 
 ## 의도적으로 제한한 부분
 
