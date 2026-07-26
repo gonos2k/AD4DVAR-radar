@@ -11,6 +11,7 @@ from advar.nowcast import (  # noqa: E402
     NowcastConfig,
     RadarState,
     advect,
+    freeze_remap_cell,
     forecast_from_state,
 )
 
@@ -108,16 +109,21 @@ class MatrixFreeTests(unittest.TestCase):
             rtol=1.0e-8,
         )
 
-    def test_advection_jvp_matches_finite_difference_at_zero_motion(self) -> None:
+    def test_advection_jvp_matches_finite_difference_in_frozen_cell(self) -> None:
         field = torch.arange(16, dtype=torch.float64).reshape(4, 4)
         direction = torch.tensor([1.0, 0.0], dtype=torch.float64)
-        function = lambda motion: advect(field, motion)
 
         for point in (
-            torch.zeros(2, dtype=torch.float64),
-            torch.tensor([1.0, -2.0], dtype=torch.float64),
+            torch.tensor([0.25, 0.35], dtype=torch.float64),
+            torch.tensor([1.25, -1.75], dtype=torch.float64),
         ):
             with self.subTest(point=point.tolist()):
+                cell = freeze_remap_cell(point)
+                function = lambda motion: advect(
+                    field,
+                    motion,
+                    frozen_cell=cell,
+                )
                 _, product = jvp(function, point, direction)
                 epsilon = 1.0e-5
                 finite_difference = (
@@ -131,11 +137,14 @@ class MatrixFreeTests(unittest.TestCase):
                     rtol=1.0e-7,
                 )
 
-    def test_advection_hvp_matches_finite_difference_at_zero_motion(self) -> None:
+    def test_advection_hvp_matches_finite_difference_in_frozen_cell(self) -> None:
         field = torch.arange(16, dtype=torch.float64).reshape(4, 4)
-        point = torch.zeros(2, dtype=torch.float64)
+        point = torch.tensor([0.25, 0.35], dtype=torch.float64)
         direction = torch.tensor([1.0, 0.0], dtype=torch.float64)
-        loss = lambda motion: torch.mean(advect(field, motion) ** 2)
+        cell = freeze_remap_cell(point)
+        loss = lambda motion: torch.mean(
+            advect(field, motion, frozen_cell=cell) ** 2
+        )
 
         product = hvp(loss, point, direction)
         gradient = torch.func.grad(loss)
@@ -151,7 +160,24 @@ class MatrixFreeTests(unittest.TestCase):
             rtol=1.0e-3,
         )
 
-    def test_forecast_jvp_matches_finite_difference_at_integer_motion(self) -> None:
+    def test_advection_is_continuous_at_an_integer_cell_boundary(self) -> None:
+        field = torch.arange(16, dtype=torch.float64).reshape(4, 4)
+        point = torch.zeros(2, dtype=torch.float64)
+        epsilon = 1.0e-7
+        left = advect(
+            field,
+            torch.tensor([-epsilon, 0.0], dtype=torch.float64),
+        )
+        center = advect(field, point)
+        right = advect(
+            field,
+            torch.tensor([epsilon, 0.0], dtype=torch.float64),
+        )
+
+        torch.testing.assert_close(left, center, atol=2.0e-6, rtol=0.0)
+        torch.testing.assert_close(right, center, atol=2.0e-6, rtol=0.0)
+
+    def test_forecast_jvp_matches_finite_difference_inside_remap_cell(self) -> None:
         config = NowcastConfig(horizon_minutes=10)
         y, x = torch.meshgrid(
             torch.arange(12, dtype=torch.float64),
@@ -172,7 +198,7 @@ class MatrixFreeTests(unittest.TestCase):
             )
             return forecast_from_state(state, config)
 
-        point = torch.tensor([1.0, 0.0], dtype=torch.float64)
+        point = torch.tensor([1.25, 0.2], dtype=torch.float64)
         direction = torch.tensor([1.0, 0.0], dtype=torch.float64)
         _, product = jvp(function, point, direction)
         epsilon = 1.0e-5
@@ -187,7 +213,7 @@ class MatrixFreeTests(unittest.TestCase):
             rtol=1.0e-6,
         )
 
-    def test_forecast_hvp_matches_finite_difference_at_integer_motion(self) -> None:
+    def test_forecast_hvp_matches_finite_difference_inside_remap_cell(self) -> None:
         config = NowcastConfig(horizon_minutes=10)
         y, x = torch.meshgrid(
             torch.arange(12, dtype=torch.float64),
@@ -208,7 +234,7 @@ class MatrixFreeTests(unittest.TestCase):
             )
             return torch.mean(forecast_from_state(state, config) ** 2)
 
-        point = torch.tensor([1.0, 0.0, 0.01], dtype=torch.float64)
+        point = torch.tensor([1.25, 0.2, 0.01], dtype=torch.float64)
         direction = torch.tensor([0.2, -0.1, 0.03], dtype=torch.float64)
         product = hvp(loss, point, direction)
         gradient = torch.func.grad(loss)

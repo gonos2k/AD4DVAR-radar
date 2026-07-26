@@ -17,9 +17,11 @@ from .matrix_free import gauss_newton_hvp, pcg
 from .nowcast import (
     NowcastConfig,
     RadarState,
+    RemapCell,
     advect,
     dbz_to_linear,
     estimate_state,
+    freeze_remap_cell,
     forecast_from_state,
     linear_to_dbz,
 )
@@ -119,6 +121,7 @@ class FrozenOuterState:
     irls_sqrt_weight: Tensor
     nowcast_config: NowcastConfig
     analysis_config: AnalysisConfig
+    analysis_remap_cells: tuple[RemapCell, RemapCell] | None = None
 
 
 @dataclass(frozen=True)
@@ -205,10 +208,15 @@ def prepare_analysis(
     )
 
     baseline_state = _detach_state(estimate_state(clean, nowcast_config))
+    remap_cells = tuple(
+        freeze_remap_cell(step * baseline_state.displacement_yx)
+        for step in (1, 2)
+    )
     initial_frozen = FrozenOuterState(
         initial_background_dbz=clean[0].detach().clone(),
         initial_support_mask=detected[0].detach().clone(),
         baseline_state=baseline_state,
+        analysis_remap_cells=remap_cells,
         irls_sqrt_weight=valid.to(dtype=frames_dbz.dtype).detach().clone(),
         nowcast_config=nowcast_config,
         analysis_config=analysis_config,
@@ -262,22 +270,26 @@ def analysis_trajectory(
     initial_dbz = floor_dbz + analyzed_offset
     echo_floor = initial_dbz.new_tensor(10.0 ** (floor_dbz / 10.0))
     initial_echo = torch.pow(10.0, initial_dbz / 10.0) - echo_floor
-    displacement = _bounded_update(
-        baseline.displacement_yx,
-        dynamics_control[:2],
-        config.motion_increment_scale_px,
-        nowcast.max_displacement_px,
-    )
-    growth = _bounded_update(
-        baseline.log_growth_per_step,
-        dynamics_control[2],
-        config.growth_increment_scale,
-        nowcast.max_log_growth_per_step,
+    displacement, growth = _decode_dynamics(
+        dynamics_control,
+        baseline,
+        config,
+        nowcast,
     )
 
     frames = [initial_echo]
+    remap_cells = frozen_outer_state.analysis_remap_cells
+    if remap_cells is None:
+        remap_cells = tuple(
+            freeze_remap_cell(step * displacement)
+            for step in (1, 2)
+        )
     for step in (1, 2):
-        frame = advect(initial_echo, step * displacement)
+        frame = advect(
+            initial_echo,
+            step * displacement,
+            frozen_cell=remap_cells[step - 1],
+        )
         frames.append(frame * torch.exp(step * growth))
     return AnalysisTrajectory(
         frames_linear=torch.stack(frames),
@@ -344,6 +356,10 @@ def freeze_irls_weights(
 ) -> FrozenOuterState:
     """Recompute pseudo-Huber weights between, never inside, PCG solves."""
 
+    frozen_outer_state = _freeze_analysis_remap_cells(
+        control,
+        frozen_outer_state,
+    )
     residual = whitened_observation_residual(
         control,
         observations,
@@ -417,6 +433,10 @@ def solve_analysis(
         else control.detach().clone()
     )
     _validate_control(control, frozen_outer_state)
+    frozen_outer_state = _freeze_analysis_remap_cells(
+        control,
+        frozen_outer_state,
+    )
     initial_cost_tensor = robust_objective(
         control,
         observations,
@@ -508,33 +528,47 @@ def solve_analysis(
                 continue
             linear_system_solved = True
 
-            step = candidate_linear.solution
-            hessian_step = gauss_newton_hvp(
+            raw_step = candidate_linear.solution
+            hessian_raw_step = gauss_newton_hvp(
                 residual_fn,
                 control,
-                step,
+                raw_step,
             )
-            predicted_reduction = -torch.dot(
-                gradient,
-                step,
-            ) - 0.5 * torch.dot(step, hessian_step)
-            predicted = float(predicted_reduction.detach())
-            candidate = control + step
-            candidate_cost = float(
-                robust_objective(
+            directional_gradient = torch.dot(gradient, raw_step)
+            directional_curvature = torch.dot(
+                raw_step,
+                hessian_raw_step,
+            )
+            for backtrack in range(12):
+                scale = 0.5**backtrack
+                step = scale * raw_step
+                predicted_reduction = (
+                    -scale * directional_gradient
+                    - 0.5 * scale**2 * directional_curvature
+                )
+                predicted = float(predicted_reduction.detach())
+                candidate = control + step
+                candidate_frozen = _freeze_analysis_remap_cells(
                     candidate,
-                    observations,
                     frozen_iteration,
-                ).detach()
-            )
-            actual = current_cost - candidate_cost
-            ratio = actual / predicted if predicted > 0 else -math.inf
+                )
+                candidate_cost = float(
+                    robust_objective(
+                        candidate,
+                        observations,
+                        candidate_frozen,
+                    ).detach()
+                )
+                actual = current_cost - candidate_cost
+                ratio = actual / predicted if predicted > 0 else -math.inf
 
-            if (
-                math.isfinite(candidate_cost)
-                and actual > 0
-                and ratio >= 0.1
-            ):
+                if not (
+                    math.isfinite(candidate_cost)
+                    and actual > 0
+                    and ratio >= 0.1
+                ):
+                    continue
+
                 control = candidate.detach()
                 current_cost = candidate_cost
                 accepted_any = True
@@ -558,6 +592,8 @@ def solve_analysis(
                 if relative_step <= config.step_tolerance:
                     converged = True
                     reason = "step_tolerance"
+                break
+            if accepted_this_outer:
                 break
             damping = min(config.maximum_damping, 4.0 * damping)
 
@@ -637,6 +673,7 @@ def _analysis_result(
     used_fallback: bool,
     reason: str,
 ) -> AnalysisResult:
+    frozen = _freeze_analysis_remap_cells(control, frozen)
     trajectory = analysis_trajectory(control, frozen)
     baseline = frozen.baseline_state
     state = RadarState(
@@ -699,6 +736,48 @@ def _bounded_update(
     ratio = (background / limit).clamp(-0.999999, 0.999999)
     latent = torch.atanh(ratio)
     return limit * torch.tanh(latent + (scale / limit) * control)
+
+
+def _decode_dynamics(
+    dynamics_control: Tensor,
+    baseline: RadarState,
+    config: AnalysisConfig,
+    nowcast: NowcastConfig,
+) -> tuple[Tensor, Tensor]:
+    displacement = _bounded_update(
+        baseline.displacement_yx,
+        dynamics_control[:2],
+        config.motion_increment_scale_px,
+        nowcast.max_displacement_px,
+    )
+    growth = _bounded_update(
+        baseline.log_growth_per_step,
+        dynamics_control[2],
+        config.growth_increment_scale,
+        nowcast.max_log_growth_per_step,
+    )
+    return displacement, growth
+
+
+def _freeze_analysis_remap_cells(
+    control: Tensor,
+    frozen: FrozenOuterState,
+) -> FrozenOuterState:
+    """Freeze the two analysis-window transport cells at an outer iterate."""
+
+    height, width = frozen.initial_background_dbz.shape
+    dynamics_control = control[height * width :]
+    displacement, _ = _decode_dynamics(
+        dynamics_control,
+        frozen.baseline_state,
+        frozen.analysis_config,
+        frozen.nowcast_config,
+    )
+    cells = tuple(
+        freeze_remap_cell(step * displacement)
+        for step in (1, 2)
+    )
+    return replace(frozen, analysis_remap_cells=cells)
 
 
 def _softplus_inverse(value: Tensor) -> Tensor:

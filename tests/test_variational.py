@@ -18,12 +18,14 @@ from advar.matrix_free import (  # noqa: E402
 from advar.nowcast import (  # noqa: E402
     NowcastConfig,
     RadarState,
+    RemapCell,
     advect,
     linear_to_dbz,
 )
 from advar.sensitivity import compute_sensitivity_snapshot  # noqa: E402
 from advar.variational import (  # noqa: E402
     AnalysisConfig,
+    FrozenOuterState,
     analysis_trajectory,
     freeze_irls_weights,
     initial_control,
@@ -105,6 +107,24 @@ class VariationalAnalysisTests(unittest.TestCase):
             atol=1.0e-10,
             rtol=0.0,
         )
+
+    def test_legacy_frozen_outer_state_constructor_remains_valid(self) -> None:
+        observations, frozen = self.stationary_problem()
+        legacy = FrozenOuterState(
+            frozen.initial_background_dbz,
+            frozen.initial_support_mask,
+            frozen.baseline_state,
+            frozen.irls_sqrt_weight,
+            frozen.nowcast_config,
+            frozen.analysis_config,
+        )
+
+        self.assertIsNone(legacy.analysis_remap_cells)
+        trajectory = analysis_trajectory(
+            initial_control(observations),
+            legacy,
+        )
+        self.assertEqual(trajectory.frames_linear.shape, (3, 4, 5))
 
     def test_detected_censored_and_once_whitened_residuals(self) -> None:
         observations, frozen = self.stationary_problem()
@@ -332,6 +352,55 @@ class VariationalAnalysisTests(unittest.TestCase):
             result.state.echo_linear,
             result.analyzed_frames_linear[-1],
         )
+
+    def test_analysis_can_cross_zero_into_a_negative_remap_cell(self) -> None:
+        height, width = 6, 6
+        y, x = torch.meshgrid(
+            torch.arange(height, dtype=torch.float64),
+            torch.arange(width, dtype=torch.float64),
+            indexing="ij",
+        )
+        initial = 2.0e4 * torch.exp(
+            -((y - 2.7) ** 2 + (x - 3.1) ** 2) / 2.0
+        )
+        displacement = torch.tensor([-0.35, 0.0], dtype=torch.float64)
+        truth = torch.stack(
+            (
+                initial,
+                advect(initial, displacement),
+                advect(initial, 2.0 * displacement),
+            )
+        )
+        observations, frozen = prepare_analysis(
+            linear_to_dbz(truth, self.nowcast_config),
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+            observation_std_dbz=1.0,
+        )
+        baseline = frozen.baseline_state
+        zero_motion = RadarState(
+            echo_amplitude=baseline.echo_amplitude,
+            displacement_yx=torch.zeros_like(baseline.displacement_yx),
+            log_growth_per_step=torch.zeros_like(
+                baseline.log_growth_per_step
+            ),
+            pair_displacements_yx=torch.zeros_like(
+                baseline.pair_displacements_yx
+            ),
+            pair_log_growth=torch.zeros_like(baseline.pair_log_growth),
+            provenance=baseline.provenance,
+        )
+        frozen = replace(
+            frozen,
+            baseline_state=zero_motion,
+            analysis_remap_cells=(RemapCell(0, 0), RemapCell(0, 0)),
+        )
+
+        result = solve_analysis(observations, frozen)
+
+        self.assertFalse(result.used_fallback, result.reason)
+        self.assertLess(float(result.state.displacement_yx[0]), -0.1)
+        self.assertLess(result.final_objective, result.initial_objective)
 
     def test_invalid_observations_use_qc_cleaned_baseline_fallback(self) -> None:
         frames = torch.full((3, 5, 5), 20.0, dtype=torch.float64)
