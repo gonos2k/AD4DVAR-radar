@@ -1,7 +1,7 @@
 """Simple three-frame radar echo nowcasting.
 
 The analysis estimates one global translation and one global growth rate.
-Each forecast lead directly applies differentiable semi-Lagrangian advection.
+Each forecast lead directly applies a local conservative echo remap.
 """
 
 from __future__ import annotations
@@ -10,7 +10,6 @@ from dataclasses import dataclass
 import math
 
 import torch
-import torch.nn.functional as F
 from torch import Tensor
 
 
@@ -75,6 +74,18 @@ class NowcastConfig:
 
 
 @dataclass(frozen=True)
+class RemapCell:
+    """Integer transport cell held fixed during one linearization."""
+
+    y: int
+    x: int
+
+    def __post_init__(self) -> None:
+        if type(self.y) is not int or type(self.x) is not int:
+            raise TypeError("remap cell coordinates must be integers")
+
+
+@dataclass(frozen=True)
 class RadarState:
     """Low-dimensional state inferred from the three input frames."""
 
@@ -127,20 +138,57 @@ def linear_to_dbz(echo: Tensor, config: NowcastConfig) -> Tensor:
     return dbz.clamp(config.min_dbz, config.max_dbz)
 
 
-def advect(echo: Tensor, displacement_yx: Tensor) -> Tensor:
-    """Move non-negative echo through its square-root amplitude."""
+def freeze_remap_cell(displacement_yx: Tensor) -> RemapCell:
+    """Return the integer transport cell for a fixed linearization point."""
+
+    if displacement_yx.shape != (2,):
+        raise ValueError("displacement_yx must have shape [2]")
+    if not displacement_yx.is_floating_point():
+        raise TypeError("displacement_yx must be floating point")
+    detached = displacement_yx.detach()
+    if not bool(torch.all(torch.isfinite(detached))):
+        raise ValueError("displacement_yx must be finite")
+    return RemapCell(
+        y=math.floor(float(detached[0])),
+        x=math.floor(float(detached[1])),
+    )
+
+
+def advect(
+    echo: Tensor,
+    displacement_yx: Tensor,
+    *,
+    frozen_cell: RemapCell | None = None,
+) -> Tensor:
+    """Move linear echo with a positive local conservative remap.
+
+    ``frozen_cell`` is optional for ordinary forecasts. Matrix-free solvers
+    pass the cell at their current outer iterate so every Krylov application
+    uses the same piecewise-smooth transport operator.
+    """
 
     if echo.ndim != 2:
         raise ValueError("echo must have shape [height, width]")
+    if not echo.is_floating_point():
+        raise TypeError("echo must be floating point")
     if displacement_yx.shape != (2,):
         raise ValueError("displacement_yx must have shape [2]")
+    if not displacement_yx.is_floating_point():
+        raise TypeError("displacement_yx must be floating point")
 
     height, width = echo.shape
     if height < 2 or width < 2:
         raise ValueError("echo height and width must both be at least 2")
 
-    amplitude = torch.sqrt(echo.clamp_min(0.0))
-    return _shift_amplitude(amplitude, displacement_yx).square()
+    displacement = displacement_yx.to(
+        dtype=echo.dtype,
+        device=echo.device,
+    )
+    return _local_conservative_remap(
+        echo.clamp_min(0.0),
+        displacement,
+        frozen_cell,
+    )
 
 
 def estimate_state(frames_dbz: Tensor, config: NowcastConfig) -> RadarState:
@@ -217,14 +265,13 @@ def forecast_linear_at_step(
         raise ValueError("step must be inside the configured forecast horizon")
     retention = math.exp(-config.interval_minutes / config.growth_decay_minutes)
     growth_sum = sum(retention**power for power in range(step))
-    amplitude = _shift_amplitude(
-        state.echo_amplitude,
+    echo = advect(
+        state.echo_linear,
         step * state.displacement_yx,
     )
-    amplitude = amplitude * torch.exp(
-        0.5 * state.log_growth_per_step * growth_sum
+    return echo * torch.exp(
+        state.log_growth_per_step * growth_sum
     )
-    return amplitude.square()
 
 
 def forecast_from_state(state: RadarState, config: NowcastConfig) -> Tensor:
@@ -253,40 +300,59 @@ def _validate_frames(frames: Tensor) -> None:
         raise TypeError("frames_dbz must be a floating-point tensor")
 
 
-def _shift_amplitude(amplitude: Tensor, displacement_yx: Tensor) -> Tensor:
-    """Translate a square-root echo field with a smooth Fourier phase shift."""
+def _local_conservative_remap(
+    echo: Tensor,
+    displacement_yx: Tensor,
+    frozen_cell: RemapCell | None,
+) -> Tensor:
+    """Deposit each source cell into its four local destination cells."""
 
-    height, width = amplitude.shape
-    padded = F.pad(amplitude, (0, width, 0, height))
-    frequency_y = torch.fft.fftfreq(
-        2 * height,
-        dtype=amplitude.dtype,
-        device=amplitude.device,
-    )
-    frequency_x = torch.fft.fftfreq(
-        2 * width,
-        dtype=amplitude.dtype,
-        device=amplitude.device,
-    )
+    height, width = echo.shape
     dy, dx = displacement_yx
-    phase = torch.exp(
-        -2j
-        * math.pi
-        * (frequency_y[:, None] * dy + frequency_x[None, :] * dx)
-    )
-    shifted = torch.fft.ifft2(torch.fft.fft2(padded) * phase).real
-    gate = _domain_gate(dy, height) * _domain_gate(dx, width)
-    return shifted[:height, :width] * gate
+    if frozen_cell is None:
+        base_y = torch.floor(dy).to(torch.int64)
+        base_x = torch.floor(dx).to(torch.int64)
+    else:
+        base_y = torch.as_tensor(
+            frozen_cell.y,
+            dtype=torch.int64,
+            device=echo.device,
+        )
+        base_x = torch.as_tensor(
+            frozen_cell.x,
+            dtype=torch.int64,
+            device=echo.device,
+        )
 
+    fraction_y = dy - base_y.to(dtype=echo.dtype)
+    fraction_x = dx - base_x.to(dtype=echo.dtype)
+    source_y = torch.arange(height, device=echo.device)[:, None]
+    source_x = torch.arange(width, device=echo.device)[None, :]
+    output = echo.new_zeros(height * width)
 
-def _domain_gate(displacement: Tensor, size: int) -> Tensor:
-    """Smoothly turn off a field before periodic padding can re-enter."""
-
-    transition = (torch.abs(displacement) - (size - 1)).clamp(0.0, 1.0)
-    smoother_step = transition**3 * (
-        10.0 - 15.0 * transition + 6.0 * transition**2
-    )
-    return 1.0 - smoother_step
+    y_options = ((0, 1.0 - fraction_y), (1, fraction_y))
+    x_options = ((0, 1.0 - fraction_x), (1, fraction_x))
+    for offset_y, weight_y in y_options:
+        destination_y = source_y + base_y + offset_y
+        valid_y = (destination_y >= 0) & (destination_y < height)
+        for offset_x, weight_x in x_options:
+            destination_x = source_x + base_x + offset_x
+            valid = (
+                valid_y
+                & (destination_x >= 0)
+                & (destination_x < width)
+            )
+            flat_index = (
+                destination_y.clamp(0, height - 1) * width
+                + destination_x.clamp(0, width - 1)
+            )
+            contribution = echo * weight_y * weight_x * valid
+            output = output.scatter_add(
+                0,
+                flat_index.reshape(-1),
+                contribution.reshape(-1),
+            )
+    return output.reshape(height, width)
 
 
 def _log_aligned_growth(

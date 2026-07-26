@@ -71,6 +71,46 @@ class NowcastTests(unittest.TestCase):
             rtol=0.02,
         )
 
+    def test_motion_improves_an_independent_analytic_gaussian_truth(
+        self,
+    ) -> None:
+        y, x = torch.meshgrid(
+            torch.arange(64, dtype=torch.float32),
+            torch.arange(64, dtype=torch.float32),
+            indexing="ij",
+        )
+        displacement = torch.tensor([0.45, -0.35])
+        truth = torch.stack(
+            tuple(
+                2.0e4
+                * torch.exp(
+                    -(
+                        (y - (30.2 + step * displacement[0])) ** 2
+                        + (x - (31.4 + step * displacement[1])) ** 2
+                    )
+                    / 8.0
+                )
+                for step in range(4)
+            )
+        )
+        frames = linear_to_dbz(truth[:3], self.config)
+        state = estimate_state(frames, self.config)
+        forecast = forecast_from_state(
+            state,
+            NowcastConfig(horizon_minutes=10),
+        )[0]
+        verification = linear_to_dbz(truth[3], self.config)
+
+        torch.testing.assert_close(
+            state.displacement_yx,
+            displacement,
+            atol=0.2,
+            rtol=0.0,
+        )
+        forecast_error = torch.mean(torch.abs(forecast - verification))
+        persistence_error = torch.mean(torch.abs(frames[2] - verification))
+        self.assertLess(float(forecast_error), float(persistence_error))
+
     def test_motion_is_recovered_without_suppressing_edge_echo(self) -> None:
         y, x = torch.meshgrid(
             torch.arange(16, dtype=torch.float32),
@@ -180,18 +220,134 @@ class NowcastTests(unittest.TestCase):
     def test_fractional_advection_is_non_negative_and_does_not_gain_mass(
         self,
     ) -> None:
-        echo = torch.zeros(32, 32)
+        echo = torch.zeros(32, 32, dtype=torch.float64)
         echo[16, 16] = 1.0e5
-        moved = advect(echo, torch.tensor([0.5, 0.5]))
+        moved = advect(
+            echo,
+            torch.tensor([0.5, 0.5], dtype=torch.float64),
+        )
 
         self.assertGreaterEqual(float(moved.min()), 0.0)
-        self.assertLessEqual(float(moved.sum()), float(echo.sum()) * 1.00001)
+        torch.testing.assert_close(moved.sum(), echo.sum())
+
+    def test_fractional_impulse_has_only_four_local_destinations(self) -> None:
+        echo = torch.zeros(32, 32, dtype=torch.float64)
+        echo[16, 16] = 1.0e5
+        moved = advect(
+            echo,
+            torch.tensor([0.5, 0.5], dtype=torch.float64),
+        )
+        expected = torch.zeros_like(echo)
+        expected[16:18, 16:18] = 2.5e4
+
+        torch.testing.assert_close(moved, expected)
+        self.assertEqual(int(torch.count_nonzero(moved)), 4)
+
+        footprint = torch.zeros_like(echo, dtype=torch.bool)
+        footprint[16:18, 16:18] = True
+        moved_dbz = linear_to_dbz(moved, self.config)
+        self.assertEqual(
+            int(torch.count_nonzero((moved_dbz > 5.0) & ~footprint)),
+            0,
+        )
+
+    def test_sharp_echoes_remain_local_and_conserve_echo_integral(self) -> None:
+        displacement = torch.tensor(
+            [0.25, -0.75],
+            dtype=torch.float64,
+        )
+        cases = []
+
+        rectangle = torch.zeros(32, 32, dtype=torch.float64)
+        rectangle[10:15, 12:19] = 3.0e4
+        cases.append((rectangle, (10, 15, 11, 18)))
+
+        horizontal_band = torch.zeros(32, 32, dtype=torch.float64)
+        horizontal_band[14:16, 8:24] = 2.0e4
+        cases.append((horizontal_band, (14, 16, 7, 23)))
+
+        vertical_band = torch.zeros(32, 32, dtype=torch.float64)
+        vertical_band[8:24, 14:16] = 2.0e4
+        cases.append((vertical_band, (8, 24, 13, 15)))
+
+        for echo, (y_start, y_stop, x_start, x_stop) in cases:
+            with self.subTest(bounds=(y_start, y_stop, x_start, x_stop)):
+                moved = advect(echo, displacement)
+                support = torch.zeros_like(echo, dtype=torch.bool)
+                support[y_start : y_stop + 1, x_start : x_stop + 1] = True
+
+                self.assertTrue(bool(torch.all(moved[~support] == 0)))
+                self.assertGreaterEqual(float(moved.min()), 0.0)
+                torch.testing.assert_close(
+                    moved.sum(),
+                    echo.sum(),
+                    atol=1.0e-10,
+                    rtol=1.0e-12,
+                )
+
+    def test_boundary_outflow_closes_the_echo_integral_budget(self) -> None:
+        cases = (
+            ((0, 10), (-0.5, 0.0)),
+            ((31, 10), (0.5, 0.0)),
+            ((10, 0), (0.0, -0.5)),
+            ((10, 31), (0.0, 0.5)),
+        )
+        for source, displacement in cases:
+            with self.subTest(source=source, displacement=displacement):
+                echo = torch.zeros(32, 32, dtype=torch.float64)
+                echo[source] = 1.0e5
+                moved = advect(
+                    echo,
+                    torch.tensor(displacement, dtype=torch.float64),
+                )
+                expected_outflow = 0.5 * float(echo.sum())
+                actual_outflow = float(echo.sum() - moved.sum())
+
+                self.assertAlmostEqual(
+                    actual_outflow,
+                    expected_outflow,
+                    places=9,
+                )
+                self.assertGreaterEqual(float(moved.min()), 0.0)
+
+    def test_direct_one_pixel_warp_avoids_repeated_half_pixel_diffusion(
+        self,
+    ) -> None:
+        echo = torch.zeros(16, 16, dtype=torch.float64)
+        echo[8, 8] = 1.0
+        half = torch.tensor([0.0, 0.5], dtype=torch.float64)
+
+        repeated = advect(advect(echo, half), half)
+        direct = advect(echo, 2.0 * half)
+
+        torch.testing.assert_close(repeated.sum(), echo.sum())
+        torch.testing.assert_close(direct.sum(), echo.sum())
+        self.assertEqual(int(torch.count_nonzero(repeated)), 3)
+        self.assertEqual(int(torch.count_nonzero(direct)), 1)
+
+        columns = torch.arange(16, dtype=torch.float64)[None, :]
+        repeated_center = torch.sum(repeated * columns) / repeated.sum()
+        direct_center = torch.sum(direct * columns) / direct.sum()
+        torch.testing.assert_close(repeated_center, direct_center)
+        self.assertFalse(torch.equal(repeated, direct))
 
     def test_echo_does_not_wrap_back_after_leaving_domain(self) -> None:
         echo = torch.zeros(32, 32)
         echo[16, 16] = 1.0e5
         moved = advect(echo, torch.tensor([80.0, 0.0]))
         torch.testing.assert_close(moved, torch.zeros_like(moved))
+
+    def test_advection_rejects_integer_echo_and_displacement(self) -> None:
+        with self.assertRaisesRegex(TypeError, "echo"):
+            advect(
+                torch.ones(4, 4, dtype=torch.int64),
+                torch.tensor([0.5, 0.5]),
+            )
+        with self.assertRaisesRegex(TypeError, "displacement"):
+            advect(
+                torch.ones(4, 4),
+                torch.tensor([0, 1]),
+            )
 
     def test_invalid_shape_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "shape"):
