@@ -47,6 +47,18 @@ def metadata_for(
     pair_motion: torch.Tensor | None = None,
     pair_growth: torch.Tensor | None = None,
 ) -> ForecastMetadata:
+    pair_motion = (
+        torch.stack((state.displacement_yx, state.displacement_yx))
+        if pair_motion is None
+        else pair_motion
+    )
+    pair_growth = (
+        torch.stack(
+            (state.log_growth_per_step, state.log_growth_per_step)
+        )
+        if pair_growth is None
+        else pair_growth
+    )
     return ForecastMetadata(
         data_status=DataStatus.OBSERVED,
         coverage_by_frame=torch.ones(
@@ -57,18 +69,10 @@ def metadata_for(
         background_used=False,
         background_age_minutes=None,
         source_mask=None,
-        pair_displacements_yx=(
-            torch.stack((state.displacement_yx, state.displacement_yx))
-            if pair_motion is None
-            else pair_motion
+        motion_disagreement_px=torch.linalg.vector_norm(
+            pair_motion[1] - pair_motion[0]
         ),
-        pair_log_growth=(
-            torch.stack(
-                (state.log_growth_per_step, state.log_growth_per_step)
-            )
-            if pair_growth is None
-            else pair_growth
-        ),
+        growth_disagreement=torch.abs(pair_growth[1] - pair_growth[0]),
     )
 
 

@@ -104,19 +104,9 @@ class ForecastMetadata:
     background_used: bool
     background_age_minutes: float | None
     source_mask: Tensor | None
-    pair_displacements_yx: Tensor
-    pair_log_growth: Tensor
+    motion_disagreement_px: Tensor
+    growth_disagreement: Tensor
     provenance: str = "p0_fft_latest"
-
-    @property
-    def motion_disagreement_px(self) -> Tensor:
-        return torch.linalg.vector_norm(
-            self.pair_displacements_yx[1] - self.pair_displacements_yx[0]
-        )
-
-    @property
-    def growth_disagreement(self) -> Tensor:
-        return torch.abs(self.pair_log_growth[1] - self.pair_log_growth[0])
 
 
 @dataclass(frozen=True)
@@ -189,10 +179,15 @@ def prepare_input(
     available = observed.clone()
     background_used_mask = torch.zeros_like(observed)
 
-    if background_age_minutes is not None:
-        if background_frames_dbz is None:
+    if background_frames_dbz is None:
+        if background_age_minutes is not None:
             raise ValueError(
                 "background_age_minutes requires background_frames_dbz"
+            )
+    else:
+        if background_age_minutes is None:
+            raise ValueError(
+                "background_age_minutes is required with background_frames_dbz"
             )
         if (
             not math.isfinite(background_age_minutes)
@@ -224,17 +219,6 @@ def prepare_input(
         background_used_mask = ~available & background_finite
         dense = torch.where(background_used_mask, clean_background, dense)
         available = available | background_used_mask
-
-    source_orders = ((1, 2), (0, 2), (1, 0))
-    for target, sources in enumerate(source_orders):
-        for source in sources:
-            fill = ~available[target] & observed[source]
-            dense[target] = torch.where(
-                fill,
-                clean_observations[source],
-                dense[target],
-            )
-            available[target] = available[target] | fill
 
     observed_count = int(observed.sum())
     observation_count = observed.numel()
@@ -291,43 +275,26 @@ def estimate_prepared_state(
     config: NowcastConfig,
 ) -> tuple[RadarState, ForecastMetadata]:
     frames = prepared.frames_dbz
-    pair_motion = torch.stack(
-        (
-            _phase_correlation_shift(frames[0], frames[1], config),
-            _phase_correlation_shift(frames[1], frames[2], config),
-        )
-    )
     linear = dbz_to_echo(
         frames,
         min_dbz=config.min_dbz,
         max_dbz=config.max_dbz,
     )
     linear, _ = validate_physical_echo(linear, name="input echo conversion")
-    pair_growth = torch.stack(
-        (
-            _log_aligned_growth(
-                linear[0],
-                linear[1],
-                pair_motion[0],
-                config,
-            ),
-            _log_aligned_growth(
-                linear[1],
-                linear[2],
-                pair_motion[1],
-                config,
-            ),
-        )
+    displacement, growth, motion_disagreement, growth_disagreement = (
+        _estimate_time_normalized_tendencies(prepared, linear, config)
     )
-    weight = config.recent_weight
+    current_echo, current_source_mask = _current_state_from_available_frame(
+        prepared,
+        linear,
+        displacement,
+        growth,
+        config,
+    )
     state = RadarState(
-        echo_linear=linear[2],
-        displacement_yx=(
-            (1.0 - weight) * pair_motion[0] + weight * pair_motion[1]
-        ),
-        log_growth_per_step=(
-            (1.0 - weight) * pair_growth[0] + weight * pair_growth[1]
-        ),
+        echo_linear=current_echo,
+        displacement_yx=displacement,
+        log_growth_per_step=growth,
     )
     metadata = ForecastMetadata(
         data_status=prepared.data_status,
@@ -336,13 +303,175 @@ def estimate_prepared_state(
         background_age_minutes=prepared.background_age_minutes,
         source_mask=(
             None
-            if bool(torch.all(prepared.available_mask[-1]))
-            else prepared.available_mask[-1].detach().clone()
+            if bool(torch.all(current_source_mask))
+            else current_source_mask.detach().clone()
         ),
-        pair_displacements_yx=pair_motion.detach(),
-        pair_log_growth=pair_growth.detach(),
+        motion_disagreement_px=motion_disagreement.detach(),
+        growth_disagreement=growth_disagreement.detach(),
     )
     return state, metadata
+
+
+def _estimate_time_normalized_tendencies(
+    prepared: PreparedRadarInput,
+    linear: Tensor,
+    config: NowcastConfig,
+) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+    estimates = []
+    for previous_index, current_index in ((0, 1), (1, 2)):
+        estimate = _estimate_available_pair(
+            prepared,
+            linear,
+            previous_index,
+            current_index,
+            config,
+        )
+        if estimate is not None:
+            estimates.append(estimate)
+
+    if not estimates:
+        long_estimate = _estimate_available_pair(
+            prepared,
+            linear,
+            0,
+            2,
+            config,
+        )
+        if long_estimate is not None:
+            estimates.append(long_estimate)
+
+    zero_motion = linear.new_zeros(2)
+    zero_growth = linear.new_zeros(())
+    if not estimates:
+        return zero_motion, zero_growth, zero_growth, zero_growth
+    if len(estimates) == 1:
+        motion, growth = estimates[0]
+        return motion, growth, zero_growth, zero_growth
+
+    first_motion, first_growth = estimates[0]
+    second_motion, second_growth = estimates[1]
+    weight = config.recent_weight
+    return (
+        (1.0 - weight) * first_motion + weight * second_motion,
+        (1.0 - weight) * first_growth + weight * second_growth,
+        torch.linalg.vector_norm(second_motion - first_motion),
+        torch.abs(second_growth - first_growth),
+    )
+
+
+def _estimate_available_pair(
+    prepared: PreparedRadarInput,
+    linear: Tensor,
+    previous_index: int,
+    current_index: int,
+    config: NowcastConfig,
+) -> tuple[Tensor, Tensor] | None:
+    common = (
+        prepared.available_mask[previous_index]
+        & prepared.available_mask[current_index]
+    )
+    if not bool(torch.any(common)):
+        return None
+
+    floor = prepared.frames_dbz.new_full((), config.min_dbz)
+    previous_dbz = torch.where(
+        common,
+        prepared.frames_dbz[previous_index],
+        floor,
+    )
+    current_dbz = torch.where(
+        common,
+        prepared.frames_dbz[current_index],
+        floor,
+    )
+    previous_signal = (
+        previous_dbz - config.echo_threshold_dbz
+    ).clamp_min(0.0)
+    current_signal = (
+        current_dbz - config.echo_threshold_dbz
+    ).clamp_min(0.0)
+    if (
+        float(torch.linalg.vector_norm(previous_signal)) <= config.epsilon
+        or float(torch.linalg.vector_norm(current_signal)) <= config.epsilon
+    ):
+        return None
+
+    step_span = current_index - previous_index
+    total_motion = _phase_correlation_shift(
+        previous_dbz,
+        current_dbz,
+        config,
+        max_displacement_px=config.max_displacement_px * step_span,
+    )
+    previous_echo = torch.where(
+        common,
+        linear[previous_index],
+        linear.new_zeros(()),
+    )
+    current_echo = torch.where(
+        common,
+        linear[current_index],
+        linear.new_zeros(()),
+    )
+    total_growth = _log_aligned_growth(
+        previous_echo,
+        current_echo,
+        total_motion,
+        config,
+        max_log_growth=config.max_log_growth_per_step * step_span,
+    )
+    return total_motion / step_span, total_growth / step_span
+
+
+def _current_state_from_available_frame(
+    prepared: PreparedRadarInput,
+    linear: Tensor,
+    displacement: Tensor,
+    growth: Tensor,
+    config: NowcastConfig,
+) -> tuple[Tensor, Tensor]:
+    latest_mask = prepared.available_mask[2]
+    if bool(torch.all(latest_mask)):
+        return linear[2], latest_mask
+
+    retention = math.exp(
+        -config.interval_minutes / config.growth_decay_minutes
+    )
+    current_echo = torch.zeros_like(linear[2])
+    current_mask = torch.zeros_like(latest_mask)
+    for source_index in range(3):
+        source_mask = prepared.available_mask[source_index]
+        if not bool(torch.any(source_mask)):
+            continue
+
+        steps = 2 - source_index
+        candidate_echo = torch.where(
+            source_mask,
+            linear[source_index],
+            linear.new_zeros(()),
+        )
+        candidate_mask = source_mask
+        if steps:
+            total_displacement = steps * displacement
+            candidate_echo = remap(candidate_echo, total_displacement)
+            growth_sum = sum(retention**power for power in range(steps))
+            candidate_echo = react_core(candidate_echo, growth * growth_sum)
+            candidate_mask = (
+                remap(
+                    source_mask.to(dtype=linear.dtype),
+                    total_displacement,
+                )
+                > config.epsilon
+            )
+
+        current_echo = torch.where(
+            candidate_mask,
+            candidate_echo,
+            current_echo,
+        )
+        current_mask = current_mask | candidate_mask
+
+    return current_echo, current_mask
 
 
 def forecast_linear_at_step(
@@ -535,7 +664,14 @@ def _log_aligned_growth(
     current: Tensor,
     displacement_yx: Tensor,
     config: NowcastConfig,
+    *,
+    max_log_growth: float | None = None,
 ) -> Tensor:
+    limit = (
+        config.max_log_growth_per_step
+        if max_log_growth is None
+        else max_log_growth
+    )
     aligned = remap(previous, displacement_yx)
     valid = _valid_advection_mask(previous.shape, displacement_yx)
     if int(valid.sum()) < 4:
@@ -546,16 +682,14 @@ def _log_aligned_growth(
     if float(previous_integrated_echo.detach()) <= config.epsilon:
         if float(current_integrated_echo.detach()) <= config.epsilon:
             return previous_integrated_echo.new_zeros(())
-        return previous_integrated_echo.new_tensor(
-            config.max_log_growth_per_step
-        )
+        return previous_integrated_echo.new_tensor(limit)
     growth = torch.log(
         (current_integrated_echo + config.epsilon)
         / (previous_integrated_echo + config.epsilon)
     )
     return growth.clamp(
-        -config.max_log_growth_per_step,
-        config.max_log_growth_per_step,
+        -limit,
+        limit,
     )
 
 
@@ -588,6 +722,8 @@ def _phase_correlation_shift(
     previous_dbz: Tensor,
     current_dbz: Tensor,
     config: NowcastConfig,
+    *,
+    max_displacement_px: float | None = None,
 ) -> Tensor:
     previous = (previous_dbz - config.echo_threshold_dbz).clamp_min(0.0)
     current = (current_dbz - config.echo_threshold_dbz).clamp_min(0.0)
@@ -632,8 +768,22 @@ def _phase_correlation_shift(
     shift = correlation.new_tensor((shift_y, shift_x))
     limits = correlation.new_tensor(
         (
-            min(config.max_displacement_px, (height - 1) / 2.0),
-            min(config.max_displacement_px, (width - 1) / 2.0),
+            min(
+                (
+                    config.max_displacement_px
+                    if max_displacement_px is None
+                    else max_displacement_px
+                ),
+                height - 1,
+            ),
+            min(
+                (
+                    config.max_displacement_px
+                    if max_displacement_px is None
+                    else max_displacement_px
+                ),
+                width - 1,
+            ),
         )
     )
     return torch.maximum(torch.minimum(shift, limits), -limits)

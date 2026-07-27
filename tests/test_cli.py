@@ -122,6 +122,20 @@ class CliTests(unittest.TestCase):
                 self.assertEqual(result["background_age_minutes"].item(), 10.0)
                 self.assertTrue(result["background_used"].item())
 
+    def test_background_requires_age(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            background_path = directory / "background.npy"
+            np.save(background_path, self._stationary_frames())
+
+            with self.assertRaises(SystemExit):
+                self._run_cli(
+                    directory,
+                    self._stationary_frames(),
+                    "--background",
+                    str(background_path),
+                )
+
     def test_all_qc_rejected_without_background_is_unavailable(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
