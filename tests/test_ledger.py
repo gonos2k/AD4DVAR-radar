@@ -19,8 +19,7 @@ from advar.ledger import (  # noqa: E402
 )
 from advar.nowcast import (  # noqa: E402
     NowcastConfig,
-    RadarState,
-    dbz_to_linear,
+    nowcast,
 )
 from advar.sensitivity import (  # noqa: E402
     SensitivityConfig,
@@ -43,17 +42,11 @@ def _contract() -> ModelContract:
 def _computed_snapshot():
     config = NowcastConfig()
     frames = torch.full((3, 2, 2), 20.0, dtype=torch.float64)
-    state = RadarState(
-        echo_amplitude=torch.sqrt(dbz_to_linear(frames[2], config)),
-        displacement_yx=torch.zeros(2, dtype=frames.dtype),
-        log_growth_per_step=torch.zeros((), dtype=frames.dtype),
-        pair_displacements_yx=torch.zeros((2, 2), dtype=frames.dtype),
-        pair_log_growth=torch.zeros(2, dtype=frames.dtype),
-    )
+    result = nowcast(frames, config)
     verification = frames.new_full((config.forecast_steps, 2, 2), 20.0)
     return compute_sensitivity_snapshot(
         frames,
-        state,
+        result,
         verification,
         nowcast_config=config,
         background_frames_dbz=frames - 0.5,

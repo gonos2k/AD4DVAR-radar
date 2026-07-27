@@ -45,28 +45,14 @@ class CliTests(unittest.TestCase):
     def _assert_common_status_fields(self, result: np.lib.npyio.NpzFile) -> None:
         expected = {
             "output_contract_version",
-            "forecast_status",
-            "data_coverage_fraction",
-            "latest_data_coverage_fraction",
+            "data_status",
+            "coverage_by_frame",
             "background_used",
             "background_age_minutes",
             "analysis_converged",
             "analysis_degraded",
             "analysis_used_fallback",
             "analysis_reason",
-            "minimum_echo_linear",
-            "negative_echo_count_before_roundoff_fix",
-            "negative_echo_integral_before_fix",
-            "roundoff_correction_count",
-            "roundoff_correction_integral",
-            "minimum_transport_weight",
-            "maximum_transport_weight",
-            "transport_weight_sum_error",
-            "echo_integral_before_transport",
-            "echo_integral_after_transport",
-            "boundary_outflow_integral",
-            "echo_budget_error",
-            "positivity_gate_passed",
         }
         self.assertTrue(expected.issubset(result.files))
 
@@ -81,15 +67,14 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v2",
+                    "nowcast-npz-v3",
                 )
-                self.assertEqual(result["forecast_status"].item(), "OBSERVED")
+                self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
                 self.assertTrue(np.isfinite(result["forecast_dbz"]).all())
-                self.assertEqual(result["data_coverage_fraction"].item(), 1.0)
-                self.assertEqual(
-                    result["latest_data_coverage_fraction"].item(),
-                    1.0,
+                np.testing.assert_array_equal(
+                    result["coverage_by_frame"],
+                    np.ones(3),
                 )
                 self.assertTrue(np.isnan(result["background_age_minutes"].item()))
                 self.assertFalse(result["background_used"].item())
@@ -97,42 +82,11 @@ class CliTests(unittest.TestCase):
                 self.assertFalse(result["analysis_degraded"].item())
                 self.assertFalse(result["analysis_used_fallback"].item())
                 self.assertEqual(result["analysis_reason"].item(), "not_requested")
-                self.assertGreaterEqual(
-                    result["minimum_echo_linear"].item(),
-                    0.0,
+                self.assertNotIn("forecast_corrected_count", result.files)
+                self.assertNotIn(
+                    "echo_integral_before_transport",
+                    result.files,
                 )
-                self.assertEqual(
-                    result["negative_echo_count_before_roundoff_fix"].item(),
-                    0,
-                )
-                self.assertEqual(
-                    result["negative_echo_integral_before_fix"].item(),
-                    0.0,
-                )
-                self.assertEqual(
-                    result["roundoff_correction_count"].item(),
-                    0,
-                )
-                self.assertEqual(
-                    result["roundoff_correction_integral"].item(),
-                    0.0,
-                )
-                self.assertEqual(
-                    result["minimum_transport_weight"].shape,
-                    (18,),
-                )
-                self.assertEqual(
-                    result["echo_integral_before_transport"].shape,
-                    (18,),
-                )
-                self.assertEqual(
-                    result["echo_integral_after_transport"].shape,
-                    (18,),
-                )
-                self.assertTrue(
-                    np.allclose(result["echo_budget_error"], 0.0)
-                )
-                self.assertTrue(result["positivity_gate_passed"].item())
 
     def test_all_qc_rejected_uses_stale_background(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -157,14 +111,13 @@ class CliTests(unittest.TestCase):
             with np.load(output_path, allow_pickle=False) as result:
                 self._assert_common_status_fields(result)
                 self.assertEqual(
-                    result["forecast_status"].item(),
+                    result["data_status"].item(),
                     "STALE_BACKGROUND",
                 )
                 self.assertTrue(np.isfinite(result["forecast_dbz"]).all())
-                self.assertEqual(result["data_coverage_fraction"].item(), 0.0)
-                self.assertEqual(
-                    result["latest_data_coverage_fraction"].item(),
-                    0.0,
+                np.testing.assert_array_equal(
+                    result["coverage_by_frame"],
+                    np.zeros(3),
                 )
                 self.assertEqual(result["background_age_minutes"].item(), 10.0)
                 self.assertTrue(result["background_used"].item())
@@ -186,16 +139,35 @@ class CliTests(unittest.TestCase):
             with np.load(output_path, allow_pickle=False) as result:
                 self._assert_common_status_fields(result)
                 self.assertEqual(
-                    result["forecast_status"].item(),
+                    result["data_status"].item(),
                     "UNAVAILABLE",
                 )
                 self.assertTrue(np.isnan(result["forecast_dbz"]).all())
-                self.assertEqual(result["data_coverage_fraction"].item(), 0.0)
-                self.assertEqual(
-                    result["latest_data_coverage_fraction"].item(),
-                    0.0,
+                np.testing.assert_array_equal(
+                    result["coverage_by_frame"],
+                    np.zeros(3),
                 )
                 self.assertFalse(result["background_used"].item())
+
+    def test_audit_is_optional_and_reuses_the_forecast(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch("advar.cli.nowcast", wraps=cli.nowcast) as science:
+                output_path = self._run_cli(
+                    Path(temporary),
+                    self._stationary_frames(),
+                    "--audit",
+                )
+
+            self.assertEqual(science.call_count, 1)
+            with np.load(output_path, allow_pickle=False) as result:
+                self.assertEqual(result["forecast_corrected_count"].item(), 0)
+                self.assertEqual(
+                    result["echo_integral_before_transport"].shape,
+                    (18,),
+                )
+                self.assertTrue(
+                    np.allclose(result["echo_budget_error"], 0.0)
+                )
 
     def test_atomic_save_preserves_existing_file_on_failure(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
