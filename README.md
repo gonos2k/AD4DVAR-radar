@@ -110,8 +110,11 @@ Gauss–Newton HVP는 `J.T @ (J @ v)`로 계산되고, LM 증분은 PCG로 푼�
 QC 탈락 화소는 관측잔차에 들어가지 않는다. 운동과 성장률은 실제로
 가용한 시각쌍에서만 추정한다. 가운데 영상이 없으면 `-20→0분` 추정량을
 20분 간격으로 정규화하고, 한 시각만 가용하면 zero-motion,
-zero-growth persistence를 사용한다. 선택적으로 이전 주기의 시간 정렬된
-3장 배경을 제공할 수 있으며, 이때 배경 나이는 필수이다.
+zero-growth persistence를 사용한다. 활성 에코 주변의 공통 coverage가
+부족한 시각쌍도 사용하지 않는다. 부분 관측장을 현재시각으로 옮길 때는
+에코와 support를 함께 수송하고 support로 정규화하므로, fractional 이동한
+결측 경계가 인공적인 에코 소멸로 바뀌지 않는다. 선택적으로 이전 주기의
+시간 정렬된 3장 배경을 제공할 수 있으며, 이때 배경 나이는 필수이다.
 
 ```python
 forecast, analysis = variational_nowcast(
@@ -145,13 +148,14 @@ advar-nowcast three_frames.npy forecast.npz --audit
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v3`
+- `output_contract_version`: 현재 `nowcast-npz-v4`
 - `forecast_dbz`: `[18, H, W]`
 - `lead_minutes`: `[10, 20, ..., 180]`
 - `displacement_yx`: 10분당 픽셀 이동량
 - `log_growth_per_step`: 10분당 로그 성장률
 - `motion_disagreement_px`: 두 인접 가용쌍의 이동 추정 불일치. 가용쌍이 하나 이하면 `0`
 - `growth_disagreement`: 두 인접 가용쌍의 성장 추정 불일치. 가용쌍이 하나 이하면 `0`
+- `tendency_pair_count`: 실제 운동·성장 추정에 사용한 독립 pair 수
 - `data_status`: `OBSERVED`, `PARTIAL`, `STALE_BACKGROUND`,
   `UNAVAILABLE` 중 하나
 - `coverage_by_frame`: 입력 세 시각의 관측 coverage

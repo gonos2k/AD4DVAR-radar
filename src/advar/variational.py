@@ -1066,5 +1066,6 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
         ),
         motion_disagreement_px=metadata.motion_disagreement_px.detach(),
         growth_disagreement=metadata.growth_disagreement.detach(),
+        tendency_pair_count=metadata.tendency_pair_count,
         provenance=metadata.provenance,
     )

@@ -5,6 +5,7 @@ from enum import Enum
 import math
 
 import torch
+import torch.nn.functional as F
 from torch import Tensor
 
 from .diagnostics import (
@@ -33,6 +34,8 @@ class NowcastConfig:
     max_dbz: float = 70.0
     echo_threshold_dbz: float = 5.0
     recent_weight: float = 2.0 / 3.0
+    min_pair_echo_coverage: float = 0.95
+    pair_echo_dilation_px: int = 3
     max_displacement_px: float = 20.0
     max_log_growth_per_step: float = math.log(1.35)
     growth_decay_minutes: float = 60.0
@@ -43,6 +46,8 @@ class NowcastConfig:
             raise TypeError("interval_minutes must be an integer")
         if type(self.horizon_minutes) is not int:
             raise TypeError("horizon_minutes must be an integer")
+        if type(self.pair_echo_dilation_px) is not int:
+            raise TypeError("pair_echo_dilation_px must be an integer")
         if self.interval_minutes <= 0:
             raise ValueError("interval_minutes must be positive")
         if self.horizon_minutes <= 0:
@@ -56,6 +61,7 @@ class NowcastConfig:
             self.max_dbz,
             self.echo_threshold_dbz,
             self.recent_weight,
+            self.min_pair_echo_coverage,
             self.max_displacement_px,
             self.max_log_growth_per_step,
             self.growth_decay_minutes,
@@ -69,6 +75,10 @@ class NowcastConfig:
             raise ValueError("echo_threshold_dbz must be inside the dBZ range")
         if not 0.0 <= self.recent_weight <= 1.0:
             raise ValueError("recent_weight must be between 0 and 1")
+        if not 0.0 <= self.min_pair_echo_coverage <= 1.0:
+            raise ValueError("min_pair_echo_coverage must be between 0 and 1")
+        if self.pair_echo_dilation_px < 0:
+            raise ValueError("pair_echo_dilation_px cannot be negative")
         if self.max_displacement_px <= 0:
             raise ValueError("max_displacement_px must be positive")
         if self.max_log_growth_per_step < 0:
@@ -106,6 +116,7 @@ class ForecastMetadata:
     source_mask: Tensor | None
     motion_disagreement_px: Tensor
     growth_disagreement: Tensor
+    tendency_pair_count: int
     provenance: str = "p0_fft_latest"
 
 
@@ -281,10 +292,14 @@ def estimate_prepared_state(
         max_dbz=config.max_dbz,
     )
     linear, _ = validate_physical_echo(linear, name="input echo conversion")
-    displacement, growth, motion_disagreement, growth_disagreement = (
-        _estimate_time_normalized_tendencies(prepared, linear, config)
-    )
-    current_echo, current_source_mask = _current_state_from_available_frame(
+    (
+        displacement,
+        growth,
+        motion_disagreement,
+        growth_disagreement,
+        tendency_pair_count,
+    ) = _estimate_time_normalized_tendencies(prepared, linear, config)
+    current_echo, current_source_mask = _merge_current_state(
         prepared,
         linear,
         displacement,
@@ -308,6 +323,7 @@ def estimate_prepared_state(
         ),
         motion_disagreement_px=motion_disagreement.detach(),
         growth_disagreement=growth_disagreement.detach(),
+        tendency_pair_count=tendency_pair_count,
     )
     return state, metadata
 
@@ -316,8 +332,8 @@ def _estimate_time_normalized_tendencies(
     prepared: PreparedRadarInput,
     linear: Tensor,
     config: NowcastConfig,
-) -> tuple[Tensor, Tensor, Tensor, Tensor]:
-    estimates = []
+) -> tuple[Tensor, Tensor, Tensor, Tensor, int]:
+    adjacent_estimates = []
     for previous_index, current_index in ((0, 1), (1, 2)):
         estimate = _estimate_available_pair(
             prepared,
@@ -327,9 +343,22 @@ def _estimate_time_normalized_tendencies(
             config,
         )
         if estimate is not None:
-            estimates.append(estimate)
+            adjacent_estimates.append(estimate)
 
-    if not estimates:
+    if len(adjacent_estimates) == 2:
+        first_motion, first_growth, _ = adjacent_estimates[0]
+        second_motion, second_growth, _ = adjacent_estimates[1]
+        weight = config.recent_weight
+        return (
+            (1.0 - weight) * first_motion + weight * second_motion,
+            (1.0 - weight) * first_growth + weight * second_growth,
+            torch.linalg.vector_norm(second_motion - first_motion),
+            torch.abs(second_growth - first_growth),
+            2,
+        )
+
+    estimates = list(adjacent_estimates)
+    if len(adjacent_estimates) < 2:
         long_estimate = _estimate_available_pair(
             prepared,
             linear,
@@ -343,20 +372,10 @@ def _estimate_time_normalized_tendencies(
     zero_motion = linear.new_zeros(2)
     zero_growth = linear.new_zeros(())
     if not estimates:
-        return zero_motion, zero_growth, zero_growth, zero_growth
-    if len(estimates) == 1:
-        motion, growth = estimates[0]
-        return motion, growth, zero_growth, zero_growth
+        return zero_motion, zero_growth, zero_growth, zero_growth, 0
 
-    first_motion, first_growth = estimates[0]
-    second_motion, second_growth = estimates[1]
-    weight = config.recent_weight
-    return (
-        (1.0 - weight) * first_motion + weight * second_motion,
-        (1.0 - weight) * first_growth + weight * second_growth,
-        torch.linalg.vector_norm(second_motion - first_motion),
-        torch.abs(second_growth - first_growth),
-    )
+    motion, growth, _ = max(estimates, key=lambda estimate: estimate[2])
+    return motion, growth, zero_growth, zero_growth, 1
 
 
 def _estimate_available_pair(
@@ -365,12 +384,17 @@ def _estimate_available_pair(
     previous_index: int,
     current_index: int,
     config: NowcastConfig,
-) -> tuple[Tensor, Tensor] | None:
-    common = (
-        prepared.available_mask[previous_index]
-        & prepared.available_mask[current_index]
+) -> tuple[Tensor, Tensor, float] | None:
+    previous_mask = prepared.available_mask[previous_index]
+    current_mask = prepared.available_mask[current_index]
+    common = previous_mask & current_mask
+    confidence = _pair_echo_coverage(
+        prepared.frames_dbz[previous_index],
+        prepared.frames_dbz[current_index],
+        common,
+        config,
     )
-    if not bool(torch.any(common)):
+    if confidence < config.min_pair_echo_coverage:
         return None
 
     floor = prepared.frames_dbz.new_full((), config.min_dbz)
@@ -404,26 +428,63 @@ def _estimate_available_pair(
         max_displacement_px=config.max_displacement_px * step_span,
     )
     previous_echo = torch.where(
-        common,
+        previous_mask,
         linear[previous_index],
         linear.new_zeros(()),
     )
     current_echo = torch.where(
-        common,
+        current_mask,
         linear[current_index],
         linear.new_zeros(()),
     )
     total_growth = _log_aligned_growth(
         previous_echo,
         current_echo,
+        previous_mask,
+        current_mask,
         total_motion,
         config,
         max_log_growth=config.max_log_growth_per_step * step_span,
     )
-    return total_motion / step_span, total_growth / step_span
+    return total_motion / step_span, total_growth / step_span, confidence
 
 
-def _current_state_from_available_frame(
+def _pair_echo_coverage(
+    previous_dbz: Tensor,
+    current_dbz: Tensor,
+    common: Tensor,
+    config: NowcastConfig,
+) -> float:
+    active_echo = (
+        (previous_dbz >= config.echo_threshold_dbz)
+        | (current_dbz >= config.echo_threshold_dbz)
+    )
+    if not bool(torch.any(active_echo)):
+        return 0.0
+
+    radius = config.pair_echo_dilation_px
+    if radius:
+        near_echo = (
+            F.max_pool2d(
+                active_echo[None, None].to(dtype=previous_dbz.dtype),
+                kernel_size=2 * radius + 1,
+                stride=1,
+                padding=radius,
+            )[0, 0]
+            > 0
+        )
+    else:
+        near_echo = active_echo
+
+    known_echo = torch.count_nonzero(active_echo & common)
+    missing_near_echo = torch.count_nonzero(near_echo & ~common)
+    denominator = known_echo + missing_near_echo
+    if int(denominator) == 0:
+        return 0.0
+    return float(known_echo / denominator)
+
+
+def _merge_current_state(
     prepared: PreparedRadarInput,
     linear: Tensor,
     displacement: Tensor,
@@ -434,43 +495,42 @@ def _current_state_from_available_frame(
     if bool(torch.all(latest_mask)):
         return linear[2], latest_mask
 
-    retention = math.exp(
-        -config.interval_minutes / config.growth_decay_minutes
-    )
-    current_echo = torch.zeros_like(linear[2])
-    current_mask = torch.zeros_like(latest_mask)
+    numerator = torch.zeros_like(linear[2])
+    support = torch.zeros_like(linear[2])
     for source_index in range(3):
         source_mask = prepared.available_mask[source_index]
         if not bool(torch.any(source_mask)):
             continue
 
         steps = 2 - source_index
-        candidate_echo = torch.where(
-            source_mask,
-            linear[source_index],
-            linear.new_zeros(()),
-        )
-        candidate_mask = source_mask
+        candidate_support = source_mask.to(dtype=linear.dtype)
+        candidate_value = linear[source_index] * candidate_support
         if steps:
             total_displacement = steps * displacement
-            candidate_echo = remap(candidate_echo, total_displacement)
-            growth_sum = sum(retention**power for power in range(steps))
-            candidate_echo = react_core(candidate_echo, growth * growth_sum)
-            candidate_mask = (
-                remap(
-                    source_mask.to(dtype=linear.dtype),
-                    total_displacement,
-                )
-                > config.epsilon
+            candidate_value = react_core(
+                remap(candidate_value, total_displacement),
+                steps * growth,
             )
+            candidate_support = remap(
+                candidate_support,
+                total_displacement,
+            ).clamp(0.0, 1.0)
 
-        current_echo = torch.where(
-            candidate_mask,
-            candidate_echo,
-            current_echo,
+        numerator = (
+            candidate_value
+            + (1.0 - candidate_support) * numerator
         )
-        current_mask = current_mask | candidate_mask
+        support = (
+            candidate_support
+            + (1.0 - candidate_support) * support
+        )
 
+    current_mask = support > config.epsilon
+    current_echo = torch.where(
+        current_mask,
+        numerator / support.clamp_min(config.epsilon),
+        torch.zeros_like(numerator),
+    )
     return current_echo, current_mask
 
 
@@ -662,6 +722,8 @@ def _validate_frames(frames: Tensor) -> None:
 def _log_aligned_growth(
     previous: Tensor,
     current: Tensor,
+    previous_mask: Tensor,
+    current_mask: Tensor,
     displacement_yx: Tensor,
     config: NowcastConfig,
     *,
@@ -672,13 +734,19 @@ def _log_aligned_growth(
         if max_log_growth is None
         else max_log_growth
     )
-    aligned = remap(previous, displacement_yx)
-    valid = _valid_advection_mask(previous.shape, displacement_yx)
-    if int(valid.sum()) < 4:
+    moved_support = remap(
+        previous_mask.to(dtype=previous.dtype),
+        displacement_yx,
+    )
+    aligned = remap(previous, displacement_yx) / moved_support.clamp_min(
+        config.epsilon
+    )
+    overlap = current_mask & (moved_support > config.epsilon)
+    if int(overlap.sum()) < 4:
         return previous.new_zeros(())
 
-    previous_integrated_echo = aligned[valid].sum()
-    current_integrated_echo = current[valid].sum()
+    previous_integrated_echo = aligned[overlap].sum()
+    current_integrated_echo = current[overlap].sum()
     if float(previous_integrated_echo.detach()) <= config.epsilon:
         if float(current_integrated_echo.detach()) <= config.epsilon:
             return previous_integrated_echo.new_zeros(())
@@ -690,31 +758,6 @@ def _log_aligned_growth(
     return growth.clamp(
         -limit,
         limit,
-    )
-
-
-def _valid_advection_mask(
-    shape: torch.Size,
-    displacement_yx: Tensor,
-) -> Tensor:
-    height, width = shape
-    y = torch.arange(
-        height,
-        dtype=displacement_yx.dtype,
-        device=displacement_yx.device,
-    )
-    x = torch.arange(
-        width,
-        dtype=displacement_yx.dtype,
-        device=displacement_yx.device,
-    )
-    source_y = y[:, None] - displacement_yx[0]
-    source_x = x[None, :] - displacement_yx[1]
-    return (
-        (source_y >= 0.0)
-        & (source_y <= height - 1)
-        & (source_x >= 0.0)
-        & (source_x <= width - 1)
     )
 
 

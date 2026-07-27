@@ -49,6 +49,7 @@ class CliTests(unittest.TestCase):
             "coverage_by_frame",
             "background_used",
             "background_age_minutes",
+            "tendency_pair_count",
             "analysis_converged",
             "analysis_degraded",
             "analysis_used_fallback",
@@ -67,7 +68,7 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v3",
+                    "nowcast-npz-v4",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -78,6 +79,7 @@ class CliTests(unittest.TestCase):
                 )
                 self.assertTrue(np.isnan(result["background_age_minutes"].item()))
                 self.assertFalse(result["background_used"].item())
+                self.assertEqual(result["tendency_pair_count"].item(), 2)
                 self.assertFalse(result["analysis_converged"].item())
                 self.assertFalse(result["analysis_degraded"].item())
                 self.assertFalse(result["analysis_used_fallback"].item())
