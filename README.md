@@ -25,6 +25,13 @@ FFT는 phase-correlation 이동량 추정에만 사용하며, 분석·예측 전
 q = max(10 ** (dBZ / 10) - 10 ** (min_dBZ / 10), 0)
 ```
 
+`q >= 0`은 수송·반응·변분분석 전체의 물리 상태 불변조건이다. 의미 있는
+음수나 NaN/Inf는 `EchoPositivityError`로 fail-close하며, dtype 반올림
+크기의 미세 음수만 0으로 보정하고 보정량을 진단값에 기록한다. 이 검사는
+물리 상태에만 적용하며 JVP·VJP·HVP와 상태증분의 부호는 제한하지 않는다.
+고정 remap 셀과 실제 이동량이 맞지 않으면
+`FrozenCellMismatchError`로 해당 연산을 거부한다.
+
 전이는 선형 에코 `q`를 네 개의 인접 목적 셀에 비음수 가중치로 보낸다.
 영역 안에서는 가중치 합이 1이므로 에코 적분을 보존하고, 영역 밖 성분은
 경계 유출로 버린다. 따라서 fractional 이동에서도 먼 위치에 양의
@@ -132,6 +139,7 @@ advar-nowcast three_frames.npy forecast.npz \
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
+- `output_contract_version`: 현재 `nowcast-npz-v2`
 - `forecast_dbz`: `[18, H, W]`
 - `lead_minutes`: `[10, 20, ..., 180]`
 - `displacement_yx`: 10분당 픽셀 이동량
@@ -143,6 +151,16 @@ advar-nowcast three_frames.npy forecast.npz \
 - `data_coverage_fraction`, `latest_data_coverage_fraction`
 - `background_used`, `background_age_minutes`
 - `analysis_converged`, `analysis_degraded`, `analysis_used_fallback`
+- `minimum_echo_linear`, `positivity_gate_passed`
+- `negative_echo_count_before_roundoff_fix`,
+  `negative_echo_integral_before_fix`
+- `roundoff_correction_count`, `roundoff_correction_integral`
+- 선행시간별 `minimum_transport_weight`, `maximum_transport_weight`,
+  `transport_weight_sum_error`
+- 선행시간별 `echo_integral_before_transport`,
+  `echo_integral_after_transport`, `boundary_outflow_integral`,
+  `echo_budget_error`
+- 변분분석 시 `analysis_minimum_echo_linear`
 
 NPZ는 같은 디렉터리의 임시 파일을 완전히 기록한 뒤 원자적으로
 교체한다. 기록 실패 시 기존 출력은 그대로 유지한다.
@@ -185,6 +203,7 @@ from datetime import datetime, timezone
 
 from advar import (
     EpisodeLedger,
+    FORECAST_INTEGRATOR_VERSION,
     ModelContract,
     SensitivityEpisode,
     compute_sensitivity_snapshot,
@@ -207,7 +226,7 @@ contract = ModelContract(
     residual_contract_version="none-v1",
     forecast_metric_version="metrics-v1",
     observation_contract_version="direct-latest-dbz-active-set-v1",
-    forecast_integrator_version="fourier-direct-v1",
+    forecast_integrator_version=FORECAST_INTEGRATOR_VERSION,
     grid_geometry_version="my-grid-v1",
     radar_qc_version="my-qc-v1",
 )

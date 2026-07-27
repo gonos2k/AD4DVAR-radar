@@ -137,6 +137,22 @@ class MatrixFreeTests(unittest.TestCase):
                     rtol=1.0e-7,
                 )
 
+    def test_positive_state_gate_does_not_clamp_signed_jvp(self) -> None:
+        field = torch.zeros(4, 4, dtype=torch.float64)
+        field[1, 1] = 1.0
+        point = torch.tensor([0.25, 0.25], dtype=torch.float64)
+        direction = torch.tensor([1.0, 0.0], dtype=torch.float64)
+        cell = freeze_remap_cell(point)
+
+        _, product = jvp(
+            lambda motion: advect(field, motion, frozen_cell=cell),
+            point,
+            direction,
+        )
+
+        self.assertTrue(bool(torch.any(product < 0.0)))
+        self.assertTrue(bool(torch.any(product > 0.0)))
+
     def test_advection_hvp_matches_finite_difference_in_frozen_cell(self) -> None:
         field = torch.arange(16, dtype=torch.float64).reshape(4, 4)
         point = torch.tensor([0.25, 0.35], dtype=torch.float64)

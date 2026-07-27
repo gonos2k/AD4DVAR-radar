@@ -15,14 +15,19 @@ from torch import Tensor
 
 from .matrix_free import gauss_newton_hvp, pcg
 from .nowcast import (
+    EchoPositivityDiagnostics,
+    EchoPositivityError,
     ForecastStatus,
     NowcastConfig,
     RadarState,
     RemapCell,
+    _advect_with_diagnostics,
+    _dbz_to_linear_with_diagnostics,
     _estimate_prepared_state,
     _prepare_radar_input,
-    advect,
+    aggregate_echo_positivity_diagnostics,
     dbz_to_linear,
+    enforce_echo_positivity,
     freeze_remap_cell,
     forecast_from_state,
     linear_to_dbz,
@@ -137,6 +142,7 @@ class AnalysisTrajectory:
     frames_linear: Tensor
     displacement_yx: Tensor
     log_growth_per_step: Tensor
+    positivity_diagnostics: EchoPositivityDiagnostics | None = None
 
 
 @dataclass(frozen=True)
@@ -154,6 +160,7 @@ class AnalysisResult:
     used_fallback: bool
     reason: str
     degraded: bool = False
+    positivity_diagnostics: EchoPositivityDiagnostics | None = None
 
 
 def prepare_analysis(
@@ -293,7 +300,10 @@ def analysis_trajectory(
     )
     initial_dbz = floor_dbz + analyzed_offset
     echo_floor = initial_dbz.new_tensor(10.0 ** (floor_dbz / 10.0))
-    initial_echo = torch.pow(10.0, initial_dbz / 10.0) - echo_floor
+    initial_echo, initial_positivity = enforce_echo_positivity(
+        torch.pow(10.0, initial_dbz / 10.0) - echo_floor,
+        name="analysis initial echo",
+    )
     displacement, growth = _decode_dynamics(
         dynamics_control,
         baseline,
@@ -302,6 +312,7 @@ def analysis_trajectory(
     )
 
     frames = [initial_echo]
+    positivity = [initial_positivity]
     remap_cells = frozen_outer_state.analysis_remap_cells
     if remap_cells is None:
         remap_cells = tuple(
@@ -309,16 +320,24 @@ def analysis_trajectory(
             for step in (1, 2)
         )
     for step in (1, 2):
-        frame = advect(
+        frame, transport_positivity = _advect_with_diagnostics(
             initial_echo,
             step * displacement,
-            frozen_cell=remap_cells[step - 1],
+            remap_cells[step - 1],
         )
-        frames.append(frame * torch.exp(step * growth))
+        evolved, reaction_positivity = enforce_echo_positivity(
+            frame * torch.exp(step * growth),
+            name=f"analysis trajectory step {step}",
+        )
+        frames.append(evolved)
+        positivity.extend((transport_positivity, reaction_positivity))
     return AnalysisTrajectory(
         frames_linear=torch.stack(frames),
         displacement_yx=displacement,
         log_growth_per_step=growth,
+        positivity_diagnostics=aggregate_echo_positivity_diagnostics(
+            *positivity
+        ),
     )
 
 
@@ -461,11 +480,20 @@ def solve_analysis(
         control,
         frozen_outer_state,
     )
-    initial_cost_tensor = robust_objective(
-        control,
-        observations,
-        frozen_outer_state,
-    )
+    try:
+        initial_cost_tensor = robust_objective(
+            control,
+            observations,
+            frozen_outer_state,
+        )
+    except EchoPositivityError:
+        return _fallback_result(
+            observations,
+            frozen_outer_state,
+            control,
+            math.inf,
+            "positivity_violation",
+        )
     initial_cost = float(initial_cost_tensor.detach())
     if not bool(torch.any(observations.valid_mask)):
         return _fallback_result(
@@ -589,13 +617,16 @@ def solve_analysis(
                     candidate,
                     frozen_iteration,
                 )
-                candidate_cost = float(
-                    robust_objective(
-                        candidate,
-                        observations,
-                        candidate_frozen,
-                    ).detach()
-                )
+                try:
+                    candidate_cost = float(
+                        robust_objective(
+                            candidate,
+                            observations,
+                            candidate_frozen,
+                        ).detach()
+                    )
+                except EchoPositivityError:
+                    continue
                 actual = current_cost - candidate_cost
                 ratio = actual / predicted if predicted > 0 else -math.inf
 
@@ -733,6 +764,12 @@ def _analysis_result(
 ) -> AnalysisResult:
     frozen = _freeze_analysis_remap_cells(control, frozen)
     trajectory = analysis_trajectory(control, frozen)
+    trajectory_positivity = trajectory.positivity_diagnostics
+    if trajectory_positivity is None:
+        _, trajectory_positivity = enforce_echo_positivity(
+            trajectory.frames_linear,
+            name="returned analysis trajectory",
+        )
     baseline = frozen.baseline_state
     state = RadarState(
         echo_amplitude=torch.sqrt(trajectory.frames_linear[-1]),
@@ -749,6 +786,7 @@ def _analysis_result(
         background_used=baseline.background_used,
         background_age_minutes=baseline.background_age_minutes,
         forecast_source_mask=baseline.forecast_source_mask,
+        positivity_diagnostics=trajectory_positivity,
     )
     return AnalysisResult(
         control=control.detach(),
@@ -762,6 +800,7 @@ def _analysis_result(
         used_fallback=used_fallback,
         reason=reason,
         degraded=degraded,
+        positivity_diagnostics=trajectory_positivity,
     )
 
 
@@ -779,11 +818,15 @@ def _fallback_result(
         if frozen.baseline_frames_dbz is None
         else frozen.baseline_frames_dbz
     )
-    frames_linear = dbz_to_linear(
+    frames_linear, trajectory_positivity = _dbz_to_linear_with_diagnostics(
         baseline_frames,
         frozen.nowcast_config,
     )
     baseline_state = frozen.baseline_state
+    baseline_state = replace(
+        baseline_state,
+        positivity_diagnostics=trajectory_positivity,
+    )
     if baseline_state.forecast_status not in (
         ForecastStatus.STALE_BACKGROUND,
         ForecastStatus.UNAVAILABLE,
@@ -804,6 +847,7 @@ def _fallback_result(
         used_fallback=True,
         reason=reason,
         degraded=False,
+        positivity_diagnostics=trajectory_positivity,
     )
 
 
@@ -871,8 +915,12 @@ def _softplus_inverse(value: Tensor) -> Tensor:
 def _analysis_echo_to_dbz(echo: Tensor, config: NowcastConfig) -> Tensor:
     """Unclipped observation operator used only inside the analysis."""
 
+    echo, _ = enforce_echo_positivity(
+        echo,
+        name="analysis observation operator",
+    )
     floor = echo.new_tensor(10.0 ** (config.min_dbz / 10.0))
-    return 10.0 * torch.log10(echo.clamp_min(0.0) + floor)
+    return 10.0 * torch.log10(echo + floor)
 
 
 def _observation_std(
@@ -1037,4 +1085,5 @@ def _detach_state(state: RadarState) -> RadarState:
             if state.forecast_source_mask is None
             else state.forecast_source_mask.detach()
         ),
+        positivity_diagnostics=state.positivity_diagnostics,
     )

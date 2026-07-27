@@ -11,8 +11,18 @@ from typing import Any
 import numpy as np
 import torch
 
-from .nowcast import NowcastConfig, nowcast
+from .nowcast import (
+    NowcastConfig,
+    aggregate_echo_positivity_diagnostics,
+    diagnose_transport,
+    enforce_echo_positivity,
+    forecast_linear_from_state,
+    nowcast,
+)
 from .variational import AnalysisConfig, variational_nowcast
+
+
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v2"
 
 
 def main() -> None:
@@ -101,8 +111,30 @@ def main() -> None:
         )
         analysis = None
 
+    forecast_linear = forecast_linear_from_state(state, config)
+    _, forecast_positivity = enforce_echo_positivity(
+        forecast_linear,
+        name="published forecast",
+    )
+    transport = [
+        diagnose_transport(
+            state.echo_linear,
+            step * state.displacement_yx,
+        )
+        for step in range(1, config.forecast_steps + 1)
+    ]
+    diagnostic_items = [
+        forecast_positivity,
+        *(item.positivity for item in transport),
+    ]
+    if state.positivity_diagnostics is not None:
+        diagnostic_items.insert(0, state.positivity_diagnostics)
+    cycle_positivity = aggregate_echo_positivity_diagnostics(
+        *diagnostic_items
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     output = {
+        "output_contract_version": np.asarray(OUTPUT_CONTRACT_VERSION),
         "forecast_dbz": forecast.detach().cpu().numpy(),
         "displacement_yx": state.displacement_yx.detach().cpu().numpy(),
         "log_growth_per_step": float(state.log_growth_per_step),
@@ -120,6 +152,45 @@ def main() -> None:
             np.nan
             if state.background_age_minutes is None
             else state.background_age_minutes
+        ),
+        "minimum_echo_linear": np.asarray(
+            cycle_positivity.minimum_echo_linear
+        ),
+        "negative_echo_count_before_roundoff_fix": np.asarray(
+            cycle_positivity.negative_echo_count_before_roundoff_fix
+        ),
+        "negative_echo_integral_before_fix": np.asarray(
+            cycle_positivity.negative_echo_integral_before_fix
+        ),
+        "roundoff_correction_count": np.asarray(
+            cycle_positivity.roundoff_correction_count
+        ),
+        "roundoff_correction_integral": np.asarray(
+            cycle_positivity.roundoff_correction_integral
+        ),
+        "minimum_transport_weight": np.asarray(
+            [item.minimum_transport_weight for item in transport]
+        ),
+        "maximum_transport_weight": np.asarray(
+            [item.maximum_transport_weight for item in transport]
+        ),
+        "transport_weight_sum_error": np.asarray(
+            [item.transport_weight_sum_error for item in transport]
+        ),
+        "echo_integral_before_transport": np.asarray(
+            [item.echo_integral_before_transport for item in transport]
+        ),
+        "echo_integral_after_transport": np.asarray(
+            [item.echo_integral_after_transport for item in transport]
+        ),
+        "boundary_outflow_integral": np.asarray(
+            [item.boundary_outflow_integral for item in transport]
+        ),
+        "echo_budget_error": np.asarray(
+            [item.echo_budget_error for item in transport]
+        ),
+        "positivity_gate_passed": np.asarray(
+            cycle_positivity.positivity_gate_passed
         ),
         "lead_minutes": np.arange(
             config.interval_minutes,
@@ -142,6 +213,11 @@ def main() -> None:
             analysis_degraded=np.asarray(analysis.degraded),
             analysis_used_fallback=np.asarray(analysis.used_fallback),
             analysis_reason=np.asarray(analysis.reason),
+            analysis_minimum_echo_linear=np.asarray(
+                analysis.positivity_diagnostics.minimum_echo_linear
+                if analysis.positivity_diagnostics is not None
+                else np.nan
+            ),
             analysis_initial_objective=np.asarray(
                 analysis.initial_objective
             ),

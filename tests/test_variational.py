@@ -26,6 +26,7 @@ from advar.nowcast import (  # noqa: E402
 from advar.sensitivity import compute_sensitivity_snapshot  # noqa: E402
 from advar.variational import (  # noqa: E402
     AnalysisConfig,
+    AnalysisTrajectory,
     FrozenOuterState,
     analysis_trajectory,
     freeze_irls_weights,
@@ -126,6 +127,15 @@ class VariationalAnalysisTests(unittest.TestCase):
             legacy,
         )
         self.assertEqual(trajectory.frames_linear.shape, (3, 4, 5))
+
+    def test_legacy_analysis_trajectory_constructor_remains_valid(self) -> None:
+        trajectory = AnalysisTrajectory(
+            torch.ones(3, 4, 5, dtype=torch.float64),
+            torch.zeros(2, dtype=torch.float64),
+            torch.zeros((), dtype=torch.float64),
+        )
+
+        self.assertIsNone(trajectory.positivity_diagnostics)
 
     def test_detected_censored_and_once_whitened_residuals(self) -> None:
         observations, frozen = self.stationary_problem()
@@ -466,6 +476,31 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertEqual(result.state.data_coverage_fraction, 0.0)
         self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
         torch.testing.assert_close(forecast[0], background[-1])
+
+    def test_negative_analysis_trajectory_fails_closed(self) -> None:
+        frames = torch.full((3, 16, 16), 20.0, dtype=torch.float64)
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+        negative = -torch.ones(16, 16, dtype=torch.float64)
+        baseline_positivity = frozen.baseline_state.positivity_diagnostics
+        self.assertIsNotNone(baseline_positivity)
+
+        with patch(
+            "advar.variational._advect_with_diagnostics",
+            return_value=(negative, baseline_positivity),
+        ):
+            result = solve_analysis(observations, frozen)
+
+        self.assertTrue(result.used_fallback)
+        self.assertEqual(result.reason, "positivity_violation")
+        self.assertGreaterEqual(
+            float(result.analyzed_frames_linear.min()),
+            0.0,
+        )
+        self.assertIsNotNone(result.positivity_diagnostics)
 
     def test_pcg_failure_uses_baseline_fallback(self) -> None:
         observations, frozen = self.stationary_problem()
