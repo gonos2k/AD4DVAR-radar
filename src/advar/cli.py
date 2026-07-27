@@ -55,7 +55,7 @@ def main() -> None:
     parser.add_argument(
         "--background-age-minutes",
         type=float,
-        help="age of --background for output diagnostics",
+        help="required age of --background in minutes",
     )
     parser.add_argument(
         "--audit",
@@ -83,6 +83,8 @@ def main() -> None:
         background = torch.as_tensor(background_array, dtype=torch.float32)
     if args.background_age_minutes is not None and background is None:
         parser.error("--background-age-minutes requires --background")
+    if background is not None and args.background_age_minutes is None:
+        parser.error("--background requires --background-age-minutes")
 
     config = NowcastConfig(
         min_dbz=args.min_dbz,

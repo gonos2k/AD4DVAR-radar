@@ -485,6 +485,13 @@ def solve_analysis(
             initial_cost,
             "no_valid_observations",
         )
+    if not bool(torch.any(frozen.initial_support_mask)):
+        return _fallback_result(
+            frozen,
+            control,
+            initial_cost,
+            "no_initial_state_support",
+        )
     if not math.isfinite(initial_cost):
         return _fallback_result(
             frozen,
@@ -1057,7 +1064,7 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
             if metadata.source_mask is None
             else metadata.source_mask.detach()
         ),
-        pair_displacements_yx=metadata.pair_displacements_yx.detach(),
-        pair_log_growth=metadata.pair_log_growth.detach(),
+        motion_disagreement_px=metadata.motion_disagreement_px.detach(),
+        growth_disagreement=metadata.growth_disagreement.detach(),
         provenance=metadata.provenance,
     )

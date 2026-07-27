@@ -1,4 +1,5 @@
 from pathlib import Path
+from importlib import import_module
 import sys
 import unittest
 from unittest.mock import patch
@@ -77,12 +78,8 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         background_used=False,
         background_age_minutes=None,
         source_mask=None,
-        pair_displacements_yx=torch.stack(
-            (state.displacement_yx, state.displacement_yx)
-        ),
-        pair_log_growth=torch.stack(
-            (state.log_growth_per_step, state.log_growth_per_step)
-        ),
+        motion_disagreement_px=state.echo_linear.new_zeros(()),
+        growth_disagreement=state.echo_linear.new_zeros(()),
     )
 
 
@@ -106,6 +103,30 @@ class NowcastTests(unittest.TestCase):
             indexing="ij",
         )
         self.echo = 1.0e5 * torch.exp(-((y - 32) ** 2 + (x - 32) ** 2) / 40.0)
+
+    def _moving_gaussian_frames(
+        self,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        y, x = torch.meshgrid(
+            torch.arange(64, dtype=torch.float64),
+            torch.arange(64, dtype=torch.float64),
+            indexing="ij",
+        )
+        displacement = torch.tensor([1.2, -0.8], dtype=torch.float64)
+        echoes = torch.stack(
+            [
+                1.0e3
+                * torch.exp(
+                    -(
+                        (y - (24.0 + step * displacement[0])) ** 2
+                        + (x - (34.0 + step * displacement[1])) ** 2
+                    )
+                    / 50.0
+                )
+                for step in range(3)
+            ]
+        )
+        return linear_to_dbz(echoes, self.config), displacement
 
     def test_dbz_linear_round_trip(self) -> None:
         dbz = torch.tensor([-10.0, 0.0, 20.0, 45.0, 70.0])
@@ -300,6 +321,41 @@ class NowcastTests(unittest.TestCase):
         self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
         torch.testing.assert_close(forecast[0], background[-1])
 
+    def test_background_requires_an_explicit_age(self) -> None:
+        frames = torch.full((3, 8, 8), torch.nan)
+        background = torch.full((3, 8, 8), 20.0)
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "background_age_minutes is required",
+        ):
+            nowcast(
+                frames,
+                self.config,
+                background_frames_dbz=background,
+            )
+
+    def test_latest_only_background_uses_stationary_persistence(self) -> None:
+        frames = torch.full((3, 8, 8), torch.nan)
+        background = torch.full((3, 8, 8), torch.nan)
+        background[-1] = 20.0
+        result = nowcast(
+            frames,
+            self.config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+
+        torch.testing.assert_close(
+            result.state.displacement_yx,
+            torch.zeros(2),
+        )
+        torch.testing.assert_close(
+            result.state.log_growth_per_step,
+            torch.zeros(()),
+        )
+        torch.testing.assert_close(result.forecast_dbz[0], background[-1])
+
     def test_old_background_without_latest_source_is_unavailable(self) -> None:
         frames = torch.full((3, 8, 8), torch.nan)
         background = torch.full((3, 8, 8), torch.nan)
@@ -331,7 +387,7 @@ class NowcastTests(unittest.TestCase):
         self.assertIsNone(metadata.background_age_minutes)
         self.assertEqual(metadata.data_status, DataStatus.OBSERVED)
 
-    def test_missing_first_frame_uses_neighboring_observation_only_as_fill(
+    def test_missing_first_frame_uses_remaining_observation_pair(
         self,
     ) -> None:
         dbz = linear_to_dbz(self.echo, self.config)
@@ -345,6 +401,111 @@ class NowcastTests(unittest.TestCase):
         )
         self.assertEqual(float(metadata.coverage_by_frame[-1]), 1.0)
         self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
+
+    def test_moving_echo_uses_only_time_normalized_available_pairs(self) -> None:
+        frames, _ = self._moving_gaussian_frames()
+        complete_state = estimate_state(frames, self.config)
+        tolerance = 0.15 * torch.linalg.vector_norm(
+            complete_state.displacement_yx
+        )
+
+        for missing_index in range(3):
+            with self.subTest(missing_index=missing_index):
+                partial = frames.clone()
+                partial[missing_index] = torch.nan
+                state = estimate_state(partial, self.config)
+                error = torch.linalg.vector_norm(
+                    state.displacement_yx
+                    - complete_state.displacement_yx
+                )
+                self.assertLessEqual(float(error), float(tolerance))
+                self.assertLess(
+                    abs(float(state.log_growth_per_step)),
+                    1.0e-5,
+                )
+
+    def test_middle_missing_normalizes_twenty_minute_growth(self) -> None:
+        factor = 1.25
+        frames = linear_to_dbz(
+            torch.stack((self.echo, self.echo * factor, self.echo * factor**2)),
+            self.config,
+        )
+        frames[1] = torch.nan
+
+        state = estimate_state(frames, self.config)
+
+        self.assertAlmostEqual(
+            float(state.log_growth_per_step),
+            float(torch.log(torch.tensor(factor))),
+            places=3,
+        )
+
+    def test_middle_missing_preserves_maximum_per_step_motion(self) -> None:
+        echoes = torch.zeros((3, 64, 64), dtype=torch.float64)
+        for step in range(3):
+            echoes[step, 32, 5 + 20 * step] = 1.0e5
+        frames = linear_to_dbz(echoes, self.config)
+        frames[1] = torch.nan
+
+        state = estimate_state(frames, self.config)
+
+        torch.testing.assert_close(
+            state.displacement_yx,
+            torch.tensor([0.0, 20.0], dtype=torch.float64),
+            atol=0.1,
+            rtol=0.0,
+        )
+
+    def test_pair_without_common_echo_does_not_slow_valid_motion(self) -> None:
+        echoes = torch.zeros((3, 64, 64), dtype=torch.float64)
+        for step in range(3):
+            echoes[step, 32, 20 + 4 * step] = 1.0e5
+        frames = linear_to_dbz(echoes, self.config)
+        frames[2, :, 28] = torch.nan
+
+        state = estimate_state(frames, self.config)
+
+        torch.testing.assert_close(
+            state.displacement_yx,
+            torch.tensor([0.0, 4.0], dtype=torch.float64),
+            atol=0.1,
+            rtol=0.0,
+        )
+        self.assertLess(
+            abs(float(state.log_growth_per_step)),
+            1.0e-5,
+        )
+
+    def test_partial_latest_frame_is_completed_from_previous_state(self) -> None:
+        frames = torch.full((3, 8, 8), 20.0)
+        frames[2] = torch.nan
+        frames[2, 4, 4] = 20.0
+
+        result = nowcast(frames, self.config)
+
+        self.assertIsNone(result.metadata.source_mask)
+        self.assertTrue(bool(torch.all(torch.isfinite(result.forecast_dbz))))
+        torch.testing.assert_close(
+            result.forecast_dbz[0],
+            torch.full((8, 8), 20.0),
+        )
+
+    def test_sparse_recent_frames_do_not_discard_complete_older_state(
+        self,
+    ) -> None:
+        frames = torch.full((3, 8, 8), 20.0)
+        frames[1:] = torch.nan
+        frames[1, 3, 3] = 20.0
+        frames[2, 4, 4] = 20.0
+
+        result = nowcast(frames, self.config)
+
+        self.assertIsNone(result.metadata.source_mask)
+        self.assertTrue(bool(torch.all(torch.isfinite(result.forecast_dbz))))
+        torch.testing.assert_close(
+            result.forecast_dbz[0],
+            torch.full((8, 8), 20.0),
+        )
 
     def test_missing_latest_frame_uses_mask_aware_persistence(self) -> None:
         dbz = linear_to_dbz(self.echo, self.config)
@@ -396,7 +557,8 @@ class NowcastTests(unittest.TestCase):
             displacement_yx=torch.tensor([0.2, -0.3]),
             log_growth_per_step=torch.zeros(()),
         )
-        with patch("advar.nowcast.remap_core", wraps=remap_core) as kernel:
+        nowcast_module = import_module("advar.nowcast")
+        with patch.object(nowcast_module, "remap_core", wraps=remap_core) as kernel:
             result = forecast_result_from_state(
                 state,
                 observed_metadata(state),

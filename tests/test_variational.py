@@ -491,6 +491,29 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
         self.assertTrue(bool(torch.all(torch.isnan(forecast.forecast_dbz))))
 
+    def test_missing_initial_frame_falls_back_to_time_aware_baseline(
+        self,
+    ) -> None:
+        frames = torch.full((3, 8, 8), 25.0, dtype=torch.float64)
+        frames[0] = torch.nan
+
+        forecast, result = variational_nowcast(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+
+        self.assertTrue(result.used_fallback)
+        self.assertEqual(result.reason, "no_initial_state_support")
+        self.assertGreater(float(result.state.echo_linear.sum()), 0.0)
+        self.assertTrue(bool(torch.all(torch.isfinite(forecast.forecast_dbz))))
+        torch.testing.assert_close(
+            forecast.forecast_dbz[0],
+            frames[-1],
+            atol=0.02,
+            rtol=0.0,
+        )
+
     def test_invalid_observations_use_stale_background(self) -> None:
         frames = torch.full((3, 5, 5), 20.0, dtype=torch.float64)
         qc_mask = torch.zeros_like(frames, dtype=torch.bool)
