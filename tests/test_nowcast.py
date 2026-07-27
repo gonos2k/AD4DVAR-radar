@@ -7,11 +7,19 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar.nowcast import (  # noqa: E402
+    EchoPositivityError,
+    FORECAST_INTEGRATOR_VERSION,
     ForecastStatus,
+    FrozenCellMismatchError,
     NowcastConfig,
+    RadarState,
+    RemapCell,
     advect,
     dbz_to_linear,
+    diagnose_transport,
+    enforce_echo_positivity,
     estimate_state,
+    forecast_linear_from_state,
     forecast_from_state,
     linear_to_dbz,
     nowcast,
@@ -319,6 +327,137 @@ class NowcastTests(unittest.TestCase):
 
         self.assertGreaterEqual(float(moved.min()), 0.0)
         torch.testing.assert_close(moved.sum(), echo.sum())
+
+    def test_physical_echo_rejects_material_negative_values(self) -> None:
+        echo = torch.ones(4, 4, dtype=torch.float64)
+        echo[1, 2] = -1.0e-6
+
+        with self.assertRaises(EchoPositivityError):
+            advect(echo, torch.zeros(2, dtype=torch.float64))
+        with self.assertRaises(EchoPositivityError):
+            linear_to_dbz(echo, self.config)
+
+    def test_high_dynamic_range_does_not_hide_negative_echo(self) -> None:
+        for dtype, positive in (
+            (torch.float32, 1.0e7),
+            (torch.float64, 1.0e15),
+        ):
+            with self.subTest(dtype=dtype):
+                echo = torch.tensor(
+                    [[positive, -1.0], [0.0, 0.0]],
+                    dtype=dtype,
+                )
+                with self.assertRaises(EchoPositivityError):
+                    enforce_echo_positivity(echo, name="dynamic range test")
+
+    def test_roundoff_negative_echo_is_corrected_and_reported(self) -> None:
+        echo = torch.ones(4, 4, dtype=torch.float64)
+        echo[1, 2] = -1.0e-15
+
+        corrected, diagnostics = enforce_echo_positivity(
+            echo,
+            name="roundoff test",
+        )
+
+        self.assertEqual(float(corrected[1, 2]), 0.0)
+        self.assertEqual(diagnostics.roundoff_correction_count, 1)
+        self.assertEqual(
+            diagnostics.negative_echo_count_before_roundoff_fix,
+            1,
+        )
+        self.assertTrue(diagnostics.positivity_gate_passed)
+
+    def test_nonfinite_physical_echo_is_rejected(self) -> None:
+        echo = torch.ones(4, 4, dtype=torch.float64)
+        echo[0, 0] = torch.nan
+
+        with self.assertRaises(EchoPositivityError):
+            enforce_echo_positivity(echo, name="nonfinite test")
+
+    def test_stale_frozen_remap_cell_is_rejected(self) -> None:
+        echo = torch.ones(4, 4, dtype=torch.float64)
+
+        with self.assertRaises(FrozenCellMismatchError):
+            advect(
+                echo,
+                torch.tensor([1.2, 0.3], dtype=torch.float64),
+                frozen_cell=RemapCell(0, 0),
+            )
+
+    def test_nonfinite_displacement_is_rejected(self) -> None:
+        echo = torch.ones(4, 4, dtype=torch.float64)
+        for displacement in (
+            torch.tensor([torch.inf, 0.0], dtype=torch.float64),
+            torch.tensor([0.0, torch.nan], dtype=torch.float64),
+        ):
+            with self.subTest(displacement=displacement.tolist()):
+                with self.assertRaises(ValueError):
+                    advect(
+                        echo,
+                        displacement,
+                        frozen_cell=RemapCell(0, 0),
+                    )
+
+    def test_transport_diagnostics_close_boundary_budget(self) -> None:
+        echo = torch.zeros(8, 8, dtype=torch.float64)
+        echo[0, 3] = 10.0
+        diagnostics = diagnose_transport(
+            echo,
+            torch.tensor([-0.25, 0.5], dtype=torch.float64),
+        )
+
+        self.assertGreaterEqual(diagnostics.minimum_transport_weight, 0.0)
+        self.assertLessEqual(diagnostics.maximum_transport_weight, 1.0)
+        self.assertLess(diagnostics.transport_weight_sum_error, 1.0e-14)
+        self.assertLess(diagnostics.echo_budget_error, 1.0e-14)
+        self.assertGreater(diagnostics.boundary_outflow_integral, 0.0)
+        self.assertTrue(diagnostics.positivity.positivity_gate_passed)
+
+    def test_transport_diagnostics_preserve_roundoff_correction(self) -> None:
+        echo = torch.ones(4, 4, dtype=torch.float64)
+        echo[1, 1] = -1.0e-15
+        diagnostics = diagnose_transport(
+            echo,
+            torch.zeros(2, dtype=torch.float64),
+        )
+
+        self.assertEqual(diagnostics.positivity.roundoff_correction_count, 1)
+        self.assertGreater(
+            diagnostics.positivity.roundoff_correction_integral,
+            0.0,
+        )
+
+    def test_integrator_contract_names_positive_local_remap(self) -> None:
+        self.assertEqual(
+            FORECAST_INTEGRATOR_VERSION,
+            "local-conservative-remap-positive-v1",
+        )
+
+    def test_growth_and_decay_keep_echo_positive_for_eighteen_steps(self) -> None:
+        pair_motion = torch.zeros(2, 2, dtype=torch.float64)
+        pair_growth = torch.zeros(2, dtype=torch.float64)
+        for growth in (
+            -self.config.max_log_growth_per_step,
+            self.config.max_log_growth_per_step,
+        ):
+            with self.subTest(growth=growth):
+                state = RadarState(
+                    echo_amplitude=torch.sqrt(self.echo.to(torch.float64)),
+                    displacement_yx=torch.tensor(
+                        [0.35, -0.45],
+                        dtype=torch.float64,
+                    ),
+                    log_growth_per_step=torch.tensor(
+                        growth,
+                        dtype=torch.float64,
+                    ),
+                    pair_displacements_yx=pair_motion,
+                    pair_log_growth=pair_growth,
+                )
+                forecast = forecast_linear_from_state(state, self.config)
+
+                self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
+                self.assertGreaterEqual(float(forecast.min()), 0.0)
 
     def test_fractional_impulse_has_only_four_local_destinations(self) -> None:
         echo = torch.zeros(32, 32, dtype=torch.float64)

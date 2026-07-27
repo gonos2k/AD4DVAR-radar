@@ -14,6 +14,9 @@ import torch
 from torch import Tensor
 
 
+FORECAST_INTEGRATOR_VERSION = "local-conservative-remap-positive-v1"
+
+
 @dataclass(frozen=True)
 class NowcastConfig:
     """Configuration for three-frame, 10-minute radar nowcasting."""
@@ -86,6 +89,36 @@ class RemapCell:
             raise TypeError("remap cell coordinates must be integers")
 
 
+class EchoPositivityError(FloatingPointError):
+    pass
+
+
+class FrozenCellMismatchError(ValueError):
+    pass
+
+
+@dataclass(frozen=True)
+class EchoPositivityDiagnostics:
+    minimum_echo_linear: float
+    negative_echo_count_before_roundoff_fix: int
+    negative_echo_integral_before_fix: float
+    roundoff_correction_count: int
+    roundoff_correction_integral: float
+    positivity_gate_passed: bool
+
+
+@dataclass(frozen=True)
+class TransportDiagnostics:
+    positivity: EchoPositivityDiagnostics
+    minimum_transport_weight: float
+    maximum_transport_weight: float
+    transport_weight_sum_error: float
+    echo_integral_before_transport: float
+    echo_integral_after_transport: float
+    boundary_outflow_integral: float
+    echo_budget_error: float
+
+
 class ForecastStatus(str, Enum):
     """Operational meaning of the data used to initialize a forecast."""
 
@@ -129,6 +162,7 @@ class RadarState:
     background_used: bool = False
     background_age_minutes: float | None = None
     forecast_source_mask: Tensor | None = None
+    positivity_diagnostics: EchoPositivityDiagnostics | None = None
 
     @property
     def echo_linear(self) -> Tensor:
@@ -154,6 +188,14 @@ class RadarState:
 def dbz_to_linear(dbz: Tensor, config: NowcastConfig) -> Tensor:
     """Convert dBZ to a non-negative linear echo amount."""
 
+    echo, _ = _dbz_to_linear_with_diagnostics(dbz, config)
+    return echo
+
+
+def _dbz_to_linear_with_diagnostics(
+    dbz: Tensor,
+    config: NowcastConfig,
+) -> tuple[Tensor, EchoPositivityDiagnostics]:
     clean = torch.nan_to_num(
         dbz,
         nan=config.min_dbz,
@@ -161,15 +203,87 @@ def dbz_to_linear(dbz: Tensor, config: NowcastConfig) -> Tensor:
         neginf=config.min_dbz,
     ).clamp(config.min_dbz, config.max_dbz)
     floor = 10.0 ** (config.min_dbz / 10.0)
-    return (torch.pow(10.0, clean / 10.0) - floor).clamp_min(0.0)
+    return enforce_echo_positivity(
+        torch.pow(10.0, clean / 10.0) - floor,
+        name="dbz_to_linear",
+    )
 
 
 def linear_to_dbz(echo: Tensor, config: NowcastConfig) -> Tensor:
     """Convert the non-negative internal echo amount back to dBZ."""
 
+    echo, _ = enforce_echo_positivity(echo, name="linear_to_dbz")
     floor = 10.0 ** (config.min_dbz / 10.0)
-    dbz = 10.0 * torch.log10(echo.clamp_min(0.0) + floor)
+    dbz = 10.0 * torch.log10(echo + floor)
     return dbz.clamp(config.min_dbz, config.max_dbz)
+
+
+def enforce_echo_positivity(
+    echo: Tensor,
+    *,
+    name: str,
+) -> tuple[Tensor, EchoPositivityDiagnostics]:
+    """Reject physical negative echo and repair roundoff-sized negatives."""
+
+    if not echo.is_floating_point():
+        raise TypeError(f"{name}: echo must be floating point")
+    if echo.numel() == 0:
+        raise ValueError(f"{name}: echo must not be empty")
+    detached = echo.detach()
+    if not bool(torch.all(torch.isfinite(detached))):
+        raise EchoPositivityError(f"{name}: non-finite physical echo")
+
+    minimum = torch.amin(detached)
+    tolerance_scale = torch.abs(minimum).clamp_min(1.0)
+    tolerance = 32.0 * torch.finfo(echo.dtype).eps * tolerance_scale
+    negative = detached < 0.0
+    negative_count = int(torch.count_nonzero(negative))
+    negative_integral = float(
+        torch.where(negative, -detached, torch.zeros_like(detached)).sum()
+    )
+    if bool(minimum < -tolerance):
+        raise EchoPositivityError(
+            f"{name}: physical echo became negative "
+            f"(minimum={float(minimum):.9g}, "
+            f"tolerance={float(tolerance):.9g}, "
+            f"count={negative_count})"
+        )
+
+    corrected = torch.where(echo < 0.0, torch.zeros_like(echo), echo)
+    diagnostics = EchoPositivityDiagnostics(
+        minimum_echo_linear=float(corrected.detach().min()),
+        negative_echo_count_before_roundoff_fix=negative_count,
+        negative_echo_integral_before_fix=negative_integral,
+        roundoff_correction_count=negative_count,
+        roundoff_correction_integral=negative_integral,
+        positivity_gate_passed=True,
+    )
+    return corrected, diagnostics
+
+
+def aggregate_echo_positivity_diagnostics(
+    *items: EchoPositivityDiagnostics,
+) -> EchoPositivityDiagnostics:
+    if not items:
+        raise ValueError("at least one positivity diagnostic is required")
+    return EchoPositivityDiagnostics(
+        minimum_echo_linear=min(item.minimum_echo_linear for item in items),
+        negative_echo_count_before_roundoff_fix=sum(
+            item.negative_echo_count_before_roundoff_fix for item in items
+        ),
+        negative_echo_integral_before_fix=sum(
+            item.negative_echo_integral_before_fix for item in items
+        ),
+        roundoff_correction_count=sum(
+            item.roundoff_correction_count for item in items
+        ),
+        roundoff_correction_integral=sum(
+            item.roundoff_correction_integral for item in items
+        ),
+        positivity_gate_passed=all(
+            item.positivity_gate_passed for item in items
+        ),
+    )
 
 
 def freeze_remap_cell(displacement_yx: Tensor) -> RemapCell:
@@ -201,6 +315,19 @@ def advect(
     uses the same piecewise-smooth transport operator.
     """
 
+    moved, _ = _advect_with_diagnostics(
+        echo,
+        displacement_yx,
+        frozen_cell,
+    )
+    return moved
+
+
+def _advect_with_diagnostics(
+    echo: Tensor,
+    displacement_yx: Tensor,
+    frozen_cell: RemapCell | None,
+) -> tuple[Tensor, EchoPositivityDiagnostics]:
     if echo.ndim != 2:
         raise ValueError("echo must have shape [height, width]")
     if not echo.is_floating_point():
@@ -209,19 +336,100 @@ def advect(
         raise ValueError("displacement_yx must have shape [2]")
     if not displacement_yx.is_floating_point():
         raise TypeError("displacement_yx must be floating point")
-
     height, width = echo.shape
     if height < 2 or width < 2:
         raise ValueError("echo height and width must both be at least 2")
 
-    displacement = displacement_yx.to(
-        dtype=echo.dtype,
-        device=echo.device,
+    displacement = displacement_yx.to(dtype=echo.dtype, device=echo.device)
+    detached_displacement = displacement.detach()
+    if not bool(torch.all(torch.isfinite(detached_displacement))):
+        raise ValueError("displacement_yx must be finite")
+    echo, input_diagnostics = enforce_echo_positivity(
+        echo,
+        name="advect input",
     )
-    return _local_conservative_remap(
-        echo.clamp_min(0.0),
+    moved = _local_conservative_remap(
+        echo,
         displacement,
         frozen_cell,
+    )
+    moved, output_diagnostics = enforce_echo_positivity(
+        moved,
+        name="advect output",
+    )
+    return moved, aggregate_echo_positivity_diagnostics(
+        input_diagnostics,
+        output_diagnostics,
+    )
+
+
+def diagnose_transport(
+    echo: Tensor,
+    displacement_yx: Tensor,
+    *,
+    frozen_cell: RemapCell | None = None,
+) -> TransportDiagnostics:
+    """Audit one remap without changing the public advection result."""
+
+    moved, positivity = _advect_with_diagnostics(
+        echo,
+        displacement_yx,
+        frozen_cell,
+    )
+    echo, _ = enforce_echo_positivity(echo, name="transport diagnostic input")
+    displacement = displacement_yx.to(dtype=echo.dtype, device=echo.device)
+    _, _, fraction_y, fraction_x = _remap_cell_and_fraction(
+        echo,
+        displacement,
+        frozen_cell,
+    )
+    weights = torch.stack(
+        (
+            (1.0 - fraction_y) * (1.0 - fraction_x),
+            fraction_y * (1.0 - fraction_x),
+            (1.0 - fraction_y) * fraction_x,
+            fraction_y * fraction_x,
+        )
+    )
+    before = echo.sum()
+    after = moved.sum()
+    height, width = echo.shape
+    base_y, base_x, _, _ = _remap_cell_and_fraction(
+        echo,
+        displacement,
+        frozen_cell,
+    )
+    source_y = torch.arange(height, device=echo.device)[:, None]
+    source_x = torch.arange(width, device=echo.device)[None, :]
+    outflow = echo.new_zeros(())
+    weight_grid = (
+        ((0, 0), weights[0]),
+        ((1, 0), weights[1]),
+        ((0, 1), weights[2]),
+        ((1, 1), weights[3]),
+    )
+    for (offset_y, offset_x), weight in weight_grid:
+        destination_y = source_y + base_y + offset_y
+        destination_x = source_x + base_x + offset_x
+        outside = (
+            (destination_y < 0)
+            | (destination_y >= height)
+            | (destination_x < 0)
+            | (destination_x >= width)
+        )
+        outflow = outflow + (echo * weight * outside).sum()
+    budget_error = before - after - outflow
+    return TransportDiagnostics(
+        positivity=positivity,
+        minimum_transport_weight=float(weights.detach().min()),
+        maximum_transport_weight=float(weights.detach().max()),
+        transport_weight_sum_error=float(
+            torch.abs(weights.detach().sum() - 1.0)
+        ),
+        echo_integral_before_transport=float(before.detach()),
+        echo_integral_after_transport=float(after.detach()),
+        boundary_outflow_integral=float(outflow.detach()),
+        echo_budget_error=float(torch.abs(budget_error.detach())),
     )
 
 
@@ -382,7 +590,7 @@ def _estimate_prepared_state(
         )
     )
 
-    linear = dbz_to_linear(frames, config)
+    linear, positivity = _dbz_to_linear_with_diagnostics(frames, config)
     pair_growth = torch.stack(
         (
             _log_aligned_growth(
@@ -403,7 +611,6 @@ def _estimate_prepared_state(
     weight = config.recent_weight
     displacement = (1.0 - weight) * pair_motion[0] + weight * pair_motion[1]
     growth = (1.0 - weight) * pair_growth[0] + weight * pair_growth[1]
-
     return RadarState(
         echo_amplitude=torch.sqrt(linear[2]),
         displacement_yx=displacement,
@@ -422,6 +629,7 @@ def _estimate_prepared_state(
             if bool(torch.all(prepared.available_mask[-1]))
             else prepared.available_mask[-1].detach().clone()
         ),
+        positivity_diagnostics=positivity,
     )
 
 
@@ -454,9 +662,14 @@ def forecast_linear_at_step(
         state.echo_linear,
         step * state.displacement_yx,
     )
-    return echo * torch.exp(
-        state.log_growth_per_step * growth_sum
+    forecast, _ = enforce_echo_positivity(
+        echo
+        * torch.exp(
+            state.log_growth_per_step * growth_sum
+        ),
+        name=f"forecast lead {step}",
     )
+    return forecast
 
 
 def forecast_from_state(state: RadarState, config: NowcastConfig) -> Tensor:
@@ -527,24 +740,11 @@ def _local_conservative_remap(
     """Deposit each source cell into its four local destination cells."""
 
     height, width = echo.shape
-    dy, dx = displacement_yx
-    if frozen_cell is None:
-        base_y = torch.floor(dy).to(torch.int64)
-        base_x = torch.floor(dx).to(torch.int64)
-    else:
-        base_y = torch.as_tensor(
-            frozen_cell.y,
-            dtype=torch.int64,
-            device=echo.device,
-        )
-        base_x = torch.as_tensor(
-            frozen_cell.x,
-            dtype=torch.int64,
-            device=echo.device,
-        )
-
-    fraction_y = dy - base_y.to(dtype=echo.dtype)
-    fraction_x = dx - base_x.to(dtype=echo.dtype)
+    base_y, base_x, fraction_y, fraction_x = _remap_cell_and_fraction(
+        echo,
+        displacement_yx,
+        frozen_cell,
+    )
     source_y = torch.arange(height, device=echo.device)[:, None]
     source_x = torch.arange(width, device=echo.device)[None, :]
     output = echo.new_zeros(height * width)
@@ -574,13 +774,55 @@ def _local_conservative_remap(
     return output.reshape(height, width)
 
 
+def _remap_cell_and_fraction(
+    echo: Tensor,
+    displacement_yx: Tensor,
+    frozen_cell: RemapCell | None,
+) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+    dy, dx = displacement_yx
+    if frozen_cell is None:
+        base_y = torch.floor(dy).to(torch.int64)
+        base_x = torch.floor(dx).to(torch.int64)
+    else:
+        base_y = torch.as_tensor(
+            frozen_cell.y,
+            dtype=torch.int64,
+            device=echo.device,
+        )
+        base_x = torch.as_tensor(
+            frozen_cell.x,
+            dtype=torch.int64,
+            device=echo.device,
+        )
+
+    fraction_y = dy - base_y.to(dtype=echo.dtype)
+    fraction_x = dx - base_x.to(dtype=echo.dtype)
+    if frozen_cell is not None:
+        detached = displacement_yx.detach()
+        scale = torch.amax(torch.abs(detached)).clamp_min(1.0)
+        tolerance = 32.0 * torch.finfo(echo.dtype).eps * scale
+        fractions = torch.stack((fraction_y.detach(), fraction_x.detach()))
+        if bool(torch.any(fractions < -tolerance)) or bool(
+            torch.any(fractions > 1.0 + tolerance)
+        ):
+            raise FrozenCellMismatchError(
+                "frozen remap cell is inconsistent with displacement "
+                f"(cell=({frozen_cell.y}, {frozen_cell.x}), "
+                f"displacement=({float(detached[0]):.9g}, "
+                f"{float(detached[1]):.9g}))"
+            )
+        fraction_y = fraction_y.clamp(0.0, 1.0)
+        fraction_x = fraction_x.clamp(0.0, 1.0)
+    return base_y, base_x, fraction_y, fraction_x
+
+
 def _log_aligned_growth(
     previous: Tensor,
     current: Tensor,
     displacement_yx: Tensor,
     config: NowcastConfig,
 ) -> Tensor:
-    aligned = advect(previous, displacement_yx).clamp_min(0.0)
+    aligned = advect(previous, displacement_yx)
     valid = _valid_advection_mask(previous.shape, displacement_yx)
     if int(valid.sum()) < 4:
         return previous.new_zeros(())

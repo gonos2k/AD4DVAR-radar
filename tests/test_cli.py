@@ -44,6 +44,7 @@ class CliTests(unittest.TestCase):
 
     def _assert_common_status_fields(self, result: np.lib.npyio.NpzFile) -> None:
         expected = {
+            "output_contract_version",
             "forecast_status",
             "data_coverage_fraction",
             "latest_data_coverage_fraction",
@@ -53,6 +54,19 @@ class CliTests(unittest.TestCase):
             "analysis_degraded",
             "analysis_used_fallback",
             "analysis_reason",
+            "minimum_echo_linear",
+            "negative_echo_count_before_roundoff_fix",
+            "negative_echo_integral_before_fix",
+            "roundoff_correction_count",
+            "roundoff_correction_integral",
+            "minimum_transport_weight",
+            "maximum_transport_weight",
+            "transport_weight_sum_error",
+            "echo_integral_before_transport",
+            "echo_integral_after_transport",
+            "boundary_outflow_integral",
+            "echo_budget_error",
+            "positivity_gate_passed",
         }
         self.assertTrue(expected.issubset(result.files))
 
@@ -65,6 +79,10 @@ class CliTests(unittest.TestCase):
 
             with np.load(output_path, allow_pickle=False) as result:
                 self._assert_common_status_fields(result)
+                self.assertEqual(
+                    result["output_contract_version"].item(),
+                    "nowcast-npz-v2",
+                )
                 self.assertEqual(result["forecast_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
                 self.assertTrue(np.isfinite(result["forecast_dbz"]).all())
@@ -79,6 +97,42 @@ class CliTests(unittest.TestCase):
                 self.assertFalse(result["analysis_degraded"].item())
                 self.assertFalse(result["analysis_used_fallback"].item())
                 self.assertEqual(result["analysis_reason"].item(), "not_requested")
+                self.assertGreaterEqual(
+                    result["minimum_echo_linear"].item(),
+                    0.0,
+                )
+                self.assertEqual(
+                    result["negative_echo_count_before_roundoff_fix"].item(),
+                    0,
+                )
+                self.assertEqual(
+                    result["negative_echo_integral_before_fix"].item(),
+                    0.0,
+                )
+                self.assertEqual(
+                    result["roundoff_correction_count"].item(),
+                    0,
+                )
+                self.assertEqual(
+                    result["roundoff_correction_integral"].item(),
+                    0.0,
+                )
+                self.assertEqual(
+                    result["minimum_transport_weight"].shape,
+                    (18,),
+                )
+                self.assertEqual(
+                    result["echo_integral_before_transport"].shape,
+                    (18,),
+                )
+                self.assertEqual(
+                    result["echo_integral_after_transport"].shape,
+                    (18,),
+                )
+                self.assertTrue(
+                    np.allclose(result["echo_budget_error"], 0.0)
+                )
+                self.assertTrue(result["positivity_gate_passed"].item())
 
     def test_all_qc_rejected_uses_stale_background(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
