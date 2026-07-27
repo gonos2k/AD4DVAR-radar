@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.3
+# ADVAR 3-frame radar nowcast v0.4
 
 10분 간격 레이더 dBZ 3장으로 다음 3시간을 10분 간격으로 예측하는
 작고 해석 가능한 matrix-free 변분 구현이다. 기존 FFT 기준예측은 항상
@@ -22,12 +22,13 @@ FFT는 phase-correlation 이동량 추정에만 사용하며, 분석·예측 전
 내부 에코량은 다음처럼 양수 선형 공간에서 계산한다.
 
 ```text
-q = max(10 ** (dBZ / 10) - 10 ** (min_dBZ / 10), 0)
+q = 10 ** (min_dBZ / 10) * expm1(ln(10) / 10 * (dBZ - min_dBZ))
 ```
 
 `q >= 0`은 수송·반응·변분분석 전체의 물리 상태 불변조건이다. 의미 있는
 음수나 NaN/Inf는 `EchoPositivityError`로 fail-close하며, dtype 반올림
-크기의 미세 음수만 0으로 보정하고 보정량을 진단값에 기록한다. 이 검사는
+크기의 미세 음수만 0으로 보정한다. 검사는 입력, LM trial 수용, 최종
+분석·예측 경계에서만 수행하며 JVP·VJP·HVP 내부에는 들어가지 않는다.
 물리 상태에만 적용하며 JVP·VJP·HVP와 상태증분의 부호는 제한하지 않는다.
 고정 remap 셀과 실제 이동량이 맞지 않으면
 `FrozenCellMismatchError`로 해당 연산을 거부한다.
@@ -59,11 +60,12 @@ import torch
 from advar import nowcast
 
 frames = torch.from_numpy(np.load("three_frames.npy")).float()  # [3, H, W]
-forecast_dbz, state = nowcast(frames)
+result = nowcast(frames)
 
-print(forecast_dbz.shape)          # [18, H, W]
-print(state.displacement_yx)       # (dy, dx), pixel / 10 min
-print(state.log_growth_per_step)   # log growth / 10 min
+print(result.forecast_dbz.shape)          # [18, H, W]
+print(result.state.displacement_yx)       # (dy, dx), pixel / 10 min
+print(result.state.log_growth_per_step)   # log growth / 10 min
+print(result.metadata.data_status)
 ```
 
 세 관측시각을 함께 분석하려면 다음처럼 사용한다.
@@ -71,7 +73,7 @@ print(state.log_growth_per_step)   # log growth / 10 min
 ```python
 from advar import variational_nowcast
 
-forecast_dbz, analysis = variational_nowcast(
+forecast, analysis = variational_nowcast(
     frames,
     observation_std_dbz=2.0,
 )
@@ -109,7 +111,7 @@ QC 탈락 화소는 관측잔차에 들어가지 않는다. 선택적으로 이�
 시간 정렬된 3장 배경을 제공할 수 있다.
 
 ```python
-forecast_dbz, analysis = variational_nowcast(
+forecast, analysis = variational_nowcast(
     frames,
     qc_mask=qc_mask,
     background_frames_dbz=previous_cycle_background,
@@ -135,32 +137,28 @@ advar-nowcast three_frames.npy forecast.npz \
   --qc-mask qc.npy \
   --background previous_cycle.npy \
   --background-age-minutes 10
+advar-nowcast three_frames.npy forecast.npz --audit
 ```
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v2`
+- `output_contract_version`: 현재 `nowcast-npz-v3`
 - `forecast_dbz`: `[18, H, W]`
 - `lead_minutes`: `[10, 20, ..., 180]`
 - `displacement_yx`: 10분당 픽셀 이동량
 - `log_growth_per_step`: 10분당 로그 성장률
 - `motion_disagreement_px`: 두 프레임 쌍의 이동 추정 불일치
 - `growth_disagreement`: 두 프레임 쌍의 성장 추정 불일치
-- `forecast_status`: `OBSERVED`, `PARTIAL_OBSERVATION`,
-  `STALE_BACKGROUND`, `UNAVAILABLE`, `BASELINE_FALLBACK` 중 하나
-- `data_coverage_fraction`, `latest_data_coverage_fraction`
+- `data_status`: `OBSERVED`, `PARTIAL`, `STALE_BACKGROUND`,
+  `UNAVAILABLE` 중 하나
+- `coverage_by_frame`: 입력 세 시각의 관측 coverage
 - `background_used`, `background_age_minutes`
 - `analysis_converged`, `analysis_degraded`, `analysis_used_fallback`
-- `minimum_echo_linear`, `positivity_gate_passed`
-- `negative_echo_count_before_roundoff_fix`,
-  `negative_echo_integral_before_fix`
-- `roundoff_correction_count`, `roundoff_correction_integral`
-- 선행시간별 `minimum_transport_weight`, `maximum_transport_weight`,
-  `transport_weight_sum_error`
-- 선행시간별 `echo_integral_before_transport`,
-  `echo_integral_after_transport`, `boundary_outflow_integral`,
-  `echo_budget_error`
-- 변분분석 시 `analysis_minimum_echo_linear`
+
+`--audit`를 지정할 때만 최종 양성 보정량과 선행시간별
+`echo_integral_before_transport`, `echo_integral_after_transport`,
+`boundary_outflow_integral`, `echo_budget_error`를 추가한다. audit는 이미
+계산한 18개 예측 remap을 재사용하며 예측을 다시 수행하지 않는다.
 
 NPZ는 같은 디렉터리의 임시 파일을 완전히 기록한 뒤 원자적으로
 교체한다. 기록 실패 시 기존 출력은 그대로 유지한다.
@@ -203,19 +201,19 @@ from datetime import datetime, timezone
 
 from advar import (
     EpisodeLedger,
-    FORECAST_INTEGRATOR_VERSION,
     ModelContract,
     SensitivityEpisode,
     compute_sensitivity_snapshot,
     nowcast,
 )
+from advar.physics import FORECAST_INTEGRATOR_VERSION
 
-forecast_dbz, state = nowcast(frames)
+result = nowcast(frames)
 
 # 이 값들은 +180분까지 미래 관측이 도착한 뒤에만 사용한다.
 snapshot = compute_sensitivity_snapshot(
     frames,
-    state,
+    result,
     verification_frames_dbz,       # [18, H, W]
     background_frames_dbz=background_frames,
     observation_std_dbz=2.0,

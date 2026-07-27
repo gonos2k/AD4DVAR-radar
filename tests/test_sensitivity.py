@@ -8,19 +8,86 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar.nowcast import (  # noqa: E402
+    DataStatus,
+    ForecastMetadata,
+    ForecastResult,
     NowcastConfig,
     RadarState,
-    dbz_to_linear,
     forecast_from_state,
     forecast_linear_at_step,
     forecast_linear_from_state,
-    linear_to_dbz,
 )
+from advar.physics import dbz_to_echo, echo_to_dbz  # noqa: E402
 from advar.sensitivity import (  # noqa: E402
     SensitivityConfig,
     compute_sensitivity_snapshot,
     forecast_metric,
 )
+
+
+def dbz_to_linear(dbz: torch.Tensor, config: NowcastConfig) -> torch.Tensor:
+    return dbz_to_echo(
+        dbz,
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
+    )
+
+
+def linear_to_dbz(echo: torch.Tensor, config: NowcastConfig) -> torch.Tensor:
+    return echo_to_dbz(
+        echo,
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
+    )
+
+
+def metadata_for(
+    state: RadarState,
+    *,
+    pair_motion: torch.Tensor | None = None,
+    pair_growth: torch.Tensor | None = None,
+) -> ForecastMetadata:
+    return ForecastMetadata(
+        data_status=DataStatus.OBSERVED,
+        coverage_by_frame=torch.ones(
+            3,
+            dtype=state.echo_linear.dtype,
+            device=state.echo_linear.device,
+        ),
+        background_used=False,
+        background_age_minutes=None,
+        source_mask=None,
+        pair_displacements_yx=(
+            torch.stack((state.displacement_yx, state.displacement_yx))
+            if pair_motion is None
+            else pair_motion
+        ),
+        pair_log_growth=(
+            torch.stack(
+                (state.log_growth_per_step, state.log_growth_per_step)
+            )
+            if pair_growth is None
+            else pair_growth
+        ),
+    )
+
+
+def result_for(
+    state: RadarState,
+    config: NowcastConfig,
+    *,
+    pair_motion: torch.Tensor | None = None,
+    pair_growth: torch.Tensor | None = None,
+) -> ForecastResult:
+    return forecast_from_state(
+        state,
+        metadata_for(
+            state,
+            pair_motion=pair_motion,
+            pair_growth=pair_growth,
+        ),
+        config,
+    )
 
 
 class SensitivityTests(unittest.TestCase):
@@ -49,21 +116,25 @@ class SensitivityTests(unittest.TestCase):
         cls.qc_mask[2, 0, 3] = False
 
         cls.state = RadarState(
-            echo_amplitude=torch.sqrt(
-                dbz_to_linear(cls.frames[2], cls.nowcast_config)
-            ),
+            echo_linear=dbz_to_linear(cls.frames[2], cls.nowcast_config),
             displacement_yx=torch.tensor([0.35, -0.25], dtype=torch.float64),
             log_growth_per_step=torch.tensor(0.015, dtype=torch.float64),
-            pair_displacements_yx=torch.tensor(
+        )
+        cls.result = result_for(
+            cls.state,
+            cls.nowcast_config,
+            pair_motion=torch.tensor(
                 [[0.32, -0.20], [0.37, -0.28]],
                 dtype=torch.float64,
             ),
-            pair_log_growth=torch.tensor([0.01, 0.02], dtype=torch.float64),
+            pair_growth=torch.tensor(
+                [0.01, 0.02],
+                dtype=torch.float64,
+            ),
         )
-        cls.verification = forecast_from_state(
-            cls.state,
-            cls.nowcast_config,
-        ) + 0.4 * torch.sin(y / 3.0)[None]
+        cls.verification = (
+            cls.result.forecast_dbz + 0.4 * torch.sin(y / 3.0)[None]
+        )
         clean_frames = torch.nan_to_num(
             cls.frames,
             nan=cls.nowcast_config.min_dbz,
@@ -93,14 +164,14 @@ class SensitivityTests(unittest.TestCase):
         }
         cls.snapshot = compute_sensitivity_snapshot(
             cls.frames,
-            cls.state,
+            cls.result,
             cls.verification,
             background_frames_dbz=cls.background,
             **common,
         )
         cls.snapshot_without_background = compute_sensitivity_snapshot(
             cls.frames,
-            cls.state,
+            cls.result,
             cls.verification,
             **common,
         )
@@ -116,11 +187,9 @@ class SensitivityTests(unittest.TestCase):
             -((y - 5.0) ** 2 + (x - 7.0) ** 2) / 18.0
         )
         state = RadarState(
-            echo_amplitude=torch.sqrt(dbz_to_linear(latest_dbz, config)),
+            echo_linear=dbz_to_linear(latest_dbz, config),
             displacement_yx=torch.tensor([0.2, -0.15], dtype=torch.float64),
             log_growth_per_step=torch.zeros((), dtype=torch.float64),
-            pair_displacements_yx=torch.zeros(2, 2, dtype=torch.float64),
-            pair_log_growth=torch.zeros(2, dtype=torch.float64),
         )
 
         linear = forecast_linear_from_state(state, config)
@@ -132,12 +201,13 @@ class SensitivityTests(unittest.TestCase):
         )
 
         torch.testing.assert_close(linear, by_step)
+        result = result_for(state, config)
         torch.testing.assert_close(
-            forecast_from_state(state, config),
+            result.forecast_dbz,
             linear_to_dbz(linear, config),
         )
         torch.testing.assert_close(
-            dbz_to_linear(forecast_from_state(state, config), config),
+            dbz_to_linear(result.forecast_dbz, config),
             linear,
         )
 
@@ -206,11 +276,9 @@ class SensitivityTests(unittest.TestCase):
 
         def score(control: torch.Tensor) -> torch.Tensor:
             candidate_state = RadarState(
-                echo_amplitude=self.state.echo_amplitude,
+                echo_linear=self.state.echo_linear,
                 displacement_yx=control[:2],
                 log_growth_per_step=control[2],
-                pair_displacements_yx=self.state.pair_displacements_yx,
-                pair_log_growth=self.state.pair_log_growth,
             )
             return forecast_metric(
                 "log_echo_mse",
@@ -272,19 +340,18 @@ class SensitivityTests(unittest.TestCase):
         )
 
         def score(latest_dbz: torch.Tensor) -> torch.Tensor:
-            candidate_amplitude = torch.sqrt(
-                dbz_to_linear(latest_dbz, self.nowcast_config)
+            candidate_echo = dbz_to_linear(
+                latest_dbz,
+                self.nowcast_config,
             )
             candidate_state = RadarState(
-                echo_amplitude=torch.where(
+                echo_linear=torch.where(
                     mask,
-                    candidate_amplitude,
-                    self.state.echo_amplitude,
+                    candidate_echo,
+                    self.state.echo_linear,
                 ),
                 displacement_yx=self.state.displacement_yx,
                 log_growth_per_step=self.state.log_growth_per_step,
-                pair_displacements_yx=self.state.pair_displacements_yx,
-                pair_log_growth=self.state.pair_log_growth,
             )
             return forecast_metric(
                 "log_echo_mse",
@@ -412,15 +479,14 @@ class SensitivityTests(unittest.TestCase):
         config = self.nowcast_config
         frames = torch.full((3, 8, 9), config.max_dbz, dtype=torch.float64)
         state = RadarState(
-            echo_amplitude=torch.sqrt(dbz_to_linear(frames[2], config)),
+            echo_linear=dbz_to_linear(frames[2], config),
             displacement_yx=torch.zeros(2, dtype=torch.float64),
             log_growth_per_step=torch.tensor(
                 config.max_log_growth_per_step,
                 dtype=torch.float64,
             ),
-            pair_displacements_yx=torch.zeros(2, 2, dtype=torch.float64),
-            pair_log_growth=torch.zeros(2, dtype=torch.float64),
         )
+        result = result_for(state, config)
         verification = torch.full(
             (config.forecast_steps, 8, 9),
             config.max_dbz,
@@ -428,7 +494,7 @@ class SensitivityTests(unittest.TestCase):
         )
         snapshot = compute_sensitivity_snapshot(
             frames,
-            state,
+            result,
             verification,
             nowcast_config=config,
             sensitivity_config=SensitivityConfig(
@@ -451,7 +517,7 @@ class SensitivityTests(unittest.TestCase):
         verification = torch.full_like(self.verification, float("nan"))
         snapshot = compute_sensitivity_snapshot(
             self.frames,
-            self.state,
+            self.result,
             verification,
             nowcast_config=self.nowcast_config,
             sensitivity_config=self.sensitivity_config,
@@ -470,7 +536,7 @@ class SensitivityTests(unittest.TestCase):
         background = torch.full_like(self.frames, float("nan"))
         snapshot = compute_sensitivity_snapshot(
             self.frames,
-            self.state,
+            self.result,
             self.verification,
             nowcast_config=self.nowcast_config,
             sensitivity_config=self.sensitivity_config,

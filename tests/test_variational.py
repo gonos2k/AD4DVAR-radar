@@ -16,18 +16,18 @@ from advar.matrix_free import (  # noqa: E402
     vjp,
 )
 from advar.nowcast import (  # noqa: E402
-    ForecastStatus,
+    DataStatus,
     NowcastConfig,
     RadarState,
+)
+from advar.physics import (  # noqa: E402
     RemapCell,
-    advect,
-    linear_to_dbz,
+    echo_to_dbz,
+    remap,
 )
 from advar.sensitivity import compute_sensitivity_snapshot  # noqa: E402
 from advar.variational import (  # noqa: E402
     AnalysisConfig,
-    AnalysisTrajectory,
-    FrozenOuterState,
     analysis_trajectory,
     freeze_irls_weights,
     initial_control,
@@ -39,6 +39,21 @@ from advar.variational import (  # noqa: E402
     variational_nowcast,
     whitened_observation_residual,
 )
+
+
+def advect(echo: torch.Tensor, displacement: torch.Tensor) -> torch.Tensor:
+    return remap(echo, displacement)
+
+
+def linear_to_dbz(
+    echo: torch.Tensor,
+    config: NowcastConfig,
+) -> torch.Tensor:
+    return echo_to_dbz(
+        echo,
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
+    )
 
 
 class VariationalAnalysisTests(unittest.TestCase):
@@ -109,33 +124,6 @@ class VariationalAnalysisTests(unittest.TestCase):
             atol=1.0e-10,
             rtol=0.0,
         )
-
-    def test_legacy_frozen_outer_state_constructor_remains_valid(self) -> None:
-        observations, frozen = self.stationary_problem()
-        legacy = FrozenOuterState(
-            frozen.initial_background_dbz,
-            frozen.initial_support_mask,
-            frozen.baseline_state,
-            frozen.irls_sqrt_weight,
-            frozen.nowcast_config,
-            frozen.analysis_config,
-        )
-
-        self.assertIsNone(legacy.analysis_remap_cells)
-        trajectory = analysis_trajectory(
-            initial_control(observations),
-            legacy,
-        )
-        self.assertEqual(trajectory.frames_linear.shape, (3, 4, 5))
-
-    def test_legacy_analysis_trajectory_constructor_remains_valid(self) -> None:
-        trajectory = AnalysisTrajectory(
-            torch.ones(3, 4, 5, dtype=torch.float64),
-            torch.zeros(2, dtype=torch.float64),
-            torch.zeros((), dtype=torch.float64),
-        )
-
-        self.assertIsNone(trajectory.positivity_diagnostics)
 
     def test_detected_censored_and_once_whitened_residuals(self) -> None:
         observations, frozen = self.stationary_problem()
@@ -309,6 +297,33 @@ class VariationalAnalysisTests(unittest.TestCase):
             -1.0e-10 * float(torch.dot(direction, direction)),
         )
 
+    def test_ad_hot_path_has_no_boundary_validation(self) -> None:
+        observations, frozen = self.stationary_problem()
+        control = initial_control(observations)
+        direction = torch.ones_like(control)
+        residual_fn = lambda value: residual_vector(
+            value,
+            observations,
+            frozen,
+        )
+
+        with patch(
+            "advar.variational._validate_observations",
+            side_effect=AssertionError("observation validation entered"),
+        ), patch(
+            "advar.variational.validate_physical_echo",
+            side_effect=AssertionError("physical audit entered"),
+        ):
+            residual = residual_fn(control)
+            product = gauss_newton_hvp(
+                residual_fn,
+                control,
+                direction,
+            )
+
+        self.assertTrue(bool(torch.all(torch.isfinite(residual))))
+        self.assertTrue(bool(torch.all(torch.isfinite(product))))
+
     def test_analysis_operator_has_gradient_above_output_cap(self) -> None:
         observations, frozen = self.stationary_problem(value_dbz=70.0)
         control = initial_control(observations)
@@ -411,16 +426,11 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
         baseline = frozen.baseline_state
         zero_motion = RadarState(
-            echo_amplitude=baseline.echo_amplitude,
+            echo_linear=baseline.echo_linear,
             displacement_yx=torch.zeros_like(baseline.displacement_yx),
             log_growth_per_step=torch.zeros_like(
                 baseline.log_growth_per_step
             ),
-            pair_displacements_yx=torch.zeros_like(
-                baseline.pair_displacements_yx
-            ),
-            pair_log_growth=torch.zeros_like(baseline.pair_log_growth),
-            provenance=baseline.provenance,
         )
         frozen = replace(
             frozen,
@@ -449,10 +459,10 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertTrue(result.used_fallback)
         self.assertEqual(result.reason, "no_valid_observations")
         self.assertEqual(
-            result.state.forecast_status,
-            ForecastStatus.UNAVAILABLE,
+            result.metadata.data_status,
+            DataStatus.UNAVAILABLE,
         )
-        self.assertTrue(bool(torch.all(torch.isnan(forecast))))
+        self.assertTrue(bool(torch.all(torch.isnan(forecast.forecast_dbz))))
 
     def test_invalid_observations_use_stale_background(self) -> None:
         frames = torch.full((3, 5, 5), 20.0, dtype=torch.float64)
@@ -470,12 +480,14 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertTrue(result.used_fallback)
         self.assertEqual(result.reason, "no_valid_observations")
         self.assertEqual(
-            result.state.forecast_status,
-            ForecastStatus.STALE_BACKGROUND,
+            result.metadata.data_status,
+            DataStatus.STALE_BACKGROUND,
         )
-        self.assertEqual(result.state.data_coverage_fraction, 0.0)
-        self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
-        torch.testing.assert_close(forecast[0], background[-1])
+        self.assertEqual(float(result.metadata.coverage_by_frame.mean()), 0.0)
+        self.assertTrue(
+            bool(torch.all(torch.isfinite(forecast.forecast_dbz)))
+        )
+        torch.testing.assert_close(forecast.forecast_dbz[0], background[-1])
 
     def test_negative_analysis_trajectory_fails_closed(self) -> None:
         frames = torch.full((3, 16, 16), 20.0, dtype=torch.float64)
@@ -485,12 +497,9 @@ class VariationalAnalysisTests(unittest.TestCase):
             analysis_config=self.analysis_config,
         )
         negative = -torch.ones(16, 16, dtype=torch.float64)
-        baseline_positivity = frozen.baseline_state.positivity_diagnostics
-        self.assertIsNotNone(baseline_positivity)
-
         with patch(
-            "advar.variational._advect_with_diagnostics",
-            return_value=(negative, baseline_positivity),
+            "advar.variational.advance",
+            return_value=negative,
         ):
             result = solve_analysis(observations, frozen)
 
@@ -500,7 +509,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             float(result.analyzed_frames_linear.min()),
             0.0,
         )
-        self.assertIsNotNone(result.positivity_diagnostics)
+        self.assertGreaterEqual(result.audit.minimum_before_fix, 0.0)
 
     def test_pcg_failure_uses_baseline_fallback(self) -> None:
         observations, frozen = self.stationary_problem()
@@ -521,10 +530,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             frozen.baseline_state.echo_linear,
         )
         self.assertFalse(result.degraded)
-        self.assertEqual(
-            result.state.forecast_status,
-            ForecastStatus.BASELINE_FALLBACK,
-        )
+        self.assertEqual(result.metadata.data_status, DataStatus.OBSERVED)
 
     def test_later_pcg_failure_preserves_accepted_analysis(self) -> None:
         height, width = 6, 6
@@ -558,20 +564,10 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
         baseline = frozen.baseline_state
         zero_motion = RadarState(
-            echo_amplitude=baseline.echo_amplitude,
+            echo_linear=baseline.echo_linear,
             displacement_yx=torch.zeros_like(baseline.displacement_yx),
             log_growth_per_step=torch.zeros_like(
                 baseline.log_growth_per_step
-            ),
-            pair_displacements_yx=torch.zeros_like(
-                baseline.pair_displacements_yx
-            ),
-            pair_log_growth=torch.zeros_like(baseline.pair_log_growth),
-            provenance=baseline.provenance,
-            forecast_status=baseline.forecast_status,
-            data_coverage_fraction=baseline.data_coverage_fraction,
-            latest_data_coverage_fraction=(
-                baseline.latest_data_coverage_fraction
             ),
         )
         frozen = replace(
@@ -602,7 +598,10 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertTrue(result.degraded)
         self.assertGreater(float(torch.linalg.vector_norm(result.control)), 0)
         self.assertLess(result.final_objective, result.initial_objective)
-        self.assertEqual(result.state.provenance, "p1_variational_analysis")
+        self.assertEqual(
+            result.metadata.provenance,
+            "p1_variational_analysis",
+        )
 
         final_frozen = freeze_irls_weights(
             result.control,
@@ -671,7 +670,7 @@ class VariationalAnalysisTests(unittest.TestCase):
 
     def test_m0_sensitivity_rejects_p1_analysis_state(self) -> None:
         frames = torch.full((3, 4, 4), 20.0, dtype=torch.float64)
-        _, result = variational_nowcast(
+        forecast, _ = variational_nowcast(
             frames,
             nowcast_config=self.nowcast_config,
             analysis_config=self.analysis_config,
@@ -685,7 +684,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "requires a P0"):
             compute_sensitivity_snapshot(
                 frames,
-                result.state,
+                forecast,
                 verification,
                 nowcast_config=self.nowcast_config,
             )

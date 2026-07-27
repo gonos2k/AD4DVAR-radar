@@ -1,29 +1,100 @@
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from advar.nowcast import (  # noqa: E402
+from advar.diagnostics import (  # noqa: E402
     EchoPositivityError,
-    FORECAST_INTEGRATOR_VERSION,
-    ForecastStatus,
-    FrozenCellMismatchError,
+    audit_transport,
+    validate_physical_echo,
+)
+from advar.nowcast import (  # noqa: E402
+    DataStatus,
+    ForecastMetadata,
     NowcastConfig,
     RadarState,
-    RemapCell,
-    advect,
-    dbz_to_linear,
-    diagnose_transport,
-    enforce_echo_positivity,
-    estimate_state,
+    estimate_state as estimate_state_with_metadata,
+    forecast_from_state as forecast_result_from_state,
     forecast_linear_from_state,
-    forecast_from_state,
-    linear_to_dbz,
     nowcast,
 )
+from advar.physics import (  # noqa: E402
+    FORECAST_INTEGRATOR_VERSION,
+    FrozenCellMismatchError,
+    RemapCell,
+    dbz_to_echo,
+    echo_to_dbz,
+    remap,
+    remap_core,
+)
+
+
+def dbz_to_linear(dbz: torch.Tensor, config: NowcastConfig) -> torch.Tensor:
+    return dbz_to_echo(
+        dbz,
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
+    )
+
+
+def linear_to_dbz(echo: torch.Tensor, config: NowcastConfig) -> torch.Tensor:
+    echo, _ = validate_physical_echo(echo, name="test conversion")
+    return echo_to_dbz(
+        echo,
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
+    )
+
+
+def advect(
+    echo: torch.Tensor,
+    displacement: torch.Tensor,
+    *,
+    frozen_cell: RemapCell | None = None,
+) -> torch.Tensor:
+    return remap(echo, displacement, cell=frozen_cell)
+
+
+def estimate_state(
+    frames: torch.Tensor,
+    config: NowcastConfig,
+) -> RadarState:
+    return estimate_state_with_metadata(frames, config)[0]
+
+
+def observed_metadata(state: RadarState) -> ForecastMetadata:
+    return ForecastMetadata(
+        data_status=DataStatus.OBSERVED,
+        coverage_by_frame=torch.ones(
+            3,
+            dtype=state.echo_linear.dtype,
+            device=state.echo_linear.device,
+        ),
+        background_used=False,
+        background_age_minutes=None,
+        source_mask=None,
+        pair_displacements_yx=torch.stack(
+            (state.displacement_yx, state.displacement_yx)
+        ),
+        pair_log_growth=torch.stack(
+            (state.log_growth_per_step, state.log_growth_per_step)
+        ),
+    )
+
+
+def forecast_from_state(
+    state: RadarState,
+    config: NowcastConfig,
+) -> torch.Tensor:
+    return forecast_result_from_state(
+        state,
+        observed_metadata(state),
+        config,
+    ).forecast_dbz
 
 
 class NowcastTests(unittest.TestCase):
@@ -43,7 +114,8 @@ class NowcastTests(unittest.TestCase):
 
     def test_stationary_echo_stays_stationary(self) -> None:
         dbz = linear_to_dbz(self.echo, self.config)
-        forecast, state = nowcast(torch.stack((dbz, dbz, dbz)), self.config)
+        result = nowcast(torch.stack((dbz, dbz, dbz)), self.config)
+        forecast, state = result.forecast_dbz, result.state
 
         torch.testing.assert_close(
             state.displacement_yx,
@@ -192,39 +264,39 @@ class NowcastTests(unittest.TestCase):
         dbz = linear_to_dbz(self.echo, self.config)
         frames = torch.stack((dbz, dbz, dbz))
         frames[:, 0, 0] = torch.nan
-        forecast, state = nowcast(frames, self.config)
+        result = nowcast(frames, self.config)
+        forecast, metadata = result.forecast_dbz, result.metadata
 
         self.assertEqual(
-            state.forecast_status,
-            ForecastStatus.PARTIAL_OBSERVATION,
+            metadata.data_status,
+            DataStatus.PARTIAL,
         )
         self.assertTrue(bool(torch.all(torch.isnan(forecast[:, 0, 0]))))
         self.assertTrue(bool(torch.all(torch.isfinite(forecast[:, 1:, 1:]))))
 
     def test_all_missing_without_background_is_unavailable(self) -> None:
         frames = torch.full((3, 8, 8), torch.nan)
-        forecast, state = nowcast(frames, self.config)
+        result = nowcast(frames, self.config)
+        forecast, metadata = result.forecast_dbz, result.metadata
 
-        self.assertEqual(state.forecast_status, ForecastStatus.UNAVAILABLE)
-        self.assertEqual(state.data_coverage_fraction, 0.0)
+        self.assertEqual(metadata.data_status, DataStatus.UNAVAILABLE)
+        self.assertEqual(float(metadata.coverage_by_frame.mean()), 0.0)
         self.assertTrue(bool(torch.all(torch.isnan(forecast))))
 
     def test_all_missing_uses_time_aligned_stale_background(self) -> None:
         frames = torch.full((3, 8, 8), torch.nan)
         background = torch.full((3, 8, 8), 20.0)
-        forecast, state = nowcast(
+        result = nowcast(
             frames,
             self.config,
             background_frames_dbz=background,
             background_age_minutes=10.0,
         )
 
-        self.assertEqual(
-            state.forecast_status,
-            ForecastStatus.STALE_BACKGROUND,
-        )
-        self.assertTrue(state.background_used)
-        self.assertEqual(state.background_age_minutes, 10.0)
+        forecast, metadata = result.forecast_dbz, result.metadata
+        self.assertEqual(metadata.data_status, DataStatus.STALE_BACKGROUND)
+        self.assertTrue(metadata.background_used)
+        self.assertEqual(metadata.background_age_minutes, 10.0)
         self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
         torch.testing.assert_close(forecast[0], background[-1])
 
@@ -232,61 +304,66 @@ class NowcastTests(unittest.TestCase):
         frames = torch.full((3, 8, 8), torch.nan)
         background = torch.full((3, 8, 8), torch.nan)
         background[0] = 20.0
-        forecast, state = nowcast(
+        result = nowcast(
             frames,
             self.config,
             background_frames_dbz=background,
             background_age_minutes=20.0,
         )
 
-        self.assertTrue(state.background_used)
-        self.assertEqual(state.forecast_status, ForecastStatus.UNAVAILABLE)
+        forecast, metadata = result.forecast_dbz, result.metadata
+        self.assertTrue(metadata.background_used)
+        self.assertEqual(metadata.data_status, DataStatus.UNAVAILABLE)
         self.assertTrue(bool(torch.all(torch.isnan(forecast))))
 
     def test_unused_background_does_not_publish_stale_age(self) -> None:
         frames = torch.full((3, 8, 8), 20.0)
         background = torch.full_like(frames, 25.0)
-        _, state = nowcast(
+        result = nowcast(
             frames,
             self.config,
             background_frames_dbz=background,
             background_age_minutes=10.0,
         )
 
-        self.assertFalse(state.background_used)
-        self.assertIsNone(state.background_age_minutes)
-        self.assertEqual(state.forecast_status, ForecastStatus.OBSERVED)
+        metadata = result.metadata
+        self.assertFalse(metadata.background_used)
+        self.assertIsNone(metadata.background_age_minutes)
+        self.assertEqual(metadata.data_status, DataStatus.OBSERVED)
 
     def test_missing_first_frame_uses_neighboring_observation_only_as_fill(
         self,
     ) -> None:
         dbz = linear_to_dbz(self.echo, self.config)
         frames = torch.stack((torch.full_like(dbz, torch.nan), dbz, dbz))
-        forecast, state = nowcast(frames, self.config)
+        result = nowcast(frames, self.config)
+        forecast, metadata = result.forecast_dbz, result.metadata
 
         self.assertEqual(
-            state.forecast_status,
-            ForecastStatus.PARTIAL_OBSERVATION,
+            metadata.data_status,
+            DataStatus.PARTIAL,
         )
-        self.assertEqual(state.latest_data_coverage_fraction, 1.0)
+        self.assertEqual(float(metadata.coverage_by_frame[-1]), 1.0)
         self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
 
     def test_missing_latest_frame_uses_mask_aware_persistence(self) -> None:
         dbz = linear_to_dbz(self.echo, self.config)
         frames = torch.stack((dbz, dbz, torch.full_like(dbz, torch.nan)))
-        forecast, state = nowcast(frames, self.config)
+        result = nowcast(frames, self.config)
+        forecast, metadata = result.forecast_dbz, result.metadata
 
         self.assertEqual(
-            state.forecast_status,
-            ForecastStatus.PARTIAL_OBSERVATION,
+            metadata.data_status,
+            DataStatus.PARTIAL,
         )
-        self.assertEqual(state.latest_data_coverage_fraction, 0.0)
+        self.assertEqual(float(metadata.coverage_by_frame[-1]), 0.0)
         self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
         torch.testing.assert_close(forecast[0], dbz, atol=0.02, rtol=0.0)
 
     def test_empty_echo_uses_persistence_fallback(self) -> None:
         frames = torch.full((3, 32, 32), self.config.min_dbz)
-        forecast, state = nowcast(frames, self.config)
+        result = nowcast(frames, self.config)
+        forecast, state = result.forecast_dbz, result.state
 
         torch.testing.assert_close(state.displacement_yx, torch.zeros(2))
         torch.testing.assert_close(state.log_growth_per_step, torch.zeros(()))
@@ -301,11 +378,9 @@ class NowcastTests(unittest.TestCase):
         frames = torch.stack((dbz, dbz, dbz))
         state = estimate_state(frames, self.config)
         state = type(state)(
-            echo_amplitude=state.echo_amplitude,
+            echo_linear=state.echo_linear,
             displacement_yx=displacement,
             log_growth_per_step=torch.zeros(()),
-            pair_displacements_yx=state.pair_displacements_yx,
-            pair_log_growth=state.pair_log_growth,
         )
 
         forecast = forecast_from_state(state, self.config)
@@ -314,6 +389,23 @@ class NowcastTests(unittest.TestCase):
             self.config,
         )
         torch.testing.assert_close(forecast[-1], expected)
+
+    def test_full_forecast_remaps_each_lead_once_even_with_audit(self) -> None:
+        state = RadarState(
+            echo_linear=self.echo,
+            displacement_yx=torch.tensor([0.2, -0.3]),
+            log_growth_per_step=torch.zeros(()),
+        )
+        with patch("advar.nowcast.remap_core", wraps=remap_core) as kernel:
+            result = forecast_result_from_state(
+                state,
+                observed_metadata(state),
+                self.config,
+                audit=True,
+            )
+
+        self.assertEqual(kernel.call_count, self.config.forecast_steps)
+        self.assertEqual(len(result.audit.transport), self.config.forecast_steps)
 
     def test_fractional_advection_is_non_negative_and_does_not_gain_mass(
         self,
@@ -333,7 +425,7 @@ class NowcastTests(unittest.TestCase):
         echo[1, 2] = -1.0e-6
 
         with self.assertRaises(EchoPositivityError):
-            advect(echo, torch.zeros(2, dtype=torch.float64))
+            validate_physical_echo(echo, name="transport input")
         with self.assertRaises(EchoPositivityError):
             linear_to_dbz(echo, self.config)
 
@@ -348,31 +440,26 @@ class NowcastTests(unittest.TestCase):
                     dtype=dtype,
                 )
                 with self.assertRaises(EchoPositivityError):
-                    enforce_echo_positivity(echo, name="dynamic range test")
+                    validate_physical_echo(echo, name="dynamic range test")
 
     def test_roundoff_negative_echo_is_corrected_and_reported(self) -> None:
         echo = torch.ones(4, 4, dtype=torch.float64)
         echo[1, 2] = -1.0e-15
 
-        corrected, diagnostics = enforce_echo_positivity(
+        corrected, diagnostics = validate_physical_echo(
             echo,
             name="roundoff test",
         )
 
         self.assertEqual(float(corrected[1, 2]), 0.0)
-        self.assertEqual(diagnostics.roundoff_correction_count, 1)
-        self.assertEqual(
-            diagnostics.negative_echo_count_before_roundoff_fix,
-            1,
-        )
-        self.assertTrue(diagnostics.positivity_gate_passed)
+        self.assertEqual(diagnostics.corrected_count, 1)
 
     def test_nonfinite_physical_echo_is_rejected(self) -> None:
         echo = torch.ones(4, 4, dtype=torch.float64)
         echo[0, 0] = torch.nan
 
         with self.assertRaises(EchoPositivityError):
-            enforce_echo_positivity(echo, name="nonfinite test")
+            validate_physical_echo(echo, name="nonfinite test")
 
     def test_stale_frozen_remap_cell_is_rejected(self) -> None:
         echo = torch.ones(4, 4, dtype=torch.float64)
@@ -401,48 +488,39 @@ class NowcastTests(unittest.TestCase):
     def test_transport_diagnostics_close_boundary_budget(self) -> None:
         echo = torch.zeros(8, 8, dtype=torch.float64)
         echo[0, 3] = 10.0
-        diagnostics = diagnose_transport(
+        diagnostics = audit_transport(
             echo,
             torch.tensor([-0.25, 0.5], dtype=torch.float64),
         )
 
-        self.assertGreaterEqual(diagnostics.minimum_transport_weight, 0.0)
-        self.assertLessEqual(diagnostics.maximum_transport_weight, 1.0)
-        self.assertLess(diagnostics.transport_weight_sum_error, 1.0e-14)
         self.assertLess(diagnostics.echo_budget_error, 1.0e-14)
         self.assertGreater(diagnostics.boundary_outflow_integral, 0.0)
-        self.assertTrue(diagnostics.positivity.positivity_gate_passed)
 
     def test_transport_diagnostics_preserve_roundoff_correction(self) -> None:
         echo = torch.ones(4, 4, dtype=torch.float64)
         echo[1, 1] = -1.0e-15
-        diagnostics = diagnose_transport(
+        corrected, positivity = validate_physical_echo(
             echo,
-            torch.zeros(2, dtype=torch.float64),
+            name="transport input",
         )
-
-        self.assertEqual(diagnostics.positivity.roundoff_correction_count, 1)
-        self.assertGreater(
-            diagnostics.positivity.roundoff_correction_integral,
-            0.0,
-        )
+        audit_transport(corrected, torch.zeros(2, dtype=torch.float64))
+        self.assertEqual(positivity.corrected_count, 1)
+        self.assertGreater(positivity.corrected_integral, 0.0)
 
     def test_integrator_contract_names_positive_local_remap(self) -> None:
         self.assertEqual(
             FORECAST_INTEGRATOR_VERSION,
-            "local-conservative-remap-positive-v1",
+            "local-conservative-slice-remap-v2",
         )
 
     def test_growth_and_decay_keep_echo_positive_for_eighteen_steps(self) -> None:
-        pair_motion = torch.zeros(2, 2, dtype=torch.float64)
-        pair_growth = torch.zeros(2, dtype=torch.float64)
         for growth in (
             -self.config.max_log_growth_per_step,
             self.config.max_log_growth_per_step,
         ):
             with self.subTest(growth=growth):
                 state = RadarState(
-                    echo_amplitude=torch.sqrt(self.echo.to(torch.float64)),
+                    echo_linear=self.echo.to(torch.float64),
                     displacement_yx=torch.tensor(
                         [0.35, -0.45],
                         dtype=torch.float64,
@@ -451,8 +529,6 @@ class NowcastTests(unittest.TestCase):
                         growth,
                         dtype=torch.float64,
                     ),
-                    pair_displacements_yx=pair_motion,
-                    pair_log_growth=pair_growth,
                 )
                 forecast = forecast_linear_from_state(state, self.config)
 

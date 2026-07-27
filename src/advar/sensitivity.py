@@ -10,11 +10,13 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from .nowcast import (
+    ForecastMetadata,
+    ForecastResult,
     NowcastConfig,
     RadarState,
-    dbz_to_linear,
     forecast_linear_at_step,
 )
+from .physics import dbz_to_echo, freeze_remap_cell
 
 
 SUPPORTED_METRICS = (
@@ -148,7 +150,7 @@ class SensitivitySnapshot:
 
 def compute_sensitivity_snapshot(
     frames_dbz: Tensor,
-    state: RadarState,
+    result: ForecastResult,
     verification_frames_dbz: Tensor,
     *,
     nowcast_config: NowcastConfig | None = None,
@@ -167,7 +169,9 @@ def compute_sensitivity_snapshot(
 
     nowcast_config = nowcast_config or NowcastConfig()
     sensitivity_config = sensitivity_config or SensitivityConfig()
-    if state.provenance != "p0_fft_latest":
+    state = result.state
+    metadata = result.metadata
+    if metadata.provenance != "p0_fft_latest":
         raise ValueError(
             "M0 direct sensitivity requires a P0 latest-frame state"
         )
@@ -185,7 +189,7 @@ def compute_sensitivity_snapshot(
         qc_mask,
     )
 
-    height, width = state.echo_amplitude.shape
+    height, width = state.echo_linear.shape
     lead_minutes = tuple(
         range(
             nowcast_config.interval_minutes,
@@ -209,11 +213,15 @@ def compute_sensitivity_snapshot(
         neginf=nowcast_config.min_dbz,
     )
     verification_valid = torch.isfinite(verification_frames_dbz)
-    truth_linear = dbz_to_linear(clean_verification, nowcast_config)
+    truth_linear = dbz_to_echo(
+        clean_verification,
+        min_dbz=nowcast_config.min_dbz,
+        max_dbz=nowcast_config.max_dbz,
+    )
     control = torch.cat(
         (state.displacement_yx, state.log_growth_per_step.reshape(1))
     )
-    amplitude = state.echo_amplitude
+    echo = state.echo_linear
     clean_frames, latest_active = _frozen_observations(
         frames_dbz,
         nowcast_config,
@@ -227,42 +235,42 @@ def compute_sensitivity_snapshot(
     )
 
     score_shape = (lead_count, metric_count)
-    forecast_scores = amplitude.new_full(score_shape, float("nan"))
+    forecast_scores = echo.new_full(score_shape, float("nan"))
     metric_available = torch.zeros(
         score_shape,
         dtype=torch.bool,
-        device=amplitude.device,
+        device=echo.device,
     )
-    control_sensitivity = amplitude.new_full(
+    control_sensitivity = echo.new_full(
         (lead_count, metric_count, 3),
         float("nan"),
     )
-    direct_norm = amplitude.new_zeros((lead_count, metric_count, 3))
-    tile_direct_norm = amplitude.new_zeros(
+    direct_norm = echo.new_zeros((lead_count, metric_count, 3))
+    tile_direct_norm = echo.new_zeros(
         (lead_count, metric_count, 3, tile_rows, tile_columns)
     )
     tile_shape = (lead_count, metric_count, 3, tile_rows, tile_columns)
     if whitening_available:
-        tile_whitened_norm = amplitude.new_zeros(tile_shape)
+        tile_whitened_norm = echo.new_zeros(tile_shape)
     else:
-        tile_whitened_norm = amplitude.new_full(tile_shape, float("nan"))
+        tile_whitened_norm = echo.new_full(tile_shape, float("nan"))
     selected_count = len(full_map_indices)
-    forecast_maps = amplitude.new_full(
+    forecast_maps = echo.new_full(
         (selected_count, metric_count, height, width),
         float("nan"),
     )
-    direct_maps = amplitude.new_zeros(
+    direct_maps = echo.new_zeros(
         (selected_count, metric_count, 3, height, width)
     )
     selected_cap_masks = torch.zeros(
         (selected_count, height, width),
         dtype=torch.bool,
-        device=amplitude.device,
+        device=echo.device,
     )
     all_cap_masks = torch.zeros(
         (lead_count, height, width),
         dtype=torch.bool,
-        device=amplitude.device,
+        device=echo.device,
     )
     innovation, innovation_mask = _dbz_innovation(
         frames_dbz,
@@ -275,19 +283,19 @@ def compute_sensitivity_snapshot(
         and bool(torch.any(innovation_mask[2] & latest_active))
     )
     if not impact_input_available:
-        tile_impact = amplitude.new_full(
+        tile_impact = echo.new_full(
             (lead_count, metric_count, 3, tile_rows, tile_columns),
             float("nan"),
         )
-        observation_impact = amplitude.new_full(
+        observation_impact = echo.new_full(
             (lead_count, metric_count, 3),
             float("nan"),
         )
     else:
-        tile_impact = amplitude.new_zeros(
+        tile_impact = echo.new_zeros(
             (lead_count, metric_count, 3, tile_rows, tile_columns)
         )
-        observation_impact = amplitude.new_zeros((lead_count, metric_count, 3))
+        observation_impact = echo.new_zeros((lead_count, metric_count, 3))
     selected_position = {
         index: position for position, index in enumerate(full_map_indices)
     }
@@ -295,10 +303,14 @@ def compute_sensitivity_snapshot(
     for lead_index in range(lead_count):
         truth = truth_linear[lead_index]
         valid = verification_valid[lead_index]
+        lead_cell = freeze_remap_cell(
+            (lead_index + 1) * state.displacement_yx
+        )
         latent_prediction = forecast_linear_at_step(
             state,
             lead_index + 1,
             nowcast_config,
+            cell=lead_cell,
         )
         prediction, cap_active = _freeze_output_cap(
             latent_prediction,
@@ -350,22 +362,23 @@ def compute_sensitivity_snapshot(
                 candidate_control: Tensor,
                 candidate_latest_dbz: Tensor,
             ) -> Tensor:
-                candidate_amplitude = _active_dbz_to_amplitude(
+                candidate_echo = _active_dbz_to_echo(
                     candidate_latest_dbz,
                     clean_frames[2],
-                    amplitude,
+                    echo,
                     latest_active,
                     nowcast_config,
                 )
                 candidate_state = _state_from_control(
                     state,
                     candidate_control,
-                    candidate_amplitude,
+                    candidate_echo,
                 )
                 candidate = forecast_linear_at_step(
                     candidate_state,
                     lead_index + 1,
                     nowcast_config,
+                    cell=lead_cell,
                 )
                 return metric(_apply_output_cap(candidate, cap_active, nowcast_config))
 
@@ -417,11 +430,11 @@ def compute_sensitivity_snapshot(
         observation_impact.fill_(float("nan"))
         tile_impact.fill_(float("nan"))
 
-    reward = amplitude.new_full(observation_impact.shape, float("nan"))
+    reward = echo.new_full(observation_impact.shape, float("nan"))
     if baseline_scores is not None:
         baseline_scores = baseline_scores.to(
-            dtype=amplitude.dtype,
-            device=amplitude.device,
+            dtype=echo.dtype,
+            device=echo.device,
         )
         if baseline_scores.shape != forecast_scores.shape:
             raise ValueError("baseline_scores must match forecast_scores shape")
@@ -438,7 +451,7 @@ def compute_sensitivity_snapshot(
     trust_components = _trust_components(
         state,
         control,
-        amplitude,
+        echo,
         truth_linear,
         verification_valid,
         control_sensitivity,
@@ -458,6 +471,7 @@ def compute_sensitivity_snapshot(
         context_features=extract_context_features(
             frames_dbz,
             state,
+            metadata,
             nowcast_config,
         ),
         analysis_control=control.detach(),
@@ -477,12 +491,12 @@ def compute_sensitivity_snapshot(
         observation_std_dbz=(
             observation_std
             if whitening_available
-            else amplitude.new_full(frames_dbz.shape, float("nan"))
+            else echo.new_full(frames_dbz.shape, float("nan"))
         ),
         observation_innovation_dbz=(
             innovation
             if innovation is not None
-            else amplitude.new_full(frames_dbz.shape, float("nan"))
+            else echo.new_full(frames_dbz.shape, float("nan"))
         ),
         observation_innovation_mask=(
             innovation_mask
@@ -492,7 +506,7 @@ def compute_sensitivity_snapshot(
         baseline_scores=(
             baseline_scores.detach()
             if baseline_scores is not None
-            else amplitude.new_full(forecast_scores.shape, float("nan"))
+            else echo.new_full(forecast_scores.shape, float("nan"))
         ),
         reward_epsilon=sensitivity_config.epsilon,
         trust_components=trust_components,
@@ -537,6 +551,7 @@ def forecast_metric(
 def extract_context_features(
     frames_dbz: Tensor,
     state: RadarState,
+    metadata: ForecastMetadata,
     config: NowcastConfig,
 ) -> Tensor:
     """Extract a small auditable context vector for later retrieval."""
@@ -564,7 +579,11 @@ def extract_context_features(
     active_count = active.sum().clamp_min(1)
     boundary_fraction = (active & border).sum() / active_count
 
-    linear = dbz_to_linear(latest, config)
+    linear = dbz_to_echo(
+        latest,
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
+    )
     center = torch.nan_to_num(
         _soft_centroid(linear, torch.ones_like(active)),
         nan=0.0,
@@ -576,8 +595,8 @@ def extract_context_features(
             motion[1],
             torch.linalg.vector_norm(motion),
             state.log_growth_per_step,
-            state.motion_disagreement_px,
-            state.growth_disagreement,
+            metadata.motion_disagreement_px,
+            metadata.growth_disagreement,
             latest.mean(),
             latest.max(),
             q90,
@@ -594,23 +613,12 @@ def extract_context_features(
 def _state_from_control(
     template: RadarState,
     control: Tensor,
-    amplitude: Tensor,
+    echo: Tensor,
 ) -> RadarState:
     return RadarState(
-        echo_amplitude=amplitude,
+        echo_linear=echo,
         displacement_yx=control[:2],
         log_growth_per_step=control[2],
-        pair_displacements_yx=template.pair_displacements_yx,
-        pair_log_growth=template.pair_log_growth,
-        provenance=template.provenance,
-        forecast_status=template.forecast_status,
-        data_coverage_fraction=template.data_coverage_fraction,
-        latest_data_coverage_fraction=(
-            template.latest_data_coverage_fraction
-        ),
-        background_used=template.background_used,
-        background_age_minutes=template.background_age_minutes,
-        forecast_source_mask=template.forecast_source_mask,
     )
 
 
@@ -807,10 +815,10 @@ def _frozen_observations(
     return clean.detach(), latest_active.detach()
 
 
-def _active_dbz_to_amplitude(
+def _active_dbz_to_echo(
     candidate_dbz: Tensor,
     nominal_dbz: Tensor,
-    nominal_amplitude: Tensor,
+    nominal_echo: Tensor,
     active: Tensor,
     config: NowcastConfig,
 ) -> Tensor:
@@ -826,19 +834,22 @@ def _active_dbz_to_amplitude(
         nominal_dbz,
         torch.zeros_like(nominal_dbz),
     )
-    floor = 10.0 ** (config.min_dbz / 10.0)
-    candidate_echo = torch.pow(10.0, safe_dbz / 10.0) - floor
-    nominal_echo = torch.pow(10.0, nominal_safe_dbz / 10.0) - floor
-    candidate_amplitude = torch.sqrt(candidate_echo.clamp_min(config.epsilon))
-    nominal_active_amplitude = torch.sqrt(
-        nominal_echo.clamp_min(config.epsilon)
+    candidate_echo = dbz_to_echo(
+        safe_dbz,
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
+    )
+    nominal_active_echo = dbz_to_echo(
+        nominal_safe_dbz,
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
     ).detach()
     perturbation = torch.where(
         active,
-        candidate_amplitude - nominal_active_amplitude,
-        torch.zeros_like(candidate_amplitude),
+        candidate_echo - nominal_active_echo,
+        torch.zeros_like(candidate_echo),
     )
-    return nominal_amplitude.detach() + perturbation
+    return nominal_echo.detach() + perturbation
 
 
 def _observation_std(
@@ -907,7 +918,7 @@ def _full_map_indices(
 def _trust_components(
     template: RadarState,
     control: Tensor,
-    amplitude: Tensor,
+    echo: Tensor,
     truth: Tensor,
     valid: Tensor,
     gradients: Tensor,
@@ -916,8 +927,8 @@ def _trust_components(
     nowcast_config: NowcastConfig,
     sensitivity_config: SensitivityConfig,
 ) -> dict[str, float]:
-    verification_quality = valid.to(amplitude.dtype).mean().clamp(0.0, 1.0)
-    support_quality = metric_available.to(amplitude.dtype).mean()
+    verification_quality = valid.to(echo.dtype).mean().clamp(0.0, 1.0)
+    support_quality = metric_available.to(echo.dtype).mean()
     if not bool(torch.any(metric_available)):
         return {
             "linearity": 0.0,
@@ -932,7 +943,7 @@ def _trust_components(
         candidate_state = _state_from_control(
             template,
             candidate_control,
-            amplitude,
+            echo,
         )
         scores: list[Tensor] = []
         for lead_index in range(nowcast_config.forecast_steps):
@@ -995,7 +1006,7 @@ def _validate_inputs(
     expected = (config.forecast_steps, *frames.shape[1:])
     if tuple(verification.shape) != expected:
         raise ValueError(f"verification_frames_dbz must have shape {expected}")
-    if tuple(state.echo_amplitude.shape) != tuple(frames.shape[1:]):
+    if tuple(state.echo_linear.shape) != tuple(frames.shape[1:]):
         raise ValueError("state grid must match frame grid")
     if background is not None and background.shape != frames.shape:
         raise ValueError("background_frames_dbz must match frames_dbz shape")
@@ -1015,7 +1026,7 @@ def _validate_inputs(
     if frames.device != verification.device:
         raise ValueError("frames and verification must use the same device")
     state_tensors = (
-        state.echo_amplitude,
+        state.echo_linear,
         state.displacement_yx,
         state.log_growth_per_step,
     )

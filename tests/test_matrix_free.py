@@ -10,10 +10,46 @@ from advar.matrix_free import hvp, jvp, vjp  # noqa: E402
 from advar.nowcast import (  # noqa: E402
     NowcastConfig,
     RadarState,
-    advect,
-    freeze_remap_cell,
-    forecast_from_state,
+    forecast_linear_at_step,
 )
+from advar.physics import (  # noqa: E402
+    RemapCell,
+    freeze_remap_cell,
+    remap,
+    remap_core,
+)
+
+
+def advect(
+    echo: torch.Tensor,
+    displacement: torch.Tensor,
+    *,
+    frozen_cell: RemapCell | None = None,
+) -> torch.Tensor:
+    return (
+        remap(echo, displacement)
+        if frozen_cell is None
+        else remap_core(echo, displacement, frozen_cell)
+    )
+
+
+def forecast_control(
+    control: torch.Tensor,
+    echo: torch.Tensor,
+    config: NowcastConfig,
+    cells: tuple[RemapCell, ...],
+) -> torch.Tensor:
+    state = RadarState(
+        echo_linear=echo,
+        displacement_yx=control[:2],
+        log_growth_per_step=control[2],
+    )
+    return torch.stack(
+        [
+            forecast_linear_at_step(state, step, config, cell=cells[step - 1])
+            for step in range(1, config.forecast_steps + 1)
+        ]
+    )
 
 
 class MatrixFreeTests(unittest.TestCase):
@@ -52,20 +88,17 @@ class MatrixFreeTests(unittest.TestCase):
             indexing="ij",
         )
         echo = 1.0e3 * torch.exp(-((y - 6) ** 2 + (x - 6) ** 2) / 8.0)
-        pair_motion = torch.zeros(2, 2, dtype=torch.float64)
-        pair_growth = torch.zeros(2, dtype=torch.float64)
-
-        def forecast(control: torch.Tensor) -> torch.Tensor:
-            state = RadarState(
-                echo_amplitude=torch.sqrt(echo),
-                displacement_yx=control[:2],
-                log_growth_per_step=control[2],
-                pair_displacements_yx=pair_motion,
-                pair_log_growth=pair_growth,
-            )
-            return forecast_from_state(state, config)
-
         point = torch.tensor([0.3, -0.2, 0.01], dtype=torch.float64)
+        cells = tuple(
+            freeze_remap_cell(step * point[:2])
+            for step in range(1, config.forecast_steps + 1)
+        )
+        forecast = lambda control: forecast_control(
+            control,
+            echo,
+            config,
+            cells,
+        )
         direction = torch.randn_like(point)
         cotangent = torch.randn_like(forecast(point))
         _, jacobian_vector = jvp(forecast, point, direction)
@@ -83,21 +116,14 @@ class MatrixFreeTests(unittest.TestCase):
             indexing="ij",
         )
         echo = 1.0e3 * torch.exp(-((y - 4) ** 2 + (x - 4) ** 2) / 6.0)
-        pair_motion = torch.zeros(2, 2, dtype=torch.float64)
-        pair_growth = torch.zeros(2, dtype=torch.float64)
-
-        def loss(control: torch.Tensor) -> torch.Tensor:
-            state = RadarState(
-                echo_amplitude=torch.sqrt(echo),
-                displacement_yx=control[:2],
-                log_growth_per_step=control[2],
-                pair_displacements_yx=pair_motion,
-                pair_log_growth=pair_growth,
-            )
-            forecast = forecast_from_state(state, config)
-            return torch.mean(forecast**2)
-
         point = torch.tensor([0.3, -0.2, 0.01], dtype=torch.float64)
+        cells = tuple(
+            freeze_remap_cell(step * point[:2])
+            for step in range(1, config.forecast_steps + 1)
+        )
+        loss = lambda control: torch.mean(
+            forecast_control(control, echo, config, cells) ** 2
+        )
         v = torch.tensor([0.2, -0.1, 0.03], dtype=torch.float64)
         w = torch.tensor([-0.1, 0.4, -0.02], dtype=torch.float64)
         hv = hvp(loss, point, v)
@@ -200,21 +226,18 @@ class MatrixFreeTests(unittest.TestCase):
             torch.arange(12, dtype=torch.float64),
             indexing="ij",
         )
-        amplitude = torch.exp(-((y - 6) ** 2 + (x - 6) ** 2) / 16.0)
-        pair_motion = torch.zeros(2, 2, dtype=torch.float64)
-        pair_growth = torch.zeros(2, dtype=torch.float64)
+        echo = torch.exp(-((y - 6) ** 2 + (x - 6) ** 2) / 8.0)
+        point = torch.tensor([1.25, 0.2], dtype=torch.float64)
+        cell = freeze_remap_cell(point)
 
         def function(motion: torch.Tensor) -> torch.Tensor:
             state = RadarState(
-                echo_amplitude=amplitude,
+                echo_linear=echo,
                 displacement_yx=motion,
                 log_growth_per_step=torch.zeros((), dtype=torch.float64),
-                pair_displacements_yx=pair_motion,
-                pair_log_growth=pair_growth,
             )
-            return forecast_from_state(state, config)
+            return forecast_linear_at_step(state, 1, config, cell=cell)
 
-        point = torch.tensor([1.25, 0.2], dtype=torch.float64)
         direction = torch.tensor([1.0, 0.0], dtype=torch.float64)
         _, product = jvp(function, point, direction)
         epsilon = 1.0e-5
@@ -236,21 +259,12 @@ class MatrixFreeTests(unittest.TestCase):
             torch.arange(12, dtype=torch.float64),
             indexing="ij",
         )
-        amplitude = torch.exp(-((y - 6) ** 2 + (x - 6) ** 2) / 16.0)
-        pair_motion = torch.zeros(2, 2, dtype=torch.float64)
-        pair_growth = torch.zeros(2, dtype=torch.float64)
-
-        def loss(control: torch.Tensor) -> torch.Tensor:
-            state = RadarState(
-                echo_amplitude=amplitude,
-                displacement_yx=control[:2],
-                log_growth_per_step=control[2],
-                pair_displacements_yx=pair_motion,
-                pair_log_growth=pair_growth,
-            )
-            return torch.mean(forecast_from_state(state, config) ** 2)
-
+        echo = torch.exp(-((y - 6) ** 2 + (x - 6) ** 2) / 8.0)
         point = torch.tensor([1.25, 0.2, 0.01], dtype=torch.float64)
+        cells = (freeze_remap_cell(point[:2]),)
+        loss = lambda control: torch.mean(
+            forecast_control(control, echo, config, cells) ** 2
+        )
         direction = torch.tensor([0.2, -0.1, 0.03], dtype=torch.float64)
         product = hvp(loss, point, direction)
         gradient = torch.func.grad(loss)
