@@ -50,7 +50,10 @@ def validate_physical_echo(
     minimum = torch.amin(detached)
     tolerance = (
         32.0
-        * torch.finfo(echo.dtype).eps
+        * min(
+            torch.finfo(echo.dtype).eps,
+            torch.finfo(torch.float32).eps,
+        )
         * torch.abs(minimum).clamp_min(1.0)
     )
     negative = detached < 0.0

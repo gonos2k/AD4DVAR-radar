@@ -10,7 +10,7 @@ from advar.matrix_free import hvp, jvp, vjp  # noqa: E402
 from advar.nowcast import (  # noqa: E402
     NowcastConfig,
     RadarState,
-    forecast_linear_at_step,
+    _forecast_linear_at_step_core,
 )
 from advar.physics import (  # noqa: E402
     RemapCell,
@@ -46,7 +46,12 @@ def forecast_control(
     )
     return torch.stack(
         [
-            forecast_linear_at_step(state, step, config, cell=cells[step - 1])
+            _forecast_linear_at_step_core(
+                state,
+                step,
+                config,
+                cells[step - 1],
+            )
             for step in range(1, config.forecast_steps + 1)
         ]
     )
@@ -236,7 +241,7 @@ class MatrixFreeTests(unittest.TestCase):
                 displacement_yx=motion,
                 log_growth_per_step=torch.zeros((), dtype=torch.float64),
             )
-            return forecast_linear_at_step(state, 1, config, cell=cell)
+            return _forecast_linear_at_step_core(state, 1, config, cell)
 
         direction = torch.tensor([1.0, 0.0], dtype=torch.float64)
         _, product = jvp(function, point, direction)

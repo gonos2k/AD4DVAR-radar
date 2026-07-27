@@ -14,6 +14,7 @@ from .nowcast import (
     ForecastResult,
     NowcastConfig,
     RadarState,
+    _forecast_linear_at_step_core,
     forecast_linear_at_step,
 )
 from .physics import dbz_to_echo, freeze_remap_cell
@@ -306,11 +307,11 @@ def compute_sensitivity_snapshot(
         lead_cell = freeze_remap_cell(
             (lead_index + 1) * state.displacement_yx
         )
-        latent_prediction = forecast_linear_at_step(
+        latent_prediction = _forecast_linear_at_step_core(
             state,
             lead_index + 1,
             nowcast_config,
-            cell=lead_cell,
+            lead_cell,
         )
         prediction, cap_active = _freeze_output_cap(
             latent_prediction,
@@ -374,11 +375,11 @@ def compute_sensitivity_snapshot(
                     candidate_control,
                     candidate_echo,
                 )
-                candidate = forecast_linear_at_step(
+                candidate = _forecast_linear_at_step_core(
                     candidate_state,
                     lead_index + 1,
                     nowcast_config,
-                    cell=lead_cell,
+                    lead_cell,
                 )
                 return metric(_apply_output_cap(candidate, cap_active, nowcast_config))
 

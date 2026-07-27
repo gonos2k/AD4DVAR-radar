@@ -134,9 +134,9 @@ def validate_remap_cell(
     _validate_displacement(displacement_yx)
     detached = displacement_yx.detach()
     fractions = detached - detached.new_tensor((cell.y, cell.x))
-    tolerance = 32.0 * torch.finfo(detached.dtype).eps * torch.maximum(
-        detached.abs(),
-        torch.ones_like(detached),
+    tolerance = 32.0 * min(
+        torch.finfo(detached.dtype).eps,
+        torch.finfo(torch.float32).eps,
     )
     if bool(torch.any(fractions < -tolerance)) or bool(
         torch.any(fractions > 1.0 + tolerance)
@@ -155,7 +155,9 @@ def remap_fractions(
     cell: RemapCell,
 ) -> tuple[Tensor, Tensor]:
     base = echo.new_tensor((cell.y, cell.x))
-    fractions = displacement_yx.to(dtype=echo.dtype, device=echo.device) - base
+    fractions = (
+        displacement_yx.to(dtype=echo.dtype, device=echo.device) - base
+    ).clamp(0.0, 1.0)
     return fractions[0], fractions[1]
 
 

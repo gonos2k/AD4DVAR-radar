@@ -349,17 +349,29 @@ def forecast_linear_at_step(
     state: RadarState,
     step: int,
     config: NowcastConfig,
-    *,
-    cell: RemapCell | None = None,
 ) -> Tensor:
     if not 1 <= step <= config.forecast_steps:
         raise ValueError("step must be inside the configured forecast horizon")
+    displacement = step * state.displacement_yx
+    return _forecast_linear_at_step_core(
+        state,
+        step,
+        config,
+        freeze_remap_cell(displacement),
+    )
+
+
+def _forecast_linear_at_step_core(
+    state: RadarState,
+    step: int,
+    config: NowcastConfig,
+    cell: RemapCell,
+) -> Tensor:
     retention = math.exp(
         -config.interval_minutes / config.growth_decay_minutes
     )
     growth_sum = sum(retention**power for power in range(step))
     displacement = step * state.displacement_yx
-    cell = freeze_remap_cell(displacement) if cell is None else cell
     return react_core(
         remap_core(state.echo_linear, displacement, cell),
         state.log_growth_per_step * growth_sum,

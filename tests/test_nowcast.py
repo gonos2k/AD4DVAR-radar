@@ -420,6 +420,34 @@ class NowcastTests(unittest.TestCase):
         self.assertGreaterEqual(float(moved.min()), 0.0)
         torch.testing.assert_close(moved.sum(), echo.sum())
 
+    def test_roundoff_tolerance_cannot_create_negative_transport_weight(
+        self,
+    ) -> None:
+        echo = torch.zeros(7, 7, dtype=torch.float32)
+        echo[3, 3] = 1.0
+
+        moved = advect(
+            echo,
+            torch.tensor([-1.0e-7, 0.0], dtype=torch.float32),
+            frozen_cell=RemapCell(0, 0),
+        )
+
+        self.assertGreaterEqual(float(moved.min()), 0.0)
+
+    def test_low_precision_tolerance_does_not_hide_stale_cell(self) -> None:
+        for dtype, value in (
+            (torch.float16, -0.03125),
+            (torch.bfloat16, -0.125),
+        ):
+            with self.subTest(dtype=dtype):
+                echo = torch.ones(4, 4, dtype=dtype)
+                with self.assertRaises(FrozenCellMismatchError):
+                    advect(
+                        echo,
+                        torch.tensor([value, 0.0], dtype=dtype),
+                        frozen_cell=RemapCell(0, 0),
+                    )
+
     def test_physical_echo_rejects_material_negative_values(self) -> None:
         echo = torch.ones(4, 4, dtype=torch.float64)
         echo[1, 2] = -1.0e-6
@@ -428,6 +456,20 @@ class NowcastTests(unittest.TestCase):
             validate_physical_echo(echo, name="transport input")
         with self.assertRaises(EchoPositivityError):
             linear_to_dbz(echo, self.config)
+
+    def test_low_precision_echo_rejects_material_negative_values(self) -> None:
+        for dtype, value in (
+            (torch.float16, -0.03125),
+            (torch.bfloat16, -0.25),
+        ):
+            with self.subTest(dtype=dtype):
+                echo = torch.ones(4, 4, dtype=dtype)
+                echo[1, 2] = value
+                with self.assertRaises(EchoPositivityError):
+                    validate_physical_echo(
+                        echo,
+                        name="low-precision test",
+                    )
 
     def test_high_dynamic_range_does_not_hide_negative_echo(self) -> None:
         for dtype, positive in (
@@ -469,6 +511,19 @@ class NowcastTests(unittest.TestCase):
                 echo,
                 torch.tensor([1.2, 0.3], dtype=torch.float64),
                 frozen_cell=RemapCell(0, 0),
+            )
+
+    def test_large_displacement_does_not_expand_cell_tolerance(self) -> None:
+        echo = torch.ones(4, 4, dtype=torch.float32)
+
+        with self.assertRaises(FrozenCellMismatchError):
+            advect(
+                echo,
+                torch.tensor(
+                    [1_000_000.25, 0.0],
+                    dtype=torch.float32,
+                ),
+                frozen_cell=RemapCell(999_998, 0),
             )
 
     def test_nonfinite_displacement_is_rejected(self) -> None:

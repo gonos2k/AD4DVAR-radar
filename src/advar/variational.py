@@ -253,7 +253,10 @@ def analysis_trajectory(
     frozen: FrozenOuterState,
 ) -> AnalysisTrajectory:
     _validate_control(control, frozen)
-    return _analysis_trajectory(control, frozen)
+    return _analysis_trajectory(
+        control,
+        _freeze_analysis_remap_cells(control, frozen),
+    )
 
 
 def _analysis_trajectory(

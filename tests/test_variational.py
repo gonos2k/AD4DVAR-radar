@@ -324,6 +324,33 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertTrue(bool(torch.all(torch.isfinite(residual))))
         self.assertTrue(bool(torch.all(torch.isfinite(product))))
 
+    def test_public_trajectory_refreezes_stale_remap_cells(self) -> None:
+        observations, frozen = self.stationary_problem()
+        control = initial_control(observations)
+        expected = analysis_trajectory(control, frozen)
+        stale = replace(
+            frozen,
+            analysis_remap_cells=(
+                RemapCell(4, 4),
+                RemapCell(-4, -4),
+            ),
+        )
+
+        actual = analysis_trajectory(control, stale)
+
+        torch.testing.assert_close(
+            actual.frames_linear,
+            expected.frames_linear,
+        )
+        torch.testing.assert_close(
+            actual.displacement_yx,
+            expected.displacement_yx,
+        )
+        torch.testing.assert_close(
+            actual.log_growth_per_step,
+            expected.log_growth_per_step,
+        )
+
     def test_analysis_operator_has_gradient_above_output_cap(self) -> None:
         observations, frozen = self.stationary_problem(value_dbz=70.0)
         control = initial_control(observations)
