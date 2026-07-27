@@ -73,6 +73,7 @@ def metadata_for(
             pair_motion[1] - pair_motion[0]
         ),
         growth_disagreement=torch.abs(pair_growth[1] - pair_growth[0]),
+        tendency_pair_count=2,
     )
 
 

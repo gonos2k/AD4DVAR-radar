@@ -19,7 +19,7 @@ from .nowcast import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v3"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v4"
 
 
 def main() -> None:
@@ -144,6 +144,7 @@ def _output_arrays(
         "log_growth_per_step": float(result.state.log_growth_per_step),
         "motion_disagreement_px": float(metadata.motion_disagreement_px),
         "growth_disagreement": float(metadata.growth_disagreement),
+        "tendency_pair_count": np.asarray(metadata.tendency_pair_count),
         "data_status": np.asarray(metadata.data_status.value),
         "coverage_by_frame": metadata.coverage_by_frame.cpu().numpy(),
         "background_used": np.asarray(metadata.background_used),

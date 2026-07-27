@@ -80,6 +80,7 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         source_mask=None,
         motion_disagreement_px=state.echo_linear.new_zeros(()),
         growth_disagreement=state.echo_linear.new_zeros(()),
+        tendency_pair_count=2,
     )
 
 
@@ -404,7 +405,11 @@ class NowcastTests(unittest.TestCase):
 
     def test_moving_echo_uses_only_time_normalized_available_pairs(self) -> None:
         frames, _ = self._moving_gaussian_frames()
-        complete_state = estimate_state(frames, self.config)
+        complete_state, complete_metadata = estimate_state_with_metadata(
+            frames,
+            self.config,
+        )
+        self.assertEqual(complete_metadata.tendency_pair_count, 2)
         tolerance = 0.15 * torch.linalg.vector_norm(
             complete_state.displacement_yx
         )
@@ -413,16 +418,86 @@ class NowcastTests(unittest.TestCase):
             with self.subTest(missing_index=missing_index):
                 partial = frames.clone()
                 partial[missing_index] = torch.nan
-                state = estimate_state(partial, self.config)
+                state, metadata = estimate_state_with_metadata(
+                    partial,
+                    self.config,
+                )
                 error = torch.linalg.vector_norm(
                     state.displacement_yx
                     - complete_state.displacement_yx
                 )
                 self.assertLessEqual(float(error), float(tolerance))
+                self.assertEqual(metadata.tendency_pair_count, 1)
                 self.assertLess(
                     abs(float(state.log_growth_per_step)),
                     1.0e-5,
                 )
+
+    def test_qc_hole_rejects_mask_dominated_motion(self) -> None:
+        y, x = torch.meshgrid(
+            torch.arange(64, dtype=torch.float64),
+            torch.arange(64, dtype=torch.float64),
+            indexing="ij",
+        )
+        displacement = torch.tensor([1.2, -0.8], dtype=torch.float64)
+        frames = torch.stack(
+            [
+                -10.0
+                + 50.0
+                * torch.exp(
+                    -(
+                        (y - (28.0 + step * displacement[0])) ** 2
+                        + (x - (34.0 + step * displacement[1])) ** 2
+                    )
+                    / 50.0
+                )
+                for step in range(3)
+            ]
+        )
+        qc_mask = torch.ones_like(frames, dtype=torch.bool)
+        qc_mask[:, 25:31, 31:37] = False
+
+        state, metadata = estimate_state_with_metadata(
+            frames,
+            self.config,
+            qc_mask=qc_mask,
+        )
+
+        torch.testing.assert_close(
+            state.displacement_yx,
+            torch.zeros_like(state.displacement_yx),
+        )
+        torch.testing.assert_close(
+            state.log_growth_per_step,
+            torch.zeros_like(state.log_growth_per_step),
+        )
+        self.assertEqual(metadata.tendency_pair_count, 0)
+
+    def test_irregular_mask_rejects_mask_dominated_motion(self) -> None:
+        frames, _ = self._moving_gaussian_frames()
+        y, x = torch.meshgrid(
+            torch.arange(64),
+            torch.arange(64),
+            indexing="ij",
+        )
+        mask = ((3 * y + 5 * x) % 10) < 7
+        qc_mask = mask.expand_as(frames)
+
+        state, metadata = estimate_state_with_metadata(
+            frames,
+            self.config,
+            qc_mask=qc_mask,
+        )
+
+        torch.testing.assert_close(
+            state.displacement_yx,
+            torch.zeros_like(state.displacement_yx),
+        )
+        torch.testing.assert_close(
+            state.log_growth_per_step,
+            torch.zeros_like(state.log_growth_per_step),
+        )
+        self.assertEqual(metadata.tendency_pair_count, 0)
 
     def test_middle_missing_normalizes_twenty_minute_growth(self) -> None:
         factor = 1.25
@@ -507,6 +582,90 @@ class NowcastTests(unittest.TestCase):
             torch.full((8, 8), 20.0),
         )
 
+    def test_fractional_sparse_merge_preserves_constant_echo(self) -> None:
+        echo = torch.ones(8, 8, dtype=torch.float64)
+        frame = linear_to_dbz(echo, self.config)
+        frames = torch.stack((frame, frame, torch.full_like(frame, torch.nan)))
+        frames[1, :, 1::2] = torch.nan
+        nowcast_module = import_module("advar.nowcast")
+        zero = echo.new_zeros(())
+        tendencies = (
+            echo.new_tensor([0.0, 0.5]),
+            zero,
+            zero,
+            zero,
+            1,
+        )
+
+        with patch.object(
+            nowcast_module,
+            "_estimate_time_normalized_tendencies",
+            return_value=tendencies,
+        ):
+            state, metadata = estimate_state_with_metadata(frames, self.config)
+
+        valid = (
+            torch.ones_like(echo, dtype=torch.bool)
+            if metadata.source_mask is None
+            else metadata.source_mask
+        )
+        torch.testing.assert_close(
+            state.echo_linear[valid],
+            torch.ones_like(state.echo_linear[valid]),
+        )
+
+    def test_analysis_window_growth_does_not_decay(self) -> None:
+        echo = torch.ones(8, 8, dtype=torch.float64)
+        frame = linear_to_dbz(echo, self.config)
+        frames = torch.stack(
+            (
+                frame,
+                torch.full_like(frame, torch.nan),
+                torch.full_like(frame, torch.nan),
+            )
+        )
+        nowcast_module = import_module("advar.nowcast")
+        growth = torch.log(echo.new_tensor(1.2))
+        zero = echo.new_zeros(())
+        tendencies = (
+            echo.new_zeros(2),
+            growth,
+            zero,
+            zero,
+            1,
+        )
+
+        with patch.object(
+            nowcast_module,
+            "_estimate_time_normalized_tendencies",
+            return_value=tendencies,
+        ):
+            state, _ = estimate_state_with_metadata(frames, self.config)
+
+        torch.testing.assert_close(
+            state.echo_linear,
+            torch.full_like(echo, 1.2**2),
+        )
+
+    def test_growth_uses_normalized_advected_support(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        previous_mask = torch.zeros(8, 8, dtype=torch.bool)
+        previous_mask[:, ::2] = True
+        current_mask = torch.ones_like(previous_mask)
+        previous = previous_mask.to(torch.float64)
+        current = torch.ones_like(previous)
+
+        growth = nowcast_module._log_aligned_growth(
+            previous,
+            current,
+            previous_mask,
+            current_mask,
+            torch.tensor([0.0, 0.5], dtype=torch.float64),
+            self.config,
+        )
+
+        torch.testing.assert_close(growth, torch.zeros_like(growth))
+
     def test_missing_latest_frame_uses_mask_aware_persistence(self) -> None:
         dbz = linear_to_dbz(self.echo, self.config)
         frames = torch.stack((dbz, dbz, torch.full_like(dbz, torch.nan)))
@@ -526,6 +685,7 @@ class NowcastTests(unittest.TestCase):
         result = nowcast(frames, self.config)
         forecast, state = result.forecast_dbz, result.state
 
+        self.assertEqual(result.metadata.tendency_pair_count, 0)
         torch.testing.assert_close(state.displacement_yx, torch.zeros(2))
         torch.testing.assert_close(state.log_growth_per_step, torch.zeros(()))
         torch.testing.assert_close(
@@ -882,6 +1042,12 @@ class NowcastTests(unittest.TestCase):
             NowcastConfig(echo_threshold_dbz=float("nan"))
         with self.assertRaises(TypeError):
             NowcastConfig(interval_minutes=True)
+        with self.assertRaises(ValueError):
+            NowcastConfig(min_pair_echo_coverage=1.1)
+        with self.assertRaises(ValueError):
+            NowcastConfig(pair_echo_dilation_px=-1)
+        with self.assertRaises(TypeError):
+            NowcastConfig(pair_echo_dilation_px=True)
 
 
 if __name__ == "__main__":
