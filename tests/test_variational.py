@@ -756,10 +756,9 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "requires a P0"):
             compute_sensitivity_snapshot(
-                frames,
+                frames[-1],
                 forecast,
                 verification,
-                nowcast_config=self.nowcast_config,
             )
 
 

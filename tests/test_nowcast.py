@@ -16,6 +16,7 @@ from advar.diagnostics import (  # noqa: E402
 from advar.nowcast import (  # noqa: E402
     DataStatus,
     ForecastMetadata,
+    ForecastRunContract,
     NowcastConfig,
     RadarState,
     TendencySource,
@@ -91,10 +92,18 @@ def forecast_from_state(
     state: RadarState,
     config: NowcastConfig,
 ) -> torch.Tensor:
+    latest = linear_to_dbz(state.echo_linear, config)
+    frames = torch.stack((latest, latest, latest))
     return forecast_result_from_state(
         state,
         observed_metadata(state),
         config,
+        run=ForecastRunContract.from_inputs(
+            config,
+            frames,
+            torch.ones_like(latest, dtype=torch.bool),
+            None,
+        ),
     ).forecast_dbz
 
 
@@ -827,7 +836,18 @@ class NowcastTests(unittest.TestCase):
             tendency_source=TendencySource.OBSERVATION,
         )
 
-        result = forecast_result_from_state(state, metadata, config)
+        latest = linear_to_dbz(state.echo_linear, config)
+        result = forecast_result_from_state(
+            state,
+            metadata,
+            config,
+            run=ForecastRunContract.from_inputs(
+                config,
+                torch.stack((latest, latest, latest)),
+                torch.ones_like(latest, dtype=torch.bool),
+                None,
+            ),
+        )
         expected = torch.stack(
             [
                 remap(support, step * state.displacement_yx)
@@ -950,15 +970,45 @@ class NowcastTests(unittest.TestCase):
         )
         nowcast_module = import_module("advar.nowcast")
         with patch.object(nowcast_module, "remap_core", wraps=remap_core) as kernel:
+            latest = linear_to_dbz(state.echo_linear, self.config)
             result = forecast_result_from_state(
                 state,
                 observed_metadata(state),
                 self.config,
+                run=ForecastRunContract.from_inputs(
+                    self.config,
+                    torch.stack((latest, latest, latest)),
+                    torch.ones_like(latest, dtype=torch.bool),
+                    None,
+                ),
                 audit=True,
             )
 
         self.assertEqual(kernel.call_count, self.config.forecast_steps)
         self.assertEqual(len(result.audit.transport), self.config.forecast_steps)
+
+    def test_forecast_config_must_match_its_run_contract(self) -> None:
+        state = RadarState(
+            echo_linear=self.echo,
+            displacement_yx=torch.zeros(2),
+            log_growth_per_step=torch.zeros(()),
+        )
+        latest = linear_to_dbz(state.echo_linear, self.config)
+        frames = torch.stack((latest, latest, latest))
+        run = ForecastRunContract.from_inputs(
+            self.config,
+            frames,
+            torch.ones_like(latest, dtype=torch.bool),
+            None,
+        )
+
+        with self.assertRaisesRegex(ValueError, "run contract"):
+            forecast_result_from_state(
+                state,
+                observed_metadata(state),
+                NowcastConfig(max_dbz=60.0),
+                run=run,
+            )
 
     def test_fractional_advection_is_non_negative_and_does_not_gain_mass(
         self,

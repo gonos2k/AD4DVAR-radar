@@ -224,14 +224,18 @@ from advar import (
 )
 from advar.physics import FORECAST_INTEGRATOR_VERSION
 
-result = nowcast(frames)
+result = nowcast(
+    frames,
+    background_frames_dbz=background_frames,
+    background_age_minutes=10.0,
+)
 
 # 이 값들은 +180분까지 미래 관측이 도착한 뒤에만 사용한다.
 snapshot = compute_sensitivity_snapshot(
-    frames,
+    frames[-1],
     result,
     verification_frames_dbz,       # [18, H, W]
-    background_frames_dbz=background_frames,
+    latest_background_dbz=background_frames[-1],
     observation_std_dbz=2.0,
 )
 
@@ -243,6 +247,8 @@ contract = ModelContract(
     forecast_integrator_version=FORECAST_INTEGRATOR_VERSION,
     grid_geometry_version="my-grid-v1",
     radar_qc_version="my-qc-v1",
+    nowcast_config_digest=snapshot.nowcast_config_digest,
+    sensitivity_config_digest=snapshot.sensitivity_config_digest,
 )
 episode = SensitivityEpisode(
     episode_id="20260726T120000Z-radar-a",

@@ -48,7 +48,7 @@ SCHEMA_ONE_CONTEXT_FEATURE_NAMES = (
 )
 
 
-def _contract() -> ModelContract:
+def _contract(snapshot=None) -> ModelContract:
     return ModelContract(
         model_commit="model-v1",
         residual_contract_version="residual-v1",
@@ -57,20 +57,35 @@ def _contract() -> ModelContract:
         forecast_integrator_version="integrator-v1",
         grid_geometry_version="grid-v1",
         radar_qc_version="qc-v1",
+        nowcast_config_digest=(
+            "a" * 64
+            if snapshot is None
+            else snapshot.nowcast_config_digest
+        ),
+        sensitivity_config_digest=(
+            "b" * 64
+            if snapshot is None
+            else snapshot.sensitivity_config_digest
+        ),
     )
 
 
 def _computed_snapshot():
     config = NowcastConfig()
     frames = torch.full((3, 2, 2), 20.0, dtype=torch.float64)
-    result = nowcast(frames, config)
+    background = frames - 0.5
+    result = nowcast(
+        frames,
+        config,
+        background_frames_dbz=background,
+        background_age_minutes=10.0,
+    )
     verification = frames.new_full((config.forecast_steps, 2, 2), 20.0)
     return compute_sensitivity_snapshot(
-        frames,
+        frames[-1],
         result,
         verification,
-        nowcast_config=config,
-        background_frames_dbz=frames - 0.5,
+        latest_background_dbz=background[-1],
         baseline_scores=torch.ones(
             config.forecast_steps,
             1,
@@ -96,12 +111,27 @@ class ModelContractTests(unittest.TestCase):
                 )
                 self.assertNotEqual(contract.digest, changed.digest)
 
+    def test_episode_rejects_config_digest_mismatch(self) -> None:
+        snapshot = _computed_snapshot()
+        contract = replace(
+            _contract(snapshot),
+            nowcast_config_digest="0" * 64,
+        )
+        with self.assertRaisesRegex(ValueError, "config digests"):
+            SensitivityEpisode(
+                episode_id="mismatched-config",
+                issue_time="2026-07-26T05:00:00+00:00",
+                radar_id="KTLX",
+                contract=contract,
+                snapshot=snapshot,
+            )
+
 
 class EpisodeLedgerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.snapshot = _computed_snapshot()
-        cls.contract = _contract()
+        cls.contract = _contract(cls.snapshot)
 
     def setUp(self) -> None:
         self.temporary_directory = tempfile.TemporaryDirectory()
@@ -145,7 +175,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
 
         manifest = loaded.manifest
-        self.assertEqual(manifest["schema_version"], 2)
+        self.assertEqual(manifest["schema_version"], 3)
         self.assertEqual(manifest["contract_hash"], self.contract.digest)
         self.assertIs(
             manifest["indirect_observation_sensitivity_available"],
@@ -251,6 +281,8 @@ class EpisodeLedgerTests(unittest.TestCase):
         checksums_path = target / "checksums.json"
         manifest = json.loads(manifest_path.read_text("utf-8"))
         manifest["schema_version"] = 1
+        manifest["contract"].pop("nowcast_config_digest")
+        manifest["contract"].pop("sensitivity_config_digest")
         manifest["context_feature_names"] = list(
             SCHEMA_ONE_CONTEXT_FEATURE_NAMES
         )
@@ -370,6 +402,8 @@ class EpisodeLedgerTests(unittest.TestCase):
 
         manifest = json.loads(manifest_path.read_text("utf-8"))
         manifest["schema_version"] = 1
+        manifest["contract"].pop("nowcast_config_digest")
+        manifest["contract"].pop("sensitivity_config_digest")
         manifest["context_feature_names"] = list(
             SCHEMA_ONE_CONTEXT_FEATURE_NAMES
         )

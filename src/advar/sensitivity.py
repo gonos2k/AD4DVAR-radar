@@ -9,6 +9,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 
+from ._digest import dataclass_digest
 from .nowcast import (
     DataStatus,
     ForecastMetadata,
@@ -118,6 +119,10 @@ class SensitivityConfig:
         if not math.isfinite(self.epsilon) or self.epsilon <= 0:
             raise ValueError("epsilon must be positive")
 
+    @property
+    def digest(self) -> str:
+        return dataclass_digest(self)
+
 
 @dataclass(frozen=True)
 class DirectSensitivity:
@@ -132,6 +137,8 @@ class DirectSensitivity:
 
 @dataclass(frozen=True)
 class SensitivitySnapshot:
+    nowcast_config_digest: str
+    sensitivity_config_digest: str
     metric_names: tuple[str, ...]
     lead_minutes: tuple[int, ...]
     full_map_lead_minutes: tuple[int, ...]
@@ -168,16 +175,14 @@ class SensitivitySnapshot:
 
 
 def compute_sensitivity_snapshot(
-    frames_dbz: Tensor,
+    latest_frame_dbz: Tensor,
     result: ForecastResult,
     verification_frames_dbz: Tensor,
     *,
-    nowcast_config: NowcastConfig | None = None,
     sensitivity_config: SensitivityConfig | None = None,
-    background_frames_dbz: Tensor | None = None,
+    latest_background_dbz: Tensor | None = None,
     observation_std_dbz: float | Tensor | None = None,
     baseline_scores: Tensor | None = None,
-    qc_mask: Tensor | None = None,
 ) -> SensitivitySnapshot:
     """Compute M0 forecast/control/direct-observation sensitivities.
 
@@ -186,8 +191,12 @@ def compute_sensitivity_snapshot(
     excluded: its discrete peak selection has no valid local derivative.
     """
 
-    nowcast_config = nowcast_config or NowcastConfig()
     sensitivity_config = sensitivity_config or SensitivityConfig()
+    nowcast_config = result.run.config
+    result.validate_issuance()
+    result.run.validate_latest_frame(latest_frame_dbz)
+    result.run.validate_latest_background(latest_background_dbz)
+    latest_observation_mask = result.run.latest_observation_mask
     state = result.state
     metadata = result.metadata
     if metadata.data_status is DataStatus.UNAVAILABLE:
@@ -200,12 +209,11 @@ def compute_sensitivity_snapshot(
     ):
         raise ValueError("active_margin_dbz leaves no differentiable range")
     _validate_inputs(
-        frames_dbz,
+        latest_frame_dbz,
         verification_frames_dbz,
         state,
         nowcast_config,
-        background_frames_dbz,
-        qc_mask,
+        latest_background_dbz,
     )
 
     height, width = state.echo_linear.shape
@@ -246,15 +254,25 @@ def compute_sensitivity_snapshot(
         min_dbz=nowcast_config.min_dbz,
         max_dbz=nowcast_config.max_dbz,
     )
+    issued_echo = dbz_to_echo(
+        torch.nan_to_num(
+            result.forecast_dbz,
+            nan=nowcast_config.min_dbz,
+            posinf=nowcast_config.max_dbz,
+            neginf=nowcast_config.min_dbz,
+        ),
+        min_dbz=nowcast_config.min_dbz,
+        max_dbz=nowcast_config.max_dbz,
+    )
     control = torch.cat(
         (state.displacement_yx, state.log_growth_per_step.reshape(1))
     )
     echo = state.echo_linear
-    clean_frames, latest_active = _frozen_observations(
-        frames_dbz,
+    clean_latest, latest_active = _frozen_observation(
+        latest_frame_dbz,
+        latest_observation_mask,
         nowcast_config,
         sensitivity_config,
-        qc_mask,
     )
     if not bool(torch.any(latest_active)):
         raise ValueError(
@@ -262,7 +280,7 @@ def compute_sensitivity_snapshot(
         )
     observation_std, whitening_available = _observation_std(
         observation_std_dbz,
-        frames_dbz,
+        latest_frame_dbz,
         sensitivity_config.epsilon,
     )
 
@@ -305,14 +323,14 @@ def compute_sensitivity_snapshot(
         device=echo.device,
     )
     innovation, innovation_mask = _dbz_innovation(
-        frames_dbz,
-        background_frames_dbz,
-        qc_mask,
+        latest_frame_dbz,
+        latest_background_dbz,
+        latest_observation_mask,
         nowcast_config,
     )
     impact_input_available = (
         innovation is not None
-        and bool(torch.any(innovation_mask[2] & latest_active))
+        and bool(torch.any(innovation_mask & latest_active))
     )
     if not impact_input_available:
         innovation = None
@@ -344,6 +362,16 @@ def compute_sensitivity_snapshot(
             latent_prediction,
             nowcast_config,
         )
+        nominal_valid = issued_valid[lead_index]
+        if not torch.allclose(
+            prediction[nominal_valid],
+            issued_echo[lead_index][nominal_valid],
+            rtol=1.0e-5,
+            atol=1.0e-7,
+        ):
+            raise ValueError(
+                "sensitivity model disagrees with the issued forecast"
+            )
         all_cap_masks[lead_index] = cap_active
         if lead_index in selected_position:
             selected_cap_masks[selected_position[lead_index]] = cap_active
@@ -388,7 +416,7 @@ def compute_sensitivity_snapshot(
             ) -> Tensor:
                 candidate_echo = _active_dbz_to_echo(
                     candidate_latest_dbz,
-                    clean_frames[2],
+                    clean_latest,
                     echo,
                     latest_active,
                     nowcast_config,
@@ -409,9 +437,9 @@ def compute_sensitivity_snapshot(
             control_gradient, direct_gradient = torch.func.grad(
                 score_from_state,
                 argnums=(0, 1),
-            )(control, clean_frames[2])
+            )(control, clean_latest)
             forecast_gradient = torch.func.grad(metric)(prediction)
-            whitened_gradient = direct_gradient * observation_std[2]
+            whitened_gradient = direct_gradient * observation_std
 
             forecast_scores[lead_index, metric_index] = score.detach()
             control_sensitivity[lead_index, metric_index] = (
@@ -437,8 +465,8 @@ def compute_sensitivity_snapshot(
 
             if observation_impact is not None and tile_impact is not None:
                 contribution = torch.where(
-                    innovation_mask[2],
-                    direct_gradient.detach() * innovation[2],
+                    innovation_mask,
+                    direct_gradient.detach() * innovation,
                     torch.zeros_like(direct_gradient),
                 )
                 tiles = _tile_sum(
@@ -485,17 +513,19 @@ def compute_sensitivity_snapshot(
     trust_score = math.prod(trust_components.values())
 
     return SensitivitySnapshot(
+        nowcast_config_digest=nowcast_config.digest,
+        sensitivity_config_digest=sensitivity_config.digest,
         metric_names=sensitivity_config.metric_names,
         lead_minutes=lead_minutes,
         full_map_lead_minutes=sensitivity_config.full_map_lead_minutes,
         tile_size=sensitivity_config.tile_size,
         context_feature_names=CONTEXT_FEATURE_NAMES,
         context_features=extract_context_features(
-            frames_dbz,
+            latest_frame_dbz,
             state,
             metadata,
             nowcast_config,
-            qc_mask=qc_mask,
+            latest_observation_mask=latest_observation_mask,
         ),
         analysis_control=control.detach(),
         forecast_scores=forecast_scores,
@@ -514,17 +544,17 @@ def compute_sensitivity_snapshot(
         ),
         latest_sensitivity_mask=latest_active,
         observation_std_dbz=(
-            observation_std[2].detach()
+            observation_std.detach()
             if whitening_available
             else None
         ),
         observation_innovation_dbz=(
-            innovation[2]
+            innovation
             if innovation is not None
             else None
         ),
         observation_innovation_mask=(
-            innovation_mask[2]
+            innovation_mask
             if innovation_mask is not None
             else None
         ),
@@ -571,20 +601,20 @@ def forecast_metric(
 
 
 def extract_context_features(
-    frames_dbz: Tensor,
+    latest_frame_dbz: Tensor,
     state: RadarState,
     metadata: ForecastMetadata,
     config: NowcastConfig,
     *,
-    qc_mask: Tensor | None = None,
+    latest_observation_mask: Tensor,
 ) -> Tensor:
     """Extract a small auditable context vector for later retrieval."""
 
-    latest_valid = torch.isfinite(frames_dbz[2])
-    if qc_mask is not None:
-        latest_valid = latest_valid & qc_mask[2]
+    latest_valid = (
+        torch.isfinite(latest_frame_dbz) & latest_observation_mask
+    )
     latest = torch.nan_to_num(
-        frames_dbz[2],
+        latest_frame_dbz,
         nan=config.min_dbz,
         posinf=config.max_dbz,
         neginf=config.min_dbz,
@@ -837,32 +867,26 @@ def _as_tiles(values: Tensor, tile_size: int) -> Tensor:
     ).permute(0, 2, 1, 3)
 
 
-def _frozen_observations(
-    frames: Tensor,
+def _frozen_observation(
+    latest_frame: Tensor,
+    accepted: Tensor,
     nowcast_config: NowcastConfig,
     sensitivity_config: SensitivityConfig,
-    qc_mask: Tensor | None,
 ) -> tuple[Tensor, Tensor]:
-    """Freeze cleaning/QC choices and return the latest differentiable mask."""
-
-    finite = torch.isfinite(frames)
+    finite = torch.isfinite(latest_frame)
     clean = torch.nan_to_num(
-        frames,
+        latest_frame,
         nan=nowcast_config.min_dbz,
         posinf=nowcast_config.max_dbz,
         neginf=nowcast_config.min_dbz,
     ).clamp(nowcast_config.min_dbz, nowcast_config.max_dbz)
-    if qc_mask is None:
-        accepted = torch.ones_like(finite)
-    else:
-        accepted = qc_mask
 
     margin = sensitivity_config.active_margin_dbz
     latest_active = (
-        finite[2]
-        & accepted[2]
-        & (clean[2] > nowcast_config.min_dbz + margin)
-        & (clean[2] < nowcast_config.max_dbz - margin)
+        finite
+        & accepted
+        & (clean > nowcast_config.min_dbz + margin)
+        & (clean < nowcast_config.max_dbz - margin)
     )
     return clean.detach(), latest_active.detach()
 
@@ -927,18 +951,20 @@ def _observation_std(
 
 
 def _dbz_innovation(
-    frames: Tensor,
+    latest_frame: Tensor,
     background: Tensor | None,
-    qc_mask: Tensor | None,
+    accepted: Tensor,
     config: NowcastConfig,
 ) -> tuple[Tensor | None, Tensor | None]:
     if background is None:
         return None, None
-    valid = torch.isfinite(frames) & torch.isfinite(background)
-    if qc_mask is not None:
-        valid = valid & qc_mask
-    clean_frames = torch.nan_to_num(
-        frames,
+    valid = (
+        torch.isfinite(latest_frame)
+        & torch.isfinite(background)
+        & accepted
+    )
+    clean_frame = torch.nan_to_num(
+        latest_frame,
         nan=config.min_dbz,
         posinf=config.max_dbz,
         neginf=config.min_dbz,
@@ -951,8 +977,8 @@ def _dbz_innovation(
     ).clamp(config.min_dbz, config.max_dbz)
     innovation = torch.where(
         valid,
-        clean_frames - clean_background,
-        torch.full_like(frames, float("nan")),
+        clean_frame - clean_background,
+        torch.full_like(latest_frame, float("nan")),
     )
     return innovation.detach(), valid.detach()
 
@@ -1046,47 +1072,50 @@ def _trust_components(
 
 
 def _validate_inputs(
-    frames: Tensor,
+    latest_frame: Tensor,
     verification: Tensor,
     state: RadarState,
     config: NowcastConfig,
     background: Tensor | None,
-    qc_mask: Tensor | None,
 ) -> None:
-    if frames.ndim != 3 or frames.shape[0] != 3:
-        raise ValueError("frames_dbz must have shape [3, height, width]")
-    expected = (config.forecast_steps, *frames.shape[1:])
+    if latest_frame.ndim != 2:
+        raise ValueError("latest_frame_dbz must have shape [height, width]")
+    expected = (config.forecast_steps, *latest_frame.shape)
     if tuple(verification.shape) != expected:
         raise ValueError(f"verification_frames_dbz must have shape {expected}")
-    if tuple(state.echo_linear.shape) != tuple(frames.shape[1:]):
+    if tuple(state.echo_linear.shape) != tuple(latest_frame.shape):
         raise ValueError("state grid must match frame grid")
-    if background is not None and background.shape != frames.shape:
-        raise ValueError("background_frames_dbz must match frames_dbz shape")
-    if not frames.is_floating_point() or not verification.is_floating_point():
-        raise TypeError("frames and verification must be floating-point tensors")
+    if background is not None and background.shape != latest_frame.shape:
+        raise ValueError(
+            "latest_background_dbz must match latest_frame_dbz shape"
+        )
+    if (
+        not latest_frame.is_floating_point()
+        or not verification.is_floating_point()
+    ):
+        raise TypeError(
+            "latest frame and verification must be floating-point tensors"
+        )
     if background is not None and not background.is_floating_point():
-        raise TypeError("background_frames_dbz must be floating-point")
-    if qc_mask is not None:
-        if qc_mask.shape != frames.shape:
-            raise ValueError("qc_mask must match frames_dbz shape")
-        if qc_mask.dtype != torch.bool:
-            raise TypeError("qc_mask must be boolean")
+        raise TypeError("latest_background_dbz must be floating-point")
     if state.displacement_yx.shape != (2,):
         raise ValueError("state displacement must have shape [2]")
     if state.log_growth_per_step.ndim != 0:
         raise ValueError("state log growth must be scalar")
-    if frames.device != verification.device:
-        raise ValueError("frames and verification must use the same device")
+    if latest_frame.device != verification.device:
+        raise ValueError(
+            "latest frame and verification must use the same device"
+        )
     state_tensors = (
         state.echo_linear,
         state.displacement_yx,
         state.log_growth_per_step,
     )
-    if any(tensor.device != frames.device for tensor in state_tensors):
-        raise ValueError("state and frames must use the same device")
+    if any(tensor.device != latest_frame.device for tensor in state_tensors):
+        raise ValueError("state and latest frame must use the same device")
     if any(not tensor.is_floating_point() for tensor in state_tensors):
         raise TypeError("state tensors must be floating-point")
-    if background is not None and background.device != frames.device:
-        raise ValueError("background and frames must use the same device")
-    if qc_mask is not None and qc_mask.device != frames.device:
-        raise ValueError("qc_mask and frames must use the same device")
+    if background is not None and background.device != latest_frame.device:
+        raise ValueError(
+            "background and latest frame must use the same device"
+        )

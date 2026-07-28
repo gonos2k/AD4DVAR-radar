@@ -8,10 +8,12 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from advar._digest import tensor_digest  # noqa: E402
 from advar.nowcast import (  # noqa: E402
     DataStatus,
     ForecastMetadata,
     ForecastResult,
+    ForecastRunContract,
     NowcastConfig,
     RadarState,
     TendencySource,
@@ -87,9 +89,17 @@ def result_for(
     state: RadarState,
     config: NowcastConfig,
     *,
+    frames: torch.Tensor | None = None,
+    accepted_mask: torch.Tensor | None = None,
+    background: torch.Tensor | None = None,
     pair_motion: torch.Tensor | None = None,
     pair_growth: torch.Tensor | None = None,
 ) -> ForecastResult:
+    if frames is None:
+        latest = linear_to_dbz(state.echo_linear, config)
+        frames = torch.stack((latest, latest, latest))
+    if accepted_mask is None:
+        accepted_mask = torch.isfinite(frames)
     return forecast_from_state(
         state,
         metadata_for(
@@ -98,6 +108,12 @@ def result_for(
             pair_growth=pair_growth,
         ),
         config,
+        run=ForecastRunContract.from_inputs(
+            config,
+            frames,
+            accepted_mask[-1],
+            background,
+        ),
     )
 
 
@@ -131,21 +147,6 @@ class SensitivityTests(unittest.TestCase):
             displacement_yx=torch.tensor([0.35, -0.25], dtype=torch.float64),
             log_growth_per_step=torch.tensor(0.015, dtype=torch.float64),
         )
-        cls.result = result_for(
-            cls.state,
-            cls.nowcast_config,
-            pair_motion=torch.tensor(
-                [[0.32, -0.20], [0.37, -0.28]],
-                dtype=torch.float64,
-            ),
-            pair_growth=torch.tensor(
-                [0.01, 0.02],
-                dtype=torch.float64,
-            ),
-        )
-        cls.verification = (
-            cls.result.forecast_dbz + 0.4 * torch.sin(y / 3.0)[None]
-        )
         clean_frames = torch.nan_to_num(
             cls.frames,
             nan=cls.nowcast_config.min_dbz,
@@ -161,27 +162,43 @@ class SensitivityTests(unittest.TestCase):
             cls.nowcast_config.min_dbz,
             cls.nowcast_config.max_dbz,
         )
+        cls.result = result_for(
+            cls.state,
+            cls.nowcast_config,
+            frames=cls.frames,
+            accepted_mask=cls.qc_mask & torch.isfinite(cls.frames),
+            background=cls.background,
+            pair_motion=torch.tensor(
+                [[0.32, -0.20], [0.37, -0.28]],
+                dtype=torch.float64,
+            ),
+            pair_growth=torch.tensor(
+                [0.01, 0.02],
+                dtype=torch.float64,
+            ),
+        )
+        cls.verification = (
+            cls.result.forecast_dbz + 0.4 * torch.sin(y / 3.0)[None]
+        )
         baseline_scores = torch.ones(
             cls.nowcast_config.forecast_steps,
             1,
             dtype=torch.float64,
         )
         common = {
-            "nowcast_config": cls.nowcast_config,
             "sensitivity_config": cls.sensitivity_config,
             "observation_std_dbz": 2.0,
             "baseline_scores": baseline_scores,
-            "qc_mask": cls.qc_mask,
         }
         cls.snapshot = compute_sensitivity_snapshot(
-            cls.frames,
+            cls.frames[2],
             cls.result,
             cls.verification,
-            background_frames_dbz=cls.background,
+            latest_background_dbz=cls.background[2],
             **common,
         )
         cls.snapshot_without_background = compute_sensitivity_snapshot(
-            cls.frames,
+            cls.frames[2],
             cls.result,
             cls.verification,
             **common,
@@ -212,7 +229,8 @@ class SensitivityTests(unittest.TestCase):
         )
 
         torch.testing.assert_close(linear, by_step)
-        result = result_for(state, config)
+        frames = torch.stack((latest_dbz, latest_dbz, latest_dbz))
+        result = result_for(state, config, frames=frames)
         torch.testing.assert_close(
             result.forecast_dbz,
             linear_to_dbz(linear, config),
@@ -269,6 +287,126 @@ class SensitivityTests(unittest.TestCase):
             (13, 17),
         )
         self.assertTrue(snapshot.whitened_tile_norm_available)
+        self.assertEqual(
+            snapshot.nowcast_config_digest,
+            self.nowcast_config.digest,
+        )
+        self.assertEqual(
+            snapshot.sensitivity_config_digest,
+            self.sensitivity_config.digest,
+        )
+
+    def test_sensitivity_uses_the_forecast_run_config(self) -> None:
+        config = NowcastConfig(
+            horizon_minutes=20,
+            growth_decay_minutes=120.0,
+            max_dbz=60.0,
+            min_publish_support=0.7,
+        )
+        frames = torch.full((3, 5, 6), 20.0, dtype=torch.float64)
+        result = nowcast(frames, config)
+        verification = result.forecast_dbz.clone()
+
+        snapshot = compute_sensitivity_snapshot(
+            frames[-1],
+            result,
+            verification,
+            sensitivity_config=SensitivityConfig(
+                metric_names=("log_echo_mse",),
+                full_map_lead_minutes=(10,),
+            ),
+        )
+
+        self.assertEqual(snapshot.nowcast_config_digest, config.digest)
+        torch.testing.assert_close(
+            snapshot.forecast_scores,
+            torch.zeros_like(snapshot.forecast_scores),
+        )
+
+    def test_sensitivity_rejects_mismatched_run_inputs(self) -> None:
+        different_frame = self.frames[-1].clone()
+        different_frame[6, 8] += 0.1
+        with self.assertRaisesRegex(ValueError, "latest frame disagrees"):
+            compute_sensitivity_snapshot(
+                different_frame,
+                self.result,
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+            )
+
+        different_background = self.background[-1].clone()
+        different_background[6, 8] += 0.1
+        with self.assertRaisesRegex(ValueError, "background disagrees"):
+            compute_sensitivity_snapshot(
+                self.frames[-1],
+                self.result,
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+                latest_background_dbz=different_background,
+            )
+
+    def test_sensitivity_rejects_a_changed_acceptance_mask(self) -> None:
+        changed_mask = self.result.run.latest_observation_mask
+        changed_mask[0, 3] = True
+        changed_run = replace(
+            self.result.run,
+            _latest_observation_mask=changed_mask,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "observation mask disagrees",
+        ):
+            compute_sensitivity_snapshot(
+                self.frames[-1],
+                replace(self.result, run=changed_run),
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+                latest_background_dbz=self.background[-1],
+            )
+
+    def test_returned_acceptance_mask_is_an_independent_copy(self) -> None:
+        changed_mask = self.result.run.latest_observation_mask
+        changed_mask[:] = True
+
+        snapshot = compute_sensitivity_snapshot(
+            self.frames[-1],
+            self.result,
+            self.verification,
+            sensitivity_config=self.sensitivity_config,
+            latest_background_dbz=self.background[-1],
+        )
+
+        self.assertFalse(bool(snapshot.latest_sensitivity_mask[0, 3]))
+
+    def test_sensitivity_rejects_a_forecast_that_does_not_close(self) -> None:
+        changed = self.result.forecast_dbz.clone()
+        changed[0, 6, 8] += 0.1
+        with self.assertRaisesRegex(
+            ValueError,
+            "disagrees with the issued forecast",
+        ):
+            compute_sensitivity_snapshot(
+                self.frames[-1],
+                replace(self.result, forecast_dbz=changed),
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+            )
+
+    def test_sensitivity_rejects_a_shrunken_issued_domain(self) -> None:
+        changed = self.result.forecast_dbz.clone()
+        changed[0, 6, 8] = float("nan")
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "disagrees with the issued forecast",
+        ):
+            compute_sensitivity_snapshot(
+                self.frames[-1],
+                replace(self.result, forecast_dbz=changed),
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+            )
 
     def test_control_gradient_matches_centered_finite_difference(self) -> None:
         truth = dbz_to_linear(self.verification[0], self.nowcast_config)
@@ -479,17 +617,16 @@ class SensitivityTests(unittest.TestCase):
                 dtype=torch.float64,
             ),
         )
-        result = result_for(state, config)
+        result = result_for(state, config, frames=frames)
         verification = torch.full(
             (config.forecast_steps, 8, 9),
             config.max_dbz,
             dtype=torch.float64,
         )
         snapshot = compute_sensitivity_snapshot(
-            frames,
+            frames[2],
             result,
             verification,
-            nowcast_config=config,
             sensitivity_config=SensitivityConfig(
                 metric_names=("log_echo_mse",),
                 full_map_lead_minutes=(10,),
@@ -509,13 +646,11 @@ class SensitivityTests(unittest.TestCase):
     def test_missing_verification_is_not_recorded_as_zero_error(self) -> None:
         verification = torch.full_like(self.verification, float("nan"))
         snapshot = compute_sensitivity_snapshot(
-            self.frames,
+            self.frames[2],
             self.result,
             verification,
-            nowcast_config=self.nowcast_config,
             sensitivity_config=self.sensitivity_config,
-            background_frames_dbz=self.background,
-            qc_mask=self.qc_mask,
+            latest_background_dbz=self.background[2],
         )
 
         self.assertFalse(bool(torch.any(snapshot.metric_available)))
@@ -537,14 +672,14 @@ class SensitivityTests(unittest.TestCase):
             self.result,
             forecast_dbz=issued_dbz,
             valid_mask=issued,
+            forecast_dbz_digest=tensor_digest(issued_dbz),
+            valid_mask_digest=tensor_digest(issued),
         )
         snapshot = compute_sensitivity_snapshot(
-            self.frames,
+            self.frames[2],
             result,
             self.verification,
-            nowcast_config=self.nowcast_config,
             sensitivity_config=self.sensitivity_config,
-            qc_mask=self.qc_mask,
         )
         truth = dbz_to_linear(self.verification[0], self.nowcast_config)
         expected = forecast_metric(
@@ -565,14 +700,12 @@ class SensitivityTests(unittest.TestCase):
                 ),
             )
         )
-        with self.assertRaisesRegex(ValueError, "issued finite values"):
+        with self.assertRaisesRegex(ValueError, "valid mask disagrees"):
             compute_sensitivity_snapshot(
-                self.frames,
+                self.frames[2],
                 replace(self.result, valid_mask=issued),
                 self.verification,
-                nowcast_config=self.nowcast_config,
                 sensitivity_config=self.sensitivity_config,
-                qc_mask=self.qc_mask,
             )
 
     def test_unissued_forecast_has_no_sensitivity(self) -> None:
@@ -584,12 +717,10 @@ class SensitivityTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "unissued forecast"):
             compute_sensitivity_snapshot(
-                self.frames,
+                self.frames[2],
                 result,
                 self.verification,
-                nowcast_config=self.nowcast_config,
                 sensitivity_config=self.sensitivity_config,
-                qc_mask=self.qc_mask,
             )
 
     def test_background_only_state_has_no_direct_sensitivity(self) -> None:
@@ -604,12 +735,11 @@ class SensitivityTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "valid latest observation"):
             compute_sensitivity_snapshot(
-                frames,
+                frames[2],
                 result,
                 self.verification,
-                nowcast_config=self.nowcast_config,
                 sensitivity_config=self.sensitivity_config,
-                background_frames_dbz=background,
+                latest_background_dbz=background[2],
             )
 
     def test_context_separates_observed_weather_from_missing_area(self) -> None:
@@ -631,10 +761,11 @@ class SensitivityTests(unittest.TestCase):
             echo_linear=torch.zeros((4, 5), dtype=torch.float64),
         )
         features = extract_context_features(
-            frames,
+            frames[2],
             state,
             metadata,
             self.nowcast_config,
+            latest_observation_mask=torch.isfinite(frames[2]),
         )
         values = dict(zip(self.snapshot.context_feature_names, features))
 
@@ -652,14 +783,19 @@ class SensitivityTests(unittest.TestCase):
 
     def test_nonfinite_background_does_not_create_fake_innovation(self) -> None:
         background = torch.full_like(self.frames, float("nan"))
+        result = result_for(
+            self.state,
+            self.nowcast_config,
+            frames=self.frames,
+            accepted_mask=self.qc_mask & torch.isfinite(self.frames),
+            background=background,
+        )
         snapshot = compute_sensitivity_snapshot(
-            self.frames,
-            self.result,
+            self.frames[2],
+            result,
             self.verification,
-            nowcast_config=self.nowcast_config,
             sensitivity_config=self.sensitivity_config,
-            background_frames_dbz=background,
-            qc_mask=self.qc_mask,
+            latest_background_dbz=background[2],
         )
 
         self.assertFalse(snapshot.impact_available)

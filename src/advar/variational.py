@@ -12,6 +12,7 @@ from .matrix_free import gauss_newton_hvp, pcg
 from .nowcast import (
     ForecastMetadata,
     ForecastResult,
+    ForecastRunContract,
     NowcastConfig,
     RadarState,
     estimate_prepared_state,
@@ -700,10 +701,17 @@ def variational_nowcast(
         background_age_minutes=background_age_minutes,
     )
     analysis = solve_analysis(observations, frozen)
+    run = ForecastRunContract.from_inputs(
+        nowcast_config,
+        frames_dbz,
+        observations.valid_mask[-1],
+        background_frames_dbz,
+    )
     forecast = forecast_from_state(
         analysis.state,
         analysis.metadata,
         nowcast_config,
+        run=run,
         audit=audit,
     )
     return forecast, analysis
