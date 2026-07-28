@@ -1,5 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import fields, replace
+import hashlib
+import json
 from pathlib import Path
 import sqlite3
 import sys
@@ -27,12 +29,31 @@ from advar.sensitivity import (  # noqa: E402
 )
 
 
+SCHEMA_ONE_CONTEXT_FEATURE_NAMES = (
+    "motion_dy",
+    "motion_dx",
+    "motion_speed",
+    "log_growth",
+    "motion_disagreement",
+    "growth_disagreement",
+    "latest_mean_dbz",
+    "latest_max_dbz",
+    "latest_q90_dbz",
+    "echo_fraction_5dbz",
+    "echo_fraction_35dbz",
+    "boundary_echo_fraction",
+    "centroid_y",
+    "centroid_x",
+    "log_echo_mass",
+)
+
+
 def _contract() -> ModelContract:
     return ModelContract(
         model_commit="model-v1",
         residual_contract_version="residual-v1",
-        forecast_metric_version="metric-v1",
-        observation_contract_version="observation-v1",
+        forecast_metric_version="issued-domain-metrics-v2",
+        observation_contract_version="direct-latest-dbz-active-set-v2",
         forecast_integrator_version="integrator-v1",
         grid_geometry_version="grid-v1",
         radar_qc_version="qc-v1",
@@ -112,7 +133,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         loaded = self.ledger.load(episode.episode_id)
         self.assertEqual(
             loaded.arrays["direct_observation_sensitivity_norm"].shape,
-            (18, 1, 3),
+            (18, 1),
         )
         np.testing.assert_array_equal(
             loaded.arrays["forecast_scores"],
@@ -124,6 +145,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
 
         manifest = loaded.manifest
+        self.assertEqual(manifest["schema_version"], 2)
         self.assertEqual(manifest["contract_hash"], self.contract.digest)
         self.assertIs(
             manifest["indirect_observation_sensitivity_available"],
@@ -136,8 +158,6 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(
             manifest["sensitivity_scope"],
             {
-                "input_-20_minutes": "no_direct_forecast_path",
-                "input_-10_minutes": "no_direct_forecast_path",
                 "input_0_minutes": (
                     "partial_direct_latest_dbz_fixed_control"
                 ),
@@ -149,7 +169,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
 
         impacts = self.ledger.list_impacts(episode.episode_id)
-        self.assertEqual(len(impacts), 54)
+        self.assertEqual(len(impacts), 18)
         self.assertEqual(
             {
                 (
@@ -160,9 +180,8 @@ class EpisodeLedgerTests(unittest.TestCase):
                 for row in impacts
             },
             {
-                (lead, "log_echo_mse", offset)
+                (lead, "log_echo_mse", 0)
                 for lead in range(10, 181, 10)
-                for offset in (-20, -10, 0)
             },
         )
         self.assertEqual(
@@ -171,8 +190,6 @@ class EpisodeLedgerTests(unittest.TestCase):
                 for row in impacts
             },
             {
-                (-20, "no_direct_forecast_path"),
-                (-10, "no_direct_forecast_path"),
                 (0, "partial_direct_latest_dbz_fixed_control"),
             },
         )
@@ -185,6 +202,249 @@ class EpisodeLedgerTests(unittest.TestCase):
             reloaded.arrays["direct_observation_sensitivity_norm"],
             loaded.arrays["direct_observation_sensitivity_norm"],
         )
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            version = connection.execute("PRAGMA user_version").fetchone()[0]
+        self.assertEqual(version, 3)
+
+    def test_unavailable_optional_arrays_are_omitted(self) -> None:
+        direct = replace(
+            self.snapshot.direct,
+            whitened_tile_norm=None,
+            impact=None,
+            tile_impact=None,
+            reward=None,
+        )
+        snapshot = replace(
+            self.snapshot,
+            direct=direct,
+            observation_std_dbz=None,
+            observation_innovation_dbz=None,
+            observation_innovation_mask=None,
+            baseline_scores=None,
+        )
+        episode = replace(
+            self.episode("without-optional-arrays"),
+            snapshot=snapshot,
+        )
+
+        self.ledger.append(episode)
+        loaded = self.ledger.load(episode.episode_id)
+
+        for name in (
+            "tile_whitened_direct_sensitivity_norm",
+            "direct_observation_impact",
+            "tile_direct_observation_impact",
+            "direct_normalized_reward",
+            "observation_std_dbz",
+            "observation_innovation_dbz",
+            "observation_innovation_mask",
+            "baseline_scores",
+        ):
+            self.assertNotIn(name, loaded.arrays)
+        self.assertFalse(loaded.manifest["impact_available"])
+        self.assertFalse(loaded.manifest["reward_available"])
+
+    def test_v2_layout_cannot_claim_schema_one(self) -> None:
+        episode = self.episode("v2-as-schema-one")
+        target = self.ledger.append(episode)
+        manifest_path = target / "manifest.json"
+        checksums_path = target / "checksums.json"
+        manifest = json.loads(manifest_path.read_text("utf-8"))
+        manifest["schema_version"] = 1
+        manifest["context_feature_names"] = list(
+            SCHEMA_ONE_CONTEXT_FEATURE_NAMES
+        )
+        manifest["arrays"]["context_features"]["shape"] = [
+            len(SCHEMA_ONE_CONTEXT_FEATURE_NAMES)
+        ]
+        interval = manifest["lead_minutes"][0]
+        manifest["sensitivity_scope"] = {
+            f"input_{-2 * interval}_minutes": "no_direct_forecast_path",
+            f"input_{-interval}_minutes": "no_direct_forecast_path",
+            "input_0_minutes": "partial_direct_latest_dbz_fixed_control",
+            "indirect_analysis_path": (
+                "unavailable_implicit_variational_fso_not_implemented"
+            ),
+            "total_observation_sensitivity": "unavailable",
+        }
+        contract_value = {
+            "contract_schema_version": 1,
+            **manifest["contract"],
+        }
+        manifest["contract_hash"] = hashlib.sha256(
+            json.dumps(
+                contract_value,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        manifest_text = json.dumps(
+            manifest,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        manifest_path.write_text(manifest_text, encoding="utf-8")
+        manifest_hash = hashlib.sha256(manifest_text.encode("utf-8")).hexdigest()
+        checksums = json.loads(checksums_path.read_text("utf-8"))
+        checksums["manifest.json"] = manifest_hash
+        checksums_path.write_text(
+            json.dumps(
+                checksums,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            encoding="utf-8",
+        )
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute("DROP TRIGGER episodes_no_update")
+            connection.execute(
+                """
+                UPDATE episodes
+                SET contract_hash = ?, manifest_sha256 = ?
+                WHERE episode_id = ?
+                """,
+                (manifest["contract_hash"], manifest_hash, episode.episode_id),
+            )
+
+        reopened = EpisodeLedger(self.root)
+        with self.assertRaisesRegex(ValueError, "episode schema"):
+            reopened.verify(episode.episode_id)
+
+    def test_schema_one_episode_remains_verifiable(self) -> None:
+        episode = self.episode("schema-one")
+        target = self.ledger.append(episode)
+        arrays_path = target / "sensitivity_arrays.npz"
+        manifest_path = target / "manifest.json"
+        checksums_path = target / "checksums.json"
+        with np.load(arrays_path, allow_pickle=False) as archive:
+            arrays = {name: archive[name].copy() for name in archive.files}
+
+        context = arrays["context_features"]
+        arrays["context_features"] = np.concatenate((context[:6], context[12:]))
+
+        def latest_axis(name: str, *, fill: float = 0.0) -> np.ndarray:
+            source = arrays[name]
+            shape = (*source.shape[:2], 3, *source.shape[2:])
+            expanded = np.full(shape, fill, dtype=source.dtype)
+            expanded[:, :, 2] = source
+            return expanded
+
+        arrays["direct_observation_sensitivity"] = latest_axis(
+            "direct_observation_sensitivity"
+        )
+        arrays["direct_observation_sensitivity_norm"] = latest_axis(
+            "direct_observation_sensitivity_norm"
+        )
+        arrays["tile_direct_sensitivity_norm"] = latest_axis(
+            "tile_direct_sensitivity_norm"
+        )
+        arrays["direct_observation_impact"] = latest_axis(
+            "direct_observation_impact"
+        )
+        arrays["tile_direct_observation_impact"] = latest_axis(
+            "tile_direct_observation_impact"
+        )
+        arrays["direct_normalized_reward"] = latest_axis(
+            "direct_normalized_reward"
+        )
+
+        height, width = arrays["latest_sensitivity_mask"].shape
+        tile_shape = arrays["tile_direct_sensitivity_norm"].shape
+        lead_count, metric_count = tile_shape[:2]
+        tile_rows, tile_columns = tile_shape[-2:]
+        arrays["tile_whitened_direct_sensitivity_norm"] = np.full(
+            (lead_count, metric_count, 3, tile_rows, tile_columns),
+            np.nan,
+        )
+        arrays["observation_std_dbz"] = np.full((3, height, width), np.nan)
+        innovation = np.full((3, height, width), np.nan)
+        innovation[2] = arrays["observation_innovation_dbz"]
+        arrays["observation_innovation_dbz"] = innovation
+        innovation_mask = np.zeros((3, height, width), dtype=np.bool_)
+        innovation_mask[2] = arrays["observation_innovation_mask"]
+        arrays["observation_innovation_mask"] = innovation_mask
+        np.savez_compressed(arrays_path, **arrays)
+
+        manifest = json.loads(manifest_path.read_text("utf-8"))
+        manifest["schema_version"] = 1
+        manifest["context_feature_names"] = list(
+            SCHEMA_ONE_CONTEXT_FEATURE_NAMES
+        )
+        interval = manifest["lead_minutes"][0]
+        manifest["sensitivity_scope"] = {
+            f"input_{-2 * interval}_minutes": "no_direct_forecast_path",
+            f"input_{-interval}_minutes": "no_direct_forecast_path",
+            "input_0_minutes": "partial_direct_latest_dbz_fixed_control",
+            "indirect_analysis_path": (
+                "unavailable_implicit_variational_fso_not_implemented"
+            ),
+            "total_observation_sensitivity": "unavailable",
+        }
+        manifest["contract_hash"] = hashlib.sha256(
+            json.dumps(
+                {"contract_schema_version": 1, **manifest["contract"]},
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        manifest["arrays"] = {
+            name: {"shape": list(value.shape), "dtype": str(value.dtype)}
+            for name, value in arrays.items()
+        }
+        manifest_text = json.dumps(
+            manifest,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        manifest_path.write_text(manifest_text, encoding="utf-8")
+        manifest_hash = hashlib.sha256(manifest_text.encode("utf-8")).hexdigest()
+        arrays_hash = hashlib.sha256(arrays_path.read_bytes()).hexdigest()
+        checksums_path.write_text(
+            json.dumps(
+                {
+                    "manifest.json": manifest_hash,
+                    "sensitivity_arrays.npz": arrays_hash,
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            encoding="utf-8",
+        )
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute("DROP TRIGGER episodes_no_update")
+            connection.execute(
+                """
+                UPDATE episodes
+                SET contract_hash = ?, manifest_sha256 = ?, arrays_sha256 = ?
+                WHERE episode_id = ?
+                """,
+                (
+                    manifest["contract_hash"],
+                    manifest_hash,
+                    arrays_hash,
+                    episode.episode_id,
+                ),
+            )
+
+        reopened = EpisodeLedger(self.root)
+        reopened.verify(episode.episode_id)
+        loaded = reopened.load(episode.episode_id)
+        self.assertEqual(loaded.manifest["schema_version"], 1)
+        self.assertEqual(
+            loaded.arrays["direct_observation_sensitivity_norm"].shape,
+            (18, 1, 3),
+        )
+        self.assertEqual(
+            loaded.manifest["context_feature_names"],
+            list(SCHEMA_ONE_CONTEXT_FEATURE_NAMES),
+        )
+        self.assertEqual(loaded.arrays["context_features"].shape, (15,))
 
     def test_duplicate_episode_id_is_rejected(self) -> None:
         episode = self.episode()
@@ -263,7 +523,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                         connection.execute(statement, (episode.episode_id,))
 
         self.ledger.verify(episode.episode_id)
-        self.assertEqual(len(self.ledger.list_impacts(episode.episode_id)), 54)
+        self.assertEqual(len(self.ledger.list_impacts(episode.episode_id)), 18)
 
         with sqlite3.connect(self.ledger.index_path) as connection:
             with self.assertRaisesRegex(
@@ -290,13 +550,13 @@ class EpisodeLedgerTests(unittest.TestCase):
                 replace(self.episode("bad-shape"), snapshot=malformed)
             )
 
-        direct = self.snapshot.direct_observation_sensitivity.clone()
-        direct[0, 0, 0, 0, 0] = 1.0
+        direct = self.snapshot.direct.maps.clone()
+        direct[0, 0, 0, 0] = 1.0
         contradictory = replace(
             self.snapshot,
-            direct_observation_sensitivity=direct,
+            direct=replace(self.snapshot.direct, maps=direct),
         )
-        with self.assertRaisesRegex(ValueError, "old-frame direct maps"):
+        with self.assertRaisesRegex(ValueError, "map and norm disagree"):
             self.ledger.append(
                 replace(self.episode("bad-direct"), snapshot=contradictory)
             )
@@ -308,7 +568,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 float("nan"),
             ),
         )
-        with self.assertRaisesRegex(ValueError, "reward availability"):
+        with self.assertRaisesRegex(ValueError, "finite and non-negative"):
             self.ledger.append(
                 replace(
                     self.episode("bad-baseline"),
@@ -316,11 +576,11 @@ class EpisodeLedgerTests(unittest.TestCase):
                 )
             )
 
-        reward = self.snapshot.direct_normalized_reward.clone()
-        reward[:, :, 2] = 123.0
+        reward = self.snapshot.direct.reward.clone()
+        reward[:] = 123.0
         invalid_reward = replace(
             self.snapshot,
-            direct_normalized_reward=reward,
+            direct=replace(self.snapshot.direct, reward=reward),
         )
         with self.assertRaisesRegex(
             ValueError,
@@ -421,7 +681,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         episode = self.episode("after-upgrade")
         upgraded.append(episode)
         upgraded.verify(episode.episode_id)
-        self.assertEqual(len(upgraded.list_impacts(episode.episode_id)), 54)
+        self.assertEqual(len(upgraded.list_impacts(episode.episode_id)), 18)
         with sqlite3.connect(root / "index.sqlite") as connection:
             columns = {
                 row[1]: row
@@ -439,7 +699,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 2)
+        self.assertEqual(version, 3)
 
 
 if __name__ == "__main__":

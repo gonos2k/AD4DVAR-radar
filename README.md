@@ -201,12 +201,14 @@ NPZ는 같은 디렉터리의 임시 파일을 완전히 기록한 뒤 원자적
 - 30·60·120·180분의 예측장 민감도
 - 최신 입력 영상의 고정 제어 직접 민감도 `dE / d(dBZ)`
 - 16×16 타일별 직접 민감도 크기와 innovation 영향
-- 상황 특징 15개, 선형성 신뢰도, 모델·관측·지표 계약 해시
+- 결측과 자료출처를 분리한 상황 특징 21개, 선형성 신뢰도, 계약 해시
 
-민감도 점수는 실제 발행된 dBZ 상한과 같은 고정 활성집합을 사용한다.
+민감도 점수는 검증 유효영역과 실제 발행 유효영역의 교집합에서만
+계산하며, 발행된 dBZ 상한과 같은 고정 활성집합을 사용한다.
 검증장이 없거나 FSS·객체중심을 정의할 에코가 없으면
 `metric_available=False`와 `NaN`으로 기록하며, 0 오차로 해석하지 않는다.
 background의 비유한값과 QC 탈락 화소도 innovation 영향에서 제외한다.
+innovation·whitening·impact·reward가 없으면 해당 배열은 저장하지 않는다.
 기본 지표는 `log_echo_mse`, `soft_fss_error_35`(`1-softFSS`),
 `centroid_error`이며 모두 작을수록 좋다.
 
@@ -236,8 +238,8 @@ snapshot = compute_sensitivity_snapshot(
 contract = ModelContract(
     model_commit="working-tree",
     residual_contract_version="none-v1",
-    forecast_metric_version="metrics-v1",
-    observation_contract_version="direct-latest-dbz-active-set-v1",
+    forecast_metric_version="issued-domain-metrics-v2",
+    observation_contract_version="direct-latest-dbz-active-set-v2",
     forecast_integrator_version=FORECAST_INTEGRATOR_VERSION,
     grid_geometry_version="my-grid-v1",
     radar_qc_version="my-qc-v1",
@@ -273,6 +275,7 @@ SQLite에도 고정되며, 배열 이름·shape·dtype까지 검증한다. Pickl
 현재 이동·성장 추정은 FFT peak의 이산 선택을 포함한다. 따라서 M0가
 계산하는 관측 민감도는 최신 영상이 예측 초기장으로 들어가는
 `partial_direct_latest_dbz_fixed_control` 경로뿐이다.
+발행되지 않은 예측과 유효한 최신 직접관측이 없는 사례는 거부한다.
 
 - `-20분`, `-10분`: 직접 예측 경로 없음
 - `0분`: 고정된 `(dy, dx, log_growth)`에서 직접 dBZ 민감도 제공

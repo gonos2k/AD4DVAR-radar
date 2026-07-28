@@ -125,7 +125,7 @@ class ForecastMetadata:
     growth_disagreement: Tensor
     tendency_pair_count: int
     tendency_source: TendencySource
-    provenance: str = "p0_fft_latest"
+    provenance: str = "p0_support_merged"
 
 
 @dataclass(frozen=True)

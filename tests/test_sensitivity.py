@@ -1,3 +1,4 @@
+from dataclasses import replace
 from pathlib import Path
 import math
 import sys
@@ -17,11 +18,13 @@ from advar.nowcast import (  # noqa: E402
     forecast_from_state,
     forecast_linear_at_step,
     forecast_linear_from_state,
+    nowcast,
 )
 from advar.physics import dbz_to_echo, echo_to_dbz  # noqa: E402
 from advar.sensitivity import (  # noqa: E402
     SensitivityConfig,
     compute_sensitivity_snapshot,
+    extract_context_features,
     forecast_metric,
 )
 
@@ -228,7 +231,9 @@ class SensitivityTests(unittest.TestCase):
 
         self.assertEqual(snapshot.lead_minutes, tuple(range(10, 181, 10)))
         self.assertEqual(snapshot.full_map_lead_minutes, (10,))
-        self.assertEqual(snapshot.context_features.shape, (15,))
+        self.assertEqual(snapshot.context_features.shape, (21,))
+        self.assertIn("log_integrated_echo", snapshot.context_feature_names)
+        self.assertNotIn("log_echo_mass", snapshot.context_feature_names)
         self.assertEqual(snapshot.analysis_control.shape, (3,))
         self.assertEqual(snapshot.forecast_scores.shape, (18, 1))
         self.assertEqual(snapshot.metric_available.shape, (18, 1))
@@ -242,41 +247,28 @@ class SensitivityTests(unittest.TestCase):
             (1, self.height, self.width),
         )
         self.assertEqual(
-            snapshot.direct_observation_sensitivity.shape,
-            (1, 1, 3, self.height, self.width),
+            snapshot.direct.maps.shape,
+            (1, 1, self.height, self.width),
         )
         self.assertEqual(
-            snapshot.direct_observation_sensitivity_norm.shape,
-            (18, 1, 3),
+            snapshot.direct.norm.shape,
+            (18, 1),
         )
         self.assertEqual(
-            snapshot.tile_direct_sensitivity_norm.shape,
-            (18, 1, 3, tile_rows, tile_columns),
+            snapshot.direct.tile_norm.shape,
+            (18, 1, tile_rows, tile_columns),
         )
+        self.assertIsNotNone(snapshot.direct.impact)
         self.assertEqual(
-            snapshot.direct_observation_impact.shape,
-            (18, 1, 3),
+            snapshot.direct.impact.shape,
+            (18, 1),
         )
         self.assertEqual(snapshot.latest_sensitivity_mask.shape, (13, 17))
         self.assertEqual(
             snapshot.observation_innovation_mask.shape,
-            (3, 13, 17),
+            (13, 17),
         )
         self.assertTrue(snapshot.whitened_tile_norm_available)
-        self.assertFalse(snapshot.indirect_observation_sensitivity_available)
-        self.assertFalse(snapshot.promotion_eligible)
-        torch.testing.assert_close(
-            snapshot.direct_observation_sensitivity[:, :, :2],
-            torch.zeros_like(
-                snapshot.direct_observation_sensitivity[:, :, :2]
-            ),
-        )
-        torch.testing.assert_close(
-            snapshot.direct_observation_sensitivity_norm[:, :, :2],
-            torch.zeros_like(
-                snapshot.direct_observation_sensitivity_norm[:, :, :2]
-            ),
-        )
 
     def test_control_gradient_matches_centered_finite_difference(self) -> None:
         truth = dbz_to_linear(self.verification[0], self.nowcast_config)
@@ -321,7 +313,7 @@ class SensitivityTests(unittest.TestCase):
 
     def test_latest_direct_dbz_gradient_obeys_frozen_active_set(self) -> None:
         mask = self.snapshot.latest_sensitivity_mask
-        gradient = self.snapshot.direct_observation_sensitivity[0, 0, 2]
+        gradient = self.snapshot.direct.maps[0, 0]
 
         self.assertTrue(bool(torch.all(torch.isfinite(gradient))))
         self.assertFalse(bool(mask[0, 0]))  # non-finite
@@ -449,14 +441,14 @@ class SensitivityTests(unittest.TestCase):
             self.width % self.sensitivity_config.tile_size,
             0,
         )
-        tile_sum = self.snapshot.tile_direct_observation_impact.sum(
+        tile_sum = self.snapshot.direct.tile_impact.sum(
             dim=(-1, -2)
         )
 
         self.assertTrue(bool(torch.all(torch.isfinite(tile_sum))))
         torch.testing.assert_close(
             tile_sum,
-            self.snapshot.direct_observation_impact,
+            self.snapshot.direct.impact,
             atol=1.0e-12,
             rtol=1.0e-12,
         )
@@ -466,26 +458,19 @@ class SensitivityTests(unittest.TestCase):
 
         self.assertFalse(snapshot.impact_available)
         self.assertFalse(snapshot.reward_available)
-        self.assertTrue(
-            bool(torch.all(torch.isnan(snapshot.observation_innovation_dbz)))
-        )
-        self.assertTrue(
-            bool(torch.all(torch.isnan(snapshot.direct_observation_impact)))
-        )
-        self.assertTrue(
-            bool(
-                torch.all(
-                    torch.isnan(snapshot.tile_direct_observation_impact)
-                )
-            )
-        )
-        self.assertTrue(
-            bool(torch.all(torch.isnan(snapshot.direct_normalized_reward)))
-        )
+        self.assertIsNone(snapshot.observation_innovation_dbz)
+        self.assertIsNone(snapshot.observation_innovation_mask)
+        self.assertIsNone(snapshot.direct.impact)
+        self.assertIsNone(snapshot.direct.tile_impact)
+        self.assertIsNone(snapshot.direct.reward)
 
     def test_sensitivity_scores_the_issued_capped_forecast(self) -> None:
         config = self.nowcast_config
-        frames = torch.full((3, 8, 9), config.max_dbz, dtype=torch.float64)
+        frames = torch.full(
+            (3, 8, 9),
+            config.max_dbz - 0.5,
+            dtype=torch.float64,
+        )
         state = RadarState(
             echo_linear=dbz_to_linear(frames[2], config),
             displacement_yx=torch.zeros(2, dtype=torch.float64),
@@ -540,6 +525,131 @@ class SensitivityTests(unittest.TestCase):
         )
         self.assertFalse(snapshot.impact_available)
 
+    def test_scores_and_gradients_use_only_the_issued_domain(self) -> None:
+        issued = torch.zeros_like(self.result.forecast_dbz, dtype=torch.bool)
+        issued[:, 3:10, 4:13] = True
+        issued_dbz = torch.where(
+            issued,
+            self.result.forecast_dbz,
+            torch.full_like(self.result.forecast_dbz, float("nan")),
+        )
+        result = replace(
+            self.result,
+            forecast_dbz=issued_dbz,
+            valid_mask=issued,
+        )
+        snapshot = compute_sensitivity_snapshot(
+            self.frames,
+            result,
+            self.verification,
+            nowcast_config=self.nowcast_config,
+            sensitivity_config=self.sensitivity_config,
+            qc_mask=self.qc_mask,
+        )
+        truth = dbz_to_linear(self.verification[0], self.nowcast_config)
+        expected = forecast_metric(
+            "log_echo_mse",
+            self.result.forecast_linear[0],
+            truth,
+            issued[0],
+            self.nowcast_config,
+            self.sensitivity_config,
+        )
+
+        torch.testing.assert_close(snapshot.forecast_scores[0, 0], expected)
+        self.assertTrue(
+            torch.equal(
+                snapshot.forecast_sensitivity[0, 0][~issued[0]],
+                torch.zeros_like(
+                    snapshot.forecast_sensitivity[0, 0][~issued[0]]
+                ),
+            )
+        )
+        with self.assertRaisesRegex(ValueError, "issued finite values"):
+            compute_sensitivity_snapshot(
+                self.frames,
+                replace(self.result, valid_mask=issued),
+                self.verification,
+                nowcast_config=self.nowcast_config,
+                sensitivity_config=self.sensitivity_config,
+                qc_mask=self.qc_mask,
+            )
+
+    def test_unissued_forecast_has_no_sensitivity(self) -> None:
+        metadata = replace(
+            self.result.metadata,
+            data_status=DataStatus.UNAVAILABLE,
+        )
+        result = replace(self.result, metadata=metadata)
+
+        with self.assertRaisesRegex(ValueError, "unissued forecast"):
+            compute_sensitivity_snapshot(
+                self.frames,
+                result,
+                self.verification,
+                nowcast_config=self.nowcast_config,
+                sensitivity_config=self.sensitivity_config,
+                qc_mask=self.qc_mask,
+            )
+
+    def test_background_only_state_has_no_direct_sensitivity(self) -> None:
+        frames = torch.full_like(self.frames, float("nan"))
+        background = torch.full_like(self.frames, 20.0)
+        result = nowcast(
+            frames,
+            self.nowcast_config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+
+        with self.assertRaisesRegex(ValueError, "valid latest observation"):
+            compute_sensitivity_snapshot(
+                frames,
+                result,
+                self.verification,
+                nowcast_config=self.nowcast_config,
+                sensitivity_config=self.sensitivity_config,
+                background_frames_dbz=background,
+            )
+
+    def test_context_separates_observed_weather_from_missing_area(self) -> None:
+        frames = torch.full((3, 4, 5), float("nan"), dtype=torch.float64)
+        frames[2, 1, 2] = 40.0
+        metadata = replace(
+            self.result.metadata,
+            coverage_by_frame=torch.tensor(
+                [0.0, 0.0, 0.05],
+                dtype=torch.float64,
+            ),
+            tendency_pair_count=1,
+            tendency_source=TendencySource.BACKGROUND,
+            background_contribution_fraction=0.25,
+            source_support=torch.full((4, 5), 0.5, dtype=torch.float64),
+        )
+        state = replace(
+            self.state,
+            echo_linear=torch.zeros((4, 5), dtype=torch.float64),
+        )
+        features = extract_context_features(
+            frames,
+            state,
+            metadata,
+            self.nowcast_config,
+        )
+        values = dict(zip(self.snapshot.context_feature_names, features))
+
+        torch.testing.assert_close(values["latest_mean_dbz"], features.new_tensor(40.0))
+        for name, expected in (
+            ("echo_fraction_5dbz", 1.0),
+            ("latest_observation_coverage", 0.05),
+            ("current_state_support_fraction", 0.5),
+            ("tendency_source_background", 1.0),
+        ):
+            torch.testing.assert_close(
+                values[name],
+                features.new_tensor(expected),
+            )
+
     def test_nonfinite_background_does_not_create_fake_innovation(self) -> None:
         background = torch.full_like(self.frames, float("nan"))
         snapshot = compute_sensitivity_snapshot(
@@ -553,15 +663,9 @@ class SensitivityTests(unittest.TestCase):
         )
 
         self.assertFalse(snapshot.impact_available)
-        self.assertFalse(
-            bool(torch.any(snapshot.observation_innovation_mask))
-        )
-        self.assertTrue(
-            bool(torch.all(torch.isnan(snapshot.observation_innovation_dbz)))
-        )
-        self.assertTrue(
-            bool(torch.all(torch.isnan(snapshot.direct_observation_impact)))
-        )
+        self.assertIsNone(snapshot.observation_innovation_mask)
+        self.assertIsNone(snapshot.observation_innovation_dbz)
+        self.assertIsNone(snapshot.direct.impact)
 
     def test_soft_fss_handles_a_grid_smaller_than_its_window(self) -> None:
         config = SensitivityConfig(
