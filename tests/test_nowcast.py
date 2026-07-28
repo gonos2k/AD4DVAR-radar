@@ -433,7 +433,7 @@ class NowcastTests(unittest.TestCase):
                     1.0e-5,
                 )
 
-    def test_qc_hole_rejects_mask_dominated_motion(self) -> None:
+    def test_near_echo_qc_hole_rejects_mask_dominated_motion(self) -> None:
         y, x = torch.meshgrid(
             torch.arange(64, dtype=torch.float64),
             torch.arange(64, dtype=torch.float64),
@@ -454,24 +454,30 @@ class NowcastTests(unittest.TestCase):
                 for step in range(3)
             ]
         )
-        qc_mask = torch.ones_like(frames, dtype=torch.bool)
-        qc_mask[:, 25:31, 31:37] = False
 
-        state, metadata = estimate_state_with_metadata(
-            frames,
-            self.config,
-            qc_mask=qc_mask,
-        )
+        for hole_size in (1, 2, 3, 6):
+            with self.subTest(hole_size=hole_size):
+                qc_mask = torch.ones_like(frames, dtype=torch.bool)
+                qc_mask[
+                    :,
+                    28 : 28 + hole_size,
+                    34 : 34 + hole_size,
+                ] = False
+                state, metadata = estimate_state_with_metadata(
+                    frames,
+                    self.config,
+                    qc_mask=qc_mask,
+                )
 
-        torch.testing.assert_close(
-            state.displacement_yx,
-            torch.zeros_like(state.displacement_yx),
-        )
-        torch.testing.assert_close(
-            state.log_growth_per_step,
-            torch.zeros_like(state.log_growth_per_step),
-        )
-        self.assertEqual(metadata.tendency_pair_count, 0)
+                torch.testing.assert_close(
+                    state.displacement_yx,
+                    torch.zeros_like(state.displacement_yx),
+                )
+                torch.testing.assert_close(
+                    state.log_growth_per_step,
+                    torch.zeros_like(state.log_growth_per_step),
+                )
+                self.assertEqual(metadata.tendency_pair_count, 0)
 
     def test_irregular_mask_rejects_mask_dominated_motion(self) -> None:
         frames, _ = self._moving_gaussian_frames()
@@ -498,6 +504,26 @@ class NowcastTests(unittest.TestCase):
             torch.zeros_like(state.log_growth_per_step),
         )
         self.assertEqual(metadata.tendency_pair_count, 0)
+
+    def test_far_qc_hole_does_not_reject_echo_pair(self) -> None:
+        frames, _ = self._moving_gaussian_frames()
+        complete = estimate_state(frames, self.config)
+        qc_mask = torch.ones_like(frames, dtype=torch.bool)
+        qc_mask[:, 0, 0] = False
+
+        partial, metadata = estimate_state_with_metadata(
+            frames,
+            self.config,
+            qc_mask=qc_mask,
+        )
+
+        torch.testing.assert_close(
+            partial.displacement_yx,
+            complete.displacement_yx,
+            atol=0.05,
+            rtol=0.0,
+        )
+        self.assertEqual(metadata.tendency_pair_count, 2)
 
     def test_middle_missing_normalizes_twenty_minute_growth(self) -> None:
         factor = 1.25
@@ -550,6 +576,69 @@ class NowcastTests(unittest.TestCase):
             abs(float(state.log_growth_per_step)),
             1.0e-5,
         )
+
+    def test_observation_pair_precedes_conflicting_background_pair(self) -> None:
+        frames, _ = self._moving_gaussian_frames()
+        observation_pair = frames.clone()
+        observation_pair[2] = torch.nan
+        background = frames[0].expand_as(frames).clone()
+
+        state, metadata = estimate_state_with_metadata(
+            observation_pair,
+            self.config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+        expected = estimate_state(
+            observation_pair,
+            self.config,
+        ).displacement_yx
+
+        torch.testing.assert_close(
+            state.displacement_yx,
+            expected,
+            atol=0.05,
+            rtol=0.0,
+        )
+        self.assertEqual(metadata.tendency_pair_count, 1)
+
+    def test_propagated_observation_precedes_clear_background(self) -> None:
+        frames = torch.full((3, 8, 8), torch.nan, dtype=torch.float64)
+        frames[1] = 30.0
+        background = torch.full_like(frames, self.config.min_dbz)
+
+        result = nowcast(
+            frames,
+            self.config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+
+        torch.testing.assert_close(
+            result.forecast_dbz[0],
+            torch.full((8, 8), 30.0, dtype=torch.float64),
+            atol=0.02,
+            rtol=0.0,
+        )
+
+    def test_direct_clear_observation_precedes_echo_background(self) -> None:
+        frames = torch.full((3, 8, 8), torch.nan, dtype=torch.float64)
+        frames[2, 4, 4] = self.config.min_dbz
+        background = torch.full_like(frames, 30.0)
+
+        result = nowcast(
+            frames,
+            self.config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+
+        self.assertAlmostEqual(
+            float(result.forecast_dbz[0, 4, 4]),
+            self.config.min_dbz,
+            places=5,
+        )
+        self.assertGreater(float(result.forecast_dbz[0, 4, 5]), 29.0)
 
     def test_partial_latest_frame_is_completed_from_previous_state(self) -> None:
         frames = torch.full((3, 8, 8), 20.0)
@@ -1042,8 +1131,6 @@ class NowcastTests(unittest.TestCase):
             NowcastConfig(echo_threshold_dbz=float("nan"))
         with self.assertRaises(TypeError):
             NowcastConfig(interval_minutes=True)
-        with self.assertRaises(ValueError):
-            NowcastConfig(min_pair_echo_coverage=1.1)
         with self.assertRaises(ValueError):
             NowcastConfig(pair_echo_dilation_px=-1)
         with self.assertRaises(TypeError):

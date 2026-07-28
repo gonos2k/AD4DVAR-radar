@@ -34,7 +34,6 @@ class NowcastConfig:
     max_dbz: float = 70.0
     echo_threshold_dbz: float = 5.0
     recent_weight: float = 2.0 / 3.0
-    min_pair_echo_coverage: float = 0.95
     pair_echo_dilation_px: int = 3
     max_displacement_px: float = 20.0
     max_log_growth_per_step: float = math.log(1.35)
@@ -61,7 +60,6 @@ class NowcastConfig:
             self.max_dbz,
             self.echo_threshold_dbz,
             self.recent_weight,
-            self.min_pair_echo_coverage,
             self.max_displacement_px,
             self.max_log_growth_per_step,
             self.growth_decay_minutes,
@@ -75,8 +73,6 @@ class NowcastConfig:
             raise ValueError("echo_threshold_dbz must be inside the dBZ range")
         if not 0.0 <= self.recent_weight <= 1.0:
             raise ValueError("recent_weight must be between 0 and 1")
-        if not 0.0 <= self.min_pair_echo_coverage <= 1.0:
-            raise ValueError("min_pair_echo_coverage must be between 0 and 1")
         if self.pair_echo_dilation_px < 0:
             raise ValueError("pair_echo_dilation_px cannot be negative")
         if self.max_displacement_px <= 0:
@@ -140,11 +136,12 @@ class ForecastResult:
 @dataclass(frozen=True)
 class PreparedRadarInput:
     frames_dbz: Tensor
+    background_frames_dbz: Tensor
     observed_mask: Tensor
+    background_mask: Tensor
     missing_mask: Tensor
     qc_rejected_mask: Tensor
     observed_clear_mask: Tensor
-    available_mask: Tensor
     data_status: DataStatus
     coverage_by_frame: Tensor
     background_used: bool
@@ -182,12 +179,14 @@ def prepare_input(
         posinf=config.max_dbz,
         neginf=config.min_dbz,
     ).clamp(config.min_dbz, config.max_dbz)
-    dense = torch.where(
+    floor = clean_observations.new_full((), config.min_dbz)
+    observation_frames = torch.where(
         observed,
         clean_observations,
-        clean_observations.new_full((), config.min_dbz),
+        floor,
     )
-    available = observed.clone()
+    background_frames = torch.full_like(frames_dbz, config.min_dbz)
+    background_mask = torch.zeros_like(observed)
     background_used_mask = torch.zeros_like(observed)
 
     if background_frames_dbz is None:
@@ -220,16 +219,19 @@ def prepare_input(
             dtype=frames_dbz.dtype,
             device=frames_dbz.device,
         )
-        background_finite = torch.isfinite(background)
+        background_mask = torch.isfinite(background)
         clean_background = torch.nan_to_num(
             background,
             nan=config.min_dbz,
             posinf=config.max_dbz,
             neginf=config.min_dbz,
         ).clamp(config.min_dbz, config.max_dbz)
-        background_used_mask = ~available & background_finite
-        dense = torch.where(background_used_mask, clean_background, dense)
-        available = available | background_used_mask
+        background_frames = torch.where(
+            background_mask,
+            clean_background,
+            floor,
+        )
+        background_used_mask = ~observed & background_mask
 
     observed_count = int(observed.sum())
     observation_count = observed.numel()
@@ -238,7 +240,7 @@ def prepare_input(
     if observed_count == 0:
         status = (
             DataStatus.STALE_BACKGROUND
-            if bool(torch.any(available[-1]))
+            if bool(torch.any(background_mask[-1]))
             else DataStatus.UNAVAILABLE
         )
     elif observed_count < observation_count:
@@ -247,13 +249,14 @@ def prepare_input(
         status = DataStatus.OBSERVED
 
     return PreparedRadarInput(
-        frames_dbz=dense,
+        frames_dbz=observation_frames,
+        background_frames_dbz=background_frames,
         observed_mask=observed,
+        background_mask=background_mask,
         missing_mask=missing,
         qc_rejected_mask=qc_rejected,
         observed_clear_mask=observed
         & (clean_observations < config.echo_threshold_dbz),
-        available_mask=available,
         data_status=status,
         coverage_by_frame=coverage_by_frame.detach(),
         background_used=background_used,
@@ -285,23 +288,40 @@ def estimate_prepared_state(
     prepared: PreparedRadarInput,
     config: NowcastConfig,
 ) -> tuple[RadarState, ForecastMetadata]:
-    frames = prepared.frames_dbz
-    linear = dbz_to_echo(
-        frames,
+    observation_linear = dbz_to_echo(
+        prepared.frames_dbz,
         min_dbz=config.min_dbz,
         max_dbz=config.max_dbz,
     )
-    linear, _ = validate_physical_echo(linear, name="input echo conversion")
+    background_linear = dbz_to_echo(
+        prepared.background_frames_dbz,
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
+    )
+    observation_linear, _ = validate_physical_echo(
+        observation_linear,
+        name="observation echo conversion",
+    )
+    background_linear, _ = validate_physical_echo(
+        background_linear,
+        name="background echo conversion",
+    )
     (
         displacement,
         growth,
         motion_disagreement,
         growth_disagreement,
         tendency_pair_count,
-    ) = _estimate_time_normalized_tendencies(prepared, linear, config)
+    ) = _estimate_time_normalized_tendencies(
+        prepared,
+        observation_linear,
+        background_linear,
+        config,
+    )
     current_echo, current_source_mask = _merge_current_state(
         prepared,
-        linear,
+        observation_linear,
+        background_linear,
         displacement,
         growth,
         config,
@@ -330,13 +350,37 @@ def estimate_prepared_state(
 
 def _estimate_time_normalized_tendencies(
     prepared: PreparedRadarInput,
+    observation_linear: Tensor,
+    background_linear: Tensor,
+    config: NowcastConfig,
+) -> tuple[Tensor, Tensor, Tensor, Tensor, int]:
+    observation_estimate = _estimate_source_tendencies(
+        prepared.frames_dbz,
+        prepared.observed_mask,
+        observation_linear,
+        config,
+    )
+    if observation_estimate[-1]:
+        return observation_estimate
+    return _estimate_source_tendencies(
+        prepared.background_frames_dbz,
+        prepared.background_mask,
+        background_linear,
+        config,
+    )
+
+
+def _estimate_source_tendencies(
+    frames_dbz: Tensor,
+    masks: Tensor,
     linear: Tensor,
     config: NowcastConfig,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor, int]:
     adjacent_estimates = []
     for previous_index, current_index in ((0, 1), (1, 2)):
         estimate = _estimate_available_pair(
-            prepared,
+            frames_dbz,
+            masks,
             linear,
             previous_index,
             current_index,
@@ -346,8 +390,8 @@ def _estimate_time_normalized_tendencies(
             adjacent_estimates.append(estimate)
 
     if len(adjacent_estimates) == 2:
-        first_motion, first_growth, _ = adjacent_estimates[0]
-        second_motion, second_growth, _ = adjacent_estimates[1]
+        first_motion, first_growth = adjacent_estimates[0]
+        second_motion, second_growth = adjacent_estimates[1]
         weight = config.recent_weight
         return (
             (1.0 - weight) * first_motion + weight * second_motion,
@@ -357,55 +401,55 @@ def _estimate_time_normalized_tendencies(
             2,
         )
 
-    estimates = list(adjacent_estimates)
-    if len(adjacent_estimates) < 2:
-        long_estimate = _estimate_available_pair(
-            prepared,
-            linear,
-            0,
-            2,
-            config,
-        )
-        if long_estimate is not None:
-            estimates.append(long_estimate)
-
     zero_motion = linear.new_zeros(2)
     zero_growth = linear.new_zeros(())
-    if not estimates:
+    if adjacent_estimates:
+        motion, growth = adjacent_estimates[0]
+        return motion, growth, zero_growth, zero_growth, 1
+
+    long_estimate = _estimate_available_pair(
+        frames_dbz,
+        masks,
+        linear,
+        0,
+        2,
+        config,
+    )
+    if long_estimate is None:
         return zero_motion, zero_growth, zero_growth, zero_growth, 0
 
-    motion, growth, _ = max(estimates, key=lambda estimate: estimate[2])
+    motion, growth = long_estimate
     return motion, growth, zero_growth, zero_growth, 1
 
 
 def _estimate_available_pair(
-    prepared: PreparedRadarInput,
+    frames_dbz: Tensor,
+    masks: Tensor,
     linear: Tensor,
     previous_index: int,
     current_index: int,
     config: NowcastConfig,
-) -> tuple[Tensor, Tensor, float] | None:
-    previous_mask = prepared.available_mask[previous_index]
-    current_mask = prepared.available_mask[current_index]
+) -> tuple[Tensor, Tensor] | None:
+    previous_mask = masks[previous_index]
+    current_mask = masks[current_index]
     common = previous_mask & current_mask
-    confidence = _pair_echo_coverage(
-        prepared.frames_dbz[previous_index],
-        prepared.frames_dbz[current_index],
+    if not _has_complete_echo_neighborhood(
+        frames_dbz[previous_index],
+        frames_dbz[current_index],
         common,
         config,
-    )
-    if confidence < config.min_pair_echo_coverage:
+    ):
         return None
 
-    floor = prepared.frames_dbz.new_full((), config.min_dbz)
+    floor = frames_dbz.new_full((), config.min_dbz)
     previous_dbz = torch.where(
         common,
-        prepared.frames_dbz[previous_index],
+        frames_dbz[previous_index],
         floor,
     )
     current_dbz = torch.where(
         common,
-        prepared.frames_dbz[current_index],
+        frames_dbz[current_index],
         floor,
     )
     previous_signal = (
@@ -446,21 +490,21 @@ def _estimate_available_pair(
         config,
         max_log_growth=config.max_log_growth_per_step * step_span,
     )
-    return total_motion / step_span, total_growth / step_span, confidence
+    return total_motion / step_span, total_growth / step_span
 
 
-def _pair_echo_coverage(
+def _has_complete_echo_neighborhood(
     previous_dbz: Tensor,
     current_dbz: Tensor,
     common: Tensor,
     config: NowcastConfig,
-) -> float:
+) -> bool:
     active_echo = (
         (previous_dbz >= config.echo_threshold_dbz)
         | (current_dbz >= config.echo_threshold_dbz)
     )
     if not bool(torch.any(active_echo)):
-        return 0.0
+        return False
 
     radius = config.pair_echo_dilation_px
     if radius:
@@ -476,29 +520,55 @@ def _pair_echo_coverage(
     else:
         near_echo = active_echo
 
-    known_echo = torch.count_nonzero(active_echo & common)
-    missing_near_echo = torch.count_nonzero(near_echo & ~common)
-    denominator = known_echo + missing_near_echo
-    if int(denominator) == 0:
-        return 0.0
-    return float(known_echo / denominator)
+    return not bool(torch.any(near_echo & ~common))
 
 
 def _merge_current_state(
     prepared: PreparedRadarInput,
-    linear: Tensor,
+    observation_linear: Tensor,
+    background_linear: Tensor,
     displacement: Tensor,
     growth: Tensor,
     config: NowcastConfig,
 ) -> tuple[Tensor, Tensor]:
-    latest_mask = prepared.available_mask[2]
+    observation_echo, observation_mask = _merge_source_frames(
+        observation_linear,
+        prepared.observed_mask,
+        displacement,
+        growth,
+        config,
+    )
+    background_echo, background_mask = _merge_source_frames(
+        background_linear,
+        prepared.background_mask,
+        displacement,
+        growth,
+        config,
+    )
+    current_mask = observation_mask | background_mask
+    current_echo = torch.where(
+        observation_mask,
+        observation_echo,
+        background_echo,
+    )
+    return current_echo, current_mask
+
+
+def _merge_source_frames(
+    linear: Tensor,
+    masks: Tensor,
+    displacement: Tensor,
+    growth: Tensor,
+    config: NowcastConfig,
+) -> tuple[Tensor, Tensor]:
+    latest_mask = masks[2]
     if bool(torch.all(latest_mask)):
         return linear[2], latest_mask
 
     numerator = torch.zeros_like(linear[2])
     support = torch.zeros_like(linear[2])
     for source_index in range(3):
-        source_mask = prepared.available_mask[source_index]
+        source_mask = masks[source_index]
         if not bool(torch.any(source_mask)):
             continue
 

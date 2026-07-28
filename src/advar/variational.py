@@ -223,12 +223,17 @@ def prepare_analysis(
         freeze_remap_cell(step * baseline_state.displacement_yx)
         for step in (1, 2)
     )
+    baseline_frames_dbz = torch.where(
+        prepared.observed_mask,
+        prepared.frames_dbz,
+        prepared.background_frames_dbz,
+    )
     frozen = FrozenOuterState(
-        initial_background_dbz=prepared.frames_dbz[0].detach().clone(),
+        initial_background_dbz=baseline_frames_dbz[0].detach().clone(),
         initial_support_mask=detected[0].detach().clone(),
         baseline_state=baseline_state,
         baseline_metadata=baseline_metadata,
-        baseline_frames_dbz=prepared.frames_dbz.detach().clone(),
+        baseline_frames_dbz=baseline_frames_dbz.detach().clone(),
         irls_sqrt_weight=valid.to(dtype=frames_dbz.dtype).detach().clone(),
         nowcast_config=nowcast_config,
         analysis_config=analysis_config,
