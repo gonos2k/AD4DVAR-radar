@@ -1063,14 +1063,18 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
         data_status=metadata.data_status,
         coverage_by_frame=metadata.coverage_by_frame.detach(),
         background_used=metadata.background_used,
+        background_contribution_fraction=(
+            metadata.background_contribution_fraction
+        ),
         background_age_minutes=metadata.background_age_minutes,
-        source_mask=(
+        source_support=(
             None
-            if metadata.source_mask is None
-            else metadata.source_mask.detach()
+            if metadata.source_support is None
+            else metadata.source_support.detach()
         ),
         motion_disagreement_px=metadata.motion_disagreement_px.detach(),
         growth_disagreement=metadata.growth_disagreement.detach(),
         tendency_pair_count=metadata.tendency_pair_count,
+        tendency_source=metadata.tendency_source,
         provenance=metadata.provenance,
     )

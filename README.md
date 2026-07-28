@@ -151,7 +151,7 @@ advar-nowcast three_frames.npy forecast.npz --audit
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v4`
+- `output_contract_version`: 현재 `nowcast-npz-v5`
 - `forecast_dbz`: `[18, H, W]`
 - `lead_minutes`: `[10, 20, ..., 180]`
 - `displacement_yx`: 10분당 픽셀 이동량
@@ -159,10 +159,14 @@ advar-nowcast three_frames.npy forecast.npz --audit
 - `motion_disagreement_px`: 두 인접 가용쌍의 이동 추정 불일치. 가용쌍이 하나 이하면 `0`
 - `growth_disagreement`: 두 인접 가용쌍의 성장 추정 불일치. 가용쌍이 하나 이하면 `0`
 - `tendency_pair_count`: 실제 운동·성장 추정에 사용한 독립 pair 수
+- `tendency_source`: 경향 추정 출처. `OBSERVATION`, `BACKGROUND`,
+  `NONE` 중 하나
+- `min_publish_support`: 유한한 예측값을 발행하는 최소 source support
 - `data_status`: `OBSERVED`, `PARTIAL`, `STALE_BACKGROUND`,
   `UNAVAILABLE` 중 하나
 - `coverage_by_frame`: 입력 세 시각의 관측 coverage
-- `background_used`, `background_age_minutes`
+- `background_used`, `background_contribution_fraction`,
+  `background_age_minutes`
 - `analysis_converged`, `analysis_degraded`, `analysis_used_fallback`
 
 `--audit`를 지정할 때만 최종 양성 보정량과 선행시간별

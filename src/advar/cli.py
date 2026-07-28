@@ -19,7 +19,7 @@ from .nowcast import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v4"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v5"
 
 
 def main() -> None:
@@ -31,6 +31,12 @@ def main() -> None:
     parser.add_argument("--min-dbz", type=float, default=-10.0)
     parser.add_argument("--max-dbz", type=float, default=70.0)
     parser.add_argument("--echo-threshold-dbz", type=float, default=5.0)
+    parser.add_argument(
+        "--min-publish-support",
+        type=float,
+        default=0.95,
+        help="minimum propagated source support required for publication",
+    )
     parser.add_argument(
         "--variational",
         action="store_true",
@@ -90,6 +96,7 @@ def main() -> None:
         min_dbz=args.min_dbz,
         max_dbz=args.max_dbz,
         echo_threshold_dbz=args.echo_threshold_dbz,
+        min_publish_support=args.min_publish_support,
     )
     frames_tensor = torch.as_tensor(frames, dtype=torch.float32)
     if args.variational:
@@ -145,9 +152,14 @@ def _output_arrays(
         "motion_disagreement_px": float(metadata.motion_disagreement_px),
         "growth_disagreement": float(metadata.growth_disagreement),
         "tendency_pair_count": np.asarray(metadata.tendency_pair_count),
+        "tendency_source": np.asarray(metadata.tendency_source.value),
+        "min_publish_support": np.asarray(config.min_publish_support),
         "data_status": np.asarray(metadata.data_status.value),
         "coverage_by_frame": metadata.coverage_by_frame.cpu().numpy(),
         "background_used": np.asarray(metadata.background_used),
+        "background_contribution_fraction": np.asarray(
+            metadata.background_contribution_fraction
+        ),
         "background_age_minutes": np.asarray(
             np.nan
             if metadata.background_age_minutes is None

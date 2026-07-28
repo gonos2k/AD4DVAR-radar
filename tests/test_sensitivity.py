@@ -13,6 +13,7 @@ from advar.nowcast import (  # noqa: E402
     ForecastResult,
     NowcastConfig,
     RadarState,
+    TendencySource,
     forecast_from_state,
     forecast_linear_at_step,
     forecast_linear_from_state,
@@ -67,13 +68,15 @@ def metadata_for(
             device=state.echo_linear.device,
         ),
         background_used=False,
+        background_contribution_fraction=0.0,
         background_age_minutes=None,
-        source_mask=None,
+        source_support=None,
         motion_disagreement_px=torch.linalg.vector_norm(
             pair_motion[1] - pair_motion[0]
         ),
         growth_disagreement=torch.abs(pair_growth[1] - pair_growth[0]),
         tendency_pair_count=2,
+        tendency_source=TendencySource.OBSERVATION,
     )
 
 

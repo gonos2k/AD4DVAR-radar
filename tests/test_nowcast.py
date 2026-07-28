@@ -18,6 +18,7 @@ from advar.nowcast import (  # noqa: E402
     ForecastMetadata,
     NowcastConfig,
     RadarState,
+    TendencySource,
     estimate_state as estimate_state_with_metadata,
     forecast_from_state as forecast_result_from_state,
     forecast_linear_from_state,
@@ -76,11 +77,13 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
             device=state.echo_linear.device,
         ),
         background_used=False,
+        background_contribution_fraction=0.0,
         background_age_minutes=None,
-        source_mask=None,
+        source_support=None,
         motion_disagreement_px=state.echo_linear.new_zeros(()),
         growth_disagreement=state.echo_linear.new_zeros(()),
         tendency_pair_count=2,
+        tendency_source=TendencySource.OBSERVATION,
     )
 
 
@@ -303,6 +306,7 @@ class NowcastTests(unittest.TestCase):
 
         self.assertEqual(metadata.data_status, DataStatus.UNAVAILABLE)
         self.assertEqual(float(metadata.coverage_by_frame.mean()), 0.0)
+        self.assertEqual(metadata.tendency_source, TendencySource.NONE)
         self.assertTrue(bool(torch.all(torch.isnan(forecast))))
 
     def test_all_missing_uses_time_aligned_stale_background(self) -> None:
@@ -318,7 +322,12 @@ class NowcastTests(unittest.TestCase):
         forecast, metadata = result.forecast_dbz, result.metadata
         self.assertEqual(metadata.data_status, DataStatus.STALE_BACKGROUND)
         self.assertTrue(metadata.background_used)
+        self.assertEqual(metadata.background_contribution_fraction, 1.0)
         self.assertEqual(metadata.background_age_minutes, 10.0)
+        self.assertEqual(
+            metadata.tendency_source,
+            TendencySource.BACKGROUND,
+        )
         self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
         torch.testing.assert_close(forecast[0], background[-1])
 
@@ -385,6 +394,7 @@ class NowcastTests(unittest.TestCase):
 
         metadata = result.metadata
         self.assertFalse(metadata.background_used)
+        self.assertEqual(metadata.background_contribution_fraction, 0.0)
         self.assertIsNone(metadata.background_age_minutes)
         self.assertEqual(metadata.data_status, DataStatus.OBSERVED)
 
@@ -601,6 +611,13 @@ class NowcastTests(unittest.TestCase):
             rtol=0.0,
         )
         self.assertEqual(metadata.tendency_pair_count, 1)
+        self.assertEqual(
+            metadata.tendency_source,
+            TendencySource.OBSERVATION,
+        )
+        self.assertTrue(metadata.background_used)
+        self.assertGreater(metadata.background_contribution_fraction, 0.0)
+        self.assertLess(metadata.background_contribution_fraction, 0.1)
 
     def test_propagated_observation_precedes_clear_background(self) -> None:
         frames = torch.full((3, 8, 8), torch.nan, dtype=torch.float64)
@@ -647,7 +664,7 @@ class NowcastTests(unittest.TestCase):
 
         result = nowcast(frames, self.config)
 
-        self.assertIsNone(result.metadata.source_mask)
+        self.assertIsNone(result.metadata.source_support)
         self.assertTrue(bool(torch.all(torch.isfinite(result.forecast_dbz))))
         torch.testing.assert_close(
             result.forecast_dbz[0],
@@ -664,7 +681,7 @@ class NowcastTests(unittest.TestCase):
 
         result = nowcast(frames, self.config)
 
-        self.assertIsNone(result.metadata.source_mask)
+        self.assertIsNone(result.metadata.source_support)
         self.assertTrue(bool(torch.all(torch.isfinite(result.forecast_dbz))))
         torch.testing.assert_close(
             result.forecast_dbz[0],
@@ -684,6 +701,7 @@ class NowcastTests(unittest.TestCase):
             zero,
             zero,
             1,
+            TendencySource.OBSERVATION,
         )
 
         with patch.object(
@@ -695,12 +713,135 @@ class NowcastTests(unittest.TestCase):
 
         valid = (
             torch.ones_like(echo, dtype=torch.bool)
-            if metadata.source_mask is None
-            else metadata.source_mask
+            if metadata.source_support is None
+            else metadata.source_support > self.config.epsilon
         )
         torch.testing.assert_close(
             state.echo_linear[valid],
             torch.ones_like(state.echo_linear[valid]),
+        )
+
+    def test_fractional_support_is_not_promoted_to_full_support(self) -> None:
+        frames = torch.full((3, 8, 8), torch.nan, dtype=torch.float64)
+        frames[1, 3, 3] = linear_to_dbz(
+            torch.tensor(1.0, dtype=torch.float64),
+            self.config,
+        )
+        nowcast_module = import_module("advar.nowcast")
+        zero = frames.new_zeros(())
+        tendencies = (
+            frames.new_tensor([0.5, 0.5]),
+            zero,
+            zero,
+            zero,
+            1,
+            TendencySource.OBSERVATION,
+        )
+
+        with patch.object(
+            nowcast_module,
+            "_estimate_time_normalized_tendencies",
+            return_value=tendencies,
+        ):
+            state, metadata = estimate_state_with_metadata(frames, self.config)
+
+        self.assertIsNotNone(metadata.source_support)
+        support = metadata.source_support
+        assert support is not None
+        nonzero = support[support > 0]
+        self.assertEqual(nonzero.numel(), 4)
+        torch.testing.assert_close(
+            nonzero,
+            torch.full_like(nonzero, 0.25),
+        )
+        torch.testing.assert_close(support.sum(), support.new_tensor(1.0))
+        torch.testing.assert_close(
+            state.echo_linear[support > 0],
+            torch.ones(4, dtype=torch.float64),
+        )
+
+    def test_fractional_observation_support_blends_with_background(self) -> None:
+        frames = torch.full((3, 8, 8), torch.nan, dtype=torch.float64)
+        observation_echo = torch.tensor(100.0, dtype=torch.float64)
+        background_echo = torch.tensor(1.0, dtype=torch.float64)
+        frames[1, 3, 3] = linear_to_dbz(observation_echo, self.config)
+        background = torch.full_like(
+            frames,
+            linear_to_dbz(background_echo, self.config),
+        )
+        nowcast_module = import_module("advar.nowcast")
+        zero = frames.new_zeros(())
+        tendencies = (
+            frames.new_tensor([0.0, 0.99]),
+            zero,
+            zero,
+            zero,
+            1,
+            TendencySource.OBSERVATION,
+        )
+
+        with patch.object(
+            nowcast_module,
+            "_estimate_time_normalized_tendencies",
+            return_value=tendencies,
+        ):
+            state, metadata = estimate_state_with_metadata(
+                frames,
+                self.config,
+                background_frames_dbz=background,
+                background_age_minutes=10.0,
+            )
+
+        expected = 0.01 * observation_echo + 0.99 * background_echo
+        torch.testing.assert_close(state.echo_linear[3, 3], expected)
+        self.assertTrue(metadata.background_used)
+        self.assertGreater(metadata.background_contribution_fraction, 0.9)
+        self.assertEqual(metadata.background_age_minutes, 10.0)
+
+    def test_publication_mask_uses_advected_fractional_support(self) -> None:
+        config = NowcastConfig(
+            horizon_minutes=20,
+            min_publish_support=0.6,
+        )
+        echo = torch.ones(8, 8, dtype=torch.float64)
+        support = torch.zeros_like(echo)
+        support[3:5, 3:5] = torch.tensor(
+            [[1.0, 0.8], [0.6, 0.4]],
+            dtype=torch.float64,
+        )
+        state = RadarState(
+            echo_linear=echo,
+            displacement_yx=torch.tensor([0.0, 0.5], dtype=torch.float64),
+            log_growth_per_step=torch.zeros((), dtype=torch.float64),
+        )
+        metadata = ForecastMetadata(
+            data_status=DataStatus.PARTIAL,
+            coverage_by_frame=torch.ones(3, dtype=torch.float64),
+            background_used=False,
+            background_contribution_fraction=0.0,
+            background_age_minutes=None,
+            source_support=support,
+            motion_disagreement_px=torch.zeros((), dtype=torch.float64),
+            growth_disagreement=torch.zeros((), dtype=torch.float64),
+            tendency_pair_count=1,
+            tendency_source=TendencySource.OBSERVATION,
+        )
+
+        result = forecast_result_from_state(state, metadata, config)
+        expected = torch.stack(
+            [
+                remap(support, step * state.displacement_yx)
+                >= config.min_publish_support
+                for step in range(1, config.forecast_steps + 1)
+            ]
+        )
+
+        torch.testing.assert_close(result.valid_mask, expected)
+        self.assertTrue(
+            bool(torch.all(torch.isfinite(result.forecast_dbz[expected])))
+        )
+        self.assertTrue(
+            bool(torch.all(torch.isnan(result.forecast_dbz[~expected])))
         )
 
     def test_analysis_window_growth_does_not_decay(self) -> None:
@@ -722,6 +863,7 @@ class NowcastTests(unittest.TestCase):
             zero,
             zero,
             1,
+            TendencySource.OBSERVATION,
         )
 
         with patch.object(
@@ -1135,6 +1277,10 @@ class NowcastTests(unittest.TestCase):
             NowcastConfig(pair_echo_dilation_px=-1)
         with self.assertRaises(TypeError):
             NowcastConfig(pair_echo_dilation_px=True)
+        with self.assertRaises(ValueError):
+            NowcastConfig(min_publish_support=0.0)
+        with self.assertRaises(ValueError):
+            NowcastConfig(min_publish_support=1.01)
 
 
 if __name__ == "__main__":
