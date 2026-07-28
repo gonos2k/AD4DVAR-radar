@@ -538,6 +538,29 @@ class VariationalAnalysisTests(unittest.TestCase):
             bool(torch.all(torch.isfinite(forecast.forecast_dbz)))
         )
         torch.testing.assert_close(forecast.forecast_dbz[0], background[-1])
+        torch.testing.assert_close(
+            echo_to_dbz(
+                result.analyzed_frames_linear,
+                min_dbz=self.nowcast_config.min_dbz,
+            ),
+            background,
+        )
+
+    def test_analysis_background_preserves_valid_observation(self) -> None:
+        frames = torch.full((3, 5, 5), torch.nan, dtype=torch.float64)
+        frames[0, 2, 2] = 15.0
+        background = torch.full_like(frames, 25.0)
+
+        _, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+
+        self.assertEqual(float(frozen.initial_background_dbz[2, 2]), 15.0)
+        self.assertEqual(float(frozen.initial_background_dbz[0, 0]), 25.0)
 
     def test_negative_analysis_trajectory_fails_closed(self) -> None:
         frames = torch.full((3, 16, 16), 20.0, dtype=torch.float64)
