@@ -19,12 +19,29 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from .sensitivity import SensitivitySnapshot
+from .sensitivity import CONTEXT_FEATURE_NAMES, SensitivitySnapshot
 
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 2
+_INDEX_SCHEMA_VERSION = 3
+_SCHEMA_ONE_CONTEXT_FEATURE_NAMES = (
+    "motion_dy",
+    "motion_dx",
+    "motion_speed",
+    "log_growth",
+    "motion_disagreement",
+    "growth_disagreement",
+    "latest_mean_dbz",
+    "latest_max_dbz",
+    "latest_q90_dbz",
+    "echo_fraction_5dbz",
+    "echo_fraction_35dbz",
+    "boundary_echo_fraction",
+    "centroid_y",
+    "centroid_x",
+    "log_echo_mass",
+)
 
 
 @dataclass(frozen=True)
@@ -45,12 +62,7 @@ class ModelContract:
 
     @property
     def digest(self) -> str:
-        return _json_digest(
-            {
-                "contract_schema_version": 1,
-                **asdict(self),
-            }
-        )
+        return _model_contract_digest(self, schema_version=2)
 
 
 @dataclass(frozen=True)
@@ -412,46 +424,38 @@ class EpisodeLedger:
         episode: SensitivityEpisode,
     ) -> None:
         snapshot = episode.snapshot
-        interval = snapshot.lead_minutes[0]
-        input_offsets = (-2 * interval, -interval, 0)
         rows: list[tuple[Any, ...]] = []
         for lead_index, lead in enumerate(snapshot.lead_minutes):
             for metric_index, metric in enumerate(snapshot.metric_names):
-                for input_index, offset in enumerate(input_offsets):
-                    status = (
-                        "partial_direct_latest_dbz_fixed_control"
-                        if input_index == 2
-                        else "no_direct_forecast_path"
+                rows.append(
+                    (
+                        episode.episode_id,
+                        lead,
+                        metric,
+                        0,
+                        "partial_direct_latest_dbz_fixed_control",
+                        _sqlite_number(
+                            snapshot.forecast_scores[lead_index, metric_index]
+                        ),
+                        _sqlite_number(
+                            snapshot.direct.norm[lead_index, metric_index]
+                        ),
+                        _sqlite_number(
+                            None
+                            if snapshot.direct.impact is None
+                            else snapshot.direct.impact[
+                                lead_index, metric_index
+                            ]
+                        ),
+                        _sqlite_number(
+                            None
+                            if snapshot.direct.reward is None
+                            else snapshot.direct.reward[
+                                lead_index, metric_index
+                            ]
+                        ),
                     )
-                    rows.append(
-                        (
-                            episode.episode_id,
-                            lead,
-                            metric,
-                            offset,
-                            status,
-                            _sqlite_number(
-                                snapshot.forecast_scores[
-                                    lead_index, metric_index
-                                ]
-                            ),
-                            _sqlite_number(
-                                snapshot.direct_observation_sensitivity_norm[
-                                    lead_index, metric_index, input_index
-                                ]
-                            ),
-                            _sqlite_number(
-                                snapshot.direct_observation_impact[
-                                    lead_index, metric_index, input_index
-                                ]
-                            ),
-                            _sqlite_number(
-                                snapshot.direct_normalized_reward[
-                                    lead_index, metric_index, input_index
-                                ]
-                            ),
-                        )
-                    )
+                )
         connection.executemany(
             """
             INSERT INTO episode_impacts (
@@ -559,6 +563,15 @@ def _owned_episode_copy(episode: SensitivityEpisode) -> SensitivityEpisode:
             replacements[field.name] = value.detach().cpu().clone()
         elif isinstance(value, dict):
             replacements[field.name] = dict(value)
+    direct_replacements: dict[str, Tensor] = {}
+    for field in fields(episode.snapshot.direct):
+        value = getattr(episode.snapshot.direct, field.name)
+        if isinstance(value, Tensor):
+            direct_replacements[field.name] = value.detach().cpu().clone()
+    replacements["direct"] = replace(
+        episode.snapshot.direct,
+        **direct_replacements,
+    )
     owned_snapshot = replace(episode.snapshot, **replacements)
     return replace(
         episode,
@@ -577,29 +590,30 @@ def _snapshot_arrays(episode: SensitivityEpisode) -> dict[str, np.ndarray]:
         "control_sensitivity": snapshot.control_sensitivity,
         "forecast_sensitivity": snapshot.forecast_sensitivity,
         "forecast_cap_active_mask": snapshot.forecast_cap_active_mask,
-        "direct_observation_sensitivity": (
-            snapshot.direct_observation_sensitivity
-        ),
-        "direct_observation_sensitivity_norm": (
-            snapshot.direct_observation_sensitivity_norm
-        ),
-        "tile_direct_sensitivity_norm": (
-            snapshot.tile_direct_sensitivity_norm
-        ),
-        "tile_whitened_direct_sensitivity_norm": (
-            snapshot.tile_whitened_direct_sensitivity_norm
-        ),
-        "direct_observation_impact": snapshot.direct_observation_impact,
-        "tile_direct_observation_impact": (
-            snapshot.tile_direct_observation_impact
-        ),
-        "direct_normalized_reward": snapshot.direct_normalized_reward,
+        "direct_observation_sensitivity": snapshot.direct.maps,
+        "direct_observation_sensitivity_norm": snapshot.direct.norm,
+        "tile_direct_sensitivity_norm": snapshot.direct.tile_norm,
         "latest_sensitivity_mask": snapshot.latest_sensitivity_mask,
+    }
+    optional_arrays = {
+        "tile_whitened_direct_sensitivity_norm": (
+            snapshot.direct.whitened_tile_norm
+        ),
+        "direct_observation_impact": snapshot.direct.impact,
+        "tile_direct_observation_impact": snapshot.direct.tile_impact,
+        "direct_normalized_reward": snapshot.direct.reward,
         "observation_std_dbz": snapshot.observation_std_dbz,
         "observation_innovation_dbz": snapshot.observation_innovation_dbz,
         "observation_innovation_mask": snapshot.observation_innovation_mask,
         "baseline_scores": snapshot.baseline_scores,
     }
+    tensor_arrays.update(
+        {
+            name: value
+            for name, value in optional_arrays.items()
+            if value is not None
+        }
+    )
     arrays = {
         name: tensor.detach().cpu().numpy().copy()
         for name, tensor in tensor_arrays.items()
@@ -617,7 +631,7 @@ def _episode_manifest(
 ) -> dict[str, Any]:
     snapshot = episode.snapshot
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "episode_id": episode.episode_id,
         "issue_time": episode.issue_time,
         "radar_id": episode.radar_id,
@@ -628,7 +642,7 @@ def _episode_manifest(
         "full_map_lead_minutes": list(snapshot.full_map_lead_minutes),
         "tile_size": snapshot.tile_size,
         "context_feature_names": list(snapshot.context_feature_names),
-        "sensitivity_scope": _sensitivity_scope(snapshot),
+        "sensitivity_scope": _sensitivity_scope(),
         "units": {
             "forecast_sensitivity": "d_error/d_linear_echo",
             "control_sensitivity": (
@@ -658,11 +672,8 @@ def _episode_manifest(
     }
 
 
-def _sensitivity_scope(snapshot: SensitivitySnapshot) -> dict[str, str]:
-    interval = snapshot.lead_minutes[0]
+def _sensitivity_scope() -> dict[str, str]:
     return {
-        f"input_{-2 * interval}_minutes": "no_direct_forecast_path",
-        f"input_{-interval}_minutes": "no_direct_forecast_path",
         "input_0_minutes": "partial_direct_latest_dbz_fixed_control",
         "indirect_analysis_path": (
             "unavailable_implicit_variational_fso_not_implemented"
@@ -676,7 +687,8 @@ def _verify_manifest(
     episode_id: str,
     row: sqlite3.Row,
 ) -> None:
-    if manifest.get("schema_version") != 1:
+    schema_version = manifest.get("schema_version")
+    if type(schema_version) is not int or schema_version not in (1, 2):
         raise ValueError("unsupported episode schema")
     if manifest.get("episode_id") != episode_id:
         raise ValueError("manifest episode_id disagrees with the index")
@@ -684,9 +696,13 @@ def _verify_manifest(
         contract = ModelContract(**manifest["contract"])
     except (KeyError, TypeError, ValueError) as error:
         raise ValueError("manifest contains an invalid contract") from error
-    if contract.digest != manifest.get("contract_hash"):
+    contract_hash = _model_contract_digest(
+        contract,
+        schema_version=schema_version,
+    )
+    if contract_hash != manifest.get("contract_hash"):
         raise ValueError("manifest contract hash is invalid")
-    if contract.digest != row["contract_hash"]:
+    if contract_hash != row["contract_hash"]:
         raise ValueError("contract hash disagrees with the index")
     if manifest.get("indirect_observation_sensitivity_available") is not False:
         raise ValueError("M0 episodes cannot contain indirect sensitivity")
@@ -706,6 +722,112 @@ def _verify_manifest(
         raise ValueError("index contains an invalid indirect sensitivity flag")
     if not isinstance(manifest.get("arrays"), dict):
         raise ValueError("manifest array schema is missing")
+    _verify_manifest_layout(manifest)
+
+
+def _verify_manifest_layout(manifest: dict[str, Any]) -> None:
+    arrays = manifest["arrays"]
+    schema_version = manifest["schema_version"]
+    core = {
+        "context_features",
+        "analysis_control",
+        "forecast_scores",
+        "metric_available",
+        "control_sensitivity",
+        "forecast_sensitivity",
+        "forecast_cap_active_mask",
+        "direct_observation_sensitivity",
+        "direct_observation_sensitivity_norm",
+        "tile_direct_sensitivity_norm",
+        "latest_sensitivity_mask",
+        "action_features",
+    }
+    optional = {
+        "tile_whitened_direct_sensitivity_norm",
+        "direct_observation_impact",
+        "tile_direct_observation_impact",
+        "direct_normalized_reward",
+        "observation_std_dbz",
+        "observation_innovation_dbz",
+        "observation_innovation_mask",
+        "baseline_scores",
+    }
+    array_names = set(arrays)
+    if schema_version == 1:
+        context_names = _SCHEMA_ONE_CONTEXT_FEATURE_NAMES
+        leads = manifest.get("lead_minutes")
+        if (
+            not isinstance(leads, list)
+            or not leads
+            or type(leads[0]) is not int
+            or leads[0] <= 0
+        ):
+            raise ValueError("schema 1 lead_minutes are invalid")
+        if array_names != core | optional:
+            raise ValueError("manifest arrays do not match episode schema 1")
+        interval = leads[0]
+        expected_scope = {
+            f"input_{-2 * interval}_minutes": "no_direct_forecast_path",
+            f"input_{-interval}_minutes": "no_direct_forecast_path",
+            "input_0_minutes": "partial_direct_latest_dbz_fixed_control",
+            "indirect_analysis_path": (
+                "unavailable_implicit_variational_fso_not_implemented"
+            ),
+            "total_observation_sensitivity": "unavailable",
+        }
+    else:
+        context_names = CONTEXT_FEATURE_NAMES
+        if not core <= array_names <= core | optional:
+            raise ValueError("manifest arrays do not match episode schema 2")
+        expected_scope = _sensitivity_scope()
+
+    if manifest.get("context_feature_names") != list(context_names):
+        raise ValueError("context features do not match the episode schema")
+    if _declared_array_shape(arrays, "context_features") != (
+        len(context_names),
+    ):
+        raise ValueError("context feature shape does not match the episode schema")
+    ranks = {
+        "direct_observation_sensitivity": (5, 4, 2),
+        "direct_observation_sensitivity_norm": (3, 2, 2),
+        "tile_direct_sensitivity_norm": (5, 4, 2),
+        "tile_whitened_direct_sensitivity_norm": (5, 4, 2),
+        "direct_observation_impact": (3, 2, 2),
+        "tile_direct_observation_impact": (5, 4, 2),
+        "direct_normalized_reward": (3, 2, 2),
+        "observation_std_dbz": (3, 2, 0),
+        "observation_innovation_dbz": (3, 2, 0),
+        "observation_innovation_mask": (3, 2, 0),
+    }
+    version_index = schema_version - 1
+    for name, (v1_rank, v2_rank, input_axis) in ranks.items():
+        if name not in arrays:
+            continue
+        shape = _declared_array_shape(arrays, name)
+        expected_rank = (v1_rank, v2_rank)[version_index]
+        if len(shape) != expected_rank:
+            raise ValueError(
+                f"{name} does not match episode schema {schema_version}"
+            )
+        if schema_version == 1 and shape[input_axis] != 3:
+            raise ValueError(f"{name} does not preserve three input times")
+    if manifest.get("sensitivity_scope") != expected_scope:
+        raise ValueError("sensitivity_scope does not match the episode schema")
+
+
+def _declared_array_shape(
+    arrays: dict[str, Any],
+    name: str,
+) -> tuple[int, ...]:
+    declaration = arrays.get(name)
+    if not isinstance(declaration, dict):
+        raise ValueError(f"manifest array declaration is missing: {name}")
+    shape = declaration.get("shape")
+    if not isinstance(shape, list) or any(
+        type(size) is not int or size < 0 for size in shape
+    ):
+        raise ValueError(f"manifest array shape is invalid: {name}")
+    return tuple(shape)
 
 
 def _verify_array_schema(
@@ -725,10 +847,6 @@ def _verify_array_schema(
 
 
 def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
-    if snapshot.indirect_observation_sensitivity_available:
-        raise ValueError("M0 cannot store indirect observation sensitivity")
-    if snapshot.promotion_eligible:
-        raise ValueError("M0 episodes are not eligible for promotion")
     if not math.isfinite(snapshot.trust_score):
         raise ValueError("trust_score must be finite")
     if snapshot.reward_available and not snapshot.impact_available:
@@ -785,7 +903,7 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
     tile_rows = math.ceil(height / snapshot.tile_size)
     tile_columns = math.ceil(width / snapshot.tile_size)
 
-    expected_shapes = {
+    core_tensors = {
         "context_features": (len(snapshot.context_feature_names),),
         "analysis_control": (3,),
         "forecast_scores": (lead_count, metric_count),
@@ -801,102 +919,51 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         "direct_observation_sensitivity": (
             selected_count,
             metric_count,
-            3,
             height,
             width,
         ),
         "direct_observation_sensitivity_norm": (
             lead_count,
             metric_count,
-            3,
         ),
         "tile_direct_sensitivity_norm": (
             lead_count,
             metric_count,
-            3,
             tile_rows,
             tile_columns,
         ),
-        "tile_whitened_direct_sensitivity_norm": (
-            lead_count,
-            metric_count,
-            3,
-            tile_rows,
-            tile_columns,
-        ),
-        "direct_observation_impact": (lead_count, metric_count, 3),
-        "tile_direct_observation_impact": (
-            lead_count,
-            metric_count,
-            3,
-            tile_rows,
-            tile_columns,
-        ),
-        "direct_normalized_reward": (lead_count, metric_count, 3),
         "latest_sensitivity_mask": (height, width),
-        "observation_std_dbz": (3, height, width),
-        "observation_innovation_dbz": (3, height, width),
-        "observation_innovation_mask": (3, height, width),
-        "baseline_scores": (lead_count, metric_count),
     }
-    for name, expected in expected_shapes.items():
-        value = getattr(snapshot, name)
+    core_values = {
+        "context_features": snapshot.context_features,
+        "analysis_control": snapshot.analysis_control,
+        "forecast_scores": snapshot.forecast_scores,
+        "metric_available": snapshot.metric_available,
+        "control_sensitivity": snapshot.control_sensitivity,
+        "forecast_sensitivity": snapshot.forecast_sensitivity,
+        "forecast_cap_active_mask": snapshot.forecast_cap_active_mask,
+        "direct_observation_sensitivity": snapshot.direct.maps,
+        "direct_observation_sensitivity_norm": snapshot.direct.norm,
+        "tile_direct_sensitivity_norm": snapshot.direct.tile_norm,
+        "latest_sensitivity_mask": snapshot.latest_sensitivity_mask,
+    }
+    for name, expected in core_tensors.items():
+        value = core_values[name]
         if not isinstance(value, Tensor) or tuple(value.shape) != expected:
             raise ValueError(f"{name} must have shape {expected}")
 
-    for name in (
-        "context_features",
-        "analysis_control",
-        "forecast_scores",
-        "control_sensitivity",
-        "forecast_sensitivity",
-        "direct_observation_sensitivity",
-        "direct_observation_sensitivity_norm",
-        "tile_direct_sensitivity_norm",
-        "tile_whitened_direct_sensitivity_norm",
-        "direct_observation_impact",
-        "tile_direct_observation_impact",
-        "direct_normalized_reward",
-        "observation_std_dbz",
-        "observation_innovation_dbz",
-        "baseline_scores",
-    ):
-        _require_float_tensor(name, getattr(snapshot, name))
-    for name in (
-        "metric_available",
-        "forecast_cap_active_mask",
-        "latest_sensitivity_mask",
-        "observation_innovation_mask",
-    ):
-        _require_bool_tensor(name, getattr(snapshot, name))
+    for name, value in core_values.items():
+        if name in {
+            "metric_available",
+            "forecast_cap_active_mask",
+            "latest_sensitivity_mask",
+        }:
+            _require_bool_tensor(name, value)
+        else:
+            _require_float_tensor(name, value)
 
     _require_finite("context_features", snapshot.context_features)
     _require_finite("analysis_control", snapshot.analysis_control)
-    _require_zero(
-        "old-frame direct maps",
-        snapshot.direct_observation_sensitivity[:, :, :2],
-    )
-    _require_zero(
-        "old-frame direct norms",
-        snapshot.direct_observation_sensitivity_norm[:, :, :2],
-    )
-    _require_zero(
-        "old-frame direct tile norms",
-        snapshot.tile_direct_sensitivity_norm[:, :, :2],
-    )
-    if snapshot.whitened_tile_norm_available:
-        _require_zero(
-            "old-frame whitened tile norms",
-            snapshot.tile_whitened_direct_sensitivity_norm[:, :, :2],
-        )
-        _require_finite("observation_std_dbz", snapshot.observation_std_dbz)
-        if bool(torch.any(snapshot.observation_std_dbz <= 0)):
-            raise ValueError("observation_std_dbz must be positive")
-    elif not bool(
-        torch.all(torch.isnan(snapshot.tile_whitened_direct_sensitivity_norm))
-        and torch.all(torch.isnan(snapshot.observation_std_dbz))
-    ):
-        raise ValueError("unavailable whitened summaries must be NaN")
 
     available = snapshot.metric_available
     if not bool(torch.all(torch.isfinite(snapshot.forecast_scores[available]))):
@@ -912,8 +979,8 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
     ):
         raise ValueError("unavailable control sensitivities must be NaN")
 
-    latest_norm = snapshot.direct_observation_sensitivity_norm[:, :, 2]
-    latest_tile_norm = snapshot.tile_direct_sensitivity_norm[:, :, 2]
+    latest_norm = snapshot.direct.norm
+    latest_tile_norm = snapshot.direct.tile_norm
     if not bool(torch.all(torch.isfinite(latest_norm[available]))):
         raise ValueError("available latest-frame norms must be finite")
     if not bool(torch.all(torch.isnan(latest_norm[~available]))):
@@ -931,13 +998,33 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
     if not bool(torch.all(torch.isnan(latest_tile_norm[~available]))):
         raise ValueError("unavailable latest-frame tile norms must be NaN")
     if snapshot.whitened_tile_norm_available:
-        whitened_latest = (
-            snapshot.tile_whitened_direct_sensitivity_norm[:, :, 2]
+        whitened_latest = snapshot.direct.whitened_tile_norm
+        expected = (lead_count, metric_count, tile_rows, tile_columns)
+        if tuple(whitened_latest.shape) != expected:
+            raise ValueError(
+                "tile_whitened_direct_sensitivity_norm "
+                f"must have shape {expected}"
+            )
+        _require_float_tensor(
+            "tile_whitened_direct_sensitivity_norm",
+            whitened_latest,
         )
+        if snapshot.observation_std_dbz is None:
+            raise ValueError("whitened summaries require observation_std_dbz")
+        if tuple(snapshot.observation_std_dbz.shape) != (height, width):
+            raise ValueError("observation_std_dbz must match the latest frame")
+        _require_float_tensor("observation_std_dbz", snapshot.observation_std_dbz)
+        _require_finite("observation_std_dbz", snapshot.observation_std_dbz)
+        if bool(torch.any(snapshot.observation_std_dbz <= 0)):
+            raise ValueError("observation_std_dbz must be positive")
         if not bool(torch.all(torch.isfinite(whitened_latest[available]))):
             raise ValueError("available whitened tile norms must be finite")
         if not bool(torch.all(torch.isnan(whitened_latest[~available]))):
             raise ValueError("unavailable whitened tile norms must be NaN")
+    elif snapshot.observation_std_dbz is not None:
+        raise ValueError(
+            "observation_std_dbz requires whitened sensitivity summaries"
+        )
     for position, lead in enumerate(selected_leads):
         lead_index = leads.index(lead)
         for metric_index in range(metric_count):
@@ -945,9 +1032,7 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             forecast_map = snapshot.forecast_sensitivity[
                 position, metric_index
             ]
-            direct_map = snapshot.direct_observation_sensitivity[
-                position, metric_index, 2
-            ]
+            direct_map = snapshot.direct.maps[position, metric_index]
             if is_available:
                 _require_finite("forecast sensitivity map", forecast_map)
                 _require_finite("direct sensitivity map", direct_map)
@@ -966,33 +1051,49 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             ):
                 raise ValueError("unavailable sensitivity maps must be NaN")
 
-    innovation_mask = snapshot.observation_innovation_mask
-    innovation = snapshot.observation_innovation_dbz
-    if not bool(torch.all(torch.isfinite(innovation[innovation_mask]))):
-        raise ValueError("valid innovations must be finite")
-    if not bool(torch.all(torch.isnan(innovation[~innovation_mask]))):
-        raise ValueError("invalid innovations must be NaN")
+    innovation_values = (
+        snapshot.observation_innovation_dbz,
+        snapshot.observation_innovation_mask,
+    )
+    if (innovation_values[0] is None) != (innovation_values[1] is None):
+        raise ValueError("innovation value and mask availability must agree")
+    if innovation_values[0] is not None and innovation_values[1] is not None:
+        innovation, innovation_mask = innovation_values
+        if tuple(innovation.shape) != (height, width):
+            raise ValueError("observation_innovation_dbz must match latest frame")
+        if tuple(innovation_mask.shape) != (height, width):
+            raise ValueError("observation_innovation_mask must match latest frame")
+        _require_float_tensor("observation_innovation_dbz", innovation)
+        _require_bool_tensor("observation_innovation_mask", innovation_mask)
+        if not bool(torch.all(torch.isfinite(innovation[innovation_mask]))):
+            raise ValueError("valid innovations must be finite")
+        if not bool(torch.all(torch.isnan(innovation[~innovation_mask]))):
+            raise ValueError("invalid innovations must be NaN")
 
     if snapshot.impact_available:
-        if not bool(
+        if snapshot.observation_innovation_mask is None or not bool(
             torch.any(
-                snapshot.observation_innovation_mask[2]
+                snapshot.observation_innovation_mask
                 & snapshot.latest_sensitivity_mask
             )
         ):
             raise ValueError("impact requires a valid latest-frame innovation")
         if not bool(torch.any(snapshot.metric_available)):
             raise ValueError("impact requires an available metric")
-        _require_zero(
-            "old-frame direct impacts",
-            snapshot.direct_observation_impact[:, :, :2],
+        latest_impact = snapshot.direct.impact
+        latest_tile_impact = snapshot.direct.tile_impact
+        if latest_tile_impact is None:
+            raise ValueError("direct impact requires tile impact")
+        if tuple(latest_impact.shape) != (lead_count, metric_count):
+            raise ValueError("direct_observation_impact has invalid shape")
+        expected = (lead_count, metric_count, tile_rows, tile_columns)
+        if tuple(latest_tile_impact.shape) != expected:
+            raise ValueError("tile_direct_observation_impact has invalid shape")
+        _require_float_tensor("direct_observation_impact", latest_impact)
+        _require_float_tensor(
+            "tile_direct_observation_impact",
+            latest_tile_impact,
         )
-        _require_zero(
-            "old-frame tile impacts",
-            snapshot.tile_direct_observation_impact[:, :, :2],
-        )
-        latest_impact = snapshot.direct_observation_impact[:, :, 2]
-        latest_tile_impact = snapshot.tile_direct_observation_impact[:, :, 2]
         if not bool(torch.all(torch.isfinite(latest_impact[available]))):
             raise ValueError("available latest-frame impacts must be finite")
         if not bool(torch.all(torch.isnan(latest_impact[~available]))):
@@ -1004,45 +1105,36 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             atol=1.0e-7,
         ):
             raise ValueError("tile impacts and whole-field impacts disagree")
-    elif not bool(
-        torch.all(torch.isnan(snapshot.direct_observation_impact))
-        and torch.all(torch.isnan(snapshot.tile_direct_observation_impact))
-    ):
-        raise ValueError("unavailable impacts must be NaN")
+    elif snapshot.direct.tile_impact is not None:
+        raise ValueError("tile impact cannot exist without direct impact")
     baseline = snapshot.baseline_scores
-    baseline_available = bool(
-        torch.all(torch.isfinite(baseline))
-        and torch.all(baseline >= 0)
-    )
-    baseline_missing = bool(torch.all(torch.isnan(baseline)))
-    if not baseline_available and not baseline_missing:
-        raise ValueError("baseline_scores must be non-negative or all NaN")
-    expected_reward_available = (
-        snapshot.impact_available and baseline_available
-    )
+    baseline_available = baseline is not None
+    if baseline is not None:
+        if tuple(baseline.shape) != (lead_count, metric_count):
+            raise ValueError("baseline_scores has invalid shape")
+        _require_float_tensor("baseline_scores", baseline)
+        if not bool(
+            torch.all(torch.isfinite(baseline)) and torch.all(baseline >= 0)
+        ):
+            raise ValueError("baseline_scores must be finite and non-negative")
+    expected_reward_available = snapshot.impact_available and baseline_available
     if snapshot.reward_available != expected_reward_available:
         raise ValueError("reward availability disagrees with baseline_scores")
 
     if snapshot.reward_available:
-        _require_zero(
-            "old-frame direct rewards",
-            snapshot.direct_normalized_reward[:, :, :2],
-        )
+        reward = snapshot.direct.reward
+        if tuple(reward.shape) != (lead_count, metric_count):
+            raise ValueError("direct_normalized_reward has invalid shape")
+        _require_float_tensor("direct_normalized_reward", reward)
         if not bool(
-            torch.all(
-                torch.isfinite(
-                    snapshot.direct_normalized_reward[
-                        snapshot.metric_available
-                    ]
-                )
-            )
+            torch.all(torch.isfinite(reward[snapshot.metric_available]))
         ):
             raise ValueError("available rewards must be finite")
-        expected_reward = -snapshot.direct_observation_impact / (
-            baseline[..., None] + snapshot.reward_epsilon
+        expected_reward = -snapshot.direct.impact / (
+            baseline + snapshot.reward_epsilon
         )
         if not torch.allclose(
-            snapshot.direct_normalized_reward,
+            reward,
             expected_reward,
             rtol=1.0e-5,
             atol=1.0e-7,
@@ -1051,8 +1143,6 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             raise ValueError(
                 "direct_normalized_reward disagrees with impact and baseline"
             )
-    elif not bool(torch.all(torch.isnan(snapshot.direct_normalized_reward))):
-        raise ValueError("unavailable rewards must be NaN")
     if any(
         not math.isfinite(value)
         for value in snapshot.trust_components.values()
@@ -1083,11 +1173,6 @@ def _require_finite(name: str, value: Tensor) -> None:
         raise ValueError(f"{name} must be finite")
 
 
-def _require_zero(name: str, value: Tensor) -> None:
-    if not torch.equal(value, torch.zeros_like(value)):
-        raise ValueError(f"{name} must be exactly zero")
-
-
 def _row_exists(
     connection: sqlite3.Connection,
     episode_id: str,
@@ -1102,6 +1187,8 @@ def _row_exists(
 
 
 def _sqlite_number(value: Any) -> float | None:
+    if value is None:
+        return None
     number = float(value)
     return number if math.isfinite(number) else None
 
@@ -1118,6 +1205,19 @@ def _json_text(value: Any) -> str:
 
 def _json_digest(value: Any) -> str:
     return hashlib.sha256(_json_text(value).encode("utf-8")).hexdigest()
+
+
+def _model_contract_digest(
+    contract: ModelContract,
+    *,
+    schema_version: int,
+) -> str:
+    return _json_digest(
+        {
+            "contract_schema_version": schema_version,
+            **asdict(contract),
+        }
+    )
 
 
 def _file_digest(path: Path) -> str:

@@ -10,10 +10,12 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from .nowcast import (
+    DataStatus,
     ForecastMetadata,
     ForecastResult,
     NowcastConfig,
     RadarState,
+    TendencySource,
     _forecast_linear_at_step_core,
     forecast_linear_at_step,
 )
@@ -33,6 +35,12 @@ CONTEXT_FEATURE_NAMES = (
     "log_growth",
     "motion_disagreement",
     "growth_disagreement",
+    "tendency_pair_count",
+    "tendency_source_observation",
+    "tendency_source_background",
+    "current_state_support_fraction",
+    "background_contribution_fraction",
+    "latest_observation_coverage",
     "latest_mean_dbz",
     "latest_max_dbz",
     "latest_q90_dbz",
@@ -41,7 +49,7 @@ CONTEXT_FEATURE_NAMES = (
     "boundary_echo_fraction",
     "centroid_y",
     "centroid_x",
-    "log_echo_mass",
+    "log_integrated_echo",
 )
 
 
@@ -112,9 +120,18 @@ class SensitivityConfig:
 
 
 @dataclass(frozen=True)
-class SensitivitySnapshot:
-    """M0 sensitivity result for one completed forecast cycle."""
+class DirectSensitivity:
+    maps: Tensor
+    norm: Tensor
+    tile_norm: Tensor
+    whitened_tile_norm: Tensor | None = None
+    impact: Tensor | None = None
+    tile_impact: Tensor | None = None
+    reward: Tensor | None = None
 
+
+@dataclass(frozen=True)
+class SensitivitySnapshot:
     metric_names: tuple[str, ...]
     lead_minutes: tuple[int, ...]
     full_map_lead_minutes: tuple[int, ...]
@@ -127,26 +144,27 @@ class SensitivitySnapshot:
     control_sensitivity: Tensor
     forecast_sensitivity: Tensor
     forecast_cap_active_mask: Tensor
-    direct_observation_sensitivity: Tensor
-    direct_observation_sensitivity_norm: Tensor
-    tile_direct_sensitivity_norm: Tensor
-    tile_whitened_direct_sensitivity_norm: Tensor
-    direct_observation_impact: Tensor
-    tile_direct_observation_impact: Tensor
-    direct_normalized_reward: Tensor
+    direct: DirectSensitivity
     latest_sensitivity_mask: Tensor
-    observation_std_dbz: Tensor
-    observation_innovation_dbz: Tensor
-    observation_innovation_mask: Tensor
-    baseline_scores: Tensor
+    observation_std_dbz: Tensor | None
+    observation_innovation_dbz: Tensor | None
+    observation_innovation_mask: Tensor | None
+    baseline_scores: Tensor | None
     reward_epsilon: float
     trust_components: dict[str, float]
     trust_score: float
-    impact_available: bool
-    reward_available: bool
-    whitened_tile_norm_available: bool
-    indirect_observation_sensitivity_available: bool = False
-    promotion_eligible: bool = False
+
+    @property
+    def impact_available(self) -> bool:
+        return self.direct.impact is not None
+
+    @property
+    def reward_available(self) -> bool:
+        return self.direct.reward is not None
+
+    @property
+    def whitened_tile_norm_available(self) -> bool:
+        return self.direct.whitened_tile_norm is not None
 
 
 def compute_sensitivity_snapshot(
@@ -172,10 +190,10 @@ def compute_sensitivity_snapshot(
     sensitivity_config = sensitivity_config or SensitivityConfig()
     state = result.state
     metadata = result.metadata
-    if metadata.provenance != "p0_fft_latest":
-        raise ValueError(
-            "M0 direct sensitivity requires a P0 latest-frame state"
-        )
+    if metadata.data_status is DataStatus.UNAVAILABLE:
+        raise ValueError("sensitivity is undefined for an unissued forecast")
+    if metadata.provenance != "p0_support_merged":
+        raise ValueError("M0 direct sensitivity requires a P0 state")
     if (
         2 * sensitivity_config.active_margin_dbz
         >= nowcast_config.max_dbz - nowcast_config.min_dbz
@@ -214,6 +232,15 @@ def compute_sensitivity_snapshot(
         neginf=nowcast_config.min_dbz,
     )
     verification_valid = torch.isfinite(verification_frames_dbz)
+    issued_valid = torch.isfinite(result.forecast_dbz)
+    if issued_valid.shape != verification_valid.shape:
+        raise ValueError("issued forecast must match verification shape")
+    if result.valid_mask is not None:
+        if result.valid_mask.shape != verification_valid.shape:
+            raise ValueError("forecast valid_mask must match verification shape")
+        if not torch.equal(result.valid_mask, issued_valid):
+            raise ValueError("forecast valid_mask must match issued finite values")
+    verification_valid = verification_valid & issued_valid
     truth_linear = dbz_to_echo(
         clean_verification,
         min_dbz=nowcast_config.min_dbz,
@@ -229,6 +256,10 @@ def compute_sensitivity_snapshot(
         sensitivity_config,
         qc_mask,
     )
+    if not bool(torch.any(latest_active)):
+        raise ValueError(
+            "M0 direct sensitivity requires a valid latest observation"
+        )
     observation_std, whitening_available = _observation_std(
         observation_std_dbz,
         frames_dbz,
@@ -246,22 +277,22 @@ def compute_sensitivity_snapshot(
         (lead_count, metric_count, 3),
         float("nan"),
     )
-    direct_norm = echo.new_zeros((lead_count, metric_count, 3))
+    direct_norm = echo.new_zeros((lead_count, metric_count))
     tile_direct_norm = echo.new_zeros(
-        (lead_count, metric_count, 3, tile_rows, tile_columns)
+        (lead_count, metric_count, tile_rows, tile_columns)
     )
-    tile_shape = (lead_count, metric_count, 3, tile_rows, tile_columns)
+    tile_shape = (lead_count, metric_count, tile_rows, tile_columns)
     if whitening_available:
         tile_whitened_norm = echo.new_zeros(tile_shape)
     else:
-        tile_whitened_norm = echo.new_full(tile_shape, float("nan"))
+        tile_whitened_norm = None
     selected_count = len(full_map_indices)
     forecast_maps = echo.new_full(
         (selected_count, metric_count, height, width),
         float("nan"),
     )
     direct_maps = echo.new_zeros(
-        (selected_count, metric_count, 3, height, width)
+        (selected_count, metric_count, height, width)
     )
     selected_cap_masks = torch.zeros(
         (selected_count, height, width),
@@ -284,19 +315,15 @@ def compute_sensitivity_snapshot(
         and bool(torch.any(innovation_mask[2] & latest_active))
     )
     if not impact_input_available:
-        tile_impact = echo.new_full(
-            (lead_count, metric_count, 3, tile_rows, tile_columns),
-            float("nan"),
-        )
-        observation_impact = echo.new_full(
-            (lead_count, metric_count, 3),
-            float("nan"),
-        )
+        innovation = None
+        innovation_mask = None
+        tile_impact = None
+        observation_impact = None
     else:
         tile_impact = echo.new_zeros(
-            (lead_count, metric_count, 3, tile_rows, tile_columns)
+            (lead_count, metric_count, tile_rows, tile_columns)
         )
-        observation_impact = echo.new_zeros((lead_count, metric_count, 3))
+        observation_impact = echo.new_zeros((lead_count, metric_count))
     selected_position = {
         index: position for position, index in enumerate(full_map_indices)
     }
@@ -332,20 +359,16 @@ def compute_sensitivity_snapshot(
                 nowcast_config,
                 sensitivity_config,
             ):
-                direct_norm[lead_index, metric_index, 2] = float("nan")
-                tile_direct_norm[lead_index, metric_index, 2] = float("nan")
-                if whitening_available:
-                    tile_whitened_norm[
-                        lead_index, metric_index, 2
-                    ] = float("nan")
+                direct_norm[lead_index, metric_index] = float("nan")
+                tile_direct_norm[lead_index, metric_index] = float("nan")
+                if tile_whitened_norm is not None:
+                    tile_whitened_norm[lead_index, metric_index] = float("nan")
                 if lead_index in selected_position:
                     position = selected_position[lead_index]
-                    direct_maps[position, metric_index, 2] = float("nan")
-                if impact_input_available:
-                    observation_impact[
-                        lead_index, metric_index, 2
-                    ] = float("nan")
-                    tile_impact[lead_index, metric_index, 2] = float("nan")
+                    direct_maps[position, metric_index] = float("nan")
+                if observation_impact is not None and tile_impact is not None:
+                    observation_impact[lead_index, metric_index] = float("nan")
+                    tile_impact[lead_index, metric_index] = float("nan")
                 continue
 
             metric_available[lead_index, metric_index] = True
@@ -394,15 +417,15 @@ def compute_sensitivity_snapshot(
             control_sensitivity[lead_index, metric_index] = (
                 control_gradient.detach()
             )
-            direct_norm[lead_index, metric_index, 2] = torch.linalg.vector_norm(
+            direct_norm[lead_index, metric_index] = torch.linalg.vector_norm(
                 direct_gradient.detach()
             )
-            tile_direct_norm[lead_index, metric_index, 2] = _tile_l2(
+            tile_direct_norm[lead_index, metric_index] = _tile_l2(
                 direct_gradient.detach(),
                 sensitivity_config.tile_size,
             )
-            if whitening_available:
-                tile_whitened_norm[lead_index, metric_index, 2] = _tile_l2(
+            if tile_whitened_norm is not None:
+                tile_whitened_norm[lead_index, metric_index] = _tile_l2(
                     whitened_gradient.detach(),
                     sensitivity_config.tile_size,
                 )
@@ -410,9 +433,9 @@ def compute_sensitivity_snapshot(
             if lead_index in selected_position:
                 position = selected_position[lead_index]
                 forecast_maps[position, metric_index] = forecast_gradient.detach()
-                direct_maps[position, metric_index, 2] = direct_gradient.detach()
+                direct_maps[position, metric_index] = direct_gradient.detach()
 
-            if impact_input_available:
+            if observation_impact is not None and tile_impact is not None:
                 contribution = torch.where(
                     innovation_mask[2],
                     direct_gradient.detach() * innovation[2],
@@ -422,16 +445,15 @@ def compute_sensitivity_snapshot(
                     contribution,
                     sensitivity_config.tile_size,
                 )
-                tile_impact[lead_index, metric_index, 2] = tiles
-                observation_impact[lead_index, metric_index, 2] = tiles.sum()
+                tile_impact[lead_index, metric_index] = tiles
+                observation_impact[lead_index, metric_index] = tiles.sum()
 
     has_metric_support = bool(torch.any(metric_available))
-    impact_available = impact_input_available and has_metric_support
-    if not impact_available:
-        observation_impact.fill_(float("nan"))
-        tile_impact.fill_(float("nan"))
+    if not has_metric_support:
+        observation_impact = None
+        tile_impact = None
 
-    reward = echo.new_full(observation_impact.shape, float("nan"))
+    reward = None
     if baseline_scores is not None:
         baseline_scores = baseline_scores.to(
             dtype=echo.dtype,
@@ -443,11 +465,10 @@ def compute_sensitivity_snapshot(
             torch.any(baseline_scores < 0)
         ):
             raise ValueError("baseline_scores must be finite and non-negative")
-        if impact_available:
+        if observation_impact is not None:
             reward = -observation_impact / (
-                baseline_scores[..., None] + sensitivity_config.epsilon
+                baseline_scores + sensitivity_config.epsilon
             )
-    reward_available = impact_available and baseline_scores is not None
 
     trust_components = _trust_components(
         state,
@@ -474,6 +495,7 @@ def compute_sensitivity_snapshot(
             state,
             metadata,
             nowcast_config,
+            qc_mask=qc_mask,
         ),
         analysis_control=control.detach(),
         forecast_scores=forecast_scores,
@@ -481,40 +503,39 @@ def compute_sensitivity_snapshot(
         control_sensitivity=control_sensitivity,
         forecast_sensitivity=forecast_maps,
         forecast_cap_active_mask=selected_cap_masks,
-        direct_observation_sensitivity=direct_maps,
-        direct_observation_sensitivity_norm=direct_norm,
-        tile_direct_sensitivity_norm=tile_direct_norm,
-        tile_whitened_direct_sensitivity_norm=tile_whitened_norm,
-        direct_observation_impact=observation_impact,
-        tile_direct_observation_impact=tile_impact,
-        direct_normalized_reward=reward,
+        direct=DirectSensitivity(
+            maps=direct_maps,
+            norm=direct_norm,
+            tile_norm=tile_direct_norm,
+            whitened_tile_norm=tile_whitened_norm,
+            impact=observation_impact,
+            tile_impact=tile_impact,
+            reward=reward,
+        ),
         latest_sensitivity_mask=latest_active,
         observation_std_dbz=(
-            observation_std
+            observation_std[2].detach()
             if whitening_available
-            else echo.new_full(frames_dbz.shape, float("nan"))
+            else None
         ),
         observation_innovation_dbz=(
-            innovation
+            innovation[2]
             if innovation is not None
-            else echo.new_full(frames_dbz.shape, float("nan"))
+            else None
         ),
         observation_innovation_mask=(
-            innovation_mask
+            innovation_mask[2]
             if innovation_mask is not None
-            else torch.zeros_like(frames_dbz, dtype=torch.bool)
+            else None
         ),
         baseline_scores=(
             baseline_scores.detach()
             if baseline_scores is not None
-            else echo.new_full(forecast_scores.shape, float("nan"))
+            else None
         ),
         reward_epsilon=sensitivity_config.epsilon,
         trust_components=trust_components,
         trust_score=trust_score,
-        impact_available=impact_available,
-        reward_available=reward_available,
-        whitened_tile_norm_available=whitening_available,
     )
 
 
@@ -554,22 +575,34 @@ def extract_context_features(
     state: RadarState,
     metadata: ForecastMetadata,
     config: NowcastConfig,
+    *,
+    qc_mask: Tensor | None = None,
 ) -> Tensor:
     """Extract a small auditable context vector for later retrieval."""
 
+    latest_valid = torch.isfinite(frames_dbz[2])
+    if qc_mask is not None:
+        latest_valid = latest_valid & qc_mask[2]
     latest = torch.nan_to_num(
         frames_dbz[2],
         nan=config.min_dbz,
         posinf=config.max_dbz,
         neginf=config.min_dbz,
     ).clamp(config.min_dbz, config.max_dbz)
-    active = latest >= config.echo_threshold_dbz
-    strong = latest >= 35.0
+    active = latest_valid & (latest >= config.echo_threshold_dbz)
+    strong = latest_valid & (latest >= 35.0)
+    valid_values = latest[latest_valid]
     active_values = latest[active]
     if active_values.numel():
         q90 = torch.quantile(active_values, 0.9)
     else:
         q90 = latest.new_tensor(config.min_dbz)
+    if valid_values.numel():
+        latest_mean = valid_values.mean()
+        latest_max = valid_values.max()
+    else:
+        latest_mean = latest.new_tensor(config.min_dbz)
+        latest_max = latest.new_tensor(config.min_dbz)
 
     border_width = max(1, min(latest.shape) // 16)
     border = torch.zeros_like(active)
@@ -586,10 +619,22 @@ def extract_context_features(
         max_dbz=config.max_dbz,
     )
     center = torch.nan_to_num(
-        _soft_centroid(linear, torch.ones_like(active)),
+        _soft_centroid(linear, latest_valid),
         nan=0.0,
     )
     motion = state.displacement_yx
+    valid_count = latest_valid.sum().clamp_min(1)
+    support_fraction = (
+        latest.new_tensor(1.0)
+        if metadata.source_support is None
+        else metadata.source_support.to(latest).mean()
+    )
+    tendency_observation = latest.new_tensor(
+        float(metadata.tendency_source is TendencySource.OBSERVATION)
+    )
+    tendency_background = latest.new_tensor(
+        float(metadata.tendency_source is TendencySource.BACKGROUND)
+    )
     return torch.stack(
         (
             motion[0],
@@ -598,15 +643,21 @@ def extract_context_features(
             state.log_growth_per_step,
             metadata.motion_disagreement_px,
             metadata.growth_disagreement,
-            latest.mean(),
-            latest.max(),
+            latest.new_tensor(float(metadata.tendency_pair_count)),
+            tendency_observation,
+            tendency_background,
+            support_fraction,
+            latest.new_tensor(metadata.background_contribution_fraction),
+            metadata.coverage_by_frame[-1].to(latest),
+            latest_mean,
+            latest_max,
             q90,
-            active.to(latest.dtype).mean(),
-            strong.to(latest.dtype).mean(),
+            active.sum().to(latest.dtype) / valid_count,
+            strong.sum().to(latest.dtype) / valid_count,
             boundary_fraction.to(latest.dtype),
             center[0],
             center[1],
-            torch.log1p(linear.sum()),
+            torch.log1p(linear[latest_valid].sum()),
         )
     ).detach()
 

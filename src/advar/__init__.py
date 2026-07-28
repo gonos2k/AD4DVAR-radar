@@ -16,6 +16,7 @@ from .nowcast import (
     nowcast,
 )
 from .sensitivity import (
+    DirectSensitivity,
     SensitivityConfig,
     SensitivitySnapshot,
     compute_sensitivity_snapshot,
@@ -30,6 +31,7 @@ __all__ = [
     "AnalysisConfig",
     "AnalysisResult",
     "DataStatus",
+    "DirectSensitivity",
     "EpisodeLedger",
     "ForecastMetadata",
     "ForecastResult",
