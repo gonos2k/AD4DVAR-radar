@@ -48,8 +48,11 @@ class CliTests(unittest.TestCase):
             "data_status",
             "coverage_by_frame",
             "background_used",
+            "background_contribution_fraction",
             "background_age_minutes",
             "tendency_pair_count",
+            "tendency_source",
+            "min_publish_support",
             "analysis_converged",
             "analysis_degraded",
             "analysis_used_fallback",
@@ -68,7 +71,7 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v4",
+                    "nowcast-npz-v5",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -79,6 +82,15 @@ class CliTests(unittest.TestCase):
                 )
                 self.assertTrue(np.isnan(result["background_age_minutes"].item()))
                 self.assertFalse(result["background_used"].item())
+                self.assertEqual(
+                    result["background_contribution_fraction"].item(),
+                    0.0,
+                )
+                self.assertEqual(
+                    result["tendency_source"].item(),
+                    "OBSERVATION",
+                )
+                self.assertEqual(result["min_publish_support"].item(), 0.95)
                 self.assertEqual(result["tendency_pair_count"].item(), 2)
                 self.assertFalse(result["analysis_converged"].item())
                 self.assertFalse(result["analysis_degraded"].item())
@@ -123,6 +135,14 @@ class CliTests(unittest.TestCase):
                 )
                 self.assertEqual(result["background_age_minutes"].item(), 10.0)
                 self.assertTrue(result["background_used"].item())
+                self.assertEqual(
+                    result["background_contribution_fraction"].item(),
+                    1.0,
+                )
+                self.assertEqual(
+                    result["tendency_source"].item(),
+                    "BACKGROUND",
+                )
 
     def test_background_requires_age(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -164,6 +184,7 @@ class CliTests(unittest.TestCase):
                     np.zeros(3),
                 )
                 self.assertFalse(result["background_used"].item())
+                self.assertEqual(result["tendency_source"].item(), "NONE")
 
     def test_audit_is_optional_and_reuses_the_forecast(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

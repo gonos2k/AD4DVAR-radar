@@ -38,6 +38,7 @@ class NowcastConfig:
     max_displacement_px: float = 20.0
     max_log_growth_per_step: float = math.log(1.35)
     growth_decay_minutes: float = 60.0
+    min_publish_support: float = 0.95
     epsilon: float = 1.0e-6
 
     def __post_init__(self) -> None:
@@ -63,6 +64,7 @@ class NowcastConfig:
             self.max_displacement_px,
             self.max_log_growth_per_step,
             self.growth_decay_minutes,
+            self.min_publish_support,
             self.epsilon,
         )
         if not all(math.isfinite(value) for value in numeric_values):
@@ -81,6 +83,8 @@ class NowcastConfig:
             raise ValueError("max_log_growth_per_step cannot be negative")
         if self.growth_decay_minutes <= 0:
             raise ValueError("growth_decay_minutes must be positive")
+        if not 0.0 < self.min_publish_support <= 1.0:
+            raise ValueError("min_publish_support must be in (0, 1]")
         if self.epsilon <= 0:
             raise ValueError("epsilon must be positive")
 
@@ -96,6 +100,12 @@ class DataStatus(str, Enum):
     UNAVAILABLE = "UNAVAILABLE"
 
 
+class TendencySource(str, Enum):
+    OBSERVATION = "OBSERVATION"
+    BACKGROUND = "BACKGROUND"
+    NONE = "NONE"
+
+
 @dataclass(frozen=True)
 class RadarState:
     echo_linear: Tensor
@@ -108,11 +118,13 @@ class ForecastMetadata:
     data_status: DataStatus
     coverage_by_frame: Tensor
     background_used: bool
+    background_contribution_fraction: float
     background_age_minutes: float | None
-    source_mask: Tensor | None
+    source_support: Tensor | None
     motion_disagreement_px: Tensor
     growth_disagreement: Tensor
     tendency_pair_count: int
+    tendency_source: TendencySource
     provenance: str = "p0_fft_latest"
 
 
@@ -144,7 +156,6 @@ class PreparedRadarInput:
     observed_clear_mask: Tensor
     data_status: DataStatus
     coverage_by_frame: Tensor
-    background_used: bool
     background_age_minutes: float | None
 
 
@@ -187,8 +198,6 @@ def prepare_input(
     )
     background_frames = torch.full_like(frames_dbz, config.min_dbz)
     background_mask = torch.zeros_like(observed)
-    background_used_mask = torch.zeros_like(observed)
-
     if background_frames_dbz is None:
         if background_age_minutes is not None:
             raise ValueError(
@@ -231,12 +240,9 @@ def prepare_input(
             clean_background,
             floor,
         )
-        background_used_mask = ~observed & background_mask
-
     observed_count = int(observed.sum())
     observation_count = observed.numel()
     coverage_by_frame = observed.to(torch.float64).mean(dim=(1, 2))
-    background_used = bool(torch.any(background_used_mask))
     if observed_count == 0:
         status = (
             DataStatus.STALE_BACKGROUND
@@ -259,10 +265,7 @@ def prepare_input(
         & (clean_observations < config.echo_threshold_dbz),
         data_status=status,
         coverage_by_frame=coverage_by_frame.detach(),
-        background_used=background_used,
-        background_age_minutes=(
-            background_age_minutes if background_used else None
-        ),
+        background_age_minutes=background_age_minutes,
     )
 
 
@@ -312,13 +315,18 @@ def estimate_prepared_state(
         motion_disagreement,
         growth_disagreement,
         tendency_pair_count,
+        tendency_source,
     ) = _estimate_time_normalized_tendencies(
         prepared,
         observation_linear,
         background_linear,
         config,
     )
-    current_echo, current_source_mask = _merge_current_state(
+    (
+        current_echo,
+        current_source_support,
+        background_contribution_fraction,
+    ) = _merge_current_state(
         prepared,
         observation_linear,
         background_linear,
@@ -334,16 +342,24 @@ def estimate_prepared_state(
     metadata = ForecastMetadata(
         data_status=prepared.data_status,
         coverage_by_frame=prepared.coverage_by_frame,
-        background_used=prepared.background_used,
-        background_age_minutes=prepared.background_age_minutes,
-        source_mask=(
+        background_used=background_contribution_fraction > config.epsilon,
+        background_contribution_fraction=background_contribution_fraction,
+        background_age_minutes=(
+            prepared.background_age_minutes
+            if background_contribution_fraction > config.epsilon
+            else None
+        ),
+        source_support=(
             None
-            if bool(torch.all(current_source_mask))
-            else current_source_mask.detach().clone()
+            if bool(
+                torch.all(current_source_support >= 1.0 - config.epsilon)
+            )
+            else current_source_support.detach().clone()
         ),
         motion_disagreement_px=motion_disagreement.detach(),
         growth_disagreement=growth_disagreement.detach(),
         tendency_pair_count=tendency_pair_count,
+        tendency_source=tendency_source,
     )
     return state, metadata
 
@@ -353,7 +369,7 @@ def _estimate_time_normalized_tendencies(
     observation_linear: Tensor,
     background_linear: Tensor,
     config: NowcastConfig,
-) -> tuple[Tensor, Tensor, Tensor, Tensor, int]:
+) -> tuple[Tensor, Tensor, Tensor, Tensor, int, TendencySource]:
     observation_estimate = _estimate_source_tendencies(
         prepared.frames_dbz,
         prepared.observed_mask,
@@ -361,13 +377,16 @@ def _estimate_time_normalized_tendencies(
         config,
     )
     if observation_estimate[-1]:
-        return observation_estimate
-    return _estimate_source_tendencies(
+        return (*observation_estimate, TendencySource.OBSERVATION)
+    background_estimate = _estimate_source_tendencies(
         prepared.background_frames_dbz,
         prepared.background_mask,
         background_linear,
         config,
     )
+    if background_estimate[-1]:
+        return (*background_estimate, TendencySource.BACKGROUND)
+    return (*background_estimate, TendencySource.NONE)
 
 
 def _estimate_source_tendencies(
@@ -530,28 +549,41 @@ def _merge_current_state(
     displacement: Tensor,
     growth: Tensor,
     config: NowcastConfig,
-) -> tuple[Tensor, Tensor]:
-    observation_echo, observation_mask = _merge_source_frames(
+) -> tuple[Tensor, Tensor, float]:
+    observation_echo, observation_support = _merge_source_frames(
         observation_linear,
         prepared.observed_mask,
         displacement,
         growth,
         config,
     )
-    background_echo, background_mask = _merge_source_frames(
+    background_echo, background_support = _merge_source_frames(
         background_linear,
         prepared.background_mask,
         displacement,
         growth,
         config,
     )
-    current_mask = observation_mask | background_mask
-    current_echo = torch.where(
-        observation_mask,
-        observation_echo,
-        background_echo,
+    observation_support = observation_support.clamp(0.0, 1.0)
+    background_support = background_support.clamp(0.0, 1.0)
+    background_contribution = (
+        (1.0 - observation_support) * background_support
     )
-    return current_echo, current_mask
+    current_support = observation_support + background_contribution
+    numerator = (
+        observation_support * observation_echo
+        + background_contribution * background_echo
+    )
+    current_echo = torch.where(
+        current_support > config.epsilon,
+        numerator / current_support.clamp_min(config.epsilon),
+        torch.zeros_like(numerator),
+    )
+    contribution_fraction = float(
+        background_contribution.sum()
+        / current_support.sum().clamp_min(config.epsilon)
+    )
+    return current_echo, current_support, contribution_fraction
 
 
 def _merge_source_frames(
@@ -563,7 +595,7 @@ def _merge_source_frames(
 ) -> tuple[Tensor, Tensor]:
     latest_mask = masks[2]
     if bool(torch.all(latest_mask)):
-        return linear[2], latest_mask
+        return linear[2], latest_mask.to(dtype=linear.dtype)
 
     numerator = torch.zeros_like(linear[2])
     support = torch.zeros_like(linear[2])
@@ -595,13 +627,12 @@ def _merge_source_frames(
             + (1.0 - candidate_support) * support
         )
 
-    current_mask = support > config.epsilon
     current_echo = torch.where(
-        current_mask,
+        support > config.epsilon,
         numerator / support.clamp_min(config.epsilon),
         torch.zeros_like(numerator),
     )
-    return current_echo, current_mask
+    return current_echo, support
 
 
 def forecast_linear_at_step(
@@ -762,9 +793,9 @@ def _forecast_valid_mask(
             dtype=torch.bool,
             device=state.echo_linear.device,
         )
-    if metadata.source_mask is None:
+    if metadata.source_support is None:
         return None
-    source = metadata.source_mask.to(
+    source = metadata.source_support.to(
         dtype=state.echo_linear.dtype,
         device=state.echo_linear.device,
     )
@@ -774,7 +805,7 @@ def _forecast_valid_mask(
                 source,
                 step * state.displacement_yx,
             )
-            > config.epsilon
+            >= config.min_publish_support
             for step in range(1, config.forecast_steps + 1)
         ]
     )

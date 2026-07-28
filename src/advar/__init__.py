@@ -12,6 +12,7 @@ from .nowcast import (
     ForecastResult,
     NowcastConfig,
     RadarState,
+    TendencySource,
     nowcast,
 )
 from .sensitivity import (
@@ -39,6 +40,7 @@ __all__ = [
     "SensitivityConfig",
     "SensitivityEpisode",
     "SensitivitySnapshot",
+    "TendencySource",
     "compute_sensitivity_snapshot",
     "nowcast",
     "variational_nowcast",
