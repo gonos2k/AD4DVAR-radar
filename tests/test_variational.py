@@ -17,8 +17,10 @@ from advar.matrix_free import (  # noqa: E402
 )
 from advar.nowcast import (  # noqa: E402
     DataStatus,
+    ForecastRunContract,
     NowcastConfig,
     RadarState,
+    forecast_from_state,
 )
 from advar.physics import (  # noqa: E402
     RemapCell,
@@ -26,6 +28,7 @@ from advar.physics import (  # noqa: E402
     remap,
 )
 from advar.sensitivity import compute_sensitivity_snapshot  # noqa: E402
+import advar.variational as variational_module  # noqa: E402
 from advar.variational import (  # noqa: E402
     AnalysisConfig,
     analysis_trajectory,
@@ -470,6 +473,95 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertFalse(result.used_fallback, result.reason)
         self.assertLess(float(result.state.displacement_yx[0]), -0.1)
         self.assertLess(result.final_objective, result.initial_objective)
+
+    def test_analysis_support_follows_analyzed_displacement(self) -> None:
+        height, width = 6, 6
+        frames = torch.full(
+            (3, height, width),
+            torch.nan,
+            dtype=torch.float64,
+        )
+        frames[0, 1, 2] = 20.0
+        background = torch.full_like(frames, torch.nan)
+        background[0, 1, 4] = self.nowcast_config.min_dbz
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+        control = initial_control(observations)
+        motion_limit = self.nowcast_config.max_displacement_px
+        control[-3] = (
+            motion_limit
+            * torch.atanh(control.new_tensor(1.0 / motion_limit))
+            / self.analysis_config.motion_increment_scale_px
+        )
+
+        result = variational_module._analysis_result(
+            control,
+            frozen,
+            0.0,
+            0.0,
+            1,
+            0,
+            True,
+            "test_support_closure",
+        )
+
+        torch.testing.assert_close(
+            result.state.displacement_yx,
+            control.new_tensor((1.0, 0.0)),
+            atol=1.0e-12,
+            rtol=0.0,
+        )
+        displacement = 2.0 * result.state.displacement_yx
+        observation_support = remap(
+            frozen.observed_mask[0].to(dtype=control.dtype),
+            displacement,
+        )
+        background_support = remap(
+            frozen.background_mask[0].to(dtype=control.dtype),
+            displacement,
+        )
+        expected_support = (
+            observation_support
+            + (1.0 - observation_support) * background_support
+        )
+        torch.testing.assert_close(
+            result.metadata.source_support,
+            expected_support,
+        )
+        self.assertTrue(result.metadata.background_used)
+        self.assertAlmostEqual(
+            result.metadata.background_contribution_fraction,
+            0.5,
+        )
+        self.assertEqual(result.metadata.background_age_minutes, 10.0)
+
+        run = ForecastRunContract.from_inputs(
+            self.nowcast_config,
+            frames,
+            observations.valid_mask[-1],
+            background,
+        )
+        forecast = forecast_from_state(
+            result.state,
+            result.metadata,
+            self.nowcast_config,
+            run=run,
+        )
+        expected_valid = (
+            remap(
+                expected_support,
+                result.state.displacement_yx,
+            )
+            >= self.nowcast_config.min_publish_support
+        )
+        torch.testing.assert_close(forecast.valid_mask[0], expected_valid)
+        self.assertTrue(forecast.valid_mask[0, 4, 2])
+        self.assertTrue(torch.isfinite(forecast.forecast_dbz[0, 4, 2]))
 
     def test_invalid_observations_without_background_are_unavailable(
         self,
