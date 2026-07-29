@@ -8,6 +8,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 
+from ._digest import dataclass_digest, tensor_digest
 from .diagnostics import (
     PositivityAudit,
     TransportAudit,
@@ -92,6 +93,10 @@ class NowcastConfig:
     def forecast_steps(self) -> int:
         return self.horizon_minutes // self.interval_minutes
 
+    @property
+    def digest(self) -> str:
+        return dataclass_digest(self)
+
 
 class DataStatus(str, Enum):
     OBSERVED = "OBSERVED"
@@ -136,13 +141,97 @@ class ForecastAudit:
 
 
 @dataclass(frozen=True)
+class ForecastRunContract:
+    config: NowcastConfig
+    _latest_observation_mask: Tensor
+    latest_observation_mask_digest: str
+    latest_frame_digest: str
+    latest_background_digest: str | None
+
+    @classmethod
+    def from_inputs(
+        cls,
+        config: NowcastConfig,
+        frames_dbz: Tensor,
+        latest_observation_mask: Tensor,
+        background_frames_dbz: Tensor | None,
+    ) -> ForecastRunContract:
+        latest_frame = frames_dbz[-1]
+        if (
+            latest_observation_mask.shape != latest_frame.shape
+            or latest_observation_mask.dtype != torch.bool
+        ):
+            raise ValueError(
+                "latest_observation_mask must be boolean with the latest frame shape"
+            )
+        latest_background = (
+            None
+            if background_frames_dbz is None
+            else tensor_digest(background_frames_dbz[-1])
+        )
+        accepted_mask = latest_observation_mask.detach().clone()
+        return cls(
+            config=config,
+            _latest_observation_mask=accepted_mask,
+            latest_observation_mask_digest=tensor_digest(accepted_mask),
+            latest_frame_digest=tensor_digest(latest_frame),
+            latest_background_digest=latest_background,
+        )
+
+    @property
+    def latest_observation_mask(self) -> Tensor:
+        if (
+            tensor_digest(self._latest_observation_mask)
+            != self.latest_observation_mask_digest
+        ):
+            raise ValueError(
+                "latest observation mask disagrees with the forecast run"
+            )
+        return self._latest_observation_mask.clone()
+
+    def validate_latest_frame(self, latest_frame_dbz: Tensor) -> None:
+        if tensor_digest(latest_frame_dbz) != self.latest_frame_digest:
+            raise ValueError("latest frame disagrees with the forecast run")
+
+    def validate_latest_background(
+        self,
+        latest_background_dbz: Tensor | None,
+    ) -> None:
+        if latest_background_dbz is None:
+            return
+        if self.latest_background_digest is None:
+            raise ValueError("forecast run did not use a background")
+        if tensor_digest(latest_background_dbz) != self.latest_background_digest:
+            raise ValueError("latest background disagrees with the forecast run")
+
+
+@dataclass(frozen=True)
 class ForecastResult:
     forecast_dbz: Tensor
     forecast_linear: Tensor
     valid_mask: Tensor | None
+    forecast_dbz_digest: str
+    valid_mask_digest: str | None
     state: RadarState
     metadata: ForecastMetadata
+    run: ForecastRunContract
     audit: ForecastAudit | None = None
+
+    def validate_issuance(self) -> None:
+        if tensor_digest(self.forecast_dbz) != self.forecast_dbz_digest:
+            raise ValueError("forecast result disagrees with the issued forecast")
+        if self.valid_mask_digest is None:
+            if self.valid_mask is not None:
+                raise ValueError(
+                    "forecast valid mask disagrees with the issued forecast"
+                )
+        elif (
+            self.valid_mask is None
+            or tensor_digest(self.valid_mask) != self.valid_mask_digest
+        ):
+            raise ValueError(
+                "forecast valid mask disagrees with the issued forecast"
+            )
 
 
 @dataclass(frozen=True)
@@ -690,8 +779,11 @@ def forecast_from_state(
     metadata: ForecastMetadata,
     config: NowcastConfig,
     *,
+    run: ForecastRunContract,
     audit: bool = False,
 ) -> ForecastResult:
+    if config != run.config:
+        raise ValueError("forecast config must match the run contract")
     input_echo, input_audit = validate_physical_echo(
         state.echo_linear,
         name="forecast input state",
@@ -743,8 +835,15 @@ def forecast_from_state(
         forecast_dbz=forecast_dbz,
         forecast_linear=forecast_linear,
         valid_mask=valid_mask,
+        forecast_dbz_digest=tensor_digest(forecast_dbz),
+        valid_mask_digest=(
+            tensor_digest(valid_mask)
+            if valid_mask is not None
+            else None
+        ),
         state=state,
         metadata=metadata,
+        run=run,
         audit=(
             ForecastAudit(
                 input_echo=input_audit,
@@ -767,17 +866,25 @@ def nowcast(
     audit: bool = False,
 ) -> ForecastResult:
     config = config or NowcastConfig()
-    state, metadata = estimate_state(
+    prepared = prepare_input(
         frames_dbz,
         config,
-        qc_mask=qc_mask,
+        accepted_mask=qc_mask,
         background_frames_dbz=background_frames_dbz,
         background_age_minutes=background_age_minutes,
+    )
+    state, metadata = estimate_prepared_state(prepared, config)
+    run = ForecastRunContract.from_inputs(
+        config,
+        frames_dbz,
+        prepared.observed_mask[-1],
+        background_frames_dbz,
     )
     return forecast_from_state(
         state,
         metadata,
         config,
+        run=run,
         audit=audit,
     )
 

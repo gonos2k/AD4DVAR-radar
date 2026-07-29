@@ -55,6 +55,8 @@ class ModelContract:
     forecast_integrator_version: str
     grid_geometry_version: str
     radar_qc_version: str
+    nowcast_config_digest: str
+    sensitivity_config_digest: str
 
     def __post_init__(self) -> None:
         if not all(asdict(self).values()):
@@ -62,7 +64,7 @@ class ModelContract:
 
     @property
     def digest(self) -> str:
-        return _model_contract_digest(self, schema_version=2)
+        return _model_contract_digest(self, schema_version=3)
 
 
 @dataclass(frozen=True)
@@ -85,6 +87,15 @@ class SensitivityEpisode:
             raise ValueError("radar_id must be non-empty")
         if not all(math.isfinite(value) for value in self.action_features):
             raise ValueError("action_features must be finite")
+        if (
+            self.contract.nowcast_config_digest
+            != self.snapshot.nowcast_config_digest
+            or self.contract.sensitivity_config_digest
+            != self.snapshot.sensitivity_config_digest
+        ):
+            raise ValueError(
+                "model contract config digests must match the sensitivity snapshot"
+            )
 
 
 @dataclass(frozen=True)
@@ -631,7 +642,7 @@ def _episode_manifest(
 ) -> dict[str, Any]:
     snapshot = episode.snapshot
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "episode_id": episode.episode_id,
         "issue_time": episode.issue_time,
         "radar_id": episode.radar_id,
@@ -688,18 +699,39 @@ def _verify_manifest(
     row: sqlite3.Row,
 ) -> None:
     schema_version = manifest.get("schema_version")
-    if type(schema_version) is not int or schema_version not in (1, 2):
+    if type(schema_version) is not int or schema_version not in (1, 2, 3):
         raise ValueError("unsupported episode schema")
     if manifest.get("episode_id") != episode_id:
         raise ValueError("manifest episode_id disagrees with the index")
-    try:
-        contract = ModelContract(**manifest["contract"])
-    except (KeyError, TypeError, ValueError) as error:
-        raise ValueError("manifest contains an invalid contract") from error
-    contract_hash = _model_contract_digest(
-        contract,
-        schema_version=schema_version,
-    )
+    contract_values = manifest.get("contract")
+    if not isinstance(contract_values, dict):
+        raise ValueError("manifest contains an invalid contract")
+    if schema_version < 3:
+        current_fields = {field.name for field in fields(ModelContract)}
+        legacy_fields = current_fields - {
+            "nowcast_config_digest",
+            "sensitivity_config_digest",
+        }
+        if (
+            set(contract_values) != legacy_fields
+            or not all(contract_values.values())
+        ):
+            raise ValueError("manifest contains an invalid contract")
+        contract_hash = _json_digest(
+            {
+                "contract_schema_version": schema_version,
+                **contract_values,
+            }
+        )
+    else:
+        try:
+            contract = ModelContract(**contract_values)
+        except (TypeError, ValueError) as error:
+            raise ValueError("manifest contains an invalid contract") from error
+        contract_hash = _model_contract_digest(
+            contract,
+            schema_version=schema_version,
+        )
     if contract_hash != manifest.get("contract_hash"):
         raise ValueError("manifest contract hash is invalid")
     if contract_hash != row["contract_hash"]:
@@ -799,12 +831,11 @@ def _verify_manifest_layout(manifest: dict[str, Any]) -> None:
         "observation_innovation_dbz": (3, 2, 0),
         "observation_innovation_mask": (3, 2, 0),
     }
-    version_index = schema_version - 1
     for name, (v1_rank, v2_rank, input_axis) in ranks.items():
         if name not in arrays:
             continue
         shape = _declared_array_shape(arrays, name)
-        expected_rank = (v1_rank, v2_rank)[version_index]
+        expected_rank = v1_rank if schema_version == 1 else v2_rank
         if len(shape) != expected_rank:
             raise ValueError(
                 f"{name} does not match episode schema {schema_version}"
@@ -847,6 +878,12 @@ def _verify_array_schema(
 
 
 def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
+    for name, digest in (
+        ("nowcast_config_digest", snapshot.nowcast_config_digest),
+        ("sensitivity_config_digest", snapshot.sensitivity_config_digest),
+    ):
+        if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+            raise ValueError(f"{name} must be a SHA-256 digest")
     if not math.isfinite(snapshot.trust_score):
         raise ValueError("trust_score must be finite")
     if snapshot.reward_available and not snapshot.impact_available:
