@@ -574,11 +574,96 @@ class VariationalAnalysisTests(unittest.TestCase):
             observed,
             torch.zeros_like(detected),
             torch.tensor((0.0, 1.0), dtype=torch.float64),
-            self.nowcast_config.epsilon,
+            self.analysis_config.minimum_control_reachability,
         )
 
         self.assertTrue(support[3, 4])
         self.assertEqual(int(support.sum()), 1)
+
+    def test_tiny_causal_tail_does_not_open_control_support(self) -> None:
+        detected = torch.zeros((3, 7, 9), dtype=torch.bool)
+        detected[2, 3, 4] = True
+        observed = torch.zeros_like(detected)
+        observed[0, 3, 3] = True
+        displacement = torch.tensor(
+            (0.0, 0.999995),
+            dtype=torch.float64,
+        )
+        precursor = remap(
+            detected[2].to(dtype=displacement.dtype),
+            -2.0 * displacement,
+        )
+
+        self.assertGreater(
+            float(precursor[3, 3]),
+            self.nowcast_config.epsilon,
+        )
+        self.assertLess(
+            float(precursor[3, 3]),
+            self.analysis_config.minimum_control_reachability,
+        )
+        support = variational_module._causal_initial_support(
+            detected,
+            observed,
+            torch.zeros_like(detected),
+            displacement,
+            self.analysis_config.minimum_control_reachability,
+        )
+        self.assertFalse(bool(torch.any(support)))
+
+    def test_bilinear_quarter_weights_open_control_support(self) -> None:
+        detected = torch.zeros((3, 7, 9), dtype=torch.bool)
+        detected[2, 3, 4] = True
+        observed = torch.zeros_like(detected)
+        observed[0, 2:4, 3:5] = True
+
+        support = variational_module._causal_initial_support(
+            detected,
+            observed,
+            torch.zeros_like(detected),
+            torch.tensor((0.25, 0.25), dtype=torch.float64),
+            self.analysis_config.minimum_control_reachability,
+        )
+
+        self.assertEqual(int(support.sum()), 4)
+
+    def test_tiny_causal_tail_is_not_representable(self) -> None:
+        _, frozen = self.stationary_problem(height=7, width=9)
+        support = torch.zeros_like(frozen.initial_support_mask)
+        support[3, 3] = True
+        detected = torch.zeros_like(frozen.detected_masks)
+        detected[2, 3, 4] = True
+        frozen = replace(
+            frozen,
+            initial_support_mask=support,
+            detected_masks=detected,
+        )
+
+        self.assertFalse(
+            variational_module._analysis_window_is_representable(
+                frozen,
+                torch.tensor((0.0, 0.999995), dtype=torch.float64),
+            )
+        )
+
+    def test_transient_intermediate_echo_must_be_representable(self) -> None:
+        _, frozen = self.stationary_problem(height=7, width=9)
+        support = torch.zeros_like(frozen.initial_support_mask)
+        support[3, 3] = True
+        detected = torch.zeros_like(frozen.detected_masks)
+        detected[1, 3, 4] = True
+        frozen = replace(
+            frozen,
+            initial_support_mask=support,
+            detected_masks=detected,
+        )
+
+        self.assertFalse(
+            variational_module._analysis_window_is_representable(
+                frozen,
+                torch.tensor((0.0, 2.0), dtype=torch.float64),
+            )
+        )
 
     def test_later_echo_opens_anchored_causal_control_support(self) -> None:
         frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
@@ -656,7 +741,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
 
         self.assertTrue(result.used_fallback)
-        self.assertEqual(result.reason, "unrepresentable_latest_echo")
+        self.assertEqual(result.reason, "unrepresentable_analysis_window")
         torch.testing.assert_close(
             result.state.echo_linear,
             frozen.baseline_state.echo_linear,
@@ -697,6 +782,38 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         self.assertFalse(result.used_fallback)
         self.assertEqual(float(result.metadata.source_support[4, 6]), 0.0)
+
+    def test_infeasible_lm_trial_is_rejected_before_evaluation(self) -> None:
+        observations, frozen = self.stationary_problem()
+        changed_dbz = observations.dbz.clone()
+        changed_dbz[1] -= 1.0
+        changed = replace(observations, dbz=changed_dbz)
+        frozen = replace(
+            frozen,
+            analysis_config=replace(
+                self.analysis_config,
+                maximum_outer_iterations=1,
+                maximum_damping_retries=0,
+            ),
+        )
+        evaluate = variational_module._evaluate_control
+
+        with (
+            patch(
+                "advar.variational._analysis_window_is_representable",
+                return_value=False,
+            ) as representable,
+            patch(
+                "advar.variational._evaluate_control",
+                wraps=evaluate,
+            ) as evaluate_control,
+        ):
+            result = solve_analysis(changed, frozen)
+
+        self.assertTrue(result.used_fallback)
+        self.assertEqual(result.reason, "no_accepted_step")
+        self.assertEqual(representable.call_count, 12)
+        self.assertEqual(evaluate_control.call_count, 1)
 
     def test_invalid_observations_without_background_are_unavailable(
         self,
