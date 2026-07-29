@@ -640,10 +640,15 @@ def _merge_current_state(
     )
     observation_support = observation_support.clamp(0.0, 1.0)
     background_support = background_support.clamp(0.0, 1.0)
-    background_contribution = (
-        (1.0 - observation_support) * background_support
+    (
+        current_support,
+        background_contribution,
+        contribution_fraction,
+    ) = _combine_source_supports(
+        observation_support,
+        background_support,
+        config.epsilon,
     )
-    current_support = observation_support + background_contribution
     numerator = (
         observation_support * observation_echo
         + background_contribution * background_echo
@@ -653,11 +658,69 @@ def _merge_current_state(
         numerator / current_support.clamp_min(config.epsilon),
         torch.zeros_like(numerator),
     )
+    return current_echo, current_support, contribution_fraction
+
+
+def merge_current_support(
+    observed_masks: Tensor,
+    background_masks: Tensor,
+    displacement_yx: Tensor,
+    config: NowcastConfig,
+) -> tuple[Tensor, float]:
+    observation_support = _merge_source_support(
+        observed_masks,
+        displacement_yx,
+    ).clamp(0.0, 1.0)
+    background_support = _merge_source_support(
+        background_masks,
+        displacement_yx,
+    ).clamp(0.0, 1.0)
+    current_support, _, contribution_fraction = _combine_source_supports(
+        observation_support,
+        background_support,
+        config.epsilon,
+    )
+    return current_support, contribution_fraction
+
+
+def _combine_source_supports(
+    observation_support: Tensor,
+    background_support: Tensor,
+    epsilon: float,
+) -> tuple[Tensor, Tensor, float]:
+    background_contribution = (
+        (1.0 - observation_support) * background_support
+    )
+    current_support = observation_support + background_contribution
     contribution_fraction = float(
         background_contribution.sum()
-        / current_support.sum().clamp_min(config.epsilon)
+        / current_support.sum().clamp_min(epsilon)
     )
-    return current_echo, current_support, contribution_fraction
+    return current_support, background_contribution, contribution_fraction
+
+
+def _merge_source_support(
+    masks: Tensor,
+    displacement_yx: Tensor,
+) -> Tensor:
+    support = torch.zeros_like(
+        masks[2],
+        dtype=displacement_yx.dtype,
+        device=displacement_yx.device,
+    )
+    for source_index in range(3):
+        candidate = masks[source_index].to(
+            dtype=displacement_yx.dtype,
+            device=displacement_yx.device,
+        )
+        steps = 2 - source_index
+        if steps:
+            candidate = remap(
+                candidate,
+                steps * displacement_yx,
+            ).clamp(0.0, 1.0)
+        support = candidate + (1.0 - candidate) * support
+    return support
 
 
 def _merge_source_frames(

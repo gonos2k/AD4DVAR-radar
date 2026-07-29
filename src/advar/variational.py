@@ -17,6 +17,7 @@ from .nowcast import (
     RadarState,
     estimate_prepared_state,
     forecast_from_state,
+    merge_current_support,
     prepare_input,
 )
 from .physics import (
@@ -110,6 +111,9 @@ class AnalysisObservations:
 class FrozenOuterState:
     initial_background_dbz: Tensor
     initial_support_mask: Tensor
+    observed_mask: Tensor
+    background_mask: Tensor
+    background_age_minutes: float | None
     baseline_state: RadarState
     baseline_metadata: ForecastMetadata
     baseline_frames_dbz: Tensor
@@ -232,6 +236,9 @@ def prepare_analysis(
     frozen = FrozenOuterState(
         initial_background_dbz=baseline_frames_dbz[0].detach().clone(),
         initial_support_mask=detected[0].detach().clone(),
+        observed_mask=prepared.observed_mask.detach().clone(),
+        background_mask=prepared.background_mask.detach().clone(),
+        background_age_minutes=prepared.background_age_minutes,
         baseline_state=baseline_state,
         baseline_metadata=baseline_metadata,
         baseline_frames_dbz=baseline_frames_dbz.detach().clone(),
@@ -807,11 +814,24 @@ def _analysis_result(
         displacement_yx=trajectory.displacement_yx,
         log_growth_per_step=trajectory.log_growth_per_step,
     )
+    source_support, background_fraction = merge_current_support(
+        frozen.observed_mask,
+        frozen.background_mask,
+        trajectory.displacement_yx,
+        frozen.nowcast_config,
+    )
+    background_used = background_fraction > frozen.nowcast_config.epsilon
     return AnalysisResult(
         control=control.detach(),
         state=_detach_state(state),
         metadata=replace(
             frozen.baseline_metadata,
+            background_used=background_used,
+            background_contribution_fraction=background_fraction,
+            background_age_minutes=(
+                frozen.background_age_minutes if background_used else None
+            ),
+            source_support=source_support.detach(),
             provenance="p1_variational_analysis",
         ),
         analyzed_frames_linear=frames.detach(),
