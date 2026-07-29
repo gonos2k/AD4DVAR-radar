@@ -26,6 +26,7 @@ from .physics import (
     dbz_to_echo,
     echo_to_dbz,
     freeze_remap_cell,
+    remap,
 )
 
 
@@ -111,6 +112,7 @@ class AnalysisObservations:
 class FrozenOuterState:
     initial_background_dbz: Tensor
     initial_support_mask: Tensor
+    latest_detected_mask: Tensor
     observed_mask: Tensor
     background_mask: Tensor
     background_age_minutes: float | None
@@ -224,6 +226,13 @@ def prepare_analysis(
     )
     baseline_state = _detach_state(baseline_state)
     baseline_metadata = _detach_metadata(baseline_metadata)
+    initial_support = _causal_initial_support(
+        detected,
+        prepared.observed_mask,
+        prepared.background_mask,
+        baseline_state.displacement_yx,
+        nowcast_config.epsilon,
+    )
     remap_cells = tuple(
         freeze_remap_cell(step * baseline_state.displacement_yx)
         for step in (1, 2)
@@ -235,7 +244,8 @@ def prepare_analysis(
     )
     frozen = FrozenOuterState(
         initial_background_dbz=baseline_frames_dbz[0].detach().clone(),
-        initial_support_mask=detected[0].detach().clone(),
+        initial_support_mask=initial_support.detach().clone(),
+        latest_detected_mask=detected[2].detach().clone(),
         observed_mask=prepared.observed_mask.detach().clone(),
         background_mask=prepared.background_mask.detach().clone(),
         background_age_minutes=prepared.background_age_minutes,
@@ -253,6 +263,24 @@ def prepare_analysis(
         observations,
         frozen,
     )
+
+
+def _causal_initial_support(
+    detected_mask: Tensor,
+    observed_mask: Tensor,
+    background_mask: Tensor,
+    displacement_yx: Tensor,
+    epsilon: float,
+) -> Tensor:
+    initial_anchor = observed_mask[0] | background_mask[0]
+    support = detected_mask[0].clone()
+    for step in (1, 2):
+        precursor = remap(
+            detected_mask[step].to(dtype=displacement_yx.dtype),
+            -step * displacement_yx,
+        )
+        support |= precursor > epsilon
+    return support & initial_anchor
 
 
 def initial_control(observations: AnalysisObservations) -> Tensor:
@@ -805,6 +833,18 @@ def _analysis_result(
 ) -> AnalysisResult:
     frozen = _freeze_analysis_remap_cells(control, frozen)
     trajectory = _analysis_trajectory(control, frozen)
+    if not _latest_echo_is_representable(
+        frozen,
+        trajectory.displacement_yx,
+    ):
+        return _fallback_result(
+            frozen,
+            control,
+            initial_objective,
+            "unrepresentable_latest_echo",
+            outer_iterations,
+            pcg_iterations,
+        )
     frames, audit = validate_physical_echo(
         trajectory.frames_linear,
         name="final analysis",
@@ -814,9 +854,15 @@ def _analysis_result(
         displacement_yx=trajectory.displacement_yx,
         log_growth_per_step=trajectory.log_growth_per_step,
     )
+    initial_background_mask = torch.cat(
+        (
+            frozen.background_mask[:1],
+            torch.zeros_like(frozen.background_mask[1:]),
+        )
+    )
     source_support, background_fraction = merge_current_support(
         frozen.observed_mask,
-        frozen.background_mask,
+        initial_background_mask,
         trajectory.displacement_yx,
         frozen.nowcast_config,
     )
@@ -845,6 +891,20 @@ def _analysis_result(
         degraded=degraded,
         audit=audit,
     )
+
+
+def _latest_echo_is_representable(
+    frozen: FrozenOuterState,
+    displacement_yx: Tensor,
+) -> bool:
+    reachable = remap(
+        frozen.initial_support_mask.to(dtype=displacement_yx.dtype),
+        2 * displacement_yx,
+    )
+    missing = frozen.latest_detected_mask & (
+        reachable <= frozen.nowcast_config.epsilon
+    )
+    return not bool(torch.any(missing))
 
 
 def _fallback_result(
