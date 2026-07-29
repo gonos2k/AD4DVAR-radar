@@ -243,11 +243,10 @@ def compute_sensitivity_snapshot(
     issued_valid = torch.isfinite(result.forecast_dbz)
     if issued_valid.shape != verification_valid.shape:
         raise ValueError("issued forecast must match verification shape")
-    if result.valid_mask is not None:
-        if result.valid_mask.shape != verification_valid.shape:
-            raise ValueError("forecast valid_mask must match verification shape")
-        if not torch.equal(result.valid_mask, issued_valid):
-            raise ValueError("forecast valid_mask must match issued finite values")
+    if result.valid_mask.shape != verification_valid.shape:
+        raise ValueError("forecast valid_mask must match verification shape")
+    if not torch.equal(result.valid_mask, issued_valid):
+        raise ValueError("forecast valid_mask must match issued finite values")
     verification_valid = verification_valid & issued_valid
     truth_linear = dbz_to_echo(
         clean_verification,
@@ -654,11 +653,7 @@ def extract_context_features(
     )
     motion = state.displacement_yx
     valid_count = latest_valid.sum().clamp_min(1)
-    support_fraction = (
-        latest.new_tensor(1.0)
-        if metadata.source_support is None
-        else metadata.source_support.to(latest).mean()
-    )
+    support_fraction = metadata.source_support.to(latest).mean()
     tendency_observation = latest.new_tensor(
         float(metadata.tendency_source is TendencySource.OBSERVATION)
     )

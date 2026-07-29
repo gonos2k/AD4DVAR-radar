@@ -80,7 +80,7 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         background_used=False,
         background_contribution_fraction=0.0,
         background_age_minutes=None,
-        source_support=None,
+        source_support=torch.ones_like(state.echo_linear),
         motion_disagreement_px=state.echo_linear.new_zeros(()),
         growth_disagreement=state.echo_linear.new_zeros(()),
         tendency_pair_count=2,
@@ -159,6 +159,12 @@ class NowcastTests(unittest.TestCase):
         )
         torch.testing.assert_close(forecast[0], dbz, atol=0.02, rtol=0.0)
         self.assertEqual(forecast.shape, (18, 64, 64))
+        torch.testing.assert_close(
+            result.metadata.source_support,
+            torch.ones_like(result.metadata.source_support),
+        )
+        self.assertTrue(bool(torch.all(result.valid_mask)))
+        self.assertFalse(hasattr(result, "forecast_linear"))
 
     def test_translation_is_recovered(self) -> None:
         displacement = torch.tensor([2.0, -3.0])
@@ -222,8 +228,13 @@ class NowcastTests(unittest.TestCase):
             atol=0.2,
             rtol=0.0,
         )
-        forecast_error = torch.mean(torch.abs(forecast - verification))
-        persistence_error = torch.mean(torch.abs(frames[2] - verification))
+        issued = torch.isfinite(forecast)
+        forecast_error = torch.mean(
+            torch.abs(forecast[issued] - verification[issued])
+        )
+        persistence_error = torch.mean(
+            torch.abs(frames[2][issued] - verification[issued])
+        )
         self.assertLess(float(forecast_error), float(persistence_error))
 
     def test_motion_is_recovered_without_suppressing_edge_echo(self) -> None:
@@ -673,7 +684,10 @@ class NowcastTests(unittest.TestCase):
 
         result = nowcast(frames, self.config)
 
-        self.assertIsNone(result.metadata.source_support)
+        torch.testing.assert_close(
+            result.metadata.source_support,
+            torch.ones_like(result.metadata.source_support),
+        )
         self.assertTrue(bool(torch.all(torch.isfinite(result.forecast_dbz))))
         torch.testing.assert_close(
             result.forecast_dbz[0],
@@ -690,7 +704,10 @@ class NowcastTests(unittest.TestCase):
 
         result = nowcast(frames, self.config)
 
-        self.assertIsNone(result.metadata.source_support)
+        torch.testing.assert_close(
+            result.metadata.source_support,
+            torch.ones_like(result.metadata.source_support),
+        )
         self.assertTrue(bool(torch.all(torch.isfinite(result.forecast_dbz))))
         torch.testing.assert_close(
             result.forecast_dbz[0],
@@ -720,11 +737,7 @@ class NowcastTests(unittest.TestCase):
         ):
             state, metadata = estimate_state_with_metadata(frames, self.config)
 
-        valid = (
-            torch.ones_like(echo, dtype=torch.bool)
-            if metadata.source_support is None
-            else metadata.source_support > self.config.epsilon
-        )
+        valid = metadata.source_support > self.config.epsilon
         torch.testing.assert_close(
             state.echo_linear[valid],
             torch.ones_like(state.echo_linear[valid]),
@@ -864,6 +877,37 @@ class NowcastTests(unittest.TestCase):
             bool(torch.all(torch.isnan(result.forecast_dbz[~expected])))
         )
 
+    def test_full_support_uses_an_unknown_inflow_boundary(self) -> None:
+        config = NowcastConfig(horizon_minutes=10)
+        echo = torch.ones(8, 8, dtype=torch.float64)
+        state = RadarState(
+            echo_linear=echo,
+            displacement_yx=torch.tensor([0.0, 1.0], dtype=torch.float64),
+            log_growth_per_step=torch.zeros((), dtype=torch.float64),
+        )
+        latest = linear_to_dbz(echo, config)
+        result = forecast_result_from_state(
+            state,
+            observed_metadata(state),
+            config,
+            run=ForecastRunContract.from_inputs(
+                config,
+                torch.stack((latest, latest, latest)),
+                torch.ones_like(latest, dtype=torch.bool),
+                None,
+            ),
+        )
+
+        self.assertEqual(int(result.valid_mask.sum()), 8 * 7)
+        self.assertTrue(
+            torch.equal(
+                torch.isfinite(result.forecast_dbz),
+                result.valid_mask,
+            )
+        )
+        self.assertTrue(bool(torch.all(~result.valid_mask[0, :, 0])))
+        self.assertTrue(bool(torch.all(result.valid_mask[0, :, 1:])))
+
     def test_analysis_window_growth_does_not_decay(self) -> None:
         echo = torch.ones(8, 8, dtype=torch.float64)
         frame = linear_to_dbz(echo, self.config)
@@ -960,7 +1004,9 @@ class NowcastTests(unittest.TestCase):
             advect(state.echo_linear, 18 * displacement),
             self.config,
         )
-        torch.testing.assert_close(forecast[-1], expected)
+        issued = torch.isfinite(forecast[-1])
+        self.assertFalse(bool(torch.all(issued)))
+        torch.testing.assert_close(forecast[-1][issued], expected[issued])
 
     def test_full_forecast_remaps_each_lead_once_even_with_audit(self) -> None:
         state = RadarState(

@@ -75,7 +75,7 @@ def metadata_for(
         background_used=False,
         background_contribution_fraction=0.0,
         background_age_minutes=None,
-        source_support=None,
+        source_support=torch.ones_like(state.echo_linear),
         motion_disagreement_px=torch.linalg.vector_norm(
             pair_motion[1] - pair_motion[0]
         ),
@@ -231,13 +231,20 @@ class SensitivityTests(unittest.TestCase):
         torch.testing.assert_close(linear, by_step)
         frames = torch.stack((latest_dbz, latest_dbz, latest_dbz))
         result = result_for(state, config, frames=frames)
-        torch.testing.assert_close(
-            result.forecast_dbz,
-            linear_to_dbz(linear, config),
+        expected_dbz = linear_to_dbz(linear, config)
+        self.assertTrue(
+            torch.equal(
+                torch.isfinite(result.forecast_dbz),
+                result.valid_mask,
+            )
         )
         torch.testing.assert_close(
-            dbz_to_linear(result.forecast_dbz, config),
-            linear,
+            result.forecast_dbz[result.valid_mask],
+            expected_dbz[result.valid_mask],
+        )
+        torch.testing.assert_close(
+            dbz_to_linear(result.forecast_dbz, config)[result.valid_mask],
+            linear[result.valid_mask],
         )
 
     def test_snapshot_shapes_and_m0_scope(self) -> None:
@@ -663,6 +670,7 @@ class SensitivityTests(unittest.TestCase):
     def test_scores_and_gradients_use_only_the_issued_domain(self) -> None:
         issued = torch.zeros_like(self.result.forecast_dbz, dtype=torch.bool)
         issued[:, 3:10, 4:13] = True
+        issued &= self.result.valid_mask
         issued_dbz = torch.where(
             issued,
             self.result.forecast_dbz,
@@ -684,7 +692,11 @@ class SensitivityTests(unittest.TestCase):
         truth = dbz_to_linear(self.verification[0], self.nowcast_config)
         expected = forecast_metric(
             "log_echo_mse",
-            self.result.forecast_linear[0],
+            forecast_linear_at_step(
+                self.result.state,
+                1,
+                self.nowcast_config,
+            ),
             truth,
             issued[0],
             self.nowcast_config,

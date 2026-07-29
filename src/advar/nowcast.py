@@ -125,7 +125,7 @@ class ForecastMetadata:
     background_used: bool
     background_contribution_fraction: float
     background_age_minutes: float | None
-    source_support: Tensor | None
+    source_support: Tensor
     motion_disagreement_px: Tensor
     growth_disagreement: Tensor
     tendency_pair_count: int
@@ -208,10 +208,9 @@ class ForecastRunContract:
 @dataclass(frozen=True)
 class ForecastResult:
     forecast_dbz: Tensor
-    forecast_linear: Tensor
-    valid_mask: Tensor | None
+    valid_mask: Tensor
     forecast_dbz_digest: str
-    valid_mask_digest: str | None
+    valid_mask_digest: str
     state: RadarState
     metadata: ForecastMetadata
     run: ForecastRunContract
@@ -220,15 +219,7 @@ class ForecastResult:
     def validate_issuance(self) -> None:
         if tensor_digest(self.forecast_dbz) != self.forecast_dbz_digest:
             raise ValueError("forecast result disagrees with the issued forecast")
-        if self.valid_mask_digest is None:
-            if self.valid_mask is not None:
-                raise ValueError(
-                    "forecast valid mask disagrees with the issued forecast"
-                )
-        elif (
-            self.valid_mask is None
-            or tensor_digest(self.valid_mask) != self.valid_mask_digest
-        ):
+        if tensor_digest(self.valid_mask) != self.valid_mask_digest:
             raise ValueError(
                 "forecast valid mask disagrees with the issued forecast"
             )
@@ -438,13 +429,7 @@ def estimate_prepared_state(
             if background_contribution_fraction > config.epsilon
             else None
         ),
-        source_support=(
-            None
-            if bool(
-                torch.all(current_source_support >= 1.0 - config.epsilon)
-            )
-            else current_source_support.detach().clone()
-        ),
+        source_support=current_source_support.detach().clone(),
         motion_disagreement_px=motion_disagreement.detach(),
         growth_disagreement=growth_disagreement.detach(),
         tendency_pair_count=tendency_pair_count,
@@ -825,22 +810,16 @@ def forecast_from_state(
         max_dbz=config.max_dbz,
     )
     valid_mask = _forecast_valid_mask(state, metadata, config)
-    if valid_mask is not None:
-        forecast_dbz = torch.where(
-            valid_mask,
-            forecast_dbz,
-            forecast_dbz.new_full((), torch.nan),
-        )
+    forecast_dbz = torch.where(
+        valid_mask,
+        forecast_dbz,
+        forecast_dbz.new_full((), torch.nan),
+    )
     return ForecastResult(
         forecast_dbz=forecast_dbz,
-        forecast_linear=forecast_linear,
         valid_mask=valid_mask,
         forecast_dbz_digest=tensor_digest(forecast_dbz),
-        valid_mask_digest=(
-            tensor_digest(valid_mask)
-            if valid_mask is not None
-            else None
-        ),
+        valid_mask_digest=tensor_digest(valid_mask),
         state=state,
         metadata=metadata,
         run=run,
@@ -893,15 +872,13 @@ def _forecast_valid_mask(
     state: RadarState,
     metadata: ForecastMetadata,
     config: NowcastConfig,
-) -> Tensor | None:
+) -> Tensor:
     if metadata.data_status == DataStatus.UNAVAILABLE:
         return torch.zeros(
             (config.forecast_steps,) + state.echo_linear.shape,
             dtype=torch.bool,
             device=state.echo_linear.device,
         )
-    if metadata.source_support is None:
-        return None
     source = metadata.source_support.to(
         dtype=state.echo_linear.dtype,
         device=state.echo_linear.device,
