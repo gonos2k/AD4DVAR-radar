@@ -563,6 +563,141 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertTrue(forecast.valid_mask[0, 4, 2])
         self.assertTrue(torch.isfinite(forecast.forecast_dbz[0, 4, 2]))
 
+    def test_causal_support_back_advects_later_detection(self) -> None:
+        detected = torch.zeros((3, 7, 9), dtype=torch.bool)
+        detected[2, 3, 6] = True
+        observed = torch.zeros_like(detected)
+        observed[0, 3, 4] = True
+
+        support = variational_module._causal_initial_support(
+            detected,
+            observed,
+            torch.zeros_like(detected),
+            torch.tensor((0.0, 1.0), dtype=torch.float64),
+            self.nowcast_config.epsilon,
+        )
+
+        self.assertTrue(support[3, 4])
+        self.assertEqual(int(support.sum()), 1)
+
+    def test_later_echo_opens_anchored_causal_control_support(self) -> None:
+        frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
+        frames[:, 2, 2] = 20.0
+        frames[0, 4, 6] = 4.9
+        frames[1, 4, 6] = 12.0
+        frames[2, 4, 6] = 20.0
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+
+        self.assertFalse(observations.detected_mask[0, 4, 6])
+        self.assertTrue(frozen.initial_support_mask[4, 6])
+
+        control = initial_control(observations)
+        baseline = analysis_trajectory(control, frozen).frames_linear[2]
+        changed = control.clone()
+        changed[4 * 9 + 6] = 1.0
+        response = analysis_trajectory(changed, frozen).frames_linear[2]
+        self.assertGreater(float(response[4, 6]), float(baseline[4, 6]))
+
+    def test_later_detected_echo_is_not_published_as_clear(self) -> None:
+        frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
+        frames[:, 2, 2] = 20.0
+        frames[0, 4, 6] = 4.9
+        frames[1, 4, 6] = 12.0
+        frames[2, 4, 6] = 20.0
+
+        forecast, result = variational_nowcast(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+
+        analyzed_dbz = echo_to_dbz(
+            result.state.echo_linear,
+            min_dbz=self.nowcast_config.min_dbz,
+        )
+        self.assertGreater(
+            float(analyzed_dbz[4, 6]),
+            self.analysis_config.detection_limit_dbz,
+        )
+        self.assertTrue(forecast.valid_mask[0, 4, 6])
+        self.assertGreater(
+            float(forecast.forecast_dbz[0, 4, 6]),
+            self.analysis_config.detection_limit_dbz,
+        )
+
+    def test_unrepresentable_latest_echo_falls_back_to_p0(self) -> None:
+        frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
+        frames[:, 2, 2] = 20.0
+        frames[0, 4, 6] = 4.9
+        frames[1, 4, 6] = 12.0
+        frames[2, 4, 6] = 20.0
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+        stale_support = torch.zeros_like(frozen.initial_support_mask)
+        stale_support[2, 2] = True
+        frozen = replace(frozen, initial_support_mask=stale_support)
+
+        result = variational_module._analysis_result(
+            initial_control(observations),
+            frozen,
+            1.0,
+            0.5,
+            1,
+            0,
+            True,
+            "test_unrepresentable_echo",
+        )
+
+        self.assertTrue(result.used_fallback)
+        self.assertEqual(result.reason, "unrepresentable_latest_echo")
+        torch.testing.assert_close(
+            result.state.echo_linear,
+            frozen.baseline_state.echo_linear,
+        )
+        self.assertGreater(
+            float(
+                echo_to_dbz(
+                    result.state.echo_linear,
+                    min_dbz=self.nowcast_config.min_dbz,
+                )[4, 6]
+            ),
+            self.analysis_config.detection_limit_dbz,
+        )
+
+    def test_later_background_does_not_expand_p1_support(self) -> None:
+        frames = torch.full((3, 7, 9), torch.nan, dtype=torch.float64)
+        frames[0, 2, 2] = 20.0
+        background = torch.full_like(frames, torch.nan)
+        background[2, 4, 6] = self.nowcast_config.min_dbz
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+
+        result = variational_module._analysis_result(
+            initial_control(observations),
+            frozen,
+            0.0,
+            0.0,
+            1,
+            0,
+            True,
+            "test_later_background_support",
+        )
+
+        self.assertFalse(result.used_fallback)
+        self.assertEqual(float(result.metadata.source_support[4, 6]), 0.0)
+
     def test_invalid_observations_without_background_are_unavailable(
         self,
     ) -> None:
