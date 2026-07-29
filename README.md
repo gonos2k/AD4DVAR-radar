@@ -130,6 +130,11 @@ forecast, analysis = variational_nowcast(
 
 관측이 전혀 없으면 이전 주기 배경을 `STALE_BACKGROUND`으로 사용한다.
 배경도 없으면 결과 상태는 `UNAVAILABLE`이고 예측장은 `NaN`이다.
+Python API의 `ForecastResult.valid_mask`와
+`ForecastMetadata.source_support`는 항상 Tensor이다. 외부 유입 support는
+0으로 두므로 이동 후 지원되지 않는 경계는 `forecast_dbz`에서 `NaN`이며,
+그 finite 영역은 `valid_mask`와 정확히 같다. 선형 예측은 공개 결과에
+중복 저장하지 않고 필요할 때 상태와 순수 물리 코어에서 계산한다.
 
 현재 P1에는 이전 분석주기의 독립 배경장이 없다. 따라서 `Y(-20)`을 초기장
 anchor이자 첫 관측으로 함께 사용한다. 이는 완전한 Bayesian 4D-Var가 아니라

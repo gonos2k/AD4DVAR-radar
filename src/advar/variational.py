@@ -1075,11 +1075,7 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
             metadata.background_contribution_fraction
         ),
         background_age_minutes=metadata.background_age_minutes,
-        source_support=(
-            None
-            if metadata.source_support is None
-            else metadata.source_support.detach()
-        ),
+        source_support=metadata.source_support.detach(),
         motion_disagreement_px=metadata.motion_disagreement_px.detach(),
         growth_disagreement=metadata.growth_disagreement.detach(),
         tendency_pair_count=metadata.tendency_pair_count,
