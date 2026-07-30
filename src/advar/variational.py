@@ -42,6 +42,7 @@ class AnalysisConfig:
     initial_increment_scale_dbz: float = 4.0
     motion_increment_scale_px: float = 1.0
     growth_increment_scale: float = 0.04
+    minimum_control_reachability: float = 0.25
     maximum_outer_iterations: int = 4
     maximum_pcg_iterations: int = 40
     maximum_damping_retries: int = 2
@@ -65,6 +66,9 @@ class AnalysisConfig:
             "initial_increment_scale_dbz": self.initial_increment_scale_dbz,
             "motion_increment_scale_px": self.motion_increment_scale_px,
             "growth_increment_scale": self.growth_increment_scale,
+            "minimum_control_reachability": (
+                self.minimum_control_reachability
+            ),
             "pcg_relative_tolerance": self.pcg_relative_tolerance,
             "gradient_tolerance": self.gradient_tolerance,
             "step_tolerance": self.step_tolerance,
@@ -93,6 +97,8 @@ class AnalysisConfig:
             raise ValueError("minimum_damping cannot exceed initial_damping")
         if self.initial_damping > self.maximum_damping:
             raise ValueError("initial_damping cannot exceed maximum_damping")
+        if self.minimum_control_reachability > 1.0:
+            raise ValueError("minimum_control_reachability cannot exceed 1")
 
 
 @dataclass(frozen=True)
@@ -112,7 +118,7 @@ class AnalysisObservations:
 class FrozenOuterState:
     initial_background_dbz: Tensor
     initial_support_mask: Tensor
-    latest_detected_mask: Tensor
+    detected_masks: Tensor
     observed_mask: Tensor
     background_mask: Tensor
     background_age_minutes: float | None
@@ -231,7 +237,7 @@ def prepare_analysis(
         prepared.observed_mask,
         prepared.background_mask,
         baseline_state.displacement_yx,
-        nowcast_config.epsilon,
+        analysis_config.minimum_control_reachability,
     )
     remap_cells = tuple(
         freeze_remap_cell(step * baseline_state.displacement_yx)
@@ -245,7 +251,7 @@ def prepare_analysis(
     frozen = FrozenOuterState(
         initial_background_dbz=baseline_frames_dbz[0].detach().clone(),
         initial_support_mask=initial_support.detach().clone(),
-        latest_detected_mask=detected[2].detach().clone(),
+        detected_masks=detected.detach().clone(),
         observed_mask=prepared.observed_mask.detach().clone(),
         background_mask=prepared.background_mask.detach().clone(),
         background_age_minutes=prepared.background_age_minutes,
@@ -270,7 +276,7 @@ def _causal_initial_support(
     observed_mask: Tensor,
     background_mask: Tensor,
     displacement_yx: Tensor,
-    epsilon: float,
+    minimum_reachability: float,
 ) -> Tensor:
     initial_anchor = observed_mask[0] | background_mask[0]
     support = detected_mask[0].clone()
@@ -279,7 +285,7 @@ def _causal_initial_support(
             detected_mask[step].to(dtype=displacement_yx.dtype),
             -step * displacement_yx,
         )
-        support |= precursor > epsilon
+        support |= precursor >= minimum_reachability
     return support & initial_anchor
 
 
@@ -542,6 +548,7 @@ def solve_analysis(
         )
 
     config = frozen.analysis_config
+    field_size = frozen.initial_background_dbz.numel()
     damping = config.initial_damping
     current_cost = initial_cost
     total_pcg_iterations = 0
@@ -627,6 +634,17 @@ def solve_analysis(
                     ).detach()
                 )
                 candidate = control + step
+                candidate_displacement, _ = _decode_dynamics(
+                    candidate[field_size:],
+                    frozen_iteration.baseline_state,
+                    config,
+                    frozen_iteration.nowcast_config,
+                )
+                if not _analysis_window_is_representable(
+                    frozen_iteration,
+                    candidate_displacement,
+                ):
+                    continue
                 candidate_frozen = _freeze_analysis_remap_cells(
                     candidate,
                     frozen_iteration,
@@ -833,7 +851,7 @@ def _analysis_result(
 ) -> AnalysisResult:
     frozen = _freeze_analysis_remap_cells(control, frozen)
     trajectory = _analysis_trajectory(control, frozen)
-    if not _latest_echo_is_representable(
+    if not _analysis_window_is_representable(
         frozen,
         trajectory.displacement_yx,
     ):
@@ -841,7 +859,7 @@ def _analysis_result(
             frozen,
             control,
             initial_objective,
-            "unrepresentable_latest_echo",
+            "unrepresentable_analysis_window",
             outer_iterations,
             pcg_iterations,
         )
@@ -893,18 +911,21 @@ def _analysis_result(
     )
 
 
-def _latest_echo_is_representable(
+def _analysis_window_is_representable(
     frozen: FrozenOuterState,
     displacement_yx: Tensor,
 ) -> bool:
-    reachable = remap(
-        frozen.initial_support_mask.to(dtype=displacement_yx.dtype),
-        2 * displacement_yx,
-    )
-    missing = frozen.latest_detected_mask & (
-        reachable <= frozen.nowcast_config.epsilon
-    )
-    return not bool(torch.any(missing))
+    support = frozen.initial_support_mask.to(dtype=displacement_yx.dtype)
+    if bool(torch.any(frozen.detected_masks[0] & ~frozen.initial_support_mask)):
+        return False
+    for step in (1, 2):
+        reachable = remap(support, step * displacement_yx)
+        missing = frozen.detected_masks[step] & (
+            reachable < frozen.analysis_config.minimum_control_reachability
+        )
+        if bool(torch.any(missing)):
+            return False
+    return True
 
 
 def _fallback_result(
