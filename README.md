@@ -91,7 +91,17 @@ P1 제어벡터는 다음 하나뿐이다.
 
 `a_q`는 dBZ latent의 softplus 좌표에서 양의 선형 에코로 변환한다.
 무에코 영역은 고정 support mask로 잠가 레이더 세 장만으로 신규 에코를
-만들지 않는다. 세 관측잔차는 다음 순서로 정확히 한 번 처리한다.
+만들지 않는다. 다만 분석창 후반에 탐지된 에코는 baseline 운동으로
+초기시각에 역수송하고, 초기 관측 또는 배경 anchor가 있는 위치만 2 pixel
+범위에서 precursor control로 연다. causal-only floor 화소는 탐지한계 바로
+아래에서 control을 warm start하므로 배경을 바꾸지 않으며 제어 prior 비용도
+그대로 부담한다. 모든 분석시각의 탐지 에코에는 최소 0.25의 control
+reachability를 요구하고, 그 최소 여유를
+`analysis.minimum_reachability_margin`에 기록한다. 초기 탐지 에코의 정상
+수송으로 설명되지 않는 최신 에코가 분석에서 관측값의 3 표준편차보다 더
+약하면 `unresolved_growth_or_emergence`로 기준예측에 복귀한다.
+
+세 관측잔차는 다음 순서로 정확히 한 번 처리한다.
 
 ```text
 detected 또는 censored residual

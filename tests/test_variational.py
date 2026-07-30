@@ -575,6 +575,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             torch.zeros_like(detected),
             torch.tensor((0.0, 1.0), dtype=torch.float64),
             self.analysis_config.minimum_control_reachability,
+            0,
         )
 
         self.assertTrue(support[3, 4])
@@ -608,6 +609,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             torch.zeros_like(detected),
             displacement,
             self.analysis_config.minimum_control_reachability,
+            0,
         )
         self.assertFalse(bool(torch.any(support)))
 
@@ -623,6 +625,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             torch.zeros_like(detected),
             torch.tensor((0.25, 0.25), dtype=torch.float64),
             self.analysis_config.minimum_control_reachability,
+            0,
         )
 
         self.assertEqual(int(support.sum()), 4)
@@ -665,6 +668,30 @@ class VariationalAnalysisTests(unittest.TestCase):
             )
         )
 
+    def test_reachability_margin_changes_sign_at_threshold(self) -> None:
+        _, frozen = self.stationary_problem(height=7, width=9)
+        support = torch.zeros_like(frozen.initial_support_mask)
+        support[3, 3] = True
+        detected = torch.zeros_like(frozen.detected_masks)
+        detected[1, 3, 4] = True
+        frozen = replace(
+            frozen,
+            initial_support_mask=support,
+            detected_masks=detected,
+        )
+
+        below = variational_module._analysis_window_reachability_margin(
+            frozen,
+            torch.tensor((0.0, 0.249999), dtype=torch.float64),
+        )
+        above = variational_module._analysis_window_reachability_margin(
+            frozen,
+            torch.tensor((0.0, 0.250001), dtype=torch.float64),
+        )
+
+        self.assertLess(below, 0.0)
+        self.assertGreater(above, 0.0)
+
     def test_later_echo_opens_anchored_causal_control_support(self) -> None:
         frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
         frames[:, 2, 2] = 20.0
@@ -687,6 +714,76 @@ class VariationalAnalysisTests(unittest.TestCase):
         response = analysis_trajectory(changed, frozen).frames_linear[2]
         self.assertGreater(float(response[4, 6]), float(baseline[4, 6]))
 
+    def test_causal_envelope_preserves_only_initial_anchors(self) -> None:
+        detected = torch.zeros((3, 7, 9), dtype=torch.bool)
+        detected[2, 3, 6] = True
+        observed = torch.zeros_like(detected)
+        observed[0, 3, 4] = True
+        observed[0, 3, 6] = True
+
+        support = variational_module._causal_initial_support(
+            detected,
+            observed,
+            torch.zeros_like(detected),
+            torch.zeros(2, dtype=torch.float64),
+            self.analysis_config.minimum_control_reachability,
+            self.analysis_config.causal_support_dilation_px,
+        )
+
+        self.assertTrue(support[3, 4])
+        self.assertTrue(support[3, 6])
+        self.assertFalse(support[3, 5])
+        self.assertEqual(int(support.sum()), 2)
+
+        _, frozen = self.stationary_problem(height=7, width=9)
+        frozen = replace(
+            frozen,
+            initial_support_mask=support,
+            detected_masks=detected,
+        )
+        margin = variational_module._analysis_window_reachability_margin(
+            frozen,
+            torch.tensor((0.0, 1.0), dtype=torch.float64),
+        )
+        self.assertAlmostEqual(
+            margin,
+            1.0 - self.analysis_config.minimum_control_reachability,
+        )
+
+    def test_floor_precursor_uses_prior_charged_warm_start(self) -> None:
+        frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
+        frames[:, 2, 2] = 20.0
+        frames[1, 4, 6] = 6.0
+        frames[2, 4, 6] = 7.0
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+            observation_std_dbz=0.5,
+        )
+
+        warm = variational_module._warm_started_control(
+            observations,
+            frozen,
+        )
+        warm_trajectory = analysis_trajectory(warm, frozen)
+        warm_initial_dbz = echo_to_dbz(
+            warm_trajectory.frames_linear[0],
+            min_dbz=self.nowcast_config.min_dbz,
+        )
+
+        self.assertTrue(frozen.causal_only_mask[4, 6])
+        self.assertGreater(abs(float(warm[4 * 9 + 6])), 1.0)
+        self.assertAlmostEqual(float(warm_initial_dbz[4, 6]), 4.0, places=6)
+        self.assertGreater(float(torch.dot(warm, warm)), 0.0)
+
+        result = solve_analysis(observations, frozen)
+
+        self.assertFalse(result.used_fallback, result.reason)
+        self.assertLess(result.final_objective, result.initial_objective)
+        self.assertIsNotNone(result.minimum_reachability_margin)
+        self.assertGreaterEqual(result.minimum_reachability_margin or 0.0, 0.0)
+
     def test_later_detected_echo_is_not_published_as_clear(self) -> None:
         frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
         frames[:, 2, 2] = 20.0
@@ -700,14 +797,10 @@ class VariationalAnalysisTests(unittest.TestCase):
             analysis_config=self.analysis_config,
         )
 
-        analyzed_dbz = echo_to_dbz(
-            result.state.echo_linear,
-            min_dbz=self.nowcast_config.min_dbz,
-        )
-        self.assertGreater(
-            float(analyzed_dbz[4, 6]),
-            self.analysis_config.detection_limit_dbz,
-        )
+        self.assertTrue(result.used_fallback)
+        self.assertEqual(result.reason, "unresolved_growth_or_emergence")
+        self.assertIsNotNone(result.minimum_reachability_margin)
+        self.assertGreaterEqual(result.minimum_reachability_margin or 0.0, 0.0)
         self.assertTrue(forecast.valid_mask[0, 4, 6])
         self.assertGreater(
             float(forecast.forecast_dbz[0, 4, 6]),
