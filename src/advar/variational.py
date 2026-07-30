@@ -43,6 +43,8 @@ class AnalysisConfig:
     motion_increment_scale_px: float = 1.0
     growth_increment_scale: float = 0.04
     minimum_control_reachability: float = 0.25
+    causal_support_dilation_px: int = 2
+    maximum_latest_detected_error_std: float = 3.0
     maximum_outer_iterations: int = 4
     maximum_pcg_iterations: int = 40
     maximum_damping_retries: int = 2
@@ -69,6 +71,9 @@ class AnalysisConfig:
             "minimum_control_reachability": (
                 self.minimum_control_reachability
             ),
+            "maximum_latest_detected_error_std": (
+                self.maximum_latest_detected_error_std
+            ),
             "pcg_relative_tolerance": self.pcg_relative_tolerance,
             "gradient_tolerance": self.gradient_tolerance,
             "step_tolerance": self.step_tolerance,
@@ -93,6 +98,11 @@ class AnalysisConfig:
             or self.maximum_damping_retries < 0
         ):
             raise ValueError("maximum_damping_retries cannot be negative")
+        if (
+            type(self.causal_support_dilation_px) is not int
+            or self.causal_support_dilation_px < 0
+        ):
+            raise ValueError("causal_support_dilation_px cannot be negative")
         if self.minimum_damping > self.initial_damping:
             raise ValueError("minimum_damping cannot exceed initial_damping")
         if self.initial_damping > self.maximum_damping:
@@ -118,7 +128,10 @@ class AnalysisObservations:
 class FrozenOuterState:
     initial_background_dbz: Tensor
     initial_support_mask: Tensor
+    causal_only_mask: Tensor
     detected_masks: Tensor
+    latest_observed_dbz: Tensor
+    latest_observation_std_dbz: Tensor
     observed_mask: Tensor
     background_mask: Tensor
     background_age_minutes: float | None
@@ -153,6 +166,7 @@ class AnalysisResult:
     reason: str
     audit: PositivityAudit
     degraded: bool = False
+    minimum_reachability_margin: float | None = None
 
 
 def prepare_analysis(
@@ -238,7 +252,9 @@ def prepare_analysis(
         prepared.background_mask,
         baseline_state.displacement_yx,
         analysis_config.minimum_control_reachability,
+        analysis_config.causal_support_dilation_px,
     )
+    causal_only = initial_support & ~detected[0]
     remap_cells = tuple(
         freeze_remap_cell(step * baseline_state.displacement_yx)
         for step in (1, 2)
@@ -251,7 +267,10 @@ def prepare_analysis(
     frozen = FrozenOuterState(
         initial_background_dbz=baseline_frames_dbz[0].detach().clone(),
         initial_support_mask=initial_support.detach().clone(),
+        causal_only_mask=causal_only.detach().clone(),
         detected_masks=detected.detach().clone(),
+        latest_observed_dbz=observed_dbz[-1].detach().clone(),
+        latest_observation_std_dbz=std[-1].detach().clone(),
         observed_mask=prepared.observed_mask.detach().clone(),
         background_mask=prepared.background_mask.detach().clone(),
         background_age_minutes=prepared.background_age_minutes,
@@ -263,7 +282,7 @@ def prepare_analysis(
         analysis_config=analysis_config,
         analysis_remap_cells=remap_cells,
     )
-    control = initial_control(observations)
+    control = _warm_started_control(observations, frozen)
     return observations, freeze_irls_weights(
         control,
         observations,
@@ -277,22 +296,78 @@ def _causal_initial_support(
     background_mask: Tensor,
     displacement_yx: Tensor,
     minimum_reachability: float,
+    dilation_px: int,
 ) -> Tensor:
     initial_anchor = observed_mask[0] | background_mask[0]
-    support = detected_mask[0].clone()
+    later_support = torch.zeros_like(detected_mask[0])
     for step in (1, 2):
         precursor = remap(
             detected_mask[step].to(dtype=displacement_yx.dtype),
             -step * displacement_yx,
         )
-        support |= precursor >= minimum_reachability
-    return support & initial_anchor
+        later_support |= precursor >= minimum_reachability
+    if dilation_px > 0:
+        later_support = (
+            F.max_pool2d(
+                later_support[None, None].to(dtype=displacement_yx.dtype),
+                kernel_size=2 * dilation_px + 1,
+                stride=1,
+                padding=dilation_px,
+            )[0, 0]
+            > 0
+        )
+    return (detected_mask[0] | later_support) & initial_anchor
 
 
 def initial_control(observations: AnalysisObservations) -> Tensor:
     _validate_observations(observations)
     height, width = observations.dbz.shape[-2:]
     return observations.dbz.new_zeros(height * width + 3)
+
+
+def _warm_started_control(
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+) -> Tensor:
+    control = initial_control(observations)
+    if not bool(torch.any(frozen.causal_only_mask)):
+        return control
+
+    config = frozen.analysis_config
+    floor_dbz = frozen.nowcast_config.min_dbz
+    seed_dbz = max(
+        config.detection_limit_dbz - config.censor_temperature_dbz,
+        0.5 * (floor_dbz + config.detection_limit_dbz),
+    )
+    seed_mask = frozen.causal_only_mask & (
+        frozen.initial_background_dbz < seed_dbz
+    )
+    if not bool(torch.any(seed_mask)):
+        return control
+
+    background_offset = (
+        frozen.initial_background_dbz - floor_dbz
+    ) / config.echo_transform_scale_dbz
+    background_latent = _softplus_inverse(
+        background_offset.clamp_min(config.transform_epsilon)
+    )
+    seed_offset = control.new_full(
+        frozen.initial_background_dbz.shape,
+        (seed_dbz - floor_dbz) / config.echo_transform_scale_dbz,
+    )
+    seed_latent = _softplus_inverse(
+        seed_offset.clamp_min(config.transform_epsilon)
+    )
+    field_control = control[: frozen.initial_background_dbz.numel()].reshape(
+        frozen.initial_background_dbz.shape
+    )
+    required_control = (
+        (seed_latent - background_latent)
+        * config.echo_transform_scale_dbz
+        / config.initial_increment_scale_dbz
+    )
+    field_control[seed_mask] = required_control[seed_mask]
+    return control
 
 
 def analysis_trajectory(
@@ -505,7 +580,7 @@ def solve_analysis(
 ) -> AnalysisResult:
     _validate_observations(observations)
     control = (
-        initial_control(observations)
+        _warm_started_control(observations, frozen)
         if control is None
         else control.detach().clone()
     )
@@ -851,10 +926,11 @@ def _analysis_result(
 ) -> AnalysisResult:
     frozen = _freeze_analysis_remap_cells(control, frozen)
     trajectory = _analysis_trajectory(control, frozen)
-    if not _analysis_window_is_representable(
+    reachability_margin = _analysis_window_reachability_margin(
         frozen,
         trajectory.displacement_yx,
-    ):
+    )
+    if reachability_margin < 0:
         return _fallback_result(
             frozen,
             control,
@@ -862,11 +938,26 @@ def _analysis_result(
             "unrepresentable_analysis_window",
             outer_iterations,
             pcg_iterations,
+            minimum_reachability_margin=reachability_margin,
         )
     frames, audit = validate_physical_echo(
         trajectory.frames_linear,
         name="final analysis",
     )
+    if not _latest_detected_amplitude_is_resolved(
+        frozen,
+        frames[-1],
+        trajectory.displacement_yx,
+    ):
+        return _fallback_result(
+            frozen,
+            control,
+            initial_objective,
+            "unresolved_growth_or_emergence",
+            outer_iterations,
+            pcg_iterations,
+            minimum_reachability_margin=reachability_margin,
+        )
     state = RadarState(
         echo_linear=frames[-1],
         displacement_yx=trajectory.displacement_yx,
@@ -908,6 +999,7 @@ def _analysis_result(
         reason=reason,
         degraded=degraded,
         audit=audit,
+        minimum_reachability_margin=reachability_margin,
     )
 
 
@@ -915,17 +1007,57 @@ def _analysis_window_is_representable(
     frozen: FrozenOuterState,
     displacement_yx: Tensor,
 ) -> bool:
+    return _analysis_window_reachability_margin(frozen, displacement_yx) >= 0
+
+
+def _analysis_window_reachability_margin(
+    frozen: FrozenOuterState,
+    displacement_yx: Tensor,
+) -> float:
     support = frozen.initial_support_mask.to(dtype=displacement_yx.dtype)
-    if bool(torch.any(frozen.detected_masks[0] & ~frozen.initial_support_mask)):
-        return False
-    for step in (1, 2):
-        reachable = remap(support, step * displacement_yx)
-        missing = frozen.detected_masks[step] & (
-            reachable < frozen.analysis_config.minimum_control_reachability
+    threshold = frozen.analysis_config.minimum_control_reachability
+    margins: list[Tensor] = []
+    for step in (0, 1, 2):
+        detected = frozen.detected_masks[step]
+        if not bool(torch.any(detected)):
+            continue
+        reachable = support if step == 0 else remap(
+            support,
+            step * displacement_yx,
         )
-        if bool(torch.any(missing)):
-            return False
-    return True
+        margins.append(torch.min(reachable[detected]) - threshold)
+    if not margins:
+        return 1.0 - threshold
+    return float(torch.min(torch.stack(margins)).detach())
+
+
+def _latest_detected_amplitude_is_resolved(
+    frozen: FrozenOuterState,
+    latest_echo: Tensor,
+    displacement_yx: Tensor,
+) -> bool:
+    initial_reach = remap(
+        frozen.detected_masks[0].to(dtype=displacement_yx.dtype),
+        2.0 * displacement_yx,
+    )
+    precursor_required = frozen.detected_masks[-1] & (
+        initial_reach
+        < frozen.analysis_config.minimum_control_reachability
+    )
+    if not bool(torch.any(precursor_required)):
+        return True
+    latest_dbz = echo_to_dbz(
+        latest_echo,
+        min_dbz=frozen.nowcast_config.min_dbz,
+    )
+    minimum_dbz = (
+        frozen.latest_observed_dbz
+        - frozen.analysis_config.maximum_latest_detected_error_std
+        * frozen.latest_observation_std_dbz
+    )
+    return not bool(
+        torch.any(precursor_required & (latest_dbz < minimum_dbz))
+    )
 
 
 def _fallback_result(
@@ -935,6 +1067,8 @@ def _fallback_result(
     reason: str,
     outer_iterations: int = 0,
     pcg_iterations: int = 0,
+    *,
+    minimum_reachability_margin: float | None = None,
 ) -> AnalysisResult:
     frames = dbz_to_echo(
         frozen.baseline_frames_dbz,
@@ -959,6 +1093,7 @@ def _fallback_result(
         reason=reason,
         degraded=False,
         audit=audit,
+        minimum_reachability_margin=minimum_reachability_margin,
     )
 
 
