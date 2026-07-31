@@ -44,7 +44,7 @@ class AnalysisConfig:
     growth_increment_scale: float = 0.04
     minimum_control_reachability: float = 0.25
     causal_support_dilation_px: int = 2
-    maximum_detected_error_std: float = 3.0
+    maximum_latest_detected_error_std: float = 3.0
     maximum_unresolved_amplitude_fraction: float = 0.01
     maximum_outer_iterations: int = 4
     maximum_pcg_iterations: int = 40
@@ -117,6 +117,10 @@ class AnalysisConfig:
             raise ValueError(
                 "maximum_unresolved_amplitude_fraction must be in [0, 1]"
             )
+
+    @property
+    def maximum_detected_error_std(self) -> float:
+        return self.maximum_latest_detected_error_std
 
 
 @dataclass(frozen=True)

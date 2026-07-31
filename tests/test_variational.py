@@ -1018,6 +1018,13 @@ class VariationalAnalysisTests(unittest.TestCase):
                         maximum_unresolved_amplitude_fraction=value
                     )
 
+    def test_latest_amplitude_threshold_constructor_remains_supported(
+        self,
+    ) -> None:
+        config = AnalysisConfig(maximum_latest_detected_error_std=4.5)
+
+        self.assertEqual(config.maximum_detected_error_std, 4.5)
+
     def test_unrepresentable_latest_echo_falls_back_to_p0(self) -> None:
         frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
         frames[:, 2, 2] = 20.0

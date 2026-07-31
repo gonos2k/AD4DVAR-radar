@@ -104,7 +104,8 @@ floor 아래인 가중 화소비율을
 `analysis.unresolved_amplitude_fraction`에 기록하고, 그 비율이 연구용
 fail-close 기본값 1%를 넘으면 `unresolved_growth_or_emergence`로
 기준예측에 복귀한다. 이 1%는 운용 임계값이 아니며 실제 hindcast에서
-보정해야 한다.
+보정해야 한다. 기존 `maximum_latest_detected_error_std` 생성자 인자는
+0.4 API 호환을 위해 유지되며, 현재는 두 후속 분석시각 모두에 적용된다.
 
 warm start는 solver의 출발점일 뿐 수용 기준은 아니다. P1은 zero-control
 목적함수를 `initial_objective`로 고정하고, 최종 제어가 이를 수치
