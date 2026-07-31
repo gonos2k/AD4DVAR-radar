@@ -329,6 +329,7 @@ def compute_sensitivity_snapshot(
     )
     impact_input_available = (
         innovation is not None
+        and innovation_mask is not None
         and bool(torch.any(innovation_mask & latest_active))
     )
     if not impact_input_available:
@@ -463,6 +464,10 @@ def compute_sensitivity_snapshot(
                 direct_maps[position, metric_index] = direct_gradient.detach()
 
             if observation_impact is not None and tile_impact is not None:
+                if innovation is None or innovation_mask is None:
+                    raise RuntimeError(
+                        "impact storage requires an observation innovation"
+                    )
                 contribution = torch.where(
                     innovation_mask,
                     direct_gradient.detach() * innovation,

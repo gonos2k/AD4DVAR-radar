@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }} CPU
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.10"
+          - "3.12"
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install package and test tools
+        run: >-
+          python -m pip install --editable .
+          pytest==9.1.1
+          basedpyright==1.39.9
+
+      - name: Check product source types
+        if: matrix.python-version == '3.12'
+        run: >-
+          python -m basedpyright
+          --level error
+          --pythonpath "$(command -v python)"
+          src/advar
+
+      - name: Run CPU FP32 and FP64 tests
+        run: python -m pytest -q
+
+  package:
+    name: Wheel and CLI smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Build source and wheel distributions
+        run: |
+          python -m pip install build==1.5.0
+          python -m build
+
+      - name: Install the built wheel in isolation
+        run: |
+          python -m venv .wheel-venv
+          .wheel-venv/bin/python -m pip install dist/*.whl
+
+      - name: Generate CLI smoke input
+        run: |
+          .wheel-venv/bin/python - <<'PY'
+          import os
+          from pathlib import Path
+
+          import numpy as np
+
+          output = Path(os.environ["RUNNER_TEMP"])
+          y, x = np.meshgrid(
+              np.arange(16, dtype=np.float32),
+              np.arange(16, dtype=np.float32),
+              indexing="ij",
+          )
+          frame = -10.0 + 45.0 * np.exp(
+              -((y - 7.5) ** 2 + (x - 7.5) ** 2) / 12.0
+          )
+          np.save(output / "three_frames.npy", np.stack((frame, frame, frame)))
+          PY
+
+      - name: Run installed CLI
+        run: |
+          .wheel-venv/bin/advar-nowcast \
+            "$RUNNER_TEMP/three_frames.npy" \
+            "$RUNNER_TEMP/forecast.npz"
+
+      - name: Validate installed CLI output contract
+        run: |
+          .wheel-venv/bin/python - <<'PY'
+          import os
+          from pathlib import Path
+
+          import numpy as np
+
+          path = Path(os.environ["RUNNER_TEMP"]) / "forecast.npz"
+          with np.load(path, allow_pickle=False) as result:
+              assert result["output_contract_version"].item() == "nowcast-npz-v5"
+              assert result["forecast_dbz"].shape == (18, 16, 16)
+              assert np.isfinite(result["forecast_dbz"]).all()
+              assert result["data_status"].item() == "OBSERVED"
+          PY

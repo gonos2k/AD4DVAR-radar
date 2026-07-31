@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 import math
+from typing import cast
 
 import torch
 import torch.nn.functional as F
@@ -269,9 +271,9 @@ def prepare_analysis(
         analysis_config.causal_support_dilation_px,
     )
     causal_only = initial_support & ~detected[0]
-    remap_cells = tuple(
-        freeze_remap_cell(step * baseline_state.displacement_yx)
-        for step in (1, 2)
+    remap_cells = (
+        freeze_remap_cell(baseline_state.displacement_yx),
+        freeze_remap_cell(2 * baseline_state.displacement_yx),
     )
     baseline_frames_dbz = torch.where(
         prepared.observed_mask,
@@ -626,11 +628,10 @@ def solve_analysis(
         )
     reference_cost = float(reference_cost_tensor.detach())
 
-    control = (
-        _warm_started_control(observations, frozen)
-        if control is None
-        else control.detach().clone()
-    )
+    if control is None:
+        control = _warm_started_control(observations, frozen)
+    else:
+        control = control.detach().clone()
     _validate_control(control, frozen)
     if torch.equal(control, reference_control):
         frozen = reference_frozen
@@ -702,12 +703,18 @@ def solve_analysis(
             observations,
             frozen,
         )
-        residual_fn = lambda value: residual_vector(
+        linearization_point: Tensor = control
+        residual_fn: Callable[[Tensor], Tensor] = lambda value: residual_vector(
             value,
             observations,
             frozen_iteration,
         )
-        residual, pullback = torch.func.vjp(residual_fn, control)
+        vjp_result = torch.func.vjp(residual_fn, linearization_point)
+        residual = cast(Tensor, vjp_result[0])
+        pullback = cast(
+            Callable[[Tensor], tuple[Tensor]],
+            vjp_result[1],
+        )
         gradient = pullback(residual)[0]
         gradient_norm = float(torch.linalg.vector_norm(gradient).detach())
         if not math.isfinite(gradient_norm):
@@ -732,7 +739,7 @@ def solve_analysis(
         for _ in range(config.maximum_damping_retries + 1):
             operator = lambda vector: gauss_newton_hvp(
                 residual_fn,
-                control,
+                linearization_point,
                 vector,
                 damping=damping,
             )
@@ -758,7 +765,7 @@ def solve_analysis(
             raw_step = linear.solution
             hessian_step = gauss_newton_hvp(
                 residual_fn,
-                control,
+                linearization_point,
                 raw_step,
             )
             directional_gradient = torch.dot(gradient, raw_step)

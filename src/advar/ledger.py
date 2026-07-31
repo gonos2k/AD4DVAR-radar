@@ -13,9 +13,10 @@ import re
 import shutil
 import sqlite3
 import tempfile
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
+from numpy.typing import NDArray
 import torch
 from torch import Tensor
 
@@ -103,7 +104,7 @@ class LoadedEpisode:
     """Verified data loaded without Python object deserialization."""
 
     manifest: dict[str, Any]
-    arrays: dict[str, np.ndarray]
+    arrays: dict[str, NDArray[Any]]
 
 
 class EpisodeLedger:
@@ -133,7 +134,10 @@ class EpisodeLedger:
         try:
             arrays = _snapshot_arrays(episode)
             arrays_path = temporary / "sensitivity_arrays.npz"
-            np.savez_compressed(arrays_path, **arrays)
+            np.savez_compressed(
+                arrays_path,
+                **cast(dict[str, Any], arrays),
+            )
 
             manifest = _episode_manifest(episode, arrays)
             manifest_path = temporary / "manifest.json"
@@ -591,7 +595,7 @@ def _owned_episode_copy(episode: SensitivityEpisode) -> SensitivityEpisode:
     )
 
 
-def _snapshot_arrays(episode: SensitivityEpisode) -> dict[str, np.ndarray]:
+def _snapshot_arrays(episode: SensitivityEpisode) -> dict[str, NDArray[Any]]:
     snapshot = episode.snapshot
     tensor_arrays = {
         "context_features": snapshot.context_features,
@@ -638,7 +642,7 @@ def _snapshot_arrays(episode: SensitivityEpisode) -> dict[str, np.ndarray]:
 
 def _episode_manifest(
     episode: SensitivityEpisode,
-    arrays: dict[str, np.ndarray],
+    arrays: dict[str, NDArray[Any]],
 ) -> dict[str, Any]:
     snapshot = episode.snapshot
     return {
@@ -1036,6 +1040,8 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         raise ValueError("unavailable latest-frame tile norms must be NaN")
     if snapshot.whitened_tile_norm_available:
         whitened_latest = snapshot.direct.whitened_tile_norm
+        if whitened_latest is None:
+            raise ValueError("whitened summaries require whitened tile norms")
         expected = (lead_count, metric_count, tile_rows, tile_columns)
         if tuple(whitened_latest.shape) != expected:
             raise ValueError(
@@ -1046,13 +1052,14 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             "tile_whitened_direct_sensitivity_norm",
             whitened_latest,
         )
-        if snapshot.observation_std_dbz is None:
+        observation_std = snapshot.observation_std_dbz
+        if observation_std is None:
             raise ValueError("whitened summaries require observation_std_dbz")
-        if tuple(snapshot.observation_std_dbz.shape) != (height, width):
+        if tuple(observation_std.shape) != (height, width):
             raise ValueError("observation_std_dbz must match the latest frame")
-        _require_float_tensor("observation_std_dbz", snapshot.observation_std_dbz)
-        _require_finite("observation_std_dbz", snapshot.observation_std_dbz)
-        if bool(torch.any(snapshot.observation_std_dbz <= 0)):
+        _require_float_tensor("observation_std_dbz", observation_std)
+        _require_finite("observation_std_dbz", observation_std)
+        if bool(torch.any(observation_std <= 0)):
             raise ValueError("observation_std_dbz must be positive")
         if not bool(torch.all(torch.isfinite(whitened_latest[available]))):
             raise ValueError("available whitened tile norms must be finite")
@@ -1088,14 +1095,11 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             ):
                 raise ValueError("unavailable sensitivity maps must be NaN")
 
-    innovation_values = (
-        snapshot.observation_innovation_dbz,
-        snapshot.observation_innovation_mask,
-    )
-    if (innovation_values[0] is None) != (innovation_values[1] is None):
+    innovation = snapshot.observation_innovation_dbz
+    innovation_mask = snapshot.observation_innovation_mask
+    if (innovation is None) != (innovation_mask is None):
         raise ValueError("innovation value and mask availability must agree")
-    if innovation_values[0] is not None and innovation_values[1] is not None:
-        innovation, innovation_mask = innovation_values
+    if innovation is not None and innovation_mask is not None:
         if tuple(innovation.shape) != (height, width):
             raise ValueError("observation_innovation_dbz must match latest frame")
         if tuple(innovation_mask.shape) != (height, width):
@@ -1119,8 +1123,8 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             raise ValueError("impact requires an available metric")
         latest_impact = snapshot.direct.impact
         latest_tile_impact = snapshot.direct.tile_impact
-        if latest_tile_impact is None:
-            raise ValueError("direct impact requires tile impact")
+        if latest_impact is None or latest_tile_impact is None:
+            raise ValueError("direct impact requires impact and tile impact")
         if tuple(latest_impact.shape) != (lead_count, metric_count):
             raise ValueError("direct_observation_impact has invalid shape")
         expected = (lead_count, metric_count, tile_rows, tile_columns)
@@ -1160,6 +1164,11 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
 
     if snapshot.reward_available:
         reward = snapshot.direct.reward
+        impact = snapshot.direct.impact
+        if reward is None or impact is None or baseline is None:
+            raise ValueError(
+                "normalized reward requires reward, impact, and baseline"
+            )
         if tuple(reward.shape) != (lead_count, metric_count):
             raise ValueError("direct_normalized_reward has invalid shape")
         _require_float_tensor("direct_normalized_reward", reward)
@@ -1167,7 +1176,7 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             torch.all(torch.isfinite(reward[snapshot.metric_available]))
         ):
             raise ValueError("available rewards must be finite")
-        expected_reward = -snapshot.direct.impact / (
+        expected_reward = -impact / (
             baseline + snapshot.reward_epsilon
         )
         if not torch.allclose(

@@ -4,6 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 import math
 from numbers import Integral, Real
+from typing import cast
 
 import torch
 from torch import Tensor
@@ -37,7 +38,7 @@ def _check_like(name: str, value: Tensor, reference: Tensor) -> None:
         raise ValueError(f"{name} must have the same dtype and device as the input")
 
 
-def _nonnegative_float(name: str, value: Real) -> float:
+def _nonnegative_float(name: str, value: object) -> float:
     if isinstance(value, bool) or not isinstance(value, Real):
         raise TypeError(f"{name} must be a real number")
     result = float(value)
@@ -131,7 +132,8 @@ def jvp(
 ) -> tuple[Tensor, Tensor]:
     """Return ``function(point)`` and the Jacobian-vector product."""
 
-    return torch.func.jvp(function, (point,), (direction,))
+    result = torch.func.jvp(function, (point,), (direction,))
+    return cast(Tensor, result[0]), cast(Tensor, result[1])
 
 
 def vjp(
@@ -141,7 +143,12 @@ def vjp(
 ) -> tuple[Tensor, Tensor]:
     """Return ``function(point)`` and the vector-Jacobian product."""
 
-    value, pullback = torch.func.vjp(function, point)
+    result = torch.func.vjp(function, point)
+    value = cast(Tensor, result[0])
+    pullback = cast(
+        Callable[[Tensor], tuple[Tensor]],
+        result[1],
+    )
     return value, pullback(cotangent)[0]
 
 
@@ -153,8 +160,8 @@ def hvp(
     """Apply a scalar function's Hessian without constructing the matrix."""
 
     gradient = torch.func.grad(scalar_function)
-    _, product = torch.func.jvp(gradient, (point,), (direction,))
-    return product
+    result = torch.func.jvp(gradient, (point,), (direction,))
+    return cast(Tensor, result[1])
 
 
 def gauss_newton_value_and_gradient(
@@ -164,7 +171,12 @@ def gauss_newton_value_and_gradient(
     """Return ``0.5 * ||F(point)||²`` and ``J_F.T @ F(point)``."""
 
     _check_real_tensor("point", point)
-    residual, pullback = torch.func.vjp(residual_fn, point)
+    result = torch.func.vjp(residual_fn, point)
+    residual = cast(Tensor, result[0])
+    pullback = cast(
+        Callable[[Tensor], tuple[Tensor]],
+        result[1],
+    )
     _check_real_tensor("residual_fn(point)", residual)
 
     value = 0.5 * _inner(residual, residual)
@@ -177,7 +189,7 @@ def gauss_newton_hvp(
     residual_fn: TensorFunction,
     point: Tensor,
     direction: Tensor,
-    damping: Real = 0.0,
+    damping: Real | float = 0.0,
 ) -> Tensor:
     """Return ``J_F.T @ (J_F @ direction) + damping * direction``."""
 
@@ -185,13 +197,19 @@ def gauss_newton_hvp(
     _check_like("direction", direction, point)
     damping_value = _nonnegative_float("damping", damping)
 
-    residual, pullback = torch.func.vjp(residual_fn, point)
+    result = torch.func.vjp(residual_fn, point)
+    residual = cast(Tensor, result[0])
+    pullback = cast(
+        Callable[[Tensor], tuple[Tensor]],
+        result[1],
+    )
     _check_real_tensor("residual_fn(point)", residual)
-    _, jacobian_vector = torch.func.jvp(
+    jvp_result = torch.func.jvp(
         residual_fn,
         (point,),
         (direction,),
     )
+    jacobian_vector = cast(Tensor, jvp_result[1])
     _check_like("J_F @ direction", jacobian_vector, residual)
 
     product = pullback(jacobian_vector)[0]
@@ -215,8 +233,8 @@ def pcg(
     *,
     preconditioner: TensorFunction | None = None,
     initial: Tensor | None = None,
-    rtol: Real = 1.0e-6,
-    atol: Real = 0.0,
+    rtol: Real | float = 1.0e-6,
+    atol: Real | float = 0.0,
     max_iterations: int | None = None,
 ) -> PCGResult:
     """Solve ``operator(x) = rhs`` using matrix-free PCG.
