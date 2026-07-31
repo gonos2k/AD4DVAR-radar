@@ -1,5 +1,10 @@
 # ADVAR 3-frame radar nowcast v0.4
 
+`main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
+시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
+검사한다. 별도 package job은 sdist와 wheel을 빌드한 뒤 격리 환경에 wheel을
+설치하여 `advar-nowcast` CLI와 NPZ 출력계약을 smoke-test한다.
+
 10분 간격 레이더 dBZ 3장으로 다음 3시간을 10분 간격으로 예측하는
 작고 해석 가능한 matrix-free 변분 구현이다. 기존 FFT 기준예측은 항상
 수치 분석 실패 시 fallback으로 유지한다. 단, 관측과 이전 주기 배경이
