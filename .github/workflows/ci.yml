@@ -44,11 +44,7 @@ jobs:
 
       - name: Check product source types
         if: matrix.python-version == '3.12'
-        run: >-
-          python -m basedpyright
-          --level error
-          --pythonpath "$(command -v python)"
-          src/advar
+        run: python .github/scripts/check_basedpyright.py
 
       - name: Run CPU FP32 and FP64 tests
         run: python -m pytest -q
