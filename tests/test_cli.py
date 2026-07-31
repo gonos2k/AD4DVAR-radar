@@ -102,6 +102,39 @@ class CliTests(unittest.TestCase):
                     result.files,
                 )
 
+    def test_variational_output_records_feasibility_diagnostics(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            frames = np.full((3, 8, 8), 20.0, dtype=np.float32)
+            frames[1] = 19.0
+            output_path = self._run_cli(
+                Path(temporary),
+                frames,
+                "--variational",
+            )
+
+            with np.load(output_path, allow_pickle=False) as result:
+                self.assertFalse(result["analysis_used_fallback"].item())
+                self.assertLess(
+                    result["analysis_final_objective"].item(),
+                    result["analysis_initial_objective"].item(),
+                )
+                self.assertEqual(
+                    result["analysis_unresolved_amplitude_fraction"].item(),
+                    0.0,
+                )
+                self.assertEqual(
+                    result["analysis_causal_control_cell_count"].item(),
+                    0,
+                )
+                self.assertEqual(
+                    result["analysis_causal_seed_cell_count"].item(),
+                    0,
+                )
+                self.assertEqual(
+                    result["analysis_causal_seed_prior_cost"].item(),
+                    0.0,
+                )
+
     def test_all_qc_rejected_uses_stale_background(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
