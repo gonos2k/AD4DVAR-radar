@@ -44,7 +44,8 @@ class AnalysisConfig:
     growth_increment_scale: float = 0.04
     minimum_control_reachability: float = 0.25
     causal_support_dilation_px: int = 2
-    maximum_latest_detected_error_std: float = 3.0
+    maximum_detected_error_std: float = 3.0
+    maximum_unresolved_amplitude_fraction: float = 0.01
     maximum_outer_iterations: int = 4
     maximum_pcg_iterations: int = 40
     maximum_damping_retries: int = 2
@@ -71,9 +72,7 @@ class AnalysisConfig:
             "minimum_control_reachability": (
                 self.minimum_control_reachability
             ),
-            "maximum_latest_detected_error_std": (
-                self.maximum_latest_detected_error_std
-            ),
+            "maximum_detected_error_std": self.maximum_detected_error_std,
             "pcg_relative_tolerance": self.pcg_relative_tolerance,
             "gradient_tolerance": self.gradient_tolerance,
             "step_tolerance": self.step_tolerance,
@@ -109,6 +108,15 @@ class AnalysisConfig:
             raise ValueError("initial_damping cannot exceed maximum_damping")
         if self.minimum_control_reachability > 1.0:
             raise ValueError("minimum_control_reachability cannot exceed 1")
+        if (
+            not math.isfinite(self.maximum_unresolved_amplitude_fraction)
+            or not 0.0
+            <= self.maximum_unresolved_amplitude_fraction
+            <= 1.0
+        ):
+            raise ValueError(
+                "maximum_unresolved_amplitude_fraction must be in [0, 1]"
+            )
 
 
 @dataclass(frozen=True)
@@ -130,8 +138,6 @@ class FrozenOuterState:
     initial_support_mask: Tensor
     causal_only_mask: Tensor
     detected_masks: Tensor
-    latest_observed_dbz: Tensor
-    latest_observation_std_dbz: Tensor
     observed_mask: Tensor
     background_mask: Tensor
     background_age_minutes: float | None
@@ -167,6 +173,10 @@ class AnalysisResult:
     audit: PositivityAudit
     degraded: bool = False
     minimum_reachability_margin: float | None = None
+    unresolved_amplitude_fraction: float | None = None
+    causal_control_cell_count: int = 0
+    causal_seed_cell_count: int = 0
+    causal_seed_prior_cost: float = 0.0
 
 
 def prepare_analysis(
@@ -269,8 +279,6 @@ def prepare_analysis(
         initial_support_mask=initial_support.detach().clone(),
         causal_only_mask=causal_only.detach().clone(),
         detected_masks=detected.detach().clone(),
-        latest_observed_dbz=observed_dbz[-1].detach().clone(),
-        latest_observation_std_dbz=std[-1].detach().clone(),
         observed_mask=prepared.observed_mask.detach().clone(),
         background_mask=prepared.background_mask.detach().clone(),
         background_age_minutes=prepared.background_age_minutes,
@@ -330,9 +338,16 @@ def _warm_started_control(
     frozen: FrozenOuterState,
 ) -> Tensor:
     control = initial_control(observations)
-    if not bool(torch.any(frozen.causal_only_mask)):
-        return control
+    seed_control = _precursor_seed_control(frozen)
+    field_size = frozen.initial_background_dbz.numel()
+    control[:field_size] = seed_control.flatten()
+    return control
 
+
+def _precursor_seed_control(frozen: FrozenOuterState) -> Tensor:
+    seed_control = torch.zeros_like(frozen.initial_background_dbz)
+    if not bool(torch.any(frozen.causal_only_mask)):
+        return seed_control
     config = frozen.analysis_config
     floor_dbz = frozen.nowcast_config.min_dbz
     seed_dbz = max(
@@ -343,7 +358,7 @@ def _warm_started_control(
         frozen.initial_background_dbz < seed_dbz
     )
     if not bool(torch.any(seed_mask)):
-        return control
+        return seed_control
 
     background_offset = (
         frozen.initial_background_dbz - floor_dbz
@@ -351,23 +366,31 @@ def _warm_started_control(
     background_latent = _softplus_inverse(
         background_offset.clamp_min(config.transform_epsilon)
     )
-    seed_offset = control.new_full(
+    seed_offset = seed_control.new_full(
         frozen.initial_background_dbz.shape,
         (seed_dbz - floor_dbz) / config.echo_transform_scale_dbz,
     )
     seed_latent = _softplus_inverse(
         seed_offset.clamp_min(config.transform_epsilon)
     )
-    field_control = control[: frozen.initial_background_dbz.numel()].reshape(
-        frozen.initial_background_dbz.shape
-    )
     required_control = (
         (seed_latent - background_latent)
         * config.echo_transform_scale_dbz
         / config.initial_increment_scale_dbz
     )
-    field_control[seed_mask] = required_control[seed_mask]
-    return control
+    seed_control[seed_mask] = required_control[seed_mask]
+    return seed_control
+
+
+def _causal_seed_diagnostics(
+    frozen: FrozenOuterState,
+) -> tuple[int, int, float]:
+    seed_control = _precursor_seed_control(frozen)
+    return (
+        int(torch.count_nonzero(frozen.causal_only_mask)),
+        int(torch.count_nonzero(seed_control)),
+        0.5 * float(torch.dot(seed_control.flatten(), seed_control.flatten())),
+    )
 
 
 def analysis_trajectory(
@@ -579,53 +602,89 @@ def solve_analysis(
     control: Tensor | None = None,
 ) -> AnalysisResult:
     _validate_observations(observations)
+    reference_control = initial_control(observations)
+    reference_frozen = _freeze_analysis_remap_cells(
+        reference_control,
+        frozen,
+    )
+    try:
+        reference_cost_tensor, reference_trajectory = _evaluate_control(
+            reference_control,
+            observations,
+            reference_frozen,
+        )
+    except EchoPositivityError:
+        return _fallback_result(
+            frozen,
+            reference_control,
+            math.inf,
+            "positivity_violation",
+        )
+    reference_cost = float(reference_cost_tensor.detach())
+
     control = (
         _warm_started_control(observations, frozen)
         if control is None
         else control.detach().clone()
     )
     _validate_control(control, frozen)
-    frozen = _freeze_analysis_remap_cells(control, frozen)
-    try:
-        initial_cost_tensor, _ = _evaluate_control(
-            control,
-            observations,
-            frozen,
-        )
-    except EchoPositivityError:
-        return _fallback_result(
-            frozen,
-            control,
-            math.inf,
-            "positivity_violation",
-        )
-    initial_cost = float(initial_cost_tensor.detach())
+    if torch.equal(control, reference_control):
+        frozen = reference_frozen
+        current_cost_tensor = reference_cost_tensor
+        current_trajectory = reference_trajectory
+    else:
+        frozen = _freeze_analysis_remap_cells(control, frozen)
+        try:
+            current_cost_tensor, current_trajectory = _evaluate_control(
+                control,
+                observations,
+                frozen,
+            )
+        except EchoPositivityError:
+            return _fallback_result(
+                frozen,
+                control,
+                reference_cost,
+                "positivity_violation",
+            )
+    current_cost = float(current_cost_tensor.detach())
+    current_amplitude_fraction = _unresolved_amplitude_fraction(
+        observations,
+        frozen,
+        current_trajectory,
+    )
     if not bool(torch.any(observations.valid_mask)):
         return _fallback_result(
             frozen,
             control,
-            initial_cost,
+            reference_cost,
             "no_valid_observations",
         )
     if not bool(torch.any(frozen.initial_support_mask)):
         return _fallback_result(
             frozen,
             control,
-            initial_cost,
+            reference_cost,
             "no_initial_state_support",
         )
-    if not math.isfinite(initial_cost):
+    if not math.isfinite(reference_cost):
         return _fallback_result(
             frozen,
             control,
-            initial_cost,
+            reference_cost,
+            "nonfinite_reference_objective",
+        )
+    if not math.isfinite(current_cost):
+        return _fallback_result(
+            frozen,
+            control,
+            reference_cost,
             "nonfinite_initial_objective",
         )
 
     config = frozen.analysis_config
     field_size = frozen.initial_background_dbz.numel()
     damping = config.initial_damping
-    current_cost = initial_cost
     total_pcg_iterations = 0
     accepted_any = False
     converged = False
@@ -651,8 +710,9 @@ def solve_analysis(
             return _failed_result(
                 accepted_any,
                 control,
+                observations,
                 frozen,
-                initial_cost,
+                reference_cost,
                 current_cost,
                 completed_iterations,
                 total_pcg_iterations,
@@ -725,13 +785,28 @@ def solve_analysis(
                     frozen_iteration,
                 )
                 try:
-                    candidate_cost_tensor, _ = _evaluate_control(
-                        candidate,
-                        observations,
-                        candidate_frozen,
+                    candidate_cost_tensor, candidate_trajectory = (
+                        _evaluate_control(
+                            candidate,
+                            observations,
+                            candidate_frozen,
+                        )
                     )
                     candidate_cost = float(candidate_cost_tensor.detach())
                 except EchoPositivityError:
+                    continue
+                candidate_amplitude_fraction = (
+                    _unresolved_amplitude_fraction(
+                        observations,
+                        candidate_frozen,
+                        candidate_trajectory,
+                    )
+                )
+                if not _amplitude_trial_is_admissible(
+                    current_amplitude_fraction,
+                    candidate_amplitude_fraction,
+                    config.maximum_unresolved_amplitude_fraction,
+                ):
                     continue
                 actual = current_cost - candidate_cost
                 ratio = actual / predicted if predicted > 0 else -math.inf
@@ -744,6 +819,7 @@ def solve_analysis(
 
                 control = candidate.detach()
                 current_cost = candidate_cost
+                current_amplitude_fraction = candidate_amplitude_fraction
                 accepted_any = True
                 accepted = True
                 if ratio > 0.75:
@@ -773,8 +849,9 @@ def solve_analysis(
             return _failed_result(
                 accepted_any,
                 control,
+                observations,
                 frozen,
-                initial_cost,
+                reference_cost,
                 current_cost,
                 completed_iterations,
                 total_pcg_iterations,
@@ -787,15 +864,16 @@ def solve_analysis(
         return _fallback_result(
             frozen,
             control,
-            initial_cost,
+            reference_cost,
             "no_accepted_step",
             completed_iterations,
             total_pcg_iterations,
         )
     return _analysis_result(
         control,
+        observations,
         frozen,
-        initial_cost,
+        reference_cost,
         current_cost,
         completed_iterations,
         total_pcg_iterations,
@@ -883,8 +961,9 @@ def _evaluate_control(
 def _failed_result(
     accepted_any: bool,
     control: Tensor,
+    observations: AnalysisObservations,
     frozen: FrozenOuterState,
-    initial_cost: float,
+    reference_cost: float,
     current_cost: float,
     outer_iterations: int,
     pcg_iterations: int,
@@ -893,8 +972,9 @@ def _failed_result(
     if accepted_any:
         return _analysis_result(
             control,
+            observations,
             frozen,
-            initial_cost,
+            reference_cost,
             current_cost,
             outer_iterations,
             pcg_iterations,
@@ -905,7 +985,7 @@ def _failed_result(
     return _fallback_result(
         frozen,
         control,
-        initial_cost,
+        reference_cost,
         reason,
         outer_iterations,
         pcg_iterations,
@@ -914,8 +994,9 @@ def _failed_result(
 
 def _analysis_result(
     control: Tensor,
+    observations: AnalysisObservations,
     frozen: FrozenOuterState,
-    initial_objective: float,
+    reference_objective: float,
     final_objective: float,
     outer_iterations: int,
     pcg_iterations: int,
@@ -934,7 +1015,7 @@ def _analysis_result(
         return _fallback_result(
             frozen,
             control,
-            initial_objective,
+            reference_objective,
             "unrepresentable_analysis_window",
             outer_iterations,
             pcg_iterations,
@@ -944,19 +1025,40 @@ def _analysis_result(
         trajectory.frames_linear,
         name="final analysis",
     )
-    if not _latest_detected_amplitude_is_resolved(
+    trajectory = replace(trajectory, frames_linear=frames)
+    unresolved_amplitude_fraction = _unresolved_amplitude_fraction(
+        observations,
         frozen,
-        frames[-1],
-        trajectory.displacement_yx,
+        trajectory,
+    )
+    if (
+        unresolved_amplitude_fraction
+        > frozen.analysis_config.maximum_unresolved_amplitude_fraction
     ):
         return _fallback_result(
             frozen,
             control,
-            initial_objective,
+            reference_objective,
             "unresolved_growth_or_emergence",
             outer_iterations,
             pcg_iterations,
             minimum_reachability_margin=reachability_margin,
+            unresolved_amplitude_fraction=unresolved_amplitude_fraction,
+        )
+    if not _objective_improves_reference(
+        final_objective,
+        reference_objective,
+        control.dtype,
+    ):
+        return _fallback_result(
+            frozen,
+            control,
+            reference_objective,
+            "no_improvement_over_zero_control",
+            outer_iterations,
+            pcg_iterations,
+            minimum_reachability_margin=reachability_margin,
+            unresolved_amplitude_fraction=unresolved_amplitude_fraction,
         )
     state = RadarState(
         echo_linear=frames[-1],
@@ -976,6 +1078,11 @@ def _analysis_result(
         frozen.nowcast_config,
     )
     background_used = background_fraction > frozen.nowcast_config.epsilon
+    (
+        causal_control_cell_count,
+        causal_seed_cell_count,
+        causal_seed_prior_cost,
+    ) = _causal_seed_diagnostics(frozen)
     return AnalysisResult(
         control=control.detach(),
         state=_detach_state(state),
@@ -990,7 +1097,7 @@ def _analysis_result(
             provenance="p1_variational_analysis",
         ),
         analyzed_frames_linear=frames.detach(),
-        initial_objective=initial_objective,
+        initial_objective=reference_objective,
         final_objective=final_objective,
         outer_iterations=outer_iterations,
         pcg_iterations=pcg_iterations,
@@ -1000,6 +1107,10 @@ def _analysis_result(
         degraded=degraded,
         audit=audit,
         minimum_reachability_margin=reachability_margin,
+        unresolved_amplitude_fraction=unresolved_amplitude_fraction,
+        causal_control_cell_count=causal_control_cell_count,
+        causal_seed_cell_count=causal_seed_cell_count,
+        causal_seed_prior_cost=causal_seed_prior_cost,
     )
 
 
@@ -1031,33 +1142,88 @@ def _analysis_window_reachability_margin(
     return float(torch.min(torch.stack(margins)).detach())
 
 
-def _latest_detected_amplitude_is_resolved(
+def _unresolved_amplitude_fraction(
+    observations: AnalysisObservations,
     frozen: FrozenOuterState,
-    latest_echo: Tensor,
-    displacement_yx: Tensor,
-) -> bool:
-    initial_reach = remap(
-        frozen.detected_masks[0].to(dtype=displacement_yx.dtype),
-        2.0 * displacement_yx,
-    )
-    precursor_required = frozen.detected_masks[-1] & (
-        initial_reach
-        < frozen.analysis_config.minimum_control_reachability
-    )
-    if not bool(torch.any(precursor_required)):
-        return True
-    latest_dbz = echo_to_dbz(
-        latest_echo,
+    trajectory: AnalysisTrajectory,
+) -> float:
+    prediction_dbz = echo_to_dbz(
+        trajectory.frames_linear,
         min_dbz=frozen.nowcast_config.min_dbz,
     )
-    minimum_dbz = (
-        frozen.latest_observed_dbz
-        - frozen.analysis_config.maximum_latest_detected_error_std
-        * frozen.latest_observation_std_dbz
+    initial_detected = frozen.detected_masks[0].to(
+        dtype=trajectory.displacement_yx.dtype
     )
-    return not bool(
-        torch.any(precursor_required & (latest_dbz < minimum_dbz))
+    bad_weight = prediction_dbz.new_zeros(())
+    total_weight = prediction_dbz.new_zeros(())
+    amplitude_floor = (
+        frozen.analysis_config.detection_limit_dbz
+        - frozen.analysis_config.censor_temperature_dbz
     )
+
+    for step in (1, 2):
+        initial_reach = remap(
+            initial_detected,
+            step * trajectory.displacement_yx,
+        )
+        precursor_required = frozen.detected_masks[step] & (
+            initial_reach
+            < frozen.analysis_config.minimum_control_reachability
+        )
+        if not bool(torch.any(precursor_required)):
+            continue
+
+        local_prediction = F.max_pool2d(
+            prediction_dbz[step][None, None],
+            kernel_size=3,
+            stride=1,
+            padding=1,
+        )[0, 0]
+        quality = observations.quality_weight[step]
+        standardized_deficit = (
+            torch.sqrt(quality)
+            * (observations.dbz[step] - local_prediction)
+            / observations.std_dbz[step]
+        )
+        unresolved = precursor_required & (
+            (
+                standardized_deficit
+                > frozen.analysis_config.maximum_detected_error_std
+            )
+            | (local_prediction < amplitude_floor)
+        )
+        bad_weight = bad_weight + quality[unresolved].sum()
+        total_weight = total_weight + quality[precursor_required].sum()
+
+    if float(total_weight.detach()) <= 0:
+        return 0.0
+    return float((bad_weight / total_weight).detach())
+
+
+def _amplitude_trial_is_admissible(
+    current_fraction: float,
+    candidate_fraction: float,
+    maximum_fraction: float,
+) -> bool:
+    if candidate_fraction <= maximum_fraction:
+        return True
+    return (
+        current_fraction > maximum_fraction
+        and candidate_fraction < current_fraction
+    )
+
+
+def _objective_improves_reference(
+    final_objective: float,
+    reference_objective: float,
+    dtype: torch.dtype,
+) -> bool:
+    tolerance = (
+        32.0
+        * torch.finfo(dtype).eps
+        * max(1.0, abs(reference_objective))
+    )
+    return final_objective < reference_objective - tolerance
 
 
 def _fallback_result(
@@ -1069,6 +1235,7 @@ def _fallback_result(
     pcg_iterations: int = 0,
     *,
     minimum_reachability_margin: float | None = None,
+    unresolved_amplitude_fraction: float | None = None,
 ) -> AnalysisResult:
     frames = dbz_to_echo(
         frozen.baseline_frames_dbz,
@@ -1079,6 +1246,11 @@ def _fallback_result(
         frames,
         name="fallback analysis",
     )
+    (
+        causal_control_cell_count,
+        causal_seed_cell_count,
+        causal_seed_prior_cost,
+    ) = _causal_seed_diagnostics(frozen)
     return AnalysisResult(
         control=torch.zeros_like(control),
         state=_detach_state(frozen.baseline_state),
@@ -1094,6 +1266,10 @@ def _fallback_result(
         degraded=False,
         audit=audit,
         minimum_reachability_margin=minimum_reachability_margin,
+        unresolved_amplitude_fraction=unresolved_amplitude_fraction,
+        causal_control_cell_count=causal_control_cell_count,
+        causal_seed_cell_count=causal_seed_cell_count,
+        causal_seed_prior_cost=causal_seed_prior_cost,
     )
 
 

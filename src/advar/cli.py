@@ -192,6 +192,25 @@ def _output_arrays(
             analysis_final_objective=np.asarray(analysis.final_objective),
             analysis_outer_iterations=np.asarray(analysis.outer_iterations),
             analysis_pcg_iterations=np.asarray(analysis.pcg_iterations),
+            analysis_minimum_reachability_margin=np.asarray(
+                np.nan
+                if analysis.minimum_reachability_margin is None
+                else analysis.minimum_reachability_margin
+            ),
+            analysis_unresolved_amplitude_fraction=np.asarray(
+                np.nan
+                if analysis.unresolved_amplitude_fraction is None
+                else analysis.unresolved_amplitude_fraction
+            ),
+            analysis_causal_control_cell_count=np.asarray(
+                analysis.causal_control_cell_count
+            ),
+            analysis_causal_seed_cell_count=np.asarray(
+                analysis.causal_seed_cell_count
+            ),
+            analysis_causal_seed_prior_cost=np.asarray(
+                analysis.causal_seed_prior_cost
+            ),
         )
     return output
 

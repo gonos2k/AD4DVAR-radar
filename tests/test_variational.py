@@ -24,6 +24,7 @@ from advar.nowcast import (  # noqa: E402
 )
 from advar.physics import (  # noqa: E402
     RemapCell,
+    dbz_to_echo,
     echo_to_dbz,
     remap,
 )
@@ -501,9 +502,10 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         result = variational_module._analysis_result(
             control,
+            observations,
             frozen,
-            0.0,
-            0.0,
+            1.0,
+            0.5,
             1,
             0,
             True,
@@ -776,13 +778,54 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertGreater(abs(float(warm[4 * 9 + 6])), 1.0)
         self.assertAlmostEqual(float(warm_initial_dbz[4, 6]), 4.0, places=6)
         self.assertGreater(float(torch.dot(warm, warm)), 0.0)
+        zero = initial_control(observations)
+        zero_frozen = variational_module._freeze_analysis_remap_cells(
+            zero,
+            frozen,
+        )
+        reference_cost, _ = variational_module._evaluate_control(
+            zero,
+            observations,
+            zero_frozen,
+        )
+        warm_cost, _ = variational_module._evaluate_control(
+            warm,
+            observations,
+            frozen,
+        )
+        self.assertGreater(float(warm_cost), float(reference_cost))
 
         result = solve_analysis(observations, frozen)
 
         self.assertFalse(result.used_fallback, result.reason)
+        self.assertAlmostEqual(result.initial_objective, float(reference_cost))
         self.assertLess(result.final_objective, result.initial_objective)
         self.assertIsNotNone(result.minimum_reachability_margin)
         self.assertGreaterEqual(result.minimum_reachability_margin or 0.0, 0.0)
+        self.assertGreater(result.causal_control_cell_count, 0)
+        self.assertGreater(result.causal_seed_cell_count, 0)
+        self.assertGreater(result.causal_seed_prior_cost, 0.0)
+
+    def test_analysis_must_improve_zero_control_reference(self) -> None:
+        observations, frozen = self.stationary_problem()
+
+        result = variational_module._analysis_result(
+            initial_control(observations),
+            observations,
+            frozen,
+            10.0,
+            20.0,
+            1,
+            0,
+            True,
+            "synthetic_warm_start_improvement",
+        )
+
+        self.assertTrue(result.used_fallback)
+        self.assertEqual(result.reason, "no_improvement_over_zero_control")
+        self.assertEqual(result.initial_objective, 10.0)
+        self.assertEqual(result.final_objective, 10.0)
+        self.assertEqual(int(torch.count_nonzero(result.control)), 0)
 
     def test_later_detected_echo_is_not_published_as_clear(self) -> None:
         frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
@@ -806,6 +849,174 @@ class VariationalAnalysisTests(unittest.TestCase):
             float(forecast.forecast_dbz[0, 4, 6]),
             self.analysis_config.detection_limit_dbz,
         )
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+        zero = initial_control(observations)
+        zero_frozen = variational_module._freeze_analysis_remap_cells(
+            zero,
+            frozen,
+        )
+        reference_cost, _ = variational_module._evaluate_control(
+            zero,
+            observations,
+            zero_frozen,
+        )
+        self.assertAlmostEqual(
+            result.initial_objective,
+            float(reference_cost),
+        )
+        self.assertAlmostEqual(
+            result.final_objective,
+            float(reference_cost),
+        )
+        self.assertEqual(int(torch.count_nonzero(result.control)), 0)
+        self.assertIsNotNone(result.unresolved_amplitude_fraction)
+        self.assertGreater(
+            result.unresolved_amplitude_fraction or 0.0,
+            self.analysis_config.maximum_unresolved_amplitude_fraction,
+        )
+        self.assertGreater(result.causal_seed_cell_count, 0)
+        self.assertGreater(result.causal_seed_prior_cost, 0.0)
+
+    def test_amplitude_fraction_tolerates_one_spatial_outlier(self) -> None:
+        frames = torch.full((3, 32, 32), -10.0, dtype=torch.float64)
+        frames[2] = 20.0
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+        trajectory = analysis_trajectory(
+            initial_control(observations),
+            frozen,
+        )
+        prediction_dbz = frames.clone()
+        prediction_dbz[2, 15:18, 15:18] = 10.0
+        trajectory = replace(
+            trajectory,
+            frames_linear=dbz_to_echo(
+                prediction_dbz,
+                min_dbz=self.nowcast_config.min_dbz,
+                max_dbz=self.nowcast_config.max_dbz,
+            ),
+        )
+
+        fraction = variational_module._unresolved_amplitude_fraction(
+            observations,
+            frozen,
+            trajectory,
+        )
+
+        self.assertAlmostEqual(fraction, 1.0 / (32.0 * 32.0))
+        self.assertLess(
+            fraction,
+            self.analysis_config.maximum_unresolved_amplitude_fraction,
+        )
+
+    def test_low_quality_echo_does_not_hard_veto_amplitude(self) -> None:
+        frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
+        frames[2, 3, 4] = 20.0
+        quality = torch.ones_like(frames)
+        quality[2, 3, 4] = 0.01
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+            quality_weight=quality,
+        )
+        trajectory = analysis_trajectory(
+            initial_control(observations),
+            frozen,
+        )
+        prediction_dbz = torch.full_like(frames, -10.0)
+        prediction_dbz[2, 3, 4] = 10.0
+        trajectory = replace(
+            trajectory,
+            frames_linear=dbz_to_echo(
+                prediction_dbz,
+                min_dbz=self.nowcast_config.min_dbz,
+                max_dbz=self.nowcast_config.max_dbz,
+            ),
+        )
+
+        fraction = variational_module._unresolved_amplitude_fraction(
+            observations,
+            frozen,
+            trajectory,
+        )
+
+        self.assertEqual(fraction, 0.0)
+
+    def test_transient_intermediate_amplitude_is_checked(self) -> None:
+        frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
+        frames[1, 3, 4] = 20.0
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+        trajectory = analysis_trajectory(
+            initial_control(observations),
+            frozen,
+        )
+
+        fraction = variational_module._unresolved_amplitude_fraction(
+            observations,
+            frozen,
+            trajectory,
+        )
+
+        self.assertEqual(fraction, 1.0)
+
+    def test_local_echo_closes_subpixel_amplitude_error(self) -> None:
+        frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
+        frames[2, 3, 4] = 20.0
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+        trajectory = analysis_trajectory(
+            initial_control(observations),
+            frozen,
+        )
+        prediction_dbz = torch.full_like(frames, -10.0)
+        prediction_dbz[2, 3, 5] = 20.0
+        trajectory = replace(
+            trajectory,
+            frames_linear=dbz_to_echo(
+                prediction_dbz,
+                min_dbz=self.nowcast_config.min_dbz,
+                max_dbz=self.nowcast_config.max_dbz,
+            ),
+        )
+
+        fraction = variational_module._unresolved_amplitude_fraction(
+            observations,
+            frozen,
+            trajectory,
+        )
+
+        self.assertEqual(fraction, 0.0)
+
+    def test_amplitude_filter_requires_monotone_feasibility(self) -> None:
+        admissible = variational_module._amplitude_trial_is_admissible
+
+        self.assertTrue(admissible(0.8, 0.4, 0.01))
+        self.assertFalse(admissible(0.8, 0.8, 0.01))
+        self.assertTrue(admissible(0.4, 0.0, 0.01))
+        self.assertFalse(admissible(0.0, 0.4, 0.01))
+
+    def test_unresolved_amplitude_fraction_must_be_bounded(self) -> None:
+        for value in (-0.1, 1.1, float("nan")):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, r"must be in \[0, 1\]"):
+                    AnalysisConfig(
+                        maximum_unresolved_amplitude_fraction=value
+                    )
 
     def test_unrepresentable_latest_echo_falls_back_to_p0(self) -> None:
         frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
@@ -824,6 +1035,7 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         result = variational_module._analysis_result(
             initial_control(observations),
+            observations,
             frozen,
             1.0,
             0.5,
@@ -864,9 +1076,10 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         result = variational_module._analysis_result(
             initial_control(observations),
+            observations,
             frozen,
-            0.0,
-            0.0,
+            1.0,
+            0.5,
             1,
             0,
             True,
@@ -1180,7 +1393,8 @@ class VariationalAnalysisTests(unittest.TestCase):
 
     def test_m0_sensitivity_rejects_p1_analysis_state(self) -> None:
         frames = torch.full((3, 4, 4), 20.0, dtype=torch.float64)
-        forecast, _ = variational_nowcast(
+        frames[1] = 19.0
+        forecast, analysis = variational_nowcast(
             frames,
             nowcast_config=self.nowcast_config,
             analysis_config=self.analysis_config,
@@ -1191,6 +1405,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             dtype=torch.float64,
         )
 
+        self.assertFalse(analysis.used_fallback, analysis.reason)
         with self.assertRaisesRegex(ValueError, "requires a P0"):
             compute_sensitivity_snapshot(
                 frames[-1],

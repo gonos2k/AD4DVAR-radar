@@ -98,8 +98,23 @@ P1 제어벡터는 다음 하나뿐이다.
 그대로 부담한다. 모든 분석시각의 탐지 에코에는 최소 0.25의 control
 reachability를 요구하고, 그 최소 여유를
 `analysis.minimum_reachability_margin`에 기록한다. 초기 탐지 에코의 정상
-수송으로 설명되지 않는 최신 에코가 분석에서 관측값의 3 표준편차보다 더
-약하면 `unresolved_growth_or_emergence`로 기준예측에 복귀한다.
+수송으로 설명되지 않는 -10분 및 최신 에코는 3×3 근린의 분석 최댓값과
+비교한다. quality-weighted 표준화 deficit이 3을 넘거나 에코가 precursor
+floor 아래인 가중 화소비율을
+`analysis.unresolved_amplitude_fraction`에 기록하고, 그 비율이 연구용
+fail-close 기본값 1%를 넘으면 `unresolved_growth_or_emergence`로
+기준예측에 복귀한다. 이 1%는 운용 임계값이 아니며 실제 hindcast에서
+보정해야 한다.
+
+warm start는 solver의 출발점일 뿐 수용 기준은 아니다. P1은 zero-control
+목적함수를 `initial_objective`로 고정하고, 최종 제어가 이를 수치
+허용오차보다 명확히 낮출 때만 분석을 발행한다. fallback이면 반환 제어는
+zero이고 `final_objective == initial_objective`다. amplitude 조건을
+위반한 warm start에서는 위반비율을 줄이는 LM 후보만 허용하고, 일단
+feasible해지면 다시 infeasible 영역으로 나갈 수 없다. causal envelope의
+제어 셀 수, 실제 seed 셀 수, seed prior 비용도 각각
+`causal_control_cell_count`, `causal_seed_cell_count`,
+`causal_seed_prior_cost`로 기록한다.
 
 세 관측잔차는 다음 순서로 정확히 한 번 처리한다.
 
