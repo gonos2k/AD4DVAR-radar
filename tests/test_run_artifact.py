@@ -357,6 +357,34 @@ class ForecastRunArtifactTests(unittest.TestCase):
             ):
                 load_forecast_run(path)
 
+    def test_load_rejects_malformed_phase_correlation_psr_schema(self) -> None:
+        result = nowcast(self.frames())
+        malformed_values = (
+            np.asarray(1, dtype=np.int64),
+            np.asarray([1.0], dtype=np.float64),
+            np.asarray(np.inf, dtype=np.float64),
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                original: dict[str, Any] = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                }
+
+            for malformed in malformed_values:
+                with self.subTest(value=malformed):
+                    arrays = dict(original)
+                    arrays["minimum_phase_correlation_psr"] = malformed
+                    np.savez_compressed(path, **arrays)
+
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "minimum_phase_correlation_psr must be",
+                    ):
+                        load_forecast_run(path)
+
     def test_load_rejects_tampered_background_tendency_provenance(self) -> None:
         result = nowcast(self.frames())
         with tempfile.TemporaryDirectory() as temporary:

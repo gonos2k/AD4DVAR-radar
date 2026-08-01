@@ -266,9 +266,10 @@ def load_forecast_run(path: str | Path) -> ForecastResult:
                 archive,
                 "growth_disagreement",
             ),
-            minimum_phase_correlation_psr=_tensor(
+            minimum_phase_correlation_psr=_floating_scalar_tensor(
                 archive,
                 "minimum_phase_correlation_psr",
+                allow_nan=True,
             ),
             tendency_pair_count=_int_scalar(
                 archive,
@@ -648,3 +649,20 @@ def _float_scalar(
     if math.isfinite(result) or (allow_nan and math.isnan(result)):
         return result
     raise ValueError(f"{name} must be finite")
+
+
+def _floating_scalar_tensor(
+    archive: np.lib.npyio.NpzFile,
+    name: str,
+    *,
+    allow_nan: bool = False,
+) -> Tensor:
+    value = _array(archive, name)
+    if value.shape != () or value.dtype.kind != "f":
+        raise ValueError(f"{name} must be a floating-point scalar")
+    result = _tensor(archive, name)
+    scalar = float(result.item())
+    if math.isfinite(scalar) or (allow_nan and math.isnan(scalar)):
+        return result
+    qualifier = "finite or NaN" if allow_nan else "finite"
+    raise ValueError(f"{name} must be {qualifier}")
