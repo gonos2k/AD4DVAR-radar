@@ -398,6 +398,51 @@ class VariationalAnalysisTests(unittest.TestCase):
             -1.0e-10 * float(torch.dot(direction, direction)),
         )
 
+    def test_field_smoothness_prior_uses_only_active_edges(self) -> None:
+        _, frozen = self.stationary_problem()
+        width = frozen.initial_background_dbz.shape[1]
+        active_index = torch.tensor(
+            (0, 1, width + 2),
+            dtype=torch.int64,
+        )
+        frozen = replace(frozen, active_field_index=active_index)
+        control = initial_control(frozen)
+        control[:3] = torch.tensor(
+            (0.0, 2.0, 100.0),
+            dtype=control.dtype,
+        )
+
+        smoothness = variational_module._field_smoothness_residual(
+            control,
+            frozen,
+        )
+
+        self.assertEqual(smoothness.numel(), 1)
+        torch.testing.assert_close(
+            smoothness,
+            torch.tensor(
+                (
+                    2.0
+                    * math.sqrt(self.analysis_config.field_smoothness_weight),
+                ),
+                dtype=control.dtype,
+            ),
+        )
+
+    def test_constant_active_field_has_zero_smoothness_cost(self) -> None:
+        _, frozen = self.stationary_problem()
+        control = initial_control(frozen)
+        field_size = frozen.active_field_index.numel()
+        control[:field_size] = 3.0
+
+        residual = variational_module._field_smoothness_residual(
+            control,
+            frozen,
+        )
+
+        self.assertGreater(residual.numel(), 0)
+        torch.testing.assert_close(residual, torch.zeros_like(residual))
+
     def test_solver_reuses_one_vjp_pullback_per_outer_iteration(self) -> None:
         observations, frozen = self.stationary_problem()
         changed_dbz = observations.dbz.clone()
@@ -483,10 +528,31 @@ class VariationalAnalysisTests(unittest.TestCase):
                 for left in dynamics_columns
             )
         ) + torch.eye(3, dtype=torch.float64)
+        expected_gram = expected_hessian - torch.eye(3, dtype=torch.float64)
+        expected_data_eigenvalues = torch.linalg.eigvalsh(expected_gram)
         expected_eigenvalues = torch.linalg.eigvalsh(expected_hessian)
         torch.testing.assert_close(
             torch.tensor(eigenvalues, dtype=torch.float64),
             expected_eigenvalues,
+        )
+        data_eigenvalues = result.dynamics_data_gram_eigenvalues
+        assert data_eigenvalues is not None
+        torch.testing.assert_close(
+            torch.tensor(data_eigenvalues, dtype=torch.float64),
+            expected_data_eigenvalues,
+        )
+        self.assertAlmostEqual(
+            result.dynamics_data_information_trace or 0.0,
+            float(torch.trace(expected_gram)),
+        )
+        self.assertEqual(result.dynamics_data_effective_rank, 3)
+        self.assertEqual(
+            result.regularized_dynamics_hessian_eigenvalues,
+            result.dynamics_reduced_hessian_eigenvalues,
+        )
+        self.assertEqual(
+            result.regularized_dynamics_hessian_condition_number,
+            result.dynamics_reduced_hessian_condition_number,
         )
         self.assertGreaterEqual(eigenvalues[0], 1.0)
         self.assertLessEqual(eigenvalues[0], eigenvalues[1])
@@ -509,6 +575,47 @@ class VariationalAnalysisTests(unittest.TestCase):
             assert cosine is not None
             self.assertGreaterEqual(cosine, 0.0)
             self.assertLessEqual(cosine, 1.0)
+        self.assertGreaterEqual(result.field_smoothness_prior_cost, 0.0)
+        self.assertIsNotNone(result.motion_saturation_margin_yx)
+        assert result.motion_saturation_margin_yx is not None
+        self.assertTrue(
+            all(margin >= 0.0 for margin in result.motion_saturation_margin_yx)
+        )
+        self.assertIsNotNone(result.growth_saturation_margin)
+        self.assertGreaterEqual(result.growth_saturation_margin or 0.0, 0.0)
+
+    def test_data_identifiability_reports_zero_information_without_data(
+        self,
+    ) -> None:
+        observations, frozen = self.stationary_problem()
+        no_information = replace(
+            observations,
+            quality_weight=torch.zeros_like(observations.quality_weight),
+        )
+        control = initial_control(frozen)
+        diagnostics = variational_module._identifiability_diagnostics(
+            control,
+            no_information,
+            frozen,
+            analysis_trajectory(control, frozen),
+        )
+
+        self.assertIsNotNone(diagnostics)
+        assert diagnostics is not None
+        self.assertEqual(
+            diagnostics.dynamics_data_gram_eigenvalues,
+            (0.0,) * 3,
+        )
+        self.assertEqual(diagnostics.dynamics_data_information_trace, 0.0)
+        self.assertEqual(diagnostics.dynamics_data_effective_rank, 0)
+        self.assertEqual(
+            diagnostics.regularized_dynamics_hessian_eigenvalues,
+            (1.0,) * 3,
+        )
+        self.assertEqual(
+            diagnostics.regularized_dynamics_hessian_condition_number,
+            1.0,
+        )
 
     def test_ad_hot_path_has_no_boundary_validation(self) -> None:
         observations, frozen = self.stationary_problem()
@@ -1928,6 +2035,12 @@ class VariationalAnalysisTests(unittest.TestCase):
                                     value
                                 )
                             )
+
+    def test_field_smoothness_weight_must_be_nonnegative(self) -> None:
+        for value in (-0.1, float("nan")):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "cannot be negative"):
+                    AnalysisConfig(field_smoothness_weight=value)
 
     def test_latest_amplitude_threshold_constructor_remains_supported(
         self,

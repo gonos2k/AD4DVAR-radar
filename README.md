@@ -218,6 +218,13 @@ envelope의 제어 셀 수, 실제 seed 셀 수, seed prior 비용도 각각
 `causal_control_cell_count`, `causal_seed_cell_count`,
 `causal_seed_prior_cost`로 기록한다.
 
+active initial-field control에는 기본 `field_smoothness_weight=0.01`의
+1차 차분 prior를 추가한다. 이 residual은 active support 안에서 서로 맞닿은
+상하·좌우 셀 사이에만 존재하므로 결측 또는 비활성 경계를 가로질러 제어값을
+연결하지 않는다. 해당 비용은 `analysis_field_smoothness_prior_cost`에
+기록되며 control의 독립 unit prior와 함께 목적함수·JVP·VJP·GN-HVP에 같은
+형태로 포함된다.
+
 세 관측잔차는 다음 순서로 정확히 한 번 처리한다.
 
 ```text
@@ -296,7 +303,7 @@ advar-nowcast three_frames.npy forecast.npz --audit
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v10`
+- `output_contract_version`: 현재 `nowcast-npz-v11`
 - `forecast_run_artifact_version`: 현재 `forecast-run-v4`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
@@ -352,9 +359,20 @@ PSR gate를 통과한 최근 pair 하나만 사용한다. 이 경우 불일치 �
 - `analysis_amplitude_diagnostics_source`: `returned_analysis`,
   `rejected_candidate`, `unavailable` 중 하나
 - `analysis_relative_objective_reduction`: zero-control P1 목적함수 대비 감소율
+- `analysis_dynamics_data_gram_eigenvalues`,
+  `analysis_dynamics_data_information_trace`,
+  `analysis_dynamics_data_effective_rank`: 최종 IRLS 선형화점에서 prior를
+  제외한 관측 Jacobian Gram의 정보량과 수치 rank
+- `analysis_regularized_dynamics_hessian_eigenvalues`,
+  `analysis_regularized_dynamics_hessian_condition_number`: unit prior를
+  포함한 dynamics Hessian의 solver 조건성
 - `analysis_dynamics_reduced_hessian_eigenvalues`,
-  `analysis_dynamics_reduced_hessian_condition_number`: 최종 IRLS
-  선형화점의 표준화된 dynamics 제어 조건성
+  `analysis_dynamics_reduced_hessian_condition_number`: 호환성을 위해 유지되는
+  위 regularized 진단의 기존 이름
+- `analysis_field_smoothness_prior_cost`,
+  `analysis_motion_saturation_margin_yx`,
+  `analysis_growth_saturation_margin`: 공간 prior 비용과 이동·성장 상한까지의
+  남은 control margin
 - `analysis_field_growth_jacobian_cosine`,
   `analysis_field_motion_jacobian_cosine_yx`: 관측공간에서 초기장
   증분이 성장·이동 증분과 얼마나 유사한지 나타내는 절대 cosine
