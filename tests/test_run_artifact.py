@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from typing import Any
 import zipfile
 
@@ -23,6 +24,7 @@ from advar import (  # noqa: E402
     save_forecast_run,
 )
 from advar._digest import tensor_digest  # noqa: E402
+import advar.run_artifact as run_artifact  # noqa: E402
 from advar.run_artifact import seal_forecast_run_arrays  # noqa: E402
 
 
@@ -605,6 +607,36 @@ class ForecastRunArtifactTests(unittest.TestCase):
 
             with self.assertRaisesRegex(ValueError, "non-object dtypes"):
                 load_forecast_run(path)
+
+    def test_load_uses_the_same_file_after_resource_preflight(self) -> None:
+        original_result = nowcast(self.frames())
+        replacement_frames = self.frames() + 1.0
+        replacement_result = nowcast(replacement_frames)
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            path = directory / "run.npz"
+            replacement = directory / "replacement.npz"
+            save_forecast_run(original_result, path)
+            save_forecast_run(replacement_result, replacement)
+            real_preflight = run_artifact._preflight_archive
+
+            def preflight_then_replace(
+                source: Any,
+                **limits: Any,
+            ) -> None:
+                real_preflight(source, **limits)
+                replacement.replace(path)
+
+            with patch(
+                "advar.run_artifact._preflight_archive",
+                side_effect=preflight_then_replace,
+            ):
+                loaded = load_forecast_run(path)
+
+        self.assertEqual(
+            loaded.forecast_run_digest,
+            original_result.forecast_run_digest,
+        )
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 import re
 import tempfile
-from typing import Any, cast
+from typing import Any, BinaryIO, cast
 import zipfile
 
 import numpy as np
@@ -340,7 +340,7 @@ def atomic_savez_compressed(
 
 
 def _preflight_archive(
-    source: Path,
+    source: BinaryIO,
     *,
     maximum_member_count: int,
     maximum_member_bytes: int,
@@ -472,13 +472,13 @@ def load_forecast_run(
     """Load and independently validate a durable forecast run artifact."""
 
     source = Path(path)
-    _preflight_archive(
+    artifact = _open_preflighted_artifact(
         source,
         maximum_member_count=maximum_member_count,
         maximum_member_bytes=maximum_member_bytes,
         maximum_total_expanded_bytes=maximum_total_expanded_bytes,
     )
-    with np.load(source, allow_pickle=False) as archive:
+    with artifact, np.load(artifact, allow_pickle=False) as archive:
         version = _string_scalar(archive, "forecast_run_artifact_version")
         if version != FORECAST_RUN_ARTIFACT_VERSION:
             raise ValueError(f"unsupported forecast run artifact: {version}")
@@ -721,6 +721,28 @@ def load_forecast_run(
         stored_projected_velocity,
     )
     return result
+
+
+def _open_preflighted_artifact(
+    source: Path,
+    *,
+    maximum_member_count: int,
+    maximum_member_bytes: int,
+    maximum_total_expanded_bytes: int,
+) -> BinaryIO:
+    artifact = source.open("rb")
+    try:
+        _preflight_archive(
+            artifact,
+            maximum_member_count=maximum_member_count,
+            maximum_member_bytes=maximum_member_bytes,
+            maximum_total_expanded_bytes=maximum_total_expanded_bytes,
+        )
+        artifact.seek(0)
+        return artifact
+    except BaseException:
+        artifact.close()
+        raise
 
 
 def _forecast_run_artifact_digest(
