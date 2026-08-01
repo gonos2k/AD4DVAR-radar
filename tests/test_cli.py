@@ -1,5 +1,6 @@
 from contextlib import redirect_stdout
 import io
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -242,6 +243,7 @@ class CliTests(unittest.TestCase):
                     ].item(),
                     0.0,
                 )
+
                 self.assertEqual(
                     result[
                         "analysis_maximum_growth_envelope_ratio_by_time"
@@ -308,6 +310,23 @@ class CliTests(unittest.TestCase):
             self.assertIsNotNone(loaded.run.analysis_config_json)
             self.assertIsNotNone(loaded.run.analysis_config_digest)
             self.assertIsNotNone(loaded.run.analysis_input_digest)
+
+    def test_cli_records_operational_amplitude_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output_path = self._run_cli(
+                Path(temporary),
+                self._stationary_frames(),
+                "--variational",
+                "--amplitude-information-policy",
+                "operational_fallback",
+            )
+
+            with np.load(output_path, allow_pickle=False) as result:
+                config = json.loads(result["analysis_config_json"].item())
+                self.assertEqual(
+                    config["amplitude_information_policy"],
+                    "operational_fallback",
+                )
 
     def test_all_qc_rejected_uses_stale_background(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

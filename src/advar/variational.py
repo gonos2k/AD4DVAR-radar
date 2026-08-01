@@ -35,6 +35,12 @@ from .physics import (
 )
 
 
+AmplitudeInformationPolicy = Literal[
+    "research_degraded",
+    "operational_fallback",
+]
+
+
 @dataclass(frozen=True)
 class AnalysisConfig:
     detection_limit_dbz: float = 5.0
@@ -53,6 +59,12 @@ class AnalysisConfig:
     maximum_unresolved_amplitude_fraction: float = 0.01
     minimum_amplitude_total_quality_weight: float = 0.01
     minimum_amplitude_effective_pixel_count: float = 1.0
+    amplitude_information_policy: AmplitudeInformationPolicy = (
+        "research_degraded"
+    )
+    minimum_integrated_echo_ratio_for_confidence: float = 0.5
+    minimum_soft_echo_area_ratio_for_confidence: float = 0.5
+    maximum_established_excess_growth_fraction_for_confidence: float = 0.01
     maximum_outer_iterations: int = 4
     maximum_pcg_iterations: int = 40
     maximum_damping_retries: int = 2
@@ -130,6 +142,28 @@ class AnalysisConfig:
             raise ValueError(
                 "maximum_unresolved_amplitude_fraction must be in [0, 1]"
             )
+        if self.amplitude_information_policy not in (
+            "research_degraded",
+            "operational_fallback",
+        ):
+            raise ValueError(
+                "amplitude_information_policy must be research_degraded "
+                "or operational_fallback"
+            )
+        confidence_fractions = {
+            "minimum_integrated_echo_ratio_for_confidence": (
+                self.minimum_integrated_echo_ratio_for_confidence
+            ),
+            "minimum_soft_echo_area_ratio_for_confidence": (
+                self.minimum_soft_echo_area_ratio_for_confidence
+            ),
+            "maximum_established_excess_growth_fraction_for_confidence": (
+                self.maximum_established_excess_growth_fraction_for_confidence
+            ),
+        }
+        for name, value in confidence_fractions.items():
+            if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+                raise ValueError(f"{name} must be in [0, 1]")
 
     @property
     def maximum_detected_error_std(self) -> float:
@@ -220,6 +254,30 @@ class _AmplitudeDiagnostics:
     @property
     def has_insufficient_information(self) -> bool:
         return bool(torch.any(~self.information_sufficient_by_time))
+
+    def degrades_confidence(self, config: AnalysisConfig) -> bool:
+        finite_echo_ratio = torch.isfinite(self.integrated_echo_ratio_by_time)
+        echo_ratio_low = finite_echo_ratio & (
+            self.integrated_echo_ratio_by_time
+            < config.minimum_integrated_echo_ratio_for_confidence
+        )
+        finite_area_ratio = torch.isfinite(
+            self.displacement_tolerant_soft_echo_area_ratio_by_time
+        )
+        area_ratio_low = finite_area_ratio & (
+            self.displacement_tolerant_soft_echo_area_ratio_by_time
+            < config.minimum_soft_echo_area_ratio_for_confidence
+        )
+        finite_excess = torch.isfinite(
+            self.established_echo_excess_growth_fraction_by_time
+        )
+        excess_high = finite_excess & (
+            self.established_echo_excess_growth_fraction_by_time
+            > config.maximum_established_excess_growth_fraction_for_confidence
+        )
+        return bool(
+            torch.any(echo_ratio_low | area_ratio_low | excess_high)
+        )
 
 
 @dataclass(frozen=True)
@@ -1018,6 +1076,18 @@ def solve_analysis(
         )
 
     config = frozen.analysis_config
+    if (
+        current_amplitude.has_insufficient_information
+        and config.amplitude_information_policy == "operational_fallback"
+    ):
+        return _fallback_result(
+            frozen,
+            control,
+            reference_cost,
+            "insufficient_amplitude_information",
+            amplitude_diagnostics=current_amplitude,
+            amplitude_diagnostics_source="rejected_candidate",
+        )
     field_size = frozen.active_field_index.numel()
     damping = config.initial_damping
     total_pcg_iterations = 0
@@ -1418,6 +1488,22 @@ def _analysis_result(
         trajectory,
     )
     if (
+        amplitude.has_insufficient_information
+        and frozen.analysis_config.amplitude_information_policy
+        == "operational_fallback"
+    ):
+        return _fallback_result(
+            frozen,
+            control,
+            reference_objective,
+            "insufficient_amplitude_information",
+            outer_iterations,
+            pcg_iterations,
+            minimum_reachability_margin=reachability_margin,
+            amplitude_diagnostics=amplitude,
+            amplitude_diagnostics_source="rejected_candidate",
+        )
+    if (
         float(amplitude.maximum_gated_unresolved_fraction.detach())
         > frozen.analysis_config.maximum_unresolved_amplitude_fraction
     ):
@@ -1502,7 +1588,11 @@ def _analysis_result(
         converged=converged,
         used_fallback=False,
         reason=reason,
-        degraded=degraded or amplitude.has_insufficient_information,
+        degraded=(
+            degraded
+            or amplitude.has_insufficient_information
+            or amplitude.degrades_confidence(frozen.analysis_config)
+        ),
         audit=audit,
         minimum_reachability_margin=reachability_margin,
         unresolved_amplitude_fraction=float(
@@ -1733,17 +1823,15 @@ def _amplitude_diagnostics(
             0.0,
         )
         floor_excess = torch.clamp_min(
-            (amplitude_floor - local_prediction)
-            / frozen.analysis_config.censor_temperature_dbz,
+            torch.sqrt(quality)
+            * (amplitude_floor - local_prediction)
+            / observations.std_dbz[step],
             0.0,
         )
         violation = (
-            quality[precursor_required]
-            * (
-                standardized_excess[precursor_required].square()
-                + floor_excess[precursor_required].square()
-            )
-        ).sum() / total_weight
+            standardized_excess[precursor_required].square()
+            + floor_excess[precursor_required].square()
+        ).sum() / effective_pixel_count
 
         integrated_echo_ratio = nan
         soft_echo_area_ratio = nan

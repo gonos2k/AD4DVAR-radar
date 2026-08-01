@@ -52,6 +52,14 @@ def main() -> None:
         help="observation error used by --variational",
     )
     parser.add_argument(
+        "--amplitude-information-policy",
+        choices=("research_degraded", "operational_fallback"),
+        default="research_degraded",
+        help=(
+            "P1 behavior when precursor amplitude information is insufficient"
+        ),
+    )
+    parser.add_argument(
         "--qc-mask",
         type=Path,
         help="optional boolean .npy mask shaped [3, H, W]",
@@ -127,6 +135,7 @@ def main() -> None:
             nowcast_config=config,
             analysis_config=AnalysisConfig(
                 detection_limit_dbz=args.echo_threshold_dbz,
+                amplitude_information_policy=args.amplitude_information_policy,
             ),
             observation_std_dbz=args.observation_std_dbz,
             qc_mask=qc_mask,
