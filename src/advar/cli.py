@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import argparse
-import os
 from pathlib import Path
-import tempfile
 from typing import Any
 
 import numpy as np
@@ -18,11 +16,15 @@ from .nowcast import (
     RadarGridTimeContract,
     nowcast,
 )
-from .run_artifact import forecast_run_arrays
+from .run_artifact import (
+    atomic_savez_compressed,
+    forecast_run_arrays,
+    seal_forecast_run_arrays,
+)
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v11"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v12"
 
 
 def main() -> None:
@@ -79,12 +81,21 @@ def main() -> None:
         type=float,
         default=60.0,
     )
+    parser.add_argument("--maximum-motion-speed-mps", type=float)
     parser.add_argument("--valid-times", nargs=3)
     parser.add_argument("--background-valid-times", nargs=3)
     parser.add_argument("--dx-m", type=float)
     parser.add_argument("--dy-m", type=float)
     parser.add_argument("--projection")
     parser.add_argument("--grid-hash")
+    parser.add_argument(
+        "--pixel-to-projected-matrix-m",
+        type=float,
+        nargs=4,
+        metavar=("XX", "XR", "YX", "YR"),
+    )
+    parser.add_argument("--causal-support-uncertainty-m", type=float)
+    parser.add_argument("--amplitude-displacement-tolerance-m", type=float)
     parser.add_argument(
         "--audit",
         action="store_true",
@@ -93,6 +104,13 @@ def main() -> None:
     args = parser.parse_args()
     if args.output.suffix != ".npz":
         parser.error("output path must end with .npz")
+    if not args.variational and (
+        args.causal_support_uncertainty_m is not None
+        or args.amplitude_displacement_tolerance_m is not None
+    ):
+        parser.error(
+            "physical P1 distance settings require --variational"
+        )
 
     frames = np.load(args.input, allow_pickle=False)
     if frames.ndim != 3 or frames.shape[0] != 3:
@@ -127,6 +145,7 @@ def main() -> None:
         maximum_background_age_minutes=(
             args.maximum_background_age_minutes
         ),
+        maximum_motion_speed_mps=args.maximum_motion_speed_mps,
     )
     frames_tensor = torch.as_tensor(frames, dtype=torch.float32)
     if args.variational:
@@ -136,6 +155,12 @@ def main() -> None:
             analysis_config=AnalysisConfig(
                 detection_limit_dbz=args.echo_threshold_dbz,
                 amplitude_information_policy=args.amplitude_information_policy,
+                causal_support_uncertainty_m=(
+                    args.causal_support_uncertainty_m
+                ),
+                amplitude_displacement_tolerance_m=(
+                    args.amplitude_displacement_tolerance_m
+                ),
             ),
             observation_std_dbz=args.observation_std_dbz,
             qc_mask=qc_mask,
@@ -160,7 +185,10 @@ def main() -> None:
     output = _output_arrays(result, analysis, config)
     if args.audit:
         output.update(_audit_arrays(result, analysis))
-    _atomic_savez_compressed(args.output, output)
+    atomic_savez_compressed(
+        args.output,
+        seal_forecast_run_arrays(output),
+    )
 
     dy, dx = result.state.displacement_yx.tolist()
     print(
@@ -183,8 +211,15 @@ def _grid_time_contract_from_args(
         args.grid_hash,
     )
     if not any(value is not None for value in required):
-        if args.background_valid_times is not None:
-            parser.error("--background-valid-times requires grid/time metadata")
+        physical_metadata = (
+            args.background_valid_times,
+            args.pixel_to_projected_matrix_m,
+            args.maximum_motion_speed_mps,
+            args.causal_support_uncertainty_m,
+            args.amplitude_displacement_tolerance_m,
+        )
+        if any(value is not None for value in physical_metadata):
+            parser.error("physical settings require grid/time metadata")
         return None
     if any(value is None for value in required):
         parser.error(
@@ -202,6 +237,20 @@ def _grid_time_contract_from_args(
             dy_m=args.dy_m,
             projection=args.projection,
             grid_hash=args.grid_hash,
+            pixel_to_projected_matrix_m=(
+                None
+                if args.pixel_to_projected_matrix_m is None
+                else (
+                    (
+                        args.pixel_to_projected_matrix_m[0],
+                        args.pixel_to_projected_matrix_m[1],
+                    ),
+                    (
+                        args.pixel_to_projected_matrix_m[2],
+                        args.pixel_to_projected_matrix_m[3],
+                    ),
+                )
+            ),
             background_valid_times=(
                 None
                 if args.background_valid_times is None
@@ -386,6 +435,11 @@ def _output_arrays(
             analysis_motion_saturation_margin_yx=(
                 _optional_pair_array(analysis.motion_saturation_margin_yx)
             ),
+            analysis_motion_speed_saturation_margin_mps=np.asarray(
+                np.nan
+                if analysis.motion_speed_saturation_margin_mps is None
+                else analysis.motion_speed_saturation_margin_mps
+            ),
             analysis_growth_saturation_margin=np.asarray(
                 np.nan
                 if analysis.growth_saturation_margin is None
@@ -471,32 +525,6 @@ def _audit_arrays(
             ),
         )
     return output
-
-
-def _atomic_savez_compressed(
-    path: Path,
-    arrays: dict[str, Any],
-) -> None:
-    """Publish one complete NPZ or leave the previous output untouched."""
-
-    temporary_path: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w+b",
-            dir=path.parent,
-            prefix=f".{path.name}.",
-            suffix=".tmp",
-            delete=False,
-        ) as temporary:
-            temporary_path = Path(temporary.name)
-            np.savez_compressed(temporary, **arrays)
-            temporary.flush()
-            os.fsync(temporary.fileno())
-        os.replace(temporary_path, path)
-    except BaseException:
-        if temporary_path is not None:
-            temporary_path.unlink(missing_ok=True)
-        raise
 
 
 if __name__ == "__main__":

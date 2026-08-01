@@ -1,9 +1,12 @@
 from dataclasses import replace
+import io
 from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from typing import Any
+import zipfile
 
 import numpy as np
 import torch
@@ -15,14 +18,20 @@ from advar import (  # noqa: E402
     RadarGridTimeContract,
     SensitivityConfig,
     compute_sensitivity_snapshot,
+    compute_sensitivity_snapshot_from_run,
     load_forecast_run,
     nowcast,
     save_forecast_run,
 )
 from advar._digest import tensor_digest  # noqa: E402
+import advar.run_artifact as run_artifact  # noqa: E402
+from advar.run_artifact import seal_forecast_run_arrays  # noqa: E402
 
 
 class ForecastRunArtifactTests(unittest.TestCase):
+    def _save_arrays(self, path: Path, arrays: dict[str, Any]) -> None:
+        np.savez_compressed(path, **seal_forecast_run_arrays(arrays))
+
     def test_tensor_digest_accepts_scalar_tensors(self) -> None:
         value = torch.tensor(0.125, dtype=torch.float64)
 
@@ -109,8 +118,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             result.run.latest_observation_mask,
         )
 
-        reloaded = compute_sensitivity_snapshot(
-            frames[-1],
+        reloaded = compute_sensitivity_snapshot_from_run(
             loaded,
             loaded.forecast_dbz.clone(),
             sensitivity_config=sensitivity_config,
@@ -145,6 +153,49 @@ class ForecastRunArtifactTests(unittest.TestCase):
             equal_nan=True,
         )
         self.assertEqual(reloaded.trust_score, in_memory.trust_score)
+
+    def test_restart_m0_uses_embedded_latest_background(self) -> None:
+        frames = self.frames()
+        background = frames - 2.0
+        result = nowcast(
+            frames,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+        expected = compute_sensitivity_snapshot(
+            frames[-1],
+            result,
+            result.forecast_dbz.clone(),
+            latest_background_dbz=background[-1],
+        )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            save_forecast_run(result, path)
+            loaded = load_forecast_run(path)
+
+        torch.testing.assert_close(loaded.run.latest_frame_dbz, frames[-1])
+        loaded_background = loaded.run.latest_background_dbz
+        self.assertIsNotNone(loaded_background)
+        assert loaded_background is not None
+        torch.testing.assert_close(
+            loaded_background,
+            background[-1],
+        )
+        actual = compute_sensitivity_snapshot_from_run(
+            loaded,
+            loaded.forecast_dbz.clone(),
+        )
+        torch.testing.assert_close(
+            actual.control_sensitivity,
+            expected.control_sensitivity,
+            equal_nan=True,
+        )
+        torch.testing.assert_close(
+            actual.direct.maps,
+            expected.direct.maps,
+            equal_nan=True,
+        )
 
     def test_round_trip_preserves_grid_time_contract(self) -> None:
         frames = self.frames()
@@ -188,6 +239,10 @@ class ForecastRunArtifactTests(unittest.TestCase):
             loaded.displacement_mps_yx,
             result.displacement_mps_yx,
         )
+        torch.testing.assert_close(
+            loaded.projected_velocity_mps_xy,
+            result.projected_velocity_mps_xy,
+        )
 
     def test_load_rejects_tampered_grid_time_contract(self) -> None:
         contract = RadarGridTimeContract(
@@ -212,9 +267,12 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 }
             contract_value = arrays["grid_time_contract_json"].item()
             arrays["grid_time_contract_json"] = np.asarray(
-                contract_value.replace('"dx_m":1000.0', '"dx_m":2000.0')
+                contract_value.replace(
+                    '"projection":"EPSG:5179"',
+                    '"projection":"EPSG:3857"',
+                )
             )
-            np.savez_compressed(path, **arrays)
+            self._save_arrays(path, arrays)
 
             with self.assertRaisesRegex(
                 ValueError,
@@ -244,7 +302,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
                     for name in archive.files
                 }
             arrays["displacement_mps_yx"] += 1.0
-            np.savez_compressed(path, **arrays)
+            self._save_arrays(path, arrays)
 
             with self.assertRaisesRegex(
                 ValueError,
@@ -317,7 +375,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
                     for name in archive.files
                 }
             arrays["state_echo_linear"][0, 0] += 1.0
-            np.savez_compressed(path, **arrays)
+            self._save_arrays(path, arrays)
 
             with self.assertRaisesRegex(
                 ValueError,
@@ -349,7 +407,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
                     for name in archive.files
                 }
             arrays["minimum_phase_correlation_psr"] += 1.0
-            np.savez_compressed(path, **arrays)
+            self._save_arrays(path, arrays)
 
             with self.assertRaisesRegex(
                 ValueError,
@@ -377,7 +435,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 with self.subTest(value=malformed):
                     arrays = dict(original)
                     arrays["minimum_phase_correlation_psr"] = malformed
-                    np.savez_compressed(path, **arrays)
+                    self._save_arrays(path, arrays)
 
                     with self.assertRaisesRegex(
                         ValueError,
@@ -396,7 +454,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
                     for name in archive.files
                 }
             arrays["background_tendency_used"] = np.asarray(True)
-            np.savez_compressed(path, **arrays)
+            self._save_arrays(path, arrays)
 
             with self.assertRaisesRegex(
                 ValueError,
@@ -444,7 +502,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 '"growth_decay_minutes":60.0,"min_publish_support":0.95,'
                 '"epsilon":1e-06}'
             )
-            np.savez_compressed(path, **arrays)
+            self._save_arrays(path, arrays)
 
             with self.assertRaisesRegex(
                 ValueError,
@@ -463,10 +521,122 @@ class ForecastRunArtifactTests(unittest.TestCase):
                     for name in archive.files
                 }
             arrays["input_bundle_digest"] = np.asarray("0" * 64)
-            np.savez_compressed(path, **arrays)
+            self._save_arrays(path, arrays)
 
             with self.assertRaisesRegex(ValueError, "run identity"):
                 load_forecast_run(path)
+
+    def test_load_rejects_unknown_archive_member(self) -> None:
+        result = nowcast(self.frames())
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                arrays: dict[str, Any] = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                }
+            arrays["unexpected_payload"] = np.asarray(1)
+            self._save_arrays(path, arrays)
+
+            with self.assertRaisesRegex(ValueError, "unknown members"):
+                load_forecast_run(path)
+
+    def test_load_applies_archive_resource_limits_before_materialization(
+        self,
+    ) -> None:
+        result = nowcast(self.frames())
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                member_count = len(archive.files)
+
+            cases = (
+                ({"maximum_member_count": member_count - 1}, "too many"),
+                ({"maximum_member_bytes": 1}, "member is too large"),
+                (
+                    {"maximum_total_expanded_bytes": 1},
+                    "expands beyond",
+                ),
+            )
+            for limits, message in cases:
+                with self.subTest(limits=limits):
+                    with self.assertRaisesRegex(ValueError, message):
+                        load_forecast_run(path, **limits)
+
+    def test_load_rejects_declared_array_size_before_materialization(
+        self,
+    ) -> None:
+        header = io.BytesIO()
+        np.lib.format.write_array_header_1_0(
+            header,
+            {
+                "descr": np.dtype(np.float64).str,
+                "fortran_order": False,
+                "shape": (1_000_000_000,),
+            },
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "hostile.npz"
+            with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr("forecast_dbz.npy", header.getvalue())
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "declares too much array data",
+            ):
+                load_forecast_run(path, maximum_member_bytes=1024)
+
+    def test_load_rejects_object_array_header_before_materialization(
+        self,
+    ) -> None:
+        header = io.BytesIO()
+        np.lib.format.write_array_header_1_0(
+            header,
+            {
+                "descr": np.dtype(object).str,
+                "fortran_order": False,
+                "shape": (1,),
+            },
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "object.npz"
+            with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr("forecast_dbz.npy", header.getvalue())
+
+            with self.assertRaisesRegex(ValueError, "non-object dtypes"):
+                load_forecast_run(path)
+
+    def test_load_uses_the_same_file_after_resource_preflight(self) -> None:
+        original_result = nowcast(self.frames())
+        replacement_frames = self.frames() + 1.0
+        replacement_result = nowcast(replacement_frames)
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            path = directory / "run.npz"
+            replacement = directory / "replacement.npz"
+            save_forecast_run(original_result, path)
+            save_forecast_run(replacement_result, replacement)
+            real_preflight = run_artifact._preflight_archive
+
+            def preflight_then_replace(
+                source: Any,
+                **limits: Any,
+            ) -> None:
+                real_preflight(source, **limits)
+                replacement.replace(path)
+
+            with patch(
+                "advar.run_artifact._preflight_archive",
+                side_effect=preflight_then_replace,
+            ):
+                loaded = load_forecast_run(path)
+
+        self.assertEqual(
+            loaded.forecast_run_digest,
+            original_result.forecast_run_digest,
+        )
 
 
 if __name__ == "__main__":

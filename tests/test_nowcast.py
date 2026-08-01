@@ -1590,6 +1590,10 @@ class NowcastTests(unittest.TestCase):
             NowcastConfig(phase_correlation_sidelobe_radius_px=-1)
         with self.assertRaises(TypeError):
             NowcastConfig(phase_correlation_sidelobe_radius_px=True)
+        for value in (0.0, -1.0, float("nan"), True):
+            with self.subTest(maximum_motion_speed_mps=value):
+                with self.assertRaises(ValueError):
+                    NowcastConfig(maximum_motion_speed_mps=value)
 
     def test_grid_time_contract_is_canonical_and_part_of_run_identity(
         self,
@@ -1637,10 +1641,101 @@ class NowcastTests(unittest.TestCase):
             * result.state.displacement_yx.new_tensor((1000.0, 1000.0))
             / 600.0,
         )
+        torch.testing.assert_close(
+            result.projected_velocity_mps_xy,
+            torch.stack(
+                (
+                    result.state.displacement_yx[1] * 1000.0 / 600.0,
+                    -result.state.displacement_yx[0] * 1000.0 / 600.0,
+                )
+            ),
+        )
         self.assertNotEqual(
             result.forecast_run_digest,
             shifted_result.forecast_run_digest,
         )
+
+    def test_grid_affine_maps_row_col_to_projected_velocity(self) -> None:
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=500.0,
+            projection="EPSG:5179",
+            grid_hash="b" * 64,
+            pixel_to_projected_matrix_m=(
+                (0.0, -500.0),
+                (1000.0, 0.0),
+            ),
+        )
+        displacement = torch.tensor((2.0, 3.0), dtype=torch.float64)
+
+        torch.testing.assert_close(
+            contract.projected_displacement_xy(displacement),
+            torch.tensor((-1000.0, 3000.0), dtype=torch.float64),
+        )
+        self.assertEqual(
+            contract.maximum_displacement_yx(10.0, 10),
+            (12.0, 6.0),
+        )
+        self.assertEqual(contract.pixel_radius_yx(1000.0), (2, 1))
+
+        sheared = RadarGridTimeContract(
+            valid_times=contract.valid_times,
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection=contract.projection,
+            grid_hash="c" * 64,
+            pixel_to_projected_matrix_m=(
+                (1000.0, 800.0),
+                (0.0, 600.0),
+            ),
+        )
+        self.assertEqual(sheared.pixel_radius_yx(1000.0), (2, 2))
+
+    def test_grid_affine_rejects_singular_or_inconsistent_geometry(
+        self,
+    ) -> None:
+        common = {
+            "valid_times": (
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            "dx_m": 1000.0,
+            "dy_m": 1000.0,
+            "projection": "EPSG:5179",
+            "grid_hash": "d" * 64,
+        }
+        cases = (
+            (
+                ((1000.0, 1000.0), (0.0, 0.0)),
+                "invertible",
+            ),
+            (
+                ((500.0, 0.0), (0.0, -1000.0)),
+                "agree with dx_m and dy_m",
+            ),
+        )
+        for matrix, message in cases:
+            with self.subTest(matrix=matrix):
+                with self.assertRaisesRegex(ValueError, message):
+                    RadarGridTimeContract(
+                        **common,
+                        pixel_to_projected_matrix_m=matrix,
+                    )
+
+    def test_physical_motion_limit_requires_grid_contract(self) -> None:
+        frames = torch.full((3, 8, 8), 20.0)
+
+        with self.assertRaisesRegex(ValueError, "grid/time contract"):
+            nowcast(
+                frames,
+                NowcastConfig(maximum_motion_speed_mps=10.0),
+            )
 
     def test_grid_time_contract_rejects_invalid_time_and_background_age(
         self,
