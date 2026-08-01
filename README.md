@@ -178,7 +178,11 @@ quality-weighted 표준화 deficit이 3을 넘거나 에코가 precursor floor
 제외하고 `analysis.amplitude_information_sufficient_by_time`과
 `analysis.insufficient_amplitude_information`에 명시한다. raw 시간별
 fraction과 quality weight는 감사용으로 그대로 보존하며, 이 경우 수용된
-분석도 `degraded=True`로 표시한다. 정보가 충분한
+분석도 기본 연구정책 `amplitude_information_policy="research_degraded"`
+에서는 `degraded=True`로 표시한다. 운용정책
+`"operational_fallback"`에서는 precursor 진폭정보가 부족한 P1을 발행하지
+않고 `insufficient_amplitude_information`으로 P0에 복귀한다. CLI에서는
+`--amplitude-information-policy`로 이 정책을 선택한다. 정보가 충분한
 시각의 최댓값이 연구용 fail-close 기본값 1%를 넘으면
 `unresolved_growth_or_emergence`로 기준예측에 복귀한다. 이 1%는 운용
 임계값이 아니며 정보량 하한과 함께 실제 hindcast에서 보정해야 한다. 기존
@@ -198,14 +202,17 @@ warm start는 solver의 출발점일 뿐 수용 기준은 아니다. P1은 zero-
 목적함수를 `initial_objective`로 고정하고, 최종 제어가 이를 수치
 허용오차보다 명확히 낮출 때만 분석을 발행한다. fallback이면 반환 제어는
 zero이고 `final_objective == initial_objective`다. amplitude 조건을
-위반한 warm start에서는 연속적인 초과량 제곱 점수의
+위반한 warm start에서는 quality로 한 번 백색화한 연속 초과량 제곱 점수의
 `(시간별 최댓값, 시간별 합)`을 사전식으로 줄이는 LM 후보를 허용하고,
 최종 안전판정에는 시간별 discrete fraction의 최댓값을 사용한다. 작은
 float32 violation에도 절대 1 기준 허용오차를 적용하지 않는다. 일단
 feasible해지면 다시 infeasible 영역으로 나갈 수 없다. 시간별 선형 에코
 적분비, displacement-tolerant soft echo area 비, quality scale에 불변인
-유효 정보화소 수, bad/total quality weight는 분석 진단으로만 기록하며
-운용 hard gate가 아니다. 진단이 반환된 분석을 평가했는지, 폐기된 후보를
+유효 정보화소 수, bad/total quality weight는 분석 진단으로 기록한다.
+적분비나 면적비가 연구 기본 하한 0.5보다 작거나 established echo의
+초과성장 비율이 1%보다 크면 분석은 `degraded=True`가 되지만 hard fallback은
+하지 않는다. 이 신뢰도 임계값은 운용값이 아니며 실제 hindcast에서 반드시
+보정해야 한다. 진단이 반환된 분석을 평가했는지, 폐기된 후보를
 평가했는지는 `analysis.amplitude_diagnostics_source`로 구분한다. causal
 envelope의 제어 셀 수, 실제 seed 셀 수, seed prior 비용도 각각
 `causal_control_cell_count`, `causal_seed_cell_count`,

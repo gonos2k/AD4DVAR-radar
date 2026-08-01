@@ -1466,6 +1466,9 @@ class VariationalAnalysisTests(unittest.TestCase):
             1.0 / 9.0,
             places=5,
         )
+        self.assertTrue(
+            diagnostics.degrades_confidence(self.analysis_config)
+        )
 
     def test_continuous_violation_allows_progress_before_threshold(self) -> None:
         frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
@@ -1643,6 +1646,73 @@ class VariationalAnalysisTests(unittest.TestCase):
             (True, False),
         )
 
+    def test_operational_policy_falls_back_on_insufficient_information(
+        self,
+    ) -> None:
+        frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
+        frames[2, 3, 4] = 20.0
+        quality = torch.ones_like(frames)
+        quality[2, 3, 4] = 1.0e-3
+        config = replace(
+            self.analysis_config,
+            amplitude_information_policy="operational_fallback",
+        )
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=config,
+            quality_weight=quality,
+        )
+
+        result = solve_analysis(observations, frozen)
+
+        self.assertTrue(result.used_fallback)
+        self.assertEqual(result.reason, "insufficient_amplitude_information")
+        self.assertTrue(result.insufficient_amplitude_information)
+        self.assertEqual(result.final_objective, result.initial_objective)
+        torch.testing.assert_close(
+            result.control,
+            torch.zeros_like(result.control),
+        )
+
+    def test_continuous_violation_does_not_double_weight_quality(self) -> None:
+        frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
+        frames[2, 3, 3] = 20.0
+        frames[2, 3, 5] = 20.0
+        quality = torch.ones_like(frames)
+        quality[2, 3, 5] = 0.25
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+            observation_std_dbz=2.0,
+            quality_weight=quality,
+        )
+        prediction = torch.full_like(frames, -10.0)
+        trajectory = replace(
+            analysis_trajectory(initial_control(frozen), frozen),
+            frames_linear=dbz_to_echo(
+                prediction,
+                min_dbz=self.nowcast_config.min_dbz,
+                max_dbz=self.nowcast_config.max_dbz,
+            ),
+        )
+
+        diagnostics = variational_module._amplitude_diagnostics(
+            observations,
+            frozen,
+            trajectory,
+        )
+
+        effective_count = 1.25**2 / (1.0 + 0.25**2)
+        expected = (
+            12.0**2 + 7.0**2 + 4.5**2 + 3.5**2
+        ) / effective_count
+        self.assertAlmostEqual(
+            float(diagnostics.violation_score_by_time[1]),
+            expected,
+        )
+
     def test_effective_pixel_threshold_can_disable_small_sample_veto(
         self,
     ) -> None:
@@ -1717,6 +1787,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             "test_established_growth_diagnostic",
         )
         self.assertFalse(result.used_fallback)
+        self.assertTrue(result.degraded)
         self.assertEqual(
             result.established_echo_excess_growth_fraction,
             1.0,
@@ -1809,6 +1880,53 @@ class VariationalAnalysisTests(unittest.TestCase):
                         else:
                             AnalysisConfig(
                                 minimum_amplitude_effective_pixel_count=value
+                            )
+
+    def test_amplitude_policy_and_confidence_thresholds_are_validated(
+        self,
+    ) -> None:
+        with self.assertRaisesRegex(
+            ValueError,
+            "amplitude_information_policy",
+        ):
+            AnalysisConfig(
+                amplitude_information_policy=cast(
+                    variational_module.AmplitudeInformationPolicy,
+                    "invalid",
+                )
+            )
+        for field_name in (
+            "minimum_integrated_echo_ratio_for_confidence",
+            "minimum_soft_echo_area_ratio_for_confidence",
+            "maximum_established_excess_growth_fraction_for_confidence",
+        ):
+            for value in (-0.1, 1.1, float("nan")):
+                with self.subTest(field_name=field_name, value=value):
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        r"must be in \[0, 1\]",
+                    ):
+                        if field_name == (
+                            "minimum_integrated_echo_ratio_for_confidence"
+                        ):
+                            AnalysisConfig(
+                                minimum_integrated_echo_ratio_for_confidence=(
+                                    value
+                                )
+                            )
+                        elif field_name == (
+                            "minimum_soft_echo_area_ratio_for_confidence"
+                        ):
+                            AnalysisConfig(
+                                minimum_soft_echo_area_ratio_for_confidence=(
+                                    value
+                                )
+                            )
+                        else:
+                            AnalysisConfig(
+                                maximum_established_excess_growth_fraction_for_confidence=(
+                                    value
+                                )
                             )
 
     def test_latest_amplitude_threshold_constructor_remains_supported(
