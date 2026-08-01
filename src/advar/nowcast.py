@@ -968,12 +968,33 @@ def _estimate_source_tendencies(
     if len(adjacent_estimates) == 2:
         first_motion, first_growth, first_psr = adjacent_estimates[0]
         second_motion, second_growth, second_psr = adjacent_estimates[1]
+        motion_disagreement = torch.linalg.vector_norm(
+            second_motion - first_motion
+        )
+        growth_disagreement = torch.abs(second_growth - first_growth)
+        motion_is_inconsistent = float(motion_disagreement.detach()) >= (
+            config.max_displacement_px - config.epsilon
+        )
+        growth_is_inconsistent = (
+            config.max_log_growth_per_step > config.epsilon
+            and float(growth_disagreement.detach())
+            >= config.max_log_growth_per_step - config.epsilon
+        )
+        if motion_is_inconsistent or growth_is_inconsistent:
+            return (
+                second_motion,
+                second_growth,
+                motion_disagreement,
+                growth_disagreement,
+                second_psr,
+                1,
+            )
         weight = config.recent_weight
         return (
             (1.0 - weight) * first_motion + weight * second_motion,
             (1.0 - weight) * first_growth + weight * second_growth,
-            torch.linalg.vector_norm(second_motion - first_motion),
-            torch.abs(second_growth - first_growth),
+            motion_disagreement,
+            growth_disagreement,
             torch.minimum(first_psr, second_psr),
             2,
         )
@@ -1050,7 +1071,7 @@ def _estimate_available_pair(
         return None
 
     step_span = current_index - previous_index
-    total_motion, phase_correlation_psr = (
+    total_motion, phase_correlation_psr, search_interior = (
         _phase_correlation_shift_and_psr(
             previous_dbz,
             current_dbz,
@@ -1058,7 +1079,7 @@ def _estimate_available_pair(
             max_displacement_px=config.max_displacement_px * step_span,
         )
     )
-    if float(phase_correlation_psr.detach()) < (
+    if not search_interior or float(phase_correlation_psr.detach()) < (
         config.minimum_phase_correlation_psr
     ):
         return None
@@ -1537,13 +1558,13 @@ def _phase_correlation_shift(
     *,
     max_displacement_px: float | None = None,
 ) -> Tensor:
-    shift, _ = _phase_correlation_shift_and_psr(
+    shift, _, search_interior = _phase_correlation_shift_and_psr(
         previous_dbz,
         current_dbz,
         config,
         max_displacement_px=max_displacement_px,
     )
-    return shift
+    return shift if search_interior else torch.zeros_like(shift)
 
 
 def _phase_correlation_shift_and_psr(
@@ -1552,7 +1573,7 @@ def _phase_correlation_shift_and_psr(
     config: NowcastConfig,
     *,
     max_displacement_px: float | None = None,
-) -> tuple[Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, bool]:
     previous = (previous_dbz - config.echo_threshold_dbz).clamp_min(0.0)
     current = (current_dbz - config.echo_threshold_dbz).clamp_min(0.0)
 
@@ -1561,7 +1582,7 @@ def _phase_correlation_shift_and_psr(
         * torch.linalg.vector_norm(current)
     )
     if float(energy.detach()) <= config.epsilon:
-        return previous.new_zeros(2), previous.new_zeros(())
+        return previous.new_zeros(2), previous.new_zeros(()), False
 
     height, width = previous.shape
     previous = previous - previous.mean()
@@ -1571,7 +1592,7 @@ def _phase_correlation_shift_and_psr(
         * torch.linalg.vector_norm(current)
     )
     if float(centered_energy.detach()) <= config.epsilon:
-        return previous.new_zeros(2), previous.new_zeros(())
+        return previous.new_zeros(2), previous.new_zeros(()), False
 
     padded_shape = (2 * height, 2 * width)
     cross_power = torch.fft.fft2(current, s=padded_shape) * torch.conj(
@@ -1600,6 +1621,15 @@ def _phase_correlation_shift_and_psr(
         shift_x -= correlation_width
 
     shift = correlation.new_tensor((shift_y, shift_x))
+    peak_shift_y = peak_y
+    peak_shift_x = peak_x
+    if peak_shift_y > correlation_height / 2:
+        peak_shift_y -= correlation_height
+    if peak_shift_x > correlation_width / 2:
+        peak_shift_x -= correlation_width
+    integer_peak_shift = correlation.new_tensor(
+        (peak_shift_y, peak_shift_x)
+    )
     limits = correlation.new_tensor(
         (
             min(
@@ -1620,7 +1650,14 @@ def _phase_correlation_shift_and_psr(
             ),
         )
     )
-    return torch.maximum(torch.minimum(shift, limits), -limits), psr
+    inside_limits = bool(
+        torch.all(torch.abs(shift) <= limits + config.epsilon)
+    )
+    interior_bin_limit = (limits - 0.5).clamp_min(config.epsilon)
+    away_from_search_boundary = bool(
+        torch.all(torch.abs(integer_peak_shift) < interior_bin_limit)
+    )
+    return shift, psr, inside_limits and away_from_search_boundary
 
 
 def _peak_to_sidelobe_ratio(

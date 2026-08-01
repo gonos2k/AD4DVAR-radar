@@ -313,6 +313,13 @@ advar-nowcast three_frames.npy forecast.npz --audit
 - `tendency_pair_count`: 실제 운동·성장 추정에 사용한 독립 pair 수
 - `tendency_source`: 경향 추정 출처. `OBSERVATION`, `BACKGROUND`,
   `NONE` 중 하나
+
+Phase-correlation의 raw peak가 `max_displacement_px` 범위 밖이거나 허용
+search boundary bin에 있으면 높은 PSR이어도 사용하지 않는다. 두 adjacent
+pair의 이동 불일치가 `max_displacement_px` 이상이거나 성장 불일치가
+`max_log_growth_per_step` 이상이면 존재하지 않는 중간 경향을 평균하지 않고,
+PSR gate를 통과한 최근 pair 하나만 사용한다. 이 경우 불일치 진단은 두 pair의
+차이를 보존하고 `tendency_pair_count=1`로 기록한다.
 - `min_publish_support`: 유한한 예측값을 발행하는 최소 source support
 - `data_status`: `OBSERVED`, `PARTIAL`, `STALE_BACKGROUND`,
   `UNAVAILABLE` 중 하나

@@ -1,5 +1,6 @@
 from pathlib import Path
 from importlib import import_module
+import math
 import sys
 import unittest
 from unittest.mock import patch
@@ -454,10 +455,12 @@ class NowcastTests(unittest.TestCase):
         nowcast_module = import_module("advar.nowcast")
         frames, displacement = self._moving_gaussian_frames()
 
-        shift, psr = nowcast_module._phase_correlation_shift_and_psr(
-            frames[0],
-            frames[1],
-            self.config,
+        shift, psr, search_interior = (
+            nowcast_module._phase_correlation_shift_and_psr(
+                frames[0],
+                frames[1],
+                self.config,
+            )
         )
 
         torch.testing.assert_close(
@@ -470,6 +473,121 @@ class NowcastTests(unittest.TestCase):
             float(psr),
             self.config.minimum_phase_correlation_psr,
         )
+        self.assertTrue(search_interior)
+
+    def test_phase_correlation_rejects_peak_outside_motion_range(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        previous = linear_to_dbz(self.echo, self.config)
+        current = torch.roll(previous, shifts=30, dims=1)
+
+        shift, psr, search_interior = (
+            nowcast_module._phase_correlation_shift_and_psr(
+                previous,
+                current,
+                self.config,
+            )
+        )
+
+        torch.testing.assert_close(
+            shift,
+            torch.tensor([0.0, 30.0]),
+            atol=0.1,
+            rtol=0.0,
+        )
+        self.assertGreaterEqual(
+            float(psr),
+            self.config.minimum_phase_correlation_psr,
+        )
+        self.assertFalse(search_interior)
+
+    def test_phase_correlation_rejects_peak_at_search_boundary(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        previous = linear_to_dbz(self.echo, self.config)
+        current = torch.roll(previous, shifts=20, dims=1)
+
+        shift, psr, search_interior = (
+            nowcast_module._phase_correlation_shift_and_psr(
+                previous,
+                current,
+                self.config,
+            )
+        )
+
+        torch.testing.assert_close(
+            shift,
+            torch.tensor([0.0, 20.0]),
+            atol=0.1,
+            rtol=0.0,
+        )
+        self.assertGreaterEqual(
+            float(psr),
+            self.config.minimum_phase_correlation_psr,
+        )
+        self.assertFalse(search_interior)
+
+    def test_subpixel_search_limit_accepts_zero_motion(self) -> None:
+        config = NowcastConfig(max_displacement_px=0.25)
+        frame = linear_to_dbz(self.echo, config)
+
+        state, metadata = estimate_state_with_metadata(
+            torch.stack((frame, frame, frame)),
+            config,
+        )
+
+        torch.testing.assert_close(
+            state.displacement_yx,
+            torch.zeros_like(state.displacement_yx),
+        )
+        self.assertEqual(metadata.tendency_pair_count, 2)
+        self.assertGreaterEqual(
+            float(metadata.minimum_phase_correlation_psr),
+            config.minimum_phase_correlation_psr,
+        )
+
+    def test_inconsistent_high_psr_pairs_use_recent_pair(self) -> None:
+        first = linear_to_dbz(self.echo, self.config)
+        second = torch.roll(first, shifts=10, dims=1)
+        frames = torch.stack((first, second, first))
+
+        state, metadata = estimate_state_with_metadata(frames, self.config)
+
+        torch.testing.assert_close(
+            state.displacement_yx,
+            torch.tensor([0.0, -10.0]),
+            atol=0.1,
+            rtol=0.0,
+        )
+        self.assertAlmostEqual(
+            float(metadata.motion_disagreement_px),
+            20.0,
+            places=1,
+        )
+        self.assertEqual(metadata.tendency_pair_count, 1)
+        self.assertGreaterEqual(
+            float(metadata.minimum_phase_correlation_psr),
+            self.config.minimum_phase_correlation_psr,
+        )
+
+    def test_inconsistent_growth_pairs_use_recent_pair(self) -> None:
+        factor = math.exp(self.config.max_log_growth_per_step)
+        frames = linear_to_dbz(
+            torch.stack((self.echo, self.echo * factor, self.echo)),
+            self.config,
+        )
+
+        state, metadata = estimate_state_with_metadata(frames, self.config)
+
+        self.assertAlmostEqual(
+            float(state.log_growth_per_step),
+            -self.config.max_log_growth_per_step,
+            places=3,
+        )
+        self.assertAlmostEqual(
+            float(metadata.growth_disagreement),
+            2.0 * self.config.max_log_growth_per_step,
+            places=3,
+        )
+        self.assertEqual(metadata.tendency_pair_count, 1)
 
     def test_low_psr_pairs_fail_closed_to_persistence(self) -> None:
         generator = torch.Generator().manual_seed(7)
@@ -648,7 +766,7 @@ class NowcastTests(unittest.TestCase):
             places=3,
         )
 
-    def test_middle_missing_preserves_maximum_per_step_motion(self) -> None:
+    def test_middle_missing_rejects_motion_at_search_boundary(self) -> None:
         echoes = torch.zeros((3, 64, 64), dtype=torch.float64)
         for step in range(3):
             echoes[step, 32, 5 + 20 * step] = 1.0e5
@@ -659,9 +777,7 @@ class NowcastTests(unittest.TestCase):
 
         torch.testing.assert_close(
             state.displacement_yx,
-            torch.tensor([0.0, 20.0], dtype=torch.float64),
-            atol=0.1,
-            rtol=0.0,
+            torch.zeros_like(state.displacement_yx),
         )
 
     def test_pair_without_common_echo_does_not_slow_valid_motion(self) -> None:
