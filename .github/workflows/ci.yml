@@ -110,8 +110,12 @@ jobs:
 
           path = Path(os.environ["RUNNER_TEMP"]) / "forecast.npz"
           with np.load(path, allow_pickle=False) as result:
-              assert result["output_contract_version"].item() == "nowcast-npz-v5"
+              assert result["output_contract_version"].item() == "nowcast-npz-v10"
+              assert result["forecast_run_artifact_version"].item() == "forecast-run-v4"
               assert result["forecast_dbz"].shape == (18, 16, 16)
-              assert np.isfinite(result["forecast_dbz"]).all()
+              assert np.array_equal(
+                  np.isfinite(result["forecast_dbz"]),
+                  result["valid_mask"],
+              )
               assert result["data_status"].item() == "OBSERVED"
           PY

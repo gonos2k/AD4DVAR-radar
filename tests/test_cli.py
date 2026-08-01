@@ -11,6 +11,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar import cli  # noqa: E402
+from advar import load_forecast_run  # noqa: E402
 
 
 class CliTests(unittest.TestCase):
@@ -45,11 +46,30 @@ class CliTests(unittest.TestCase):
     def _assert_common_status_fields(self, result: np.lib.npyio.NpzFile) -> None:
         expected = {
             "output_contract_version",
+            "forecast_run_artifact_version",
+            "forecast_run_digest",
+            "nowcast_config_json",
+            "input_bundle_digest",
+            "grid_time_contract_present",
+            "grid_time_contract_json",
+            "grid_time_contract_digest",
+            "displacement_mps_yx",
+            "analysis_config_present",
+            "analysis_config_json",
+            "analysis_config_digest",
+            "analysis_input_digest",
+            "valid_mask",
+            "state_echo_linear",
+            "source_support",
+            "latest_observation_mask",
             "data_status",
             "coverage_by_frame",
             "background_used",
             "background_contribution_fraction",
+            "background_state_support_fraction",
+            "background_tendency_used",
             "background_age_minutes",
+            "minimum_phase_correlation_psr",
             "tendency_pair_count",
             "tendency_source",
             "min_publish_support",
@@ -71,7 +91,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v5",
+                    "nowcast-npz-v10",
+                )
+                self.assertEqual(
+                    result["forecast_run_artifact_version"].item(),
+                    "forecast-run-v4",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -82,6 +106,7 @@ class CliTests(unittest.TestCase):
                 )
                 self.assertTrue(np.isnan(result["background_age_minutes"].item()))
                 self.assertFalse(result["background_used"].item())
+                self.assertFalse(result["background_tendency_used"].item())
                 self.assertEqual(
                     result["background_contribution_fraction"].item(),
                     0.0,
@@ -92,7 +117,12 @@ class CliTests(unittest.TestCase):
                 )
                 self.assertEqual(result["min_publish_support"].item(), 0.95)
                 self.assertEqual(result["tendency_pair_count"].item(), 2)
+                self.assertGreaterEqual(
+                    result["minimum_phase_correlation_psr"].item(),
+                    8.0,
+                )
                 self.assertFalse(result["analysis_converged"].item())
+                self.assertFalse(result["analysis_config_present"].item())
                 self.assertFalse(result["analysis_degraded"].item())
                 self.assertFalse(result["analysis_used_fallback"].item())
                 self.assertEqual(result["analysis_reason"].item(), "not_requested")
@@ -101,6 +131,47 @@ class CliTests(unittest.TestCase):
                     "echo_integral_before_transport",
                     result.files,
                 )
+            loaded = load_forecast_run(output_path)
+            loaded.validate_issuance()
+            self.assertEqual(loaded.forecast_dbz.shape, (18, 8, 8))
+            self.assertEqual(
+                loaded.run.config.min_publish_support,
+                0.95,
+            )
+
+    def test_cli_persists_grid_time_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output_path = self._run_cli(
+                Path(temporary),
+                self._stationary_frames(),
+                "--valid-times",
+                "2026-07-31T09:00:00+09:00",
+                "2026-07-31T09:10:00+09:00",
+                "2026-07-31T09:20:00+09:00",
+                "--dx-m",
+                "1000",
+                "--dy-m",
+                "1000",
+                "--projection",
+                "EPSG:5179",
+                "--grid-hash",
+                "d" * 64,
+            )
+
+            loaded = load_forecast_run(output_path)
+            contract = loaded.run.grid_time_contract
+            self.assertIsNotNone(contract)
+            assert contract is not None
+            self.assertEqual(
+                contract.valid_times,
+                (
+                    "2026-07-31T00:00:00Z",
+                    "2026-07-31T00:10:00Z",
+                    "2026-07-31T00:20:00Z",
+                ),
+            )
+            self.assertEqual(contract.dx_m, 1000.0)
+            self.assertEqual(contract.projection, "EPSG:5179")
 
     def test_variational_output_records_feasibility_diagnostics(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -113,6 +184,16 @@ class CliTests(unittest.TestCase):
             )
 
             with np.load(output_path, allow_pickle=False) as result:
+                self.assertTrue(result["analysis_config_present"].item())
+                self.assertTrue(result["analysis_config_json"].item())
+                self.assertEqual(
+                    len(result["analysis_config_digest"].item()),
+                    64,
+                )
+                self.assertEqual(
+                    len(result["analysis_input_digest"].item()),
+                    64,
+                )
                 self.assertFalse(result["analysis_used_fallback"].item())
                 self.assertLess(
                     result["analysis_final_objective"].item(),
@@ -121,6 +202,71 @@ class CliTests(unittest.TestCase):
                 self.assertEqual(
                     result["analysis_unresolved_amplitude_fraction"].item(),
                     0.0,
+                )
+                np.testing.assert_array_equal(
+                    result[
+                        "analysis_unresolved_amplitude_fraction_by_time"
+                    ],
+                    np.zeros(2),
+                )
+                np.testing.assert_array_equal(
+                    result["analysis_amplitude_violation_score_by_time"],
+                    np.zeros(2),
+                )
+                np.testing.assert_array_equal(
+                    result[
+                        "analysis_effective_precursor_pixel_count_by_time"
+                    ],
+                    np.zeros(2),
+                )
+                np.testing.assert_array_equal(
+                    result[
+                        "analysis_amplitude_information_sufficient_by_time"
+                    ],
+                    np.ones(2, dtype=np.bool_),
+                )
+                self.assertFalse(
+                    result[
+                        "analysis_insufficient_amplitude_information"
+                    ].item()
+                )
+                np.testing.assert_array_equal(
+                    result[
+                        "analysis_established_echo_excess_growth_fraction_by_time"
+                    ],
+                    np.zeros(2),
+                )
+                self.assertEqual(
+                    result[
+                        "analysis_established_echo_excess_growth_fraction"
+                    ].item(),
+                    0.0,
+                )
+                self.assertEqual(
+                    result[
+                        "analysis_maximum_growth_envelope_ratio_by_time"
+                    ].shape,
+                    (2,),
+                )
+                self.assertLessEqual(
+                    result[
+                        "analysis_maximum_growth_envelope_ratio"
+                    ].item(),
+                    1.0,
+                )
+                np.testing.assert_array_equal(
+                    result[
+                        "analysis_displacement_tolerant_soft_echo_area_ratio_by_time"
+                    ],
+                    np.full(2, np.nan),
+                )
+                self.assertEqual(
+                    result["analysis_amplitude_diagnostics_source"].item(),
+                    "returned_analysis",
+                )
+                self.assertEqual(
+                    result["analysis_relative_objective_reduction"].shape,
+                    (),
                 )
                 self.assertEqual(
                     result["analysis_causal_control_cell_count"].item(),
@@ -134,6 +280,34 @@ class CliTests(unittest.TestCase):
                     result["analysis_causal_seed_prior_cost"].item(),
                     0.0,
                 )
+                eigenvalues = result[
+                    "analysis_dynamics_reduced_hessian_eigenvalues"
+                ]
+                self.assertEqual(eigenvalues.shape, (3,))
+                self.assertTrue(np.isfinite(eigenvalues).all())
+                self.assertTrue(np.all(eigenvalues >= 1.0))
+                self.assertTrue(
+                    np.isfinite(
+                        result[
+                            "analysis_dynamics_reduced_hessian_condition_number"
+                        ]
+                    )
+                )
+                self.assertTrue(
+                    np.isfinite(
+                        result["analysis_field_growth_jacobian_cosine"]
+                    )
+                )
+                motion_cosines = result[
+                    "analysis_field_motion_jacobian_cosine_yx"
+                ]
+                self.assertEqual(motion_cosines.shape, (2,))
+                self.assertTrue(np.isfinite(motion_cosines).all())
+            loaded = load_forecast_run(output_path)
+            loaded.validate_issuance()
+            self.assertIsNotNone(loaded.run.analysis_config_json)
+            self.assertIsNotNone(loaded.run.analysis_config_digest)
+            self.assertIsNotNone(loaded.run.analysis_input_digest)
 
     def test_all_qc_rejected_uses_stale_background(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -157,6 +331,7 @@ class CliTests(unittest.TestCase):
 
             with np.load(output_path, allow_pickle=False) as result:
                 self._assert_common_status_fields(result)
+                self.assertFalse(result["analysis_config_present"].item())
                 self.assertEqual(
                     result["data_status"].item(),
                     "STALE_BACKGROUND",
@@ -168,6 +343,7 @@ class CliTests(unittest.TestCase):
                 )
                 self.assertEqual(result["background_age_minutes"].item(), 10.0)
                 self.assertTrue(result["background_used"].item())
+                self.assertTrue(result["background_tendency_used"].item())
                 self.assertEqual(
                     result["background_contribution_fraction"].item(),
                     1.0,

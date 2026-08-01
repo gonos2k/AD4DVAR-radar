@@ -175,8 +175,16 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
 
         manifest = loaded.manifest
-        self.assertEqual(manifest["schema_version"], 3)
+        self.assertEqual(manifest["schema_version"], 4)
         self.assertEqual(manifest["contract_hash"], self.contract.digest)
+        self.assertEqual(
+            manifest["forecast_run_digest"],
+            self.snapshot.forecast_run_digest,
+        )
+        self.assertEqual(
+            episode.forecast_run_digest,
+            self.snapshot.forecast_run_digest,
+        )
         self.assertIs(
             manifest["indirect_observation_sensitivity_available"],
             False,
@@ -281,6 +289,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         checksums_path = target / "checksums.json"
         manifest = json.loads(manifest_path.read_text("utf-8"))
         manifest["schema_version"] = 1
+        manifest.pop("forecast_run_digest")
         manifest["contract"].pop("nowcast_config_digest")
         manifest["contract"].pop("sensitivity_config_digest")
         manifest["context_feature_names"] = list(
@@ -402,6 +411,7 @@ class EpisodeLedgerTests(unittest.TestCase):
 
         manifest = json.loads(manifest_path.read_text("utf-8"))
         manifest["schema_version"] = 1
+        manifest.pop("forecast_run_digest")
         manifest["contract"].pop("nowcast_config_digest")
         manifest["contract"].pop("sensitivity_config_digest")
         manifest["context_feature_names"] = list(
@@ -480,6 +490,87 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         self.assertEqual(loaded.arrays["context_features"].shape, (15,))
 
+    def test_schema_three_episode_without_run_identity_remains_verifiable(
+        self,
+    ) -> None:
+        episode = self.episode("schema-three")
+        target = self.ledger.append(episode)
+        manifest_path = target / "manifest.json"
+        checksums_path = target / "checksums.json"
+        manifest = json.loads(manifest_path.read_text("utf-8"))
+        manifest["schema_version"] = 3
+        manifest.pop("forecast_run_digest")
+        manifest_text = json.dumps(
+            manifest,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        manifest_path.write_text(manifest_text, encoding="utf-8")
+        manifest_hash = hashlib.sha256(manifest_text.encode("utf-8")).hexdigest()
+        checksums = json.loads(checksums_path.read_text("utf-8"))
+        checksums["manifest.json"] = manifest_hash
+        checksums_path.write_text(
+            json.dumps(
+                checksums,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            encoding="utf-8",
+        )
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute("DROP TRIGGER episodes_no_update")
+            connection.execute(
+                """
+                UPDATE episodes
+                SET manifest_sha256 = ?
+                WHERE episode_id = ?
+                """,
+                (manifest_hash, episode.episode_id),
+            )
+
+        reopened = EpisodeLedger(self.root)
+        reopened.verify(episode.episode_id)
+        loaded = reopened.load(episode.episode_id)
+        self.assertEqual(loaded.manifest["schema_version"], 3)
+        self.assertNotIn("forecast_run_digest", loaded.manifest)
+
+        manifest["forecast_run_digest"] = None
+        manifest_text = json.dumps(
+            manifest,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        manifest_path.write_text(manifest_text, encoding="utf-8")
+        manifest_hash = hashlib.sha256(manifest_text.encode("utf-8")).hexdigest()
+        checksums["manifest.json"] = manifest_hash
+        checksums_path.write_text(
+            json.dumps(
+                checksums,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            encoding="utf-8",
+        )
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute("DROP TRIGGER episodes_no_update")
+            connection.execute(
+                """
+                UPDATE episodes
+                SET manifest_sha256 = ?
+                WHERE episode_id = ?
+                """,
+                (manifest_hash, episode.episode_id),
+            )
+        with self.assertRaisesRegex(
+            ValueError,
+            "forecast run provenance does not match",
+        ):
+            reopened.verify(episode.episode_id)
+
     def test_duplicate_episode_id_is_rejected(self) -> None:
         episode = self.episode()
         self.ledger.append(episode)
@@ -517,6 +608,90 @@ class EpisodeLedgerTests(unittest.TestCase):
             self.ledger.verify(episode.episode_id)
         with self.assertRaises(ValueError):
             self.ledger.load(episode.episode_id)
+
+    def test_forecast_run_digest_is_validated_independently_of_contract(
+        self,
+    ) -> None:
+        episode = self.episode("invalid-run-provenance")
+        target = self.ledger.append(episode)
+        manifest_path = target / "manifest.json"
+        checksums_path = target / "checksums.json"
+        manifest = json.loads(manifest_path.read_text("utf-8"))
+        original_contract_hash = manifest["contract_hash"]
+        manifest["forecast_run_digest"] = "not-a-sha256"
+        manifest_text = json.dumps(
+            manifest,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        manifest_path.write_text(manifest_text, encoding="utf-8")
+        manifest_hash = hashlib.sha256(manifest_text.encode("utf-8")).hexdigest()
+        checksums = json.loads(checksums_path.read_text("utf-8"))
+        checksums["manifest.json"] = manifest_hash
+        checksums_path.write_text(
+            json.dumps(
+                checksums,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            encoding="utf-8",
+        )
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute("DROP TRIGGER episodes_no_update")
+            connection.execute(
+                """
+                UPDATE episodes
+                SET manifest_sha256 = ?
+                WHERE episode_id = ?
+                """,
+                (manifest_hash, episode.episode_id),
+            )
+
+        self.assertEqual(manifest["contract_hash"], original_contract_hash)
+        with self.assertRaisesRegex(
+            ValueError,
+            "forecast_run_digest is invalid",
+        ):
+            EpisodeLedger(self.root).verify(episode.episode_id)
+
+    def test_forecast_run_identity_does_not_change_contract_compatibility(
+        self,
+    ) -> None:
+        changed_snapshot = replace(
+            self.snapshot,
+            forecast_run_digest="f" * 64,
+        )
+        changed_episode = replace(
+            self.episode("different-run"),
+            snapshot=changed_snapshot,
+        )
+
+        self.assertEqual(
+            changed_episode.contract.digest,
+            self.episode().contract.digest,
+        )
+        self.assertNotEqual(
+            changed_episode.forecast_run_digest,
+            self.episode().forecast_run_digest,
+        )
+
+    def test_invalid_snapshot_forecast_run_digest_is_rejected(self) -> None:
+        for index, invalid_digest in enumerate(("invalid", None)):
+            with self.subTest(invalid_digest=invalid_digest):
+                malformed = replace(
+                    self.snapshot,
+                    forecast_run_digest=invalid_digest,
+                )
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "forecast_run_digest must be a SHA-256 digest",
+                ):
+                    replace(
+                        self.episode(f"bad-run-digest-{index}"),
+                        snapshot=malformed,
+                    )
 
     def test_untracked_episode_file_is_detected(self) -> None:
         episode = self.episode("extra-file")

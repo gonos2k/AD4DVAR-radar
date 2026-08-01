@@ -9,14 +9,18 @@ import torch
 from torch import Tensor
 
 
-def dataclass_digest(value: Any) -> str:
+def json_digest(value: Any) -> str:
     text = json.dumps(
-        asdict(value),
+        value,
         sort_keys=True,
         separators=(",", ":"),
         allow_nan=False,
     )
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def dataclass_digest(value: Any) -> str:
+    return json_digest(asdict(value))
 
 
 def tensor_digest(value: Tensor) -> str:
@@ -31,5 +35,5 @@ def tensor_digest(value: Tensor) -> str:
     ).encode("utf-8")
     digest = hashlib.sha256(metadata)
     digest.update(b"\0")
-    digest.update(tensor.view(torch.uint8).numpy().tobytes())
+    digest.update(tensor.reshape(-1).view(torch.uint8).numpy().tobytes())
     return digest.hexdigest()
