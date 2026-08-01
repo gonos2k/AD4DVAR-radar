@@ -55,6 +55,8 @@ class CliTests(unittest.TestCase):
             "grid_time_contract_json",
             "grid_time_contract_digest",
             "displacement_mps_yx",
+            "grid_velocity_mps_yx",
+            "projected_velocity_mps_xy",
             "analysis_config_present",
             "analysis_config_json",
             "analysis_config_digest",
@@ -62,6 +64,8 @@ class CliTests(unittest.TestCase):
             "valid_mask",
             "state_echo_linear",
             "source_support",
+            "latest_frame_dbz",
+            "latest_background_dbz",
             "latest_observation_mask",
             "data_status",
             "coverage_by_frame",
@@ -92,11 +96,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v11",
+                    "nowcast-npz-v12",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v4",
+                    "forecast-run-v5",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -157,6 +161,13 @@ class CliTests(unittest.TestCase):
                 "EPSG:5179",
                 "--grid-hash",
                 "d" * 64,
+                "--pixel-to-projected-matrix-m",
+                "0",
+                "-1000",
+                "1000",
+                "0",
+                "--maximum-motion-speed-mps",
+                "30",
             )
 
             loaded = load_forecast_run(output_path)
@@ -173,6 +184,14 @@ class CliTests(unittest.TestCase):
             )
             self.assertEqual(contract.dx_m, 1000.0)
             self.assertEqual(contract.projection, "EPSG:5179")
+            self.assertEqual(
+                contract.pixel_to_projected_matrix_m,
+                ((0.0, -1000.0), (1000.0, 0.0)),
+            )
+            self.assertEqual(
+                loaded.run.config.maximum_motion_speed_mps,
+                30.0,
+            )
 
     def test_variational_output_records_feasibility_diagnostics(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -345,6 +364,13 @@ class CliTests(unittest.TestCase):
                     result["analysis_growth_saturation_margin"].item(),
                     0.0,
                 )
+                self.assertTrue(
+                    np.isnan(
+                        result[
+                            "analysis_motion_speed_saturation_margin_mps"
+                        ].item()
+                    )
+                )
             loaded = load_forecast_run(output_path)
             loaded.validate_issuance()
             self.assertIsNotNone(loaded.run.analysis_config_json)
@@ -473,6 +499,8 @@ class CliTests(unittest.TestCase):
                 self.assertTrue(
                     np.allclose(result["echo_budget_error"], 0.0)
                 )
+            loaded = load_forecast_run(output_path)
+            loaded.validate_issuance()
 
     def test_atomic_save_preserves_existing_file_on_failure(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -482,14 +510,14 @@ class CliTests(unittest.TestCase):
             output_path.write_bytes(original)
 
             with patch(
-                "advar.cli.np.savez_compressed",
+                "advar.run_artifact.np.savez_compressed",
                 side_effect=RuntimeError("synthetic write failure"),
             ):
                 with self.assertRaisesRegex(
                     RuntimeError,
                     "synthetic write failure",
                 ):
-                    cli._atomic_savez_compressed(
+                    cli.atomic_savez_compressed(
                         output_path,
                         {"forecast_dbz": np.zeros((1, 2, 2))},
                     )
@@ -499,6 +527,36 @@ class CliTests(unittest.TestCase):
                 list(directory.glob(f".{output_path.name}.*.tmp")),
                 [],
             )
+
+    def test_atomic_save_fsyncs_file_and_parent_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "forecast.npz"
+            with patch("advar.run_artifact.os.fsync") as fsync:
+                cli.atomic_savez_compressed(
+                    path,
+                    {"forecast_dbz": np.zeros((1, 2, 2))},
+                )
+
+            self.assertTrue(path.exists())
+            self.assertEqual(fsync.call_count, 2)
+
+    def test_cli_diagnostic_tampering_breaks_artifact_digest(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output_path = self._run_cli(
+                Path(temporary),
+                self._stationary_frames(),
+                "--variational",
+            )
+            with np.load(output_path, allow_pickle=False) as archive:
+                arrays = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                }
+            arrays["analysis_field_smoothness_prior_cost"] += 1.0
+            np.savez_compressed(output_path, **arrays)
+
+            with self.assertRaisesRegex(ValueError, "artifact digest mismatch"):
+                load_forecast_run(output_path)
 
 
 if __name__ == "__main__":

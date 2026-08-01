@@ -23,6 +23,7 @@ from .nowcast import (
     estimate_prepared_state,
     forecast_from_state,
     merge_current_support,
+    motion_displacement_limits_yx,
     prepare_input,
 )
 from .physics import (
@@ -55,6 +56,9 @@ class AnalysisConfig:
     growth_increment_scale: float = 0.04
     minimum_control_reachability: float = 0.25
     causal_support_dilation_px: int = 2
+    causal_support_uncertainty_m: float | None = None
+    amplitude_displacement_tolerance_px: int = 1
+    amplitude_displacement_tolerance_m: float | None = None
     maximum_latest_detected_error_std: float = 3.0
     maximum_unresolved_amplitude_fraction: float = 0.01
     minimum_amplitude_total_quality_weight: float = 0.01
@@ -128,6 +132,27 @@ class AnalysisConfig:
             or self.causal_support_dilation_px < 0
         ):
             raise ValueError("causal_support_dilation_px cannot be negative")
+        if (
+            type(self.amplitude_displacement_tolerance_px) is not int
+            or self.amplitude_displacement_tolerance_px < 0
+        ):
+            raise ValueError(
+                "amplitude_displacement_tolerance_px cannot be negative"
+            )
+        physical_distances = {
+            "causal_support_uncertainty_m": self.causal_support_uncertainty_m,
+            "amplitude_displacement_tolerance_m": (
+                self.amplitude_displacement_tolerance_m
+            ),
+        }
+        for name, value in physical_distances.items():
+            if value is not None and (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or value < 0
+            ):
+                raise ValueError(f"{name} must be finite and nonnegative")
         if self.minimum_damping > self.initial_damping:
             raise ValueError("minimum_damping cannot exceed initial_damping")
         if self.initial_damping > self.maximum_damping:
@@ -206,6 +231,9 @@ class FrozenOuterState:
     irls_sqrt_weight: Tensor
     nowcast_config: NowcastConfig
     analysis_config: AnalysisConfig
+    grid_time_contract: RadarGridTimeContract | None
+    motion_limits_yx: Tensor
+    amplitude_displacement_tolerance_yx: tuple[int, int]
     analysis_remap_cells: tuple[RemapCell, RemapCell]
 
 
@@ -366,6 +394,7 @@ class AnalysisResult:
     regularized_dynamics_hessian_condition_number: float | None = None
     field_smoothness_prior_cost: float = 0.0
     motion_saturation_margin_yx: tuple[float, float] | None = None
+    motion_speed_saturation_margin_mps: float | None = None
     growth_saturation_margin: float | None = None
     field_growth_jacobian_cosine: float | None = None
     field_motion_jacobian_cosine_yx: (
@@ -383,10 +412,42 @@ def prepare_analysis(
     qc_mask: Tensor | None = None,
     background_frames_dbz: Tensor | None = None,
     background_age_minutes: float | None = None,
+    grid_time_contract: RadarGridTimeContract | None = None,
 ) -> tuple[AnalysisObservations, FrozenOuterState]:
     nowcast_config = nowcast_config or NowcastConfig()
     analysis_config = analysis_config or AnalysisConfig()
     _validate_frames(frames_dbz)
+    motion_limits = motion_displacement_limits_yx(
+        nowcast_config,
+        grid_time_contract,
+        frames_dbz,
+    )
+    if analysis_config.causal_support_uncertainty_m is not None:
+        if grid_time_contract is None:
+            raise ValueError(
+                "causal_support_uncertainty_m requires a grid/time contract"
+            )
+        causal_dilation_yx = grid_time_contract.pixel_radius_yx(
+            analysis_config.causal_support_uncertainty_m
+        )
+    else:
+        causal_dilation_yx = (
+            analysis_config.causal_support_dilation_px,
+            analysis_config.causal_support_dilation_px,
+        )
+    if analysis_config.amplitude_displacement_tolerance_m is not None:
+        if grid_time_contract is None:
+            raise ValueError(
+                "amplitude_displacement_tolerance_m requires a grid/time contract"
+            )
+        amplitude_tolerance_yx = grid_time_contract.pixel_radius_yx(
+            analysis_config.amplitude_displacement_tolerance_m
+        )
+    else:
+        amplitude_tolerance_yx = (
+            analysis_config.amplitude_displacement_tolerance_px,
+            analysis_config.amplitude_displacement_tolerance_px,
+        )
     if not (
         nowcast_config.min_dbz
         < analysis_config.detection_limit_dbz
@@ -447,6 +508,7 @@ def prepare_analysis(
     baseline_state, baseline_metadata = estimate_prepared_state(
         prepared,
         nowcast_config,
+        grid_time_contract=grid_time_contract,
     )
     baseline_state = _detach_state(baseline_state)
     baseline_metadata = _detach_metadata(baseline_metadata)
@@ -456,7 +518,7 @@ def prepare_analysis(
         prepared.background_mask,
         baseline_state.displacement_yx,
         analysis_config.minimum_control_reachability,
-        analysis_config.causal_support_dilation_px,
+        causal_dilation_yx,
     )
     causal_only = initial_support & ~detected[0]
     active_field_index = torch.nonzero(
@@ -488,6 +550,9 @@ def prepare_analysis(
         irls_sqrt_weight=valid.to(dtype=frames_dbz.dtype).detach().clone(),
         nowcast_config=nowcast_config,
         analysis_config=analysis_config,
+        grid_time_contract=grid_time_contract,
+        motion_limits_yx=motion_limits.detach().clone(),
+        amplitude_displacement_tolerance_yx=amplitude_tolerance_yx,
         analysis_remap_cells=remap_cells,
     )
     control = _warm_started_control(observations, frozen)
@@ -504,7 +569,7 @@ def _causal_control_and_seed_support(
     background_mask: Tensor,
     displacement_yx: Tensor,
     minimum_reachability: float,
-    dilation_px: int,
+    dilation_yx: int | tuple[int, int],
 ) -> tuple[Tensor, Tensor]:
     initial_anchor = observed_mask[0] | background_mask[0]
     precursor_core = torch.zeros_like(detected_mask[0])
@@ -515,13 +580,17 @@ def _causal_control_and_seed_support(
         )
         precursor_core |= precursor >= minimum_reachability
     control_envelope = precursor_core
-    if dilation_px > 0:
+    if isinstance(dilation_yx, int):
+        dilation_y, dilation_x = dilation_yx, dilation_yx
+    else:
+        dilation_y, dilation_x = dilation_yx
+    if dilation_y > 0 or dilation_x > 0:
         control_envelope = (
             F.max_pool2d(
                 precursor_core[None, None].to(dtype=displacement_yx.dtype),
-                kernel_size=2 * dilation_px + 1,
+                kernel_size=(2 * dilation_y + 1, 2 * dilation_x + 1),
                 stride=1,
-                padding=dilation_px,
+                padding=(dilation_y, dilation_x),
             )[0, 0]
             > 0
         )
@@ -653,6 +722,7 @@ def _analysis_trajectory(
         frozen.baseline_state,
         config,
         nowcast,
+        frozen.motion_limits_yx,
     )
     frames = [initial_echo]
     for step in (1, 2):
@@ -1294,7 +1364,13 @@ def solve_analysis(
                     frozen_iteration.baseline_state,
                     config,
                     frozen_iteration.nowcast_config,
+                    frozen_iteration.motion_limits_yx,
                 )
+                if not _motion_is_admissible(
+                    candidate_displacement,
+                    frozen_iteration,
+                ):
+                    continue
                 if not _analysis_window_is_representable(
                     frozen_iteration,
                     candidate_displacement,
@@ -1432,6 +1508,7 @@ def variational_nowcast(
         qc_mask=qc_mask,
         background_frames_dbz=background_frames_dbz,
         background_age_minutes=background_age_minutes,
+        grid_time_contract=grid_time_contract,
     )
     analysis = solve_analysis(observations, frozen)
     (
@@ -1674,8 +1751,12 @@ def _analysis_result(
         _field_smoothness_prior_cost(control, frozen).detach()
     )
     motion_saturation_margin = (
-        frozen.nowcast_config.max_displacement_px
+        frozen.motion_limits_yx
         - torch.abs(trajectory.displacement_yx)
+    )
+    motion_speed_saturation_margin = _motion_speed_saturation_margin(
+        trajectory.displacement_yx,
+        frozen,
     )
     growth_saturation_margin = (
         frozen.nowcast_config.max_log_growth_per_step
@@ -1808,6 +1889,9 @@ def _analysis_result(
             float(motion_saturation_margin[0]),
             float(motion_saturation_margin[1]),
         ),
+        motion_speed_saturation_margin_mps=(
+            motion_speed_saturation_margin
+        ),
         growth_saturation_margin=float(growth_saturation_margin),
         field_growth_jacobian_cosine=(
             None
@@ -1861,6 +1945,16 @@ def _unresolved_amplitude_fraction(
         trajectory,
     ).maximum_unresolved_fraction
     return float(maximum.detach())
+
+
+def _local_maximum(value: Tensor, radius_yx: tuple[int, int]) -> Tensor:
+    radius_y, radius_x = radius_yx
+    return F.max_pool2d(
+        value[None, None],
+        kernel_size=(2 * radius_y + 1, 2 * radius_x + 1),
+        stride=1,
+        padding=(radius_y, radius_x),
+    )[0, 0]
 
 
 def _amplitude_diagnostics(
@@ -1925,12 +2019,10 @@ def _amplitude_diagnostics(
             )
             continue
 
-        local_prediction = F.max_pool2d(
-            prediction_dbz[step][None, None],
-            kernel_size=3,
-            stride=1,
-            padding=1,
-        )[0, 0]
+        local_prediction = _local_maximum(
+            prediction_dbz[step],
+            frozen.amplitude_displacement_tolerance_yx,
+        )
         quality = observations.quality_weight[step]
         standardized_deficit = (
             torch.sqrt(quality)
@@ -1983,14 +2075,10 @@ def _amplitude_diagnostics(
         soft_echo_area_ratio = nan
         if include_spatial_diagnostics:
             expanded_region = (
-                F.max_pool2d(
-                    precursor_required[None, None].to(
-                        dtype=prediction_dbz.dtype
-                    ),
-                    kernel_size=3,
-                    stride=1,
-                    padding=1,
-                )[0, 0]
+                _local_maximum(
+                    precursor_required.to(dtype=prediction_dbz.dtype),
+                    frozen.amplitude_displacement_tolerance_yx,
+                )
                 > 0
             )
             observed_echo = dbz_to_echo(
@@ -2116,12 +2204,10 @@ def _established_growth_envelope_diagnostics(
             step * nowcast.max_log_growth_per_step,
             frozen.analysis_remap_cells[index],
         )
-        local_envelope_echo = F.max_pool2d(
-            envelope_echo[None, None],
-            kernel_size=3,
-            stride=1,
-            padding=1,
-        )[0, 0]
+        local_envelope_echo = _local_maximum(
+            envelope_echo,
+            frozen.amplitude_displacement_tolerance_yx,
+        )
         local_envelope_dbz = echo_to_dbz(
             local_envelope_echo,
             min_dbz=nowcast.min_dbz,
@@ -2421,17 +2507,50 @@ def _fallback_result(
     )
 
 
+def _motion_speed_saturation_margin(
+    displacement_yx: Tensor,
+    frozen: FrozenOuterState,
+) -> float | None:
+    maximum_speed = frozen.nowcast_config.maximum_motion_speed_mps
+    contract = frozen.grid_time_contract
+    if maximum_speed is None or contract is None:
+        return None
+    projected = contract.projected_displacement_xy(displacement_yx)
+    speed = torch.linalg.vector_norm(projected) / (
+        frozen.nowcast_config.interval_minutes * 60.0
+    )
+    return maximum_speed - float(speed.detach())
+
+
+def _motion_is_admissible(
+    displacement_yx: Tensor,
+    frozen: FrozenOuterState,
+) -> bool:
+    margin = _motion_speed_saturation_margin(displacement_yx, frozen)
+    return margin is None or margin >= -frozen.nowcast_config.epsilon
+
+
 def _bounded_update(
     background: Tensor,
     control: Tensor,
     scale: float,
-    limit: float,
+    limit: float | Tensor,
 ) -> Tensor:
-    if limit == 0:
+    limit_tensor = torch.as_tensor(
+        limit,
+        dtype=background.dtype,
+        device=background.device,
+    )
+    if bool(torch.any(limit_tensor < 0)):
+        raise ValueError("bounded update limit cannot be negative")
+    if bool(torch.all(limit_tensor == 0)):
         return torch.zeros_like(background)
-    ratio = (background / limit).clamp(-0.999999, 0.999999)
+    safe_limit = limit_tensor.clamp_min(torch.finfo(background.dtype).tiny)
+    ratio = (background / safe_limit).clamp(-0.999999, 0.999999)
     latent = torch.atanh(ratio)
-    return limit * torch.tanh(latent + (scale / limit) * control)
+    return limit_tensor * torch.tanh(
+        latent + (scale / safe_limit) * control
+    )
 
 
 def _decode_dynamics(
@@ -2439,12 +2558,13 @@ def _decode_dynamics(
     baseline: RadarState,
     config: AnalysisConfig,
     nowcast: NowcastConfig,
+    motion_limits_yx: Tensor,
 ) -> tuple[Tensor, Tensor]:
     displacement = _bounded_update(
         baseline.displacement_yx,
         dynamics_control[:2],
         config.motion_increment_scale_px,
-        nowcast.max_displacement_px,
+        motion_limits_yx,
     )
     growth = _bounded_update(
         baseline.log_growth_per_step,
@@ -2465,6 +2585,7 @@ def _freeze_analysis_remap_cells(
         frozen.baseline_state,
         frozen.analysis_config,
         frozen.nowcast_config,
+        frozen.motion_limits_yx,
     )
     return replace(
         frozen,

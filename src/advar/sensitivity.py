@@ -575,6 +575,27 @@ def compute_sensitivity_snapshot(
     )
 
 
+def compute_sensitivity_snapshot_from_run(
+    result: ForecastResult,
+    verification_frames_dbz: Tensor,
+    *,
+    sensitivity_config: SensitivityConfig | None = None,
+    observation_std_dbz: float | Tensor | None = None,
+    baseline_scores: Tensor | None = None,
+) -> SensitivitySnapshot:
+    """Compute delayed M0 using the exact inputs embedded in ``result``."""
+
+    return compute_sensitivity_snapshot(
+        result.run.latest_frame_dbz,
+        result,
+        verification_frames_dbz,
+        sensitivity_config=sensitivity_config,
+        latest_background_dbz=result.run.latest_background_dbz,
+        observation_std_dbz=observation_std_dbz,
+        baseline_scores=baseline_scores,
+    )
+
+
 def forecast_metric(
     name: str,
     forecast_linear: Tensor,

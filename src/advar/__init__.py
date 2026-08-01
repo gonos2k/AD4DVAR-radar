@@ -21,6 +21,7 @@ from .sensitivity import (
     SensitivityConfig,
     SensitivitySnapshot,
     compute_sensitivity_snapshot,
+    compute_sensitivity_snapshot_from_run,
 )
 from .run_artifact import load_forecast_run, save_forecast_run
 from .variational import (
@@ -47,6 +48,7 @@ __all__ = [
     "SensitivitySnapshot",
     "TendencySource",
     "compute_sensitivity_snapshot",
+    "compute_sensitivity_snapshot_from_run",
     "load_forecast_run",
     "nowcast",
     "save_forecast_run",

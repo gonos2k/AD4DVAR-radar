@@ -39,6 +39,7 @@ class NowcastConfig:
     recent_weight: float = 2.0 / 3.0
     pair_echo_dilation_px: int = 3
     max_displacement_px: float = 20.0
+    maximum_motion_speed_mps: float | None = None
     minimum_phase_correlation_psr: float = 8.0
     phase_correlation_sidelobe_radius_px: int = 2
     max_log_growth_per_step: float = math.log(1.35)
@@ -91,6 +92,13 @@ class NowcastConfig:
             raise ValueError("pair_echo_dilation_px cannot be negative")
         if self.max_displacement_px <= 0:
             raise ValueError("max_displacement_px must be positive")
+        if self.maximum_motion_speed_mps is not None and (
+            isinstance(self.maximum_motion_speed_mps, bool)
+            or not isinstance(self.maximum_motion_speed_mps, (int, float))
+            or not math.isfinite(self.maximum_motion_speed_mps)
+            or self.maximum_motion_speed_mps <= 0
+        ):
+            raise ValueError("maximum_motion_speed_mps must be positive")
         if self.minimum_phase_correlation_psr < 0:
             raise ValueError(
                 "minimum_phase_correlation_psr cannot be negative"
@@ -153,6 +161,9 @@ class RadarGridTimeContract:
     projection: str
     grid_hash: str
     background_valid_times: tuple[str, str, str] | None = None
+    pixel_to_projected_matrix_m: (
+        tuple[tuple[float, float], tuple[float, float]] | None
+    ) = None
 
     def __post_init__(self) -> None:
         valid_times = _canonical_time_tuple("valid_times", self.valid_times)
@@ -181,6 +192,62 @@ class RadarGridTimeContract:
             or self.dy_m <= 0
         ):
             raise ValueError("dy_m must be finite and positive")
+        matrix = self.pixel_to_projected_matrix_m
+        if matrix is None:
+            matrix = ((float(self.dx_m), 0.0), (0.0, -float(self.dy_m)))
+        if (
+            not isinstance(matrix, tuple)
+            or len(matrix) != 2
+            or any(
+                not isinstance(row, tuple) or len(row) != 2
+                for row in matrix
+            )
+        ):
+            raise ValueError(
+                "pixel_to_projected_matrix_m must be a 2x2 tuple"
+            )
+        canonical_matrix = (
+            (float(matrix[0][0]), float(matrix[0][1])),
+            (float(matrix[1][0]), float(matrix[1][1])),
+        )
+        if not all(
+            math.isfinite(value)
+            for row in canonical_matrix
+            for value in row
+        ):
+            raise ValueError("pixel_to_projected_matrix_m must be finite")
+        determinant = (
+            canonical_matrix[0][0] * canonical_matrix[1][1]
+            - canonical_matrix[0][1] * canonical_matrix[1][0]
+        )
+        scale = max(abs(value) for row in canonical_matrix for value in row)
+        if abs(determinant) <= math.ulp(max(scale * scale, 1.0)):
+            raise ValueError("pixel_to_projected_matrix_m must be invertible")
+        column_spacing = math.hypot(
+            canonical_matrix[0][0], canonical_matrix[1][0]
+        )
+        row_spacing = math.hypot(
+            canonical_matrix[0][1], canonical_matrix[1][1]
+        )
+        if not math.isclose(
+            column_spacing,
+            float(self.dx_m),
+            rel_tol=1.0e-9,
+            abs_tol=1.0e-9,
+        ) or not math.isclose(
+            row_spacing,
+            float(self.dy_m),
+            rel_tol=1.0e-9,
+            abs_tol=1.0e-9,
+        ):
+            raise ValueError(
+                "pixel_to_projected_matrix_m must agree with dx_m and dy_m"
+            )
+        object.__setattr__(
+            self,
+            "pixel_to_projected_matrix_m",
+            canonical_matrix,
+        )
         if (
             not isinstance(self.projection, str)
             or not self.projection
@@ -193,6 +260,52 @@ class RadarGridTimeContract:
     def digest(self) -> str:
         return dataclass_digest(self)
 
+    def projected_displacement_xy(
+        self,
+        displacement_yx: Tensor,
+    ) -> Tensor:
+        if displacement_yx.shape != (2,):
+            raise ValueError("displacement_yx must have shape [2]")
+        assert self.pixel_to_projected_matrix_m is not None
+        matrix = displacement_yx.new_tensor(self.pixel_to_projected_matrix_m)
+        column_row = torch.stack((displacement_yx[1], displacement_yx[0]))
+        return matrix @ column_row
+
+    def maximum_displacement_yx(
+        self,
+        maximum_speed_mps: float,
+        interval_minutes: int,
+    ) -> tuple[float, float]:
+        if not math.isfinite(maximum_speed_mps) or maximum_speed_mps <= 0:
+            raise ValueError("maximum_speed_mps must be positive")
+        if type(interval_minutes) is not int or interval_minutes <= 0:
+            raise ValueError("interval_minutes must be positive")
+        radius_m = maximum_speed_mps * interval_minutes * 60.0
+        return self._maximum_index_displacement_yx(radius_m)
+
+    def _maximum_index_displacement_yx(
+        self,
+        radius_m: float,
+    ) -> tuple[float, float]:
+        assert self.pixel_to_projected_matrix_m is not None
+        (a, b), (c, d) = self.pixel_to_projected_matrix_m
+        determinant = a * d - b * c
+        inverse = (
+            (d / determinant, -b / determinant),
+            (-c / determinant, a / determinant),
+        )
+        maximum_col = radius_m * math.hypot(*inverse[0])
+        maximum_row = radius_m * math.hypot(*inverse[1])
+        return maximum_row, maximum_col
+
+    def pixel_radius_yx(self, distance_m: float) -> tuple[int, int]:
+        if not math.isfinite(distance_m) or distance_m < 0:
+            raise ValueError("distance_m must be finite and nonnegative")
+        maximum_row, maximum_col = self._maximum_index_displacement_yx(
+            distance_m
+        )
+        return math.ceil(maximum_row), math.ceil(maximum_col)
+
     def validate_for(
         self,
         config: NowcastConfig,
@@ -200,6 +313,11 @@ class RadarGridTimeContract:
         background_present: bool,
         background_age_minutes: float | None,
     ) -> None:
+        if config.maximum_motion_speed_mps is not None:
+            self.maximum_displacement_yx(
+                config.maximum_motion_speed_mps,
+                config.interval_minutes,
+            )
         observation_times = tuple(
             _parse_aware_time(value, "valid_times")
             for value in self.valid_times
@@ -272,6 +390,24 @@ class RadarGridTimeContract:
             raise ValueError(
                 "background_age_minutes must match the latest valid times"
             )
+
+
+def motion_displacement_limits_yx(
+    config: NowcastConfig,
+    grid_time_contract: RadarGridTimeContract | None,
+    reference: Tensor,
+) -> Tensor:
+    if config.maximum_motion_speed_mps is None:
+        return reference.new_full((2,), config.max_displacement_px)
+    if grid_time_contract is None:
+        raise ValueError(
+            "maximum_motion_speed_mps requires a grid/time contract"
+        )
+    limits = grid_time_contract.maximum_displacement_yx(
+        config.maximum_motion_speed_mps,
+        config.interval_minutes,
+    )
+    return reference.new_tensor(limits)
 
 
 class DataStatus(str, Enum):
@@ -401,7 +537,9 @@ class ForecastAudit:
 @dataclass(frozen=True)
 class ForecastRunContract:
     config: NowcastConfig
+    _latest_frame_dbz: Tensor
     _latest_observation_mask: Tensor
+    _latest_background_dbz: Tensor | None
     latest_observation_mask_digest: str
     latest_frame_digest: str
     latest_background_digest: str | None
@@ -467,9 +605,17 @@ class ForecastRunContract:
             else tensor_digest(background_frames_dbz[-1])
         )
         accepted_mask = observation_masks[-1].detach().clone()
+        accepted_frame = latest_frame.detach().clone()
+        accepted_background = (
+            None
+            if background_frames_dbz is None
+            else background_frames_dbz[-1].detach().clone()
+        )
         return cls(
             config=config,
+            _latest_frame_dbz=accepted_frame,
             _latest_observation_mask=accepted_mask,
+            _latest_background_dbz=accepted_background,
             latest_observation_mask_digest=tensor_digest(accepted_mask),
             latest_frame_digest=tensor_digest(latest_frame),
             latest_background_digest=latest_background,
@@ -495,9 +641,21 @@ class ForecastRunContract:
         )
 
     @property
+    def latest_frame_dbz(self) -> Tensor:
+        self.validate_integrity()
+        return self._latest_frame_dbz.clone()
+
+    @property
     def latest_observation_mask(self) -> Tensor:
         self.validate_integrity()
         return self._latest_observation_mask.clone()
+
+    @property
+    def latest_background_dbz(self) -> Tensor | None:
+        self.validate_integrity()
+        if self._latest_background_dbz is None:
+            return None
+        return self._latest_background_dbz.clone()
 
     def validate_integrity(self) -> None:
         _validate_sha256_digest(
@@ -522,6 +680,25 @@ class ForecastRunContract:
             background_present=self.latest_background_digest is not None,
             background_age_minutes=self.background_age_minutes,
         )
+        if (
+            self._latest_frame_dbz.ndim != 2
+            or not self._latest_frame_dbz.is_floating_point()
+        ):
+            raise ValueError("latest frame must be a floating 2-D tensor")
+        if (
+            self._latest_observation_mask.dtype != torch.bool
+            or self._latest_observation_mask.shape
+            != self._latest_frame_dbz.shape
+        ):
+            raise ValueError(
+                "latest observation mask must match the latest frame"
+            )
+        if self._latest_background_dbz is not None and (
+            not self._latest_background_dbz.is_floating_point()
+            or self._latest_background_dbz.shape
+            != self._latest_frame_dbz.shape
+        ):
+            raise ValueError("latest background must match the latest frame")
         if self.grid_time_contract is None:
             if self.grid_time_contract_digest is not None:
                 raise ValueError(
@@ -543,6 +720,16 @@ class ForecastRunContract:
                 background_present=self.latest_background_digest is not None,
                 background_age_minutes=self.background_age_minutes,
             )
+        motion_displacement_limits_yx(
+            self.config,
+            self.grid_time_contract,
+            self._latest_frame_dbz,
+        )
+        if (
+            tensor_digest(self._latest_frame_dbz)
+            != self.latest_frame_digest
+        ):
+            raise ValueError("latest frame disagrees with the forecast run")
         if (
             tensor_digest(self._latest_observation_mask)
             != self.latest_observation_mask_digest
@@ -550,6 +737,15 @@ class ForecastRunContract:
             raise ValueError(
                 "latest observation mask disagrees with the forecast run"
             )
+        if self._latest_background_dbz is None:
+            if self.latest_background_digest is not None:
+                raise ValueError("latest background is missing from the run")
+        elif (
+            self.latest_background_digest is None
+            or tensor_digest(self._latest_background_dbz)
+            != self.latest_background_digest
+        ):
+            raise ValueError("latest background disagrees with the forecast run")
         _validate_analysis_lineage(
             self.analysis_config_json,
             self.analysis_config_digest,
@@ -565,10 +761,15 @@ class ForecastRunContract:
         latest_background_dbz: Tensor | None,
     ) -> None:
         if latest_background_dbz is None:
-            return
+            if self.latest_background_digest is None:
+                return
+            raise ValueError("latest background is required by the forecast run")
         if self.latest_background_digest is None:
             raise ValueError("forecast run did not use a background")
-        if tensor_digest(latest_background_dbz) != self.latest_background_digest:
+        if (
+            tensor_digest(latest_background_dbz)
+            != self.latest_background_digest
+        ):
             raise ValueError("latest background disagrees with the forecast run")
 
 
@@ -676,7 +877,7 @@ class ForecastResult:
     audit: ForecastAudit | None = None
 
     @property
-    def displacement_mps_yx(self) -> Tensor | None:
+    def grid_velocity_mps_yx(self) -> Tensor | None:
         contract = self.run.grid_time_contract
         if contract is None:
             return None
@@ -685,6 +886,21 @@ class ForecastResult:
         )
         seconds_per_step = 60.0 * self.run.config.interval_minutes
         return self.state.displacement_yx * metres_per_pixel / seconds_per_step
+
+    @property
+    def displacement_mps_yx(self) -> Tensor | None:
+        return self.grid_velocity_mps_yx
+
+    @property
+    def projected_velocity_mps_xy(self) -> Tensor | None:
+        contract = self.run.grid_time_contract
+        if contract is None:
+            return None
+        projected = contract.projected_displacement_xy(
+            self.state.displacement_yx
+        )
+        seconds_per_step = 60.0 * self.run.config.interval_minutes
+        return projected / seconds_per_step
 
     def validate_issuance(self) -> None:
         if tensor_digest(self.forecast_dbz) != self.forecast_dbz_digest:
@@ -832,6 +1048,7 @@ def estimate_state(
     qc_mask: Tensor | None = None,
     background_frames_dbz: Tensor | None = None,
     background_age_minutes: float | None = None,
+    grid_time_contract: RadarGridTimeContract | None = None,
 ) -> tuple[RadarState, ForecastMetadata]:
     prepared = prepare_input(
         frames_dbz,
@@ -840,12 +1057,18 @@ def estimate_state(
         background_frames_dbz=background_frames_dbz,
         background_age_minutes=background_age_minutes,
     )
-    return estimate_prepared_state(prepared, config)
+    return estimate_prepared_state(
+        prepared,
+        config,
+        grid_time_contract=grid_time_contract,
+    )
 
 
 def estimate_prepared_state(
     prepared: PreparedRadarInput,
     config: NowcastConfig,
+    *,
+    grid_time_contract: RadarGridTimeContract | None = None,
 ) -> tuple[RadarState, ForecastMetadata]:
     observation_linear = dbz_to_echo(
         prepared.frames_dbz,
@@ -878,6 +1101,7 @@ def estimate_prepared_state(
         observation_linear,
         background_linear,
         config,
+        grid_time_contract,
     )
     (
         current_echo,
@@ -926,12 +1150,14 @@ def _estimate_time_normalized_tendencies(
     observation_linear: Tensor,
     background_linear: Tensor,
     config: NowcastConfig,
+    grid_time_contract: RadarGridTimeContract | None,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, int, TendencySource]:
     observation_estimate = _estimate_source_tendencies(
         prepared.frames_dbz,
         prepared.observed_mask,
         observation_linear,
         config,
+        grid_time_contract,
     )
     if observation_estimate[-1]:
         return (*observation_estimate, TendencySource.OBSERVATION)
@@ -940,6 +1166,7 @@ def _estimate_time_normalized_tendencies(
         prepared.background_mask,
         background_linear,
         config,
+        grid_time_contract,
     )
     if background_estimate[-1]:
         return (*background_estimate, TendencySource.BACKGROUND)
@@ -951,6 +1178,7 @@ def _estimate_source_tendencies(
     masks: Tensor,
     linear: Tensor,
     config: NowcastConfig,
+    grid_time_contract: RadarGridTimeContract | None,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, int]:
     adjacent_estimates: list[tuple[Tensor, Tensor, Tensor]] = []
     for previous_index, current_index in ((0, 1), (1, 2)):
@@ -961,6 +1189,7 @@ def _estimate_source_tendencies(
             previous_index,
             current_index,
             config,
+            grid_time_contract,
         )
         if estimate is not None:
             adjacent_estimates.append(estimate)
@@ -972,9 +1201,25 @@ def _estimate_source_tendencies(
             second_motion - first_motion
         )
         growth_disagreement = torch.abs(second_growth - first_growth)
-        motion_is_inconsistent = float(motion_disagreement.detach()) >= (
-            config.max_displacement_px - config.epsilon
-        )
+        if (
+            config.maximum_motion_speed_mps is not None
+            and grid_time_contract is not None
+        ):
+            projected_disagreement = (
+                grid_time_contract.projected_displacement_xy(
+                    second_motion - first_motion
+                )
+            )
+            disagreement_speed = torch.linalg.vector_norm(
+                projected_disagreement
+            ) / (config.interval_minutes * 60.0)
+            motion_is_inconsistent = float(
+                disagreement_speed.detach()
+            ) >= (config.maximum_motion_speed_mps - config.epsilon)
+        else:
+            motion_is_inconsistent = float(
+                motion_disagreement.detach()
+            ) >= (config.max_displacement_px - config.epsilon)
         growth_is_inconsistent = (
             config.max_log_growth_per_step > config.epsilon
             and float(growth_disagreement.detach())
@@ -1013,6 +1258,7 @@ def _estimate_source_tendencies(
         0,
         2,
         config,
+        grid_time_contract,
     )
     if long_estimate is None:
         return (
@@ -1035,6 +1281,7 @@ def _estimate_available_pair(
     previous_index: int,
     current_index: int,
     config: NowcastConfig,
+    grid_time_contract: RadarGridTimeContract | None,
 ) -> tuple[Tensor, Tensor, Tensor] | None:
     previous_mask = masks[previous_index]
     current_mask = masks[current_index]
@@ -1071,18 +1318,34 @@ def _estimate_available_pair(
         return None
 
     step_span = current_index - previous_index
+    per_step_limits = motion_displacement_limits_yx(
+        config,
+        grid_time_contract,
+        previous_dbz,
+    )
     total_motion, phase_correlation_psr, search_interior = (
         _phase_correlation_shift_and_psr(
             previous_dbz,
             current_dbz,
             config,
-            max_displacement_px=config.max_displacement_px * step_span,
+            max_displacement_yx=per_step_limits * step_span,
         )
     )
     if not search_interior or float(phase_correlation_psr.detach()) < (
         config.minimum_phase_correlation_psr
     ):
         return None
+    if (
+        config.maximum_motion_speed_mps is not None
+        and grid_time_contract is not None
+    ):
+        projected = grid_time_contract.projected_displacement_xy(total_motion)
+        seconds = step_span * config.interval_minutes * 60.0
+        speed = torch.linalg.vector_norm(projected) / seconds
+        if float(speed.detach()) > (
+            config.maximum_motion_speed_mps + config.epsilon
+        ):
+            return None
     previous_echo = torch.where(
         previous_mask,
         linear[previous_index],
@@ -1442,6 +1705,7 @@ def nowcast(
     audit: bool = False,
 ) -> ForecastResult:
     config = config or NowcastConfig()
+    motion_displacement_limits_yx(config, grid_time_contract, frames_dbz)
     if grid_time_contract is not None:
         grid_time_contract.validate_for(
             config,
@@ -1455,7 +1719,11 @@ def nowcast(
         background_frames_dbz=background_frames_dbz,
         background_age_minutes=background_age_minutes,
     )
-    state, metadata = estimate_prepared_state(prepared, config)
+    state, metadata = estimate_prepared_state(
+        prepared,
+        config,
+        grid_time_contract=grid_time_contract,
+    )
     run = ForecastRunContract.from_inputs(
         config,
         frames_dbz,
@@ -1556,13 +1824,13 @@ def _phase_correlation_shift(
     current_dbz: Tensor,
     config: NowcastConfig,
     *,
-    max_displacement_px: float | None = None,
+    max_displacement_yx: Tensor | None = None,
 ) -> Tensor:
     shift, _, search_interior = _phase_correlation_shift_and_psr(
         previous_dbz,
         current_dbz,
         config,
-        max_displacement_px=max_displacement_px,
+        max_displacement_yx=max_displacement_yx,
     )
     return shift if search_interior else torch.zeros_like(shift)
 
@@ -1572,7 +1840,7 @@ def _phase_correlation_shift_and_psr(
     current_dbz: Tensor,
     config: NowcastConfig,
     *,
-    max_displacement_px: float | None = None,
+    max_displacement_yx: Tensor | None = None,
 ) -> tuple[Tensor, Tensor, bool]:
     previous = (previous_dbz - config.echo_threshold_dbz).clamp_min(0.0)
     current = (current_dbz - config.echo_threshold_dbz).clamp_min(0.0)
@@ -1630,25 +1898,21 @@ def _phase_correlation_shift_and_psr(
     integer_peak_shift = correlation.new_tensor(
         (peak_shift_y, peak_shift_x)
     )
-    limits = correlation.new_tensor(
-        (
-            min(
-                (
-                    config.max_displacement_px
-                    if max_displacement_px is None
-                    else max_displacement_px
-                ),
-                height - 1,
-            ),
-            min(
-                (
-                    config.max_displacement_px
-                    if max_displacement_px is None
-                    else max_displacement_px
-                ),
-                width - 1,
-            ),
+    requested_limits = (
+        correlation.new_full((2,), config.max_displacement_px)
+        if max_displacement_yx is None
+        else max_displacement_yx.to(
+            dtype=correlation.dtype,
+            device=correlation.device,
         )
+    )
+    if requested_limits.shape != (2,) or not bool(
+        torch.all(torch.isfinite(requested_limits) & (requested_limits > 0))
+    ):
+        raise ValueError("max_displacement_yx must be a positive finite [2]")
+    limits = torch.minimum(
+        requested_limits,
+        correlation.new_tensor((height - 1, width - 1)),
     )
     inside_limits = bool(
         torch.all(torch.abs(shift) <= limits + config.epsilon)

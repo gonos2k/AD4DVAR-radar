@@ -201,9 +201,23 @@ class SensitivityTests(unittest.TestCase):
             latest_background_dbz=cls.background[2],
             **common,
         )
+        result_without_background = result_for(
+            cls.state,
+            cls.nowcast_config,
+            frames=cls.frames,
+            accepted_mask=cls.qc_mask & torch.isfinite(cls.frames),
+            pair_motion=torch.tensor(
+                [[0.32, -0.20], [0.37, -0.28]],
+                dtype=torch.float64,
+            ),
+            pair_growth=torch.tensor(
+                [0.01, 0.02],
+                dtype=torch.float64,
+            ),
+        )
         cls.snapshot_without_background = compute_sensitivity_snapshot(
             cls.frames[2],
-            cls.result,
+            result_without_background,
             cls.verification,
             **common,
         )
@@ -704,6 +718,7 @@ class SensitivityTests(unittest.TestCase):
             result,
             self.verification,
             sensitivity_config=self.sensitivity_config,
+            latest_background_dbz=self.background[2],
         )
         truth = dbz_to_linear(self.verification[0], self.nowcast_config)
         expected = forecast_metric(
@@ -763,6 +778,7 @@ class SensitivityTests(unittest.TestCase):
                 result,
                 self.verification,
                 sensitivity_config=self.sensitivity_config,
+                latest_background_dbz=self.background[2],
             )
 
     def test_background_only_state_has_no_direct_sensitivity(self) -> None:

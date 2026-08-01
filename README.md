@@ -64,7 +64,7 @@ Python API:
 import numpy as np
 import torch
 
-from advar import nowcast
+from advar import NowcastConfig, nowcast
 
 frames = torch.from_numpy(np.load("three_frames.npy")).float()  # [3, H, W]
 result = nowcast(frames)
@@ -90,13 +90,24 @@ grid_time = RadarGridTimeContract(
     dy_m=1000.0,
     projection="EPSG:5179",
     grid_hash="<lowercase SHA-256 grid identity>",
+    pixel_to_projected_matrix_m=(
+        (1000.0, 0.0),
+        (0.0, -1000.0),
+    ),
 )
-result = nowcast(frames, grid_time_contract=grid_time)
+result = nowcast(
+    frames,
+    NowcastConfig(maximum_motion_speed_mps=40.0),
+    grid_time_contract=grid_time,
+)
 ```
 
 시각은 UTC로 canonicalize되며 세 간격이 `interval_minutes`와 정확히
 일치해야 한다. 배경을 사용하면 같은 세 시각의 `background_valid_times`와
-최신 `background_age_minutes`가 일치해야 하며,
+최신 `background_age_minutes`가 일치해야 한다. affine matrix는 배열
+`(column, row)` 증분을 투영좌표 `(x, y)` metre 증분으로 변환하며, 생략하면
+north-up `((dx, 0), (0, -dy))`를 사용한다. `maximum_motion_speed_mps`를
+설정하면 P0 raw motion과 P1 후보를 이 투영좌표 속도에서 fail-close한다.
 `maximum_background_age_minutes`를 넘는 배경은 거부한다. 계약을 생략한
 호출은 합성·연구용 index-time/pixel-grid 경로로 유지되며 실제 레이더
 운영자료의 물리 provenance를 주장하지 않는다.
@@ -105,24 +116,33 @@ result = nowcast(frames, grid_time_contract=grid_time)
 forecast-run artifact를 저장한다.
 
 ```python
-from advar import load_forecast_run, save_forecast_run
+from advar import (
+    compute_sensitivity_snapshot_from_run,
+    load_forecast_run,
+    save_forecast_run,
+)
 
 save_forecast_run(result, "forecast-run.npz")
 
 # 미래 검증자료가 도착한 별도 프로세스
 result = load_forecast_run("forecast-run.npz")
 result.validate_issuance()
+snapshot = compute_sensitivity_snapshot_from_run(result, verification_dbz)
 ```
 
 artifact는 발행장·유효영역, 현재 에코상태, source support, 실제
-`NowcastConfig`, 최신 관측 수용 mask와 각 digest를 함께 저장한다.
+`NowcastConfig`, 최신 관측장·수용 mask·배경장과 각 digest를 함께 저장한다.
 세 관측장·세 실제 수용 mask·배경 전체·배경 age는 하나의
 `input_bundle_digest`로 묶고, 상태와 발행 결과까지 포함한
 `forecast_run_digest`로 정확한 실행 identity를 고정한다.
 P1 실행은 실제 `AnalysisConfig` JSON과 observation-std·quality-weight의
 analysis input digest도 같은 identity에 포함한다.
-재적재 시 tensor/config/state/metadata/artifact digest를 독립적으로
-재계산한다. 선택적인 positivity/transport audit 객체는 M0 재현에
+재적재 전 ZIP member 수·개별/전체 압축해제 크기·이름, NPY header의
+dtype·shape·선언 payload를 검사하고 알 수 없는 member와 object dtype을
+거부한다. 기본 한도는 128개, member당 1 GiB, 전체 2 GiB이며 API 인자로
+더 낮출 수 있다. 재적재 시 모든 member를 묶는 artifact digest와
+tensor/config/state/metadata digest를 독립적으로 재계산한다. 선택적인
+positivity/transport audit 객체는 M0 재현에
 필요하지 않으므로 `load_forecast_run()` 결과에서는 `None`이다.
 
 배경 사용 provenance는 현재 상태 support와 경향 초기화를 분리한다.
@@ -145,6 +165,11 @@ print(analysis.used_fallback)
 print(analysis.initial_objective, analysis.final_objective)
 print(analysis.state.echo_linear)  # 세 장으로 분석된 현재 q(0)
 ```
+
+실제 격자에서는 `AnalysisConfig(causal_support_uncertainty_m=...,
+amplitude_displacement_tolerance_m=...)`로 causal envelope와 진폭 위치허용을
+metre 단위로 지정할 수 있다. 두 값은 `RadarGridTimeContract`의 축 간격을
+사용해 row/column 반경으로 변환되며 격자계약 없이 사용하면 거부된다.
 
 P1 제어벡터는 다음 하나뿐이다.
 
@@ -297,23 +322,29 @@ advar-nowcast three_frames.npy forecast.npz \
 advar-nowcast three_frames.npy forecast.npz \
   --valid-times 2026-07-31T00:00:00Z 2026-07-31T00:10:00Z 2026-07-31T00:20:00Z \
   --dx-m 1000 --dy-m 1000 --projection EPSG:5179 \
-  --grid-hash <lowercase-SHA-256>
+  --grid-hash <lowercase-SHA-256> \
+  --pixel-to-projected-matrix-m 1000 0 0 -1000 \
+  --maximum-motion-speed-mps 40
 advar-nowcast three_frames.npy forecast.npz --audit
 ```
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v11`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v4`
+- `output_contract_version`: 현재 `nowcast-npz-v12`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v5`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
-- `displacement_yx`, `displacement_mps_yx`: pixel/step 및 `(dy, dx)` m/s
+- `displacement_yx`: `(row, column)` pixel/step
+- `grid_velocity_mps_yx`, `displacement_mps_yx`: 호환용 grid-axis
+  `(row, column)` m/s
+- `projected_velocity_mps_xy`: affine 계약을 적용한 projected `(x, y)` m/s
 - `analysis_config_json`, `analysis_config_digest`, `analysis_input_digest`
 - `forecast_dbz`: `[18, H, W]`
 - `valid_mask`, `state_echo_linear`, `source_support`
 - `nowcast_config_json`, `nowcast_config_digest`
-- `latest_observation_mask`, 최신 입력·배경 digest
+- `latest_frame_dbz`, `latest_observation_mask`, `latest_background_dbz`와
+  최신 입력·배경 digest
 - `forecast_dbz_digest`, `valid_mask_digest`, `state_metadata_digest`,
   `forecast_run_artifact_digest`
 - `lead_minutes`: `[10, 20, ..., 180]`
@@ -371,8 +402,9 @@ PSR gate를 통과한 최근 pair 하나만 사용한다. 이 경우 불일치 �
   위 regularized 진단의 기존 이름
 - `analysis_field_smoothness_prior_cost`,
   `analysis_motion_saturation_margin_yx`,
+  `analysis_motion_speed_saturation_margin_mps`,
   `analysis_growth_saturation_margin`: 공간 prior 비용과 이동·성장 상한까지의
-  남은 control margin
+  남은 control margin. 물리속도 상한이 없으면 speed margin은 `NaN`
 - `analysis_field_growth_jacobian_cosine`,
   `analysis_field_motion_jacobian_cosine_yx`: 관측공간에서 초기장
   증분이 성장·이동 증분과 얼마나 유사한지 나타내는 절대 cosine
@@ -382,8 +414,10 @@ PSR gate를 통과한 최근 pair 하나만 사용한다. 이 경우 불일치 �
 `boundary_outflow_integral`, `echo_budget_error`를 추가한다. audit는 이미
 계산한 18개 예측 remap을 재사용하며 예측을 다시 수행하지 않는다.
 
-NPZ는 같은 디렉터리의 임시 파일을 완전히 기록한 뒤 원자적으로
-교체한다. 기록 실패 시 기존 출력은 그대로 유지한다.
+NPZ는 같은 디렉터리의 임시 파일을 `fsync`하고 원자적으로 교체한 다음
+parent directory를 `fsync`한다. 원자교체 이전 기록 실패 시 기존 출력은
+그대로 유지되며, directory `fsync` 실패는 내구성을 보장할 수 없으므로
+호출자에게 전달한다.
 
 ## 의도적으로 제한한 부분
 

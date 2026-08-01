@@ -2042,6 +2042,41 @@ class VariationalAnalysisTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "cannot be negative"):
                     AnalysisConfig(field_smoothness_weight=value)
 
+    def test_physical_distance_settings_resolve_against_grid(self) -> None:
+        frames = torch.full((3, 8, 8), 20.0, dtype=torch.float64)
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=500.0,
+            projection="EPSG:5179",
+            grid_hash="e" * 64,
+        )
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=NowcastConfig(
+                maximum_motion_speed_mps=10.0
+            ),
+            analysis_config=AnalysisConfig(
+                causal_support_uncertainty_m=1000.0,
+                amplitude_displacement_tolerance_m=750.0,
+            ),
+            grid_time_contract=contract,
+        )
+
+        self.assertEqual(observations.dbz.shape, frames.shape)
+        self.assertEqual(
+            frozen.amplitude_displacement_tolerance_yx,
+            (2, 1),
+        )
+        torch.testing.assert_close(
+            frozen.motion_limits_yx,
+            torch.tensor((12.0, 6.0), dtype=frames.dtype),
+        )
+
     def test_latest_amplitude_threshold_constructor_remains_supported(
         self,
     ) -> None:
