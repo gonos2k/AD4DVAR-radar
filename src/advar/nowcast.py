@@ -1653,8 +1653,9 @@ def _phase_correlation_shift_and_psr(
     inside_limits = bool(
         torch.all(torch.abs(shift) <= limits + config.epsilon)
     )
+    interior_bin_limit = (limits - 0.5).clamp_min(config.epsilon)
     away_from_search_boundary = bool(
-        torch.all(torch.abs(integer_peak_shift) < limits - 0.5)
+        torch.all(torch.abs(integer_peak_shift) < interior_bin_limit)
     )
     return shift, psr, inside_limits and away_from_search_boundary
 

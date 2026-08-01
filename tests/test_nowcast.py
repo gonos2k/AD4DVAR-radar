@@ -525,6 +525,25 @@ class NowcastTests(unittest.TestCase):
         )
         self.assertFalse(search_interior)
 
+    def test_subpixel_search_limit_accepts_zero_motion(self) -> None:
+        config = NowcastConfig(max_displacement_px=0.25)
+        frame = linear_to_dbz(self.echo, config)
+
+        state, metadata = estimate_state_with_metadata(
+            torch.stack((frame, frame, frame)),
+            config,
+        )
+
+        torch.testing.assert_close(
+            state.displacement_yx,
+            torch.zeros_like(state.displacement_yx),
+        )
+        self.assertEqual(metadata.tendency_pair_count, 2)
+        self.assertGreaterEqual(
+            float(metadata.minimum_phase_correlation_psr),
+            config.minimum_phase_correlation_psr,
+        )
+
     def test_inconsistent_high_psr_pairs_use_recent_pair(self) -> None:
         first = linear_to_dbz(self.echo, self.config)
         second = torch.roll(first, shifts=10, dims=1)
