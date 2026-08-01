@@ -137,6 +137,7 @@ class DirectSensitivity:
 
 @dataclass(frozen=True)
 class SensitivitySnapshot:
+    forecast_run_digest: str
     nowcast_config_digest: str
     sensitivity_config_digest: str
     metric_names: tuple[str, ...]
@@ -517,6 +518,7 @@ def compute_sensitivity_snapshot(
     trust_score = math.prod(trust_components.values())
 
     return SensitivitySnapshot(
+        forecast_run_digest=result.forecast_run_digest,
         nowcast_config_digest=nowcast_config.digest,
         sensitivity_config_digest=sensitivity_config.digest,
         metric_names=sensitivity_config.metric_names,

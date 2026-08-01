@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar._digest import tensor_digest  # noqa: E402
 from advar.nowcast import (  # noqa: E402
+    _forecast_run_identity_digest,
     DataStatus,
     ForecastMetadata,
     ForecastResult,
@@ -21,6 +22,7 @@ from advar.nowcast import (  # noqa: E402
     forecast_linear_at_step,
     forecast_linear_from_state,
     nowcast,
+    state_metadata_digest,
 )
 from advar.physics import dbz_to_echo, echo_to_dbz  # noqa: E402
 from advar.sensitivity import (  # noqa: E402
@@ -80,6 +82,7 @@ def metadata_for(
             pair_motion[1] - pair_motion[0]
         ),
         growth_disagreement=torch.abs(pair_growth[1] - pair_growth[0]),
+        minimum_phase_correlation_psr=state.echo_linear.new_tensor(10.0),
         tendency_pair_count=2,
         tendency_source=TendencySource.OBSERVATION,
     )
@@ -111,8 +114,9 @@ def result_for(
         run=ForecastRunContract.from_inputs(
             config,
             frames,
-            accepted_mask[-1],
+            accepted_mask,
             background,
+            0.0 if background is not None else None,
         ),
     )
 
@@ -301,6 +305,10 @@ class SensitivityTests(unittest.TestCase):
         self.assertEqual(
             snapshot.sensitivity_config_digest,
             self.sensitivity_config.digest,
+        )
+        self.assertEqual(
+            snapshot.forecast_run_digest,
+            self.result.forecast_run_digest,
         )
 
     def test_sensitivity_uses_the_forecast_run_config(self) -> None:
@@ -676,12 +684,20 @@ class SensitivityTests(unittest.TestCase):
             self.result.forecast_dbz,
             torch.full_like(self.result.forecast_dbz, float("nan")),
         )
+        forecast_digest = tensor_digest(issued_dbz)
+        valid_mask_digest = tensor_digest(issued)
         result = replace(
             self.result,
             forecast_dbz=issued_dbz,
             valid_mask=issued,
-            forecast_dbz_digest=tensor_digest(issued_dbz),
-            valid_mask_digest=tensor_digest(issued),
+            forecast_dbz_digest=forecast_digest,
+            valid_mask_digest=valid_mask_digest,
+            forecast_run_digest=_forecast_run_identity_digest(
+                self.result.run,
+                self.result.state_metadata_digest,
+                forecast_digest,
+                valid_mask_digest,
+            ),
         )
         snapshot = compute_sensitivity_snapshot(
             self.frames[2],
@@ -725,7 +741,21 @@ class SensitivityTests(unittest.TestCase):
             self.result.metadata,
             data_status=DataStatus.UNAVAILABLE,
         )
-        result = replace(self.result, metadata=metadata)
+        metadata_digest = state_metadata_digest(
+            self.result.state,
+            metadata,
+        )
+        result = replace(
+            self.result,
+            metadata=metadata,
+            state_metadata_digest=metadata_digest,
+            forecast_run_digest=_forecast_run_identity_digest(
+                self.result.run,
+                metadata_digest,
+                self.result.forecast_dbz_digest,
+                self.result.valid_mask_digest,
+            ),
+        )
 
         with self.assertRaisesRegex(ValueError, "unissued forecast"):
             compute_sensitivity_snapshot(

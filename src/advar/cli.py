@@ -9,17 +9,20 @@ import tempfile
 from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 import torch
 
 from .nowcast import (
     ForecastResult,
     NowcastConfig,
+    RadarGridTimeContract,
     nowcast,
 )
+from .run_artifact import forecast_run_arrays
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v5"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v10"
 
 
 def main() -> None:
@@ -64,6 +67,17 @@ def main() -> None:
         help="required age of --background in minutes",
     )
     parser.add_argument(
+        "--maximum-background-age-minutes",
+        type=float,
+        default=60.0,
+    )
+    parser.add_argument("--valid-times", nargs=3)
+    parser.add_argument("--background-valid-times", nargs=3)
+    parser.add_argument("--dx-m", type=float)
+    parser.add_argument("--dy-m", type=float)
+    parser.add_argument("--projection")
+    parser.add_argument("--grid-hash")
+    parser.add_argument(
         "--audit",
         action="store_true",
         help="include optional positivity and transport audits",
@@ -91,12 +105,20 @@ def main() -> None:
         parser.error("--background-age-minutes requires --background")
     if background is not None and args.background_age_minutes is None:
         parser.error("--background requires --background-age-minutes")
+    grid_time_contract = _grid_time_contract_from_args(
+        parser,
+        args,
+        background_present=background is not None,
+    )
 
     config = NowcastConfig(
         min_dbz=args.min_dbz,
         max_dbz=args.max_dbz,
         echo_threshold_dbz=args.echo_threshold_dbz,
         min_publish_support=args.min_publish_support,
+        maximum_background_age_minutes=(
+            args.maximum_background_age_minutes
+        ),
     )
     frames_tensor = torch.as_tensor(frames, dtype=torch.float32)
     if args.variational:
@@ -110,6 +132,7 @@ def main() -> None:
             qc_mask=qc_mask,
             background_frames_dbz=background,
             background_age_minutes=args.background_age_minutes,
+            grid_time_contract=grid_time_contract,
             audit=args.audit,
         )
     else:
@@ -119,6 +142,7 @@ def main() -> None:
             qc_mask=qc_mask,
             background_frames_dbz=background,
             background_age_minutes=args.background_age_minutes,
+            grid_time_contract=grid_time_contract,
             audit=args.audit,
         )
         analysis = None
@@ -136,41 +160,66 @@ def main() -> None:
     )
 
 
+def _grid_time_contract_from_args(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+    *,
+    background_present: bool,
+) -> RadarGridTimeContract | None:
+    required = (
+        args.valid_times,
+        args.dx_m,
+        args.dy_m,
+        args.projection,
+        args.grid_hash,
+    )
+    if not any(value is not None for value in required):
+        if args.background_valid_times is not None:
+            parser.error("--background-valid-times requires grid/time metadata")
+        return None
+    if any(value is None for value in required):
+        parser.error(
+            "--valid-times, --dx-m, --dy-m, --projection, and --grid-hash "
+            "must be provided together"
+        )
+    if background_present != (args.background_valid_times is not None):
+        parser.error(
+            "--background-valid-times must match --background availability"
+        )
+    try:
+        return RadarGridTimeContract(
+            valid_times=tuple(args.valid_times),
+            dx_m=args.dx_m,
+            dy_m=args.dy_m,
+            projection=args.projection,
+            grid_hash=args.grid_hash,
+            background_valid_times=(
+                None
+                if args.background_valid_times is None
+                else tuple(args.background_valid_times)
+            ),
+        )
+    except (TypeError, ValueError) as error:
+        parser.error(str(error))
+
+
 def _output_arrays(
     result: ForecastResult,
     analysis: AnalysisResult | None,
     config: NowcastConfig,
 ) -> dict[str, Any]:
-    metadata = result.metadata
-    output: dict[str, Any] = {
-        "output_contract_version": np.asarray(OUTPUT_CONTRACT_VERSION),
-        "forecast_dbz": result.forecast_dbz.detach().cpu().numpy(),
-        "displacement_yx": (
-            result.state.displacement_yx.detach().cpu().numpy()
-        ),
-        "log_growth_per_step": float(result.state.log_growth_per_step),
-        "motion_disagreement_px": float(metadata.motion_disagreement_px),
-        "growth_disagreement": float(metadata.growth_disagreement),
-        "tendency_pair_count": np.asarray(metadata.tendency_pair_count),
-        "tendency_source": np.asarray(metadata.tendency_source.value),
-        "min_publish_support": np.asarray(config.min_publish_support),
-        "data_status": np.asarray(metadata.data_status.value),
-        "coverage_by_frame": metadata.coverage_by_frame.cpu().numpy(),
-        "background_used": np.asarray(metadata.background_used),
-        "background_contribution_fraction": np.asarray(
-            metadata.background_contribution_fraction
-        ),
-        "background_age_minutes": np.asarray(
-            np.nan
-            if metadata.background_age_minutes is None
-            else metadata.background_age_minutes
-        ),
-        "lead_minutes": np.arange(
-            config.interval_minutes,
-            config.horizon_minutes + 1,
-            config.interval_minutes,
-        ),
-    }
+    output = forecast_run_arrays(result)
+    output.update(
+        {
+            "output_contract_version": np.asarray(OUTPUT_CONTRACT_VERSION),
+            "min_publish_support": np.asarray(config.min_publish_support),
+            "lead_minutes": np.arange(
+                config.interval_minutes,
+                config.horizon_minutes + 1,
+                config.interval_minutes,
+            ),
+        }
+    )
     if analysis is None:
         output.update(
             analysis_used=np.asarray(False),
@@ -202,6 +251,79 @@ def _output_arrays(
                 if analysis.unresolved_amplitude_fraction is None
                 else analysis.unresolved_amplitude_fraction
             ),
+            analysis_unresolved_amplitude_fraction_by_time=(
+                _optional_pair_array(
+                    analysis.unresolved_amplitude_fraction_by_time
+                )
+            ),
+            analysis_unresolved_pixel_fraction_by_time=_optional_pair_array(
+                analysis.unresolved_pixel_fraction_by_time
+            ),
+            analysis_amplitude_violation_score=np.asarray(
+                np.nan
+                if analysis.amplitude_violation_score is None
+                else analysis.amplitude_violation_score
+            ),
+            analysis_amplitude_violation_score_by_time=_optional_pair_array(
+                analysis.amplitude_violation_score_by_time
+            ),
+            analysis_integrated_echo_ratio_by_time=_optional_pair_array(
+                analysis.integrated_echo_ratio_by_time
+            ),
+            analysis_displacement_tolerant_soft_echo_area_ratio_by_time=(
+                _optional_pair_array(
+                    analysis
+                    .displacement_tolerant_soft_echo_area_ratio_by_time
+                )
+            ),
+            analysis_amplitude_diagnostics_source=np.asarray(
+                analysis.amplitude_diagnostics_source
+            ),
+            analysis_effective_precursor_pixel_count_by_time=(
+                _optional_pair_array(
+                    analysis.effective_precursor_pixel_count_by_time
+                )
+            ),
+            analysis_bad_quality_weight_by_time=_optional_pair_array(
+                analysis.bad_quality_weight_by_time
+            ),
+            analysis_total_quality_weight_by_time=_optional_pair_array(
+                analysis.total_quality_weight_by_time
+            ),
+            analysis_amplitude_information_sufficient_by_time=(
+                _optional_bool_pair_array(
+                    analysis.amplitude_information_sufficient_by_time
+                )
+            ),
+            analysis_insufficient_amplitude_information=np.asarray(
+                analysis.insufficient_amplitude_information
+            ),
+            analysis_established_echo_excess_growth_fraction=np.asarray(
+                np.nan
+                if analysis.established_echo_excess_growth_fraction is None
+                else analysis.established_echo_excess_growth_fraction
+            ),
+            analysis_established_echo_excess_growth_fraction_by_time=(
+                _optional_pair_array(
+                    analysis
+                    .established_echo_excess_growth_fraction_by_time
+                )
+            ),
+            analysis_maximum_growth_envelope_ratio=np.asarray(
+                np.nan
+                if analysis.maximum_growth_envelope_ratio is None
+                else analysis.maximum_growth_envelope_ratio
+            ),
+            analysis_maximum_growth_envelope_ratio_by_time=(
+                _optional_pair_array(
+                    analysis.maximum_growth_envelope_ratio_by_time
+                )
+            ),
+            analysis_relative_objective_reduction=np.asarray(
+                np.nan
+                if analysis.relative_objective_reduction is None
+                else analysis.relative_objective_reduction
+            ),
             analysis_causal_control_cell_count=np.asarray(
                 analysis.causal_control_cell_count
             ),
@@ -211,8 +333,56 @@ def _output_arrays(
             analysis_causal_seed_prior_cost=np.asarray(
                 analysis.causal_seed_prior_cost
             ),
+            analysis_dynamics_reduced_hessian_eigenvalues=(
+                _optional_triple_array(
+                    analysis.dynamics_reduced_hessian_eigenvalues
+                )
+            ),
+            analysis_dynamics_reduced_hessian_condition_number=np.asarray(
+                np.nan
+                if analysis.dynamics_reduced_hessian_condition_number is None
+                else analysis.dynamics_reduced_hessian_condition_number
+            ),
+            analysis_field_growth_jacobian_cosine=np.asarray(
+                np.nan
+                if analysis.field_growth_jacobian_cosine is None
+                else analysis.field_growth_jacobian_cosine
+            ),
+            analysis_field_motion_jacobian_cosine_yx=(
+                _optional_nullable_pair_array(
+                    analysis.field_motion_jacobian_cosine_yx
+                )
+            ),
         )
     return output
+
+
+def _optional_pair_array(
+    value: tuple[float, float] | None,
+) -> NDArray[Any]:
+    return np.asarray((np.nan, np.nan) if value is None else value)
+
+
+def _optional_bool_pair_array(
+    value: tuple[bool, bool] | None,
+) -> NDArray[Any]:
+    return np.asarray((False, False) if value is None else value)
+
+
+def _optional_nullable_pair_array(
+    value: tuple[float | None, float | None] | None,
+) -> NDArray[Any]:
+    if value is None:
+        return np.asarray((np.nan, np.nan))
+    return np.asarray(
+        tuple(np.nan if item is None else item for item in value)
+    )
+
+
+def _optional_triple_array(
+    value: tuple[float, float, float] | None,
+) -> NDArray[Any]:
+    return np.asarray((np.nan, np.nan, np.nan) if value is None else value)
 
 
 def _audit_arrays(

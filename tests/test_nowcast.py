@@ -18,6 +18,7 @@ from advar.nowcast import (  # noqa: E402
     ForecastMetadata,
     ForecastRunContract,
     NowcastConfig,
+    RadarGridTimeContract,
     RadarState,
     TendencySource,
     estimate_state as estimate_state_with_metadata,
@@ -83,6 +84,7 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         source_support=torch.ones_like(state.echo_linear),
         motion_disagreement_px=state.echo_linear.new_zeros(()),
         growth_disagreement=state.echo_linear.new_zeros(()),
+        minimum_phase_correlation_psr=state.echo_linear.new_tensor(10.0),
         tendency_pair_count=2,
         tendency_source=TendencySource.OBSERVATION,
     )
@@ -101,13 +103,16 @@ def forecast_from_state(
         run=ForecastRunContract.from_inputs(
             config,
             frames,
-            torch.ones_like(latest, dtype=torch.bool),
+            torch.ones_like(frames, dtype=torch.bool),
             None,
         ),
     ).forecast_dbz
 
 
 class NowcastTests(unittest.TestCase):
+    config: NowcastConfig = NowcastConfig()
+    echo: torch.Tensor = torch.empty(0)
+
     def setUp(self) -> None:
         self.config = NowcastConfig()
         y, x = torch.meshgrid(
@@ -346,8 +351,10 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(metadata.background_age_minutes, 10.0)
         self.assertEqual(
             metadata.tendency_source,
-            TendencySource.BACKGROUND,
+            TendencySource.NONE,
         )
+        self.assertFalse(metadata.background_tendency_used)
+        self.assertTrue(torch.isnan(metadata.minimum_phase_correlation_psr))
         self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
         torch.testing.assert_close(forecast[0], background[-1])
 
@@ -414,9 +421,79 @@ class NowcastTests(unittest.TestCase):
 
         metadata = result.metadata
         self.assertFalse(metadata.background_used)
+        self.assertFalse(metadata.background_tendency_used)
         self.assertEqual(metadata.background_contribution_fraction, 0.0)
+        self.assertEqual(metadata.background_state_support_fraction, 0.0)
         self.assertIsNone(metadata.background_age_minutes)
         self.assertEqual(metadata.data_status, DataStatus.OBSERVED)
+
+    def test_background_tendency_preserves_usage_and_age(self) -> None:
+        background, _ = self._moving_gaussian_frames()
+        frames = torch.full_like(background, torch.nan)
+        frames[2] = background[2]
+
+        result = nowcast(
+            frames,
+            self.config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+
+        metadata = result.metadata
+        self.assertEqual(metadata.tendency_source, TendencySource.BACKGROUND)
+        self.assertTrue(metadata.background_tendency_used)
+        self.assertTrue(metadata.background_used)
+        self.assertEqual(metadata.background_state_support_fraction, 0.0)
+        self.assertEqual(metadata.background_age_minutes, 10.0)
+        self.assertGreaterEqual(
+            float(metadata.minimum_phase_correlation_psr),
+            self.config.minimum_phase_correlation_psr,
+        )
+
+    def test_phase_correlation_psr_accepts_a_distinct_shift(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        frames, displacement = self._moving_gaussian_frames()
+
+        shift, psr = nowcast_module._phase_correlation_shift_and_psr(
+            frames[0],
+            frames[1],
+            self.config,
+        )
+
+        torch.testing.assert_close(
+            shift,
+            displacement,
+            atol=0.15,
+            rtol=0.0,
+        )
+        self.assertGreaterEqual(
+            float(psr),
+            self.config.minimum_phase_correlation_psr,
+        )
+
+    def test_low_psr_pairs_fail_closed_to_persistence(self) -> None:
+        generator = torch.Generator().manual_seed(7)
+        frames = 10.0 + 30.0 * torch.rand(
+            3,
+            32,
+            32,
+            generator=generator,
+            dtype=torch.float64,
+        )
+
+        state, metadata = estimate_state_with_metadata(frames, self.config)
+
+        torch.testing.assert_close(
+            state.displacement_yx,
+            torch.zeros_like(state.displacement_yx),
+        )
+        torch.testing.assert_close(
+            state.log_growth_per_step,
+            torch.zeros_like(state.log_growth_per_step),
+        )
+        self.assertEqual(metadata.tendency_pair_count, 0)
+        self.assertEqual(metadata.tendency_source, TendencySource.NONE)
+        self.assertTrue(torch.isnan(metadata.minimum_phase_correlation_psr))
 
     def test_missing_first_frame_uses_remaining_observation_pair(
         self,
@@ -726,6 +803,7 @@ class NowcastTests(unittest.TestCase):
             zero,
             zero,
             zero,
+            echo.new_tensor(10.0),
             1,
             TendencySource.OBSERVATION,
         )
@@ -756,6 +834,7 @@ class NowcastTests(unittest.TestCase):
             zero,
             zero,
             zero,
+            frames.new_tensor(10.0),
             1,
             TendencySource.OBSERVATION,
         )
@@ -789,7 +868,7 @@ class NowcastTests(unittest.TestCase):
         frames[1, 3, 3] = linear_to_dbz(observation_echo, self.config)
         background = torch.full_like(
             frames,
-            linear_to_dbz(background_echo, self.config),
+            float(linear_to_dbz(background_echo, self.config)),
         )
         nowcast_module = import_module("advar.nowcast")
         zero = frames.new_zeros(())
@@ -798,6 +877,7 @@ class NowcastTests(unittest.TestCase):
             zero,
             zero,
             zero,
+            frames.new_tensor(10.0),
             1,
             TendencySource.OBSERVATION,
         )
@@ -845,19 +925,24 @@ class NowcastTests(unittest.TestCase):
             source_support=support,
             motion_disagreement_px=torch.zeros((), dtype=torch.float64),
             growth_disagreement=torch.zeros((), dtype=torch.float64),
+            minimum_phase_correlation_psr=torch.tensor(
+                10.0,
+                dtype=torch.float64,
+            ),
             tendency_pair_count=1,
             tendency_source=TendencySource.OBSERVATION,
         )
 
         latest = linear_to_dbz(state.echo_linear, config)
+        frames = torch.stack((latest, latest, latest))
         result = forecast_result_from_state(
             state,
             metadata,
             config,
             run=ForecastRunContract.from_inputs(
                 config,
-                torch.stack((latest, latest, latest)),
-                torch.ones_like(latest, dtype=torch.bool),
+                frames,
+                torch.ones_like(frames, dtype=torch.bool),
                 None,
             ),
         )
@@ -886,14 +971,15 @@ class NowcastTests(unittest.TestCase):
             log_growth_per_step=torch.zeros((), dtype=torch.float64),
         )
         latest = linear_to_dbz(echo, config)
+        frames = torch.stack((latest, latest, latest))
         result = forecast_result_from_state(
             state,
             observed_metadata(state),
             config,
             run=ForecastRunContract.from_inputs(
                 config,
-                torch.stack((latest, latest, latest)),
-                torch.ones_like(latest, dtype=torch.bool),
+                frames,
+                torch.ones_like(frames, dtype=torch.bool),
                 None,
             ),
         )
@@ -926,6 +1012,7 @@ class NowcastTests(unittest.TestCase):
             growth,
             zero,
             zero,
+            echo.new_tensor(10.0),
             1,
             TendencySource.OBSERVATION,
         )
@@ -1017,20 +1104,22 @@ class NowcastTests(unittest.TestCase):
         nowcast_module = import_module("advar.nowcast")
         with patch.object(nowcast_module, "remap_core", wraps=remap_core) as kernel:
             latest = linear_to_dbz(state.echo_linear, self.config)
+            frames = torch.stack((latest, latest, latest))
             result = forecast_result_from_state(
                 state,
                 observed_metadata(state),
                 self.config,
                 run=ForecastRunContract.from_inputs(
                     self.config,
-                    torch.stack((latest, latest, latest)),
-                    torch.ones_like(latest, dtype=torch.bool),
+                    frames,
+                    torch.ones_like(frames, dtype=torch.bool),
                     None,
                 ),
                 audit=True,
             )
 
         self.assertEqual(kernel.call_count, self.config.forecast_steps)
+        assert result.audit is not None
         self.assertEqual(len(result.audit.transport), self.config.forecast_steps)
 
     def test_forecast_config_must_match_its_run_contract(self) -> None:
@@ -1044,7 +1133,7 @@ class NowcastTests(unittest.TestCase):
         run = ForecastRunContract.from_inputs(
             self.config,
             frames,
-            torch.ones_like(latest, dtype=torch.bool),
+            torch.ones_like(frames, dtype=torch.bool),
             None,
         )
 
@@ -1377,6 +1466,127 @@ class NowcastTests(unittest.TestCase):
             NowcastConfig(min_publish_support=0.0)
         with self.assertRaises(ValueError):
             NowcastConfig(min_publish_support=1.01)
+        with self.assertRaises(ValueError):
+            NowcastConfig(maximum_background_age_minutes=0.0)
+        with self.assertRaises(ValueError):
+            NowcastConfig(minimum_phase_correlation_psr=-1.0)
+        with self.assertRaises(ValueError):
+            NowcastConfig(phase_correlation_sidelobe_radius_px=-1)
+        with self.assertRaises(TypeError):
+            NowcastConfig(phase_correlation_sidelobe_radius_px=True)
+
+    def test_grid_time_contract_is_canonical_and_part_of_run_identity(
+        self,
+    ) -> None:
+        frames = torch.full((3, 4, 4), 20.0)
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T09:00:00+09:00",
+                "2026-07-31T09:10:00+09:00",
+                "2026-07-31T09:20:00+09:00",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="a" * 64,
+        )
+        shifted = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+                "2026-07-31T00:30:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="a" * 64,
+        )
+
+        result = nowcast(frames, grid_time_contract=contract)
+        shifted_result = nowcast(frames, grid_time_contract=shifted)
+
+        self.assertEqual(
+            contract.valid_times,
+            (
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+        )
+        self.assertEqual(result.run.grid_time_contract, contract)
+        self.assertEqual(result.run.grid_time_contract_digest, contract.digest)
+        torch.testing.assert_close(
+            result.displacement_mps_yx,
+            result.state.displacement_yx
+            * result.state.displacement_yx.new_tensor((1000.0, 1000.0))
+            / 600.0,
+        )
+        self.assertNotEqual(
+            result.forecast_run_digest,
+            shifted_result.forecast_run_digest,
+        )
+
+    def test_grid_time_contract_rejects_invalid_time_and_background_age(
+        self,
+    ) -> None:
+        frames = torch.full((3, 4, 4), 20.0)
+        with self.assertRaisesRegex(ValueError, "timezone"):
+            RadarGridTimeContract(
+                valid_times=(
+                    "2026-07-31T00:00:00",
+                    "2026-07-31T00:10:00Z",
+                    "2026-07-31T00:20:00Z",
+                ),
+                dx_m=1000.0,
+                dy_m=1000.0,
+                projection="EPSG:5179",
+                grid_hash="a" * 64,
+            )
+        wrong_interval = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:05:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="a" * 64,
+        )
+        with self.assertRaisesRegex(ValueError, "interval_minutes"):
+            nowcast(frames, grid_time_contract=wrong_interval)
+
+        background = frames - 1.0
+        background_contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="a" * 64,
+            background_valid_times=(
+                "2026-07-30T23:50:00Z",
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "latest valid times"):
+            nowcast(
+                frames,
+                background_frames_dbz=background,
+                background_age_minutes=20.0,
+                grid_time_contract=background_contract,
+            )
+        with self.assertRaisesRegex(ValueError, "maximum_background_age"):
+            nowcast(
+                frames,
+                NowcastConfig(maximum_background_age_minutes=5.0),
+                background_frames_dbz=background,
+                background_age_minutes=10.0,
+            )
 
 
 if __name__ == "__main__":

@@ -1,21 +1,24 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
+import json
 import math
-from typing import cast
+from typing import Literal, cast
 
 import torch
 import torch.nn.functional as F
 from torch import Tensor
 
+from ._digest import json_digest, tensor_digest
 from .diagnostics import EchoPositivityError, PositivityAudit, validate_physical_echo
-from .matrix_free import gauss_newton_hvp, pcg
+from .matrix_free import pcg
 from .nowcast import (
     ForecastMetadata,
     ForecastResult,
     ForecastRunContract,
     NowcastConfig,
+    RadarGridTimeContract,
     RadarState,
     estimate_prepared_state,
     forecast_from_state,
@@ -48,6 +51,8 @@ class AnalysisConfig:
     causal_support_dilation_px: int = 2
     maximum_latest_detected_error_std: float = 3.0
     maximum_unresolved_amplitude_fraction: float = 0.01
+    minimum_amplitude_total_quality_weight: float = 0.01
+    minimum_amplitude_effective_pixel_count: float = 1.0
     maximum_outer_iterations: int = 4
     maximum_pcg_iterations: int = 40
     maximum_damping_retries: int = 2
@@ -75,6 +80,12 @@ class AnalysisConfig:
                 self.minimum_control_reachability
             ),
             "maximum_detected_error_std": self.maximum_detected_error_std,
+            "minimum_amplitude_total_quality_weight": (
+                self.minimum_amplitude_total_quality_weight
+            ),
+            "minimum_amplitude_effective_pixel_count": (
+                self.minimum_amplitude_effective_pixel_count
+            ),
             "pcg_relative_tolerance": self.pcg_relative_tolerance,
             "gradient_tolerance": self.gradient_tolerance,
             "step_tolerance": self.step_tolerance,
@@ -142,7 +153,9 @@ class AnalysisObservations:
 class FrozenOuterState:
     initial_background_dbz: Tensor
     initial_support_mask: Tensor
+    active_field_index: Tensor
     causal_only_mask: Tensor
+    causal_seed_mask: Tensor
     detected_masks: Tensor
     observed_mask: Tensor
     background_mask: Tensor
@@ -164,8 +177,73 @@ class AnalysisTrajectory:
 
 
 @dataclass(frozen=True)
+class _AmplitudeDiagnostics:
+    unresolved_fraction_by_time: Tensor
+    unresolved_pixel_fraction_by_time: Tensor
+    violation_score_by_time: Tensor
+    integrated_echo_ratio_by_time: Tensor
+    displacement_tolerant_soft_echo_area_ratio_by_time: Tensor
+    effective_pixel_count_by_time: Tensor
+    bad_quality_weight_by_time: Tensor
+    total_quality_weight_by_time: Tensor
+    information_sufficient_by_time: Tensor
+    established_echo_excess_growth_fraction_by_time: Tensor
+    maximum_growth_envelope_ratio_by_time: Tensor
+
+    def _gated(self, values: Tensor) -> Tensor:
+        return torch.where(
+            self.information_sufficient_by_time,
+            values,
+            torch.zeros_like(values),
+        )
+
+    @property
+    def maximum_unresolved_fraction(self) -> Tensor:
+        return torch.max(self.unresolved_fraction_by_time)
+
+    @property
+    def maximum_gated_unresolved_fraction(self) -> Tensor:
+        return torch.max(self._gated(self.unresolved_fraction_by_time))
+
+    @property
+    def maximum_violation_score(self) -> Tensor:
+        return torch.max(self.violation_score_by_time)
+
+    @property
+    def maximum_gated_violation_score(self) -> Tensor:
+        return torch.max(self._gated(self.violation_score_by_time))
+
+    @property
+    def total_gated_violation_score(self) -> Tensor:
+        return self._gated(self.violation_score_by_time).sum()
+
+    @property
+    def has_insufficient_information(self) -> bool:
+        return bool(torch.any(~self.information_sufficient_by_time))
+
+
+@dataclass(frozen=True)
+class _IdentifiabilityDiagnostics:
+    dynamics_reduced_hessian_eigenvalues: tuple[float, float, float]
+    dynamics_reduced_hessian_condition_number: float
+    field_growth_jacobian_cosine: float | None
+    field_motion_jacobian_cosine_yx: tuple[
+        float | None,
+        float | None,
+    ]
+
+
+AmplitudeDiagnosticsSource = Literal[
+    "unavailable",
+    "returned_analysis",
+    "rejected_candidate",
+]
+
+
+@dataclass(frozen=True)
 class AnalysisResult:
     control: Tensor
+    active_field_index: Tensor
     state: RadarState
     metadata: ForecastMetadata
     analyzed_frames_linear: Tensor
@@ -180,9 +258,42 @@ class AnalysisResult:
     degraded: bool = False
     minimum_reachability_margin: float | None = None
     unresolved_amplitude_fraction: float | None = None
+    unresolved_amplitude_fraction_by_time: tuple[float, float] | None = None
+    unresolved_pixel_fraction_by_time: tuple[float, float] | None = None
+    amplitude_violation_score: float | None = None
+    amplitude_violation_score_by_time: tuple[float, float] | None = None
+    integrated_echo_ratio_by_time: tuple[float, float] | None = None
+    displacement_tolerant_soft_echo_area_ratio_by_time: (
+        tuple[float, float] | None
+    ) = None
+    effective_precursor_pixel_count_by_time: (
+        tuple[float, float] | None
+    ) = None
+    bad_quality_weight_by_time: tuple[float, float] | None = None
+    total_quality_weight_by_time: tuple[float, float] | None = None
+    amplitude_information_sufficient_by_time: (
+        tuple[bool, bool] | None
+    ) = None
+    insufficient_amplitude_information: bool = False
+    established_echo_excess_growth_fraction: float | None = None
+    established_echo_excess_growth_fraction_by_time: (
+        tuple[float, float] | None
+    ) = None
+    maximum_growth_envelope_ratio: float | None = None
+    maximum_growth_envelope_ratio_by_time: tuple[float, float] | None = None
+    amplitude_diagnostics_source: AmplitudeDiagnosticsSource = "unavailable"
+    relative_objective_reduction: float | None = None
     causal_control_cell_count: int = 0
     causal_seed_cell_count: int = 0
     causal_seed_prior_cost: float = 0.0
+    dynamics_reduced_hessian_eigenvalues: (
+        tuple[float, float, float] | None
+    ) = None
+    dynamics_reduced_hessian_condition_number: float | None = None
+    field_growth_jacobian_cosine: float | None = None
+    field_motion_jacobian_cosine_yx: (
+        tuple[float | None, float | None] | None
+    ) = None
 
 
 def prepare_analysis(
@@ -262,7 +373,7 @@ def prepare_analysis(
     )
     baseline_state = _detach_state(baseline_state)
     baseline_metadata = _detach_metadata(baseline_metadata)
-    initial_support = _causal_initial_support(
+    initial_support, causal_seed = _causal_control_and_seed_support(
         detected,
         prepared.observed_mask,
         prepared.background_mask,
@@ -271,6 +382,10 @@ def prepare_analysis(
         analysis_config.causal_support_dilation_px,
     )
     causal_only = initial_support & ~detected[0]
+    active_field_index = torch.nonzero(
+        initial_support.flatten(),
+        as_tuple=False,
+    ).flatten()
     remap_cells = (
         freeze_remap_cell(baseline_state.displacement_yx),
         freeze_remap_cell(2 * baseline_state.displacement_yx),
@@ -283,7 +398,9 @@ def prepare_analysis(
     frozen = FrozenOuterState(
         initial_background_dbz=baseline_frames_dbz[0].detach().clone(),
         initial_support_mask=initial_support.detach().clone(),
+        active_field_index=active_field_index.detach().clone(),
         causal_only_mask=causal_only.detach().clone(),
+        causal_seed_mask=causal_seed.detach().clone(),
         detected_masks=detected.detach().clone(),
         observed_mask=prepared.observed_mask.detach().clone(),
         background_mask=prepared.background_mask.detach().clone(),
@@ -304,55 +421,63 @@ def prepare_analysis(
     )
 
 
-def _causal_initial_support(
+def _causal_control_and_seed_support(
     detected_mask: Tensor,
     observed_mask: Tensor,
     background_mask: Tensor,
     displacement_yx: Tensor,
     minimum_reachability: float,
     dilation_px: int,
-) -> Tensor:
+) -> tuple[Tensor, Tensor]:
     initial_anchor = observed_mask[0] | background_mask[0]
-    later_support = torch.zeros_like(detected_mask[0])
+    precursor_core = torch.zeros_like(detected_mask[0])
     for step in (1, 2):
         precursor = remap(
             detected_mask[step].to(dtype=displacement_yx.dtype),
             -step * displacement_yx,
         )
-        later_support |= precursor >= minimum_reachability
+        precursor_core |= precursor >= minimum_reachability
+    control_envelope = precursor_core
     if dilation_px > 0:
-        later_support = (
+        control_envelope = (
             F.max_pool2d(
-                later_support[None, None].to(dtype=displacement_yx.dtype),
+                precursor_core[None, None].to(dtype=displacement_yx.dtype),
                 kernel_size=2 * dilation_px + 1,
                 stride=1,
                 padding=dilation_px,
             )[0, 0]
             > 0
         )
-    return (detected_mask[0] | later_support) & initial_anchor
+    control_support = (
+        detected_mask[0] | control_envelope
+    ) & initial_anchor
+    seed_support = (
+        precursor_core & initial_anchor & ~detected_mask[0]
+    )
+    return control_support, seed_support
 
 
-def initial_control(observations: AnalysisObservations) -> Tensor:
-    _validate_observations(observations)
-    height, width = observations.dbz.shape[-2:]
-    return observations.dbz.new_zeros(height * width + 3)
+def initial_control(frozen: FrozenOuterState) -> Tensor:
+    return frozen.initial_background_dbz.new_zeros(
+        frozen.active_field_index.numel() + 3
+    )
 
 
 def _warm_started_control(
     observations: AnalysisObservations,
     frozen: FrozenOuterState,
 ) -> Tensor:
-    control = initial_control(observations)
+    _validate_observations(observations)
+    control = initial_control(frozen)
     seed_control = _precursor_seed_control(frozen)
-    field_size = frozen.initial_background_dbz.numel()
-    control[:field_size] = seed_control.flatten()
+    field_size = frozen.active_field_index.numel()
+    control[:field_size] = seed_control.flatten()[frozen.active_field_index]
     return control
 
 
 def _precursor_seed_control(frozen: FrozenOuterState) -> Tensor:
     seed_control = torch.zeros_like(frozen.initial_background_dbz)
-    if not bool(torch.any(frozen.causal_only_mask)):
+    if not bool(torch.any(frozen.causal_seed_mask)):
         return seed_control
     config = frozen.analysis_config
     floor_dbz = frozen.nowcast_config.min_dbz
@@ -360,7 +485,7 @@ def _precursor_seed_control(frozen: FrozenOuterState) -> Tensor:
         config.detection_limit_dbz - config.censor_temperature_dbz,
         0.5 * (floor_dbz + config.detection_limit_dbz),
     )
-    seed_mask = frozen.causal_only_mask & (
+    seed_mask = frozen.causal_seed_mask & (
         frozen.initial_background_dbz < seed_dbz
     )
     if not bool(torch.any(seed_mask)):
@@ -415,8 +540,15 @@ def _analysis_trajectory(
     frozen: FrozenOuterState,
 ) -> AnalysisTrajectory:
     height, width = frozen.initial_background_dbz.shape
-    field_control = control[: height * width].reshape(height, width)
-    dynamics_control = control[height * width :]
+    field_size = frozen.active_field_index.numel()
+    field_control = torch.zeros_like(
+        frozen.initial_background_dbz,
+    ).flatten().scatter(
+        0,
+        frozen.active_field_index,
+        control[:field_size],
+    ).reshape(height, width)
+    dynamics_control = control[field_size:]
     config = frozen.analysis_config
     nowcast = frozen.nowcast_config
 
@@ -434,7 +566,6 @@ def _analysis_trajectory(
             / config.echo_transform_scale_dbz
         )
         * field_control
-        * frozen.initial_support_mask
     )
     initial_echo = dbz_to_echo(
         floor_dbz + analyzed_offset,
@@ -570,6 +701,203 @@ def residual_vector(
     return torch.cat((weighted.reshape(-1), control))
 
 
+def _scaled_dot(left: Tensor, right: Tensor) -> float:
+    left_scale = float(torch.amax(torch.abs(left)).detach())
+    right_scale = float(torch.amax(torch.abs(right)).detach())
+    if left_scale == 0.0 or right_scale == 0.0:
+        return 0.0
+    normalized = torch.dot(left / left_scale, right / right_scale)
+    return float(normalized.detach()) * left_scale * right_scale
+
+
+def _absolute_jacobian_cosine(
+    left: Tensor,
+    right: Tensor,
+) -> float | None:
+    left_scale = float(torch.amax(torch.abs(left)).detach())
+    right_scale = float(torch.amax(torch.abs(right)).detach())
+    if left_scale == 0.0 or right_scale == 0.0:
+        return None
+    left_scaled = left / left_scale
+    right_scaled = right / right_scale
+    denominator = float(
+        (
+            torch.linalg.vector_norm(left_scaled)
+            * torch.linalg.vector_norm(right_scaled)
+        ).detach()
+    )
+    if denominator == 0.0 or not math.isfinite(denominator):
+        return None
+    cosine = (
+        abs(float(torch.dot(left_scaled, right_scaled).detach()))
+        / denominator
+    )
+    if not math.isfinite(cosine):
+        return None
+    return min(1.0, cosine)
+
+
+def _field_identifiability_directions(
+    control: Tensor,
+    frozen: FrozenOuterState,
+    trajectory: AnalysisTrajectory,
+) -> tuple[Tensor | None, Tensor | None, Tensor | None]:
+    field_size = frozen.active_field_index.numel()
+    if field_size == 0:
+        return None, None, None
+
+    height, width = frozen.initial_background_dbz.shape
+    dense_field_control = torch.zeros_like(
+        frozen.initial_background_dbz
+    ).flatten().scatter(
+        0,
+        frozen.active_field_index,
+        control[:field_size],
+    ).reshape(height, width)
+    config = frozen.analysis_config
+    background_offset = (
+        frozen.initial_background_dbz - frozen.nowcast_config.min_dbz
+    ) / config.echo_transform_scale_dbz
+    background_latent = _softplus_inverse(
+        background_offset.clamp_min(config.transform_epsilon)
+    )
+    transform_derivative = config.initial_increment_scale_dbz * torch.sigmoid(
+        background_latent
+        + (
+            config.initial_increment_scale_dbz
+            / config.echo_transform_scale_dbz
+        )
+        * dense_field_control
+    )
+    transform_derivative = transform_derivative.clamp_min(
+        config.initial_increment_scale_dbz * config.transform_epsilon
+    )
+    initial_dbz = echo_to_dbz(
+        trajectory.frames_linear[0],
+        min_dbz=frozen.nowcast_config.min_dbz,
+        max_dbz=frozen.nowcast_config.max_dbz,
+    )
+
+    gradient_y = torch.zeros_like(initial_dbz)
+    if height > 1:
+        gradient_y[0] = initial_dbz[1] - initial_dbz[0]
+        gradient_y[-1] = initial_dbz[-1] - initial_dbz[-2]
+    if height > 2:
+        gradient_y[1:-1] = 0.5 * (initial_dbz[2:] - initial_dbz[:-2])
+
+    gradient_x = torch.zeros_like(initial_dbz)
+    if width > 1:
+        gradient_x[:, 0] = initial_dbz[:, 1] - initial_dbz[:, 0]
+        gradient_x[:, -1] = initial_dbz[:, -1] - initial_dbz[:, -2]
+    if width > 2:
+        gradient_x[:, 1:-1] = 0.5 * (
+            initial_dbz[:, 2:] - initial_dbz[:, :-2]
+        )
+
+    def pack(field_values: Tensor) -> Tensor | None:
+        active_values = field_values.flatten()[frozen.active_field_index]
+        norm = float(torch.linalg.vector_norm(active_values).detach())
+        if norm == 0.0 or not math.isfinite(norm):
+            return None
+        direction = torch.zeros_like(control)
+        direction[:field_size] = active_values / norm
+        return direction
+
+    return (
+        pack(torch.ones_like(initial_dbz) / transform_derivative),
+        pack(-gradient_y / transform_derivative),
+        pack(-gradient_x / transform_derivative),
+    )
+
+
+def _identifiability_diagnostics(
+    control: Tensor,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    trajectory: AnalysisTrajectory,
+) -> _IdentifiabilityDiagnostics | None:
+    frozen = freeze_irls_weights(control, observations, frozen)
+    field_size = frozen.active_field_index.numel()
+
+    residual_fn: Callable[[Tensor], Tensor] = lambda value: (
+        (
+            _whitened_observation_residual(value, observations, frozen)
+            * frozen.irls_sqrt_weight
+        ).reshape(-1)
+    )
+
+    def jacobian_vector(direction: Tensor) -> Tensor:
+        result = torch.func.jvp(
+            residual_fn,
+            (control,),
+            (direction,),
+        )
+        return cast(Tensor, result[1]).detach()
+
+    dynamics_columns: list[Tensor] = []
+    for dynamics_index in range(3):
+        direction = torch.zeros_like(control)
+        direction[field_size + dynamics_index] = 1.0
+        column = jacobian_vector(direction)
+        if not bool(torch.all(torch.isfinite(column))):
+            return None
+        dynamics_columns.append(column)
+
+    hessian_values = [
+        [
+            _scaled_dot(dynamics_columns[row], dynamics_columns[column])
+            + float(row == column)
+            for column in range(3)
+        ]
+        for row in range(3)
+    ]
+    hessian = torch.tensor(hessian_values, dtype=torch.float64)
+    hessian = 0.5 * (hessian + hessian.mT)
+    if not bool(torch.all(torch.isfinite(hessian))):
+        return None
+    eigenvalues = torch.linalg.eigvalsh(hessian)
+    if not bool(torch.all(torch.isfinite(eigenvalues))):
+        return None
+    minimum_eigenvalue = float(eigenvalues[0])
+    maximum_eigenvalue = float(eigenvalues[-1])
+    if minimum_eigenvalue <= 0.0:
+        return None
+
+    field_scale, field_shift_y, field_shift_x = (
+        _field_identifiability_directions(control, frozen, trajectory)
+    )
+
+    def cosine(
+        field_direction: Tensor | None,
+        dynamics_column: Tensor,
+    ) -> float | None:
+        if field_direction is None:
+            return None
+        field_column = jacobian_vector(field_direction)
+        if not bool(torch.all(torch.isfinite(field_column))):
+            return None
+        return _absolute_jacobian_cosine(field_column, dynamics_column)
+
+    return _IdentifiabilityDiagnostics(
+        dynamics_reduced_hessian_eigenvalues=(
+            float(eigenvalues[0]),
+            float(eigenvalues[1]),
+            float(eigenvalues[2]),
+        ),
+        dynamics_reduced_hessian_condition_number=(
+            maximum_eigenvalue / minimum_eigenvalue
+        ),
+        field_growth_jacobian_cosine=cosine(
+            field_scale,
+            dynamics_columns[2],
+        ),
+        field_motion_jacobian_cosine_yx=(
+            cosine(field_shift_y, dynamics_columns[0]),
+            cosine(field_shift_x, dynamics_columns[1]),
+        ),
+    )
+
+
 def robust_objective(
     control: Tensor,
     observations: AnalysisObservations,
@@ -608,7 +936,8 @@ def solve_analysis(
     control: Tensor | None = None,
 ) -> AnalysisResult:
     _validate_observations(observations)
-    reference_control = initial_control(observations)
+    reference_control = initial_control(frozen)
+    _validate_control(reference_control, frozen)
     reference_frozen = _freeze_analysis_remap_cells(
         reference_control,
         frozen,
@@ -653,10 +982,11 @@ def solve_analysis(
                 "positivity_violation",
             )
     current_cost = float(current_cost_tensor.detach())
-    current_amplitude_fraction = _unresolved_amplitude_fraction(
+    current_amplitude = _amplitude_diagnostics(
         observations,
         frozen,
         current_trajectory,
+        include_spatial_diagnostics=False,
     )
     if not bool(torch.any(observations.valid_mask)):
         return _fallback_result(
@@ -688,7 +1018,7 @@ def solve_analysis(
         )
 
     config = frozen.analysis_config
-    field_size = frozen.initial_background_dbz.numel()
+    field_size = frozen.active_field_index.numel()
     damping = config.initial_damping
     total_pcg_iterations = 0
     accepted_any = False
@@ -704,10 +1034,12 @@ def solve_analysis(
             frozen,
         )
         linearization_point: Tensor = control
-        residual_fn: Callable[[Tensor], Tensor] = lambda value: residual_vector(
-            value,
-            observations,
-            frozen_iteration,
+        residual_fn: Callable[[Tensor], Tensor] = lambda value: (
+            residual_vector(
+                value,
+                observations,
+                frozen_iteration,
+            )
         )
         vjp_result = torch.func.vjp(residual_fn, linearization_point)
         residual = cast(Tensor, vjp_result[0])
@@ -715,6 +1047,16 @@ def solve_analysis(
             Callable[[Tensor], tuple[Tensor]],
             vjp_result[1],
         )
+
+        def normal_product(vector: Tensor) -> Tensor:
+            jvp_result = torch.func.jvp(
+                residual_fn,
+                (linearization_point,),
+                (vector,),
+            )
+            jacobian_vector = cast(Tensor, jvp_result[1])
+            return pullback(jacobian_vector)[0]
+
         gradient = pullback(residual)[0]
         gradient_norm = float(torch.linalg.vector_norm(gradient).detach())
         if not math.isfinite(gradient_norm):
@@ -737,11 +1079,8 @@ def solve_analysis(
         accepted = False
         linear_system_solved = False
         for _ in range(config.maximum_damping_retries + 1):
-            operator = lambda vector: gauss_newton_hvp(
-                residual_fn,
-                linearization_point,
-                vector,
-                damping=damping,
+            operator: Callable[[Tensor], Tensor] = lambda vector: (
+                normal_product(vector) + damping * vector
             )
             try:
                 linear = pcg(
@@ -763,11 +1102,7 @@ def solve_analysis(
                 continue
             linear_system_solved = True
             raw_step = linear.solution
-            hessian_step = gauss_newton_hvp(
-                residual_fn,
-                linearization_point,
-                raw_step,
-            )
+            hessian_step = normal_product(raw_step)
             directional_gradient = torch.dot(gradient, raw_step)
             directional_curvature = torch.dot(raw_step, hessian_step)
             for backtrack in range(12):
@@ -806,17 +1141,17 @@ def solve_analysis(
                     candidate_cost = float(candidate_cost_tensor.detach())
                 except EchoPositivityError:
                     continue
-                candidate_amplitude_fraction = (
-                    _unresolved_amplitude_fraction(
-                        observations,
-                        candidate_frozen,
-                        candidate_trajectory,
-                    )
+                candidate_amplitude = _amplitude_diagnostics(
+                    observations,
+                    candidate_frozen,
+                    candidate_trajectory,
+                    include_spatial_diagnostics=False,
                 )
                 if not _amplitude_trial_is_admissible(
-                    current_amplitude_fraction,
-                    candidate_amplitude_fraction,
+                    current_amplitude,
+                    candidate_amplitude,
                     config.maximum_unresolved_amplitude_fraction,
+                    control.dtype,
                 ):
                     continue
                 actual = current_cost - candidate_cost
@@ -830,7 +1165,7 @@ def solve_analysis(
 
                 control = candidate.detach()
                 current_cost = candidate_cost
-                current_amplitude_fraction = candidate_amplitude_fraction
+                current_amplitude = candidate_amplitude
                 accepted_any = True
                 accepted = True
                 if ratio > 0.75:
@@ -904,9 +1239,16 @@ def variational_nowcast(
     qc_mask: Tensor | None = None,
     background_frames_dbz: Tensor | None = None,
     background_age_minutes: float | None = None,
+    grid_time_contract: RadarGridTimeContract | None = None,
     audit: bool = False,
 ) -> tuple[ForecastResult, AnalysisResult]:
     nowcast_config = nowcast_config or NowcastConfig()
+    if grid_time_contract is not None:
+        grid_time_contract.validate_for(
+            nowcast_config,
+            background_present=background_frames_dbz is not None,
+            background_age_minutes=background_age_minutes,
+        )
     observations, frozen = prepare_analysis(
         frames_dbz,
         nowcast_config=nowcast_config,
@@ -918,11 +1260,21 @@ def variational_nowcast(
         background_age_minutes=background_age_minutes,
     )
     analysis = solve_analysis(observations, frozen)
+    (
+        analysis_config_json,
+        analysis_config_digest,
+        analysis_input_digest,
+    ) = _analysis_input_lineage(observations, frozen.analysis_config)
     run = ForecastRunContract.from_inputs(
         nowcast_config,
         frames_dbz,
-        observations.valid_mask[-1],
+        observations.valid_mask,
         background_frames_dbz,
+        background_age_minutes,
+        grid_time_contract=grid_time_contract,
+        analysis_config_json=analysis_config_json,
+        analysis_config_digest=analysis_config_digest,
+        analysis_input_digest=analysis_input_digest,
     )
     forecast = forecast_from_state(
         analysis.state,
@@ -932,6 +1284,29 @@ def variational_nowcast(
         audit=audit,
     )
     return forecast, analysis
+
+
+def _analysis_input_lineage(
+    observations: AnalysisObservations,
+    config: AnalysisConfig,
+) -> tuple[str, str, str]:
+    config_value = asdict(config)
+    config_json = json.dumps(
+        config_value,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
+    config_digest = json_digest(config_value)
+    input_digest = json_digest(
+        {
+            "version": "p1-analysis-input-v1",
+            "analysis_config_digest": config_digest,
+            "observation_std_dbz": tensor_digest(observations.std_dbz),
+            "quality_weight": tensor_digest(observations.quality_weight),
+        }
+    )
+    return config_json, config_digest, input_digest
 
 
 def _evaluate_control(
@@ -1037,13 +1412,13 @@ def _analysis_result(
         name="final analysis",
     )
     trajectory = replace(trajectory, frames_linear=frames)
-    unresolved_amplitude_fraction = _unresolved_amplitude_fraction(
+    amplitude = _amplitude_diagnostics(
         observations,
         frozen,
         trajectory,
     )
     if (
-        unresolved_amplitude_fraction
+        float(amplitude.maximum_gated_unresolved_fraction.detach())
         > frozen.analysis_config.maximum_unresolved_amplitude_fraction
     ):
         return _fallback_result(
@@ -1054,7 +1429,8 @@ def _analysis_result(
             outer_iterations,
             pcg_iterations,
             minimum_reachability_margin=reachability_margin,
-            unresolved_amplitude_fraction=unresolved_amplitude_fraction,
+            amplitude_diagnostics=amplitude,
+            amplitude_diagnostics_source="rejected_candidate",
         )
     if not _objective_improves_reference(
         final_objective,
@@ -1069,7 +1445,8 @@ def _analysis_result(
             outer_iterations,
             pcg_iterations,
             minimum_reachability_margin=reachability_margin,
-            unresolved_amplitude_fraction=unresolved_amplitude_fraction,
+            amplitude_diagnostics=amplitude,
+            amplitude_diagnostics_source="rejected_candidate",
         )
     state = RadarState(
         echo_linear=frames[-1],
@@ -1088,14 +1465,24 @@ def _analysis_result(
         trajectory.displacement_yx,
         frozen.nowcast_config,
     )
-    background_used = background_fraction > frozen.nowcast_config.epsilon
+    background_used = (
+        background_fraction > frozen.nowcast_config.epsilon
+        or frozen.baseline_metadata.background_tendency_used
+    )
     (
         causal_control_cell_count,
         causal_seed_cell_count,
         causal_seed_prior_cost,
     ) = _causal_seed_diagnostics(frozen)
+    identifiability = _identifiability_diagnostics(
+        control,
+        observations,
+        frozen,
+        trajectory,
+    )
     return AnalysisResult(
         control=control.detach(),
+        active_field_index=frozen.active_field_index.detach().clone(),
         state=_detach_state(state),
         metadata=replace(
             frozen.baseline_metadata,
@@ -1115,13 +1502,87 @@ def _analysis_result(
         converged=converged,
         used_fallback=False,
         reason=reason,
-        degraded=degraded,
+        degraded=degraded or amplitude.has_insufficient_information,
         audit=audit,
         minimum_reachability_margin=reachability_margin,
-        unresolved_amplitude_fraction=unresolved_amplitude_fraction,
+        unresolved_amplitude_fraction=float(
+            amplitude.maximum_unresolved_fraction.detach()
+        ),
+        unresolved_amplitude_fraction_by_time=(
+            _materialize_pair(amplitude.unresolved_fraction_by_time)
+        ),
+        unresolved_pixel_fraction_by_time=(
+            _materialize_pair(amplitude.unresolved_pixel_fraction_by_time)
+        ),
+        amplitude_violation_score=float(
+            amplitude.maximum_violation_score.detach()
+        ),
+        amplitude_violation_score_by_time=_materialize_pair(
+            amplitude.violation_score_by_time
+        ),
+        integrated_echo_ratio_by_time=_materialize_pair(
+            amplitude.integrated_echo_ratio_by_time
+        ),
+        displacement_tolerant_soft_echo_area_ratio_by_time=_materialize_pair(
+            amplitude.displacement_tolerant_soft_echo_area_ratio_by_time
+        ),
+        effective_precursor_pixel_count_by_time=_materialize_pair(
+            amplitude.effective_pixel_count_by_time
+        ),
+        bad_quality_weight_by_time=_materialize_pair(
+            amplitude.bad_quality_weight_by_time
+        ),
+        total_quality_weight_by_time=_materialize_pair(
+            amplitude.total_quality_weight_by_time
+        ),
+        amplitude_information_sufficient_by_time=_materialize_bool_pair(
+            amplitude.information_sufficient_by_time
+        ),
+        insufficient_amplitude_information=(
+            amplitude.has_insufficient_information
+        ),
+        established_echo_excess_growth_fraction=(
+            _materialize_finite_max(
+                amplitude.established_echo_excess_growth_fraction_by_time
+            )
+        ),
+        established_echo_excess_growth_fraction_by_time=_materialize_pair(
+            amplitude.established_echo_excess_growth_fraction_by_time
+        ),
+        maximum_growth_envelope_ratio=_materialize_finite_max(
+            amplitude.maximum_growth_envelope_ratio_by_time
+        ),
+        maximum_growth_envelope_ratio_by_time=_materialize_pair(
+            amplitude.maximum_growth_envelope_ratio_by_time
+        ),
+        amplitude_diagnostics_source="returned_analysis",
+        relative_objective_reduction=_relative_objective_reduction(
+            reference_objective,
+            final_objective,
+        ),
         causal_control_cell_count=causal_control_cell_count,
         causal_seed_cell_count=causal_seed_cell_count,
         causal_seed_prior_cost=causal_seed_prior_cost,
+        dynamics_reduced_hessian_eigenvalues=(
+            None
+            if identifiability is None
+            else identifiability.dynamics_reduced_hessian_eigenvalues
+        ),
+        dynamics_reduced_hessian_condition_number=(
+            None
+            if identifiability is None
+            else identifiability.dynamics_reduced_hessian_condition_number
+        ),
+        field_growth_jacobian_cosine=(
+            None
+            if identifiability is None
+            else identifiability.field_growth_jacobian_cosine
+        ),
+        field_motion_jacobian_cosine_yx=(
+            None
+            if identifiability is None
+            else identifiability.field_motion_jacobian_cosine_yx
+        ),
     )
 
 
@@ -1158,19 +1619,52 @@ def _unresolved_amplitude_fraction(
     frozen: FrozenOuterState,
     trajectory: AnalysisTrajectory,
 ) -> float:
+    maximum = _amplitude_diagnostics(
+        observations,
+        frozen,
+        trajectory,
+    ).maximum_unresolved_fraction
+    return float(maximum.detach())
+
+
+def _amplitude_diagnostics(
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    trajectory: AnalysisTrajectory,
+    *,
+    include_spatial_diagnostics: bool = True,
+) -> _AmplitudeDiagnostics:
     prediction_dbz = echo_to_dbz(
         trajectory.frames_linear,
         min_dbz=frozen.nowcast_config.min_dbz,
     )
+    (
+        established_excess_growth_fractions,
+        maximum_growth_envelope_ratios,
+    ) = _established_growth_envelope_diagnostics(
+        observations,
+        frozen,
+        trajectory,
+        enabled=include_spatial_diagnostics,
+    )
     initial_detected = frozen.detected_masks[0].to(
         dtype=trajectory.displacement_yx.dtype
     )
-    bad_weight = prediction_dbz.new_zeros(())
-    total_weight = prediction_dbz.new_zeros(())
     amplitude_floor = (
         frozen.analysis_config.detection_limit_dbz
         - frozen.analysis_config.censor_temperature_dbz
     )
+    unresolved_fractions: list[Tensor] = []
+    unresolved_pixel_fractions: list[Tensor] = []
+    violation_scores: list[Tensor] = []
+    integrated_echo_ratios: list[Tensor] = []
+    soft_echo_area_ratios: list[Tensor] = []
+    effective_pixel_counts: list[Tensor] = []
+    bad_quality_weights: list[Tensor] = []
+    total_quality_weights: list[Tensor] = []
+    information_sufficient: list[Tensor] = []
+    zero = prediction_dbz.new_zeros(())
+    nan = prediction_dbz.new_full((), math.nan)
 
     for step in (1, 2):
         initial_reach = remap(
@@ -1182,6 +1676,17 @@ def _unresolved_amplitude_fraction(
             < frozen.analysis_config.minimum_control_reachability
         )
         if not bool(torch.any(precursor_required)):
+            unresolved_fractions.append(zero)
+            unresolved_pixel_fractions.append(zero)
+            violation_scores.append(zero)
+            integrated_echo_ratios.append(nan)
+            soft_echo_area_ratios.append(nan)
+            effective_pixel_counts.append(zero)
+            bad_quality_weights.append(zero)
+            total_quality_weights.append(zero)
+            information_sufficient.append(
+                torch.ones_like(zero, dtype=torch.bool)
+            )
             continue
 
         local_prediction = F.max_pool2d(
@@ -1203,24 +1708,290 @@ def _unresolved_amplitude_fraction(
             )
             | (local_prediction < amplitude_floor)
         )
-        bad_weight = bad_weight + quality[unresolved].sum()
-        total_weight = total_weight + quality[precursor_required].sum()
+        selected_quality = quality[precursor_required]
+        bad_weight = quality[unresolved].sum()
+        total_weight = selected_quality.sum()
+        relative_quality = selected_quality / selected_quality.max()
+        effective_pixel_count = relative_quality.sum().square() / (
+            relative_quality.square().sum()
+        )
+        sufficient = (
+            total_weight
+            >= frozen.analysis_config.minimum_amplitude_total_quality_weight
+        ) & (
+            effective_pixel_count
+            >= frozen.analysis_config.minimum_amplitude_effective_pixel_count
+        )
+        unresolved_fraction = bad_weight / total_weight
+        unresolved_pixel_fraction = (
+            unresolved[precursor_required].to(dtype=prediction_dbz.dtype).mean()
+        )
 
-    if float(total_weight.detach()) <= 0:
-        return 0.0
-    return float((bad_weight / total_weight).detach())
+        standardized_excess = torch.clamp_min(
+            standardized_deficit
+            - frozen.analysis_config.maximum_detected_error_std,
+            0.0,
+        )
+        floor_excess = torch.clamp_min(
+            (amplitude_floor - local_prediction)
+            / frozen.analysis_config.censor_temperature_dbz,
+            0.0,
+        )
+        violation = (
+            quality[precursor_required]
+            * (
+                standardized_excess[precursor_required].square()
+                + floor_excess[precursor_required].square()
+            )
+        ).sum() / total_weight
+
+        integrated_echo_ratio = nan
+        soft_echo_area_ratio = nan
+        if include_spatial_diagnostics:
+            expanded_region = (
+                F.max_pool2d(
+                    precursor_required[None, None].to(
+                        dtype=prediction_dbz.dtype
+                    ),
+                    kernel_size=3,
+                    stride=1,
+                    padding=1,
+                )[0, 0]
+                > 0
+            )
+            observed_echo = dbz_to_echo(
+                observations.dbz[step],
+                min_dbz=frozen.nowcast_config.min_dbz,
+                max_dbz=frozen.nowcast_config.max_dbz,
+            )
+            observed_echo_integral = observed_echo[precursor_required].sum()
+            predicted_echo_integral = trajectory.frames_linear[step][
+                expanded_region
+            ].sum()
+            integrated_echo_ratio = (
+                predicted_echo_integral / observed_echo_integral
+            )
+
+            temperature = frozen.analysis_config.censor_temperature_dbz
+            observed_soft_area = torch.sigmoid(
+                (
+                    observations.dbz[step]
+                    - frozen.analysis_config.detection_limit_dbz
+                )
+                / temperature
+            )[precursor_required].sum()
+            predicted_soft_area = torch.sigmoid(
+                (
+                    prediction_dbz[step]
+                    - frozen.analysis_config.detection_limit_dbz
+                )
+                / temperature
+            )[expanded_region].sum()
+            soft_echo_area_ratio = (
+                predicted_soft_area / observed_soft_area
+            )
+
+        unresolved_fractions.append(unresolved_fraction)
+        unresolved_pixel_fractions.append(unresolved_pixel_fraction)
+        violation_scores.append(violation)
+        integrated_echo_ratios.append(integrated_echo_ratio)
+        soft_echo_area_ratios.append(soft_echo_area_ratio)
+        effective_pixel_counts.append(effective_pixel_count)
+        bad_quality_weights.append(bad_weight)
+        total_quality_weights.append(total_weight)
+        information_sufficient.append(sufficient)
+
+    return _AmplitudeDiagnostics(
+        unresolved_fraction_by_time=torch.stack(unresolved_fractions),
+        unresolved_pixel_fraction_by_time=torch.stack(
+            unresolved_pixel_fractions
+        ),
+        violation_score_by_time=torch.stack(violation_scores),
+        integrated_echo_ratio_by_time=torch.stack(integrated_echo_ratios),
+        displacement_tolerant_soft_echo_area_ratio_by_time=torch.stack(
+            soft_echo_area_ratios
+        ),
+        effective_pixel_count_by_time=torch.stack(effective_pixel_counts),
+        bad_quality_weight_by_time=torch.stack(bad_quality_weights),
+        total_quality_weight_by_time=torch.stack(total_quality_weights),
+        information_sufficient_by_time=torch.stack(information_sufficient),
+        established_echo_excess_growth_fraction_by_time=(
+            established_excess_growth_fractions
+        ),
+        maximum_growth_envelope_ratio_by_time=(
+            maximum_growth_envelope_ratios
+        ),
+    )
+
+
+def _established_growth_envelope_diagnostics(
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    trajectory: AnalysisTrajectory,
+    *,
+    enabled: bool,
+) -> tuple[Tensor, Tensor]:
+    unavailable = trajectory.frames_linear.new_full((2,), math.nan)
+    if not enabled or not bool(torch.any(frozen.detected_masks[0])):
+        return unavailable, unavailable.clone()
+
+    nowcast = frozen.nowcast_config
+    analysis = frozen.analysis_config
+    initial_quality = observations.quality_weight[0].clamp_min(
+        analysis.transform_epsilon
+    )
+    initial_upper_dbz = (
+        observations.dbz[0]
+        + analysis.maximum_detected_error_std
+        * observations.std_dbz[0]
+        / torch.sqrt(initial_quality)
+    ).clamp_max(nowcast.max_dbz)
+    initial_upper_dbz = torch.where(
+        frozen.detected_masks[0],
+        initial_upper_dbz,
+        initial_upper_dbz.new_full((), nowcast.min_dbz),
+    )
+    initial_upper_echo = dbz_to_echo(
+        initial_upper_dbz,
+        min_dbz=nowcast.min_dbz,
+        max_dbz=nowcast.max_dbz,
+    )
+    initial_detected = frozen.detected_masks[0].to(
+        dtype=trajectory.displacement_yx.dtype
+    )
+    excess_fractions: list[Tensor] = []
+    maximum_ratios: list[Tensor] = []
+    nan = trajectory.frames_linear.new_full((), math.nan)
+
+    for index, step in enumerate((1, 2)):
+        initial_reach = remap(
+            initial_detected,
+            step * trajectory.displacement_yx,
+        )
+        established = frozen.detected_masks[step] & (
+            initial_reach >= analysis.minimum_control_reachability
+        )
+        if not bool(torch.any(established)):
+            excess_fractions.append(nan)
+            maximum_ratios.append(nan)
+            continue
+
+        envelope_echo = advance(
+            initial_upper_echo,
+            step * trajectory.displacement_yx,
+            step * nowcast.max_log_growth_per_step,
+            frozen.analysis_remap_cells[index],
+        )
+        local_envelope_echo = F.max_pool2d(
+            envelope_echo[None, None],
+            kernel_size=3,
+            stride=1,
+            padding=1,
+        )[0, 0]
+        local_envelope_dbz = echo_to_dbz(
+            local_envelope_echo,
+            min_dbz=nowcast.min_dbz,
+            max_dbz=nowcast.max_dbz,
+        )
+        quality = observations.quality_weight[step]
+        standardized_excess = (
+            torch.sqrt(quality)
+            * (observations.dbz[step] - local_envelope_dbz)
+            / observations.std_dbz[step]
+        )
+        excess = established & (
+            standardized_excess > analysis.maximum_detected_error_std
+        )
+        excess_fractions.append(
+            quality[excess].sum() / quality[established].sum()
+        )
+        observed_echo = dbz_to_echo(
+            observations.dbz[step],
+            min_dbz=nowcast.min_dbz,
+            max_dbz=nowcast.max_dbz,
+        )
+        maximum_ratios.append(
+            torch.max(
+                observed_echo[established]
+                / local_envelope_echo[established].clamp_min(nowcast.epsilon)
+            )
+        )
+
+    return torch.stack(excess_fractions), torch.stack(maximum_ratios)
 
 
 def _amplitude_trial_is_admissible(
-    current_fraction: float,
-    candidate_fraction: float,
+    current: _AmplitudeDiagnostics,
+    candidate: _AmplitudeDiagnostics,
     maximum_fraction: float,
+    dtype: torch.dtype,
 ) -> bool:
+    metrics = torch.stack(
+        (
+            current.maximum_gated_unresolved_fraction,
+            candidate.maximum_gated_unresolved_fraction,
+            current.maximum_gated_violation_score,
+            candidate.maximum_gated_violation_score,
+            current.total_gated_violation_score,
+            candidate.total_gated_violation_score,
+        )
+    ).detach().cpu()
+    current_fraction = float(metrics[0])
+    candidate_fraction = float(metrics[1])
+    current_maximum = float(metrics[2])
+    candidate_maximum = float(metrics[3])
+    current_total = float(metrics[4])
+    candidate_total = float(metrics[5])
     if candidate_fraction <= maximum_fraction:
         return True
-    return (
-        current_fraction > maximum_fraction
-        and candidate_fraction < current_fraction
+    if current_fraction <= maximum_fraction:
+        return False
+    info = torch.finfo(dtype)
+    maximum_tolerance = (
+        32.0
+        * info.eps
+        * max(abs(current_maximum), abs(candidate_maximum), info.tiny)
+    )
+    if candidate_maximum < current_maximum - maximum_tolerance:
+        return True
+    if candidate_maximum > current_maximum + maximum_tolerance:
+        return False
+    total_tolerance = (
+        32.0
+        * info.eps
+        * max(abs(current_total), abs(candidate_total), info.tiny)
+    )
+    return candidate_total < current_total - total_tolerance
+
+
+def _materialize_pair(values: Tensor) -> tuple[float, float]:
+    values = values.detach().cpu()
+    return float(values[0]), float(values[1])
+
+
+def _materialize_bool_pair(values: Tensor) -> tuple[bool, bool]:
+    values = values.detach().cpu()
+    return bool(values[0]), bool(values[1])
+
+
+def _materialize_finite_max(values: Tensor) -> float | None:
+    values = values.detach().cpu()
+    finite = values[torch.isfinite(values)]
+    return None if finite.numel() == 0 else float(torch.max(finite))
+
+
+def _relative_objective_reduction(
+    reference_objective: float,
+    final_objective: float,
+) -> float | None:
+    if not (
+        math.isfinite(reference_objective)
+        and math.isfinite(final_objective)
+    ):
+        return None
+    return (reference_objective - final_objective) / max(
+        abs(reference_objective),
+        torch.finfo(torch.float64).eps,
     )
 
 
@@ -1246,8 +2017,23 @@ def _fallback_result(
     pcg_iterations: int = 0,
     *,
     minimum_reachability_margin: float | None = None,
-    unresolved_amplitude_fraction: float | None = None,
+    amplitude_diagnostics: _AmplitudeDiagnostics | None = None,
+    amplitude_diagnostics_source: AmplitudeDiagnosticsSource = "unavailable",
 ) -> AnalysisResult:
+    if (
+        amplitude_diagnostics is None
+        and amplitude_diagnostics_source != "unavailable"
+    ):
+        raise ValueError(
+            "amplitude diagnostics source requires amplitude diagnostics"
+        )
+    if (
+        amplitude_diagnostics is not None
+        and amplitude_diagnostics_source == "unavailable"
+    ):
+        raise ValueError(
+            "stored amplitude diagnostics require an explicit source"
+        )
     frames = dbz_to_echo(
         frozen.baseline_frames_dbz,
         min_dbz=frozen.nowcast_config.min_dbz,
@@ -1264,6 +2050,7 @@ def _fallback_result(
     ) = _causal_seed_diagnostics(frozen)
     return AnalysisResult(
         control=torch.zeros_like(control),
+        active_field_index=frozen.active_field_index.detach().clone(),
         state=_detach_state(frozen.baseline_state),
         metadata=frozen.baseline_metadata,
         analyzed_frames_linear=frames.detach(),
@@ -1277,7 +2064,123 @@ def _fallback_result(
         degraded=False,
         audit=audit,
         minimum_reachability_margin=minimum_reachability_margin,
-        unresolved_amplitude_fraction=unresolved_amplitude_fraction,
+        unresolved_amplitude_fraction=(
+            None
+            if amplitude_diagnostics is None
+            else float(
+                amplitude_diagnostics.maximum_unresolved_fraction.detach()
+            )
+        ),
+        unresolved_amplitude_fraction_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics.unresolved_fraction_by_time
+            )
+        ),
+        unresolved_pixel_fraction_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics.unresolved_pixel_fraction_by_time
+            )
+        ),
+        amplitude_violation_score=(
+            None
+            if amplitude_diagnostics is None
+            else float(amplitude_diagnostics.maximum_violation_score.detach())
+        ),
+        amplitude_violation_score_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics.violation_score_by_time
+            )
+        ),
+        integrated_echo_ratio_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics.integrated_echo_ratio_by_time
+            )
+        ),
+        displacement_tolerant_soft_echo_area_ratio_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics
+                .displacement_tolerant_soft_echo_area_ratio_by_time
+            )
+        ),
+        effective_precursor_pixel_count_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics.effective_pixel_count_by_time
+            )
+        ),
+        bad_quality_weight_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics.bad_quality_weight_by_time
+            )
+        ),
+        total_quality_weight_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics.total_quality_weight_by_time
+            )
+        ),
+        amplitude_information_sufficient_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_bool_pair(
+                amplitude_diagnostics.information_sufficient_by_time
+            )
+        ),
+        insufficient_amplitude_information=(
+            False
+            if amplitude_diagnostics is None
+            else amplitude_diagnostics.has_insufficient_information
+        ),
+        established_echo_excess_growth_fraction=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_finite_max(
+                amplitude_diagnostics
+                .established_echo_excess_growth_fraction_by_time
+            )
+        ),
+        established_echo_excess_growth_fraction_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics
+                .established_echo_excess_growth_fraction_by_time
+            )
+        ),
+        maximum_growth_envelope_ratio=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_finite_max(
+                amplitude_diagnostics.maximum_growth_envelope_ratio_by_time
+            )
+        ),
+        maximum_growth_envelope_ratio_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics.maximum_growth_envelope_ratio_by_time
+            )
+        ),
+        amplitude_diagnostics_source=amplitude_diagnostics_source,
+        relative_objective_reduction=(
+            None
+            if not math.isfinite(initial_objective)
+            else 0.0
+        ),
         causal_control_cell_count=causal_control_cell_count,
         causal_seed_cell_count=causal_seed_cell_count,
         causal_seed_prior_cost=causal_seed_prior_cost,
@@ -1322,9 +2225,9 @@ def _freeze_analysis_remap_cells(
     control: Tensor,
     frozen: FrozenOuterState,
 ) -> FrozenOuterState:
-    height, width = frozen.initial_background_dbz.shape
+    field_size = frozen.active_field_index.numel()
     displacement, _ = _decode_dynamics(
-        control[height * width :],
+        control[field_size:],
         frozen.baseline_state,
         frozen.analysis_config,
         frozen.nowcast_config,
@@ -1465,8 +2368,8 @@ def _validate_control(
     control: Tensor,
     frozen: FrozenOuterState,
 ) -> None:
-    height, width = frozen.initial_background_dbz.shape
-    expected = height * width + 3
+    active_index = frozen.active_field_index
+    expected = active_index.numel() + 3
     if (
         control.ndim != 1
         or control.numel() != expected
@@ -1479,6 +2382,19 @@ def _validate_control(
         raise ValueError("control and frozen state must use the same device")
     if control.dtype != frozen.initial_background_dbz.dtype:
         raise ValueError("control and frozen state must use the same dtype")
+    expected_index = torch.nonzero(
+        frozen.initial_support_mask.flatten(),
+        as_tuple=False,
+    ).flatten()
+    if (
+        active_index.ndim != 1
+        or active_index.dtype != torch.long
+        or active_index.device != frozen.initial_background_dbz.device
+        or not torch.equal(active_index, expected_index)
+    ):
+        raise ValueError(
+            "active_field_index must enumerate initial support in flat order"
+        )
 
 
 def _detach_state(state: RadarState) -> RadarState:
@@ -1501,6 +2417,9 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
         source_support=metadata.source_support.detach(),
         motion_disagreement_px=metadata.motion_disagreement_px.detach(),
         growth_disagreement=metadata.growth_disagreement.detach(),
+        minimum_phase_correlation_psr=(
+            metadata.minimum_phase_correlation_psr.detach()
+        ),
         tendency_pair_count=metadata.tendency_pair_count,
         tendency_source=metadata.tendency_source,
         provenance=metadata.provenance,

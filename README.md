@@ -15,6 +15,8 @@
 입력 시각은 `[-20, -10, 0]분`, 출력 시각은 `[+10, ..., +180]분`이다.
 
 1. 실제로 가용한 프레임 쌍에서 phase correlation으로 전역 이동량을 추정한다.
+   peak 주변을 제외한 sidelobe 대비 peak의 분리도(PSR)가 연구 기본값
+   `8.0`보다 낮으면 그 pair는 경향 추정에서 fail-close한다.
 2. 이전 에코를 이동시킨 뒤 겹치는 영역의 에코 적분비로 로그 성장률을 추정한다.
 3. 각 선행시간을 최신 에코에서 국지적 양성 보존 remap으로 직접 이류한다.
 4. 성장률은 60분 시간규모로 감쇠시켜 장시간 폭주를 막는다.
@@ -73,6 +75,62 @@ print(result.state.log_growth_per_step)   # log growth / 10 min
 print(result.metadata.data_status)
 ```
 
+실제 자료에서는 시각·격자 계약을 함께 전달한다.
+
+```python
+from advar import RadarGridTimeContract
+
+grid_time = RadarGridTimeContract(
+    valid_times=(
+        "2026-07-31T00:00:00Z",
+        "2026-07-31T00:10:00Z",
+        "2026-07-31T00:20:00Z",
+    ),
+    dx_m=1000.0,
+    dy_m=1000.0,
+    projection="EPSG:5179",
+    grid_hash="<lowercase SHA-256 grid identity>",
+)
+result = nowcast(frames, grid_time_contract=grid_time)
+```
+
+시각은 UTC로 canonicalize되며 세 간격이 `interval_minutes`와 정확히
+일치해야 한다. 배경을 사용하면 같은 세 시각의 `background_valid_times`와
+최신 `background_age_minutes`가 일치해야 하며,
+`maximum_background_age_minutes`를 넘는 배경은 거부한다. 계약을 생략한
+호출은 합성·연구용 index-time/pixel-grid 경로로 유지되며 실제 레이더
+운영자료의 물리 provenance를 주장하지 않는다.
+
+발행 프로세스가 종료된 뒤에도 동일한 실행계약으로 M0를 계산하려면
+forecast-run artifact를 저장한다.
+
+```python
+from advar import load_forecast_run, save_forecast_run
+
+save_forecast_run(result, "forecast-run.npz")
+
+# 미래 검증자료가 도착한 별도 프로세스
+result = load_forecast_run("forecast-run.npz")
+result.validate_issuance()
+```
+
+artifact는 발행장·유효영역, 현재 에코상태, source support, 실제
+`NowcastConfig`, 최신 관측 수용 mask와 각 digest를 함께 저장한다.
+세 관측장·세 실제 수용 mask·배경 전체·배경 age는 하나의
+`input_bundle_digest`로 묶고, 상태와 발행 결과까지 포함한
+`forecast_run_digest`로 정확한 실행 identity를 고정한다.
+P1 실행은 실제 `AnalysisConfig` JSON과 observation-std·quality-weight의
+analysis input digest도 같은 identity에 포함한다.
+재적재 시 tensor/config/state/metadata/artifact digest를 독립적으로
+재계산한다. 선택적인 positivity/transport audit 객체는 M0 재현에
+필요하지 않으므로 `load_forecast_run()` 결과에서는 `None`이다.
+
+배경 사용 provenance는 현재 상태 support와 경향 초기화를 분리한다.
+`background_state_support_fraction`은 현재 에코상태에서 배경 support가
+차지한 비율이고, `background_tendency_used`는 이동·성장률 추정이 배경
+pair에 의존했는지를 나타낸다. `background_used`는 두 경로의 논리합이며,
+어느 경로에서든 배경을 사용하면 `background_age_minutes`를 보존한다.
+
 세 관측시각을 함께 분석하려면 다음처럼 사용한다.
 
 ```python
@@ -91,34 +149,65 @@ print(analysis.state.echo_linear)  # 세 장으로 분석된 현재 q(0)
 P1 제어벡터는 다음 하나뿐이다.
 
 ```text
-[a_q(-20분, H×W), a_dy, a_dx, a_log_growth]
+[a_q(-20분, |S_control|), a_dy, a_dx, a_log_growth]
 ```
 
-`a_q`는 dBZ latent의 softplus 좌표에서 양의 선형 에코로 변환한다.
-무에코 영역은 고정 support mask로 잠가 레이더 세 장만으로 신규 에코를
-만들지 않는다. 다만 분석창 후반에 탐지된 에코는 baseline 운동으로
+`a_q`는 고정 control support의 활성 격자만 포함하며
+`analysis.active_field_index`가 각 값을 원래 `H×W` 격자의 flat index로
+연결한다. dBZ latent의 softplus 좌표에서 양의 선형 에코로 변환하고,
+support 밖 제어변수는 PCG 벡터에 만들지 않는다. 무에코 영역은 고정
+support mask로 잠가 레이더 세 장만으로 신규 에코를 만들지 않는다.
+다만 분석창 후반에 탐지된 에코는 baseline 운동으로
 초기시각에 역수송하고, 초기 관측 또는 배경 anchor가 있는 위치만 2 pixel
-범위에서 precursor control로 연다. causal-only floor 화소는 탐지한계 바로
-아래에서 control을 warm start하므로 배경을 바꾸지 않으며 제어 prior 비용도
-그대로 부담한다. 모든 분석시각의 탐지 에코에는 최소 0.25의 control
+범위에서 precursor control로 연다. 이 확장영역은 운동오차를 허용하는
+control envelope일 뿐 precursor 초기 추정은 아니다. 탐지한계 바로 아래의
+warm start는 역이류 core와 초기 anchor가 직접 겹치는 causal seed에만
+적용하므로, 주변 envelope는 zero control에서 시작한다. seed는 배경을
+바꾸지 않으며 제어 prior 비용도 그대로 부담한다. 모든 분석시각의 탐지
+에코에는 최소 0.25의 control
 reachability를 요구하고, 그 최소 여유를
 `analysis.minimum_reachability_margin`에 기록한다. 초기 탐지 에코의 정상
 수송으로 설명되지 않는 -10분 및 최신 에코는 3×3 근린의 분석 최댓값과
-비교한다. quality-weighted 표준화 deficit이 3을 넘거나 에코가 precursor
-floor 아래인 가중 화소비율을
-`analysis.unresolved_amplitude_fraction`에 기록하고, 그 비율이 연구용
-fail-close 기본값 1%를 넘으면 `unresolved_growth_or_emergence`로
-기준예측에 복귀한다. 이 1%는 운용 임계값이 아니며 실제 hindcast에서
-보정해야 한다. 기존 `maximum_latest_detected_error_std` 생성자 인자는
-0.4 API 호환을 위해 유지되며, 현재는 두 후속 분석시각 모두에 적용된다.
+비교한다. `quality_weight`는 관측 precision multiplier로 사용한다.
+quality-weighted 표준화 deficit이 3을 넘거나 에코가 precursor floor
+아래인 정보가중 비율을 -10분과 0분에 각각 계산하고,
+`analysis.unresolved_amplitude_fraction_by_time`에 기록한다. 기존 scalar
+`analysis.unresolved_amplitude_fraction`은 두 시각 값의 최댓값이다.
+단, precursor 관측의 총 quality weight가 기본 0.01 미만이거나 유효
+정보화소 수가 기본 1.0 미만이면 해당 시각은 hard amplitude gate에서
+제외하고 `analysis.amplitude_information_sufficient_by_time`과
+`analysis.insufficient_amplitude_information`에 명시한다. raw 시간별
+fraction과 quality weight는 감사용으로 그대로 보존하며, 이 경우 수용된
+분석도 `degraded=True`로 표시한다. 정보가 충분한
+시각의 최댓값이 연구용 fail-close 기본값 1%를 넘으면
+`unresolved_growth_or_emergence`로 기준예측에 복귀한다. 이 1%는 운용
+임계값이 아니며 정보량 하한과 함께 실제 hindcast에서 보정해야 한다. 기존
+`maximum_latest_detected_error_std` 생성자 인자는 0.4 API 호환을 위해
+유지되며, 현재는 두 후속 분석시각 모두에 적용된다.
+
+초기 탐지 에코에서 기하학적으로 도달 가능한 후속 에코도 별도 성장능력
+진단을 받는다. 초기 관측의 quality-aware 3-sigma 상한을 분석 이동량과
+`max_log_growth_per_step`으로 수송한 뒤, 후속 관측이 그 envelope를 넘는
+정보가중 비율과 최대 선형에코 비를 각각
+`established_echo_excess_growth_fraction_by_time`과
+`maximum_growth_envelope_ratio_by_time`에 기록한다. 이 값은 현재 모델의
+전역 성장률 상한으로 설명하기 어려운 established echo를 찾는 진단이며,
+실제 hindcast 보정 전에는 hard fallback 조건으로 사용하지 않는다.
 
 warm start는 solver의 출발점일 뿐 수용 기준은 아니다. P1은 zero-control
 목적함수를 `initial_objective`로 고정하고, 최종 제어가 이를 수치
 허용오차보다 명확히 낮출 때만 분석을 발행한다. fallback이면 반환 제어는
 zero이고 `final_objective == initial_objective`다. amplitude 조건을
-위반한 warm start에서는 위반비율을 줄이는 LM 후보만 허용하고, 일단
-feasible해지면 다시 infeasible 영역으로 나갈 수 없다. causal envelope의
-제어 셀 수, 실제 seed 셀 수, seed prior 비용도 각각
+위반한 warm start에서는 연속적인 초과량 제곱 점수의
+`(시간별 최댓값, 시간별 합)`을 사전식으로 줄이는 LM 후보를 허용하고,
+최종 안전판정에는 시간별 discrete fraction의 최댓값을 사용한다. 작은
+float32 violation에도 절대 1 기준 허용오차를 적용하지 않는다. 일단
+feasible해지면 다시 infeasible 영역으로 나갈 수 없다. 시간별 선형 에코
+적분비, displacement-tolerant soft echo area 비, quality scale에 불변인
+유효 정보화소 수, bad/total quality weight는 분석 진단으로만 기록하며
+운용 hard gate가 아니다. 진단이 반환된 분석을 평가했는지, 폐기된 후보를
+평가했는지는 `analysis.amplitude_diagnostics_source`로 구분한다. causal
+envelope의 제어 셀 수, 실제 seed 셀 수, seed prior 비용도 각각
 `causal_control_cell_count`, `causal_seed_cell_count`,
 `causal_seed_prior_cost`로 기록한다.
 
@@ -132,7 +221,16 @@ detected 또는 censored residual
 
 잔차벡터에는 표준화된 제어 prior도 그대로 포함한다. 따라서
 Gauss–Newton HVP는 `J.T @ (J @ v)`로 계산되고, LM 증분은 PCG로 푼다.
-행렬이나 Jacobian은 생성하지 않는다. 첫 분석 증분 전 PCG 실패,
+각 외부 반복은 VJP pullback을 한 번만 만들고 PCG의 각 `J.T @ (J @ v)`에
+재사용한다. PCG의 수렴 여부와 `relative_residual`은 반환 전에 다시 계산한
+실제 `b - A @ x`로 확인하며, 재귀잔차가 먼저 수렴했지만 실제잔차가 남으면
+Krylov recurrence를 재시작한다. 행렬이나 Jacobian은 생성하지 않는다.
+수용된 분석에는 최종 IRLS 선형화점의 관측 Jacobian만 사용하여
+표준화된 dynamics 3변수의
+`J_dyn.T @ J_dyn + I` 고유값·조건수와, 초기장–성장 및
+초기장–이동 Jacobian 절대 cosine을 진단으로 기록한다. 이 값은 아직
+hindcast로 보정된 발행 gate가 아니며 분석 수용 여부를 바꾸지 않는다.
+첫 분석 증분 전 PCG 실패,
 비유한값, 수용할 수 없는 증분은 FFT 기준예측으로 복귀한다. 한 번이라도
 목적함수를 낮춘 분석이 수용된 뒤 후속 반복이 실패하면 그 최선 분석을
 `degraded=True`로 보존한다.
@@ -182,18 +280,36 @@ advar-nowcast three_frames.npy forecast.npz \
   --qc-mask qc.npy \
   --background previous_cycle.npy \
   --background-age-minutes 10
+advar-nowcast three_frames.npy forecast.npz \
+  --valid-times 2026-07-31T00:00:00Z 2026-07-31T00:10:00Z 2026-07-31T00:20:00Z \
+  --dx-m 1000 --dy-m 1000 --projection EPSG:5179 \
+  --grid-hash <lowercase-SHA-256>
 advar-nowcast three_frames.npy forecast.npz --audit
 ```
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v5`
+- `output_contract_version`: 현재 `nowcast-npz-v10`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v4`
+- `forecast_run_digest`, `input_bundle_digest`
+- `grid_time_contract_json`, `grid_time_contract_digest`
+- `run_background_age_minutes`: 실제 입력계약의 배경 age
+- `displacement_yx`, `displacement_mps_yx`: pixel/step 및 `(dy, dx)` m/s
+- `analysis_config_json`, `analysis_config_digest`, `analysis_input_digest`
 - `forecast_dbz`: `[18, H, W]`
+- `valid_mask`, `state_echo_linear`, `source_support`
+- `nowcast_config_json`, `nowcast_config_digest`
+- `latest_observation_mask`, 최신 입력·배경 digest
+- `forecast_dbz_digest`, `valid_mask_digest`, `state_metadata_digest`,
+  `forecast_run_artifact_digest`
 - `lead_minutes`: `[10, 20, ..., 180]`
 - `displacement_yx`: 10분당 픽셀 이동량
 - `log_growth_per_step`: 10분당 로그 성장률
 - `motion_disagreement_px`: 두 인접 가용쌍의 이동 추정 불일치. 가용쌍이 하나 이하면 `0`
 - `growth_disagreement`: 두 인접 가용쌍의 성장 추정 불일치. 가용쌍이 하나 이하면 `0`
+- `minimum_phase_correlation_psr`: 실제 경향 추정에 사용한 pair들의 최저
+  peak-to-sidelobe ratio. 가용 pair가 없으면 `NaN`. 기본 임계값 `8.0`과
+  peak 제외반경 2 pixel은 합성·연구 설정이며 실제 hindcast로 보정해야 한다.
 - `tendency_pair_count`: 실제 운동·성장 추정에 사용한 독립 pair 수
 - `tendency_source`: 경향 추정 출처. `OBSERVATION`, `BACKGROUND`,
   `NONE` 중 하나
@@ -201,9 +317,33 @@ advar-nowcast three_frames.npy forecast.npz --audit
 - `data_status`: `OBSERVED`, `PARTIAL`, `STALE_BACKGROUND`,
   `UNAVAILABLE` 중 하나
 - `coverage_by_frame`: 입력 세 시각의 관측 coverage
-- `background_used`, `background_contribution_fraction`,
-  `background_age_minutes`
+- `background_used`, `background_state_support_fraction`,
+  `background_tendency_used`, `background_age_minutes`
+- `background_contribution_fraction`: 호환성을 위해 유지되는
+  `background_state_support_fraction`의 기존 이름
 - `analysis_converged`, `analysis_degraded`, `analysis_used_fallback`
+- `analysis_unresolved_amplitude_fraction_by_time`,
+  `analysis_amplitude_violation_score_by_time`: `[-10분, 0분]`
+- `analysis_integrated_echo_ratio_by_time`,
+  `analysis_displacement_tolerant_soft_echo_area_ratio_by_time`:
+  precursor 영역의 공간 폐합 진단
+- `analysis_effective_precursor_pixel_count_by_time`,
+  `analysis_bad_quality_weight_by_time`,
+  `analysis_total_quality_weight_by_time`
+- `analysis_amplitude_information_sufficient_by_time`,
+  `analysis_insufficient_amplitude_information`
+- `analysis_established_echo_excess_growth_fraction_by_time`,
+  `analysis_maximum_growth_envelope_ratio_by_time`: 초기 established echo의
+  최대 성장능력 envelope 진단
+- `analysis_amplitude_diagnostics_source`: `returned_analysis`,
+  `rejected_candidate`, `unavailable` 중 하나
+- `analysis_relative_objective_reduction`: zero-control P1 목적함수 대비 감소율
+- `analysis_dynamics_reduced_hessian_eigenvalues`,
+  `analysis_dynamics_reduced_hessian_condition_number`: 최종 IRLS
+  선형화점의 표준화된 dynamics 제어 조건성
+- `analysis_field_growth_jacobian_cosine`,
+  `analysis_field_motion_jacobian_cosine_yx`: 관측공간에서 초기장
+  증분이 성장·이동 증분과 얼마나 유사한지 나타내는 절대 cosine
 
 `--audit`를 지정할 때만 최종 양성 보정량과 선행시간별
 `echo_integral_before_transport`, `echo_integral_after_transport`,
@@ -238,6 +378,7 @@ NPZ는 같은 디렉터리의 임시 파일을 완전히 기록한 뒤 원자적
 - 최신 입력 영상의 고정 제어 직접 민감도 `dE / d(dBZ)`
 - 16×16 타일별 직접 민감도 크기와 innovation 영향
 - 결측과 자료출처를 분리한 상황 특징 21개, 선형성 신뢰도, 계약 해시
+- 민감도를 생성한 정확한 발행 실행의 `forecast_run_digest`
 
 민감도 점수는 검증 유효영역과 실제 발행 유효영역의 교집합에서만
 계산하며, 발행된 dBZ 상한과 같은 고정 활성집합을 사용한다.
@@ -310,7 +451,10 @@ memory/
 
 SQLite 커밋이 완료된 사례만 조회할 수 있다. manifest와 NPZ의 SHA-256은
 SQLite에도 고정되며, 배열 이름·shape·dtype까지 검증한다. Pickle은
-사용하지 않는다.
+사용하지 않는다. manifest의 `forecast_run_digest`는 정확히 어느 발행
+실행에서 민감도 episode가 생성됐는지를 보존한다. 이 값은 episode
+identity이며, 서로 결합 가능한 경험을 정하는 `ModelContract.digest`에는
+포함하지 않는다.
 
 ### M0의 엄밀한 경계
 

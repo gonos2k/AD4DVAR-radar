@@ -26,6 +26,17 @@ from .sensitivity import CONTEXT_FEATURE_NAMES, SensitivitySnapshot
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
 _INDEX_SCHEMA_VERSION = 3
+_EPISODE_SCHEMA_VERSION = 4
+_MODEL_CONTRACT_SCHEMA_VERSION = 3
+_LEGACY_MODEL_CONTRACT_FIELDS_V1_V2 = {
+    "model_commit",
+    "residual_contract_version",
+    "forecast_metric_version",
+    "observation_contract_version",
+    "forecast_integrator_version",
+    "grid_geometry_version",
+    "radar_qc_version",
+}
 _SCHEMA_ONE_CONTEXT_FEATURE_NAMES = (
     "motion_dy",
     "motion_dx",
@@ -65,7 +76,10 @@ class ModelContract:
 
     @property
     def digest(self) -> str:
-        return _model_contract_digest(self, schema_version=3)
+        return _model_contract_digest(
+            self,
+            schema_version=_MODEL_CONTRACT_SCHEMA_VERSION,
+        )
 
 
 @dataclass(frozen=True)
@@ -88,6 +102,12 @@ class SensitivityEpisode:
             raise ValueError("radar_id must be non-empty")
         if not all(math.isfinite(value) for value in self.action_features):
             raise ValueError("action_features must be finite")
+        forecast_run_digest = self.snapshot.forecast_run_digest
+        if (
+            not isinstance(forecast_run_digest, str)
+            or re.fullmatch(r"[0-9a-f]{64}", forecast_run_digest) is None
+        ):
+            raise ValueError("forecast_run_digest must be a SHA-256 digest")
         if (
             self.contract.nowcast_config_digest
             != self.snapshot.nowcast_config_digest
@@ -97,6 +117,10 @@ class SensitivityEpisode:
             raise ValueError(
                 "model contract config digests must match the sensitivity snapshot"
             )
+
+    @property
+    def forecast_run_digest(self) -> str:
+        return self.snapshot.forecast_run_digest
 
 
 @dataclass(frozen=True)
@@ -646,10 +670,11 @@ def _episode_manifest(
 ) -> dict[str, Any]:
     snapshot = episode.snapshot
     return {
-        "schema_version": 3,
+        "schema_version": _EPISODE_SCHEMA_VERSION,
         "episode_id": episode.episode_id,
         "issue_time": episode.issue_time,
         "radar_id": episode.radar_id,
+        "forecast_run_digest": episode.forecast_run_digest,
         "contract": asdict(episode.contract),
         "contract_hash": episode.contract.digest,
         "metric_names": list(snapshot.metric_names),
@@ -703,21 +728,30 @@ def _verify_manifest(
     row: sqlite3.Row,
 ) -> None:
     schema_version = manifest.get("schema_version")
-    if type(schema_version) is not int or schema_version not in (1, 2, 3):
+    if (
+        type(schema_version) is not int
+        or schema_version not in (1, 2, 3, _EPISODE_SCHEMA_VERSION)
+    ):
         raise ValueError("unsupported episode schema")
     if manifest.get("episode_id") != episode_id:
         raise ValueError("manifest episode_id disagrees with the index")
+    forecast_run_digest = manifest.get("forecast_run_digest")
+    if schema_version >= 4:
+        if (
+            not isinstance(forecast_run_digest, str)
+            or re.fullmatch(r"[0-9a-f]{64}", forecast_run_digest) is None
+        ):
+            raise ValueError("manifest forecast_run_digest is invalid")
+    elif "forecast_run_digest" in manifest:
+        raise ValueError(
+            "forecast run provenance does not match the episode schema"
+        )
     contract_values = manifest.get("contract")
     if not isinstance(contract_values, dict):
         raise ValueError("manifest contains an invalid contract")
     if schema_version < 3:
-        current_fields = {field.name for field in fields(ModelContract)}
-        legacy_fields = current_fields - {
-            "nowcast_config_digest",
-            "sensitivity_config_digest",
-        }
         if (
-            set(contract_values) != legacy_fields
+            set(contract_values) != _LEGACY_MODEL_CONTRACT_FIELDS_V1_V2
             or not all(contract_values.values())
         ):
             raise ValueError("manifest contains an invalid contract")
@@ -734,7 +768,7 @@ def _verify_manifest(
             raise ValueError("manifest contains an invalid contract") from error
         contract_hash = _model_contract_digest(
             contract,
-            schema_version=schema_version,
+            schema_version=_MODEL_CONTRACT_SCHEMA_VERSION,
         )
     if contract_hash != manifest.get("contract_hash"):
         raise ValueError("manifest contract hash is invalid")
@@ -814,7 +848,9 @@ def _verify_manifest_layout(manifest: dict[str, Any]) -> None:
     else:
         context_names = CONTEXT_FEATURE_NAMES
         if not core <= array_names <= core | optional:
-            raise ValueError("manifest arrays do not match episode schema 2")
+            raise ValueError(
+                f"manifest arrays do not match episode schema {schema_version}"
+            )
         expected_scope = _sensitivity_scope()
 
     if manifest.get("context_feature_names") != list(context_names):
@@ -883,6 +919,7 @@ def _verify_array_schema(
 
 def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
     for name, digest in (
+        ("forecast_run_digest", snapshot.forecast_run_digest),
         ("nowcast_config_digest", snapshot.nowcast_config_digest),
         ("sensitivity_config_digest", snapshot.sensitivity_config_digest),
     ):

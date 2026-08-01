@@ -55,6 +55,37 @@ class PCGTests(unittest.TestCase):
         self.assertEqual(result.iterations, 1)
         torch.testing.assert_close(result.solution, rhs / diagonal)
 
+    def test_iteration_limit_reports_recomputed_true_residual(self) -> None:
+        matrix = torch.tensor(
+            [[1.0, 0.0], [0.0, 4.0]],
+            dtype=torch.float64,
+        )
+        rhs = torch.ones(2, dtype=torch.float64)
+        operator_calls = 0
+
+        def operator(value: torch.Tensor) -> torch.Tensor:
+            nonlocal operator_calls
+            operator_calls += 1
+            return matrix @ value
+
+        result = pcg(
+            operator,
+            rhs,
+            rtol=0.0,
+            max_iterations=1,
+        )
+        true_relative_residual = float(
+            torch.linalg.vector_norm(rhs - matrix @ result.solution)
+            / torch.linalg.vector_norm(rhs)
+        )
+
+        self.assertFalse(result.converged)
+        self.assertEqual(operator_calls, 2)
+        self.assertAlmostEqual(
+            result.relative_residual,
+            true_relative_residual,
+        )
+
     def test_zero_rhs_returns_exact_zero_without_operator_call(self) -> None:
         calls = 0
 

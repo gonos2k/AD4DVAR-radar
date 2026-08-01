@@ -241,7 +241,9 @@ def pcg(
 
     ``operator`` and ``preconditioner`` must preserve the shape, dtype, and
     device of ``rhs``. The operator is expected to be symmetric positive
-    definite and the preconditioner positive definite.
+    definite and the preconditioner positive definite. Reported convergence
+    and ``relative_residual`` use a freshly recomputed ``rhs - operator(x)``;
+    a drifted recursive residual restarts the Krylov recurrence.
     """
 
     _check_real_tensor("rhs", rhs)
@@ -285,12 +287,15 @@ def pcg(
         _check_finite_tensor(output_name, output)
         return output
 
+    def recompute_residual(candidate: Tensor) -> Tensor:
+        return rhs - apply(operator, candidate, "operator output")
+
     if initial is None:
         solution = torch.zeros_like(rhs)
         residual = rhs.clone()
     else:
         solution = initial.clone()
-        residual = rhs - apply(operator, solution, "operator output")
+        residual = recompute_residual(solution)
 
     tolerance = max(atol_value, rtol_value * rhs_norm)
     residual_norm = _norm(residual)
@@ -337,16 +342,22 @@ def pcg(
         if not math.isfinite(residual_norm):
             raise RuntimeError("residual norm is not finite")
 
-        if residual_norm <= tolerance:
-            return PCGResult(
-                solution=solution,
-                converged=True,
-                iterations=iteration,
-                relative_residual=residual_norm / rhs_norm,
-            )
-
-        if iteration == iteration_limit:
-            break
+        restarted = False
+        if residual_norm <= tolerance or iteration == iteration_limit:
+            residual = recompute_residual(solution)
+            residual_norm = _norm(residual)
+            if not math.isfinite(residual_norm):
+                raise RuntimeError("true residual norm is not finite")
+            if residual_norm <= tolerance:
+                return PCGResult(
+                    solution=solution,
+                    converged=True,
+                    iterations=iteration,
+                    relative_residual=residual_norm / rhs_norm,
+                )
+            if iteration == iteration_limit:
+                break
+            restarted = True
 
         if preconditioner is None:
             preconditioned = residual.clone()
@@ -360,10 +371,13 @@ def pcg(
         if not next_residual_dot.is_positive_finite:
             raise RuntimeError("preconditioner must be positive definite")
 
-        beta = _inner_ratio(next_residual_dot, residual_dot)
-        if not math.isfinite(beta):
-            raise RuntimeError("PCG direction update is not finite")
-        search_direction = preconditioned + beta * search_direction
+        if restarted:
+            search_direction = preconditioned.clone()
+        else:
+            beta = _inner_ratio(next_residual_dot, residual_dot)
+            if not math.isfinite(beta):
+                raise RuntimeError("PCG direction update is not finite")
+            search_direction = preconditioned + beta * search_direction
         residual_dot = next_residual_dot
 
     return PCGResult(
