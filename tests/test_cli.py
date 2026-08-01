@@ -92,7 +92,7 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v10",
+                    "nowcast-npz-v11",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
@@ -305,6 +305,46 @@ class CliTests(unittest.TestCase):
                 ]
                 self.assertEqual(motion_cosines.shape, (2,))
                 self.assertTrue(np.isfinite(motion_cosines).all())
+                data_eigenvalues = result[
+                    "analysis_dynamics_data_gram_eigenvalues"
+                ]
+                self.assertEqual(data_eigenvalues.shape, (3,))
+                self.assertTrue(np.isfinite(data_eigenvalues).all())
+                self.assertTrue(np.all(data_eigenvalues >= 0.0))
+                self.assertGreater(
+                    result["analysis_dynamics_data_information_trace"].item(),
+                    0.0,
+                )
+                self.assertGreaterEqual(
+                    result["analysis_dynamics_data_effective_rank"].item(),
+                    1,
+                )
+                np.testing.assert_array_equal(
+                    result[
+                        "analysis_regularized_dynamics_hessian_eigenvalues"
+                    ],
+                    eigenvalues,
+                )
+                self.assertEqual(
+                    result[
+                        "analysis_regularized_dynamics_hessian_condition_number"
+                    ].item(),
+                    result[
+                        "analysis_dynamics_reduced_hessian_condition_number"
+                    ].item(),
+                )
+                self.assertGreaterEqual(
+                    result["analysis_field_smoothness_prior_cost"].item(),
+                    0.0,
+                )
+                self.assertEqual(
+                    result["analysis_motion_saturation_margin_yx"].shape,
+                    (2,),
+                )
+                self.assertGreaterEqual(
+                    result["analysis_growth_saturation_margin"].item(),
+                    0.0,
+                )
             loaded = load_forecast_run(output_path)
             loaded.validate_issuance()
             self.assertIsNotNone(loaded.run.analysis_config_json)

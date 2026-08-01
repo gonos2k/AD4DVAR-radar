@@ -22,7 +22,7 @@ from .run_artifact import forecast_run_arrays
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v10"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v11"
 
 
 def main() -> None:
@@ -351,6 +351,45 @@ def _output_arrays(
                 np.nan
                 if analysis.dynamics_reduced_hessian_condition_number is None
                 else analysis.dynamics_reduced_hessian_condition_number
+            ),
+            analysis_dynamics_data_gram_eigenvalues=(
+                _optional_triple_array(
+                    analysis.dynamics_data_gram_eigenvalues
+                )
+            ),
+            analysis_dynamics_data_information_trace=np.asarray(
+                np.nan
+                if analysis.dynamics_data_information_trace is None
+                else analysis.dynamics_data_information_trace
+            ),
+            analysis_dynamics_data_effective_rank=np.asarray(
+                -1
+                if analysis.dynamics_data_effective_rank is None
+                else analysis.dynamics_data_effective_rank
+            ),
+            analysis_regularized_dynamics_hessian_eigenvalues=(
+                _optional_triple_array(
+                    analysis.regularized_dynamics_hessian_eigenvalues
+                )
+            ),
+            analysis_regularized_dynamics_hessian_condition_number=(
+                np.asarray(
+                    np.nan
+                    if analysis.regularized_dynamics_hessian_condition_number
+                    is None
+                    else analysis.regularized_dynamics_hessian_condition_number
+                )
+            ),
+            analysis_field_smoothness_prior_cost=np.asarray(
+                analysis.field_smoothness_prior_cost
+            ),
+            analysis_motion_saturation_margin_yx=(
+                _optional_pair_array(analysis.motion_saturation_margin_yx)
+            ),
+            analysis_growth_saturation_margin=np.asarray(
+                np.nan
+                if analysis.growth_saturation_margin is None
+                else analysis.growth_saturation_margin
             ),
             analysis_field_growth_jacobian_cosine=np.asarray(
                 np.nan

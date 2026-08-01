@@ -65,6 +65,7 @@ class AnalysisConfig:
     minimum_integrated_echo_ratio_for_confidence: float = 0.5
     minimum_soft_echo_area_ratio_for_confidence: float = 0.5
     maximum_established_excess_growth_fraction_for_confidence: float = 0.01
+    field_smoothness_weight: float = 0.01
     maximum_outer_iterations: int = 4
     maximum_pcg_iterations: int = 40
     maximum_damping_retries: int = 2
@@ -164,6 +165,11 @@ class AnalysisConfig:
         for name, value in confidence_fractions.items():
             if not math.isfinite(value) or not 0.0 <= value <= 1.0:
                 raise ValueError(f"{name} must be in [0, 1]")
+        if (
+            not math.isfinite(self.field_smoothness_weight)
+            or self.field_smoothness_weight < 0.0
+        ):
+            raise ValueError("field_smoothness_weight cannot be negative")
 
     @property
     def maximum_detected_error_std(self) -> float:
@@ -282,8 +288,11 @@ class _AmplitudeDiagnostics:
 
 @dataclass(frozen=True)
 class _IdentifiabilityDiagnostics:
-    dynamics_reduced_hessian_eigenvalues: tuple[float, float, float]
-    dynamics_reduced_hessian_condition_number: float
+    dynamics_data_gram_eigenvalues: tuple[float, float, float]
+    dynamics_data_information_trace: float
+    dynamics_data_effective_rank: int
+    regularized_dynamics_hessian_eigenvalues: tuple[float, float, float]
+    regularized_dynamics_hessian_condition_number: float
     field_growth_jacobian_cosine: float | None
     field_motion_jacobian_cosine_yx: tuple[
         float | None,
@@ -348,6 +357,16 @@ class AnalysisResult:
         tuple[float, float, float] | None
     ) = None
     dynamics_reduced_hessian_condition_number: float | None = None
+    dynamics_data_gram_eigenvalues: tuple[float, float, float] | None = None
+    dynamics_data_information_trace: float | None = None
+    dynamics_data_effective_rank: int | None = None
+    regularized_dynamics_hessian_eigenvalues: (
+        tuple[float, float, float] | None
+    ) = None
+    regularized_dynamics_hessian_condition_number: float | None = None
+    field_smoothness_prior_cost: float = 0.0
+    motion_saturation_margin_yx: tuple[float, float] | None = None
+    growth_saturation_margin: float | None = None
     field_growth_jacobian_cosine: float | None = None
     field_motion_jacobian_cosine_yx: (
         tuple[float | None, float | None] | None
@@ -756,7 +775,55 @@ def residual_vector(
         _whitened_observation_residual(control, observations, frozen)
         * frozen.irls_sqrt_weight
     )
-    return torch.cat((weighted.reshape(-1), control))
+    return torch.cat(
+        (
+            weighted.reshape(-1),
+            control,
+            _field_smoothness_residual(control, frozen),
+        )
+    )
+
+
+def _field_smoothness_residual(
+    control: Tensor,
+    frozen: FrozenOuterState,
+) -> Tensor:
+    field_size = frozen.active_field_index.numel()
+    weight = frozen.analysis_config.field_smoothness_weight
+    if field_size == 0 or weight == 0.0:
+        return control.new_zeros(0)
+
+    height, width = frozen.initial_background_dbz.shape
+    dense = torch.zeros_like(frozen.initial_background_dbz).flatten().scatter(
+        0,
+        frozen.active_field_index,
+        control[:field_size],
+    ).reshape(height, width)
+    active = torch.zeros_like(
+        frozen.initial_background_dbz,
+        dtype=torch.bool,
+    ).flatten().scatter(
+        0,
+        frozen.active_field_index,
+        True,
+    ).reshape(height, width)
+    vertical_edges = active[1:] & active[:-1]
+    horizontal_edges = active[:, 1:] & active[:, :-1]
+    differences = torch.cat(
+        (
+            (dense[1:] - dense[:-1])[vertical_edges],
+            (dense[:, 1:] - dense[:, :-1])[horizontal_edges],
+        )
+    )
+    return math.sqrt(weight) * differences
+
+
+def _field_smoothness_prior_cost(
+    control: Tensor,
+    frozen: FrozenOuterState,
+) -> Tensor:
+    residual = _field_smoothness_residual(control, frozen)
+    return 0.5 * torch.dot(residual, residual)
 
 
 def _scaled_dot(left: Tensor, right: Tensor) -> float:
@@ -901,23 +968,48 @@ def _identifiability_diagnostics(
             return None
         dynamics_columns.append(column)
 
-    hessian_values = [
+    gram_values = [
         [
             _scaled_dot(dynamics_columns[row], dynamics_columns[column])
-            + float(row == column)
             for column in range(3)
         ]
         for row in range(3)
     ]
-    hessian = torch.tensor(hessian_values, dtype=torch.float64)
-    hessian = 0.5 * (hessian + hessian.mT)
-    if not bool(torch.all(torch.isfinite(hessian))):
+    gram = torch.tensor(gram_values, dtype=torch.float64)
+    gram = 0.5 * (gram + gram.mT)
+    if not bool(torch.all(torch.isfinite(gram))):
         return None
-    eigenvalues = torch.linalg.eigvalsh(hessian)
-    if not bool(torch.all(torch.isfinite(eigenvalues))):
+    raw_data_eigenvalues = torch.linalg.eigvalsh(gram)
+    if not bool(torch.all(torch.isfinite(raw_data_eigenvalues))):
         return None
-    minimum_eigenvalue = float(eigenvalues[0])
-    maximum_eigenvalue = float(eigenvalues[-1])
+    gram_scale = max(
+        1.0,
+        float(torch.amax(torch.abs(gram)).detach()),
+    )
+    negative_tolerance = 64.0 * torch.finfo(torch.float64).eps * gram_scale
+    if float(raw_data_eigenvalues[0]) < -negative_tolerance:
+        return None
+    data_eigenvalues = torch.clamp_min(raw_data_eigenvalues, 0.0)
+    data_information_trace = float(torch.sum(data_eigenvalues))
+    maximum_data_eigenvalue = float(data_eigenvalues[-1])
+    if maximum_data_eigenvalue == 0.0:
+        data_effective_rank = 0
+    else:
+        rank_tolerance = (
+            3.0
+            * torch.finfo(torch.float64).eps
+            * maximum_data_eigenvalue
+        )
+        data_effective_rank = int(
+            torch.count_nonzero(data_eigenvalues > rank_tolerance)
+        )
+
+    regularized_hessian = gram + torch.eye(3, dtype=torch.float64)
+    regularized_eigenvalues = torch.linalg.eigvalsh(regularized_hessian)
+    if not bool(torch.all(torch.isfinite(regularized_eigenvalues))):
+        return None
+    minimum_eigenvalue = float(regularized_eigenvalues[0])
+    maximum_eigenvalue = float(regularized_eigenvalues[-1])
     if minimum_eigenvalue <= 0.0:
         return None
 
@@ -937,12 +1029,19 @@ def _identifiability_diagnostics(
         return _absolute_jacobian_cosine(field_column, dynamics_column)
 
     return _IdentifiabilityDiagnostics(
-        dynamics_reduced_hessian_eigenvalues=(
-            float(eigenvalues[0]),
-            float(eigenvalues[1]),
-            float(eigenvalues[2]),
+        dynamics_data_gram_eigenvalues=(
+            float(data_eigenvalues[0]),
+            float(data_eigenvalues[1]),
+            float(data_eigenvalues[2]),
         ),
-        dynamics_reduced_hessian_condition_number=(
+        dynamics_data_information_trace=data_information_trace,
+        dynamics_data_effective_rank=data_effective_rank,
+        regularized_dynamics_hessian_eigenvalues=(
+            float(regularized_eigenvalues[0]),
+            float(regularized_eigenvalues[1]),
+            float(regularized_eigenvalues[2]),
+        ),
+        regularized_dynamics_hessian_condition_number=(
             maximum_eigenvalue / minimum_eigenvalue
         ),
         field_growth_jacobian_cosine=cosine(
@@ -965,7 +1064,7 @@ def robust_objective(
         control,
         _whitened_observation_residual(control, observations, frozen),
         observations,
-        frozen.analysis_config,
+        frozen,
     )
 
 
@@ -973,8 +1072,9 @@ def _robust_objective_from_residual(
     control: Tensor,
     residual: Tensor,
     observations: AnalysisObservations,
-    config: AnalysisConfig,
+    frozen: FrozenOuterState,
 ) -> Tensor:
+    config = frozen.analysis_config
     delta = config.pseudo_huber_delta
     robust = delta**2 * (
         torch.sqrt(1.0 + (residual / delta).square()) - 1.0
@@ -984,7 +1084,11 @@ def _robust_objective_from_residual(
         robust,
         torch.zeros_like(robust),
     )
-    return robust.sum() + 0.5 * torch.dot(control, control)
+    return (
+        robust.sum()
+        + 0.5 * torch.dot(control, control)
+        + _field_smoothness_prior_cost(control, frozen)
+    )
 
 
 def solve_analysis(
@@ -1408,7 +1512,7 @@ def _evaluate_control(
             control,
             residual,
             observations,
-            frozen.analysis_config,
+            frozen,
         ),
         trajectory,
     )
@@ -1566,6 +1670,17 @@ def _analysis_result(
         frozen,
         trajectory,
     )
+    field_smoothness_prior_cost = float(
+        _field_smoothness_prior_cost(control, frozen).detach()
+    )
+    motion_saturation_margin = (
+        frozen.nowcast_config.max_displacement_px
+        - torch.abs(trajectory.displacement_yx)
+    )
+    growth_saturation_margin = (
+        frozen.nowcast_config.max_log_growth_per_step
+        - torch.abs(trajectory.log_growth_per_step)
+    )
     return AnalysisResult(
         control=control.detach(),
         active_field_index=frozen.active_field_index.detach().clone(),
@@ -1656,13 +1771,44 @@ def _analysis_result(
         dynamics_reduced_hessian_eigenvalues=(
             None
             if identifiability is None
-            else identifiability.dynamics_reduced_hessian_eigenvalues
+            else identifiability.regularized_dynamics_hessian_eigenvalues
         ),
         dynamics_reduced_hessian_condition_number=(
             None
             if identifiability is None
-            else identifiability.dynamics_reduced_hessian_condition_number
+            else identifiability.regularized_dynamics_hessian_condition_number
         ),
+        dynamics_data_gram_eigenvalues=(
+            None
+            if identifiability is None
+            else identifiability.dynamics_data_gram_eigenvalues
+        ),
+        dynamics_data_information_trace=(
+            None
+            if identifiability is None
+            else identifiability.dynamics_data_information_trace
+        ),
+        dynamics_data_effective_rank=(
+            None
+            if identifiability is None
+            else identifiability.dynamics_data_effective_rank
+        ),
+        regularized_dynamics_hessian_eigenvalues=(
+            None
+            if identifiability is None
+            else identifiability.regularized_dynamics_hessian_eigenvalues
+        ),
+        regularized_dynamics_hessian_condition_number=(
+            None
+            if identifiability is None
+            else identifiability.regularized_dynamics_hessian_condition_number
+        ),
+        field_smoothness_prior_cost=field_smoothness_prior_cost,
+        motion_saturation_margin_yx=(
+            float(motion_saturation_margin[0]),
+            float(motion_saturation_margin[1]),
+        ),
+        growth_saturation_margin=float(growth_saturation_margin),
         field_growth_jacobian_cosine=(
             None
             if identifiability is None
