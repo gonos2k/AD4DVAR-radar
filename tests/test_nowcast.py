@@ -605,22 +605,19 @@ class NowcastTests(unittest.TestCase):
             places=1,
         )
         self.assertEqual(metadata.motion_pair_count, 0)
-        self.assertEqual(metadata.growth_pair_count, 2)
+        self.assertEqual(metadata.growth_pair_count, 0)
         self.assertEqual(
             metadata.motion_pair_selection,
             TendencyPairSelection.PERSISTENCE,
         )
         self.assertEqual(
             metadata.growth_pair_selection,
-            TendencyPairSelection.BLENDED,
+            TendencyPairSelection.PERSISTENCE,
         )
         self.assertTrue(metadata.motion_pair_conflict)
-        self.assertFalse(metadata.growth_pair_conflict)
-        self.assertEqual(metadata.tendency_pair_count, 2)
-        self.assertGreaterEqual(
-            float(metadata.minimum_phase_correlation_psr),
-            self.config.minimum_phase_correlation_psr,
-        )
+        self.assertTrue(metadata.growth_pair_conflict)
+        self.assertEqual(metadata.tendency_pair_count, 0)
+        self.assertTrue(torch.isnan(metadata.minimum_phase_correlation_psr))
 
     def test_conflicting_growth_without_psr_advantage_uses_persistence(
         self,
@@ -696,9 +693,14 @@ class NowcastTests(unittest.TestCase):
             TendencyPairSelection.PERSISTENCE,
         )
         self.assertEqual(tendency.motion_pair_count, 0)
-        self.assertEqual(tendency.growth_pair_count, 2)
+        self.assertEqual(tendency.growth_pair_count, 0)
         self.assertTrue(tendency.motion_pair_conflict)
-        self.assertFalse(tendency.growth_pair_conflict)
+        self.assertTrue(tendency.growth_pair_conflict)
+        self.assertEqual(
+            tendency.growth_pair_selection,
+            TendencyPairSelection.PERSISTENCE,
+        )
+        self.assertEqual(float(tendency.log_growth_per_step), 0.0)
         torch.testing.assert_close(
             tendency.source_displacement_yx,
             torch.tensor(

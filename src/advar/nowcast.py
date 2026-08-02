@@ -1697,8 +1697,10 @@ def _estimate_source_tendencies(
             config,
         )
         growth_disagreement = torch.abs(second_growth - first_growth)
-        growth_is_inconsistent = float(growth_disagreement.detach()) >= (
-            config.maximum_pair_growth_disagreement - config.epsilon
+        growth_is_inconsistent = (
+            motion_selection is TendencyPairSelection.PERSISTENCE
+            or float(growth_disagreement.detach())
+            >= config.maximum_pair_growth_disagreement - config.epsilon
         )
         growth, growth_indices, growth_selection = _combine_pair_component(
             first_growth,
@@ -2020,8 +2022,10 @@ def _combine_single_adjacent_and_long(
         config,
     )
     growth_disagreement = torch.abs(long_growth - adjacent_growth)
-    growth_is_inconsistent = float(growth_disagreement.detach()) >= (
-        config.maximum_pair_growth_disagreement - config.epsilon
+    growth_is_inconsistent = (
+        motion_selection is TendencyPairSelection.PERSISTENCE
+        or float(growth_disagreement.detach())
+        >= config.maximum_pair_growth_disagreement - config.epsilon
     )
     growth, growth_adjacent, growth_long, growth_selection = (
         _select_single_adjacent_or_long_component(
