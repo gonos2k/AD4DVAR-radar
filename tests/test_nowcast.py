@@ -979,7 +979,7 @@ class NowcastTests(unittest.TestCase):
         earlier = (
             frames.new_tensor([0.0, 4.0]),
             zero,
-            frames.new_tensor(12.0),
+            frames.new_tensor(10.0),
         )
         recent = (
             frames.new_tensor([0.0, -4.0]),
@@ -1050,7 +1050,7 @@ class NowcastTests(unittest.TestCase):
         zero = frames.new_zeros(())
         estimates = self._pair_estimates(
             nowcast_module,
-            (frames.new_tensor((0.0, 4.0)), zero, frames.new_tensor(12.0)),
+            (frames.new_tensor((0.0, 4.0)), zero, frames.new_tensor(10.0)),
             (frames.new_tensor((0.0, -4.0)), zero, frames.new_tensor(12.0)),
         )
         with patch.object(

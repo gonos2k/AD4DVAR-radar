@@ -630,6 +630,11 @@ def load_forecast_run(
             loaded_arrays,
             "background_tendency_used",
         )
+        state_path_age = _float_scalar(
+            loaded_arrays,
+            "state_path_age_minutes",
+            allow_nan=True,
+        )
         metadata = ForecastMetadata(
             data_status=DataStatus(
                 _string_scalar(loaded_arrays, "data_status")
@@ -720,18 +725,7 @@ def load_forecast_run(
                 "state_path_extrapolated",
             ),
             state_path_age_minutes=(
-                None
-                if math.isnan(
-                    _float_scalar(
-                        loaded_arrays,
-                        "state_path_age_minutes",
-                        allow_nan=True,
-                    )
-                )
-                else _float_scalar(
-                    loaded_arrays,
-                    "state_path_age_minutes",
-                )
+                None if math.isnan(state_path_age) else state_path_age
             ),
             minimum_growth_overlap_support=_float_scalar(
                 loaded_arrays,
