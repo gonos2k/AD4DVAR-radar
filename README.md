@@ -282,7 +282,9 @@ active initial-field control에는 기본 `field_smoothness_weight=0.01`의
 있으면 affine cell area와 축 길이에서 얻은 graph metric 가중치를 적용하여
 직교 비등방 격자에서 수평 `dy/dx`, 수직 `dx/dy`가 된다. 이는 dBZ장 자체가
 아니라 standardized field-control graph prior이며 좌표계는
-`analysis_field_smoothness_coordinate_system`에 기록한다.
+`analysis_field_smoothness_coordinate_system`에 기록한다. 현재 물리 graph
+smoothness는 직교 projected grid에만 정의되며, 비직교 affine에서는 이를
+끄지 않으면 분석을 fail-close한다.
 
 세 관측잔차는 다음 순서로 정확히 한 번 처리한다.
 

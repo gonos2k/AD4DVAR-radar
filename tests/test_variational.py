@@ -489,6 +489,44 @@ class VariationalAnalysisTests(unittest.TestCase):
             torch.tensor((0.125, 0.125, 8.0, 8.0), dtype=torch.float64),
         )
 
+    def test_field_smoothness_rejects_sheared_grid(self) -> None:
+        frames = torch.full((3, 8, 8), 20.0, dtype=torch.float64)
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="c" * 64,
+            pixel_to_projected_matrix_m=(
+                (1000.0, 800.0),
+                (0.0, -600.0),
+            ),
+        )
+
+        with self.assertRaisesRegex(ValueError, "orthogonal"):
+            prepare_analysis(
+                frames,
+                nowcast_config=self.nowcast_config,
+                analysis_config=self.analysis_config,
+                grid_time_contract=contract,
+            )
+
+        _, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=replace(
+                self.analysis_config,
+                field_smoothness_weight=0.0,
+            ),
+            grid_time_contract=contract,
+        )
+        self.assertFalse(contract.grid_axes_are_orthogonal)
+        self.assertEqual(frozen.smooth_edge_left_index.numel(), 112)
+
     def test_projected_velocity_control_is_isotropic_on_anisotropic_grid(
         self,
     ) -> None:

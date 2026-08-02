@@ -610,6 +610,14 @@ def prepare_analysis(
             raise ValueError(
                 "motion_increment_scale_mps requires a physical motion limit"
             )
+    if (
+        grid_time_contract is not None
+        and analysis_config.field_smoothness_weight > 0.0
+        and not grid_time_contract.grid_axes_are_orthogonal
+    ):
+        raise ValueError(
+            "field smoothness requires orthogonal projected grid axes"
+        )
     if analysis_config.execution_mode == "operational":
         if grid_time_contract is None:
             raise ValueError(
@@ -2298,7 +2306,7 @@ def _analysis_result(
             else "grid_yx_px"
         ),
         field_smoothness_coordinate_system=(
-            "projected_affine_graph"
+            "projected_orthogonal_graph"
             if frozen.grid_time_contract is not None
             else "index_graph"
         ),
@@ -3209,7 +3217,7 @@ def _fallback_result(
             else "grid_yx_px"
         ),
         field_smoothness_coordinate_system=(
-            "projected_affine_graph"
+            "projected_orthogonal_graph"
             if frozen.grid_time_contract is not None
             else "index_graph"
         ),

@@ -566,7 +566,7 @@ class CliTests(unittest.TestCase):
                     result[
                         "analysis_field_smoothness_coordinate_system"
                     ].item(),
-                    "projected_affine_graph",
+                    "projected_orthogonal_graph",
                 )
                 self.assertIn(
                     "analysis_amplitude_confidence_failed",

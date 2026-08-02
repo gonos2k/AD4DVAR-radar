@@ -337,6 +337,14 @@ class RadarGridTimeContract:
         (xx, xr), (yx, yr) = self.pixel_to_projected_matrix_m
         return abs(xx * yr - xr * yx)
 
+    @property
+    def grid_axes_are_orthogonal(self) -> bool:
+        assert self.pixel_to_projected_matrix_m is not None
+        (xx, xr), (yx, yr) = self.pixel_to_projected_matrix_m
+        dot_product = xx * xr + yx * yr
+        scale = float(self.dx_m) * float(self.dy_m)
+        return math.isclose(dot_product, 0.0, abs_tol=1.0e-9 * scale)
+
     def projected_displacement_xy(
         self,
         displacement_yx: Tensor,
