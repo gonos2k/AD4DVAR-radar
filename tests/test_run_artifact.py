@@ -156,6 +156,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "state_path_source",
             "state_path_mode",
             "state_path_pair_count",
+            "state_path_minimum_psr",
             "state_path_conflict",
             "state_path_extrapolated",
             "state_path_age_minutes",
@@ -169,10 +170,6 @@ class ForecastRunArtifactTests(unittest.TestCase):
                     self.assertTrue(math.isnan(loaded_value))
                 else:
                     self.assertEqual(loaded_value, expected)
-        self.assertEqual(
-            loaded.metadata.state_path_minimum_psr,
-            result.metadata.state_path_minimum_psr,
-        )
         torch.testing.assert_close(
             loaded.run.latest_observation_mask,
             result.run.latest_observation_mask,

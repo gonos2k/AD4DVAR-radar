@@ -1678,6 +1678,7 @@ def estimate_prepared_state(
         current_source_support,
         background_contribution_fraction,
         state_path_source,
+        state_path_contributors,
     ) = _merge_current_state(
         prepared,
         observation_linear,
@@ -1698,26 +1699,36 @@ def estimate_prepared_state(
     )
     if state_path_source is TendencySource.OBSERVATION:
         state_paths = observation_paths
-        state_masks = prepared.observed_mask
         state_path_base_age_minutes = 0.0
     elif state_path_source is TendencySource.BACKGROUND:
         state_paths = background_paths
-        state_masks = prepared.background_mask
         state_path_base_age_minutes = prepared.background_age_minutes or 0.0
     else:
         state_paths = None
-        state_masks = None
         state_path_base_age_minutes = 0.0
-    state_path_age_minutes = (
-        _state_path_age_minutes(
+    if state_paths is None:
+        state_path_mode = TendencyPairSelection.NONE
+        state_path_pair_count = 0
+        state_path_minimum_psr = math.nan
+        state_path_conflict = False
+        state_path_extrapolated = False
+        state_path_age_minutes = None
+    else:
+        (
+            state_path_mode,
+            state_path_pair_count,
+            state_path_minimum_psr,
+            state_path_conflict,
+            state_path_extrapolated,
+        ) = _actual_state_path_provenance(
             state_paths,
-            state_masks,
+            state_path_contributors,
+        )
+        state_path_age_minutes = _state_path_age_minutes(
+            state_path_contributors,
             config.interval_minutes,
             base_age_minutes=state_path_base_age_minutes,
         )
-        if state_paths is not None and state_masks is not None
-        else None
-    )
     metadata = ForecastMetadata(
         data_status=prepared.data_status,
         coverage_by_frame=prepared.coverage_by_frame,
@@ -1742,31 +1753,11 @@ def estimate_prepared_state(
         motion_pair_conflict=tendency.motion_pair_conflict,
         growth_pair_conflict=tendency.growth_pair_conflict,
         state_path_source=state_path_source,
-        state_path_mode=(
-            state_paths.reconstruction_selection
-            if state_paths is not None
-            else TendencyPairSelection.NONE
-        ),
-        state_path_pair_count=(
-            state_paths.reconstruction_pair_count
-            if state_paths is not None
-            else 0
-        ),
-        state_path_minimum_psr=(
-            float(state_paths.reconstruction_minimum_psr.detach())
-            if state_paths is not None
-            else math.nan
-        ),
-        state_path_conflict=(
-            state_paths.reconstruction_conflict
-            if state_paths is not None
-            else False
-        ),
-        state_path_extrapolated=(
-            state_paths.reconstruction_extrapolated
-            if state_paths is not None
-            else False
-        ),
+        state_path_mode=state_path_mode,
+        state_path_pair_count=state_path_pair_count,
+        state_path_minimum_psr=state_path_minimum_psr,
+        state_path_conflict=state_path_conflict,
+        state_path_extrapolated=state_path_extrapolated,
         state_path_age_minutes=state_path_age_minutes,
         minimum_growth_overlap_support=float(
             tendency.minimum_growth_overlap_support.detach()
@@ -2850,28 +2841,32 @@ def _merge_current_state(
     observation_paths: _SourceTendencyEstimate,
     background_paths: _SourceTendencyEstimate,
     config: NowcastConfig,
-) -> tuple[Tensor, Tensor, float, TendencySource]:
-    observation_echo, observation_support = _merge_source_frames(
-        observation_linear,
-        prepared.observed_mask,
-        observation_paths.source_displacement_yx,
-        observation_paths.source_log_growth,
-        observation_paths.source_usable,
-        config,
-        source_support_displacements_yx=(
-            observation_paths.source_support_displacements_yx
-        ),
+) -> tuple[Tensor, Tensor, float, TendencySource, Tensor]:
+    observation_echo, observation_support, observation_contributors = (
+        _merge_source_frames(
+            observation_linear,
+            prepared.observed_mask,
+            observation_paths.source_displacement_yx,
+            observation_paths.source_log_growth,
+            observation_paths.source_usable,
+            config,
+            source_support_displacements_yx=(
+                observation_paths.source_support_displacements_yx
+            ),
+        )
     )
-    background_echo, background_support = _merge_source_frames(
-        background_linear,
-        prepared.background_mask,
-        background_paths.source_displacement_yx,
-        background_paths.source_log_growth,
-        background_paths.source_usable,
-        config,
-        source_support_displacements_yx=(
-            background_paths.source_support_displacements_yx
-        ),
+    background_echo, background_support, background_contributors = (
+        _merge_source_frames(
+            background_linear,
+            prepared.background_mask,
+            background_paths.source_displacement_yx,
+            background_paths.source_log_growth,
+            background_paths.source_usable,
+            config,
+            source_support_displacements_yx=(
+                background_paths.source_support_displacements_yx
+            ),
+        )
     )
     observation_support = observation_support.clamp(0.0, 1.0)
     background_support = background_support.clamp(0.0, 1.0)
@@ -2895,23 +2890,56 @@ def _merge_current_state(
     )
     if bool(torch.any(observation_support > config.epsilon)):
         path_source = TendencySource.OBSERVATION
+        path_contributors = observation_contributors
     elif bool(torch.any(background_support > config.epsilon)):
         path_source = TendencySource.BACKGROUND
+        path_contributors = background_contributors
     else:
         path_source = TendencySource.NONE
-    return current_echo, current_support, contribution_fraction, path_source
+        path_contributors = torch.zeros_like(observation_contributors)
+    return (
+        current_echo,
+        current_support,
+        contribution_fraction,
+        path_source,
+        path_contributors,
+    )
+
+
+def _actual_state_path_provenance(
+    paths: _SourceTendencyEstimate,
+    contributing_sources: Tensor,
+) -> tuple[TendencyPairSelection, int, float, bool, bool]:
+    if not bool(torch.any(contributing_sources[:2])):
+        return TendencyPairSelection.NONE, 0, math.nan, False, False
+    selection = paths.reconstruction_selection
+    pair_count = paths.reconstruction_pair_count
+    minimum_psr = float(paths.reconstruction_minimum_psr.detach())
+    conflict = paths.reconstruction_conflict
+    if (
+        selection is TendencyPairSelection.BLENDED
+        and not bool(contributing_sources[0])
+        and bool(contributing_sources[1])
+    ):
+        selection = TendencyPairSelection.RECENT
+        pair_count = 1
+        conflict = False
+    return (
+        selection,
+        pair_count,
+        minimum_psr,
+        conflict,
+        paths.reconstruction_extrapolated,
+    )
 
 
 def _state_path_age_minutes(
-    paths: _SourceTendencyEstimate,
-    masks: Tensor,
+    contributing_sources: Tensor,
     interval_minutes: int,
     *,
     base_age_minutes: float = 0.0,
 ) -> float | None:
-    source_present = masks.flatten(1).any(dim=1)
-    used = paths.source_usable & source_present
-    indices = torch.nonzero(used, as_tuple=False).flatten()
+    indices = torch.nonzero(contributing_sources, as_tuple=False).flatten()
     if indices.numel() == 0:
         return None
     oldest_index = int(indices.min())
@@ -2989,13 +3017,18 @@ def _merge_source_frames(
     config: NowcastConfig,
     *,
     source_support_displacements_yx: Tensor | None = None,
-) -> tuple[Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor]:
     latest_mask = masks[2]
     if bool(torch.all(latest_mask)):
-        return linear[2], latest_mask.to(dtype=linear.dtype)
+        return (
+            linear[2],
+            latest_mask.to(dtype=linear.dtype),
+            torch.tensor((False, False, True), device=linear.device),
+        )
 
     numerator = torch.zeros_like(linear[2])
     support = torch.zeros_like(linear[2])
+    contributions = [torch.zeros_like(linear[2]) for _ in range(3)]
     for source_index in range(3):
         if not bool(source_usable[source_index]):
             continue
@@ -3033,21 +3066,21 @@ def _merge_source_frames(
                 torch.zeros_like(endpoint_numerator),
             )
 
-        numerator = (
-            candidate_value
-            + (1.0 - candidate_support) * numerator
-        )
-        support = (
-            candidate_support
-            + (1.0 - candidate_support) * support
-        )
+        remaining = 1.0 - candidate_support
+        contributions = [remaining * value for value in contributions]
+        contributions[source_index] = candidate_support
+        numerator = candidate_value + remaining * numerator
+        support = candidate_support + remaining * support
 
     current_echo = torch.where(
         support > config.epsilon,
         numerator / support.clamp_min(config.epsilon),
         torch.zeros_like(numerator),
     )
-    return current_echo, support
+    contributing_sources = torch.stack(
+        tuple(value.sum() > config.epsilon for value in contributions)
+    )
+    return current_echo, support, contributing_sources
 
 
 def forecast_linear_at_step(

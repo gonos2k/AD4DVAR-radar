@@ -391,6 +391,15 @@ class NowcastTests(unittest.TestCase):
         )
         self.assertFalse(metadata.background_tendency_used)
         self.assertTrue(torch.isnan(metadata.minimum_phase_correlation_psr))
+        self.assertEqual(
+            metadata.state_path_source,
+            TendencySource.BACKGROUND,
+        )
+        self.assertEqual(
+            metadata.state_path_mode,
+            TendencyPairSelection.NONE,
+        )
+        self.assertEqual(metadata.state_path_age_minutes, 10.0)
         self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
         torch.testing.assert_close(forecast[0], background[-1])
 
@@ -831,7 +840,7 @@ class NowcastTests(unittest.TestCase):
                 None,
             )
 
-        current, support = nowcast_module._merge_source_frames(
+        current, support, _ = nowcast_module._merge_source_frames(
             linear,
             masks,
             tendency.source_displacement_yx,
@@ -864,7 +873,7 @@ class NowcastTests(unittest.TestCase):
         support_segments[0, 0] = linear.new_tensor((0.0, -1.0))
         support_segments[0, 1] = linear.new_tensor((0.0, 1.0))
 
-        endpoint_state, endpoint_support = (
+        endpoint_state, endpoint_support, _ = (
             nowcast_module._merge_source_frames(
                 linear,
                 masks,
@@ -874,7 +883,7 @@ class NowcastTests(unittest.TestCase):
                 self.config,
             )
         )
-        path_state, path_support = nowcast_module._merge_source_frames(
+        path_state, path_support, _ = nowcast_module._merge_source_frames(
             linear,
             masks,
             endpoint_displacements,
@@ -1023,11 +1032,11 @@ class NowcastTests(unittest.TestCase):
         )
         self.assertEqual(
             metadata.state_path_mode,
-            TendencyPairSelection.BLENDED,
+            TendencyPairSelection.RECENT,
         )
-        self.assertEqual(metadata.state_path_pair_count, 2)
+        self.assertEqual(metadata.state_path_pair_count, 1)
         self.assertEqual(metadata.state_path_minimum_psr, 12.0)
-        self.assertTrue(metadata.state_path_conflict)
+        self.assertFalse(metadata.state_path_conflict)
         self.assertFalse(metadata.state_path_extrapolated)
         self.assertEqual(metadata.state_path_age_minutes, 10.0)
         self.assertGreater(float(state.echo_linear[8, 4]), 10.0)
@@ -1086,11 +1095,29 @@ class NowcastTests(unittest.TestCase):
         )
         self.assertEqual(
             metadata.state_path_mode,
-            TendencyPairSelection.BLENDED,
+            TendencyPairSelection.RECENT,
         )
-        self.assertEqual(metadata.state_path_pair_count, 2)
+        self.assertEqual(metadata.state_path_pair_count, 1)
         self.assertGreater(float(state.echo_linear[8, 4]), 10.0)
         self.assertLess(float(state.echo_linear[8, 8]), 1.0)
+
+    def test_complete_latest_frame_has_direct_path_provenance(self) -> None:
+        frames, _ = self._moving_gaussian_frames()
+
+        result = nowcast(frames, self.config)
+
+        self.assertEqual(
+            result.metadata.state_path_source,
+            TendencySource.OBSERVATION,
+        )
+        self.assertEqual(
+            result.metadata.state_path_mode,
+            TendencyPairSelection.NONE,
+        )
+        self.assertEqual(result.metadata.state_path_pair_count, 0)
+        self.assertTrue(math.isnan(result.metadata.state_path_minimum_psr))
+        self.assertFalse(result.metadata.state_path_extrapolated)
+        self.assertEqual(result.metadata.state_path_age_minutes, 0.0)
 
     def test_conflicting_pairs_choose_clearly_higher_psr_pair(self) -> None:
         nowcast_module = import_module("advar.nowcast")
