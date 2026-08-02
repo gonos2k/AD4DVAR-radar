@@ -642,6 +642,7 @@ class _SourceTendencyEstimate:
     reconstruction_pair_count: int
     reconstruction_selection: TendencyPairSelection
     reconstruction_minimum_psr: Tensor
+    reconstruction_recent_psr: Tensor
     reconstruction_conflict: bool
     reconstruction_extrapolated: bool
 
@@ -1938,6 +1939,7 @@ def _estimate_source_tendencies(
             reconstruction_minimum_psr=torch.min(
                 torch.stack((first_psr, second_psr))
             ),
+            reconstruction_recent_psr=second_psr,
             reconstruction_conflict=motion_is_inconsistent,
             reconstruction_extrapolated=False,
         )
@@ -2022,6 +2024,7 @@ def _estimate_source_tendencies(
                 else TendencyPairSelection.NONE
             ),
             reconstruction_minimum_psr=unavailable_psr,
+            reconstruction_recent_psr=unavailable_psr,
             reconstruction_conflict=False,
             reconstruction_extrapolated=bool(torch.any(masks[-1])),
         )
@@ -2177,6 +2180,7 @@ def _single_pair_tendency(
         reconstruction_pair_count = 1
         reconstruction_selection = TendencyPairSelection.LONG
         reconstruction_extrapolated = False
+        reconstruction_recent_psr = psr.new_full((), torch.nan)
     elif source_pair_index is not None:
         source_paths = _single_adjacent_source_paths(
             motion,
@@ -2190,11 +2194,17 @@ def _single_pair_tendency(
             else TendencyPairSelection.NONE
         )
         reconstruction_extrapolated = False
+        reconstruction_recent_psr = (
+            psr
+            if source_pair_index == 1
+            else psr.new_full((), torch.nan)
+        )
     else:
         source_paths = _uniform_source_paths(motion, growth)
         reconstruction_pair_count = 1
         reconstruction_selection = selection
         reconstruction_extrapolated = True
+        reconstruction_recent_psr = psr
     unavailable = psr.new_full((), torch.nan)
     return _SourceTendencyEstimate(
         displacement_yx=motion,
@@ -2233,6 +2243,7 @@ def _single_pair_tendency(
         reconstruction_minimum_psr=(
             psr if reconstruction_pair_count else unavailable
         ),
+        reconstruction_recent_psr=reconstruction_recent_psr,
         reconstruction_conflict=False,
         reconstruction_extrapolated=reconstruction_extrapolated,
     )
@@ -2352,6 +2363,7 @@ def _combine_single_adjacent_and_long(
         reconstruction_pair_count = 1
         reconstruction_selection = TendencyPairSelection.LONG
         reconstruction_minimum_psr = long_psr
+        reconstruction_recent_psr = long_psr.new_full((), torch.nan)
     elif motion_selection is TendencyPairSelection.SINGLE:
         source_paths = _single_adjacent_source_paths(
             adjacent_motion,
@@ -2369,11 +2381,17 @@ def _combine_single_adjacent_and_long(
             if reconstruction_pair_count
             else adjacent_psr.new_full((), torch.nan)
         )
+        reconstruction_recent_psr = (
+            adjacent_psr
+            if adjacent_pair_index == 1
+            else adjacent_psr.new_full((), torch.nan)
+        )
     else:
         source_paths = _latest_only_source_paths(motion, growth)
         reconstruction_pair_count = 0
         reconstruction_selection = TendencyPairSelection.NONE
         reconstruction_minimum_psr = adjacent_psr.new_full((), torch.nan)
+        reconstruction_recent_psr = adjacent_psr.new_full((), torch.nan)
     return _SourceTendencyEstimate(
         displacement_yx=motion,
         log_growth_per_step=growth,
@@ -2397,6 +2415,7 @@ def _combine_single_adjacent_and_long(
         reconstruction_pair_count=reconstruction_pair_count,
         reconstruction_selection=reconstruction_selection,
         reconstruction_minimum_psr=reconstruction_minimum_psr,
+        reconstruction_recent_psr=reconstruction_recent_psr,
         reconstruction_conflict=motion_is_inconsistent,
         reconstruction_extrapolated=False,
     )
@@ -2923,6 +2942,7 @@ def _actual_state_path_provenance(
     ):
         selection = TendencyPairSelection.RECENT
         pair_count = 1
+        minimum_psr = float(paths.reconstruction_recent_psr.detach())
         conflict = False
     return (
         selection,
