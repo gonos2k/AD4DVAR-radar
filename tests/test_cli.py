@@ -87,6 +87,8 @@ class CliTests(unittest.TestCase):
             "4",
             "--minimum-growth-overlap-area-km2",
             "4",
+            "--minimum-publish-verified-support",
+            "0.95",
             "--causal-support-uncertainty-m",
             "1000",
             "--amplitude-displacement-tolerance-m",
@@ -133,6 +135,8 @@ class CliTests(unittest.TestCase):
             "valid_mask",
             "state_echo_linear",
             "source_support",
+            "verified_source_support",
+            "forecast_verified_support",
             "latest_frame_dbz",
             "latest_background_dbz",
             "latest_observation_mask",
@@ -164,6 +168,7 @@ class CliTests(unittest.TestCase):
             "minimum_growth_overlap_support",
             "minimum_growth_overlap_area_km2",
             "min_publish_support",
+            "minimum_publish_verified_support",
             "analysis_converged",
             "analysis_degraded",
             "analysis_used_fallback",
@@ -182,11 +187,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v24",
+                    "nowcast-npz-v25",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v16",
+                    "forecast-run-v17",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -545,6 +550,7 @@ class CliTests(unittest.TestCase):
             "--minimum-pair-confidence-ratio",
             "--minimum-growth-overlap-support",
             "--minimum-growth-overlap-area-km2",
+            "--minimum-publish-verified-support",
         )
         for name in required:
             with self.subTest(name=name):
@@ -595,6 +601,10 @@ class CliTests(unittest.TestCase):
                 self.assertEqual(
                     nowcast_config["minimum_growth_overlap_area_km2"],
                     4.0,
+                )
+                self.assertEqual(
+                    nowcast_config["minimum_publish_verified_support"],
+                    0.95,
                 )
                 self.assertEqual(
                     result["analysis_motion_control_coordinate_system"].item(),

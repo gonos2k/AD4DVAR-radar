@@ -373,7 +373,8 @@ amplitude 거리, projected m/s 운동증분 scale, 명시적인
 PSR·pair 운동/성장 불일치·pair 신뢰도 우위·성장 overlap
 support·물리면적·관측오차·amplitude
 정보량·적분량·면적·성장
-임계값과 `--operational-calibration-id`를 모두 요구한다. 누락된 보정값이
+임계값, 검증된 상태경로 support 발행 임계값과
+`--operational-calibration-id`를 모두 요구한다. 누락된 보정값이
 있으면 실행 전에 거부하며, 두
 amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값은 실제
 레이더 hindcast에서 얻어야 하며 저장된 `nowcast_config_json`,
@@ -381,8 +382,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v24`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v16`
+- `output_contract_version`: 현재 `nowcast-npz-v25`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v17`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -392,7 +393,14 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 - `projected_velocity_mps_xy`: affine 계약을 적용한 projected `(x, y)` m/s
 - `analysis_config_json`, `analysis_config_digest`, `analysis_input_digest`
 - `forecast_dbz`: `[18, H, W]`
-- `valid_mask`, `state_echo_linear`, `source_support`
+- `valid_mask`, `state_echo_linear`, `source_support`,
+  `verified_source_support`, `forecast_verified_support`
+- `source_support`는 상태가 정의됐는지를, `verified_source_support`는
+  최신 직접관측 또는 유효한 pair 경로로 재구성됐는지를 나타낸다.
+  연구모드에서는 예전 persistence를 유지하지만, 운영모드는
+  `minimum_publish_verified_support`로 검증되지 않은 경로를 발행에서
+  제외한다. `forecast_verified_support`는 이 support를 선행시간별로
+  수송한 진단이다.
 - `nowcast_config_json`, `nowcast_config_digest`
 - `latest_frame_dbz`, `latest_observation_mask`, `latest_background_dbz`와
   최신 입력·배경 digest
@@ -662,6 +670,8 @@ M0 `trust_components`의 `pair_consistency`는 기본적으로 충돌한 성분 
 `SensitivityConfig.pair_conflict_trust_penalty=0.5`를 곱한다. 두 성분이 모두
 충돌하면 0.25가 되며, 이 값은 sensitivity config digest에 포함된다. 기본값은
 연구용 보수적 prior이고 검색·운용 임계값은 실제 hindcast로 보정해야 한다.
+`path_evidence`는 현재 source support 중 직접관측·유효 pair 경로로
+검증된 가중 비율이며, 미검증 persistence가 많을수록 M0 trust를 낮춘다.
 
 ### M0의 엄밀한 경계
 

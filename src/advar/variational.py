@@ -2124,6 +2124,7 @@ def _analysis_result(
                 frozen.background_age_minutes if background_used else None
             ),
             source_support=source_support.detach(),
+            verified_source_support=source_support.detach(),
             provenance="p1_variational_analysis",
             dynamics_source=DynamicsSource.P1_VARIATIONAL,
             state_path_source=TendencySource.NONE,
@@ -3551,6 +3552,7 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
         ),
         background_age_minutes=metadata.background_age_minutes,
         source_support=metadata.source_support.detach(),
+        verified_source_support=metadata.verified_source_support.detach(),
         motion_disagreement_px=metadata.motion_disagreement_px.detach(),
         motion_disagreement_mps=metadata.motion_disagreement_mps.detach(),
         growth_disagreement=metadata.growth_disagreement.detach(),

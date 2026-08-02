@@ -80,6 +80,7 @@ def metadata_for(
         background_contribution_fraction=0.0,
         background_age_minutes=None,
         source_support=torch.ones_like(state.echo_linear),
+        verified_source_support=torch.ones_like(state.echo_linear),
         motion_disagreement_px=torch.linalg.vector_norm(
             pair_motion[1] - pair_motion[0]
         ),
@@ -1160,7 +1161,12 @@ class SensitivityTests(unittest.TestCase):
             conflict.trust_components["pair_consistency"],
             penalty,
         )
-        for name in ("linearity", "verification", "metric_support"):
+        for name in (
+            "linearity",
+            "verification",
+            "metric_support",
+            "path_evidence",
+        ):
             self.assertAlmostEqual(
                 conflict.trust_components[name],
                 baseline.trust_components[name],
@@ -1168,6 +1174,56 @@ class SensitivityTests(unittest.TestCase):
         self.assertAlmostEqual(
             conflict.trust_score,
             baseline.trust_score * penalty,
+        )
+
+    def test_unverified_path_support_reduces_trust(self) -> None:
+        verified = self.result.metadata.verified_source_support.clone()
+        verified[:, verified.shape[1] // 2 :] = 0.0
+        metadata = replace(
+            self.result.metadata,
+            verified_source_support=verified,
+        )
+        unverified_result = forecast_from_state(
+            self.state,
+            metadata,
+            self.nowcast_config,
+            run=self.result.run,
+        )
+
+        baseline = compute_sensitivity_snapshot(
+            self.frames[2],
+            self.result,
+            self.verification,
+            sensitivity_config=self.sensitivity_config,
+            latest_background_dbz=self.background[2],
+        )
+        unverified = compute_sensitivity_snapshot(
+            self.frames[2],
+            unverified_result,
+            self.verification,
+            sensitivity_config=self.sensitivity_config,
+            latest_background_dbz=self.background[2],
+        )
+
+        expected_path_evidence = float(verified.mean())
+        self.assertEqual(baseline.trust_components["path_evidence"], 1.0)
+        self.assertEqual(
+            unverified.trust_components["path_evidence"],
+            expected_path_evidence,
+        )
+        for name in (
+            "linearity",
+            "verification",
+            "metric_support",
+            "pair_consistency",
+        ):
+            self.assertAlmostEqual(
+                unverified.trust_components[name],
+                baseline.trust_components[name],
+            )
+        self.assertAlmostEqual(
+            unverified.trust_score,
+            baseline.trust_score * expected_path_evidence,
         )
 
     def test_nonfinite_background_does_not_create_fake_innovation(self) -> None:

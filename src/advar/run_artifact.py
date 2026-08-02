@@ -32,7 +32,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v16"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v17"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 128
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
@@ -55,6 +55,7 @@ _CORE_ARRAY_NAMES = frozenset(
         "forecast_dbz_digest",
         "valid_mask",
         "valid_mask_digest",
+        "forecast_verified_support",
         "state_echo_linear",
         "displacement_yx",
         "displacement_mps_yx",
@@ -70,6 +71,7 @@ _CORE_ARRAY_NAMES = frozenset(
         "background_tendency_used",
         "background_age_minutes",
         "source_support",
+        "verified_source_support",
         "motion_disagreement_px",
         "motion_disagreement_mps",
         "growth_disagreement",
@@ -110,6 +112,7 @@ _CLI_EXTRA_ARRAY_NAMES = frozenset(
     {
         "output_contract_version",
         "min_publish_support",
+        "minimum_publish_verified_support",
         "lead_minutes",
         "analysis_used",
         "analysis_converged",
@@ -241,6 +244,9 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "forecast_dbz_digest": np.asarray(result.forecast_dbz_digest),
         "valid_mask": _numpy(result.valid_mask),
         "valid_mask_digest": np.asarray(result.valid_mask_digest),
+        "forecast_verified_support": _numpy(
+            result.forecast_verified_support
+        ),
         "state_echo_linear": _numpy(result.state.echo_linear),
         "displacement_yx": _numpy(result.state.displacement_yx),
         "displacement_mps_yx": (
@@ -280,6 +286,9 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             else metadata.background_age_minutes
         ),
         "source_support": _numpy(metadata.source_support),
+        "verified_source_support": _numpy(
+            metadata.verified_source_support
+        ),
         "motion_disagreement_px": _numpy(
             metadata.motion_disagreement_px
         ),
@@ -591,6 +600,10 @@ def load_forecast_run(
 
         forecast_dbz = _tensor(loaded_arrays, "forecast_dbz")
         valid_mask = _tensor(loaded_arrays, "valid_mask")
+        stored_forecast_verified_support = _tensor(
+            loaded_arrays,
+            "forecast_verified_support",
+        )
         stored_displacement_mps = _tensor(
             loaded_arrays,
             "displacement_mps_yx",
@@ -657,6 +670,10 @@ def load_forecast_run(
                 None if math.isnan(background_age) else background_age
             ),
             source_support=_tensor(loaded_arrays, "source_support"),
+            verified_source_support=_tensor(
+                loaded_arrays,
+                "verified_source_support",
+            ),
             motion_disagreement_px=_tensor(
                 loaded_arrays,
                 "motion_disagreement_px",
@@ -862,6 +879,11 @@ def load_forecast_run(
             audit=None,
         )
     result.validate_issuance()
+    if not torch.equal(
+        result.forecast_verified_support,
+        stored_forecast_verified_support,
+    ):
+        raise ValueError("forecast verified support mismatch")
     _validate_displacement_mps(result, stored_displacement_mps)
     _validate_velocity(
         "grid_velocity_mps_yx",

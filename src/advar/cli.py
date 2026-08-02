@@ -24,7 +24,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v24"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v25"
 
 
 def main() -> None:
@@ -41,6 +41,11 @@ def main() -> None:
         type=float,
         default=0.95,
         help="minimum propagated source support required for publication",
+    )
+    parser.add_argument(
+        "--minimum-publish-verified-support",
+        type=float,
+        help="minimum pair-verified support required for publication",
     )
     parser.add_argument(
         "--variational",
@@ -239,6 +244,9 @@ def main() -> None:
         max_dbz=args.max_dbz,
         echo_threshold_dbz=args.echo_threshold_dbz,
         min_publish_support=args.min_publish_support,
+        minimum_publish_verified_support=(
+            args.minimum_publish_verified_support
+        ),
         maximum_background_age_minutes=(
             args.maximum_background_age_minutes
         ),
@@ -372,6 +380,9 @@ def _analysis_config_from_args(
         ),
         "--minimum-growth-overlap-area-km2": (
             args.minimum_growth_overlap_area_km2
+        ),
+        "--minimum-publish-verified-support": (
+            args.minimum_publish_verified_support
         ),
         "--maximum-motion-speed-mps": args.maximum_motion_speed_mps,
         "--motion-increment-scale-mps": args.motion_increment_scale_mps,
@@ -573,6 +584,11 @@ def _output_arrays(
         {
             "output_contract_version": np.asarray(OUTPUT_CONTRACT_VERSION),
             "min_publish_support": np.asarray(config.min_publish_support),
+            "minimum_publish_verified_support": np.asarray(
+                np.nan
+                if config.minimum_publish_verified_support is None
+                else config.minimum_publish_verified_support
+            ),
             "lead_minutes": np.arange(
                 config.interval_minutes,
                 config.horizon_minutes + 1,
