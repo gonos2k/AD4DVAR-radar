@@ -924,6 +924,53 @@ class SensitivityTests(unittest.TestCase):
         self.assertEqual(float(values["motion_pair_conflict"]), 1.0)
         self.assertEqual(float(values["growth_pair_conflict"]), 0.0)
 
+    def test_context_records_reconstruction_and_growth_evidence(self) -> None:
+        metadata = replace(
+            self.result.metadata,
+            state_path_source=TendencySource.OBSERVATION,
+            state_path_mode=TendencyPairSelection.RECENT,
+            state_path_pair_count=1,
+            state_path_minimum_psr=12.0,
+            state_path_conflict=True,
+            state_path_extrapolated=False,
+            state_path_age_minutes=10.0,
+            minimum_growth_overlap_support=5.0,
+            minimum_growth_overlap_area_km2=2.0,
+        )
+        features = extract_context_features(
+            self.frames[2],
+            self.state,
+            metadata,
+            self.nowcast_config,
+            latest_observation_mask=(
+                self.qc_mask[2] & torch.isfinite(self.frames[2])
+            ),
+        )
+        values = dict(zip(self.snapshot.context_feature_names, features))
+
+        expected = {
+            "state_path_pair_count": 1.0,
+            "state_path_source_observation": 1.0,
+            "state_path_source_background": 0.0,
+            "state_path_conflict": 1.0,
+            "state_path_extrapolated": 0.0,
+            "state_path_age_available": 1.0,
+            "state_path_age_minutes": 10.0,
+            "state_path_psr_available": 1.0,
+            "log1p_state_path_minimum_psr": math.log1p(12.0),
+            "growth_overlap_support_available": 1.0,
+            "log1p_minimum_growth_overlap_support": math.log1p(5.0),
+            "growth_overlap_area_available": 1.0,
+            "log1p_minimum_growth_overlap_area_km2": math.log1p(2.0),
+            "state_path_mode_recent": 1.0,
+        }
+        for name, value in expected.items():
+            with self.subTest(name=name):
+                torch.testing.assert_close(
+                    values[name],
+                    features.new_tensor(value),
+                )
+
     def test_context_distinguishes_missing_psr_from_numeric_zero(self) -> None:
         metadata = replace(
             self.result.metadata,
