@@ -1997,6 +1997,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             observed_dbz,
             prediction_dbz,
             prediction_echo,
+            torch.ones_like(precursor),
             frozen,
             enabled=True,
         )
@@ -2008,6 +2009,48 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertAlmostEqual(float(diagnostics[4]), 0.5)
         self.assertAlmostEqual(float(diagnostics[5]), 0.5, places=5)
         self.assertAlmostEqual(float(diagnostics[6]), 0.5, places=5)
+
+    def test_established_echo_cannot_fill_precursor_object(self) -> None:
+        frames = torch.full((3, 9, 9), -10.0, dtype=torch.float64)
+        _, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+        precursor = torch.zeros((9, 9), dtype=torch.bool)
+        precursor[4, 5] = True
+        quality = torch.ones((9, 9), dtype=torch.float64)
+        observed_dbz = torch.full((9, 9), -10.0, dtype=torch.float64)
+        observed_dbz[precursor] = 20.0
+        prediction_dbz = torch.full_like(observed_dbz, -10.0)
+        prediction_dbz[4, 4] = 20.0
+        prediction_echo = dbz_to_echo(
+            prediction_dbz,
+            min_dbz=self.nowcast_config.min_dbz,
+            max_dbz=self.nowcast_config.max_dbz,
+        )
+        precursor_attribution = torch.ones_like(precursor)
+        precursor_attribution[4, 4] = False
+
+        diagnostics = variational_module._precursor_object_diagnostics(
+            precursor,
+            torch.zeros_like(precursor),
+            quality,
+            observed_dbz,
+            prediction_dbz,
+            prediction_echo,
+            precursor_attribution,
+            frozen,
+            enabled=True,
+        )
+
+        self.assertEqual(int(diagnostics[0]), 1)
+        self.assertEqual(float(diagnostics[3]), 0.0)
+        self.assertEqual(float(diagnostics[4]), 0.0)
+        self.assertLess(
+            float(diagnostics[6]),
+            self.analysis_config.minimum_soft_echo_area_ratio_for_confidence,
+        )
 
     def test_operational_confidence_policy_falls_back_on_under_and_over(
         self,
