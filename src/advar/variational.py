@@ -538,13 +538,8 @@ class AnalysisResult:
     causal_control_cell_count: int = 0
     causal_seed_cell_count: int = 0
     causal_seed_prior_cost: float = 0.0
-    dynamics_reduced_hessian_eigenvalues: (
-        tuple[float, float, float] | None
-    ) = None
-    dynamics_reduced_hessian_condition_number: float | None = None
     dynamics_data_gram_eigenvalues: tuple[float, float, float] | None = None
     dynamics_data_information_trace: float | None = None
-    dynamics_data_effective_rank: int | None = None
     regularized_dynamics_hessian_eigenvalues: (
         tuple[float, float, float] | None
     ) = None
@@ -554,9 +549,6 @@ class AnalysisResult:
     motion_speed_saturation_margin_mps: float | None = None
     growth_saturation_margin: float | None = None
     field_growth_jacobian_cosine: float | None = None
-    field_motion_jacobian_cosine_yx: (
-        tuple[float | None, float | None] | None
-    ) = None
     field_motion_jacobian_cosine_by_control: (
         tuple[float | None, float | None] | None
     ) = None
@@ -2226,16 +2218,6 @@ def _analysis_result(
         causal_control_cell_count=causal_control_cell_count,
         causal_seed_cell_count=causal_seed_cell_count,
         causal_seed_prior_cost=causal_seed_prior_cost,
-        dynamics_reduced_hessian_eigenvalues=(
-            None
-            if identifiability is None
-            else identifiability.regularized_dynamics_hessian_eigenvalues
-        ),
-        dynamics_reduced_hessian_condition_number=(
-            None
-            if identifiability is None
-            else identifiability.regularized_dynamics_hessian_condition_number
-        ),
         dynamics_data_gram_eigenvalues=(
             None
             if identifiability is None
@@ -2245,11 +2227,6 @@ def _analysis_result(
             None
             if identifiability is None
             else identifiability.dynamics_data_information_trace
-        ),
-        dynamics_data_effective_rank=(
-            None
-            if identifiability is None
-            else identifiability.dynamics_data_numerical_rank
         ),
         dynamics_data_numerical_rank=(
             None
@@ -2289,11 +2266,6 @@ def _analysis_result(
             None
             if identifiability is None
             else identifiability.field_growth_jacobian_cosine
-        ),
-        field_motion_jacobian_cosine_yx=(
-            None
-            if identifiability is None
-            else identifiability.field_motion_jacobian_cosine_by_control
         ),
         field_motion_jacobian_cosine_by_control=(
             None

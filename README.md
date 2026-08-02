@@ -380,8 +380,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v20`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v12`
+- `output_contract_version`: 현재 `nowcast-npz-v21`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v13`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -474,17 +474,13 @@ adjacent pair와 관측을 공유하므로 두 값을 독립 표본처럼 평균
 - `analysis_dynamics_data_gram_eigenvalues`,
   `analysis_dynamics_data_information_trace`,
   `analysis_dynamics_data_numerical_rank`: 최종 IRLS 선형화점에서 prior를
-  제외한 관측 Jacobian Gram의 정보량과 수치 rank. 기존
-  `analysis_dynamics_data_effective_rank`는 호환 이름
+  제외한 관측 Jacobian Gram의 정보량과 수치 rank
 - `analysis_dynamics_data_to_prior_ratio_by_mode`,
   `analysis_dynamics_data_effective_dimension`: mode별
   `lambda/(1+lambda)`와 그 합
 - `analysis_regularized_dynamics_hessian_eigenvalues`,
   `analysis_regularized_dynamics_hessian_condition_number`: unit prior를
   포함한 dynamics Hessian의 solver 조건성
-- `analysis_dynamics_reduced_hessian_eigenvalues`,
-  `analysis_dynamics_reduced_hessian_condition_number`: 호환성을 위해 유지되는
-  위 regularized 진단의 기존 이름
 - `analysis_field_smoothness_prior_cost`,
   `analysis_motion_control_coordinate_system`,
   `analysis_field_smoothness_coordinate_system`,
@@ -495,7 +491,7 @@ adjacent pair와 관측을 공유하므로 두 값을 독립 표본처럼 평균
 - `analysis_field_growth_jacobian_cosine`,
   `analysis_field_motion_jacobian_cosine_by_control`: 관측공간에서 초기장
   증분이 성장·현재 motion-control 좌표의 이동증분과 얼마나 유사한지 나타내는
-  절대 cosine. 기존 `analysis_field_motion_jacobian_cosine_yx`는 호환 이름
+  절대 cosine
 
 `--audit`를 지정할 때만 최종 양성 보정량과 선행시간별
 `echo_integral_before_transport`, `echo_integral_after_transport`,

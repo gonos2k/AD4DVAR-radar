@@ -749,13 +749,17 @@ class VariationalAnalysisTests(unittest.TestCase):
         result = solve_analysis(observations, frozen)
 
         self.assertFalse(result.used_fallback, result.reason)
-        self.assertIsNotNone(result.dynamics_reduced_hessian_eigenvalues)
         self.assertIsNotNone(
-            result.dynamics_reduced_hessian_condition_number
+            result.regularized_dynamics_hessian_eigenvalues
         )
-        eigenvalues = result.dynamics_reduced_hessian_eigenvalues
+        self.assertIsNotNone(
+            result.regularized_dynamics_hessian_condition_number
+        )
+        eigenvalues = result.regularized_dynamics_hessian_eigenvalues
         assert eigenvalues is not None
-        condition_number = result.dynamics_reduced_hessian_condition_number
+        condition_number = (
+            result.regularized_dynamics_hessian_condition_number
+        )
         assert condition_number is not None
         diagnostic_frozen = freeze_irls_weights(
             result.control,
@@ -812,7 +816,6 @@ class VariationalAnalysisTests(unittest.TestCase):
             result.dynamics_data_information_trace or 0.0,
             float(torch.trace(expected_gram)),
         )
-        self.assertEqual(result.dynamics_data_effective_rank, 3)
         self.assertEqual(result.dynamics_data_numerical_rank, 3)
         expected_data_share = expected_data_eigenvalues / (
             1.0 + expected_data_eigenvalues
@@ -827,14 +830,6 @@ class VariationalAnalysisTests(unittest.TestCase):
             torch.tensor(data_share, dtype=torch.float64),
             expected_data_share,
         )
-        self.assertEqual(
-            result.regularized_dynamics_hessian_eigenvalues,
-            result.dynamics_reduced_hessian_eigenvalues,
-        )
-        self.assertEqual(
-            result.regularized_dynamics_hessian_condition_number,
-            result.dynamics_reduced_hessian_condition_number,
-        )
         self.assertGreaterEqual(eigenvalues[0], 1.0)
         self.assertLessEqual(eigenvalues[0], eigenvalues[1])
         self.assertLessEqual(eigenvalues[1], eigenvalues[2])
@@ -848,8 +843,8 @@ class VariationalAnalysisTests(unittest.TestCase):
             0.0,
         )
         self.assertLessEqual(result.field_growth_jacobian_cosine or 0.0, 1.0)
-        self.assertIsNotNone(result.field_motion_jacobian_cosine_yx)
-        motion_cosines = result.field_motion_jacobian_cosine_yx
+        self.assertIsNotNone(result.field_motion_jacobian_cosine_by_control)
+        motion_cosines = result.field_motion_jacobian_cosine_by_control
         assert motion_cosines is not None
         for cosine in motion_cosines:
             self.assertIsNotNone(cosine)

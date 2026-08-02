@@ -623,7 +623,7 @@ class _SourceTendencyEstimate:
 
 
 _FORECAST_INPUT_BUNDLE_VERSION = "forecast-input-bundle-v2"
-_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v3"
+_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v4"
 
 
 def _validate_background_age(

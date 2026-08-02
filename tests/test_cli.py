@@ -166,11 +166,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v20",
+                    "nowcast-npz-v21",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v12",
+                    "forecast-run-v13",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -408,7 +408,7 @@ class CliTests(unittest.TestCase):
                     0.0,
                 )
                 eigenvalues = result[
-                    "analysis_dynamics_reduced_hessian_eigenvalues"
+                    "analysis_regularized_dynamics_hessian_eigenvalues"
                 ]
                 self.assertEqual(eigenvalues.shape, (3,))
                 self.assertTrue(np.isfinite(eigenvalues).all())
@@ -416,7 +416,7 @@ class CliTests(unittest.TestCase):
                 self.assertTrue(
                     np.isfinite(
                         result[
-                            "analysis_dynamics_reduced_hessian_condition_number"
+                            "analysis_regularized_dynamics_hessian_condition_number"
                         ]
                     )
                 )
@@ -426,7 +426,7 @@ class CliTests(unittest.TestCase):
                     )
                 )
                 motion_cosines = result[
-                    "analysis_field_motion_jacobian_cosine_yx"
+                    "analysis_field_motion_jacobian_cosine_by_control"
                 ]
                 self.assertEqual(motion_cosines.shape, (2,))
                 self.assertTrue(np.isfinite(motion_cosines).all())
@@ -441,22 +441,8 @@ class CliTests(unittest.TestCase):
                     0.0,
                 )
                 self.assertGreaterEqual(
-                    result["analysis_dynamics_data_effective_rank"].item(),
+                    result["analysis_dynamics_data_numerical_rank"].item(),
                     1,
-                )
-                np.testing.assert_array_equal(
-                    result[
-                        "analysis_regularized_dynamics_hessian_eigenvalues"
-                    ],
-                    eigenvalues,
-                )
-                self.assertEqual(
-                    result[
-                        "analysis_regularized_dynamics_hessian_condition_number"
-                    ].item(),
-                    result[
-                        "analysis_dynamics_reduced_hessian_condition_number"
-                    ].item(),
                 )
                 self.assertGreaterEqual(
                     result["analysis_field_smoothness_prior_cost"].item(),

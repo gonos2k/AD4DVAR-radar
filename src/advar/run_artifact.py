@@ -31,7 +31,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v12"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v13"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 128
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
@@ -139,11 +139,8 @@ _CLI_EXTRA_ARRAY_NAMES = frozenset(
         "analysis_causal_control_cell_count",
         "analysis_causal_seed_cell_count",
         "analysis_causal_seed_prior_cost",
-        "analysis_dynamics_reduced_hessian_eigenvalues",
-        "analysis_dynamics_reduced_hessian_condition_number",
         "analysis_dynamics_data_gram_eigenvalues",
         "analysis_dynamics_data_information_trace",
-        "analysis_dynamics_data_effective_rank",
         "analysis_dynamics_data_numerical_rank",
         "analysis_dynamics_data_effective_dimension",
         "analysis_dynamics_data_to_prior_ratio_by_mode",
@@ -156,7 +153,6 @@ _CLI_EXTRA_ARRAY_NAMES = frozenset(
         "analysis_motion_speed_saturation_margin_mps",
         "analysis_growth_saturation_margin",
         "analysis_field_growth_jacobian_cosine",
-        "analysis_field_motion_jacobian_cosine_yx",
         "analysis_field_motion_jacobian_cosine_by_control",
         "input_minimum_before_fix",
         "input_corrected_count",
