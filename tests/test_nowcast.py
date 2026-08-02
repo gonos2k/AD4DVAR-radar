@@ -699,6 +699,71 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(tendency.growth_pair_count, 2)
         self.assertTrue(tendency.motion_pair_conflict)
         self.assertFalse(tendency.growth_pair_conflict)
+        torch.testing.assert_close(
+            tendency.source_displacement_yx,
+            torch.tensor(
+                ((0.0, 0.0), (-9.0, 0.0), (0.0, 0.0)),
+                dtype=torch.float64,
+            ),
+        )
+        self.assertTrue(bool(torch.all(tendency.source_usable)))
+
+    def test_direction_turn_uses_each_source_path_for_current_state(
+        self,
+    ) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        shape = (16, 16)
+        linear = torch.zeros((3, *shape), dtype=torch.float64)
+        masks = torch.zeros_like(linear, dtype=torch.bool)
+        linear[0, 8, 4] = 1.0
+        linear[1, 8, 8] = 2.0
+        masks[0, 8, 4] = True
+        masks[1, 8, 8] = True
+        estimates = (
+            (
+                torch.tensor([0.0, 4.0], dtype=torch.float64),
+                torch.tensor(0.04, dtype=torch.float64),
+                torch.tensor(12.0, dtype=torch.float64),
+            ),
+            (
+                torch.tensor([0.0, -4.0], dtype=torch.float64),
+                torch.tensor(-0.04, dtype=torch.float64),
+                torch.tensor(12.0, dtype=torch.float64),
+            ),
+        )
+
+        with patch.object(
+            nowcast_module,
+            "_estimate_available_pair",
+            side_effect=estimates,
+        ):
+            tendency = nowcast_module._estimate_source_tendencies(
+                linear,
+                torch.ones_like(masks),
+                linear,
+                self.config,
+                None,
+            )
+
+        current, support = nowcast_module._merge_source_frames(
+            linear,
+            masks,
+            tendency.source_displacement_yx,
+            tendency.source_log_growth,
+            tendency.source_usable,
+            self.config,
+        )
+
+        self.assertEqual(float(support[8, 4]), 1.0)
+        self.assertEqual(float(support[8, 8]), 0.0)
+        self.assertAlmostEqual(
+            float(current[8, 4]),
+            2.0 * math.exp(-0.04),
+        )
+        torch.testing.assert_close(
+            tendency.source_log_growth,
+            torch.tensor((0.0, -0.04, 0.0), dtype=torch.float64),
+        )
 
     def test_conflicting_pairs_choose_clearly_higher_psr_pair(self) -> None:
         nowcast_module = import_module("advar.nowcast")
@@ -795,6 +860,48 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(float(tendency.minimum_phase_correlation_psr), 30.0)
         self.assertFalse(tendency.motion_pair_conflict)
         self.assertFalse(tendency.growth_pair_conflict)
+        torch.testing.assert_close(
+            tendency.source_displacement_yx[0],
+            2.0 * long[0],
+        )
+        self.assertEqual(
+            tendency.source_usable.tolist(),
+            [True, False, True],
+        )
+
+    def test_recent_pair_excludes_unconnected_earliest_source(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        values = torch.zeros((3, 2, 2), dtype=torch.float64)
+        masks = torch.ones_like(values, dtype=torch.bool)
+        recent = (
+            torch.tensor([1.0, -2.0], dtype=torch.float64),
+            torch.tensor(0.05, dtype=torch.float64),
+            torch.tensor(12.0, dtype=torch.float64),
+        )
+
+        with patch.object(
+            nowcast_module,
+            "_estimate_available_pair",
+            side_effect=(None, recent, None),
+        ):
+            tendency = nowcast_module._estimate_source_tendencies(
+                values,
+                masks,
+                values,
+                self.config,
+                None,
+            )
+
+        self.assertEqual(
+            tendency.motion_pair_selection,
+            TendencyPairSelection.RECENT,
+        )
+        self.assertEqual(tendency.source_usable.tolist(), [False, True, True])
+        torch.testing.assert_close(
+            tendency.source_displacement_yx[1],
+            recent[0],
+        )
+        self.assertEqual(float(tendency.source_log_growth[1]), 0.05)
 
     def test_long_pair_conflict_without_confidence_advantage_is_independent(
         self,
@@ -842,6 +949,11 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(float(tendency.minimum_phase_correlation_psr), 12.0)
         self.assertFalse(tendency.motion_pair_conflict)
         self.assertTrue(tendency.growth_pair_conflict)
+        torch.testing.assert_close(
+            tendency.source_log_growth,
+            torch.tensor((0.4, 0.2, 0.0), dtype=torch.float64),
+        )
+        self.assertTrue(bool(torch.all(tendency.source_usable)))
 
     def test_long_pair_confidence_accounts_for_common_coverage(self) -> None:
         nowcast_module = import_module("advar.nowcast")

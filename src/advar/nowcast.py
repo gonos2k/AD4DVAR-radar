@@ -605,6 +605,9 @@ class TendencyPairSelection(str, Enum):
 class _SourceTendencyEstimate:
     displacement_yx: Tensor
     log_growth_per_step: Tensor
+    source_displacement_yx: Tensor
+    source_log_growth: Tensor
+    source_usable: Tensor
     motion_disagreement_px: Tensor
     motion_disagreement_mps: Tensor
     growth_disagreement: Tensor
@@ -1555,8 +1558,7 @@ def estimate_prepared_state(
         prepared,
         observation_linear,
         background_linear,
-        displacement,
-        growth,
+        tendency,
         config,
     )
     state = RadarState(
@@ -1650,6 +1652,10 @@ def _estimate_source_tendencies(
             adjacent_estimates.append((pair_index, estimate))
 
     if len(adjacent_estimates) == 2:
+        source_paths = _adjacent_source_paths(
+            adjacent_estimates[0][1],
+            adjacent_estimates[1][1],
+        )
         first_motion, first_growth, first_psr = adjacent_estimates[0][1]
         second_motion, second_growth, second_psr = adjacent_estimates[1][1]
         motion_disagreement = torch.linalg.vector_norm(
@@ -1702,6 +1708,9 @@ def _estimate_source_tendencies(
         return _SourceTendencyEstimate(
             displacement_yx=motion,
             log_growth_per_step=growth,
+            source_displacement_yx=source_paths[0],
+            source_log_growth=source_paths[1],
+            source_usable=source_paths[2],
             motion_disagreement_px=motion_disagreement,
             motion_disagreement_mps=motion_disagreement_mps,
             growth_disagreement=growth_disagreement,
@@ -1731,7 +1740,18 @@ def _estimate_source_tendencies(
         )
         if long_estimate is None:
             motion, growth, psr = adjacent_estimate
-            return _single_pair_tendency(motion, growth, psr)
+            selection = (
+                TendencyPairSelection.EARLIER
+                if adjacent_pair_index == 0
+                else TendencyPairSelection.RECENT
+            )
+            return _single_pair_tendency(
+                motion,
+                growth,
+                psr,
+                selection=selection,
+                source_pair_index=adjacent_pair_index,
+            )
         return _combine_single_adjacent_and_long(
             adjacent_estimate,
             long_estimate,
@@ -1751,9 +1771,13 @@ def _estimate_source_tendencies(
         grid_time_contract,
     )
     if long_estimate is None:
+        source_paths = _uniform_source_paths(zero_motion, zero_growth)
         return _SourceTendencyEstimate(
             displacement_yx=zero_motion,
             log_growth_per_step=zero_growth,
+            source_displacement_yx=source_paths[0],
+            source_log_growth=source_paths[1],
+            source_usable=source_paths[2],
             motion_disagreement_px=zero_growth,
             motion_disagreement_mps=unavailable_psr,
             growth_disagreement=zero_growth,
@@ -1776,17 +1800,127 @@ def _estimate_source_tendencies(
     )
 
 
+def _latest_only_source_paths(
+    motion: Tensor,
+    growth: Tensor,
+) -> tuple[Tensor, Tensor, Tensor]:
+    zero_motion = torch.zeros_like(motion)
+    zero_growth = torch.zeros_like(growth)
+    return (
+        torch.stack((zero_motion, zero_motion, zero_motion)),
+        torch.stack((zero_growth, zero_growth, zero_growth)),
+        torch.tensor(
+            (False, False, True),
+            dtype=torch.bool,
+            device=motion.device,
+        ),
+    )
+
+
+def _uniform_source_paths(
+    motion: Tensor,
+    growth: Tensor,
+) -> tuple[Tensor, Tensor, Tensor]:
+    zero_motion = torch.zeros_like(motion)
+    zero_growth = torch.zeros_like(growth)
+    return (
+        torch.stack((2.0 * motion, motion, zero_motion)),
+        torch.stack((2.0 * growth, growth, zero_growth)),
+        torch.ones(3, dtype=torch.bool, device=motion.device),
+    )
+
+
+def _adjacent_source_paths(
+    earlier: tuple[Tensor, Tensor, Tensor],
+    recent: tuple[Tensor, Tensor, Tensor],
+) -> tuple[Tensor, Tensor, Tensor]:
+    earlier_motion, earlier_growth, _ = earlier
+    recent_motion, recent_growth, _ = recent
+    zero_motion = torch.zeros_like(earlier_motion)
+    zero_growth = torch.zeros_like(earlier_growth)
+    return (
+        torch.stack(
+            (
+                earlier_motion + recent_motion,
+                recent_motion,
+                zero_motion,
+            )
+        ),
+        torch.stack(
+            (
+                earlier_growth + recent_growth,
+                recent_growth,
+                zero_growth,
+            )
+        ),
+        torch.ones(3, dtype=torch.bool, device=earlier_motion.device),
+    )
+
+
+def _single_adjacent_source_paths(
+    motion: Tensor,
+    growth: Tensor,
+    pair_index: int,
+) -> tuple[Tensor, Tensor, Tensor]:
+    if pair_index == 0:
+        return _uniform_source_paths(motion, growth)
+    if pair_index != 1:
+        raise ValueError("adjacent pair index must be 0 or 1")
+    zero_motion = torch.zeros_like(motion)
+    zero_growth = torch.zeros_like(growth)
+    return (
+        torch.stack((zero_motion, motion, zero_motion)),
+        torch.stack((zero_growth, growth, zero_growth)),
+        torch.tensor(
+            (False, True, True),
+            dtype=torch.bool,
+            device=motion.device,
+        ),
+    )
+
+
+def _long_source_paths(
+    motion: Tensor,
+    growth: Tensor,
+) -> tuple[Tensor, Tensor, Tensor]:
+    zero_motion = torch.zeros_like(motion)
+    zero_growth = torch.zeros_like(growth)
+    return (
+        torch.stack((2.0 * motion, zero_motion, zero_motion)),
+        torch.stack((2.0 * growth, zero_growth, zero_growth)),
+        torch.tensor(
+            (True, False, True),
+            dtype=torch.bool,
+            device=motion.device,
+        ),
+    )
+
+
 def _single_pair_tendency(
     motion: Tensor,
     growth: Tensor,
     psr: Tensor,
     *,
     selection: TendencyPairSelection = TendencyPairSelection.SINGLE,
+    source_pair_index: int | None = None,
 ) -> _SourceTendencyEstimate:
     zero = growth.new_zeros(())
+    if selection is TendencyPairSelection.LONG:
+        source_paths = _long_source_paths(motion, growth)
+    elif source_pair_index is not None:
+        source_paths = _single_adjacent_source_paths(
+            motion,
+            growth,
+            source_pair_index,
+        )
+    else:
+        source_paths = _uniform_source_paths(motion, growth)
     return _SourceTendencyEstimate(
         displacement_yx=motion,
         log_growth_per_step=growth,
+        source_displacement_yx=source_paths[0],
+        source_log_growth=source_paths[1],
+        source_usable=source_paths[2],
         motion_disagreement_px=zero,
         motion_disagreement_mps=psr.new_full((), torch.nan),
         growth_disagreement=zero,
@@ -1877,9 +2011,22 @@ def _combine_single_adjacent_and_long(
         if used_psrs
         else adjacent_psr.new_full((), torch.nan)
     )
+    if motion_selection is TendencyPairSelection.LONG:
+        source_paths = _long_source_paths(long_motion, long_growth)
+    elif motion_selection is TendencyPairSelection.SINGLE:
+        source_paths = _single_adjacent_source_paths(
+            adjacent_motion,
+            adjacent_growth,
+            adjacent_pair_index,
+        )
+    else:
+        source_paths = _latest_only_source_paths(motion, growth)
     return _SourceTendencyEstimate(
         displacement_yx=motion,
         log_growth_per_step=growth,
+        source_displacement_yx=source_paths[0],
+        source_log_growth=source_paths[1],
+        source_usable=source_paths[2],
         motion_disagreement_px=motion_disagreement,
         motion_disagreement_mps=motion_disagreement_mps,
         growth_disagreement=growth_disagreement,
@@ -2165,22 +2312,23 @@ def _merge_current_state(
     prepared: PreparedRadarInput,
     observation_linear: Tensor,
     background_linear: Tensor,
-    displacement: Tensor,
-    growth: Tensor,
+    tendency: _SourceTendencyEstimate,
     config: NowcastConfig,
 ) -> tuple[Tensor, Tensor, float]:
     observation_echo, observation_support = _merge_source_frames(
         observation_linear,
         prepared.observed_mask,
-        displacement,
-        growth,
+        tendency.source_displacement_yx,
+        tendency.source_log_growth,
+        tendency.source_usable,
         config,
     )
     background_echo, background_support = _merge_source_frames(
         background_linear,
         prepared.background_mask,
-        displacement,
-        growth,
+        tendency.source_displacement_yx,
+        tendency.source_log_growth,
+        tendency.source_usable,
         config,
     )
     observation_support = observation_support.clamp(0.0, 1.0)
@@ -2271,8 +2419,9 @@ def _merge_source_support(
 def _merge_source_frames(
     linear: Tensor,
     masks: Tensor,
-    displacement: Tensor,
-    growth: Tensor,
+    source_displacement_yx: Tensor,
+    source_log_growth: Tensor,
+    source_usable: Tensor,
     config: NowcastConfig,
 ) -> tuple[Tensor, Tensor]:
     latest_mask = masks[2]
@@ -2282,18 +2431,19 @@ def _merge_source_frames(
     numerator = torch.zeros_like(linear[2])
     support = torch.zeros_like(linear[2])
     for source_index in range(3):
+        if not bool(source_usable[source_index]):
+            continue
         source_mask = masks[source_index]
         if not bool(torch.any(source_mask)):
             continue
 
-        steps = 2 - source_index
         candidate_support = source_mask.to(dtype=linear.dtype)
         candidate_value = linear[source_index] * candidate_support
-        if steps:
-            total_displacement = steps * displacement
+        if source_index < 2:
+            total_displacement = source_displacement_yx[source_index]
             candidate_value = react_core(
                 remap(candidate_value, total_displacement),
-                steps * growth,
+                source_log_growth[source_index],
             )
             candidate_support = remap(
                 candidate_support,
