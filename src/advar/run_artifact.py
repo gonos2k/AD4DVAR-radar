@@ -20,6 +20,7 @@ from torch import Tensor
 from ._digest import json_digest
 from .nowcast import (
     DataStatus,
+    DynamicsSource,
     ForecastMetadata,
     ForecastResult,
     ForecastRunContract,
@@ -31,7 +32,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v14"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v15"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 128
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
@@ -81,6 +82,7 @@ _CORE_ARRAY_NAMES = frozenset(
         "motion_pair_conflict",
         "growth_pair_conflict",
         "tendency_source",
+        "dynamics_source",
         "state_path_source",
         "state_path_mode",
         "state_path_pair_count",
@@ -300,6 +302,7 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "motion_pair_conflict": np.asarray(metadata.motion_pair_conflict),
         "growth_pair_conflict": np.asarray(metadata.growth_pair_conflict),
         "tendency_source": np.asarray(metadata.tendency_source.value),
+        "dynamics_source": np.asarray(metadata.dynamics_source.value),
         "state_path_source": np.asarray(metadata.state_path_source.value),
         "state_path_mode": np.asarray(metadata.state_path_mode.value),
         "state_path_pair_count": np.asarray(metadata.state_path_pair_count),
@@ -700,6 +703,9 @@ def load_forecast_run(
             ),
             tendency_source=TendencySource(
                 _string_scalar(loaded_arrays, "tendency_source")
+            ),
+            dynamics_source=DynamicsSource(
+                _string_scalar(loaded_arrays, "dynamics_source")
             ),
             state_path_source=TendencySource(
                 _string_scalar(loaded_arrays, "state_path_source")

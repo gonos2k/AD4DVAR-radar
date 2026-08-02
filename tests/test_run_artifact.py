@@ -16,6 +16,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar import (  # noqa: E402
+    DynamicsSource,
     NowcastConfig,
     RadarGridTimeContract,
     SensitivityConfig,
@@ -124,6 +125,10 @@ class ForecastRunArtifactTests(unittest.TestCase):
             loaded.metadata.background_state_support_fraction,
             result.metadata.background_state_support_fraction,
         )
+        self.assertEqual(
+            loaded.metadata.dynamics_source,
+            DynamicsSource.P0_RECONSTRUCTION,
+        )
         torch.testing.assert_close(
             loaded.metadata.minimum_phase_correlation_psr,
             result.metadata.minimum_phase_correlation_psr,
@@ -153,6 +158,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             result.metadata.growth_pair_conflict,
         )
         for name in (
+            "dynamics_source",
             "state_path_source",
             "state_path_mode",
             "state_path_pair_count",

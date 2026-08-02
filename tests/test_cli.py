@@ -151,6 +151,7 @@ class CliTests(unittest.TestCase):
             "growth_pair_conflict",
             "motion_disagreement_mps",
             "tendency_source",
+            "dynamics_source",
             "state_path_source",
             "state_path_mode",
             "state_path_pair_count",
@@ -179,11 +180,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v22",
+                    "nowcast-npz-v23",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v14",
+                    "forecast-run-v15",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -334,6 +335,15 @@ class CliTests(unittest.TestCase):
                     64,
                 )
                 self.assertFalse(result["analysis_used_fallback"].item())
+                self.assertEqual(
+                    result["dynamics_source"].item(),
+                    "P1_VARIATIONAL",
+                )
+                self.assertEqual(result["state_path_source"].item(), "NONE")
+                self.assertEqual(result["state_path_mode"].item(), "NONE")
+                self.assertTrue(
+                    np.isnan(result["minimum_growth_overlap_support"].item())
+                )
                 self.assertLess(
                     result["analysis_final_objective"].item(),
                     result["analysis_initial_objective"].item(),
@@ -478,6 +488,13 @@ class CliTests(unittest.TestCase):
                 )
             loaded = load_forecast_run(output_path)
             loaded.validate_issuance()
+            self.assertEqual(
+                loaded.metadata.dynamics_source.value,
+                "P1_VARIATIONAL",
+            )
+            self.assertTrue(
+                np.isnan(loaded.metadata.minimum_growth_overlap_support)
+            )
             self.assertIsNotNone(loaded.run.analysis_config_json)
             self.assertIsNotNone(loaded.run.analysis_config_digest)
             self.assertIsNotNone(loaded.run.analysis_input_digest)

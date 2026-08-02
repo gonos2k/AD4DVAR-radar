@@ -608,6 +608,12 @@ class TendencySource(str, Enum):
     NONE = "NONE"
 
 
+class DynamicsSource(str, Enum):
+    P0_RECONSTRUCTION = "P0_RECONSTRUCTION"
+    P1_VARIATIONAL = "P1_VARIATIONAL"
+    P0_FALLBACK = "P0_FALLBACK"
+
+
 class TendencyPairSelection(str, Enum):
     NONE = "NONE"
     SINGLE = "SINGLE"
@@ -779,6 +785,7 @@ class ForecastMetadata:
     tendency_pair_count: int
     tendency_source: TendencySource
     provenance: str = "p0_support_merged"
+    dynamics_source: DynamicsSource = DynamicsSource.P0_RECONSTRUCTION
     motion_pair_count: int = 0
     growth_pair_count: int = 0
     motion_pair_selection: TendencyPairSelection = TendencyPairSelection.NONE
@@ -878,6 +885,7 @@ def state_metadata_digest(
                 "motion_pair_conflict": metadata.motion_pair_conflict,
                 "growth_pair_conflict": metadata.growth_pair_conflict,
                 "tendency_source": metadata.tendency_source.value,
+                "dynamics_source": metadata.dynamics_source.value,
                 "state_path_source": metadata.state_path_source.value,
                 "state_path_mode": metadata.state_path_mode.value,
                 "state_path_pair_count": metadata.state_path_pair_count,
@@ -1446,6 +1454,25 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         or metadata.state_path_age_minutes < 0
     ):
         raise ValueError("state path age must be finite and nonnegative")
+    expected_provenance = {
+        DynamicsSource.P0_RECONSTRUCTION: "p0_support_merged",
+        DynamicsSource.P0_FALLBACK: "p0_support_merged",
+        DynamicsSource.P1_VARIATIONAL: "p1_variational_analysis",
+    }[metadata.dynamics_source]
+    if metadata.provenance != expected_provenance:
+        raise ValueError("dynamics source and provenance disagree")
+    if metadata.dynamics_source is DynamicsSource.P1_VARIATIONAL and (
+        metadata.state_path_source is not TendencySource.NONE
+        or metadata.state_path_mode is not TendencyPairSelection.NONE
+        or metadata.state_path_pair_count != 0
+        or not math.isnan(metadata.state_path_minimum_psr)
+        or metadata.state_path_conflict
+        or metadata.state_path_extrapolated
+        or metadata.state_path_age_minutes is not None
+        or not math.isnan(metadata.minimum_growth_overlap_support)
+        or not math.isnan(metadata.minimum_growth_overlap_area_km2)
+    ):
+        raise ValueError("P1 metadata cannot retain P0 path evidence")
     for name, value in (
         (
             "minimum_growth_overlap_support",

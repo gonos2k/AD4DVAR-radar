@@ -12,6 +12,7 @@ from torch import Tensor
 from ._digest import dataclass_digest
 from .nowcast import (
     DataStatus,
+    DynamicsSource,
     ForecastMetadata,
     ForecastResult,
     NowcastConfig,
@@ -251,7 +252,7 @@ def compute_sensitivity_snapshot(
     metadata = result.metadata
     if metadata.data_status is DataStatus.UNAVAILABLE:
         raise ValueError("sensitivity is undefined for an unissued forecast")
-    if metadata.provenance != "p0_support_merged":
+    if metadata.dynamics_source is DynamicsSource.P1_VARIATIONAL:
         raise ValueError("M0 direct sensitivity requires a P0 state")
     if (
         2 * sensitivity_config.active_margin_dbz

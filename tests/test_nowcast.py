@@ -17,6 +17,7 @@ from advar.diagnostics import (  # noqa: E402
 )
 from advar.nowcast import (  # noqa: E402
     DataStatus,
+    DynamicsSource,
     ForecastMetadata,
     ForecastRunContract,
     NowcastConfig,
@@ -2658,6 +2659,16 @@ class NowcastTests(unittest.TestCase):
                     )
                 ),
                 "source_support",
+            ),
+            (
+                reissue(
+                    metadata=replace(
+                        issued.metadata,
+                        provenance="p1_variational_analysis",
+                        dynamics_source=DynamicsSource.P1_VARIATIONAL,
+                    )
+                ),
+                "P1 metadata",
             ),
         )
 
