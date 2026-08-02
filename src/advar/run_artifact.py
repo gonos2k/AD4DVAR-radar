@@ -750,16 +750,6 @@ def load_forecast_run(
             != stored_background_tendency_used
         ):
             raise ValueError("background tendency provenance mismatch")
-        expected_background_used = (
-            metadata.background_state_support_fraction > config.epsilon
-            or metadata.background_tendency_used
-        )
-        if metadata.background_used != expected_background_used:
-            raise ValueError("background usage provenance mismatch")
-        if metadata.background_used != (
-            metadata.background_age_minutes is not None
-        ):
-            raise ValueError("background age provenance mismatch")
         latest_background_present = _bool_scalar(
             loaded_arrays,
             "latest_background_present",

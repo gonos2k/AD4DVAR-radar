@@ -92,6 +92,7 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         minimum_phase_correlation_psr=state.echo_linear.new_tensor(10.0),
         tendency_pair_count=2,
         tendency_source=TendencySource.OBSERVATION,
+        minimum_growth_overlap_support=float(state.echo_linear.numel()),
     )
 
 
@@ -1982,6 +1983,8 @@ class NowcastTests(unittest.TestCase):
             ),
             tendency_pair_count=1,
             tendency_source=TendencySource.OBSERVATION,
+            motion_pair_count=1,
+            motion_pair_selection=TendencyPairSelection.SINGLE,
         )
 
         latest = linear_to_dbz(state.echo_linear, config)
@@ -2670,12 +2673,66 @@ class NowcastTests(unittest.TestCase):
                 ),
                 "P1 metadata",
             ),
+            (
+                reissue(
+                    metadata=replace(
+                        issued.metadata,
+                        background_used=True,
+                        background_age_minutes=10.0,
+                    )
+                ),
+                "background usage provenance",
+            ),
         )
 
         for candidate, message in cases:
             with self.subTest(message=message):
                 with self.assertRaisesRegex(ValueError, message):
                     candidate.validate_issuance()
+
+    def test_issuance_rejects_growth_count_evidence_mismatch(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        frames = torch.full((3, 8, 8), 20.0, dtype=torch.float64)
+        issued = nowcast(frames, self.config)
+
+        def reissue(metadata: ForecastMetadata) -> object:
+            state_digest = nowcast_module.state_metadata_digest(
+                issued.state,
+                metadata,
+            )
+            return replace(
+                issued,
+                metadata=metadata,
+                state_metadata_digest=state_digest,
+                forecast_run_digest=(
+                    nowcast_module._forecast_run_identity_digest(
+                        issued.run,
+                        state_digest,
+                        issued.forecast_dbz_digest,
+                        issued.valid_mask_digest,
+                    )
+                ),
+            )
+
+        unused_with_evidence = replace(
+            issued.metadata,
+            minimum_growth_overlap_support=4.0,
+        )
+        used_without_evidence = replace(
+            issued.metadata,
+            growth_pair_count=1,
+            growth_pair_selection=TendencyPairSelection.SINGLE,
+            tendency_pair_count=1,
+            minimum_phase_correlation_psr=issued.forecast_dbz.new_tensor(10.0),
+        )
+
+        for metadata, message in (
+            (unused_with_evidence, "unused growth pairs"),
+            (used_without_evidence, "used growth pairs"),
+        ):
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    reissue(metadata).validate_issuance()
 
     def test_fractional_advection_is_non_negative_and_does_not_gain_mass(
         self,

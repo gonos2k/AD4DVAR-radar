@@ -1473,18 +1473,65 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         or not math.isnan(metadata.minimum_growth_overlap_area_km2)
     ):
         raise ValueError("P1 metadata cannot retain P0 path evidence")
-    for name, value in (
-        (
-            "minimum_growth_overlap_support",
-            metadata.minimum_growth_overlap_support,
-        ),
-        (
-            "minimum_growth_overlap_area_km2",
-            metadata.minimum_growth_overlap_area_km2,
-        ),
+    background_fraction = metadata.background_contribution_fraction
+    if (
+        not math.isfinite(background_fraction)
+        or background_fraction < 0
+        or background_fraction > 1
     ):
-        if not math.isnan(value) and (not math.isfinite(value) or value < 0):
-            raise ValueError(f"{name} must be nonnegative or NaN")
+        raise ValueError("background contribution fraction must be in [0, 1]")
+    expected_background_used = (
+        background_fraction > config.epsilon
+        or metadata.background_tendency_used
+    )
+    if metadata.background_used != expected_background_used:
+        raise ValueError("background usage provenance mismatch")
+    background_age = metadata.background_age_minutes
+    if metadata.background_used != (
+        background_age is not None
+    ):
+        raise ValueError("background age provenance mismatch")
+    if metadata.background_used:
+        run_background_age = result.run.background_age_minutes
+        if (
+            background_age is None
+            or run_background_age is None
+            or not math.isclose(
+                background_age,
+                run_background_age,
+                rel_tol=0.0,
+                abs_tol=config.epsilon,
+            )
+        ):
+            raise ValueError("background age disagrees with the forecast run")
+    growth_support = metadata.minimum_growth_overlap_support
+    growth_area = metadata.minimum_growth_overlap_area_km2
+    if metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
+        if metadata.growth_pair_count == 0:
+            if not math.isnan(growth_support) or not math.isnan(growth_area):
+                raise ValueError("unused growth pairs cannot retain evidence")
+        else:
+            if (
+                not math.isfinite(growth_support)
+                or growth_support + config.epsilon
+                < config.minimum_growth_overlap_support
+            ):
+                raise ValueError("used growth pairs require valid evidence")
+            if result.run.grid_time_contract is None:
+                if not math.isnan(growth_area):
+                    raise ValueError(
+                        "growth overlap area requires a grid/time contract"
+                    )
+            elif (
+                not math.isfinite(growth_area)
+                or growth_area <= 0
+                or (
+                    config.minimum_growth_overlap_area_km2 is not None
+                    and growth_area + config.epsilon
+                    < config.minimum_growth_overlap_area_km2
+                )
+            ):
+                raise ValueError("used growth pairs require valid area evidence")
     if not torch.equal(torch.isfinite(forecast), valid):
         raise ValueError("valid_mask must match finite forecast values")
     finite_tensors = (

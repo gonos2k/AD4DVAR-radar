@@ -88,6 +88,7 @@ def metadata_for(
         minimum_phase_correlation_psr=state.echo_linear.new_tensor(10.0),
         tendency_pair_count=2,
         tendency_source=TendencySource.OBSERVATION,
+        minimum_growth_overlap_support=float(state.echo_linear.numel()),
     )
 
 
@@ -126,6 +127,11 @@ def result_for(
                 )
             )
             / (config.interval_minutes * 60.0),
+            minimum_growth_overlap_area_km2=(
+                metadata.minimum_growth_overlap_support
+                * grid_time_contract.cell_area_m2
+                / 1.0e6
+            ),
         )
     return forecast_from_state(
         state,

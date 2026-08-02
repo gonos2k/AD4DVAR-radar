@@ -740,6 +740,36 @@ class ForecastRunArtifactTests(unittest.TestCase):
             ):
                 load_forecast_run(path)
 
+    def test_load_uses_central_metadata_semantics(self) -> None:
+        result = nowcast(self.frames())
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                original: dict[str, Any] = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                }
+
+            for name, value, message in (
+                (
+                    "background_used",
+                    np.asarray(True),
+                    "background usage provenance",
+                ),
+                (
+                    "minimum_growth_overlap_support",
+                    np.asarray(np.nan),
+                    "used growth pairs",
+                ),
+            ):
+                with self.subTest(name=name):
+                    arrays = dict(original)
+                    arrays[name] = value
+                    self._save_arrays(path, arrays)
+                    with self.assertRaisesRegex(ValueError, message):
+                        load_forecast_run(path)
+
     def test_save_rejects_mutated_analysis_lineage(self) -> None:
         result = nowcast(self.frames())
         changed_run = replace(
