@@ -433,6 +433,12 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   weight를 이전·현재 에코 적분에도 적용하며, 사용 가능한 성장 증거가
   없으면 `NaN`이다.
 
+직접 발행과 `forecast-run` 재적재는 같은 중앙 의미검증을 사용한다. P0와
+P0 fallback에서 `growth_pair_count=0`이면 성장 overlap은 반드시 `NaN`이고,
+성장 pair를 사용했다면 support와 사용 가능한 물리면적 증거가 설정 임계값을
+만족해야 한다. `background_used`도 상태 기여 또는 배경 tendency 사용 여부와
+일치해야 하며, 사용 시 run contract의 배경 age와 같은 값을 기록한다.
+
 Phase-correlation의 raw peak가 `max_displacement_px` 범위 밖이거나 허용
 search boundary bin에 있으면 높은 PSR이어도 사용하지 않는다. pair 일관성은
 검색상한과 분리된 `maximum_pair_motion_disagreement_px`, 격자계약이 있을 때의
