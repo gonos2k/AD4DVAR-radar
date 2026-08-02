@@ -26,8 +26,16 @@ from .sensitivity import CONTEXT_FEATURE_NAMES, SensitivitySnapshot
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
 _INDEX_SCHEMA_VERSION = 3
-_EPISODE_SCHEMA_VERSION = 12
+_EPISODE_SCHEMA_VERSION = 13
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
+_TRUST_COMPONENTS_V13 = {
+    "linearity",
+    "verification",
+    "metric_support",
+    "pair_consistency",
+    "path_evidence",
+    "observation_evidence",
+}
 _MODEL_CONTRACT_SCHEMA_BY_EPISODE_SCHEMA = {
     3: 3,
     4: 3,
@@ -897,6 +905,12 @@ def _verify_manifest(
         raise ValueError("M0 episodes cannot contain total sensitivity")
     if manifest.get("promotion_eligible") is not False:
         raise ValueError("M0 episodes cannot be promoted automatically")
+    trust_components = manifest.get("trust_components")
+    if schema_version >= 13 and (
+        not isinstance(trust_components, dict)
+        or set(trust_components) != _TRUST_COMPONENTS_V13
+    ):
+        raise ValueError("manifest trust component contract is invalid")
     reward_epsilon = manifest.get("reward_epsilon")
     if (
         not isinstance(reward_epsilon, (int, float))

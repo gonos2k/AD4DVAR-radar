@@ -24,7 +24,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v27"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v28"
 
 
 def main() -> None:

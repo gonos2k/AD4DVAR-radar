@@ -141,7 +141,7 @@ P1 실행은 실제 `AnalysisConfig` JSON과 observation-std·quality-weight의
 analysis input digest도 같은 identity에 포함한다.
 재적재 전 ZIP member 수·개별/전체 압축해제 크기·이름, NPY header의
 dtype·shape·선언 payload를 검사하고 알 수 없는 member와 object dtype을
-거부한다. 기본 한도는 128개, member당 1 GiB, 전체 2 GiB이며 API 인자로
+거부한다. 기본 한도는 160개, member당 1 GiB, 전체 2 GiB이며 API 인자로
 더 낮출 수 있다. 재적재 시 모든 member를 묶는 artifact digest와
 tensor/config/state/metadata digest를 독립적으로 재계산한다. 각 member는
 archive에서 한 번만 materialize하며 같은 NumPy storage를 digest
@@ -382,8 +382,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v27`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v19`
+- `output_contract_version`: 현재 `nowcast-npz-v28`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v20`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -432,8 +432,12 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   `state_path_extrapolated`, `state_path_age_minutes`: 현재상태 재구성
   경로의 출처·선택·신뢰도·최대 source age. 관측과 배경이
   함께 기여하면 `state_path_source` 는 우선순위가 높은 관측을
-  기록하고 배경 기여는 `background_contribution_fraction`으로
-  별도 기록한다. accepted P1에서는 이 P0 재구성 증거를 최종상태
+  기록하는 호환용 요약이다.
+- `observation_state_support_fraction`, `background_state_support_fraction`,
+  `observation_path_*`, `background_path_*`: 혼합 상태의 실제 기여비와
+  source별 mode·pair count·PSR·conflict·extrapolation·age를 동시에
+  보존한다. 관측 1%+배경 99%도 관측 경로 하나로 축약되지 않는다.
+  accepted P1에서는 이 P0 재구성 증거를 최종상태
   provenance로 재사용하지 않고 unavailable로 기록한다.
 - `minimum_growth_overlap_support`, `minimum_growth_overlap_area_km2`:
   선택된 운동에서 실제 성장률 결합에 사용된 pair들의 최소
@@ -666,7 +670,7 @@ availability=0과 finite value 0을 함께 기록하여 결측 PSR을 실제 0�
 sensitivity snapshot은 실제
 `grid_time_contract_digest`도 보존하고 `ModelContract`의 같은 필드와 정확히
 일치해야 하므로 서로 다른 affine/grid의 spatial sensitivity가 같은 계약으로
-섞이지 않는다. 현재 episode schema는 v12, model-contract hash schema는
+섞이지 않는다. 현재 episode schema는 v13, model-contract hash schema는
 v11이며 기존 schema 1–11을 그대로 검증한다. 과거 episode에
 존재하지 않던 conflict나 selection 값을 임의로 보간하지 않으므로 서로 다른
 context 계약이 같은 학습집합으로 섞이지 않는다.
@@ -676,6 +680,8 @@ M0 `trust_components`의 `pair_consistency`는 기본적으로 충돌한 성분 
 연구용 보수적 prior이고 검색·운용 임계값은 실제 hindcast로 보정해야 한다.
 `path_evidence`는 현재 source support 중 직접관측·유효 pair 경로로
 검증된 가중 비율이며, 미검증 persistence가 많을수록 M0 trust를 낮춘다.
+`observation_evidence`는 현재 상태 support 중 관측이 기여한 비율으로,
+배경이 지배하는 혼합 상태의 직접 관측 M0 trust를 낮춘다.
 
 ### M0의 엄밀한 경계
 

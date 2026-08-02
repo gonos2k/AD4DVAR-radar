@@ -125,6 +125,28 @@ class ForecastRunArtifactTests(unittest.TestCase):
             loaded.forecast_verified_support,
             result.forecast_verified_support,
         )
+        for loaded_path, expected_path in (
+            (
+                loaded.metadata.observation_path,
+                result.metadata.observation_path,
+            ),
+            (
+                loaded.metadata.background_path,
+                result.metadata.background_path,
+            ),
+        ):
+            self.assertEqual(loaded_path.mode, expected_path.mode)
+            self.assertEqual(loaded_path.pair_count, expected_path.pair_count)
+            self.assertTrue(math.isnan(loaded_path.minimum_psr))
+            self.assertEqual(loaded_path.conflict, expected_path.conflict)
+            self.assertEqual(
+                loaded_path.extrapolated,
+                expected_path.extrapolated,
+            )
+            self.assertEqual(
+                loaded_path.age_minutes,
+                expected_path.age_minutes,
+            )
         self.assertEqual(
             loaded.metadata.background_tendency_used,
             result.metadata.background_tendency_used,
