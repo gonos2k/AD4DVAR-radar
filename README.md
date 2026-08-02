@@ -381,8 +381,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v22`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v14`
+- `output_contract_version`: 현재 `nowcast-npz-v23`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v15`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -417,13 +417,16 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   대응하는 `*_pair_selection`과 함께 해석한다.
 - `tendency_source`: 경향 추정 출처. `OBSERVATION`, `BACKGROUND`,
   `NONE` 중 하나
+- `dynamics_source`: 최종 발행상태 동역학의 출처.
+  `P0_RECONSTRUCTION`, `P1_VARIATIONAL`, `P0_FALLBACK` 중 하나
 - `state_path_source`, `state_path_mode`, `state_path_pair_count`,
   `state_path_minimum_psr`, `state_path_conflict`,
   `state_path_extrapolated`, `state_path_age_minutes`: 현재상태 재구성
   경로의 출처·선택·신뢰도·최대 source age. 관측과 배경이
   함께 기여하면 `state_path_source` 는 우선순위가 높은 관측을
   기록하고 배경 기여는 `background_contribution_fraction`으로
-  별도 기록한다.
+  별도 기록한다. accepted P1에서는 이 P0 재구성 증거를 최종상태
+  provenance로 재사용하지 않고 unavailable로 기록한다.
 - `minimum_growth_overlap_support`, `minimum_growth_overlap_area_km2`:
   선택된 운동에서 실제 성장률 결합에 사용된 pair들의 최소
   에코 관련 fractional-overlap support와 물리면적. 동일한 support

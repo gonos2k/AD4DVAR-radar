@@ -20,10 +20,12 @@ from advar.matrix_free import (  # noqa: E402
 )
 from advar.nowcast import (  # noqa: E402
     DataStatus,
+    DynamicsSource,
     ForecastRunContract,
     NowcastConfig,
     RadarGridTimeContract,
     RadarState,
+    TendencyPairSelection,
     TendencySource,
     forecast_from_state,
 )
@@ -1192,6 +1194,13 @@ class VariationalAnalysisTests(unittest.TestCase):
                 background_used=True,
                 background_age_minutes=10.0,
                 tendency_source=TendencySource.BACKGROUND,
+                state_path_source=TendencySource.OBSERVATION,
+                state_path_mode=TendencyPairSelection.RECENT,
+                state_path_pair_count=1,
+                state_path_minimum_psr=12.0,
+                state_path_age_minutes=10.0,
+                minimum_growth_overlap_support=5.0,
+                minimum_growth_overlap_area_km2=2.0,
             ),
         )
 
@@ -1215,6 +1224,27 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertTrue(result.metadata.background_tendency_used)
         self.assertTrue(result.metadata.background_used)
         self.assertEqual(result.metadata.background_age_minutes, 10.0)
+        self.assertEqual(
+            result.metadata.dynamics_source,
+            DynamicsSource.P1_VARIATIONAL,
+        )
+        self.assertEqual(
+            result.metadata.state_path_source,
+            TendencySource.NONE,
+        )
+        self.assertEqual(
+            result.metadata.state_path_mode,
+            TendencyPairSelection.NONE,
+        )
+        self.assertEqual(result.metadata.state_path_pair_count, 0)
+        self.assertTrue(math.isnan(result.metadata.state_path_minimum_psr))
+        self.assertIsNone(result.metadata.state_path_age_minutes)
+        self.assertTrue(
+            math.isnan(result.metadata.minimum_growth_overlap_support)
+        )
+        self.assertTrue(
+            math.isnan(result.metadata.minimum_growth_overlap_area_km2)
+        )
 
     def test_causal_support_back_advects_later_detection(self) -> None:
         detected = torch.zeros((3, 7, 9), dtype=torch.bool)
@@ -1566,6 +1596,10 @@ class VariationalAnalysisTests(unittest.TestCase):
         result = solve_analysis(observations, frozen)
 
         self.assertTrue(result.used_fallback)
+        self.assertEqual(
+            result.metadata.dynamics_source,
+            DynamicsSource.P0_FALLBACK,
+        )
         self.assertEqual(result.reason, "no_improvement_over_zero_control")
         self.assertAlmostEqual(result.initial_objective, float(reference_cost))
         self.assertEqual(result.final_objective, result.initial_objective)
