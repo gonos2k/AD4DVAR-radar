@@ -1,6 +1,7 @@
 from collections import Counter
 from dataclasses import replace
 import io
+import math
 from pathlib import Path
 import sys
 import tempfile
@@ -151,6 +152,24 @@ class ForecastRunArtifactTests(unittest.TestCase):
             loaded.metadata.growth_pair_conflict,
             result.metadata.growth_pair_conflict,
         )
+        for name in (
+            "state_path_source",
+            "state_path_mode",
+            "state_path_pair_count",
+            "state_path_minimum_psr",
+            "state_path_conflict",
+            "state_path_extrapolated",
+            "state_path_age_minutes",
+            "minimum_growth_overlap_support",
+            "minimum_growth_overlap_area_km2",
+        ):
+            with self.subTest(name=name):
+                loaded_value = getattr(loaded.metadata, name)
+                expected = getattr(result.metadata, name)
+                if isinstance(expected, float) and math.isnan(expected):
+                    self.assertTrue(math.isnan(loaded_value))
+                else:
+                    self.assertEqual(loaded_value, expected)
         torch.testing.assert_close(
             loaded.run.latest_observation_mask,
             result.run.latest_observation_mask,

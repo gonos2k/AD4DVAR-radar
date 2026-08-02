@@ -289,7 +289,10 @@ class EpisodeLedgerTests(unittest.TestCase):
             manifest["context_feature_names"][6:8],
             ["motion_pair_conflict", "growth_pair_conflict"],
         )
-        self.assertEqual(loaded.arrays["context_features"].shape, (50,))
+        self.assertEqual(
+            loaded.arrays["context_features"].shape,
+            (len(manifest["context_feature_names"]),),
+        )
         self.assertEqual(manifest["contract_hash"], self.contract.digest)
         self.assertEqual(
             manifest["forecast_run_digest"],

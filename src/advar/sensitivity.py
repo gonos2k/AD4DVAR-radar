@@ -43,6 +43,19 @@ CONTEXT_FEATURE_NAMES = (
     "tendency_pair_count",
     "tendency_source_observation",
     "tendency_source_background",
+    "state_path_pair_count",
+    "state_path_source_observation",
+    "state_path_source_background",
+    "state_path_conflict",
+    "state_path_extrapolated",
+    "state_path_age_available",
+    "state_path_age_minutes",
+    "state_path_psr_available",
+    "log1p_state_path_minimum_psr",
+    "growth_overlap_support_available",
+    "log1p_minimum_growth_overlap_support",
+    "growth_overlap_area_available",
+    "log1p_minimum_growth_overlap_area_km2",
     "current_state_support_fraction",
     "background_contribution_fraction",
     "latest_observation_coverage",
@@ -61,6 +74,10 @@ CONTEXT_FEATURE_NAMES = (
     ),
     *tuple(
         f"growth_pair_selection_{selection.value.lower()}"
+        for selection in TendencyPairSelection
+    ),
+    *tuple(
+        f"state_path_mode_{selection.value.lower()}"
         for selection in TendencyPairSelection
     ),
     "phase_correlation_psr_available",
@@ -724,6 +741,12 @@ def extract_context_features(
     tendency_background = latest.new_tensor(
         float(metadata.tendency_source is TendencySource.BACKGROUND)
     )
+    state_path_observation = latest.new_tensor(
+        float(metadata.state_path_source is TendencySource.OBSERVATION)
+    )
+    state_path_background = latest.new_tensor(
+        float(metadata.state_path_source is TendencySource.BACKGROUND)
+    )
     pair_selection_features = tuple(
         latest.new_tensor(
             float(metadata.motion_pair_selection is selection)
@@ -734,6 +757,18 @@ def extract_context_features(
             float(metadata.growth_pair_selection is selection)
         )
         for selection in TendencyPairSelection
+    )
+    state_path_selection_features = tuple(
+        latest.new_tensor(float(metadata.state_path_mode is selection))
+        for selection in TendencyPairSelection
+    )
+    state_path_age_available = metadata.state_path_age_minutes is not None
+    state_path_psr_available = math.isfinite(metadata.state_path_minimum_psr)
+    growth_support_available = math.isfinite(
+        metadata.minimum_growth_overlap_support
+    )
+    growth_area_available = math.isfinite(
+        metadata.minimum_growth_overlap_area_km2
     )
     psr_available = metadata.tendency_pair_count > 0 and bool(
         torch.isfinite(metadata.minimum_phase_correlation_psr)
@@ -782,6 +817,31 @@ def extract_context_features(
             latest.new_tensor(float(metadata.tendency_pair_count)),
             tendency_observation,
             tendency_background,
+            latest.new_tensor(float(metadata.state_path_pair_count)),
+            state_path_observation,
+            state_path_background,
+            latest.new_tensor(float(metadata.state_path_conflict)),
+            latest.new_tensor(float(metadata.state_path_extrapolated)),
+            latest.new_tensor(float(state_path_age_available)),
+            latest.new_tensor(metadata.state_path_age_minutes or 0.0),
+            latest.new_tensor(float(state_path_psr_available)),
+            latest.new_tensor(
+                math.log1p(metadata.state_path_minimum_psr)
+                if state_path_psr_available
+                else 0.0
+            ),
+            latest.new_tensor(float(growth_support_available)),
+            latest.new_tensor(
+                math.log1p(metadata.minimum_growth_overlap_support)
+                if growth_support_available
+                else 0.0
+            ),
+            latest.new_tensor(float(growth_area_available)),
+            latest.new_tensor(
+                math.log1p(metadata.minimum_growth_overlap_area_km2)
+                if growth_area_available
+                else 0.0
+            ),
             support_fraction,
             latest.new_tensor(metadata.background_contribution_fraction),
             metadata.coverage_by_frame[-1].to(latest),
@@ -795,6 +855,7 @@ def extract_context_features(
             center[1],
             torch.log1p(linear[latest_valid].sum()),
             *pair_selection_features,
+            *state_path_selection_features,
             latest.new_tensor(float(psr_available)),
             torch.log1p(finite_minimum_psr).to(latest),
             latest.new_tensor(float(grid_available)),

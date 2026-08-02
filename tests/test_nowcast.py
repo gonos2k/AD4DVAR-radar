@@ -126,6 +126,38 @@ class NowcastTests(unittest.TestCase):
         )
         self.echo = 1.0e5 * torch.exp(-((y - 32) ** 2 + (x - 32) ** 2) / 40.0)
 
+    @staticmethod
+    def _growth_evidence(
+        nowcast_module: object,
+        value: torch.Tensor,
+        *,
+        available: bool = True,
+    ) -> object:
+        return nowcast_module._GrowthEvidence(  # type: ignore[attr-defined]
+            value=value,
+            available=available,
+            overlap_support=value.new_tensor(8.0),
+            overlap_area_km2=value.new_full((), torch.nan),
+            aligned_previous_integral=value.new_tensor(1.0),
+            current_integral=torch.exp(value),
+        )
+
+    def _pair_estimates(
+        self,
+        nowcast_module: object,
+        *pairs: tuple[torch.Tensor, torch.Tensor, torch.Tensor] | None,
+    ) -> tuple[object, ...]:
+        return tuple(
+            None
+            if pair is None
+            else (
+                pair[0],
+                self._growth_evidence(nowcast_module, pair[1]),
+                pair[2],
+            )
+            for pair in pairs
+        )
+
     def _moving_gaussian_frames(
         self,
     ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -359,6 +391,15 @@ class NowcastTests(unittest.TestCase):
         )
         self.assertFalse(metadata.background_tendency_used)
         self.assertTrue(torch.isnan(metadata.minimum_phase_correlation_psr))
+        self.assertEqual(
+            metadata.state_path_source,
+            TendencySource.BACKGROUND,
+        )
+        self.assertEqual(
+            metadata.state_path_mode,
+            TendencyPairSelection.NONE,
+        )
+        self.assertEqual(metadata.state_path_age_minutes, 10.0)
         self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
         torch.testing.assert_close(forecast[0], background[-1])
 
@@ -409,7 +450,7 @@ class NowcastTests(unittest.TestCase):
         )
 
         forecast, metadata = result.forecast_dbz, result.metadata
-        self.assertTrue(metadata.background_used)
+        self.assertFalse(metadata.background_used)
         self.assertEqual(metadata.data_status, DataStatus.UNAVAILABLE)
         self.assertTrue(bool(torch.all(torch.isnan(forecast))))
 
@@ -674,7 +715,7 @@ class NowcastTests(unittest.TestCase):
         with patch.object(
             nowcast_module,
             "_estimate_available_pair",
-            side_effect=estimates,
+            side_effect=self._pair_estimates(nowcast_module, *estimates),
         ):
             tendency = nowcast_module._estimate_source_tendencies(
                 values,
@@ -738,7 +779,7 @@ class NowcastTests(unittest.TestCase):
         with patch.object(
             nowcast_module,
             "_estimate_available_pair",
-            side_effect=estimates,
+            side_effect=self._pair_estimates(nowcast_module, *estimates),
         ):
             tendency = nowcast_module._estimate_source_tendencies(
                 linear,
@@ -789,7 +830,7 @@ class NowcastTests(unittest.TestCase):
         with patch.object(
             nowcast_module,
             "_estimate_available_pair",
-            side_effect=estimates,
+            side_effect=self._pair_estimates(nowcast_module, *estimates),
         ):
             tendency = nowcast_module._estimate_source_tendencies(
                 linear,
@@ -799,7 +840,7 @@ class NowcastTests(unittest.TestCase):
                 None,
             )
 
-        current, support = nowcast_module._merge_source_frames(
+        current, support, _ = nowcast_module._merge_source_frames(
             linear,
             masks,
             tendency.source_displacement_yx,
@@ -818,6 +859,265 @@ class NowcastTests(unittest.TestCase):
             tendency.source_log_growth,
             torch.tensor((0.0, -0.04, 0.0), dtype=torch.float64),
         )
+
+    def test_source_support_cannot_return_after_leaving_boundary(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        linear = torch.zeros((3, 5, 5), dtype=torch.float64)
+        masks = torch.zeros_like(linear, dtype=torch.bool)
+        linear[0, 2, 0] = 1.0
+        masks[0, 2, 0] = True
+        endpoint_displacements = linear.new_zeros((3, 2))
+        source_growth = linear.new_zeros(3)
+        source_usable = torch.tensor((True, False, False))
+        support_segments = linear.new_zeros((3, 2, 2))
+        support_segments[0, 0] = linear.new_tensor((0.0, -1.0))
+        support_segments[0, 1] = linear.new_tensor((0.0, 1.0))
+
+        endpoint_state, endpoint_support, _ = (
+            nowcast_module._merge_source_frames(
+                linear,
+                masks,
+                endpoint_displacements,
+                source_growth,
+                source_usable,
+                self.config,
+            )
+        )
+        path_state, path_support, _ = nowcast_module._merge_source_frames(
+            linear,
+            masks,
+            endpoint_displacements,
+            source_growth,
+            source_usable,
+            self.config,
+            source_support_displacements_yx=support_segments,
+        )
+
+        self.assertEqual(float(endpoint_support.sum()), 1.0)
+        self.assertEqual(float(endpoint_state.sum()), 1.0)
+        self.assertEqual(float(path_support.sum()), 0.0)
+        self.assertEqual(float(path_state.sum()), 0.0)
+
+    def test_future_fallback_does_not_replace_observation_paths(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        values = torch.zeros((3, 16, 16), dtype=torch.float64)
+        masks = torch.ones_like(values, dtype=torch.bool)
+        earlier = (
+            torch.tensor([0.0, 4.0], dtype=torch.float64),
+            torch.tensor(0.0, dtype=torch.float64),
+            torch.tensor(12.0, dtype=torch.float64),
+        )
+        recent = (
+            torch.tensor([0.0, -4.0], dtype=torch.float64),
+            torch.tensor(0.0, dtype=torch.float64),
+            torch.tensor(12.0, dtype=torch.float64),
+        )
+        with patch.object(
+            nowcast_module,
+            "_estimate_available_pair",
+            side_effect=self._pair_estimates(
+                nowcast_module,
+                earlier,
+                recent,
+            ),
+        ):
+            observation_paths = nowcast_module._estimate_source_tendencies(
+                values,
+                masks,
+                values,
+                self.config,
+                None,
+            )
+        zero = values.new_zeros(())
+        background_future = nowcast_module._single_pair_tendency(
+            values.new_zeros(2),
+            self._growth_evidence(nowcast_module, zero),
+            values.new_tensor(20.0),
+            selection=TendencyPairSelection.RECENT,
+            source_pair_index=1,
+        )
+        prepared = nowcast_module.prepare_input(values, self.config)
+
+        with patch.object(
+            nowcast_module,
+            "_estimate_source_tendencies",
+            side_effect=(observation_paths, background_future),
+        ):
+            future, source, observation, background = (
+                nowcast_module._estimate_time_normalized_tendencies(
+                    prepared,
+                    values,
+                    values,
+                    self.config,
+                    None,
+                )
+            )
+
+        self.assertFalse(observation_paths.future_available)
+        self.assertTrue(observation_paths.reconstruction_available)
+        self.assertIs(future, background_future)
+        self.assertEqual(source, TendencySource.BACKGROUND)
+        self.assertIs(observation, observation_paths)
+        self.assertIs(background, background_future)
+        torch.testing.assert_close(
+            observation.source_displacement_yx[1],
+            recent[0],
+        )
+
+    def test_background_future_does_not_move_observation_state(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        frames = torch.full((3, 16, 16), torch.nan, dtype=torch.float64)
+        frames[1, 8, 8] = 20.0
+        background = torch.full_like(frames, self.config.min_dbz)
+        prepared = nowcast_module.prepare_input(
+            frames,
+            self.config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+        zero = frames.new_zeros(())
+        earlier = (
+            frames.new_tensor([0.0, 4.0]),
+            zero,
+            frames.new_tensor(12.0),
+        )
+        recent = (
+            frames.new_tensor([0.0, -4.0]),
+            zero,
+            frames.new_tensor(12.0),
+        )
+        with patch.object(
+            nowcast_module,
+            "_estimate_available_pair",
+            side_effect=self._pair_estimates(
+                nowcast_module,
+                earlier,
+                recent,
+            ),
+        ):
+            observation_paths = nowcast_module._estimate_source_tendencies(
+                prepared.frames_dbz,
+                prepared.observed_mask,
+                torch.zeros_like(frames),
+                self.config,
+                None,
+            )
+        background_future = nowcast_module._single_pair_tendency(
+            frames.new_zeros(2),
+            self._growth_evidence(nowcast_module, zero),
+            frames.new_tensor(20.0),
+            selection=TendencyPairSelection.RECENT,
+            source_pair_index=1,
+        )
+
+        with patch.object(
+            nowcast_module,
+            "_estimate_time_normalized_tendencies",
+            return_value=(
+                background_future,
+                TendencySource.BACKGROUND,
+                observation_paths,
+                background_future,
+            ),
+        ):
+            state, metadata = nowcast_module.estimate_prepared_state(
+                prepared,
+                self.config,
+            )
+
+        self.assertEqual(metadata.tendency_source, TendencySource.BACKGROUND)
+        self.assertEqual(
+            metadata.state_path_source,
+            TendencySource.OBSERVATION,
+        )
+        self.assertEqual(
+            metadata.state_path_mode,
+            TendencyPairSelection.RECENT,
+        )
+        self.assertEqual(metadata.state_path_pair_count, 1)
+        self.assertEqual(metadata.state_path_minimum_psr, 12.0)
+        self.assertFalse(metadata.state_path_conflict)
+        self.assertFalse(metadata.state_path_extrapolated)
+        self.assertEqual(metadata.state_path_age_minutes, 10.0)
+        self.assertGreater(float(state.echo_linear[8, 4]), 10.0)
+        self.assertLess(float(state.echo_linear[8, 8]), 1.0)
+
+    def test_observation_path_is_published_without_future_tendency(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        frames = torch.full((3, 16, 16), torch.nan, dtype=torch.float64)
+        frames[1, 8, 8] = 20.0
+        prepared = nowcast_module.prepare_input(frames, self.config)
+        zero = frames.new_zeros(())
+        estimates = self._pair_estimates(
+            nowcast_module,
+            (frames.new_tensor((0.0, 4.0)), zero, frames.new_tensor(12.0)),
+            (frames.new_tensor((0.0, -4.0)), zero, frames.new_tensor(12.0)),
+        )
+        with patch.object(
+            nowcast_module,
+            "_estimate_available_pair",
+            side_effect=estimates,
+        ):
+            observation_paths = nowcast_module._estimate_source_tendencies(
+                prepared.frames_dbz,
+                prepared.observed_mask,
+                torch.zeros_like(frames),
+                self.config,
+                None,
+            )
+        background_paths = nowcast_module._estimate_source_tendencies(
+            prepared.background_frames_dbz,
+            prepared.background_mask,
+            torch.zeros_like(frames),
+            self.config,
+            None,
+        )
+
+        with patch.object(
+            nowcast_module,
+            "_estimate_time_normalized_tendencies",
+            return_value=(
+                observation_paths,
+                TendencySource.NONE,
+                observation_paths,
+                background_paths,
+            ),
+        ):
+            state, metadata = nowcast_module.estimate_prepared_state(
+                prepared,
+                self.config,
+            )
+
+        self.assertEqual(metadata.tendency_source, TendencySource.NONE)
+        self.assertEqual(
+            metadata.state_path_source,
+            TendencySource.OBSERVATION,
+        )
+        self.assertEqual(
+            metadata.state_path_mode,
+            TendencyPairSelection.RECENT,
+        )
+        self.assertEqual(metadata.state_path_pair_count, 1)
+        self.assertGreater(float(state.echo_linear[8, 4]), 10.0)
+        self.assertLess(float(state.echo_linear[8, 8]), 1.0)
+
+    def test_complete_latest_frame_has_direct_path_provenance(self) -> None:
+        frames, _ = self._moving_gaussian_frames()
+
+        result = nowcast(frames, self.config)
+
+        self.assertEqual(
+            result.metadata.state_path_source,
+            TendencySource.OBSERVATION,
+        )
+        self.assertEqual(
+            result.metadata.state_path_mode,
+            TendencyPairSelection.NONE,
+        )
+        self.assertEqual(result.metadata.state_path_pair_count, 0)
+        self.assertTrue(math.isnan(result.metadata.state_path_minimum_psr))
+        self.assertFalse(result.metadata.state_path_extrapolated)
+        self.assertEqual(result.metadata.state_path_age_minutes, 0.0)
 
     def test_conflicting_pairs_choose_clearly_higher_psr_pair(self) -> None:
         nowcast_module = import_module("advar.nowcast")
@@ -840,12 +1140,18 @@ class NowcastTests(unittest.TestCase):
             patch.object(
                 nowcast_module,
                 "_estimate_available_pair",
-                side_effect=estimates,
+                side_effect=self._pair_estimates(
+                    nowcast_module,
+                    *estimates,
+                ),
             ),
             patch.object(
                 nowcast_module,
-                "_growth_aligned_with_motion",
-                side_effect=(estimates[0][1], estimates[1][1]),
+                "_growth_evidence_aligned_with_motion",
+                side_effect=(
+                    self._growth_evidence(nowcast_module, estimates[0][1]),
+                    self._growth_evidence(nowcast_module, estimates[1][1]),
+                ),
             ),
         ):
             tendency = nowcast_module._estimate_source_tendencies(
@@ -898,12 +1204,20 @@ class NowcastTests(unittest.TestCase):
             patch.object(
                 nowcast_module,
                 "_estimate_available_pair",
-                side_effect=(adjacent, None, long),
+                side_effect=self._pair_estimates(
+                    nowcast_module,
+                    adjacent,
+                    None,
+                    long,
+                ),
             ),
             patch.object(
                 nowcast_module,
-                "_growth_aligned_with_motion",
-                side_effect=(adjacent[1], long[1]),
+                "_growth_evidence_aligned_with_motion",
+                side_effect=(
+                    self._growth_evidence(nowcast_module, adjacent[1]),
+                    self._growth_evidence(nowcast_module, long[1]),
+                ),
             ),
         ):
             tendency = nowcast_module._estimate_source_tendencies(
@@ -950,7 +1264,12 @@ class NowcastTests(unittest.TestCase):
         with patch.object(
             nowcast_module,
             "_estimate_available_pair",
-            side_effect=(None, recent, None),
+            side_effect=self._pair_estimates(
+                nowcast_module,
+                None,
+                recent,
+                None,
+            ),
         ):
             tendency = nowcast_module._estimate_source_tendencies(
                 values,
@@ -992,12 +1311,20 @@ class NowcastTests(unittest.TestCase):
             patch.object(
                 nowcast_module,
                 "_estimate_available_pair",
-                side_effect=(adjacent, None, long),
+                side_effect=self._pair_estimates(
+                    nowcast_module,
+                    adjacent,
+                    None,
+                    long,
+                ),
             ),
             patch.object(
                 nowcast_module,
-                "_growth_aligned_with_motion",
-                side_effect=(adjacent[1], long[1]),
+                "_growth_evidence_aligned_with_motion",
+                side_effect=(
+                    self._growth_evidence(nowcast_module, adjacent[1]),
+                    self._growth_evidence(nowcast_module, long[1]),
+                ),
             ),
         ):
             tendency = nowcast_module._estimate_source_tendencies(
@@ -1026,9 +1353,9 @@ class NowcastTests(unittest.TestCase):
         self.assertTrue(tendency.growth_pair_conflict)
         torch.testing.assert_close(
             tendency.source_log_growth,
-            torch.tensor((0.4, 0.2, 0.0), dtype=torch.float64),
+            torch.zeros(3, dtype=torch.float64),
         )
-        self.assertTrue(bool(torch.all(tendency.source_usable)))
+        self.assertEqual(tendency.source_usable.tolist(), [False, False, True])
 
     def test_long_pair_confidence_accounts_for_common_coverage(self) -> None:
         nowcast_module = import_module("advar.nowcast")
@@ -1046,10 +1373,25 @@ class NowcastTests(unittest.TestCase):
             torch.tensor(20.0, dtype=torch.float64),
         )
 
-        with patch.object(
-            nowcast_module,
-            "_estimate_available_pair",
-            side_effect=(adjacent, None, long),
+        with (
+            patch.object(
+                nowcast_module,
+                "_estimate_available_pair",
+                side_effect=self._pair_estimates(
+                    nowcast_module,
+                    adjacent,
+                    None,
+                    long,
+                ),
+            ),
+            patch.object(
+                nowcast_module,
+                "_growth_evidence_aligned_with_motion",
+                side_effect=(
+                    self._growth_evidence(nowcast_module, adjacent[1]),
+                    self._growth_evidence(nowcast_module, long[1]),
+                ),
+            ),
         ):
             tendency = nowcast_module._estimate_source_tendencies(
                 values,
@@ -1413,10 +1755,11 @@ class NowcastTests(unittest.TestCase):
             TendencySource.OBSERVATION,
         )
         self.assertTrue(metadata.background_used)
-        self.assertGreater(metadata.background_contribution_fraction, 0.0)
-        self.assertLess(metadata.background_contribution_fraction, 0.1)
+        self.assertEqual(metadata.background_contribution_fraction, 1.0)
 
-    def test_propagated_observation_precedes_clear_background(self) -> None:
+    def test_unconnected_observation_does_not_precede_current_background(
+        self,
+    ) -> None:
         frames = torch.full((3, 8, 8), torch.nan, dtype=torch.float64)
         frames[1] = 30.0
         background = torch.full_like(frames, self.config.min_dbz)
@@ -1430,9 +1773,7 @@ class NowcastTests(unittest.TestCase):
 
         torch.testing.assert_close(
             result.forecast_dbz[0],
-            torch.full((8, 8), 30.0, dtype=torch.float64),
-            atol=0.02,
-            rtol=0.0,
+            torch.full((8, 8), self.config.min_dbz, dtype=torch.float64),
         )
 
     def test_direct_clear_observation_precedes_echo_background(self) -> None:
@@ -1498,13 +1839,16 @@ class NowcastTests(unittest.TestCase):
         frames[1, :, 1::2] = torch.nan
         nowcast_module = import_module("advar.nowcast")
         zero = echo.new_zeros(())
+        observation_paths = nowcast_module._single_pair_tendency(
+            echo.new_tensor([0.0, 0.5]),
+            self._growth_evidence(nowcast_module, zero),
+            echo.new_tensor(10.0),
+        )
         tendencies = (
-            nowcast_module._single_pair_tendency(
-                echo.new_tensor([0.0, 0.5]),
-                zero,
-                echo.new_tensor(10.0),
-            ),
+            observation_paths,
             TendencySource.OBSERVATION,
+            observation_paths,
+            observation_paths,
         )
 
         with patch.object(
@@ -1528,13 +1872,16 @@ class NowcastTests(unittest.TestCase):
         )
         nowcast_module = import_module("advar.nowcast")
         zero = frames.new_zeros(())
+        observation_paths = nowcast_module._single_pair_tendency(
+            frames.new_tensor([0.5, 0.5]),
+            self._growth_evidence(nowcast_module, zero),
+            frames.new_tensor(10.0),
+        )
         tendencies = (
-            nowcast_module._single_pair_tendency(
-                frames.new_tensor([0.5, 0.5]),
-                zero,
-                frames.new_tensor(10.0),
-            ),
+            observation_paths,
             TendencySource.OBSERVATION,
+            observation_paths,
+            observation_paths,
         )
 
         with patch.object(
@@ -1570,13 +1917,16 @@ class NowcastTests(unittest.TestCase):
         )
         nowcast_module = import_module("advar.nowcast")
         zero = frames.new_zeros(())
+        observation_paths = nowcast_module._single_pair_tendency(
+            frames.new_tensor([0.0, 0.99]),
+            self._growth_evidence(nowcast_module, zero),
+            frames.new_tensor(10.0),
+        )
         tendencies = (
-            nowcast_module._single_pair_tendency(
-                frames.new_tensor([0.0, 0.99]),
-                zero,
-                frames.new_tensor(10.0),
-            ),
+            observation_paths,
             TendencySource.OBSERVATION,
+            observation_paths,
+            observation_paths,
         )
 
         with patch.object(
@@ -1707,13 +2057,16 @@ class NowcastTests(unittest.TestCase):
         nowcast_module = import_module("advar.nowcast")
         growth = torch.log(echo.new_tensor(1.2))
         zero = echo.new_zeros(())
+        observation_paths = nowcast_module._single_pair_tendency(
+            echo.new_zeros(2),
+            self._growth_evidence(nowcast_module, growth),
+            echo.new_tensor(10.0),
+        )
         tendencies = (
-            nowcast_module._single_pair_tendency(
-                echo.new_zeros(2),
-                growth,
-                echo.new_tensor(10.0),
-            ),
+            observation_paths,
             TendencySource.OBSERVATION,
+            observation_paths,
+            observation_paths,
         )
 
         with patch.object(
@@ -1736,18 +2089,239 @@ class NowcastTests(unittest.TestCase):
         previous = previous_mask.to(torch.float64)
         current = torch.ones_like(previous)
 
-        growth = nowcast_module._log_aligned_growth(
+        evidence = nowcast_module._aligned_growth_evidence(
             previous,
             current,
             previous_mask,
             current_mask,
             torch.tensor([0.0, 0.5], dtype=torch.float64),
             self.config,
+            grid_time_contract=None,
         )
 
-        torch.testing.assert_close(growth, torch.zeros_like(growth))
+        self.assertTrue(evidence.available)
+        torch.testing.assert_close(
+            evidence.value,
+            torch.zeros_like(evidence.value),
+        )
 
-    def test_missing_latest_frame_uses_mask_aware_persistence(self) -> None:
+    def test_growth_with_three_pixels_of_overlap_is_unavailable(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        previous = torch.zeros((4, 4), dtype=torch.float64)
+        current = torch.zeros_like(previous)
+        previous_mask = torch.zeros_like(previous, dtype=torch.bool)
+        current_mask = torch.zeros_like(previous, dtype=torch.bool)
+        previous_mask[0, :3] = True
+        current_mask[0, :3] = True
+        previous[previous_mask] = 1.0
+        current[current_mask] = 2.0
+
+        evidence = nowcast_module._aligned_growth_evidence(
+            previous,
+            current,
+            previous_mask,
+            current_mask,
+            previous.new_zeros(2),
+            self.config,
+            grid_time_contract=None,
+        )
+
+        self.assertFalse(evidence.available)
+        self.assertEqual(float(evidence.overlap_support), 3.0)
+        self.assertEqual(float(evidence.value), 0.0)
+        self.assertEqual(float(evidence.aligned_previous_integral), 3.0)
+        self.assertEqual(float(evidence.current_integral), 6.0)
+
+    def test_unavailable_growth_is_not_blended_as_zero(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        available = self._growth_evidence(
+            nowcast_module,
+            torch.tensor(0.05, dtype=torch.float64),
+        )
+        unavailable = self._growth_evidence(
+            nowcast_module,
+            torch.tensor(0.0, dtype=torch.float64),
+            available=False,
+        )
+
+        value, indices, selection, disagreement, conflict = (
+            nowcast_module._combine_adjacent_growth_evidence(
+                available,
+                unavailable,
+                torch.tensor(12.0, dtype=torch.float64),
+                torch.tensor(30.0, dtype=torch.float64),
+                TendencyPairSelection.BLENDED,
+                self.config,
+            )
+        )
+
+        self.assertEqual(float(value), 0.05)
+        self.assertEqual(indices, (0,))
+        self.assertEqual(selection, TendencyPairSelection.EARLIER)
+        self.assertEqual(float(disagreement), 0.0)
+        self.assertFalse(conflict)
+
+    def test_unavailable_growth_records_no_pair_selection(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        unavailable = self._growth_evidence(
+            nowcast_module,
+            torch.tensor(0.0, dtype=torch.float64),
+            available=False,
+        )
+
+        estimate = nowcast_module._single_pair_tendency(
+            torch.tensor([0.0, 1.0], dtype=torch.float64),
+            unavailable,
+            torch.tensor(12.0, dtype=torch.float64),
+        )
+
+        self.assertTrue(estimate.future_available)
+        self.assertEqual(estimate.motion_pair_count, 1)
+        self.assertEqual(estimate.growth_pair_count, 0)
+        self.assertEqual(
+            estimate.growth_pair_selection,
+            TendencyPairSelection.NONE,
+        )
+        self.assertFalse(estimate.growth_pair_conflict)
+
+    def test_missing_aligned_previous_echo_is_not_maximum_growth(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        previous = torch.zeros((4, 4), dtype=torch.float64)
+        current = torch.ones_like(previous)
+        mask = torch.ones_like(previous, dtype=torch.bool)
+
+        evidence = nowcast_module._aligned_growth_evidence(
+            previous,
+            current,
+            mask,
+            mask,
+            previous.new_zeros(2),
+            self.config,
+            grid_time_contract=None,
+        )
+
+        self.assertFalse(evidence.available)
+        self.assertEqual(float(evidence.value), 0.0)
+        self.assertEqual(float(evidence.aligned_previous_integral), 0.0)
+        self.assertEqual(float(evidence.current_integral), 16.0)
+
+    def test_growth_overlap_area_is_resolution_invariant(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = NowcastConfig(
+            minimum_growth_overlap_support=0.5,
+            minimum_growth_overlap_area_km2=3.5,
+        )
+        common_contract = {
+            "valid_times": (
+                "2026-08-02T00:00:00Z",
+                "2026-08-02T00:10:00Z",
+                "2026-08-02T00:20:00Z",
+            ),
+            "projection": "EPSG:5179",
+            "grid_hash": "9" * 64,
+        }
+        fine_contract = RadarGridTimeContract(
+            dx_m=250.0,
+            dy_m=250.0,
+            **common_contract,
+        )
+        coarse_contract = RadarGridTimeContract(
+            dx_m=2000.0,
+            dy_m=2000.0,
+            **common_contract,
+        )
+        fine = torch.ones((8, 8), dtype=torch.float64)
+        coarse = torch.ones((2, 2), dtype=torch.float64)
+        fine_mask = torch.ones_like(fine, dtype=torch.bool)
+        coarse_mask = torch.zeros_like(coarse, dtype=torch.bool)
+        coarse_mask[0, 0] = True
+
+        fine_evidence = nowcast_module._aligned_growth_evidence(
+            fine,
+            fine,
+            fine_mask,
+            fine_mask,
+            fine.new_zeros(2),
+            config,
+            grid_time_contract=fine_contract,
+        )
+        coarse_evidence = nowcast_module._aligned_growth_evidence(
+            coarse,
+            coarse,
+            coarse_mask,
+            coarse_mask,
+            coarse.new_zeros(2),
+            config,
+            grid_time_contract=coarse_contract,
+        )
+
+        self.assertTrue(fine_evidence.available)
+        self.assertTrue(coarse_evidence.available)
+        torch.testing.assert_close(
+            fine_evidence.overlap_area_km2,
+            coarse_evidence.overlap_area_km2,
+        )
+        self.assertEqual(float(fine_evidence.overlap_area_km2), 4.0)
+
+    def test_high_pair_psr_does_not_replace_missing_growth_evidence(
+        self,
+    ) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        values = torch.zeros((3, 4, 4), dtype=torch.float64)
+        masks = torch.ones_like(values, dtype=torch.bool)
+        first = (
+            values.new_tensor([0.0, 1.0]),
+            values.new_tensor(0.05),
+            values.new_tensor(12.0),
+        )
+        second = (
+            values.new_tensor([0.0, 1.0]),
+            values.new_tensor(0.0),
+            values.new_tensor(30.0),
+        )
+        first_evidence = self._growth_evidence(
+            nowcast_module,
+            first[1],
+        )
+        second_evidence = self._growth_evidence(
+            nowcast_module,
+            second[1],
+            available=False,
+        )
+
+        with (
+            patch.object(
+                nowcast_module,
+                "_estimate_available_pair",
+                side_effect=self._pair_estimates(
+                    nowcast_module,
+                    first,
+                    second,
+                ),
+            ),
+            patch.object(
+                nowcast_module,
+                "_growth_evidence_aligned_with_motion",
+                side_effect=(first_evidence, second_evidence),
+            ),
+        ):
+            tendency = nowcast_module._estimate_source_tendencies(
+                values,
+                masks,
+                values,
+                self.config,
+                None,
+            )
+
+        self.assertEqual(float(tendency.log_growth_per_step), 0.05)
+        self.assertEqual(tendency.growth_pair_count, 1)
+        self.assertEqual(
+            tendency.growth_pair_selection,
+            TendencyPairSelection.EARLIER,
+        )
+        self.assertEqual(float(tendency.growth_disagreement), 0.0)
+
+    def test_earlier_pair_does_not_extrapolate_missing_latest_frame(self) -> None:
         dbz = linear_to_dbz(self.echo, self.config)
         frames = torch.stack((dbz, dbz, torch.full_like(dbz, torch.nan)))
         result = nowcast(frames, self.config)
@@ -1758,8 +2332,8 @@ class NowcastTests(unittest.TestCase):
             DataStatus.PARTIAL,
         )
         self.assertEqual(float(metadata.coverage_by_frame[-1]), 0.0)
-        self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
-        torch.testing.assert_close(forecast[0], dbz, atol=0.02, rtol=0.0)
+        self.assertFalse(bool(torch.any(torch.isfinite(forecast))))
+        self.assertFalse(bool(torch.any(metadata.source_support)))
 
     def test_empty_echo_uses_persistence_fallback(self) -> None:
         frames = torch.full((3, 32, 32), self.config.min_dbz)
@@ -2318,6 +2892,12 @@ class NowcastTests(unittest.TestCase):
             NowcastConfig(maximum_pair_velocity_disagreement_mps=0.0)
         with self.assertRaises(ValueError):
             NowcastConfig(maximum_pair_growth_disagreement=0.0)
+        with self.assertRaises(ValueError):
+            NowcastConfig(minimum_growth_overlap_support=0.0)
+        for value in (0.0, -1.0, float("nan"), True):
+            with self.subTest(minimum_growth_overlap_area_km2=value):
+                with self.assertRaises(ValueError):
+                    NowcastConfig(minimum_growth_overlap_area_km2=value)
         for value in (0.0, -1.0):
             with self.subTest(minimum_pair_psr_advantage=value):
                 with self.assertRaises(ValueError):
@@ -2348,6 +2928,7 @@ class NowcastTests(unittest.TestCase):
         config = NowcastConfig(
             pair_echo_dilation_m=1000.0,
             phase_correlation_sidelobe_radius_m=1000.0,
+            minimum_growth_overlap_area_km2=1.0,
         )
 
         with self.assertRaisesRegex(ValueError, "grid/time contract"):
