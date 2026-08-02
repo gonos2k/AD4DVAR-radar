@@ -1,3 +1,4 @@
+from dataclasses import replace
 from pathlib import Path
 from importlib import import_module
 import math
@@ -1655,6 +1656,73 @@ class NowcastTests(unittest.TestCase):
                 NowcastConfig(max_dbz=60.0),
                 run=run,
             )
+
+    def test_forecast_rejects_out_of_contract_state_dynamics(self) -> None:
+        latest = linear_to_dbz(self.echo, self.config)
+        frames = torch.stack((latest, latest, latest))
+        run = ForecastRunContract.from_inputs(
+            self.config,
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        states = (
+            RadarState(
+                echo_linear=self.echo,
+                displacement_yx=torch.tensor(
+                    (self.config.max_displacement_px + 1.0, 0.0)
+                ),
+                log_growth_per_step=torch.zeros(()),
+            ),
+            RadarState(
+                echo_linear=self.echo,
+                displacement_yx=torch.zeros(2),
+                log_growth_per_step=torch.tensor(
+                    self.config.max_log_growth_per_step + 0.1
+                ),
+            ),
+        )
+
+        for state in states:
+            with self.subTest(state=state):
+                with self.assertRaisesRegex(ValueError, "configured limit"):
+                    forecast_result_from_state(
+                        state,
+                        observed_metadata(state),
+                        self.config,
+                        run=run,
+                    )
+
+    def test_issuance_rejects_digest_consistent_invalid_dynamics(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        frames = torch.full((3, 8, 8), 20.0, dtype=torch.float64)
+        result = nowcast(frames, self.config)
+        invalid_state = replace(
+            result.state,
+            displacement_yx=torch.tensor(
+                (self.config.max_displacement_px + 1.0, 0.0),
+                dtype=torch.float64,
+            ),
+        )
+        state_digest = nowcast_module.state_metadata_digest(
+            invalid_state,
+            result.metadata,
+        )
+        run_digest = nowcast_module._forecast_run_identity_digest(
+            result.run,
+            state_digest,
+            result.forecast_dbz_digest,
+            result.valid_mask_digest,
+        )
+        invalid = replace(
+            result,
+            state=invalid_state,
+            state_metadata_digest=state_digest,
+            forecast_run_digest=run_digest,
+        )
+
+        with self.assertRaisesRegex(ValueError, "configured limit"):
+            invalid.validate_issuance()
 
     def test_fractional_advection_is_non_negative_and_does_not_gain_mass(
         self,

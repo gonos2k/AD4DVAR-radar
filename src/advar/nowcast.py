@@ -657,6 +657,49 @@ class RadarState:
     log_growth_per_step: Tensor
 
 
+def _validate_state_dynamics(
+    state: RadarState,
+    config: NowcastConfig,
+    grid_time_contract: RadarGridTimeContract | None,
+) -> None:
+    displacement = state.displacement_yx
+    growth = state.log_growth_per_step
+    if displacement.shape != (2,) or not bool(
+        torch.all(torch.isfinite(displacement))
+    ):
+        raise ValueError("state displacement must be finite with shape [2]")
+    if growth.ndim != 0 or not bool(torch.isfinite(growth)):
+        raise ValueError("state log growth must be a finite scalar")
+    if config.maximum_motion_speed_mps is None:
+        motion_within_limit = bool(
+            torch.all(
+                torch.abs(displacement)
+                <= config.max_displacement_px + config.epsilon
+            )
+        )
+    else:
+        if grid_time_contract is None:
+            raise ValueError(
+                "physical state motion requires a grid/time contract"
+            )
+        speed = torch.linalg.vector_norm(
+            grid_time_contract.projected_velocity_xy(
+                displacement,
+                config.interval_minutes,
+            )
+        )
+        motion_within_limit = bool(
+            speed <= config.maximum_motion_speed_mps + config.epsilon
+        )
+    if not motion_within_limit:
+        raise ValueError("state motion exceeds the configured limit")
+    if bool(
+        torch.abs(growth)
+        > config.max_log_growth_per_step + config.epsilon
+    ):
+        raise ValueError("state log growth exceeds the configured limit")
+
+
 @dataclass(frozen=True)
 class ForecastMetadata:
     data_status: DataStatus
@@ -1164,6 +1207,11 @@ class ForecastResult:
                 "forecast state or metadata disagrees with the issued forecast"
             )
         self.run.validate_integrity()
+        _validate_state_dynamics(
+            self.state,
+            self.run.config,
+            self.run.grid_time_contract,
+        )
         if (
             _forecast_run_identity_digest(
                 self.run,
@@ -2176,6 +2224,7 @@ def forecast_from_state(
 ) -> ForecastResult:
     if config != run.config:
         raise ValueError("forecast config must match the run contract")
+    _validate_state_dynamics(state, config, run.grid_time_contract)
     input_echo, input_audit = validate_physical_echo(
         state.echo_linear,
         name="forecast input state",
