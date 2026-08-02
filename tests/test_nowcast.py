@@ -1971,13 +1971,14 @@ class NowcastTests(unittest.TestCase):
         )
 
     def test_fractional_observation_support_blends_with_background(self) -> None:
+        config = replace(self.config, epsilon=0.02)
         frames = torch.full((3, 8, 8), torch.nan, dtype=torch.float64)
         observation_echo = torch.tensor(100.0, dtype=torch.float64)
         background_echo = torch.tensor(1.0, dtype=torch.float64)
-        frames[1, 3, 3] = linear_to_dbz(observation_echo, self.config)
+        frames[1, 3, 3] = linear_to_dbz(observation_echo, config)
         background = torch.full_like(
             frames,
-            float(linear_to_dbz(background_echo, self.config)),
+            float(linear_to_dbz(background_echo, config)),
         )
         nowcast_module = import_module("advar.nowcast")
         zero = frames.new_zeros(())
@@ -2000,16 +2001,20 @@ class NowcastTests(unittest.TestCase):
         ):
             state, metadata = estimate_state_with_metadata(
                 frames,
-                self.config,
+                config,
                 background_frames_dbz=background,
                 background_age_minutes=10.0,
             )
 
-        expected = 0.01 * observation_echo + 0.99 * background_echo
-        torch.testing.assert_close(state.echo_linear[3, 3], expected)
+        expected = 0.99 * observation_echo + 0.01 * background_echo
+        torch.testing.assert_close(state.echo_linear[3, 4], expected)
         self.assertTrue(metadata.background_used)
         self.assertGreater(metadata.background_contribution_fraction, 0.9)
         self.assertLess(metadata.observation_state_support_fraction, 0.1)
+        self.assertLess(
+            metadata.observation_state_support_fraction,
+            config.epsilon,
+        )
         self.assertAlmostEqual(
             metadata.observation_state_support_fraction
             + metadata.background_state_support_fraction,
@@ -2027,6 +2032,19 @@ class NowcastTests(unittest.TestCase):
             TendencyPairSelection.NONE,
         )
         self.assertEqual(metadata.background_path.age_minutes, 10.0)
+        result = forecast_result_from_state(
+            state,
+            metadata,
+            config,
+            run=ForecastRunContract.from_inputs(
+                config,
+                frames,
+                torch.isfinite(frames),
+                background,
+                background_age_minutes=10.0,
+            ),
+        )
+        result.validate_issuance()
 
     def test_publication_mask_uses_advected_fractional_support(self) -> None:
         config = NowcastConfig(
