@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import asdict
 import hashlib
 import json
@@ -25,20 +26,23 @@ from .nowcast import (
     NowcastConfig,
     RadarGridTimeContract,
     RadarState,
+    TendencyPairSelection,
     TendencySource,
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v5"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v12"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 128
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
 DEFAULT_MAXIMUM_TOTAL_EXPANDED_BYTES = 2 * 1024**3
+_ArtifactArrays = Mapping[str, NDArray[Any]]
 _CORE_ARRAY_NAMES = frozenset(
     {
         "forecast_run_artifact_version",
         "forecast_run_artifact_digest",
         "forecast_run_digest",
+        "forecast_integrator_version",
         "nowcast_config_json",
         "nowcast_config_digest",
         "input_bundle_digest",
@@ -66,9 +70,16 @@ _CORE_ARRAY_NAMES = frozenset(
         "background_age_minutes",
         "source_support",
         "motion_disagreement_px",
+        "motion_disagreement_mps",
         "growth_disagreement",
         "minimum_phase_correlation_psr",
         "tendency_pair_count",
+        "motion_pair_count",
+        "growth_pair_count",
+        "motion_pair_selection",
+        "growth_pair_selection",
+        "motion_pair_conflict",
+        "growth_pair_conflict",
         "tendency_source",
         "provenance",
         "latest_frame_dbz",
@@ -111,6 +122,14 @@ _CLI_EXTRA_ARRAY_NAMES = frozenset(
         "analysis_total_quality_weight_by_time",
         "analysis_amplitude_information_sufficient_by_time",
         "analysis_insufficient_amplitude_information",
+        "analysis_amplitude_confidence_failed",
+        "analysis_precursor_object_count_by_time",
+        "analysis_insufficient_amplitude_object_count_by_time",
+        "analysis_maximum_object_unresolved_fraction_by_time",
+        "analysis_minimum_object_integrated_echo_ratio_by_time",
+        "analysis_maximum_object_integrated_echo_ratio_by_time",
+        "analysis_minimum_object_soft_echo_area_ratio_by_time",
+        "analysis_maximum_object_soft_echo_area_ratio_by_time",
         "analysis_established_echo_excess_growth_fraction",
         "analysis_established_echo_excess_growth_fraction_by_time",
         "analysis_maximum_growth_envelope_ratio",
@@ -125,14 +144,20 @@ _CLI_EXTRA_ARRAY_NAMES = frozenset(
         "analysis_dynamics_data_gram_eigenvalues",
         "analysis_dynamics_data_information_trace",
         "analysis_dynamics_data_effective_rank",
+        "analysis_dynamics_data_numerical_rank",
+        "analysis_dynamics_data_effective_dimension",
+        "analysis_dynamics_data_to_prior_ratio_by_mode",
         "analysis_regularized_dynamics_hessian_eigenvalues",
         "analysis_regularized_dynamics_hessian_condition_number",
         "analysis_field_smoothness_prior_cost",
+        "analysis_motion_control_coordinate_system",
+        "analysis_field_smoothness_coordinate_system",
         "analysis_motion_saturation_margin_yx",
         "analysis_motion_speed_saturation_margin_mps",
         "analysis_growth_saturation_margin",
         "analysis_field_growth_jacobian_cosine",
         "analysis_field_motion_jacobian_cosine_yx",
+        "analysis_field_motion_jacobian_cosine_by_control",
         "input_minimum_before_fix",
         "input_corrected_count",
         "input_corrected_integral",
@@ -158,6 +183,7 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
     """
 
     result.validate_issuance()
+    _validate_run_contract(result)
     config = result.run.config
     config_json = json.dumps(
         asdict(config),
@@ -176,6 +202,9 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         ),
         "forecast_run_artifact_digest": np.asarray(""),
         "forecast_run_digest": np.asarray(result.forecast_run_digest),
+        "forecast_integrator_version": np.asarray(
+            result.run.forecast_integrator_version
+        ),
         "nowcast_config_json": np.asarray(config_json),
         "nowcast_config_digest": np.asarray(config.digest),
         "input_bundle_digest": np.asarray(result.run.input_bundle_digest),
@@ -248,11 +277,24 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "motion_disagreement_px": _numpy(
             metadata.motion_disagreement_px
         ),
+        "motion_disagreement_mps": _numpy(
+            metadata.motion_disagreement_mps
+        ),
         "growth_disagreement": _numpy(metadata.growth_disagreement),
         "minimum_phase_correlation_psr": _numpy(
             metadata.minimum_phase_correlation_psr
         ),
         "tendency_pair_count": np.asarray(metadata.tendency_pair_count),
+        "motion_pair_count": np.asarray(metadata.motion_pair_count),
+        "growth_pair_count": np.asarray(metadata.growth_pair_count),
+        "motion_pair_selection": np.asarray(
+            metadata.motion_pair_selection.value
+        ),
+        "growth_pair_selection": np.asarray(
+            metadata.growth_pair_selection.value
+        ),
+        "motion_pair_conflict": np.asarray(metadata.motion_pair_conflict),
+        "growth_pair_conflict": np.asarray(metadata.growth_pair_conflict),
         "tendency_source": np.asarray(metadata.tendency_source.value),
         "provenance": np.asarray(metadata.provenance),
         "latest_observation_mask": _numpy(latest_observation_mask),
@@ -479,25 +521,32 @@ def load_forecast_run(
         maximum_total_expanded_bytes=maximum_total_expanded_bytes,
     )
     with artifact, np.load(artifact, allow_pickle=False) as archive:
-        version = _string_scalar(archive, "forecast_run_artifact_version")
+        version_name = "forecast_run_artifact_version"
+        loaded_arrays: dict[str, NDArray[Any]] = {
+            version_name: np.array(archive[version_name], copy=True)
+        }
+        version = _string_scalar(loaded_arrays, version_name)
         if version != FORECAST_RUN_ARTIFACT_VERSION:
             raise ValueError(f"unsupported forecast run artifact: {version}")
 
+        loaded_arrays.update(
+            {
+                name: np.array(archive[name], copy=True)
+                for name in archive.files
+                if name != version_name
+            }
+        )
         stored_artifact_digest = _digest_scalar(
-            archive,
+            loaded_arrays,
             "forecast_run_artifact_digest",
         )
-        loaded_arrays = {
-            name: np.array(archive[name], copy=True)
-            for name in archive.files
-        }
         expected_artifact_digest = _forecast_run_artifact_digest(
             loaded_arrays
         )
         if stored_artifact_digest != expected_artifact_digest:
             raise ValueError("forecast run artifact digest mismatch")
 
-        config_json = _string_scalar(archive, "nowcast_config_json")
+        config_json = _string_scalar(loaded_arrays, "nowcast_config_json")
         try:
             config_value = json.loads(config_json)
         except json.JSONDecodeError as error:
@@ -505,43 +554,46 @@ def load_forecast_run(
         if not isinstance(config_value, dict):
             raise ValueError("nowcast_config_json must contain an object")
         config = NowcastConfig(**cast(dict[str, Any], config_value))
-        config_digest = _digest_scalar(archive, "nowcast_config_digest")
+        config_digest = _digest_scalar(
+            loaded_arrays,
+            "nowcast_config_digest",
+        )
         if config.digest != config_digest:
             raise ValueError("nowcast config digest mismatch")
 
-        forecast_dbz = _tensor(archive, "forecast_dbz")
-        valid_mask = _tensor(archive, "valid_mask")
+        forecast_dbz = _tensor(loaded_arrays, "forecast_dbz")
+        valid_mask = _tensor(loaded_arrays, "valid_mask")
         stored_displacement_mps = _tensor(
-            archive,
+            loaded_arrays,
             "displacement_mps_yx",
         )
         stored_grid_velocity = _tensor(
-            archive,
+            loaded_arrays,
             "grid_velocity_mps_yx",
         )
         stored_projected_velocity = _tensor(
-            archive,
+            loaded_arrays,
             "projected_velocity_mps_xy",
         )
         state = RadarState(
-            echo_linear=_tensor(archive, "state_echo_linear"),
-            displacement_yx=_tensor(archive, "displacement_yx"),
+            echo_linear=_tensor(loaded_arrays, "state_echo_linear"),
+            displacement_yx=_tensor(loaded_arrays, "displacement_yx"),
             log_growth_per_step=_tensor(
-                archive,
+                loaded_arrays,
                 "log_growth_per_step",
             ),
         )
         background_age = _float_scalar(
-            archive,
+            loaded_arrays,
             "background_age_minutes",
             allow_nan=True,
         )
         background_state_support_fraction = _float_scalar(
-            archive,
+            loaded_arrays,
             "background_state_support_fraction",
         )
         background_contribution_fraction = _float_scalar(
-            archive,
+            loaded_arrays,
             "background_contribution_fraction",
         )
         if (
@@ -550,41 +602,76 @@ def load_forecast_run(
         ):
             raise ValueError("background state support fraction mismatch")
         stored_background_tendency_used = _bool_scalar(
-            archive,
+            loaded_arrays,
             "background_tendency_used",
         )
         metadata = ForecastMetadata(
-            data_status=DataStatus(_string_scalar(archive, "data_status")),
-            coverage_by_frame=_tensor(archive, "coverage_by_frame"),
-            background_used=_bool_scalar(archive, "background_used"),
+            data_status=DataStatus(
+                _string_scalar(loaded_arrays, "data_status")
+            ),
+            coverage_by_frame=_tensor(
+                loaded_arrays,
+                "coverage_by_frame",
+            ),
+            background_used=_bool_scalar(
+                loaded_arrays,
+                "background_used",
+            ),
             background_contribution_fraction=(
                 background_contribution_fraction
             ),
             background_age_minutes=(
                 None if math.isnan(background_age) else background_age
             ),
-            source_support=_tensor(archive, "source_support"),
+            source_support=_tensor(loaded_arrays, "source_support"),
             motion_disagreement_px=_tensor(
-                archive,
+                loaded_arrays,
                 "motion_disagreement_px",
             ),
+            motion_disagreement_mps=_floating_scalar_tensor(
+                loaded_arrays,
+                "motion_disagreement_mps",
+                allow_nan=True,
+            ),
             growth_disagreement=_tensor(
-                archive,
+                loaded_arrays,
                 "growth_disagreement",
             ),
             minimum_phase_correlation_psr=_floating_scalar_tensor(
-                archive,
+                loaded_arrays,
                 "minimum_phase_correlation_psr",
                 allow_nan=True,
             ),
             tendency_pair_count=_int_scalar(
-                archive,
+                loaded_arrays,
                 "tendency_pair_count",
             ),
-            tendency_source=TendencySource(
-                _string_scalar(archive, "tendency_source")
+            motion_pair_count=_int_scalar(
+                loaded_arrays,
+                "motion_pair_count",
             ),
-            provenance=_string_scalar(archive, "provenance"),
+            growth_pair_count=_int_scalar(
+                loaded_arrays,
+                "growth_pair_count",
+            ),
+            motion_pair_selection=TendencyPairSelection(
+                _string_scalar(loaded_arrays, "motion_pair_selection")
+            ),
+            growth_pair_selection=TendencyPairSelection(
+                _string_scalar(loaded_arrays, "growth_pair_selection")
+            ),
+            motion_pair_conflict=_bool_scalar(
+                loaded_arrays,
+                "motion_pair_conflict",
+            ),
+            growth_pair_conflict=_bool_scalar(
+                loaded_arrays,
+                "growth_pair_conflict",
+            ),
+            tendency_source=TendencySource(
+                _string_scalar(loaded_arrays, "tendency_source")
+            ),
+            provenance=_string_scalar(loaded_arrays, "provenance"),
         )
         if (
             metadata.background_tendency_used
@@ -602,15 +689,15 @@ def load_forecast_run(
         ):
             raise ValueError("background age provenance mismatch")
         latest_background_present = _bool_scalar(
-            archive,
+            loaded_arrays,
             "latest_background_present",
         )
         stored_latest_background = _tensor(
-            archive,
+            loaded_arrays,
             "latest_background_dbz",
         )
         latest_background_text = _string_scalar(
-            archive,
+            loaded_arrays,
             "latest_background_digest",
         )
         if latest_background_present:
@@ -635,24 +722,24 @@ def load_forecast_run(
             analysis_config_json,
             analysis_config_digest,
             analysis_input_digest,
-        ) = _analysis_lineage(archive)
+        ) = _analysis_lineage(loaded_arrays)
         latest_observation_mask_digest = _digest_scalar(
-            archive,
+            loaded_arrays,
             "latest_observation_mask_digest",
         )
         run_background_age = _float_scalar(
-            archive,
+            loaded_arrays,
             "run_background_age_minutes",
             allow_nan=True,
         )
         grid_time_contract, grid_time_contract_digest = (
-            _grid_time_contract(archive)
+            _grid_time_contract(loaded_arrays)
         )
         run = ForecastRunContract(
             config=config,
-            _latest_frame_dbz=_tensor(archive, "latest_frame_dbz"),
+            _latest_frame_dbz=_tensor(loaded_arrays, "latest_frame_dbz"),
             _latest_observation_mask=_tensor(
-                archive,
+                loaded_arrays,
                 "latest_observation_mask",
             ),
             _latest_background_dbz=(
@@ -664,12 +751,12 @@ def load_forecast_run(
                 latest_observation_mask_digest
             ),
             latest_frame_digest=_digest_scalar(
-                archive,
+                loaded_arrays,
                 "latest_frame_digest",
             ),
             latest_background_digest=latest_background_digest,
             input_bundle_digest=_digest_scalar(
-                archive,
+                loaded_arrays,
                 "input_bundle_digest",
             ),
             background_age_minutes=(
@@ -682,20 +769,24 @@ def load_forecast_run(
             analysis_config_json=analysis_config_json,
             analysis_config_digest=analysis_config_digest,
             analysis_input_digest=analysis_input_digest,
+            forecast_integrator_version=_string_scalar(
+                loaded_arrays,
+                "forecast_integrator_version",
+            ),
         )
         stored_state_digest = _digest_scalar(
-            archive,
+            loaded_arrays,
             "state_metadata_digest",
         )
         result = ForecastResult(
             forecast_dbz=forecast_dbz,
             valid_mask=valid_mask,
             forecast_dbz_digest=_digest_scalar(
-                archive,
+                loaded_arrays,
                 "forecast_dbz_digest",
             ),
             valid_mask_digest=_digest_scalar(
-                archive,
+                loaded_arrays,
                 "valid_mask_digest",
             ),
             state=state,
@@ -703,12 +794,12 @@ def load_forecast_run(
             run=run,
             state_metadata_digest=stored_state_digest,
             forecast_run_digest=_digest_scalar(
-                archive,
+                loaded_arrays,
                 "forecast_run_digest",
             ),
             audit=None,
         )
-    _validate_loaded_contract(result)
+    _validate_run_contract(result)
     _validate_displacement_mps(result, stored_displacement_mps)
     _validate_velocity(
         "grid_velocity_mps_yx",
@@ -774,9 +865,28 @@ def _forecast_run_artifact_digest(
             ).encode("utf-8")
             digest.update(encoded)
         else:
-            digest.update(np.ascontiguousarray(value).tobytes())
+            _update_digest_with_array_bytes(digest, value)
         digest.update(b"\0")
     return digest.hexdigest()
+
+
+def _update_digest_with_array_bytes(
+    digest: Any,
+    value: NDArray[Any],
+) -> None:
+    if value.flags.c_contiguous:
+        digest.update(value.data.cast("B"))
+        return
+    buffer_elements = max(1, (1024**2) // max(1, value.dtype.itemsize))
+    iterator = np.nditer(
+        value,
+        flags=("external_loop", "buffered", "zerosize_ok"),
+        op_flags=(("readonly",),),
+        order="C",
+        buffersize=buffer_elements,
+    )
+    for chunk in iterator:
+        digest.update(np.asarray(chunk).data.cast("B"))
 
 
 def seal_forecast_run_arrays(arrays: dict[str, Any]) -> dict[str, Any]:
@@ -788,11 +898,11 @@ def seal_forecast_run_arrays(arrays: dict[str, Any]) -> dict[str, Any]:
 
 
 def _grid_time_contract(
-    archive: np.lib.npyio.NpzFile,
+    arrays: _ArtifactArrays,
 ) -> tuple[RadarGridTimeContract | None, str | None]:
-    present = _bool_scalar(archive, "grid_time_contract_present")
-    contract_json = _string_scalar(archive, "grid_time_contract_json")
-    digest_text = _string_scalar(archive, "grid_time_contract_digest")
+    present = _bool_scalar(arrays, "grid_time_contract_present")
+    contract_json = _string_scalar(arrays, "grid_time_contract_json")
+    digest_text = _string_scalar(arrays, "grid_time_contract_digest")
     if not present:
         if contract_json or digest_text:
             raise ValueError(
@@ -891,7 +1001,7 @@ def _validate_velocity(
         raise ValueError(f"{name} disagrees with the run contract")
 
 
-def _validate_loaded_contract(result: ForecastResult) -> None:
+def _validate_run_contract(result: ForecastResult) -> None:
     forecast = result.forecast_dbz
     valid = result.valid_mask
     state = result.state
@@ -906,6 +1016,7 @@ def _validate_loaded_contract(result: ForecastResult) -> None:
         metadata.coverage_by_frame,
         metadata.source_support,
         metadata.motion_disagreement_px,
+        metadata.motion_disagreement_mps,
         metadata.growth_disagreement,
     )
     if any(value.dtype not in floating for value in float_tensors):
@@ -937,15 +1048,90 @@ def _validate_loaded_contract(result: ForecastResult) -> None:
         raise ValueError("source_support must match the state grid")
     if metadata.motion_disagreement_px.ndim != 0:
         raise ValueError("motion_disagreement_px must be scalar")
+    if metadata.motion_disagreement_mps.ndim != 0:
+        raise ValueError("motion_disagreement_mps must be scalar")
     if metadata.growth_disagreement.ndim != 0:
         raise ValueError("growth_disagreement must be scalar")
+    selection_counts = {
+        TendencyPairSelection.NONE: 0,
+        TendencyPairSelection.PERSISTENCE: 0,
+        TendencyPairSelection.SINGLE: 1,
+        TendencyPairSelection.LONG: 1,
+        TendencyPairSelection.EARLIER: 1,
+        TendencyPairSelection.RECENT: 1,
+        TendencyPairSelection.BLENDED: 2,
+    }
+    if metadata.motion_pair_count != selection_counts[
+        metadata.motion_pair_selection
+    ]:
+        raise ValueError("motion pair count and selection disagree")
+    if metadata.growth_pair_count != selection_counts[
+        metadata.growth_pair_selection
+    ]:
+        raise ValueError("growth pair count and selection disagree")
+    if (
+        metadata.motion_pair_selection is TendencyPairSelection.PERSISTENCE
+        and not metadata.motion_pair_conflict
+    ) or (
+        metadata.motion_pair_selection is TendencyPairSelection.BLENDED
+        and metadata.motion_pair_conflict
+    ):
+        raise ValueError("motion pair conflict provenance is inconsistent")
+    if (
+        metadata.growth_pair_selection is TendencyPairSelection.PERSISTENCE
+        and not metadata.growth_pair_conflict
+    ) or (
+        metadata.growth_pair_selection is TendencyPairSelection.BLENDED
+        and metadata.growth_pair_conflict
+    ):
+        raise ValueError("growth pair conflict provenance is inconsistent")
+    selections = (
+        metadata.motion_pair_selection,
+        metadata.growth_pair_selection,
+    )
+    pair_sources: dict[
+        TendencyPairSelection,
+        frozenset[str],
+    ] = {
+        TendencyPairSelection.NONE: frozenset(),
+        TendencyPairSelection.PERSISTENCE: frozenset(),
+        TendencyPairSelection.SINGLE: frozenset(("single_adjacent",)),
+        TendencyPairSelection.LONG: frozenset(("long",)),
+        TendencyPairSelection.EARLIER: frozenset(("earlier",)),
+        TendencyPairSelection.RECENT: frozenset(("recent",)),
+        TendencyPairSelection.BLENDED: frozenset(("earlier", "recent")),
+    }
+    used_sources = pair_sources[selections[0]] | pair_sources[selections[1]]
+    union_count_is_valid = metadata.tendency_pair_count == len(used_sources)
+    if not union_count_is_valid:
+        raise ValueError("tendency_pair_count is inconsistent")
+    minimum_psr = float(metadata.minimum_phase_correlation_psr)
+    if metadata.tendency_pair_count == 0:
+        if not math.isnan(minimum_psr):
+            raise ValueError("unused tendency pairs must have NaN PSR")
+    elif not math.isfinite(minimum_psr):
+        raise ValueError("used tendency pairs must have finite PSR")
     latest_observation_mask = result.run.latest_observation_mask
     if latest_observation_mask.shape != state.echo_linear.shape:
         raise ValueError("latest observation mask must match the state grid")
     if not torch.equal(torch.isfinite(forecast), valid):
         raise ValueError("valid_mask must match finite forecast values")
-    if not all(bool(torch.all(torch.isfinite(value))) for value in float_tensors[1:]):
+    finite_tensors = (
+        state.echo_linear,
+        state.displacement_yx,
+        state.log_growth_per_step,
+        metadata.coverage_by_frame,
+        metadata.source_support,
+        metadata.motion_disagreement_px,
+        metadata.growth_disagreement,
+    )
+    if not all(
+        bool(torch.all(torch.isfinite(value))) for value in finite_tensors
+    ):
         raise ValueError("forecast run state and metadata must be finite")
+    disagreement_mps = float(metadata.motion_disagreement_mps)
+    if math.isinf(disagreement_mps):
+        raise ValueError("motion_disagreement_mps cannot be infinite")
     if bool(torch.any(state.echo_linear < 0)):
         raise ValueError("state_echo_linear cannot be negative")
     if not bool(
@@ -974,34 +1160,34 @@ def _numpy(value: Tensor) -> NDArray[Any]:
     return value.detach().contiguous().cpu().numpy()
 
 
-def _tensor(archive: np.lib.npyio.NpzFile, name: str) -> Tensor:
-    return torch.from_numpy(np.array(_array(archive, name), copy=True))
+def _tensor(arrays: _ArtifactArrays, name: str) -> Tensor:
+    return torch.from_numpy(_array(arrays, name))
 
 
-def _array(archive: np.lib.npyio.NpzFile, name: str) -> NDArray[Any]:
-    if name not in archive.files:
+def _array(arrays: _ArtifactArrays, name: str) -> NDArray[Any]:
+    if name not in arrays:
         raise ValueError(f"forecast run artifact is missing {name}")
-    return cast(NDArray[Any], archive[name])
+    return arrays[name]
 
 
-def _string_scalar(archive: np.lib.npyio.NpzFile, name: str) -> str:
-    value = _array(archive, name)
+def _string_scalar(arrays: _ArtifactArrays, name: str) -> str:
+    value = _array(arrays, name)
     if value.shape != () or value.dtype.kind != "U":
         raise ValueError(f"{name} must be a string scalar")
     return str(value.item())
 
 
-def _digest_scalar(archive: np.lib.npyio.NpzFile, name: str) -> str:
-    return _validate_digest(name, _string_scalar(archive, name))
+def _digest_scalar(arrays: _ArtifactArrays, name: str) -> str:
+    return _validate_digest(name, _string_scalar(arrays, name))
 
 
 def _analysis_lineage(
-    archive: np.lib.npyio.NpzFile,
+    arrays: _ArtifactArrays,
 ) -> tuple[str | None, str | None, str | None]:
-    present = _bool_scalar(archive, "analysis_config_present")
-    config_json = _string_scalar(archive, "analysis_config_json")
-    config_digest = _string_scalar(archive, "analysis_config_digest")
-    input_digest = _string_scalar(archive, "analysis_input_digest")
+    present = _bool_scalar(arrays, "analysis_config_present")
+    config_json = _string_scalar(arrays, "analysis_config_json")
+    config_digest = _string_scalar(arrays, "analysis_config_digest")
+    input_digest = _string_scalar(arrays, "analysis_input_digest")
     if not present:
         if config_json or config_digest or input_digest:
             raise ValueError("absent analysis config must have empty lineage")
@@ -1029,27 +1215,27 @@ def _validate_digest(name: str, value: str) -> str:
     return value
 
 
-def _bool_scalar(archive: np.lib.npyio.NpzFile, name: str) -> bool:
-    value = _array(archive, name)
+def _bool_scalar(arrays: _ArtifactArrays, name: str) -> bool:
+    value = _array(arrays, name)
     if value.shape != () or value.dtype != np.bool_:
         raise ValueError(f"{name} must be a boolean scalar")
     return bool(value.item())
 
 
-def _int_scalar(archive: np.lib.npyio.NpzFile, name: str) -> int:
-    value = _array(archive, name)
+def _int_scalar(arrays: _ArtifactArrays, name: str) -> int:
+    value = _array(arrays, name)
     if value.shape != () or value.dtype.kind not in {"i", "u"}:
         raise ValueError(f"{name} must be an integer scalar")
     return int(value.item())
 
 
 def _float_scalar(
-    archive: np.lib.npyio.NpzFile,
+    arrays: _ArtifactArrays,
     name: str,
     *,
     allow_nan: bool = False,
 ) -> float:
-    value = _array(archive, name)
+    value = _array(arrays, name)
     if value.shape != () or value.dtype.kind != "f":
         raise ValueError(f"{name} must be a floating-point scalar")
     result = float(value.item())
@@ -1059,15 +1245,15 @@ def _float_scalar(
 
 
 def _floating_scalar_tensor(
-    archive: np.lib.npyio.NpzFile,
+    arrays: _ArtifactArrays,
     name: str,
     *,
     allow_nan: bool = False,
 ) -> Tensor:
-    value = _array(archive, name)
+    value = _array(arrays, name)
     if value.shape != () or value.dtype.kind != "f":
         raise ValueError(f"{name} must be a floating-point scalar")
-    result = _tensor(archive, name)
+    result = _tensor(arrays, name)
     scalar = float(result.item())
     if math.isfinite(scalar) or (allow_nan and math.isnan(scalar)):
         return result

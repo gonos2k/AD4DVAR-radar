@@ -15,7 +15,9 @@ from .nowcast import (
     ForecastMetadata,
     ForecastResult,
     NowcastConfig,
+    RadarGridTimeContract,
     RadarState,
+    TendencyPairSelection,
     TendencySource,
     _forecast_linear_at_step_core,
     forecast_linear_at_step,
@@ -36,6 +38,8 @@ CONTEXT_FEATURE_NAMES = (
     "log_growth",
     "motion_disagreement",
     "growth_disagreement",
+    "motion_pair_conflict",
+    "growth_pair_conflict",
     "tendency_pair_count",
     "tendency_source_observation",
     "tendency_source_background",
@@ -51,6 +55,27 @@ CONTEXT_FEATURE_NAMES = (
     "centroid_y",
     "centroid_x",
     "log_integrated_echo",
+    *tuple(
+        f"motion_pair_selection_{selection.value.lower()}"
+        for selection in TendencyPairSelection
+    ),
+    *tuple(
+        f"growth_pair_selection_{selection.value.lower()}"
+        for selection in TendencyPairSelection
+    ),
+    "phase_correlation_psr_available",
+    "log1p_minimum_phase_correlation_psr",
+    "projected_velocity_available",
+    "projected_velocity_x_mps",
+    "projected_velocity_y_mps",
+    "projected_speed_mps",
+    "motion_disagreement_mps_available",
+    "motion_disagreement_mps",
+    "area_weighted_echo_available",
+    "log1p_linear_reflectivity_integral_km2",
+    "grid_spacing_available",
+    "grid_column_spacing_m",
+    "grid_row_spacing_m",
 )
 
 
@@ -66,6 +91,7 @@ class SensitivityConfig:
     minimum_fss_truth_mass: float = 0.5
     active_margin_dbz: float = 0.1
     linearity_delta: tuple[float, float, float] = (0.05, -0.04, 0.005)
+    pair_conflict_trust_penalty: float = 0.5
     epsilon: float = 1.0e-6
 
     def __post_init__(self) -> None:
@@ -116,6 +142,11 @@ class SensitivityConfig:
             math.isfinite(value) for value in self.linearity_delta
         ):
             raise ValueError("linearity_delta must contain three finite values")
+        if (
+            not math.isfinite(self.pair_conflict_trust_penalty)
+            or not 0.0 < self.pair_conflict_trust_penalty <= 1.0
+        ):
+            raise ValueError("pair_conflict_trust_penalty must be in (0, 1]")
         if not math.isfinite(self.epsilon) or self.epsilon <= 0:
             raise ValueError("epsilon must be positive")
 
@@ -140,6 +171,7 @@ class SensitivitySnapshot:
     forecast_run_digest: str
     nowcast_config_digest: str
     sensitivity_config_digest: str
+    grid_time_contract_digest: str | None
     metric_names: tuple[str, ...]
     lead_minutes: tuple[int, ...]
     full_map_lead_minutes: tuple[int, ...]
@@ -505,6 +537,7 @@ def compute_sensitivity_snapshot(
 
     trust_components = _trust_components(
         state,
+        metadata,
         control,
         echo,
         truth_linear,
@@ -521,6 +554,7 @@ def compute_sensitivity_snapshot(
         forecast_run_digest=result.forecast_run_digest,
         nowcast_config_digest=nowcast_config.digest,
         sensitivity_config_digest=sensitivity_config.digest,
+        grid_time_contract_digest=result.run.grid_time_contract_digest,
         metric_names=sensitivity_config.metric_names,
         lead_minutes=lead_minutes,
         full_map_lead_minutes=sensitivity_config.full_map_lead_minutes,
@@ -532,6 +566,7 @@ def compute_sensitivity_snapshot(
             metadata,
             nowcast_config,
             latest_observation_mask=latest_observation_mask,
+            grid_time_contract=result.run.grid_time_contract,
         ),
         analysis_control=control.detach(),
         forecast_scores=forecast_scores,
@@ -634,6 +669,7 @@ def extract_context_features(
     config: NowcastConfig,
     *,
     latest_observation_mask: Tensor,
+    grid_time_contract: RadarGridTimeContract | None = None,
 ) -> Tensor:
     """Extract a small auditable context vector for later retrieval."""
 
@@ -688,6 +724,51 @@ def extract_context_features(
     tendency_background = latest.new_tensor(
         float(metadata.tendency_source is TendencySource.BACKGROUND)
     )
+    pair_selection_features = tuple(
+        latest.new_tensor(
+            float(metadata.motion_pair_selection is selection)
+        )
+        for selection in TendencyPairSelection
+    ) + tuple(
+        latest.new_tensor(
+            float(metadata.growth_pair_selection is selection)
+        )
+        for selection in TendencyPairSelection
+    )
+    psr_available = metadata.tendency_pair_count > 0 and bool(
+        torch.isfinite(metadata.minimum_phase_correlation_psr)
+    )
+    finite_minimum_psr = torch.nan_to_num(
+        metadata.minimum_phase_correlation_psr,
+        nan=0.0,
+        posinf=0.0,
+        neginf=0.0,
+    ).clamp_min(0.0)
+    disagreement_mps_available = bool(
+        torch.isfinite(metadata.motion_disagreement_mps)
+    )
+    finite_disagreement_mps = torch.nan_to_num(
+        metadata.motion_disagreement_mps,
+        nan=0.0,
+        posinf=0.0,
+        neginf=0.0,
+    )
+    grid_available = grid_time_contract is not None
+    if grid_time_contract is None:
+        projected_velocity = latest.new_zeros(2)
+        area_weighted_echo = latest.new_zeros(())
+        grid_spacing = latest.new_zeros(2)
+    else:
+        projected_velocity = grid_time_contract.projected_velocity_xy(
+            state.displacement_yx,
+            config.interval_minutes,
+        ).to(latest)
+        area_weighted_echo = linear[latest_valid].sum() * (
+            grid_time_contract.cell_area_m2 / 1.0e6
+        )
+        grid_spacing = latest.new_tensor(
+            (grid_time_contract.dx_m, grid_time_contract.dy_m)
+        )
     return torch.stack(
         (
             motion[0],
@@ -696,6 +777,8 @@ def extract_context_features(
             state.log_growth_per_step,
             metadata.motion_disagreement_px,
             metadata.growth_disagreement,
+            latest.new_tensor(float(metadata.motion_pair_conflict)),
+            latest.new_tensor(float(metadata.growth_pair_conflict)),
             latest.new_tensor(float(metadata.tendency_pair_count)),
             tendency_observation,
             tendency_background,
@@ -711,6 +794,20 @@ def extract_context_features(
             center[0],
             center[1],
             torch.log1p(linear[latest_valid].sum()),
+            *pair_selection_features,
+            latest.new_tensor(float(psr_available)),
+            torch.log1p(finite_minimum_psr).to(latest),
+            latest.new_tensor(float(grid_available)),
+            projected_velocity[0],
+            projected_velocity[1],
+            torch.linalg.vector_norm(projected_velocity),
+            latest.new_tensor(float(disagreement_mps_available)),
+            finite_disagreement_mps.to(latest),
+            latest.new_tensor(float(grid_available)),
+            torch.log1p(area_weighted_echo),
+            latest.new_tensor(float(grid_available)),
+            grid_spacing[0],
+            grid_spacing[1],
         )
     ).detach()
 
@@ -1018,6 +1115,7 @@ def _full_map_indices(
 
 def _trust_components(
     template: RadarState,
+    metadata: ForecastMetadata,
     control: Tensor,
     echo: Tensor,
     truth: Tensor,
@@ -1030,11 +1128,18 @@ def _trust_components(
 ) -> dict[str, float]:
     verification_quality = valid.to(echo.dtype).mean().clamp(0.0, 1.0)
     support_quality = metric_available.to(echo.dtype).mean()
+    conflict_count = int(metadata.motion_pair_conflict) + int(
+        metadata.growth_pair_conflict
+    )
+    pair_consistency_quality = (
+        sensitivity_config.pair_conflict_trust_penalty**conflict_count
+    )
     if not bool(torch.any(metric_available)):
         return {
             "linearity": 0.0,
             "verification": float(verification_quality),
             "metric_support": 0.0,
+            "pair_consistency": pair_consistency_quality,
         }
 
     delta = control.new_tensor(sensitivity_config.linearity_delta)
@@ -1091,6 +1196,7 @@ def _trust_components(
         "linearity": float(linearity_quality.detach()),
         "verification": float(verification_quality.detach()),
         "metric_support": float(support_quality.detach()),
+        "pair_consistency": pair_consistency_quality,
     }
 
 

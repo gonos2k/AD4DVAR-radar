@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.4
+# ADVAR 3-frame radar nowcast v0.21
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -108,6 +108,8 @@ result = nowcast(
 `(column, row)` 증분을 투영좌표 `(x, y)` metre 증분으로 변환하며, 생략하면
 north-up `((dx, 0), (0, -dy))`를 사용한다. `maximum_motion_speed_mps`를
 설정하면 P0 raw motion과 P1 후보를 이 투영좌표 속도에서 fail-close한다.
+affine의 정규화 determinant가 `0.01`보다 작거나 2-norm condition number가
+`1000`보다 크면 거의 평행하거나 지나치게 왜곡된 격자로 보고 거부한다.
 `maximum_background_age_minutes`를 넘는 배경은 거부한다. 계약을 생략한
 호출은 합성·연구용 index-time/pixel-grid 경로로 유지되며 실제 레이더
 운영자료의 물리 provenance를 주장하지 않는다.
@@ -141,8 +143,11 @@ analysis input digest도 같은 identity에 포함한다.
 dtype·shape·선언 payload를 검사하고 알 수 없는 member와 object dtype을
 거부한다. 기본 한도는 128개, member당 1 GiB, 전체 2 GiB이며 API 인자로
 더 낮출 수 있다. 재적재 시 모든 member를 묶는 artifact digest와
-tensor/config/state/metadata digest를 독립적으로 재계산한다. 선택적인
-positivity/transport audit 객체는 M0 재현에
+tensor/config/state/metadata digest를 독립적으로 재계산한다. 각 member는
+archive에서 한 번만 materialize하며 같은 NumPy storage를 digest
+검증과 반환 Tensor 구성에 재사용한다. 연속 수치배열은 복사 없는 buffer로,
+비연속 수치배열은 1 MiB 이하 C-order chunk로 digest한다.
+선택적인 positivity/transport audit 객체는 M0 재현에
 필요하지 않으므로 `load_forecast_run()` 결과에서는 `None`이다.
 
 배경 사용 provenance는 현재 상태 support와 경향 초기화를 분리한다.
@@ -169,12 +174,15 @@ print(analysis.state.echo_linear)  # 세 장으로 분석된 현재 q(0)
 실제 격자에서는 `AnalysisConfig(causal_support_uncertainty_m=...,
 amplitude_displacement_tolerance_m=...)`로 causal envelope와 진폭 위치허용을
 metre 단위로 지정할 수 있다. 두 값은 `RadarGridTimeContract`의 축 간격을
-사용해 row/column 반경으로 변환되며 격자계약 없이 사용하면 거부된다.
+사용해 실제 투영거리 안에 있는 integer `(row, column)` offset만 선택한다.
+따라서 1 km 정방격자의 1 km tolerance는 축방향 이웃을 포함하지만 1.414 km
+대각 이웃은 제외한다. 필요한 pixel bound가 분석격자보다 크면 거부하며,
+격자계약 없이 물리거리 설정을 사용해도 거부한다.
 
 P1 제어벡터는 다음 하나뿐이다.
 
 ```text
-[a_q(-20분, |S_control|), a_dy, a_dx, a_log_growth]
+[a_q(-20분, |S_control|), a_motion_1, a_motion_2, a_log_growth]
 ```
 
 `a_q`는 고정 control support의 활성 격자만 포함하며
@@ -182,6 +190,16 @@ P1 제어벡터는 다음 하나뿐이다.
 연결한다. dBZ latent의 softplus 좌표에서 양의 선형 에코로 변환하고,
 support 밖 제어변수는 PCG 벡터에 만들지 않는다. 무에코 영역은 고정
 support mask로 잠가 레이더 세 장만으로 신규 에코를 만들지 않는다.
+연구용 기본 경로의 운동성분은 `(row, column)` pixel 증분이지만,
+`motion_increment_scale_mps`와 격자계약을 제공하면 두 성분은 projected
+`(x, y)` m/s 증분이다. 두 성분을 하나의 radial `tanh` speed-ball로 decode하여
+모든 finite control이 원형 물리속도 상한 안에 매끄럽게 머문다. 운용모드는 이
+물리 제어를 강제하고 affine 역변환으로 수송코어의 `(row, column)`
+displacement를 만든다. 실제 좌표계와 제약형태는
+`analysis_motion_control_coordinate_system`에 기록한다.
+baseline 운동 또는 성장률이 hard bound에 정확히 닿으면 zero control은 그 값을
+정확히 보존하고 outward update는 투영으로 막되, 관측이 지지하는 inward update는
+허용한다. saturation margin은 baseline에서 0으로 기록한다.
 다만 분석창 후반에 탐지된 에코는 baseline 운동으로
 초기시각에 역수송하고, 초기 관측 또는 배경 anchor가 있는 위치만 2 pixel
 범위에서 precursor control로 연다. 이 확장영역은 운동오차를 허용하는
@@ -198,6 +216,11 @@ quality-weighted 표준화 deficit이 3을 넘거나 에코가 precursor floor
 아래인 정보가중 비율을 -10분과 0분에 각각 계산하고,
 `analysis.unresolved_amplitude_fraction_by_time`에 기록한다. 기존 scalar
 `analysis.unresolved_amplitude_fraction`은 두 시각 값의 최댓값이다.
+같은 시각 안에서 작은 대류셀 실패가 큰 정상영역에 희석되지 않도록
+precursor-required mask를 8-연결 객체로 나누고, 객체 수·정보부족 객체 수,
+객체별 unresolved fraction의 최댓값과 integrated-echo·soft-area 비율의
+최솟값/최댓값도 기록한다. 객체 라벨링과 공간적 비율 계산은 최종 결과
+경계에서만 수행하므로 LM 후보의 JVP/VJP/HVP 경로에는 들어가지 않는다.
 단, precursor 관측의 총 quality weight가 기본 0.01 미만이거나 유효
 정보화소 수가 기본 1.0 미만이면 해당 시각은 hard amplitude gate에서
 제외하고 `analysis.amplitude_information_sufficient_by_time`과
@@ -210,7 +233,13 @@ fraction과 quality weight는 감사용으로 그대로 보존하며, 이 경우
 `--amplitude-information-policy`로 이 정책을 선택한다. 정보가 충분한
 시각의 최댓값이 연구용 fail-close 기본값 1%를 넘으면
 `unresolved_growth_or_emergence`로 기준예측에 복귀한다. 이 1%는 운용
-임계값이 아니며 정보량 하한과 함께 실제 hindcast에서 보정해야 한다. 기존
+임계값이 아니며 정보량 하한과 함께 실제 hindcast에서 보정해야 한다.
+에코 적분비와 soft echo area 비는 각각 설정된 상·하한을 모두 검사한다.
+급격한 established-echo 성장과 함께 하나라도 벗어나면
+`amplitude_confidence_failed=True`가 된다. 연구정책
+`amplitude_confidence_policy="research_degraded"`는 분석을 degraded로
+보존하고, 운용정책 `"operational_fallback"`은
+`amplitude_confidence_failure`로 P0에 복귀한다. 기존
 `maximum_latest_detected_error_std` 생성자 인자는 0.4 API 호환을 위해
 유지되며, 현재는 두 후속 분석시각 모두에 적용된다.
 
@@ -248,7 +277,12 @@ active initial-field control에는 기본 `field_smoothness_weight=0.01`의
 상하·좌우 셀 사이에만 존재하므로 결측 또는 비활성 경계를 가로질러 제어값을
 연결하지 않는다. 해당 비용은 `analysis_field_smoothness_prior_cost`에
 기록되며 control의 독립 unit prior와 함께 목적함수·JVP·VJP·GN-HVP에 같은
-형태로 포함된다.
+형태로 포함된다. active edge와 local control index는 분석 준비단계에서 한 번
+계산하므로 hot path에서 전체 `H×W` field를 다시 만들지 않는다. 격자계약이
+있으면 affine cell area와 축 길이에서 얻은 graph metric 가중치를 적용하여
+직교 비등방 격자에서 수평 `dy/dx`, 수직 `dx/dy`가 된다. 이는 dBZ장 자체가
+아니라 standardized field-control graph prior이며 좌표계는
+`analysis_field_smoothness_coordinate_system`에 기록한다.
 
 세 관측잔차는 다음 순서로 정확히 한 번 처리한다.
 
@@ -265,10 +299,13 @@ Gauss–Newton HVP는 `J.T @ (J @ v)`로 계산되고, LM 증분은 PCG로 푼�
 실제 `b - A @ x`로 확인하며, 재귀잔차가 먼저 수렴했지만 실제잔차가 남으면
 Krylov recurrence를 재시작한다. 행렬이나 Jacobian은 생성하지 않는다.
 수용된 분석에는 최종 IRLS 선형화점의 관측 Jacobian만 사용하여
-표준화된 dynamics 3변수의
-`J_dyn.T @ J_dyn + I` 고유값·조건수와, 초기장–성장 및
+표준화된 dynamics 3변수의 자료 Gram `G=J_dyn.T @ J_dyn`,
+regularized Hessian `G+I`의 고유값·조건수와, 초기장–성장 및
 초기장–이동 Jacobian 절대 cosine을 진단으로 기록한다. 이 값은 아직
 hindcast로 보정된 발행 gate가 아니며 분석 수용 여부를 바꾸지 않는다.
+자료 고유값별 posterior precision 기여율 `lambda/(1+lambda)`와 그 합인
+`dynamics_data_effective_dimension`도 기록한다. 기존 effective-rank 이름은
+수치 rank 호환필드이며 새 `dynamics_data_numerical_rank`가 정확한 명칭이다.
 첫 분석 증분 전 PCG 실패,
 비유한값, 수용할 수 없는 증분은 FFT 기준예측으로 복귀한다. 한 번이라도
 목적함수를 낮춘 분석이 수용된 뒤 후속 반복이 실패하면 그 최선 분석을
@@ -328,10 +365,21 @@ advar-nowcast three_frames.npy forecast.npz \
 advar-nowcast three_frames.npy forecast.npz --audit
 ```
 
+CLI 기본 `--mode research`는 합성·hindcast 진단용이다. `--mode operational`
+은 `--variational`, 완전한 시각·격자 계약, 물리속도 상한, 물리 causal 및
+amplitude 거리, projected m/s 운동증분 scale, 명시적인
+PSR·pair 운동/성장 불일치·pair 신뢰도 우위·관측오차·amplitude
+정보량·적분량·면적·성장
+임계값과 `--operational-calibration-id`를 모두 요구한다. 누락된 보정값이
+있으면 실행 전에 거부하며, 두
+amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값은 실제
+레이더 hindcast에서 얻어야 하며 저장된 `nowcast_config_json`,
+`analysis_config_json`과 각 digest에 포함된다.
+
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v12`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v5`
+- `output_contract_version`: 현재 `nowcast-npz-v20`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v12`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -355,16 +403,36 @@ advar-nowcast three_frames.npy forecast.npz --audit
 - `minimum_phase_correlation_psr`: 실제 경향 추정에 사용한 pair들의 최저
   peak-to-sidelobe ratio. 가용 pair가 없으면 `NaN`. 기본 임계값 `8.0`과
   peak 제외반경 2 pixel은 합성·연구 설정이며 실제 hindcast로 보정해야 한다.
-- `tendency_pair_count`: 실제 운동·성장 추정에 사용한 독립 pair 수
+- `tendency_pair_count`: 운동 또는 성장에 실제 사용한 독립 pair의 합집합 크기
+- `motion_pair_count`, `growth_pair_count`: 각 성분에 실제 사용한 pair 수
+- `motion_pair_selection`, `growth_pair_selection`: 각 성분의 독립 결합 결과.
+  `NONE`, `SINGLE`, `LONG`, `BLENDED`, `EARLIER`, `RECENT`,
+  `PERSISTENCE` 중 하나
+- `motion_pair_conflict`, `growth_pair_conflict`: 두 pair 추정이 각 성분에서
+  서로 모순됐는지 나타내는 관측 가능한 provenance. 셀 분열·병합, 가속·회전,
+  다중 객체 충돌 같은 기상학적 원인을 확정하는 라벨은 아니며, 실제 처리 결과는
+  대응하는 `*_pair_selection`과 함께 해석한다.
 - `tendency_source`: 경향 추정 출처. `OBSERVATION`, `BACKGROUND`,
   `NONE` 중 하나
 
 Phase-correlation의 raw peak가 `max_displacement_px` 범위 밖이거나 허용
-search boundary bin에 있으면 높은 PSR이어도 사용하지 않는다. 두 adjacent
-pair의 이동 불일치가 `max_displacement_px` 이상이거나 성장 불일치가
-`max_log_growth_per_step` 이상이면 존재하지 않는 중간 경향을 평균하지 않고,
-PSR gate를 통과한 최근 pair 하나만 사용한다. 이 경우 불일치 진단은 두 pair의
-차이를 보존하고 `tendency_pair_count=1`로 기록한다.
+search boundary bin에 있으면 높은 PSR이어도 사용하지 않는다. pair 일관성은
+검색상한과 분리된 `maximum_pair_motion_disagreement_px`, 격자계약이 있을 때의
+`maximum_pair_velocity_disagreement_mps`, 그리고
+`maximum_pair_growth_disagreement`로 검사한다. 운동과 성장은 독립적으로
+결합한다. 일관된 pair는 PSR과 recency를 함께 가중해 평균하고, 충돌할 때 한
+pair의 PSR이 `minimum_pair_psr_advantage` 이상 우세하면 그 pair만 사용한다.
+우위가 없으면 해당 성분만 persistence로 fail-close한다. 이 네 기본 임계값은
+합성·연구 설정이며 실제 레이더 hindcast로 보정해야 한다.
+
+인접 pair가 하나만 유효하고 20분 long pair도 유효하면 두 후보를 독립적으로
+검사한다. 신뢰도는 `PSR * common_coverage`에 long pair의 시간간격·형태변형
+위험을 나타내는 `long_pair_confidence_penalty`를 곱한다. 두 후보가 일관되면
+long pair가 `minimum_pair_psr_advantage` 이상 명확히 우세할 때만 교체하고,
+충돌하면 신뢰도 우위가 없는 성분만 persistence로 fail-close한다. long pair는
+adjacent pair와 관측을 공유하므로 두 값을 독립 표본처럼 평균하지 않는다.
+`operational` profile에서는 이 span penalty도 hindcast로 보정한 값을 CLI에
+명시해야 한다.
 - `min_publish_support`: 유한한 예측값을 발행하는 최소 source support
 - `data_status`: `OBSERVED`, `PARTIAL`, `STALE_BACKGROUND`,
   `UNAVAILABLE` 중 하나
@@ -384,6 +452,17 @@ PSR gate를 통과한 최근 pair 하나만 사용한다. 이 경우 불일치 �
   `analysis_total_quality_weight_by_time`
 - `analysis_amplitude_information_sufficient_by_time`,
   `analysis_insufficient_amplitude_information`
+- `analysis_precursor_object_count_by_time`,
+  `analysis_insufficient_amplitude_object_count_by_time`: 8-연결 precursor
+  객체 수와 amplitude 정보량 기준에 미달한 객체 수
+- `analysis_maximum_object_unresolved_fraction_by_time`,
+  `analysis_minimum_object_integrated_echo_ratio_by_time`,
+  `analysis_maximum_object_integrated_echo_ratio_by_time`,
+  `analysis_minimum_object_soft_echo_area_ratio_by_time`,
+  `analysis_maximum_object_soft_echo_area_ratio_by_time`: 작은 객체 실패가
+  전체 시간별 비율에 희석되지 않도록 보존한 객체별 최악값
+- `analysis_amplitude_confidence_failed`: 적분량·soft area의 양방향 한계 또는
+  established-echo 성장·객체별 신뢰도 한계를 벗어났는지 여부
 - `analysis_established_echo_excess_growth_fraction_by_time`,
   `analysis_maximum_growth_envelope_ratio_by_time`: 초기 established echo의
   최대 성장능력 envelope 진단
@@ -392,8 +471,12 @@ PSR gate를 통과한 최근 pair 하나만 사용한다. 이 경우 불일치 �
 - `analysis_relative_objective_reduction`: zero-control P1 목적함수 대비 감소율
 - `analysis_dynamics_data_gram_eigenvalues`,
   `analysis_dynamics_data_information_trace`,
-  `analysis_dynamics_data_effective_rank`: 최종 IRLS 선형화점에서 prior를
-  제외한 관측 Jacobian Gram의 정보량과 수치 rank
+  `analysis_dynamics_data_numerical_rank`: 최종 IRLS 선형화점에서 prior를
+  제외한 관측 Jacobian Gram의 정보량과 수치 rank. 기존
+  `analysis_dynamics_data_effective_rank`는 호환 이름
+- `analysis_dynamics_data_to_prior_ratio_by_mode`,
+  `analysis_dynamics_data_effective_dimension`: mode별
+  `lambda/(1+lambda)`와 그 합
 - `analysis_regularized_dynamics_hessian_eigenvalues`,
   `analysis_regularized_dynamics_hessian_condition_number`: unit prior를
   포함한 dynamics Hessian의 solver 조건성
@@ -401,13 +484,16 @@ PSR gate를 통과한 최근 pair 하나만 사용한다. 이 경우 불일치 �
   `analysis_dynamics_reduced_hessian_condition_number`: 호환성을 위해 유지되는
   위 regularized 진단의 기존 이름
 - `analysis_field_smoothness_prior_cost`,
+  `analysis_motion_control_coordinate_system`,
+  `analysis_field_smoothness_coordinate_system`,
   `analysis_motion_saturation_margin_yx`,
   `analysis_motion_speed_saturation_margin_mps`,
   `analysis_growth_saturation_margin`: 공간 prior 비용과 이동·성장 상한까지의
   남은 control margin. 물리속도 상한이 없으면 speed margin은 `NaN`
 - `analysis_field_growth_jacobian_cosine`,
-  `analysis_field_motion_jacobian_cosine_yx`: 관측공간에서 초기장
-  증분이 성장·이동 증분과 얼마나 유사한지 나타내는 절대 cosine
+  `analysis_field_motion_jacobian_cosine_by_control`: 관측공간에서 초기장
+  증분이 성장·현재 motion-control 좌표의 이동증분과 얼마나 유사한지 나타내는
+  절대 cosine. 기존 `analysis_field_motion_jacobian_cosine_yx`는 호환 이름
 
 `--audit`를 지정할 때만 최종 양성 보정량과 선행시간별
 `echo_integral_before_transport`, `echo_integral_after_transport`,
@@ -443,7 +529,7 @@ parent directory를 `fsync`한다. 원자교체 이전 기록 실패 시 기존 
 - 30·60·120·180분의 예측장 민감도
 - 최신 입력 영상의 고정 제어 직접 민감도 `dE / d(dBZ)`
 - 16×16 타일별 직접 민감도 크기와 innovation 영향
-- 결측과 자료출처를 분리한 상황 특징 21개, 선형성 신뢰도, 계약 해시
+- 결측·자료출처·물리격자를 분리한 상황 특징 50개, 선형성 신뢰도, 계약 해시
 - 민감도를 생성한 정확한 발행 실행의 `forecast_run_digest`
 
 민감도 점수는 검증 유효영역과 실제 발행 유효영역의 교집합에서만
@@ -492,6 +578,7 @@ contract = ModelContract(
     radar_qc_version="my-qc-v1",
     nowcast_config_digest=snapshot.nowcast_config_digest,
     sensitivity_config_digest=snapshot.sensitivity_config_digest,
+    grid_time_contract_digest=snapshot.grid_time_contract_digest,
 )
 episode = SensitivityEpisode(
     episode_id="20260726T120000Z-radar-a",
@@ -521,6 +608,37 @@ SQLite에도 고정되며, 배열 이름·shape·dtype까지 검증한다. Pickl
 실행에서 민감도 episode가 생성됐는지를 보존한다. 이 값은 episode
 identity이며, 서로 결합 가능한 경험을 정하는 `ModelContract.digest`에는
 포함하지 않는다.
+M0 context에는 `motion_pair_conflict`, `growth_pair_conflict`가 각각 0/1로
+포함된다. 두 `*_pair_selection`도 `NONE`, `SINGLE`, `LONG`, `BLENDED`,
+`EARLIER`, `RECENT`, `PERSISTENCE`를 성분별 7-way one-hot으로 저장하여 pair
+불일치 발생과 실제 처리결과를 분리해 hindcast·학습할 수 있다. 그 뒤에는
+`phase_correlation_psr_available`과
+`log1p_minimum_phase_correlation_psr`를 저장한다. 가용 pair가 없을 때는
+availability=0과 finite value 0을 함께 기록하여 결측 PSR을 실제 0과 구분한다.
+격자계약이 있으면 `projected_velocity_available=1`과 투영좌표
+`projected_velocity_x_mps`, `projected_velocity_y_mps`, `projected_speed_mps`도
+저장한다. 격자계약이 없는 연구사례는 availability=0과 finite 0을 함께 기록해
+실제 정지사례와 구분한다. 두 pair를 실제로 비교하고 격자계약이 있을 때는
+`motion_disagreement_mps_available=1`과 `motion_disagreement_mps`를 append한다.
+비교할 pair나 물리격자 계약이 없으면 availability=0과 finite 0을 기록한다.
+격자계약이 있으면 affine determinant로 cell 면적을 계산해
+`area_weighted_echo_available=1`과
+`log1p_linear_reflectivity_integral_km2`도 저장한다. 동일한 물리영역을 다른
+해상도로 표현해도 이 값은 유지된다. 이어서 `grid_spacing_available=1`과
+`grid_column_spacing_m`, `grid_row_spacing_m`를 저장하므로 `tile_size`와 함께
+각 sensitivity tile의 물리 축 길이를 별도 격자 조회 없이 해석할 수 있다.
+격자계약이 없는 연구사례는 availability=0과 finite 0을 저장한다.
+sensitivity snapshot은 실제
+`grid_time_contract_digest`도 보존하고 `ModelContract`의 같은 필드와 정확히
+일치해야 하므로 서로 다른 affine/grid의 spatial sensitivity가 같은 계약으로
+섞이지 않는다. 현재 episode schema는 v12, model-contract hash schema는
+v11이며 기존 schema 1–11을 그대로 검증한다. 과거 episode에
+존재하지 않던 conflict나 selection 값을 임의로 보간하지 않으므로 서로 다른
+context 계약이 같은 학습집합으로 섞이지 않는다.
+M0 `trust_components`의 `pair_consistency`는 기본적으로 충돌한 성분 하나당
+`SensitivityConfig.pair_conflict_trust_penalty=0.5`를 곱한다. 두 성분이 모두
+충돌하면 0.25가 되며, 이 값은 sensitivity config digest에 포함된다. 기본값은
+연구용 보수적 prior이고 검색·운용 임계값은 실제 hindcast로 보정해야 한다.
 
 ### M0의 엄밀한 경계
 

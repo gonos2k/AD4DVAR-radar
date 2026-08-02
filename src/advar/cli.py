@@ -24,7 +24,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v12"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v20"
 
 
 def main() -> None:
@@ -48,18 +48,60 @@ def main() -> None:
         help="jointly analyze the three frames before forecasting",
     )
     parser.add_argument(
+        "--mode",
+        choices=("research", "operational"),
+        default="research",
+        help="research diagnostics or a calibrated fail-closed P1 profile",
+    )
+    parser.add_argument(
+        "--operational-calibration-id",
+        help="immutable identifier for the hindcast calibration profile",
+    )
+    parser.add_argument(
         "--observation-std-dbz",
         type=float,
-        default=2.0,
         help="observation error used by --variational",
+    )
+    parser.add_argument(
+        "--motion-increment-scale-mps",
+        type=float,
+        help="projected x/y velocity increment scale used by --variational",
     )
     parser.add_argument(
         "--amplitude-information-policy",
         choices=("research_degraded", "operational_fallback"),
-        default="research_degraded",
         help=(
             "P1 behavior when precursor amplitude information is insufficient"
         ),
+    )
+    parser.add_argument(
+        "--amplitude-confidence-policy",
+        choices=("research_degraded", "operational_fallback"),
+        help="P1 behavior when amplitude amount, area, or growth is implausible",
+    )
+    parser.add_argument("--maximum-detected-error-std", type=float)
+    parser.add_argument("--maximum-unresolved-amplitude-fraction", type=float)
+    parser.add_argument("--minimum-amplitude-total-quality-weight", type=float)
+    parser.add_argument("--minimum-amplitude-effective-pixel-count", type=float)
+    parser.add_argument(
+        "--minimum-integrated-echo-ratio-for-confidence",
+        type=float,
+    )
+    parser.add_argument(
+        "--maximum-integrated-echo-ratio-for-confidence",
+        type=float,
+    )
+    parser.add_argument(
+        "--minimum-soft-echo-area-ratio-for-confidence",
+        type=float,
+    )
+    parser.add_argument(
+        "--maximum-soft-echo-area-ratio-for-confidence",
+        type=float,
+    )
+    parser.add_argument(
+        "--maximum-established-excess-growth-fraction-for-confidence",
+        type=float,
     )
     parser.add_argument(
         "--qc-mask",
@@ -82,6 +124,29 @@ def main() -> None:
         default=60.0,
     )
     parser.add_argument("--maximum-motion-speed-mps", type=float)
+    parser.add_argument("--minimum-phase-correlation-psr", type=float)
+    parser.add_argument("--pair-echo-dilation-m", type=float)
+    parser.add_argument("--phase-correlation-sidelobe-radius-m", type=float)
+    parser.add_argument(
+        "--maximum-pair-motion-disagreement-px",
+        type=float,
+    )
+    parser.add_argument(
+        "--maximum-pair-velocity-disagreement-mps",
+        type=float,
+    )
+    parser.add_argument(
+        "--maximum-pair-growth-disagreement",
+        type=float,
+    )
+    parser.add_argument(
+        "--minimum-pair-psr-advantage",
+        type=float,
+    )
+    parser.add_argument(
+        "--long-pair-confidence-penalty",
+        type=float,
+    )
     parser.add_argument("--valid-times", nargs=3)
     parser.add_argument("--background-valid-times", nargs=3)
     parser.add_argument("--dx-m", type=float)
@@ -104,12 +169,37 @@ def main() -> None:
     args = parser.parse_args()
     if args.output.suffix != ".npz":
         parser.error("output path must end with .npz")
+    if (
+        args.mode != "operational"
+        and args.operational_calibration_id is not None
+    ):
+        parser.error(
+            "--operational-calibration-id requires --mode operational"
+        )
     if not args.variational and (
-        args.causal_support_uncertainty_m is not None
+        args.mode == "operational"
+        or args.amplitude_information_policy is not None
+        or args.amplitude_confidence_policy is not None
+        or args.operational_calibration_id is not None
+        or args.observation_std_dbz is not None
+        or args.motion_increment_scale_mps is not None
+        or args.maximum_detected_error_std is not None
+        or args.maximum_unresolved_amplitude_fraction is not None
+        or args.minimum_amplitude_total_quality_weight is not None
+        or args.minimum_amplitude_effective_pixel_count is not None
+        or args.minimum_integrated_echo_ratio_for_confidence is not None
+        or args.maximum_integrated_echo_ratio_for_confidence is not None
+        or args.minimum_soft_echo_area_ratio_for_confidence is not None
+        or args.maximum_soft_echo_area_ratio_for_confidence is not None
+        or (
+            args.maximum_established_excess_growth_fraction_for_confidence
+            is not None
+        )
+        or args.causal_support_uncertainty_m is not None
         or args.amplitude_displacement_tolerance_m is not None
     ):
         parser.error(
-            "physical P1 distance settings require --variational"
+            "operational mode and P1 analysis settings require --variational"
         )
 
     frames = np.load(args.input, allow_pickle=False)
@@ -137,6 +227,7 @@ def main() -> None:
         background_present=background is not None,
     )
 
+    default_nowcast_config = NowcastConfig()
     config = NowcastConfig(
         min_dbz=args.min_dbz,
         max_dbz=args.max_dbz,
@@ -146,23 +237,53 @@ def main() -> None:
             args.maximum_background_age_minutes
         ),
         maximum_motion_speed_mps=args.maximum_motion_speed_mps,
+        minimum_phase_correlation_psr=(
+            default_nowcast_config.minimum_phase_correlation_psr
+            if args.minimum_phase_correlation_psr is None
+            else args.minimum_phase_correlation_psr
+        ),
+        pair_echo_dilation_m=args.pair_echo_dilation_m,
+        phase_correlation_sidelobe_radius_m=(
+            args.phase_correlation_sidelobe_radius_m
+        ),
+        maximum_pair_motion_disagreement_px=(
+            default_nowcast_config.maximum_pair_motion_disagreement_px
+            if args.maximum_pair_motion_disagreement_px is None
+            else args.maximum_pair_motion_disagreement_px
+        ),
+        maximum_pair_velocity_disagreement_mps=(
+            default_nowcast_config.maximum_pair_velocity_disagreement_mps
+            if args.maximum_pair_velocity_disagreement_mps is None
+            else args.maximum_pair_velocity_disagreement_mps
+        ),
+        maximum_pair_growth_disagreement=(
+            default_nowcast_config.maximum_pair_growth_disagreement
+            if args.maximum_pair_growth_disagreement is None
+            else args.maximum_pair_growth_disagreement
+        ),
+        minimum_pair_psr_advantage=(
+            default_nowcast_config.minimum_pair_psr_advantage
+            if args.minimum_pair_psr_advantage is None
+            else args.minimum_pair_psr_advantage
+        ),
+        long_pair_confidence_penalty=(
+            default_nowcast_config.long_pair_confidence_penalty
+            if args.long_pair_confidence_penalty is None
+            else args.long_pair_confidence_penalty
+        ),
     )
     frames_tensor = torch.as_tensor(frames, dtype=torch.float32)
     if args.variational:
+        analysis_config = _analysis_config_from_args(
+            parser,
+            args,
+            grid_time_contract=grid_time_contract,
+        )
         result, analysis = variational_nowcast(
             frames_tensor,
             nowcast_config=config,
-            analysis_config=AnalysisConfig(
-                detection_limit_dbz=args.echo_threshold_dbz,
-                amplitude_information_policy=args.amplitude_information_policy,
-                causal_support_uncertainty_m=(
-                    args.causal_support_uncertainty_m
-                ),
-                amplitude_displacement_tolerance_m=(
-                    args.amplitude_displacement_tolerance_m
-                ),
-            ),
-            observation_std_dbz=args.observation_std_dbz,
+            analysis_config=analysis_config,
+            observation_std_dbz=analysis_config.observation_std_dbz,
             qc_mask=qc_mask,
             background_frames_dbz=background,
             background_age_minutes=args.background_age_minutes,
@@ -197,6 +318,158 @@ def main() -> None:
     )
 
 
+def _analysis_config_from_args(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+    *,
+    grid_time_contract: RadarGridTimeContract | None,
+) -> AnalysisConfig:
+    defaults = AnalysisConfig()
+    calibrated_values = {
+        "--operational-calibration-id": args.operational_calibration_id,
+        "--observation-std-dbz": args.observation_std_dbz,
+        "--minimum-phase-correlation-psr": (
+            args.minimum_phase_correlation_psr
+        ),
+        "--pair-echo-dilation-m": args.pair_echo_dilation_m,
+        "--phase-correlation-sidelobe-radius-m": (
+            args.phase_correlation_sidelobe_radius_m
+        ),
+        "--long-pair-confidence-penalty": (
+            args.long_pair_confidence_penalty
+        ),
+        "--maximum-pair-velocity-disagreement-mps": (
+            args.maximum_pair_velocity_disagreement_mps
+        ),
+        "--maximum-pair-growth-disagreement": (
+            args.maximum_pair_growth_disagreement
+        ),
+        "--minimum-pair-psr-advantage": args.minimum_pair_psr_advantage,
+        "--maximum-motion-speed-mps": args.maximum_motion_speed_mps,
+        "--motion-increment-scale-mps": args.motion_increment_scale_mps,
+        "--causal-support-uncertainty-m": (
+            args.causal_support_uncertainty_m
+        ),
+        "--amplitude-displacement-tolerance-m": (
+            args.amplitude_displacement_tolerance_m
+        ),
+        "--maximum-detected-error-std": args.maximum_detected_error_std,
+        "--maximum-unresolved-amplitude-fraction": (
+            args.maximum_unresolved_amplitude_fraction
+        ),
+        "--minimum-amplitude-total-quality-weight": (
+            args.minimum_amplitude_total_quality_weight
+        ),
+        "--minimum-amplitude-effective-pixel-count": (
+            args.minimum_amplitude_effective_pixel_count
+        ),
+        "--minimum-integrated-echo-ratio-for-confidence": (
+            args.minimum_integrated_echo_ratio_for_confidence
+        ),
+        "--maximum-integrated-echo-ratio-for-confidence": (
+            args.maximum_integrated_echo_ratio_for_confidence
+        ),
+        "--minimum-soft-echo-area-ratio-for-confidence": (
+            args.minimum_soft_echo_area_ratio_for_confidence
+        ),
+        "--maximum-soft-echo-area-ratio-for-confidence": (
+            args.maximum_soft_echo_area_ratio_for_confidence
+        ),
+        "--maximum-established-excess-growth-fraction-for-confidence": (
+            args.maximum_established_excess_growth_fraction_for_confidence
+        ),
+    }
+    if args.mode == "operational":
+        missing = [
+            name for name, value in calibrated_values.items() if value is None
+        ]
+        if grid_time_contract is None:
+            missing.append("grid/time metadata")
+        if missing:
+            parser.error(
+                "operational mode requires explicitly calibrated values for: "
+                + ", ".join(missing)
+            )
+        if args.amplitude_information_policy not in (
+            None,
+            "operational_fallback",
+        ) or args.amplitude_confidence_policy not in (
+            None,
+            "operational_fallback",
+        ):
+            parser.error(
+                "operational mode requires operational_fallback amplitude "
+                "policies"
+            )
+    information_policy = args.amplitude_information_policy or (
+        "operational_fallback"
+        if args.mode == "operational"
+        else defaults.amplitude_information_policy
+    )
+    confidence_policy = args.amplitude_confidence_policy or (
+        "operational_fallback"
+        if args.mode == "operational"
+        else defaults.amplitude_confidence_policy
+    )
+
+    def value(name: str, default: float) -> float:
+        candidate = getattr(args, name)
+        return default if candidate is None else candidate
+
+    return AnalysisConfig(
+        execution_mode=args.mode,
+        operational_calibration_id=args.operational_calibration_id,
+        detection_limit_dbz=args.echo_threshold_dbz,
+        observation_std_dbz=value(
+            "observation_std_dbz",
+            defaults.observation_std_dbz,
+        ),
+        motion_increment_scale_mps=args.motion_increment_scale_mps,
+        maximum_latest_detected_error_std=value(
+            "maximum_detected_error_std",
+            defaults.maximum_latest_detected_error_std,
+        ),
+        maximum_unresolved_amplitude_fraction=value(
+            "maximum_unresolved_amplitude_fraction",
+            defaults.maximum_unresolved_amplitude_fraction,
+        ),
+        minimum_amplitude_total_quality_weight=value(
+            "minimum_amplitude_total_quality_weight",
+            defaults.minimum_amplitude_total_quality_weight,
+        ),
+        minimum_amplitude_effective_pixel_count=value(
+            "minimum_amplitude_effective_pixel_count",
+            defaults.minimum_amplitude_effective_pixel_count,
+        ),
+        amplitude_information_policy=information_policy,
+        amplitude_confidence_policy=confidence_policy,
+        minimum_integrated_echo_ratio_for_confidence=value(
+            "minimum_integrated_echo_ratio_for_confidence",
+            defaults.minimum_integrated_echo_ratio_for_confidence,
+        ),
+        maximum_integrated_echo_ratio_for_confidence=value(
+            "maximum_integrated_echo_ratio_for_confidence",
+            defaults.maximum_integrated_echo_ratio_for_confidence,
+        ),
+        minimum_soft_echo_area_ratio_for_confidence=value(
+            "minimum_soft_echo_area_ratio_for_confidence",
+            defaults.minimum_soft_echo_area_ratio_for_confidence,
+        ),
+        maximum_soft_echo_area_ratio_for_confidence=value(
+            "maximum_soft_echo_area_ratio_for_confidence",
+            defaults.maximum_soft_echo_area_ratio_for_confidence,
+        ),
+        maximum_established_excess_growth_fraction_for_confidence=value(
+            "maximum_established_excess_growth_fraction_for_confidence",
+            defaults.maximum_established_excess_growth_fraction_for_confidence,
+        ),
+        causal_support_uncertainty_m=args.causal_support_uncertainty_m,
+        amplitude_displacement_tolerance_m=(
+            args.amplitude_displacement_tolerance_m
+        ),
+    )
+
+
 def _grid_time_contract_from_args(
     parser: argparse.ArgumentParser,
     args: argparse.Namespace,
@@ -215,6 +488,7 @@ def _grid_time_contract_from_args(
             args.background_valid_times,
             args.pixel_to_projected_matrix_m,
             args.maximum_motion_speed_mps,
+            args.motion_increment_scale_mps,
             args.causal_support_uncertainty_m,
             args.amplitude_displacement_tolerance_m,
         )
@@ -356,6 +630,42 @@ def _output_arrays(
             analysis_insufficient_amplitude_information=np.asarray(
                 analysis.insufficient_amplitude_information
             ),
+            analysis_amplitude_confidence_failed=np.asarray(
+                analysis.amplitude_confidence_failed
+            ),
+            analysis_precursor_object_count_by_time=_optional_int_pair_array(
+                analysis.precursor_object_count_by_time
+            ),
+            analysis_insufficient_amplitude_object_count_by_time=(
+                _optional_int_pair_array(
+                    analysis.insufficient_amplitude_object_count_by_time
+                )
+            ),
+            analysis_maximum_object_unresolved_fraction_by_time=(
+                _optional_pair_array(
+                    analysis.maximum_object_unresolved_fraction_by_time
+                )
+            ),
+            analysis_minimum_object_integrated_echo_ratio_by_time=(
+                _optional_pair_array(
+                    analysis.minimum_object_integrated_echo_ratio_by_time
+                )
+            ),
+            analysis_maximum_object_integrated_echo_ratio_by_time=(
+                _optional_pair_array(
+                    analysis.maximum_object_integrated_echo_ratio_by_time
+                )
+            ),
+            analysis_minimum_object_soft_echo_area_ratio_by_time=(
+                _optional_pair_array(
+                    analysis.minimum_object_soft_echo_area_ratio_by_time
+                )
+            ),
+            analysis_maximum_object_soft_echo_area_ratio_by_time=(
+                _optional_pair_array(
+                    analysis.maximum_object_soft_echo_area_ratio_by_time
+                )
+            ),
             analysis_established_echo_excess_growth_fraction=np.asarray(
                 np.nan
                 if analysis.established_echo_excess_growth_fraction is None
@@ -416,6 +726,21 @@ def _output_arrays(
                 if analysis.dynamics_data_effective_rank is None
                 else analysis.dynamics_data_effective_rank
             ),
+            analysis_dynamics_data_numerical_rank=np.asarray(
+                -1
+                if analysis.dynamics_data_numerical_rank is None
+                else analysis.dynamics_data_numerical_rank
+            ),
+            analysis_dynamics_data_effective_dimension=np.asarray(
+                np.nan
+                if analysis.dynamics_data_effective_dimension is None
+                else analysis.dynamics_data_effective_dimension
+            ),
+            analysis_dynamics_data_to_prior_ratio_by_mode=(
+                _optional_triple_array(
+                    analysis.dynamics_data_to_prior_ratio_by_mode
+                )
+            ),
             analysis_regularized_dynamics_hessian_eigenvalues=(
                 _optional_triple_array(
                     analysis.regularized_dynamics_hessian_eigenvalues
@@ -431,6 +756,12 @@ def _output_arrays(
             ),
             analysis_field_smoothness_prior_cost=np.asarray(
                 analysis.field_smoothness_prior_cost
+            ),
+            analysis_motion_control_coordinate_system=np.asarray(
+                analysis.motion_control_coordinate_system
+            ),
+            analysis_field_smoothness_coordinate_system=np.asarray(
+                analysis.field_smoothness_coordinate_system
             ),
             analysis_motion_saturation_margin_yx=(
                 _optional_pair_array(analysis.motion_saturation_margin_yx)
@@ -455,6 +786,11 @@ def _output_arrays(
                     analysis.field_motion_jacobian_cosine_yx
                 )
             ),
+            analysis_field_motion_jacobian_cosine_by_control=(
+                _optional_nullable_pair_array(
+                    analysis.field_motion_jacobian_cosine_by_control
+                )
+            ),
         )
     return output
 
@@ -469,6 +805,12 @@ def _optional_bool_pair_array(
     value: tuple[bool, bool] | None,
 ) -> NDArray[Any]:
     return np.asarray((False, False) if value is None else value)
+
+
+def _optional_int_pair_array(
+    value: tuple[int, int] | None,
+) -> NDArray[Any]:
+    return np.asarray((0, 0) if value is None else value)
 
 
 def _optional_nullable_pair_array(
