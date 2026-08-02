@@ -621,8 +621,12 @@ class _SourceTendencyEstimate:
     growth_pair_conflict: bool
 
     @property
-    def available(self) -> bool:
+    def future_available(self) -> bool:
         return self.tendency_pair_count > 0
+
+    @property
+    def reconstruction_available(self) -> bool:
+        return bool(torch.any(self.source_usable))
 
 
 _FORECAST_INPUT_BUNDLE_VERSION = "forecast-input-bundle-v2"
@@ -1541,7 +1545,12 @@ def estimate_prepared_state(
         background_linear,
         name="background echo conversion",
     )
-    tendency, tendency_source = _estimate_time_normalized_tendencies(
+    (
+        tendency,
+        tendency_source,
+        observation_paths,
+        background_paths,
+    ) = _estimate_time_normalized_tendencies(
         prepared,
         observation_linear,
         background_linear,
@@ -1558,7 +1567,8 @@ def estimate_prepared_state(
         prepared,
         observation_linear,
         background_linear,
-        tendency,
+        observation_paths,
+        background_paths,
         config,
     )
     state = RadarState(
@@ -1604,7 +1614,12 @@ def _estimate_time_normalized_tendencies(
     background_linear: Tensor,
     config: NowcastConfig,
     grid_time_contract: RadarGridTimeContract | None,
-) -> tuple[_SourceTendencyEstimate, TendencySource]:
+) -> tuple[
+    _SourceTendencyEstimate,
+    TendencySource,
+    _SourceTendencyEstimate,
+    _SourceTendencyEstimate,
+]:
     observation_estimate = _estimate_source_tendencies(
         prepared.frames_dbz,
         prepared.observed_mask,
@@ -1612,8 +1627,6 @@ def _estimate_time_normalized_tendencies(
         config,
         grid_time_contract,
     )
-    if observation_estimate.available:
-        return observation_estimate, TendencySource.OBSERVATION
     background_estimate = _estimate_source_tendencies(
         prepared.background_frames_dbz,
         prepared.background_mask,
@@ -1621,9 +1634,16 @@ def _estimate_time_normalized_tendencies(
         config,
         grid_time_contract,
     )
-    if background_estimate.available:
-        return background_estimate, TendencySource.BACKGROUND
-    return observation_estimate, TendencySource.NONE
+    if observation_estimate.future_available:
+        future = observation_estimate
+        source = TendencySource.OBSERVATION
+    elif background_estimate.future_available:
+        future = background_estimate
+        source = TendencySource.BACKGROUND
+    else:
+        future = observation_estimate
+        source = TendencySource.NONE
+    return future, source, observation_estimate, background_estimate
 
 
 def _estimate_source_tendencies(
@@ -1882,7 +1902,7 @@ def _single_adjacent_source_paths(
     pair_index: int,
 ) -> tuple[Tensor, Tensor, Tensor]:
     if pair_index == 0:
-        return _uniform_source_paths(motion, growth)
+        return _latest_only_source_paths(motion, growth)
     if pair_index != 1:
         raise ValueError("adjacent pair index must be 0 or 1")
     zero_motion = torch.zeros_like(motion)
@@ -2373,23 +2393,24 @@ def _merge_current_state(
     prepared: PreparedRadarInput,
     observation_linear: Tensor,
     background_linear: Tensor,
-    tendency: _SourceTendencyEstimate,
+    observation_paths: _SourceTendencyEstimate,
+    background_paths: _SourceTendencyEstimate,
     config: NowcastConfig,
 ) -> tuple[Tensor, Tensor, float]:
     observation_echo, observation_support = _merge_source_frames(
         observation_linear,
         prepared.observed_mask,
-        tendency.source_displacement_yx,
-        tendency.source_log_growth,
-        tendency.source_usable,
+        observation_paths.source_displacement_yx,
+        observation_paths.source_log_growth,
+        observation_paths.source_usable,
         config,
     )
     background_echo, background_support = _merge_source_frames(
         background_linear,
         prepared.background_mask,
-        tendency.source_displacement_yx,
-        tendency.source_log_growth,
-        tendency.source_usable,
+        background_paths.source_displacement_yx,
+        background_paths.source_log_growth,
+        background_paths.source_usable,
         config,
     )
     observation_support = observation_support.clamp(0.0, 1.0)

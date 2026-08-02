@@ -819,6 +819,129 @@ class NowcastTests(unittest.TestCase):
             torch.tensor((0.0, -0.04, 0.0), dtype=torch.float64),
         )
 
+    def test_future_fallback_does_not_replace_observation_paths(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        values = torch.zeros((3, 16, 16), dtype=torch.float64)
+        masks = torch.ones_like(values, dtype=torch.bool)
+        earlier = (
+            torch.tensor([0.0, 4.0], dtype=torch.float64),
+            torch.tensor(0.0, dtype=torch.float64),
+            torch.tensor(12.0, dtype=torch.float64),
+        )
+        recent = (
+            torch.tensor([0.0, -4.0], dtype=torch.float64),
+            torch.tensor(0.0, dtype=torch.float64),
+            torch.tensor(12.0, dtype=torch.float64),
+        )
+        with patch.object(
+            nowcast_module,
+            "_estimate_available_pair",
+            side_effect=(earlier, recent),
+        ):
+            observation_paths = nowcast_module._estimate_source_tendencies(
+                values,
+                masks,
+                values,
+                self.config,
+                None,
+            )
+        zero = values.new_zeros(())
+        background_future = nowcast_module._single_pair_tendency(
+            values.new_zeros(2),
+            zero,
+            values.new_tensor(20.0),
+            selection=TendencyPairSelection.RECENT,
+            source_pair_index=1,
+        )
+        prepared = nowcast_module.prepare_input(values, self.config)
+
+        with patch.object(
+            nowcast_module,
+            "_estimate_source_tendencies",
+            side_effect=(observation_paths, background_future),
+        ):
+            future, source, observation, background = (
+                nowcast_module._estimate_time_normalized_tendencies(
+                    prepared,
+                    values,
+                    values,
+                    self.config,
+                    None,
+                )
+            )
+
+        self.assertFalse(observation_paths.future_available)
+        self.assertTrue(observation_paths.reconstruction_available)
+        self.assertIs(future, background_future)
+        self.assertEqual(source, TendencySource.BACKGROUND)
+        self.assertIs(observation, observation_paths)
+        self.assertIs(background, background_future)
+        torch.testing.assert_close(
+            observation.source_displacement_yx[1],
+            recent[0],
+        )
+
+    def test_background_future_does_not_move_observation_state(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        frames = torch.full((3, 16, 16), torch.nan, dtype=torch.float64)
+        frames[1, 8, 8] = 20.0
+        background = torch.full_like(frames, self.config.min_dbz)
+        prepared = nowcast_module.prepare_input(
+            frames,
+            self.config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+        zero = frames.new_zeros(())
+        earlier = (
+            frames.new_tensor([0.0, 4.0]),
+            zero,
+            frames.new_tensor(12.0),
+        )
+        recent = (
+            frames.new_tensor([0.0, -4.0]),
+            zero,
+            frames.new_tensor(12.0),
+        )
+        with patch.object(
+            nowcast_module,
+            "_estimate_available_pair",
+            side_effect=(earlier, recent),
+        ):
+            observation_paths = nowcast_module._estimate_source_tendencies(
+                prepared.frames_dbz,
+                prepared.observed_mask,
+                torch.zeros_like(frames),
+                self.config,
+                None,
+            )
+        background_future = nowcast_module._single_pair_tendency(
+            frames.new_zeros(2),
+            zero,
+            frames.new_tensor(20.0),
+            selection=TendencyPairSelection.RECENT,
+            source_pair_index=1,
+        )
+
+        with patch.object(
+            nowcast_module,
+            "_estimate_time_normalized_tendencies",
+            return_value=(
+                background_future,
+                TendencySource.BACKGROUND,
+                observation_paths,
+                background_future,
+            ),
+        ):
+            state, metadata = nowcast_module.estimate_prepared_state(
+                prepared,
+                self.config,
+            )
+
+        self.assertEqual(metadata.tendency_source, TendencySource.BACKGROUND)
+        self.assertGreater(float(state.echo_linear[8, 4]), 10.0)
+        self.assertLess(float(state.echo_linear[8, 8]), 1.0)
+
     def test_conflicting_pairs_choose_clearly_higher_psr_pair(self) -> None:
         nowcast_module = import_module("advar.nowcast")
         values = torch.zeros((3, 2, 2), dtype=torch.float64)
@@ -1026,9 +1149,9 @@ class NowcastTests(unittest.TestCase):
         self.assertTrue(tendency.growth_pair_conflict)
         torch.testing.assert_close(
             tendency.source_log_growth,
-            torch.tensor((0.4, 0.2, 0.0), dtype=torch.float64),
+            torch.zeros(3, dtype=torch.float64),
         )
-        self.assertTrue(bool(torch.all(tendency.source_usable)))
+        self.assertEqual(tendency.source_usable.tolist(), [False, False, True])
 
     def test_long_pair_confidence_accounts_for_common_coverage(self) -> None:
         nowcast_module = import_module("advar.nowcast")
@@ -1413,8 +1536,7 @@ class NowcastTests(unittest.TestCase):
             TendencySource.OBSERVATION,
         )
         self.assertTrue(metadata.background_used)
-        self.assertGreater(metadata.background_contribution_fraction, 0.0)
-        self.assertLess(metadata.background_contribution_fraction, 0.1)
+        self.assertEqual(metadata.background_contribution_fraction, 1.0)
 
     def test_propagated_observation_precedes_clear_background(self) -> None:
         frames = torch.full((3, 8, 8), torch.nan, dtype=torch.float64)
@@ -1498,13 +1620,16 @@ class NowcastTests(unittest.TestCase):
         frames[1, :, 1::2] = torch.nan
         nowcast_module = import_module("advar.nowcast")
         zero = echo.new_zeros(())
+        observation_paths = nowcast_module._single_pair_tendency(
+            echo.new_tensor([0.0, 0.5]),
+            zero,
+            echo.new_tensor(10.0),
+        )
         tendencies = (
-            nowcast_module._single_pair_tendency(
-                echo.new_tensor([0.0, 0.5]),
-                zero,
-                echo.new_tensor(10.0),
-            ),
+            observation_paths,
             TendencySource.OBSERVATION,
+            observation_paths,
+            observation_paths,
         )
 
         with patch.object(
@@ -1528,13 +1653,16 @@ class NowcastTests(unittest.TestCase):
         )
         nowcast_module = import_module("advar.nowcast")
         zero = frames.new_zeros(())
+        observation_paths = nowcast_module._single_pair_tendency(
+            frames.new_tensor([0.5, 0.5]),
+            zero,
+            frames.new_tensor(10.0),
+        )
         tendencies = (
-            nowcast_module._single_pair_tendency(
-                frames.new_tensor([0.5, 0.5]),
-                zero,
-                frames.new_tensor(10.0),
-            ),
+            observation_paths,
             TendencySource.OBSERVATION,
+            observation_paths,
+            observation_paths,
         )
 
         with patch.object(
@@ -1570,13 +1698,16 @@ class NowcastTests(unittest.TestCase):
         )
         nowcast_module = import_module("advar.nowcast")
         zero = frames.new_zeros(())
+        observation_paths = nowcast_module._single_pair_tendency(
+            frames.new_tensor([0.0, 0.99]),
+            zero,
+            frames.new_tensor(10.0),
+        )
         tendencies = (
-            nowcast_module._single_pair_tendency(
-                frames.new_tensor([0.0, 0.99]),
-                zero,
-                frames.new_tensor(10.0),
-            ),
+            observation_paths,
             TendencySource.OBSERVATION,
+            observation_paths,
+            observation_paths,
         )
 
         with patch.object(
@@ -1707,13 +1838,16 @@ class NowcastTests(unittest.TestCase):
         nowcast_module = import_module("advar.nowcast")
         growth = torch.log(echo.new_tensor(1.2))
         zero = echo.new_zeros(())
+        observation_paths = nowcast_module._single_pair_tendency(
+            echo.new_zeros(2),
+            growth,
+            echo.new_tensor(10.0),
+        )
         tendencies = (
-            nowcast_module._single_pair_tendency(
-                echo.new_zeros(2),
-                growth,
-                echo.new_tensor(10.0),
-            ),
+            observation_paths,
             TendencySource.OBSERVATION,
+            observation_paths,
+            observation_paths,
         )
 
         with patch.object(
@@ -1747,7 +1881,7 @@ class NowcastTests(unittest.TestCase):
 
         torch.testing.assert_close(growth, torch.zeros_like(growth))
 
-    def test_missing_latest_frame_uses_mask_aware_persistence(self) -> None:
+    def test_earlier_pair_does_not_extrapolate_missing_latest_frame(self) -> None:
         dbz = linear_to_dbz(self.echo, self.config)
         frames = torch.stack((dbz, dbz, torch.full_like(dbz, torch.nan)))
         result = nowcast(frames, self.config)
@@ -1758,8 +1892,8 @@ class NowcastTests(unittest.TestCase):
             DataStatus.PARTIAL,
         )
         self.assertEqual(float(metadata.coverage_by_frame[-1]), 0.0)
-        self.assertTrue(bool(torch.all(torch.isfinite(forecast))))
-        torch.testing.assert_close(forecast[0], dbz, atol=0.02, rtol=0.0)
+        self.assertFalse(bool(torch.any(torch.isfinite(forecast))))
+        self.assertFalse(bool(torch.any(metadata.source_support)))
 
     def test_empty_echo_uses_persistence_fallback(self) -> None:
         frames = torch.full((3, 32, 32), self.config.min_dbz)
