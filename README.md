@@ -372,7 +372,7 @@ CLI 기본 `--mode research`는 합성·hindcast 진단용이다. `--mode operat
 amplitude 거리, projected m/s 운동증분 scale, 명시적인
 PSR·pair 운동/성장 불일치·pair 신뢰도 우위·성장 overlap
 support·물리면적·관측오차·amplitude
-정보량·적분량·면적·성장·성장률 overlap support/물리면적
+정보량·적분량·면적·성장
 임계값과 `--operational-calibration-id`를 모두 요구한다. 누락된 보정값이
 있으면 실행 전에 거부하며, 두
 amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값은 실제
@@ -428,15 +428,6 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   선택된 운동에서 실제 성장률 결합에 사용된 pair들의 최소
   overlap support와 물리면적. 사용 가능한 성장 증거가 없으면
   `NaN`이다.
-- `state_path_source`, `state_path_mode`, `state_path_pair_count`:
-  현재상태 재구성에 실제 사용한 관측 또는 배경 경로. 미래
-  `tendency_source`와 독립적으로 기록한다.
-- `state_path_minimum_psr`, `state_path_conflict`,
-  `state_path_extrapolated`, `state_path_age_minutes`: 현재상태 경로의
-  신뢰도·충돌·외삽·자료연령 provenance
-- `minimum_growth_overlap_support`, `minimum_growth_overlap_area_km2`:
-  선택된 미래 성장률에 실제 사용한 정렬 pair 중 최소 overlap 정보량.
-  성장 evidence가 없으면 `NaN`이다.
 
 Phase-correlation의 raw peak가 `max_displacement_px` 범위 밖이거나 허용
 search boundary bin에 있으면 높은 PSR이어도 사용하지 않는다. pair 일관성은
