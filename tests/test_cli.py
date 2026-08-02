@@ -81,6 +81,8 @@ class CliTests(unittest.TestCase):
             "0.0953",
             "--minimum-pair-psr-advantage",
             "3",
+            "--minimum-pair-confidence-ratio",
+            "1.5",
             "--minimum-growth-overlap-support",
             "4",
             "--minimum-growth-overlap-area-km2",
@@ -180,11 +182,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v23",
+                    "nowcast-npz-v24",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v15",
+                    "forecast-run-v16",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -272,6 +274,8 @@ class CliTests(unittest.TestCase):
                 "0.08",
                 "--minimum-pair-psr-advantage",
                 "4.5",
+                "--minimum-pair-confidence-ratio",
+                "1.8",
             )
 
             loaded = load_forecast_run(output_path)
@@ -311,6 +315,10 @@ class CliTests(unittest.TestCase):
             self.assertEqual(
                 loaded.run.config.minimum_pair_psr_advantage,
                 4.5,
+            )
+            self.assertEqual(
+                loaded.run.config.minimum_pair_confidence_ratio,
+                1.8,
             )
 
     def test_variational_output_records_feasibility_diagnostics(self) -> None:
@@ -534,6 +542,7 @@ class CliTests(unittest.TestCase):
             "--maximum-pair-velocity-disagreement-mps",
             "--maximum-pair-growth-disagreement",
             "--minimum-pair-psr-advantage",
+            "--minimum-pair-confidence-ratio",
             "--minimum-growth-overlap-support",
             "--minimum-growth-overlap-area-km2",
         )

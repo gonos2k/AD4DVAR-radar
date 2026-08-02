@@ -1359,7 +1359,9 @@ class NowcastTests(unittest.TestCase):
         )
         self.assertEqual(tendency.source_usable.tolist(), [False, False, True])
 
-    def test_long_pair_confidence_accounts_for_common_coverage(self) -> None:
+    def test_long_pair_confidence_ignores_irrelevant_domain_coverage(
+        self,
+    ) -> None:
         nowcast_module = import_module("advar.nowcast")
         values = torch.zeros((3, 2, 2), dtype=torch.float64)
         masks = torch.ones_like(values, dtype=torch.bool)
@@ -1405,12 +1407,38 @@ class NowcastTests(unittest.TestCase):
 
         self.assertEqual(
             tendency.motion_pair_selection,
-            TendencyPairSelection.LONG,
+            TendencyPairSelection.SINGLE,
         )
         self.assertEqual(
             tendency.growth_pair_selection,
-            TendencyPairSelection.LONG,
+            TendencyPairSelection.SINGLE,
         )
+
+    def test_equal_zero_pair_confidence_has_no_false_advantage(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        adjacent = torch.tensor(1.0, dtype=torch.float64)
+        long = torch.tensor(2.0, dtype=torch.float64)
+        zero = torch.zeros((), dtype=torch.float64)
+
+        selected = nowcast_module._select_single_adjacent_or_long_component(
+            adjacent,
+            long,
+            zero,
+            zero,
+            inconsistent=False,
+            config=self.config,
+        )
+        conflict = nowcast_module._select_single_adjacent_or_long_component(
+            adjacent,
+            long,
+            zero,
+            zero,
+            inconsistent=True,
+            config=self.config,
+        )
+
+        self.assertEqual(selected[3], TendencyPairSelection.SINGLE)
+        self.assertEqual(conflict[3], TendencyPairSelection.PERSISTENCE)
 
     def test_pair_velocity_disagreement_is_resolution_invariant(self) -> None:
         nowcast_module = import_module("advar.nowcast")
@@ -3075,6 +3103,10 @@ class NowcastTests(unittest.TestCase):
             with self.subTest(minimum_pair_psr_advantage=value):
                 with self.assertRaises(ValueError):
                     NowcastConfig(minimum_pair_psr_advantage=value)
+        for value in (1.0, 0.0, -1.0):
+            with self.subTest(minimum_pair_confidence_ratio=value):
+                with self.assertRaises(ValueError):
+                    NowcastConfig(minimum_pair_confidence_ratio=value)
         for value in (0.0, -1.0, 1.01):
             with self.subTest(long_pair_confidence_penalty=value):
                 with self.assertRaises(ValueError):

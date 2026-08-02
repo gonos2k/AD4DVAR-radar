@@ -24,7 +24,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v23"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v24"
 
 
 def main() -> None:
@@ -141,6 +141,10 @@ def main() -> None:
     )
     parser.add_argument(
         "--minimum-pair-psr-advantage",
+        type=float,
+    )
+    parser.add_argument(
+        "--minimum-pair-confidence-ratio",
         type=float,
     )
     parser.add_argument(
@@ -268,6 +272,11 @@ def main() -> None:
             if args.minimum_pair_psr_advantage is None
             else args.minimum_pair_psr_advantage
         ),
+        minimum_pair_confidence_ratio=(
+            default_nowcast_config.minimum_pair_confidence_ratio
+            if args.minimum_pair_confidence_ratio is None
+            else args.minimum_pair_confidence_ratio
+        ),
         long_pair_confidence_penalty=(
             default_nowcast_config.long_pair_confidence_penalty
             if args.long_pair_confidence_penalty is None
@@ -355,6 +364,9 @@ def _analysis_config_from_args(
             args.maximum_pair_growth_disagreement
         ),
         "--minimum-pair-psr-advantage": args.minimum_pair_psr_advantage,
+        "--minimum-pair-confidence-ratio": (
+            args.minimum_pair_confidence_ratio
+        ),
         "--minimum-growth-overlap-support": (
             args.minimum_growth_overlap_support
         ),
