@@ -145,6 +145,7 @@ class CliTests(unittest.TestCase):
             "background_used",
             "background_contribution_fraction",
             "background_state_support_fraction",
+            "observation_state_support_fraction",
             "background_tendency_used",
             "background_age_minutes",
             "minimum_phase_correlation_psr",
@@ -165,6 +166,18 @@ class CliTests(unittest.TestCase):
             "state_path_conflict",
             "state_path_extrapolated",
             "state_path_age_minutes",
+            "observation_path_mode",
+            "observation_path_pair_count",
+            "observation_path_minimum_psr",
+            "observation_path_conflict",
+            "observation_path_extrapolated",
+            "observation_path_age_minutes",
+            "background_path_mode",
+            "background_path_pair_count",
+            "background_path_minimum_psr",
+            "background_path_conflict",
+            "background_path_extrapolated",
+            "background_path_age_minutes",
             "minimum_growth_overlap_support",
             "minimum_growth_overlap_area_km2",
             "min_publish_support",
@@ -187,11 +200,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v27",
+                    "nowcast-npz-v28",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v19",
+                    "forecast-run-v20",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))

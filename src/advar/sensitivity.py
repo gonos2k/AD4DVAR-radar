@@ -1202,6 +1202,7 @@ def _trust_components(
             / metadata.source_support.sum().clamp_min(nowcast_config.epsilon)
         ).clamp(0.0, 1.0)
     )
+    observation_evidence_quality = metadata.observation_state_support_fraction
     if not bool(torch.any(metric_available)):
         return {
             "linearity": 0.0,
@@ -1209,6 +1210,7 @@ def _trust_components(
             "metric_support": 0.0,
             "pair_consistency": pair_consistency_quality,
             "path_evidence": path_evidence_quality,
+            "observation_evidence": observation_evidence_quality,
         }
 
     delta = control.new_tensor(sensitivity_config.linearity_delta)
@@ -1267,6 +1269,7 @@ def _trust_components(
         "metric_support": float(support_quality.detach()),
         "pair_consistency": pair_consistency_quality,
         "path_evidence": path_evidence_quality,
+        "observation_evidence": observation_evidence_quality,
     }
 
 

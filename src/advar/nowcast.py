@@ -788,6 +788,16 @@ def _validate_state_dynamics(
 
 
 @dataclass(frozen=True)
+class StatePathProvenance:
+    mode: TendencyPairSelection = TendencyPairSelection.NONE
+    pair_count: int = 0
+    minimum_psr: float = math.nan
+    conflict: bool = False
+    extrapolated: bool = False
+    age_minutes: float | None = None
+
+
+@dataclass(frozen=True)
 class ForecastMetadata:
     data_status: DataStatus
     coverage_by_frame: Tensor
@@ -817,6 +827,8 @@ class ForecastMetadata:
     state_path_conflict: bool = False
     state_path_extrapolated: bool = False
     state_path_age_minutes: float | None = None
+    observation_path: StatePathProvenance = StatePathProvenance()
+    background_path: StatePathProvenance = StatePathProvenance()
     minimum_growth_overlap_support: float = math.nan
     minimum_growth_overlap_area_km2: float = math.nan
 
@@ -851,6 +863,12 @@ class ForecastMetadata:
         return self.background_contribution_fraction
 
     @property
+    def observation_state_support_fraction(self) -> float:
+        if not bool(torch.any(self.source_support > 0)):
+            return 0.0
+        return 1.0 - self.background_contribution_fraction
+
+    @property
     def background_tendency_used(self) -> bool:
         return self.tendency_source is TendencySource.BACKGROUND
 
@@ -879,6 +897,9 @@ def state_metadata_digest(
                 ),
                 "background_state_support_fraction": (
                     metadata.background_state_support_fraction
+                ),
+                "observation_state_support_fraction": (
+                    metadata.observation_state_support_fraction
                 ),
                 "background_tendency_used": metadata.background_tendency_used,
                 "background_age_minutes": metadata.background_age_minutes,
@@ -918,6 +939,12 @@ def state_metadata_digest(
                     metadata.state_path_extrapolated
                 ),
                 "state_path_age_minutes": metadata.state_path_age_minutes,
+                "observation_path": _path_provenance_digest_values(
+                    metadata.observation_path
+                ),
+                "background_path": _path_provenance_digest_values(
+                    metadata.background_path
+                ),
                 "minimum_growth_overlap_support": _finite_float_or_none(
                     metadata.minimum_growth_overlap_support
                 ),
@@ -932,6 +959,19 @@ def state_metadata_digest(
 
 def _finite_float_or_none(value: float) -> float | None:
     return value if math.isfinite(value) else None
+
+
+def _path_provenance_digest_values(
+    path: StatePathProvenance,
+) -> dict[str, object]:
+    return {
+        "mode": path.mode.value,
+        "pair_count": path.pair_count,
+        "minimum_psr": _finite_float_or_none(path.minimum_psr),
+        "conflict": path.conflict,
+        "extrapolated": path.extrapolated,
+        "age_minutes": path.age_minutes,
+    }
 
 
 @dataclass(frozen=True)
@@ -1438,6 +1478,16 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         metadata.state_path_mode
     ]:
         raise ValueError("state path pair count and selection disagree")
+    _validate_state_path_provenance(
+        "observation path",
+        metadata.observation_path,
+        selection_counts,
+    )
+    _validate_state_path_provenance(
+        "background path",
+        metadata.background_path,
+        selection_counts,
+    )
     if (
         metadata.motion_pair_selection is TendencyPairSelection.PERSISTENCE
         and not metadata.motion_pair_conflict
@@ -1502,6 +1552,8 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         or metadata.state_path_conflict
         or metadata.state_path_extrapolated
         or metadata.state_path_age_minutes is not None
+        or not _path_is_empty(metadata.observation_path)
+        or not _path_is_empty(metadata.background_path)
         or not math.isnan(metadata.minimum_growth_overlap_support)
         or not math.isnan(metadata.minimum_growth_overlap_area_km2)
     ):
@@ -1513,6 +1565,21 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         or background_fraction > 1
     ):
         raise ValueError("background contribution fraction must be in [0, 1]")
+    if metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
+        if metadata.observation_state_support_fraction > config.epsilon:
+            expected_path_source = TendencySource.OBSERVATION
+            expected_path = metadata.observation_path
+        elif background_fraction > config.epsilon:
+            expected_path_source = TendencySource.BACKGROUND
+            expected_path = metadata.background_path
+        else:
+            expected_path_source = TendencySource.NONE
+            expected_path = StatePathProvenance()
+        if (
+            metadata.state_path_source is not expected_path_source
+            or not _aggregate_path_matches(metadata, expected_path)
+        ):
+            raise ValueError("aggregate state path provenance mismatch")
     expected_background_used = (
         background_fraction > config.epsilon
         or metadata.background_tendency_used
@@ -1616,6 +1683,53 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         or metadata.background_age_minutes < 0
     ):
         raise ValueError("background age must be finite and nonnegative")
+
+
+def _validate_state_path_provenance(
+    name: str,
+    path: StatePathProvenance,
+    selection_counts: dict[TendencyPairSelection, int],
+) -> None:
+    if path.pair_count != selection_counts[path.mode]:
+        raise ValueError(f"{name} pair count and mode disagree")
+    if path.pair_count == 0:
+        if not math.isnan(path.minimum_psr):
+            raise ValueError(f"unused {name} must have NaN PSR")
+    elif not math.isfinite(path.minimum_psr):
+        raise ValueError(f"used {name} must have finite PSR")
+    if path.age_minutes is not None and (
+        not math.isfinite(path.age_minutes) or path.age_minutes < 0
+    ):
+        raise ValueError(f"{name} age must be finite and nonnegative")
+
+
+def _path_is_empty(path: StatePathProvenance) -> bool:
+    return (
+        path.mode is TendencyPairSelection.NONE
+        and path.pair_count == 0
+        and math.isnan(path.minimum_psr)
+        and not path.conflict
+        and not path.extrapolated
+        and path.age_minutes is None
+    )
+
+
+def _aggregate_path_matches(
+    metadata: ForecastMetadata,
+    path: StatePathProvenance,
+) -> bool:
+    psr_matches = (
+        math.isnan(metadata.state_path_minimum_psr)
+        and math.isnan(path.minimum_psr)
+    ) or metadata.state_path_minimum_psr == path.minimum_psr
+    return (
+        metadata.state_path_mode is path.mode
+        and metadata.state_path_pair_count == path.pair_count
+        and psr_matches
+        and metadata.state_path_conflict == path.conflict
+        and metadata.state_path_extrapolated == path.extrapolated
+        and metadata.state_path_age_minutes == path.age_minutes
+    )
 
 
 @dataclass(frozen=True)
@@ -1799,8 +1913,8 @@ def estimate_prepared_state(
         current_source_support,
         current_verified_source_support,
         background_contribution_fraction,
-        state_path_source,
-        state_path_contributors,
+        observation_contributors,
+        background_contributors,
     ) = _merge_current_state(
         prepared,
         observation_linear,
@@ -1819,16 +1933,27 @@ def estimate_prepared_state(
         background_contribution_fraction > config.epsilon
         or background_tendency_used
     )
-    if state_path_source is TendencySource.OBSERVATION:
-        state_paths = observation_paths
-        state_path_base_age_minutes = 0.0
-    elif state_path_source is TendencySource.BACKGROUND:
-        state_paths = background_paths
-        state_path_base_age_minutes = prepared.background_age_minutes or 0.0
+    observation_path = _source_path_provenance(
+        observation_paths,
+        observation_contributors,
+        config.interval_minutes,
+    )
+    background_path = _source_path_provenance(
+        background_paths,
+        background_contributors,
+        config.interval_minutes,
+        base_age_minutes=prepared.background_age_minutes or 0.0,
+    )
+    if bool(torch.any(observation_contributors)):
+        state_path_source = TendencySource.OBSERVATION
+        state_path = observation_path
+    elif bool(torch.any(background_contributors)):
+        state_path_source = TendencySource.BACKGROUND
+        state_path = background_path
     else:
-        state_paths = None
-        state_path_base_age_minutes = 0.0
-    if state_paths is None:
+        state_path_source = TendencySource.NONE
+        state_path = StatePathProvenance()
+    if state_path_source is TendencySource.NONE:
         state_path_mode = TendencyPairSelection.NONE
         state_path_pair_count = 0
         state_path_minimum_psr = math.nan
@@ -1836,21 +1961,12 @@ def estimate_prepared_state(
         state_path_extrapolated = False
         state_path_age_minutes = None
     else:
-        (
-            state_path_mode,
-            state_path_pair_count,
-            state_path_minimum_psr,
-            state_path_conflict,
-            state_path_extrapolated,
-        ) = _actual_state_path_provenance(
-            state_paths,
-            state_path_contributors,
-        )
-        state_path_age_minutes = _state_path_age_minutes(
-            state_path_contributors,
-            config.interval_minutes,
-            base_age_minutes=state_path_base_age_minutes,
-        )
+        state_path_mode = state_path.mode
+        state_path_pair_count = state_path.pair_count
+        state_path_minimum_psr = state_path.minimum_psr
+        state_path_conflict = state_path.conflict
+        state_path_extrapolated = state_path.extrapolated
+        state_path_age_minutes = state_path.age_minutes
     metadata = ForecastMetadata(
         data_status=prepared.data_status,
         coverage_by_frame=prepared.coverage_by_frame,
@@ -1884,6 +2000,8 @@ def estimate_prepared_state(
         state_path_conflict=state_path_conflict,
         state_path_extrapolated=state_path_extrapolated,
         state_path_age_minutes=state_path_age_minutes,
+        observation_path=observation_path,
+        background_path=background_path,
         minimum_growth_overlap_support=float(
             tendency.minimum_growth_overlap_support.detach()
         ),
@@ -2975,7 +3093,7 @@ def _merge_current_state(
     observation_paths: _SourceTendencyEstimate,
     background_paths: _SourceTendencyEstimate,
     config: NowcastConfig,
-) -> tuple[Tensor, Tensor, Tensor, float, TendencySource, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor, float, Tensor, Tensor]:
     (
         observation_echo,
         observation_support,
@@ -3038,22 +3156,13 @@ def _merge_current_state(
         observation_verified_support
         + (1.0 - observation_support) * background_verified_support
     ).clamp(0.0, 1.0)
-    if bool(torch.any(observation_support > config.epsilon)):
-        path_source = TendencySource.OBSERVATION
-        path_contributors = observation_contributors
-    elif bool(torch.any(background_support > config.epsilon)):
-        path_source = TendencySource.BACKGROUND
-        path_contributors = background_contributors
-    else:
-        path_source = TendencySource.NONE
-        path_contributors = torch.zeros_like(observation_contributors)
     return (
         current_echo,
         current_support,
         current_verified_support,
         contribution_fraction,
-        path_source,
-        path_contributors,
+        observation_contributors,
+        background_contributors,
     )
 
 
@@ -3089,6 +3198,32 @@ def _actual_state_path_provenance(
         minimum_psr,
         conflict,
         paths.reconstruction_extrapolated,
+    )
+
+
+def _source_path_provenance(
+    paths: _SourceTendencyEstimate,
+    contributing_sources: Tensor,
+    interval_minutes: int,
+    *,
+    base_age_minutes: float = 0.0,
+) -> StatePathProvenance:
+    if not bool(torch.any(contributing_sources)):
+        return StatePathProvenance()
+    mode, pair_count, minimum_psr, conflict, extrapolated = (
+        _actual_state_path_provenance(paths, contributing_sources)
+    )
+    return StatePathProvenance(
+        mode=mode,
+        pair_count=pair_count,
+        minimum_psr=minimum_psr,
+        conflict=conflict,
+        extrapolated=extrapolated,
+        age_minutes=_state_path_age_minutes(
+            contributing_sources,
+            interval_minutes,
+            base_age_minutes=base_age_minutes,
+        ),
     )
 
 

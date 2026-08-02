@@ -18,6 +18,7 @@ from advar.nowcast import (  # noqa: E402
     NowcastConfig,
     RadarGridTimeContract,
     RadarState,
+    StatePathProvenance,
     TendencySource,
     TendencyPairSelection,
     forecast_from_state,
@@ -89,6 +90,9 @@ def metadata_for(
         minimum_phase_correlation_psr=state.echo_linear.new_tensor(10.0),
         tendency_pair_count=2,
         tendency_source=TendencySource.OBSERVATION,
+        state_path_source=TendencySource.OBSERVATION,
+        state_path_age_minutes=0.0,
+        observation_path=StatePathProvenance(age_minutes=0.0),
         minimum_growth_overlap_support=float(state.echo_linear.numel()),
     )
 
@@ -1166,6 +1170,7 @@ class SensitivityTests(unittest.TestCase):
             "verification",
             "metric_support",
             "path_evidence",
+            "observation_evidence",
         ):
             self.assertAlmostEqual(
                 conflict.trust_components[name],
@@ -1207,6 +1212,10 @@ class SensitivityTests(unittest.TestCase):
 
         expected_path_evidence = float(verified.mean())
         self.assertEqual(baseline.trust_components["path_evidence"], 1.0)
+        self.assertAlmostEqual(
+            baseline.trust_components["observation_evidence"],
+            self.result.metadata.observation_state_support_fraction,
+        )
         self.assertEqual(
             unverified.trust_components["path_evidence"],
             expected_path_evidence,
@@ -1216,6 +1225,7 @@ class SensitivityTests(unittest.TestCase):
             "verification",
             "metric_support",
             "pair_consistency",
+            "observation_evidence",
         ):
             self.assertAlmostEqual(
                 unverified.trust_components[name],

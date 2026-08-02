@@ -284,7 +284,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
 
         manifest = loaded.manifest
-        self.assertEqual(manifest["schema_version"], 12)
+        self.assertEqual(manifest["schema_version"], 13)
         self.assertEqual(
             manifest["context_feature_names"][6:8],
             ["motion_pair_conflict", "growth_pair_conflict"],
@@ -304,6 +304,14 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         self.assertEqual(
             manifest["trust_components"]["pair_consistency"],
+            1.0,
+        )
+        self.assertEqual(
+            manifest["trust_components"]["path_evidence"],
+            1.0,
+        )
+        self.assertEqual(
+            manifest["trust_components"]["observation_evidence"],
             1.0,
         )
         self.assertIs(

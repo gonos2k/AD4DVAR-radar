@@ -23,6 +23,7 @@ from advar.nowcast import (  # noqa: E402
     NowcastConfig,
     RadarGridTimeContract,
     RadarState,
+    StatePathProvenance,
     TendencyPairSelection,
     TendencySource,
     estimate_state as estimate_state_with_metadata,
@@ -93,6 +94,9 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         minimum_phase_correlation_psr=state.echo_linear.new_tensor(10.0),
         tendency_pair_count=2,
         tendency_source=TendencySource.OBSERVATION,
+        state_path_source=TendencySource.OBSERVATION,
+        state_path_age_minutes=0.0,
+        observation_path=StatePathProvenance(age_minutes=0.0),
         minimum_growth_overlap_support=float(state.echo_linear.numel()),
     )
 
@@ -2005,7 +2009,24 @@ class NowcastTests(unittest.TestCase):
         torch.testing.assert_close(state.echo_linear[3, 3], expected)
         self.assertTrue(metadata.background_used)
         self.assertGreater(metadata.background_contribution_fraction, 0.9)
+        self.assertLess(metadata.observation_state_support_fraction, 0.1)
+        self.assertAlmostEqual(
+            metadata.observation_state_support_fraction
+            + metadata.background_state_support_fraction,
+            1.0,
+        )
         self.assertEqual(metadata.background_age_minutes, 10.0)
+        self.assertEqual(
+            metadata.observation_path.mode,
+            TendencyPairSelection.SINGLE,
+        )
+        self.assertTrue(metadata.observation_path.extrapolated)
+        self.assertEqual(metadata.observation_path.age_minutes, 10.0)
+        self.assertEqual(
+            metadata.background_path.mode,
+            TendencyPairSelection.NONE,
+        )
+        self.assertEqual(metadata.background_path.age_minutes, 10.0)
 
     def test_publication_mask_uses_advected_fractional_support(self) -> None:
         config = NowcastConfig(
@@ -2042,6 +2063,9 @@ class NowcastTests(unittest.TestCase):
             ),
             tendency_pair_count=1,
             tendency_source=TendencySource.OBSERVATION,
+            state_path_source=TendencySource.OBSERVATION,
+            state_path_age_minutes=0.0,
+            observation_path=StatePathProvenance(age_minutes=0.0),
             motion_pair_count=1,
             motion_pair_selection=TendencyPairSelection.SINGLE,
         )
@@ -2732,6 +2756,17 @@ class NowcastTests(unittest.TestCase):
                     )
                 ),
                 "verified_source_support",
+            ),
+            (
+                reissue(
+                    metadata=replace(
+                        issued.metadata,
+                        observation_path=StatePathProvenance(
+                            age_minutes=10.0
+                        ),
+                    )
+                ),
+                "aggregate state path provenance",
             ),
             (
                 reissue(

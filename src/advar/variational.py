@@ -22,6 +22,7 @@ from .nowcast import (
     NowcastConfig,
     RadarGridTimeContract,
     RadarState,
+    StatePathProvenance,
     TendencyPairSelection,
     TendencySource,
     estimate_prepared_state,
@@ -2134,6 +2135,8 @@ def _analysis_result(
             state_path_conflict=False,
             state_path_extrapolated=False,
             state_path_age_minutes=None,
+            observation_path=StatePathProvenance(),
+            background_path=StatePathProvenance(),
             minimum_growth_overlap_support=math.nan,
             minimum_growth_overlap_area_km2=math.nan,
         ),
@@ -3624,6 +3627,8 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
         state_path_conflict=metadata.state_path_conflict,
         state_path_extrapolated=metadata.state_path_extrapolated,
         state_path_age_minutes=metadata.state_path_age_minutes,
+        observation_path=metadata.observation_path,
+        background_path=metadata.background_path,
         minimum_growth_overlap_support=(
             metadata.minimum_growth_overlap_support
         ),

@@ -27,14 +27,15 @@ from .nowcast import (
     NowcastConfig,
     RadarGridTimeContract,
     RadarState,
+    StatePathProvenance,
     TendencyPairSelection,
     TendencySource,
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v19"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v20"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-DEFAULT_MAXIMUM_MEMBER_COUNT = 128
+DEFAULT_MAXIMUM_MEMBER_COUNT = 160
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
 DEFAULT_MAXIMUM_TOTAL_EXPANDED_BYTES = 2 * 1024**3
 _ArtifactArrays = Mapping[str, NDArray[Any]]
@@ -68,6 +69,7 @@ _CORE_ARRAY_NAMES = frozenset(
         "background_used",
         "background_contribution_fraction",
         "background_state_support_fraction",
+        "observation_state_support_fraction",
         "background_tendency_used",
         "background_age_minutes",
         "source_support",
@@ -92,6 +94,18 @@ _CORE_ARRAY_NAMES = frozenset(
         "state_path_conflict",
         "state_path_extrapolated",
         "state_path_age_minutes",
+        "observation_path_mode",
+        "observation_path_pair_count",
+        "observation_path_minimum_psr",
+        "observation_path_conflict",
+        "observation_path_extrapolated",
+        "observation_path_age_minutes",
+        "background_path_mode",
+        "background_path_pair_count",
+        "background_path_minimum_psr",
+        "background_path_conflict",
+        "background_path_extrapolated",
+        "background_path_age_minutes",
         "minimum_growth_overlap_support",
         "minimum_growth_overlap_area_km2",
         "provenance",
@@ -277,6 +291,9 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "background_state_support_fraction": np.asarray(
             metadata.background_state_support_fraction
         ),
+        "observation_state_support_fraction": np.asarray(
+            metadata.observation_state_support_fraction
+        ),
         "background_tendency_used": np.asarray(
             metadata.background_tendency_used
         ),
@@ -327,6 +344,11 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             if metadata.state_path_age_minutes is None
             else metadata.state_path_age_minutes
         ),
+        **_path_provenance_arrays(
+            "observation_path",
+            metadata.observation_path,
+        ),
+        **_path_provenance_arrays("background_path", metadata.background_path),
         "minimum_growth_overlap_support": np.asarray(
             metadata.minimum_growth_overlap_support
         ),
@@ -373,6 +395,22 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         ),
     }
     return seal_forecast_run_arrays(arrays)
+
+
+def _path_provenance_arrays(
+    prefix: str,
+    path: StatePathProvenance,
+) -> dict[str, NDArray[Any]]:
+    return {
+        f"{prefix}_mode": np.asarray(path.mode.value),
+        f"{prefix}_pair_count": np.asarray(path.pair_count),
+        f"{prefix}_minimum_psr": np.asarray(path.minimum_psr),
+        f"{prefix}_conflict": np.asarray(path.conflict),
+        f"{prefix}_extrapolated": np.asarray(path.extrapolated),
+        f"{prefix}_age_minutes": np.asarray(
+            np.nan if path.age_minutes is None else path.age_minutes
+        ),
+    }
 
 
 def save_forecast_run(result: ForecastResult, path: str | Path) -> None:
@@ -651,6 +689,14 @@ def load_forecast_run(
             "state_path_age_minutes",
             allow_nan=True,
         )
+        observation_path = _path_provenance_from_arrays(
+            loaded_arrays,
+            "observation_path",
+        )
+        background_path = _path_provenance_from_arrays(
+            loaded_arrays,
+            "background_path",
+        )
         metadata = ForecastMetadata(
             data_status=DataStatus(
                 _string_scalar(loaded_arrays, "data_status")
@@ -750,6 +796,8 @@ def load_forecast_run(
             state_path_age_minutes=(
                 None if math.isnan(state_path_age) else state_path_age
             ),
+            observation_path=observation_path,
+            background_path=background_path,
             minimum_growth_overlap_support=_float_scalar(
                 loaded_arrays,
                 "minimum_growth_overlap_support",
@@ -762,6 +810,15 @@ def load_forecast_run(
             ),
             provenance=_string_scalar(loaded_arrays, "provenance"),
         )
+        stored_observation_fraction = _float_scalar(
+            loaded_arrays,
+            "observation_state_support_fraction",
+        )
+        if (
+            stored_observation_fraction
+            != metadata.observation_state_support_fraction
+        ):
+            raise ValueError("observation state support fraction mismatch")
         if (
             metadata.background_tendency_used
             != stored_background_tendency_used
@@ -1169,6 +1226,31 @@ def _float_scalar(
     if math.isfinite(result) or (allow_nan and math.isnan(result)):
         return result
     raise ValueError(f"{name} must be finite")
+
+
+def _path_provenance_from_arrays(
+    arrays: _ArtifactArrays,
+    prefix: str,
+) -> StatePathProvenance:
+    age = _float_scalar(
+        arrays,
+        f"{prefix}_age_minutes",
+        allow_nan=True,
+    )
+    return StatePathProvenance(
+        mode=TendencyPairSelection(
+            _string_scalar(arrays, f"{prefix}_mode")
+        ),
+        pair_count=_int_scalar(arrays, f"{prefix}_pair_count"),
+        minimum_psr=_float_scalar(
+            arrays,
+            f"{prefix}_minimum_psr",
+            allow_nan=True,
+        ),
+        conflict=_bool_scalar(arrays, f"{prefix}_conflict"),
+        extrapolated=_bool_scalar(arrays, f"{prefix}_extrapolated"),
+        age_minutes=None if math.isnan(age) else age,
+    )
 
 
 def _floating_scalar_tensor(
