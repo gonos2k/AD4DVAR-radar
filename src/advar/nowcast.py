@@ -1153,6 +1153,22 @@ def _forecast_run_identity_digest(
     )
 
 
+def _validate_state_for_run(
+    state: RadarState,
+    run: ForecastRunContract,
+) -> None:
+    if (
+        state.echo_linear.ndim != 2
+        or state.echo_linear.shape != run._latest_frame_dbz.shape
+    ):
+        raise ValueError("state grid must match the run input grid")
+    _validate_state_dynamics(
+        state,
+        run.config,
+        run.grid_time_contract,
+    )
+
+
 @dataclass(frozen=True)
 class ForecastResult:
     forecast_dbz: Tensor
@@ -1199,6 +1215,8 @@ class ForecastResult:
             raise ValueError(
                 "forecast valid mask disagrees with the issued forecast"
             )
+        self.run.validate_integrity()
+        _validate_forecast_contract(self)
         if (
             state_metadata_digest(self.state, self.metadata)
             != self.state_metadata_digest
@@ -1206,12 +1224,6 @@ class ForecastResult:
             raise ValueError(
                 "forecast state or metadata disagrees with the issued forecast"
             )
-        self.run.validate_integrity()
-        _validate_state_dynamics(
-            self.state,
-            self.run.config,
-            self.run.grid_time_contract,
-        )
         if (
             _forecast_run_identity_digest(
                 self.run,
@@ -1222,6 +1234,147 @@ class ForecastResult:
             != self.forecast_run_digest
         ):
             raise ValueError("forecast run identity disagrees with the issued forecast")
+
+
+def _validate_forecast_contract(result: ForecastResult) -> None:
+    forecast = result.forecast_dbz
+    valid = result.valid_mask
+    state = result.state
+    metadata = result.metadata
+    config = result.run.config
+    floating = (torch.float32, torch.float64)
+    float_tensors = (
+        forecast,
+        state.echo_linear,
+        state.displacement_yx,
+        state.log_growth_per_step,
+        metadata.coverage_by_frame,
+        metadata.source_support,
+        metadata.motion_disagreement_px,
+        metadata.motion_disagreement_mps,
+        metadata.growth_disagreement,
+    )
+    if any(value.dtype not in floating for value in float_tensors):
+        raise ValueError("forecast run tensors must use float32 or float64")
+    state_tensors = (
+        forecast,
+        state.echo_linear,
+        state.displacement_yx,
+        state.log_growth_per_step,
+        metadata.source_support,
+    )
+    if len({value.dtype for value in state_tensors}) != 1:
+        raise ValueError("forecast run state tensors must share one dtype")
+    if forecast.ndim != 3 or forecast.shape[0] != config.forecast_steps:
+        raise ValueError("forecast_dbz has the wrong lead shape")
+    if valid.dtype != torch.bool or valid.shape != forecast.shape:
+        raise ValueError("valid_mask must be boolean with the forecast shape")
+    _validate_state_for_run(state, result.run)
+    if forecast.shape[1:] != state.echo_linear.shape:
+        raise ValueError("forecast and state grids disagree")
+    if metadata.coverage_by_frame.shape != (3,):
+        raise ValueError("coverage_by_frame must have shape [3]")
+    if metadata.source_support.shape != state.echo_linear.shape:
+        raise ValueError("source_support must match the state grid")
+    if metadata.motion_disagreement_px.ndim != 0:
+        raise ValueError("motion_disagreement_px must be scalar")
+    if metadata.motion_disagreement_mps.ndim != 0:
+        raise ValueError("motion_disagreement_mps must be scalar")
+    if metadata.growth_disagreement.ndim != 0:
+        raise ValueError("growth_disagreement must be scalar")
+    selection_counts = {
+        TendencyPairSelection.NONE: 0,
+        TendencyPairSelection.PERSISTENCE: 0,
+        TendencyPairSelection.SINGLE: 1,
+        TendencyPairSelection.LONG: 1,
+        TendencyPairSelection.EARLIER: 1,
+        TendencyPairSelection.RECENT: 1,
+        TendencyPairSelection.BLENDED: 2,
+    }
+    if metadata.motion_pair_count != selection_counts[
+        metadata.motion_pair_selection
+    ]:
+        raise ValueError("motion pair count and selection disagree")
+    if metadata.growth_pair_count != selection_counts[
+        metadata.growth_pair_selection
+    ]:
+        raise ValueError("growth pair count and selection disagree")
+    if (
+        metadata.motion_pair_selection is TendencyPairSelection.PERSISTENCE
+        and not metadata.motion_pair_conflict
+    ) or (
+        metadata.motion_pair_selection is TendencyPairSelection.BLENDED
+        and metadata.motion_pair_conflict
+    ):
+        raise ValueError("motion pair conflict provenance is inconsistent")
+    if (
+        metadata.growth_pair_selection is TendencyPairSelection.PERSISTENCE
+        and not metadata.growth_pair_conflict
+    ) or (
+        metadata.growth_pair_selection is TendencyPairSelection.BLENDED
+        and metadata.growth_pair_conflict
+    ):
+        raise ValueError("growth pair conflict provenance is inconsistent")
+    selections = (
+        metadata.motion_pair_selection,
+        metadata.growth_pair_selection,
+    )
+    pair_sources: dict[TendencyPairSelection, frozenset[str]] = {
+        TendencyPairSelection.NONE: frozenset(),
+        TendencyPairSelection.PERSISTENCE: frozenset(),
+        TendencyPairSelection.SINGLE: frozenset(("single_adjacent",)),
+        TendencyPairSelection.LONG: frozenset(("long",)),
+        TendencyPairSelection.EARLIER: frozenset(("earlier",)),
+        TendencyPairSelection.RECENT: frozenset(("recent",)),
+        TendencyPairSelection.BLENDED: frozenset(("earlier", "recent")),
+    }
+    used_sources = pair_sources[selections[0]] | pair_sources[selections[1]]
+    if metadata.tendency_pair_count != len(used_sources):
+        raise ValueError("tendency_pair_count is inconsistent")
+    minimum_psr = float(metadata.minimum_phase_correlation_psr)
+    if metadata.tendency_pair_count == 0:
+        if not math.isnan(minimum_psr):
+            raise ValueError("unused tendency pairs must have NaN PSR")
+    elif not math.isfinite(minimum_psr):
+        raise ValueError("used tendency pairs must have finite PSR")
+    if not torch.equal(torch.isfinite(forecast), valid):
+        raise ValueError("valid_mask must match finite forecast values")
+    finite_tensors = (
+        state.echo_linear,
+        state.displacement_yx,
+        state.log_growth_per_step,
+        metadata.coverage_by_frame,
+        metadata.source_support,
+        metadata.motion_disagreement_px,
+        metadata.growth_disagreement,
+    )
+    if not all(
+        bool(torch.all(torch.isfinite(value))) for value in finite_tensors
+    ):
+        raise ValueError("forecast run state and metadata must be finite")
+    if math.isinf(float(metadata.motion_disagreement_mps)):
+        raise ValueError("motion_disagreement_mps cannot be infinite")
+    if bool(torch.any(state.echo_linear < 0)):
+        raise ValueError("state_echo_linear cannot be negative")
+    if not bool(
+        torch.all(
+            (metadata.coverage_by_frame >= 0)
+            & (metadata.coverage_by_frame <= 1)
+        )
+    ):
+        raise ValueError("coverage_by_frame must be in [0, 1]")
+    if not bool(
+        torch.all(
+            (metadata.source_support >= 0)
+            & (metadata.source_support <= 1)
+        )
+    ):
+        raise ValueError("source_support must be in [0, 1]")
+    if metadata.background_age_minutes is not None and (
+        not math.isfinite(metadata.background_age_minutes)
+        or metadata.background_age_minutes < 0
+    ):
+        raise ValueError("background age must be finite and nonnegative")
 
 
 @dataclass(frozen=True)
@@ -2224,7 +2377,8 @@ def forecast_from_state(
 ) -> ForecastResult:
     if config != run.config:
         raise ValueError("forecast config must match the run contract")
-    _validate_state_dynamics(state, config, run.grid_time_contract)
+    run.validate_integrity()
+    _validate_state_for_run(state, run)
     input_echo, input_audit = validate_physical_echo(
         state.echo_linear,
         name="forecast input state",
