@@ -2435,6 +2435,10 @@ def _amplitude_diagnostics(
             initial_reach
             < frozen.analysis_config.minimum_control_reachability
         )
+        precursor_attribution_region = (
+            initial_reach
+            < frozen.analysis_config.minimum_control_reachability
+        )
         if not bool(torch.any(precursor_required)):
             unresolved_fractions.append(zero)
             unresolved_pixel_fractions.append(zero)
@@ -2518,6 +2522,7 @@ def _amplitude_diagnostics(
                 )
                 > 0
             )
+            expanded_region &= precursor_attribution_region
             observed_echo = dbz_to_echo(
                 observations.dbz[step],
                 min_dbz=frozen.nowcast_config.min_dbz,
@@ -2565,6 +2570,7 @@ def _amplitude_diagnostics(
             observations.dbz[step],
             prediction_dbz[step],
             trajectory.frames_linear[step],
+            precursor_attribution_region,
             frozen,
             enabled=include_spatial_diagnostics,
         )
@@ -2645,6 +2651,7 @@ def _precursor_object_diagnostics(
     observed_dbz: Tensor,
     prediction_dbz: Tensor,
     prediction_echo: Tensor,
+    prediction_attribution_region: Tensor,
     frozen: FrozenOuterState,
     *,
     enabled: bool,
@@ -2709,6 +2716,7 @@ def _precursor_object_diagnostics(
         prediction_dbz,
         frozen.amplitude_displacement_offsets_yx,
     ):
+        expanded &= prediction_attribution_region
         integrated_echo_ratios.append(
             prediction_echo[expanded].sum() / observed_echo[indices].sum()
         )
