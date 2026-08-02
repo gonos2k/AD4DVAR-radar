@@ -381,8 +381,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v23`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v15`
+- `output_contract_version`: 현재 `nowcast-npz-v24`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v16`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -450,12 +450,14 @@ pair의 PSR이 `minimum_pair_psr_advantage` 이상 우세하면 그 pair만 사�
 합성·연구 설정이며 실제 레이더 hindcast로 보정해야 한다.
 
 인접 pair가 하나만 유효하고 20분 long pair도 유효하면 두 후보를 독립적으로
-검사한다. 신뢰도는 `PSR * common_coverage`에 long pair의 시간간격·형태변형
-위험을 나타내는 `long_pair_confidence_penalty`를 곱한다. 두 후보가 일관되면
-long pair가 `minimum_pair_psr_advantage` 이상 명확히 우세할 때만 교체하고,
-충돌하면 신뢰도 우위가 없는 성분만 persistence로 fail-close한다. long pair는
-adjacent pair와 관측을 공유하므로 두 값을 독립 표본처럼 평균하지 않는다.
-`operational` profile에서는 이 span penalty도 hindcast로 보정한 값을 CLI에
+검사한다. near-echo completeness가 이미 에코 주변 자료 가용성을 검사하므로
+에코와 무관한 전체 도메인 coverage는 confidence에 곱하지 않는다. 신뢰도는
+PSR에 long pair의 시간간격·형태변형 위험을 나타내는
+`long_pair_confidence_penalty`만 곱한다. long 또는 adjacent 후보가
+`minimum_pair_confidence_ratio` 이상 우세할 때만 교체하고, 충돌하면서 우위가
+없으면 해당 성분은 persistence로 fail-close한다. long pair는 adjacent pair와
+관측을 공유하므로 두 값을 독립 표본처럼 평균하지 않는다. `operational`
+profile에서는 span penalty와 confidence ratio를 모두 hindcast로 보정해 CLI에
 명시해야 한다.
 - `min_publish_support`: 유한한 예측값을 발행하는 최소 source support
 - `data_status`: `OBSERVED`, `PARTIAL`, `STALE_BACKGROUND`,

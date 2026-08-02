@@ -49,6 +49,7 @@ class NowcastConfig:
     maximum_pair_velocity_disagreement_mps: float = 10.0
     maximum_pair_growth_disagreement: float = math.log(1.10)
     minimum_pair_psr_advantage: float = 3.0
+    minimum_pair_confidence_ratio: float = 1.5
     long_pair_confidence_penalty: float = 0.5
     minimum_phase_correlation_psr: float = 8.0
     phase_correlation_sidelobe_radius_px: int = 2
@@ -90,6 +91,7 @@ class NowcastConfig:
             self.maximum_pair_velocity_disagreement_mps,
             self.maximum_pair_growth_disagreement,
             self.minimum_pair_psr_advantage,
+            self.minimum_pair_confidence_ratio,
             self.long_pair_confidence_penalty,
             self.minimum_phase_correlation_psr,
             self.max_log_growth_per_step,
@@ -141,6 +143,8 @@ class NowcastConfig:
                 raise ValueError(f"{name} must be positive")
         if self.minimum_pair_psr_advantage <= 0:
             raise ValueError("minimum_pair_psr_advantage must be positive")
+        if self.minimum_pair_confidence_ratio <= 1:
+            raise ValueError("minimum_pair_confidence_ratio must exceed 1")
         if not 0.0 < self.long_pair_confidence_penalty <= 1.0:
             raise ValueError(
                 "long_pair_confidence_penalty must be in (0, 1]"
@@ -2352,16 +2356,10 @@ def _combine_single_adjacent_and_long(
     adjacent_current = adjacent_pair_index + 1
     adjacent_confidence = _pair_confidence(
         adjacent_psr,
-        masks,
-        adjacent_previous,
-        adjacent_current,
         span_penalty=1.0,
     )
     long_confidence = _pair_confidence(
         long_psr,
-        masks,
-        0,
-        2,
         span_penalty=config.long_pair_confidence_penalty,
     )
     motion, motion_adjacent, motion_long, motion_selection = (
@@ -2497,16 +2495,10 @@ def _combine_single_adjacent_and_long(
 
 def _pair_confidence(
     psr: Tensor,
-    masks: Tensor,
-    previous_index: int,
-    current_index: int,
     *,
     span_penalty: float,
 ) -> Tensor:
-    common_coverage = torch.mean(
-        (masks[previous_index] & masks[current_index]).to(dtype=psr.dtype)
-    )
-    return psr * common_coverage * span_penalty
+    return psr * span_penalty
 
 
 def _select_single_adjacent_or_long_component(
@@ -2518,14 +2510,17 @@ def _select_single_adjacent_or_long_component(
     inconsistent: bool,
     config: NowcastConfig,
 ) -> tuple[Tensor, bool, bool, TendencyPairSelection]:
-    confidence_advantage = float(
-        (long_confidence - adjacent_confidence).detach()
-    )
+    long_value = float(long_confidence.detach())
+    adjacent_value = float(adjacent_confidence.detach())
     long_is_clearly_better = (
-        confidence_advantage >= config.minimum_pair_psr_advantage
+        long_value > adjacent_value + config.epsilon
+        and long_value
+        >= adjacent_value * config.minimum_pair_confidence_ratio
     )
     adjacent_is_clearly_better = (
-        -confidence_advantage >= config.minimum_pair_psr_advantage
+        adjacent_value > long_value + config.epsilon
+        and adjacent_value
+        >= long_value * config.minimum_pair_confidence_ratio
     )
     if inconsistent:
         if long_is_clearly_better:
