@@ -874,15 +874,13 @@ def _update_digest_with_array_bytes(
         digest.update(value.data.cast("B"))
         return
     buffer_elements = max(1, (1024**2) // max(1, value.dtype.itemsize))
-    iterator = np.nditer(
-        value,
-        flags=("external_loop", "buffered", "zerosize_ok"),
-        op_flags=(("readonly",),),
-        order="C",
-        buffersize=buffer_elements,
-    )
-    for chunk in iterator:
-        digest.update(np.asarray(chunk).data.cast("B"))
+    for index in np.ndindex(value.shape[:-1]):
+        row = np.asarray(value[index]).reshape(-1)
+        for start in range(0, row.size, buffer_elements):
+            chunk = np.ascontiguousarray(
+                row[start : start + buffer_elements]
+            )
+            digest.update(chunk.data.cast("B"))
 
 
 def seal_forecast_run_arrays(arrays: dict[str, Any]) -> dict[str, Any]:
