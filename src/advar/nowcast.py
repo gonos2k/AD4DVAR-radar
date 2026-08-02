@@ -1566,10 +1566,16 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
     ):
         raise ValueError("background contribution fraction must be in [0, 1]")
     if metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
-        if metadata.observation_state_support_fraction > config.epsilon:
+        observation_path_used = _path_has_contribution(
+            metadata.observation_path
+        )
+        background_path_used = _path_has_contribution(
+            metadata.background_path
+        )
+        if observation_path_used:
             expected_path_source = TendencySource.OBSERVATION
             expected_path = metadata.observation_path
-        elif background_fraction > config.epsilon:
+        elif background_path_used:
             expected_path_source = TendencySource.BACKGROUND
             expected_path = metadata.background_path
         else:
@@ -1712,6 +1718,10 @@ def _path_is_empty(path: StatePathProvenance) -> bool:
         and not path.extrapolated
         and path.age_minutes is None
     )
+
+
+def _path_has_contribution(path: StatePathProvenance) -> bool:
+    return path.age_minutes is not None
 
 
 def _aggregate_path_matches(
