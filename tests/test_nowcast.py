@@ -1724,6 +1724,82 @@ class NowcastTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "configured limit"):
             invalid.validate_issuance()
 
+    def test_forecast_rejects_state_grid_outside_run_contract(self) -> None:
+        frames = torch.full((3, 8, 8), 20.0, dtype=torch.float64)
+        issued = nowcast(frames, self.config)
+        state = replace(
+            issued.state,
+            echo_linear=issued.state.echo_linear[:4, :4].clone(),
+        )
+        metadata = replace(
+            issued.metadata,
+            source_support=issued.metadata.source_support[:4, :4].clone(),
+        )
+
+        with self.assertRaisesRegex(ValueError, "run input grid"):
+            forecast_result_from_state(
+                state,
+                metadata,
+                self.config,
+                run=issued.run,
+            )
+
+    def test_issuance_rejects_digest_consistent_invalid_structure(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        frames = torch.full((3, 8, 8), 20.0, dtype=torch.float64)
+        issued = nowcast(frames, self.config)
+
+        def reissue(**changes: object) -> object:
+            candidate = replace(issued, **changes)
+            state_digest = nowcast_module.state_metadata_digest(
+                candidate.state,
+                candidate.metadata,
+            )
+            forecast_digest = nowcast_module.tensor_digest(
+                candidate.forecast_dbz
+            )
+            valid_digest = nowcast_module.tensor_digest(candidate.valid_mask)
+            return replace(
+                candidate,
+                state_metadata_digest=state_digest,
+                forecast_dbz_digest=forecast_digest,
+                valid_mask_digest=valid_digest,
+                forecast_run_digest=(
+                    nowcast_module._forecast_run_identity_digest(
+                        candidate.run,
+                        state_digest,
+                        forecast_digest,
+                        valid_digest,
+                    )
+                ),
+            )
+
+        cases = (
+            (
+                reissue(
+                    forecast_dbz=issued.forecast_dbz[:-1].clone(),
+                    valid_mask=issued.valid_mask[:-1].clone(),
+                ),
+                "lead shape",
+            ),
+            (
+                reissue(
+                    metadata=replace(
+                        issued.metadata,
+                        source_support=(
+                            issued.metadata.source_support[:4, :4].clone()
+                        ),
+                    )
+                ),
+                "source_support",
+            ),
+        )
+
+        for candidate, message in cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    candidate.validate_issuance()
+
     def test_fractional_advection_is_non_negative_and_does_not_gain_mass(
         self,
     ) -> None:
