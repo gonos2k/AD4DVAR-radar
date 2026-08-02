@@ -477,6 +477,43 @@ class NowcastTests(unittest.TestCase):
         )
         self.assertTrue(search_interior)
 
+    def test_physical_psr_is_translation_invariant(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = NowcastConfig(
+            phase_correlation_sidelobe_radius_m=1000.0,
+        )
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="7" * 64,
+        )
+        correlation = torch.arange(64, dtype=torch.float64).reshape(8, 8)
+        correlation[0, 0] = 100.0
+        shifted = torch.roll(correlation, shifts=(2, 3), dims=(0, 1))
+
+        origin_psr = nowcast_module._peak_to_sidelobe_ratio(
+            correlation,
+            0,
+            0,
+            config,
+            contract,
+        )
+        shifted_psr = nowcast_module._peak_to_sidelobe_ratio(
+            shifted,
+            2,
+            3,
+            config,
+            contract,
+        )
+
+        torch.testing.assert_close(shifted_psr, origin_psr)
+
     def test_phase_correlation_rejects_peak_outside_motion_range(self) -> None:
         nowcast_module = import_module("advar.nowcast")
         previous = linear_to_dbz(self.echo, self.config)

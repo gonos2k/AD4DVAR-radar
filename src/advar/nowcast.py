@@ -2514,10 +2514,18 @@ def _peak_to_sidelobe_ratio(
             )
         assert grid_time_contract.pixel_to_projected_matrix_m is not None
         (a, b), (c, d) = grid_time_contract.pixel_to_projected_matrix_m
-        signed_y = torch.arange(height, device=correlation.device)
-        signed_x = torch.arange(width, device=correlation.device)
-        signed_y = torch.where(signed_y <= height // 2, signed_y, signed_y - height)
-        signed_x = torch.where(signed_x <= width // 2, signed_x, signed_x - width)
+        signed_y = torch.remainder(
+            torch.arange(height, device=correlation.device)
+            - peak_y
+            + height // 2,
+            height,
+        ) - height // 2
+        signed_x = torch.remainder(
+            torch.arange(width, device=correlation.device)
+            - peak_x
+            + width // 2,
+            width,
+        ) - width // 2
         row = signed_y[:, None].to(dtype=correlation.dtype)
         column = signed_x[None, :].to(dtype=correlation.dtype)
         distance = torch.sqrt(
