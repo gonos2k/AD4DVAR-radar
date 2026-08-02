@@ -1667,14 +1667,10 @@ def _estimate_source_tendencies(
             config,
             grid_time_contract,
         )
-        growth_disagreement = torch.abs(second_growth - first_growth)
         motion_is_inconsistent = _motion_pairs_are_inconsistent(
             motion_disagreement,
             motion_disagreement_mps,
             config,
-        )
-        growth_is_inconsistent = float(growth_disagreement.detach()) >= (
-            config.maximum_pair_growth_disagreement - config.epsilon
         )
         motion, motion_indices, motion_selection = _combine_pair_component(
             first_motion,
@@ -1683,6 +1679,28 @@ def _estimate_source_tendencies(
             second_psr,
             inconsistent=motion_is_inconsistent,
             config=config,
+        )
+        first_growth = _growth_aligned_with_motion(
+            linear,
+            masks,
+            0,
+            1,
+            motion,
+            config,
+        )
+        second_growth = _growth_aligned_with_motion(
+            linear,
+            masks,
+            1,
+            2,
+            motion,
+            config,
+        )
+        growth_disagreement = torch.abs(second_growth - first_growth)
+        growth_is_inconsistent = (
+            motion_selection is TendencyPairSelection.PERSISTENCE
+            or float(growth_disagreement.detach())
+            >= config.maximum_pair_growth_disagreement - config.epsilon
         )
         growth, growth_indices, growth_selection = _combine_pair_component(
             first_growth,
@@ -1756,6 +1774,7 @@ def _estimate_source_tendencies(
             adjacent_estimate,
             long_estimate,
             adjacent_pair_index,
+            linear,
             masks,
             config,
             grid_time_contract,
@@ -1939,12 +1958,13 @@ def _combine_single_adjacent_and_long(
     adjacent: tuple[Tensor, Tensor, Tensor],
     long: tuple[Tensor, Tensor, Tensor],
     adjacent_pair_index: int,
+    linear: Tensor,
     masks: Tensor,
     config: NowcastConfig,
     grid_time_contract: RadarGridTimeContract | None,
 ) -> _SourceTendencyEstimate:
-    adjacent_motion, adjacent_growth, adjacent_psr = adjacent
-    long_motion, long_growth, long_psr = long
+    adjacent_motion, adjacent_source_growth, adjacent_psr = adjacent
+    long_motion, long_source_growth, long_psr = long
     motion_disagreement = torch.linalg.vector_norm(
         long_motion - adjacent_motion
     )
@@ -1954,14 +1974,10 @@ def _combine_single_adjacent_and_long(
         config,
         grid_time_contract,
     )
-    growth_disagreement = torch.abs(long_growth - adjacent_growth)
     motion_is_inconsistent = _motion_pairs_are_inconsistent(
         motion_disagreement,
         motion_disagreement_mps,
         config,
-    )
-    growth_is_inconsistent = float(growth_disagreement.detach()) >= (
-        config.maximum_pair_growth_disagreement - config.epsilon
     )
     adjacent_previous = adjacent_pair_index
     adjacent_current = adjacent_pair_index + 1
@@ -1989,6 +2005,28 @@ def _combine_single_adjacent_and_long(
             config=config,
         )
     )
+    adjacent_growth = _growth_aligned_with_motion(
+        linear,
+        masks,
+        adjacent_previous,
+        adjacent_current,
+        motion,
+        config,
+    )
+    long_growth = _growth_aligned_with_motion(
+        linear,
+        masks,
+        0,
+        2,
+        motion,
+        config,
+    )
+    growth_disagreement = torch.abs(long_growth - adjacent_growth)
+    growth_is_inconsistent = (
+        motion_selection is TendencyPairSelection.PERSISTENCE
+        or float(growth_disagreement.detach())
+        >= config.maximum_pair_growth_disagreement - config.epsilon
+    )
     growth, growth_adjacent, growth_long, growth_selection = (
         _select_single_adjacent_or_long_component(
             adjacent_growth,
@@ -2012,11 +2050,11 @@ def _combine_single_adjacent_and_long(
         else adjacent_psr.new_full((), torch.nan)
     )
     if motion_selection is TendencyPairSelection.LONG:
-        source_paths = _long_source_paths(long_motion, long_growth)
+        source_paths = _long_source_paths(long_motion, long_source_growth)
     elif motion_selection is TendencyPairSelection.SINGLE:
         source_paths = _single_adjacent_source_paths(
             adjacent_motion,
-            adjacent_growth,
+            adjacent_source_growth,
             adjacent_pair_index,
         )
     else:
@@ -2149,6 +2187,39 @@ def _combine_pair_component(
     return combined, (1,), TendencyPairSelection.RECENT
 
 
+def _growth_aligned_with_motion(
+    linear: Tensor,
+    masks: Tensor,
+    previous_index: int,
+    current_index: int,
+    motion_per_step: Tensor,
+    config: NowcastConfig,
+) -> Tensor:
+    previous_mask = masks[previous_index]
+    current_mask = masks[current_index]
+    previous_echo = torch.where(
+        previous_mask,
+        linear[previous_index],
+        linear.new_zeros(()),
+    )
+    current_echo = torch.where(
+        current_mask,
+        linear[current_index],
+        linear.new_zeros(()),
+    )
+    step_span = current_index - previous_index
+    total_growth = _log_aligned_growth(
+        previous_echo,
+        current_echo,
+        previous_mask,
+        current_mask,
+        step_span * motion_per_step,
+        config,
+        max_log_growth=config.max_log_growth_per_step * step_span,
+    )
+    return total_growth / step_span
+
+
 def _estimate_available_pair(
     frames_dbz: Tensor,
     masks: Tensor,
@@ -2223,28 +2294,18 @@ def _estimate_available_pair(
             config.maximum_motion_speed_mps + config.epsilon
         ):
             return None
-    previous_echo = torch.where(
-        previous_mask,
-        linear[previous_index],
-        linear.new_zeros(()),
-    )
-    current_echo = torch.where(
-        current_mask,
-        linear[current_index],
-        linear.new_zeros(()),
-    )
-    total_growth = _log_aligned_growth(
-        previous_echo,
-        current_echo,
-        previous_mask,
-        current_mask,
-        total_motion,
+    per_step_motion = total_motion / step_span
+    growth = _growth_aligned_with_motion(
+        linear,
+        masks,
+        previous_index,
+        current_index,
+        per_step_motion,
         config,
-        max_log_growth=config.max_log_growth_per_step * step_span,
     )
     return (
-        total_motion / step_span,
-        total_growth / step_span,
+        per_step_motion,
+        growth,
         phase_correlation_psr,
     )
 

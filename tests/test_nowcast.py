@@ -605,22 +605,19 @@ class NowcastTests(unittest.TestCase):
             places=1,
         )
         self.assertEqual(metadata.motion_pair_count, 0)
-        self.assertEqual(metadata.growth_pair_count, 2)
+        self.assertEqual(metadata.growth_pair_count, 0)
         self.assertEqual(
             metadata.motion_pair_selection,
             TendencyPairSelection.PERSISTENCE,
         )
         self.assertEqual(
             metadata.growth_pair_selection,
-            TendencyPairSelection.BLENDED,
+            TendencyPairSelection.PERSISTENCE,
         )
         self.assertTrue(metadata.motion_pair_conflict)
-        self.assertFalse(metadata.growth_pair_conflict)
-        self.assertEqual(metadata.tendency_pair_count, 2)
-        self.assertGreaterEqual(
-            float(metadata.minimum_phase_correlation_psr),
-            self.config.minimum_phase_correlation_psr,
-        )
+        self.assertTrue(metadata.growth_pair_conflict)
+        self.assertEqual(metadata.tendency_pair_count, 0)
+        self.assertTrue(torch.isnan(metadata.minimum_phase_correlation_psr))
 
     def test_conflicting_growth_without_psr_advantage_uses_persistence(
         self,
@@ -696,9 +693,14 @@ class NowcastTests(unittest.TestCase):
             TendencyPairSelection.PERSISTENCE,
         )
         self.assertEqual(tendency.motion_pair_count, 0)
-        self.assertEqual(tendency.growth_pair_count, 2)
+        self.assertEqual(tendency.growth_pair_count, 0)
         self.assertTrue(tendency.motion_pair_conflict)
-        self.assertFalse(tendency.growth_pair_conflict)
+        self.assertTrue(tendency.growth_pair_conflict)
+        self.assertEqual(
+            tendency.growth_pair_selection,
+            TendencyPairSelection.PERSISTENCE,
+        )
+        self.assertEqual(float(tendency.log_growth_per_step), 0.0)
         torch.testing.assert_close(
             tendency.source_displacement_yx,
             torch.tensor(
@@ -707,6 +709,58 @@ class NowcastTests(unittest.TestCase):
             ),
         )
         self.assertTrue(bool(torch.all(tendency.source_usable)))
+
+    def test_growth_is_reestimated_with_selected_motion(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        previous = torch.zeros((8, 8), dtype=torch.float64)
+        current = torch.zeros_like(previous)
+        previous[2:6, 1:3] = 1.0
+        current[2:6, 3:5] = 1.0
+        previous_mask = torch.zeros_like(previous, dtype=torch.bool)
+        current_mask = torch.zeros_like(previous, dtype=torch.bool)
+        previous_mask[1:7, 0:5] = True
+        current_mask[1:7, 2:7] = True
+        linear = torch.stack((previous, current, previous))
+        masks = torch.stack((previous_mask, current_mask, previous_mask))
+        estimates = (
+            (
+                torch.tensor([0.0, 2.0], dtype=torch.float64),
+                torch.tensor(0.0, dtype=torch.float64),
+                torch.tensor(12.0, dtype=torch.float64),
+            ),
+            (
+                torch.tensor([0.0, -2.0], dtype=torch.float64),
+                torch.tensor(0.0, dtype=torch.float64),
+                torch.tensor(12.0, dtype=torch.float64),
+            ),
+        )
+
+        with patch.object(
+            nowcast_module,
+            "_estimate_available_pair",
+            side_effect=estimates,
+        ):
+            tendency = nowcast_module._estimate_source_tendencies(
+                linear,
+                masks,
+                linear,
+                self.config,
+                None,
+            )
+
+        torch.testing.assert_close(
+            tendency.displacement_yx,
+            torch.zeros(2, dtype=torch.float64),
+        )
+        self.assertAlmostEqual(
+            float(tendency.growth_disagreement),
+            2.0 * self.config.max_log_growth_per_step,
+        )
+        self.assertTrue(tendency.growth_pair_conflict)
+        self.assertEqual(
+            tendency.growth_pair_selection,
+            TendencyPairSelection.PERSISTENCE,
+        )
 
     def test_direction_turn_uses_each_source_path_for_current_state(
         self,
@@ -782,10 +836,17 @@ class NowcastTests(unittest.TestCase):
             ),
         )
 
-        with patch.object(
-            nowcast_module,
-            "_estimate_available_pair",
-            side_effect=estimates,
+        with (
+            patch.object(
+                nowcast_module,
+                "_estimate_available_pair",
+                side_effect=estimates,
+            ),
+            patch.object(
+                nowcast_module,
+                "_growth_aligned_with_motion",
+                side_effect=(estimates[0][1], estimates[1][1]),
+            ),
         ):
             tendency = nowcast_module._estimate_source_tendencies(
                 values,
@@ -833,10 +894,17 @@ class NowcastTests(unittest.TestCase):
             torch.tensor(30.0, dtype=torch.float64),
         )
 
-        with patch.object(
-            nowcast_module,
-            "_estimate_available_pair",
-            side_effect=(adjacent, None, long),
+        with (
+            patch.object(
+                nowcast_module,
+                "_estimate_available_pair",
+                side_effect=(adjacent, None, long),
+            ),
+            patch.object(
+                nowcast_module,
+                "_growth_aligned_with_motion",
+                side_effect=(adjacent[1], long[1]),
+            ),
         ):
             tendency = nowcast_module._estimate_source_tendencies(
                 values,
@@ -920,10 +988,17 @@ class NowcastTests(unittest.TestCase):
             torch.tensor(24.0, dtype=torch.float64),
         )
 
-        with patch.object(
-            nowcast_module,
-            "_estimate_available_pair",
-            side_effect=(adjacent, None, long),
+        with (
+            patch.object(
+                nowcast_module,
+                "_estimate_available_pair",
+                side_effect=(adjacent, None, long),
+            ),
+            patch.object(
+                nowcast_module,
+                "_growth_aligned_with_motion",
+                side_effect=(adjacent[1], long[1]),
+            ),
         ):
             tendency = nowcast_module._estimate_source_tendencies(
                 values,

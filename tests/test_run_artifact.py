@@ -227,7 +227,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
         self.assertFalse(loaded.metadata.motion_pair_conflict)
         self.assertFalse(loaded.metadata.growth_pair_conflict)
 
-    def test_round_trip_preserves_independent_pair_conflict_provenance(
+    def test_round_trip_preserves_motion_conditioned_growth_conflict(
         self,
     ) -> None:
         coordinates = torch.arange(64, dtype=torch.float64)
@@ -242,14 +242,14 @@ class ForecastRunArtifactTests(unittest.TestCase):
         )
 
         self.assertTrue(result.metadata.motion_pair_conflict)
-        self.assertFalse(result.metadata.growth_pair_conflict)
+        self.assertTrue(result.metadata.growth_pair_conflict)
         self.assertEqual(
             result.metadata.motion_pair_selection,
             TendencyPairSelection.PERSISTENCE,
         )
         self.assertEqual(
             result.metadata.growth_pair_selection,
-            TendencyPairSelection.BLENDED,
+            TendencyPairSelection.PERSISTENCE,
         )
 
         with tempfile.TemporaryDirectory() as temporary:
@@ -258,14 +258,14 @@ class ForecastRunArtifactTests(unittest.TestCase):
             loaded = load_forecast_run(path)
 
         self.assertTrue(loaded.metadata.motion_pair_conflict)
-        self.assertFalse(loaded.metadata.growth_pair_conflict)
+        self.assertTrue(loaded.metadata.growth_pair_conflict)
         self.assertEqual(
             loaded.metadata.motion_pair_selection,
             TendencyPairSelection.PERSISTENCE,
         )
         self.assertEqual(
             loaded.metadata.growth_pair_selection,
-            TendencyPairSelection.BLENDED,
+            TendencyPairSelection.PERSISTENCE,
         )
         loaded.validate_issuance()
         snapshot = compute_sensitivity_snapshot_from_run(
@@ -281,19 +281,19 @@ class ForecastRunArtifactTests(unittest.TestCase):
             zip(snapshot.context_feature_names, snapshot.context_features)
         )
         self.assertEqual(float(context["motion_pair_conflict"]), 1.0)
-        self.assertEqual(float(context["growth_pair_conflict"]), 0.0)
+        self.assertEqual(float(context["growth_pair_conflict"]), 1.0)
         self.assertEqual(
             float(context["motion_pair_selection_persistence"]),
             1.0,
         )
         self.assertEqual(
-            float(context["growth_pair_selection_blended"]),
+            float(context["growth_pair_selection_persistence"]),
             1.0,
         )
-        self.assertEqual(float(context["phase_correlation_psr_available"]), 1.0)
-        torch.testing.assert_close(
-            context["log1p_minimum_phase_correlation_psr"],
-            torch.log1p(loaded.metadata.minimum_phase_correlation_psr),
+        self.assertEqual(float(context["phase_correlation_psr_available"]), 0.0)
+        self.assertEqual(
+            float(context["log1p_minimum_phase_correlation_psr"]),
+            0.0,
         )
 
     def test_loader_materializes_each_archive_member_once(self) -> None:
