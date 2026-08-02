@@ -1968,6 +1968,47 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
         self.assertTrue(diagnostics.degrades_confidence(self.analysis_config))
 
+    def test_overlapping_object_footprints_share_prediction_once(self) -> None:
+        frames = torch.full((3, 9, 9), -10.0, dtype=torch.float64)
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+        precursor = torch.zeros((9, 9), dtype=torch.bool)
+        precursor[4, 3] = True
+        precursor[4, 5] = True
+        unresolved = torch.zeros_like(precursor)
+        quality = torch.ones((9, 9), dtype=torch.float64)
+        observed_dbz = torch.full((9, 9), -10.0, dtype=torch.float64)
+        observed_dbz[precursor] = 20.0
+        prediction_dbz = torch.full_like(observed_dbz, -10.0)
+        prediction_dbz[4, 4] = 20.0
+        prediction_echo = dbz_to_echo(
+            prediction_dbz,
+            min_dbz=self.nowcast_config.min_dbz,
+            max_dbz=self.nowcast_config.max_dbz,
+        )
+
+        diagnostics = variational_module._precursor_object_diagnostics(
+            precursor,
+            unresolved,
+            quality,
+            observed_dbz,
+            prediction_dbz,
+            prediction_echo,
+            frozen,
+            enabled=True,
+        )
+
+        self.assertEqual(int(diagnostics[0]), 2)
+        self.assertEqual(int(diagnostics[1]), 0)
+        self.assertEqual(float(diagnostics[2]), 0.0)
+        self.assertAlmostEqual(float(diagnostics[3]), 0.5)
+        self.assertAlmostEqual(float(diagnostics[4]), 0.5)
+        self.assertAlmostEqual(float(diagnostics[5]), 0.5, places=5)
+        self.assertAlmostEqual(float(diagnostics[6]), 0.5, places=5)
+
     def test_operational_confidence_policy_falls_back_on_under_and_over(
         self,
     ) -> None:

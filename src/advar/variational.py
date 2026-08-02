@@ -2659,6 +2659,7 @@ def _precursor_object_diagnostics(
     object_count = zero.new_tensor(len(components), dtype=torch.long)
     insufficient_count = zero.to(dtype=torch.long)
     unresolved_fractions: list[Tensor] = []
+    eligible_components: list[Tensor] = []
     integrated_echo_ratios: list[Tensor] = []
     soft_echo_area_ratios: list[Tensor] = []
     flat_quality = quality.flatten()
@@ -2700,12 +2701,14 @@ def _precursor_object_diagnostics(
         unresolved_fractions.append(
             selected_quality[flat_unresolved[indices]].sum() / total_weight
         )
-        object_mask = torch.zeros_like(precursor_required)
-        object_mask.flatten()[indices] = True
-        expanded = _footprint_maximum(
-            object_mask.to(dtype=prediction_dbz.dtype),
-            frozen.amplitude_displacement_offsets_yx,
-        ) > 0
+        eligible_components.append(indices)
+
+    for indices, expanded in _overlapping_footprint_groups(
+        eligible_components,
+        precursor_required,
+        prediction_dbz,
+        frozen.amplitude_displacement_offsets_yx,
+    ):
         integrated_echo_ratios.append(
             prediction_echo[expanded].sum() / observed_echo[indices].sum()
         )
@@ -2738,6 +2741,43 @@ def _precursor_object_diagnostics(
         torch.max(echo_values),
         torch.min(area_values),
         torch.max(area_values),
+    )
+
+
+def _overlapping_footprint_groups(
+    components: list[Tensor],
+    mask_template: Tensor,
+    value_template: Tensor,
+    offsets_yx: tuple[tuple[int, int], ...],
+) -> tuple[tuple[Tensor, Tensor], ...]:
+    groups: list[tuple[list[Tensor], Tensor]] = []
+    for indices in components:
+        object_mask = torch.zeros_like(mask_template)
+        object_mask.flatten()[indices] = True
+        expanded = _footprint_maximum(
+            object_mask.to(dtype=value_template.dtype),
+            offsets_yx,
+        ) > 0
+        overlaps = [
+            index
+            for index, (_, group_mask) in enumerate(groups)
+            if bool(torch.any(expanded & group_mask))
+        ]
+        if not overlaps:
+            groups.append(([indices], expanded))
+            continue
+
+        merged_indices = [indices]
+        merged_mask = expanded
+        for index in reversed(overlaps):
+            group_indices, group_mask = groups.pop(index)
+            merged_indices.extend(group_indices)
+            merged_mask |= group_mask
+        groups.append((merged_indices, merged_mask))
+
+    return tuple(
+        (torch.cat(indices), expanded)
+        for indices, expanded in groups
     )
 
 

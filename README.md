@@ -382,8 +382,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v25`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v17`
+- `output_contract_version`: 현재 `nowcast-npz-v26`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v18`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -494,7 +494,9 @@ profile에서는 span penalty와 confidence ratio를 모두 hindcast로 보정�
   `analysis_maximum_object_integrated_echo_ratio_by_time`,
   `analysis_minimum_object_soft_echo_area_ratio_by_time`,
   `analysis_maximum_object_soft_echo_area_ratio_by_time`: 작은 객체 실패가
-  전체 시간별 비율에 희석되지 않도록 보존한 객체별 최악값
+  전체 시간별 비율에 희석되지 않도록 보존한 최악값. unresolved fraction은
+  원 객체별로 계산하고, 에코 적분·면적은 물리 tolerance footprint가 겹치는
+  객체를 하나의 matching group으로 묶어 같은 예측 에코를 중복 귀속하지 않는다.
 - `analysis_amplitude_confidence_failed`: 적분량·soft area의 양방향 한계 또는
   established-echo 성장·객체별 신뢰도 한계를 벗어났는지 여부
 - `analysis_established_echo_excess_growth_fraction_by_time`,
