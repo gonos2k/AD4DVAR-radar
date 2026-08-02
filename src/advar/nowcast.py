@@ -54,6 +54,8 @@ class NowcastConfig:
     phase_correlation_sidelobe_radius_px: int = 2
     phase_correlation_sidelobe_radius_m: float | None = None
     max_log_growth_per_step: float = math.log(1.35)
+    minimum_growth_overlap_support: float = 4.0
+    minimum_growth_overlap_area_km2: float | None = None
     growth_decay_minutes: float = 60.0
     maximum_background_age_minutes: float = 60.0
     min_publish_support: float = 0.95
@@ -91,6 +93,7 @@ class NowcastConfig:
             self.long_pair_confidence_penalty,
             self.minimum_phase_correlation_psr,
             self.max_log_growth_per_step,
+            self.minimum_growth_overlap_support,
             self.growth_decay_minutes,
             self.maximum_background_age_minutes,
             self.min_publish_support,
@@ -159,6 +162,20 @@ class NowcastConfig:
             )
         if self.max_log_growth_per_step < 0:
             raise ValueError("max_log_growth_per_step cannot be negative")
+        if self.minimum_growth_overlap_support <= 0:
+            raise ValueError("minimum_growth_overlap_support must be positive")
+        if self.minimum_growth_overlap_area_km2 is not None and (
+            isinstance(self.minimum_growth_overlap_area_km2, bool)
+            or not isinstance(
+                self.minimum_growth_overlap_area_km2,
+                (int, float),
+            )
+            or not math.isfinite(self.minimum_growth_overlap_area_km2)
+            or self.minimum_growth_overlap_area_km2 <= 0
+        ):
+            raise ValueError(
+                "minimum_growth_overlap_area_km2 must be positive"
+            )
         if self.growth_decay_minutes <= 0:
             raise ValueError("growth_decay_minutes must be positive")
         if self.maximum_background_age_minutes <= 0:
@@ -619,6 +636,13 @@ class _SourceTendencyEstimate:
     growth_pair_selection: TendencyPairSelection
     motion_pair_conflict: bool
     growth_pair_conflict: bool
+    minimum_growth_overlap_support: Tensor
+    minimum_growth_overlap_area_km2: Tensor
+    reconstruction_pair_count: int
+    reconstruction_selection: TendencyPairSelection
+    reconstruction_minimum_psr: Tensor
+    reconstruction_conflict: bool
+    reconstruction_extrapolated: bool
 
     @property
     def future_available(self) -> bool:
@@ -627,6 +651,37 @@ class _SourceTendencyEstimate:
     @property
     def reconstruction_available(self) -> bool:
         return bool(torch.any(self.source_usable))
+
+
+@dataclass(frozen=True)
+class _GrowthEvidence:
+    value: Tensor
+    available: bool
+    overlap_support: Tensor
+    overlap_area_km2: Tensor
+    aligned_previous_integral: Tensor
+    current_integral: Tensor
+
+
+def _minimum_growth_evidence(
+    evidence: tuple[_GrowthEvidence, ...],
+    used_indices: tuple[int, ...],
+    reference: Tensor,
+) -> tuple[Tensor, Tensor]:
+    if not used_indices:
+        unavailable = reference.new_full((), torch.nan)
+        return unavailable, unavailable.clone()
+    used = tuple(evidence[index] for index in used_indices)
+    minimum_support = torch.min(
+        torch.stack(tuple(item.overlap_support for item in used))
+    )
+    areas = torch.stack(tuple(item.overlap_area_km2 for item in used))
+    minimum_area = (
+        torch.min(areas)
+        if bool(torch.all(torch.isfinite(areas)))
+        else reference.new_full((), torch.nan)
+    )
+    return minimum_support, minimum_area
 
 
 _FORECAST_INPUT_BUNDLE_VERSION = "forecast-input-bundle-v2"
@@ -728,6 +783,15 @@ class ForecastMetadata:
     growth_pair_selection: TendencyPairSelection = TendencyPairSelection.NONE
     motion_pair_conflict: bool = False
     growth_pair_conflict: bool = False
+    state_path_source: TendencySource = TendencySource.NONE
+    state_path_mode: TendencyPairSelection = TendencyPairSelection.NONE
+    state_path_pair_count: int = 0
+    state_path_minimum_psr: float = math.nan
+    state_path_conflict: bool = False
+    state_path_extrapolated: bool = False
+    state_path_age_minutes: float | None = None
+    minimum_growth_overlap_support: float = math.nan
+    minimum_growth_overlap_area_km2: float = math.nan
 
     def __post_init__(self) -> None:
         if (
@@ -1525,6 +1589,7 @@ def estimate_prepared_state(
     if grid_time_contract is None and (
         config.pair_echo_dilation_m is not None
         or config.phase_correlation_sidelobe_radius_m is not None
+        or config.minimum_growth_overlap_area_km2 is not None
     ):
         raise ValueError("physical pair settings require a grid/time contract")
     observation_linear = dbz_to_echo(
@@ -1563,6 +1628,7 @@ def estimate_prepared_state(
         current_echo,
         current_source_support,
         background_contribution_fraction,
+        state_path_source,
     ) = _merge_current_state(
         prepared,
         observation_linear,
@@ -1580,6 +1646,21 @@ def estimate_prepared_state(
     background_used = (
         background_contribution_fraction > config.epsilon
         or background_tendency_used
+    )
+    state_paths = (
+        observation_paths
+        if state_path_source is TendencySource.OBSERVATION
+        else background_paths
+    )
+    state_masks = (
+        prepared.observed_mask
+        if state_path_source is TendencySource.OBSERVATION
+        else prepared.background_mask
+    )
+    state_path_age_minutes = _state_path_age_minutes(
+        state_paths,
+        state_masks,
+        config.interval_minutes,
     )
     metadata = ForecastMetadata(
         data_status=prepared.data_status,
@@ -1604,6 +1685,21 @@ def estimate_prepared_state(
         growth_pair_selection=tendency.growth_pair_selection,
         motion_pair_conflict=tendency.motion_pair_conflict,
         growth_pair_conflict=tendency.growth_pair_conflict,
+        state_path_source=state_path_source,
+        state_path_mode=state_paths.reconstruction_selection,
+        state_path_pair_count=state_paths.reconstruction_pair_count,
+        state_path_minimum_psr=float(
+            state_paths.reconstruction_minimum_psr.detach()
+        ),
+        state_path_conflict=state_paths.reconstruction_conflict,
+        state_path_extrapolated=state_paths.reconstruction_extrapolated,
+        state_path_age_minutes=state_path_age_minutes,
+        minimum_growth_overlap_support=float(
+            tendency.minimum_growth_overlap_support.detach()
+        ),
+        minimum_growth_overlap_area_km2=float(
+            tendency.minimum_growth_overlap_area_km2.detach()
+        ),
     )
     return state, metadata
 
@@ -1654,7 +1750,7 @@ def _estimate_source_tendencies(
     grid_time_contract: RadarGridTimeContract | None,
 ) -> _SourceTendencyEstimate:
     adjacent_estimates: list[
-        tuple[int, tuple[Tensor, Tensor, Tensor]]
+        tuple[int, tuple[Tensor, _GrowthEvidence, Tensor]]
     ] = []
     for pair_index, (previous_index, current_index) in enumerate(
         ((0, 1), (1, 2))
@@ -1676,8 +1772,8 @@ def _estimate_source_tendencies(
             adjacent_estimates[0][1],
             adjacent_estimates[1][1],
         )
-        first_motion, first_growth, first_psr = adjacent_estimates[0][1]
-        second_motion, second_growth, second_psr = adjacent_estimates[1][1]
+        first_motion, _, first_psr = adjacent_estimates[0][1]
+        second_motion, _, second_psr = adjacent_estimates[1][1]
         motion_disagreement = torch.linalg.vector_norm(
             second_motion - first_motion
         )
@@ -1700,35 +1796,37 @@ def _estimate_source_tendencies(
             inconsistent=motion_is_inconsistent,
             config=config,
         )
-        first_growth = _growth_aligned_with_motion(
+        first_growth_evidence = _growth_evidence_aligned_with_motion(
             linear,
             masks,
             0,
             1,
             motion,
             config,
+            grid_time_contract,
         )
-        second_growth = _growth_aligned_with_motion(
+        second_growth_evidence = _growth_evidence_aligned_with_motion(
             linear,
             masks,
             1,
             2,
             motion,
             config,
+            grid_time_contract,
         )
-        growth_disagreement = torch.abs(second_growth - first_growth)
-        growth_is_inconsistent = (
-            motion_selection is TendencyPairSelection.PERSISTENCE
-            or float(growth_disagreement.detach())
-            >= config.maximum_pair_growth_disagreement - config.epsilon
-        )
-        growth, growth_indices, growth_selection = _combine_pair_component(
-            first_growth,
-            second_growth,
+        (
+            growth,
+            growth_indices,
+            growth_selection,
+            growth_disagreement,
+            growth_is_inconsistent,
+        ) = _combine_adjacent_growth_evidence(
+            first_growth_evidence,
+            second_growth_evidence,
             first_psr,
             second_psr,
-            inconsistent=growth_is_inconsistent,
-            config=config,
+            motion_selection,
+            config,
         )
         used_indices = tuple(sorted(set(motion_indices) | set(growth_indices)))
         minimum_psr = (
@@ -1742,6 +1840,13 @@ def _estimate_source_tendencies(
             )
             if used_indices
             else linear.new_full((), torch.nan)
+        )
+        minimum_growth_support, minimum_growth_area = (
+            _minimum_growth_evidence(
+                (first_growth_evidence, second_growth_evidence),
+                growth_indices,
+                linear,
+            )
         )
         return _SourceTendencyEstimate(
             displacement_yx=motion,
@@ -1760,6 +1865,15 @@ def _estimate_source_tendencies(
             growth_pair_selection=growth_selection,
             motion_pair_conflict=motion_is_inconsistent,
             growth_pair_conflict=growth_is_inconsistent,
+            minimum_growth_overlap_support=minimum_growth_support,
+            minimum_growth_overlap_area_km2=minimum_growth_area,
+            reconstruction_pair_count=2,
+            reconstruction_selection=TendencyPairSelection.BLENDED,
+            reconstruction_minimum_psr=torch.min(
+                torch.stack((first_psr, second_psr))
+            ),
+            reconstruction_conflict=motion_is_inconsistent,
+            reconstruction_extrapolated=False,
         )
 
     zero_motion = linear.new_zeros(2)
@@ -1810,7 +1924,11 @@ def _estimate_source_tendencies(
         grid_time_contract,
     )
     if long_estimate is None:
-        source_paths = _uniform_source_paths(zero_motion, zero_growth)
+        source_paths = (
+            _uniform_source_paths(zero_motion, zero_growth)
+            if bool(torch.any(masks[-1]))
+            else _latest_only_source_paths(zero_motion, zero_growth)
+        )
         return _SourceTendencyEstimate(
             displacement_yx=zero_motion,
             log_growth_per_step=zero_growth,
@@ -1828,6 +1946,17 @@ def _estimate_source_tendencies(
             growth_pair_selection=TendencyPairSelection.NONE,
             motion_pair_conflict=False,
             growth_pair_conflict=False,
+            minimum_growth_overlap_support=unavailable_psr,
+            minimum_growth_overlap_area_km2=unavailable_psr,
+            reconstruction_pair_count=0,
+            reconstruction_selection=(
+                TendencyPairSelection.PERSISTENCE
+                if bool(torch.any(masks[-1]))
+                else TendencyPairSelection.NONE
+            ),
+            reconstruction_minimum_psr=unavailable_psr,
+            reconstruction_conflict=False,
+            reconstruction_extrapolated=bool(torch.any(masks[-1])),
         )
 
     motion, growth, psr = long_estimate
@@ -1870,11 +1999,13 @@ def _uniform_source_paths(
 
 
 def _adjacent_source_paths(
-    earlier: tuple[Tensor, Tensor, Tensor],
-    recent: tuple[Tensor, Tensor, Tensor],
+    earlier: tuple[Tensor, _GrowthEvidence, Tensor],
+    recent: tuple[Tensor, _GrowthEvidence, Tensor],
 ) -> tuple[Tensor, Tensor, Tensor]:
-    earlier_motion, earlier_growth, _ = earlier
-    recent_motion, recent_growth, _ = recent
+    earlier_motion, earlier_growth_evidence, _ = earlier
+    recent_motion, recent_growth_evidence, _ = recent
+    earlier_growth = earlier_growth_evidence.value
+    recent_growth = recent_growth_evidence.value
     zero_motion = torch.zeros_like(earlier_motion)
     zero_growth = torch.zeros_like(earlier_growth)
     return (
@@ -1937,23 +2068,38 @@ def _long_source_paths(
 
 def _single_pair_tendency(
     motion: Tensor,
-    growth: Tensor,
+    growth_evidence: _GrowthEvidence,
     psr: Tensor,
     *,
     selection: TendencyPairSelection = TendencyPairSelection.SINGLE,
     source_pair_index: int | None = None,
 ) -> _SourceTendencyEstimate:
+    growth = growth_evidence.value
     zero = growth.new_zeros(())
     if selection is TendencyPairSelection.LONG:
         source_paths = _long_source_paths(motion, growth)
+        reconstruction_pair_count = 1
+        reconstruction_selection = TendencyPairSelection.LONG
+        reconstruction_extrapolated = False
     elif source_pair_index is not None:
         source_paths = _single_adjacent_source_paths(
             motion,
             growth,
             source_pair_index,
         )
+        reconstruction_pair_count = int(source_pair_index == 1)
+        reconstruction_selection = (
+            TendencyPairSelection.RECENT
+            if source_pair_index == 1
+            else TendencyPairSelection.NONE
+        )
+        reconstruction_extrapolated = False
     else:
         source_paths = _uniform_source_paths(motion, growth)
+        reconstruction_pair_count = 1
+        reconstruction_selection = selection
+        reconstruction_extrapolated = True
+    unavailable = psr.new_full((), torch.nan)
     return _SourceTendencyEstimate(
         displacement_yx=motion,
         log_growth_per_step=growth,
@@ -1966,17 +2112,38 @@ def _single_pair_tendency(
         minimum_phase_correlation_psr=psr,
         tendency_pair_count=1,
         motion_pair_count=1,
-        growth_pair_count=1,
+        growth_pair_count=int(growth_evidence.available),
         motion_pair_selection=selection,
-        growth_pair_selection=selection,
+        growth_pair_selection=(
+            selection
+            if growth_evidence.available
+            else TendencyPairSelection.PERSISTENCE
+        ),
         motion_pair_conflict=False,
         growth_pair_conflict=False,
+        minimum_growth_overlap_support=(
+            growth_evidence.overlap_support
+            if growth_evidence.available
+            else unavailable
+        ),
+        minimum_growth_overlap_area_km2=(
+            growth_evidence.overlap_area_km2
+            if growth_evidence.available
+            else unavailable
+        ),
+        reconstruction_pair_count=reconstruction_pair_count,
+        reconstruction_selection=reconstruction_selection,
+        reconstruction_minimum_psr=(
+            psr if reconstruction_pair_count else unavailable
+        ),
+        reconstruction_conflict=False,
+        reconstruction_extrapolated=reconstruction_extrapolated,
     )
 
 
 def _combine_single_adjacent_and_long(
-    adjacent: tuple[Tensor, Tensor, Tensor],
-    long: tuple[Tensor, Tensor, Tensor],
+    adjacent: tuple[Tensor, _GrowthEvidence, Tensor],
+    long: tuple[Tensor, _GrowthEvidence, Tensor],
     adjacent_pair_index: int,
     linear: Tensor,
     masks: Tensor,
@@ -2025,37 +2192,38 @@ def _combine_single_adjacent_and_long(
             config=config,
         )
     )
-    adjacent_growth = _growth_aligned_with_motion(
+    adjacent_growth_evidence = _growth_evidence_aligned_with_motion(
         linear,
         masks,
         adjacent_previous,
         adjacent_current,
         motion,
         config,
+        grid_time_contract,
     )
-    long_growth = _growth_aligned_with_motion(
+    long_growth_evidence = _growth_evidence_aligned_with_motion(
         linear,
         masks,
         0,
         2,
         motion,
         config,
+        grid_time_contract,
     )
-    growth_disagreement = torch.abs(long_growth - adjacent_growth)
-    growth_is_inconsistent = (
-        motion_selection is TendencyPairSelection.PERSISTENCE
-        or float(growth_disagreement.detach())
-        >= config.maximum_pair_growth_disagreement - config.epsilon
-    )
-    growth, growth_adjacent, growth_long, growth_selection = (
-        _select_single_adjacent_or_long_component(
-            adjacent_growth,
-            long_growth,
-            adjacent_confidence,
-            long_confidence,
-            inconsistent=growth_is_inconsistent,
-            config=config,
-        )
+    (
+        growth,
+        growth_adjacent,
+        growth_long,
+        growth_selection,
+        growth_disagreement,
+        growth_is_inconsistent,
+    ) = _select_adjacent_or_long_growth_evidence(
+        adjacent_growth_evidence,
+        long_growth_evidence,
+        adjacent_confidence,
+        long_confidence,
+        motion_selection,
+        config,
     )
     adjacent_used = motion_adjacent or growth_adjacent
     long_used = motion_long or growth_long
@@ -2069,16 +2237,46 @@ def _combine_single_adjacent_and_long(
         if used_psrs
         else adjacent_psr.new_full((), torch.nan)
     )
+    growth_indices = tuple(
+        index
+        for index, used in enumerate((growth_adjacent, growth_long))
+        if used
+    )
+    minimum_growth_support, minimum_growth_area = _minimum_growth_evidence(
+        (adjacent_growth_evidence, long_growth_evidence),
+        growth_indices,
+        linear,
+    )
     if motion_selection is TendencyPairSelection.LONG:
-        source_paths = _long_source_paths(long_motion, long_source_growth)
+        source_paths = _long_source_paths(
+            long_motion,
+            long_source_growth.value,
+        )
+        reconstruction_pair_count = 1
+        reconstruction_selection = TendencyPairSelection.LONG
+        reconstruction_minimum_psr = long_psr
     elif motion_selection is TendencyPairSelection.SINGLE:
         source_paths = _single_adjacent_source_paths(
             adjacent_motion,
-            adjacent_source_growth,
+            adjacent_source_growth.value,
             adjacent_pair_index,
+        )
+        reconstruction_pair_count = int(adjacent_pair_index == 1)
+        reconstruction_selection = (
+            TendencyPairSelection.RECENT
+            if adjacent_pair_index == 1
+            else TendencyPairSelection.NONE
+        )
+        reconstruction_minimum_psr = (
+            adjacent_psr
+            if reconstruction_pair_count
+            else adjacent_psr.new_full((), torch.nan)
         )
     else:
         source_paths = _latest_only_source_paths(motion, growth)
+        reconstruction_pair_count = 0
+        reconstruction_selection = TendencyPairSelection.NONE
+        reconstruction_minimum_psr = adjacent_psr.new_full((), torch.nan)
     return _SourceTendencyEstimate(
         displacement_yx=motion,
         log_growth_per_step=growth,
@@ -2096,6 +2294,13 @@ def _combine_single_adjacent_and_long(
         growth_pair_selection=growth_selection,
         motion_pair_conflict=motion_is_inconsistent,
         growth_pair_conflict=growth_is_inconsistent,
+        minimum_growth_overlap_support=minimum_growth_support,
+        minimum_growth_overlap_area_km2=minimum_growth_area,
+        reconstruction_pair_count=reconstruction_pair_count,
+        reconstruction_selection=reconstruction_selection,
+        reconstruction_minimum_psr=reconstruction_minimum_psr,
+        reconstruction_conflict=motion_is_inconsistent,
+        reconstruction_extrapolated=False,
     )
 
 
@@ -2145,6 +2350,79 @@ def _select_single_adjacent_or_long_component(
     if long_is_clearly_better:
         return long, False, True, TendencyPairSelection.LONG
     return adjacent, True, False, TendencyPairSelection.SINGLE
+
+
+def _select_adjacent_or_long_growth_evidence(
+    adjacent: _GrowthEvidence,
+    long: _GrowthEvidence,
+    adjacent_confidence: Tensor,
+    long_confidence: Tensor,
+    motion_selection: TendencyPairSelection,
+    config: NowcastConfig,
+) -> tuple[Tensor, bool, bool, TendencyPairSelection, Tensor, bool]:
+    disagreement = (
+        torch.abs(long.value - adjacent.value)
+        if adjacent.available and long.available
+        else torch.zeros_like(adjacent.value)
+    )
+    if motion_selection is TendencyPairSelection.PERSISTENCE:
+        return (
+            torch.zeros_like(adjacent.value),
+            False,
+            False,
+            TendencyPairSelection.PERSISTENCE,
+            disagreement,
+            True,
+        )
+    if adjacent.available and long.available:
+        inconsistent = (
+            float(disagreement.detach())
+            >= config.maximum_pair_growth_disagreement - config.epsilon
+        )
+        value, uses_adjacent, uses_long, selection = (
+            _select_single_adjacent_or_long_component(
+                adjacent.value,
+                long.value,
+                adjacent_confidence,
+                long_confidence,
+                inconsistent=inconsistent,
+                config=config,
+            )
+        )
+        return (
+            value,
+            uses_adjacent,
+            uses_long,
+            selection,
+            disagreement,
+            inconsistent,
+        )
+    if adjacent.available:
+        return (
+            adjacent.value,
+            True,
+            False,
+            TendencyPairSelection.SINGLE,
+            disagreement,
+            False,
+        )
+    if long.available:
+        return (
+            long.value,
+            False,
+            True,
+            TendencyPairSelection.LONG,
+            disagreement,
+            False,
+        )
+    return (
+        torch.zeros_like(adjacent.value),
+        False,
+        False,
+        TendencyPairSelection.PERSISTENCE,
+        disagreement,
+        False,
+    )
 
 
 def _motion_disagreement_mps(
@@ -2207,14 +2485,81 @@ def _combine_pair_component(
     return combined, (1,), TendencyPairSelection.RECENT
 
 
-def _growth_aligned_with_motion(
+def _combine_adjacent_growth_evidence(
+    first: _GrowthEvidence,
+    second: _GrowthEvidence,
+    first_psr: Tensor,
+    second_psr: Tensor,
+    motion_selection: TendencyPairSelection,
+    config: NowcastConfig,
+) -> tuple[
+    Tensor,
+    tuple[int, ...],
+    TendencyPairSelection,
+    Tensor,
+    bool,
+]:
+    disagreement = (
+        torch.abs(second.value - first.value)
+        if first.available and second.available
+        else torch.zeros_like(first.value)
+    )
+    if motion_selection is TendencyPairSelection.PERSISTENCE:
+        return (
+            torch.zeros_like(first.value),
+            (),
+            TendencyPairSelection.PERSISTENCE,
+            disagreement,
+            True,
+        )
+    if first.available and second.available:
+        inconsistent = (
+            float(disagreement.detach())
+            >= config.maximum_pair_growth_disagreement - config.epsilon
+        )
+        value, indices, selection = _combine_pair_component(
+            first.value,
+            second.value,
+            first_psr,
+            second_psr,
+            inconsistent=inconsistent,
+            config=config,
+        )
+        return value, indices, selection, disagreement, inconsistent
+    if first.available:
+        return (
+            first.value,
+            (0,),
+            TendencyPairSelection.EARLIER,
+            disagreement,
+            False,
+        )
+    if second.available:
+        return (
+            second.value,
+            (1,),
+            TendencyPairSelection.RECENT,
+            disagreement,
+            False,
+        )
+    return (
+        torch.zeros_like(first.value),
+        (),
+        TendencyPairSelection.PERSISTENCE,
+        disagreement,
+        False,
+    )
+
+
+def _growth_evidence_aligned_with_motion(
     linear: Tensor,
     masks: Tensor,
     previous_index: int,
     current_index: int,
     motion_per_step: Tensor,
     config: NowcastConfig,
-) -> Tensor:
+    grid_time_contract: RadarGridTimeContract | None,
+) -> _GrowthEvidence:
     previous_mask = masks[previous_index]
     current_mask = masks[current_index]
     previous_echo = torch.where(
@@ -2228,7 +2573,7 @@ def _growth_aligned_with_motion(
         linear.new_zeros(()),
     )
     step_span = current_index - previous_index
-    total_growth = _log_aligned_growth(
+    evidence = _aligned_growth_evidence(
         previous_echo,
         current_echo,
         previous_mask,
@@ -2236,8 +2581,9 @@ def _growth_aligned_with_motion(
         step_span * motion_per_step,
         config,
         max_log_growth=config.max_log_growth_per_step * step_span,
+        grid_time_contract=grid_time_contract,
     )
-    return total_growth / step_span
+    return replace(evidence, value=evidence.value / step_span)
 
 
 def _estimate_available_pair(
@@ -2248,7 +2594,7 @@ def _estimate_available_pair(
     current_index: int,
     config: NowcastConfig,
     grid_time_contract: RadarGridTimeContract | None,
-) -> tuple[Tensor, Tensor, Tensor] | None:
+) -> tuple[Tensor, _GrowthEvidence, Tensor] | None:
     previous_mask = masks[previous_index]
     current_mask = masks[current_index]
     common = previous_mask & current_mask
@@ -2315,13 +2661,14 @@ def _estimate_available_pair(
         ):
             return None
     per_step_motion = total_motion / step_span
-    growth = _growth_aligned_with_motion(
+    growth = _growth_evidence_aligned_with_motion(
         linear,
         masks,
         previous_index,
         current_index,
         per_step_motion,
         config,
+        grid_time_contract,
     )
     return (
         per_step_motion,
@@ -2396,7 +2743,7 @@ def _merge_current_state(
     observation_paths: _SourceTendencyEstimate,
     background_paths: _SourceTendencyEstimate,
     config: NowcastConfig,
-) -> tuple[Tensor, Tensor, float]:
+) -> tuple[Tensor, Tensor, float, TendencySource]:
     observation_echo, observation_support = _merge_source_frames(
         observation_linear,
         prepared.observed_mask,
@@ -2433,7 +2780,27 @@ def _merge_current_state(
         numerator / current_support.clamp_min(config.epsilon),
         torch.zeros_like(numerator),
     )
-    return current_echo, current_support, contribution_fraction
+    if bool(torch.any(observation_support > config.epsilon)):
+        path_source = TendencySource.OBSERVATION
+    elif bool(torch.any(background_support > config.epsilon)):
+        path_source = TendencySource.BACKGROUND
+    else:
+        path_source = TendencySource.NONE
+    return current_echo, current_support, contribution_fraction, path_source
+
+
+def _state_path_age_minutes(
+    paths: _SourceTendencyEstimate,
+    masks: Tensor,
+    interval_minutes: int,
+) -> float | None:
+    source_present = masks.flatten(1).any(dim=1)
+    used = paths.source_usable & source_present
+    indices = torch.nonzero(used, as_tuple=False).flatten()
+    if indices.numel() == 0:
+        return None
+    oldest_index = int(indices.min())
+    return float((2 - oldest_index) * interval_minutes)
 
 
 def merge_current_support(
@@ -2770,7 +3137,7 @@ def _validate_frames(frames: Tensor) -> None:
         raise TypeError("frames_dbz must be a floating-point tensor")
 
 
-def _log_aligned_growth(
+def _aligned_growth_evidence(
     previous: Tensor,
     current: Tensor,
     previous_mask: Tensor,
@@ -2779,7 +3146,8 @@ def _log_aligned_growth(
     config: NowcastConfig,
     *,
     max_log_growth: float | None = None,
-) -> Tensor:
+    grid_time_contract: RadarGridTimeContract | None,
+) -> _GrowthEvidence:
     limit = (
         config.max_log_growth_per_step
         if max_log_growth is None
@@ -2793,22 +3161,51 @@ def _log_aligned_growth(
         config.epsilon
     )
     overlap = current_mask & (moved_support > config.epsilon)
-    if int(overlap.sum()) < 4:
-        return previous.new_zeros(())
-
+    overlap_support = moved_support[overlap].sum()
+    overlap_area_km2 = (
+        overlap_support * (grid_time_contract.cell_area_m2 / 1.0e6)
+        if grid_time_contract is not None
+        else previous.new_full((), torch.nan)
+    )
     previous_integrated_echo = aligned[overlap].sum()
     current_integrated_echo = current[overlap].sum()
-    if float(previous_integrated_echo.detach()) <= config.epsilon:
-        if float(current_integrated_echo.detach()) <= config.epsilon:
-            return previous_integrated_echo.new_zeros(())
-        return previous_integrated_echo.new_tensor(limit)
+    enough_support = (
+        float(overlap_support.detach()) + config.epsilon
+        >= config.minimum_growth_overlap_support
+    )
+    enough_area = (
+        config.minimum_growth_overlap_area_km2 is None
+        or (
+            grid_time_contract is not None
+            and float(overlap_area_km2.detach()) + config.epsilon
+            >= config.minimum_growth_overlap_area_km2
+        )
+    )
+    available = (
+        enough_support
+        and enough_area
+        and float(previous_integrated_echo.detach()) > config.epsilon
+    )
+    if not available:
+        return _GrowthEvidence(
+            value=previous.new_zeros(()),
+            available=False,
+            overlap_support=overlap_support,
+            overlap_area_km2=overlap_area_km2,
+            aligned_previous_integral=previous_integrated_echo,
+            current_integral=current_integrated_echo,
+        )
     growth = torch.log(
         (current_integrated_echo + config.epsilon)
         / (previous_integrated_echo + config.epsilon)
     )
-    return growth.clamp(
-        -limit,
-        limit,
+    return _GrowthEvidence(
+        value=growth.clamp(-limit, limit),
+        available=True,
+        overlap_support=overlap_support,
+        overlap_area_km2=overlap_area_km2,
+        aligned_previous_integral=previous_integrated_echo,
+        current_integral=current_integrated_echo,
     )
 
 
