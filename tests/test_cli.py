@@ -135,7 +135,11 @@ class CliTests(unittest.TestCase):
             "valid_mask",
             "state_echo_linear",
             "source_support",
+            "path_verified_source_support",
             "verified_source_support",
+            "observation_verified_source_support",
+            "background_verified_source_support",
+            "forecast_path_verified_support",
             "forecast_verified_support",
             "latest_frame_dbz",
             "latest_background_dbz",
@@ -200,11 +204,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v28",
+                    "nowcast-npz-v29",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v20",
+                    "forecast-run-v21",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))

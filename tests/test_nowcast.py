@@ -87,7 +87,14 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         background_contribution_fraction=0.0,
         background_age_minutes=None,
         source_support=torch.ones_like(state.echo_linear),
+        path_verified_source_support=torch.ones_like(state.echo_linear),
         verified_source_support=torch.ones_like(state.echo_linear),
+        observation_verified_source_support=torch.ones_like(
+            state.echo_linear
+        ),
+        background_verified_source_support=torch.zeros_like(
+            state.echo_linear
+        ),
         motion_disagreement_px=state.echo_linear.new_zeros(()),
         motion_disagreement_mps=state.echo_linear.new_full((), torch.nan),
         growth_disagreement=state.echo_linear.new_zeros(()),
@@ -847,7 +854,7 @@ class NowcastTests(unittest.TestCase):
                 None,
             )
 
-        current, support, _, _ = nowcast_module._merge_source_frames(
+        current, support, _, _, _ = nowcast_module._merge_source_frames(
             linear,
             masks,
             tendency.source_displacement_yx,
@@ -880,7 +887,7 @@ class NowcastTests(unittest.TestCase):
         support_segments[0, 0] = linear.new_tensor((0.0, -1.0))
         support_segments[0, 1] = linear.new_tensor((0.0, 1.0))
 
-        endpoint_state, endpoint_support, _, _ = (
+        endpoint_state, endpoint_support, _, _, _ = (
             nowcast_module._merge_source_frames(
                 linear,
                 masks,
@@ -890,7 +897,7 @@ class NowcastTests(unittest.TestCase):
                 self.config,
             )
         )
-        path_state, path_support, _, _ = nowcast_module._merge_source_frames(
+        path_state, path_support, _, _, _ = nowcast_module._merge_source_frames(
             linear,
             masks,
             endpoint_displacements,
@@ -1855,6 +1862,89 @@ class NowcastTests(unittest.TestCase):
             torch.full((8, 8), 20.0),
         )
 
+    def test_local_path_verification_rejects_opposing_echo_motion(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = replace(self.config, pair_echo_dilation_px=1)
+        linear = torch.zeros((3, 16, 16), dtype=torch.float64)
+        masks = torch.zeros_like(linear, dtype=torch.bool)
+        echo = dbz_to_linear(linear.new_tensor(20.0), config)
+        linear[1, 3:5, 3:5] = echo
+        linear[1, 11:13, 11:13] = echo
+        linear[2, 3:5, 5:7] = echo
+        linear[2, 11:13, 9:11] = echo
+        masks[1:] = linear[1:] > 0
+        growth = nowcast_module._aligned_growth_evidence(
+            linear[1],
+            linear[2],
+            masks[1],
+            masks[2],
+            linear.new_tensor((0.0, 2.0)),
+            config,
+            max_log_growth=config.max_log_growth_per_step,
+            grid_time_contract=None,
+        )
+        paths = nowcast_module._single_pair_tendency(
+            linear.new_tensor((0.0, 2.0)),
+            growth,
+            linear.new_tensor(20.0),
+            selection=TendencyPairSelection.RECENT,
+            source_pair_index=1,
+        )
+
+        path_verified, state_verified = (
+            nowcast_module._source_verification_masks(
+                linear,
+                masks,
+                paths,
+                config,
+                None,
+            )
+        )
+
+        self.assertTrue(bool(torch.all(path_verified[1, 3:5, 5:7])))
+        self.assertFalse(bool(torch.any(path_verified[1, 11:13, 13:15])))
+        torch.testing.assert_close(state_verified, path_verified)
+
+    def test_path_without_growth_evidence_is_not_state_verified(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        linear = torch.zeros((3, 8, 8), dtype=torch.float64)
+        masks = torch.zeros_like(linear, dtype=torch.bool)
+        echo = dbz_to_linear(linear.new_tensor(20.0), self.config)
+        linear[1, 4, 3] = echo
+        linear[2, 4, 4] = echo
+        masks[1:] = linear[1:] > 0
+        growth = nowcast_module._aligned_growth_evidence(
+            linear[1],
+            linear[2],
+            masks[1],
+            masks[2],
+            linear.new_tensor((0.0, 1.0)),
+            self.config,
+            max_log_growth=self.config.max_log_growth_per_step,
+            grid_time_contract=None,
+        )
+        self.assertFalse(growth.available)
+        paths = nowcast_module._single_pair_tendency(
+            linear.new_tensor((0.0, 1.0)),
+            growth,
+            linear.new_tensor(20.0),
+            selection=TendencyPairSelection.RECENT,
+            source_pair_index=1,
+        )
+
+        path_verified, state_verified = (
+            nowcast_module._source_verification_masks(
+                linear,
+                masks,
+                paths,
+                self.config,
+                None,
+            )
+        )
+
+        self.assertTrue(bool(path_verified[1, 4, 4]))
+        self.assertFalse(bool(state_verified[1, 4, 4]))
+
     def test_operational_publication_excludes_unverified_persistence(
         self,
     ) -> None:
@@ -2069,7 +2159,10 @@ class NowcastTests(unittest.TestCase):
             background_contribution_fraction=0.0,
             background_age_minutes=None,
             source_support=support,
+            path_verified_source_support=support,
             verified_source_support=support,
+            observation_verified_source_support=support,
+            background_verified_source_support=torch.zeros_like(support),
             motion_disagreement_px=torch.zeros((), dtype=torch.float64),
             motion_disagreement_mps=torch.full(
                 (), torch.nan, dtype=torch.float64

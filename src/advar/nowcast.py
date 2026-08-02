@@ -805,7 +805,10 @@ class ForecastMetadata:
     background_contribution_fraction: float
     background_age_minutes: float | None
     source_support: Tensor
+    path_verified_source_support: Tensor
     verified_source_support: Tensor
+    observation_verified_source_support: Tensor
+    background_verified_source_support: Tensor
     motion_disagreement_px: Tensor
     motion_disagreement_mps: Tensor
     growth_disagreement: Tensor
@@ -904,8 +907,17 @@ def state_metadata_digest(
                 "background_tendency_used": metadata.background_tendency_used,
                 "background_age_minutes": metadata.background_age_minutes,
                 "source_support": tensor_digest(metadata.source_support),
+                "path_verified_source_support": tensor_digest(
+                    metadata.path_verified_source_support
+                ),
                 "verified_source_support": tensor_digest(
                     metadata.verified_source_support
+                ),
+                "observation_verified_source_support": tensor_digest(
+                    metadata.observation_verified_source_support
+                ),
+                "background_verified_source_support": tensor_digest(
+                    metadata.background_verified_source_support
                 ),
                 "motion_disagreement_px": tensor_digest(
                     metadata.motion_disagreement_px
@@ -1379,6 +1391,14 @@ class ForecastResult:
             self.run.config,
         )
 
+    @property
+    def forecast_path_verified_support(self) -> Tensor:
+        return _advected_support_by_lead(
+            self.metadata.path_verified_source_support,
+            self.state,
+            self.run.config,
+        )
+
     def validate_issuance(self) -> None:
         if tensor_digest(self.forecast_dbz) != self.forecast_dbz_digest:
             raise ValueError("forecast result disagrees with the issued forecast")
@@ -1421,7 +1441,10 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         state.log_growth_per_step,
         metadata.coverage_by_frame,
         metadata.source_support,
+        metadata.path_verified_source_support,
         metadata.verified_source_support,
+        metadata.observation_verified_source_support,
+        metadata.background_verified_source_support,
         metadata.motion_disagreement_px,
         metadata.motion_disagreement_mps,
         metadata.growth_disagreement,
@@ -1434,7 +1457,10 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         state.displacement_yx,
         state.log_growth_per_step,
         metadata.source_support,
+        metadata.path_verified_source_support,
         metadata.verified_source_support,
+        metadata.observation_verified_source_support,
+        metadata.background_verified_source_support,
     )
     if len({value.dtype for value in state_tensors}) != 1:
         raise ValueError("forecast run state tensors must share one dtype")
@@ -1449,8 +1475,26 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         raise ValueError("coverage_by_frame must have shape [3]")
     if metadata.source_support.shape != state.echo_linear.shape:
         raise ValueError("source_support must match the state grid")
+    if metadata.path_verified_source_support.shape != state.echo_linear.shape:
+        raise ValueError(
+            "path_verified_source_support must match the state grid"
+        )
     if metadata.verified_source_support.shape != state.echo_linear.shape:
         raise ValueError("verified_source_support must match the state grid")
+    if (
+        metadata.observation_verified_source_support.shape
+        != state.echo_linear.shape
+    ):
+        raise ValueError(
+            "observation_verified_source_support must match the state grid"
+        )
+    if (
+        metadata.background_verified_source_support.shape
+        != state.echo_linear.shape
+    ):
+        raise ValueError(
+            "background_verified_source_support must match the state grid"
+        )
     if metadata.motion_disagreement_px.ndim != 0:
         raise ValueError("motion_disagreement_px must be scalar")
     if metadata.motion_disagreement_mps.ndim != 0:
@@ -1646,7 +1690,10 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         state.log_growth_per_step,
         metadata.coverage_by_frame,
         metadata.source_support,
+        metadata.path_verified_source_support,
         metadata.verified_source_support,
+        metadata.observation_verified_source_support,
+        metadata.background_verified_source_support,
         metadata.motion_disagreement_px,
         metadata.growth_disagreement,
     )
@@ -1674,16 +1721,45 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         raise ValueError("source_support must be in [0, 1]")
     if not bool(
         torch.all(
-            (metadata.verified_source_support >= 0)
+            (metadata.path_verified_source_support >= 0)
+            & (
+                metadata.path_verified_source_support
+                <= metadata.source_support + config.epsilon
+            )
+            & (metadata.verified_source_support >= 0)
             & (
                 metadata.verified_source_support
-                <= metadata.source_support + config.epsilon
+                <= metadata.path_verified_source_support
+            )
+            & (metadata.observation_verified_source_support >= 0)
+            & (metadata.background_verified_source_support >= 0)
+            & (
+                metadata.observation_verified_source_support
+                + metadata.background_verified_source_support
+                <= metadata.verified_source_support + config.epsilon
             )
         )
     ):
         raise ValueError(
-            "verified_source_support must be inside source_support"
+            "verified_source_support and evidence channels must be nested "
+            "inside source_support"
         )
+    if metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
+        source_verified = (
+            metadata.observation_verified_source_support
+            + metadata.background_verified_source_support
+        ).clamp(0.0, 1.0)
+        if not bool(
+            torch.allclose(
+                metadata.verified_source_support,
+                source_verified,
+                rtol=0.0,
+                atol=config.epsilon,
+            )
+        ):
+            raise ValueError(
+                "verified_source_support must equal source evidence channels"
+            )
     if metadata.background_age_minutes is not None and (
         not math.isfinite(metadata.background_age_minutes)
         or metadata.background_age_minutes < 0
@@ -1921,7 +1997,10 @@ def estimate_prepared_state(
     (
         current_echo,
         current_source_support,
+        current_path_verified_source_support,
         current_verified_source_support,
+        observation_verified_source_support,
+        background_verified_source_support,
         background_contribution_fraction,
         observation_contributors,
         background_contributors,
@@ -1932,6 +2011,7 @@ def estimate_prepared_state(
         observation_paths,
         background_paths,
         config,
+        grid_time_contract,
     )
     state = RadarState(
         echo_linear=current_echo,
@@ -1986,8 +2066,17 @@ def estimate_prepared_state(
             prepared.background_age_minutes if background_used else None
         ),
         source_support=current_source_support.detach().clone(),
+        path_verified_source_support=(
+            current_path_verified_source_support.detach().clone()
+        ),
         verified_source_support=(
             current_verified_source_support.detach().clone()
+        ),
+        observation_verified_source_support=(
+            observation_verified_source_support.detach().clone()
+        ),
+        background_verified_source_support=(
+            background_verified_source_support.detach().clone()
         ),
         motion_disagreement_px=tendency.motion_disagreement_px.detach(),
         motion_disagreement_mps=tendency.motion_disagreement_mps.detach(),
@@ -3051,30 +3140,12 @@ def _has_complete_echo_neighborhood(
     if not bool(torch.any(active_echo)):
         return False
 
-    if config.pair_echo_dilation_m is not None:
-        if grid_time_contract is None:
-            raise ValueError(
-                "pair_echo_dilation_m requires a grid/time contract"
-            )
-        offsets = grid_time_contract.pixel_offsets_within_distance(
-            config.pair_echo_dilation_m,
-            maximum_radius_yx=(active_echo.shape[0] - 1, active_echo.shape[1] - 1),
-        )
-        near_echo = _dilate_mask(active_echo, offsets)
-    else:
-        radius = config.pair_echo_dilation_px
-        near_echo = (
-            _dilate_mask(
-                active_echo,
-                tuple(
-                    (row, column)
-                    for row in range(-radius, radius + 1)
-                    for column in range(-radius, radius + 1)
-                ),
-            )
-            if radius
-            else active_echo
-        )
+    offsets = _pair_echo_offsets(
+        active_echo.shape,
+        config,
+        grid_time_contract,
+    )
+    near_echo = _dilate_mask(active_echo, offsets)
 
     return not bool(torch.any(near_echo & ~common))
 
@@ -3103,10 +3174,40 @@ def _merge_current_state(
     observation_paths: _SourceTendencyEstimate,
     background_paths: _SourceTendencyEstimate,
     config: NowcastConfig,
-) -> tuple[Tensor, Tensor, Tensor, float, Tensor, Tensor]:
+    grid_time_contract: RadarGridTimeContract | None,
+) -> tuple[
+    Tensor,
+    Tensor,
+    Tensor,
+    Tensor,
+    Tensor,
+    Tensor,
+    float,
+    Tensor,
+    Tensor,
+]:
+    observation_path_masks, observation_state_masks = (
+        _source_verification_masks(
+            observation_linear,
+            prepared.observed_mask,
+            observation_paths,
+            config,
+            grid_time_contract,
+        )
+    )
+    background_path_masks, background_state_masks = (
+        _source_verification_masks(
+            background_linear,
+            prepared.background_mask,
+            background_paths,
+            config,
+            grid_time_contract,
+        )
+    )
     (
         observation_echo,
         observation_support,
+        observation_path_verified_support,
         observation_verified_support,
         observation_contributors,
     ) = (
@@ -3120,12 +3221,14 @@ def _merge_current_state(
             source_support_displacements_yx=(
                 observation_paths.source_support_displacements_yx
             ),
-            source_verified=_verified_source_flags(observation_paths),
+            source_path_verified=observation_path_masks,
+            source_state_verified=observation_state_masks,
         )
     )
     (
         background_echo,
         background_support,
+        background_path_verified_support,
         background_verified_support,
         background_contributors,
     ) = (
@@ -3139,7 +3242,8 @@ def _merge_current_state(
             source_support_displacements_yx=(
                 background_paths.source_support_displacements_yx
             ),
-            source_verified=_verified_source_flags(background_paths),
+            source_path_verified=background_path_masks,
+            source_state_verified=background_state_masks,
         )
     )
     observation_support = observation_support.clamp(0.0, 1.0)
@@ -3162,25 +3266,145 @@ def _merge_current_state(
         numerator / current_support.clamp_min(config.epsilon),
         torch.zeros_like(numerator),
     )
+    actual_background_path_verified_support = (
+        (1.0 - observation_support) * background_path_verified_support
+    )
+    actual_background_verified_support = (
+        (1.0 - observation_support) * background_verified_support
+    )
+    current_path_verified_support = (
+        observation_path_verified_support
+        + actual_background_path_verified_support
+    ).clamp(0.0, 1.0)
     current_verified_support = (
-        observation_verified_support
-        + (1.0 - observation_support) * background_verified_support
+        observation_verified_support + actual_background_verified_support
     ).clamp(0.0, 1.0)
     return (
         current_echo,
         current_support,
+        current_path_verified_support,
         current_verified_support,
+        observation_verified_support,
+        actual_background_verified_support,
         contribution_fraction,
         observation_contributors,
         background_contributors,
     )
 
 
-def _verified_source_flags(paths: _SourceTendencyEstimate) -> Tensor:
-    verified = paths.source_usable.clone()
-    if paths.reconstruction_extrapolated:
-        verified[:2] = False
-    return verified
+def _source_verification_masks(
+    linear: Tensor,
+    masks: Tensor,
+    paths: _SourceTendencyEstimate,
+    config: NowcastConfig,
+    grid_time_contract: RadarGridTimeContract | None,
+) -> tuple[Tensor, Tensor]:
+    path_verified = torch.zeros_like(masks)
+    state_verified = torch.zeros_like(masks)
+    path_verified[2] = masks[2]
+    state_verified[2] = masks[2]
+    echo_threshold = dbz_to_echo(
+        linear.new_tensor(config.echo_threshold_dbz),
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
+    )
+    current_detected = masks[2] & (linear[2] >= echo_threshold)
+    nearby_current = _dilate_mask(
+        current_detected,
+        _pair_echo_offsets(
+            current_detected.shape,
+            config,
+            grid_time_contract,
+        ),
+    )
+    for source_index in (0, 1):
+        if not bool(paths.source_usable[source_index]):
+            continue
+        candidate_value, candidate_support = _transport_source_candidate(
+            linear[source_index],
+            masks[source_index],
+            paths.source_displacement_yx[source_index],
+            paths.source_support_displacements_yx[source_index],
+            paths.source_log_growth[source_index],
+            config,
+        )
+        candidate_echo = torch.where(
+            candidate_support > config.epsilon,
+            candidate_value / candidate_support.clamp_min(config.epsilon),
+            torch.zeros_like(candidate_value),
+        )
+        candidate_detected = (
+            candidate_support > config.epsilon
+        ) & (candidate_echo >= echo_threshold)
+        local_path_verified = candidate_detected & nearby_current
+        path_verified[source_index] = local_path_verified
+        step_span = 2 - source_index
+        growth = _growth_evidence_aligned_with_motion(
+            linear,
+            masks,
+            source_index,
+            2,
+            paths.source_displacement_yx[source_index] / step_span,
+            config,
+            grid_time_contract,
+        )
+        if growth.available:
+            state_verified[source_index] = local_path_verified
+    return path_verified, state_verified
+
+
+def _pair_echo_offsets(
+    shape: torch.Size,
+    config: NowcastConfig,
+    grid_time_contract: RadarGridTimeContract | None,
+) -> tuple[tuple[int, int], ...]:
+    if config.pair_echo_dilation_m is not None:
+        if grid_time_contract is None:
+            raise ValueError(
+                "pair_echo_dilation_m requires a grid/time contract"
+            )
+        return grid_time_contract.pixel_offsets_within_distance(
+            config.pair_echo_dilation_m,
+            maximum_radius_yx=(shape[0] - 1, shape[1] - 1),
+        )
+    radius = config.pair_echo_dilation_px
+    return tuple(
+        (row, column)
+        for row in range(-radius, radius + 1)
+        for column in range(-radius, radius + 1)
+    )
+
+
+def _transport_source_candidate(
+    linear: Tensor,
+    mask: Tensor,
+    displacement_yx: Tensor,
+    support_displacements_yx: Tensor,
+    log_growth: Tensor,
+    config: NowcastConfig,
+) -> tuple[Tensor, Tensor]:
+    source_support = mask.to(dtype=linear.dtype)
+    endpoint_support = remap(source_support, displacement_yx).clamp(0.0, 1.0)
+    endpoint_numerator = react_core(
+        remap(linear * source_support, displacement_yx),
+        log_growth,
+    )
+    path_support = source_support
+    for segment in support_displacements_yx:
+        path_support = remap(path_support, segment).clamp(0.0, 1.0)
+    candidate_support = torch.where(
+        endpoint_support > config.epsilon,
+        path_support,
+        torch.zeros_like(path_support),
+    )
+    candidate_value = torch.where(
+        endpoint_support > config.epsilon,
+        endpoint_numerator
+        / endpoint_support.clamp_min(config.epsilon)
+        * candidate_support,
+        torch.zeros_like(endpoint_numerator),
+    )
+    return candidate_value, candidate_support
 
 
 def _actual_state_path_provenance(
@@ -3321,24 +3545,40 @@ def _merge_source_frames(
     config: NowcastConfig,
     *,
     source_support_displacements_yx: Tensor | None = None,
-    source_verified: Tensor | None = None,
-) -> tuple[Tensor, Tensor, Tensor, Tensor]:
-    if source_verified is None:
-        source_verified = source_usable
-    if source_verified.shape != (3,) or source_verified.dtype != torch.bool:
-        raise ValueError("source_verified must be boolean with shape [3]")
+    source_path_verified: Tensor | None = None,
+    source_state_verified: Tensor | None = None,
+) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+    expected_shape = masks.shape
+    default_verification = source_usable[:, None, None].expand(expected_shape)
+    if source_path_verified is None:
+        source_path_verified = default_verification
+    if source_state_verified is None:
+        source_state_verified = default_verification
+    if (
+        source_path_verified.shape != expected_shape
+        or source_state_verified.shape != expected_shape
+        or source_path_verified.dtype != torch.bool
+        or source_state_verified.dtype != torch.bool
+    ):
+        raise ValueError(
+            "source verification masks must be boolean with the source shape"
+        )
     latest_mask = masks[2]
     if bool(torch.all(latest_mask)):
         latest_support = latest_mask.to(dtype=linear.dtype)
         return (
             linear[2],
             latest_support,
-            latest_support * source_verified[2].to(dtype=linear.dtype),
+            latest_support
+            * source_path_verified[2].to(dtype=linear.dtype),
+            latest_support
+            * source_state_verified[2].to(dtype=linear.dtype),
             torch.tensor((False, False, True), device=linear.device),
         )
 
     numerator = torch.zeros_like(linear[2])
     support = torch.zeros_like(linear[2])
+    path_verified_support = torch.zeros_like(linear[2])
     verified_support = torch.zeros_like(linear[2])
     contributions = [torch.zeros_like(linear[2]) for _ in range(3)]
     for source_index in range(3):
@@ -3351,31 +3591,25 @@ def _merge_source_frames(
         candidate_support = source_mask.to(dtype=linear.dtype)
         candidate_value = linear[source_index] * candidate_support
         if source_index < 2:
-            total_displacement = source_displacement_yx[source_index]
-            endpoint_support = remap(
-                candidate_support,
-                total_displacement,
-            ).clamp(0.0, 1.0)
-            endpoint_numerator = react_core(
-                remap(candidate_value, total_displacement),
-                source_log_growth[source_index],
+            support_displacements = (
+                source_support_displacements_yx[source_index]
+                if source_support_displacements_yx is not None
+                else torch.stack(
+                    (
+                        source_displacement_yx[source_index],
+                        source_displacement_yx.new_zeros(2),
+                    )
+                )
             )
-            path_support = endpoint_support
-            if source_support_displacements_yx is not None:
-                path_support = candidate_support
-                for segment in source_support_displacements_yx[source_index]:
-                    path_support = remap(path_support, segment).clamp(0.0, 1.0)
-            candidate_support = torch.where(
-                endpoint_support > config.epsilon,
-                path_support,
-                torch.zeros_like(path_support),
-            )
-            candidate_value = torch.where(
-                endpoint_support > config.epsilon,
-                endpoint_numerator
-                / endpoint_support.clamp_min(config.epsilon)
-                * candidate_support,
-                torch.zeros_like(endpoint_numerator),
+            candidate_value, candidate_support = (
+                _transport_source_candidate(
+                    linear[source_index],
+                    source_mask,
+                    source_displacement_yx[source_index],
+                    support_displacements,
+                    source_log_growth[source_index],
+                    config,
+                )
             )
 
         remaining = 1.0 - candidate_support
@@ -3383,9 +3617,14 @@ def _merge_source_frames(
         contributions[source_index] = candidate_support
         numerator = candidate_value + remaining * numerator
         support = candidate_support + remaining * support
+        path_verified_support = (
+            candidate_support
+            * source_path_verified[source_index].to(dtype=linear.dtype)
+            + remaining * path_verified_support
+        )
         verified_support = (
             candidate_support
-            * source_verified[source_index].to(dtype=linear.dtype)
+            * source_state_verified[source_index].to(dtype=linear.dtype)
             + remaining * verified_support
         )
 
@@ -3397,7 +3636,13 @@ def _merge_source_frames(
     contributing_sources = torch.stack(
         tuple(value.sum() > config.epsilon for value in contributions)
     )
-    return current_echo, support, verified_support, contributing_sources
+    return (
+        current_echo,
+        support,
+        path_verified_support,
+        verified_support,
+        contributing_sources,
+    )
 
 
 def forecast_linear_at_step(
