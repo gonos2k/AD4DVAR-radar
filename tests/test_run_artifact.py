@@ -1,3 +1,4 @@
+from collections import Counter
 from dataclasses import replace
 import io
 from pathlib import Path
@@ -17,6 +18,7 @@ from advar import (  # noqa: E402
     NowcastConfig,
     RadarGridTimeContract,
     SensitivityConfig,
+    TendencyPairSelection,
     compute_sensitivity_snapshot,
     compute_sensitivity_snapshot_from_run,
     load_forecast_run,
@@ -24,6 +26,7 @@ from advar import (  # noqa: E402
     save_forecast_run,
 )
 from advar._digest import tensor_digest  # noqa: E402
+from advar.physics import FORECAST_INTEGRATOR_VERSION  # noqa: E402
 import advar.run_artifact as run_artifact  # noqa: E402
 from advar.run_artifact import seal_forecast_run_arrays  # noqa: E402
 
@@ -39,6 +42,17 @@ class ForecastRunArtifactTests(unittest.TestCase):
         self.assertNotEqual(
             tensor_digest(value),
             tensor_digest(value.to(dtype=torch.float32)),
+        )
+
+    def test_artifact_digest_is_independent_of_numpy_memory_layout(self) -> None:
+        contiguous = np.arange(24, dtype=np.float64).reshape(4, 6)
+        fortran = np.asfortranarray(contiguous)
+
+        self.assertEqual(
+            run_artifact._forecast_run_artifact_digest(
+                {"value": contiguous}
+            ),
+            run_artifact._forecast_run_artifact_digest({"value": fortran}),
         )
 
     def frames(self, *, dtype: torch.dtype = torch.float64) -> torch.Tensor:
@@ -113,9 +127,37 @@ class ForecastRunArtifactTests(unittest.TestCase):
             loaded.metadata.minimum_phase_correlation_psr,
             result.metadata.minimum_phase_correlation_psr,
         )
+        self.assertEqual(
+            loaded.metadata.motion_pair_count,
+            result.metadata.motion_pair_count,
+        )
+        self.assertEqual(
+            loaded.metadata.growth_pair_count,
+            result.metadata.growth_pair_count,
+        )
+        self.assertEqual(
+            loaded.metadata.motion_pair_selection,
+            result.metadata.motion_pair_selection,
+        )
+        self.assertEqual(
+            loaded.metadata.growth_pair_selection,
+            result.metadata.growth_pair_selection,
+        )
+        self.assertEqual(
+            loaded.metadata.motion_pair_conflict,
+            result.metadata.motion_pair_conflict,
+        )
+        self.assertEqual(
+            loaded.metadata.growth_pair_conflict,
+            result.metadata.growth_pair_conflict,
+        )
         torch.testing.assert_close(
             loaded.run.latest_observation_mask,
             result.run.latest_observation_mask,
+        )
+        self.assertEqual(
+            loaded.run.forecast_integrator_version,
+            FORECAST_INTEGRATOR_VERSION,
         )
 
         reloaded = compute_sensitivity_snapshot_from_run(
@@ -153,6 +195,132 @@ class ForecastRunArtifactTests(unittest.TestCase):
             equal_nan=True,
         )
         self.assertEqual(reloaded.trust_score, in_memory.trust_score)
+
+    def test_round_trip_preserves_long_pair_provenance(self) -> None:
+        frames = self.frames()
+        frames[1] = torch.nan
+        result = nowcast(frames)
+
+        self.assertEqual(
+            result.metadata.motion_pair_selection,
+            TendencyPairSelection.LONG,
+        )
+        self.assertEqual(
+            result.metadata.growth_pair_selection,
+            TendencyPairSelection.LONG,
+        )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "long-pair-run.npz"
+            save_forecast_run(result, path)
+            loaded = load_forecast_run(path)
+
+        self.assertEqual(
+            loaded.metadata.motion_pair_selection,
+            TendencyPairSelection.LONG,
+        )
+        self.assertEqual(
+            loaded.metadata.growth_pair_selection,
+            TendencyPairSelection.LONG,
+        )
+        self.assertEqual(loaded.metadata.tendency_pair_count, 1)
+        self.assertFalse(loaded.metadata.motion_pair_conflict)
+        self.assertFalse(loaded.metadata.growth_pair_conflict)
+
+    def test_round_trip_preserves_independent_pair_conflict_provenance(
+        self,
+    ) -> None:
+        coordinates = torch.arange(64, dtype=torch.float64)
+        y, x = torch.meshgrid(coordinates, coordinates, indexing="ij")
+        first = -10.0 + 40.0 * torch.exp(
+            -((y - 31.5).square() + (x - 31.5).square()) / 32.0
+        )
+        result = nowcast(
+            torch.stack(
+                (first, torch.roll(first, shifts=10, dims=1), first)
+            )
+        )
+
+        self.assertTrue(result.metadata.motion_pair_conflict)
+        self.assertFalse(result.metadata.growth_pair_conflict)
+        self.assertEqual(
+            result.metadata.motion_pair_selection,
+            TendencyPairSelection.PERSISTENCE,
+        )
+        self.assertEqual(
+            result.metadata.growth_pair_selection,
+            TendencyPairSelection.BLENDED,
+        )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "pair-conflict-run.npz"
+            save_forecast_run(result, path)
+            loaded = load_forecast_run(path)
+
+        self.assertTrue(loaded.metadata.motion_pair_conflict)
+        self.assertFalse(loaded.metadata.growth_pair_conflict)
+        self.assertEqual(
+            loaded.metadata.motion_pair_selection,
+            TendencyPairSelection.PERSISTENCE,
+        )
+        self.assertEqual(
+            loaded.metadata.growth_pair_selection,
+            TendencyPairSelection.BLENDED,
+        )
+        loaded.validate_issuance()
+        snapshot = compute_sensitivity_snapshot_from_run(
+            loaded,
+            loaded.forecast_dbz.clone(),
+            sensitivity_config=SensitivityConfig(
+                metric_names=("log_echo_mse",),
+                full_map_lead_minutes=(10,),
+                tile_size=16,
+            ),
+        )
+        context = dict(
+            zip(snapshot.context_feature_names, snapshot.context_features)
+        )
+        self.assertEqual(float(context["motion_pair_conflict"]), 1.0)
+        self.assertEqual(float(context["growth_pair_conflict"]), 0.0)
+        self.assertEqual(
+            float(context["motion_pair_selection_persistence"]),
+            1.0,
+        )
+        self.assertEqual(
+            float(context["growth_pair_selection_blended"]),
+            1.0,
+        )
+        self.assertEqual(float(context["phase_correlation_psr_available"]), 1.0)
+        torch.testing.assert_close(
+            context["log1p_minimum_phase_correlation_psr"],
+            torch.log1p(loaded.metadata.minimum_phase_correlation_psr),
+        )
+
+    def test_loader_materializes_each_archive_member_once(self) -> None:
+        result = nowcast(self.frames())
+        reads: Counter[str] = Counter()
+        original_getitem = np.lib.npyio.NpzFile.__getitem__
+
+        def counted_getitem(
+            archive: np.lib.npyio.NpzFile,
+            name: str,
+        ) -> np.ndarray:
+            reads[name] += 1
+            return original_getitem(archive, name)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "single-materialization-run.npz"
+            save_forecast_run(result, path)
+            with patch.object(
+                np.lib.npyio.NpzFile,
+                "__getitem__",
+                counted_getitem,
+            ):
+                loaded = load_forecast_run(path)
+
+        loaded.validate_issuance()
+        self.assertEqual(set(reads), run_artifact._CORE_ARRAY_NAMES)
+        self.assertEqual(set(reads.values()), {1})
 
     def test_restart_m0_uses_embedded_latest_background(self) -> None:
         frames = self.frames()
@@ -242,6 +410,49 @@ class ForecastRunArtifactTests(unittest.TestCase):
         torch.testing.assert_close(
             loaded.projected_velocity_mps_xy,
             result.projected_velocity_mps_xy,
+        )
+        torch.testing.assert_close(
+            loaded.metadata.motion_disagreement_mps,
+            result.metadata.motion_disagreement_mps,
+            equal_nan=True,
+        )
+        snapshot = compute_sensitivity_snapshot_from_run(
+            loaded,
+            loaded.forecast_dbz.clone(),
+            sensitivity_config=SensitivityConfig(
+                metric_names=("log_echo_mse",),
+                full_map_lead_minutes=(10,),
+                tile_size=4,
+            ),
+        )
+        context = dict(
+            zip(snapshot.context_feature_names, snapshot.context_features)
+        )
+        self.assertEqual(snapshot.grid_time_contract_digest, contract.digest)
+        self.assertEqual(context["projected_velocity_available"], 1.0)
+        self.assertEqual(
+            context["motion_disagreement_mps_available"], 1.0
+        )
+        torch.testing.assert_close(
+            context["motion_disagreement_mps"],
+            loaded.metadata.motion_disagreement_mps,
+        )
+        self.assertEqual(context["area_weighted_echo_available"], 1.0)
+        self.assertGreater(
+            context["log1p_linear_reflectivity_integral_km2"], 0.0
+        )
+        torch.testing.assert_close(
+            torch.stack(
+                (
+                    context["projected_velocity_x_mps"],
+                    context["projected_velocity_y_mps"],
+                )
+            ),
+            loaded.projected_velocity_mps_xy,
+        )
+        torch.testing.assert_close(
+            context["projected_speed_mps"],
+            torch.linalg.vector_norm(loaded.projected_velocity_mps_xy),
         )
 
     def test_load_rejects_tampered_grid_time_contract(self) -> None:
@@ -415,6 +626,48 @@ class ForecastRunArtifactTests(unittest.TestCase):
             ):
                 load_forecast_run(path)
 
+    def test_load_rejects_pair_selection_count_mismatch(self) -> None:
+        result = nowcast(self.frames())
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                arrays = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                }
+            arrays["motion_pair_selection"] = np.asarray("PERSISTENCE")
+            self._save_arrays(path, arrays)
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "motion pair count and selection disagree",
+            ):
+                load_forecast_run(path)
+
+    def test_load_rejects_incorrect_pair_union_count(self) -> None:
+        result = nowcast(self.frames())
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                arrays = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                }
+            arrays["motion_pair_count"] = np.asarray(1)
+            arrays["growth_pair_count"] = np.asarray(1)
+            arrays["motion_pair_selection"] = np.asarray("EARLIER")
+            arrays["growth_pair_selection"] = np.asarray("RECENT")
+            arrays["tendency_pair_count"] = np.asarray(1)
+            self._save_arrays(path, arrays)
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "tendency_pair_count is inconsistent",
+            ):
+                load_forecast_run(path)
+
     def test_load_rejects_malformed_phase_correlation_psr_schema(self) -> None:
         result = nowcast(self.frames())
         malformed_values = (
@@ -481,6 +734,22 @@ class ForecastRunArtifactTests(unittest.TestCase):
                     replace(result, run=changed_run),
                     path,
                 )
+            self.assertFalse(path.exists())
+
+    def test_save_rejects_incompatible_forecast_integrator(self) -> None:
+        result = nowcast(self.frames())
+        changed_run = replace(
+            result.run,
+            forecast_integrator_version="incompatible-integrator",
+        )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            with self.assertRaisesRegex(
+                ValueError,
+                "forecast integrator version",
+            ):
+                save_forecast_run(replace(result, run=changed_run), path)
             self.assertFalse(path.exists())
 
     def test_load_rejects_config_json_that_disagrees_with_digest(self) -> None:

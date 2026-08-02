@@ -16,8 +16,10 @@ from advar.nowcast import (  # noqa: E402
     ForecastResult,
     ForecastRunContract,
     NowcastConfig,
+    RadarGridTimeContract,
     RadarState,
     TendencySource,
+    TendencyPairSelection,
     forecast_from_state,
     forecast_linear_at_step,
     forecast_linear_from_state,
@@ -81,6 +83,7 @@ def metadata_for(
         motion_disagreement_px=torch.linalg.vector_norm(
             pair_motion[1] - pair_motion[0]
         ),
+        motion_disagreement_mps=state.echo_linear.new_full((), torch.nan),
         growth_disagreement=torch.abs(pair_growth[1] - pair_growth[0]),
         minimum_phase_correlation_psr=state.echo_linear.new_tensor(10.0),
         tendency_pair_count=2,
@@ -97,19 +100,36 @@ def result_for(
     background: torch.Tensor | None = None,
     pair_motion: torch.Tensor | None = None,
     pair_growth: torch.Tensor | None = None,
+    grid_time_contract: RadarGridTimeContract | None = None,
 ) -> ForecastResult:
     if frames is None:
         latest = linear_to_dbz(state.echo_linear, config)
         frames = torch.stack((latest, latest, latest))
     if accepted_mask is None:
         accepted_mask = torch.isfinite(frames)
+    metadata = metadata_for(
+        state,
+        pair_motion=pair_motion,
+        pair_growth=pair_growth,
+    )
+    if grid_time_contract is not None:
+        motions = (
+            torch.stack((state.displacement_yx, state.displacement_yx))
+            if pair_motion is None
+            else pair_motion
+        )
+        metadata = replace(
+            metadata,
+            motion_disagreement_mps=torch.linalg.vector_norm(
+                grid_time_contract.projected_displacement_xy(
+                    motions[1] - motions[0]
+                )
+            )
+            / (config.interval_minutes * 60.0),
+        )
     return forecast_from_state(
         state,
-        metadata_for(
-            state,
-            pair_motion=pair_motion,
-            pair_growth=pair_growth,
-        ),
+        metadata,
         config,
         run=ForecastRunContract.from_inputs(
             config,
@@ -117,6 +137,7 @@ def result_for(
             accepted_mask,
             background,
             0.0 if background is not None else None,
+            grid_time_contract=grid_time_contract,
         ),
     )
 
@@ -273,10 +294,51 @@ class SensitivityTests(unittest.TestCase):
         )
 
         self.assertEqual(snapshot.lead_minutes, tuple(range(10, 181, 10)))
+        self.assertIsNone(snapshot.grid_time_contract_digest)
         self.assertEqual(snapshot.full_map_lead_minutes, (10,))
-        self.assertEqual(snapshot.context_features.shape, (21,))
+        self.assertEqual(snapshot.context_features.shape, (50,))
+        self.assertIn("motion_pair_conflict", snapshot.context_feature_names)
+        self.assertIn("growth_pair_conflict", snapshot.context_feature_names)
         self.assertIn("log_integrated_echo", snapshot.context_feature_names)
         self.assertNotIn("log_echo_mass", snapshot.context_feature_names)
+        context = dict(
+            zip(snapshot.context_feature_names, snapshot.context_features)
+        )
+        for component in ("motion", "growth"):
+            selection_values = tuple(
+                float(
+                    context[
+                        f"{component}_pair_selection_{selection.value.lower()}"
+                    ]
+                )
+                for selection in TendencyPairSelection
+            )
+            self.assertEqual(sum(selection_values), 1.0)
+            self.assertEqual(
+                context[f"{component}_pair_selection_blended"],
+                1.0,
+            )
+        self.assertEqual(context["phase_correlation_psr_available"], 1.0)
+        torch.testing.assert_close(
+            context["log1p_minimum_phase_correlation_psr"],
+            torch.log1p(self.result.metadata.minimum_phase_correlation_psr),
+        )
+        self.assertEqual(context["projected_velocity_available"], 0.0)
+        for name in (
+            "projected_velocity_x_mps",
+            "projected_velocity_y_mps",
+            "projected_speed_mps",
+        ):
+            self.assertEqual(context[name], 0.0)
+        self.assertEqual(context["motion_disagreement_mps_available"], 0.0)
+        self.assertEqual(context["motion_disagreement_mps"], 0.0)
+        self.assertEqual(context["area_weighted_echo_available"], 0.0)
+        self.assertEqual(
+            context["log1p_linear_reflectivity_integral_km2"], 0.0
+        )
+        self.assertEqual(context["grid_spacing_available"], 0.0)
+        self.assertEqual(context["grid_column_spacing_m"], 0.0)
+        self.assertEqual(context["grid_row_spacing_m"], 0.0)
         self.assertEqual(snapshot.analysis_control.shape, (3,))
         self.assertEqual(snapshot.forecast_scores.shape, (18, 1))
         self.assertEqual(snapshot.metric_available.shape, (18, 1))
@@ -839,6 +901,219 @@ class SensitivityTests(unittest.TestCase):
                 features.new_tensor(expected),
             )
 
+    def test_context_preserves_independent_pair_conflicts(self) -> None:
+        metadata = replace(
+            self.result.metadata,
+            motion_pair_conflict=True,
+            growth_pair_conflict=False,
+        )
+        features = extract_context_features(
+            self.frames[2],
+            self.state,
+            metadata,
+            self.nowcast_config,
+            latest_observation_mask=(
+                self.qc_mask[2] & torch.isfinite(self.frames[2])
+            ),
+        )
+        values = dict(zip(self.snapshot.context_feature_names, features))
+
+        self.assertEqual(float(values["motion_pair_conflict"]), 1.0)
+        self.assertEqual(float(values["growth_pair_conflict"]), 0.0)
+
+    def test_context_distinguishes_missing_psr_from_numeric_zero(self) -> None:
+        metadata = replace(
+            self.result.metadata,
+            tendency_pair_count=0,
+            motion_pair_count=0,
+            growth_pair_count=0,
+            motion_pair_selection=TendencyPairSelection.NONE,
+            growth_pair_selection=TendencyPairSelection.NONE,
+            minimum_phase_correlation_psr=torch.tensor(float("nan")),
+        )
+        features = extract_context_features(
+            self.frames[2],
+            self.state,
+            metadata,
+            self.nowcast_config,
+            latest_observation_mask=(
+                self.qc_mask[2] & torch.isfinite(self.frames[2])
+            ),
+        )
+        values = dict(zip(self.snapshot.context_feature_names, features))
+
+        self.assertEqual(float(values["phase_correlation_psr_available"]), 0.0)
+        self.assertEqual(
+            float(values["log1p_minimum_phase_correlation_psr"]),
+            0.0,
+        )
+
+    def test_context_uses_projected_velocity_from_grid_contract(self) -> None:
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-02T00:00:00Z",
+                "2026-08-02T00:10:00Z",
+                "2026-08-02T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="1" * 64,
+            pixel_to_projected_matrix_m=(
+                (800.0, -600.0),
+                (600.0, 800.0),
+            ),
+        )
+        result = result_for(
+            self.state,
+            self.nowcast_config,
+            frames=self.frames,
+            accepted_mask=self.qc_mask & torch.isfinite(self.frames),
+            pair_motion=torch.stack(
+                (
+                    torch.zeros_like(self.state.displacement_yx),
+                    self.state.displacement_yx,
+                )
+            ),
+            grid_time_contract=contract,
+        )
+        snapshot = compute_sensitivity_snapshot(
+            self.frames[2],
+            result,
+            self.verification,
+            sensitivity_config=self.sensitivity_config,
+        )
+        context = dict(
+            zip(snapshot.context_feature_names, snapshot.context_features)
+        )
+        self.assertEqual(snapshot.grid_time_contract_digest, contract.digest)
+        expected = self.state.displacement_yx.new_tensor(
+            (-410.0 / 600.0, 130.0 / 600.0)
+        )
+
+        self.assertEqual(context["projected_velocity_available"], 1.0)
+        torch.testing.assert_close(
+            context["projected_velocity_x_mps"],
+            expected[0],
+        )
+        torch.testing.assert_close(
+            context["projected_velocity_y_mps"],
+            expected[1],
+        )
+        torch.testing.assert_close(
+            context["projected_speed_mps"],
+            torch.linalg.vector_norm(expected),
+        )
+        self.assertEqual(
+            context["motion_disagreement_mps_available"], 1.0
+        )
+        torch.testing.assert_close(
+            context["motion_disagreement_mps"],
+            torch.linalg.vector_norm(expected),
+        )
+        self.assertEqual(context["area_weighted_echo_available"], 1.0)
+        torch.testing.assert_close(
+            context["log1p_linear_reflectivity_integral_km2"],
+            context["log_integrated_echo"],
+        )
+        self.assertEqual(context["grid_spacing_available"], 1.0)
+        self.assertEqual(context["grid_column_spacing_m"], contract.dx_m)
+        self.assertEqual(context["grid_row_spacing_m"], contract.dy_m)
+
+    def test_area_weighted_echo_is_resolution_invariant(self) -> None:
+        physical_integrals = []
+        pixel_integrals = []
+        for size, spacing_m in ((2, 1000.0), (4, 500.0)):
+            latest = torch.full(
+                (size, size), 20.0, dtype=torch.float64
+            )
+            state = RadarState(
+                echo_linear=dbz_to_linear(latest, self.nowcast_config),
+                displacement_yx=torch.zeros(2, dtype=torch.float64),
+                log_growth_per_step=torch.zeros((), dtype=torch.float64),
+            )
+            contract = RadarGridTimeContract(
+                valid_times=(
+                    "2026-08-02T00:00:00Z",
+                    "2026-08-02T00:10:00Z",
+                    "2026-08-02T00:20:00Z",
+                ),
+                dx_m=spacing_m,
+                dy_m=spacing_m,
+                projection="EPSG:5179",
+                grid_hash=str(size) * 64,
+            )
+            features = extract_context_features(
+                latest,
+                state,
+                metadata_for(state),
+                self.nowcast_config,
+                latest_observation_mask=torch.ones_like(
+                    latest, dtype=torch.bool
+                ),
+                grid_time_contract=contract,
+            )
+            context = dict(zip(self.snapshot.context_feature_names, features))
+            physical_integrals.append(
+                context["log1p_linear_reflectivity_integral_km2"]
+            )
+            pixel_integrals.append(context["log_integrated_echo"])
+
+        torch.testing.assert_close(
+            physical_integrals[0], physical_integrals[1]
+        )
+        self.assertNotEqual(pixel_integrals[0], pixel_integrals[1])
+
+    def test_pair_conflict_reduces_trust_without_changing_other_components(
+        self,
+    ) -> None:
+        penalty = 0.4
+        sensitivity_config = replace(
+            self.sensitivity_config,
+            pair_conflict_trust_penalty=penalty,
+        )
+        conflict_metadata = replace(
+            self.result.metadata,
+            motion_pair_count=0,
+            motion_pair_selection=TendencyPairSelection.PERSISTENCE,
+            motion_pair_conflict=True,
+        )
+        conflict_result = forecast_from_state(
+            self.state,
+            conflict_metadata,
+            self.nowcast_config,
+            run=self.result.run,
+        )
+        baseline = compute_sensitivity_snapshot(
+            self.frames[2],
+            self.result,
+            self.verification,
+            sensitivity_config=sensitivity_config,
+            latest_background_dbz=self.background[2],
+        )
+        conflict = compute_sensitivity_snapshot(
+            self.frames[2],
+            conflict_result,
+            self.verification,
+            sensitivity_config=sensitivity_config,
+            latest_background_dbz=self.background[2],
+        )
+
+        self.assertEqual(baseline.trust_components["pair_consistency"], 1.0)
+        self.assertEqual(
+            conflict.trust_components["pair_consistency"],
+            penalty,
+        )
+        for name in ("linearity", "verification", "metric_support"):
+            self.assertAlmostEqual(
+                conflict.trust_components[name],
+                baseline.trust_components[name],
+            )
+        self.assertAlmostEqual(
+            conflict.trust_score,
+            baseline.trust_score * penalty,
+        )
+
     def test_nonfinite_background_does_not_create_fake_innovation(self) -> None:
         background = torch.full_like(self.frames, float("nan"))
         result = result_for(
@@ -903,6 +1178,9 @@ class SensitivityTests(unittest.TestCase):
             {"soft_fss_temperature_dbz": float("nan")},
             {"active_margin_dbz": float("nan")},
             {"linearity_delta": (0.1, 0.2)},
+            {"pair_conflict_trust_penalty": 0.0},
+            {"pair_conflict_trust_penalty": 1.1},
+            {"pair_conflict_trust_penalty": float("nan")},
         )
         for values in invalid_configs:
             with self.subTest(values=values):

@@ -26,8 +26,19 @@ from .sensitivity import CONTEXT_FEATURE_NAMES, SensitivitySnapshot
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
 _INDEX_SCHEMA_VERSION = 3
-_EPISODE_SCHEMA_VERSION = 4
-_MODEL_CONTRACT_SCHEMA_VERSION = 3
+_EPISODE_SCHEMA_VERSION = 12
+_MODEL_CONTRACT_SCHEMA_VERSION = 11
+_MODEL_CONTRACT_SCHEMA_BY_EPISODE_SCHEMA = {
+    3: 3,
+    4: 3,
+    5: 4,
+    6: 5,
+    7: 6,
+    8: 7,
+    9: 8,
+    10: 9,
+    11: 10,
+}
 _LEGACY_MODEL_CONTRACT_FIELDS_V1_V2 = {
     "model_commit",
     "residual_contract_version",
@@ -54,6 +65,93 @@ _SCHEMA_ONE_CONTEXT_FEATURE_NAMES = (
     "centroid_x",
     "log_echo_mass",
 )
+_SCHEMA_TWO_TO_FOUR_CONTEXT_FEATURE_NAMES = (
+    "motion_dy",
+    "motion_dx",
+    "motion_speed",
+    "log_growth",
+    "motion_disagreement",
+    "growth_disagreement",
+    "tendency_pair_count",
+    "tendency_source_observation",
+    "tendency_source_background",
+    "current_state_support_fraction",
+    "background_contribution_fraction",
+    "latest_observation_coverage",
+    "latest_mean_dbz",
+    "latest_max_dbz",
+    "latest_q90_dbz",
+    "echo_fraction_5dbz",
+    "echo_fraction_35dbz",
+    "boundary_echo_fraction",
+    "centroid_y",
+    "centroid_x",
+    "log_integrated_echo",
+)
+_SCHEMA_FIVE_CONTEXT_FEATURE_NAMES = (
+    "motion_dy",
+    "motion_dx",
+    "motion_speed",
+    "log_growth",
+    "motion_disagreement",
+    "growth_disagreement",
+    "motion_pair_conflict",
+    "growth_pair_conflict",
+    "tendency_pair_count",
+    "tendency_source_observation",
+    "tendency_source_background",
+    "current_state_support_fraction",
+    "background_contribution_fraction",
+    "latest_observation_coverage",
+    "latest_mean_dbz",
+    "latest_max_dbz",
+    "latest_q90_dbz",
+    "echo_fraction_5dbz",
+    "echo_fraction_35dbz",
+    "boundary_echo_fraction",
+    "centroid_y",
+    "centroid_x",
+    "log_integrated_echo",
+)
+_SCHEMA_SIX_CONTEXT_FEATURE_NAMES = (
+    *_SCHEMA_FIVE_CONTEXT_FEATURE_NAMES,
+    "motion_pair_selection_none",
+    "motion_pair_selection_single",
+    "motion_pair_selection_long",
+    "motion_pair_selection_blended",
+    "motion_pair_selection_earlier",
+    "motion_pair_selection_recent",
+    "motion_pair_selection_persistence",
+    "growth_pair_selection_none",
+    "growth_pair_selection_single",
+    "growth_pair_selection_long",
+    "growth_pair_selection_blended",
+    "growth_pair_selection_earlier",
+    "growth_pair_selection_recent",
+    "growth_pair_selection_persistence",
+)
+_SCHEMA_SEVEN_CONTEXT_FEATURE_NAMES = (
+    *_SCHEMA_SIX_CONTEXT_FEATURE_NAMES,
+    "phase_correlation_psr_available",
+    "log1p_minimum_phase_correlation_psr",
+)
+_SCHEMA_EIGHT_CONTEXT_FEATURE_NAMES = (
+    *_SCHEMA_SEVEN_CONTEXT_FEATURE_NAMES,
+    "projected_velocity_available",
+    "projected_velocity_x_mps",
+    "projected_velocity_y_mps",
+    "projected_speed_mps",
+)
+_SCHEMA_NINE_CONTEXT_FEATURE_NAMES = (
+    *_SCHEMA_EIGHT_CONTEXT_FEATURE_NAMES,
+    "motion_disagreement_mps_available",
+    "motion_disagreement_mps",
+)
+_SCHEMA_TEN_CONTEXT_FEATURE_NAMES = (
+    *_SCHEMA_NINE_CONTEXT_FEATURE_NAMES,
+    "area_weighted_echo_available",
+    "log1p_linear_reflectivity_integral_km2",
+)
 
 
 @dataclass(frozen=True)
@@ -69,10 +167,19 @@ class ModelContract:
     radar_qc_version: str
     nowcast_config_digest: str
     sensitivity_config_digest: str
+    grid_time_contract_digest: str | None = None
 
     def __post_init__(self) -> None:
-        if not all(asdict(self).values()):
+        required = asdict(self)
+        grid_digest = required.pop("grid_time_contract_digest")
+        if not all(required.values()):
             raise ValueError("all model contract fields must be non-empty")
+        if grid_digest is not None and re.fullmatch(
+            r"[0-9a-f]{64}", grid_digest
+        ) is None:
+            raise ValueError(
+                "grid_time_contract_digest must be a SHA-256 digest"
+            )
 
     @property
     def digest(self) -> str:
@@ -116,6 +223,13 @@ class SensitivityEpisode:
         ):
             raise ValueError(
                 "model contract config digests must match the sensitivity snapshot"
+            )
+        if (
+            self.contract.grid_time_contract_digest
+            != self.snapshot.grid_time_contract_digest
+        ):
+            raise ValueError(
+                "model contract grid digest must match the sensitivity snapshot"
             )
 
     @property
@@ -730,7 +844,7 @@ def _verify_manifest(
     schema_version = manifest.get("schema_version")
     if (
         type(schema_version) is not int
-        or schema_version not in (1, 2, 3, _EPISODE_SCHEMA_VERSION)
+        or not 1 <= schema_version <= _EPISODE_SCHEMA_VERSION
     ):
         raise ValueError("unsupported episode schema")
     if manifest.get("episode_id") != episode_id:
@@ -768,7 +882,10 @@ def _verify_manifest(
             raise ValueError("manifest contains an invalid contract") from error
         contract_hash = _model_contract_digest(
             contract,
-            schema_version=_MODEL_CONTRACT_SCHEMA_VERSION,
+            schema_version=_MODEL_CONTRACT_SCHEMA_BY_EPISODE_SCHEMA.get(
+                schema_version,
+                _MODEL_CONTRACT_SCHEMA_VERSION,
+            ),
         )
     if contract_hash != manifest.get("contract_hash"):
         raise ValueError("manifest contract hash is invalid")
@@ -845,6 +962,55 @@ def _verify_manifest_layout(manifest: dict[str, Any]) -> None:
             ),
             "total_observation_sensitivity": "unavailable",
         }
+    elif schema_version in (2, 3, 4):
+        context_names = _SCHEMA_TWO_TO_FOUR_CONTEXT_FEATURE_NAMES
+        if not core <= array_names <= core | optional:
+            raise ValueError(
+                f"manifest arrays do not match episode schema {schema_version}"
+            )
+        expected_scope = _sensitivity_scope()
+    elif schema_version == 5:
+        context_names = _SCHEMA_FIVE_CONTEXT_FEATURE_NAMES
+        if not core <= array_names <= core | optional:
+            raise ValueError(
+                "manifest arrays do not match episode schema 5"
+            )
+        expected_scope = _sensitivity_scope()
+    elif schema_version == 6:
+        context_names = _SCHEMA_SIX_CONTEXT_FEATURE_NAMES
+        if not core <= array_names <= core | optional:
+            raise ValueError(
+                "manifest arrays do not match episode schema 6"
+            )
+        expected_scope = _sensitivity_scope()
+    elif schema_version == 7:
+        context_names = _SCHEMA_SEVEN_CONTEXT_FEATURE_NAMES
+        if not core <= array_names <= core | optional:
+            raise ValueError(
+                "manifest arrays do not match episode schema 7"
+            )
+        expected_scope = _sensitivity_scope()
+    elif schema_version == 8:
+        context_names = _SCHEMA_EIGHT_CONTEXT_FEATURE_NAMES
+        if not core <= array_names <= core | optional:
+            raise ValueError(
+                "manifest arrays do not match episode schema 8"
+            )
+        expected_scope = _sensitivity_scope()
+    elif schema_version == 9:
+        context_names = _SCHEMA_NINE_CONTEXT_FEATURE_NAMES
+        if not core <= array_names <= core | optional:
+            raise ValueError(
+                "manifest arrays do not match episode schema 9"
+            )
+        expected_scope = _sensitivity_scope()
+    elif schema_version in (10, 11):
+        context_names = _SCHEMA_TEN_CONTEXT_FEATURE_NAMES
+        if not core <= array_names <= core | optional:
+            raise ValueError(
+                "manifest arrays do not match episode schema 10"
+            )
+        expected_scope = _sensitivity_scope()
     else:
         context_names = CONTEXT_FEATURE_NAMES
         if not core <= array_names <= core | optional:
@@ -925,6 +1091,13 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
     ):
         if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
             raise ValueError(f"{name} must be a SHA-256 digest")
+    grid_digest = snapshot.grid_time_contract_digest
+    if grid_digest is not None and re.fullmatch(
+        r"[0-9a-f]{64}", grid_digest
+    ) is None:
+        raise ValueError(
+            "grid_time_contract_digest must be a SHA-256 digest"
+        )
     if not math.isfinite(snapshot.trust_score):
         raise ValueError("trust_score must be finite")
     if snapshot.reward_available and not snapshot.impact_available:
@@ -1295,10 +1468,13 @@ def _model_contract_digest(
     *,
     schema_version: int,
 ) -> str:
+    values = asdict(contract)
+    if schema_version < 10:
+        values.pop("grid_time_contract_digest")
     return _json_digest(
         {
             "contract_schema_version": schema_version,
-            **asdict(contract),
+            **values,
         }
     )
 

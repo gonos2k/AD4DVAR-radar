@@ -13,6 +13,7 @@ from .nowcast import (
     NowcastConfig,
     RadarGridTimeContract,
     RadarState,
+    TendencyPairSelection,
     TendencySource,
     nowcast,
 )
@@ -46,6 +47,7 @@ __all__ = [
     "SensitivityConfig",
     "SensitivityEpisode",
     "SensitivitySnapshot",
+    "TendencyPairSelection",
     "TendencySource",
     "compute_sensitivity_snapshot",
     "compute_sensitivity_snapshot_from_run",

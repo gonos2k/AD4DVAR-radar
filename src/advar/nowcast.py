@@ -29,6 +29,10 @@ from .physics import (
 )
 
 
+_MINIMUM_GRID_AXIS_SINE = 0.01
+_MAXIMUM_GRID_AFFINE_CONDITION_NUMBER = 1000.0
+
+
 @dataclass(frozen=True)
 class NowcastConfig:
     interval_minutes: int = 10
@@ -38,10 +42,17 @@ class NowcastConfig:
     echo_threshold_dbz: float = 5.0
     recent_weight: float = 2.0 / 3.0
     pair_echo_dilation_px: int = 3
+    pair_echo_dilation_m: float | None = None
     max_displacement_px: float = 20.0
     maximum_motion_speed_mps: float | None = None
+    maximum_pair_motion_disagreement_px: float = 4.0
+    maximum_pair_velocity_disagreement_mps: float = 10.0
+    maximum_pair_growth_disagreement: float = math.log(1.10)
+    minimum_pair_psr_advantage: float = 3.0
+    long_pair_confidence_penalty: float = 0.5
     minimum_phase_correlation_psr: float = 8.0
     phase_correlation_sidelobe_radius_px: int = 2
+    phase_correlation_sidelobe_radius_m: float | None = None
     max_log_growth_per_step: float = math.log(1.35)
     growth_decay_minutes: float = 60.0
     maximum_background_age_minutes: float = 60.0
@@ -73,6 +84,11 @@ class NowcastConfig:
             self.echo_threshold_dbz,
             self.recent_weight,
             self.max_displacement_px,
+            self.maximum_pair_motion_disagreement_px,
+            self.maximum_pair_velocity_disagreement_mps,
+            self.maximum_pair_growth_disagreement,
+            self.minimum_pair_psr_advantage,
+            self.long_pair_confidence_penalty,
             self.minimum_phase_correlation_psr,
             self.max_log_growth_per_step,
             self.growth_decay_minutes,
@@ -90,8 +106,42 @@ class NowcastConfig:
             raise ValueError("recent_weight must be between 0 and 1")
         if self.pair_echo_dilation_px < 0:
             raise ValueError("pair_echo_dilation_px cannot be negative")
+        physical_radii = {
+            "pair_echo_dilation_m": self.pair_echo_dilation_m,
+            "phase_correlation_sidelobe_radius_m": (
+                self.phase_correlation_sidelobe_radius_m
+            ),
+        }
+        for name, value in physical_radii.items():
+            if value is not None and (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or value < 0
+            ):
+                raise ValueError(f"{name} must be finite and nonnegative")
         if self.max_displacement_px <= 0:
             raise ValueError("max_displacement_px must be positive")
+        pair_limits = {
+            "maximum_pair_motion_disagreement_px": (
+                self.maximum_pair_motion_disagreement_px
+            ),
+            "maximum_pair_velocity_disagreement_mps": (
+                self.maximum_pair_velocity_disagreement_mps
+            ),
+            "maximum_pair_growth_disagreement": (
+                self.maximum_pair_growth_disagreement
+            ),
+        }
+        for name, value in pair_limits.items():
+            if value <= 0:
+                raise ValueError(f"{name} must be positive")
+        if self.minimum_pair_psr_advantage <= 0:
+            raise ValueError("minimum_pair_psr_advantage must be positive")
+        if not 0.0 < self.long_pair_confidence_penalty <= 1.0:
+            raise ValueError(
+                "long_pair_confidence_penalty must be in (0, 1]"
+            )
         if self.maximum_motion_speed_mps is not None and (
             isinstance(self.maximum_motion_speed_mps, bool)
             or not isinstance(self.maximum_motion_speed_mps, (int, float))
@@ -125,7 +175,6 @@ class NowcastConfig:
     @property
     def digest(self) -> str:
         return dataclass_digest(self)
-
 
 def _parse_aware_time(value: str, name: str) -> datetime:
     if not isinstance(value, str) or not value:
@@ -243,6 +292,28 @@ class RadarGridTimeContract:
             raise ValueError(
                 "pixel_to_projected_matrix_m must agree with dx_m and dy_m"
             )
+        normalized_determinant = abs(determinant) / (
+            column_spacing * row_spacing
+        )
+        frobenius_squared = sum(
+            value * value for row in canonical_matrix for value in row
+        )
+        discriminant = max(
+            frobenius_squared * frobenius_squared
+            - 4.0 * determinant * determinant,
+            0.0,
+        )
+        maximum_singular_value_squared = 0.5 * (
+            frobenius_squared + math.sqrt(discriminant)
+        )
+        condition_number = maximum_singular_value_squared / abs(determinant)
+        if (
+            normalized_determinant < _MINIMUM_GRID_AXIS_SINE
+            or condition_number > _MAXIMUM_GRID_AFFINE_CONDITION_NUMBER
+        ):
+            raise ValueError(
+                "pixel_to_projected_matrix_m must be well-conditioned"
+            )
         object.__setattr__(
             self,
             "pixel_to_projected_matrix_m",
@@ -260,6 +331,20 @@ class RadarGridTimeContract:
     def digest(self) -> str:
         return dataclass_digest(self)
 
+    @property
+    def cell_area_m2(self) -> float:
+        assert self.pixel_to_projected_matrix_m is not None
+        (xx, xr), (yx, yr) = self.pixel_to_projected_matrix_m
+        return abs(xx * yr - xr * yx)
+
+    @property
+    def grid_axes_are_orthogonal(self) -> bool:
+        assert self.pixel_to_projected_matrix_m is not None
+        (xx, xr), (yx, yr) = self.pixel_to_projected_matrix_m
+        dot_product = xx * xr + yx * yr
+        scale = float(self.dx_m) * float(self.dy_m)
+        return math.isclose(dot_product, 0.0, abs_tol=1.0e-9 * scale)
+
     def projected_displacement_xy(
         self,
         displacement_yx: Tensor,
@@ -270,6 +355,41 @@ class RadarGridTimeContract:
         matrix = displacement_yx.new_tensor(self.pixel_to_projected_matrix_m)
         column_row = torch.stack((displacement_yx[1], displacement_yx[0]))
         return matrix @ column_row
+
+    def displacement_yx_from_projected_xy(
+        self,
+        projected_displacement_xy: Tensor,
+    ) -> Tensor:
+        if projected_displacement_xy.shape != (2,):
+            raise ValueError("projected_displacement_xy must have shape [2]")
+        assert self.pixel_to_projected_matrix_m is not None
+        matrix = projected_displacement_xy.new_tensor(
+            self.pixel_to_projected_matrix_m
+        )
+        column_row = torch.linalg.solve(matrix, projected_displacement_xy)
+        return torch.stack((column_row[1], column_row[0]))
+
+    def projected_velocity_xy(
+        self,
+        displacement_yx: Tensor,
+        interval_minutes: int,
+    ) -> Tensor:
+        if type(interval_minutes) is not int or interval_minutes <= 0:
+            raise ValueError("interval_minutes must be positive")
+        return self.projected_displacement_xy(displacement_yx) / (
+            interval_minutes * 60.0
+        )
+
+    def displacement_yx_from_projected_velocity(
+        self,
+        projected_velocity_xy: Tensor,
+        interval_minutes: int,
+    ) -> Tensor:
+        if type(interval_minutes) is not int or interval_minutes <= 0:
+            raise ValueError("interval_minutes must be positive")
+        return self.displacement_yx_from_projected_xy(
+            projected_velocity_xy * (interval_minutes * 60.0)
+        )
 
     def maximum_displacement_yx(
         self,
@@ -304,7 +424,55 @@ class RadarGridTimeContract:
         maximum_row, maximum_col = self._maximum_index_displacement_yx(
             distance_m
         )
-        return math.ceil(maximum_row), math.ceil(maximum_col)
+        tolerance = 64.0 * math.ulp(
+            max(maximum_row, maximum_col, 1.0)
+        )
+        return (
+            math.floor(maximum_row + tolerance),
+            math.floor(maximum_col + tolerance),
+        )
+
+    def pixel_offsets_within_distance(
+        self,
+        distance_m: float,
+        *,
+        maximum_radius_yx: tuple[int, int],
+    ) -> tuple[tuple[int, int], ...]:
+        """Return integer row/column offsets inside a projected-distance ball."""
+
+        if (
+            not isinstance(maximum_radius_yx, tuple)
+            or len(maximum_radius_yx) != 2
+            or any(type(value) is not int or value < 0 for value in maximum_radius_yx)
+        ):
+            raise ValueError(
+                "maximum_radius_yx must contain two nonnegative integers"
+            )
+        radius_y, radius_x = self.pixel_radius_yx(distance_m)
+        if radius_y > maximum_radius_yx[0] or radius_x > maximum_radius_yx[1]:
+            raise ValueError(
+                "physical distance requires a grid radius larger than the "
+                "analysis grid"
+            )
+        assert self.pixel_to_projected_matrix_m is not None
+        (a, b), (c, d) = self.pixel_to_projected_matrix_m
+        distance_tolerance = 64.0 * math.ulp(
+            max(distance_m, float(self.dx_m), float(self.dy_m), 1.0)
+        )
+        maximum_distance = distance_m + distance_tolerance
+        offsets = tuple(
+            (row, column)
+            for row in range(-radius_y, radius_y + 1)
+            for column in range(-radius_x, radius_x + 1)
+            if math.hypot(
+                a * column + b * row,
+                c * column + d * row,
+            )
+            <= maximum_distance
+        )
+        if (0, 0) not in offsets:
+            raise RuntimeError("physical offset footprint must contain its origin")
+        return offsets
 
     def validate_for(
         self,
@@ -423,8 +591,39 @@ class TendencySource(str, Enum):
     NONE = "NONE"
 
 
+class TendencyPairSelection(str, Enum):
+    NONE = "NONE"
+    SINGLE = "SINGLE"
+    LONG = "LONG"
+    BLENDED = "BLENDED"
+    EARLIER = "EARLIER"
+    RECENT = "RECENT"
+    PERSISTENCE = "PERSISTENCE"
+
+
+@dataclass(frozen=True)
+class _SourceTendencyEstimate:
+    displacement_yx: Tensor
+    log_growth_per_step: Tensor
+    motion_disagreement_px: Tensor
+    motion_disagreement_mps: Tensor
+    growth_disagreement: Tensor
+    minimum_phase_correlation_psr: Tensor
+    tendency_pair_count: int
+    motion_pair_count: int
+    growth_pair_count: int
+    motion_pair_selection: TendencyPairSelection
+    growth_pair_selection: TendencyPairSelection
+    motion_pair_conflict: bool
+    growth_pair_conflict: bool
+
+    @property
+    def available(self) -> bool:
+        return self.tendency_pair_count > 0
+
+
 _FORECAST_INPUT_BUNDLE_VERSION = "forecast-input-bundle-v2"
-_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v2"
+_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v4"
 
 
 def _validate_background_age(
@@ -467,11 +666,44 @@ class ForecastMetadata:
     background_age_minutes: float | None
     source_support: Tensor
     motion_disagreement_px: Tensor
+    motion_disagreement_mps: Tensor
     growth_disagreement: Tensor
     minimum_phase_correlation_psr: Tensor
     tendency_pair_count: int
     tendency_source: TendencySource
     provenance: str = "p0_support_merged"
+    motion_pair_count: int = 0
+    growth_pair_count: int = 0
+    motion_pair_selection: TendencyPairSelection = TendencyPairSelection.NONE
+    growth_pair_selection: TendencyPairSelection = TendencyPairSelection.NONE
+    motion_pair_conflict: bool = False
+    growth_pair_conflict: bool = False
+
+    def __post_init__(self) -> None:
+        if (
+            self.tendency_pair_count in (1, 2)
+            and self.motion_pair_count == 0
+            and self.growth_pair_count == 0
+            and self.motion_pair_selection is TendencyPairSelection.NONE
+            and self.growth_pair_selection is TendencyPairSelection.NONE
+        ):
+            selection = (
+                TendencyPairSelection.SINGLE
+                if self.tendency_pair_count == 1
+                else TendencyPairSelection.BLENDED
+            )
+            object.__setattr__(
+                self,
+                "motion_pair_count",
+                self.tendency_pair_count,
+            )
+            object.__setattr__(
+                self,
+                "growth_pair_count",
+                self.tendency_pair_count,
+            )
+            object.__setattr__(self, "motion_pair_selection", selection)
+            object.__setattr__(self, "growth_pair_selection", selection)
 
     @property
     def background_state_support_fraction(self) -> float:
@@ -513,6 +745,9 @@ def state_metadata_digest(
                 "motion_disagreement_px": tensor_digest(
                     metadata.motion_disagreement_px
                 ),
+                "motion_disagreement_mps": tensor_digest(
+                    metadata.motion_disagreement_mps
+                ),
                 "growth_disagreement": tensor_digest(
                     metadata.growth_disagreement
                 ),
@@ -520,6 +755,12 @@ def state_metadata_digest(
                     metadata.minimum_phase_correlation_psr
                 ),
                 "tendency_pair_count": metadata.tendency_pair_count,
+                "motion_pair_count": metadata.motion_pair_count,
+                "growth_pair_count": metadata.growth_pair_count,
+                "motion_pair_selection": metadata.motion_pair_selection.value,
+                "growth_pair_selection": metadata.growth_pair_selection.value,
+                "motion_pair_conflict": metadata.motion_pair_conflict,
+                "growth_pair_conflict": metadata.growth_pair_conflict,
                 "tendency_source": metadata.tendency_source.value,
                 "provenance": metadata.provenance,
             },
@@ -550,6 +791,7 @@ class ForecastRunContract:
     analysis_config_json: str | None = None
     analysis_config_digest: str | None = None
     analysis_input_digest: str | None = None
+    forecast_integrator_version: str = FORECAST_INTEGRATOR_VERSION
 
     @classmethod
     def from_inputs(
@@ -658,6 +900,10 @@ class ForecastRunContract:
         return self._latest_background_dbz.clone()
 
     def validate_integrity(self) -> None:
+        if self.forecast_integrator_version != FORECAST_INTEGRATOR_VERSION:
+            raise ValueError(
+                "forecast integrator version is incompatible with this runtime"
+            )
         _validate_sha256_digest(
             "input_bundle_digest",
             self.input_bundle_digest,
@@ -845,6 +1091,7 @@ def _forecast_run_identity_digest(
     return json_digest(
         {
             "version": _FORECAST_RUN_IDENTITY_VERSION,
+            "forecast_integrator_version": run.forecast_integrator_version,
             "nowcast_config_digest": run.config.digest,
             "input_bundle_digest": run.input_bundle_digest,
             "latest_frame_digest": run.latest_frame_digest,
@@ -937,7 +1184,6 @@ class PreparedRadarInput:
     background_mask: Tensor
     missing_mask: Tensor
     qc_rejected_mask: Tensor
-    observed_clear_mask: Tensor
     data_status: DataStatus
     coverage_by_frame: Tensor
     background_age_minutes: float | None
@@ -1033,8 +1279,6 @@ def prepare_input(
         background_mask=background_mask,
         missing_mask=missing,
         qc_rejected_mask=qc_rejected,
-        observed_clear_mask=observed
-        & (clean_observations < config.echo_threshold_dbz),
         data_status=status,
         coverage_by_frame=coverage_by_frame.detach(),
         background_age_minutes=background_age_minutes,
@@ -1070,6 +1314,11 @@ def estimate_prepared_state(
     *,
     grid_time_contract: RadarGridTimeContract | None = None,
 ) -> tuple[RadarState, ForecastMetadata]:
+    if grid_time_contract is None and (
+        config.pair_echo_dilation_m is not None
+        or config.phase_correlation_sidelobe_radius_m is not None
+    ):
+        raise ValueError("physical pair settings require a grid/time contract")
     observation_linear = dbz_to_echo(
         prepared.frames_dbz,
         min_dbz=config.min_dbz,
@@ -1088,21 +1337,15 @@ def estimate_prepared_state(
         background_linear,
         name="background echo conversion",
     )
-    (
-        displacement,
-        growth,
-        motion_disagreement,
-        growth_disagreement,
-        minimum_phase_correlation_psr,
-        tendency_pair_count,
-        tendency_source,
-    ) = _estimate_time_normalized_tendencies(
+    tendency, tendency_source = _estimate_time_normalized_tendencies(
         prepared,
         observation_linear,
         background_linear,
         config,
         grid_time_contract,
     )
+    displacement = tendency.displacement_yx
+    growth = tendency.log_growth_per_step
     (
         current_echo,
         current_source_support,
@@ -1134,13 +1377,20 @@ def estimate_prepared_state(
             prepared.background_age_minutes if background_used else None
         ),
         source_support=current_source_support.detach().clone(),
-        motion_disagreement_px=motion_disagreement.detach(),
-        growth_disagreement=growth_disagreement.detach(),
+        motion_disagreement_px=tendency.motion_disagreement_px.detach(),
+        motion_disagreement_mps=tendency.motion_disagreement_mps.detach(),
+        growth_disagreement=tendency.growth_disagreement.detach(),
         minimum_phase_correlation_psr=(
-            minimum_phase_correlation_psr.detach()
+            tendency.minimum_phase_correlation_psr.detach()
         ),
-        tendency_pair_count=tendency_pair_count,
+        tendency_pair_count=tendency.tendency_pair_count,
         tendency_source=tendency_source,
+        motion_pair_count=tendency.motion_pair_count,
+        growth_pair_count=tendency.growth_pair_count,
+        motion_pair_selection=tendency.motion_pair_selection,
+        growth_pair_selection=tendency.growth_pair_selection,
+        motion_pair_conflict=tendency.motion_pair_conflict,
+        growth_pair_conflict=tendency.growth_pair_conflict,
     )
     return state, metadata
 
@@ -1151,7 +1401,7 @@ def _estimate_time_normalized_tendencies(
     background_linear: Tensor,
     config: NowcastConfig,
     grid_time_contract: RadarGridTimeContract | None,
-) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, int, TendencySource]:
+) -> tuple[_SourceTendencyEstimate, TendencySource]:
     observation_estimate = _estimate_source_tendencies(
         prepared.frames_dbz,
         prepared.observed_mask,
@@ -1159,8 +1409,8 @@ def _estimate_time_normalized_tendencies(
         config,
         grid_time_contract,
     )
-    if observation_estimate[-1]:
-        return (*observation_estimate, TendencySource.OBSERVATION)
+    if observation_estimate.available:
+        return observation_estimate, TendencySource.OBSERVATION
     background_estimate = _estimate_source_tendencies(
         prepared.background_frames_dbz,
         prepared.background_mask,
@@ -1168,9 +1418,9 @@ def _estimate_time_normalized_tendencies(
         config,
         grid_time_contract,
     )
-    if background_estimate[-1]:
-        return (*background_estimate, TendencySource.BACKGROUND)
-    return (*background_estimate, TendencySource.NONE)
+    if background_estimate.available:
+        return background_estimate, TendencySource.BACKGROUND
+    return observation_estimate, TendencySource.NONE
 
 
 def _estimate_source_tendencies(
@@ -1179,9 +1429,13 @@ def _estimate_source_tendencies(
     linear: Tensor,
     config: NowcastConfig,
     grid_time_contract: RadarGridTimeContract | None,
-) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, int]:
-    adjacent_estimates: list[tuple[Tensor, Tensor, Tensor]] = []
-    for previous_index, current_index in ((0, 1), (1, 2)):
+) -> _SourceTendencyEstimate:
+    adjacent_estimates: list[
+        tuple[int, tuple[Tensor, Tensor, Tensor]]
+    ] = []
+    for pair_index, (previous_index, current_index) in enumerate(
+        ((0, 1), (1, 2))
+    ):
         estimate = _estimate_available_pair(
             frames_dbz,
             masks,
@@ -1192,64 +1446,99 @@ def _estimate_source_tendencies(
             grid_time_contract,
         )
         if estimate is not None:
-            adjacent_estimates.append(estimate)
+            adjacent_estimates.append((pair_index, estimate))
 
     if len(adjacent_estimates) == 2:
-        first_motion, first_growth, first_psr = adjacent_estimates[0]
-        second_motion, second_growth, second_psr = adjacent_estimates[1]
+        first_motion, first_growth, first_psr = adjacent_estimates[0][1]
+        second_motion, second_growth, second_psr = adjacent_estimates[1][1]
         motion_disagreement = torch.linalg.vector_norm(
             second_motion - first_motion
         )
+        motion_disagreement_mps = _motion_disagreement_mps(
+            first_motion,
+            second_motion,
+            config,
+            grid_time_contract,
+        )
         growth_disagreement = torch.abs(second_growth - first_growth)
-        if (
-            config.maximum_motion_speed_mps is not None
-            and grid_time_contract is not None
-        ):
-            projected_disagreement = (
-                grid_time_contract.projected_displacement_xy(
-                    second_motion - first_motion
+        motion_is_inconsistent = _motion_pairs_are_inconsistent(
+            motion_disagreement,
+            motion_disagreement_mps,
+            config,
+        )
+        growth_is_inconsistent = float(growth_disagreement.detach()) >= (
+            config.maximum_pair_growth_disagreement - config.epsilon
+        )
+        motion, motion_indices, motion_selection = _combine_pair_component(
+            first_motion,
+            second_motion,
+            first_psr,
+            second_psr,
+            inconsistent=motion_is_inconsistent,
+            config=config,
+        )
+        growth, growth_indices, growth_selection = _combine_pair_component(
+            first_growth,
+            second_growth,
+            first_psr,
+            second_psr,
+            inconsistent=growth_is_inconsistent,
+            config=config,
+        )
+        used_indices = tuple(sorted(set(motion_indices) | set(growth_indices)))
+        minimum_psr = (
+            torch.min(
+                torch.stack(
+                    tuple(
+                        (first_psr, second_psr)[index]
+                        for index in used_indices
+                    )
                 )
             )
-            disagreement_speed = torch.linalg.vector_norm(
-                projected_disagreement
-            ) / (config.interval_minutes * 60.0)
-            motion_is_inconsistent = float(
-                disagreement_speed.detach()
-            ) >= (config.maximum_motion_speed_mps - config.epsilon)
-        else:
-            motion_is_inconsistent = float(
-                motion_disagreement.detach()
-            ) >= (config.max_displacement_px - config.epsilon)
-        growth_is_inconsistent = (
-            config.max_log_growth_per_step > config.epsilon
-            and float(growth_disagreement.detach())
-            >= config.max_log_growth_per_step - config.epsilon
+            if used_indices
+            else linear.new_full((), torch.nan)
         )
-        if motion_is_inconsistent or growth_is_inconsistent:
-            return (
-                second_motion,
-                second_growth,
-                motion_disagreement,
-                growth_disagreement,
-                second_psr,
-                1,
-            )
-        weight = config.recent_weight
-        return (
-            (1.0 - weight) * first_motion + weight * second_motion,
-            (1.0 - weight) * first_growth + weight * second_growth,
-            motion_disagreement,
-            growth_disagreement,
-            torch.minimum(first_psr, second_psr),
-            2,
+        return _SourceTendencyEstimate(
+            displacement_yx=motion,
+            log_growth_per_step=growth,
+            motion_disagreement_px=motion_disagreement,
+            motion_disagreement_mps=motion_disagreement_mps,
+            growth_disagreement=growth_disagreement,
+            minimum_phase_correlation_psr=minimum_psr,
+            tendency_pair_count=len(used_indices),
+            motion_pair_count=len(motion_indices),
+            growth_pair_count=len(growth_indices),
+            motion_pair_selection=motion_selection,
+            growth_pair_selection=growth_selection,
+            motion_pair_conflict=motion_is_inconsistent,
+            growth_pair_conflict=growth_is_inconsistent,
         )
 
     zero_motion = linear.new_zeros(2)
     zero_growth = linear.new_zeros(())
     unavailable_psr = linear.new_full((), torch.nan)
     if adjacent_estimates:
-        motion, growth, psr = adjacent_estimates[0]
-        return motion, growth, zero_growth, zero_growth, psr, 1
+        adjacent_pair_index, adjacent_estimate = adjacent_estimates[0]
+        long_estimate = _estimate_available_pair(
+            frames_dbz,
+            masks,
+            linear,
+            0,
+            2,
+            config,
+            grid_time_contract,
+        )
+        if long_estimate is None:
+            motion, growth, psr = adjacent_estimate
+            return _single_pair_tendency(motion, growth, psr)
+        return _combine_single_adjacent_and_long(
+            adjacent_estimate,
+            long_estimate,
+            adjacent_pair_index,
+            masks,
+            config,
+            grid_time_contract,
+        )
 
     long_estimate = _estimate_available_pair(
         frames_dbz,
@@ -1261,17 +1550,255 @@ def _estimate_source_tendencies(
         grid_time_contract,
     )
     if long_estimate is None:
-        return (
-            zero_motion,
-            zero_growth,
-            zero_growth,
-            zero_growth,
-            unavailable_psr,
-            0,
+        return _SourceTendencyEstimate(
+            displacement_yx=zero_motion,
+            log_growth_per_step=zero_growth,
+            motion_disagreement_px=zero_growth,
+            motion_disagreement_mps=unavailable_psr,
+            growth_disagreement=zero_growth,
+            minimum_phase_correlation_psr=unavailable_psr,
+            tendency_pair_count=0,
+            motion_pair_count=0,
+            growth_pair_count=0,
+            motion_pair_selection=TendencyPairSelection.NONE,
+            growth_pair_selection=TendencyPairSelection.NONE,
+            motion_pair_conflict=False,
+            growth_pair_conflict=False,
         )
 
     motion, growth, psr = long_estimate
-    return motion, growth, zero_growth, zero_growth, psr, 1
+    return _single_pair_tendency(
+        motion,
+        growth,
+        psr,
+        selection=TendencyPairSelection.LONG,
+    )
+
+
+def _single_pair_tendency(
+    motion: Tensor,
+    growth: Tensor,
+    psr: Tensor,
+    *,
+    selection: TendencyPairSelection = TendencyPairSelection.SINGLE,
+) -> _SourceTendencyEstimate:
+    zero = growth.new_zeros(())
+    return _SourceTendencyEstimate(
+        displacement_yx=motion,
+        log_growth_per_step=growth,
+        motion_disagreement_px=zero,
+        motion_disagreement_mps=psr.new_full((), torch.nan),
+        growth_disagreement=zero,
+        minimum_phase_correlation_psr=psr,
+        tendency_pair_count=1,
+        motion_pair_count=1,
+        growth_pair_count=1,
+        motion_pair_selection=selection,
+        growth_pair_selection=selection,
+        motion_pair_conflict=False,
+        growth_pair_conflict=False,
+    )
+
+
+def _combine_single_adjacent_and_long(
+    adjacent: tuple[Tensor, Tensor, Tensor],
+    long: tuple[Tensor, Tensor, Tensor],
+    adjacent_pair_index: int,
+    masks: Tensor,
+    config: NowcastConfig,
+    grid_time_contract: RadarGridTimeContract | None,
+) -> _SourceTendencyEstimate:
+    adjacent_motion, adjacent_growth, adjacent_psr = adjacent
+    long_motion, long_growth, long_psr = long
+    motion_disagreement = torch.linalg.vector_norm(
+        long_motion - adjacent_motion
+    )
+    motion_disagreement_mps = _motion_disagreement_mps(
+        adjacent_motion,
+        long_motion,
+        config,
+        grid_time_contract,
+    )
+    growth_disagreement = torch.abs(long_growth - adjacent_growth)
+    motion_is_inconsistent = _motion_pairs_are_inconsistent(
+        motion_disagreement,
+        motion_disagreement_mps,
+        config,
+    )
+    growth_is_inconsistent = float(growth_disagreement.detach()) >= (
+        config.maximum_pair_growth_disagreement - config.epsilon
+    )
+    adjacent_previous = adjacent_pair_index
+    adjacent_current = adjacent_pair_index + 1
+    adjacent_confidence = _pair_confidence(
+        adjacent_psr,
+        masks,
+        adjacent_previous,
+        adjacent_current,
+        span_penalty=1.0,
+    )
+    long_confidence = _pair_confidence(
+        long_psr,
+        masks,
+        0,
+        2,
+        span_penalty=config.long_pair_confidence_penalty,
+    )
+    motion, motion_adjacent, motion_long, motion_selection = (
+        _select_single_adjacent_or_long_component(
+            adjacent_motion,
+            long_motion,
+            adjacent_confidence,
+            long_confidence,
+            inconsistent=motion_is_inconsistent,
+            config=config,
+        )
+    )
+    growth, growth_adjacent, growth_long, growth_selection = (
+        _select_single_adjacent_or_long_component(
+            adjacent_growth,
+            long_growth,
+            adjacent_confidence,
+            long_confidence,
+            inconsistent=growth_is_inconsistent,
+            config=config,
+        )
+    )
+    adjacent_used = motion_adjacent or growth_adjacent
+    long_used = motion_long or growth_long
+    used_psrs = []
+    if adjacent_used:
+        used_psrs.append(adjacent_psr)
+    if long_used:
+        used_psrs.append(long_psr)
+    minimum_psr = (
+        torch.min(torch.stack(used_psrs))
+        if used_psrs
+        else adjacent_psr.new_full((), torch.nan)
+    )
+    return _SourceTendencyEstimate(
+        displacement_yx=motion,
+        log_growth_per_step=growth,
+        motion_disagreement_px=motion_disagreement,
+        motion_disagreement_mps=motion_disagreement_mps,
+        growth_disagreement=growth_disagreement,
+        minimum_phase_correlation_psr=minimum_psr,
+        tendency_pair_count=int(adjacent_used) + int(long_used),
+        motion_pair_count=int(motion_adjacent) + int(motion_long),
+        growth_pair_count=int(growth_adjacent) + int(growth_long),
+        motion_pair_selection=motion_selection,
+        growth_pair_selection=growth_selection,
+        motion_pair_conflict=motion_is_inconsistent,
+        growth_pair_conflict=growth_is_inconsistent,
+    )
+
+
+def _pair_confidence(
+    psr: Tensor,
+    masks: Tensor,
+    previous_index: int,
+    current_index: int,
+    *,
+    span_penalty: float,
+) -> Tensor:
+    common_coverage = torch.mean(
+        (masks[previous_index] & masks[current_index]).to(dtype=psr.dtype)
+    )
+    return psr * common_coverage * span_penalty
+
+
+def _select_single_adjacent_or_long_component(
+    adjacent: Tensor,
+    long: Tensor,
+    adjacent_confidence: Tensor,
+    long_confidence: Tensor,
+    *,
+    inconsistent: bool,
+    config: NowcastConfig,
+) -> tuple[Tensor, bool, bool, TendencyPairSelection]:
+    confidence_advantage = float(
+        (long_confidence - adjacent_confidence).detach()
+    )
+    long_is_clearly_better = (
+        confidence_advantage >= config.minimum_pair_psr_advantage
+    )
+    adjacent_is_clearly_better = (
+        -confidence_advantage >= config.minimum_pair_psr_advantage
+    )
+    if inconsistent:
+        if long_is_clearly_better:
+            return long, False, True, TendencyPairSelection.LONG
+        if adjacent_is_clearly_better:
+            return adjacent, True, False, TendencyPairSelection.SINGLE
+        return (
+            torch.zeros_like(adjacent),
+            False,
+            False,
+            TendencyPairSelection.PERSISTENCE,
+        )
+    if long_is_clearly_better:
+        return long, False, True, TendencyPairSelection.LONG
+    return adjacent, True, False, TendencyPairSelection.SINGLE
+
+
+def _motion_disagreement_mps(
+    first_motion: Tensor,
+    second_motion: Tensor,
+    config: NowcastConfig,
+    grid_time_contract: RadarGridTimeContract | None,
+) -> Tensor:
+    if grid_time_contract is None:
+        return first_motion.new_full((), torch.nan)
+    projected = grid_time_contract.projected_displacement_xy(
+        second_motion - first_motion
+    )
+    return torch.linalg.vector_norm(projected) / (
+        config.interval_minutes * 60.0
+    )
+
+
+def _motion_pairs_are_inconsistent(
+    motion_disagreement_px: Tensor,
+    motion_disagreement_mps: Tensor,
+    config: NowcastConfig,
+) -> bool:
+    if bool(torch.isfinite(motion_disagreement_mps)):
+        disagreement = float(motion_disagreement_mps.detach())
+        limit = config.maximum_pair_velocity_disagreement_mps
+    else:
+        disagreement = float(motion_disagreement_px.detach())
+        limit = config.maximum_pair_motion_disagreement_px
+    return disagreement >= limit - config.epsilon
+
+
+def _combine_pair_component(
+    first: Tensor,
+    second: Tensor,
+    first_psr: Tensor,
+    second_psr: Tensor,
+    *,
+    inconsistent: bool,
+    config: NowcastConfig,
+) -> tuple[Tensor, tuple[int, ...], TendencyPairSelection]:
+    if inconsistent:
+        psr_difference = float((second_psr - first_psr).detach())
+        if psr_difference >= config.minimum_pair_psr_advantage:
+            return second, (1,), TendencyPairSelection.RECENT
+        if -psr_difference >= config.minimum_pair_psr_advantage:
+            return first, (0,), TendencyPairSelection.EARLIER
+        return torch.zeros_like(first), (), TendencyPairSelection.PERSISTENCE
+
+    first_weight = (1.0 - config.recent_weight) * first_psr
+    second_weight = config.recent_weight * second_psr
+    total_weight = (first_weight + second_weight).clamp_min(config.epsilon)
+    combined = (first_weight * first + second_weight * second) / total_weight
+    first_used = float(first_weight.detach()) > config.epsilon
+    second_used = float(second_weight.detach()) > config.epsilon
+    if first_used and second_used:
+        return combined, (0, 1), TendencyPairSelection.BLENDED
+    if first_used:
+        return combined, (0,), TendencyPairSelection.EARLIER
+    return combined, (1,), TendencyPairSelection.RECENT
 
 
 def _estimate_available_pair(
@@ -1291,6 +1818,7 @@ def _estimate_available_pair(
         frames_dbz[current_index],
         common,
         config,
+        grid_time_contract,
     ):
         return None
 
@@ -1329,6 +1857,7 @@ def _estimate_available_pair(
             current_dbz,
             config,
             max_displacement_yx=per_step_limits * step_span,
+            grid_time_contract=grid_time_contract,
         )
     )
     if not search_interior or float(phase_correlation_psr.detach()) < (
@@ -1377,6 +1906,7 @@ def _has_complete_echo_neighborhood(
     current_dbz: Tensor,
     common: Tensor,
     config: NowcastConfig,
+    grid_time_contract: RadarGridTimeContract | None,
 ) -> bool:
     active_echo = (
         (previous_dbz >= config.echo_threshold_dbz)
@@ -1385,21 +1915,49 @@ def _has_complete_echo_neighborhood(
     if not bool(torch.any(active_echo)):
         return False
 
-    radius = config.pair_echo_dilation_px
-    if radius:
-        near_echo = (
-            F.max_pool2d(
-                active_echo[None, None].to(dtype=previous_dbz.dtype),
-                kernel_size=2 * radius + 1,
-                stride=1,
-                padding=radius,
-            )[0, 0]
-            > 0
+    if config.pair_echo_dilation_m is not None:
+        if grid_time_contract is None:
+            raise ValueError(
+                "pair_echo_dilation_m requires a grid/time contract"
+            )
+        offsets = grid_time_contract.pixel_offsets_within_distance(
+            config.pair_echo_dilation_m,
+            maximum_radius_yx=(active_echo.shape[0] - 1, active_echo.shape[1] - 1),
         )
+        near_echo = _dilate_mask(active_echo, offsets)
     else:
-        near_echo = active_echo
+        radius = config.pair_echo_dilation_px
+        near_echo = (
+            _dilate_mask(
+                active_echo,
+                tuple(
+                    (row, column)
+                    for row in range(-radius, radius + 1)
+                    for column in range(-radius, radius + 1)
+                ),
+            )
+            if radius
+            else active_echo
+        )
 
     return not bool(torch.any(near_echo & ~common))
+
+
+def _dilate_mask(
+    mask: Tensor,
+    offsets_yx: tuple[tuple[int, int], ...],
+) -> Tensor:
+    height, width = mask.shape
+    result = torch.zeros_like(mask)
+    for offset_y, offset_x in offsets_yx:
+        if abs(offset_y) >= height or abs(offset_x) >= width:
+            continue
+        source_y = slice(max(0, -offset_y), min(height, height - offset_y))
+        source_x = slice(max(0, -offset_x), min(width, width - offset_x))
+        target_y = slice(max(0, offset_y), min(height, height + offset_y))
+        target_x = slice(max(0, offset_x), min(width, width + offset_x))
+        result[target_y, target_x] |= mask[source_y, source_x]
+    return result
 
 
 def _merge_current_state(
@@ -1825,12 +2383,14 @@ def _phase_correlation_shift(
     config: NowcastConfig,
     *,
     max_displacement_yx: Tensor | None = None,
+    grid_time_contract: RadarGridTimeContract | None = None,
 ) -> Tensor:
     shift, _, search_interior = _phase_correlation_shift_and_psr(
         previous_dbz,
         current_dbz,
         config,
         max_displacement_yx=max_displacement_yx,
+        grid_time_contract=grid_time_contract,
     )
     return shift if search_interior else torch.zeros_like(shift)
 
@@ -1841,6 +2401,7 @@ def _phase_correlation_shift_and_psr(
     config: NowcastConfig,
     *,
     max_displacement_yx: Tensor | None = None,
+    grid_time_contract: RadarGridTimeContract | None = None,
 ) -> tuple[Tensor, Tensor, bool]:
     previous = (previous_dbz - config.echo_threshold_dbz).clamp_min(0.0)
     current = (current_dbz - config.echo_threshold_dbz).clamp_min(0.0)
@@ -1877,6 +2438,7 @@ def _phase_correlation_shift_and_psr(
         peak_y,
         peak_x,
         config,
+        grid_time_contract,
     )
     offset_y = _parabolic_peak_offset(correlation[:, peak_x], peak_y, config)
     offset_x = _parabolic_peak_offset(correlation[peak_y, :], peak_x, config)
@@ -1929,6 +2491,7 @@ def _peak_to_sidelobe_ratio(
     peak_y: int,
     peak_x: int,
     config: NowcastConfig,
+    grid_time_contract: RadarGridTimeContract | None,
 ) -> Tensor:
     height, width = correlation.shape
     y_distance = torch.abs(
@@ -1939,10 +2502,37 @@ def _peak_to_sidelobe_ratio(
     )
     y_distance = torch.minimum(y_distance, height - y_distance)
     x_distance = torch.minimum(x_distance, width - x_distance)
-    radius = config.phase_correlation_sidelobe_radius_px
-    sidelobe_mask = (y_distance[:, None] > radius) | (
-        x_distance[None, :] > radius
-    )
+    if config.phase_correlation_sidelobe_radius_m is None:
+        radius = config.phase_correlation_sidelobe_radius_px
+        sidelobe_mask = (y_distance[:, None] > radius) | (
+            x_distance[None, :] > radius
+        )
+    else:
+        if grid_time_contract is None:
+            raise ValueError(
+                "phase_correlation_sidelobe_radius_m requires a grid/time contract"
+            )
+        assert grid_time_contract.pixel_to_projected_matrix_m is not None
+        (a, b), (c, d) = grid_time_contract.pixel_to_projected_matrix_m
+        signed_y = torch.remainder(
+            torch.arange(height, device=correlation.device)
+            - peak_y
+            + height // 2,
+            height,
+        ) - height // 2
+        signed_x = torch.remainder(
+            torch.arange(width, device=correlation.device)
+            - peak_x
+            + width // 2,
+            width,
+        ) - width // 2
+        row = signed_y[:, None].to(dtype=correlation.dtype)
+        column = signed_x[None, :].to(dtype=correlation.dtype)
+        distance = torch.sqrt(
+            (a * column + b * row).square()
+            + (c * column + d * row).square()
+        )
+        sidelobe_mask = distance > config.phase_correlation_sidelobe_radius_m
     sidelobe = correlation[sidelobe_mask]
     if sidelobe.numel() < 2:
         return correlation.new_zeros(())

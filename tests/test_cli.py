@@ -1,4 +1,4 @@
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 import io
 import json
 from pathlib import Path
@@ -44,6 +44,69 @@ class CliTests(unittest.TestCase):
             cli.main()
         return output_path
 
+    def _operational_profile_arguments(self) -> tuple[str, ...]:
+        return (
+            "--variational",
+            "--mode",
+            "operational",
+            "--operational-calibration-id",
+            "test-calibration-v1",
+            "--valid-times",
+            "2026-07-31T00:00:00Z",
+            "2026-07-31T00:10:00Z",
+            "2026-07-31T00:20:00Z",
+            "--dx-m",
+            "1000",
+            "--dy-m",
+            "1000",
+            "--projection",
+            "EPSG:3857",
+            "--grid-hash",
+            "0" * 64,
+            "--maximum-motion-speed-mps",
+            "100",
+            "--motion-increment-scale-mps",
+            "2",
+            "--minimum-phase-correlation-psr",
+            "0",
+            "--pair-echo-dilation-m",
+            "3000",
+            "--phase-correlation-sidelobe-radius-m",
+            "2000",
+            "--long-pair-confidence-penalty",
+            "0.5",
+            "--maximum-pair-velocity-disagreement-mps",
+            "10",
+            "--maximum-pair-growth-disagreement",
+            "0.0953",
+            "--minimum-pair-psr-advantage",
+            "3",
+            "--causal-support-uncertainty-m",
+            "1000",
+            "--amplitude-displacement-tolerance-m",
+            "1000",
+            "--observation-std-dbz",
+            "2",
+            "--maximum-detected-error-std",
+            "10",
+            "--maximum-unresolved-amplitude-fraction",
+            "1",
+            "--minimum-amplitude-total-quality-weight",
+            "0.001",
+            "--minimum-amplitude-effective-pixel-count",
+            "1",
+            "--minimum-integrated-echo-ratio-for-confidence",
+            "0.01",
+            "--maximum-integrated-echo-ratio-for-confidence",
+            "100",
+            "--minimum-soft-echo-area-ratio-for-confidence",
+            "0.01",
+            "--maximum-soft-echo-area-ratio-for-confidence",
+            "100",
+            "--maximum-established-excess-growth-fraction-for-confidence",
+            "1",
+        )
+
     def _assert_common_status_fields(self, result: np.lib.npyio.NpzFile) -> None:
         expected = {
             "output_contract_version",
@@ -76,6 +139,13 @@ class CliTests(unittest.TestCase):
             "background_age_minutes",
             "minimum_phase_correlation_psr",
             "tendency_pair_count",
+            "motion_pair_count",
+            "growth_pair_count",
+            "motion_pair_selection",
+            "growth_pair_selection",
+            "motion_pair_conflict",
+            "growth_pair_conflict",
+            "motion_disagreement_mps",
             "tendency_source",
             "min_publish_support",
             "analysis_converged",
@@ -96,11 +166,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v12",
+                    "nowcast-npz-v21",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v5",
+                    "forecast-run-v13",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -122,6 +192,18 @@ class CliTests(unittest.TestCase):
                 )
                 self.assertEqual(result["min_publish_support"].item(), 0.95)
                 self.assertEqual(result["tendency_pair_count"].item(), 2)
+                self.assertEqual(result["motion_pair_count"].item(), 2)
+                self.assertEqual(result["growth_pair_count"].item(), 2)
+                self.assertEqual(
+                    result["motion_pair_selection"].item(),
+                    "BLENDED",
+                )
+                self.assertEqual(
+                    result["growth_pair_selection"].item(),
+                    "BLENDED",
+                )
+                self.assertFalse(result["motion_pair_conflict"].item())
+                self.assertFalse(result["growth_pair_conflict"].item())
                 self.assertGreaterEqual(
                     result["minimum_phase_correlation_psr"].item(),
                     8.0,
@@ -168,6 +250,14 @@ class CliTests(unittest.TestCase):
                 "0",
                 "--maximum-motion-speed-mps",
                 "30",
+                "--maximum-pair-motion-disagreement-px",
+                "3.5",
+                "--maximum-pair-velocity-disagreement-mps",
+                "7.5",
+                "--maximum-pair-growth-disagreement",
+                "0.08",
+                "--minimum-pair-psr-advantage",
+                "4.5",
             )
 
             loaded = load_forecast_run(output_path)
@@ -191,6 +281,22 @@ class CliTests(unittest.TestCase):
             self.assertEqual(
                 loaded.run.config.maximum_motion_speed_mps,
                 30.0,
+            )
+            self.assertEqual(
+                loaded.run.config.maximum_pair_motion_disagreement_px,
+                3.5,
+            )
+            self.assertEqual(
+                loaded.run.config.maximum_pair_velocity_disagreement_mps,
+                7.5,
+            )
+            self.assertEqual(
+                loaded.run.config.maximum_pair_growth_disagreement,
+                0.08,
+            )
+            self.assertEqual(
+                loaded.run.config.minimum_pair_psr_advantage,
+                4.5,
             )
 
     def test_variational_output_records_feasibility_diagnostics(self) -> None:
@@ -302,7 +408,7 @@ class CliTests(unittest.TestCase):
                     0.0,
                 )
                 eigenvalues = result[
-                    "analysis_dynamics_reduced_hessian_eigenvalues"
+                    "analysis_regularized_dynamics_hessian_eigenvalues"
                 ]
                 self.assertEqual(eigenvalues.shape, (3,))
                 self.assertTrue(np.isfinite(eigenvalues).all())
@@ -310,7 +416,7 @@ class CliTests(unittest.TestCase):
                 self.assertTrue(
                     np.isfinite(
                         result[
-                            "analysis_dynamics_reduced_hessian_condition_number"
+                            "analysis_regularized_dynamics_hessian_condition_number"
                         ]
                     )
                 )
@@ -320,7 +426,7 @@ class CliTests(unittest.TestCase):
                     )
                 )
                 motion_cosines = result[
-                    "analysis_field_motion_jacobian_cosine_yx"
+                    "analysis_field_motion_jacobian_cosine_by_control"
                 ]
                 self.assertEqual(motion_cosines.shape, (2,))
                 self.assertTrue(np.isfinite(motion_cosines).all())
@@ -335,22 +441,8 @@ class CliTests(unittest.TestCase):
                     0.0,
                 )
                 self.assertGreaterEqual(
-                    result["analysis_dynamics_data_effective_rank"].item(),
+                    result["analysis_dynamics_data_numerical_rank"].item(),
                     1,
-                )
-                np.testing.assert_array_equal(
-                    result[
-                        "analysis_regularized_dynamics_hessian_eigenvalues"
-                    ],
-                    eigenvalues,
-                )
-                self.assertEqual(
-                    result[
-                        "analysis_regularized_dynamics_hessian_condition_number"
-                    ].item(),
-                    result[
-                        "analysis_dynamics_reduced_hessian_condition_number"
-                    ].item(),
                 )
                 self.assertGreaterEqual(
                     result["analysis_field_smoothness_prior_cost"].item(),
@@ -392,6 +484,87 @@ class CliTests(unittest.TestCase):
                 self.assertEqual(
                     config["amplitude_information_policy"],
                     "operational_fallback",
+                )
+
+    def test_operational_mode_requires_explicit_calibration(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            with self.assertRaises(SystemExit), redirect_stderr(io.StringIO()):
+                self._run_cli(
+                    Path(temporary),
+                    self._stationary_frames(),
+                    "--variational",
+                    "--mode",
+                    "operational",
+                )
+
+    def test_operational_mode_requires_pair_calibration(self) -> None:
+        required = (
+            "--pair-echo-dilation-m",
+            "--phase-correlation-sidelobe-radius-m",
+            "--maximum-pair-velocity-disagreement-mps",
+            "--maximum-pair-growth-disagreement",
+            "--minimum-pair-psr-advantage",
+        )
+        for name in required:
+            with self.subTest(name=name):
+                with tempfile.TemporaryDirectory() as temporary:
+                    arguments = list(self._operational_profile_arguments())
+                    position = arguments.index(name)
+                    del arguments[position : position + 2]
+                    with self.assertRaises(SystemExit), redirect_stderr(
+                        io.StringIO()
+                    ):
+                        self._run_cli(
+                            Path(temporary),
+                            self._stationary_frames(),
+                            *arguments,
+                        )
+
+    def test_operational_mode_records_complete_fail_closed_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output_path = self._run_cli(
+                Path(temporary),
+                self._stationary_frames(),
+                *self._operational_profile_arguments(),
+            )
+
+            with np.load(output_path, allow_pickle=False) as result:
+                config = json.loads(result["analysis_config_json"].item())
+                self.assertEqual(config["execution_mode"], "operational")
+                self.assertEqual(
+                    config["operational_calibration_id"],
+                    "test-calibration-v1",
+                )
+                self.assertEqual(
+                    config["amplitude_information_policy"],
+                    "operational_fallback",
+                )
+                self.assertEqual(
+                    config["amplitude_confidence_policy"],
+                    "operational_fallback",
+                )
+                self.assertEqual(config["motion_increment_scale_mps"], 2.0)
+                self.assertEqual(
+                    result["analysis_motion_control_coordinate_system"].item(),
+                    "projected_xy_mps_radial_ball",
+                )
+                self.assertEqual(
+                    result[
+                        "analysis_field_smoothness_coordinate_system"
+                    ].item(),
+                    "projected_orthogonal_graph",
+                )
+                self.assertIn(
+                    "analysis_amplitude_confidence_failed",
+                    result.files,
+                )
+                self.assertIn(
+                    "analysis_dynamics_data_effective_dimension",
+                    result.files,
+                )
+                self.assertIn(
+                    "analysis_dynamics_data_to_prior_ratio_by_mode",
+                    result.files,
                 )
 
     def test_all_qc_rejected_uses_stale_background(self) -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from collections import deque
 from dataclasses import asdict, dataclass, replace
 import json
 import math
@@ -40,6 +41,11 @@ AmplitudeInformationPolicy = Literal[
     "research_degraded",
     "operational_fallback",
 ]
+AmplitudeConfidencePolicy = Literal[
+    "research_degraded",
+    "operational_fallback",
+]
+AnalysisExecutionMode = Literal["research", "operational"]
 
 
 @dataclass(frozen=True)
@@ -79,6 +85,14 @@ class AnalysisConfig:
     initial_damping: float = 1.0e-2
     minimum_damping: float = 1.0e-6
     maximum_damping: float = 1.0e6
+    execution_mode: AnalysisExecutionMode = "research"
+    operational_calibration_id: str | None = None
+    amplitude_confidence_policy: AmplitudeConfidencePolicy = (
+        "research_degraded"
+    )
+    maximum_integrated_echo_ratio_for_confidence: float = 2.0
+    maximum_soft_echo_area_ratio_for_confidence: float = 2.0
+    motion_increment_scale_mps: float | None = None
 
     def __post_init__(self) -> None:
         positive = {
@@ -176,6 +190,42 @@ class AnalysisConfig:
                 "amplitude_information_policy must be research_degraded "
                 "or operational_fallback"
             )
+        if self.amplitude_confidence_policy not in (
+            "research_degraded",
+            "operational_fallback",
+        ):
+            raise ValueError(
+                "amplitude_confidence_policy must be research_degraded "
+                "or operational_fallback"
+            )
+        if self.execution_mode not in ("research", "operational"):
+            raise ValueError("execution_mode must be research or operational")
+        if self.operational_calibration_id is not None and (
+            not isinstance(self.operational_calibration_id, str)
+            or not self.operational_calibration_id
+            or self.operational_calibration_id.strip()
+            != self.operational_calibration_id
+        ):
+            raise ValueError(
+                "operational_calibration_id must be a nonempty canonical string"
+            )
+        if self.execution_mode == "operational" and (
+            self.amplitude_information_policy != "operational_fallback"
+            or self.amplitude_confidence_policy != "operational_fallback"
+            or self.operational_calibration_id is None
+            or self.motion_increment_scale_mps is None
+        ):
+            raise ValueError(
+                "operational execution requires fallback amplitude policies "
+                "and calibrated physical control settings"
+            )
+        if (
+            self.execution_mode == "research"
+            and self.operational_calibration_id is not None
+        ):
+            raise ValueError(
+                "operational_calibration_id requires operational execution"
+            )
         confidence_fractions = {
             "minimum_integrated_echo_ratio_for_confidence": (
                 self.minimum_integrated_echo_ratio_for_confidence
@@ -190,11 +240,41 @@ class AnalysisConfig:
         for name, value in confidence_fractions.items():
             if not math.isfinite(value) or not 0.0 <= value <= 1.0:
                 raise ValueError(f"{name} must be in [0, 1]")
+        confidence_upper_ratios = {
+            "maximum_integrated_echo_ratio_for_confidence": (
+                self.maximum_integrated_echo_ratio_for_confidence
+            ),
+            "maximum_soft_echo_area_ratio_for_confidence": (
+                self.maximum_soft_echo_area_ratio_for_confidence
+            ),
+        }
+        for name, value in confidence_upper_ratios.items():
+            if not math.isfinite(value) or value < 1.0:
+                raise ValueError(f"{name} must be finite and at least 1")
+        if (
+            self.minimum_integrated_echo_ratio_for_confidence
+            > self.maximum_integrated_echo_ratio_for_confidence
+        ):
+            raise ValueError(
+                "minimum integrated echo ratio cannot exceed its maximum"
+            )
+        if (
+            self.minimum_soft_echo_area_ratio_for_confidence
+            > self.maximum_soft_echo_area_ratio_for_confidence
+        ):
+            raise ValueError(
+                "minimum soft echo area ratio cannot exceed its maximum"
+            )
         if (
             not math.isfinite(self.field_smoothness_weight)
             or self.field_smoothness_weight < 0.0
         ):
             raise ValueError("field_smoothness_weight cannot be negative")
+        if self.motion_increment_scale_mps is not None and (
+            not math.isfinite(self.motion_increment_scale_mps)
+            or self.motion_increment_scale_mps <= 0.0
+        ):
+            raise ValueError("motion_increment_scale_mps must be positive")
 
     @property
     def maximum_detected_error_std(self) -> float:
@@ -211,7 +291,6 @@ class AnalysisObservations:
     censored_mask: Tensor
     missing_mask: Tensor
     qc_rejected_mask: Tensor
-    observed_clear_mask: Tensor
 
 
 @dataclass(frozen=True)
@@ -233,8 +312,21 @@ class FrozenOuterState:
     analysis_config: AnalysisConfig
     grid_time_contract: RadarGridTimeContract | None
     motion_limits_yx: Tensor
-    amplitude_displacement_tolerance_yx: tuple[int, int]
+    amplitude_displacement_offsets_yx: tuple[tuple[int, int], ...]
     analysis_remap_cells: tuple[RemapCell, RemapCell]
+    smooth_edge_left_index: Tensor
+    smooth_edge_right_index: Tensor
+    smooth_edge_physical_weight: Tensor
+
+    @property
+    def amplitude_displacement_tolerance_yx(self) -> tuple[int, int]:
+        return (
+            max(abs(row) for row, _ in self.amplitude_displacement_offsets_yx),
+            max(
+                abs(column)
+                for _, column in self.amplitude_displacement_offsets_yx
+            ),
+        )
 
 
 @dataclass(frozen=True)
@@ -257,6 +349,13 @@ class _AmplitudeDiagnostics:
     information_sufficient_by_time: Tensor
     established_echo_excess_growth_fraction_by_time: Tensor
     maximum_growth_envelope_ratio_by_time: Tensor
+    precursor_object_count_by_time: Tensor
+    insufficient_object_count_by_time: Tensor
+    maximum_object_unresolved_fraction_by_time: Tensor
+    minimum_object_integrated_echo_ratio_by_time: Tensor
+    maximum_object_integrated_echo_ratio_by_time: Tensor
+    minimum_object_soft_echo_area_ratio_by_time: Tensor
+    maximum_object_soft_echo_area_ratio_by_time: Tensor
 
     def _gated(self, values: Tensor) -> Tensor:
         return torch.where(
@@ -287,30 +386,86 @@ class _AmplitudeDiagnostics:
 
     @property
     def has_insufficient_information(self) -> bool:
-        return bool(torch.any(~self.information_sufficient_by_time))
+        return bool(
+            torch.any(~self.information_sufficient_by_time)
+            or torch.any(self.insufficient_object_count_by_time > 0)
+        )
 
     def degrades_confidence(self, config: AnalysisConfig) -> bool:
-        finite_echo_ratio = torch.isfinite(self.integrated_echo_ratio_by_time)
-        echo_ratio_low = finite_echo_ratio & (
+        available_echo_ratio = ~torch.isnan(
+            self.integrated_echo_ratio_by_time
+        )
+        echo_ratio_low = available_echo_ratio & (
             self.integrated_echo_ratio_by_time
             < config.minimum_integrated_echo_ratio_for_confidence
         )
-        finite_area_ratio = torch.isfinite(
+        echo_ratio_high = available_echo_ratio & (
+            self.integrated_echo_ratio_by_time
+            > config.maximum_integrated_echo_ratio_for_confidence
+        )
+        available_area_ratio = ~torch.isnan(
             self.displacement_tolerant_soft_echo_area_ratio_by_time
         )
-        area_ratio_low = finite_area_ratio & (
+        area_ratio_low = available_area_ratio & (
             self.displacement_tolerant_soft_echo_area_ratio_by_time
             < config.minimum_soft_echo_area_ratio_for_confidence
         )
-        finite_excess = torch.isfinite(
+        area_ratio_high = available_area_ratio & (
+            self.displacement_tolerant_soft_echo_area_ratio_by_time
+            > config.maximum_soft_echo_area_ratio_for_confidence
+        )
+        available_excess = ~torch.isnan(
             self.established_echo_excess_growth_fraction_by_time
         )
-        excess_high = finite_excess & (
+        excess_high = available_excess & (
             self.established_echo_excess_growth_fraction_by_time
             > config.maximum_established_excess_growth_fraction_for_confidence
         )
+        object_unresolved_high = (
+            self.maximum_object_unresolved_fraction_by_time
+            > config.maximum_unresolved_amplitude_fraction
+        )
+        object_echo_low = (
+            ~torch.isnan(self.minimum_object_integrated_echo_ratio_by_time)
+            & (
+                self.minimum_object_integrated_echo_ratio_by_time
+                < config.minimum_integrated_echo_ratio_for_confidence
+            )
+        )
+        object_echo_high = (
+            ~torch.isnan(self.maximum_object_integrated_echo_ratio_by_time)
+            & (
+                self.maximum_object_integrated_echo_ratio_by_time
+                > config.maximum_integrated_echo_ratio_for_confidence
+            )
+        )
+        object_area_low = (
+            ~torch.isnan(self.minimum_object_soft_echo_area_ratio_by_time)
+            & (
+                self.minimum_object_soft_echo_area_ratio_by_time
+                < config.minimum_soft_echo_area_ratio_for_confidence
+            )
+        )
+        object_area_high = (
+            ~torch.isnan(self.maximum_object_soft_echo_area_ratio_by_time)
+            & (
+                self.maximum_object_soft_echo_area_ratio_by_time
+                > config.maximum_soft_echo_area_ratio_for_confidence
+            )
+        )
         return bool(
-            torch.any(echo_ratio_low | area_ratio_low | excess_high)
+            torch.any(
+                echo_ratio_low
+                | echo_ratio_high
+                | area_ratio_low
+                | area_ratio_high
+                | excess_high
+                | object_unresolved_high
+                | object_echo_low
+                | object_echo_high
+                | object_area_low
+                | object_area_high
+            )
         )
 
 
@@ -318,11 +473,13 @@ class _AmplitudeDiagnostics:
 class _IdentifiabilityDiagnostics:
     dynamics_data_gram_eigenvalues: tuple[float, float, float]
     dynamics_data_information_trace: float
-    dynamics_data_effective_rank: int
+    dynamics_data_numerical_rank: int
+    dynamics_data_effective_dimension: float
+    dynamics_data_to_prior_ratio_by_mode: tuple[float, float, float]
     regularized_dynamics_hessian_eigenvalues: tuple[float, float, float]
     regularized_dynamics_hessian_condition_number: float
     field_growth_jacobian_cosine: float | None
-    field_motion_jacobian_cosine_yx: tuple[
+    field_motion_jacobian_cosine_by_control: tuple[
         float | None,
         float | None,
     ]
@@ -381,13 +538,8 @@ class AnalysisResult:
     causal_control_cell_count: int = 0
     causal_seed_cell_count: int = 0
     causal_seed_prior_cost: float = 0.0
-    dynamics_reduced_hessian_eigenvalues: (
-        tuple[float, float, float] | None
-    ) = None
-    dynamics_reduced_hessian_condition_number: float | None = None
     dynamics_data_gram_eigenvalues: tuple[float, float, float] | None = None
     dynamics_data_information_trace: float | None = None
-    dynamics_data_effective_rank: int | None = None
     regularized_dynamics_hessian_eigenvalues: (
         tuple[float, float, float] | None
     ) = None
@@ -397,9 +549,34 @@ class AnalysisResult:
     motion_speed_saturation_margin_mps: float | None = None
     growth_saturation_margin: float | None = None
     field_growth_jacobian_cosine: float | None = None
-    field_motion_jacobian_cosine_yx: (
+    field_motion_jacobian_cosine_by_control: (
         tuple[float | None, float | None] | None
     ) = None
+    amplitude_confidence_failed: bool = False
+    precursor_object_count_by_time: tuple[int, int] | None = None
+    insufficient_amplitude_object_count_by_time: tuple[int, int] | None = None
+    maximum_object_unresolved_fraction_by_time: (
+        tuple[float, float] | None
+    ) = None
+    minimum_object_integrated_echo_ratio_by_time: (
+        tuple[float, float] | None
+    ) = None
+    maximum_object_integrated_echo_ratio_by_time: (
+        tuple[float, float] | None
+    ) = None
+    minimum_object_soft_echo_area_ratio_by_time: (
+        tuple[float, float] | None
+    ) = None
+    maximum_object_soft_echo_area_ratio_by_time: (
+        tuple[float, float] | None
+    ) = None
+    dynamics_data_numerical_rank: int | None = None
+    dynamics_data_effective_dimension: float | None = None
+    dynamics_data_to_prior_ratio_by_mode: (
+        tuple[float, float, float] | None
+    ) = None
+    motion_control_coordinate_system: str = "grid_yx_px"
+    field_smoothness_coordinate_system: str = "index_graph"
 
 
 def prepare_analysis(
@@ -416,22 +593,65 @@ def prepare_analysis(
 ) -> tuple[AnalysisObservations, FrozenOuterState]:
     nowcast_config = nowcast_config or NowcastConfig()
     analysis_config = analysis_config or AnalysisConfig()
+    if analysis_config.motion_increment_scale_mps is not None:
+        if grid_time_contract is None:
+            raise ValueError(
+                "motion_increment_scale_mps requires a grid/time contract"
+            )
+        if nowcast_config.maximum_motion_speed_mps is None:
+            raise ValueError(
+                "motion_increment_scale_mps requires a physical motion limit"
+            )
+    if (
+        grid_time_contract is not None
+        and analysis_config.field_smoothness_weight > 0.0
+        and not grid_time_contract.grid_axes_are_orthogonal
+    ):
+        raise ValueError(
+            "field smoothness requires orthogonal projected grid axes"
+        )
+    if analysis_config.execution_mode == "operational":
+        if grid_time_contract is None:
+            raise ValueError(
+                "operational analysis requires a grid/time contract"
+            )
+        if nowcast_config.maximum_motion_speed_mps is None:
+            raise ValueError(
+                "operational analysis requires a physical motion limit"
+            )
+        if (
+            nowcast_config.pair_echo_dilation_m is None
+            or nowcast_config.phase_correlation_sidelobe_radius_m is None
+        ):
+            raise ValueError(
+                "operational analysis requires physical pair confidence settings"
+            )
+        if (
+            analysis_config.causal_support_uncertainty_m is None
+            or analysis_config.amplitude_displacement_tolerance_m is None
+        ):
+            raise ValueError(
+                "operational analysis requires physical causal and amplitude "
+                "distance settings"
+            )
     _validate_frames(frames_dbz)
     motion_limits = motion_displacement_limits_yx(
         nowcast_config,
         grid_time_contract,
         frames_dbz,
     )
+    maximum_radius_yx = (frames_dbz.shape[1] - 1, frames_dbz.shape[2] - 1)
     if analysis_config.causal_support_uncertainty_m is not None:
         if grid_time_contract is None:
             raise ValueError(
                 "causal_support_uncertainty_m requires a grid/time contract"
             )
-        causal_dilation_yx = grid_time_contract.pixel_radius_yx(
-            analysis_config.causal_support_uncertainty_m
+        causal_dilation_offsets = grid_time_contract.pixel_offsets_within_distance(
+            analysis_config.causal_support_uncertainty_m,
+            maximum_radius_yx=maximum_radius_yx,
         )
     else:
-        causal_dilation_yx = (
+        causal_dilation_offsets = _rectangular_offsets_yx(
             analysis_config.causal_support_dilation_px,
             analysis_config.causal_support_dilation_px,
         )
@@ -440,11 +660,14 @@ def prepare_analysis(
             raise ValueError(
                 "amplitude_displacement_tolerance_m requires a grid/time contract"
             )
-        amplitude_tolerance_yx = grid_time_contract.pixel_radius_yx(
-            analysis_config.amplitude_displacement_tolerance_m
+        amplitude_tolerance_offsets = (
+            grid_time_contract.pixel_offsets_within_distance(
+                analysis_config.amplitude_displacement_tolerance_m,
+                maximum_radius_yx=maximum_radius_yx,
+            )
         )
     else:
-        amplitude_tolerance_yx = (
+        amplitude_tolerance_offsets = _rectangular_offsets_yx(
             analysis_config.amplitude_displacement_tolerance_px,
             analysis_config.amplitude_displacement_tolerance_px,
         )
@@ -501,7 +724,6 @@ def prepare_analysis(
         censored_mask=censored.detach().clone(),
         missing_mask=prepared.missing_mask.detach().clone(),
         qc_rejected_mask=prepared.qc_rejected_mask.detach().clone(),
-        observed_clear_mask=censored.detach().clone(),
     )
     _validate_observations(observations)
 
@@ -518,13 +740,23 @@ def prepare_analysis(
         prepared.background_mask,
         baseline_state.displacement_yx,
         analysis_config.minimum_control_reachability,
-        causal_dilation_yx,
+        causal_dilation_offsets,
     )
     causal_only = initial_support & ~detected[0]
     active_field_index = torch.nonzero(
         initial_support.flatten(),
         as_tuple=False,
     ).flatten()
+    (
+        smooth_edge_left_index,
+        smooth_edge_right_index,
+        smooth_edge_physical_weight,
+    ) = _active_smoothness_graph(
+        initial_support,
+        active_field_index,
+        frames_dbz,
+        grid_time_contract,
+    )
     remap_cells = (
         freeze_remap_cell(baseline_state.displacement_yx),
         freeze_remap_cell(2 * baseline_state.displacement_yx),
@@ -552,8 +784,11 @@ def prepare_analysis(
         analysis_config=analysis_config,
         grid_time_contract=grid_time_contract,
         motion_limits_yx=motion_limits.detach().clone(),
-        amplitude_displacement_tolerance_yx=amplitude_tolerance_yx,
+        amplitude_displacement_offsets_yx=amplitude_tolerance_offsets,
         analysis_remap_cells=remap_cells,
+        smooth_edge_left_index=smooth_edge_left_index,
+        smooth_edge_right_index=smooth_edge_right_index,
+        smooth_edge_physical_weight=smooth_edge_physical_weight,
     )
     control = _warm_started_control(observations, frozen)
     return observations, freeze_irls_weights(
@@ -569,7 +804,7 @@ def _causal_control_and_seed_support(
     background_mask: Tensor,
     displacement_yx: Tensor,
     minimum_reachability: float,
-    dilation_yx: int | tuple[int, int],
+    dilation_offsets_yx: tuple[tuple[int, int], ...],
 ) -> tuple[Tensor, Tensor]:
     initial_anchor = observed_mask[0] | background_mask[0]
     precursor_core = torch.zeros_like(detected_mask[0])
@@ -579,21 +814,10 @@ def _causal_control_and_seed_support(
             -step * displacement_yx,
         )
         precursor_core |= precursor >= minimum_reachability
-    control_envelope = precursor_core
-    if isinstance(dilation_yx, int):
-        dilation_y, dilation_x = dilation_yx, dilation_yx
-    else:
-        dilation_y, dilation_x = dilation_yx
-    if dilation_y > 0 or dilation_x > 0:
-        control_envelope = (
-            F.max_pool2d(
-                precursor_core[None, None].to(dtype=displacement_yx.dtype),
-                kernel_size=(2 * dilation_y + 1, 2 * dilation_x + 1),
-                stride=1,
-                padding=(dilation_y, dilation_x),
-            )[0, 0]
-            > 0
-        )
+    control_envelope = _footprint_maximum(
+        precursor_core.to(dtype=displacement_yx.dtype),
+        dilation_offsets_yx,
+    ) > 0
     control_support = (
         detected_mask[0] | control_envelope
     ) & initial_anchor
@@ -601,6 +825,64 @@ def _causal_control_and_seed_support(
         precursor_core & initial_anchor & ~detected_mask[0]
     )
     return control_support, seed_support
+
+
+def _active_smoothness_graph(
+    active_mask: Tensor,
+    active_field_index: Tensor,
+    reference: Tensor,
+    grid_time_contract: RadarGridTimeContract | None,
+) -> tuple[Tensor, Tensor, Tensor]:
+    height, width = active_mask.shape
+    active_lookup = torch.full(
+        (height * width,),
+        -1,
+        dtype=torch.long,
+        device=active_mask.device,
+    )
+    active_lookup[active_field_index] = torch.arange(
+        active_field_index.numel(),
+        dtype=torch.long,
+        device=active_mask.device,
+    )
+    global_index = torch.arange(
+        height * width,
+        dtype=torch.long,
+        device=active_mask.device,
+    ).reshape(height, width)
+    vertical = active_mask[1:] & active_mask[:-1]
+    horizontal = active_mask[:, 1:] & active_mask[:, :-1]
+    left_global = torch.cat(
+        (global_index[:-1][vertical], global_index[:, :-1][horizontal])
+    )
+    right_global = torch.cat(
+        (global_index[1:][vertical], global_index[:, 1:][horizontal])
+    )
+    left = active_lookup[left_global]
+    right = active_lookup[right_global]
+    vertical_count = int(torch.count_nonzero(vertical))
+    if grid_time_contract is None:
+        physical_weight = reference.new_ones(left.numel())
+    else:
+        assert grid_time_contract.pixel_to_projected_matrix_m is not None
+        (xx, xr), (yx, yr) = (
+            grid_time_contract.pixel_to_projected_matrix_m
+        )
+        cell_area = grid_time_contract.cell_area_m2
+        column_length_squared = xx * xx + yx * yx
+        row_length_squared = xr * xr + yr * yr
+        vertical_weight = column_length_squared / cell_area
+        horizontal_weight = row_length_squared / cell_area
+        physical_weight = torch.cat(
+            (
+                reference.new_full((vertical_count,), vertical_weight),
+                reference.new_full(
+                    (left.numel() - vertical_count,),
+                    horizontal_weight,
+                ),
+            )
+        )
+    return left, right, physical_weight
 
 
 def initial_control(frozen: FrozenOuterState) -> Tensor:
@@ -723,6 +1005,7 @@ def _analysis_trajectory(
         config,
         nowcast,
         frozen.motion_limits_yx,
+        frozen.grid_time_contract,
     )
     frames = [initial_echo]
     for step in (1, 2):
@@ -860,32 +1143,20 @@ def _field_smoothness_residual(
 ) -> Tensor:
     field_size = frozen.active_field_index.numel()
     weight = frozen.analysis_config.field_smoothness_weight
-    if field_size == 0 or weight == 0.0:
+    if (
+        field_size == 0
+        or weight == 0.0
+        or frozen.smooth_edge_left_index.numel() == 0
+    ):
         return control.new_zeros(0)
-
-    height, width = frozen.initial_background_dbz.shape
-    dense = torch.zeros_like(frozen.initial_background_dbz).flatten().scatter(
-        0,
-        frozen.active_field_index,
-        control[:field_size],
-    ).reshape(height, width)
-    active = torch.zeros_like(
-        frozen.initial_background_dbz,
-        dtype=torch.bool,
-    ).flatten().scatter(
-        0,
-        frozen.active_field_index,
-        True,
-    ).reshape(height, width)
-    vertical_edges = active[1:] & active[:-1]
-    horizontal_edges = active[:, 1:] & active[:, :-1]
-    differences = torch.cat(
-        (
-            (dense[1:] - dense[:-1])[vertical_edges],
-            (dense[:, 1:] - dense[:, :-1])[horizontal_edges],
-        )
+    field = control[:field_size]
+    differences = (
+        field[frozen.smooth_edge_right_index]
+        - field[frozen.smooth_edge_left_index]
     )
-    return math.sqrt(weight) * differences
+    return torch.sqrt(
+        weight * frozen.smooth_edge_physical_weight
+    ) * differences
 
 
 def _field_smoothness_prior_cost(
@@ -1063,16 +1334,18 @@ def _identifiability_diagnostics(
     data_information_trace = float(torch.sum(data_eigenvalues))
     maximum_data_eigenvalue = float(data_eigenvalues[-1])
     if maximum_data_eigenvalue == 0.0:
-        data_effective_rank = 0
+        data_numerical_rank = 0
     else:
         rank_tolerance = (
             3.0
             * torch.finfo(torch.float64).eps
             * maximum_data_eigenvalue
         )
-        data_effective_rank = int(
+        data_numerical_rank = int(
             torch.count_nonzero(data_eigenvalues > rank_tolerance)
         )
+    data_to_prior_ratio = data_eigenvalues / (1.0 + data_eigenvalues)
+    data_effective_dimension = float(torch.sum(data_to_prior_ratio))
 
     regularized_hessian = gram + torch.eye(3, dtype=torch.float64)
     regularized_eigenvalues = torch.linalg.eigvalsh(regularized_hessian)
@@ -1085,6 +1358,12 @@ def _identifiability_diagnostics(
 
     field_scale, field_shift_y, field_shift_x = (
         _field_identifiability_directions(control, frozen, trajectory)
+    )
+    motion_field_directions = _motion_field_identifiability_directions(
+        control,
+        frozen,
+        field_shift_y,
+        field_shift_x,
     )
 
     def cosine(
@@ -1105,7 +1384,13 @@ def _identifiability_diagnostics(
             float(data_eigenvalues[2]),
         ),
         dynamics_data_information_trace=data_information_trace,
-        dynamics_data_effective_rank=data_effective_rank,
+        dynamics_data_numerical_rank=data_numerical_rank,
+        dynamics_data_effective_dimension=data_effective_dimension,
+        dynamics_data_to_prior_ratio_by_mode=(
+            float(data_to_prior_ratio[0]),
+            float(data_to_prior_ratio[1]),
+            float(data_to_prior_ratio[2]),
+        ),
         regularized_dynamics_hessian_eigenvalues=(
             float(regularized_eigenvalues[0]),
             float(regularized_eigenvalues[1]),
@@ -1118,11 +1403,50 @@ def _identifiability_diagnostics(
             field_scale,
             dynamics_columns[2],
         ),
-        field_motion_jacobian_cosine_yx=(
-            cosine(field_shift_y, dynamics_columns[0]),
-            cosine(field_shift_x, dynamics_columns[1]),
+        field_motion_jacobian_cosine_by_control=(
+            cosine(motion_field_directions[0], dynamics_columns[0]),
+            cosine(motion_field_directions[1], dynamics_columns[1]),
         ),
     )
+
+
+def _motion_field_identifiability_directions(
+    control: Tensor,
+    frozen: FrozenOuterState,
+    field_shift_y: Tensor | None,
+    field_shift_x: Tensor | None,
+) -> tuple[Tensor | None, Tensor | None]:
+    if field_shift_y is None or field_shift_x is None:
+        return None, None
+    field_size = frozen.active_field_index.numel()
+    dynamics_control = control[field_size:]
+
+    def displacement(value: Tensor) -> Tensor:
+        return _decode_dynamics(
+            value,
+            frozen.baseline_state,
+            frozen.analysis_config,
+            frozen.nowcast_config,
+            frozen.motion_limits_yx,
+            frozen.grid_time_contract,
+        )[0]
+
+    directions: list[Tensor] = []
+    for index in range(2):
+        basis = torch.zeros_like(dynamics_control)
+        basis[index] = 1.0
+        tangent = cast(
+            Tensor,
+            torch.func.jvp(
+                displacement,
+                (dynamics_control,),
+                (basis,),
+            )[1],
+        )
+        directions.append(
+            tangent[0] * field_shift_y + tangent[1] * field_shift_x
+        )
+    return directions[0], directions[1]
 
 
 def robust_objective(
@@ -1365,10 +1689,14 @@ def solve_analysis(
                     config,
                     frozen_iteration.nowcast_config,
                     frozen_iteration.motion_limits_yx,
+                    frozen_iteration.grid_time_contract,
                 )
-                if not _motion_is_admissible(
-                    candidate_displacement,
-                    frozen_iteration,
+                if (
+                    config.motion_increment_scale_mps is None
+                    and not _motion_is_admissible(
+                        candidate_displacement,
+                        frozen_iteration,
+                    )
                 ):
                     continue
                 if not _analysis_window_is_representable(
@@ -1699,6 +2027,25 @@ def _analysis_result(
             amplitude_diagnostics=amplitude,
             amplitude_diagnostics_source="rejected_candidate",
         )
+    amplitude_confidence_failed = amplitude.degrades_confidence(
+        frozen.analysis_config
+    )
+    if (
+        amplitude_confidence_failed
+        and frozen.analysis_config.amplitude_confidence_policy
+        == "operational_fallback"
+    ):
+        return _fallback_result(
+            frozen,
+            control,
+            reference_objective,
+            "amplitude_confidence_failure",
+            outer_iterations,
+            pcg_iterations,
+            minimum_reachability_margin=reachability_margin,
+            amplitude_diagnostics=amplitude,
+            amplitude_diagnostics_source="rejected_candidate",
+        )
     if not _objective_improves_reference(
         final_objective,
         reference_objective,
@@ -1787,7 +2134,7 @@ def _analysis_result(
         degraded=(
             degraded
             or amplitude.has_insufficient_information
-            or amplitude.degrades_confidence(frozen.analysis_config)
+            or amplitude_confidence_failed
         ),
         audit=audit,
         minimum_reachability_margin=reachability_margin,
@@ -1827,6 +2174,28 @@ def _analysis_result(
         insufficient_amplitude_information=(
             amplitude.has_insufficient_information
         ),
+        amplitude_confidence_failed=amplitude_confidence_failed,
+        precursor_object_count_by_time=_materialize_int_pair(
+            amplitude.precursor_object_count_by_time
+        ),
+        insufficient_amplitude_object_count_by_time=_materialize_int_pair(
+            amplitude.insufficient_object_count_by_time
+        ),
+        maximum_object_unresolved_fraction_by_time=_materialize_pair(
+            amplitude.maximum_object_unresolved_fraction_by_time
+        ),
+        minimum_object_integrated_echo_ratio_by_time=_materialize_pair(
+            amplitude.minimum_object_integrated_echo_ratio_by_time
+        ),
+        maximum_object_integrated_echo_ratio_by_time=_materialize_pair(
+            amplitude.maximum_object_integrated_echo_ratio_by_time
+        ),
+        minimum_object_soft_echo_area_ratio_by_time=_materialize_pair(
+            amplitude.minimum_object_soft_echo_area_ratio_by_time
+        ),
+        maximum_object_soft_echo_area_ratio_by_time=_materialize_pair(
+            amplitude.maximum_object_soft_echo_area_ratio_by_time
+        ),
         established_echo_excess_growth_fraction=(
             _materialize_finite_max(
                 amplitude.established_echo_excess_growth_fraction_by_time
@@ -1849,16 +2218,6 @@ def _analysis_result(
         causal_control_cell_count=causal_control_cell_count,
         causal_seed_cell_count=causal_seed_cell_count,
         causal_seed_prior_cost=causal_seed_prior_cost,
-        dynamics_reduced_hessian_eigenvalues=(
-            None
-            if identifiability is None
-            else identifiability.regularized_dynamics_hessian_eigenvalues
-        ),
-        dynamics_reduced_hessian_condition_number=(
-            None
-            if identifiability is None
-            else identifiability.regularized_dynamics_hessian_condition_number
-        ),
         dynamics_data_gram_eigenvalues=(
             None
             if identifiability is None
@@ -1869,10 +2228,20 @@ def _analysis_result(
             if identifiability is None
             else identifiability.dynamics_data_information_trace
         ),
-        dynamics_data_effective_rank=(
+        dynamics_data_numerical_rank=(
             None
             if identifiability is None
-            else identifiability.dynamics_data_effective_rank
+            else identifiability.dynamics_data_numerical_rank
+        ),
+        dynamics_data_effective_dimension=(
+            None
+            if identifiability is None
+            else identifiability.dynamics_data_effective_dimension
+        ),
+        dynamics_data_to_prior_ratio_by_mode=(
+            None
+            if identifiability is None
+            else identifiability.dynamics_data_to_prior_ratio_by_mode
         ),
         regularized_dynamics_hessian_eigenvalues=(
             None
@@ -1898,10 +2267,20 @@ def _analysis_result(
             if identifiability is None
             else identifiability.field_growth_jacobian_cosine
         ),
-        field_motion_jacobian_cosine_yx=(
+        field_motion_jacobian_cosine_by_control=(
             None
             if identifiability is None
-            else identifiability.field_motion_jacobian_cosine_yx
+            else identifiability.field_motion_jacobian_cosine_by_control
+        ),
+        motion_control_coordinate_system=(
+            "projected_xy_mps_radial_ball"
+            if frozen.analysis_config.motion_increment_scale_mps is not None
+            else "grid_yx_px"
+        ),
+        field_smoothness_coordinate_system=(
+            "projected_orthogonal_graph"
+            if frozen.grid_time_contract is not None
+            else "index_graph"
         ),
     )
 
@@ -1947,14 +2326,44 @@ def _unresolved_amplitude_fraction(
     return float(maximum.detach())
 
 
-def _local_maximum(value: Tensor, radius_yx: tuple[int, int]) -> Tensor:
-    radius_y, radius_x = radius_yx
-    return F.max_pool2d(
-        value[None, None],
-        kernel_size=(2 * radius_y + 1, 2 * radius_x + 1),
-        stride=1,
-        padding=(radius_y, radius_x),
-    )[0, 0]
+def _rectangular_offsets_yx(
+    radius_y: int,
+    radius_x: int,
+) -> tuple[tuple[int, int], ...]:
+    return tuple(
+        (row, column)
+        for row in range(-radius_y, radius_y + 1)
+        for column in range(-radius_x, radius_x + 1)
+    )
+
+
+def _footprint_maximum(
+    value: Tensor,
+    offsets_yx: tuple[tuple[int, int], ...],
+) -> Tensor:
+    if value.ndim != 2:
+        raise ValueError("footprint maximum requires a two-dimensional tensor")
+    if not offsets_yx or (0, 0) not in offsets_yx:
+        raise ValueError("offset footprint must contain its origin")
+    radius_y = max(abs(row) for row, _ in offsets_yx)
+    radius_x = max(abs(column) for _, column in offsets_yx)
+    padded = F.pad(
+        value,
+        (radius_x, radius_x, radius_y, radius_y),
+        value=-math.inf,
+    )
+    height, width = value.shape
+    shifted = tuple(
+        padded[
+            radius_y + row : radius_y + row + height,
+            radius_x + column : radius_x + column + width,
+        ]
+        for row, column in offsets_yx
+    )
+    result = shifted[0]
+    for candidate in shifted[1:]:
+        result = torch.maximum(result, candidate)
+    return result
 
 
 def _amplitude_diagnostics(
@@ -1993,6 +2402,13 @@ def _amplitude_diagnostics(
     bad_quality_weights: list[Tensor] = []
     total_quality_weights: list[Tensor] = []
     information_sufficient: list[Tensor] = []
+    precursor_object_counts: list[Tensor] = []
+    insufficient_object_counts: list[Tensor] = []
+    maximum_object_unresolved_fractions: list[Tensor] = []
+    minimum_object_integrated_echo_ratios: list[Tensor] = []
+    maximum_object_integrated_echo_ratios: list[Tensor] = []
+    minimum_object_soft_echo_area_ratios: list[Tensor] = []
+    maximum_object_soft_echo_area_ratios: list[Tensor] = []
     zero = prediction_dbz.new_zeros(())
     nan = prediction_dbz.new_full((), math.nan)
 
@@ -2017,11 +2433,18 @@ def _amplitude_diagnostics(
             information_sufficient.append(
                 torch.ones_like(zero, dtype=torch.bool)
             )
+            precursor_object_counts.append(zero.to(dtype=torch.long))
+            insufficient_object_counts.append(zero.to(dtype=torch.long))
+            maximum_object_unresolved_fractions.append(zero)
+            minimum_object_integrated_echo_ratios.append(nan)
+            maximum_object_integrated_echo_ratios.append(nan)
+            minimum_object_soft_echo_area_ratios.append(nan)
+            maximum_object_soft_echo_area_ratios.append(nan)
             continue
 
-        local_prediction = _local_maximum(
+        local_prediction = _footprint_maximum(
             prediction_dbz[step],
-            frozen.amplitude_displacement_tolerance_yx,
+            frozen.amplitude_displacement_offsets_yx,
         )
         quality = observations.quality_weight[step]
         standardized_deficit = (
@@ -2075,9 +2498,9 @@ def _amplitude_diagnostics(
         soft_echo_area_ratio = nan
         if include_spatial_diagnostics:
             expanded_region = (
-                _local_maximum(
+                _footprint_maximum(
                     precursor_required.to(dtype=prediction_dbz.dtype),
-                    frozen.amplitude_displacement_tolerance_yx,
+                    frozen.amplitude_displacement_offsets_yx,
                 )
                 > 0
             )
@@ -2113,6 +2536,25 @@ def _amplitude_diagnostics(
                 predicted_soft_area / observed_soft_area
             )
 
+        (
+            object_count,
+            insufficient_object_count,
+            maximum_object_unresolved_fraction,
+            minimum_object_integrated_echo_ratio,
+            maximum_object_integrated_echo_ratio,
+            minimum_object_soft_echo_area_ratio,
+            maximum_object_soft_echo_area_ratio,
+        ) = _precursor_object_diagnostics(
+            precursor_required,
+            unresolved,
+            quality,
+            observations.dbz[step],
+            prediction_dbz[step],
+            trajectory.frames_linear[step],
+            frozen,
+            enabled=include_spatial_diagnostics,
+        )
+
         unresolved_fractions.append(unresolved_fraction)
         unresolved_pixel_fractions.append(unresolved_pixel_fraction)
         violation_scores.append(violation)
@@ -2122,6 +2564,23 @@ def _amplitude_diagnostics(
         bad_quality_weights.append(bad_weight)
         total_quality_weights.append(total_weight)
         information_sufficient.append(sufficient)
+        precursor_object_counts.append(object_count)
+        insufficient_object_counts.append(insufficient_object_count)
+        maximum_object_unresolved_fractions.append(
+            maximum_object_unresolved_fraction
+        )
+        minimum_object_integrated_echo_ratios.append(
+            minimum_object_integrated_echo_ratio
+        )
+        maximum_object_integrated_echo_ratios.append(
+            maximum_object_integrated_echo_ratio
+        )
+        minimum_object_soft_echo_area_ratios.append(
+            minimum_object_soft_echo_area_ratio
+        )
+        maximum_object_soft_echo_area_ratios.append(
+            maximum_object_soft_echo_area_ratio
+        )
 
     return _AmplitudeDiagnostics(
         unresolved_fraction_by_time=torch.stack(unresolved_fractions),
@@ -2143,7 +2602,161 @@ def _amplitude_diagnostics(
         maximum_growth_envelope_ratio_by_time=(
             maximum_growth_envelope_ratios
         ),
+        precursor_object_count_by_time=torch.stack(precursor_object_counts),
+        insufficient_object_count_by_time=torch.stack(
+            insufficient_object_counts
+        ),
+        maximum_object_unresolved_fraction_by_time=torch.stack(
+            maximum_object_unresolved_fractions
+        ),
+        minimum_object_integrated_echo_ratio_by_time=torch.stack(
+            minimum_object_integrated_echo_ratios
+        ),
+        maximum_object_integrated_echo_ratio_by_time=torch.stack(
+            maximum_object_integrated_echo_ratios
+        ),
+        minimum_object_soft_echo_area_ratio_by_time=torch.stack(
+            minimum_object_soft_echo_area_ratios
+        ),
+        maximum_object_soft_echo_area_ratio_by_time=torch.stack(
+            maximum_object_soft_echo_area_ratios
+        ),
     )
+
+
+def _precursor_object_diagnostics(
+    precursor_required: Tensor,
+    unresolved: Tensor,
+    quality: Tensor,
+    observed_dbz: Tensor,
+    prediction_dbz: Tensor,
+    prediction_echo: Tensor,
+    frozen: FrozenOuterState,
+    *,
+    enabled: bool,
+) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
+    zero = prediction_dbz.new_zeros(())
+    nan = prediction_dbz.new_full((), math.nan)
+    if not enabled:
+        count = zero.to(dtype=torch.long)
+        return count, count.clone(), zero, nan, nan, nan, nan
+
+    components = _connected_component_flat_indices(precursor_required)
+    object_count = zero.new_tensor(len(components), dtype=torch.long)
+    insufficient_count = zero.to(dtype=torch.long)
+    unresolved_fractions: list[Tensor] = []
+    integrated_echo_ratios: list[Tensor] = []
+    soft_echo_area_ratios: list[Tensor] = []
+    flat_quality = quality.flatten()
+    flat_unresolved = unresolved.flatten()
+    flat_observed_dbz = observed_dbz.flatten()
+    observed_echo = dbz_to_echo(
+        observed_dbz,
+        min_dbz=frozen.nowcast_config.min_dbz,
+        max_dbz=frozen.nowcast_config.max_dbz,
+    ).flatten()
+    temperature = frozen.analysis_config.censor_temperature_dbz
+
+    for indices in components:
+        selected_quality = flat_quality[indices]
+        total_weight = selected_quality.sum()
+        maximum_quality = selected_quality.max().clamp_min(
+            frozen.analysis_config.transform_epsilon
+        )
+        relative_quality = selected_quality / maximum_quality
+        effective_count = relative_quality.sum().square() / (
+            relative_quality.square().sum().clamp_min(
+                frozen.analysis_config.transform_epsilon
+            )
+        )
+        sufficient = bool(
+            (
+                total_weight
+                >= frozen.analysis_config.minimum_amplitude_total_quality_weight
+            )
+            & (
+                effective_count
+                >= frozen.analysis_config.minimum_amplitude_effective_pixel_count
+            )
+        )
+        if not sufficient:
+            insufficient_count = insufficient_count + 1
+            continue
+
+        unresolved_fractions.append(
+            selected_quality[flat_unresolved[indices]].sum() / total_weight
+        )
+        object_mask = torch.zeros_like(precursor_required)
+        object_mask.flatten()[indices] = True
+        expanded = _footprint_maximum(
+            object_mask.to(dtype=prediction_dbz.dtype),
+            frozen.amplitude_displacement_offsets_yx,
+        ) > 0
+        integrated_echo_ratios.append(
+            prediction_echo[expanded].sum() / observed_echo[indices].sum()
+        )
+        observed_soft_area = torch.sigmoid(
+            (
+                flat_observed_dbz[indices]
+                - frozen.analysis_config.detection_limit_dbz
+            )
+            / temperature
+        ).sum()
+        predicted_soft_area = torch.sigmoid(
+            (
+                prediction_dbz
+                - frozen.analysis_config.detection_limit_dbz
+            )
+            / temperature
+        )[expanded].sum()
+        soft_echo_area_ratios.append(predicted_soft_area / observed_soft_area)
+
+    if not unresolved_fractions:
+        return object_count, insufficient_count, zero, nan, nan, nan, nan
+    unresolved_values = torch.stack(unresolved_fractions)
+    echo_values = torch.stack(integrated_echo_ratios)
+    area_values = torch.stack(soft_echo_area_ratios)
+    return (
+        object_count,
+        insufficient_count,
+        torch.max(unresolved_values),
+        torch.min(echo_values),
+        torch.max(echo_values),
+        torch.min(area_values),
+        torch.max(area_values),
+    )
+
+
+def _connected_component_flat_indices(mask: Tensor) -> tuple[Tensor, ...]:
+    _, width = mask.shape
+    remaining = {
+        (int(row), int(column))
+        for row, column in torch.nonzero(
+            mask.detach().cpu(),
+            as_tuple=False,
+        ).tolist()
+    }
+    components: list[Tensor] = []
+    while remaining:
+        pending = deque((remaining.pop(),))
+        flat_indices: list[int] = []
+        while pending:
+            row, column = pending.popleft()
+            flat_indices.append(row * width + column)
+            for delta_row in (-1, 0, 1):
+                for delta_column in (-1, 0, 1):
+                    neighbor = (row + delta_row, column + delta_column)
+                    if neighbor in remaining:
+                        remaining.remove(neighbor)
+                        pending.append(neighbor)
+        components.append(
+            torch.tensor(
+                flat_indices,
+                dtype=torch.long,
+                device=mask.device,
+            )
+        )
+    return tuple(components)
 
 
 def _established_growth_envelope_diagnostics(
@@ -2204,9 +2817,9 @@ def _established_growth_envelope_diagnostics(
             step * nowcast.max_log_growth_per_step,
             frozen.analysis_remap_cells[index],
         )
-        local_envelope_echo = _local_maximum(
+        local_envelope_echo = _footprint_maximum(
             envelope_echo,
-            frozen.amplitude_displacement_tolerance_yx,
+            frozen.amplitude_displacement_offsets_yx,
         )
         local_envelope_dbz = echo_to_dbz(
             local_envelope_echo,
@@ -2292,6 +2905,11 @@ def _materialize_pair(values: Tensor) -> tuple[float, float]:
 def _materialize_bool_pair(values: Tensor) -> tuple[bool, bool]:
     values = values.detach().cpu()
     return bool(values[0]), bool(values[1])
+
+
+def _materialize_int_pair(values: Tensor) -> tuple[int, int]:
+    values = values.detach().cpu()
+    return int(values[0]), int(values[1])
 
 
 def _materialize_finite_max(values: Tensor) -> float | None:
@@ -2465,6 +3083,67 @@ def _fallback_result(
             if amplitude_diagnostics is None
             else amplitude_diagnostics.has_insufficient_information
         ),
+        amplitude_confidence_failed=(
+            False
+            if amplitude_diagnostics is None
+            else amplitude_diagnostics.degrades_confidence(
+                frozen.analysis_config
+            )
+        ),
+        precursor_object_count_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_int_pair(
+                amplitude_diagnostics.precursor_object_count_by_time
+            )
+        ),
+        insufficient_amplitude_object_count_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_int_pair(
+                amplitude_diagnostics.insufficient_object_count_by_time
+            )
+        ),
+        maximum_object_unresolved_fraction_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics
+                .maximum_object_unresolved_fraction_by_time
+            )
+        ),
+        minimum_object_integrated_echo_ratio_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics
+                .minimum_object_integrated_echo_ratio_by_time
+            )
+        ),
+        maximum_object_integrated_echo_ratio_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics
+                .maximum_object_integrated_echo_ratio_by_time
+            )
+        ),
+        minimum_object_soft_echo_area_ratio_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics
+                .minimum_object_soft_echo_area_ratio_by_time
+            )
+        ),
+        maximum_object_soft_echo_area_ratio_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics
+                .maximum_object_soft_echo_area_ratio_by_time
+            )
+        ),
         established_echo_excess_growth_fraction=(
             None
             if amplitude_diagnostics is None
@@ -2504,6 +3183,16 @@ def _fallback_result(
         causal_control_cell_count=causal_control_cell_count,
         causal_seed_cell_count=causal_seed_cell_count,
         causal_seed_prior_cost=causal_seed_prior_cost,
+        motion_control_coordinate_system=(
+            "projected_xy_mps_radial_ball"
+            if frozen.analysis_config.motion_increment_scale_mps is not None
+            else "grid_yx_px"
+        ),
+        field_smoothness_coordinate_system=(
+            "projected_orthogonal_graph"
+            if frozen.grid_time_contract is not None
+            else "index_graph"
+        ),
     )
 
 
@@ -2546,11 +3235,61 @@ def _bounded_update(
     if bool(torch.all(limit_tensor == 0)):
         return torch.zeros_like(background)
     safe_limit = limit_tensor.clamp_min(torch.finfo(background.dtype).tiny)
-    ratio = (background / safe_limit).clamp(-0.999999, 0.999999)
+    inside = torch.abs(background) < safe_limit
+    unit = background.new_tensor(1.0)
+    interior_limit = torch.nextafter(unit, background.new_zeros(()))
+    ratio = (background / safe_limit).clamp(
+        -interior_limit,
+        interior_limit,
+    )
     latent = torch.atanh(ratio)
-    return limit_tensor * torch.tanh(
+    updated = limit_tensor * torch.tanh(
         latent + (scale / safe_limit) * control
     )
+    projected = (background + scale * control).clamp(
+        -limit_tensor,
+        limit_tensor,
+    )
+    return torch.where(inside, updated, projected)
+
+
+def _bounded_vector_update(
+    background: Tensor,
+    control: Tensor,
+    scale: float,
+    limit: float,
+) -> Tensor:
+    if not math.isfinite(limit) or limit <= 0.0:
+        raise ValueError("bounded vector update limit must be positive")
+    limit_tensor = background.new_tensor(limit)
+    tiny = torch.finfo(background.dtype).tiny
+    background_norm = torch.linalg.vector_norm(background)
+    background_direction = background / background_norm.clamp_min(tiny)
+    inside = background_norm < limit_tensor
+    unit = limit_tensor.new_tensor(1.0)
+    interior_limit = torch.nextafter(unit, limit_tensor.new_zeros(()))
+    background_ratio = (background_norm / limit_tensor).clamp(
+        max=interior_limit
+    )
+    latent = (
+        torch.atanh(background_ratio) * background_direction
+        + (scale / limit_tensor) * control
+    )
+    latent_norm = torch.linalg.vector_norm(latent)
+    safe_norm = latent_norm.clamp_min(tiny)
+    radial_factor = torch.where(
+        latent_norm > math.sqrt(torch.finfo(background.dtype).eps),
+        torch.tanh(latent_norm) / safe_norm,
+        1.0 - latent_norm.square() / 3.0,
+    )
+    updated = limit_tensor * radial_factor * latent
+    candidate = background + scale * control
+    candidate_norm = torch.linalg.vector_norm(candidate)
+    projected = candidate * torch.clamp(
+        limit_tensor / candidate_norm.clamp_min(tiny),
+        max=1.0,
+    )
+    return torch.where(inside, updated, projected)
 
 
 def _decode_dynamics(
@@ -2559,13 +3298,39 @@ def _decode_dynamics(
     config: AnalysisConfig,
     nowcast: NowcastConfig,
     motion_limits_yx: Tensor,
+    grid_time_contract: RadarGridTimeContract | None,
 ) -> tuple[Tensor, Tensor]:
-    displacement = _bounded_update(
-        baseline.displacement_yx,
-        dynamics_control[:2],
-        config.motion_increment_scale_px,
-        motion_limits_yx,
-    )
+    if config.motion_increment_scale_mps is None:
+        displacement = _bounded_update(
+            baseline.displacement_yx,
+            dynamics_control[:2],
+            config.motion_increment_scale_px,
+            motion_limits_yx,
+        )
+    else:
+        if (
+            grid_time_contract is None
+            or nowcast.maximum_motion_speed_mps is None
+        ):
+            raise ValueError(
+                "physical motion control requires grid/time and speed limits"
+            )
+        baseline_velocity = grid_time_contract.projected_velocity_xy(
+            baseline.displacement_yx,
+            nowcast.interval_minutes,
+        )
+        projected_velocity = _bounded_vector_update(
+            baseline_velocity,
+            dynamics_control[:2],
+            config.motion_increment_scale_mps,
+            nowcast.maximum_motion_speed_mps,
+        )
+        displacement = (
+            grid_time_contract.displacement_yx_from_projected_velocity(
+                projected_velocity,
+                nowcast.interval_minutes,
+            )
+        )
     growth = _bounded_update(
         baseline.log_growth_per_step,
         dynamics_control[2],
@@ -2586,6 +3351,7 @@ def _freeze_analysis_remap_cells(
         frozen.analysis_config,
         frozen.nowcast_config,
         frozen.motion_limits_yx,
+        frozen.grid_time_contract,
     )
     return replace(
         frozen,
@@ -2689,7 +3455,6 @@ def _validate_observations(observations: AnalysisObservations) -> None:
         "censored_mask",
         "missing_mask",
         "qc_rejected_mask",
-        "observed_clear_mask",
     ):
         value = getattr(observations, name)
         if (
@@ -2771,6 +3536,7 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
         background_age_minutes=metadata.background_age_minutes,
         source_support=metadata.source_support.detach(),
         motion_disagreement_px=metadata.motion_disagreement_px.detach(),
+        motion_disagreement_mps=metadata.motion_disagreement_mps.detach(),
         growth_disagreement=metadata.growth_disagreement.detach(),
         minimum_phase_correlation_psr=(
             metadata.minimum_phase_correlation_psr.detach()
@@ -2778,4 +3544,10 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
         tendency_pair_count=metadata.tendency_pair_count,
         tendency_source=metadata.tendency_source,
         provenance=metadata.provenance,
+        motion_pair_count=metadata.motion_pair_count,
+        growth_pair_count=metadata.growth_pair_count,
+        motion_pair_selection=metadata.motion_pair_selection,
+        growth_pair_selection=metadata.growth_pair_selection,
+        motion_pair_conflict=metadata.motion_pair_conflict,
+        growth_pair_conflict=metadata.growth_pair_conflict,
     )

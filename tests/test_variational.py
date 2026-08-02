@@ -298,7 +298,7 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         self.assertTrue(observations.missing_mask[0, 0, 0])
         self.assertFalse(observations.valid_mask[0, 0, 0])
-        self.assertTrue(observations.observed_clear_mask[1, 0, 1])
+        self.assertTrue(observations.censored_mask[1, 0, 1])
         self.assertTrue(observations.valid_mask[1, 0, 1])
         self.assertTrue(observations.qc_rejected_mask[2, 0, 2])
         self.assertFalse(observations.valid_mask[2, 0, 2])
@@ -405,7 +405,23 @@ class VariationalAnalysisTests(unittest.TestCase):
             (0, 1, width + 2),
             dtype=torch.int64,
         )
-        frozen = replace(frozen, active_field_index=active_index)
+        active_mask = torch.zeros_like(frozen.initial_support_mask)
+        active_mask.flatten()[active_index] = True
+        left, right, physical_weight = (
+            variational_module._active_smoothness_graph(
+                active_mask,
+                active_index,
+                frozen.initial_background_dbz,
+                None,
+            )
+        )
+        frozen = replace(
+            frozen,
+            active_field_index=active_index,
+            smooth_edge_left_index=left,
+            smooth_edge_right_index=right,
+            smooth_edge_physical_weight=physical_weight,
+        )
         control = initial_control(frozen)
         control[:3] = torch.tensor(
             (0.0, 2.0, 100.0),
@@ -442,6 +458,257 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         self.assertGreater(residual.numel(), 0)
         torch.testing.assert_close(residual, torch.zeros_like(residual))
+
+    def test_physical_smoothness_graph_weights_anisotropic_edges(self) -> None:
+        active_mask = torch.ones((2, 2), dtype=torch.bool)
+        active_index = torch.arange(4, dtype=torch.long)
+        reference = torch.zeros((2, 2), dtype=torch.float64)
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=250.0,
+            dy_m=2000.0,
+            projection="EPSG:5179",
+            grid_hash="a" * 64,
+        )
+
+        left, right, weight = variational_module._active_smoothness_graph(
+            active_mask,
+            active_index,
+            reference,
+            contract,
+        )
+
+        torch.testing.assert_close(left, torch.tensor((0, 1, 0, 2)))
+        torch.testing.assert_close(right, torch.tensor((2, 3, 1, 3)))
+        torch.testing.assert_close(
+            weight,
+            torch.tensor((0.125, 0.125, 8.0, 8.0), dtype=torch.float64),
+        )
+
+    def test_field_smoothness_rejects_sheared_grid(self) -> None:
+        frames = torch.full((3, 8, 8), 20.0, dtype=torch.float64)
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="c" * 64,
+            pixel_to_projected_matrix_m=(
+                (1000.0, 800.0),
+                (0.0, -600.0),
+            ),
+        )
+
+        with self.assertRaisesRegex(ValueError, "orthogonal"):
+            prepare_analysis(
+                frames,
+                nowcast_config=self.nowcast_config,
+                analysis_config=self.analysis_config,
+                grid_time_contract=contract,
+            )
+
+        _, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=replace(
+                self.analysis_config,
+                field_smoothness_weight=0.0,
+            ),
+            grid_time_contract=contract,
+        )
+        self.assertFalse(contract.grid_axes_are_orthogonal)
+        self.assertEqual(frozen.smooth_edge_left_index.numel(), 112)
+
+    def test_projected_velocity_control_is_isotropic_on_anisotropic_grid(
+        self,
+    ) -> None:
+        frames = torch.full((3, 8, 8), 20.0, dtype=torch.float64)
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=250.0,
+            dy_m=2000.0,
+            projection="EPSG:5179",
+            grid_hash="b" * 64,
+            pixel_to_projected_matrix_m=(
+                (0.0, -2000.0),
+                (250.0, 0.0),
+            ),
+        )
+        nowcast = replace(
+            self.nowcast_config,
+            maximum_motion_speed_mps=100.0,
+            minimum_phase_correlation_psr=0.0,
+        )
+        config = replace(
+            self.analysis_config,
+            motion_increment_scale_mps=2.0,
+        )
+        _, frozen = prepare_analysis(
+            frames,
+            nowcast_config=nowcast,
+            analysis_config=config,
+            grid_time_contract=contract,
+        )
+        field_size = frozen.active_field_index.numel()
+        control_x = initial_control(frozen)
+        control_y = initial_control(frozen)
+        control_x[field_size] = 0.5
+        control_y[field_size + 1] = 0.5
+
+        velocity_x = contract.projected_velocity_xy(
+            analysis_trajectory(control_x, frozen).displacement_yx,
+            nowcast.interval_minutes,
+        )
+        velocity_y = contract.projected_velocity_xy(
+            analysis_trajectory(control_y, frozen).displacement_yx,
+            nowcast.interval_minutes,
+        )
+
+        self.assertGreater(float(velocity_x[0]), 0.0)
+        self.assertGreater(float(velocity_y[1]), 0.0)
+        torch.testing.assert_close(velocity_x[1], velocity_x.new_zeros(()))
+        torch.testing.assert_close(velocity_y[0], velocity_y.new_zeros(()))
+        torch.testing.assert_close(velocity_x[0], velocity_y[1])
+
+    def test_radial_velocity_control_is_rotation_equivariant(self) -> None:
+        background = torch.zeros(2, dtype=torch.float64)
+        axis_control = torch.tensor((20.0, 0.0), dtype=torch.float64)
+        diagonal_control = torch.tensor(
+            (20.0 / math.sqrt(2.0), 20.0 / math.sqrt(2.0)),
+            dtype=torch.float64,
+        )
+
+        axis_velocity = variational_module._bounded_vector_update(
+            background,
+            axis_control,
+            scale=2.0,
+            limit=30.0,
+        )
+        diagonal_velocity = variational_module._bounded_vector_update(
+            background,
+            diagonal_control,
+            scale=2.0,
+            limit=30.0,
+        )
+
+        torch.testing.assert_close(
+            torch.linalg.vector_norm(axis_velocity),
+            torch.linalg.vector_norm(diagonal_velocity),
+        )
+        self.assertLess(float(torch.linalg.vector_norm(axis_velocity)), 30.0)
+        torch.testing.assert_close(axis_velocity[1], axis_velocity.new_zeros(()))
+        torch.testing.assert_close(diagonal_velocity[0], diagonal_velocity[1])
+
+    def test_radial_velocity_control_preserves_baseline_and_local_scale(
+        self,
+    ) -> None:
+        baseline = torch.tensor((12.0, -5.0), dtype=torch.float64)
+        decoded = variational_module._bounded_vector_update(
+            baseline,
+            torch.zeros_like(baseline),
+            scale=2.0,
+            limit=30.0,
+        )
+        torch.testing.assert_close(decoded, baseline)
+
+        zero = torch.zeros(2, dtype=torch.float64)
+        direction = torch.tensor((1.0, -2.0), dtype=torch.float64)
+        value, tangent = torch.func.jvp(
+            lambda control: variational_module._bounded_vector_update(
+                zero,
+                control,
+                scale=2.0,
+                limit=30.0,
+            ),
+            (zero,),
+            (direction,),
+        )
+        torch.testing.assert_close(value, zero)
+        torch.testing.assert_close(tangent, 2.0 * direction)
+
+    def test_bounded_controls_allow_inward_updates_at_saturated_baselines(
+        self,
+    ) -> None:
+        vector = torch.tensor((30.0, 0.0), dtype=torch.float64)
+        zero_vector = variational_module._bounded_vector_update(
+            vector,
+            torch.zeros_like(vector),
+            scale=2.0,
+            limit=30.0,
+        )
+        inward_vector = variational_module._bounded_vector_update(
+            vector,
+            torch.tensor((-1.0, 0.0), dtype=vector.dtype),
+            scale=2.0,
+            limit=30.0,
+        )
+        outward_vector = variational_module._bounded_vector_update(
+            vector,
+            torch.tensor((1.0, 0.0), dtype=vector.dtype),
+            scale=2.0,
+            limit=30.0,
+        )
+        torch.testing.assert_close(zero_vector, vector, rtol=0.0, atol=0.0)
+        self.assertLess(float(torch.linalg.vector_norm(inward_vector)), 30.0)
+        torch.testing.assert_close(outward_vector, vector, rtol=0.0, atol=0.0)
+
+        scalar = torch.tensor(1.0, dtype=torch.float64)
+        zero_scalar = variational_module._bounded_update(
+            scalar,
+            scalar.new_zeros(()),
+            scale=0.1,
+            limit=1.0,
+        )
+        inward_scalar = variational_module._bounded_update(
+            scalar,
+            scalar.new_tensor(-1.0),
+            scale=0.1,
+            limit=1.0,
+        )
+        outward_scalar = variational_module._bounded_update(
+            scalar,
+            scalar.new_tensor(1.0),
+            scale=0.1,
+            limit=1.0,
+        )
+        torch.testing.assert_close(zero_scalar, scalar, rtol=0.0, atol=0.0)
+        self.assertLess(float(inward_scalar), 1.0)
+        torch.testing.assert_close(outward_scalar, scalar, rtol=0.0, atol=0.0)
+
+    def test_radial_velocity_control_keeps_large_controls_inside_speed_ball(
+        self,
+    ) -> None:
+        background = torch.tensor((10.0, 5.0), dtype=torch.float64)
+        for control in (
+            torch.tensor((1.0e6, 0.0), dtype=torch.float64),
+            torch.tensor((0.0, -1.0e6), dtype=torch.float64),
+            torch.tensor((1.0e6, 1.0e6), dtype=torch.float64),
+        ):
+            with self.subTest(control=tuple(control.tolist())):
+                velocity = variational_module._bounded_vector_update(
+                    background,
+                    control,
+                    scale=2.0,
+                    limit=30.0,
+                )
+                self.assertTrue(bool(torch.all(torch.isfinite(velocity))))
+                self.assertLessEqual(
+                    float(torch.linalg.vector_norm(velocity)),
+                    30.0
+                    * (1.0 + 10.0 * torch.finfo(velocity.dtype).eps),
+                )
 
     def test_solver_reuses_one_vjp_pullback_per_outer_iteration(self) -> None:
         observations, frozen = self.stationary_problem()
@@ -482,13 +749,17 @@ class VariationalAnalysisTests(unittest.TestCase):
         result = solve_analysis(observations, frozen)
 
         self.assertFalse(result.used_fallback, result.reason)
-        self.assertIsNotNone(result.dynamics_reduced_hessian_eigenvalues)
         self.assertIsNotNone(
-            result.dynamics_reduced_hessian_condition_number
+            result.regularized_dynamics_hessian_eigenvalues
         )
-        eigenvalues = result.dynamics_reduced_hessian_eigenvalues
+        self.assertIsNotNone(
+            result.regularized_dynamics_hessian_condition_number
+        )
+        eigenvalues = result.regularized_dynamics_hessian_eigenvalues
         assert eigenvalues is not None
-        condition_number = result.dynamics_reduced_hessian_condition_number
+        condition_number = (
+            result.regularized_dynamics_hessian_condition_number
+        )
         assert condition_number is not None
         diagnostic_frozen = freeze_irls_weights(
             result.control,
@@ -545,14 +816,19 @@ class VariationalAnalysisTests(unittest.TestCase):
             result.dynamics_data_information_trace or 0.0,
             float(torch.trace(expected_gram)),
         )
-        self.assertEqual(result.dynamics_data_effective_rank, 3)
-        self.assertEqual(
-            result.regularized_dynamics_hessian_eigenvalues,
-            result.dynamics_reduced_hessian_eigenvalues,
+        self.assertEqual(result.dynamics_data_numerical_rank, 3)
+        expected_data_share = expected_data_eigenvalues / (
+            1.0 + expected_data_eigenvalues
         )
-        self.assertEqual(
-            result.regularized_dynamics_hessian_condition_number,
-            result.dynamics_reduced_hessian_condition_number,
+        self.assertAlmostEqual(
+            result.dynamics_data_effective_dimension or 0.0,
+            float(torch.sum(expected_data_share)),
+        )
+        data_share = result.dynamics_data_to_prior_ratio_by_mode
+        assert data_share is not None
+        torch.testing.assert_close(
+            torch.tensor(data_share, dtype=torch.float64),
+            expected_data_share,
         )
         self.assertGreaterEqual(eigenvalues[0], 1.0)
         self.assertLessEqual(eigenvalues[0], eigenvalues[1])
@@ -567,8 +843,8 @@ class VariationalAnalysisTests(unittest.TestCase):
             0.0,
         )
         self.assertLessEqual(result.field_growth_jacobian_cosine or 0.0, 1.0)
-        self.assertIsNotNone(result.field_motion_jacobian_cosine_yx)
-        motion_cosines = result.field_motion_jacobian_cosine_yx
+        self.assertIsNotNone(result.field_motion_jacobian_cosine_by_control)
+        motion_cosines = result.field_motion_jacobian_cosine_by_control
         assert motion_cosines is not None
         for cosine in motion_cosines:
             self.assertIsNotNone(cosine)
@@ -607,7 +883,12 @@ class VariationalAnalysisTests(unittest.TestCase):
             (0.0,) * 3,
         )
         self.assertEqual(diagnostics.dynamics_data_information_trace, 0.0)
-        self.assertEqual(diagnostics.dynamics_data_effective_rank, 0)
+        self.assertEqual(diagnostics.dynamics_data_numerical_rank, 0)
+        self.assertEqual(diagnostics.dynamics_data_effective_dimension, 0.0)
+        self.assertEqual(
+            diagnostics.dynamics_data_to_prior_ratio_by_mode,
+            (0.0,) * 3,
+        )
         self.assertEqual(
             diagnostics.regularized_dynamics_hessian_eigenvalues,
             (1.0,) * 3,
@@ -842,7 +1123,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             1.0,
             0.5,
             1,
-            0,
+            ((0, 0),),
             True,
             "test_support_closure",
         )
@@ -921,7 +1202,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             1.0,
             0.5,
             1,
-            0,
+            ((0, 0),),
             True,
             "test_background_tendency_provenance",
         )
@@ -947,7 +1228,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             torch.zeros_like(detected),
             torch.tensor((0.0, 1.0), dtype=torch.float64),
             self.analysis_config.minimum_control_reachability,
-            0,
+            ((0, 0),),
         )
 
         self.assertTrue(support[3, 4])
@@ -982,7 +1263,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             torch.zeros_like(detected),
             displacement,
             self.analysis_config.minimum_control_reachability,
-            0,
+            ((0, 0),),
         )
         self.assertFalse(bool(torch.any(support)))
         self.assertFalse(bool(torch.any(seed)))
@@ -999,7 +1280,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             torch.zeros_like(detected),
             torch.tensor((0.25, 0.25), dtype=torch.float64),
             self.analysis_config.minimum_control_reachability,
-            0,
+            ((0, 0),),
         )
 
         self.assertEqual(int(support.sum()), 4)
@@ -1110,7 +1391,10 @@ class VariationalAnalysisTests(unittest.TestCase):
             torch.zeros_like(detected),
             torch.zeros(2, dtype=torch.float64),
             self.analysis_config.minimum_control_reachability,
-            self.analysis_config.causal_support_dilation_px,
+            variational_module._rectangular_offsets_yx(
+                self.analysis_config.causal_support_dilation_px,
+                self.analysis_config.causal_support_dilation_px,
+            ),
         )
 
         self.assertTrue(support[3, 4])
@@ -1577,6 +1861,167 @@ class VariationalAnalysisTests(unittest.TestCase):
             diagnostics.degrades_confidence(self.analysis_config)
         )
 
+    def test_confidence_detects_bidirectional_echo_and_area_errors(
+        self,
+    ) -> None:
+        diagnostics = replace(
+            self._synthetic_amplitude_diagnostics((0.0, 0.0)),
+            unresolved_fraction_by_time=torch.zeros(2, dtype=torch.float64),
+            integrated_echo_ratio_by_time=torch.tensor(
+                (0.25, 4.0),
+                dtype=torch.float64,
+            ),
+            displacement_tolerant_soft_echo_area_ratio_by_time=torch.tensor(
+                (4.0, 0.25),
+                dtype=torch.float64,
+            ),
+        )
+
+        self.assertTrue(diagnostics.degrades_confidence(self.analysis_config))
+
+    def test_small_failed_precursor_object_is_not_diluted_by_large_object(
+        self,
+    ) -> None:
+        frames = torch.full((3, 32, 32), -10.0, dtype=torch.float64)
+        frames[:, 29, 29] = 20.0
+        frames[2, 10:25, 10:25] = 20.0
+        frames[2, 2, 2] = 20.0
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+        prediction_dbz = frames.clone()
+        prediction_dbz[2, 2, 2] = self.nowcast_config.min_dbz
+        trajectory = replace(
+            analysis_trajectory(initial_control(frozen), frozen),
+            frames_linear=dbz_to_echo(
+                prediction_dbz,
+                min_dbz=self.nowcast_config.min_dbz,
+                max_dbz=self.nowcast_config.max_dbz,
+            ),
+        )
+
+        diagnostics = variational_module._amplitude_diagnostics(
+            observations,
+            frozen,
+            trajectory,
+        )
+
+        self.assertLess(
+            float(diagnostics.unresolved_fraction_by_time[1]),
+            self.analysis_config.maximum_unresolved_amplitude_fraction,
+        )
+        self.assertEqual(
+            int(diagnostics.precursor_object_count_by_time[1]),
+            2,
+        )
+        self.assertEqual(
+            float(
+                diagnostics.maximum_object_unresolved_fraction_by_time[1]
+            ),
+            1.0,
+        )
+        self.assertLess(
+            float(
+                diagnostics.minimum_object_integrated_echo_ratio_by_time[1]
+            ),
+            self.analysis_config.minimum_integrated_echo_ratio_for_confidence,
+        )
+        self.assertTrue(diagnostics.degrades_confidence(self.analysis_config))
+
+    def test_operational_confidence_policy_falls_back_on_under_and_over(
+        self,
+    ) -> None:
+        observations, frozen = self.stationary_problem()
+        frozen = replace(
+            frozen,
+            analysis_config=replace(
+                frozen.analysis_config,
+                amplitude_confidence_policy="operational_fallback",
+            ),
+        )
+        for ratio in (0.25, 4.0):
+            with self.subTest(integrated_echo_ratio=ratio):
+                diagnostics = replace(
+                    self._synthetic_amplitude_diagnostics((0.0, 0.0)),
+                    unresolved_fraction_by_time=torch.zeros(
+                        2,
+                        dtype=torch.float64,
+                    ),
+                    integrated_echo_ratio_by_time=torch.tensor(
+                        (1.0, ratio),
+                        dtype=torch.float64,
+                    ),
+                    displacement_tolerant_soft_echo_area_ratio_by_time=(
+                        torch.ones(2, dtype=torch.float64)
+                    ),
+                )
+
+                with patch.object(
+                    variational_module,
+                    "_amplitude_diagnostics",
+                    return_value=diagnostics,
+                ):
+                    result = variational_module._analysis_result(
+                        initial_control(frozen),
+                        observations,
+                        frozen,
+                        1.0,
+                        0.5,
+                        1,
+                        0,
+                        True,
+                        "test_operational_confidence",
+                    )
+
+                self.assertTrue(result.used_fallback)
+                self.assertEqual(
+                    result.reason,
+                    "amplitude_confidence_failure",
+                )
+                self.assertTrue(result.amplitude_confidence_failed)
+                self.assertEqual(
+                    result.final_objective,
+                    result.initial_objective,
+                )
+
+    def test_research_confidence_policy_returns_degraded_analysis(self) -> None:
+        observations, frozen = self.stationary_problem()
+        diagnostics = replace(
+            self._synthetic_amplitude_diagnostics((0.0, 0.0)),
+            unresolved_fraction_by_time=torch.zeros(2, dtype=torch.float64),
+            integrated_echo_ratio_by_time=torch.tensor(
+                (1.0, 4.0),
+                dtype=torch.float64,
+            ),
+            displacement_tolerant_soft_echo_area_ratio_by_time=torch.ones(
+                2,
+                dtype=torch.float64,
+            ),
+        )
+
+        with patch.object(
+            variational_module,
+            "_amplitude_diagnostics",
+            return_value=diagnostics,
+        ):
+            result = variational_module._analysis_result(
+                initial_control(frozen),
+                observations,
+                frozen,
+                1.0,
+                0.5,
+                1,
+                0,
+                True,
+                "test_research_confidence",
+            )
+
+        self.assertFalse(result.used_fallback)
+        self.assertTrue(result.degraded)
+        self.assertTrue(result.amplitude_confidence_failed)
+
     def test_continuous_violation_allows_progress_before_threshold(self) -> None:
         frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
         frames[2, 3, 4] = 20.0
@@ -1959,6 +2404,32 @@ class VariationalAnalysisTests(unittest.TestCase):
                 math.nan,
                 dtype=dtype,
             ),
+            precursor_object_count_by_time=torch.zeros(2, dtype=torch.long),
+            insufficient_object_count_by_time=torch.zeros(
+                2,
+                dtype=torch.long,
+            ),
+            maximum_object_unresolved_fraction_by_time=zeros.clone(),
+            minimum_object_integrated_echo_ratio_by_time=torch.full(
+                (2,),
+                math.nan,
+                dtype=dtype,
+            ),
+            maximum_object_integrated_echo_ratio_by_time=torch.full(
+                (2,),
+                math.nan,
+                dtype=dtype,
+            ),
+            minimum_object_soft_echo_area_ratio_by_time=torch.full(
+                (2,),
+                math.nan,
+                dtype=dtype,
+            ),
+            maximum_object_soft_echo_area_ratio_by_time=torch.full(
+                (2,),
+                math.nan,
+                dtype=dtype,
+            ),
         )
 
     def test_unresolved_amplitude_fraction_must_be_bounded(self) -> None:
@@ -2002,6 +2473,16 @@ class VariationalAnalysisTests(unittest.TestCase):
                     "invalid",
                 )
             )
+        with self.assertRaisesRegex(
+            ValueError,
+            "amplitude_confidence_policy",
+        ):
+            AnalysisConfig(
+                amplitude_confidence_policy=cast(
+                    variational_module.AmplitudeConfidencePolicy,
+                    "invalid",
+                )
+            )
         for field_name in (
             "minimum_integrated_echo_ratio_for_confidence",
             "minimum_soft_echo_area_ratio_for_confidence",
@@ -2035,12 +2516,96 @@ class VariationalAnalysisTests(unittest.TestCase):
                                     value
                                 )
                             )
+        for field_name in (
+            "maximum_integrated_echo_ratio_for_confidence",
+            "maximum_soft_echo_area_ratio_for_confidence",
+        ):
+            for value in (0.9, float("nan"), float("inf")):
+                with self.subTest(field_name=field_name, value=value):
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "must be finite and at least 1",
+                    ):
+                        AnalysisConfig(**{field_name: value})
+
+    def test_operational_analysis_requires_complete_physical_contract(
+        self,
+    ) -> None:
+        config = AnalysisConfig(
+            execution_mode="operational",
+            operational_calibration_id="test-calibration-v1",
+            amplitude_information_policy="operational_fallback",
+            amplitude_confidence_policy="operational_fallback",
+            motion_increment_scale_mps=2.0,
+            causal_support_uncertainty_m=1000.0,
+            amplitude_displacement_tolerance_m=1000.0,
+        )
+        frames = torch.full((3, 7, 9), 20.0, dtype=torch.float64)
+
+        with self.assertRaisesRegex(ValueError, "grid/time contract"):
+            prepare_analysis(
+                frames,
+                nowcast_config=NowcastConfig(
+                    maximum_motion_speed_mps=30.0
+                ),
+                analysis_config=config,
+            )
+
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="0" * 64,
+        )
+        with self.assertRaisesRegex(ValueError, "pair confidence"):
+            prepare_analysis(
+                frames,
+                nowcast_config=NowcastConfig(maximum_motion_speed_mps=30.0),
+                analysis_config=config,
+                grid_time_contract=contract,
+            )
 
     def test_field_smoothness_weight_must_be_nonnegative(self) -> None:
         for value in (-0.1, float("nan")):
             with self.subTest(value=value):
                 with self.assertRaisesRegex(ValueError, "cannot be negative"):
                     AnalysisConfig(field_smoothness_weight=value)
+
+    def test_physical_motion_increment_requires_positive_complete_contract(
+        self,
+    ) -> None:
+        for value in (0.0, -1.0, float("nan")):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "must be positive"):
+                    AnalysisConfig(motion_increment_scale_mps=value)
+
+        frames = torch.full((3, 8, 8), 20.0, dtype=torch.float64)
+        config = AnalysisConfig(motion_increment_scale_mps=2.0)
+        with self.assertRaisesRegex(ValueError, "grid/time contract"):
+            prepare_analysis(frames, analysis_config=config)
+
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="f" * 64,
+        )
+        with self.assertRaisesRegex(ValueError, "physical motion limit"):
+            prepare_analysis(
+                frames,
+                analysis_config=config,
+                grid_time_contract=contract,
+            )
 
     def test_physical_distance_settings_resolve_against_grid(self) -> None:
         frames = torch.full((3, 8, 8), 20.0, dtype=torch.float64)
@@ -2070,12 +2635,78 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertEqual(observations.dbz.shape, frames.shape)
         self.assertEqual(
             frozen.amplitude_displacement_tolerance_yx,
-            (2, 1),
+            (1, 0),
+        )
+        self.assertEqual(
+            frozen.amplitude_displacement_offsets_yx,
+            ((-1, 0), (0, 0), (1, 0)),
         )
         torch.testing.assert_close(
             frozen.motion_limits_yx,
             torch.tensor((12.0, 6.0), dtype=frames.dtype),
         )
+
+    def test_exact_physical_footprint_excludes_diagonal_causal_anchor(
+        self,
+    ) -> None:
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="1" * 64,
+        )
+        offsets = contract.pixel_offsets_within_distance(
+            1000.0,
+            maximum_radius_yx=(6, 8),
+        )
+        detected = torch.zeros((3, 7, 9), dtype=torch.bool)
+        detected[2, 3, 3] = True
+        observed = torch.zeros_like(detected)
+        observed[0, 3, 4] = True
+        observed[0, 4, 4] = True
+
+        support, _ = variational_module._causal_control_and_seed_support(
+            detected,
+            observed,
+            torch.zeros_like(detected),
+            torch.zeros(2, dtype=torch.float64),
+            self.analysis_config.minimum_control_reachability,
+            offsets,
+        )
+
+        self.assertTrue(support[3, 4])
+        self.assertFalse(support[4, 4])
+
+    def test_exact_physical_footprint_excludes_diagonal_local_maximum(
+        self,
+    ) -> None:
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="2" * 64,
+        )
+        offsets = contract.pixel_offsets_within_distance(
+            1000.0,
+            maximum_radius_yx=(4, 4),
+        )
+        value = torch.zeros((5, 5), dtype=torch.float64)
+        value[2, 2] = 20.0
+
+        local = variational_module._footprint_maximum(value, offsets)
+
+        self.assertEqual(float(local[2, 1]), 20.0)
+        self.assertEqual(float(local[1, 1]), 0.0)
 
     def test_latest_amplitude_threshold_constructor_remains_supported(
         self,

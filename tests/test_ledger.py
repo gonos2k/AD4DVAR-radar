@@ -46,6 +46,93 @@ SCHEMA_ONE_CONTEXT_FEATURE_NAMES = (
     "centroid_x",
     "log_echo_mass",
 )
+SCHEMA_TWO_TO_FOUR_CONTEXT_FEATURE_NAMES = (
+    "motion_dy",
+    "motion_dx",
+    "motion_speed",
+    "log_growth",
+    "motion_disagreement",
+    "growth_disagreement",
+    "tendency_pair_count",
+    "tendency_source_observation",
+    "tendency_source_background",
+    "current_state_support_fraction",
+    "background_contribution_fraction",
+    "latest_observation_coverage",
+    "latest_mean_dbz",
+    "latest_max_dbz",
+    "latest_q90_dbz",
+    "echo_fraction_5dbz",
+    "echo_fraction_35dbz",
+    "boundary_echo_fraction",
+    "centroid_y",
+    "centroid_x",
+    "log_integrated_echo",
+)
+SCHEMA_FIVE_CONTEXT_FEATURE_NAMES = (
+    "motion_dy",
+    "motion_dx",
+    "motion_speed",
+    "log_growth",
+    "motion_disagreement",
+    "growth_disagreement",
+    "motion_pair_conflict",
+    "growth_pair_conflict",
+    "tendency_pair_count",
+    "tendency_source_observation",
+    "tendency_source_background",
+    "current_state_support_fraction",
+    "background_contribution_fraction",
+    "latest_observation_coverage",
+    "latest_mean_dbz",
+    "latest_max_dbz",
+    "latest_q90_dbz",
+    "echo_fraction_5dbz",
+    "echo_fraction_35dbz",
+    "boundary_echo_fraction",
+    "centroid_y",
+    "centroid_x",
+    "log_integrated_echo",
+)
+SCHEMA_SIX_CONTEXT_FEATURE_NAMES = (
+    *SCHEMA_FIVE_CONTEXT_FEATURE_NAMES,
+    "motion_pair_selection_none",
+    "motion_pair_selection_single",
+    "motion_pair_selection_long",
+    "motion_pair_selection_blended",
+    "motion_pair_selection_earlier",
+    "motion_pair_selection_recent",
+    "motion_pair_selection_persistence",
+    "growth_pair_selection_none",
+    "growth_pair_selection_single",
+    "growth_pair_selection_long",
+    "growth_pair_selection_blended",
+    "growth_pair_selection_earlier",
+    "growth_pair_selection_recent",
+    "growth_pair_selection_persistence",
+)
+SCHEMA_SEVEN_CONTEXT_FEATURE_NAMES = (
+    *SCHEMA_SIX_CONTEXT_FEATURE_NAMES,
+    "phase_correlation_psr_available",
+    "log1p_minimum_phase_correlation_psr",
+)
+SCHEMA_EIGHT_CONTEXT_FEATURE_NAMES = (
+    *SCHEMA_SEVEN_CONTEXT_FEATURE_NAMES,
+    "projected_velocity_available",
+    "projected_velocity_x_mps",
+    "projected_velocity_y_mps",
+    "projected_speed_mps",
+)
+SCHEMA_NINE_CONTEXT_FEATURE_NAMES = (
+    *SCHEMA_EIGHT_CONTEXT_FEATURE_NAMES,
+    "motion_disagreement_mps_available",
+    "motion_disagreement_mps",
+)
+SCHEMA_TEN_CONTEXT_FEATURE_NAMES = (
+    *SCHEMA_NINE_CONTEXT_FEATURE_NAMES,
+    "area_weighted_echo_available",
+    "log1p_linear_reflectivity_integral_km2",
+)
 
 
 def _contract(snapshot=None) -> ModelContract:
@@ -66,6 +153,9 @@ def _contract(snapshot=None) -> ModelContract:
             "b" * 64
             if snapshot is None
             else snapshot.sensitivity_config_digest
+        ),
+        grid_time_contract_digest=(
+            None if snapshot is None else snapshot.grid_time_contract_digest
         ),
     )
 
@@ -105,9 +195,14 @@ class ModelContractTests(unittest.TestCase):
 
         for field in fields(contract):
             with self.subTest(field=field.name):
+                value = (
+                    "c" * 64
+                    if field.name == "grid_time_contract_digest"
+                    else f"{getattr(contract, field.name)}-changed"
+                )
                 changed = replace(
                     contract,
-                    **{field.name: f"{getattr(contract, field.name)}-changed"},
+                    **{field.name: value},
                 )
                 self.assertNotEqual(contract.digest, changed.digest)
 
@@ -124,6 +219,20 @@ class ModelContractTests(unittest.TestCase):
                 radar_id="KTLX",
                 contract=contract,
                 snapshot=snapshot,
+            )
+
+    def test_episode_rejects_grid_digest_mismatch(self) -> None:
+        snapshot = replace(
+            _computed_snapshot(),
+            grid_time_contract_digest="c" * 64,
+        )
+        with self.assertRaisesRegex(ValueError, "grid digest"):
+            SensitivityEpisode(
+                episode_id="mismatched-grid",
+                issue_time="2026-07-26T05:00:00+00:00",
+                radar_id="KTLX",
+                contract=_contract(snapshot),
+                snapshot=replace(snapshot, grid_time_contract_digest="d" * 64),
             )
 
 
@@ -175,7 +284,12 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
 
         manifest = loaded.manifest
-        self.assertEqual(manifest["schema_version"], 4)
+        self.assertEqual(manifest["schema_version"], 12)
+        self.assertEqual(
+            manifest["context_feature_names"][6:8],
+            ["motion_pair_conflict", "growth_pair_conflict"],
+        )
+        self.assertEqual(loaded.arrays["context_features"].shape, (50,))
         self.assertEqual(manifest["contract_hash"], self.contract.digest)
         self.assertEqual(
             manifest["forecast_run_digest"],
@@ -184,6 +298,10 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(
             episode.forecast_run_digest,
             self.snapshot.forecast_run_digest,
+        )
+        self.assertEqual(
+            manifest["trust_components"]["pair_consistency"],
+            1.0,
         )
         self.assertIs(
             manifest["indirect_observation_sensitivity_available"],
@@ -292,6 +410,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         manifest.pop("forecast_run_digest")
         manifest["contract"].pop("nowcast_config_digest")
         manifest["contract"].pop("sensitivity_config_digest")
+        manifest["contract"].pop("grid_time_contract_digest")
         manifest["context_feature_names"] = list(
             SCHEMA_ONE_CONTEXT_FEATURE_NAMES
         )
@@ -364,7 +483,9 @@ class EpisodeLedgerTests(unittest.TestCase):
             arrays = {name: archive[name].copy() for name in archive.files}
 
         context = arrays["context_features"]
-        arrays["context_features"] = np.concatenate((context[:6], context[12:]))
+        arrays["context_features"] = np.concatenate(
+            (context[:6], context[14:23])
+        )
 
         def latest_axis(name: str, *, fill: float = 0.0) -> np.ndarray:
             source = arrays[name]
@@ -414,6 +535,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         manifest.pop("forecast_run_digest")
         manifest["contract"].pop("nowcast_config_digest")
         manifest["contract"].pop("sensitivity_config_digest")
+        manifest["contract"].pop("grid_time_contract_digest")
         manifest["context_feature_names"] = list(
             SCHEMA_ONE_CONTEXT_FEATURE_NAMES
         )
@@ -495,11 +617,37 @@ class EpisodeLedgerTests(unittest.TestCase):
     ) -> None:
         episode = self.episode("schema-three")
         target = self.ledger.append(episode)
+        arrays_path = target / "sensitivity_arrays.npz"
         manifest_path = target / "manifest.json"
         checksums_path = target / "checksums.json"
+        with np.load(arrays_path, allow_pickle=False) as archive:
+            arrays = {name: archive[name].copy() for name in archive.files}
+        context = arrays["context_features"]
+        arrays["context_features"] = np.concatenate(
+            (context[:6], context[8:23])
+        )
+        np.savez_compressed(arrays_path, **arrays)
+        arrays_hash = hashlib.sha256(arrays_path.read_bytes()).hexdigest()
+
         manifest = json.loads(manifest_path.read_text("utf-8"))
         manifest["schema_version"] = 3
         manifest.pop("forecast_run_digest")
+        manifest["contract"].pop("grid_time_contract_digest")
+        manifest["context_feature_names"] = list(
+            SCHEMA_TWO_TO_FOUR_CONTEXT_FEATURE_NAMES
+        )
+        manifest["arrays"]["context_features"]["shape"] = [
+            len(SCHEMA_TWO_TO_FOUR_CONTEXT_FEATURE_NAMES)
+        ]
+        legacy_contract_hash = hashlib.sha256(
+            json.dumps(
+                {"contract_schema_version": 3, **manifest["contract"]},
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        manifest["contract_hash"] = legacy_contract_hash
         manifest_text = json.dumps(
             manifest,
             ensure_ascii=False,
@@ -510,6 +658,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         manifest_hash = hashlib.sha256(manifest_text.encode("utf-8")).hexdigest()
         checksums = json.loads(checksums_path.read_text("utf-8"))
         checksums["manifest.json"] = manifest_hash
+        checksums["sensitivity_arrays.npz"] = arrays_hash
         checksums_path.write_text(
             json.dumps(
                 checksums,
@@ -524,10 +673,15 @@ class EpisodeLedgerTests(unittest.TestCase):
             connection.execute(
                 """
                 UPDATE episodes
-                SET manifest_sha256 = ?
+                SET contract_hash = ?, manifest_sha256 = ?, arrays_sha256 = ?
                 WHERE episode_id = ?
                 """,
-                (manifest_hash, episode.episode_id),
+                (
+                    legacy_contract_hash,
+                    manifest_hash,
+                    arrays_hash,
+                    episode.episode_id,
+                ),
             )
 
         reopened = EpisodeLedger(self.root)
@@ -535,6 +689,10 @@ class EpisodeLedgerTests(unittest.TestCase):
         loaded = reopened.load(episode.episode_id)
         self.assertEqual(loaded.manifest["schema_version"], 3)
         self.assertNotIn("forecast_run_digest", loaded.manifest)
+        self.assertEqual(
+            loaded.arrays["context_features"].shape,
+            (len(SCHEMA_TWO_TO_FOUR_CONTEXT_FEATURE_NAMES),),
+        )
 
         manifest["forecast_run_digest"] = None
         manifest_text = json.dumps(
@@ -570,6 +728,268 @@ class EpisodeLedgerTests(unittest.TestCase):
             "forecast run provenance does not match",
         ):
             reopened.verify(episode.episode_id)
+
+    def test_schema_four_context_contract_remains_verifiable(self) -> None:
+        episode = self.episode("schema-four")
+        target = self.ledger.append(episode)
+        arrays_path = target / "sensitivity_arrays.npz"
+        manifest_path = target / "manifest.json"
+        checksums_path = target / "checksums.json"
+        with np.load(arrays_path, allow_pickle=False) as archive:
+            arrays = {name: archive[name].copy() for name in archive.files}
+        context = arrays["context_features"]
+        arrays["context_features"] = np.concatenate(
+            (context[:6], context[8:23])
+        )
+        np.savez_compressed(arrays_path, **arrays)
+        arrays_hash = hashlib.sha256(arrays_path.read_bytes()).hexdigest()
+
+        manifest = json.loads(manifest_path.read_text("utf-8"))
+        manifest["schema_version"] = 4
+        manifest["contract"].pop("grid_time_contract_digest")
+        manifest["context_feature_names"] = list(
+            SCHEMA_TWO_TO_FOUR_CONTEXT_FEATURE_NAMES
+        )
+        manifest["arrays"]["context_features"]["shape"] = [
+            len(SCHEMA_TWO_TO_FOUR_CONTEXT_FEATURE_NAMES)
+        ]
+        legacy_contract_hash = hashlib.sha256(
+            json.dumps(
+                {"contract_schema_version": 3, **manifest["contract"]},
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        manifest["contract_hash"] = legacy_contract_hash
+        manifest_text = json.dumps(
+            manifest,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        manifest_path.write_text(manifest_text, encoding="utf-8")
+        manifest_hash = hashlib.sha256(manifest_text.encode("utf-8")).hexdigest()
+        checksums = json.loads(checksums_path.read_text("utf-8"))
+        checksums["manifest.json"] = manifest_hash
+        checksums["sensitivity_arrays.npz"] = arrays_hash
+        checksums_path.write_text(
+            json.dumps(
+                checksums,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            encoding="utf-8",
+        )
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute("DROP TRIGGER episodes_no_update")
+            connection.execute(
+                """
+                UPDATE episodes
+                SET contract_hash = ?, manifest_sha256 = ?, arrays_sha256 = ?
+                WHERE episode_id = ?
+                """,
+                (
+                    legacy_contract_hash,
+                    manifest_hash,
+                    arrays_hash,
+                    episode.episode_id,
+                ),
+            )
+
+        reopened = EpisodeLedger(self.root)
+        reopened.verify(episode.episode_id)
+        loaded = reopened.load(episode.episode_id)
+        self.assertEqual(loaded.manifest["schema_version"], 4)
+        self.assertEqual(
+            loaded.manifest["context_feature_names"],
+            list(SCHEMA_TWO_TO_FOUR_CONTEXT_FEATURE_NAMES),
+        )
+        self.assertEqual(
+            loaded.arrays["context_features"].shape,
+            (len(SCHEMA_TWO_TO_FOUR_CONTEXT_FEATURE_NAMES),),
+        )
+
+    def test_schema_five_conflict_context_remains_verifiable(self) -> None:
+        episode = self.episode("schema-five")
+        target = self.ledger.append(episode)
+        arrays_path = target / "sensitivity_arrays.npz"
+        manifest_path = target / "manifest.json"
+        checksums_path = target / "checksums.json"
+        with np.load(arrays_path, allow_pickle=False) as archive:
+            arrays = {name: archive[name].copy() for name in archive.files}
+        arrays["context_features"] = arrays["context_features"][:23]
+        np.savez_compressed(arrays_path, **arrays)
+        arrays_hash = hashlib.sha256(arrays_path.read_bytes()).hexdigest()
+
+        manifest = json.loads(manifest_path.read_text("utf-8"))
+        manifest["schema_version"] = 5
+        manifest["contract"].pop("grid_time_contract_digest")
+        manifest["context_feature_names"] = list(
+            SCHEMA_FIVE_CONTEXT_FEATURE_NAMES
+        )
+        manifest["arrays"]["context_features"]["shape"] = [
+            len(SCHEMA_FIVE_CONTEXT_FEATURE_NAMES)
+        ]
+        legacy_contract_hash = hashlib.sha256(
+            json.dumps(
+                {"contract_schema_version": 4, **manifest["contract"]},
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        manifest["contract_hash"] = legacy_contract_hash
+        manifest_text = json.dumps(
+            manifest,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        manifest_path.write_text(manifest_text, encoding="utf-8")
+        manifest_hash = hashlib.sha256(manifest_text.encode("utf-8")).hexdigest()
+        checksums = json.loads(checksums_path.read_text("utf-8"))
+        checksums["manifest.json"] = manifest_hash
+        checksums["sensitivity_arrays.npz"] = arrays_hash
+        checksums_path.write_text(
+            json.dumps(
+                checksums,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            encoding="utf-8",
+        )
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute("DROP TRIGGER episodes_no_update")
+            connection.execute(
+                """
+                UPDATE episodes
+                SET contract_hash = ?, manifest_sha256 = ?, arrays_sha256 = ?
+                WHERE episode_id = ?
+                """,
+                (
+                    legacy_contract_hash,
+                    manifest_hash,
+                    arrays_hash,
+                    episode.episode_id,
+                ),
+            )
+
+        reopened = EpisodeLedger(self.root)
+        reopened.verify(episode.episode_id)
+        loaded = reopened.load(episode.episode_id)
+        self.assertEqual(loaded.manifest["schema_version"], 5)
+        self.assertEqual(
+            loaded.manifest["context_feature_names"],
+            list(SCHEMA_FIVE_CONTEXT_FEATURE_NAMES),
+        )
+        self.assertEqual(
+            loaded.arrays["context_features"].shape,
+            (len(SCHEMA_FIVE_CONTEXT_FEATURE_NAMES),),
+        )
+
+    def test_extended_context_schemas_remain_verifiable(self) -> None:
+        cases = (
+            (6, 5, SCHEMA_SIX_CONTEXT_FEATURE_NAMES),
+            (7, 6, SCHEMA_SEVEN_CONTEXT_FEATURE_NAMES),
+            (8, 7, SCHEMA_EIGHT_CONTEXT_FEATURE_NAMES),
+            (9, 8, SCHEMA_NINE_CONTEXT_FEATURE_NAMES),
+            (10, 9, SCHEMA_TEN_CONTEXT_FEATURE_NAMES),
+            (11, 10, SCHEMA_TEN_CONTEXT_FEATURE_NAMES),
+        )
+        for schema_version, contract_version, context_names in cases:
+            with self.subTest(schema_version=schema_version):
+                episode = self.episode(f"schema-{schema_version}")
+                target = self.ledger.append(episode)
+                arrays_path = target / "sensitivity_arrays.npz"
+                manifest_path = target / "manifest.json"
+                checksums_path = target / "checksums.json"
+                with np.load(arrays_path, allow_pickle=False) as archive:
+                    arrays = {
+                        name: archive[name].copy() for name in archive.files
+                    }
+                arrays["context_features"] = arrays["context_features"][
+                    : len(context_names)
+                ]
+                np.savez_compressed(arrays_path, **arrays)
+                arrays_hash = hashlib.sha256(
+                    arrays_path.read_bytes()
+                ).hexdigest()
+
+                manifest = json.loads(manifest_path.read_text("utf-8"))
+                manifest["schema_version"] = schema_version
+                if schema_version < 11:
+                    manifest["contract"].pop("grid_time_contract_digest")
+                manifest["context_feature_names"] = list(context_names)
+                manifest["arrays"]["context_features"]["shape"] = [
+                    len(context_names)
+                ]
+                legacy_contract_hash = hashlib.sha256(
+                    json.dumps(
+                        {
+                            "contract_schema_version": contract_version,
+                            **manifest["contract"],
+                        },
+                        ensure_ascii=False,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ).encode("utf-8")
+                ).hexdigest()
+                manifest["contract_hash"] = legacy_contract_hash
+                manifest_text = json.dumps(
+                    manifest,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                manifest_path.write_text(manifest_text, encoding="utf-8")
+                manifest_hash = hashlib.sha256(
+                    manifest_text.encode("utf-8")
+                ).hexdigest()
+                checksums = json.loads(checksums_path.read_text("utf-8"))
+                checksums["manifest.json"] = manifest_hash
+                checksums["sensitivity_arrays.npz"] = arrays_hash
+                checksums_path.write_text(
+                    json.dumps(
+                        checksums,
+                        ensure_ascii=False,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                    encoding="utf-8",
+                )
+                with sqlite3.connect(self.ledger.index_path) as connection:
+                    connection.execute("DROP TRIGGER episodes_no_update")
+                    connection.execute(
+                        """
+                        UPDATE episodes
+                        SET contract_hash = ?, manifest_sha256 = ?, arrays_sha256 = ?
+                        WHERE episode_id = ?
+                        """,
+                        (
+                            legacy_contract_hash,
+                            manifest_hash,
+                            arrays_hash,
+                            episode.episode_id,
+                        ),
+                    )
+
+                reopened = EpisodeLedger(self.root)
+                reopened.verify(episode.episode_id)
+                loaded = reopened.load(episode.episode_id)
+                self.assertEqual(
+                    loaded.manifest["schema_version"], schema_version
+                )
+                self.assertEqual(
+                    loaded.manifest["context_feature_names"],
+                    list(context_names),
+                )
+                self.assertEqual(
+                    loaded.arrays["context_features"].shape,
+                    (len(context_names),),
+                )
 
     def test_duplicate_episode_id_is_rejected(self) -> None:
         episode = self.episode()
