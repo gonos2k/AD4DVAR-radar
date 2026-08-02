@@ -118,8 +118,24 @@ class ForecastRunArtifactTests(unittest.TestCase):
             result.metadata.source_support,
         )
         torch.testing.assert_close(
+            loaded.metadata.path_verified_source_support,
+            result.metadata.path_verified_source_support,
+        )
+        torch.testing.assert_close(
             loaded.metadata.verified_source_support,
             result.metadata.verified_source_support,
+        )
+        torch.testing.assert_close(
+            loaded.metadata.observation_verified_source_support,
+            result.metadata.observation_verified_source_support,
+        )
+        torch.testing.assert_close(
+            loaded.metadata.background_verified_source_support,
+            result.metadata.background_verified_source_support,
+        )
+        torch.testing.assert_close(
+            loaded.forecast_path_verified_support,
+            result.forecast_path_verified_support,
         )
         torch.testing.assert_close(
             loaded.forecast_verified_support,
@@ -672,7 +688,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
     def test_save_rejects_mutated_metadata(self) -> None:
         result = nowcast(self.frames())
         result.metadata.source_support[0, 0] = 0.0
+        result.metadata.path_verified_source_support[0, 0] = 0.0
         result.metadata.verified_source_support[0, 0] = 0.0
+        result.metadata.observation_verified_source_support[0, 0] = 0.0
 
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "run.npz"

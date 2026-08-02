@@ -382,8 +382,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v28`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v20`
+- `output_contract_version`: 현재 `nowcast-npz-v29`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v21`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -394,13 +394,19 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 - `analysis_config_json`, `analysis_config_digest`, `analysis_input_digest`
 - `forecast_dbz`: `[18, H, W]`
 - `valid_mask`, `state_echo_linear`, `source_support`,
-  `verified_source_support`, `forecast_verified_support`
-- `source_support`는 상태가 정의됐는지를, `verified_source_support`는
-  최신 직접관측 또는 유효한 pair 경로로 재구성됐는지를 나타낸다.
+  `path_verified_source_support`, `verified_source_support`,
+  `observation_verified_source_support`,
+  `background_verified_source_support`, `forecast_path_verified_support`,
+  `forecast_verified_support`
+- `source_support`는 상태가 정의됐는지를,
+  `path_verified_source_support`는 국지 에코 위치경로가 검증됐는지를,
+  `verified_source_support`는 성장증거까지 있는 상태경로인지를 나타낸다.
+  관측과 배경의 엄격한 evidence support도 별도로 보존한다.
   연구모드에서는 예전 persistence를 유지하지만, 운영모드는
   `minimum_publish_verified_support`로 검증되지 않은 경로를 발행에서
-  제외한다. `forecast_verified_support`는 이 support를 선행시간별로
-  수송한 진단이다.
+  제외한다. `forecast_path_verified_support`와
+  `forecast_verified_support`는 각 support를 선행시간별로 수송한
+  진단이다.
 - `nowcast_config_json`, `nowcast_config_digest`
 - `latest_frame_dbz`, `latest_observation_mask`, `latest_background_dbz`와
   최신 입력·배경 digest

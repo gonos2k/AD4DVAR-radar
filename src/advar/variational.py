@@ -2050,6 +2050,27 @@ def _analysis_result(
             amplitude_diagnostics=amplitude,
             amplitude_diagnostics_source="rejected_candidate",
         )
+    analysis_degraded = (
+        degraded
+        or not converged
+        or amplitude.has_insufficient_information
+        or amplitude_confidence_failed
+    )
+    if (
+        frozen.analysis_config.execution_mode == "operational"
+        and analysis_degraded
+    ):
+        return _fallback_result(
+            frozen,
+            control,
+            reference_objective,
+            "degraded_operational_analysis",
+            outer_iterations,
+            pcg_iterations,
+            minimum_reachability_margin=reachability_margin,
+            amplitude_diagnostics=amplitude,
+            amplitude_diagnostics_source="rejected_candidate",
+        )
     if not _objective_improves_reference(
         final_objective,
         reference_objective,
@@ -2113,6 +2134,11 @@ def _analysis_result(
         frozen.nowcast_config.max_log_growth_per_step
         - torch.abs(trajectory.log_growth_per_step)
     )
+    analysis_verified_support = (
+        source_support.detach()
+        if not analysis_degraded
+        else torch.zeros_like(source_support)
+    )
     return AnalysisResult(
         control=control.detach(),
         active_field_index=frozen.active_field_index.detach().clone(),
@@ -2125,7 +2151,14 @@ def _analysis_result(
                 frozen.background_age_minutes if background_used else None
             ),
             source_support=source_support.detach(),
-            verified_source_support=source_support.detach(),
+            path_verified_source_support=analysis_verified_support,
+            verified_source_support=analysis_verified_support,
+            observation_verified_source_support=torch.zeros_like(
+                source_support
+            ),
+            background_verified_source_support=torch.zeros_like(
+                source_support
+            ),
             provenance="p1_variational_analysis",
             dynamics_source=DynamicsSource.P1_VARIATIONAL,
             state_path_source=TendencySource.NONE,
@@ -2148,11 +2181,7 @@ def _analysis_result(
         converged=converged,
         used_fallback=False,
         reason=reason,
-        degraded=(
-            degraded
-            or amplitude.has_insufficient_information
-            or amplitude_confidence_failed
-        ),
+        degraded=analysis_degraded,
         audit=audit,
         minimum_reachability_margin=reachability_margin,
         unresolved_amplitude_fraction=float(
@@ -3603,7 +3632,16 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
         ),
         background_age_minutes=metadata.background_age_minutes,
         source_support=metadata.source_support.detach(),
+        path_verified_source_support=(
+            metadata.path_verified_source_support.detach()
+        ),
         verified_source_support=metadata.verified_source_support.detach(),
+        observation_verified_source_support=(
+            metadata.observation_verified_source_support.detach()
+        ),
+        background_verified_source_support=(
+            metadata.background_verified_source_support.detach()
+        ),
         motion_disagreement_px=metadata.motion_disagreement_px.detach(),
         motion_disagreement_mps=metadata.motion_disagreement_mps.detach(),
         growth_disagreement=metadata.growth_disagreement.detach(),

@@ -3154,6 +3154,14 @@ class VariationalAnalysisTests(unittest.TestCase):
             result.metadata.provenance,
             "p1_variational_analysis",
         )
+        torch.testing.assert_close(
+            result.metadata.path_verified_source_support,
+            torch.zeros_like(result.metadata.source_support),
+        )
+        torch.testing.assert_close(
+            result.metadata.verified_source_support,
+            torch.zeros_like(result.metadata.source_support),
+        )
 
         final_frozen = freeze_irls_weights(
             result.control,
@@ -3178,6 +3186,60 @@ class VariationalAnalysisTests(unittest.TestCase):
                     final_frozen,
                 )
             ),
+        )
+
+    def test_operational_analysis_rejects_degraded_candidate(self) -> None:
+        observations, frozen = self.stationary_problem()
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-03T00:00:00Z",
+                "2026-08-03T00:10:00Z",
+                "2026-08-03T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="d" * 64,
+        )
+        frozen = replace(
+            frozen,
+            nowcast_config=replace(
+                frozen.nowcast_config,
+                maximum_motion_speed_mps=30.0,
+                pair_echo_dilation_m=1000.0,
+                phase_correlation_sidelobe_radius_m=1000.0,
+            ),
+            analysis_config=AnalysisConfig(
+                execution_mode="operational",
+                operational_calibration_id="test-calibration-v1",
+                amplitude_information_policy="operational_fallback",
+                amplitude_confidence_policy="operational_fallback",
+                motion_increment_scale_mps=2.0,
+                causal_support_uncertainty_m=1000.0,
+                amplitude_displacement_tolerance_m=1000.0,
+            ),
+            grid_time_contract=contract,
+        )
+
+        result = variational_module._analysis_result(
+            initial_control(frozen),
+            observations,
+            frozen,
+            1.0,
+            0.5,
+            1,
+            ((0, 0),),
+            False,
+            "pcg_failed",
+            degraded=True,
+        )
+
+        self.assertTrue(result.used_fallback)
+        self.assertFalse(result.degraded)
+        self.assertEqual(result.reason, "degraded_operational_analysis")
+        self.assertEqual(
+            result.metadata.dynamics_source,
+            DynamicsSource.P0_FALLBACK,
         )
 
     def test_rejected_lm_trial_retries_with_more_damping(self) -> None:
