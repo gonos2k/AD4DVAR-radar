@@ -1533,7 +1533,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         self,
     ) -> None:
         frames = torch.full((3, 7, 9), -10.0, dtype=torch.float64)
-        frames[:, 2, 2] = 20.0
+        frames[:, 2:4, 2:4] = 20.0
         frames[1, 4, 6] = 6.0
         frames[2, 4, 6] = 7.0
         observations, frozen = prepare_analysis(

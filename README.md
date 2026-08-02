@@ -426,8 +426,9 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   별도 기록한다.
 - `minimum_growth_overlap_support`, `minimum_growth_overlap_area_km2`:
   선택된 운동에서 실제 성장률 결합에 사용된 pair들의 최소
-  overlap support와 물리면적. 사용 가능한 성장 증거가 없으면
-  `NaN`이다.
+  에코 관련 fractional-overlap support와 물리면적. 동일한 support
+  weight를 이전·현재 에코 적분에도 적용하며, 사용 가능한 성장 증거가
+  없으면 `NaN`이다.
 
 Phase-correlation의 raw peak가 `max_displacement_px` 범위 밖이거나 허용
 search boundary bin에 있으면 높은 PSR이어도 사용하지 않는다. pair 일관성은

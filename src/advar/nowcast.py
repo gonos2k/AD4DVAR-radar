@@ -3347,15 +3347,24 @@ def _aligned_growth_evidence(
     aligned = remap(previous, displacement_yx) / moved_support.clamp_min(
         config.epsilon
     )
-    overlap = current_mask & (moved_support > config.epsilon)
-    overlap_support = moved_support[overlap].sum()
+    echo_threshold = dbz_to_echo(
+        previous.new_tensor(config.echo_threshold_dbz),
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
+    )
+    common_support = current_mask & (moved_support > config.epsilon)
+    echo_relevant = common_support & (
+        (aligned >= echo_threshold) | (current >= echo_threshold)
+    )
+    overlap_weight = moved_support * echo_relevant.to(dtype=previous.dtype)
+    overlap_support = overlap_weight.sum()
     overlap_area_km2 = (
         overlap_support * (grid_time_contract.cell_area_m2 / 1.0e6)
         if grid_time_contract is not None
         else previous.new_full((), torch.nan)
     )
-    previous_integrated_echo = aligned[overlap].sum()
-    current_integrated_echo = current[overlap].sum()
+    previous_integrated_echo = (overlap_weight * aligned).sum()
+    current_integrated_echo = (overlap_weight * current).sum()
     enough_support = (
         float(overlap_support.detach()) + config.epsilon
         >= config.minimum_growth_overlap_support
