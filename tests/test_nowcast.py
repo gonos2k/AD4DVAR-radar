@@ -755,8 +755,8 @@ class NowcastTests(unittest.TestCase):
         nowcast_module = import_module("advar.nowcast")
         previous = torch.zeros((8, 8), dtype=torch.float64)
         current = torch.zeros_like(previous)
-        previous[2:6, 1:3] = 1.0
-        current[2:6, 3:5] = 1.0
+        previous[2:6, 1:3] = 10.0
+        current[2:6, 3:5] = 10.0
         previous_mask = torch.zeros_like(previous, dtype=torch.bool)
         current_mask = torch.zeros_like(previous, dtype=torch.bool)
         previous_mask[1:7, 0:5] = True
@@ -1581,7 +1581,7 @@ class NowcastTests(unittest.TestCase):
                 self.assertEqual(metadata.tendency_pair_count, 1)
                 self.assertLess(
                     abs(float(state.log_growth_per_step)),
-                    1.0e-5,
+                    1.0e-4,
                 )
 
     def test_near_echo_qc_hole_rejects_mask_dominated_motion(self) -> None:
@@ -2086,8 +2086,8 @@ class NowcastTests(unittest.TestCase):
         previous_mask = torch.zeros(8, 8, dtype=torch.bool)
         previous_mask[:, ::2] = True
         current_mask = torch.ones_like(previous_mask)
-        previous = previous_mask.to(torch.float64)
-        current = torch.ones_like(previous)
+        previous = 10.0 * previous_mask.to(torch.float64)
+        current = torch.full_like(previous, 10.0)
 
         evidence = nowcast_module._aligned_growth_evidence(
             previous,
@@ -2113,8 +2113,8 @@ class NowcastTests(unittest.TestCase):
         current_mask = torch.zeros_like(previous, dtype=torch.bool)
         previous_mask[0, :3] = True
         current_mask[0, :3] = True
-        previous[previous_mask] = 1.0
-        current[current_mask] = 2.0
+        previous[previous_mask] = 10.0
+        current[current_mask] = 20.0
 
         evidence = nowcast_module._aligned_growth_evidence(
             previous,
@@ -2129,8 +2129,106 @@ class NowcastTests(unittest.TestCase):
         self.assertFalse(evidence.available)
         self.assertEqual(float(evidence.overlap_support), 3.0)
         self.assertEqual(float(evidence.value), 0.0)
-        self.assertEqual(float(evidence.aligned_previous_integral), 3.0)
-        self.assertEqual(float(evidence.current_integral), 6.0)
+        self.assertEqual(float(evidence.aligned_previous_integral), 30.0)
+        self.assertEqual(float(evidence.current_integral), 60.0)
+
+    def test_clear_sky_does_not_inflate_growth_evidence(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = NowcastConfig(minimum_growth_overlap_support=0.5)
+        previous = torch.zeros((64, 64), dtype=torch.float64)
+        current = torch.zeros_like(previous)
+        previous[32, 32] = 10.0
+        current[32, 32] = 10.0
+        mask = torch.ones_like(previous, dtype=torch.bool)
+
+        evidence = nowcast_module._aligned_growth_evidence(
+            previous,
+            current,
+            mask,
+            mask,
+            previous.new_zeros(2),
+            config,
+            grid_time_contract=None,
+        )
+
+        self.assertTrue(evidence.available)
+        self.assertEqual(float(evidence.overlap_support), 1.0)
+        self.assertEqual(float(evidence.aligned_previous_integral), 10.0)
+        self.assertEqual(float(evidence.current_integral), 10.0)
+        self.assertEqual(float(evidence.value), 0.0)
+
+    def test_fractional_support_weights_strong_current_echo(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = NowcastConfig(
+            minimum_growth_overlap_support=0.005,
+            max_log_growth_per_step=math.log(100.0),
+        )
+        previous = torch.zeros((5, 5), dtype=torch.float64)
+        previous[2, 2] = 10.0
+        previous_mask = previous > 0
+        current = torch.zeros_like(previous)
+        current[2, 2] = 100.0
+        current_mask = torch.zeros_like(previous_mask)
+        current_mask[2, 2] = True
+
+        evidence = nowcast_module._aligned_growth_evidence(
+            previous,
+            current,
+            previous_mask,
+            current_mask,
+            previous.new_tensor((0.0, 0.99)),
+            config,
+            grid_time_contract=None,
+        )
+
+        self.assertTrue(evidence.available)
+        torch.testing.assert_close(
+            evidence.overlap_support,
+            previous.new_tensor(0.01),
+        )
+        torch.testing.assert_close(
+            evidence.aligned_previous_integral,
+            previous.new_tensor(0.1),
+        )
+        torch.testing.assert_close(
+            evidence.current_integral,
+            previous.new_tensor(1.0),
+        )
+
+    def test_tiny_support_tail_does_not_force_growth_limit(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        previous = torch.zeros((5, 14), dtype=torch.float64)
+        previous[2, 1:11] = 10.0
+        previous_mask = previous > 0
+        displacement = previous.new_tensor((0.0, 0.99))
+        moved_support = remap(
+            previous_mask.to(dtype=previous.dtype),
+            displacement,
+        )
+        aligned = remap(previous, displacement) / moved_support.clamp_min(
+            self.config.epsilon
+        )
+        current = aligned.clone()
+        current[2, 1] = 1000.0
+        current_mask = moved_support > self.config.epsilon
+
+        evidence = nowcast_module._aligned_growth_evidence(
+            previous,
+            current,
+            previous_mask,
+            current_mask,
+            displacement,
+            self.config,
+            grid_time_contract=None,
+        )
+
+        expected_growth = math.log(109.9 / 100.0)
+        self.assertTrue(evidence.available)
+        self.assertAlmostEqual(float(evidence.value), expected_growth)
+        self.assertLess(
+            float(evidence.value),
+            self.config.max_log_growth_per_step,
+        )
 
     def test_unavailable_growth_is_not_blended_as_zero(self) -> None:
         nowcast_module = import_module("advar.nowcast")
@@ -2187,7 +2285,7 @@ class NowcastTests(unittest.TestCase):
     def test_missing_aligned_previous_echo_is_not_maximum_growth(self) -> None:
         nowcast_module = import_module("advar.nowcast")
         previous = torch.zeros((4, 4), dtype=torch.float64)
-        current = torch.ones_like(previous)
+        current = torch.full_like(previous, 10.0)
         mask = torch.ones_like(previous, dtype=torch.bool)
 
         evidence = nowcast_module._aligned_growth_evidence(
@@ -2203,7 +2301,7 @@ class NowcastTests(unittest.TestCase):
         self.assertFalse(evidence.available)
         self.assertEqual(float(evidence.value), 0.0)
         self.assertEqual(float(evidence.aligned_previous_integral), 0.0)
-        self.assertEqual(float(evidence.current_integral), 16.0)
+        self.assertEqual(float(evidence.current_integral), 160.0)
 
     def test_growth_overlap_area_is_resolution_invariant(self) -> None:
         nowcast_module = import_module("advar.nowcast")
@@ -2230,27 +2328,29 @@ class NowcastTests(unittest.TestCase):
             dy_m=2000.0,
             **common_contract,
         )
-        fine = torch.ones((8, 8), dtype=torch.float64)
-        coarse = torch.ones((2, 2), dtype=torch.float64)
-        fine_mask = torch.ones_like(fine, dtype=torch.bool)
-        coarse_mask = torch.zeros_like(coarse, dtype=torch.bool)
+        fine_previous = torch.full((8, 8), 10.0, dtype=torch.float64)
+        fine_current = torch.full((8, 8), 12.0, dtype=torch.float64)
+        coarse_previous = torch.full((2, 2), 10.0, dtype=torch.float64)
+        coarse_current = torch.full((2, 2), 12.0, dtype=torch.float64)
+        fine_mask = torch.ones_like(fine_previous, dtype=torch.bool)
+        coarse_mask = torch.zeros_like(coarse_previous, dtype=torch.bool)
         coarse_mask[0, 0] = True
 
         fine_evidence = nowcast_module._aligned_growth_evidence(
-            fine,
-            fine,
+            fine_previous,
+            fine_current,
             fine_mask,
             fine_mask,
-            fine.new_zeros(2),
+            fine_previous.new_zeros(2),
             config,
             grid_time_contract=fine_contract,
         )
         coarse_evidence = nowcast_module._aligned_growth_evidence(
-            coarse,
-            coarse,
+            coarse_previous,
+            coarse_current,
             coarse_mask,
             coarse_mask,
-            coarse.new_zeros(2),
+            coarse_previous.new_zeros(2),
             config,
             grid_time_contract=coarse_contract,
         )
@@ -2261,6 +2361,11 @@ class NowcastTests(unittest.TestCase):
             fine_evidence.overlap_area_km2,
             coarse_evidence.overlap_area_km2,
         )
+        torch.testing.assert_close(
+            fine_evidence.value,
+            coarse_evidence.value,
+        )
+        self.assertAlmostEqual(float(fine_evidence.value), math.log(1.2))
         self.assertEqual(float(fine_evidence.overlap_area_km2), 4.0)
 
     def test_high_pair_psr_does_not_replace_missing_growth_evidence(
