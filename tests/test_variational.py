@@ -1224,6 +1224,10 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertTrue(result.metadata.background_tendency_used)
         self.assertTrue(result.metadata.background_used)
         self.assertEqual(result.metadata.background_age_minutes, 10.0)
+        torch.testing.assert_close(
+            result.metadata.verified_source_support,
+            result.metadata.source_support,
+        )
         self.assertEqual(
             result.metadata.dynamics_source,
             DynamicsSource.P1_VARIATIONAL,

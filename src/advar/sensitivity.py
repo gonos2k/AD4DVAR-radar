@@ -1196,12 +1196,19 @@ def _trust_components(
     pair_consistency_quality = (
         sensitivity_config.pair_conflict_trust_penalty**conflict_count
     )
+    path_evidence_quality = float(
+        (
+            metadata.verified_source_support.sum()
+            / metadata.source_support.sum().clamp_min(nowcast_config.epsilon)
+        ).clamp(0.0, 1.0)
+    )
     if not bool(torch.any(metric_available)):
         return {
             "linearity": 0.0,
             "verification": float(verification_quality),
             "metric_support": 0.0,
             "pair_consistency": pair_consistency_quality,
+            "path_evidence": path_evidence_quality,
         }
 
     delta = control.new_tensor(sensitivity_config.linearity_delta)
@@ -1259,6 +1266,7 @@ def _trust_components(
         "verification": float(verification_quality.detach()),
         "metric_support": float(support_quality.detach()),
         "pair_consistency": pair_consistency_quality,
+        "path_evidence": path_evidence_quality,
     }
 
 

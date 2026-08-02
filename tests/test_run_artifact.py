@@ -117,6 +117,14 @@ class ForecastRunArtifactTests(unittest.TestCase):
             loaded.metadata.source_support,
             result.metadata.source_support,
         )
+        torch.testing.assert_close(
+            loaded.metadata.verified_source_support,
+            result.metadata.verified_source_support,
+        )
+        torch.testing.assert_close(
+            loaded.forecast_verified_support,
+            result.forecast_verified_support,
+        )
         self.assertEqual(
             loaded.metadata.background_tendency_used,
             result.metadata.background_tendency_used,
@@ -619,9 +627,30 @@ class ForecastRunArtifactTests(unittest.TestCase):
             ):
                 load_forecast_run(path)
 
+    def test_load_rejects_resigned_forecast_verified_support(self) -> None:
+        result = nowcast(self.frames())
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                arrays: dict[str, Any] = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                    if name != "forecast_run_artifact_digest"
+                }
+            arrays["forecast_verified_support"][0, 0, 0] = 0.0
+            self._save_arrays(path, arrays)
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "forecast verified support mismatch",
+            ):
+                load_forecast_run(path)
+
     def test_save_rejects_mutated_metadata(self) -> None:
         result = nowcast(self.frames())
         result.metadata.source_support[0, 0] = 0.0
+        result.metadata.verified_source_support[0, 0] = 0.0
 
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "run.npz"

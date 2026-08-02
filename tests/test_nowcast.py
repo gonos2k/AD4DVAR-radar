@@ -86,6 +86,7 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         background_contribution_fraction=0.0,
         background_age_minutes=None,
         source_support=torch.ones_like(state.echo_linear),
+        verified_source_support=torch.ones_like(state.echo_linear),
         motion_disagreement_px=state.echo_linear.new_zeros(()),
         motion_disagreement_mps=state.echo_linear.new_full((), torch.nan),
         growth_disagreement=state.echo_linear.new_zeros(()),
@@ -842,7 +843,7 @@ class NowcastTests(unittest.TestCase):
                 None,
             )
 
-        current, support, _ = nowcast_module._merge_source_frames(
+        current, support, _, _ = nowcast_module._merge_source_frames(
             linear,
             masks,
             tendency.source_displacement_yx,
@@ -875,7 +876,7 @@ class NowcastTests(unittest.TestCase):
         support_segments[0, 0] = linear.new_tensor((0.0, -1.0))
         support_segments[0, 1] = linear.new_tensor((0.0, 1.0))
 
-        endpoint_state, endpoint_support, _ = (
+        endpoint_state, endpoint_support, _, _ = (
             nowcast_module._merge_source_frames(
                 linear,
                 masks,
@@ -885,7 +886,7 @@ class NowcastTests(unittest.TestCase):
                 self.config,
             )
         )
-        path_state, path_support, _ = nowcast_module._merge_source_frames(
+        path_state, path_support, _, _ = nowcast_module._merge_source_frames(
             linear,
             masks,
             endpoint_displacements,
@@ -1836,10 +1837,39 @@ class NowcastTests(unittest.TestCase):
             result.metadata.source_support,
             torch.ones_like(result.metadata.source_support),
         )
+        expected_verified = torch.zeros_like(
+            result.metadata.verified_source_support
+        )
+        expected_verified[4, 4] = 1.0
+        torch.testing.assert_close(
+            result.metadata.verified_source_support,
+            expected_verified,
+        )
         self.assertTrue(bool(torch.all(torch.isfinite(result.forecast_dbz))))
         torch.testing.assert_close(
             result.forecast_dbz[0],
             torch.full((8, 8), 20.0),
+        )
+
+    def test_operational_publication_excludes_unverified_persistence(
+        self,
+    ) -> None:
+        frames = torch.full((3, 8, 8), 20.0)
+        frames[2] = torch.nan
+        frames[2, 4, 4] = 20.0
+        config = replace(
+            self.config,
+            minimum_publish_verified_support=0.95,
+        )
+
+        result = nowcast(frames, config)
+
+        self.assertEqual(int(result.valid_mask[0].sum()), 1)
+        self.assertTrue(bool(result.valid_mask[0, 4, 4]))
+        self.assertFalse(bool(result.valid_mask[0, 3, 3]))
+        torch.testing.assert_close(
+            result.forecast_verified_support[0],
+            result.metadata.verified_source_support,
         )
 
     def test_sparse_recent_frames_do_not_discard_complete_older_state(
@@ -2000,6 +2030,7 @@ class NowcastTests(unittest.TestCase):
             background_contribution_fraction=0.0,
             background_age_minutes=None,
             source_support=support,
+            verified_source_support=support,
             motion_disagreement_px=torch.zeros((), dtype=torch.float64),
             motion_disagreement_mps=torch.full(
                 (), torch.nan, dtype=torch.float64
@@ -2695,6 +2726,17 @@ class NowcastTests(unittest.TestCase):
                 reissue(
                     metadata=replace(
                         issued.metadata,
+                        verified_source_support=(
+                            issued.metadata.verified_source_support + 0.1
+                        ),
+                    )
+                ),
+                "verified_source_support",
+            ),
+            (
+                reissue(
+                    metadata=replace(
+                        issued.metadata,
                         provenance="p1_variational_analysis",
                         dynamics_source=DynamicsSource.P1_VARIATIONAL,
                     )
@@ -3083,6 +3125,10 @@ class NowcastTests(unittest.TestCase):
             NowcastConfig(min_publish_support=0.0)
         with self.assertRaises(ValueError):
             NowcastConfig(min_publish_support=1.01)
+        for value in (0.0, -1.0, 1.01, float("nan"), True):
+            with self.subTest(minimum_publish_verified_support=value):
+                with self.assertRaises(ValueError):
+                    NowcastConfig(minimum_publish_verified_support=value)
         with self.assertRaises(ValueError):
             NowcastConfig(maximum_background_age_minutes=0.0)
         with self.assertRaises(ValueError):
