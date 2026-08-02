@@ -625,6 +625,7 @@ class _SourceTendencyEstimate:
     source_displacement_yx: Tensor
     source_log_growth: Tensor
     source_usable: Tensor
+    source_support_displacements_yx: Tensor
     motion_disagreement_px: Tensor
     motion_disagreement_mps: Tensor
     growth_disagreement: Tensor
@@ -876,10 +877,31 @@ def state_metadata_digest(
                 "motion_pair_conflict": metadata.motion_pair_conflict,
                 "growth_pair_conflict": metadata.growth_pair_conflict,
                 "tendency_source": metadata.tendency_source.value,
+                "state_path_source": metadata.state_path_source.value,
+                "state_path_mode": metadata.state_path_mode.value,
+                "state_path_pair_count": metadata.state_path_pair_count,
+                "state_path_minimum_psr": _finite_float_or_none(
+                    metadata.state_path_minimum_psr
+                ),
+                "state_path_conflict": metadata.state_path_conflict,
+                "state_path_extrapolated": (
+                    metadata.state_path_extrapolated
+                ),
+                "state_path_age_minutes": metadata.state_path_age_minutes,
+                "minimum_growth_overlap_support": _finite_float_or_none(
+                    metadata.minimum_growth_overlap_support
+                ),
+                "minimum_growth_overlap_area_km2": _finite_float_or_none(
+                    metadata.minimum_growth_overlap_area_km2
+                ),
                 "provenance": metadata.provenance,
             },
         }
     )
+
+
+def _finite_float_or_none(value: float) -> float | None:
+    return value if math.isfinite(value) else None
 
 
 @dataclass(frozen=True)
@@ -1370,6 +1392,10 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         metadata.growth_pair_selection
     ]:
         raise ValueError("growth pair count and selection disagree")
+    if metadata.state_path_pair_count != selection_counts[
+        metadata.state_path_mode
+    ]:
+        raise ValueError("state path pair count and selection disagree")
     if (
         metadata.motion_pair_selection is TendencyPairSelection.PERSISTENCE
         and not metadata.motion_pair_conflict
@@ -1408,6 +1434,29 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
             raise ValueError("unused tendency pairs must have NaN PSR")
     elif not math.isfinite(minimum_psr):
         raise ValueError("used tendency pairs must have finite PSR")
+    state_path_psr = metadata.state_path_minimum_psr
+    if metadata.state_path_pair_count == 0:
+        if not math.isnan(state_path_psr):
+            raise ValueError("unused state paths must have NaN PSR")
+    elif not math.isfinite(state_path_psr):
+        raise ValueError("used state paths must have finite PSR")
+    if metadata.state_path_age_minutes is not None and (
+        not math.isfinite(metadata.state_path_age_minutes)
+        or metadata.state_path_age_minutes < 0
+    ):
+        raise ValueError("state path age must be finite and nonnegative")
+    for name, value in (
+        (
+            "minimum_growth_overlap_support",
+            metadata.minimum_growth_overlap_support,
+        ),
+        (
+            "minimum_growth_overlap_area_km2",
+            metadata.minimum_growth_overlap_area_km2,
+        ),
+    ):
+        if not math.isnan(value) and (not math.isfinite(value) or value < 0):
+            raise ValueError(f"{name} must be nonnegative or NaN")
     if not torch.equal(torch.isfinite(forecast), valid):
         raise ValueError("valid_mask must match finite forecast values")
     finite_tensors = (
@@ -1647,20 +1696,27 @@ def estimate_prepared_state(
         background_contribution_fraction > config.epsilon
         or background_tendency_used
     )
-    state_paths = (
-        observation_paths
-        if state_path_source is TendencySource.OBSERVATION
-        else background_paths
-    )
-    state_masks = (
-        prepared.observed_mask
-        if state_path_source is TendencySource.OBSERVATION
-        else prepared.background_mask
-    )
-    state_path_age_minutes = _state_path_age_minutes(
-        state_paths,
-        state_masks,
-        config.interval_minutes,
+    if state_path_source is TendencySource.OBSERVATION:
+        state_paths = observation_paths
+        state_masks = prepared.observed_mask
+        state_path_base_age_minutes = 0.0
+    elif state_path_source is TendencySource.BACKGROUND:
+        state_paths = background_paths
+        state_masks = prepared.background_mask
+        state_path_base_age_minutes = prepared.background_age_minutes or 0.0
+    else:
+        state_paths = None
+        state_masks = None
+        state_path_base_age_minutes = 0.0
+    state_path_age_minutes = (
+        _state_path_age_minutes(
+            state_paths,
+            state_masks,
+            config.interval_minutes,
+            base_age_minutes=state_path_base_age_minutes,
+        )
+        if state_paths is not None and state_masks is not None
+        else None
     )
     metadata = ForecastMetadata(
         data_status=prepared.data_status,
@@ -1686,13 +1742,31 @@ def estimate_prepared_state(
         motion_pair_conflict=tendency.motion_pair_conflict,
         growth_pair_conflict=tendency.growth_pair_conflict,
         state_path_source=state_path_source,
-        state_path_mode=state_paths.reconstruction_selection,
-        state_path_pair_count=state_paths.reconstruction_pair_count,
-        state_path_minimum_psr=float(
-            state_paths.reconstruction_minimum_psr.detach()
+        state_path_mode=(
+            state_paths.reconstruction_selection
+            if state_paths is not None
+            else TendencyPairSelection.NONE
         ),
-        state_path_conflict=state_paths.reconstruction_conflict,
-        state_path_extrapolated=state_paths.reconstruction_extrapolated,
+        state_path_pair_count=(
+            state_paths.reconstruction_pair_count
+            if state_paths is not None
+            else 0
+        ),
+        state_path_minimum_psr=(
+            float(state_paths.reconstruction_minimum_psr.detach())
+            if state_paths is not None
+            else math.nan
+        ),
+        state_path_conflict=(
+            state_paths.reconstruction_conflict
+            if state_paths is not None
+            else False
+        ),
+        state_path_extrapolated=(
+            state_paths.reconstruction_extrapolated
+            if state_paths is not None
+            else False
+        ),
         state_path_age_minutes=state_path_age_minutes,
         minimum_growth_overlap_support=float(
             tendency.minimum_growth_overlap_support.detach()
@@ -1854,6 +1928,7 @@ def _estimate_source_tendencies(
             source_displacement_yx=source_paths[0],
             source_log_growth=source_paths[1],
             source_usable=source_paths[2],
+            source_support_displacements_yx=source_paths[3],
             motion_disagreement_px=motion_disagreement,
             motion_disagreement_mps=motion_disagreement_mps,
             growth_disagreement=growth_disagreement,
@@ -1935,6 +2010,7 @@ def _estimate_source_tendencies(
             source_displacement_yx=source_paths[0],
             source_log_growth=source_paths[1],
             source_usable=source_paths[2],
+            source_support_displacements_yx=source_paths[3],
             motion_disagreement_px=zero_growth,
             motion_disagreement_mps=unavailable_psr,
             growth_disagreement=zero_growth,
@@ -1971,7 +2047,7 @@ def _estimate_source_tendencies(
 def _latest_only_source_paths(
     motion: Tensor,
     growth: Tensor,
-) -> tuple[Tensor, Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor, Tensor]:
     zero_motion = torch.zeros_like(motion)
     zero_growth = torch.zeros_like(growth)
     return (
@@ -1982,26 +2058,34 @@ def _latest_only_source_paths(
             dtype=torch.bool,
             device=motion.device,
         ),
+        motion.new_zeros((3, 2, 2)),
     )
 
 
 def _uniform_source_paths(
     motion: Tensor,
     growth: Tensor,
-) -> tuple[Tensor, Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor, Tensor]:
     zero_motion = torch.zeros_like(motion)
     zero_growth = torch.zeros_like(growth)
     return (
         torch.stack((2.0 * motion, motion, zero_motion)),
         torch.stack((2.0 * growth, growth, zero_growth)),
         torch.ones(3, dtype=torch.bool, device=motion.device),
+        torch.stack(
+            (
+                torch.stack((motion, motion)),
+                torch.stack((motion, zero_motion)),
+                torch.stack((zero_motion, zero_motion)),
+            )
+        ),
     )
 
 
 def _adjacent_source_paths(
     earlier: tuple[Tensor, _GrowthEvidence, Tensor],
     recent: tuple[Tensor, _GrowthEvidence, Tensor],
-) -> tuple[Tensor, Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor, Tensor]:
     earlier_motion, earlier_growth_evidence, _ = earlier
     recent_motion, recent_growth_evidence, _ = recent
     earlier_growth = earlier_growth_evidence.value
@@ -2024,6 +2108,13 @@ def _adjacent_source_paths(
             )
         ),
         torch.ones(3, dtype=torch.bool, device=earlier_motion.device),
+        torch.stack(
+            (
+                torch.stack((earlier_motion, recent_motion)),
+                torch.stack((recent_motion, zero_motion)),
+                torch.stack((zero_motion, zero_motion)),
+            )
+        ),
     )
 
 
@@ -2031,7 +2122,7 @@ def _single_adjacent_source_paths(
     motion: Tensor,
     growth: Tensor,
     pair_index: int,
-) -> tuple[Tensor, Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor, Tensor]:
     if pair_index == 0:
         return _latest_only_source_paths(motion, growth)
     if pair_index != 1:
@@ -2046,13 +2137,20 @@ def _single_adjacent_source_paths(
             dtype=torch.bool,
             device=motion.device,
         ),
+        torch.stack(
+            (
+                torch.stack((zero_motion, zero_motion)),
+                torch.stack((motion, zero_motion)),
+                torch.stack((zero_motion, zero_motion)),
+            )
+        ),
     )
 
 
 def _long_source_paths(
     motion: Tensor,
     growth: Tensor,
-) -> tuple[Tensor, Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor, Tensor]:
     zero_motion = torch.zeros_like(motion)
     zero_growth = torch.zeros_like(growth)
     return (
@@ -2062,6 +2160,13 @@ def _long_source_paths(
             (True, False, True),
             dtype=torch.bool,
             device=motion.device,
+        ),
+        torch.stack(
+            (
+                torch.stack((motion, motion)),
+                torch.stack((zero_motion, zero_motion)),
+                torch.stack((zero_motion, zero_motion)),
+            )
         ),
     )
 
@@ -2106,6 +2211,7 @@ def _single_pair_tendency(
         source_displacement_yx=source_paths[0],
         source_log_growth=source_paths[1],
         source_usable=source_paths[2],
+        source_support_displacements_yx=source_paths[3],
         motion_disagreement_px=zero,
         motion_disagreement_mps=psr.new_full((), torch.nan),
         growth_disagreement=zero,
@@ -2283,6 +2389,7 @@ def _combine_single_adjacent_and_long(
         source_displacement_yx=source_paths[0],
         source_log_growth=source_paths[1],
         source_usable=source_paths[2],
+        source_support_displacements_yx=source_paths[3],
         motion_disagreement_px=motion_disagreement,
         motion_disagreement_mps=motion_disagreement_mps,
         growth_disagreement=growth_disagreement,
@@ -2751,6 +2858,9 @@ def _merge_current_state(
         observation_paths.source_log_growth,
         observation_paths.source_usable,
         config,
+        source_support_displacements_yx=(
+            observation_paths.source_support_displacements_yx
+        ),
     )
     background_echo, background_support = _merge_source_frames(
         background_linear,
@@ -2759,6 +2869,9 @@ def _merge_current_state(
         background_paths.source_log_growth,
         background_paths.source_usable,
         config,
+        source_support_displacements_yx=(
+            background_paths.source_support_displacements_yx
+        ),
     )
     observation_support = observation_support.clamp(0.0, 1.0)
     background_support = background_support.clamp(0.0, 1.0)
@@ -2793,6 +2906,8 @@ def _state_path_age_minutes(
     paths: _SourceTendencyEstimate,
     masks: Tensor,
     interval_minutes: int,
+    *,
+    base_age_minutes: float = 0.0,
 ) -> float | None:
     source_present = masks.flatten(1).any(dim=1)
     used = paths.source_usable & source_present
@@ -2800,7 +2915,7 @@ def _state_path_age_minutes(
     if indices.numel() == 0:
         return None
     oldest_index = int(indices.min())
-    return float((2 - oldest_index) * interval_minutes)
+    return base_age_minutes + float((2 - oldest_index) * interval_minutes)
 
 
 def merge_current_support(
@@ -2872,6 +2987,8 @@ def _merge_source_frames(
     source_log_growth: Tensor,
     source_usable: Tensor,
     config: NowcastConfig,
+    *,
+    source_support_displacements_yx: Tensor | None = None,
 ) -> tuple[Tensor, Tensor]:
     latest_mask = masks[2]
     if bool(torch.all(latest_mask)):
@@ -2890,14 +3007,31 @@ def _merge_source_frames(
         candidate_value = linear[source_index] * candidate_support
         if source_index < 2:
             total_displacement = source_displacement_yx[source_index]
-            candidate_value = react_core(
-                remap(candidate_value, total_displacement),
-                source_log_growth[source_index],
-            )
-            candidate_support = remap(
+            endpoint_support = remap(
                 candidate_support,
                 total_displacement,
             ).clamp(0.0, 1.0)
+            endpoint_numerator = react_core(
+                remap(candidate_value, total_displacement),
+                source_log_growth[source_index],
+            )
+            path_support = endpoint_support
+            if source_support_displacements_yx is not None:
+                path_support = candidate_support
+                for segment in source_support_displacements_yx[source_index]:
+                    path_support = remap(path_support, segment).clamp(0.0, 1.0)
+            candidate_support = torch.where(
+                endpoint_support > config.epsilon,
+                path_support,
+                torch.zeros_like(path_support),
+            )
+            candidate_value = torch.where(
+                endpoint_support > config.epsilon,
+                endpoint_numerator
+                / endpoint_support.clamp_min(config.epsilon)
+                * candidate_support,
+                torch.zeros_like(endpoint_numerator),
+            )
 
         numerator = (
             candidate_value

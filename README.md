@@ -380,8 +380,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v21`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v13`
+- `output_contract_version`: 현재 `nowcast-npz-v22`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v14`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age

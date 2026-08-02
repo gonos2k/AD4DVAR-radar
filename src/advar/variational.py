@@ -3550,4 +3550,17 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
         growth_pair_selection=metadata.growth_pair_selection,
         motion_pair_conflict=metadata.motion_pair_conflict,
         growth_pair_conflict=metadata.growth_pair_conflict,
+        state_path_source=metadata.state_path_source,
+        state_path_mode=metadata.state_path_mode,
+        state_path_pair_count=metadata.state_path_pair_count,
+        state_path_minimum_psr=metadata.state_path_minimum_psr,
+        state_path_conflict=metadata.state_path_conflict,
+        state_path_extrapolated=metadata.state_path_extrapolated,
+        state_path_age_minutes=metadata.state_path_age_minutes,
+        minimum_growth_overlap_support=(
+            metadata.minimum_growth_overlap_support
+        ),
+        minimum_growth_overlap_area_km2=(
+            metadata.minimum_growth_overlap_area_km2
+        ),
     )

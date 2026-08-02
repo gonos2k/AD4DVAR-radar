@@ -31,7 +31,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v13"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v14"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 128
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
@@ -81,6 +81,15 @@ _CORE_ARRAY_NAMES = frozenset(
         "motion_pair_conflict",
         "growth_pair_conflict",
         "tendency_source",
+        "state_path_source",
+        "state_path_mode",
+        "state_path_pair_count",
+        "state_path_minimum_psr",
+        "state_path_conflict",
+        "state_path_extrapolated",
+        "state_path_age_minutes",
+        "minimum_growth_overlap_support",
+        "minimum_growth_overlap_area_km2",
         "provenance",
         "latest_frame_dbz",
         "latest_observation_mask",
@@ -291,6 +300,27 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "motion_pair_conflict": np.asarray(metadata.motion_pair_conflict),
         "growth_pair_conflict": np.asarray(metadata.growth_pair_conflict),
         "tendency_source": np.asarray(metadata.tendency_source.value),
+        "state_path_source": np.asarray(metadata.state_path_source.value),
+        "state_path_mode": np.asarray(metadata.state_path_mode.value),
+        "state_path_pair_count": np.asarray(metadata.state_path_pair_count),
+        "state_path_minimum_psr": np.asarray(
+            metadata.state_path_minimum_psr
+        ),
+        "state_path_conflict": np.asarray(metadata.state_path_conflict),
+        "state_path_extrapolated": np.asarray(
+            metadata.state_path_extrapolated
+        ),
+        "state_path_age_minutes": np.asarray(
+            np.nan
+            if metadata.state_path_age_minutes is None
+            else metadata.state_path_age_minutes
+        ),
+        "minimum_growth_overlap_support": np.asarray(
+            metadata.minimum_growth_overlap_support
+        ),
+        "minimum_growth_overlap_area_km2": np.asarray(
+            metadata.minimum_growth_overlap_area_km2
+        ),
         "provenance": np.asarray(metadata.provenance),
         "latest_observation_mask": _numpy(latest_observation_mask),
         "latest_frame_dbz": _numpy(result.run.latest_frame_dbz),
@@ -665,6 +695,53 @@ def load_forecast_run(
             ),
             tendency_source=TendencySource(
                 _string_scalar(loaded_arrays, "tendency_source")
+            ),
+            state_path_source=TendencySource(
+                _string_scalar(loaded_arrays, "state_path_source")
+            ),
+            state_path_mode=TendencyPairSelection(
+                _string_scalar(loaded_arrays, "state_path_mode")
+            ),
+            state_path_pair_count=_int_scalar(
+                loaded_arrays,
+                "state_path_pair_count",
+            ),
+            state_path_minimum_psr=_float_scalar(
+                loaded_arrays,
+                "state_path_minimum_psr",
+                allow_nan=True,
+            ),
+            state_path_conflict=_bool_scalar(
+                loaded_arrays,
+                "state_path_conflict",
+            ),
+            state_path_extrapolated=_bool_scalar(
+                loaded_arrays,
+                "state_path_extrapolated",
+            ),
+            state_path_age_minutes=(
+                None
+                if math.isnan(
+                    _float_scalar(
+                        loaded_arrays,
+                        "state_path_age_minutes",
+                        allow_nan=True,
+                    )
+                )
+                else _float_scalar(
+                    loaded_arrays,
+                    "state_path_age_minutes",
+                )
+            ),
+            minimum_growth_overlap_support=_float_scalar(
+                loaded_arrays,
+                "minimum_growth_overlap_support",
+                allow_nan=True,
+            ),
+            minimum_growth_overlap_area_km2=_float_scalar(
+                loaded_arrays,
+                "minimum_growth_overlap_area_km2",
+                allow_nan=True,
             ),
             provenance=_string_scalar(loaded_arrays, "provenance"),
         )

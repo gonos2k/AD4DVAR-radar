@@ -851,6 +851,44 @@ class NowcastTests(unittest.TestCase):
             torch.tensor((0.0, -0.04, 0.0), dtype=torch.float64),
         )
 
+    def test_source_support_cannot_return_after_leaving_boundary(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        linear = torch.zeros((3, 5, 5), dtype=torch.float64)
+        masks = torch.zeros_like(linear, dtype=torch.bool)
+        linear[0, 2, 0] = 1.0
+        masks[0, 2, 0] = True
+        endpoint_displacements = linear.new_zeros((3, 2))
+        source_growth = linear.new_zeros(3)
+        source_usable = torch.tensor((True, False, False))
+        support_segments = linear.new_zeros((3, 2, 2))
+        support_segments[0, 0] = linear.new_tensor((0.0, -1.0))
+        support_segments[0, 1] = linear.new_tensor((0.0, 1.0))
+
+        endpoint_state, endpoint_support = (
+            nowcast_module._merge_source_frames(
+                linear,
+                masks,
+                endpoint_displacements,
+                source_growth,
+                source_usable,
+                self.config,
+            )
+        )
+        path_state, path_support = nowcast_module._merge_source_frames(
+            linear,
+            masks,
+            endpoint_displacements,
+            source_growth,
+            source_usable,
+            self.config,
+            source_support_displacements_yx=support_segments,
+        )
+
+        self.assertEqual(float(endpoint_support.sum()), 1.0)
+        self.assertEqual(float(endpoint_state.sum()), 1.0)
+        self.assertEqual(float(path_support.sum()), 0.0)
+        self.assertEqual(float(path_state.sum()), 0.0)
+
     def test_future_fallback_does_not_replace_observation_paths(self) -> None:
         nowcast_module = import_module("advar.nowcast")
         values = torch.zeros((3, 16, 16), dtype=torch.float64)
@@ -979,6 +1017,19 @@ class NowcastTests(unittest.TestCase):
             )
 
         self.assertEqual(metadata.tendency_source, TendencySource.BACKGROUND)
+        self.assertEqual(
+            metadata.state_path_source,
+            TendencySource.OBSERVATION,
+        )
+        self.assertEqual(
+            metadata.state_path_mode,
+            TendencyPairSelection.BLENDED,
+        )
+        self.assertEqual(metadata.state_path_pair_count, 2)
+        self.assertEqual(metadata.state_path_minimum_psr, 12.0)
+        self.assertTrue(metadata.state_path_conflict)
+        self.assertFalse(metadata.state_path_extrapolated)
+        self.assertEqual(metadata.state_path_age_minutes, 10.0)
         self.assertGreater(float(state.echo_linear[8, 4]), 10.0)
         self.assertLess(float(state.echo_linear[8, 8]), 1.0)
 
@@ -2024,6 +2075,27 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(float(disagreement), 0.0)
         self.assertFalse(conflict)
 
+    def test_missing_aligned_previous_echo_is_not_maximum_growth(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        previous = torch.zeros((4, 4), dtype=torch.float64)
+        current = torch.ones_like(previous)
+        mask = torch.ones_like(previous, dtype=torch.bool)
+
+        evidence = nowcast_module._aligned_growth_evidence(
+            previous,
+            current,
+            mask,
+            mask,
+            previous.new_zeros(2),
+            self.config,
+            grid_time_contract=None,
+        )
+
+        self.assertFalse(evidence.available)
+        self.assertEqual(float(evidence.value), 0.0)
+        self.assertEqual(float(evidence.aligned_previous_integral), 0.0)
+        self.assertEqual(float(evidence.current_integral), 16.0)
+
     def test_growth_overlap_area_is_resolution_invariant(self) -> None:
         nowcast_module = import_module("advar.nowcast")
         config = NowcastConfig(
@@ -2711,6 +2783,12 @@ class NowcastTests(unittest.TestCase):
             NowcastConfig(maximum_pair_velocity_disagreement_mps=0.0)
         with self.assertRaises(ValueError):
             NowcastConfig(maximum_pair_growth_disagreement=0.0)
+        with self.assertRaises(ValueError):
+            NowcastConfig(minimum_growth_overlap_support=0.0)
+        for value in (0.0, -1.0, float("nan"), True):
+            with self.subTest(minimum_growth_overlap_area_km2=value):
+                with self.assertRaises(ValueError):
+                    NowcastConfig(minimum_growth_overlap_area_km2=value)
         for value in (0.0, -1.0):
             with self.subTest(minimum_pair_psr_advantage=value):
                 with self.assertRaises(ValueError):
@@ -2741,6 +2819,7 @@ class NowcastTests(unittest.TestCase):
         config = NowcastConfig(
             pair_echo_dilation_m=1000.0,
             phase_correlation_sidelobe_radius_m=1000.0,
+            minimum_growth_overlap_area_km2=1.0,
         )
 
         with self.assertRaisesRegex(ValueError, "grid/time contract"):

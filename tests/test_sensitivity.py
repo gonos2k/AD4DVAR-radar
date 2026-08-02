@@ -296,7 +296,10 @@ class SensitivityTests(unittest.TestCase):
         self.assertEqual(snapshot.lead_minutes, tuple(range(10, 181, 10)))
         self.assertIsNone(snapshot.grid_time_contract_digest)
         self.assertEqual(snapshot.full_map_lead_minutes, (10,))
-        self.assertEqual(snapshot.context_features.shape, (50,))
+        self.assertEqual(
+            snapshot.context_features.shape,
+            (len(snapshot.context_feature_names),),
+        )
         self.assertIn("motion_pair_conflict", snapshot.context_feature_names)
         self.assertIn("growth_pair_conflict", snapshot.context_feature_names)
         self.assertIn("log_integrated_echo", snapshot.context_feature_names)
