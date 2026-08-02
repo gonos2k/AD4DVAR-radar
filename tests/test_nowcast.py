@@ -1033,6 +1033,65 @@ class NowcastTests(unittest.TestCase):
         self.assertGreater(float(state.echo_linear[8, 4]), 10.0)
         self.assertLess(float(state.echo_linear[8, 8]), 1.0)
 
+    def test_observation_path_is_published_without_future_tendency(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        frames = torch.full((3, 16, 16), torch.nan, dtype=torch.float64)
+        frames[1, 8, 8] = 20.0
+        prepared = nowcast_module.prepare_input(frames, self.config)
+        zero = frames.new_zeros(())
+        estimates = self._pair_estimates(
+            nowcast_module,
+            (frames.new_tensor((0.0, 4.0)), zero, frames.new_tensor(12.0)),
+            (frames.new_tensor((0.0, -4.0)), zero, frames.new_tensor(12.0)),
+        )
+        with patch.object(
+            nowcast_module,
+            "_estimate_available_pair",
+            side_effect=estimates,
+        ):
+            observation_paths = nowcast_module._estimate_source_tendencies(
+                prepared.frames_dbz,
+                prepared.observed_mask,
+                torch.zeros_like(frames),
+                self.config,
+                None,
+            )
+        background_paths = nowcast_module._estimate_source_tendencies(
+            prepared.background_frames_dbz,
+            prepared.background_mask,
+            torch.zeros_like(frames),
+            self.config,
+            None,
+        )
+
+        with patch.object(
+            nowcast_module,
+            "_estimate_time_normalized_tendencies",
+            return_value=(
+                observation_paths,
+                TendencySource.NONE,
+                observation_paths,
+                background_paths,
+            ),
+        ):
+            state, metadata = nowcast_module.estimate_prepared_state(
+                prepared,
+                self.config,
+            )
+
+        self.assertEqual(metadata.tendency_source, TendencySource.NONE)
+        self.assertEqual(
+            metadata.state_path_source,
+            TendencySource.OBSERVATION,
+        )
+        self.assertEqual(
+            metadata.state_path_mode,
+            TendencyPairSelection.BLENDED,
+        )
+        self.assertEqual(metadata.state_path_pair_count, 2)
+        self.assertGreater(float(state.echo_linear[8, 4]), 10.0)
+        self.assertLess(float(state.echo_linear[8, 8]), 1.0)
+
     def test_conflicting_pairs_choose_clearly_higher_psr_pair(self) -> None:
         nowcast_module = import_module("advar.nowcast")
         values = torch.zeros((3, 2, 2), dtype=torch.float64)
@@ -2074,6 +2133,29 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(selection, TendencyPairSelection.EARLIER)
         self.assertEqual(float(disagreement), 0.0)
         self.assertFalse(conflict)
+
+    def test_unavailable_growth_records_no_pair_selection(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        unavailable = self._growth_evidence(
+            nowcast_module,
+            torch.tensor(0.0, dtype=torch.float64),
+            available=False,
+        )
+
+        estimate = nowcast_module._single_pair_tendency(
+            torch.tensor([0.0, 1.0], dtype=torch.float64),
+            unavailable,
+            torch.tensor(12.0, dtype=torch.float64),
+        )
+
+        self.assertTrue(estimate.future_available)
+        self.assertEqual(estimate.motion_pair_count, 1)
+        self.assertEqual(estimate.growth_pair_count, 0)
+        self.assertEqual(
+            estimate.growth_pair_selection,
+            TendencyPairSelection.NONE,
+        )
+        self.assertFalse(estimate.growth_pair_conflict)
 
     def test_missing_aligned_previous_echo_is_not_maximum_growth(self) -> None:
         nowcast_module = import_module("advar.nowcast")

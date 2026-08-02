@@ -2223,7 +2223,7 @@ def _single_pair_tendency(
         growth_pair_selection=(
             selection
             if growth_evidence.available
-            else TendencyPairSelection.PERSISTENCE
+            else TendencyPairSelection.NONE
         ),
         motion_pair_conflict=False,
         growth_pair_conflict=False,
@@ -2526,7 +2526,7 @@ def _select_adjacent_or_long_growth_evidence(
         torch.zeros_like(adjacent.value),
         False,
         False,
-        TendencyPairSelection.PERSISTENCE,
+        TendencyPairSelection.NONE,
         disagreement,
         False,
     )
@@ -2652,7 +2652,7 @@ def _combine_adjacent_growth_evidence(
     return (
         torch.zeros_like(first.value),
         (),
-        TendencyPairSelection.PERSISTENCE,
+        TendencyPairSelection.NONE,
         disagreement,
         False,
     )

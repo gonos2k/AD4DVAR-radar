@@ -370,8 +370,9 @@ advar-nowcast three_frames.npy forecast.npz --audit
 CLI 기본 `--mode research`는 합성·hindcast 진단용이다. `--mode operational`
 은 `--variational`, 완전한 시각·격자 계약, 물리속도 상한, 물리 causal 및
 amplitude 거리, projected m/s 운동증분 scale, 명시적인
-PSR·pair 운동/성장 불일치·pair 신뢰도 우위·관측오차·amplitude
-정보량·적분량·면적·성장
+PSR·pair 운동/성장 불일치·pair 신뢰도 우위·성장 overlap
+support·물리면적·관측오차·amplitude
+정보량·적분량·면적·성장·성장률 overlap support/물리면적
 임계값과 `--operational-calibration-id`를 모두 요구한다. 누락된 보정값이
 있으면 실행 전에 거부하며, 두
 amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값은 실제
@@ -416,6 +417,26 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   대응하는 `*_pair_selection`과 함께 해석한다.
 - `tendency_source`: 경향 추정 출처. `OBSERVATION`, `BACKGROUND`,
   `NONE` 중 하나
+- `state_path_source`, `state_path_mode`, `state_path_pair_count`,
+  `state_path_minimum_psr`, `state_path_conflict`,
+  `state_path_extrapolated`, `state_path_age_minutes`: 현재상태 재구성
+  경로의 출처·선택·신뢰도·최대 source age. 관측과 배경이
+  함께 기여하면 `state_path_source` 는 우선순위가 높은 관측을
+  기록하고 배경 기여는 `background_contribution_fraction`으로
+  별도 기록한다.
+- `minimum_growth_overlap_support`, `minimum_growth_overlap_area_km2`:
+  선택된 운동에서 실제 성장률 결합에 사용된 pair들의 최소
+  overlap support와 물리면적. 사용 가능한 성장 증거가 없으면
+  `NaN`이다.
+- `state_path_source`, `state_path_mode`, `state_path_pair_count`:
+  현재상태 재구성에 실제 사용한 관측 또는 배경 경로. 미래
+  `tendency_source`와 독립적으로 기록한다.
+- `state_path_minimum_psr`, `state_path_conflict`,
+  `state_path_extrapolated`, `state_path_age_minutes`: 현재상태 경로의
+  신뢰도·충돌·외삽·자료연령 provenance
+- `minimum_growth_overlap_support`, `minimum_growth_overlap_area_km2`:
+  선택된 미래 성장률에 실제 사용한 정렬 pair 중 최소 overlap 정보량.
+  성장 evidence가 없으면 `NaN`이다.
 
 Phase-correlation의 raw peak가 `max_displacement_px` 범위 밖이거나 허용
 search boundary bin에 있으면 높은 PSR이어도 사용하지 않는다. pair 일관성은
@@ -527,7 +548,8 @@ parent directory를 `fsync`한다. 원자교체 이전 기록 실패 시 기존 
 - 30·60·120·180분의 예측장 민감도
 - 최신 입력 영상의 고정 제어 직접 민감도 `dE / d(dBZ)`
 - 16×16 타일별 직접 민감도 크기와 innovation 영향
-- 결측·자료출처·물리격자를 분리한 상황 특징 50개, 선형성 신뢰도, 계약 해시
+- 결측·자료출처·물리격자·상태 재구성 경로·성장 overlap을
+  분리한 상황 특징 70개, 선형성 신뢰도, 계약 해시
 - 민감도를 생성한 정확한 발행 실행의 `forecast_run_digest`
 
 민감도 점수는 검증 유효영역과 실제 발행 유효영역의 교집합에서만

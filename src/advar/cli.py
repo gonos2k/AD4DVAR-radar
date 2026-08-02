@@ -147,6 +147,8 @@ def main() -> None:
         "--long-pair-confidence-penalty",
         type=float,
     )
+    parser.add_argument("--minimum-growth-overlap-support", type=float)
+    parser.add_argument("--minimum-growth-overlap-area-km2", type=float)
     parser.add_argument("--valid-times", nargs=3)
     parser.add_argument("--background-valid-times", nargs=3)
     parser.add_argument("--dx-m", type=float)
@@ -271,6 +273,14 @@ def main() -> None:
             if args.long_pair_confidence_penalty is None
             else args.long_pair_confidence_penalty
         ),
+        minimum_growth_overlap_support=(
+            default_nowcast_config.minimum_growth_overlap_support
+            if args.minimum_growth_overlap_support is None
+            else args.minimum_growth_overlap_support
+        ),
+        minimum_growth_overlap_area_km2=(
+            args.minimum_growth_overlap_area_km2
+        ),
     )
     frames_tensor = torch.as_tensor(frames, dtype=torch.float32)
     if args.variational:
@@ -345,6 +355,12 @@ def _analysis_config_from_args(
             args.maximum_pair_growth_disagreement
         ),
         "--minimum-pair-psr-advantage": args.minimum_pair_psr_advantage,
+        "--minimum-growth-overlap-support": (
+            args.minimum_growth_overlap_support
+        ),
+        "--minimum-growth-overlap-area-km2": (
+            args.minimum_growth_overlap_area_km2
+        ),
         "--maximum-motion-speed-mps": args.maximum_motion_speed_mps,
         "--motion-increment-scale-mps": args.motion_increment_scale_mps,
         "--causal-support-uncertainty-m": (

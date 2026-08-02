@@ -81,6 +81,10 @@ class CliTests(unittest.TestCase):
             "0.0953",
             "--minimum-pair-psr-advantage",
             "3",
+            "--minimum-growth-overlap-support",
+            "4",
+            "--minimum-growth-overlap-area-km2",
+            "4",
             "--causal-support-uncertainty-m",
             "1000",
             "--amplitude-displacement-tolerance-m",
@@ -147,6 +151,15 @@ class CliTests(unittest.TestCase):
             "growth_pair_conflict",
             "motion_disagreement_mps",
             "tendency_source",
+            "state_path_source",
+            "state_path_mode",
+            "state_path_pair_count",
+            "state_path_minimum_psr",
+            "state_path_conflict",
+            "state_path_extrapolated",
+            "state_path_age_minutes",
+            "minimum_growth_overlap_support",
+            "minimum_growth_overlap_area_km2",
             "min_publish_support",
             "analysis_converged",
             "analysis_degraded",
@@ -504,6 +517,8 @@ class CliTests(unittest.TestCase):
             "--maximum-pair-velocity-disagreement-mps",
             "--maximum-pair-growth-disagreement",
             "--minimum-pair-psr-advantage",
+            "--minimum-growth-overlap-support",
+            "--minimum-growth-overlap-area-km2",
         )
         for name in required:
             with self.subTest(name=name):
@@ -530,6 +545,9 @@ class CliTests(unittest.TestCase):
 
             with np.load(output_path, allow_pickle=False) as result:
                 config = json.loads(result["analysis_config_json"].item())
+                nowcast_config = json.loads(
+                    result["nowcast_config_json"].item()
+                )
                 self.assertEqual(config["execution_mode"], "operational")
                 self.assertEqual(
                     config["operational_calibration_id"],
@@ -544,6 +562,14 @@ class CliTests(unittest.TestCase):
                     "operational_fallback",
                 )
                 self.assertEqual(config["motion_increment_scale_mps"], 2.0)
+                self.assertEqual(
+                    nowcast_config["minimum_growth_overlap_support"],
+                    4.0,
+                )
+                self.assertEqual(
+                    nowcast_config["minimum_growth_overlap_area_km2"],
+                    4.0,
+                )
                 self.assertEqual(
                     result["analysis_motion_control_coordinate_system"].item(),
                     "projected_xy_mps_radial_ball",
