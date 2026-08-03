@@ -113,6 +113,8 @@ class CliTests(unittest.TestCase):
             "100",
             "--maximum-established-excess-growth-fraction-for-confidence",
             "1",
+            "--minimum-object-count-ratio-for-confidence",
+            "0.75",
         )
 
     def _assert_common_status_fields(self, result: np.lib.npyio.NpzFile) -> None:
@@ -204,11 +206,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v30",
+                    "nowcast-npz-v31",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v22",
+                    "forecast-run-v23",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -568,6 +570,7 @@ class CliTests(unittest.TestCase):
             "--minimum-growth-overlap-support",
             "--minimum-growth-overlap-area-km2",
             "--minimum-publish-verified-support",
+            "--minimum-object-count-ratio-for-confidence",
         )
         for name in required:
             with self.subTest(name=name):
@@ -609,6 +612,10 @@ class CliTests(unittest.TestCase):
                 self.assertEqual(
                     config["amplitude_confidence_policy"],
                     "operational_fallback",
+                )
+                self.assertEqual(
+                    config["minimum_object_count_ratio_for_confidence"],
+                    0.75,
                 )
                 self.assertEqual(config["motion_increment_scale_mps"], 2.0)
                 self.assertEqual(

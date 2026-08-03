@@ -24,7 +24,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v30"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v31"
 
 
 def main() -> None:
@@ -106,6 +106,10 @@ def main() -> None:
     )
     parser.add_argument(
         "--maximum-established-excess-growth-fraction-for-confidence",
+        type=float,
+    )
+    parser.add_argument(
+        "--minimum-object-count-ratio-for-confidence",
         type=float,
     )
     parser.add_argument(
@@ -206,6 +210,7 @@ def main() -> None:
             args.maximum_established_excess_growth_fraction_for_confidence
             is not None
         )
+        or args.minimum_object_count_ratio_for_confidence is not None
         or args.causal_support_uncertainty_m is not None
         or args.amplitude_displacement_tolerance_m is not None
     ):
@@ -417,6 +422,9 @@ def _analysis_config_from_args(
         "--maximum-established-excess-growth-fraction-for-confidence": (
             args.maximum_established_excess_growth_fraction_for_confidence
         ),
+        "--minimum-object-count-ratio-for-confidence": (
+            args.minimum_object_count_ratio_for_confidence
+        ),
     }
     if args.mode == "operational":
         missing = [
@@ -501,6 +509,10 @@ def _analysis_config_from_args(
         maximum_established_excess_growth_fraction_for_confidence=value(
             "maximum_established_excess_growth_fraction_for_confidence",
             defaults.maximum_established_excess_growth_fraction_for_confidence,
+        ),
+        minimum_object_count_ratio_for_confidence=value(
+            "minimum_object_count_ratio_for_confidence",
+            defaults.minimum_object_count_ratio_for_confidence,
         ),
         causal_support_uncertainty_m=args.causal_support_uncertainty_m,
         amplitude_displacement_tolerance_m=(
@@ -708,6 +720,11 @@ def _output_arrays(
             analysis_maximum_object_soft_echo_area_ratio_by_time=(
                 _optional_pair_array(
                     analysis.maximum_object_soft_echo_area_ratio_by_time
+                )
+            ),
+            analysis_minimum_object_count_ratio_by_time=(
+                _optional_pair_array(
+                    analysis.minimum_object_count_ratio_by_time
                 )
             ),
             analysis_established_echo_excess_growth_fraction=np.asarray(
