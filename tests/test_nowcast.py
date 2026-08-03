@@ -3114,6 +3114,45 @@ class NowcastTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, message):
                     candidate.validate_issuance()
 
+    def test_p1_issuance_rejects_verified_support_without_evidence(
+        self,
+    ) -> None:
+        frames = torch.full((3, 8, 8), 20.0, dtype=torch.float64)
+        issued = nowcast(frames, self.config)
+        observation_verified = (
+            issued.metadata.observation_verified_source_support.clone()
+        )
+        observation_verified[0, 0] = 0.0
+        metadata = replace(
+            issued.metadata,
+            provenance="p1_variational_analysis",
+            dynamics_source=DynamicsSource.P1_VARIATIONAL,
+            state_path_source=TendencySource.NONE,
+            state_path_mode=TendencyPairSelection.NONE,
+            state_path_pair_count=0,
+            state_path_minimum_psr=math.nan,
+            state_path_conflict=False,
+            state_path_extrapolated=False,
+            state_path_age_minutes=None,
+            observation_path=StatePathProvenance(),
+            background_path=StatePathProvenance(),
+            minimum_growth_overlap_support=math.nan,
+            minimum_growth_overlap_area_km2=math.nan,
+            observation_verified_source_support=observation_verified,
+        )
+        candidate = forecast_result_from_state(
+            issued.state,
+            metadata,
+            self.config,
+            run=issued.run,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "verified_source_support must equal source evidence channels",
+        ):
+            candidate.validate_issuance()
+
     def test_issuance_rejects_growth_count_evidence_mismatch(self) -> None:
         nowcast_module = import_module("advar.nowcast")
         frames = torch.full((3, 8, 8), 20.0, dtype=torch.float64)

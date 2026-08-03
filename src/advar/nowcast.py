@@ -1865,22 +1865,21 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
             "verified_source_support and evidence channels must be nested "
             "inside source_support"
         )
-    if metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
-        source_verified = (
-            metadata.observation_verified_source_support
-            + metadata.background_verified_source_support
-        ).clamp(0.0, 1.0)
-        if not bool(
-            torch.allclose(
-                metadata.verified_source_support,
-                source_verified,
-                rtol=0.0,
-                atol=config.contract_absolute_tolerance,
-            )
-        ):
-            raise ValueError(
-                "verified_source_support must equal source evidence channels"
-            )
+    source_verified = (
+        metadata.observation_verified_source_support
+        + metadata.background_verified_source_support
+    ).clamp(0.0, 1.0)
+    if not bool(
+        torch.allclose(
+            metadata.verified_source_support,
+            source_verified,
+            rtol=0.0,
+            atol=config.contract_absolute_tolerance,
+        )
+    ):
+        raise ValueError(
+            "verified_source_support must equal source evidence channels"
+        )
     if metadata.background_age_minutes is not None and (
         not math.isfinite(metadata.background_age_minutes)
         or metadata.background_age_minutes < 0
