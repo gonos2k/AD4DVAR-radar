@@ -698,6 +698,7 @@ class _GrowthEvidence:
     overlap_area_km2: Tensor
     aligned_previous_integral: Tensor
     current_integral: Tensor
+    alignment_log_error: Tensor
 
 
 def _minimum_growth_evidence(
@@ -2822,8 +2823,8 @@ def _combine_single_adjacent_and_long(
     ) = _select_adjacent_or_long_growth_evidence(
         adjacent_growth_evidence,
         long_growth_evidence,
-        adjacent_confidence,
-        long_confidence,
+        adjacent_psr,
+        long_psr,
         motion_selection,
         config,
     )
@@ -2932,17 +2933,15 @@ def _select_single_adjacent_or_long_component(
     inconsistent: bool,
     config: NowcastConfig,
 ) -> tuple[Tensor, bool, bool, TendencyPairSelection]:
-    long_value = float(long_confidence.detach())
-    adjacent_value = float(adjacent_confidence.detach())
-    long_is_clearly_better = (
-        long_value > adjacent_value + config.contract_absolute_tolerance
-        and long_value
-        >= adjacent_value * config.minimum_pair_confidence_ratio
+    long_is_clearly_better = _confidence_is_clearly_greater(
+        long_confidence,
+        adjacent_confidence,
+        config,
     )
-    adjacent_is_clearly_better = (
-        adjacent_value > long_value + config.contract_absolute_tolerance
-        and adjacent_value
-        >= long_value * config.minimum_pair_confidence_ratio
+    adjacent_is_clearly_better = _confidence_is_clearly_greater(
+        adjacent_confidence,
+        long_confidence,
+        config,
     )
     if inconsistent:
         if long_is_clearly_better:
@@ -2960,11 +2959,26 @@ def _select_single_adjacent_or_long_component(
     return adjacent, True, False, TendencyPairSelection.SINGLE
 
 
+def _confidence_is_clearly_greater(
+    candidate: Tensor,
+    reference: Tensor,
+    config: NowcastConfig,
+) -> bool:
+    candidate_value = float(candidate.detach())
+    reference_value = float(reference.detach())
+    return (
+        candidate_value
+        > reference_value + config.contract_absolute_tolerance
+        and candidate_value
+        >= reference_value * config.minimum_pair_confidence_ratio
+    )
+
+
 def _select_adjacent_or_long_growth_evidence(
     adjacent: _GrowthEvidence,
     long: _GrowthEvidence,
-    adjacent_confidence: Tensor,
-    long_confidence: Tensor,
+    adjacent_psr: Tensor,
+    long_psr: Tensor,
     motion_selection: TendencyPairSelection,
     config: NowcastConfig,
 ) -> tuple[Tensor, bool, bool, TendencyPairSelection, Tensor, bool]:
@@ -2983,6 +2997,18 @@ def _select_adjacent_or_long_growth_evidence(
             True,
         )
     if adjacent.available and long.available:
+        adjacent_confidence = _growth_evidence_confidence(
+            adjacent,
+            adjacent_psr,
+            span_penalty=1.0,
+            config=config,
+        )
+        long_confidence = _growth_evidence_confidence(
+            long,
+            long_psr,
+            span_penalty=config.long_pair_confidence_penalty,
+            config=config,
+        )
         inconsistent = (
             float(disagreement.detach())
             >= config.maximum_pair_growth_disagreement
@@ -3126,19 +3152,57 @@ def _combine_adjacent_growth_evidence(
             True,
         )
     if first.available and second.available:
+        first_confidence = _growth_evidence_confidence(
+            first,
+            first_psr,
+            span_penalty=1.0,
+            config=config,
+        )
+        second_confidence = _growth_evidence_confidence(
+            second,
+            second_psr,
+            span_penalty=1.0,
+            config=config,
+        )
         inconsistent = (
             float(disagreement.detach())
             >= config.maximum_pair_growth_disagreement
             - config.contract_absolute_tolerance
         )
-        value, indices, selection = _combine_pair_component(
-            first.value,
-            second.value,
-            first_psr,
-            second_psr,
-            inconsistent=inconsistent,
-            config=config,
-        )
+        if inconsistent:
+            second_is_better = _confidence_is_clearly_greater(
+                second_confidence,
+                first_confidence,
+                config,
+            )
+            first_is_better = _confidence_is_clearly_greater(
+                first_confidence,
+                second_confidence,
+                config,
+            )
+            if second_is_better:
+                value = second.value
+                indices = (1,)
+                selection = TendencyPairSelection.RECENT
+            elif first_is_better:
+                value = first.value
+                indices = (0,)
+                selection = TendencyPairSelection.EARLIER
+            else:
+                value = torch.zeros_like(first.value)
+                indices = ()
+                selection = TendencyPairSelection.PERSISTENCE
+        else:
+            first_weight = (1.0 - config.recent_weight) * first_confidence
+            second_weight = config.recent_weight * second_confidence
+            total_weight = (first_weight + second_weight).clamp_min(
+                config.epsilon
+            )
+            value = (
+                first_weight * first.value + second_weight * second.value
+            ) / total_weight
+            indices = (0, 1)
+            selection = TendencyPairSelection.BLENDED
         return value, indices, selection, disagreement, inconsistent
     if first.available:
         return (
@@ -3162,6 +3226,37 @@ def _combine_adjacent_growth_evidence(
         TendencyPairSelection.NONE,
         disagreement,
         False,
+    )
+
+
+def _growth_evidence_confidence(
+    evidence: _GrowthEvidence,
+    psr: Tensor,
+    *,
+    span_penalty: float,
+    config: NowcastConfig,
+) -> Tensor:
+    if not evidence.available:
+        return torch.zeros_like(psr)
+    extent = (
+        evidence.overlap_area_km2
+        if bool(torch.isfinite(evidence.overlap_area_km2))
+        else evidence.overlap_support
+    ).clamp_min(config.epsilon)
+    support = evidence.overlap_support.clamp_min(config.epsilon)
+    previous_mean = evidence.aligned_previous_integral / support
+    current_mean = evidence.current_integral / support
+    signal = 0.5 * (
+        torch.log1p(previous_mean.clamp_min(0.0))
+        + torch.log1p(current_mean.clamp_min(0.0))
+    )
+    alignment_quality = 1.0 / (1.0 + evidence.alignment_log_error)
+    return (
+        psr.clamp_min(0.0)
+        * span_penalty
+        * torch.sqrt(extent)
+        * signal
+        * alignment_quality
     )
 
 
@@ -4156,6 +4251,17 @@ def _aligned_growth_evidence(
     )
     previous_integrated_echo = (overlap_weight * aligned).sum()
     current_integrated_echo = (overlap_weight * current).sum()
+    raw_growth = torch.log(
+        (current_integrated_echo + config.ratio_regularizer)
+        / (previous_integrated_echo + config.ratio_regularizer)
+    )
+    point_log_ratio = torch.log(
+        (current + config.ratio_regularizer)
+        / (aligned + config.ratio_regularizer)
+    )
+    alignment_log_error = (
+        overlap_weight * torch.abs(point_log_ratio - raw_growth)
+    ).sum() / overlap_support.clamp_min(config.epsilon)
     enough_support = (
         float(overlap_support.detach())
         + config.contract_absolute_tolerance
@@ -4184,18 +4290,16 @@ def _aligned_growth_evidence(
             overlap_area_km2=overlap_area_km2,
             aligned_previous_integral=previous_integrated_echo,
             current_integral=current_integrated_echo,
+            alignment_log_error=alignment_log_error,
         )
-    growth = torch.log(
-        (current_integrated_echo + config.ratio_regularizer)
-        / (previous_integrated_echo + config.ratio_regularizer)
-    )
     return _GrowthEvidence(
-        value=growth.clamp(-limit, limit),
+        value=raw_growth.clamp(-limit, limit),
         available=True,
         overlap_support=overlap_support,
         overlap_area_km2=overlap_area_km2,
         aligned_previous_integral=previous_integrated_echo,
         current_integral=current_integrated_echo,
+        alignment_log_error=alignment_log_error,
     )
 
 

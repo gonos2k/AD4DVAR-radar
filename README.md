@@ -462,16 +462,20 @@ search boundary bin에 있으면 높은 PSR이어도 사용하지 않는다. pai
 검색상한과 분리된 `maximum_pair_motion_disagreement_px`, 격자계약이 있을 때의
 `maximum_pair_velocity_disagreement_mps`, 그리고
 `maximum_pair_growth_disagreement`로 검사한다. 운동과 성장은 독립적으로
-결합한다. 일관된 pair는 PSR과 recency를 함께 가중해 평균하고, 충돌할 때 한
-pair의 PSR이 `minimum_pair_psr_advantage` 이상 우세하면 그 pair만 사용한다.
-우위가 없으면 해당 성분만 persistence로 fail-close한다. 이 네 기본 임계값은
-합성·연구 설정이며 실제 레이더 hindcast로 보정해야 한다.
+결합한다. 운동은 PSR과 recency를 함께 사용한다. 성장 confidence는 PSR뿐
+아니라 echo overlap support 또는 물리면적, 이전·현재 평균 echo, 선택 운동에서
+전역 성장률을 제거한 국지 log-ratio 정렬오차를 함께 사용한다. 따라서 작은
+echo 표본의 높은 motion PSR가 넓은 성장증거를 자동으로 압도하지 않는다.
+성장 충돌에서는 이 confidence가 `minimum_pair_confidence_ratio` 이상 우세한
+pair만 사용하고, 우위가 없으면 growth persistence로 fail-close한다. 기본
+임계값과 confidence 식은 합성·연구 설정이며 실제 레이더 hindcast로 보정해야
+한다.
 
 인접 pair가 하나만 유효하고 20분 long pair도 유효하면 두 후보를 독립적으로
 검사한다. near-echo completeness가 이미 에코 주변 자료 가용성을 검사하므로
-에코와 무관한 전체 도메인 coverage는 confidence에 곱하지 않는다. 신뢰도는
-PSR에 long pair의 시간간격·형태변형 위험을 나타내는
-`long_pair_confidence_penalty`만 곱한다. long 또는 adjacent 후보가
+에코와 무관한 전체 도메인 coverage는 confidence에 곱하지 않는다. 운동
+신뢰도는 PSR에, 성장 신뢰도는 위의 growth evidence에 시간간격·형태변형
+위험을 나타내는 `long_pair_confidence_penalty`를 곱한다. long 또는 adjacent 후보가
 `minimum_pair_confidence_ratio` 이상 우세할 때만 교체하고, 충돌하면서 우위가
 없으면 해당 성분은 persistence로 fail-close한다. long pair는 adjacent pair와
 관측을 공유하므로 두 값을 독립 표본처럼 평균하지 않는다. `operational`
