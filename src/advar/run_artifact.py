@@ -33,7 +33,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v31"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v32"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 160
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
@@ -134,6 +134,7 @@ _CORE_ARRAY_NAMES = frozenset(
         "analysis_config_json",
         "analysis_config_digest",
         "analysis_input_digest",
+        "operational_calibration_digest",
     }
 )
 _CLI_EXTRA_ARRAY_NAMES = frozenset(
@@ -239,6 +240,9 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
     latest_observation_mask = result.run.latest_observation_mask
     metadata = result.metadata
     grid_time_contract = result.run.grid_time_contract
+    operational_calibration_digest = (
+        result.run.operational_calibration_digest
+    )
     displacement_mps = result.displacement_mps_yx
     projected_velocity = result.projected_velocity_mps_xy
     arrays = {
@@ -454,6 +458,11 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             ""
             if result.run.analysis_input_digest is None
             else result.run.analysis_input_digest
+        ),
+        "operational_calibration_digest": np.asarray(
+            ""
+            if operational_calibration_digest is None
+            else operational_calibration_digest
         ),
     }
     return seal_forecast_run_arrays(arrays)
@@ -1028,6 +1037,17 @@ def load_forecast_run(
                 "forecast_integrator_version",
             ),
         )
+        stored_calibration_digest = _string_scalar(
+            loaded_arrays,
+            "operational_calibration_digest",
+        )
+        expected_calibration_digest = run.operational_calibration_digest
+        if stored_calibration_digest != (
+            ""
+            if expected_calibration_digest is None
+            else expected_calibration_digest
+        ):
+            raise ValueError("operational calibration digest mismatch")
         stored_state_digest = _digest_scalar(
             loaded_arrays,
             "state_metadata_digest",

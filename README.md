@@ -380,7 +380,9 @@ support·물리면적·관측오차·amplitude
 임계값, 검증된 상태경로·레이더 관측 support 발행 임계값, 선행시간
 confidence, 배경 기여율, 속도불확실성·위치오차 길이척도, 국지 dBZ 상태검증 오차,
 P1 국지 검증 precision·절대 dBZ 오차와
-`--operational-calibration-id`를 모두 요구한다. 누락된 보정값이
+`--operational-calibration-id`를 모두 요구한다. 이 값은 사람이 읽는
+label이며, 실제 동일성은 전체 설정·격자 정체성·적분기 버전에서 자동 계산한
+`operational_calibration_digest`로 판정한다. 누락된 보정값이
 있으면 실행 전에 거부하며, 두
 amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값은 실제
 레이더 hindcast에서 얻어야 하며 저장된 `nowcast_config_json`,
@@ -388,8 +390,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v39`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v31`
+- `output_contract_version`: 현재 `nowcast-npz-v40`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v32`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -398,6 +400,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   `(row, column)` m/s
 - `projected_velocity_mps_xy`: affine 계약을 적용한 projected `(x, y)` m/s
 - `analysis_config_json`, `analysis_config_digest`, `analysis_input_digest`
+- `operational_calibration_digest`: 운용 설정과 격자 정체성의 content address;
+  연구모드에서는 빈 문자열
 - `forecast_dbz`: `[18, H, W]`
 - `valid_mask`, `state_echo_linear`, `source_support`,
   `path_verified_source_support`, `verified_source_support`,
