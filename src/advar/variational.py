@@ -2296,7 +2296,7 @@ def _analysis_result(
         observations,
         frozen,
         trajectory,
-        include_field_conditioned=not degraded,
+        include_field_conditioned=not analysis_degraded,
     )
     field_smoothness_prior_cost = float(
         _field_smoothness_prior_cost(control, frozen).detach()
