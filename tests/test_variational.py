@@ -1327,6 +1327,10 @@ class VariationalAnalysisTests(unittest.TestCase):
             result.metadata.verified_source_support,
             result.metadata.source_support,
         )
+        torch.testing.assert_close(
+            result.metadata.observation_verified_source_support,
+            result.metadata.verified_source_support,
+        )
         self.assertEqual(
             result.metadata.dynamics_source,
             DynamicsSource.P1_VARIATIONAL,
@@ -1348,6 +1352,36 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertTrue(
             math.isnan(result.metadata.minimum_growth_overlap_area_km2)
         )
+
+    def test_p1_verification_excludes_local_latest_observation_mismatch(
+        self,
+    ) -> None:
+        observations, frozen = self.stationary_problem()
+        trajectory = analysis_trajectory(initial_control(frozen), frozen)
+        mismatched_frames = trajectory.frames_linear.clone()
+        mismatched_frames[-1, 0, 0] = dbz_to_echo(
+            torch.tensor(
+                self.nowcast_config.min_dbz,
+                dtype=mismatched_frames.dtype,
+            ),
+            min_dbz=self.nowcast_config.min_dbz,
+            max_dbz=self.nowcast_config.max_dbz,
+        )
+        trajectory = replace(
+            trajectory,
+            frames_linear=mismatched_frames,
+        )
+
+        verified = variational_module._local_analysis_verified_support(
+            trajectory,
+            observations,
+            torch.ones_like(observations.dbz[-1]),
+            frozen,
+        )
+
+        expected = torch.ones_like(verified)
+        expected[0, 0] = 0.0
+        torch.testing.assert_close(verified, expected)
 
     def test_causal_support_back_advects_later_detection(self) -> None:
         detected = torch.zeros((3, 7, 9), dtype=torch.bool)

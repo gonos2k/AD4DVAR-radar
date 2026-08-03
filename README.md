@@ -386,8 +386,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v32`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v24`
+- `output_contract_version`: 현재 `nowcast-npz-v33`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v25`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -406,6 +406,9 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   `path_verified_source_support`는 국지 에코 위치경로가 검증됐는지를,
   `verified_source_support`는 성장증거까지 있는 상태경로인지를 나타낸다.
   관측과 배경의 엄격한 evidence support도 별도로 보존한다.
+  수용된 P1은 전체 support를 자동 승격하지 않고, 최신 detected 관측의
+  표준화 절대오차 또는 censored 관측의 detection-limit 조건을 국지적으로
+  만족한 화소만 observation/state verified로 기록한다.
   연구모드에서는 예전 persistence를 유지하지만, 운영모드는
   `minimum_publish_verified_support`로 검증되지 않은 경로를 발행에서
   제외한다. `forecast_path_verified_support`와
