@@ -79,6 +79,7 @@ class AnalysisConfig:
     minimum_integrated_echo_ratio_for_confidence: float = 0.5
     minimum_soft_echo_area_ratio_for_confidence: float = 0.5
     maximum_established_excess_growth_fraction_for_confidence: float = 0.01
+    minimum_object_count_ratio_for_confidence: float = 0.75
     field_smoothness_weight: float = 0.01
     maximum_outer_iterations: int = 4
     maximum_pcg_iterations: int = 40
@@ -240,6 +241,9 @@ class AnalysisConfig:
             "maximum_established_excess_growth_fraction_for_confidence": (
                 self.maximum_established_excess_growth_fraction_for_confidence
             ),
+            "minimum_object_count_ratio_for_confidence": (
+                self.minimum_object_count_ratio_for_confidence
+            ),
         }
         for name, value in confidence_fractions.items():
             if not math.isfinite(value) or not 0.0 <= value <= 1.0:
@@ -360,6 +364,7 @@ class _AmplitudeDiagnostics:
     maximum_object_integrated_echo_ratio_by_time: Tensor
     minimum_object_soft_echo_area_ratio_by_time: Tensor
     maximum_object_soft_echo_area_ratio_by_time: Tensor
+    minimum_object_count_ratio_by_time: Tensor
 
     def _gated(self, values: Tensor) -> Tensor:
         return torch.where(
@@ -457,6 +462,13 @@ class _AmplitudeDiagnostics:
                 > config.maximum_soft_echo_area_ratio_for_confidence
             )
         )
+        object_count_low = (
+            ~torch.isnan(self.minimum_object_count_ratio_by_time)
+            & (
+                self.minimum_object_count_ratio_by_time
+                < config.minimum_object_count_ratio_for_confidence
+            )
+        )
         return bool(
             torch.any(
                 echo_ratio_low
@@ -469,6 +481,7 @@ class _AmplitudeDiagnostics:
                 | object_echo_high
                 | object_area_low
                 | object_area_high
+                | object_count_low
             )
         )
 
@@ -574,6 +587,7 @@ class AnalysisResult:
     maximum_object_soft_echo_area_ratio_by_time: (
         tuple[float, float] | None
     ) = None
+    minimum_object_count_ratio_by_time: tuple[float, float] | None = None
     dynamics_data_numerical_rank: int | None = None
     dynamics_data_effective_dimension: float | None = None
     dynamics_data_to_prior_ratio_by_mode: (
@@ -2256,6 +2270,9 @@ def _analysis_result(
         maximum_object_soft_echo_area_ratio_by_time=_materialize_pair(
             amplitude.maximum_object_soft_echo_area_ratio_by_time
         ),
+        minimum_object_count_ratio_by_time=_materialize_pair(
+            amplitude.minimum_object_count_ratio_by_time
+        ),
         established_echo_excess_growth_fraction=(
             _materialize_finite_max(
                 amplitude.established_echo_excess_growth_fraction_by_time
@@ -2469,6 +2486,7 @@ def _amplitude_diagnostics(
     maximum_object_integrated_echo_ratios: list[Tensor] = []
     minimum_object_soft_echo_area_ratios: list[Tensor] = []
     maximum_object_soft_echo_area_ratios: list[Tensor] = []
+    minimum_object_count_ratios: list[Tensor] = []
     zero = prediction_dbz.new_zeros(())
     nan = prediction_dbz.new_full((), math.nan)
 
@@ -2504,6 +2522,7 @@ def _amplitude_diagnostics(
             maximum_object_integrated_echo_ratios.append(nan)
             minimum_object_soft_echo_area_ratios.append(nan)
             maximum_object_soft_echo_area_ratios.append(nan)
+            minimum_object_count_ratios.append(nan)
             continue
 
         local_prediction = _footprint_maximum(
@@ -2609,6 +2628,7 @@ def _amplitude_diagnostics(
             maximum_object_integrated_echo_ratio,
             minimum_object_soft_echo_area_ratio,
             maximum_object_soft_echo_area_ratio,
+            minimum_object_count_ratio,
         ) = _precursor_object_diagnostics(
             precursor_required,
             unresolved,
@@ -2647,6 +2667,7 @@ def _amplitude_diagnostics(
         maximum_object_soft_echo_area_ratios.append(
             maximum_object_soft_echo_area_ratio
         )
+        minimum_object_count_ratios.append(minimum_object_count_ratio)
 
     return _AmplitudeDiagnostics(
         unresolved_fraction_by_time=torch.stack(unresolved_fractions),
@@ -2687,6 +2708,9 @@ def _amplitude_diagnostics(
         maximum_object_soft_echo_area_ratio_by_time=torch.stack(
             maximum_object_soft_echo_area_ratios
         ),
+        minimum_object_count_ratio_by_time=torch.stack(
+            minimum_object_count_ratios
+        ),
     )
 
 
@@ -2701,12 +2725,12 @@ def _precursor_object_diagnostics(
     frozen: FrozenOuterState,
     *,
     enabled: bool,
-) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
+) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
     zero = prediction_dbz.new_zeros(())
     nan = prediction_dbz.new_full((), math.nan)
     if not enabled:
         count = zero.to(dtype=torch.long)
-        return count, count.clone(), zero, nan, nan, nan, nan
+        return count, count.clone(), zero, nan, nan, nan, nan, nan
 
     components = _connected_component_flat_indices(precursor_required)
     object_count = zero.new_tensor(len(components), dtype=torch.long)
@@ -2715,6 +2739,7 @@ def _precursor_object_diagnostics(
     eligible_components: list[Tensor] = []
     integrated_echo_ratios: list[Tensor] = []
     soft_echo_area_ratios: list[Tensor] = []
+    object_count_ratios: list[Tensor] = []
     flat_quality = quality.flatten()
     flat_unresolved = unresolved.flatten()
     flat_observed_dbz = observed_dbz.flatten()
@@ -2756,12 +2781,13 @@ def _precursor_object_diagnostics(
         )
         eligible_components.append(indices)
 
-    for indices, expanded in _overlapping_footprint_groups(
+    groups = _overlapping_footprint_groups(
         eligible_components,
         precursor_required,
         prediction_dbz,
         frozen.amplitude_displacement_offsets_yx,
-    ):
+    )
+    for indices, expanded, observed_object_count in groups:
         expanded &= prediction_attribution_region
         integrated_echo_ratios.append(
             prediction_echo[expanded].sum() / observed_echo[indices].sum()
@@ -2781,12 +2807,34 @@ def _precursor_object_diagnostics(
             / temperature
         )[expanded].sum()
         soft_echo_area_ratios.append(predicted_soft_area / observed_soft_area)
+        predicted_objects = _connected_component_flat_indices(
+            expanded
+            & (
+                prediction_dbz
+                >= frozen.analysis_config.detection_limit_dbz
+            )
+        )
+        object_count_ratios.append(
+            prediction_dbz.new_tensor(
+                len(predicted_objects) / observed_object_count
+            )
+        )
 
     if not unresolved_fractions:
-        return object_count, insufficient_count, zero, nan, nan, nan, nan
+        return (
+            object_count,
+            insufficient_count,
+            zero,
+            nan,
+            nan,
+            nan,
+            nan,
+            nan,
+        )
     unresolved_values = torch.stack(unresolved_fractions)
     echo_values = torch.stack(integrated_echo_ratios)
     area_values = torch.stack(soft_echo_area_ratios)
+    count_values = torch.stack(object_count_ratios)
     return (
         object_count,
         insufficient_count,
@@ -2795,6 +2843,7 @@ def _precursor_object_diagnostics(
         torch.max(echo_values),
         torch.min(area_values),
         torch.max(area_values),
+        torch.min(count_values),
     )
 
 
@@ -2803,7 +2852,7 @@ def _overlapping_footprint_groups(
     mask_template: Tensor,
     value_template: Tensor,
     offsets_yx: tuple[tuple[int, int], ...],
-) -> tuple[tuple[Tensor, Tensor], ...]:
+) -> tuple[tuple[Tensor, Tensor, int], ...]:
     groups: list[tuple[list[Tensor], Tensor]] = []
     for indices in components:
         object_mask = torch.zeros_like(mask_template)
@@ -2830,7 +2879,7 @@ def _overlapping_footprint_groups(
         groups.append((merged_indices, merged_mask))
 
     return tuple(
-        (torch.cat(indices), expanded)
+        (torch.cat(indices), expanded, len(indices))
         for indices, expanded in groups
     )
 
@@ -3253,6 +3302,13 @@ def _fallback_result(
             else _materialize_pair(
                 amplitude_diagnostics
                 .maximum_object_soft_echo_area_ratio_by_time
+            )
+        ),
+        minimum_object_count_ratio_by_time=(
+            None
+            if amplitude_diagnostics is None
+            else _materialize_pair(
+                amplitude_diagnostics.minimum_object_count_ratio_by_time
             )
         ),
         established_echo_excess_growth_fraction=(

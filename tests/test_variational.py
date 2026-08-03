@@ -2021,6 +2021,39 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertAlmostEqual(float(diagnostics[4]), 0.5)
         self.assertAlmostEqual(float(diagnostics[5]), 0.5, places=5)
         self.assertAlmostEqual(float(diagnostics[6]), 0.5, places=5)
+        self.assertAlmostEqual(float(diagnostics[7]), 0.5)
+
+    def test_matching_group_preserves_two_predicted_objects(self) -> None:
+        frames = torch.full((3, 9, 9), -10.0, dtype=torch.float64)
+        _, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+        precursor = torch.zeros((9, 9), dtype=torch.bool)
+        precursor[4, 3] = True
+        precursor[4, 5] = True
+        observed_dbz = torch.full((9, 9), -10.0, dtype=torch.float64)
+        observed_dbz[precursor] = 20.0
+        prediction_dbz = observed_dbz.clone()
+
+        diagnostics = variational_module._precursor_object_diagnostics(
+            precursor,
+            torch.zeros_like(precursor),
+            torch.ones((9, 9), dtype=torch.float64),
+            observed_dbz,
+            prediction_dbz,
+            dbz_to_echo(
+                prediction_dbz,
+                min_dbz=self.nowcast_config.min_dbz,
+                max_dbz=self.nowcast_config.max_dbz,
+            ),
+            torch.ones_like(precursor),
+            frozen,
+            enabled=True,
+        )
+
+        self.assertAlmostEqual(float(diagnostics[7]), 1.0)
 
     def test_established_echo_cannot_fill_precursor_object(self) -> None:
         frames = torch.full((3, 9, 9), -10.0, dtype=torch.float64)
@@ -2063,6 +2096,18 @@ class VariationalAnalysisTests(unittest.TestCase):
             float(diagnostics[6]),
             self.analysis_config.minimum_soft_echo_area_ratio_for_confidence,
         )
+        self.assertEqual(float(diagnostics[7]), 0.0)
+
+    def test_object_count_collapse_degrades_confidence(self) -> None:
+        diagnostics = replace(
+            self._synthetic_amplitude_diagnostics((0.0, 0.0)),
+            minimum_object_count_ratio_by_time=torch.tensor(
+                (1.0, 0.5),
+                dtype=torch.float64,
+            ),
+        )
+
+        self.assertTrue(diagnostics.degrades_confidence(self.analysis_config))
 
     def test_operational_confidence_policy_falls_back_on_under_and_over(
         self,
@@ -2564,6 +2609,11 @@ class VariationalAnalysisTests(unittest.TestCase):
                 math.nan,
                 dtype=dtype,
             ),
+            minimum_object_count_ratio_by_time=torch.full(
+                (2,),
+                math.nan,
+                dtype=dtype,
+            ),
         )
 
     def test_unresolved_amplitude_fraction_must_be_bounded(self) -> None:
@@ -2621,6 +2671,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             "minimum_integrated_echo_ratio_for_confidence",
             "minimum_soft_echo_area_ratio_for_confidence",
             "maximum_established_excess_growth_fraction_for_confidence",
+            "minimum_object_count_ratio_for_confidence",
         ):
             for value in (-0.1, 1.1, float("nan")):
                 with self.subTest(field_name=field_name, value=value):
@@ -2644,11 +2695,17 @@ class VariationalAnalysisTests(unittest.TestCase):
                                     value
                                 )
                             )
-                        else:
+                        elif field_name == (
+                            "maximum_established_excess_growth_fraction_for_confidence"
+                        ):
                             AnalysisConfig(
                                 maximum_established_excess_growth_fraction_for_confidence=(
                                     value
                                 )
+                            )
+                        else:
+                            AnalysisConfig(
+                                minimum_object_count_ratio_for_confidence=value
                             )
         for field_name in (
             "maximum_integrated_echo_ratio_for_confidence",

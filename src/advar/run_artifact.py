@@ -33,7 +33,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v22"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v23"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 160
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
@@ -164,6 +164,7 @@ _CLI_EXTRA_ARRAY_NAMES = frozenset(
         "analysis_maximum_object_integrated_echo_ratio_by_time",
         "analysis_minimum_object_soft_echo_area_ratio_by_time",
         "analysis_maximum_object_soft_echo_area_ratio_by_time",
+        "analysis_minimum_object_count_ratio_by_time",
         "analysis_established_echo_excess_growth_fraction",
         "analysis_established_echo_excess_growth_fraction_by_time",
         "analysis_maximum_growth_envelope_ratio",
