@@ -3617,6 +3617,7 @@ def _source_verification_masks(
         config,
         grid_time_contract,
     )
+    ordered_offsets = _offsets_by_distance(offsets, grid_time_contract)
     nearby_current = _dilate_mask(current_detected, offsets)
     current_dbz = echo_to_dbz(
         linear[2],
@@ -3649,11 +3650,13 @@ def _source_verification_masks(
             min_dbz=config.min_dbz,
             max_dbz=config.max_dbz,
         )
-        local_amplitude_error = _minimum_nearby_detected_error(
+        local_state_verified = _exclusive_nearby_detected_matches(
             candidate_dbz,
             current_dbz,
+            candidate_detected,
             current_detected,
-            offsets,
+            ordered_offsets,
+            config.maximum_local_state_verification_error_dbz,
         )
         step_span = 2 - source_index
         growth = _growth_evidence_aligned_with_motion(
@@ -3666,20 +3669,44 @@ def _source_verification_masks(
             grid_time_contract,
         )
         if growth.available:
-            state_verified[source_index] = local_path_verified & (
-                local_amplitude_error
-                <= config.maximum_local_state_verification_error_dbz
-            )
+            state_verified[source_index] = local_state_verified
     return path_verified, state_verified
 
 
-def _minimum_nearby_detected_error(
+def _offsets_by_distance(
+    offsets_yx: tuple[tuple[int, int], ...],
+    grid_time_contract: RadarGridTimeContract | None,
+) -> tuple[tuple[int, int], ...]:
+    def distance_squared(offset_yx: tuple[int, int]) -> float:
+        offset_y, offset_x = offset_yx
+        if grid_time_contract is None:
+            return float(offset_y * offset_y + offset_x * offset_x)
+        assert grid_time_contract.pixel_to_projected_matrix_m is not None
+        (xx, xr), (yx, yr) = (
+            grid_time_contract.pixel_to_projected_matrix_m
+        )
+        projected_x = xx * offset_x + xr * offset_y
+        projected_y = yx * offset_x + yr * offset_y
+        return projected_x * projected_x + projected_y * projected_y
+
+    return tuple(
+        sorted(
+            offsets_yx,
+            key=lambda offset: (distance_squared(offset), offset),
+        )
+    )
+
+
+def _exclusive_nearby_detected_matches(
     candidate_dbz: Tensor,
     current_dbz: Tensor,
+    candidate_detected: Tensor,
     current_detected: Tensor,
     offsets_yx: tuple[tuple[int, int], ...],
+    maximum_error_dbz: float,
 ) -> Tensor:
-    minimum_error = torch.full_like(candidate_dbz, math.inf)
+    matched_candidate = torch.zeros_like(candidate_detected)
+    claimed_current = torch.zeros_like(current_detected)
     for offset_y, offset_x in offsets_yx:
         slices = _offset_overlap_slices(
             candidate_dbz.shape,
@@ -3689,20 +3716,22 @@ def _minimum_nearby_detected_error(
         if slices is None:
             continue
         source_y, source_x, target_y, target_x = slices
-        error = torch.abs(
-            candidate_dbz[target_y, target_x]
-            - current_dbz[source_y, source_x]
+        matches = (
+            candidate_detected[target_y, target_x]
+            & current_detected[source_y, source_x]
+            & ~matched_candidate[target_y, target_x]
+            & ~claimed_current[source_y, source_x]
+            & (
+                torch.abs(
+                    candidate_dbz[target_y, target_x]
+                    - current_dbz[source_y, source_x]
+                )
+                <= maximum_error_dbz
+            )
         )
-        error = torch.where(
-            current_detected[source_y, source_x],
-            error,
-            torch.full_like(error, math.inf),
-        )
-        minimum_error[target_y, target_x] = torch.minimum(
-            minimum_error[target_y, target_x],
-            error,
-        )
-    return minimum_error
+        matched_candidate[target_y, target_x] |= matches
+        claimed_current[source_y, source_x] |= matches
+    return matched_candidate
 
 
 def _pair_echo_offsets(

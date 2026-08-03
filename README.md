@@ -386,8 +386,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v34`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v26`
+- `output_contract_version`: 현재 `nowcast-npz-v35`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v27`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -408,6 +408,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   과거 source의 state verification은 물리 footprint 안의 최신 관측과
   `maximum_local_state_verification_error_dbz` 이내로 일치해야 한다. 기본
   6 dBZ는 연구용 시작값이며 운용모드는 hindcast 보정값을 명시해야 한다.
+  하나의 최신 관측화소는 물리적으로 가장 가까운 과거 후보 하나만 검증해
+  동일 관측이 여러 과거 상태를 동시에 승격하지 못한다.
   관측과 배경의 엄격한 evidence support도 별도로 보존한다.
   수용된 P1은 전체 support를 자동 승격하지 않고, 최신 detected 관측의
   표준화 절대오차 또는 censored 관측의 detection-limit 조건을 국지적으로
