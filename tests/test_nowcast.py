@@ -2019,20 +2019,17 @@ class NowcastTests(unittest.TestCase):
         self.assertTrue(bool(torch.all(state_verified[1, 3:5, 3:5])))
         self.assertFalse(bool(torch.any(state_verified[1, 11:13, 11:13])))
 
-    def test_local_state_verification_is_exclusive(self) -> None:
+    def test_nonzero_offset_state_match_is_path_only(self) -> None:
         nowcast_module = import_module("advar.nowcast")
-        config = replace(
-            self.config,
-            pair_echo_dilation_px=2,
-            minimum_growth_overlap_support=1.0,
-        )
+        config = replace(self.config, pair_echo_dilation_px=2)
         linear = torch.zeros((3, 12, 12), dtype=torch.float64)
         masks = torch.zeros_like(linear, dtype=torch.bool)
         echo = dbz_to_linear(linear.new_tensor(20.0), config)
+        linear[1:, 2:4, 2:4] = echo
         linear[1, 6, 4] = echo
         linear[1, 6, 8] = echo
         linear[2, 6, 6] = echo
-        masks[1:] = True
+        masks[1:] = linear[1:] > 0
         zero_motion = linear.new_zeros(2)
         growth = nowcast_module._aligned_growth_evidence(
             linear[1],
@@ -2067,31 +2064,11 @@ class NowcastTests(unittest.TestCase):
             )
         )
 
-        self.assertEqual(int(path_verified[1].sum()), 2)
-        self.assertEqual(int(state_verified[1].sum()), 1)
-        self.assertTrue(bool(state_verified[1, 6, 4]))
+        self.assertTrue(bool(path_verified[1, 6, 4]))
+        self.assertTrue(bool(path_verified[1, 6, 8]))
+        self.assertTrue(bool(torch.all(state_verified[1, 2:4, 2:4])))
+        self.assertFalse(bool(state_verified[1, 6, 4]))
         self.assertFalse(bool(state_verified[1, 6, 8]))
-
-    def test_exclusive_state_verification_orders_physical_distance(self) -> None:
-        nowcast_module = import_module("advar.nowcast")
-        contract = RadarGridTimeContract(
-            valid_times=(
-                "2026-07-31T00:00:00Z",
-                "2026-07-31T00:10:00Z",
-                "2026-07-31T00:20:00Z",
-            ),
-            dx_m=1000.0,
-            dy_m=100.0,
-            projection="EPSG:5179",
-            grid_hash="8" * 64,
-        )
-
-        ordered = nowcast_module._offsets_by_distance(
-            ((0, 1), (2, 0)),
-            contract,
-        )
-
-        self.assertEqual(ordered, ((2, 0), (0, 1)))
 
     def test_local_state_verification_is_exclusive_across_times(self) -> None:
         nowcast_module = import_module("advar.nowcast")
@@ -2100,8 +2077,8 @@ class NowcastTests(unittest.TestCase):
         masks = torch.zeros_like(linear, dtype=torch.bool)
         echo = dbz_to_linear(linear.new_tensor(20.0), config)
         linear[:, 2:4, 2:4] = echo
-        linear[0, 6, 4] = echo
-        linear[1, 6, 8] = echo
+        linear[0, 6, 6] = echo
+        linear[1, 6, 6] = echo
         linear[2, 6, 6] = echo
         masks[:] = linear > 0
         zero_motion = linear.new_zeros(2)
@@ -2139,8 +2116,8 @@ class NowcastTests(unittest.TestCase):
             None,
         )
 
-        self.assertTrue(bool(state_verified[1, 6, 8]))
-        self.assertFalse(bool(state_verified[0, 6, 4]))
+        self.assertTrue(bool(state_verified[1, 6, 6]))
+        self.assertFalse(bool(state_verified[0, 6, 6]))
 
     def test_unavailable_recent_growth_does_not_claim_state_evidence(
         self,
@@ -2152,8 +2129,8 @@ class NowcastTests(unittest.TestCase):
         echo = dbz_to_linear(linear.new_tensor(20.0), config)
         linear[0, 2:4, 2:4] = echo
         linear[2, 2:4, 2:4] = echo
-        linear[0, 6, 4] = echo
-        linear[1, 6, 8] = echo
+        linear[0, 6, 6] = echo
+        linear[1, 6, 6] = echo
         linear[2, 6, 6] = echo
         masks[:] = linear > 0
         zero_motion = linear.new_zeros(2)
@@ -2190,8 +2167,8 @@ class NowcastTests(unittest.TestCase):
             None,
         )
 
-        self.assertFalse(bool(state_verified[1, 6, 8]))
-        self.assertTrue(bool(state_verified[0, 6, 4]))
+        self.assertFalse(bool(state_verified[1, 6, 6]))
+        self.assertTrue(bool(state_verified[0, 6, 6]))
 
     def test_path_without_growth_evidence_is_not_state_verified(self) -> None:
         nowcast_module = import_module("advar.nowcast")
