@@ -33,7 +33,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v28"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v29"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 160
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
