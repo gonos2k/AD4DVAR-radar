@@ -1,4 +1,5 @@
 from contextlib import redirect_stderr, redirect_stdout
+from dataclasses import replace
 import io
 import json
 from pathlib import Path
@@ -214,6 +215,7 @@ class CliTests(unittest.TestCase):
             "background_path_age_minutes",
             "minimum_growth_overlap_support",
             "minimum_growth_overlap_area_km2",
+            "operational_calibration_digest",
             "min_publish_support",
             "minimum_publish_verified_support",
             "minimum_publish_confidence",
@@ -237,11 +239,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v39",
+                    "nowcast-npz-v40",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v31",
+                    "forecast-run-v32",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -647,6 +649,10 @@ class CliTests(unittest.TestCase):
                     "test-calibration-v1",
                 )
                 self.assertEqual(
+                    len(result["operational_calibration_digest"].item()),
+                    64,
+                )
+                self.assertEqual(
                     config["amplitude_information_policy"],
                     "operational_fallback",
                 )
@@ -733,6 +739,84 @@ class CliTests(unittest.TestCase):
                     "analysis_field_conditioned_dynamics_data_effective_dimension",
                     result.files,
                 )
+
+    def test_operational_calibration_digest_tracks_content_not_label(self) -> None:
+        def changed(
+            arguments: tuple[str, ...],
+            name: str,
+            value: str,
+        ) -> tuple[str, ...]:
+            result = list(arguments)
+            result[result.index(name) + 1] = value
+            return tuple(result)
+
+        profile = self._operational_profile_arguments()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for name in ("base", "renamed", "changed"):
+                (root / name).mkdir()
+            outputs = (
+                self._run_cli(root / "base", self._stationary_frames(), *profile),
+                self._run_cli(
+                    root / "renamed",
+                    self._stationary_frames(),
+                    *changed(
+                        profile,
+                        "--operational-calibration-id",
+                        "renamed-profile",
+                    ),
+                ),
+                self._run_cli(
+                    root / "changed",
+                    self._stationary_frames(),
+                    *changed(
+                        profile,
+                        "--forecast-confidence-length-scale-m",
+                        "9000",
+                    ),
+                ),
+            )
+            digests = []
+            for output in outputs:
+                with np.load(output, allow_pickle=False) as result:
+                    digests.append(
+                        result["operational_calibration_digest"].item()
+                    )
+            base_run = load_forecast_run(outputs[0]).run
+
+        self.assertRegex(digests[0], r"^[0-9a-f]{64}$")
+        self.assertEqual(digests[0], digests[1])
+        self.assertNotEqual(digests[0], digests[2])
+
+        grid = base_run.grid_time_contract
+        assert grid is not None
+        shifted_grid = replace(
+            grid,
+            valid_times=(
+                "2026-08-01T00:00:00Z",
+                "2026-08-01T00:10:00Z",
+                "2026-08-01T00:20:00Z",
+            ),
+        )
+        shifted_run = replace(
+            base_run,
+            grid_time_contract=shifted_grid,
+            grid_time_contract_digest=shifted_grid.digest,
+        )
+        self.assertEqual(
+            base_run.operational_calibration_digest,
+            shifted_run.operational_calibration_digest,
+        )
+        different_grid = replace(grid, grid_hash="1" * 64)
+        different_grid_run = replace(
+            base_run,
+            grid_time_contract=different_grid,
+            grid_time_contract_digest=different_grid.digest,
+        )
+        self.assertNotEqual(
+            base_run.operational_calibration_digest,
+            different_grid_run.operational_calibration_digest,
+        )
 
     def test_all_qc_rejected_uses_stale_background(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

@@ -29,6 +29,9 @@ from .physics import (
 )
 
 
+_OPERATIONAL_CALIBRATION_VERSION = "operational-calibration-v1"
+
+
 _MINIMUM_GRID_AXIS_SINE = 0.01
 _MAXIMUM_GRID_AFFINE_CONDITION_NUMBER = 1000.0
 
@@ -1209,6 +1212,47 @@ class ForecastRunContract:
         if self._latest_background_dbz is None:
             return None
         return self._latest_background_dbz.clone()
+
+    @property
+    def operational_calibration_digest(self) -> str | None:
+        """Return a stable content address for an operational profile."""
+
+        if self.analysis_config_json is None:
+            return None
+        config_value = json.loads(self.analysis_config_json)
+        if not isinstance(config_value, dict):
+            raise ValueError("analysis_config_json must contain an object")
+        if config_value.get("execution_mode") != "operational":
+            return None
+        calibration_id = config_value.pop("operational_calibration_id", None)
+        if not isinstance(calibration_id, str) or not calibration_id:
+            raise ValueError(
+                "operational analysis requires a calibration identifier"
+            )
+        grid = self.grid_time_contract
+        if grid is None:
+            raise ValueError(
+                "operational calibration requires a grid/time contract"
+            )
+        return json_digest(
+            {
+                "version": _OPERATIONAL_CALIBRATION_VERSION,
+                "forecast_integrator_version": (
+                    self.forecast_integrator_version
+                ),
+                "nowcast_config_digest": self.config.digest,
+                "analysis_config": config_value,
+                "grid": {
+                    "dx_m": grid.dx_m,
+                    "dy_m": grid.dy_m,
+                    "projection": grid.projection,
+                    "grid_hash": grid.grid_hash,
+                    "pixel_to_projected_matrix_m": (
+                        grid.pixel_to_projected_matrix_m
+                    ),
+                },
+            }
+        )
 
     def validate_integrity(self) -> None:
         if self.forecast_integrator_version != FORECAST_INTEGRATOR_VERSION:
