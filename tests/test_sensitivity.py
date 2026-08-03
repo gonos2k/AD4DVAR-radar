@@ -1330,7 +1330,7 @@ class SensitivityTests(unittest.TestCase):
             / baseline_path_evidence,
         )
 
-    def test_forecast_confidence_decays_with_position_uncertainty(self) -> None:
+    def test_m0_uses_the_issued_forecast_confidence(self) -> None:
         snapshot = compute_sensitivity_snapshot(
             self.frames[2],
             self.result,
@@ -1338,27 +1338,10 @@ class SensitivityTests(unittest.TestCase):
             sensitivity_config=self.sensitivity_config,
             latest_background_dbz=self.background[2],
         )
-        lead_seconds = torch.arange(
-            1,
-            self.nowcast_config.forecast_steps + 1,
-            dtype=self.frames.dtype,
-        ) * (self.nowcast_config.interval_minutes * 60.0)
-        uncertainty = (
-            lead_seconds
-            * self.sensitivity_config.forecast_velocity_uncertainty_mps
+        torch.testing.assert_close(
+            snapshot.forecast_confidence,
+            self.result.forecast_confidence,
         )
-        expected_decay = torch.exp(
-            -0.5
-            * (
-                uncertainty
-                / self.sensitivity_config.forecast_confidence_length_scale_m
-            ).square()
-        )
-        expected = (
-            self.result.forecast_verified_support
-            * expected_decay[:, None, None]
-        )
-        torch.testing.assert_close(snapshot.forecast_confidence, expected)
 
     def test_nonfinite_background_does_not_create_fake_innovation(self) -> None:
         background = torch.full_like(self.frames, float("nan"))
@@ -1427,10 +1410,6 @@ class SensitivityTests(unittest.TestCase):
             {"pair_conflict_trust_penalty": 0.0},
             {"pair_conflict_trust_penalty": 1.1},
             {"pair_conflict_trust_penalty": float("nan")},
-            {"forecast_velocity_uncertainty_mps": 0.0},
-            {"forecast_velocity_uncertainty_mps": float("nan")},
-            {"forecast_confidence_length_scale_m": 0.0},
-            {"forecast_confidence_length_scale_m": float("nan")},
         )
         for values in invalid_configs:
             with self.subTest(values=values):

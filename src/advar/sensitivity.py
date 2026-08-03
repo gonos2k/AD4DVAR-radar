@@ -127,8 +127,6 @@ class SensitivityConfig:
     active_margin_dbz: float = 0.1
     linearity_delta: tuple[float, float, float] = (0.05, -0.04, 0.005)
     pair_conflict_trust_penalty: float = 0.5
-    forecast_velocity_uncertainty_mps: float = 1.0
-    forecast_confidence_length_scale_m: float = 10_000.0
     epsilon: float = 1.0e-6
 
     def __post_init__(self) -> None:
@@ -184,20 +182,6 @@ class SensitivityConfig:
             or not 0.0 < self.pair_conflict_trust_penalty <= 1.0
         ):
             raise ValueError("pair_conflict_trust_penalty must be in (0, 1]")
-        if (
-            not math.isfinite(self.forecast_velocity_uncertainty_mps)
-            or self.forecast_velocity_uncertainty_mps <= 0
-        ):
-            raise ValueError(
-                "forecast_velocity_uncertainty_mps must be positive"
-            )
-        if (
-            not math.isfinite(self.forecast_confidence_length_scale_m)
-            or self.forecast_confidence_length_scale_m <= 0
-        ):
-            raise ValueError(
-                "forecast_confidence_length_scale_m must be positive"
-            )
         if not math.isfinite(self.epsilon) or self.epsilon <= 0:
             raise ValueError("epsilon must be positive")
 
@@ -415,10 +399,7 @@ def compute_sensitivity_snapshot(
         dtype=torch.bool,
         device=echo.device,
     )
-    forecast_confidence = _lead_dependent_forecast_confidence(
-        result,
-        sensitivity_config,
-    )
+    forecast_confidence = result.forecast_confidence
     forecast_source_support = result.forecast_source_support
     forecast_observation_support = result.forecast_observation_source_support
     path_evidence_by_metric = echo.new_full(score_shape, float("nan"))
@@ -1261,31 +1242,6 @@ def _full_map_indices(
     if unknown:
         raise ValueError(f"full-map leads outside forecast horizon: {sorted(unknown)}")
     return tuple(all_minutes.index(value) for value in selected_minutes)
-
-
-def _lead_dependent_forecast_confidence(
-    result: ForecastResult,
-    config: SensitivityConfig,
-) -> Tensor:
-    lead_seconds = torch.arange(
-        1,
-        result.run.config.forecast_steps + 1,
-        dtype=result.state.echo_linear.dtype,
-        device=result.state.echo_linear.device,
-    ) * (result.run.config.interval_minutes * 60.0)
-    position_uncertainty = (
-        lead_seconds * config.forecast_velocity_uncertainty_mps
-    )
-    decay = torch.exp(
-        -0.5
-        * (
-            position_uncertainty / config.forecast_confidence_length_scale_m
-        ).square()
-    )
-    return (
-        result.forecast_verified_support
-        * decay[:, None, None]
-    ).clamp(0.0, 1.0)
 
 
 def _trust_components(
