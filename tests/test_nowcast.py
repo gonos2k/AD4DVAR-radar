@@ -2231,6 +2231,210 @@ class NowcastTests(unittest.TestCase):
             result.metadata.verified_source_support,
         )
 
+    def test_live_forecast_confidence_decays_with_lead_time(self) -> None:
+        config = replace(
+            self.config,
+            forecast_velocity_uncertainty_mps=1.0,
+            forecast_confidence_length_scale_m=10_000.0,
+        )
+        state = RadarState(
+            echo_linear=torch.ones(8, 8, dtype=torch.float64),
+            displacement_yx=torch.zeros(2, dtype=torch.float64),
+            log_growth_per_step=torch.zeros((), dtype=torch.float64),
+        )
+        latest = linear_to_dbz(state.echo_linear, config)
+        frames = torch.stack((latest, latest, latest))
+        result = forecast_result_from_state(
+            state,
+            observed_metadata(state),
+            config,
+            run=ForecastRunContract.from_inputs(
+                config,
+                frames,
+                torch.ones_like(frames, dtype=torch.bool),
+                None,
+            ),
+        )
+
+        expected_position = torch.arange(
+            1,
+            config.forecast_steps + 1,
+            dtype=torch.float64,
+        ) * 600.0
+        retention = math.exp(
+            -config.interval_minutes / config.growth_decay_minutes
+        )
+        expected_growth = 0.05 * torch.cumsum(
+            retention
+            ** torch.arange(config.forecast_steps, dtype=torch.float64),
+            dim=0,
+        )
+        expected_confidence = torch.exp(
+            -0.5
+            * (
+                (expected_position / 10_000.0).square()
+                + expected_growth.square()
+            )
+        )
+
+        torch.testing.assert_close(
+            result.forecast_position_uncertainty_m,
+            expected_position,
+        )
+        torch.testing.assert_close(
+            result.forecast_confidence[:, 4, 4],
+            expected_confidence,
+        )
+        torch.testing.assert_close(
+            result.forecast_log_growth_uncertainty,
+            expected_growth,
+        )
+        self.assertGreater(
+            float(result.forecast_confidence[0, 4, 4]),
+            float(result.forecast_confidence[-1, 4, 4]),
+        )
+
+    def test_pair_disagreement_raises_live_velocity_uncertainty(self) -> None:
+        config = replace(
+            self.config,
+            horizon_minutes=10,
+            forecast_velocity_uncertainty_mps=1.0,
+        )
+        state = RadarState(
+            echo_linear=torch.ones(8, 8, dtype=torch.float64),
+            displacement_yx=torch.zeros(2, dtype=torch.float64),
+            log_growth_per_step=torch.zeros((), dtype=torch.float64),
+        )
+        metadata = replace(
+            observed_metadata(state),
+            motion_disagreement_mps=state.echo_linear.new_tensor(6.0),
+        )
+        latest = linear_to_dbz(state.echo_linear, config)
+        frames = torch.stack((latest, latest, latest))
+        result = forecast_result_from_state(
+            state,
+            metadata,
+            config,
+            run=ForecastRunContract.from_inputs(
+                config,
+                frames,
+                torch.ones_like(frames, dtype=torch.bool),
+                None,
+            ),
+        )
+
+        torch.testing.assert_close(
+            result.forecast_velocity_uncertainty_mps,
+            state.echo_linear.new_tensor(3.0),
+        )
+        torch.testing.assert_close(
+            result.forecast_position_uncertainty_m,
+            state.echo_linear.new_tensor([1800.0]),
+        )
+
+    def test_growth_disagreement_raises_live_growth_uncertainty(self) -> None:
+        config = replace(
+            self.config,
+            horizon_minutes=10,
+            forecast_log_growth_uncertainty_per_step=0.05,
+        )
+        state = RadarState(
+            echo_linear=torch.ones(8, 8, dtype=torch.float64),
+            displacement_yx=torch.zeros(2, dtype=torch.float64),
+            log_growth_per_step=torch.zeros((), dtype=torch.float64),
+        )
+        metadata = replace(
+            observed_metadata(state),
+            growth_disagreement=state.echo_linear.new_tensor(0.4),
+        )
+        latest = linear_to_dbz(state.echo_linear, config)
+        frames = torch.stack((latest, latest, latest))
+        result = forecast_result_from_state(
+            state,
+            metadata,
+            config,
+            run=ForecastRunContract.from_inputs(
+                config,
+                frames,
+                torch.ones_like(frames, dtype=torch.bool),
+                None,
+            ),
+        )
+
+        torch.testing.assert_close(
+            result.forecast_log_growth_uncertainty,
+            state.echo_linear.new_tensor([0.2]),
+        )
+
+    def test_confidence_gate_masks_long_leads_only(self) -> None:
+        config = replace(
+            self.config,
+            minimum_publish_confidence=0.8,
+            forecast_velocity_uncertainty_mps=1.0,
+            forecast_confidence_length_scale_m=10_000.0,
+        )
+        frames = torch.full((3, 8, 8), 20.0)
+
+        result = nowcast(frames, config)
+
+        self.assertTrue(bool(torch.all(result.valid_mask[0])))
+        self.assertFalse(bool(torch.any(result.valid_mask[-1])))
+
+    def test_radar_anchored_policy_rejects_background_only_state(self) -> None:
+        config = replace(
+            self.config,
+            minimum_publish_observation_verified_support=0.95,
+        )
+        frames = torch.full((3, 8, 8), torch.nan)
+        background = torch.full_like(frames, 20.0)
+
+        result = nowcast(
+            frames,
+            config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+
+        self.assertFalse(bool(torch.any(result.valid_mask)))
+        self.assertFalse(bool(torch.any(result.radar_anchored_valid_mask)))
+
+    def test_background_fraction_gate_rejects_background_dominated_state(
+        self,
+    ) -> None:
+        config = replace(
+            self.config,
+            maximum_publish_background_fraction=0.5,
+        )
+        frames = torch.full((3, 8, 8), torch.nan)
+        background = torch.full_like(frames, 20.0)
+
+        result = nowcast(
+            frames,
+            config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+
+        self.assertFalse(bool(torch.any(result.valid_mask)))
+
+    def test_background_fallback_mask_labels_continuity_forecast(self) -> None:
+        frames = torch.full((3, 8, 8), torch.nan)
+        background = torch.full_like(frames, 20.0)
+
+        result = nowcast(
+            frames,
+            self.config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+
+        self.assertTrue(bool(torch.all(result.valid_mask)))
+        self.assertFalse(bool(torch.any(result.radar_anchored_valid_mask)))
+        torch.testing.assert_close(
+            result.background_fallback_mask,
+            result.valid_mask,
+        )
+
     def test_sparse_recent_frames_do_not_discard_complete_older_state(
         self,
     ) -> None:
@@ -3743,6 +3947,28 @@ class NowcastTests(unittest.TestCase):
             with self.subTest(minimum_publish_verified_support=value):
                 with self.assertRaises(ValueError):
                     NowcastConfig(minimum_publish_verified_support=value)
+        for field_name in (
+            "minimum_publish_confidence",
+            "minimum_publish_observation_verified_support",
+        ):
+            for value in (0.0, -1.0, 1.01, float("nan"), True):
+                with self.subTest(field_name=field_name, value=value):
+                    with self.assertRaises(ValueError):
+                        NowcastConfig(**{field_name: value})
+        for value in (-1.0, 1.01, float("nan"), True):
+            with self.subTest(maximum_publish_background_fraction=value):
+                with self.assertRaises(ValueError):
+                    NowcastConfig(maximum_publish_background_fraction=value)
+        for field_name in (
+            "forecast_velocity_uncertainty_mps",
+            "forecast_confidence_length_scale_m",
+            "forecast_log_growth_uncertainty_per_step",
+            "forecast_log_growth_confidence_scale",
+        ):
+            for value in (0.0, -1.0, float("nan"), True):
+                with self.subTest(field_name=field_name, value=value):
+                    with self.assertRaises(ValueError):
+                        NowcastConfig(**{field_name: value})
         with self.assertRaises(ValueError):
             NowcastConfig(maximum_background_age_minutes=0.0)
         with self.assertRaises(ValueError):

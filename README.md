@@ -377,7 +377,8 @@ amplitude 거리, projected m/s 운동증분 scale, 명시적인
 PSR·pair 운동/성장 불일치·pair 신뢰도 우위·성장 overlap
 support·물리면적·관측오차·amplitude
 정보량·적분량·면적·성장
-임계값, 검증된 상태경로 support 발행 임계값, 국지 dBZ 상태검증 오차,
+임계값, 검증된 상태경로·레이더 관측 support 발행 임계값, 선행시간
+confidence, 배경 기여율, 속도불확실성·위치오차 길이척도, 국지 dBZ 상태검증 오차,
 P1 국지 검증 precision·절대 dBZ 오차와
 `--operational-calibration-id`를 모두 요구한다. 누락된 보정값이
 있으면 실행 전에 거부하며, 두
@@ -387,8 +388,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v38`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v30`
+- `output_contract_version`: 현재 `nowcast-npz-v39`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v31`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -402,7 +403,14 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   `path_verified_source_support`, `verified_source_support`,
   `observation_verified_source_support`,
   `background_verified_source_support`, `forecast_path_verified_support`,
-  `forecast_verified_support`
+  `forecast_verified_support`, `forecast_observation_verified_support`,
+  `forecast_background_verified_support`
+- `forecast_velocity_uncertainty_mps`,
+  `forecast_position_uncertainty_m`, `forecast_log_growth_uncertainty`,
+  `forecast_confidence`: pair disagreement와 보정된 속도·로그성장 오차
+  하한에서 계산한 선행시간별 불확실성과 confidence
+- `radar_anchored_valid_mask`, `background_fallback_mask`: 기존
+  `valid_mask`를 레이더 관측 evidence가 있는 발행과 배경 연속성 발행으로 분리한 mask
 - `source_support`는 상태가 정의됐는지를,
   `path_verified_source_support`는 국지 에코 위치경로가 검증됐는지를,
   `verified_source_support`는 성장증거까지 있는 상태경로인지를 나타낸다.
@@ -421,7 +429,9 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   `minimum_publish_verified_support`로 검증되지 않은 경로를 발행에서
   제외한다. `forecast_path_verified_support`와
   `forecast_verified_support`는 각 support를 선행시간별로 수송한
-  진단이다.
+  진단이다. 운용모드는 `minimum_publish_confidence`,
+  `minimum_publish_observation_verified_support`,
+  `maximum_publish_background_fraction`도 명시해야 한다.
 - `nowcast_config_json`, `nowcast_config_digest`
 - `latest_frame_dbz`, `latest_observation_mask`, `latest_background_dbz`와
   최신 입력·배경 digest

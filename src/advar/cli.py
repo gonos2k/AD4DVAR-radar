@@ -24,7 +24,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v38"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v39"
 
 
 def main() -> None:
@@ -46,6 +46,41 @@ def main() -> None:
         "--minimum-publish-verified-support",
         type=float,
         help="minimum pair-verified support required for publication",
+    )
+    parser.add_argument(
+        "--minimum-publish-confidence",
+        type=float,
+        help="minimum lead-dependent confidence required for publication",
+    )
+    parser.add_argument(
+        "--minimum-publish-observation-verified-support",
+        type=float,
+        help="minimum radar-verified support required for publication",
+    )
+    parser.add_argument(
+        "--maximum-publish-background-fraction",
+        type=float,
+        help="maximum current-state background fraction for publication",
+    )
+    parser.add_argument(
+        "--forecast-velocity-uncertainty-mps",
+        type=float,
+        help="minimum forecast velocity uncertainty",
+    )
+    parser.add_argument(
+        "--forecast-confidence-length-scale-m",
+        type=float,
+        help="position-error scale used by live forecast confidence",
+    )
+    parser.add_argument(
+        "--forecast-log-growth-uncertainty-per-step",
+        type=float,
+        help="minimum per-step uncertainty of effective log-echo tendency",
+    )
+    parser.add_argument(
+        "--forecast-log-growth-confidence-scale",
+        type=float,
+        help="log-echo uncertainty scale used by live confidence",
     )
     parser.add_argument(
         "--maximum-local-state-verification-error-dbz",
@@ -264,6 +299,33 @@ def main() -> None:
         minimum_publish_verified_support=(
             args.minimum_publish_verified_support
         ),
+        minimum_publish_confidence=args.minimum_publish_confidence,
+        minimum_publish_observation_verified_support=(
+            args.minimum_publish_observation_verified_support
+        ),
+        maximum_publish_background_fraction=(
+            args.maximum_publish_background_fraction
+        ),
+        forecast_velocity_uncertainty_mps=(
+            default_nowcast_config.forecast_velocity_uncertainty_mps
+            if args.forecast_velocity_uncertainty_mps is None
+            else args.forecast_velocity_uncertainty_mps
+        ),
+        forecast_confidence_length_scale_m=(
+            default_nowcast_config.forecast_confidence_length_scale_m
+            if args.forecast_confidence_length_scale_m is None
+            else args.forecast_confidence_length_scale_m
+        ),
+        forecast_log_growth_uncertainty_per_step=(
+            default_nowcast_config.forecast_log_growth_uncertainty_per_step
+            if args.forecast_log_growth_uncertainty_per_step is None
+            else args.forecast_log_growth_uncertainty_per_step
+        ),
+        forecast_log_growth_confidence_scale=(
+            default_nowcast_config.forecast_log_growth_confidence_scale
+            if args.forecast_log_growth_confidence_scale is None
+            else args.forecast_log_growth_confidence_scale
+        ),
         maximum_local_state_verification_error_dbz=(
             default_nowcast_config.maximum_local_state_verification_error_dbz
             if args.maximum_local_state_verification_error_dbz is None
@@ -405,6 +467,25 @@ def _analysis_config_from_args(
         ),
         "--minimum-publish-verified-support": (
             args.minimum_publish_verified_support
+        ),
+        "--minimum-publish-confidence": args.minimum_publish_confidence,
+        "--minimum-publish-observation-verified-support": (
+            args.minimum_publish_observation_verified_support
+        ),
+        "--maximum-publish-background-fraction": (
+            args.maximum_publish_background_fraction
+        ),
+        "--forecast-velocity-uncertainty-mps": (
+            args.forecast_velocity_uncertainty_mps
+        ),
+        "--forecast-confidence-length-scale-m": (
+            args.forecast_confidence_length_scale_m
+        ),
+        "--forecast-log-growth-uncertainty-per-step": (
+            args.forecast_log_growth_uncertainty_per_step
+        ),
+        "--forecast-log-growth-confidence-scale": (
+            args.forecast_log_growth_confidence_scale
         ),
         "--maximum-local-state-verification-error-dbz": (
             args.maximum_local_state_verification_error_dbz
@@ -634,6 +715,21 @@ def _output_arrays(
                 np.nan
                 if config.minimum_publish_verified_support is None
                 else config.minimum_publish_verified_support
+            ),
+            "minimum_publish_confidence": np.asarray(
+                np.nan
+                if config.minimum_publish_confidence is None
+                else config.minimum_publish_confidence
+            ),
+            "minimum_publish_observation_verified_support": np.asarray(
+                np.nan
+                if config.minimum_publish_observation_verified_support is None
+                else config.minimum_publish_observation_verified_support
+            ),
+            "maximum_publish_background_fraction": np.asarray(
+                np.nan
+                if config.maximum_publish_background_fraction is None
+                else config.maximum_publish_background_fraction
             ),
             "lead_minutes": np.arange(
                 config.interval_minutes,

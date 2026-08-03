@@ -110,14 +110,19 @@ jobs:
 
           path = Path(os.environ["RUNNER_TEMP"]) / "forecast.npz"
           with np.load(path, allow_pickle=False) as result:
-              assert result["output_contract_version"].item() == "nowcast-npz-v38"
-              assert result["forecast_run_artifact_version"].item() == "forecast-run-v30"
+              assert result["output_contract_version"].item() == "nowcast-npz-v39"
+              assert result["forecast_run_artifact_version"].item() == "forecast-run-v31"
               assert "state_path_source" in result
               assert "minimum_growth_overlap_support" in result
               assert "verified_source_support" in result
               assert "path_verified_source_support" in result
               assert "forecast_path_verified_support" in result
               assert "forecast_verified_support" in result
+              assert "forecast_confidence" in result
+              assert "forecast_position_uncertainty_m" in result
+              assert "forecast_log_growth_uncertainty" in result
+              assert "radar_anchored_valid_mask" in result
+              assert "background_fallback_mask" in result
               assert "observation_path_mode" in result
               assert "background_path_mode" in result
               assert result["forecast_dbz"].shape == (18, 16, 16)

@@ -141,6 +141,38 @@ class ForecastRunArtifactTests(unittest.TestCase):
             loaded.forecast_verified_support,
             result.forecast_verified_support,
         )
+        torch.testing.assert_close(
+            loaded.forecast_observation_verified_support,
+            result.forecast_observation_verified_support,
+        )
+        torch.testing.assert_close(
+            loaded.forecast_background_verified_support,
+            result.forecast_background_verified_support,
+        )
+        torch.testing.assert_close(
+            loaded.forecast_velocity_uncertainty_mps,
+            result.forecast_velocity_uncertainty_mps,
+        )
+        torch.testing.assert_close(
+            loaded.forecast_position_uncertainty_m,
+            result.forecast_position_uncertainty_m,
+        )
+        torch.testing.assert_close(
+            loaded.forecast_log_growth_uncertainty,
+            result.forecast_log_growth_uncertainty,
+        )
+        torch.testing.assert_close(
+            loaded.forecast_confidence,
+            result.forecast_confidence,
+        )
+        torch.testing.assert_close(
+            loaded.radar_anchored_valid_mask,
+            result.radar_anchored_valid_mask,
+        )
+        torch.testing.assert_close(
+            loaded.background_fallback_mask,
+            result.background_fallback_mask,
+        )
         for loaded_path, expected_path in (
             (
                 loaded.metadata.observation_path,
@@ -682,6 +714,26 @@ class ForecastRunArtifactTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 ValueError,
                 "forecast verified support mismatch",
+            ):
+                load_forecast_run(path)
+
+    def test_load_rejects_resigned_forecast_confidence(self) -> None:
+        result = nowcast(self.frames())
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                arrays: dict[str, Any] = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                    if name != "forecast_run_artifact_digest"
+                }
+            arrays["forecast_confidence"][0, 0, 0] = 0.0
+            self._save_arrays(path, arrays)
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "forecast confidence mismatch",
             ):
                 load_forecast_run(path)
 

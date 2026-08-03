@@ -61,6 +61,13 @@ class NowcastConfig:
     maximum_background_age_minutes: float = 60.0
     min_publish_support: float = 0.95
     minimum_publish_verified_support: float | None = None
+    minimum_publish_confidence: float | None = None
+    minimum_publish_observation_verified_support: float | None = None
+    maximum_publish_background_fraction: float | None = None
+    forecast_velocity_uncertainty_mps: float = 1.0
+    forecast_confidence_length_scale_m: float = 10_000.0
+    forecast_log_growth_uncertainty_per_step: float = 0.05
+    forecast_log_growth_confidence_scale: float = 1.0
     maximum_local_state_verification_error_dbz: float = 6.0
     epsilon: float = 1.0e-6
     support_presence_threshold: float = 1.0e-6
@@ -104,6 +111,10 @@ class NowcastConfig:
             self.growth_decay_minutes,
             self.maximum_background_age_minutes,
             self.min_publish_support,
+            self.forecast_velocity_uncertainty_mps,
+            self.forecast_confidence_length_scale_m,
+            self.forecast_log_growth_uncertainty_per_step,
+            self.forecast_log_growth_confidence_scale,
             self.maximum_local_state_verification_error_dbz,
             self.epsilon,
             self.support_presence_threshold,
@@ -195,6 +206,31 @@ class NowcastConfig:
             raise ValueError("maximum_background_age_minutes must be positive")
         if not 0.0 < self.min_publish_support <= 1.0:
             raise ValueError("min_publish_support must be in (0, 1]")
+        if isinstance(self.forecast_velocity_uncertainty_mps, bool) or (
+            self.forecast_velocity_uncertainty_mps <= 0
+        ):
+            raise ValueError(
+                "forecast_velocity_uncertainty_mps must be positive"
+            )
+        if isinstance(self.forecast_confidence_length_scale_m, bool) or (
+            self.forecast_confidence_length_scale_m <= 0
+        ):
+            raise ValueError(
+                "forecast_confidence_length_scale_m must be positive"
+            )
+        if isinstance(
+            self.forecast_log_growth_uncertainty_per_step,
+            bool,
+        ) or self.forecast_log_growth_uncertainty_per_step <= 0:
+            raise ValueError(
+                "forecast_log_growth_uncertainty_per_step must be positive"
+            )
+        if isinstance(self.forecast_log_growth_confidence_scale, bool) or (
+            self.forecast_log_growth_confidence_scale <= 0
+        ):
+            raise ValueError(
+                "forecast_log_growth_confidence_scale must be positive"
+            )
         if self.minimum_publish_verified_support is not None and (
             isinstance(self.minimum_publish_verified_support, bool)
             or not isinstance(
@@ -207,6 +243,32 @@ class NowcastConfig:
             raise ValueError(
                 "minimum_publish_verified_support must be in (0, 1]"
             )
+        optional_unit_thresholds = {
+            "minimum_publish_confidence": self.minimum_publish_confidence,
+            "minimum_publish_observation_verified_support": (
+                self.minimum_publish_observation_verified_support
+            ),
+            "maximum_publish_background_fraction": (
+                self.maximum_publish_background_fraction
+            ),
+        }
+        for name, value in optional_unit_thresholds.items():
+            if value is not None and (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or not 0.0 <= value <= 1.0
+            ):
+                raise ValueError(f"{name} must be in [0, 1]")
+        positive_publication_thresholds = {
+            "minimum_publish_confidence": self.minimum_publish_confidence,
+            "minimum_publish_observation_verified_support": (
+                self.minimum_publish_observation_verified_support
+            ),
+        }
+        for name, value in positive_publication_thresholds.items():
+            if value == 0.0:
+                raise ValueError(f"{name} must be in (0, 1]")
         if self.maximum_local_state_verification_error_dbz <= 0:
             raise ValueError(
                 "maximum_local_state_verification_error_dbz must be positive"
@@ -1421,6 +1483,69 @@ class ForecastResult:
             self.state,
             self.run.config,
         )
+
+    @property
+    def forecast_observation_verified_support(self) -> Tensor:
+        return _advected_support_by_lead(
+            self.metadata.observation_verified_source_support,
+            self.state,
+            self.run.config,
+        )
+
+    @property
+    def forecast_background_verified_support(self) -> Tensor:
+        return _advected_support_by_lead(
+            self.metadata.background_verified_source_support,
+            self.state,
+            self.run.config,
+        )
+
+    @property
+    def forecast_velocity_uncertainty_mps(self) -> Tensor:
+        return _forecast_velocity_uncertainty_mps(
+            self.state,
+            self.metadata,
+            self.run.config,
+        )
+
+    @property
+    def forecast_position_uncertainty_m(self) -> Tensor:
+        return _forecast_position_uncertainty_m(
+            self.state,
+            self.metadata,
+            self.run.config,
+        )
+
+    @property
+    def forecast_log_growth_uncertainty(self) -> Tensor:
+        return _forecast_log_growth_uncertainty(
+            self.state,
+            self.metadata,
+            self.run.config,
+        )
+
+    @property
+    def forecast_confidence(self) -> Tensor:
+        return _forecast_confidence(
+            self.state,
+            self.metadata,
+            self.run.config,
+        )
+
+    @property
+    def radar_anchored_valid_mask(self) -> Tensor:
+        threshold = (
+            self.run.config.minimum_publish_observation_verified_support
+        )
+        if threshold is None:
+            threshold = self.run.config.support_presence_threshold
+        return self.valid_mask & (
+            self.forecast_observation_verified_support >= threshold
+        )
+
+    @property
+    def background_fallback_mask(self) -> Tensor:
+        return self.valid_mask & ~self.radar_anchored_valid_mask
 
     @property
     def forecast_path_verified_support(self) -> Tensor:
@@ -4215,7 +4340,124 @@ def _forecast_valid_mask(
         valid &= (
             verified_support >= config.minimum_publish_verified_support
         )
+    if config.minimum_publish_confidence is not None:
+        valid &= _forecast_confidence(state, metadata, config) >= (
+            config.minimum_publish_confidence
+        )
+    if config.minimum_publish_observation_verified_support is not None:
+        observation_verified = _advected_support_by_lead(
+            metadata.observation_verified_source_support,
+            state,
+            config,
+        )
+        valid &= observation_verified >= (
+            config.minimum_publish_observation_verified_support
+        )
+    if (
+        config.maximum_publish_background_fraction is not None
+        and metadata.background_contribution_fraction
+        > config.maximum_publish_background_fraction
+        + config.contract_absolute_tolerance
+    ):
+        valid &= False
     return valid
+
+
+def _forecast_velocity_uncertainty_mps(
+    state: RadarState,
+    metadata: ForecastMetadata,
+    config: NowcastConfig,
+) -> Tensor:
+    uncertainty = state.echo_linear.new_tensor(
+        config.forecast_velocity_uncertainty_mps
+    )
+    disagreement = metadata.motion_disagreement_mps
+    if bool(torch.isfinite(disagreement)):
+        uncertainty = torch.maximum(
+            uncertainty,
+            0.5 * disagreement.clamp_min(0.0),
+        )
+    return uncertainty
+
+
+def _forecast_position_uncertainty_m(
+    state: RadarState,
+    metadata: ForecastMetadata,
+    config: NowcastConfig,
+) -> Tensor:
+    lead_seconds = torch.arange(
+        1,
+        config.forecast_steps + 1,
+        dtype=state.echo_linear.dtype,
+        device=state.echo_linear.device,
+    ) * (config.interval_minutes * 60.0)
+    return lead_seconds * _forecast_velocity_uncertainty_mps(
+        state,
+        metadata,
+        config,
+    )
+
+
+def _forecast_confidence(
+    state: RadarState,
+    metadata: ForecastMetadata,
+    config: NowcastConfig,
+) -> Tensor:
+    position_uncertainty = _forecast_position_uncertainty_m(
+        state,
+        metadata,
+        config,
+    )
+    growth_uncertainty = _forecast_log_growth_uncertainty(
+        state,
+        metadata,
+        config,
+    )
+    decay = torch.exp(
+        -0.5
+        * (
+            (
+                position_uncertainty
+                / config.forecast_confidence_length_scale_m
+            ).square()
+            + (
+                growth_uncertainty
+                / config.forecast_log_growth_confidence_scale
+            ).square()
+        )
+    )
+    verified_support = _advected_support_by_lead(
+        metadata.verified_source_support,
+        state,
+        config,
+    )
+    return (verified_support * decay[:, None, None]).clamp(0.0, 1.0)
+
+
+def _forecast_log_growth_uncertainty(
+    state: RadarState,
+    metadata: ForecastMetadata,
+    config: NowcastConfig,
+) -> Tensor:
+    uncertainty_per_step = state.echo_linear.new_tensor(
+        config.forecast_log_growth_uncertainty_per_step
+    )
+    disagreement = metadata.growth_disagreement
+    if bool(torch.isfinite(disagreement)):
+        uncertainty_per_step = torch.maximum(
+            uncertainty_per_step,
+            0.5 * disagreement.clamp_min(0.0),
+        )
+    retention = math.exp(
+        -config.interval_minutes / config.growth_decay_minutes
+    )
+    powers = torch.arange(
+        config.forecast_steps,
+        dtype=state.echo_linear.dtype,
+        device=state.echo_linear.device,
+    )
+    growth_sum = torch.cumsum(retention**powers, dim=0)
+    return growth_sum * uncertainty_per_step
 
 
 def _advected_support_by_lead(
