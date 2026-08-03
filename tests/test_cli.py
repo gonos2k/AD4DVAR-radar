@@ -89,6 +89,20 @@ class CliTests(unittest.TestCase):
             "4",
             "--minimum-publish-verified-support",
             "0.95",
+            "--minimum-publish-confidence",
+            "0.5",
+            "--minimum-publish-observation-verified-support",
+            "0.95",
+            "--maximum-publish-background-fraction",
+            "0.25",
+            "--forecast-velocity-uncertainty-mps",
+            "1",
+            "--forecast-confidence-length-scale-m",
+            "10000",
+            "--forecast-log-growth-uncertainty-per-step",
+            "0.05",
+            "--forecast-log-growth-confidence-scale",
+            "1",
             "--maximum-local-state-verification-error-dbz",
             "6",
             "--causal-support-uncertainty-m",
@@ -149,6 +163,14 @@ class CliTests(unittest.TestCase):
             "background_verified_source_support",
             "forecast_path_verified_support",
             "forecast_verified_support",
+            "forecast_observation_verified_support",
+            "forecast_background_verified_support",
+            "forecast_velocity_uncertainty_mps",
+            "forecast_position_uncertainty_m",
+            "forecast_log_growth_uncertainty",
+            "forecast_confidence",
+            "radar_anchored_valid_mask",
+            "background_fallback_mask",
             "latest_frame_dbz",
             "latest_background_dbz",
             "latest_observation_mask",
@@ -194,6 +216,9 @@ class CliTests(unittest.TestCase):
             "minimum_growth_overlap_area_km2",
             "min_publish_support",
             "minimum_publish_verified_support",
+            "minimum_publish_confidence",
+            "minimum_publish_observation_verified_support",
+            "maximum_publish_background_fraction",
             "analysis_converged",
             "analysis_degraded",
             "analysis_used_fallback",
@@ -212,11 +237,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v38",
+                    "nowcast-npz-v39",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v30",
+                    "forecast-run-v31",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -576,6 +601,13 @@ class CliTests(unittest.TestCase):
             "--minimum-growth-overlap-support",
             "--minimum-growth-overlap-area-km2",
             "--minimum-publish-verified-support",
+            "--minimum-publish-confidence",
+            "--minimum-publish-observation-verified-support",
+            "--maximum-publish-background-fraction",
+            "--forecast-velocity-uncertainty-mps",
+            "--forecast-confidence-length-scale-m",
+            "--forecast-log-growth-uncertainty-per-step",
+            "--forecast-log-growth-confidence-scale",
             "--maximum-local-state-verification-error-dbz",
             "--minimum-local-verification-precision",
             "--maximum-local-analysis-verification-error-dbz",
@@ -638,6 +670,38 @@ class CliTests(unittest.TestCase):
                 self.assertEqual(
                     nowcast_config["minimum_publish_verified_support"],
                     0.95,
+                )
+                self.assertEqual(
+                    nowcast_config["minimum_publish_confidence"],
+                    0.5,
+                )
+                self.assertEqual(
+                    nowcast_config[
+                        "minimum_publish_observation_verified_support"
+                    ],
+                    0.95,
+                )
+                self.assertEqual(
+                    nowcast_config["maximum_publish_background_fraction"],
+                    0.25,
+                )
+                self.assertEqual(
+                    nowcast_config["forecast_velocity_uncertainty_mps"],
+                    1.0,
+                )
+                self.assertEqual(
+                    nowcast_config["forecast_confidence_length_scale_m"],
+                    10_000.0,
+                )
+                self.assertEqual(
+                    nowcast_config[
+                        "forecast_log_growth_uncertainty_per_step"
+                    ],
+                    0.05,
+                )
+                self.assertEqual(
+                    nowcast_config["forecast_log_growth_confidence_scale"],
+                    1.0,
                 )
                 self.assertEqual(
                     result["analysis_motion_control_coordinate_system"].item(),

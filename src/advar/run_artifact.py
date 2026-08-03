@@ -33,7 +33,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v30"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v31"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 160
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
@@ -58,6 +58,14 @@ _CORE_ARRAY_NAMES = frozenset(
         "valid_mask_digest",
         "forecast_path_verified_support",
         "forecast_verified_support",
+        "forecast_observation_verified_support",
+        "forecast_background_verified_support",
+        "forecast_velocity_uncertainty_mps",
+        "forecast_position_uncertainty_m",
+        "forecast_log_growth_uncertainty",
+        "forecast_confidence",
+        "radar_anchored_valid_mask",
+        "background_fallback_mask",
         "state_echo_linear",
         "displacement_yx",
         "displacement_mps_yx",
@@ -133,6 +141,9 @@ _CLI_EXTRA_ARRAY_NAMES = frozenset(
         "output_contract_version",
         "min_publish_support",
         "minimum_publish_verified_support",
+        "minimum_publish_confidence",
+        "minimum_publish_observation_verified_support",
+        "maximum_publish_background_fraction",
         "lead_minutes",
         "analysis_used",
         "analysis_converged",
@@ -274,6 +285,28 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         ),
         "forecast_path_verified_support": _numpy(
             result.forecast_path_verified_support
+        ),
+        "forecast_observation_verified_support": _numpy(
+            result.forecast_observation_verified_support
+        ),
+        "forecast_background_verified_support": _numpy(
+            result.forecast_background_verified_support
+        ),
+        "forecast_velocity_uncertainty_mps": _numpy(
+            result.forecast_velocity_uncertainty_mps
+        ),
+        "forecast_position_uncertainty_m": _numpy(
+            result.forecast_position_uncertainty_m
+        ),
+        "forecast_log_growth_uncertainty": _numpy(
+            result.forecast_log_growth_uncertainty
+        ),
+        "forecast_confidence": _numpy(result.forecast_confidence),
+        "radar_anchored_valid_mask": _numpy(
+            result.radar_anchored_valid_mask
+        ),
+        "background_fallback_mask": _numpy(
+            result.background_fallback_mask
         ),
         "state_echo_linear": _numpy(result.state.echo_linear),
         "displacement_yx": _numpy(result.state.displacement_yx),
@@ -675,6 +708,38 @@ def load_forecast_run(
             loaded_arrays,
             "forecast_path_verified_support",
         )
+        stored_forecast_observation_verified_support = _tensor(
+            loaded_arrays,
+            "forecast_observation_verified_support",
+        )
+        stored_forecast_background_verified_support = _tensor(
+            loaded_arrays,
+            "forecast_background_verified_support",
+        )
+        stored_forecast_velocity_uncertainty_mps = _tensor(
+            loaded_arrays,
+            "forecast_velocity_uncertainty_mps",
+        )
+        stored_forecast_position_uncertainty_m = _tensor(
+            loaded_arrays,
+            "forecast_position_uncertainty_m",
+        )
+        stored_forecast_log_growth_uncertainty = _tensor(
+            loaded_arrays,
+            "forecast_log_growth_uncertainty",
+        )
+        stored_forecast_confidence = _tensor(
+            loaded_arrays,
+            "forecast_confidence",
+        )
+        stored_radar_anchored_valid_mask = _tensor(
+            loaded_arrays,
+            "radar_anchored_valid_mask",
+        )
+        stored_background_fallback_mask = _tensor(
+            loaded_arrays,
+            "background_fallback_mask",
+        )
         stored_displacement_mps = _tensor(
             loaded_arrays,
             "displacement_mps_yx",
@@ -999,6 +1064,46 @@ def load_forecast_run(
         stored_forecast_verified_support,
     ):
         raise ValueError("forecast verified support mismatch")
+    if not torch.equal(
+        result.forecast_observation_verified_support,
+        stored_forecast_observation_verified_support,
+    ):
+        raise ValueError("forecast observation verified support mismatch")
+    if not torch.equal(
+        result.forecast_background_verified_support,
+        stored_forecast_background_verified_support,
+    ):
+        raise ValueError("forecast background verified support mismatch")
+    if not torch.equal(
+        result.forecast_velocity_uncertainty_mps,
+        stored_forecast_velocity_uncertainty_mps,
+    ):
+        raise ValueError("forecast velocity uncertainty mismatch")
+    if not torch.equal(
+        result.forecast_position_uncertainty_m,
+        stored_forecast_position_uncertainty_m,
+    ):
+        raise ValueError("forecast position uncertainty mismatch")
+    if not torch.equal(
+        result.forecast_log_growth_uncertainty,
+        stored_forecast_log_growth_uncertainty,
+    ):
+        raise ValueError("forecast log-growth uncertainty mismatch")
+    if not torch.equal(
+        result.forecast_confidence,
+        stored_forecast_confidence,
+    ):
+        raise ValueError("forecast confidence mismatch")
+    if not torch.equal(
+        result.radar_anchored_valid_mask,
+        stored_radar_anchored_valid_mask,
+    ):
+        raise ValueError("radar-anchored valid mask mismatch")
+    if not torch.equal(
+        result.background_fallback_mask,
+        stored_background_fallback_mask,
+    ):
+        raise ValueError("background fallback mask mismatch")
     _validate_displacement_mps(result, stored_displacement_mps)
     _validate_velocity(
         "grid_velocity_mps_yx",
