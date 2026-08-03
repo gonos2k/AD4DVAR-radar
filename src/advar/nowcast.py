@@ -3624,7 +3624,8 @@ def _source_verification_masks(
         min_dbz=config.min_dbz,
         max_dbz=config.max_dbz,
     )
-    for source_index in (0, 1):
+    claimed_current = torch.zeros_like(current_detected)
+    for source_index in (1, 0):
         if not bool(paths.source_usable[source_index]):
             continue
         candidate_value, candidate_support = _transport_source_candidate(
@@ -3650,14 +3651,6 @@ def _source_verification_masks(
             min_dbz=config.min_dbz,
             max_dbz=config.max_dbz,
         )
-        local_state_verified = _exclusive_nearby_detected_matches(
-            candidate_dbz,
-            current_dbz,
-            candidate_detected,
-            current_detected,
-            ordered_offsets,
-            config.maximum_local_state_verification_error_dbz,
-        )
         step_span = 2 - source_index
         growth = _growth_evidence_aligned_with_motion(
             linear,
@@ -3669,6 +3662,17 @@ def _source_verification_masks(
             grid_time_contract,
         )
         if growth.available:
+            local_state_verified, claimed_current = (
+                _exclusive_nearby_detected_matches(
+                    candidate_dbz,
+                    current_dbz,
+                    candidate_detected,
+                    current_detected,
+                    ordered_offsets,
+                    config.maximum_local_state_verification_error_dbz,
+                    claimed_current=claimed_current,
+                )
+            )
             state_verified[source_index] = local_state_verified
     return path_verified, state_verified
 
@@ -3704,9 +3708,14 @@ def _exclusive_nearby_detected_matches(
     current_detected: Tensor,
     offsets_yx: tuple[tuple[int, int], ...],
     maximum_error_dbz: float,
-) -> Tensor:
+    *,
+    claimed_current: Tensor | None = None,
+) -> tuple[Tensor, Tensor]:
     matched_candidate = torch.zeros_like(candidate_detected)
-    claimed_current = torch.zeros_like(current_detected)
+    if claimed_current is None:
+        claimed_current = torch.zeros_like(current_detected)
+    else:
+        claimed_current = claimed_current.clone()
     for offset_y, offset_x in offsets_yx:
         slices = _offset_overlap_slices(
             candidate_dbz.shape,
@@ -3731,7 +3740,7 @@ def _exclusive_nearby_detected_matches(
         )
         matched_candidate[target_y, target_x] |= matches
         claimed_current[source_y, source_x] |= matches
-    return matched_candidate
+    return matched_candidate, claimed_current
 
 
 def _pair_echo_offsets(
