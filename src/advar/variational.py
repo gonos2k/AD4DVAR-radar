@@ -2108,6 +2108,9 @@ def _analysis_result(
         trajectory.displacement_yx,
         frozen.nowcast_config,
     )
+    observation_source_support = (
+        source_support - background_source_support
+    ).clamp(0.0, 1.0)
     background_used = (
         bool(
             torch.any(
@@ -2160,8 +2163,8 @@ def _analysis_result(
                 frozen.background_age_minutes if background_used else None
             ),
             source_support=source_support.detach(),
-            observation_source_support=torch.zeros_like(source_support),
-            background_source_support=torch.zeros_like(source_support),
+            observation_source_support=observation_source_support.detach(),
+            background_source_support=background_source_support.detach(),
             path_verified_source_support=analysis_verified_support,
             verified_source_support=analysis_verified_support,
             observation_verified_source_support=torch.zeros_like(

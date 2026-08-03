@@ -1641,20 +1641,19 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         or background_fraction > 1
     ):
         raise ValueError("background contribution fraction must be in [0, 1]")
-    if metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
-        expected_background_fraction = float(
-            metadata.background_source_support.sum()
-            / metadata.source_support.sum().clamp_min(
-                config.ratio_regularizer
-            )
+    expected_background_fraction = float(
+        metadata.background_source_support.sum()
+        / metadata.source_support.sum().clamp_min(
+            config.ratio_regularizer
         )
-        if not math.isclose(
-            background_fraction,
-            expected_background_fraction,
-            rel_tol=0.0,
-            abs_tol=config.contract_absolute_tolerance,
-        ):
-            raise ValueError("background contribution fraction mismatch")
+    )
+    if not math.isclose(
+        background_fraction,
+        expected_background_fraction,
+        rel_tol=0.0,
+        abs_tol=config.contract_absolute_tolerance,
+    ):
+        raise ValueError("background contribution fraction mismatch")
     if metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
         observation_path_used = _path_has_contribution(
             metadata.observation_path
@@ -1801,20 +1800,19 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         )
     ):
         raise ValueError("source-specific support must be in [0, 1]")
-    if metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
-        combined_source_support = (
-            metadata.observation_source_support
-            + metadata.background_source_support
-        ).clamp(0.0, 1.0)
-        if not bool(
-            torch.allclose(
-                metadata.source_support,
-                combined_source_support,
-                rtol=0.0,
-                atol=config.contract_absolute_tolerance,
-            )
-        ):
-            raise ValueError("source support and actual contributions disagree")
+    combined_source_support = (
+        metadata.observation_source_support
+        + metadata.background_source_support
+    ).clamp(0.0, 1.0)
+    if not bool(
+        torch.allclose(
+            metadata.source_support,
+            combined_source_support,
+            rtol=0.0,
+            atol=config.contract_absolute_tolerance,
+        )
+    ):
+        raise ValueError("source support and actual contributions disagree")
     if not bool(
         torch.all(
             (metadata.path_verified_source_support >= 0)
