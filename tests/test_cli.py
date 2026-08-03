@@ -206,11 +206,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v31",
+                    "nowcast-npz-v32",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v23",
+                    "forecast-run-v24",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -650,6 +650,14 @@ class CliTests(unittest.TestCase):
                 )
                 self.assertIn(
                     "analysis_dynamics_data_to_prior_ratio_by_mode",
+                    result.files,
+                )
+                self.assertIn(
+                    "analysis_field_conditioned_dynamics_data_gram_eigenvalues",
+                    result.files,
+                )
+                self.assertIn(
+                    "analysis_field_conditioned_dynamics_data_effective_dimension",
                     result.files,
                 )
 

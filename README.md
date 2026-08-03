@@ -308,6 +308,10 @@ hindcast로 보정된 발행 gate가 아니며 분석 수용 여부를 바꾸지
 자료 고유값별 posterior precision 기여율 `lambda/(1+lambda)`와 그 합인
 `dynamics_data_effective_dimension`도 기록한다. 기존 effective-rank 이름은
 수치 rank 호환필드이며 새 `dynamics_data_numerical_rank`가 정확한 명칭이다.
+초기장 field가 같은 관측을 대신 설명하는 효과는 field normal equation을
+dynamics basis별로 세 번 matrix-free PCG로 풀어 Schur complement
+`G_dyn|field`로 별도 기록한다. 이 field-conditioned 정보도 보정 전에는
+진단일 뿐 분석 수용 gate가 아니다.
 첫 분석 증분 전 PCG 실패,
 비유한값, 수용할 수 없는 증분은 FFT 기준예측으로 복귀한다. 한 번이라도
 목적함수를 낮춘 분석이 수용된 뒤 후속 반복이 실패하면 그 최선 분석을
@@ -382,8 +386,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v31`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v23`
+- `output_contract_version`: 현재 `nowcast-npz-v32`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v24`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -533,6 +537,12 @@ profile에서는 span penalty와 confidence ratio를 모두 hindcast로 보정�
 - `analysis_dynamics_data_to_prior_ratio_by_mode`,
   `analysis_dynamics_data_effective_dimension`: mode별
   `lambda/(1+lambda)`와 그 합
+- `analysis_field_conditioned_dynamics_data_gram_eigenvalues`,
+  `analysis_field_conditioned_dynamics_data_information_trace`,
+  `analysis_field_conditioned_dynamics_data_effective_dimension`: 초기장 field
+  nuisance를 prior와 공간 smoothness 아래에서 제거한 dynamics Schur-complement
+  정보. `analysis_field_conditioning_maximum_relative_residual`은 세 field PCG
+  solve의 최대 실제 상대잔차이며, solve가 수렴하지 않으면 조건부 정보는 `NaN`
 - `analysis_regularized_dynamics_hessian_eigenvalues`,
   `analysis_regularized_dynamics_hessian_condition_number`: unit prior를
   포함한 dynamics Hessian의 solver 조건성

@@ -33,7 +33,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v23"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v24"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 160
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
@@ -179,6 +179,10 @@ _CLI_EXTRA_ARRAY_NAMES = frozenset(
         "analysis_dynamics_data_numerical_rank",
         "analysis_dynamics_data_effective_dimension",
         "analysis_dynamics_data_to_prior_ratio_by_mode",
+        "analysis_field_conditioned_dynamics_data_gram_eigenvalues",
+        "analysis_field_conditioned_dynamics_data_information_trace",
+        "analysis_field_conditioned_dynamics_data_effective_dimension",
+        "analysis_field_conditioning_maximum_relative_residual",
         "analysis_regularized_dynamics_hessian_eigenvalues",
         "analysis_regularized_dynamics_hessian_condition_number",
         "analysis_field_smoothness_prior_cost",

@@ -493,6 +493,12 @@ class _IdentifiabilityDiagnostics:
     dynamics_data_numerical_rank: int
     dynamics_data_effective_dimension: float
     dynamics_data_to_prior_ratio_by_mode: tuple[float, float, float]
+    field_conditioned_dynamics_data_gram_eigenvalues: (
+        tuple[float, float, float] | None
+    )
+    field_conditioned_dynamics_data_information_trace: float | None
+    field_conditioned_dynamics_data_effective_dimension: float | None
+    field_conditioning_maximum_relative_residual: float | None
     regularized_dynamics_hessian_eigenvalues: tuple[float, float, float]
     regularized_dynamics_hessian_condition_number: float
     field_growth_jacobian_cosine: float | None
@@ -593,6 +599,12 @@ class AnalysisResult:
     dynamics_data_to_prior_ratio_by_mode: (
         tuple[float, float, float] | None
     ) = None
+    field_conditioned_dynamics_data_gram_eigenvalues: (
+        tuple[float, float, float] | None
+    ) = None
+    field_conditioned_dynamics_data_information_trace: float | None = None
+    field_conditioned_dynamics_data_effective_dimension: float | None = None
+    field_conditioning_maximum_relative_residual: float | None = None
     motion_control_coordinate_system: str = "grid_yx_px"
     field_smoothness_coordinate_system: str = "index_graph"
 
@@ -1294,11 +1306,91 @@ def _field_identifiability_directions(
     )
 
 
+def _field_conditioned_dynamics_gram(
+    control: Tensor,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    residual_fn: Callable[[Tensor], Tensor],
+    dynamics_columns: list[Tensor],
+    dynamics_gram: Tensor,
+) -> tuple[Tensor | None, float | None]:
+    field_size = frozen.active_field_index.numel()
+    if field_size == 0:
+        return dynamics_gram.clone(), 0.0
+
+    observation_vjp = torch.func.vjp(residual_fn, control)
+    observation_pullback = cast(
+        Callable[[Tensor], tuple[Tensor]],
+        observation_vjp[1],
+    )
+    full_residual_fn: Callable[[Tensor], Tensor] = lambda value: residual_vector(
+        value,
+        observations,
+        frozen,
+    )
+    full_vjp = torch.func.vjp(full_residual_fn, control)
+    full_pullback = cast(
+        Callable[[Tensor], tuple[Tensor]],
+        full_vjp[1],
+    )
+
+    def field_normal_product(field_direction: Tensor) -> Tensor:
+        direction = torch.zeros_like(control)
+        direction[:field_size] = field_direction
+        full_jacobian_vector = cast(
+            Tensor,
+            torch.func.jvp(
+                full_residual_fn,
+                (control,),
+                (direction,),
+            )[1],
+        )
+        return cast(Tensor, full_pullback(full_jacobian_vector)[0])[
+            :field_size
+        ].detach()
+
+    field_rhs = [
+        cast(Tensor, observation_pullback(column)[0])[:field_size].detach()
+        for column in dynamics_columns
+    ]
+    solutions: list[Tensor] = []
+    relative_residuals: list[float] = []
+    for rhs in field_rhs:
+        try:
+            solution = pcg(
+                field_normal_product,
+                rhs,
+                rtol=frozen.analysis_config.pcg_relative_tolerance,
+                max_iterations=frozen.analysis_config.maximum_pcg_iterations,
+            )
+        except (RuntimeError, ValueError):
+            return None, None
+        if not solution.converged:
+            return None, max(
+                (*relative_residuals, solution.relative_residual)
+            )
+        solutions.append(solution.solution)
+        relative_residuals.append(solution.relative_residual)
+
+    correction_values = [
+        [_scaled_dot(left, right) for right in solutions]
+        for left in field_rhs
+    ]
+    correction = torch.tensor(correction_values, dtype=torch.float64)
+    conditioned = dynamics_gram - correction
+    conditioned = 0.5 * (conditioned + conditioned.mT)
+    if not bool(torch.all(torch.isfinite(conditioned))):
+        return None, max(relative_residuals)
+    return conditioned, max(relative_residuals)
+
+
 def _identifiability_diagnostics(
     control: Tensor,
     observations: AnalysisObservations,
     frozen: FrozenOuterState,
     trajectory: AnalysisTrajectory,
+    *,
+    include_field_conditioned: bool = True,
 ) -> _IdentifiabilityDiagnostics | None:
     frozen = freeze_irls_weights(control, observations, frozen)
     field_size = frozen.active_field_index.numel()
@@ -1365,6 +1457,54 @@ def _identifiability_diagnostics(
     data_to_prior_ratio = data_eigenvalues / (1.0 + data_eigenvalues)
     data_effective_dimension = float(torch.sum(data_to_prior_ratio))
 
+    conditioned_gram: Tensor | None = None
+    field_conditioning_residual: float | None = None
+    if include_field_conditioned:
+        conditioned_gram, field_conditioning_residual = (
+            _field_conditioned_dynamics_gram(
+                control,
+                observations,
+                frozen,
+                residual_fn,
+                dynamics_columns,
+                gram,
+            )
+        )
+    conditioned_eigenvalue_tuple: tuple[float, float, float] | None = None
+    conditioned_information_trace: float | None = None
+    conditioned_effective_dimension: float | None = None
+    if conditioned_gram is not None:
+        conditioned_scale = max(
+            1.0,
+            float(torch.amax(torch.abs(conditioned_gram)).detach()),
+        )
+        conditioned_negative_tolerance = (
+            256.0 * torch.finfo(torch.float64).eps * conditioned_scale
+        )
+        raw_conditioned_eigenvalues = torch.linalg.eigvalsh(conditioned_gram)
+        if bool(torch.all(torch.isfinite(raw_conditioned_eigenvalues))) and (
+            float(raw_conditioned_eigenvalues[0])
+            >= -conditioned_negative_tolerance
+        ):
+            conditioned_eigenvalues = torch.clamp_min(
+                raw_conditioned_eigenvalues,
+                0.0,
+            )
+            conditioned_eigenvalue_tuple = (
+                float(conditioned_eigenvalues[0]),
+                float(conditioned_eigenvalues[1]),
+                float(conditioned_eigenvalues[2]),
+            )
+            conditioned_information_trace = float(
+                torch.sum(conditioned_eigenvalues)
+            )
+            conditioned_effective_dimension = float(
+                torch.sum(
+                    conditioned_eigenvalues
+                    / (1.0 + conditioned_eigenvalues)
+                )
+            )
+
     regularized_hessian = gram + torch.eye(3, dtype=torch.float64)
     regularized_eigenvalues = torch.linalg.eigvalsh(regularized_hessian)
     if not bool(torch.all(torch.isfinite(regularized_eigenvalues))):
@@ -1408,6 +1548,18 @@ def _identifiability_diagnostics(
             float(data_to_prior_ratio[0]),
             float(data_to_prior_ratio[1]),
             float(data_to_prior_ratio[2]),
+        ),
+        field_conditioned_dynamics_data_gram_eigenvalues=(
+            conditioned_eigenvalue_tuple
+        ),
+        field_conditioned_dynamics_data_information_trace=(
+            conditioned_information_trace
+        ),
+        field_conditioned_dynamics_data_effective_dimension=(
+            conditioned_effective_dimension
+        ),
+        field_conditioning_maximum_relative_residual=(
+            field_conditioning_residual
         ),
         regularized_dynamics_hessian_eigenvalues=(
             float(regularized_eigenvalues[0]),
@@ -2144,6 +2296,7 @@ def _analysis_result(
         observations,
         frozen,
         trajectory,
+        include_field_conditioned=not degraded,
     )
     field_smoothness_prior_cost = float(
         _field_smoothness_prior_cost(control, frozen).detach()
@@ -2319,6 +2472,29 @@ def _analysis_result(
             None
             if identifiability is None
             else identifiability.dynamics_data_to_prior_ratio_by_mode
+        ),
+        field_conditioned_dynamics_data_gram_eigenvalues=(
+            None
+            if identifiability is None
+            else identifiability
+            .field_conditioned_dynamics_data_gram_eigenvalues
+        ),
+        field_conditioned_dynamics_data_information_trace=(
+            None
+            if identifiability is None
+            else identifiability
+            .field_conditioned_dynamics_data_information_trace
+        ),
+        field_conditioned_dynamics_data_effective_dimension=(
+            None
+            if identifiability is None
+            else identifiability
+            .field_conditioned_dynamics_data_effective_dimension
+        ),
+        field_conditioning_maximum_relative_residual=(
+            None
+            if identifiability is None
+            else identifiability.field_conditioning_maximum_relative_residual
         ),
         regularized_dynamics_hessian_eigenvalues=(
             None
