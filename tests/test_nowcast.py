@@ -148,14 +148,26 @@ class NowcastTests(unittest.TestCase):
         value: torch.Tensor,
         *,
         available: bool = True,
+        overlap_support: float = 8.0,
+        overlap_area_km2: float | None = None,
+        mean_echo: float = 1.0,
+        alignment_log_error: float = 0.0,
     ) -> object:
+        previous_integral = value.new_tensor(
+            overlap_support * mean_echo
+        )
         return nowcast_module._GrowthEvidence(  # type: ignore[attr-defined]
             value=value,
             available=available,
-            overlap_support=value.new_tensor(8.0),
-            overlap_area_km2=value.new_full((), torch.nan),
-            aligned_previous_integral=value.new_tensor(1.0),
-            current_integral=torch.exp(value),
+            overlap_support=value.new_tensor(overlap_support),
+            overlap_area_km2=(
+                value.new_full((), torch.nan)
+                if overlap_area_km2 is None
+                else value.new_tensor(overlap_area_km2)
+            ),
+            aligned_previous_integral=previous_integral,
+            current_integral=previous_integral * torch.exp(value),
+            alignment_log_error=value.new_tensor(alignment_log_error),
         )
 
     def _pair_estimates(
@@ -2345,6 +2357,12 @@ class NowcastTests(unittest.TestCase):
             evidence.value,
             torch.zeros_like(evidence.value),
         )
+        torch.testing.assert_close(
+            evidence.alignment_log_error,
+            torch.zeros_like(evidence.alignment_log_error),
+            atol=1.0e-12,
+            rtol=0.0,
+        )
 
     def test_growth_with_three_pixels_of_overlap_is_unavailable(self) -> None:
         nowcast_module = import_module("advar.nowcast")
@@ -2499,6 +2517,120 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(selection, TendencyPairSelection.EARLIER)
         self.assertEqual(float(disagreement), 0.0)
         self.assertFalse(conflict)
+
+    def test_growth_confidence_uses_echo_evidence_not_only_motion_psr(
+        self,
+    ) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        sparse_high_psr = self._growth_evidence(
+            nowcast_module,
+            torch.tensor(0.2, dtype=torch.float64),
+            overlap_support=4.0,
+            mean_echo=10.0,
+        )
+        broad_lower_psr = self._growth_evidence(
+            nowcast_module,
+            torch.tensor(-0.2, dtype=torch.float64),
+            overlap_support=400.0,
+            mean_echo=10.0,
+        )
+
+        value, indices, selection, _, conflict = (
+            nowcast_module._combine_adjacent_growth_evidence(
+                sparse_high_psr,
+                broad_lower_psr,
+                torch.tensor(30.0, dtype=torch.float64),
+                torch.tensor(10.0, dtype=torch.float64),
+                TendencyPairSelection.BLENDED,
+                self.config,
+            )
+        )
+
+        self.assertTrue(conflict)
+        self.assertEqual(indices, (1,))
+        self.assertEqual(selection, TendencyPairSelection.RECENT)
+        torch.testing.assert_close(value, broad_lower_psr.value)
+
+    def test_growth_confidence_penalizes_shape_misalignment(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        aligned = self._growth_evidence(
+            nowcast_module,
+            torch.tensor(0.05, dtype=torch.float64),
+            alignment_log_error=0.0,
+        )
+        deformed = self._growth_evidence(
+            nowcast_module,
+            torch.tensor(0.05, dtype=torch.float64),
+            alignment_log_error=9.0,
+        )
+        psr = torch.tensor(12.0, dtype=torch.float64)
+
+        aligned_confidence = nowcast_module._growth_evidence_confidence(
+            aligned,
+            psr,
+            span_penalty=1.0,
+            config=self.config,
+        )
+        deformed_confidence = nowcast_module._growth_evidence_confidence(
+            deformed,
+            psr,
+            span_penalty=1.0,
+            config=self.config,
+        )
+
+        torch.testing.assert_close(
+            deformed_confidence,
+            aligned_confidence / 10.0,
+        )
+        extinction = replace(
+            aligned,
+            current_integral=aligned.value.new_zeros(()),
+        )
+        extinction_confidence = (
+            nowcast_module._growth_evidence_confidence(
+                extinction,
+                psr,
+                span_penalty=1.0,
+                config=self.config,
+            )
+        )
+        self.assertGreater(float(extinction_confidence), 0.0)
+
+    def test_growth_confidence_uses_physical_area_across_resolutions(
+        self,
+    ) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        value = torch.tensor(0.05, dtype=torch.float64)
+        fine = self._growth_evidence(
+            nowcast_module,
+            value,
+            overlap_support=64.0,
+            overlap_area_km2=4.0,
+            mean_echo=10.0,
+        )
+        coarse = self._growth_evidence(
+            nowcast_module,
+            value,
+            overlap_support=1.0,
+            overlap_area_km2=4.0,
+            mean_echo=10.0,
+        )
+        psr = torch.tensor(12.0, dtype=torch.float64)
+
+        fine_confidence = nowcast_module._growth_evidence_confidence(
+            fine,
+            psr,
+            span_penalty=1.0,
+            config=self.config,
+        )
+        coarse_confidence = nowcast_module._growth_evidence_confidence(
+            coarse,
+            psr,
+            span_penalty=1.0,
+            config=self.config,
+        )
+
+        torch.testing.assert_close(fine_confidence, coarse_confidence)
 
     def test_unavailable_growth_records_no_pair_selection(self) -> None:
         nowcast_module = import_module("advar.nowcast")
