@@ -661,7 +661,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
 
             with self.assertRaisesRegex(
                 ValueError,
-                "state or metadata",
+                "forecast does not close against the issued state",
             ):
                 load_forecast_run(path)
 
@@ -696,7 +696,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             path = Path(temporary) / "run.npz"
             with self.assertRaisesRegex(
                 ValueError,
-                "state or metadata",
+                "source support and actual contributions",
             ):
                 save_forecast_run(result, path)
             self.assertFalse(path.exists())

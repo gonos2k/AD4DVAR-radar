@@ -87,6 +87,8 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         background_contribution_fraction=0.0,
         background_age_minutes=None,
         source_support=torch.ones_like(state.echo_linear),
+        observation_source_support=torch.ones_like(state.echo_linear),
+        background_source_support=torch.zeros_like(state.echo_linear),
         path_verified_source_support=torch.ones_like(state.echo_linear),
         verified_source_support=torch.ones_like(state.echo_linear),
         observation_verified_source_support=torch.ones_like(
@@ -483,8 +485,47 @@ class NowcastTests(unittest.TestCase):
         self.assertFalse(metadata.background_tendency_used)
         self.assertEqual(metadata.background_contribution_fraction, 0.0)
         self.assertEqual(metadata.background_state_support_fraction, 0.0)
+        torch.testing.assert_close(
+            metadata.background_source_support,
+            torch.zeros_like(metadata.background_source_support),
+        )
+        self.assertIsNone(metadata.background_path.age_minutes)
         self.assertIsNone(metadata.background_age_minutes)
         self.assertEqual(metadata.data_status, DataStatus.OBSERVED)
+
+    def test_tiny_actual_background_contribution_preserves_provenance(
+        self,
+    ) -> None:
+        config = replace(self.config, epsilon=0.02)
+        frames = torch.full((3, 8, 8), torch.nan, dtype=torch.float64)
+        frames[-1] = 20.0
+        frames[-1, 0, 0] = torch.nan
+        background = torch.full_like(frames, torch.nan)
+        background[-1] = 25.0
+
+        result = nowcast(
+            frames,
+            config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+
+        metadata = result.metadata
+        self.assertLess(metadata.background_contribution_fraction, config.epsilon)
+        self.assertTrue(metadata.background_used)
+        self.assertFalse(metadata.background_tendency_used)
+        self.assertEqual(metadata.background_age_minutes, 10.0)
+        self.assertGreater(
+            float(metadata.background_source_support[0, 0]),
+            config.support_presence_threshold,
+        )
+        self.assertEqual(metadata.background_path.age_minutes, 10.0)
+        torch.testing.assert_close(
+            metadata.source_support,
+            metadata.observation_source_support
+            + metadata.background_source_support,
+        )
+        result.validate_issuance()
 
     def test_background_tendency_preserves_usage_and_age(self) -> None:
         background, _ = self._moving_gaussian_frames()
@@ -2159,6 +2200,8 @@ class NowcastTests(unittest.TestCase):
             background_contribution_fraction=0.0,
             background_age_minutes=None,
             source_support=support,
+            observation_source_support=support,
+            background_source_support=torch.zeros_like(support),
             path_verified_source_support=support,
             verified_source_support=support,
             observation_verified_source_support=support,
@@ -2838,6 +2881,27 @@ class NowcastTests(unittest.TestCase):
                 ),
             )
 
+        def without_origin(value: torch.Tensor) -> torch.Tensor:
+            updated = value.clone()
+            updated[0, 0] = 0.0
+            return updated
+
+        metadata_without_origin = replace(
+            issued.metadata,
+            source_support=without_origin(issued.metadata.source_support),
+            observation_source_support=without_origin(
+                issued.metadata.observation_source_support
+            ),
+            path_verified_source_support=without_origin(
+                issued.metadata.path_verified_source_support
+            ),
+            verified_source_support=without_origin(
+                issued.metadata.verified_source_support
+            ),
+            observation_verified_source_support=without_origin(
+                issued.metadata.observation_verified_source_support
+            ),
+        )
         cases = (
             (
                 reissue(
@@ -2845,6 +2909,18 @@ class NowcastTests(unittest.TestCase):
                     valid_mask=issued.valid_mask[:-1].clone(),
                 ),
                 "lead shape",
+            ),
+            (
+                reissue(
+                    forecast_dbz=issued.forecast_dbz.clone() + 1.0,
+                ),
+                "forecast does not close against the issued state",
+            ),
+            (
+                reissue(
+                    metadata=metadata_without_origin,
+                ),
+                "valid mask does not close against the issued state",
             ),
             (
                 reissue(
@@ -3259,6 +3335,15 @@ class NowcastTests(unittest.TestCase):
     def test_invalid_config_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
             NowcastConfig(epsilon=-1.0)
+        for field_name in (
+            "support_presence_threshold",
+            "contract_absolute_tolerance",
+            "ratio_regularizer",
+        ):
+            for value in (0.0, -1.0, float("nan")):
+                with self.subTest(field_name=field_name, value=value):
+                    with self.assertRaises(ValueError):
+                        NowcastConfig(**{field_name: value})
         with self.assertRaises(ValueError):
             NowcastConfig(echo_threshold_dbz=float("nan"))
         with self.assertRaises(TypeError):

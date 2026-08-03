@@ -1149,9 +1149,20 @@ class VariationalAnalysisTests(unittest.TestCase):
             observation_support
             + (1.0 - observation_support) * background_support
         )
+        expected_background_support = (
+            (1.0 - observation_support) * background_support
+        )
         torch.testing.assert_close(
             result.metadata.source_support,
             expected_support,
+        )
+        torch.testing.assert_close(
+            result.metadata.observation_source_support,
+            observation_support,
+        )
+        torch.testing.assert_close(
+            result.metadata.background_source_support,
+            expected_background_support,
         )
         self.assertTrue(result.metadata.background_used)
         self.assertAlmostEqual(
@@ -1183,6 +1194,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         torch.testing.assert_close(forecast.valid_mask[0], expected_valid)
         self.assertTrue(forecast.valid_mask[0, 4, 2])
         self.assertTrue(torch.isfinite(forecast.forecast_dbz[0, 4, 2]))
+        forecast.validate_issuance()
 
     def test_analysis_preserves_background_tendency_provenance(self) -> None:
         observations, frozen = self.stationary_problem()
