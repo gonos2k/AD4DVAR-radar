@@ -61,6 +61,7 @@ class NowcastConfig:
     maximum_background_age_minutes: float = 60.0
     min_publish_support: float = 0.95
     minimum_publish_verified_support: float | None = None
+    maximum_local_state_verification_error_dbz: float = 6.0
     epsilon: float = 1.0e-6
     support_presence_threshold: float = 1.0e-6
     contract_absolute_tolerance: float = 1.0e-6
@@ -103,6 +104,7 @@ class NowcastConfig:
             self.growth_decay_minutes,
             self.maximum_background_age_minutes,
             self.min_publish_support,
+            self.maximum_local_state_verification_error_dbz,
             self.epsilon,
             self.support_presence_threshold,
             self.contract_absolute_tolerance,
@@ -204,6 +206,10 @@ class NowcastConfig:
         ):
             raise ValueError(
                 "minimum_publish_verified_support must be in (0, 1]"
+            )
+        if self.maximum_local_state_verification_error_dbz <= 0:
+            raise ValueError(
+                "maximum_local_state_verification_error_dbz must be positive"
             )
         if self.epsilon <= 0:
             raise ValueError("epsilon must be positive")
@@ -3414,17 +3420,29 @@ def _dilate_mask(
     mask: Tensor,
     offsets_yx: tuple[tuple[int, int], ...],
 ) -> Tensor:
-    height, width = mask.shape
     result = torch.zeros_like(mask)
     for offset_y, offset_x in offsets_yx:
-        if abs(offset_y) >= height or abs(offset_x) >= width:
+        slices = _offset_overlap_slices(mask.shape, offset_y, offset_x)
+        if slices is None:
             continue
-        source_y = slice(max(0, -offset_y), min(height, height - offset_y))
-        source_x = slice(max(0, -offset_x), min(width, width - offset_x))
-        target_y = slice(max(0, offset_y), min(height, height + offset_y))
-        target_x = slice(max(0, offset_x), min(width, width + offset_x))
+        source_y, source_x, target_y, target_x = slices
         result[target_y, target_x] |= mask[source_y, source_x]
     return result
+
+
+def _offset_overlap_slices(
+    shape: torch.Size,
+    offset_y: int,
+    offset_x: int,
+) -> tuple[slice, slice, slice, slice] | None:
+    height, width = shape
+    if abs(offset_y) >= height or abs(offset_x) >= width:
+        return None
+    source_y = slice(max(0, -offset_y), min(height, height - offset_y))
+    source_x = slice(max(0, -offset_x), min(width, width - offset_x))
+    target_y = slice(max(0, offset_y), min(height, height + offset_y))
+    target_x = slice(max(0, offset_x), min(width, width + offset_x))
+    return source_y, source_x, target_y, target_x
 
 
 def _merge_current_state(
@@ -3594,13 +3612,16 @@ def _source_verification_masks(
         max_dbz=config.max_dbz,
     )
     current_detected = masks[2] & (linear[2] >= echo_threshold)
-    nearby_current = _dilate_mask(
-        current_detected,
-        _pair_echo_offsets(
-            current_detected.shape,
-            config,
-            grid_time_contract,
-        ),
+    offsets = _pair_echo_offsets(
+        current_detected.shape,
+        config,
+        grid_time_contract,
+    )
+    nearby_current = _dilate_mask(current_detected, offsets)
+    current_dbz = echo_to_dbz(
+        linear[2],
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
     )
     for source_index in (0, 1):
         if not bool(paths.source_usable[source_index]):
@@ -3623,6 +3644,17 @@ def _source_verification_masks(
         ) & (candidate_echo >= echo_threshold)
         local_path_verified = candidate_detected & nearby_current
         path_verified[source_index] = local_path_verified
+        candidate_dbz = echo_to_dbz(
+            candidate_echo,
+            min_dbz=config.min_dbz,
+            max_dbz=config.max_dbz,
+        )
+        local_amplitude_error = _minimum_nearby_detected_error(
+            candidate_dbz,
+            current_dbz,
+            current_detected,
+            offsets,
+        )
         step_span = 2 - source_index
         growth = _growth_evidence_aligned_with_motion(
             linear,
@@ -3634,8 +3666,43 @@ def _source_verification_masks(
             grid_time_contract,
         )
         if growth.available:
-            state_verified[source_index] = local_path_verified
+            state_verified[source_index] = local_path_verified & (
+                local_amplitude_error
+                <= config.maximum_local_state_verification_error_dbz
+            )
     return path_verified, state_verified
+
+
+def _minimum_nearby_detected_error(
+    candidate_dbz: Tensor,
+    current_dbz: Tensor,
+    current_detected: Tensor,
+    offsets_yx: tuple[tuple[int, int], ...],
+) -> Tensor:
+    minimum_error = torch.full_like(candidate_dbz, math.inf)
+    for offset_y, offset_x in offsets_yx:
+        slices = _offset_overlap_slices(
+            candidate_dbz.shape,
+            offset_y,
+            offset_x,
+        )
+        if slices is None:
+            continue
+        source_y, source_x, target_y, target_x = slices
+        error = torch.abs(
+            candidate_dbz[target_y, target_x]
+            - current_dbz[source_y, source_x]
+        )
+        error = torch.where(
+            current_detected[source_y, source_x],
+            error,
+            torch.full_like(error, math.inf),
+        )
+        minimum_error[target_y, target_x] = torch.minimum(
+            minimum_error[target_y, target_x],
+            error,
+        )
+    return minimum_error
 
 
 def _pair_echo_offsets(

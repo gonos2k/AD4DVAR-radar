@@ -24,7 +24,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v33"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v34"
 
 
 def main() -> None:
@@ -46,6 +46,11 @@ def main() -> None:
         "--minimum-publish-verified-support",
         type=float,
         help="minimum pair-verified support required for publication",
+    )
+    parser.add_argument(
+        "--maximum-local-state-verification-error-dbz",
+        type=float,
+        help="maximum local transported-to-observed dBZ error",
     )
     parser.add_argument(
         "--variational",
@@ -252,6 +257,11 @@ def main() -> None:
         minimum_publish_verified_support=(
             args.minimum_publish_verified_support
         ),
+        maximum_local_state_verification_error_dbz=(
+            default_nowcast_config.maximum_local_state_verification_error_dbz
+            if args.maximum_local_state_verification_error_dbz is None
+            else args.maximum_local_state_verification_error_dbz
+        ),
         maximum_background_age_minutes=(
             args.maximum_background_age_minutes
         ),
@@ -388,6 +398,9 @@ def _analysis_config_from_args(
         ),
         "--minimum-publish-verified-support": (
             args.minimum_publish_verified_support
+        ),
+        "--maximum-local-state-verification-error-dbz": (
+            args.maximum_local_state_verification_error_dbz
         ),
         "--maximum-motion-speed-mps": args.maximum_motion_speed_mps,
         "--motion-increment-scale-mps": args.motion_increment_scale_mps,
