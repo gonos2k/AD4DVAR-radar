@@ -1416,6 +1416,28 @@ class VariationalAnalysisTests(unittest.TestCase):
         expected[0, 0] = 0.0
         torch.testing.assert_close(verified, expected)
 
+    def test_p1_verification_excludes_zero_quality_observation(
+        self,
+    ) -> None:
+        observations, frozen = self.stationary_problem()
+        quality_weight = observations.quality_weight.clone()
+        quality_weight[-1, 0, 0] = 0.0
+        observations = replace(
+            observations,
+            quality_weight=quality_weight,
+        )
+
+        verified = variational_module._local_analysis_verified_support(
+            analysis_trajectory(initial_control(frozen), frozen),
+            observations,
+            torch.ones_like(observations.dbz[-1]),
+            frozen,
+        )
+
+        expected = torch.ones_like(verified)
+        expected[0, 0] = 0.0
+        torch.testing.assert_close(verified, expected)
+
     def test_causal_support_back_advects_later_detection(self) -> None:
         detected = torch.zeros((3, 7, 9), dtype=torch.bool)
         detected[2, 3, 6] = True

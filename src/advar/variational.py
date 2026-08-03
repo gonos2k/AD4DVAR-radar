@@ -2562,7 +2562,12 @@ def _local_analysis_verified_support(
     censored_fit = observations.censored_mask[-1] & (
         prediction_dbz < frozen.analysis_config.detection_limit_dbz
     )
-    local_fit = observations.valid_mask[-1] & (detected_fit | censored_fit)
+    has_information = observations.quality_weight[-1] > 0.0
+    local_fit = (
+        observations.valid_mask[-1]
+        & has_information
+        & (detected_fit | censored_fit)
+    )
     return source_support.detach() * local_fit.to(dtype=source_support.dtype)
 
 
