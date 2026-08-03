@@ -2098,14 +2098,23 @@ def _analysis_result(
             torch.zeros_like(frozen.background_mask[1:]),
         )
     )
-    source_support, background_fraction = merge_current_support(
+    (
+        source_support,
+        background_source_support,
+        background_fraction,
+    ) = merge_current_support(
         frozen.observed_mask,
         initial_background_mask,
         trajectory.displacement_yx,
         frozen.nowcast_config,
     )
     background_used = (
-        background_fraction > frozen.nowcast_config.epsilon
+        bool(
+            torch.any(
+                background_source_support
+                > frozen.nowcast_config.support_presence_threshold
+            )
+        )
         or frozen.baseline_metadata.background_tendency_used
     )
     (
@@ -2151,6 +2160,8 @@ def _analysis_result(
                 frozen.background_age_minutes if background_used else None
             ),
             source_support=source_support.detach(),
+            observation_source_support=torch.zeros_like(source_support),
+            background_source_support=torch.zeros_like(source_support),
             path_verified_source_support=analysis_verified_support,
             verified_source_support=analysis_verified_support,
             observation_verified_source_support=torch.zeros_like(
@@ -3632,6 +3643,10 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
         ),
         background_age_minutes=metadata.background_age_minutes,
         source_support=metadata.source_support.detach(),
+        observation_source_support=(
+            metadata.observation_source_support.detach()
+        ),
+        background_source_support=metadata.background_source_support.detach(),
         path_verified_source_support=(
             metadata.path_verified_source_support.detach()
         ),

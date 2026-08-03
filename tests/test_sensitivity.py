@@ -81,6 +81,8 @@ def metadata_for(
         background_contribution_fraction=0.0,
         background_age_minutes=None,
         source_support=torch.ones_like(state.echo_linear),
+        observation_source_support=torch.ones_like(state.echo_linear),
+        background_source_support=torch.zeros_like(state.echo_linear),
         path_verified_source_support=torch.ones_like(state.echo_linear),
         verified_source_support=torch.ones_like(state.echo_linear),
         observation_verified_source_support=torch.ones_like(

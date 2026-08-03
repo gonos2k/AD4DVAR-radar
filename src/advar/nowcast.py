@@ -62,6 +62,9 @@ class NowcastConfig:
     min_publish_support: float = 0.95
     minimum_publish_verified_support: float | None = None
     epsilon: float = 1.0e-6
+    support_presence_threshold: float = 1.0e-6
+    contract_absolute_tolerance: float = 1.0e-6
+    ratio_regularizer: float = 1.0e-12
 
     def __post_init__(self) -> None:
         if type(self.interval_minutes) is not int:
@@ -101,6 +104,9 @@ class NowcastConfig:
             self.maximum_background_age_minutes,
             self.min_publish_support,
             self.epsilon,
+            self.support_presence_threshold,
+            self.contract_absolute_tolerance,
+            self.ratio_regularizer,
         )
         if not all(math.isfinite(value) for value in numeric_values):
             raise ValueError("all numeric configuration values must be finite")
@@ -201,6 +207,12 @@ class NowcastConfig:
             )
         if self.epsilon <= 0:
             raise ValueError("epsilon must be positive")
+        if self.support_presence_threshold <= 0:
+            raise ValueError("support_presence_threshold must be positive")
+        if self.contract_absolute_tolerance <= 0:
+            raise ValueError("contract_absolute_tolerance must be positive")
+        if self.ratio_regularizer <= 0:
+            raise ValueError("ratio_regularizer must be positive")
 
     @property
     def forecast_steps(self) -> int:
@@ -761,7 +773,8 @@ def _validate_state_dynamics(
         motion_within_limit = bool(
             torch.all(
                 torch.abs(displacement)
-                <= config.max_displacement_px + config.epsilon
+                <= config.max_displacement_px
+                + config.contract_absolute_tolerance
             )
         )
     else:
@@ -776,13 +789,16 @@ def _validate_state_dynamics(
             )
         )
         motion_within_limit = bool(
-            speed <= config.maximum_motion_speed_mps + config.epsilon
+            speed
+            <= config.maximum_motion_speed_mps
+            + config.contract_absolute_tolerance
         )
     if not motion_within_limit:
         raise ValueError("state motion exceeds the configured limit")
     if bool(
         torch.abs(growth)
-        > config.max_log_growth_per_step + config.epsilon
+        > config.max_log_growth_per_step
+        + config.contract_absolute_tolerance
     ):
         raise ValueError("state log growth exceeds the configured limit")
 
@@ -805,6 +821,8 @@ class ForecastMetadata:
     background_contribution_fraction: float
     background_age_minutes: float | None
     source_support: Tensor
+    observation_source_support: Tensor
+    background_source_support: Tensor
     path_verified_source_support: Tensor
     verified_source_support: Tensor
     observation_verified_source_support: Tensor
@@ -907,6 +925,12 @@ def state_metadata_digest(
                 "background_tendency_used": metadata.background_tendency_used,
                 "background_age_minutes": metadata.background_age_minutes,
                 "source_support": tensor_digest(metadata.source_support),
+                "observation_source_support": tensor_digest(
+                    metadata.observation_source_support
+                ),
+                "background_source_support": tensor_digest(
+                    metadata.background_source_support
+                ),
                 "path_verified_source_support": tensor_digest(
                     metadata.path_verified_source_support
                 ),
@@ -1441,6 +1465,8 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         state.log_growth_per_step,
         metadata.coverage_by_frame,
         metadata.source_support,
+        metadata.observation_source_support,
+        metadata.background_source_support,
         metadata.path_verified_source_support,
         metadata.verified_source_support,
         metadata.observation_verified_source_support,
@@ -1457,6 +1483,8 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         state.displacement_yx,
         state.log_growth_per_step,
         metadata.source_support,
+        metadata.observation_source_support,
+        metadata.background_source_support,
         metadata.path_verified_source_support,
         metadata.verified_source_support,
         metadata.observation_verified_source_support,
@@ -1475,6 +1503,10 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         raise ValueError("coverage_by_frame must have shape [3]")
     if metadata.source_support.shape != state.echo_linear.shape:
         raise ValueError("source_support must match the state grid")
+    if metadata.observation_source_support.shape != state.echo_linear.shape:
+        raise ValueError("observation_source_support must match the state grid")
+    if metadata.background_source_support.shape != state.echo_linear.shape:
+        raise ValueError("background_source_support must match the state grid")
     if metadata.path_verified_source_support.shape != state.echo_linear.shape:
         raise ValueError(
             "path_verified_source_support must match the state grid"
@@ -1610,12 +1642,43 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
     ):
         raise ValueError("background contribution fraction must be in [0, 1]")
     if metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
+        expected_background_fraction = float(
+            metadata.background_source_support.sum()
+            / metadata.source_support.sum().clamp_min(
+                config.ratio_regularizer
+            )
+        )
+        if not math.isclose(
+            background_fraction,
+            expected_background_fraction,
+            rel_tol=0.0,
+            abs_tol=config.contract_absolute_tolerance,
+        ):
+            raise ValueError("background contribution fraction mismatch")
+    if metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
         observation_path_used = _path_has_contribution(
             metadata.observation_path
         )
         background_path_used = _path_has_contribution(
             metadata.background_path
         )
+        actual_observation_used = bool(
+            torch.any(
+                metadata.observation_source_support
+                > config.support_presence_threshold
+            )
+        )
+        actual_background_used = bool(
+            torch.any(
+                metadata.background_source_support
+                > config.support_presence_threshold
+            )
+        )
+        if (
+            observation_path_used != actual_observation_used
+            or background_path_used != actual_background_used
+        ):
+            raise ValueError("source path and actual contribution disagree")
         if observation_path_used:
             expected_path_source = TendencySource.OBSERVATION
             expected_path = metadata.observation_path
@@ -1630,9 +1693,14 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
             or not _aggregate_path_matches(metadata, expected_path)
         ):
             raise ValueError("aggregate state path provenance mismatch")
+    background_state_used = bool(
+        torch.any(
+            metadata.background_source_support
+            > config.support_presence_threshold
+        )
+    )
     expected_background_used = (
-        background_fraction > config.epsilon
-        or metadata.background_tendency_used
+        background_state_used or metadata.background_tendency_used
     )
     if metadata.background_used != expected_background_used:
         raise ValueError("background usage provenance mismatch")
@@ -1650,7 +1718,7 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
                 background_age,
                 run_background_age,
                 rel_tol=0.0,
-                abs_tol=config.epsilon,
+                abs_tol=config.contract_absolute_tolerance,
             )
         ):
             raise ValueError("background age disagrees with the forecast run")
@@ -1663,7 +1731,7 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         else:
             if (
                 not math.isfinite(growth_support)
-                or growth_support + config.epsilon
+                or growth_support + config.contract_absolute_tolerance
                 < config.minimum_growth_overlap_support
             ):
                 raise ValueError("used growth pairs require valid evidence")
@@ -1677,7 +1745,7 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
                 or growth_area <= 0
                 or (
                     config.minimum_growth_overlap_area_km2 is not None
-                    and growth_area + config.epsilon
+                    and growth_area + config.contract_absolute_tolerance
                     < config.minimum_growth_overlap_area_km2
                 )
             ):
@@ -1690,6 +1758,8 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         state.log_growth_per_step,
         metadata.coverage_by_frame,
         metadata.source_support,
+        metadata.observation_source_support,
+        metadata.background_source_support,
         metadata.path_verified_source_support,
         metadata.verified_source_support,
         metadata.observation_verified_source_support,
@@ -1721,10 +1791,37 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         raise ValueError("source_support must be in [0, 1]")
     if not bool(
         torch.all(
+            (metadata.observation_source_support >= 0)
+            & (metadata.background_source_support >= 0)
+            & (
+                metadata.observation_source_support
+                + metadata.background_source_support
+                <= 1.0 + config.contract_absolute_tolerance
+            )
+        )
+    ):
+        raise ValueError("source-specific support must be in [0, 1]")
+    if metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
+        combined_source_support = (
+            metadata.observation_source_support
+            + metadata.background_source_support
+        ).clamp(0.0, 1.0)
+        if not bool(
+            torch.allclose(
+                metadata.source_support,
+                combined_source_support,
+                rtol=0.0,
+                atol=config.contract_absolute_tolerance,
+            )
+        ):
+            raise ValueError("source support and actual contributions disagree")
+    if not bool(
+        torch.all(
             (metadata.path_verified_source_support >= 0)
             & (
                 metadata.path_verified_source_support
-                <= metadata.source_support + config.epsilon
+                <= metadata.source_support
+                + config.contract_absolute_tolerance
             )
             & (metadata.verified_source_support >= 0)
             & (
@@ -1736,7 +1833,8 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
             & (
                 metadata.observation_verified_source_support
                 + metadata.background_verified_source_support
-                <= metadata.verified_source_support + config.epsilon
+                <= metadata.verified_source_support
+                + config.contract_absolute_tolerance
             )
         )
     ):
@@ -1754,7 +1852,7 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
                 metadata.verified_source_support,
                 source_verified,
                 rtol=0.0,
-                atol=config.epsilon,
+                atol=config.contract_absolute_tolerance,
             )
         ):
             raise ValueError(
@@ -2001,6 +2099,8 @@ def estimate_prepared_state(
         current_verified_source_support,
         observation_verified_source_support,
         background_verified_source_support,
+        observation_source_support,
+        background_source_support,
         background_contribution_fraction,
         observation_contributors,
         background_contributors,
@@ -2020,7 +2120,12 @@ def estimate_prepared_state(
     )
     background_tendency_used = tendency_source is TendencySource.BACKGROUND
     background_used = (
-        background_contribution_fraction > config.epsilon
+        bool(
+            torch.any(
+                background_source_support
+                > config.support_presence_threshold
+            )
+        )
         or background_tendency_used
     )
     observation_path = _source_path_provenance(
@@ -2066,6 +2171,12 @@ def estimate_prepared_state(
             prepared.background_age_minutes if background_used else None
         ),
         source_support=current_source_support.detach().clone(),
+        observation_source_support=(
+            observation_source_support.detach().clone()
+        ),
+        background_source_support=(
+            background_source_support.detach().clone()
+        ),
         path_verified_source_support=(
             current_path_verified_source_support.detach().clone()
         ),
@@ -2776,12 +2887,12 @@ def _select_single_adjacent_or_long_component(
     long_value = float(long_confidence.detach())
     adjacent_value = float(adjacent_confidence.detach())
     long_is_clearly_better = (
-        long_value > adjacent_value + config.epsilon
+        long_value > adjacent_value + config.contract_absolute_tolerance
         and long_value
         >= adjacent_value * config.minimum_pair_confidence_ratio
     )
     adjacent_is_clearly_better = (
-        adjacent_value > long_value + config.epsilon
+        adjacent_value > long_value + config.contract_absolute_tolerance
         and adjacent_value
         >= long_value * config.minimum_pair_confidence_ratio
     )
@@ -2826,7 +2937,8 @@ def _select_adjacent_or_long_growth_evidence(
     if adjacent.available and long.available:
         inconsistent = (
             float(disagreement.detach())
-            >= config.maximum_pair_growth_disagreement - config.epsilon
+            >= config.maximum_pair_growth_disagreement
+            - config.contract_absolute_tolerance
         )
         value, uses_adjacent, uses_long, selection = (
             _select_single_adjacent_or_long_component(
@@ -2901,7 +3013,7 @@ def _motion_pairs_are_inconsistent(
     else:
         disagreement = float(motion_disagreement_px.detach())
         limit = config.maximum_pair_motion_disagreement_px
-    return disagreement >= limit - config.epsilon
+    return disagreement >= limit - config.contract_absolute_tolerance
 
 
 def _combine_pair_component(
@@ -2925,8 +3037,12 @@ def _combine_pair_component(
     second_weight = config.recent_weight * second_psr
     total_weight = (first_weight + second_weight).clamp_min(config.epsilon)
     combined = (first_weight * first + second_weight * second) / total_weight
-    first_used = float(first_weight.detach()) > config.epsilon
-    second_used = float(second_weight.detach()) > config.epsilon
+    first_used = (
+        float(first_weight.detach()) > config.contract_absolute_tolerance
+    )
+    second_used = (
+        float(second_weight.detach()) > config.contract_absolute_tolerance
+    )
     if first_used and second_used:
         return combined, (0, 1), TendencyPairSelection.BLENDED
     if first_used:
@@ -2964,7 +3080,8 @@ def _combine_adjacent_growth_evidence(
     if first.available and second.available:
         inconsistent = (
             float(disagreement.detach())
-            >= config.maximum_pair_growth_disagreement - config.epsilon
+            >= config.maximum_pair_growth_disagreement
+            - config.contract_absolute_tolerance
         )
         value, indices, selection = _combine_pair_component(
             first.value,
@@ -3106,7 +3223,8 @@ def _estimate_available_pair(
         seconds = step_span * config.interval_minutes * 60.0
         speed = torch.linalg.vector_norm(projected) / seconds
         if float(speed.detach()) > (
-            config.maximum_motion_speed_mps + config.epsilon
+            config.maximum_motion_speed_mps
+            + config.contract_absolute_tolerance
         ):
             return None
     per_step_motion = total_motion / step_span
@@ -3182,6 +3300,8 @@ def _merge_current_state(
     Tensor,
     Tensor,
     Tensor,
+    Tensor,
+    Tensor,
     float,
     Tensor,
     Tensor,
@@ -3209,7 +3329,7 @@ def _merge_current_state(
         observation_support,
         observation_path_verified_support,
         observation_verified_support,
-        observation_contributors,
+        observation_contribution_by_source,
     ) = (
         _merge_source_frames(
             observation_linear,
@@ -3230,7 +3350,7 @@ def _merge_current_state(
         background_support,
         background_path_verified_support,
         background_verified_support,
-        background_contributors,
+        background_contribution_by_source,
     ) = (
         _merge_source_frames(
             background_linear,
@@ -3255,14 +3375,14 @@ def _merge_current_state(
     ) = _combine_source_supports(
         observation_support,
         background_support,
-        config.epsilon,
+        config.ratio_regularizer,
     )
     numerator = (
         observation_support * observation_echo
         + background_contribution * background_echo
     )
     current_echo = torch.where(
-        current_support > config.epsilon,
+        current_support > config.support_presence_threshold,
         numerator / current_support.clamp_min(config.epsilon),
         torch.zeros_like(numerator),
     )
@@ -3271,6 +3391,27 @@ def _merge_current_state(
     )
     actual_background_verified_support = (
         (1.0 - observation_support) * background_verified_support
+    )
+    actual_observation_contribution_by_source = (
+        observation_contribution_by_source
+    )
+    actual_background_contribution_by_source = (
+        (1.0 - observation_support)[None]
+        * background_contribution_by_source
+    )
+    observation_source_support = (
+        actual_observation_contribution_by_source.sum(dim=0)
+    )
+    background_source_support = (
+        actual_background_contribution_by_source.sum(dim=0)
+    )
+    observation_contributors = (
+        actual_observation_contribution_by_source.flatten(1).amax(dim=1)
+        > config.support_presence_threshold
+    )
+    background_contributors = (
+        actual_background_contribution_by_source.flatten(1).amax(dim=1)
+        > config.support_presence_threshold
     )
     current_path_verified_support = (
         observation_path_verified_support
@@ -3286,6 +3427,8 @@ def _merge_current_state(
         current_verified_support,
         observation_verified_support,
         actual_background_verified_support,
+        observation_source_support,
+        background_source_support,
         contribution_fraction,
         observation_contributors,
         background_contributors,
@@ -3329,12 +3472,12 @@ def _source_verification_masks(
             config,
         )
         candidate_echo = torch.where(
-            candidate_support > config.epsilon,
+            candidate_support > config.support_presence_threshold,
             candidate_value / candidate_support.clamp_min(config.epsilon),
             torch.zeros_like(candidate_value),
         )
         candidate_detected = (
-            candidate_support > config.epsilon
+            candidate_support > config.support_presence_threshold
         ) & (candidate_echo >= echo_threshold)
         local_path_verified = candidate_detected & nearby_current
         path_verified[source_index] = local_path_verified
@@ -3393,12 +3536,12 @@ def _transport_source_candidate(
     for segment in support_displacements_yx:
         path_support = remap(path_support, segment).clamp(0.0, 1.0)
     candidate_support = torch.where(
-        endpoint_support > config.epsilon,
+        endpoint_support > config.support_presence_threshold,
         path_support,
         torch.zeros_like(path_support),
     )
     candidate_value = torch.where(
-        endpoint_support > config.epsilon,
+        endpoint_support > config.support_presence_threshold,
         endpoint_numerator
         / endpoint_support.clamp_min(config.epsilon)
         * candidate_support,
@@ -3479,7 +3622,7 @@ def merge_current_support(
     background_masks: Tensor,
     displacement_yx: Tensor,
     config: NowcastConfig,
-) -> tuple[Tensor, float]:
+) -> tuple[Tensor, Tensor, float]:
     observation_support = _merge_source_support(
         observed_masks,
         displacement_yx,
@@ -3488,18 +3631,20 @@ def merge_current_support(
         background_masks,
         displacement_yx,
     ).clamp(0.0, 1.0)
-    current_support, _, contribution_fraction = _combine_source_supports(
-        observation_support,
-        background_support,
-        config.epsilon,
+    current_support, background_contribution, contribution_fraction = (
+        _combine_source_supports(
+            observation_support,
+            background_support,
+            config.ratio_regularizer,
+        )
     )
-    return current_support, contribution_fraction
+    return current_support, background_contribution, contribution_fraction
 
 
 def _combine_source_supports(
     observation_support: Tensor,
     background_support: Tensor,
-    epsilon: float,
+    ratio_regularizer: float,
 ) -> tuple[Tensor, Tensor, float]:
     background_contribution = (
         (1.0 - observation_support) * background_support
@@ -3507,7 +3652,7 @@ def _combine_source_supports(
     current_support = observation_support + background_contribution
     contribution_fraction = float(
         background_contribution.sum()
-        / current_support.sum().clamp_min(epsilon)
+        / current_support.sum().clamp_min(ratio_regularizer)
     )
     return current_support, background_contribution, contribution_fraction
 
@@ -3566,6 +3711,11 @@ def _merge_source_frames(
     latest_mask = masks[2]
     if bool(torch.all(latest_mask)):
         latest_support = latest_mask.to(dtype=linear.dtype)
+        latest_contributions = torch.zeros_like(
+            masks,
+            dtype=linear.dtype,
+        )
+        latest_contributions[2] = latest_support
         return (
             linear[2],
             latest_support,
@@ -3573,7 +3723,7 @@ def _merge_source_frames(
             * source_path_verified[2].to(dtype=linear.dtype),
             latest_support
             * source_state_verified[2].to(dtype=linear.dtype),
-            torch.tensor((False, False, True), device=linear.device),
+            latest_contributions,
         )
 
     numerator = torch.zeros_like(linear[2])
@@ -3629,19 +3779,16 @@ def _merge_source_frames(
         )
 
     current_echo = torch.where(
-        support > config.epsilon,
+        support > config.support_presence_threshold,
         numerator / support.clamp_min(config.epsilon),
         torch.zeros_like(numerator),
-    )
-    contributing_sources = torch.stack(
-        tuple(value.sum() > config.epsilon for value in contributions)
     )
     return (
         current_echo,
         support,
         path_verified_support,
         verified_support,
-        contributing_sources,
+        torch.stack(contributions),
     )
 
 
@@ -3913,7 +4060,9 @@ def _aligned_growth_evidence(
         min_dbz=config.min_dbz,
         max_dbz=config.max_dbz,
     )
-    common_support = current_mask & (moved_support > config.epsilon)
+    common_support = current_mask & (
+        moved_support > config.support_presence_threshold
+    )
     echo_relevant = common_support & (
         (aligned >= echo_threshold) | (current >= echo_threshold)
     )
@@ -3927,21 +4076,24 @@ def _aligned_growth_evidence(
     previous_integrated_echo = (overlap_weight * aligned).sum()
     current_integrated_echo = (overlap_weight * current).sum()
     enough_support = (
-        float(overlap_support.detach()) + config.epsilon
+        float(overlap_support.detach())
+        + config.contract_absolute_tolerance
         >= config.minimum_growth_overlap_support
     )
     enough_area = (
         config.minimum_growth_overlap_area_km2 is None
         or (
             grid_time_contract is not None
-            and float(overlap_area_km2.detach()) + config.epsilon
+            and float(overlap_area_km2.detach())
+            + config.contract_absolute_tolerance
             >= config.minimum_growth_overlap_area_km2
         )
     )
     available = (
         enough_support
         and enough_area
-        and float(previous_integrated_echo.detach()) > config.epsilon
+        and float(previous_integrated_echo.detach())
+        > config.support_presence_threshold
     )
     if not available:
         return _GrowthEvidence(
@@ -3953,8 +4105,8 @@ def _aligned_growth_evidence(
             current_integral=current_integrated_echo,
         )
     growth = torch.log(
-        (current_integrated_echo + config.epsilon)
-        / (previous_integrated_echo + config.epsilon)
+        (current_integrated_echo + config.ratio_regularizer)
+        / (previous_integrated_echo + config.ratio_regularizer)
     )
     return _GrowthEvidence(
         value=growth.clamp(-limit, limit),
@@ -4066,9 +4218,14 @@ def _phase_correlation_shift_and_psr(
         correlation.new_tensor((height - 1, width - 1)),
     )
     inside_limits = bool(
-        torch.all(torch.abs(shift) <= limits + config.epsilon)
+        torch.all(
+            torch.abs(shift)
+            <= limits + config.contract_absolute_tolerance
+        )
     )
-    interior_bin_limit = (limits - 0.5).clamp_min(config.epsilon)
+    interior_bin_limit = (limits - 0.5).clamp_min(
+        config.contract_absolute_tolerance
+    )
     away_from_search_boundary = bool(
         torch.all(torch.abs(integer_peak_shift) < interior_bin_limit)
     )
