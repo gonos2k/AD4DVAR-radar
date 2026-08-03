@@ -24,7 +24,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v31"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v32"
 
 
 def main() -> None:
@@ -786,6 +786,38 @@ def _output_arrays(
                 _optional_triple_array(
                     analysis.dynamics_data_to_prior_ratio_by_mode
                 )
+            ),
+            analysis_field_conditioned_dynamics_data_gram_eigenvalues=(
+                _optional_triple_array(
+                    analysis
+                    .field_conditioned_dynamics_data_gram_eigenvalues
+                )
+            ),
+            analysis_field_conditioned_dynamics_data_information_trace=(
+                np.asarray(
+                    np.nan
+                    if analysis
+                    .field_conditioned_dynamics_data_information_trace
+                    is None
+                    else analysis
+                    .field_conditioned_dynamics_data_information_trace
+                )
+            ),
+            analysis_field_conditioned_dynamics_data_effective_dimension=(
+                np.asarray(
+                    np.nan
+                    if analysis
+                    .field_conditioned_dynamics_data_effective_dimension
+                    is None
+                    else analysis
+                    .field_conditioned_dynamics_data_effective_dimension
+                )
+            ),
+            analysis_field_conditioning_maximum_relative_residual=np.asarray(
+                np.nan
+                if analysis.field_conditioning_maximum_relative_residual
+                is None
+                else analysis.field_conditioning_maximum_relative_residual
             ),
             analysis_regularized_dynamics_hessian_eigenvalues=(
                 _optional_triple_array(

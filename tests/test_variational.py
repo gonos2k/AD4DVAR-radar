@@ -712,7 +712,7 @@ class VariationalAnalysisTests(unittest.TestCase):
                     * (1.0 + 10.0 * torch.finfo(velocity.dtype).eps),
                 )
 
-    def test_solver_reuses_one_vjp_pullback_per_outer_iteration(self) -> None:
+    def test_solver_reuses_pullbacks_and_field_diagnostic_adds_two(self) -> None:
         observations, frozen = self.stationary_problem()
         changed_dbz = observations.dbz.clone()
         changed_dbz[1] -= 1.0
@@ -733,7 +733,7 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         self.assertGreater(result.outer_iterations, 0)
         self.assertGreater(result.pcg_iterations, 0)
-        self.assertEqual(vjp_calls, result.outer_iterations)
+        self.assertEqual(vjp_calls, result.outer_iterations + 2)
 
     def test_returned_analysis_records_local_identifiability(self) -> None:
         coordinates = torch.arange(8, dtype=torch.float64)
@@ -832,6 +832,81 @@ class VariationalAnalysisTests(unittest.TestCase):
             torch.tensor(data_share, dtype=torch.float64),
             expected_data_share,
         )
+        observation_field_columns = []
+        full_field_columns = []
+        full_residual = lambda value: residual_vector(
+            value,
+            observations,
+            diagnostic_frozen,
+        )
+        for field_index in range(field_size):
+            direction = torch.zeros_like(result.control)
+            direction[field_index] = 1.0
+            observation_field_columns.append(
+                cast(
+                    torch.Tensor,
+                    torch.func.jvp(
+                        observation_residual,
+                        (result.control,),
+                        (direction,),
+                    )[1],
+                )
+            )
+            full_field_columns.append(
+                cast(
+                    torch.Tensor,
+                    torch.func.jvp(
+                        full_residual,
+                        (result.control,),
+                        (direction,),
+                    )[1],
+                )
+            )
+        observation_field = torch.stack(observation_field_columns, dim=1)
+        full_field = torch.stack(full_field_columns, dim=1)
+        dynamics_jacobian = torch.stack(dynamics_columns, dim=1)
+        field_dynamics = observation_field.mT @ dynamics_jacobian
+        expected_conditioned_gram = expected_gram - field_dynamics.mT @ (
+            torch.linalg.solve(full_field.mT @ full_field, field_dynamics)
+        )
+        expected_conditioned_gram = 0.5 * (
+            expected_conditioned_gram + expected_conditioned_gram.mT
+        )
+        expected_conditioned_eigenvalues = torch.linalg.eigvalsh(
+            expected_conditioned_gram
+        ).clamp_min(0.0)
+        conditioned_eigenvalues = (
+            result.field_conditioned_dynamics_data_gram_eigenvalues
+        )
+        assert conditioned_eigenvalues is not None
+        torch.testing.assert_close(
+            torch.tensor(conditioned_eigenvalues, dtype=torch.float64),
+            expected_conditioned_eigenvalues,
+            atol=2.0e-7,
+            rtol=2.0e-6,
+        )
+        self.assertAlmostEqual(
+            result.field_conditioned_dynamics_data_information_trace or 0.0,
+            float(torch.sum(expected_conditioned_eigenvalues)),
+            places=7,
+        )
+        expected_conditioned_dimension = torch.sum(
+            expected_conditioned_eigenvalues
+            / (1.0 + expected_conditioned_eigenvalues)
+        )
+        self.assertAlmostEqual(
+            result.field_conditioned_dynamics_data_effective_dimension or 0.0,
+            float(expected_conditioned_dimension),
+            places=7,
+        )
+        self.assertLessEqual(
+            result.field_conditioned_dynamics_data_information_trace or 0.0,
+            result.dynamics_data_information_trace or 0.0,
+        )
+        self.assertLessEqual(
+            result.field_conditioning_maximum_relative_residual or 0.0,
+            self.analysis_config.pcg_relative_tolerance,
+        )
         self.assertGreaterEqual(eigenvalues[0], 1.0)
         self.assertLessEqual(eigenvalues[0], eigenvalues[1])
         self.assertLessEqual(eigenvalues[1], eigenvalues[2])
@@ -890,6 +965,18 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertEqual(
             diagnostics.dynamics_data_to_prior_ratio_by_mode,
             (0.0,) * 3,
+        )
+        self.assertEqual(
+            diagnostics.field_conditioned_dynamics_data_gram_eigenvalues,
+            (0.0,) * 3,
+        )
+        self.assertEqual(
+            diagnostics.field_conditioned_dynamics_data_information_trace,
+            0.0,
+        )
+        self.assertEqual(
+            diagnostics.field_conditioned_dynamics_data_effective_dimension,
+            0.0,
         )
         self.assertEqual(
             diagnostics.regularized_dynamics_hessian_eigenvalues,
