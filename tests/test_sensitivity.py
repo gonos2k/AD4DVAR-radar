@@ -845,15 +845,23 @@ class SensitivityTests(unittest.TestCase):
             self.result.state,
             metadata,
         )
+        valid_mask = torch.zeros_like(self.result.valid_mask)
+        forecast_dbz = torch.full_like(self.result.forecast_dbz, torch.nan)
+        forecast_digest = tensor_digest(forecast_dbz)
+        valid_mask_digest = tensor_digest(valid_mask)
         result = replace(
             self.result,
+            forecast_dbz=forecast_dbz,
+            valid_mask=valid_mask,
             metadata=metadata,
             state_metadata_digest=metadata_digest,
+            forecast_dbz_digest=forecast_digest,
+            valid_mask_digest=valid_mask_digest,
             forecast_run_digest=_forecast_run_identity_digest(
                 self.result.run,
                 metadata_digest,
-                self.result.forecast_dbz_digest,
-                self.result.valid_mask_digest,
+                forecast_digest,
+                valid_mask_digest,
             ),
         )
 

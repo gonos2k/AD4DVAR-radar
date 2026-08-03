@@ -661,7 +661,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
 
             with self.assertRaisesRegex(
                 ValueError,
-                "state or metadata",
+                "forecast does not close against the issued state",
             ):
                 load_forecast_run(path)
 

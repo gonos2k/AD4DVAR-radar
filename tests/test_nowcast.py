@@ -2881,6 +2881,27 @@ class NowcastTests(unittest.TestCase):
                 ),
             )
 
+        def without_origin(value: torch.Tensor) -> torch.Tensor:
+            updated = value.clone()
+            updated[0, 0] = 0.0
+            return updated
+
+        metadata_without_origin = replace(
+            issued.metadata,
+            source_support=without_origin(issued.metadata.source_support),
+            observation_source_support=without_origin(
+                issued.metadata.observation_source_support
+            ),
+            path_verified_source_support=without_origin(
+                issued.metadata.path_verified_source_support
+            ),
+            verified_source_support=without_origin(
+                issued.metadata.verified_source_support
+            ),
+            observation_verified_source_support=without_origin(
+                issued.metadata.observation_verified_source_support
+            ),
+        )
         cases = (
             (
                 reissue(
@@ -2888,6 +2909,18 @@ class NowcastTests(unittest.TestCase):
                     valid_mask=issued.valid_mask[:-1].clone(),
                 ),
                 "lead shape",
+            ),
+            (
+                reissue(
+                    forecast_dbz=issued.forecast_dbz.clone() + 1.0,
+                ),
+                "forecast does not close against the issued state",
+            ),
+            (
+                reissue(
+                    metadata=metadata_without_origin,
+                ),
+                "valid mask does not close against the issued state",
             ),
             (
                 reissue(

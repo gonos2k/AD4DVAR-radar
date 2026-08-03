@@ -1863,6 +1863,32 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         or metadata.background_age_minutes < 0
     ):
         raise ValueError("background age must be finite and nonnegative")
+    with torch.no_grad():
+        _, expected_forecast, expected_valid, _, _ = (
+            _forecast_fields_from_state(
+                state,
+                metadata,
+                config,
+                audit=False,
+            )
+        )
+    if bool(torch.any(valid & ~expected_valid)):
+        raise ValueError("valid mask does not close against the issued state")
+    expected_issued_forecast = torch.where(
+        valid,
+        expected_forecast,
+        expected_forecast.new_full((), torch.nan),
+    )
+    if not bool(
+        torch.allclose(
+            forecast,
+            expected_issued_forecast,
+            rtol=0.0,
+            atol=config.contract_absolute_tolerance,
+            equal_nan=True,
+        )
+    ):
+        raise ValueError("forecast does not close against the issued state")
 
 
 def _validate_state_path_provenance(
@@ -3842,23 +3868,19 @@ def forecast_linear_from_state(
     )
 
 
-def forecast_from_state(
+def _forecast_fields_from_state(
     state: RadarState,
     metadata: ForecastMetadata,
     config: NowcastConfig,
     *,
-    run: ForecastRunContract,
-    audit: bool = False,
-) -> ForecastResult:
-    if config != run.config:
-        raise ValueError("forecast config must match the run contract")
-    run.validate_integrity()
-    _validate_state_for_run(state, run)
-    input_echo, input_audit = validate_physical_echo(
-        state.echo_linear,
-        name="forecast input state",
-    )
-    state = replace(state, echo_linear=input_echo)
+    audit: bool,
+) -> tuple[
+    Tensor,
+    Tensor,
+    Tensor,
+    PositivityAudit,
+    tuple[TransportAudit, ...],
+]:
     forecasts = []
     transport_audits = []
     for step in range(1, config.forecast_steps + 1):
@@ -3884,7 +3906,6 @@ def forecast_from_state(
                 state.log_growth_per_step * growth_sum,
             )
         )
-
     forecast_linear, final_audit = validate_physical_echo(
         torch.stack(forecasts),
         name="final forecast",
@@ -3899,6 +3920,44 @@ def forecast_from_state(
         valid_mask,
         forecast_dbz,
         forecast_dbz.new_full((), torch.nan),
+    )
+    return (
+        forecast_linear,
+        forecast_dbz,
+        valid_mask,
+        final_audit,
+        tuple(transport_audits),
+    )
+
+
+def forecast_from_state(
+    state: RadarState,
+    metadata: ForecastMetadata,
+    config: NowcastConfig,
+    *,
+    run: ForecastRunContract,
+    audit: bool = False,
+) -> ForecastResult:
+    if config != run.config:
+        raise ValueError("forecast config must match the run contract")
+    run.validate_integrity()
+    _validate_state_for_run(state, run)
+    input_echo, input_audit = validate_physical_echo(
+        state.echo_linear,
+        name="forecast input state",
+    )
+    state = replace(state, echo_linear=input_echo)
+    (
+        _,
+        forecast_dbz,
+        valid_mask,
+        final_audit,
+        transport_audits,
+    ) = _forecast_fields_from_state(
+        state,
+        metadata,
+        config,
+        audit=audit,
     )
     forecast_dbz_digest = tensor_digest(forecast_dbz)
     valid_mask_digest = tensor_digest(valid_mask)
