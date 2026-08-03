@@ -70,6 +70,8 @@ class AnalysisConfig:
     amplitude_displacement_tolerance_px: int = 1
     amplitude_displacement_tolerance_m: float | None = None
     maximum_latest_detected_error_std: float = 3.0
+    minimum_local_verification_precision: float = 0.01
+    maximum_local_analysis_verification_error_dbz: float = 6.0
     maximum_unresolved_amplitude_fraction: float = 0.01
     minimum_amplitude_total_quality_weight: float = 0.01
     minimum_amplitude_effective_pixel_count: float = 1.0
@@ -116,6 +118,12 @@ class AnalysisConfig:
                 self.minimum_control_reachability
             ),
             "maximum_detected_error_std": self.maximum_detected_error_std,
+            "minimum_local_verification_precision": (
+                self.minimum_local_verification_precision
+            ),
+            "maximum_local_analysis_verification_error_dbz": (
+                self.maximum_local_analysis_verification_error_dbz
+            ),
             "minimum_amplitude_total_quality_weight": (
                 self.minimum_amplitude_total_quality_weight
             ),
@@ -2550,19 +2558,25 @@ def _local_analysis_verified_support(
         min_dbz=frozen.nowcast_config.min_dbz,
         max_dbz=frozen.nowcast_config.max_dbz,
     )
-    standardized_error = (
-        torch.sqrt(observations.quality_weight[-1])
-        * torch.abs(observations.dbz[-1] - prediction_dbz)
-        / observations.std_dbz[-1]
+    absolute_error = torch.abs(observations.dbz[-1] - prediction_dbz)
+    precision = observations.quality_weight[-1] / torch.square(
+        observations.std_dbz[-1]
     )
+    standardized_error = torch.sqrt(precision) * absolute_error
     detected_fit = observations.detected_mask[-1] & (
         standardized_error
         <= frozen.analysis_config.maximum_latest_detected_error_std
+    ) & (
+        absolute_error
+        <= frozen.analysis_config.maximum_local_analysis_verification_error_dbz
     )
     censored_fit = observations.censored_mask[-1] & (
         prediction_dbz < frozen.analysis_config.detection_limit_dbz
     )
-    has_information = observations.quality_weight[-1] > 0.0
+    has_information = (
+        precision
+        >= frozen.analysis_config.minimum_local_verification_precision
+    )
     local_fit = (
         observations.valid_mask[-1]
         & has_information

@@ -99,6 +99,10 @@ class CliTests(unittest.TestCase):
             "2",
             "--maximum-detected-error-std",
             "10",
+            "--minimum-local-verification-precision",
+            "0.01",
+            "--maximum-local-analysis-verification-error-dbz",
+            "6",
             "--maximum-unresolved-amplitude-fraction",
             "1",
             "--minimum-amplitude-total-quality-weight",
@@ -208,11 +212,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v37",
+                    "nowcast-npz-v38",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v29",
+                    "forecast-run-v30",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -573,6 +577,8 @@ class CliTests(unittest.TestCase):
             "--minimum-growth-overlap-area-km2",
             "--minimum-publish-verified-support",
             "--maximum-local-state-verification-error-dbz",
+            "--minimum-local-verification-precision",
+            "--maximum-local-analysis-verification-error-dbz",
             "--minimum-object-count-ratio-for-confidence",
         )
         for name in required:

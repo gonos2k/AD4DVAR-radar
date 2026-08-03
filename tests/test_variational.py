@@ -1438,6 +1438,107 @@ class VariationalAnalysisTests(unittest.TestCase):
         expected[0, 0] = 0.0
         torch.testing.assert_close(verified, expected)
 
+    def test_p1_verification_excludes_negligible_precision(self) -> None:
+        observations, frozen = self.stationary_problem()
+        quality_weight = observations.quality_weight.clone()
+        quality_weight[-1, 0, 0] = 1.0e-8
+        observations = replace(
+            observations,
+            quality_weight=quality_weight,
+        )
+        trajectory = analysis_trajectory(initial_control(frozen), frozen)
+        mismatched_frames = trajectory.frames_linear.clone()
+        mismatched_frames[-1, 0, 0] = dbz_to_echo(
+            torch.tensor(
+                self.nowcast_config.min_dbz,
+                dtype=mismatched_frames.dtype,
+            ),
+            min_dbz=self.nowcast_config.min_dbz,
+            max_dbz=self.nowcast_config.max_dbz,
+        )
+        trajectory = replace(
+            trajectory,
+            frames_linear=mismatched_frames,
+        )
+
+        verified = variational_module._local_analysis_verified_support(
+            trajectory,
+            observations,
+            torch.ones_like(observations.dbz[-1]),
+            frozen,
+        )
+
+        self.assertEqual(float(verified[0, 0]), 0.0)
+
+    def test_p1_verification_enforces_absolute_detected_error(self) -> None:
+        observations, frozen = self.stationary_problem()
+        frozen = replace(
+            frozen,
+            analysis_config=replace(
+                frozen.analysis_config,
+                maximum_latest_detected_error_std=100.0,
+                maximum_local_analysis_verification_error_dbz=6.0,
+            ),
+        )
+        trajectory = analysis_trajectory(initial_control(frozen), frozen)
+        mismatched_frames = trajectory.frames_linear.clone()
+        mismatched_frames[-1, 0, 0] = dbz_to_echo(
+            torch.tensor(
+                self.nowcast_config.min_dbz,
+                dtype=mismatched_frames.dtype,
+            ),
+            min_dbz=self.nowcast_config.min_dbz,
+            max_dbz=self.nowcast_config.max_dbz,
+        )
+        trajectory = replace(
+            trajectory,
+            frames_linear=mismatched_frames,
+        )
+
+        verified = variational_module._local_analysis_verified_support(
+            trajectory,
+            observations,
+            torch.ones_like(observations.dbz[-1]),
+            frozen,
+        )
+
+        self.assertEqual(float(verified[0, 0]), 0.0)
+
+    def test_censored_p1_verification_requires_precision(self) -> None:
+        observations, frozen = self.stationary_problem()
+        detected = observations.detected_mask.clone()
+        censored = observations.censored_mask.clone()
+        quality = observations.quality_weight.clone()
+        detected[-1, 0, 0] = False
+        censored[-1, 0, 0] = True
+        quality[-1, 0, 0] = 1.0e-8
+        observations = replace(
+            observations,
+            detected_mask=detected,
+            censored_mask=censored,
+            quality_weight=quality,
+        )
+        trajectory = analysis_trajectory(initial_control(frozen), frozen)
+        frames = trajectory.frames_linear.clone()
+        frames[-1, 0, 0] = dbz_to_echo(
+            torch.tensor(
+                self.nowcast_config.min_dbz,
+                dtype=frames.dtype,
+            ),
+            min_dbz=self.nowcast_config.min_dbz,
+            max_dbz=self.nowcast_config.max_dbz,
+        )
+        trajectory = replace(trajectory, frames_linear=frames)
+
+        verified = variational_module._local_analysis_verified_support(
+            trajectory,
+            observations,
+            torch.ones_like(observations.dbz[-1]),
+            frozen,
+        )
+
+        self.assertEqual(float(verified[0, 0]), 0.0)
+
     def test_causal_support_back_advects_later_detection(self) -> None:
         detected = torch.zeros((3, 7, 9), dtype=torch.bool)
         detected[2, 3, 6] = True

@@ -24,7 +24,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v37"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v38"
 
 
 def main() -> None:
@@ -90,6 +90,11 @@ def main() -> None:
         help="P1 behavior when amplitude amount, area, or growth is implausible",
     )
     parser.add_argument("--maximum-detected-error-std", type=float)
+    parser.add_argument("--minimum-local-verification-precision", type=float)
+    parser.add_argument(
+        "--maximum-local-analysis-verification-error-dbz",
+        type=float,
+    )
     parser.add_argument("--maximum-unresolved-amplitude-fraction", type=float)
     parser.add_argument("--minimum-amplitude-total-quality-weight", type=float)
     parser.add_argument("--minimum-amplitude-effective-pixel-count", type=float)
@@ -204,6 +209,8 @@ def main() -> None:
         or args.observation_std_dbz is not None
         or args.motion_increment_scale_mps is not None
         or args.maximum_detected_error_std is not None
+        or args.minimum_local_verification_precision is not None
+        or args.maximum_local_analysis_verification_error_dbz is not None
         or args.maximum_unresolved_amplitude_fraction is not None
         or args.minimum_amplitude_total_quality_weight is not None
         or args.minimum_amplitude_effective_pixel_count is not None
@@ -411,6 +418,12 @@ def _analysis_config_from_args(
             args.amplitude_displacement_tolerance_m
         ),
         "--maximum-detected-error-std": args.maximum_detected_error_std,
+        "--minimum-local-verification-precision": (
+            args.minimum_local_verification_precision
+        ),
+        "--maximum-local-analysis-verification-error-dbz": (
+            args.maximum_local_analysis_verification_error_dbz
+        ),
         "--maximum-unresolved-amplitude-fraction": (
             args.maximum_unresolved_amplitude_fraction
         ),
@@ -488,6 +501,14 @@ def _analysis_config_from_args(
         maximum_latest_detected_error_std=value(
             "maximum_detected_error_std",
             defaults.maximum_latest_detected_error_std,
+        ),
+        minimum_local_verification_precision=value(
+            "minimum_local_verification_precision",
+            defaults.minimum_local_verification_precision,
+        ),
+        maximum_local_analysis_verification_error_dbz=value(
+            "maximum_local_analysis_verification_error_dbz",
+            defaults.maximum_local_analysis_verification_error_dbz,
         ),
         maximum_unresolved_amplitude_fraction=value(
             "maximum_unresolved_amplitude_fraction",
