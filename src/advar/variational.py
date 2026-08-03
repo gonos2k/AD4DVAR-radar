@@ -2313,11 +2313,14 @@ def _analysis_result(
         frozen.nowcast_config.max_log_growth_per_step
         - torch.abs(trajectory.log_growth_per_step)
     )
-    analysis_verified_support = (
-        source_support.detach()
-        if not analysis_degraded
-        else torch.zeros_like(source_support)
-    )
+    analysis_verified_support = torch.zeros_like(source_support)
+    if not analysis_degraded:
+        analysis_verified_support = _local_analysis_verified_support(
+            trajectory,
+            observations,
+            source_support,
+            frozen,
+        )
     return AnalysisResult(
         control=control.detach(),
         active_field_index=frozen.active_field_index.detach().clone(),
@@ -2334,9 +2337,7 @@ def _analysis_result(
             background_source_support=background_source_support.detach(),
             path_verified_source_support=analysis_verified_support,
             verified_source_support=analysis_verified_support,
-            observation_verified_source_support=torch.zeros_like(
-                source_support
-            ),
+            observation_verified_source_support=analysis_verified_support,
             background_verified_source_support=torch.zeros_like(
                 source_support
             ),
@@ -2536,6 +2537,33 @@ def _analysis_result(
             else "index_graph"
         ),
     )
+
+
+def _local_analysis_verified_support(
+    trajectory: AnalysisTrajectory,
+    observations: AnalysisObservations,
+    source_support: Tensor,
+    frozen: FrozenOuterState,
+) -> Tensor:
+    prediction_dbz = echo_to_dbz(
+        trajectory.frames_linear[-1],
+        min_dbz=frozen.nowcast_config.min_dbz,
+        max_dbz=frozen.nowcast_config.max_dbz,
+    )
+    standardized_error = (
+        torch.sqrt(observations.quality_weight[-1])
+        * torch.abs(observations.dbz[-1] - prediction_dbz)
+        / observations.std_dbz[-1]
+    )
+    detected_fit = observations.detected_mask[-1] & (
+        standardized_error
+        <= frozen.analysis_config.maximum_latest_detected_error_std
+    )
+    censored_fit = observations.censored_mask[-1] & (
+        prediction_dbz < frozen.analysis_config.detection_limit_dbz
+    )
+    local_fit = observations.valid_mask[-1] & (detected_fit | censored_fit)
+    return source_support.detach() * local_fit.to(dtype=source_support.dtype)
 
 
 def _analysis_window_is_representable(
