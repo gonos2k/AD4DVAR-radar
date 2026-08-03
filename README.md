@@ -377,7 +377,7 @@ amplitude 거리, projected m/s 운동증분 scale, 명시적인
 PSR·pair 운동/성장 불일치·pair 신뢰도 우위·성장 overlap
 support·물리면적·관측오차·amplitude
 정보량·적분량·면적·성장
-임계값, 검증된 상태경로 support 발행 임계값과
+임계값, 검증된 상태경로 support 발행 임계값, 국지 dBZ 상태검증 오차와
 `--operational-calibration-id`를 모두 요구한다. 누락된 보정값이
 있으면 실행 전에 거부하며, 두
 amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값은 실제
@@ -386,8 +386,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v33`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v25`
+- `output_contract_version`: 현재 `nowcast-npz-v34`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v26`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -405,6 +405,9 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 - `source_support`는 상태가 정의됐는지를,
   `path_verified_source_support`는 국지 에코 위치경로가 검증됐는지를,
   `verified_source_support`는 성장증거까지 있는 상태경로인지를 나타낸다.
+  과거 source의 state verification은 물리 footprint 안의 최신 관측과
+  `maximum_local_state_verification_error_dbz` 이내로 일치해야 한다. 기본
+  6 dBZ는 연구용 시작값이며 운용모드는 hindcast 보정값을 명시해야 한다.
   관측과 배경의 엄격한 evidence support도 별도로 보존한다.
   수용된 P1은 전체 support를 자동 승격하지 않고, 최신 detected 관측의
   표준화 절대오차 또는 censored 관측의 detection-limit 조건을 국지적으로
