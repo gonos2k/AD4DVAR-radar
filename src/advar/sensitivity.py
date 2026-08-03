@@ -32,7 +32,7 @@ SUPPORTED_METRICS = (
     "centroid_error",
 )
 
-CONTEXT_FEATURE_NAMES = (
+CONTEXT_FEATURE_NAMES_V13 = (
     "motion_dy",
     "motion_dx",
     "motion_speed",
@@ -95,6 +95,23 @@ CONTEXT_FEATURE_NAMES = (
     "grid_column_spacing_m",
     "grid_row_spacing_m",
 )
+CONTEXT_FEATURE_NAMES = (
+    *CONTEXT_FEATURE_NAMES_V13,
+    "observation_path_pair_count",
+    "observation_path_conflict",
+    "observation_path_extrapolated",
+    "observation_path_age_available",
+    "observation_path_age_minutes",
+    "observation_path_psr_available",
+    "log1p_observation_path_minimum_psr",
+    "background_path_pair_count",
+    "background_path_conflict",
+    "background_path_extrapolated",
+    "background_path_age_available",
+    "background_path_age_minutes",
+    "background_path_psr_available",
+    "log1p_background_path_minimum_psr",
+)
 
 
 @dataclass(frozen=True)
@@ -110,6 +127,8 @@ class SensitivityConfig:
     active_margin_dbz: float = 0.1
     linearity_delta: tuple[float, float, float] = (0.05, -0.04, 0.005)
     pair_conflict_trust_penalty: float = 0.5
+    forecast_velocity_uncertainty_mps: float = 1.0
+    forecast_confidence_length_scale_m: float = 10_000.0
     epsilon: float = 1.0e-6
 
     def __post_init__(self) -> None:
@@ -165,6 +184,20 @@ class SensitivityConfig:
             or not 0.0 < self.pair_conflict_trust_penalty <= 1.0
         ):
             raise ValueError("pair_conflict_trust_penalty must be in (0, 1]")
+        if (
+            not math.isfinite(self.forecast_velocity_uncertainty_mps)
+            or self.forecast_velocity_uncertainty_mps <= 0
+        ):
+            raise ValueError(
+                "forecast_velocity_uncertainty_mps must be positive"
+            )
+        if (
+            not math.isfinite(self.forecast_confidence_length_scale_m)
+            or self.forecast_confidence_length_scale_m <= 0
+        ):
+            raise ValueError(
+                "forecast_confidence_length_scale_m must be positive"
+            )
         if not math.isfinite(self.epsilon) or self.epsilon <= 0:
             raise ValueError("epsilon must be positive")
 
@@ -202,6 +235,9 @@ class SensitivitySnapshot:
     control_sensitivity: Tensor
     forecast_sensitivity: Tensor
     forecast_cap_active_mask: Tensor
+    forecast_confidence: Tensor
+    path_evidence_by_metric: Tensor
+    observation_evidence_by_metric: Tensor
     direct: DirectSensitivity
     latest_sensitivity_mask: Tensor
     observation_std_dbz: Tensor | None
@@ -372,6 +408,17 @@ def compute_sensitivity_snapshot(
         dtype=torch.bool,
         device=echo.device,
     )
+    forecast_confidence = _lead_dependent_forecast_confidence(
+        result,
+        sensitivity_config,
+    )
+    forecast_source_support = result.forecast_source_support
+    forecast_observation_support = result.forecast_observation_source_support
+    path_evidence_by_metric = echo.new_full(score_shape, float("nan"))
+    observation_evidence_by_metric = echo.new_full(
+        score_shape,
+        float("nan"),
+    )
     innovation, innovation_mask = _dbz_innovation(
         latest_frame_dbz,
         latest_background_dbz,
@@ -491,6 +538,20 @@ def compute_sensitivity_snapshot(
             )(control, clean_latest)
             forecast_gradient = torch.func.grad(metric)(prediction)
             whitened_gradient = direct_gradient * observation_std
+            evidence_weight = torch.abs(forecast_gradient.detach())
+            evidence_denominator = (
+                evidence_weight * forecast_source_support[lead_index]
+            ).sum()
+            if float(evidence_denominator) > sensitivity_config.epsilon:
+                path_evidence_by_metric[lead_index, metric_index] = (
+                    evidence_weight * forecast_confidence[lead_index]
+                ).sum() / evidence_denominator
+                observation_evidence_by_metric[
+                    lead_index, metric_index
+                ] = (
+                    evidence_weight
+                    * forecast_observation_support[lead_index]
+                ).sum() / evidence_denominator
 
             forecast_scores[lead_index, metric_index] = score.detach()
             control_sensitivity[lead_index, metric_index] = (
@@ -563,6 +624,8 @@ def compute_sensitivity_snapshot(
         control_sensitivity,
         metric_available,
         all_cap_masks,
+        path_evidence_by_metric,
+        observation_evidence_by_metric,
         nowcast_config,
         sensitivity_config,
     )
@@ -592,6 +655,11 @@ def compute_sensitivity_snapshot(
         control_sensitivity=control_sensitivity,
         forecast_sensitivity=forecast_maps,
         forecast_cap_active_mask=selected_cap_masks,
+        forecast_confidence=forecast_confidence.detach(),
+        path_evidence_by_metric=path_evidence_by_metric.detach(),
+        observation_evidence_by_metric=(
+            observation_evidence_by_metric.detach()
+        ),
         direct=DirectSensitivity(
             maps=direct_maps,
             norm=direct_norm,
@@ -771,6 +839,18 @@ def extract_context_features(
     growth_area_available = math.isfinite(
         metadata.minimum_growth_overlap_area_km2
     )
+    observation_path_age_available = (
+        metadata.observation_path.age_minutes is not None
+    )
+    observation_path_psr_available = math.isfinite(
+        metadata.observation_path.minimum_psr
+    )
+    background_path_age_available = (
+        metadata.background_path.age_minutes is not None
+    )
+    background_path_psr_available = math.isfinite(
+        metadata.background_path.minimum_psr
+    )
     psr_available = metadata.tendency_pair_count > 0 and bool(
         torch.isfinite(metadata.minimum_phase_correlation_psr)
     )
@@ -870,6 +950,28 @@ def extract_context_features(
             latest.new_tensor(float(grid_available)),
             grid_spacing[0],
             grid_spacing[1],
+            latest.new_tensor(float(metadata.observation_path.pair_count)),
+            latest.new_tensor(float(metadata.observation_path.conflict)),
+            latest.new_tensor(float(metadata.observation_path.extrapolated)),
+            latest.new_tensor(float(observation_path_age_available)),
+            latest.new_tensor(metadata.observation_path.age_minutes or 0.0),
+            latest.new_tensor(float(observation_path_psr_available)),
+            latest.new_tensor(
+                math.log1p(metadata.observation_path.minimum_psr)
+                if observation_path_psr_available
+                else 0.0
+            ),
+            latest.new_tensor(float(metadata.background_path.pair_count)),
+            latest.new_tensor(float(metadata.background_path.conflict)),
+            latest.new_tensor(float(metadata.background_path.extrapolated)),
+            latest.new_tensor(float(background_path_age_available)),
+            latest.new_tensor(metadata.background_path.age_minutes or 0.0),
+            latest.new_tensor(float(background_path_psr_available)),
+            latest.new_tensor(
+                math.log1p(metadata.background_path.minimum_psr)
+                if background_path_psr_available
+                else 0.0
+            ),
         )
     ).detach()
 
@@ -1175,6 +1277,31 @@ def _full_map_indices(
     return tuple(all_minutes.index(value) for value in selected_minutes)
 
 
+def _lead_dependent_forecast_confidence(
+    result: ForecastResult,
+    config: SensitivityConfig,
+) -> Tensor:
+    lead_seconds = torch.arange(
+        1,
+        result.run.config.forecast_steps + 1,
+        dtype=result.state.echo_linear.dtype,
+        device=result.state.echo_linear.device,
+    ) * (result.run.config.interval_minutes * 60.0)
+    position_uncertainty = (
+        lead_seconds * config.forecast_velocity_uncertainty_mps
+    )
+    decay = torch.exp(
+        -0.5
+        * (
+            position_uncertainty / config.forecast_confidence_length_scale_m
+        ).square()
+    )
+    return (
+        result.forecast_verified_support
+        * decay[:, None, None]
+    ).clamp(0.0, 1.0)
+
+
 def _trust_components(
     template: RadarState,
     metadata: ForecastMetadata,
@@ -1185,6 +1312,8 @@ def _trust_components(
     gradients: Tensor,
     metric_available: Tensor,
     cap_masks: Tensor,
+    path_evidence_by_metric: Tensor,
+    observation_evidence_by_metric: Tensor,
     nowcast_config: NowcastConfig,
     sensitivity_config: SensitivityConfig,
 ) -> dict[str, float]:
@@ -1196,13 +1325,25 @@ def _trust_components(
     pair_consistency_quality = (
         sensitivity_config.pair_conflict_trust_penalty**conflict_count
     )
-    path_evidence_quality = float(
-        (
-            metadata.verified_source_support.sum()
-            / metadata.source_support.sum().clamp_min(nowcast_config.epsilon)
-        ).clamp(0.0, 1.0)
+    evidence_available = (
+        metric_available
+        & torch.isfinite(path_evidence_by_metric)
+        & torch.isfinite(observation_evidence_by_metric)
     )
-    observation_evidence_quality = metadata.observation_state_support_fraction
+    if bool(torch.any(evidence_available)):
+        path_evidence_quality = float(
+            path_evidence_by_metric[evidence_available]
+            .mean()
+            .clamp(0.0, 1.0)
+        )
+        observation_evidence_quality = float(
+            observation_evidence_by_metric[evidence_available]
+            .mean()
+            .clamp(0.0, 1.0)
+        )
+    else:
+        path_evidence_quality = 0.0
+        observation_evidence_quality = 0.0
     if not bool(torch.any(metric_available)):
         return {
             "linearity": 0.0,

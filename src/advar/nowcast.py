@@ -1423,6 +1423,30 @@ class ForecastResult:
             self.run.config,
         )
 
+    @property
+    def forecast_source_support(self) -> Tensor:
+        return _advected_support_by_lead(
+            self.metadata.source_support,
+            self.state,
+            self.run.config,
+        )
+
+    @property
+    def forecast_observation_source_support(self) -> Tensor:
+        return _advected_support_by_lead(
+            self.metadata.observation_source_support,
+            self.state,
+            self.run.config,
+        )
+
+    @property
+    def forecast_background_source_support(self) -> Tensor:
+        return _advected_support_by_lead(
+            self.metadata.background_source_support,
+            self.state,
+            self.run.config,
+        )
+
     def validate_issuance(self) -> None:
         if tensor_digest(self.forecast_dbz) != self.forecast_dbz_digest:
             raise ValueError("forecast result disagrees with the issued forecast")

@@ -284,7 +284,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
 
         manifest = loaded.manifest
-        self.assertEqual(manifest["schema_version"], 13)
+        self.assertEqual(manifest["schema_version"], 14)
         self.assertEqual(
             manifest["context_feature_names"][6:8],
             ["motion_pair_conflict", "growth_pair_conflict"],
@@ -308,12 +308,21 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         self.assertEqual(
             manifest["trust_components"]["path_evidence"],
-            1.0,
+            self.snapshot.trust_components["path_evidence"],
         )
         self.assertEqual(
             manifest["trust_components"]["observation_evidence"],
-            1.0,
+            self.snapshot.trust_components["observation_evidence"],
         )
+        for name in (
+            "forecast_confidence",
+            "path_evidence_by_metric",
+            "observation_evidence_by_metric",
+        ):
+            np.testing.assert_array_equal(
+                loaded.arrays[name],
+                getattr(self.snapshot, name).numpy(),
+            )
         self.assertIs(
             manifest["indirect_observation_sensitivity_available"],
             False,
@@ -1181,6 +1190,32 @@ class EpisodeLedgerTests(unittest.TestCase):
                 )
 
     def test_malformed_or_contradictory_snapshot_is_rejected(self) -> None:
+        invalid_confidence = self.snapshot.forecast_confidence.clone()
+        invalid_confidence[0, 0, 0] = 1.1
+        with self.assertRaisesRegex(ValueError, "forecast_confidence"):
+            self.ledger.append(
+                replace(
+                    self.episode("bad-confidence"),
+                    snapshot=replace(
+                        self.snapshot,
+                        forecast_confidence=invalid_confidence,
+                    ),
+                )
+            )
+
+        invalid_evidence = self.snapshot.path_evidence_by_metric.clone()
+        invalid_evidence[0, 0] = 1.1
+        with self.assertRaisesRegex(ValueError, "metric evidence"):
+            self.ledger.append(
+                replace(
+                    self.episode("bad-evidence"),
+                    snapshot=replace(
+                        self.snapshot,
+                        path_evidence_by_metric=invalid_evidence,
+                    ),
+                )
+            )
+
         malformed = replace(
             self.snapshot,
             forecast_sensitivity=torch.zeros(1),

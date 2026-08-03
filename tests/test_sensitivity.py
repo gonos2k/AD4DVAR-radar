@@ -375,6 +375,15 @@ class SensitivityTests(unittest.TestCase):
             (1, self.height, self.width),
         )
         self.assertEqual(
+            snapshot.forecast_confidence.shape,
+            (18, self.height, self.width),
+        )
+        self.assertEqual(snapshot.path_evidence_by_metric.shape, (18, 1))
+        self.assertEqual(
+            snapshot.observation_evidence_by_metric.shape,
+            (18, 1),
+        )
+        self.assertEqual(
             snapshot.direct.maps.shape,
             (1, 1, self.height, self.width),
         )
@@ -964,6 +973,22 @@ class SensitivityTests(unittest.TestCase):
             state_path_age_minutes=10.0,
             minimum_growth_overlap_support=5.0,
             minimum_growth_overlap_area_km2=2.0,
+            observation_path=StatePathProvenance(
+                mode=TendencyPairSelection.RECENT,
+                pair_count=1,
+                minimum_psr=13.0,
+                conflict=False,
+                extrapolated=False,
+                age_minutes=10.0,
+            ),
+            background_path=StatePathProvenance(
+                mode=TendencyPairSelection.LONG,
+                pair_count=1,
+                minimum_psr=7.0,
+                conflict=True,
+                extrapolated=True,
+                age_minutes=20.0,
+            ),
         )
         features = extract_context_features(
             self.frames[2],
@@ -991,6 +1016,20 @@ class SensitivityTests(unittest.TestCase):
             "growth_overlap_area_available": 1.0,
             "log1p_minimum_growth_overlap_area_km2": math.log1p(2.0),
             "state_path_mode_recent": 1.0,
+            "observation_path_pair_count": 1.0,
+            "observation_path_conflict": 0.0,
+            "observation_path_extrapolated": 0.0,
+            "observation_path_age_available": 1.0,
+            "observation_path_age_minutes": 10.0,
+            "observation_path_psr_available": 1.0,
+            "log1p_observation_path_minimum_psr": math.log1p(13.0),
+            "background_path_pair_count": 1.0,
+            "background_path_conflict": 1.0,
+            "background_path_extrapolated": 1.0,
+            "background_path_age_available": 1.0,
+            "background_path_age_minutes": 20.0,
+            "background_path_psr_available": 1.0,
+            "log1p_background_path_minimum_psr": math.log1p(7.0),
         }
         for name, value in expected.items():
             with self.subTest(name=name):
@@ -1228,16 +1267,40 @@ class SensitivityTests(unittest.TestCase):
             latest_background_dbz=self.background[2],
         )
 
-        expected_path_evidence = float(verified.mean())
-        self.assertEqual(baseline.trust_components["path_evidence"], 1.0)
+        baseline_available = (
+            baseline.metric_available
+            & torch.isfinite(baseline.path_evidence_by_metric)
+            & torch.isfinite(baseline.observation_evidence_by_metric)
+        )
+        unverified_available = (
+            unverified.metric_available
+            & torch.isfinite(unverified.path_evidence_by_metric)
+            & torch.isfinite(unverified.observation_evidence_by_metric)
+        )
+        baseline_path_evidence = float(
+            baseline.path_evidence_by_metric[baseline_available].mean()
+        )
+        baseline_observation_evidence = float(
+            baseline.observation_evidence_by_metric[
+                baseline_available
+            ].mean()
+        )
+        unverified_path_evidence = float(
+            unverified.path_evidence_by_metric[unverified_available].mean()
+        )
+        self.assertAlmostEqual(
+            baseline.trust_components["path_evidence"],
+            baseline_path_evidence,
+        )
         self.assertAlmostEqual(
             baseline.trust_components["observation_evidence"],
-            self.result.metadata.observation_state_support_fraction,
+            baseline_observation_evidence,
         )
-        self.assertEqual(
+        self.assertAlmostEqual(
             unverified.trust_components["path_evidence"],
-            expected_path_evidence,
+            unverified_path_evidence,
         )
+        self.assertLess(unverified_path_evidence, baseline_path_evidence)
         for name in (
             "linearity",
             "verification",
@@ -1251,8 +1314,40 @@ class SensitivityTests(unittest.TestCase):
             )
         self.assertAlmostEqual(
             unverified.trust_score,
-            baseline.trust_score * expected_path_evidence,
+            baseline.trust_score
+            * unverified_path_evidence
+            / baseline_path_evidence,
         )
+
+    def test_forecast_confidence_decays_with_position_uncertainty(self) -> None:
+        snapshot = compute_sensitivity_snapshot(
+            self.frames[2],
+            self.result,
+            self.verification,
+            sensitivity_config=self.sensitivity_config,
+            latest_background_dbz=self.background[2],
+        )
+        lead_seconds = torch.arange(
+            1,
+            self.nowcast_config.forecast_steps + 1,
+            dtype=self.frames.dtype,
+        ) * (self.nowcast_config.interval_minutes * 60.0)
+        uncertainty = (
+            lead_seconds
+            * self.sensitivity_config.forecast_velocity_uncertainty_mps
+        )
+        expected_decay = torch.exp(
+            -0.5
+            * (
+                uncertainty
+                / self.sensitivity_config.forecast_confidence_length_scale_m
+            ).square()
+        )
+        expected = (
+            self.result.forecast_verified_support
+            * expected_decay[:, None, None]
+        )
+        torch.testing.assert_close(snapshot.forecast_confidence, expected)
 
     def test_nonfinite_background_does_not_create_fake_innovation(self) -> None:
         background = torch.full_like(self.frames, float("nan"))
@@ -1321,6 +1416,10 @@ class SensitivityTests(unittest.TestCase):
             {"pair_conflict_trust_penalty": 0.0},
             {"pair_conflict_trust_penalty": 1.1},
             {"pair_conflict_trust_penalty": float("nan")},
+            {"forecast_velocity_uncertainty_mps": 0.0},
+            {"forecast_velocity_uncertainty_mps": float("nan")},
+            {"forecast_confidence_length_scale_m": 0.0},
+            {"forecast_confidence_length_scale_m": float("nan")},
         )
         for values in invalid_configs:
             with self.subTest(values=values):

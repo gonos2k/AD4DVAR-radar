@@ -20,13 +20,17 @@ from numpy.typing import NDArray
 import torch
 from torch import Tensor
 
-from .sensitivity import CONTEXT_FEATURE_NAMES, SensitivitySnapshot
+from .sensitivity import (
+    CONTEXT_FEATURE_NAMES,
+    CONTEXT_FEATURE_NAMES_V13,
+    SensitivitySnapshot,
+)
 
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
 _INDEX_SCHEMA_VERSION = 3
-_EPISODE_SCHEMA_VERSION = 13
+_EPISODE_SCHEMA_VERSION = 14
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _TRUST_COMPONENTS_V13 = {
     "linearity",
@@ -751,6 +755,11 @@ def _snapshot_arrays(episode: SensitivityEpisode) -> dict[str, NDArray[Any]]:
         "control_sensitivity": snapshot.control_sensitivity,
         "forecast_sensitivity": snapshot.forecast_sensitivity,
         "forecast_cap_active_mask": snapshot.forecast_cap_active_mask,
+        "forecast_confidence": snapshot.forecast_confidence,
+        "path_evidence_by_metric": snapshot.path_evidence_by_metric,
+        "observation_evidence_by_metric": (
+            snapshot.observation_evidence_by_metric
+        ),
         "direct_observation_sensitivity": snapshot.direct.maps,
         "direct_observation_sensitivity_norm": snapshot.direct.norm,
         "tile_direct_sensitivity_norm": snapshot.direct.tile_norm,
@@ -812,6 +821,9 @@ def _episode_manifest(
             ),
             "direct_observation_sensitivity": "d_error/d_dbz",
             "direct_observation_impact": "error_change",
+            "forecast_confidence": "dimensionless_evidence_score",
+            "path_evidence_by_metric": "dimensionless",
+            "observation_evidence_by_metric": "dimensionless",
         },
         "whitened_tile_norm_available": (
             snapshot.whitened_tile_norm_available
@@ -929,7 +941,7 @@ def _verify_manifest(
 def _verify_manifest_layout(manifest: dict[str, Any]) -> None:
     arrays = manifest["arrays"]
     schema_version = manifest["schema_version"]
-    core = {
+    legacy_core = {
         "context_features",
         "analysis_control",
         "forecast_scores",
@@ -943,7 +955,13 @@ def _verify_manifest_layout(manifest: dict[str, Any]) -> None:
         "latest_sensitivity_mask",
         "action_features",
     }
-    optional = {
+    evidence_arrays = {
+        "forecast_confidence",
+        "path_evidence_by_metric",
+        "observation_evidence_by_metric",
+    }
+    core = legacy_core | (evidence_arrays if schema_version >= 14 else set())
+    legacy_optional = {
         "tile_whitened_direct_sensitivity_norm",
         "direct_observation_impact",
         "tile_direct_observation_impact",
@@ -953,6 +971,9 @@ def _verify_manifest_layout(manifest: dict[str, Any]) -> None:
         "observation_innovation_mask",
         "baseline_scores",
     }
+    optional = legacy_optional | (
+        evidence_arrays if schema_version < 14 else set()
+    )
     array_names = set(arrays)
     if schema_version == 1:
         context_names = _SCHEMA_ONE_CONTEXT_FEATURE_NAMES
@@ -964,7 +985,10 @@ def _verify_manifest_layout(manifest: dict[str, Any]) -> None:
             or leads[0] <= 0
         ):
             raise ValueError("schema 1 lead_minutes are invalid")
-        if array_names != core | optional:
+        if array_names not in (
+            core | legacy_optional,
+            core | optional,
+        ):
             raise ValueError("manifest arrays do not match episode schema 1")
         interval = leads[0]
         expected_scope = {
@@ -1023,6 +1047,13 @@ def _verify_manifest_layout(manifest: dict[str, Any]) -> None:
         if not core <= array_names <= core | optional:
             raise ValueError(
                 "manifest arrays do not match episode schema 10"
+            )
+        expected_scope = _sensitivity_scope()
+    elif schema_version in (12, 13):
+        context_names = CONTEXT_FEATURE_NAMES_V13
+        if not core <= array_names <= core | optional:
+            raise ValueError(
+                f"manifest arrays do not match episode schema {schema_version}"
             )
         expected_scope = _sensitivity_scope()
     else:
@@ -1181,6 +1212,9 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             width,
         ),
         "forecast_cap_active_mask": (selected_count, height, width),
+        "forecast_confidence": (lead_count, height, width),
+        "path_evidence_by_metric": (lead_count, metric_count),
+        "observation_evidence_by_metric": (lead_count, metric_count),
         "direct_observation_sensitivity": (
             selected_count,
             metric_count,
@@ -1207,6 +1241,11 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         "control_sensitivity": snapshot.control_sensitivity,
         "forecast_sensitivity": snapshot.forecast_sensitivity,
         "forecast_cap_active_mask": snapshot.forecast_cap_active_mask,
+        "forecast_confidence": snapshot.forecast_confidence,
+        "path_evidence_by_metric": snapshot.path_evidence_by_metric,
+        "observation_evidence_by_metric": (
+            snapshot.observation_evidence_by_metric
+        ),
         "direct_observation_sensitivity": snapshot.direct.maps,
         "direct_observation_sensitivity_norm": snapshot.direct.norm,
         "tile_direct_sensitivity_norm": snapshot.direct.tile_norm,
@@ -1229,6 +1268,13 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
 
     _require_finite("context_features", snapshot.context_features)
     _require_finite("analysis_control", snapshot.analysis_control)
+    if not bool(
+        torch.all(
+            (snapshot.forecast_confidence >= 0)
+            & (snapshot.forecast_confidence <= 1)
+        )
+    ):
+        raise ValueError("forecast_confidence must be in [0, 1]")
 
     available = snapshot.metric_available
     if not bool(torch.all(torch.isfinite(snapshot.forecast_scores[available]))):
@@ -1243,6 +1289,16 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         torch.all(torch.isnan(snapshot.control_sensitivity[~available]))
     ):
         raise ValueError("unavailable control sensitivities must be NaN")
+    evidence_values = (
+        snapshot.path_evidence_by_metric,
+        snapshot.observation_evidence_by_metric,
+    )
+    for value in evidence_values:
+        finite = torch.isfinite(value)
+        if not bool(torch.all((value[finite] >= 0) & (value[finite] <= 1))):
+            raise ValueError("metric evidence must be in [0, 1]")
+        if bool(torch.any(finite & ~available)):
+            raise ValueError("unavailable metrics cannot retain evidence")
 
     latest_norm = snapshot.direct.norm
     latest_tile_norm = snapshot.direct.tile_norm
