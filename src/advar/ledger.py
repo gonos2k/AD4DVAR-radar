@@ -30,7 +30,7 @@ from .sensitivity import (
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
 _INDEX_SCHEMA_VERSION = 3
-_EPISODE_SCHEMA_VERSION = 14
+_EPISODE_SCHEMA_VERSION = 15
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _TRUST_COMPONENTS_V13 = {
     "linearity",
@@ -771,11 +771,9 @@ def _snapshot_arrays(episode: SensitivityEpisode) -> dict[str, NDArray[Any]]:
         ),
         "direct_observation_impact": snapshot.direct.impact,
         "tile_direct_observation_impact": snapshot.direct.tile_impact,
-        "direct_normalized_reward": snapshot.direct.reward,
         "observation_std_dbz": snapshot.observation_std_dbz,
         "observation_innovation_dbz": snapshot.observation_innovation_dbz,
         "observation_innovation_mask": snapshot.observation_innovation_mask,
-        "baseline_scores": snapshot.baseline_scores,
     }
     tensor_arrays.update(
         {
@@ -832,6 +830,7 @@ def _episode_manifest(
         "total_observation_sensitivity_available": False,
         "impact_available": snapshot.impact_available,
         "reward_available": snapshot.reward_available,
+        "baseline_lineage_available": False,
         "reward_epsilon": snapshot.reward_epsilon,
         "trust_components": snapshot.trust_components,
         "trust_score": snapshot.trust_score,
@@ -923,6 +922,13 @@ def _verify_manifest(
         or set(trust_components) != _TRUST_COMPONENTS_V13
     ):
         raise ValueError("manifest trust component contract is invalid")
+    if schema_version >= 15 and (
+        manifest.get("baseline_lineage_available") is not False
+        or manifest.get("reward_available") is not False
+    ):
+        raise ValueError(
+            "schema 15 requires fail-closed baseline reward lineage"
+        )
     reward_epsilon = manifest.get("reward_epsilon")
     if (
         not isinstance(reward_epsilon, (int, float))
@@ -974,6 +980,8 @@ def _verify_manifest_layout(manifest: dict[str, Any]) -> None:
     optional = legacy_optional | (
         evidence_arrays if schema_version < 14 else set()
     )
+    if schema_version >= 15:
+        optional -= {"direct_normalized_reward", "baseline_scores"}
     array_names = set(arrays)
     if schema_version == 1:
         context_names = _SCHEMA_ONE_CONTEXT_FEATURE_NAMES
@@ -1145,8 +1153,10 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         )
     if not math.isfinite(snapshot.trust_score):
         raise ValueError("trust_score must be finite")
-    if snapshot.reward_available and not snapshot.impact_available:
-        raise ValueError("reward availability requires impact availability")
+    if snapshot.baseline_scores is not None or snapshot.reward_available:
+        raise ValueError(
+            "normalized reward requires a verified baseline lineage contract"
+        )
     if (
         not isinstance(snapshot.reward_epsilon, (int, float))
         or isinstance(snapshot.reward_epsilon, bool)
@@ -1428,47 +1438,6 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             raise ValueError("tile impacts and whole-field impacts disagree")
     elif snapshot.direct.tile_impact is not None:
         raise ValueError("tile impact cannot exist without direct impact")
-    baseline = snapshot.baseline_scores
-    baseline_available = baseline is not None
-    if baseline is not None:
-        if tuple(baseline.shape) != (lead_count, metric_count):
-            raise ValueError("baseline_scores has invalid shape")
-        _require_float_tensor("baseline_scores", baseline)
-        if not bool(
-            torch.all(torch.isfinite(baseline)) and torch.all(baseline >= 0)
-        ):
-            raise ValueError("baseline_scores must be finite and non-negative")
-    expected_reward_available = snapshot.impact_available and baseline_available
-    if snapshot.reward_available != expected_reward_available:
-        raise ValueError("reward availability disagrees with baseline_scores")
-
-    if snapshot.reward_available:
-        reward = snapshot.direct.reward
-        impact = snapshot.direct.impact
-        if reward is None or impact is None or baseline is None:
-            raise ValueError(
-                "normalized reward requires reward, impact, and baseline"
-            )
-        if tuple(reward.shape) != (lead_count, metric_count):
-            raise ValueError("direct_normalized_reward has invalid shape")
-        _require_float_tensor("direct_normalized_reward", reward)
-        if not bool(
-            torch.all(torch.isfinite(reward[snapshot.metric_available]))
-        ):
-            raise ValueError("available rewards must be finite")
-        expected_reward = -impact / (
-            baseline + snapshot.reward_epsilon
-        )
-        if not torch.allclose(
-            reward,
-            expected_reward,
-            rtol=1.0e-5,
-            atol=1.0e-7,
-            equal_nan=True,
-        ):
-            raise ValueError(
-                "direct_normalized_reward disagrees with impact and baseline"
-            )
     if any(
         not math.isfinite(value)
         for value in snapshot.trust_components.values()

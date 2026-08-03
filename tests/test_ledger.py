@@ -176,11 +176,6 @@ def _computed_snapshot():
         result,
         verification,
         latest_background_dbz=background[-1],
-        baseline_scores=torch.ones(
-            config.forecast_steps,
-            1,
-            dtype=frames.dtype,
-        ),
         sensitivity_config=SensitivityConfig(
             metric_names=("log_echo_mse",),
         ),
@@ -284,7 +279,11 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
 
         manifest = loaded.manifest
-        self.assertEqual(manifest["schema_version"], 14)
+        self.assertEqual(manifest["schema_version"], 15)
+        self.assertIs(manifest["baseline_lineage_available"], False)
+        self.assertIs(manifest["reward_available"], False)
+        self.assertNotIn("baseline_scores", loaded.arrays)
+        self.assertNotIn("direct_normalized_reward", loaded.arrays)
         self.assertEqual(
             manifest["context_feature_names"][6:8],
             ["motion_pair_conflict", "growth_pair_conflict"],
@@ -523,6 +522,10 @@ class EpisodeLedgerTests(unittest.TestCase):
         arrays["tile_direct_sensitivity_norm"] = latest_axis(
             "tile_direct_sensitivity_norm"
         )
+        arrays["baseline_scores"] = np.ones_like(arrays["forecast_scores"])
+        arrays["direct_normalized_reward"] = -arrays[
+            "direct_observation_impact"
+        ] / arrays["baseline_scores"]
         arrays["direct_observation_impact"] = latest_axis(
             "direct_observation_impact"
         )
@@ -552,6 +555,8 @@ class EpisodeLedgerTests(unittest.TestCase):
 
         manifest = json.loads(manifest_path.read_text("utf-8"))
         manifest["schema_version"] = 1
+        manifest["reward_available"] = True
+        manifest.pop("baseline_lineage_available")
         manifest.pop("forecast_run_digest")
         manifest["contract"].pop("nowcast_config_digest")
         manifest["contract"].pop("sensitivity_config_digest")
@@ -1238,12 +1243,9 @@ class EpisodeLedgerTests(unittest.TestCase):
 
         invalid_baseline = replace(
             self.snapshot,
-            baseline_scores=torch.full_like(
-                self.snapshot.baseline_scores,
-                float("nan"),
-            ),
+            baseline_scores=torch.ones_like(self.snapshot.forecast_scores),
         )
-        with self.assertRaisesRegex(ValueError, "finite and non-negative"):
+        with self.assertRaisesRegex(ValueError, "baseline lineage contract"):
             self.ledger.append(
                 replace(
                     self.episode("bad-baseline"),
@@ -1251,15 +1253,14 @@ class EpisodeLedgerTests(unittest.TestCase):
                 )
             )
 
-        reward = self.snapshot.direct.reward.clone()
-        reward[:] = 123.0
+        reward = torch.zeros_like(self.snapshot.forecast_scores)
         invalid_reward = replace(
             self.snapshot,
             direct=replace(self.snapshot.direct, reward=reward),
         )
         with self.assertRaisesRegex(
             ValueError,
-            "disagrees with impact and baseline",
+            "baseline lineage contract",
         ):
             self.ledger.append(
                 replace(

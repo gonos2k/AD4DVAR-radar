@@ -626,6 +626,12 @@ innovation·whitening·impact·reward가 없으면 해당 배열은 저장하지
 기본 지표는 `log_echo_mse`, `soft_fss_error_35`(`1-softFSS`),
 `centroid_error`이며 모두 작을수록 좋다.
 
+현재 schema 15 episode는 lineage 없는 `baseline_scores`를 거부하고
+`direct_observation_impact`만 저장한다. 동일 issue time, verification mask,
+metric, grid와 baseline model/run digest를 묶는 계약이 추가되기 전에는
+정규화 reward를 생성하지 않는다. schema 1–14의 기존 episode는 계속
+검증·열람할 수 있지만 새 episode로 자동 승격되지는 않는다.
+
 ```python
 from datetime import datetime, timezone
 
