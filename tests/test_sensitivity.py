@@ -225,15 +225,9 @@ class SensitivityTests(unittest.TestCase):
         cls.verification = (
             cls.result.forecast_dbz + 0.4 * torch.sin(y / 3.0)[None]
         )
-        baseline_scores = torch.ones(
-            cls.nowcast_config.forecast_steps,
-            1,
-            dtype=torch.float64,
-        )
         common = {
             "sensitivity_config": cls.sensitivity_config,
             "observation_std_dbz": 2.0,
-            "baseline_scores": baseline_scores,
         }
         cls.snapshot = compute_sensitivity_snapshot(
             cls.frames[2],
@@ -724,6 +718,23 @@ class SensitivityTests(unittest.TestCase):
         self.assertIsNone(snapshot.direct.impact)
         self.assertIsNone(snapshot.direct.tile_impact)
         self.assertIsNone(snapshot.direct.reward)
+
+    def test_unlineaged_baseline_scores_are_rejected(self) -> None:
+        baseline_scores = torch.ones_like(self.snapshot.forecast_scores)
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "verified lineage contract",
+        ):
+            compute_sensitivity_snapshot(
+                self.frames[2],
+                self.result,
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+                latest_background_dbz=self.background[2],
+                observation_std_dbz=2.0,
+                baseline_scores=baseline_scores,
+            )
 
     def test_sensitivity_scores_the_issued_capped_forecast(self) -> None:
         config = self.nowcast_config

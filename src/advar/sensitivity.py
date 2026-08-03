@@ -276,9 +276,16 @@ def compute_sensitivity_snapshot(
     The direct observation sensitivity is with respect to latest-frame dBZ
     inside a frozen active set. The FFT motion analysis is intentionally
     excluded: its discrete peak selection has no valid local derivative.
+    Baseline-normalized reward remains disabled until baseline run, metric,
+    verification, and valid-domain lineage can be verified together.
     """
 
     sensitivity_config = sensitivity_config or SensitivityConfig()
+    if baseline_scores is not None:
+        raise ValueError(
+            "baseline_scores require a verified lineage contract; "
+            "normalized reward is disabled until that contract exists"
+        )
     nowcast_config = result.run.config
     result.validate_issuance()
     result.run.validate_latest_frame(latest_frame_dbz)
@@ -597,23 +604,6 @@ def compute_sensitivity_snapshot(
         observation_impact = None
         tile_impact = None
 
-    reward = None
-    if baseline_scores is not None:
-        baseline_scores = baseline_scores.to(
-            dtype=echo.dtype,
-            device=echo.device,
-        )
-        if baseline_scores.shape != forecast_scores.shape:
-            raise ValueError("baseline_scores must match forecast_scores shape")
-        if not bool(torch.all(torch.isfinite(baseline_scores))) or bool(
-            torch.any(baseline_scores < 0)
-        ):
-            raise ValueError("baseline_scores must be finite and non-negative")
-        if observation_impact is not None:
-            reward = -observation_impact / (
-                baseline_scores + sensitivity_config.epsilon
-            )
-
     trust_components = _trust_components(
         state,
         metadata,
@@ -667,7 +657,7 @@ def compute_sensitivity_snapshot(
             whitened_tile_norm=tile_whitened_norm,
             impact=observation_impact,
             tile_impact=tile_impact,
-            reward=reward,
+            reward=None,
         ),
         latest_sensitivity_mask=latest_active,
         observation_std_dbz=(
@@ -685,11 +675,7 @@ def compute_sensitivity_snapshot(
             if innovation_mask is not None
             else None
         ),
-        baseline_scores=(
-            baseline_scores.detach()
-            if baseline_scores is not None
-            else None
-        ),
+        baseline_scores=None,
         reward_epsilon=sensitivity_config.epsilon,
         trust_components=trust_components,
         trust_score=trust_score,
