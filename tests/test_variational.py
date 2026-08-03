@@ -987,6 +987,39 @@ class VariationalAnalysisTests(unittest.TestCase):
             1.0,
         )
 
+    def test_degraded_analysis_skips_field_conditioned_identifiability(
+        self,
+    ) -> None:
+        observations, frozen = self.stationary_problem()
+
+        with patch(
+            "advar.variational._field_conditioned_dynamics_gram",
+            side_effect=AssertionError(
+                "degraded analysis entered field conditioning"
+            ),
+        ):
+            result = variational_module._analysis_result(
+                initial_control(frozen),
+                observations,
+                frozen,
+                1.0,
+                0.5,
+                1,
+                0,
+                False,
+                "maximum_iterations",
+            )
+
+        self.assertFalse(result.used_fallback)
+        self.assertTrue(result.degraded)
+        self.assertIsNotNone(result.dynamics_data_gram_eigenvalues)
+        self.assertIsNone(
+            result.field_conditioned_dynamics_data_gram_eigenvalues
+        )
+        self.assertIsNone(
+            result.field_conditioned_dynamics_data_effective_dimension
+        )
+
     def test_ad_hot_path_has_no_boundary_validation(self) -> None:
         observations, frozen = self.stationary_problem()
         control = initial_control(frozen)
