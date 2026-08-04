@@ -763,6 +763,7 @@ class _SourceTendencyEstimate:
     motion_disagreement_px: Tensor
     motion_disagreement_mps: Tensor
     growth_disagreement: Tensor
+    maximum_growth_saturation_excess: Tensor
     minimum_phase_correlation_psr: Tensor
     tendency_pair_count: int
     motion_pair_count: int
@@ -792,12 +793,26 @@ class _SourceTendencyEstimate:
 @dataclass(frozen=True)
 class _GrowthEvidence:
     value: Tensor
+    raw_value: Tensor
+    saturation_excess: Tensor
     available: bool
     overlap_support: Tensor
     overlap_area_km2: Tensor
     aligned_previous_integral: Tensor
     current_integral: Tensor
     alignment_log_error: Tensor
+
+
+def _maximum_growth_saturation_excess(
+    evidence: tuple[_GrowthEvidence, ...],
+    reference: Tensor,
+) -> Tensor:
+    available = tuple(item for item in evidence if item.available)
+    if not available:
+        return reference.new_zeros(())
+    return torch.max(
+        torch.stack(tuple(item.saturation_excess for item in available))
+    )
 
 
 def _minimum_growth_evidence(
@@ -930,6 +945,7 @@ class ForecastMetadata:
     motion_disagreement_px: Tensor
     motion_disagreement_mps: Tensor
     growth_disagreement: Tensor
+    maximum_growth_saturation_excess: Tensor
     minimum_phase_correlation_psr: Tensor
     tendency_pair_count: int
     tendency_source: TendencySource
@@ -1051,6 +1067,9 @@ def state_metadata_digest(
                 ),
                 "growth_disagreement": tensor_digest(
                     metadata.growth_disagreement
+                ),
+                "maximum_growth_saturation_excess": tensor_digest(
+                    metadata.maximum_growth_saturation_excess
                 ),
                 "minimum_phase_correlation_psr": tensor_digest(
                     metadata.minimum_phase_correlation_psr
@@ -1799,6 +1818,8 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         raise ValueError("motion_disagreement_mps must be scalar")
     if metadata.growth_disagreement.ndim != 0:
         raise ValueError("growth_disagreement must be scalar")
+    if metadata.maximum_growth_saturation_excess.ndim != 0:
+        raise ValueError("maximum_growth_saturation_excess must be scalar")
     selection_counts = {
         TendencyPairSelection.NONE: 0,
         TendencyPairSelection.PERSISTENCE: 0,
@@ -2031,11 +2052,14 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         metadata.background_verified_source_support,
         metadata.motion_disagreement_px,
         metadata.growth_disagreement,
+        metadata.maximum_growth_saturation_excess,
     )
     if not all(
         bool(torch.all(torch.isfinite(value))) for value in finite_tensors
     ):
         raise ValueError("forecast run state and metadata must be finite")
+    if float(metadata.maximum_growth_saturation_excess) < 0.0:
+        raise ValueError("maximum_growth_saturation_excess cannot be negative")
     if math.isinf(float(metadata.motion_disagreement_mps)):
         raise ValueError("motion_disagreement_mps cannot be infinite")
     if bool(torch.any(state.echo_linear < 0)):
@@ -2481,6 +2505,9 @@ def estimate_prepared_state(
         motion_disagreement_px=tendency.motion_disagreement_px.detach(),
         motion_disagreement_mps=tendency.motion_disagreement_mps.detach(),
         growth_disagreement=tendency.growth_disagreement.detach(),
+        maximum_growth_saturation_excess=(
+            tendency.maximum_growth_saturation_excess.detach()
+        ),
         minimum_phase_correlation_psr=(
             tendency.minimum_phase_correlation_psr.detach()
         ),
@@ -2665,6 +2692,12 @@ def _estimate_source_tendencies(
             motion_disagreement_px=motion_disagreement,
             motion_disagreement_mps=motion_disagreement_mps,
             growth_disagreement=growth_disagreement,
+            maximum_growth_saturation_excess=(
+                _maximum_growth_saturation_excess(
+                    (first_growth_evidence, second_growth_evidence),
+                    linear,
+                )
+            ),
             minimum_phase_correlation_psr=minimum_psr,
             tendency_pair_count=len(used_indices),
             motion_pair_count=len(motion_indices),
@@ -2748,6 +2781,7 @@ def _estimate_source_tendencies(
             motion_disagreement_px=zero_growth,
             motion_disagreement_mps=unavailable_psr,
             growth_disagreement=zero_growth,
+            maximum_growth_saturation_excess=zero_growth,
             minimum_phase_correlation_psr=unavailable_psr,
             tendency_pair_count=0,
             motion_pair_count=0,
@@ -2957,6 +2991,11 @@ def _single_pair_tendency(
         motion_disagreement_px=zero,
         motion_disagreement_mps=psr.new_full((), torch.nan),
         growth_disagreement=zero,
+        maximum_growth_saturation_excess=(
+            growth_evidence.saturation_excess
+            if growth_evidence.available
+            else zero
+        ),
         minimum_phase_correlation_psr=psr,
         tendency_pair_count=1,
         motion_pair_count=1,
@@ -3137,6 +3176,12 @@ def _combine_single_adjacent_and_long(
         motion_disagreement_px=motion_disagreement,
         motion_disagreement_mps=motion_disagreement_mps,
         growth_disagreement=growth_disagreement,
+        maximum_growth_saturation_excess=(
+            _maximum_growth_saturation_excess(
+                (adjacent_growth_evidence, long_growth_evidence),
+                linear,
+            )
+        ),
         minimum_phase_correlation_psr=minimum_psr,
         tendency_pair_count=int(adjacent_used) + int(long_used),
         motion_pair_count=int(motion_adjacent) + int(motion_long),
@@ -3532,7 +3577,12 @@ def _growth_evidence_aligned_with_motion(
         max_log_growth=config.max_log_growth_per_step * step_span,
         grid_time_contract=grid_time_contract,
     )
-    return replace(evidence, value=evidence.value / step_span)
+    return replace(
+        evidence,
+        value=evidence.value / step_span,
+        raw_value=evidence.raw_value / step_span,
+        saturation_excess=evidence.saturation_excess / step_span,
+    )
 
 
 def _estimate_available_pair(
@@ -4598,6 +4648,10 @@ def _forecast_log_growth_uncertainty(
         config,
         pair_count=metadata.growth_pair_count,
     )
+    uncertainty_per_step = torch.maximum(
+        uncertainty_per_step,
+        metadata.maximum_growth_saturation_excess,
+    )
     retention = math.exp(
         -config.interval_minutes / config.growth_decay_minutes
     )
@@ -4713,6 +4767,8 @@ def _aligned_growth_evidence(
     if not available:
         return _GrowthEvidence(
             value=previous.new_zeros(()),
+            raw_value=raw_growth,
+            saturation_excess=previous.new_zeros(()),
             available=False,
             overlap_support=overlap_support,
             overlap_area_km2=overlap_area_km2,
@@ -4722,6 +4778,8 @@ def _aligned_growth_evidence(
         )
     return _GrowthEvidence(
         value=raw_growth.clamp(-limit, limit),
+        raw_value=raw_growth,
+        saturation_excess=(torch.abs(raw_growth) - limit).clamp_min(0.0),
         available=True,
         overlap_support=overlap_support,
         overlap_area_km2=overlap_area_km2,

@@ -177,6 +177,7 @@ class CliTests(unittest.TestCase):
             "growth_evidence_uncertainty_multiplier",
             "forecast_position_uncertainty_m",
             "forecast_log_growth_uncertainty",
+            "maximum_growth_saturation_excess",
             "forecast_confidence",
             "radar_anchored_valid_mask",
             "radar_state_anchored_valid_mask",

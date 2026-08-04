@@ -3942,6 +3942,9 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
         motion_disagreement_px=metadata.motion_disagreement_px.detach(),
         motion_disagreement_mps=metadata.motion_disagreement_mps.detach(),
         growth_disagreement=metadata.growth_disagreement.detach(),
+        maximum_growth_saturation_excess=(
+            metadata.maximum_growth_saturation_excess.detach()
+        ),
         minimum_phase_correlation_psr=(
             metadata.minimum_phase_correlation_psr.detach()
         ),

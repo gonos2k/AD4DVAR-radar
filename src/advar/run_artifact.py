@@ -96,6 +96,7 @@ _CORE_ARRAY_NAMES = frozenset(
         "motion_disagreement_px",
         "motion_disagreement_mps",
         "growth_disagreement",
+        "maximum_growth_saturation_excess",
         "minimum_phase_correlation_psr",
         "tendency_pair_count",
         "motion_pair_count",
@@ -399,6 +400,9 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             metadata.motion_disagreement_mps
         ),
         "growth_disagreement": _numpy(metadata.growth_disagreement),
+        "maximum_growth_saturation_excess": _numpy(
+            metadata.maximum_growth_saturation_excess
+        ),
         "minimum_phase_correlation_psr": _numpy(
             metadata.minimum_phase_correlation_psr
         ),
@@ -899,6 +903,10 @@ def load_forecast_run(
             growth_disagreement=_tensor(
                 loaded_arrays,
                 "growth_disagreement",
+            ),
+            maximum_growth_saturation_excess=_tensor(
+                loaded_arrays,
+                "maximum_growth_saturation_excess",
             ),
             minimum_phase_correlation_psr=_floating_scalar_tensor(
                 loaded_arrays,

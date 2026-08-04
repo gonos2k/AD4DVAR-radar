@@ -413,9 +413,9 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   `motion_evidence_uncertainty_multiplier`,
   `growth_evidence_uncertainty_multiplier`,
   `forecast_position_uncertainty_m`, `forecast_log_growth_uncertainty`,
-  `forecast_confidence`: pair disagreement, pair 수·PSR, background
-  tendency age와 보정된 속도·로그성장 오차 하한에서 계산한 선행시간별
-  불확실성과 confidence
+  `maximum_growth_saturation_excess`, `forecast_confidence`: pair
+  disagreement, pair 수·PSR, background tendency age, 성장모델 상한 초과량과
+  보정된 속도·로그성장 오차 하한에서 계산한 선행시간별 불확실성과 confidence
 - `radar_state_anchored_valid_mask`,
   `radar_dynamics_anchored_valid_mask`, `background_dynamics_mask`:
   현재상태의 레이더 evidence와 미래 tendency의 레이더·배경 출처를 분리한 mask.

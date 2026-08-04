@@ -100,6 +100,7 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         motion_disagreement_px=state.echo_linear.new_zeros(()),
         motion_disagreement_mps=state.echo_linear.new_full((), torch.nan),
         growth_disagreement=state.echo_linear.new_zeros(()),
+        maximum_growth_saturation_excess=state.echo_linear.new_zeros(()),
         minimum_phase_correlation_psr=state.echo_linear.new_tensor(10.0),
         tendency_pair_count=2,
         tendency_source=TendencySource.OBSERVATION,
@@ -147,6 +148,7 @@ class NowcastTests(unittest.TestCase):
         nowcast_module: object,
         value: torch.Tensor,
         *,
+        raw_value: float | None = None,
         available: bool = True,
         overlap_support: float = 8.0,
         overlap_area_km2: float | None = None,
@@ -156,8 +158,17 @@ class NowcastTests(unittest.TestCase):
         previous_integral = value.new_tensor(
             overlap_support * mean_echo
         )
+        raw = (
+            value
+            if raw_value is None
+            else value.new_tensor(raw_value)
+        )
         return nowcast_module._GrowthEvidence(  # type: ignore[attr-defined]
             value=value,
+            raw_value=raw,
+            saturation_excess=(
+                torch.abs(raw) - torch.abs(value)
+            ).clamp_min(0.0),
             available=available,
             overlap_support=value.new_tensor(overlap_support),
             overlap_area_km2=(
@@ -2497,6 +2508,44 @@ class NowcastTests(unittest.TestCase):
             state.echo_linear.new_tensor([0.2]),
         )
 
+    def test_growth_saturation_raises_live_growth_uncertainty(self) -> None:
+        config = replace(
+            self.config,
+            horizon_minutes=10,
+            forecast_log_growth_uncertainty_per_step=0.05,
+        )
+        state = RadarState(
+            echo_linear=torch.ones(8, 8, dtype=torch.float64),
+            displacement_yx=torch.zeros(2, dtype=torch.float64),
+            log_growth_per_step=torch.zeros((), dtype=torch.float64),
+        )
+        metadata = replace(
+            observed_metadata(state),
+            growth_disagreement=state.echo_linear.new_zeros(()),
+            maximum_growth_saturation_excess=(
+                state.echo_linear.new_tensor(0.5)
+            ),
+            minimum_phase_correlation_psr=state.echo_linear.new_tensor(30.0),
+        )
+        latest = linear_to_dbz(state.echo_linear, config)
+        frames = torch.stack((latest, latest, latest))
+        result = forecast_result_from_state(
+            state,
+            metadata,
+            config,
+            run=ForecastRunContract.from_inputs(
+                config,
+                frames,
+                torch.ones_like(frames, dtype=torch.bool),
+                None,
+            ),
+        )
+
+        torch.testing.assert_close(
+            result.forecast_log_growth_uncertainty,
+            state.echo_linear.new_tensor([0.5]),
+        )
+
     def test_confidence_gate_masks_long_leads_only(self) -> None:
         config = replace(
             self.config,
@@ -2770,6 +2819,9 @@ class NowcastTests(unittest.TestCase):
                 (), torch.nan, dtype=torch.float64
             ),
             growth_disagreement=torch.zeros((), dtype=torch.float64),
+            maximum_growth_saturation_excess=torch.zeros(
+                (), dtype=torch.float64
+            ),
             minimum_phase_correlation_psr=torch.tensor(
                 10.0,
                 dtype=torch.float64,
@@ -3035,6 +3087,60 @@ class NowcastTests(unittest.TestCase):
             float(evidence.value),
             self.config.max_log_growth_per_step,
         )
+
+    def test_growth_evidence_preserves_saturation_excess(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = replace(
+            self.config,
+            max_log_growth_per_step=0.3,
+        )
+        previous = torch.full((4, 4), 10.0, dtype=torch.float64)
+        current = previous * math.exp(0.8)
+        mask = torch.ones_like(previous, dtype=torch.bool)
+
+        evidence = nowcast_module._aligned_growth_evidence(
+            previous,
+            current,
+            mask,
+            mask,
+            previous.new_zeros(2),
+            config,
+            grid_time_contract=None,
+        )
+
+        self.assertTrue(evidence.available)
+        torch.testing.assert_close(evidence.value, previous.new_tensor(0.3))
+        torch.testing.assert_close(
+            evidence.raw_value,
+            previous.new_tensor(0.8),
+        )
+        torch.testing.assert_close(
+            evidence.saturation_excess,
+            previous.new_tensor(0.5),
+        )
+
+    def test_two_clipped_growth_pairs_retain_model_mismatch(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        clipped = torch.tensor(0.3, dtype=torch.float64)
+        first = self._growth_evidence(
+            nowcast_module,
+            clipped,
+            raw_value=0.5,
+        )
+        second = self._growth_evidence(
+            nowcast_module,
+            clipped,
+            raw_value=0.8,
+        )
+
+        disagreement = torch.abs(first.value - second.value)
+        saturation = nowcast_module._maximum_growth_saturation_excess(
+            (first, second),
+            clipped,
+        )
+
+        torch.testing.assert_close(disagreement, clipped.new_zeros(()))
+        torch.testing.assert_close(saturation, clipped.new_tensor(0.5))
 
     def test_unavailable_growth_is_not_blended_as_zero(self) -> None:
         nowcast_module = import_module("advar.nowcast")

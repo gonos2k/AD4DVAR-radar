@@ -162,6 +162,10 @@ class ForecastRunArtifactTests(unittest.TestCase):
             result.forecast_log_growth_uncertainty,
         )
         torch.testing.assert_close(
+            loaded.metadata.maximum_growth_saturation_excess,
+            result.metadata.maximum_growth_saturation_excess,
+        )
+        torch.testing.assert_close(
             loaded.forecast_confidence,
             result.forecast_confidence,
         )
