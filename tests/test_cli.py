@@ -1,5 +1,5 @@
 from contextlib import redirect_stderr, redirect_stdout
-from dataclasses import replace
+from dataclasses import asdict, replace
 import io
 import json
 from pathlib import Path
@@ -15,6 +15,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar import cli  # noqa: E402
 from advar import load_forecast_run  # noqa: E402
+from advar.calibration import (  # noqa: E402
+    CalibrationMetric,
+    OperationalCalibrationManifest,
+)
+from advar.nowcast import (  # noqa: E402
+    NowcastConfig,
+    RadarGridTimeContract,
+    operational_profile_digest,
+)
+from advar.variational import AnalysisConfig  # noqa: E402
 
 
 class CliTests(unittest.TestCase):
@@ -46,13 +56,93 @@ class CliTests(unittest.TestCase):
             cli.main()
         return output_path
 
-    def _operational_profile_arguments(self) -> tuple[str, ...]:
+    def _operational_profile_arguments(
+        self,
+        directory: Path,
+        *,
+        calibration_id: str = "test-calibration-v1",
+        forecast_confidence_length_scale_m: float = 10_000.0,
+    ) -> tuple[str, ...]:
+        nowcast_config = NowcastConfig(
+            minimum_publish_verified_support=0.95,
+            minimum_publish_confidence=0.5,
+            minimum_publish_observation_verified_support=0.95,
+            maximum_publish_background_fraction=0.25,
+            forecast_confidence_length_scale_m=(
+                forecast_confidence_length_scale_m
+            ),
+            maximum_motion_speed_mps=100.0,
+            minimum_phase_correlation_psr=0.0,
+            pair_echo_dilation_m=3000.0,
+            phase_correlation_sidelobe_radius_m=2000.0,
+            maximum_pair_velocity_disagreement_mps=10.0,
+            maximum_pair_growth_disagreement=0.0953,
+            minimum_pair_psr_advantage=3.0,
+            minimum_pair_confidence_ratio=1.5,
+            long_pair_confidence_penalty=0.5,
+            minimum_growth_overlap_support=4.0,
+            minimum_growth_overlap_area_km2=4.0,
+        )
+        analysis_config = AnalysisConfig(
+            execution_mode="operational",
+            operational_calibration_id=calibration_id,
+            motion_increment_scale_mps=2.0,
+            causal_support_uncertainty_m=1000.0,
+            amplitude_displacement_tolerance_m=1000.0,
+            maximum_latest_detected_error_std=10.0,
+            minimum_local_verification_precision=0.01,
+            maximum_local_analysis_verification_error_dbz=6.0,
+            maximum_unresolved_amplitude_fraction=1.0,
+            minimum_amplitude_total_quality_weight=0.001,
+            minimum_amplitude_effective_pixel_count=1.0,
+            amplitude_information_policy="operational_fallback",
+            minimum_integrated_echo_ratio_for_confidence=0.01,
+            maximum_integrated_echo_ratio_for_confidence=100.0,
+            minimum_soft_echo_area_ratio_for_confidence=0.01,
+            maximum_soft_echo_area_ratio_for_confidence=100.0,
+            maximum_established_excess_growth_fraction_for_confidence=1.0,
+            minimum_object_count_ratio_for_confidence=0.75,
+            amplitude_confidence_policy="operational_fallback",
+        )
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:3857",
+            grid_hash="0" * 64,
+        )
+        manifest = OperationalCalibrationManifest(
+            calibration_id=calibration_id,
+            expected_profile_digest=operational_profile_digest(
+                nowcast_config,
+                asdict(analysis_config),
+                grid,
+            ),
+            radar_class="test-radar-class",
+            training_period=(
+                "2025-01-01T00:00:00Z",
+                "2025-07-01T00:00:00Z",
+            ),
+            validation_period=(
+                "2025-07-01T00:00:00Z",
+                "2026-01-01T00:00:00Z",
+            ),
+            validation_metrics=(CalibrationMetric("csi_35", 0.5),),
+        )
+        manifest_path = directory / "operational-calibration.json"
+        manifest_path.write_text(manifest.json, encoding="utf-8")
         return (
             "--variational",
             "--mode",
             "operational",
             "--operational-calibration-id",
-            "test-calibration-v1",
+            calibration_id,
+            "--operational-calibration-manifest",
+            str(manifest_path),
             "--valid-times",
             "2026-07-31T00:00:00Z",
             "2026-07-31T00:10:00Z",
@@ -100,7 +190,7 @@ class CliTests(unittest.TestCase):
             "--forecast-velocity-uncertainty-mps",
             "1",
             "--forecast-confidence-length-scale-m",
-            "10000",
+            str(forecast_confidence_length_scale_m),
             "--forecast-log-growth-uncertainty-per-step",
             "0.05",
             "--forecast-log-growth-confidence-scale",
@@ -229,6 +319,9 @@ class CliTests(unittest.TestCase):
             "minimum_growth_overlap_support",
             "minimum_growth_overlap_area_km2",
             "operational_calibration_digest",
+            "operational_calibration_manifest_present",
+            "operational_calibration_manifest_json",
+            "operational_calibration_manifest_digest",
             "min_publish_support",
             "minimum_publish_verified_support",
             "minimum_publish_confidence",
@@ -252,11 +345,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v43",
+                    "nowcast-npz-v44",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v35",
+                    "forecast-run-v36",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -611,6 +704,49 @@ class CliTests(unittest.TestCase):
                     "operational",
                 )
 
+    def test_operational_mode_requires_manifest_with_matching_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            arguments = list(self._operational_profile_arguments(directory))
+            manifest_position = arguments.index(
+                "--operational-calibration-manifest"
+            )
+            without_manifest = arguments.copy()
+            del without_manifest[manifest_position : manifest_position + 2]
+            with self.assertRaises(SystemExit), redirect_stderr(io.StringIO()):
+                self._run_cli(
+                    directory,
+                    self._stationary_frames(),
+                    *without_manifest,
+                )
+
+            identifier_position = arguments.index(
+                "--operational-calibration-id"
+            )
+            arguments[identifier_position + 1] = "wrong-calibration"
+            with self.assertRaises(SystemExit), redirect_stderr(io.StringIO()):
+                self._run_cli(
+                    directory,
+                    self._stationary_frames(),
+                    *arguments,
+                )
+
+    def test_operational_manifest_rejects_changed_runtime_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            arguments = list(self._operational_profile_arguments(directory))
+            scale_position = arguments.index(
+                "--forecast-confidence-length-scale-m"
+            )
+            arguments[scale_position + 1] = "9000"
+
+            with self.assertRaisesRegex(ValueError, "profile digest mismatch"):
+                self._run_cli(
+                    directory,
+                    self._stationary_frames(),
+                    *arguments,
+                )
+
     def test_operational_mode_requires_pair_calibration(self) -> None:
         required = (
             "--pair-echo-dilation-m",
@@ -636,7 +772,10 @@ class CliTests(unittest.TestCase):
         for name in required:
             with self.subTest(name=name):
                 with tempfile.TemporaryDirectory() as temporary:
-                    arguments = list(self._operational_profile_arguments())
+                    directory = Path(temporary)
+                    arguments = list(
+                        self._operational_profile_arguments(directory)
+                    )
                     position = arguments.index(name)
                     del arguments[position : position + 2]
                     with self.assertRaises(SystemExit), redirect_stderr(
@@ -650,10 +789,11 @@ class CliTests(unittest.TestCase):
 
     def test_operational_mode_records_complete_fail_closed_profile(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
             output_path = self._run_cli(
-                Path(temporary),
+                directory,
                 self._stationary_frames(),
-                *self._operational_profile_arguments(),
+                *self._operational_profile_arguments(directory),
             )
 
             with np.load(output_path, allow_pickle=False) as result:
@@ -670,6 +810,17 @@ class CliTests(unittest.TestCase):
                     len(result["operational_calibration_digest"].item()),
                     64,
                 )
+                manifest = OperationalCalibrationManifest.from_json(
+                    result["operational_calibration_manifest_json"].item()
+                )
+                self.assertTrue(
+                    result["operational_calibration_manifest_present"].item()
+                )
+                self.assertEqual(
+                    result["operational_calibration_manifest_digest"].item(),
+                    manifest.digest,
+                )
+                self.assertEqual(manifest.calibration_id, "test-calibration-v1")
                 self.assertEqual(
                     config["amplitude_information_policy"],
                     "operational_fallback",
@@ -787,53 +938,69 @@ class CliTests(unittest.TestCase):
                         )
                     )
 
-    def test_operational_calibration_digest_tracks_content_not_label(self) -> None:
-        def changed(
-            arguments: tuple[str, ...],
-            name: str,
-            value: str,
-        ) -> tuple[str, ...]:
-            result = list(arguments)
-            result[result.index(name) + 1] = value
-            return tuple(result)
+            loaded = load_forecast_run(output_path)
+            loaded.validate_issuance()
+            self.assertEqual(
+                loaded.run.operational_calibration_manifest_json,
+                manifest.json,
+            )
+            self.assertEqual(
+                loaded.run.operational_calibration_manifest_digest,
+                manifest.digest,
+            )
 
-        profile = self._operational_profile_arguments()
+    def test_operational_calibration_digest_tracks_content_not_label(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             for name in ("base", "renamed", "changed"):
                 (root / name).mkdir()
+            profiles = (
+                self._operational_profile_arguments(root / "base"),
+                self._operational_profile_arguments(
+                    root / "renamed",
+                    calibration_id="renamed-profile",
+                ),
+                self._operational_profile_arguments(
+                    root / "changed",
+                    forecast_confidence_length_scale_m=9000.0,
+                ),
+            )
             outputs = (
-                self._run_cli(root / "base", self._stationary_frames(), *profile),
+                self._run_cli(
+                    root / "base",
+                    self._stationary_frames(),
+                    *profiles[0],
+                ),
                 self._run_cli(
                     root / "renamed",
                     self._stationary_frames(),
-                    *changed(
-                        profile,
-                        "--operational-calibration-id",
-                        "renamed-profile",
-                    ),
+                    *profiles[1],
                 ),
                 self._run_cli(
                     root / "changed",
                     self._stationary_frames(),
-                    *changed(
-                        profile,
-                        "--forecast-confidence-length-scale-m",
-                        "9000",
-                    ),
+                    *profiles[2],
                 ),
             )
             digests = []
+            manifest_digests = []
             for output in outputs:
                 with np.load(output, allow_pickle=False) as result:
                     digests.append(
                         result["operational_calibration_digest"].item()
+                    )
+                    manifest_digests.append(
+                        result[
+                            "operational_calibration_manifest_digest"
+                        ].item()
                     )
             base_run = load_forecast_run(outputs[0]).run
 
         self.assertRegex(digests[0], r"^[0-9a-f]{64}$")
         self.assertEqual(digests[0], digests[1])
         self.assertNotEqual(digests[0], digests[2])
+        self.assertNotEqual(manifest_digests[0], manifest_digests[1])
+        self.assertNotEqual(manifest_digests[0], manifest_digests[2])
 
         grid = base_run.grid_time_contract
         assert grid is not None

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from enum import Enum
@@ -11,6 +12,7 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from ._digest import dataclass_digest, json_digest, tensor_digest
+from .calibration import OperationalCalibrationManifest
 from .diagnostics import (
     PositivityAudit,
     TransportAudit,
@@ -830,8 +832,8 @@ def _minimum_growth_evidence(
     return minimum_support, minimum_area
 
 
-_FORECAST_INPUT_BUNDLE_VERSION = "forecast-input-bundle-v2"
-_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v4"
+_FORECAST_INPUT_BUNDLE_VERSION = "forecast-input-bundle-v3"
+_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v5"
 
 
 def _validate_background_age(
@@ -1154,6 +1156,8 @@ class ForecastRunContract:
     analysis_config_json: str | None = None
     analysis_config_digest: str | None = None
     analysis_input_digest: str | None = None
+    operational_calibration_manifest_json: str | None = None
+    operational_calibration_manifest_digest: str | None = None
     forecast_integrator_version: str = FORECAST_INTEGRATOR_VERSION
 
     @classmethod
@@ -1169,6 +1173,8 @@ class ForecastRunContract:
         analysis_config_json: str | None = None,
         analysis_config_digest: str | None = None,
         analysis_input_digest: str | None = None,
+        operational_calibration_manifest_json: str | None = None,
+        operational_calibration_manifest_digest: str | None = None,
     ) -> ForecastRunContract:
         _validate_frames(frames_dbz)
         latest_frame = frames_dbz[-1]
@@ -1204,6 +1210,14 @@ class ForecastRunContract:
             analysis_config_digest,
             analysis_input_digest,
         )
+        _validate_operational_calibration_lineage(
+            config,
+            analysis_config_json,
+            grid_time_contract,
+            operational_calibration_manifest_json,
+            operational_calibration_manifest_digest,
+            FORECAST_INTEGRATOR_VERSION,
+        )
         latest_background = (
             None
             if background_frames_dbz is None
@@ -1232,6 +1246,7 @@ class ForecastRunContract:
                 grid_time_contract,
                 analysis_config_digest,
                 analysis_input_digest,
+                operational_calibration_manifest_digest,
             ),
             background_age_minutes=background_age_minutes,
             grid_time_contract=grid_time_contract,
@@ -1243,6 +1258,12 @@ class ForecastRunContract:
             analysis_config_json=analysis_config_json,
             analysis_config_digest=analysis_config_digest,
             analysis_input_digest=analysis_input_digest,
+            operational_calibration_manifest_json=(
+                operational_calibration_manifest_json
+            ),
+            operational_calibration_manifest_digest=(
+                operational_calibration_manifest_digest
+            ),
         )
 
     @property
@@ -1273,34 +1294,16 @@ class ForecastRunContract:
             raise ValueError("analysis_config_json must contain an object")
         if config_value.get("execution_mode") != "operational":
             return None
-        calibration_id = config_value.pop("operational_calibration_id", None)
-        if not isinstance(calibration_id, str) or not calibration_id:
-            raise ValueError(
-                "operational analysis requires a calibration identifier"
-            )
         grid = self.grid_time_contract
         if grid is None:
             raise ValueError(
                 "operational calibration requires a grid/time contract"
             )
-        return json_digest(
-            {
-                "version": _OPERATIONAL_CALIBRATION_VERSION,
-                "forecast_integrator_version": (
-                    self.forecast_integrator_version
-                ),
-                "nowcast_config_digest": self.config.digest,
-                "analysis_config": config_value,
-                "grid": {
-                    "dx_m": grid.dx_m,
-                    "dy_m": grid.dy_m,
-                    "projection": grid.projection,
-                    "grid_hash": grid.grid_hash,
-                    "pixel_to_projected_matrix_m": (
-                        grid.pixel_to_projected_matrix_m
-                    ),
-                },
-            }
+        return operational_profile_digest(
+            self.config,
+            config_value,
+            grid,
+            forecast_integrator_version=self.forecast_integrator_version,
         )
 
     def validate_integrity(self) -> None:
@@ -1401,6 +1404,14 @@ class ForecastRunContract:
             self.analysis_config_digest,
             self.analysis_input_digest,
         )
+        _validate_operational_calibration_lineage(
+            self.config,
+            self.analysis_config_json,
+            self.grid_time_contract,
+            self.operational_calibration_manifest_json,
+            self.operational_calibration_manifest_digest,
+            self.forecast_integrator_version,
+        )
 
     def validate_latest_frame(self, latest_frame_dbz: Tensor) -> None:
         if tensor_digest(latest_frame_dbz) != self.latest_frame_digest:
@@ -1431,6 +1442,7 @@ def _forecast_input_bundle_digest(
     grid_time_contract: RadarGridTimeContract | None,
     analysis_config_digest: str | None,
     analysis_input_digest: str | None,
+    operational_calibration_manifest_digest: str | None,
 ) -> str:
     return json_digest(
         {
@@ -1450,6 +1462,9 @@ def _forecast_input_bundle_digest(
             ),
             "analysis_config_digest": analysis_config_digest,
             "analysis_input_digest": analysis_input_digest,
+            "operational_calibration_manifest_digest": (
+                operational_calibration_manifest_digest
+            ),
         }
     )
 
@@ -1486,6 +1501,79 @@ def _validate_analysis_lineage(
     _validate_sha256_digest("analysis_input_digest", input_digest)
 
 
+def operational_profile_digest(
+    config: NowcastConfig,
+    analysis_config: Mapping[str, object],
+    grid: RadarGridTimeContract,
+    *,
+    forecast_integrator_version: str = FORECAST_INTEGRATOR_VERSION,
+) -> str:
+    config_value = dict(analysis_config)
+    if config_value.get("execution_mode") != "operational":
+        raise ValueError("operational profile requires operational analysis")
+    calibration_id = config_value.pop("operational_calibration_id", None)
+    if not isinstance(calibration_id, str) or not calibration_id:
+        raise ValueError("operational profile requires a calibration identifier")
+    return json_digest(
+        {
+            "version": _OPERATIONAL_CALIBRATION_VERSION,
+            "forecast_integrator_version": forecast_integrator_version,
+            "nowcast_config_digest": config.digest,
+            "analysis_config": config_value,
+            "grid": {
+                "dx_m": grid.dx_m,
+                "dy_m": grid.dy_m,
+                "projection": grid.projection,
+                "grid_hash": grid.grid_hash,
+                "pixel_to_projected_matrix_m": (
+                    grid.pixel_to_projected_matrix_m
+                ),
+            },
+        }
+    )
+
+
+def _validate_operational_calibration_lineage(
+    config: NowcastConfig,
+    analysis_config_json: str | None,
+    grid: RadarGridTimeContract | None,
+    manifest_json: str | None,
+    manifest_digest: str | None,
+    forecast_integrator_version: str,
+) -> None:
+    if analysis_config_json is None:
+        if manifest_json is not None or manifest_digest is not None:
+            raise ValueError("calibration manifest requires an analysis")
+        return
+    config_value = json.loads(analysis_config_json)
+    is_operational = config_value.get("execution_mode") == "operational"
+    if not is_operational:
+        if manifest_json is not None or manifest_digest is not None:
+            raise ValueError("calibration manifest requires operational analysis")
+        return
+    if grid is None:
+        raise ValueError("operational calibration requires a grid/time contract")
+    if manifest_json is None or manifest_digest is None:
+        raise ValueError("operational analysis requires a calibration manifest")
+    manifest = OperationalCalibrationManifest.from_json(manifest_json)
+    _validate_sha256_digest(
+        "operational_calibration_manifest_digest",
+        manifest_digest,
+    )
+    if manifest.json != manifest_json or manifest.digest != manifest_digest:
+        raise ValueError("operational calibration manifest digest mismatch")
+    if manifest.calibration_id != config_value.get("operational_calibration_id"):
+        raise ValueError("calibration manifest identifier mismatch")
+    profile_digest = operational_profile_digest(
+        config,
+        config_value,
+        grid,
+        forecast_integrator_version=forecast_integrator_version,
+    )
+    if manifest.expected_profile_digest != profile_digest:
+        raise ValueError("calibration manifest profile digest mismatch")
+
+
 def _forecast_run_identity_digest(
     run: ForecastRunContract,
     state_digest: str,
@@ -1507,6 +1595,9 @@ def _forecast_run_identity_digest(
             "grid_time_contract_digest": run.grid_time_contract_digest,
             "analysis_config_digest": run.analysis_config_digest,
             "analysis_input_digest": run.analysis_input_digest,
+            "operational_calibration_manifest_digest": (
+                run.operational_calibration_manifest_digest
+            ),
             "state_metadata_digest": state_digest,
             "forecast_dbz_digest": forecast_digest,
             "valid_mask_digest": valid_mask_digest,
