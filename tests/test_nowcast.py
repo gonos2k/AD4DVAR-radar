@@ -1,4 +1,4 @@
-from dataclasses import replace
+from dataclasses import fields, replace
 from pathlib import Path
 from importlib import import_module
 import math
@@ -27,6 +27,7 @@ from advar.nowcast import (  # noqa: E402
     TendencyPairSelection,
     TendencySource,
     estimate_state as estimate_state_with_metadata,
+    forecast_evidence_fields,
     forecast_from_state as forecast_result_from_state,
     forecast_linear_from_state,
     nowcast,
@@ -3755,6 +3756,83 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(kernel.call_count, self.config.forecast_steps)
         assert result.audit is not None
         self.assertEqual(len(result.audit.transport), self.config.forecast_steps)
+
+    def test_forecast_evidence_bundle_is_shared_and_reproducible(self) -> None:
+        state = RadarState(
+            echo_linear=self.echo,
+            displacement_yx=torch.tensor([0.2, -0.3]),
+            log_growth_per_step=torch.zeros(()),
+        )
+        latest = linear_to_dbz(state.echo_linear, self.config)
+        frames = torch.stack((latest, latest, latest))
+        result = forecast_result_from_state(
+            state,
+            observed_metadata(state),
+            self.config,
+            run=ForecastRunContract.from_inputs(
+                self.config,
+                frames,
+                torch.ones_like(frames, dtype=torch.bool),
+                None,
+            ),
+        )
+
+        recomputed = forecast_evidence_fields(
+            result.state,
+            result.metadata,
+            result.run.config,
+        )
+        for descriptor in fields(type(recomputed)):
+            with self.subTest(field=descriptor.name):
+                torch.testing.assert_close(
+                    getattr(result.evidence, descriptor.name),
+                    getattr(recomputed, descriptor.name),
+                    rtol=0.0,
+                    atol=0.0,
+                )
+        self.assertIs(
+            result.forecast_source_support,
+            result.evidence.source_support,
+        )
+        self.assertIs(
+            result.forecast_confidence,
+            result.evidence.confidence,
+        )
+
+    def test_issuance_rejects_modified_forecast_evidence_bundle(self) -> None:
+        frames = torch.full((3, 8, 8), 20.0, dtype=torch.float64)
+        result = nowcast(frames, self.config)
+        changed_support = result.evidence.source_support.clone()
+        changed_support[0, 0, 0] = 0.0
+        changed = replace(
+            result,
+            evidence=replace(
+                result.evidence,
+                source_support=changed_support,
+            ),
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "forecast evidence field source_support",
+        ):
+            changed.validate_issuance()
+
+    def test_batched_remap_core_matches_individual_channels(self) -> None:
+        channels = torch.stack((self.echo, 0.5 * self.echo, self.echo > 1.0))
+        channels = channels.to(dtype=self.echo.dtype)
+        displacement = self.echo.new_tensor((0.2, -0.3))
+        cell = RemapCell(0, -1)
+
+        batched = remap_core(channels, displacement, cell)
+        individual = torch.stack(
+            tuple(
+                remap_core(channel, displacement, cell)
+                for channel in channels
+            )
+        )
+
+        torch.testing.assert_close(batched, individual)
 
     def test_forecast_config_must_match_its_run_contract(self) -> None:
         state = RadarState(

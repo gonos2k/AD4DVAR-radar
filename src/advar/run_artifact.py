@@ -30,6 +30,7 @@ from .nowcast import (
     StatePathProvenance,
     TendencyPairSelection,
     TendencySource,
+    forecast_evidence_fields,
 )
 
 
@@ -1269,6 +1270,7 @@ def load_forecast_run(
                 loaded_arrays,
                 "forecast_run_digest",
             ),
+            evidence=forecast_evidence_fields(state, metadata, config),
             audit=None,
         )
     result.validate_issuance()
