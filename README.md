@@ -390,8 +390,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v41`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v33`
+- `output_contract_version`: 현재 `nowcast-npz-v42`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v34`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -413,9 +413,11 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   `motion_evidence_uncertainty_multiplier`,
   `growth_evidence_uncertainty_multiplier`,
   `forecast_position_uncertainty_m`, `forecast_log_growth_uncertainty`,
-  `maximum_growth_saturation_excess`, `forecast_confidence`: pair
+  `maximum_growth_saturation_excess`,
+  `posterior_velocity_uncertainty_mps`,
+  `posterior_log_growth_uncertainty_per_step`, `forecast_confidence`: pair
   disagreement, pair 수·PSR, background tendency age, 성장모델 상한 초과량과
-  보정된 속도·로그성장 오차 하한에서 계산한 선행시간별 불확실성과 confidence
+  P1 field-conditioned posterior에서 계산한 선행시간별 불확실성과 confidence
 - `radar_state_anchored_valid_mask`,
   `radar_dynamics_anchored_valid_mask`, `background_dynamics_mask`:
   현재상태의 레이더 evidence와 미래 tendency의 레이더·배경 출처를 분리한 mask.

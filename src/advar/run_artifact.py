@@ -33,7 +33,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v33"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v34"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 192
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
@@ -97,6 +97,8 @@ _CORE_ARRAY_NAMES = frozenset(
         "motion_disagreement_mps",
         "growth_disagreement",
         "maximum_growth_saturation_excess",
+        "posterior_velocity_uncertainty_mps",
+        "posterior_log_growth_uncertainty_per_step",
         "minimum_phase_correlation_psr",
         "tendency_pair_count",
         "motion_pair_count",
@@ -402,6 +404,12 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "growth_disagreement": _numpy(metadata.growth_disagreement),
         "maximum_growth_saturation_excess": _numpy(
             metadata.maximum_growth_saturation_excess
+        ),
+        "posterior_velocity_uncertainty_mps": _numpy(
+            metadata.posterior_velocity_uncertainty_mps
+        ),
+        "posterior_log_growth_uncertainty_per_step": _numpy(
+            metadata.posterior_log_growth_uncertainty_per_step
         ),
         "minimum_phase_correlation_psr": _numpy(
             metadata.minimum_phase_correlation_psr
@@ -907,6 +915,18 @@ def load_forecast_run(
             maximum_growth_saturation_excess=_tensor(
                 loaded_arrays,
                 "maximum_growth_saturation_excess",
+            ),
+            posterior_velocity_uncertainty_mps=_floating_scalar_tensor(
+                loaded_arrays,
+                "posterior_velocity_uncertainty_mps",
+                allow_nan=True,
+            ),
+            posterior_log_growth_uncertainty_per_step=(
+                _floating_scalar_tensor(
+                    loaded_arrays,
+                    "posterior_log_growth_uncertainty_per_step",
+                    allow_nan=True,
+                )
             ),
             minimum_phase_correlation_psr=_floating_scalar_tensor(
                 loaded_arrays,

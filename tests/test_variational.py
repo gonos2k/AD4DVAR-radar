@@ -146,6 +146,98 @@ class VariationalAnalysisTests(unittest.TestCase):
             contract.digest,
         )
 
+    def test_p1_confidence_uses_physical_posterior_uncertainty(self) -> None:
+        coordinates = torch.arange(8, dtype=torch.float64)
+        y, x = torch.meshgrid(coordinates, coordinates, indexing="ij")
+        blob = -10.0 + 40.0 * torch.exp(
+            -((y - 3.5).square() + (x - 3.5).square()) / 4.0
+        )
+        frames = torch.stack((blob, blob - 1.0, blob))
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-04T00:00:00Z",
+                "2026-08-04T00:10:00Z",
+                "2026-08-04T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="f" * 64,
+        )
+
+        forecast, analysis = variational_nowcast(
+            frames,
+            analysis_config=self.analysis_config,
+            grid_time_contract=contract,
+        )
+
+        self.assertFalse(analysis.used_fallback, analysis.reason)
+        self.assertTrue(
+            bool(
+                torch.isfinite(
+                    analysis.metadata.posterior_velocity_uncertainty_mps
+                )
+            )
+        )
+        self.assertTrue(
+            bool(
+                torch.isfinite(
+                    analysis.metadata
+                    .posterior_log_growth_uncertainty_per_step
+                )
+            )
+        )
+        torch.testing.assert_close(
+            forecast.forecast_velocity_uncertainty_mps,
+            analysis.metadata.posterior_velocity_uncertainty_mps,
+        )
+        self.assertTrue(
+            bool(torch.all(forecast.radar_dynamics_anchored_valid_mask))
+        )
+
+        stale_pair_diagnostics = replace(
+            analysis.metadata,
+            motion_disagreement_mps=torch.tensor(100.0),
+            growth_disagreement=torch.tensor(100.0),
+            maximum_growth_saturation_excess=torch.tensor(100.0),
+        )
+        changed = forecast_from_state(
+            analysis.state,
+            stale_pair_diagnostics,
+            self.nowcast_config,
+            run=forecast.run,
+        )
+        torch.testing.assert_close(
+            changed.forecast_confidence,
+            forecast.forecast_confidence,
+        )
+
+    def test_p1_without_physical_posterior_has_zero_confidence(self) -> None:
+        coordinates = torch.arange(8, dtype=torch.float64)
+        y, x = torch.meshgrid(coordinates, coordinates, indexing="ij")
+        blob = -10.0 + 40.0 * torch.exp(
+            -((y - 3.5).square() + (x - 3.5).square()) / 4.0
+        )
+        frames = torch.stack((blob, blob - 1.0, blob))
+
+        forecast, analysis = variational_nowcast(
+            frames,
+            analysis_config=self.analysis_config,
+        )
+
+        self.assertFalse(analysis.used_fallback, analysis.reason)
+        self.assertTrue(
+            bool(
+                torch.isnan(
+                    analysis.metadata.posterior_velocity_uncertainty_mps
+                )
+            )
+        )
+        self.assertFalse(bool(torch.any(forecast.forecast_confidence)))
+        self.assertFalse(
+            bool(torch.any(forecast.radar_dynamics_anchored_valid_mask))
+        )
+
     def stationary_problem(
         self,
         value_dbz: float = 20.0,
@@ -977,6 +1069,10 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertEqual(
             diagnostics.field_conditioned_dynamics_data_effective_dimension,
             0.0,
+        )
+        torch.testing.assert_close(
+            diagnostics.field_conditioned_dynamics_posterior_covariance,
+            torch.eye(3, dtype=torch.float64),
         )
         self.assertEqual(
             diagnostics.regularized_dynamics_hessian_eigenvalues,

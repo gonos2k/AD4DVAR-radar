@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 import numpy as np
+import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -178,6 +179,8 @@ class CliTests(unittest.TestCase):
             "forecast_position_uncertainty_m",
             "forecast_log_growth_uncertainty",
             "maximum_growth_saturation_excess",
+            "posterior_velocity_uncertainty_mps",
+            "posterior_log_growth_uncertainty_per_step",
             "forecast_confidence",
             "radar_anchored_valid_mask",
             "radar_state_anchored_valid_mask",
@@ -251,11 +254,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v41",
+                    "nowcast-npz-v42",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v33",
+                    "forecast-run-v34",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -570,6 +573,12 @@ class CliTests(unittest.TestCase):
                 "P1_VARIATIONAL",
             )
             self.assertTrue(
+                torch.isnan(
+                    loaded.metadata.posterior_velocity_uncertainty_mps
+                )
+            )
+            self.assertFalse(bool(torch.any(loaded.forecast_confidence)))
+            self.assertTrue(
                 np.isnan(loaded.metadata.minimum_growth_overlap_support)
             )
             self.assertIsNotNone(loaded.run.analysis_config_json)
@@ -765,6 +774,21 @@ class CliTests(unittest.TestCase):
                     "analysis_field_conditioned_dynamics_data_effective_dimension",
                     result.files,
                 )
+                if result["dynamics_source"].item() == "P1_VARIATIONAL":
+                    self.assertTrue(
+                        np.isfinite(
+                            result[
+                                "posterior_velocity_uncertainty_mps"
+                            ].item()
+                        )
+                    )
+                    self.assertTrue(
+                        np.isfinite(
+                            result[
+                                "posterior_log_growth_uncertainty_per_step"
+                            ].item()
+                        )
+                    )
 
     def test_operational_calibration_digest_tracks_content_not_label(self) -> None:
         def changed(

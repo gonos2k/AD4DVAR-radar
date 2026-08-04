@@ -507,6 +507,7 @@ class _IdentifiabilityDiagnostics:
     field_conditioned_dynamics_data_information_trace: float | None
     field_conditioned_dynamics_data_effective_dimension: float | None
     field_conditioning_maximum_relative_residual: float | None
+    field_conditioned_dynamics_posterior_covariance: Tensor | None
     regularized_dynamics_hessian_eigenvalues: tuple[float, float, float]
     regularized_dynamics_hessian_condition_number: float
     field_growth_jacobian_cosine: float | None
@@ -1481,6 +1482,7 @@ def _identifiability_diagnostics(
     conditioned_eigenvalue_tuple: tuple[float, float, float] | None = None
     conditioned_information_trace: float | None = None
     conditioned_effective_dimension: float | None = None
+    conditioned_posterior_covariance: Tensor | None = None
     if conditioned_gram is not None:
         conditioned_scale = max(
             1.0,
@@ -1512,6 +1514,18 @@ def _identifiability_diagnostics(
                     / (1.0 + conditioned_eigenvalues)
                 )
             )
+            conditioned_regularized = conditioned_gram + torch.eye(
+                3,
+                dtype=conditioned_gram.dtype,
+                device=conditioned_gram.device,
+            )
+            cholesky, info = torch.linalg.cholesky_ex(
+                conditioned_regularized
+            )
+            if int(info) == 0:
+                conditioned_posterior_covariance = torch.cholesky_inverse(
+                    cholesky
+                )
 
     regularized_hessian = gram + torch.eye(3, dtype=torch.float64)
     regularized_eigenvalues = torch.linalg.eigvalsh(regularized_hessian)
@@ -1569,6 +1583,9 @@ def _identifiability_diagnostics(
         field_conditioning_maximum_relative_residual=(
             field_conditioning_residual
         ),
+        field_conditioned_dynamics_posterior_covariance=(
+            conditioned_posterior_covariance
+        ),
         regularized_dynamics_hessian_eigenvalues=(
             float(regularized_eigenvalues[0]),
             float(regularized_eigenvalues[1]),
@@ -1585,6 +1602,72 @@ def _identifiability_diagnostics(
             cosine(motion_field_directions[0], dynamics_columns[0]),
             cosine(motion_field_directions[1], dynamics_columns[1]),
         ),
+    )
+
+
+def _posterior_physical_dynamics_uncertainty(
+    control: Tensor,
+    frozen: FrozenOuterState,
+    diagnostics: _IdentifiabilityDiagnostics | None,
+) -> tuple[Tensor, Tensor]:
+    unavailable = control.new_full((), torch.nan)
+    grid_time_contract = frozen.grid_time_contract
+    if diagnostics is None or grid_time_contract is None:
+        return unavailable, unavailable.clone()
+    covariance = (
+        diagnostics.field_conditioned_dynamics_posterior_covariance
+    )
+    if covariance is None:
+        return unavailable, unavailable.clone()
+
+    field_size = frozen.active_field_index.numel()
+    dynamics_control = control[field_size:]
+
+    def physical_dynamics(value: Tensor) -> Tensor:
+        displacement, growth = _decode_dynamics(
+            value,
+            frozen.baseline_state,
+            frozen.analysis_config,
+            frozen.nowcast_config,
+            frozen.motion_limits_yx,
+            grid_time_contract,
+        )
+        projected_velocity = grid_time_contract.projected_velocity_xy(
+            displacement,
+            frozen.nowcast_config.interval_minutes,
+        )
+        return torch.cat((projected_velocity, growth.reshape(1)))
+
+    decode_jacobian = torch.func.jacrev(physical_dynamics)(
+        dynamics_control
+    ).detach()
+    covariance = covariance.to(
+        dtype=decode_jacobian.dtype,
+        device=decode_jacobian.device,
+    )
+    physical_covariance = decode_jacobian @ covariance @ decode_jacobian.mT
+    physical_covariance = 0.5 * (
+        physical_covariance + physical_covariance.mT
+    )
+    if not bool(torch.all(torch.isfinite(physical_covariance))):
+        return unavailable, unavailable.clone()
+    velocity_variance = torch.linalg.eigvalsh(physical_covariance[:2, :2])[-1]
+    growth_variance = physical_covariance[2, 2]
+    covariance_scale = max(
+        1.0,
+        float(torch.amax(torch.abs(physical_covariance))),
+    )
+    negative_tolerance = (
+        256.0 * torch.finfo(control.dtype).eps * covariance_scale
+    )
+    if (
+        float(velocity_variance) < -negative_tolerance
+        or float(growth_variance) < -negative_tolerance
+    ):
+        return unavailable, unavailable.clone()
+    return (
+        torch.sqrt(velocity_variance.clamp_min(0.0)),
+        torch.sqrt(growth_variance.clamp_min(0.0)),
     )
 
 
@@ -2306,6 +2389,14 @@ def _analysis_result(
         trajectory,
         include_field_conditioned=not analysis_degraded,
     )
+    (
+        posterior_velocity_uncertainty_mps,
+        posterior_log_growth_uncertainty_per_step,
+    ) = _posterior_physical_dynamics_uncertainty(
+        control,
+        frozen,
+        identifiability,
+    )
     field_smoothness_prior_cost = float(
         _field_smoothness_prior_cost(control, frozen).detach()
     )
@@ -2362,6 +2453,12 @@ def _analysis_result(
             background_path=StatePathProvenance(),
             minimum_growth_overlap_support=math.nan,
             minimum_growth_overlap_area_km2=math.nan,
+            posterior_velocity_uncertainty_mps=(
+                posterior_velocity_uncertainty_mps.detach()
+            ),
+            posterior_log_growth_uncertainty_per_step=(
+                posterior_log_growth_uncertainty_per_step.detach()
+            ),
         ),
         analyzed_frames_linear=frames.detach(),
         initial_objective=reference_objective,
@@ -3944,6 +4041,12 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
         growth_disagreement=metadata.growth_disagreement.detach(),
         maximum_growth_saturation_excess=(
             metadata.maximum_growth_saturation_excess.detach()
+        ),
+        posterior_velocity_uncertainty_mps=(
+            metadata.posterior_velocity_uncertainty_mps.detach()
+        ),
+        posterior_log_growth_uncertainty_per_step=(
+            metadata.posterior_log_growth_uncertainty_per_step.detach()
         ),
         minimum_phase_correlation_psr=(
             metadata.minimum_phase_correlation_psr.detach()

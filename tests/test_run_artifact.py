@@ -166,6 +166,16 @@ class ForecastRunArtifactTests(unittest.TestCase):
             result.metadata.maximum_growth_saturation_excess,
         )
         torch.testing.assert_close(
+            loaded.metadata.posterior_velocity_uncertainty_mps,
+            result.metadata.posterior_velocity_uncertainty_mps,
+            equal_nan=True,
+        )
+        torch.testing.assert_close(
+            loaded.metadata.posterior_log_growth_uncertainty_per_step,
+            result.metadata.posterior_log_growth_uncertainty_per_step,
+            equal_nan=True,
+        )
+        torch.testing.assert_close(
             loaded.forecast_confidence,
             result.forecast_confidence,
         )
