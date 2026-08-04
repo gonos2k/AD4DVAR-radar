@@ -946,6 +946,8 @@ class ForecastMetadata:
     motion_disagreement_mps: Tensor
     growth_disagreement: Tensor
     maximum_growth_saturation_excess: Tensor
+    posterior_velocity_uncertainty_mps: Tensor
+    posterior_log_growth_uncertainty_per_step: Tensor
     minimum_phase_correlation_psr: Tensor
     tendency_pair_count: int
     tendency_source: TendencySource
@@ -1070,6 +1072,12 @@ def state_metadata_digest(
                 ),
                 "maximum_growth_saturation_excess": tensor_digest(
                     metadata.maximum_growth_saturation_excess
+                ),
+                "posterior_velocity_uncertainty_mps": tensor_digest(
+                    metadata.posterior_velocity_uncertainty_mps
+                ),
+                "posterior_log_growth_uncertainty_per_step": tensor_digest(
+                    metadata.posterior_log_growth_uncertainty_per_step
                 ),
                 "minimum_phase_correlation_psr": tensor_digest(
                     metadata.minimum_phase_correlation_psr
@@ -1658,6 +1666,10 @@ class ForecastResult:
 
     @property
     def radar_dynamics_anchored_valid_mask(self) -> Tensor:
+        if self.metadata.dynamics_source is DynamicsSource.P1_VARIATIONAL:
+            if _p1_posterior_is_available(self.metadata):
+                return self.radar_state_anchored_valid_mask
+            return torch.zeros_like(self.valid_mask)
         if (
             self.metadata.tendency_source is not TendencySource.OBSERVATION
             or self.metadata.motion_pair_count == 0
@@ -1668,6 +1680,8 @@ class ForecastResult:
 
     @property
     def background_dynamics_mask(self) -> Tensor:
+        if self.metadata.dynamics_source is DynamicsSource.P1_VARIATIONAL:
+            return torch.zeros_like(self.valid_mask)
         if self.metadata.tendency_source is not TendencySource.BACKGROUND:
             return torch.zeros_like(self.valid_mask)
         return self.valid_mask
@@ -1820,6 +1834,12 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         raise ValueError("growth_disagreement must be scalar")
     if metadata.maximum_growth_saturation_excess.ndim != 0:
         raise ValueError("maximum_growth_saturation_excess must be scalar")
+    if metadata.posterior_velocity_uncertainty_mps.ndim != 0:
+        raise ValueError("posterior_velocity_uncertainty_mps must be scalar")
+    if metadata.posterior_log_growth_uncertainty_per_step.ndim != 0:
+        raise ValueError(
+            "posterior_log_growth_uncertainty_per_step must be scalar"
+        )
     selection_counts = {
         TendencyPairSelection.NONE: 0,
         TendencyPairSelection.PERSISTENCE: 0,
@@ -1921,6 +1941,24 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         or not math.isnan(metadata.minimum_growth_overlap_area_km2)
     ):
         raise ValueError("P1 metadata cannot retain P0 path evidence")
+    posterior_values = (
+        metadata.posterior_velocity_uncertainty_mps,
+        metadata.posterior_log_growth_uncertainty_per_step,
+    )
+    if any(bool(torch.isinf(value)) for value in posterior_values):
+        raise ValueError("P1 posterior uncertainties cannot be infinite")
+    posterior_available = tuple(
+        bool(torch.isfinite(value)) for value in posterior_values
+    )
+    if posterior_available[0] != posterior_available[1]:
+        raise ValueError("P1 posterior uncertainties must be jointly available")
+    if metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
+        if not all(bool(torch.isnan(value)) for value in posterior_values):
+            raise ValueError("P0 metadata cannot contain P1 uncertainty")
+    elif all(posterior_available) and any(
+        float(value) < 0.0 for value in posterior_values
+    ):
+        raise ValueError("P1 posterior uncertainties cannot be negative")
     background_fraction = metadata.background_contribution_fraction
     if (
         not math.isfinite(background_fraction)
@@ -2507,6 +2545,12 @@ def estimate_prepared_state(
         growth_disagreement=tendency.growth_disagreement.detach(),
         maximum_growth_saturation_excess=(
             tendency.maximum_growth_saturation_excess.detach()
+        ),
+        posterior_velocity_uncertainty_mps=(
+            tendency.displacement_yx.new_full((), torch.nan)
+        ),
+        posterior_log_growth_uncertainty_per_step=(
+            tendency.log_growth_per_step.new_full((), torch.nan)
         ),
         minimum_phase_correlation_psr=(
             tendency.minimum_phase_correlation_psr.detach()
@@ -4528,6 +4572,15 @@ def _forecast_velocity_uncertainty_mps(
     metadata: ForecastMetadata,
     config: NowcastConfig,
 ) -> Tensor:
+    posterior = metadata.posterior_velocity_uncertainty_mps
+    if (
+        metadata.dynamics_source is DynamicsSource.P1_VARIATIONAL
+        and bool(torch.isfinite(posterior))
+    ):
+        return posterior.to(
+            dtype=state.echo_linear.dtype,
+            device=state.echo_linear.device,
+        )
     uncertainty = state.echo_linear.new_tensor(
         config.forecast_velocity_uncertainty_mps
     )
@@ -4545,6 +4598,14 @@ def _forecast_velocity_uncertainty_mps(
     )
 
 
+def _p1_posterior_is_available(metadata: ForecastMetadata) -> bool:
+    return bool(
+        torch.isfinite(metadata.posterior_velocity_uncertainty_mps)
+    ) and bool(
+        torch.isfinite(metadata.posterior_log_growth_uncertainty_per_step)
+    )
+
+
 def _dynamics_evidence_uncertainty_multiplier(
     state: RadarState,
     metadata: ForecastMetadata,
@@ -4552,6 +4613,8 @@ def _dynamics_evidence_uncertainty_multiplier(
     *,
     pair_count: int,
 ) -> Tensor:
+    if metadata.dynamics_source is DynamicsSource.P1_VARIATIONAL:
+        return state.echo_linear.new_ones(())
     if pair_count == 0:
         multiplier = config.persistence_uncertainty_multiplier
     elif pair_count == 1:
@@ -4597,6 +4660,13 @@ def _forecast_confidence(
     metadata: ForecastMetadata,
     config: NowcastConfig,
 ) -> Tensor:
+    if (
+        metadata.dynamics_source is DynamicsSource.P1_VARIATIONAL
+        and not _p1_posterior_is_available(metadata)
+    ):
+        return state.echo_linear.new_zeros(
+            (config.forecast_steps,) + state.echo_linear.shape
+        )
     position_uncertainty = _forecast_position_uncertainty_m(
         state,
         metadata,
@@ -4633,25 +4703,35 @@ def _forecast_log_growth_uncertainty(
     metadata: ForecastMetadata,
     config: NowcastConfig,
 ) -> Tensor:
-    uncertainty_per_step = state.echo_linear.new_tensor(
-        config.forecast_log_growth_uncertainty_per_step
-    )
-    disagreement = metadata.growth_disagreement
-    if bool(torch.isfinite(disagreement)):
+    posterior = metadata.posterior_log_growth_uncertainty_per_step
+    if (
+        metadata.dynamics_source is DynamicsSource.P1_VARIATIONAL
+        and bool(torch.isfinite(posterior))
+    ):
+        uncertainty_per_step = posterior.to(
+            dtype=state.echo_linear.dtype,
+            device=state.echo_linear.device,
+        )
+    else:
+        uncertainty_per_step = state.echo_linear.new_tensor(
+            config.forecast_log_growth_uncertainty_per_step
+        )
+        disagreement = metadata.growth_disagreement
+        if bool(torch.isfinite(disagreement)):
+            uncertainty_per_step = torch.maximum(
+                uncertainty_per_step,
+                0.5 * disagreement.clamp_min(0.0),
+            )
+        uncertainty_per_step *= _dynamics_evidence_uncertainty_multiplier(
+            state,
+            metadata,
+            config,
+            pair_count=metadata.growth_pair_count,
+        )
         uncertainty_per_step = torch.maximum(
             uncertainty_per_step,
-            0.5 * disagreement.clamp_min(0.0),
+            metadata.maximum_growth_saturation_excess,
         )
-    uncertainty_per_step *= _dynamics_evidence_uncertainty_multiplier(
-        state,
-        metadata,
-        config,
-        pair_count=metadata.growth_pair_count,
-    )
-    uncertainty_per_step = torch.maximum(
-        uncertainty_per_step,
-        metadata.maximum_growth_saturation_excess,
-    )
     retention = math.exp(
         -config.interval_minutes / config.growth_decay_minutes
     )

@@ -101,6 +101,12 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         motion_disagreement_mps=state.echo_linear.new_full((), torch.nan),
         growth_disagreement=state.echo_linear.new_zeros(()),
         maximum_growth_saturation_excess=state.echo_linear.new_zeros(()),
+        posterior_velocity_uncertainty_mps=state.echo_linear.new_full(
+            (), torch.nan
+        ),
+        posterior_log_growth_uncertainty_per_step=(
+            state.echo_linear.new_full((), torch.nan)
+        ),
         minimum_phase_correlation_psr=state.echo_linear.new_tensor(10.0),
         tendency_pair_count=2,
         tendency_source=TendencySource.OBSERVATION,
@@ -2822,6 +2828,12 @@ class NowcastTests(unittest.TestCase):
             maximum_growth_saturation_excess=torch.zeros(
                 (), dtype=torch.float64
             ),
+            posterior_velocity_uncertainty_mps=torch.full(
+                (), torch.nan, dtype=torch.float64
+            ),
+            posterior_log_growth_uncertainty_per_step=torch.full(
+                (), torch.nan, dtype=torch.float64
+            ),
             minimum_phase_correlation_psr=torch.tensor(
                 10.0,
                 dtype=torch.float64,
@@ -3749,6 +3761,18 @@ class NowcastTests(unittest.TestCase):
                     )
                 ),
                 "P1 metadata",
+            ),
+            (
+                reissue(
+                    metadata=replace(
+                        issued.metadata,
+                        posterior_velocity_uncertainty_mps=torch.tensor(1.0),
+                        posterior_log_growth_uncertainty_per_step=(
+                            torch.tensor(0.1)
+                        ),
+                    )
+                ),
+                "P0 metadata cannot contain P1 uncertainty",
             ),
             (
                 reissue(
