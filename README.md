@@ -390,8 +390,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v40`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v32`
+- `output_contract_version`: 현재 `nowcast-npz-v41`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v33`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -410,11 +410,16 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   `forecast_verified_support`, `forecast_observation_verified_support`,
   `forecast_background_verified_support`
 - `forecast_velocity_uncertainty_mps`,
+  `motion_evidence_uncertainty_multiplier`,
+  `growth_evidence_uncertainty_multiplier`,
   `forecast_position_uncertainty_m`, `forecast_log_growth_uncertainty`,
-  `forecast_confidence`: pair disagreement와 보정된 속도·로그성장 오차
-  하한에서 계산한 선행시간별 불확실성과 confidence
-- `radar_anchored_valid_mask`, `background_fallback_mask`: 기존
-  `valid_mask`를 레이더 관측 evidence가 있는 발행과 배경 연속성 발행으로 분리한 mask
+  `maximum_growth_saturation_excess`, `forecast_confidence`: pair
+  disagreement, pair 수·PSR, background tendency age, 성장모델 상한 초과량과
+  보정된 속도·로그성장 오차 하한에서 계산한 선행시간별 불확실성과 confidence
+- `radar_state_anchored_valid_mask`,
+  `radar_dynamics_anchored_valid_mask`, `background_dynamics_mask`:
+  현재상태의 레이더 evidence와 미래 tendency의 레이더·배경 출처를 분리한 mask.
+  `radar_anchored_valid_mask`는 state-anchored 호환 alias다.
 - `source_support`는 상태가 정의됐는지를,
   `path_verified_source_support`는 국지 에코 위치경로가 검증됐는지를,
   `verified_source_support`는 성장증거까지 있는 상태경로인지를 나타낸다.

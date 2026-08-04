@@ -100,6 +100,7 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         motion_disagreement_px=state.echo_linear.new_zeros(()),
         motion_disagreement_mps=state.echo_linear.new_full((), torch.nan),
         growth_disagreement=state.echo_linear.new_zeros(()),
+        maximum_growth_saturation_excess=state.echo_linear.new_zeros(()),
         minimum_phase_correlation_psr=state.echo_linear.new_tensor(10.0),
         tendency_pair_count=2,
         tendency_source=TendencySource.OBSERVATION,
@@ -147,6 +148,7 @@ class NowcastTests(unittest.TestCase):
         nowcast_module: object,
         value: torch.Tensor,
         *,
+        raw_value: float | None = None,
         available: bool = True,
         overlap_support: float = 8.0,
         overlap_area_km2: float | None = None,
@@ -156,8 +158,17 @@ class NowcastTests(unittest.TestCase):
         previous_integral = value.new_tensor(
             overlap_support * mean_echo
         )
+        raw = (
+            value
+            if raw_value is None
+            else value.new_tensor(raw_value)
+        )
         return nowcast_module._GrowthEvidence(  # type: ignore[attr-defined]
             value=value,
+            raw_value=raw,
+            saturation_excess=(
+                torch.abs(raw) - torch.abs(value)
+            ).clamp_min(0.0),
             available=available,
             overlap_support=value.new_tensor(overlap_support),
             overlap_area_km2=(
@@ -2246,7 +2257,12 @@ class NowcastTests(unittest.TestCase):
         frames = torch.stack((latest, latest, latest))
         result = forecast_result_from_state(
             state,
-            observed_metadata(state),
+            replace(
+                observed_metadata(state),
+                minimum_phase_correlation_psr=state.echo_linear.new_tensor(
+                    30.0
+                ),
+            ),
             config,
             run=ForecastRunContract.from_inputs(
                 config,
@@ -2294,6 +2310,130 @@ class NowcastTests(unittest.TestCase):
             float(result.forecast_confidence[-1, 4, 4]),
         )
 
+    def test_missing_pairs_are_less_confident_than_strong_pairs(self) -> None:
+        config = replace(self.config, horizon_minutes=10)
+        state = RadarState(
+            echo_linear=torch.ones(8, 8, dtype=torch.float64),
+            displacement_yx=torch.zeros(2, dtype=torch.float64),
+            log_growth_per_step=torch.zeros((), dtype=torch.float64),
+        )
+        strong = replace(
+            observed_metadata(state),
+            minimum_phase_correlation_psr=state.echo_linear.new_tensor(30.0),
+        )
+        persistence = replace(
+            strong,
+            minimum_phase_correlation_psr=state.echo_linear.new_full(
+                (), torch.nan
+            ),
+            tendency_pair_count=0,
+            motion_pair_count=0,
+            growth_pair_count=0,
+            motion_pair_selection=TendencyPairSelection.NONE,
+            growth_pair_selection=TendencyPairSelection.NONE,
+            tendency_source=TendencySource.NONE,
+        )
+        latest = linear_to_dbz(state.echo_linear, config)
+        frames = torch.stack((latest, latest, latest))
+        run = ForecastRunContract.from_inputs(
+            config,
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        strong_result = forecast_result_from_state(
+            state, strong, config, run=run
+        )
+        persistence_result = forecast_result_from_state(
+            state, persistence, config, run=run
+        )
+
+        torch.testing.assert_close(
+            strong_result.motion_evidence_uncertainty_multiplier,
+            state.echo_linear.new_tensor(1.0),
+        )
+        torch.testing.assert_close(
+            persistence_result.motion_evidence_uncertainty_multiplier,
+            state.echo_linear.new_tensor(4.0),
+        )
+        self.assertGreater(
+            float(strong_result.forecast_confidence[0, 4, 4]),
+            float(persistence_result.forecast_confidence[0, 4, 4]),
+        )
+
+    def test_pair_psr_changes_dynamics_uncertainty(self) -> None:
+        config = replace(self.config, horizon_minutes=10)
+        state = RadarState(
+            echo_linear=torch.ones(8, 8, dtype=torch.float64),
+            displacement_yx=torch.zeros(2, dtype=torch.float64),
+            log_growth_per_step=torch.zeros((), dtype=torch.float64),
+        )
+        weak = replace(
+            observed_metadata(state),
+            minimum_phase_correlation_psr=state.echo_linear.new_tensor(8.0),
+        )
+        strong = replace(
+            weak,
+            minimum_phase_correlation_psr=state.echo_linear.new_tensor(30.0),
+        )
+        latest = linear_to_dbz(state.echo_linear, config)
+        frames = torch.stack((latest, latest, latest))
+        run = ForecastRunContract.from_inputs(
+            config,
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+
+        weak_result = forecast_result_from_state(state, weak, config, run=run)
+        strong_result = forecast_result_from_state(
+            state, strong, config, run=run
+        )
+
+        torch.testing.assert_close(
+            weak_result.motion_evidence_uncertainty_multiplier,
+            state.echo_linear.new_tensor(2.0),
+        )
+        torch.testing.assert_close(
+            strong_result.motion_evidence_uncertainty_multiplier,
+            state.echo_linear.new_tensor(1.0),
+        )
+
+    def test_background_tendency_age_increases_uncertainty(self) -> None:
+        config = replace(self.config, horizon_minutes=10)
+        state = RadarState(
+            echo_linear=torch.ones(8, 8, dtype=torch.float64),
+            displacement_yx=torch.zeros(2, dtype=torch.float64),
+            log_growth_per_step=torch.zeros((), dtype=torch.float64),
+        )
+        metadata = replace(
+            observed_metadata(state),
+            background_used=True,
+            background_age_minutes=60.0,
+            tendency_source=TendencySource.BACKGROUND,
+            minimum_phase_correlation_psr=state.echo_linear.new_tensor(30.0),
+        )
+        latest = linear_to_dbz(state.echo_linear, config)
+        frames = torch.stack((latest, latest, latest))
+        run = ForecastRunContract.from_inputs(
+            config,
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            frames,
+            background_age_minutes=60.0,
+        )
+        result = forecast_result_from_state(state, metadata, config, run=run)
+
+        torch.testing.assert_close(
+            result.motion_evidence_uncertainty_multiplier,
+            state.echo_linear.new_tensor(2.0),
+        )
+        self.assertTrue(bool(torch.all(result.radar_state_anchored_valid_mask)))
+        self.assertFalse(
+            bool(torch.any(result.radar_dynamics_anchored_valid_mask))
+        )
+        self.assertTrue(bool(torch.all(result.background_dynamics_mask)))
+
     def test_pair_disagreement_raises_live_velocity_uncertainty(self) -> None:
         config = replace(
             self.config,
@@ -2308,6 +2448,7 @@ class NowcastTests(unittest.TestCase):
         metadata = replace(
             observed_metadata(state),
             motion_disagreement_mps=state.echo_linear.new_tensor(6.0),
+            minimum_phase_correlation_psr=state.echo_linear.new_tensor(30.0),
         )
         latest = linear_to_dbz(state.echo_linear, config)
         frames = torch.stack((latest, latest, latest))
@@ -2346,6 +2487,7 @@ class NowcastTests(unittest.TestCase):
         metadata = replace(
             observed_metadata(state),
             growth_disagreement=state.echo_linear.new_tensor(0.4),
+            minimum_phase_correlation_psr=state.echo_linear.new_tensor(30.0),
         )
         latest = linear_to_dbz(state.echo_linear, config)
         frames = torch.stack((latest, latest, latest))
@@ -2364,6 +2506,44 @@ class NowcastTests(unittest.TestCase):
         torch.testing.assert_close(
             result.forecast_log_growth_uncertainty,
             state.echo_linear.new_tensor([0.2]),
+        )
+
+    def test_growth_saturation_raises_live_growth_uncertainty(self) -> None:
+        config = replace(
+            self.config,
+            horizon_minutes=10,
+            forecast_log_growth_uncertainty_per_step=0.05,
+        )
+        state = RadarState(
+            echo_linear=torch.ones(8, 8, dtype=torch.float64),
+            displacement_yx=torch.zeros(2, dtype=torch.float64),
+            log_growth_per_step=torch.zeros((), dtype=torch.float64),
+        )
+        metadata = replace(
+            observed_metadata(state),
+            growth_disagreement=state.echo_linear.new_zeros(()),
+            maximum_growth_saturation_excess=(
+                state.echo_linear.new_tensor(0.5)
+            ),
+            minimum_phase_correlation_psr=state.echo_linear.new_tensor(30.0),
+        )
+        latest = linear_to_dbz(state.echo_linear, config)
+        frames = torch.stack((latest, latest, latest))
+        result = forecast_result_from_state(
+            state,
+            metadata,
+            config,
+            run=ForecastRunContract.from_inputs(
+                config,
+                frames,
+                torch.ones_like(frames, dtype=torch.bool),
+                None,
+            ),
+        )
+
+        torch.testing.assert_close(
+            result.forecast_log_growth_uncertainty,
+            state.echo_linear.new_tensor([0.5]),
         )
 
     def test_confidence_gate_masks_long_leads_only(self) -> None:
@@ -2639,6 +2819,9 @@ class NowcastTests(unittest.TestCase):
                 (), torch.nan, dtype=torch.float64
             ),
             growth_disagreement=torch.zeros((), dtype=torch.float64),
+            maximum_growth_saturation_excess=torch.zeros(
+                (), dtype=torch.float64
+            ),
             minimum_phase_correlation_psr=torch.tensor(
                 10.0,
                 dtype=torch.float64,
@@ -2904,6 +3087,60 @@ class NowcastTests(unittest.TestCase):
             float(evidence.value),
             self.config.max_log_growth_per_step,
         )
+
+    def test_growth_evidence_preserves_saturation_excess(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = replace(
+            self.config,
+            max_log_growth_per_step=0.3,
+        )
+        previous = torch.full((4, 4), 10.0, dtype=torch.float64)
+        current = previous * math.exp(0.8)
+        mask = torch.ones_like(previous, dtype=torch.bool)
+
+        evidence = nowcast_module._aligned_growth_evidence(
+            previous,
+            current,
+            mask,
+            mask,
+            previous.new_zeros(2),
+            config,
+            grid_time_contract=None,
+        )
+
+        self.assertTrue(evidence.available)
+        torch.testing.assert_close(evidence.value, previous.new_tensor(0.3))
+        torch.testing.assert_close(
+            evidence.raw_value,
+            previous.new_tensor(0.8),
+        )
+        torch.testing.assert_close(
+            evidence.saturation_excess,
+            previous.new_tensor(0.5),
+        )
+
+    def test_two_clipped_growth_pairs_retain_model_mismatch(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        clipped = torch.tensor(0.3, dtype=torch.float64)
+        first = self._growth_evidence(
+            nowcast_module,
+            clipped,
+            raw_value=0.5,
+        )
+        second = self._growth_evidence(
+            nowcast_module,
+            clipped,
+            raw_value=0.8,
+        )
+
+        disagreement = torch.abs(first.value - second.value)
+        saturation = nowcast_module._maximum_growth_saturation_excess(
+            (first, second),
+            clipped,
+        )
+
+        torch.testing.assert_close(disagreement, clipped.new_zeros(()))
+        torch.testing.assert_close(saturation, clipped.new_tensor(0.5))
 
     def test_unavailable_growth_is_not_blended_as_zero(self) -> None:
         nowcast_module = import_module("advar.nowcast")
@@ -3964,11 +4201,19 @@ class NowcastTests(unittest.TestCase):
             "forecast_confidence_length_scale_m",
             "forecast_log_growth_uncertainty_per_step",
             "forecast_log_growth_confidence_scale",
+            "background_tendency_age_uncertainty_scale_minutes",
         ):
             for value in (0.0, -1.0, float("nan"), True):
                 with self.subTest(field_name=field_name, value=value):
                     with self.assertRaises(ValueError):
                         NowcastConfig(**{field_name: value})
+        with self.assertRaises(ValueError):
+            NowcastConfig(single_pair_uncertainty_multiplier=0.5)
+        with self.assertRaises(ValueError):
+            NowcastConfig(
+                single_pair_uncertainty_multiplier=3.0,
+                persistence_uncertainty_multiplier=2.0,
+            )
         with self.assertRaises(ValueError):
             NowcastConfig(maximum_background_age_minutes=0.0)
         with self.assertRaises(ValueError):

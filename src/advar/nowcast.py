@@ -71,6 +71,9 @@ class NowcastConfig:
     forecast_confidence_length_scale_m: float = 10_000.0
     forecast_log_growth_uncertainty_per_step: float = 0.05
     forecast_log_growth_confidence_scale: float = 1.0
+    single_pair_uncertainty_multiplier: float = 2.0
+    persistence_uncertainty_multiplier: float = 4.0
+    background_tendency_age_uncertainty_scale_minutes: float = 60.0
     maximum_local_state_verification_error_dbz: float = 6.0
     epsilon: float = 1.0e-6
     support_presence_threshold: float = 1.0e-6
@@ -118,6 +121,9 @@ class NowcastConfig:
             self.forecast_confidence_length_scale_m,
             self.forecast_log_growth_uncertainty_per_step,
             self.forecast_log_growth_confidence_scale,
+            self.single_pair_uncertainty_multiplier,
+            self.persistence_uncertainty_multiplier,
+            self.background_tendency_age_uncertainty_scale_minutes,
             self.maximum_local_state_verification_error_dbz,
             self.epsilon,
             self.support_presence_threshold,
@@ -233,6 +239,28 @@ class NowcastConfig:
         ):
             raise ValueError(
                 "forecast_log_growth_confidence_scale must be positive"
+            )
+        if isinstance(self.single_pair_uncertainty_multiplier, bool) or (
+            self.single_pair_uncertainty_multiplier < 1.0
+        ):
+            raise ValueError(
+                "single_pair_uncertainty_multiplier must be at least 1"
+            )
+        if isinstance(self.persistence_uncertainty_multiplier, bool) or (
+            self.persistence_uncertainty_multiplier
+            < self.single_pair_uncertainty_multiplier
+        ):
+            raise ValueError(
+                "persistence_uncertainty_multiplier cannot be smaller than "
+                "single_pair_uncertainty_multiplier"
+            )
+        if isinstance(
+            self.background_tendency_age_uncertainty_scale_minutes,
+            bool,
+        ) or self.background_tendency_age_uncertainty_scale_minutes <= 0:
+            raise ValueError(
+                "background_tendency_age_uncertainty_scale_minutes must be "
+                "positive"
             )
         if self.minimum_publish_verified_support is not None and (
             isinstance(self.minimum_publish_verified_support, bool)
@@ -735,6 +763,7 @@ class _SourceTendencyEstimate:
     motion_disagreement_px: Tensor
     motion_disagreement_mps: Tensor
     growth_disagreement: Tensor
+    maximum_growth_saturation_excess: Tensor
     minimum_phase_correlation_psr: Tensor
     tendency_pair_count: int
     motion_pair_count: int
@@ -764,12 +793,26 @@ class _SourceTendencyEstimate:
 @dataclass(frozen=True)
 class _GrowthEvidence:
     value: Tensor
+    raw_value: Tensor
+    saturation_excess: Tensor
     available: bool
     overlap_support: Tensor
     overlap_area_km2: Tensor
     aligned_previous_integral: Tensor
     current_integral: Tensor
     alignment_log_error: Tensor
+
+
+def _maximum_growth_saturation_excess(
+    evidence: tuple[_GrowthEvidence, ...],
+    reference: Tensor,
+) -> Tensor:
+    available = tuple(item for item in evidence if item.available)
+    if not available:
+        return reference.new_zeros(())
+    return torch.max(
+        torch.stack(tuple(item.saturation_excess for item in available))
+    )
 
 
 def _minimum_growth_evidence(
@@ -902,6 +945,7 @@ class ForecastMetadata:
     motion_disagreement_px: Tensor
     motion_disagreement_mps: Tensor
     growth_disagreement: Tensor
+    maximum_growth_saturation_excess: Tensor
     minimum_phase_correlation_psr: Tensor
     tendency_pair_count: int
     tendency_source: TendencySource
@@ -1023,6 +1067,9 @@ def state_metadata_digest(
                 ),
                 "growth_disagreement": tensor_digest(
                     metadata.growth_disagreement
+                ),
+                "maximum_growth_saturation_excess": tensor_digest(
+                    metadata.maximum_growth_saturation_excess
                 ),
                 "minimum_phase_correlation_psr": tensor_digest(
                     metadata.minimum_phase_correlation_psr
@@ -1553,6 +1600,24 @@ class ForecastResult:
         )
 
     @property
+    def motion_evidence_uncertainty_multiplier(self) -> Tensor:
+        return _dynamics_evidence_uncertainty_multiplier(
+            self.state,
+            self.metadata,
+            self.run.config,
+            pair_count=self.metadata.motion_pair_count,
+        )
+
+    @property
+    def growth_evidence_uncertainty_multiplier(self) -> Tensor:
+        return _dynamics_evidence_uncertainty_multiplier(
+            self.state,
+            self.metadata,
+            self.run.config,
+            pair_count=self.metadata.growth_pair_count,
+        )
+
+    @property
     def forecast_position_uncertainty_m(self) -> Tensor:
         return _forecast_position_uncertainty_m(
             self.state,
@@ -1578,6 +1643,10 @@ class ForecastResult:
 
     @property
     def radar_anchored_valid_mask(self) -> Tensor:
+        return self.radar_state_anchored_valid_mask
+
+    @property
+    def radar_state_anchored_valid_mask(self) -> Tensor:
         threshold = (
             self.run.config.minimum_publish_observation_verified_support
         )
@@ -1586,6 +1655,22 @@ class ForecastResult:
         return self.valid_mask & (
             self.forecast_observation_verified_support >= threshold
         )
+
+    @property
+    def radar_dynamics_anchored_valid_mask(self) -> Tensor:
+        if (
+            self.metadata.tendency_source is not TendencySource.OBSERVATION
+            or self.metadata.motion_pair_count == 0
+            or self.metadata.growth_pair_count == 0
+        ):
+            return torch.zeros_like(self.valid_mask)
+        return self.radar_state_anchored_valid_mask
+
+    @property
+    def background_dynamics_mask(self) -> Tensor:
+        if self.metadata.tendency_source is not TendencySource.BACKGROUND:
+            return torch.zeros_like(self.valid_mask)
+        return self.valid_mask
 
     @property
     def background_fallback_mask(self) -> Tensor:
@@ -1733,6 +1818,8 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         raise ValueError("motion_disagreement_mps must be scalar")
     if metadata.growth_disagreement.ndim != 0:
         raise ValueError("growth_disagreement must be scalar")
+    if metadata.maximum_growth_saturation_excess.ndim != 0:
+        raise ValueError("maximum_growth_saturation_excess must be scalar")
     selection_counts = {
         TendencyPairSelection.NONE: 0,
         TendencyPairSelection.PERSISTENCE: 0,
@@ -1965,11 +2052,14 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         metadata.background_verified_source_support,
         metadata.motion_disagreement_px,
         metadata.growth_disagreement,
+        metadata.maximum_growth_saturation_excess,
     )
     if not all(
         bool(torch.all(torch.isfinite(value))) for value in finite_tensors
     ):
         raise ValueError("forecast run state and metadata must be finite")
+    if float(metadata.maximum_growth_saturation_excess) < 0.0:
+        raise ValueError("maximum_growth_saturation_excess cannot be negative")
     if math.isinf(float(metadata.motion_disagreement_mps)):
         raise ValueError("motion_disagreement_mps cannot be infinite")
     if bool(torch.any(state.echo_linear < 0)):
@@ -2415,6 +2505,9 @@ def estimate_prepared_state(
         motion_disagreement_px=tendency.motion_disagreement_px.detach(),
         motion_disagreement_mps=tendency.motion_disagreement_mps.detach(),
         growth_disagreement=tendency.growth_disagreement.detach(),
+        maximum_growth_saturation_excess=(
+            tendency.maximum_growth_saturation_excess.detach()
+        ),
         minimum_phase_correlation_psr=(
             tendency.minimum_phase_correlation_psr.detach()
         ),
@@ -2599,6 +2692,12 @@ def _estimate_source_tendencies(
             motion_disagreement_px=motion_disagreement,
             motion_disagreement_mps=motion_disagreement_mps,
             growth_disagreement=growth_disagreement,
+            maximum_growth_saturation_excess=(
+                _maximum_growth_saturation_excess(
+                    (first_growth_evidence, second_growth_evidence),
+                    linear,
+                )
+            ),
             minimum_phase_correlation_psr=minimum_psr,
             tendency_pair_count=len(used_indices),
             motion_pair_count=len(motion_indices),
@@ -2682,6 +2781,7 @@ def _estimate_source_tendencies(
             motion_disagreement_px=zero_growth,
             motion_disagreement_mps=unavailable_psr,
             growth_disagreement=zero_growth,
+            maximum_growth_saturation_excess=zero_growth,
             minimum_phase_correlation_psr=unavailable_psr,
             tendency_pair_count=0,
             motion_pair_count=0,
@@ -2891,6 +2991,11 @@ def _single_pair_tendency(
         motion_disagreement_px=zero,
         motion_disagreement_mps=psr.new_full((), torch.nan),
         growth_disagreement=zero,
+        maximum_growth_saturation_excess=(
+            growth_evidence.saturation_excess
+            if growth_evidence.available
+            else zero
+        ),
         minimum_phase_correlation_psr=psr,
         tendency_pair_count=1,
         motion_pair_count=1,
@@ -3071,6 +3176,12 @@ def _combine_single_adjacent_and_long(
         motion_disagreement_px=motion_disagreement,
         motion_disagreement_mps=motion_disagreement_mps,
         growth_disagreement=growth_disagreement,
+        maximum_growth_saturation_excess=(
+            _maximum_growth_saturation_excess(
+                (adjacent_growth_evidence, long_growth_evidence),
+                linear,
+            )
+        ),
         minimum_phase_correlation_psr=minimum_psr,
         tendency_pair_count=int(adjacent_used) + int(long_used),
         motion_pair_count=int(motion_adjacent) + int(motion_long),
@@ -3466,7 +3577,12 @@ def _growth_evidence_aligned_with_motion(
         max_log_growth=config.max_log_growth_per_step * step_span,
         grid_time_contract=grid_time_contract,
     )
-    return replace(evidence, value=evidence.value / step_span)
+    return replace(
+        evidence,
+        value=evidence.value / step_span,
+        raw_value=evidence.raw_value / step_span,
+        saturation_excess=evidence.saturation_excess / step_span,
+    )
 
 
 def _estimate_available_pair(
@@ -4421,7 +4537,41 @@ def _forecast_velocity_uncertainty_mps(
             uncertainty,
             0.5 * disagreement.clamp_min(0.0),
         )
-    return uncertainty
+    return uncertainty * _dynamics_evidence_uncertainty_multiplier(
+        state,
+        metadata,
+        config,
+        pair_count=metadata.motion_pair_count,
+    )
+
+
+def _dynamics_evidence_uncertainty_multiplier(
+    state: RadarState,
+    metadata: ForecastMetadata,
+    config: NowcastConfig,
+    *,
+    pair_count: int,
+) -> Tensor:
+    if pair_count == 0:
+        multiplier = config.persistence_uncertainty_multiplier
+    elif pair_count == 1:
+        multiplier = config.single_pair_uncertainty_multiplier
+    else:
+        multiplier = 1.0
+
+    psr = float(metadata.minimum_phase_correlation_psr)
+    if pair_count > 0 and math.isfinite(psr) and psr > 0.0:
+        reference_psr = 2.0 * config.minimum_phase_correlation_psr
+        multiplier *= max(1.0, reference_psr / psr)
+
+    if metadata.tendency_source is TendencySource.BACKGROUND:
+        age = metadata.background_age_minutes
+        if age is None:
+            raise ValueError("background tendency requires background age")
+        multiplier *= 1.0 + (
+            age / config.background_tendency_age_uncertainty_scale_minutes
+        )
+    return state.echo_linear.new_tensor(multiplier)
 
 
 def _forecast_position_uncertainty_m(
@@ -4492,6 +4642,16 @@ def _forecast_log_growth_uncertainty(
             uncertainty_per_step,
             0.5 * disagreement.clamp_min(0.0),
         )
+    uncertainty_per_step *= _dynamics_evidence_uncertainty_multiplier(
+        state,
+        metadata,
+        config,
+        pair_count=metadata.growth_pair_count,
+    )
+    uncertainty_per_step = torch.maximum(
+        uncertainty_per_step,
+        metadata.maximum_growth_saturation_excess,
+    )
     retention = math.exp(
         -config.interval_minutes / config.growth_decay_minutes
     )
@@ -4607,6 +4767,8 @@ def _aligned_growth_evidence(
     if not available:
         return _GrowthEvidence(
             value=previous.new_zeros(()),
+            raw_value=raw_growth,
+            saturation_excess=previous.new_zeros(()),
             available=False,
             overlap_support=overlap_support,
             overlap_area_km2=overlap_area_km2,
@@ -4616,6 +4778,8 @@ def _aligned_growth_evidence(
         )
     return _GrowthEvidence(
         value=raw_growth.clamp(-limit, limit),
+        raw_value=raw_growth,
+        saturation_excess=(torch.abs(raw_growth) - limit).clamp_min(0.0),
         available=True,
         overlap_support=overlap_support,
         overlap_area_km2=overlap_area_km2,

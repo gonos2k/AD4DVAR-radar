@@ -33,9 +33,9 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v32"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v33"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-DEFAULT_MAXIMUM_MEMBER_COUNT = 160
+DEFAULT_MAXIMUM_MEMBER_COUNT = 192
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
 DEFAULT_MAXIMUM_TOTAL_EXPANDED_BYTES = 2 * 1024**3
 _ArtifactArrays = Mapping[str, NDArray[Any]]
@@ -61,10 +61,15 @@ _CORE_ARRAY_NAMES = frozenset(
         "forecast_observation_verified_support",
         "forecast_background_verified_support",
         "forecast_velocity_uncertainty_mps",
+        "motion_evidence_uncertainty_multiplier",
+        "growth_evidence_uncertainty_multiplier",
         "forecast_position_uncertainty_m",
         "forecast_log_growth_uncertainty",
         "forecast_confidence",
         "radar_anchored_valid_mask",
+        "radar_state_anchored_valid_mask",
+        "radar_dynamics_anchored_valid_mask",
+        "background_dynamics_mask",
         "background_fallback_mask",
         "state_echo_linear",
         "displacement_yx",
@@ -91,6 +96,7 @@ _CORE_ARRAY_NAMES = frozenset(
         "motion_disagreement_px",
         "motion_disagreement_mps",
         "growth_disagreement",
+        "maximum_growth_saturation_excess",
         "minimum_phase_correlation_psr",
         "tendency_pair_count",
         "motion_pair_count",
@@ -299,6 +305,12 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "forecast_velocity_uncertainty_mps": _numpy(
             result.forecast_velocity_uncertainty_mps
         ),
+        "motion_evidence_uncertainty_multiplier": _numpy(
+            result.motion_evidence_uncertainty_multiplier
+        ),
+        "growth_evidence_uncertainty_multiplier": _numpy(
+            result.growth_evidence_uncertainty_multiplier
+        ),
         "forecast_position_uncertainty_m": _numpy(
             result.forecast_position_uncertainty_m
         ),
@@ -308,6 +320,15 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "forecast_confidence": _numpy(result.forecast_confidence),
         "radar_anchored_valid_mask": _numpy(
             result.radar_anchored_valid_mask
+        ),
+        "radar_state_anchored_valid_mask": _numpy(
+            result.radar_state_anchored_valid_mask
+        ),
+        "radar_dynamics_anchored_valid_mask": _numpy(
+            result.radar_dynamics_anchored_valid_mask
+        ),
+        "background_dynamics_mask": _numpy(
+            result.background_dynamics_mask
         ),
         "background_fallback_mask": _numpy(
             result.background_fallback_mask
@@ -379,6 +400,9 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             metadata.motion_disagreement_mps
         ),
         "growth_disagreement": _numpy(metadata.growth_disagreement),
+        "maximum_growth_saturation_excess": _numpy(
+            metadata.maximum_growth_saturation_excess
+        ),
         "minimum_phase_correlation_psr": _numpy(
             metadata.minimum_phase_correlation_psr
         ),
@@ -729,6 +753,14 @@ def load_forecast_run(
             loaded_arrays,
             "forecast_velocity_uncertainty_mps",
         )
+        stored_motion_evidence_multiplier = _tensor(
+            loaded_arrays,
+            "motion_evidence_uncertainty_multiplier",
+        )
+        stored_growth_evidence_multiplier = _tensor(
+            loaded_arrays,
+            "growth_evidence_uncertainty_multiplier",
+        )
         stored_forecast_position_uncertainty_m = _tensor(
             loaded_arrays,
             "forecast_position_uncertainty_m",
@@ -744,6 +776,18 @@ def load_forecast_run(
         stored_radar_anchored_valid_mask = _tensor(
             loaded_arrays,
             "radar_anchored_valid_mask",
+        )
+        stored_radar_state_anchored_valid_mask = _tensor(
+            loaded_arrays,
+            "radar_state_anchored_valid_mask",
+        )
+        stored_radar_dynamics_anchored_valid_mask = _tensor(
+            loaded_arrays,
+            "radar_dynamics_anchored_valid_mask",
+        )
+        stored_background_dynamics_mask = _tensor(
+            loaded_arrays,
+            "background_dynamics_mask",
         )
         stored_background_fallback_mask = _tensor(
             loaded_arrays,
@@ -859,6 +903,10 @@ def load_forecast_run(
             growth_disagreement=_tensor(
                 loaded_arrays,
                 "growth_disagreement",
+            ),
+            maximum_growth_saturation_excess=_tensor(
+                loaded_arrays,
+                "maximum_growth_saturation_excess",
             ),
             minimum_phase_correlation_psr=_floating_scalar_tensor(
                 loaded_arrays,
@@ -1100,6 +1148,16 @@ def load_forecast_run(
     ):
         raise ValueError("forecast velocity uncertainty mismatch")
     if not torch.equal(
+        result.motion_evidence_uncertainty_multiplier,
+        stored_motion_evidence_multiplier,
+    ):
+        raise ValueError("motion evidence multiplier mismatch")
+    if not torch.equal(
+        result.growth_evidence_uncertainty_multiplier,
+        stored_growth_evidence_multiplier,
+    ):
+        raise ValueError("growth evidence multiplier mismatch")
+    if not torch.equal(
         result.forecast_position_uncertainty_m,
         stored_forecast_position_uncertainty_m,
     ):
@@ -1119,6 +1177,21 @@ def load_forecast_run(
         stored_radar_anchored_valid_mask,
     ):
         raise ValueError("radar-anchored valid mask mismatch")
+    if not torch.equal(
+        result.radar_state_anchored_valid_mask,
+        stored_radar_state_anchored_valid_mask,
+    ):
+        raise ValueError("radar-state-anchored valid mask mismatch")
+    if not torch.equal(
+        result.radar_dynamics_anchored_valid_mask,
+        stored_radar_dynamics_anchored_valid_mask,
+    ):
+        raise ValueError("radar-dynamics-anchored valid mask mismatch")
+    if not torch.equal(
+        result.background_dynamics_mask,
+        stored_background_dynamics_mask,
+    ):
+        raise ValueError("background dynamics mask mismatch")
     if not torch.equal(
         result.background_fallback_mask,
         stored_background_fallback_mask,

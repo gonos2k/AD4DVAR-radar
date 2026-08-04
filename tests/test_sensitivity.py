@@ -96,6 +96,7 @@ def metadata_for(
         ),
         motion_disagreement_mps=state.echo_linear.new_full((), torch.nan),
         growth_disagreement=torch.abs(pair_growth[1] - pair_growth[0]),
+        maximum_growth_saturation_excess=state.echo_linear.new_zeros(()),
         minimum_phase_correlation_psr=state.echo_linear.new_tensor(10.0),
         tendency_pair_count=2,
         tendency_source=TendencySource.OBSERVATION,
@@ -1236,14 +1237,17 @@ class SensitivityTests(unittest.TestCase):
             "linearity",
             "verification",
             "metric_support",
-            "path_evidence",
             "observation_evidence",
         ):
             self.assertAlmostEqual(
                 conflict.trust_components[name],
                 baseline.trust_components[name],
             )
-        self.assertAlmostEqual(
+        self.assertLess(
+            conflict.trust_components["path_evidence"],
+            baseline.trust_components["path_evidence"],
+        )
+        self.assertLess(
             conflict.trust_score,
             baseline.trust_score * penalty,
         )

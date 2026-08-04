@@ -24,7 +24,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v40"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v41"
 
 
 def main() -> None:
@@ -81,6 +81,21 @@ def main() -> None:
         "--forecast-log-growth-confidence-scale",
         type=float,
         help="log-echo uncertainty scale used by live confidence",
+    )
+    parser.add_argument(
+        "--single-pair-uncertainty-multiplier",
+        type=float,
+        help="uncertainty multiplier when only one tendency pair is usable",
+    )
+    parser.add_argument(
+        "--persistence-uncertainty-multiplier",
+        type=float,
+        help="uncertainty multiplier when no tendency pair is usable",
+    )
+    parser.add_argument(
+        "--background-tendency-age-uncertainty-scale-minutes",
+        type=float,
+        help="background age that adds one dynamics uncertainty multiple",
     )
     parser.add_argument(
         "--maximum-local-state-verification-error-dbz",
@@ -326,6 +341,22 @@ def main() -> None:
             if args.forecast_log_growth_confidence_scale is None
             else args.forecast_log_growth_confidence_scale
         ),
+        single_pair_uncertainty_multiplier=(
+            default_nowcast_config.single_pair_uncertainty_multiplier
+            if args.single_pair_uncertainty_multiplier is None
+            else args.single_pair_uncertainty_multiplier
+        ),
+        persistence_uncertainty_multiplier=(
+            default_nowcast_config.persistence_uncertainty_multiplier
+            if args.persistence_uncertainty_multiplier is None
+            else args.persistence_uncertainty_multiplier
+        ),
+        background_tendency_age_uncertainty_scale_minutes=(
+            default_nowcast_config
+            .background_tendency_age_uncertainty_scale_minutes
+            if args.background_tendency_age_uncertainty_scale_minutes is None
+            else args.background_tendency_age_uncertainty_scale_minutes
+        ),
         maximum_local_state_verification_error_dbz=(
             default_nowcast_config.maximum_local_state_verification_error_dbz
             if args.maximum_local_state_verification_error_dbz is None
@@ -486,6 +517,15 @@ def _analysis_config_from_args(
         ),
         "--forecast-log-growth-confidence-scale": (
             args.forecast_log_growth_confidence_scale
+        ),
+        "--single-pair-uncertainty-multiplier": (
+            args.single_pair_uncertainty_multiplier
+        ),
+        "--persistence-uncertainty-multiplier": (
+            args.persistence_uncertainty_multiplier
+        ),
+        "--background-tendency-age-uncertainty-scale-minutes": (
+            args.background_tendency_age_uncertainty_scale_minutes
         ),
         "--maximum-local-state-verification-error-dbz": (
             args.maximum_local_state_verification_error_dbz

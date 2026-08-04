@@ -104,6 +104,12 @@ class CliTests(unittest.TestCase):
             "0.05",
             "--forecast-log-growth-confidence-scale",
             "1",
+            "--single-pair-uncertainty-multiplier",
+            "2",
+            "--persistence-uncertainty-multiplier",
+            "4",
+            "--background-tendency-age-uncertainty-scale-minutes",
+            "60",
             "--maximum-local-state-verification-error-dbz",
             "6",
             "--causal-support-uncertainty-m",
@@ -167,10 +173,16 @@ class CliTests(unittest.TestCase):
             "forecast_observation_verified_support",
             "forecast_background_verified_support",
             "forecast_velocity_uncertainty_mps",
+            "motion_evidence_uncertainty_multiplier",
+            "growth_evidence_uncertainty_multiplier",
             "forecast_position_uncertainty_m",
             "forecast_log_growth_uncertainty",
+            "maximum_growth_saturation_excess",
             "forecast_confidence",
             "radar_anchored_valid_mask",
+            "radar_state_anchored_valid_mask",
+            "radar_dynamics_anchored_valid_mask",
+            "background_dynamics_mask",
             "background_fallback_mask",
             "latest_frame_dbz",
             "latest_background_dbz",
@@ -239,11 +251,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v40",
+                    "nowcast-npz-v41",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v32",
+                    "forecast-run-v33",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -708,6 +720,20 @@ class CliTests(unittest.TestCase):
                 self.assertEqual(
                     nowcast_config["forecast_log_growth_confidence_scale"],
                     1.0,
+                )
+                self.assertEqual(
+                    nowcast_config["single_pair_uncertainty_multiplier"],
+                    2.0,
+                )
+                self.assertEqual(
+                    nowcast_config["persistence_uncertainty_multiplier"],
+                    4.0,
+                )
+                self.assertEqual(
+                    nowcast_config[
+                        "background_tendency_age_uncertainty_scale_minutes"
+                    ],
+                    60.0,
                 )
                 self.assertEqual(
                     result["analysis_motion_control_coordinate_system"].item(),
