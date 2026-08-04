@@ -33,7 +33,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v38"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v39"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 192
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
@@ -105,6 +105,8 @@ _CORE_ARRAY_NAMES = frozenset(
         "maximum_growth_saturation_excess",
         "posterior_velocity_uncertainty_mps",
         "posterior_log_growth_uncertainty_per_step",
+        "p1_velocity_saturation_uncertainty_mps",
+        "p1_log_growth_saturation_uncertainty_per_step",
         "minimum_phase_correlation_psr",
         "tendency_pair_count",
         "motion_pair_count",
@@ -437,6 +439,12 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         ),
         "posterior_log_growth_uncertainty_per_step": _numpy(
             metadata.posterior_log_growth_uncertainty_per_step
+        ),
+        "p1_velocity_saturation_uncertainty_mps": _numpy(
+            metadata.p1_velocity_saturation_uncertainty_mps
+        ),
+        "p1_log_growth_saturation_uncertainty_per_step": _numpy(
+            metadata.p1_log_growth_saturation_uncertainty_per_step
         ),
         "minimum_phase_correlation_psr": _numpy(
             metadata.minimum_phase_correlation_psr
@@ -989,6 +997,20 @@ def load_forecast_run(
                 _floating_scalar_tensor(
                     loaded_arrays,
                     "posterior_log_growth_uncertainty_per_step",
+                    allow_nan=True,
+                )
+            ),
+            p1_velocity_saturation_uncertainty_mps=(
+                _floating_scalar_tensor(
+                    loaded_arrays,
+                    "p1_velocity_saturation_uncertainty_mps",
+                    allow_nan=True,
+                )
+            ),
+            p1_log_growth_saturation_uncertainty_per_step=(
+                _floating_scalar_tensor(
+                    loaded_arrays,
+                    "p1_log_growth_saturation_uncertainty_per_step",
                     allow_nan=True,
                 )
             ),

@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.26
+# ADVAR 3-frame radar nowcast v0.27
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -379,6 +379,7 @@ support·물리면적·관측오차·amplitude
 정보량·적분량·면적·성장
 임계값, 검증된 상태경로·레이더 관측 support 발행 임계값, 선행시간
 confidence, 배경 기여율, 속도불확실성·위치오차 길이척도, 국지 dBZ 상태검증 오차,
+P1 posterior의 motion·growth saturation safe margin과 uncertainty 배수,
 P1 국지 검증 precision·절대 dBZ 오차와
 `--operational-calibration-manifest`를 모두 요구한다. manifest는 사람이
 읽는 calibration ID, radar class, 서로 겹치지 않는 학습·검증기간, 검증지표와
@@ -393,8 +394,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v46`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v38`
+- `output_contract_version`: 현재 `nowcast-npz-v47`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v39`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -426,9 +427,16 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   `forecast_position_uncertainty_m`, `forecast_log_growth_uncertainty`,
   `maximum_growth_saturation_excess`,
   `posterior_velocity_uncertainty_mps`,
-  `posterior_log_growth_uncertainty_per_step`, `forecast_confidence`: pair
+  `posterior_log_growth_uncertainty_per_step`,
+  `p1_velocity_saturation_uncertainty_mps`,
+  `p1_log_growth_saturation_uncertainty_per_step`, `forecast_confidence`: pair
   disagreement, pair 수·PSR, background tendency age, 성장모델 상한 초과량과
-  P1 field-conditioned posterior에서 계산한 선행시간별 불확실성과 confidence
+  P1 field-conditioned posterior에서 계산한 선행시간별 불확실성과 confidence.
+  P1 총 불확실성은 posterior가 기존 model-error floor를 대체하지 않으며
+  `sqrt(posterior² + model_error² + saturation²)`로 계산한다. bounded decoder의
+  safe margin 안에서는 saturation 항이 0이고, 경계에 가까워질수록 보정된
+  최대 배수까지 증가한다. 운용 P1 candidate가 safe margin을 침범하면
+  confidence를 발행하지 않고 P0로 fallback한다.
 - `radar_state_anchored_valid_mask`,
   `radar_dynamics_anchored_valid_mask`, `background_dynamics_mask`:
   현재상태의 레이더 evidence와 미래 tendency의 레이더·배경 출처를 분리한 mask.

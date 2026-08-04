@@ -110,6 +110,12 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         posterior_log_growth_uncertainty_per_step=(
             state.echo_linear.new_full((), torch.nan)
         ),
+        p1_velocity_saturation_uncertainty_mps=(
+            state.echo_linear.new_full((), torch.nan)
+        ),
+        p1_log_growth_saturation_uncertainty_per_step=(
+            state.echo_linear.new_full((), torch.nan)
+        ),
         minimum_phase_correlation_psr=state.echo_linear.new_tensor(10.0),
         tendency_pair_count=2,
         tendency_source=TendencySource.OBSERVATION,
@@ -2462,6 +2468,62 @@ class NowcastTests(unittest.TestCase):
             float(result.forecast_confidence[-1, 4, 4]),
         )
 
+    def test_p1_total_uncertainty_keeps_model_floor_and_saturation(self) -> None:
+        config = replace(self.config, horizon_minutes=10)
+        state = RadarState(
+            echo_linear=torch.ones(8, 8, dtype=torch.float64),
+            displacement_yx=torch.zeros(2, dtype=torch.float64),
+            log_growth_per_step=torch.zeros((), dtype=torch.float64),
+        )
+        metadata = replace(
+            observed_metadata(state),
+            provenance="p1_variational_analysis",
+            dynamics_source=DynamicsSource.P1_VARIATIONAL,
+            state_path_source=TendencySource.NONE,
+            state_path_mode=TendencyPairSelection.NONE,
+            state_path_pair_count=0,
+            state_path_minimum_psr=math.nan,
+            state_path_age_minutes=None,
+            observation_path=StatePathProvenance(),
+            minimum_growth_overlap_support=math.nan,
+            minimum_growth_overlap_area_km2=math.nan,
+            posterior_velocity_uncertainty_mps=state.echo_linear.new_tensor(
+                0.0
+            ),
+            posterior_log_growth_uncertainty_per_step=(
+                state.echo_linear.new_tensor(0.0)
+            ),
+            p1_velocity_saturation_uncertainty_mps=(
+                state.echo_linear.new_tensor(4.0)
+            ),
+            p1_log_growth_saturation_uncertainty_per_step=(
+                state.echo_linear.new_tensor(0.2)
+            ),
+        )
+        latest = linear_to_dbz(state.echo_linear, config)
+        frames = torch.stack((latest, latest, latest))
+        result = forecast_result_from_state(
+            state,
+            metadata,
+            config,
+            run=ForecastRunContract.from_inputs(
+                config,
+                frames,
+                torch.ones_like(frames, dtype=torch.bool),
+                None,
+            ),
+        )
+
+        torch.testing.assert_close(
+            result.forecast_velocity_uncertainty_mps,
+            state.echo_linear.new_tensor(math.sqrt(17.0)),
+        )
+        torch.testing.assert_close(
+            result.forecast_log_growth_uncertainty,
+            state.echo_linear.new_tensor([math.sqrt(0.05**2 + 0.2**2)]),
+        )
+        result.validate_issuance()
+
     def test_missing_pairs_are_less_confident_than_strong_pairs(self) -> None:
         config = replace(self.config, horizon_minutes=10)
         state = RadarState(
@@ -2982,6 +3044,12 @@ class NowcastTests(unittest.TestCase):
                 (), torch.nan, dtype=torch.float64
             ),
             posterior_log_growth_uncertainty_per_step=torch.full(
+                (), torch.nan, dtype=torch.float64
+            ),
+            p1_velocity_saturation_uncertainty_mps=torch.full(
+                (), torch.nan, dtype=torch.float64
+            ),
+            p1_log_growth_saturation_uncertainty_per_step=torch.full(
                 (), torch.nan, dtype=torch.float64
             ),
             minimum_phase_correlation_psr=torch.tensor(
@@ -4432,6 +4500,8 @@ class NowcastTests(unittest.TestCase):
             with self.subTest(maximum_motion_speed_mps=value):
                 with self.assertRaises(ValueError):
                     NowcastConfig(maximum_motion_speed_mps=value)
+        config = NowcastConfig(maximum_motion_speed_mps=1.0)
+        self.assertEqual(config.maximum_motion_speed_mps, 1.0)
 
     def test_physical_pair_settings_require_grid_contract(self) -> None:
         frames = torch.full((3, 8, 8), 20.0, dtype=torch.float64)

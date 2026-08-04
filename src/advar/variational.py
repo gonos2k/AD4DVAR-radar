@@ -660,6 +660,22 @@ def prepare_analysis(
                 "operational analysis requires a physical motion limit"
             )
         if (
+            nowcast_config.p1_motion_saturation_safe_margin_mps
+            > nowcast_config.maximum_motion_speed_mps
+        ):
+            raise ValueError(
+                "operational P1 motion saturation margin cannot exceed "
+                "the physical motion limit"
+            )
+        if (
+            nowcast_config.p1_growth_saturation_safe_margin_per_step
+            > nowcast_config.max_log_growth_per_step
+        ):
+            raise ValueError(
+                "operational P1 growth saturation margin cannot exceed "
+                "the log-growth limit"
+            )
+        if (
             nowcast_config.pair_echo_dilation_m is None
             or nowcast_config.phase_correlation_sidelobe_radius_m is None
         ):
@@ -1672,6 +1688,46 @@ def _posterior_physical_dynamics_uncertainty(
     )
 
 
+def _p1_saturation_uncertainty(
+    posterior_velocity_uncertainty_mps: Tensor,
+    posterior_log_growth_uncertainty_per_step: Tensor,
+    motion_speed_margin_mps: float | None,
+    growth_margin_per_step: Tensor,
+    config: NowcastConfig,
+) -> tuple[Tensor, Tensor]:
+    unavailable = posterior_velocity_uncertainty_mps.new_full((), torch.nan)
+    if (
+        motion_speed_margin_mps is None
+        or not bool(torch.isfinite(posterior_velocity_uncertainty_mps))
+        or not bool(
+            torch.isfinite(posterior_log_growth_uncertainty_per_step)
+        )
+    ):
+        return unavailable, unavailable.clone()
+
+    motion_exposure = 1.0 - (
+        posterior_velocity_uncertainty_mps.new_tensor(
+            motion_speed_margin_mps
+        )
+        / config.p1_motion_saturation_safe_margin_mps
+    )
+    growth_exposure = 1.0 - (
+        growth_margin_per_step
+        / config.p1_growth_saturation_safe_margin_per_step
+    )
+    multiplier = config.p1_saturation_uncertainty_multiplier
+    return (
+        posterior_velocity_uncertainty_mps.new_tensor(
+            config.forecast_velocity_uncertainty_mps * multiplier
+        )
+        * motion_exposure.clamp(0.0, 1.0),
+        posterior_log_growth_uncertainty_per_step.new_tensor(
+            config.forecast_log_growth_uncertainty_per_step * multiplier
+        )
+        * growth_exposure.clamp(0.0, 1.0),
+    )
+
+
 def _motion_field_identifiability_directions(
     control: Tensor,
     frozen: FrozenOuterState,
@@ -2342,6 +2398,38 @@ def _analysis_result(
             amplitude_diagnostics=amplitude,
             amplitude_diagnostics_source="rejected_candidate",
         )
+    motion_speed_saturation_margin = _motion_speed_saturation_margin(
+        trajectory.displacement_yx,
+        frozen,
+    )
+    motion_saturation_margin_mps = _motion_saturation_margin_mps(
+        trajectory.displacement_yx,
+        frozen,
+    )
+    growth_saturation_margin = (
+        frozen.nowcast_config.max_log_growth_per_step
+        - torch.abs(trajectory.log_growth_per_step)
+    )
+    if frozen.analysis_config.execution_mode == "operational" and (
+        motion_speed_saturation_margin is None
+        or motion_speed_saturation_margin
+        + frozen.nowcast_config.contract_absolute_tolerance
+        < frozen.nowcast_config.p1_motion_saturation_safe_margin_mps
+        or float(growth_saturation_margin)
+        + frozen.nowcast_config.contract_absolute_tolerance
+        < frozen.nowcast_config.p1_growth_saturation_safe_margin_per_step
+    ):
+        return _fallback_result(
+            frozen,
+            control,
+            reference_objective,
+            "dynamics_saturation_margin",
+            outer_iterations,
+            pcg_iterations,
+            minimum_reachability_margin=reachability_margin,
+            amplitude_diagnostics=amplitude,
+            amplitude_diagnostics_source="rejected_candidate",
+        )
     if not _objective_improves_reference(
         final_objective,
         reference_objective,
@@ -2411,20 +2499,22 @@ def _analysis_result(
         frozen,
         identifiability,
     )
+    (
+        p1_velocity_saturation_uncertainty_mps,
+        p1_log_growth_saturation_uncertainty_per_step,
+    ) = _p1_saturation_uncertainty(
+        posterior_velocity_uncertainty_mps,
+        posterior_log_growth_uncertainty_per_step,
+        motion_saturation_margin_mps,
+        growth_saturation_margin,
+        frozen.nowcast_config,
+    )
     field_smoothness_prior_cost = float(
         _field_smoothness_prior_cost(control, frozen).detach()
     )
     motion_saturation_margin = (
         frozen.motion_limits_yx
         - torch.abs(trajectory.displacement_yx)
-    )
-    motion_speed_saturation_margin = _motion_speed_saturation_margin(
-        trajectory.displacement_yx,
-        frozen,
-    )
-    growth_saturation_margin = (
-        frozen.nowcast_config.max_log_growth_per_step
-        - torch.abs(trajectory.log_growth_per_step)
     )
     analysis_verified_support = torch.zeros_like(source_support)
     if not analysis_degraded:
@@ -2475,6 +2565,12 @@ def _analysis_result(
             ),
             posterior_log_growth_uncertainty_per_step=(
                 posterior_log_growth_uncertainty_per_step.detach()
+            ),
+            p1_velocity_saturation_uncertainty_mps=(
+                p1_velocity_saturation_uncertainty_mps.detach()
+            ),
+            p1_log_growth_saturation_uncertainty_per_step=(
+                p1_log_growth_saturation_uncertainty_per_step.detach()
             ),
         ),
         analyzed_frames_linear=frames.detach(),
@@ -3715,6 +3811,37 @@ def _motion_speed_saturation_margin(
     return maximum_speed - float(speed.detach())
 
 
+def _motion_saturation_margin_mps(
+    displacement_yx: Tensor,
+    frozen: FrozenOuterState,
+) -> float | None:
+    speed_margin = _motion_speed_saturation_margin(displacement_yx, frozen)
+    if speed_margin is not None:
+        return speed_margin
+    contract = frozen.grid_time_contract
+    if contract is None:
+        return None
+    margin_yx = frozen.motion_limits_yx - torch.abs(displacement_yx)
+    zero = margin_yx.new_zeros(())
+    axis_margins = torch.stack(
+        (
+            torch.stack((margin_yx[0], zero)),
+            torch.stack((zero, margin_yx[1])),
+        )
+    )
+    projected = torch.stack(
+        tuple(
+            contract.projected_displacement_xy(value)
+            for value in axis_margins
+        )
+    )
+    seconds_per_step = frozen.nowcast_config.interval_minutes * 60.0
+    minimum_margin = torch.min(
+        torch.linalg.vector_norm(projected, dim=1)
+    )
+    return float(minimum_margin.detach()) / seconds_per_step
+
+
 def _motion_is_admissible(
     displacement_yx: Tensor,
     frozen: FrozenOuterState,
@@ -4073,6 +4200,12 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
         ),
         posterior_log_growth_uncertainty_per_step=(
             metadata.posterior_log_growth_uncertainty_per_step.detach()
+        ),
+        p1_velocity_saturation_uncertainty_mps=(
+            metadata.p1_velocity_saturation_uncertainty_mps.detach()
+        ),
+        p1_log_growth_saturation_uncertainty_per_step=(
+            metadata.p1_log_growth_saturation_uncertainty_per_step.detach()
         ),
         minimum_phase_correlation_psr=(
             metadata.minimum_phase_correlation_psr.detach()

@@ -187,9 +187,23 @@ class VariationalAnalysisTests(unittest.TestCase):
                 )
             )
         )
+        self.assertTrue(
+            bool(
+                torch.isfinite(
+                    analysis.metadata.p1_velocity_saturation_uncertainty_mps
+                )
+            )
+        )
+        expected_velocity_uncertainty = torch.sqrt(
+            analysis.metadata.posterior_velocity_uncertainty_mps.square()
+            + analysis.metadata.posterior_velocity_uncertainty_mps.new_tensor(
+                self.nowcast_config.forecast_velocity_uncertainty_mps**2
+            )
+            + analysis.metadata.p1_velocity_saturation_uncertainty_mps.square()
+        )
         torch.testing.assert_close(
             forecast.forecast_velocity_uncertainty_mps,
-            analysis.metadata.posterior_velocity_uncertainty_mps,
+            expected_velocity_uncertainty,
         )
         self.assertTrue(
             bool(torch.all(forecast.radar_dynamics_anchored_valid_mask))
@@ -3134,6 +3148,18 @@ class VariationalAnalysisTests(unittest.TestCase):
                 grid_time_contract=contract,
             )
 
+        with self.assertRaisesRegex(ValueError, "motion saturation margin"):
+            prepare_analysis(
+                frames,
+                nowcast_config=NowcastConfig(
+                    maximum_motion_speed_mps=1.0,
+                    pair_echo_dilation_m=1000.0,
+                    phase_correlation_sidelobe_radius_m=1000.0,
+                ),
+                analysis_config=config,
+                grid_time_contract=contract,
+            )
+
     def test_field_smoothness_weight_must_be_nonnegative(self) -> None:
         for value in (-0.1, float("nan")):
             with self.subTest(value=value):
@@ -3683,6 +3709,126 @@ class VariationalAnalysisTests(unittest.TestCase):
             result.metadata.dynamics_source,
             DynamicsSource.P0_FALLBACK,
         )
+
+    def test_operational_analysis_rejects_saturated_dynamics(self) -> None:
+        observations, frozen = self.stationary_problem()
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-03T00:00:00Z",
+                "2026-08-03T00:10:00Z",
+                "2026-08-03T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="e" * 64,
+        )
+        frozen = replace(
+            frozen,
+            nowcast_config=replace(
+                frozen.nowcast_config,
+                maximum_motion_speed_mps=30.0,
+                pair_echo_dilation_m=1000.0,
+                phase_correlation_sidelobe_radius_m=1000.0,
+                p1_motion_saturation_safe_margin_mps=2.0,
+            ),
+            analysis_config=AnalysisConfig(
+                execution_mode="operational",
+                operational_calibration_id="test-calibration-v1",
+                amplitude_information_policy="operational_fallback",
+                amplitude_confidence_policy="operational_fallback",
+                motion_increment_scale_mps=2.0,
+                causal_support_uncertainty_m=1000.0,
+                amplitude_displacement_tolerance_m=1000.0,
+            ),
+            grid_time_contract=contract,
+        )
+
+        with patch.object(
+            variational_module,
+            "_motion_speed_saturation_margin",
+            return_value=1.0,
+        ):
+            result = variational_module._analysis_result(
+                initial_control(frozen),
+                observations,
+                frozen,
+                1.0,
+                0.5,
+                1,
+                ((0, 0),),
+                True,
+                "converged",
+            )
+
+        self.assertTrue(result.used_fallback)
+        self.assertEqual(result.reason, "dynamics_saturation_margin")
+
+    def test_p1_saturation_uncertainty_grows_toward_decoder_limit(self) -> None:
+        reference = torch.zeros((), dtype=torch.float64)
+        config = NowcastConfig(
+            forecast_velocity_uncertainty_mps=1.0,
+            forecast_log_growth_uncertainty_per_step=0.05,
+            p1_motion_saturation_safe_margin_mps=2.0,
+            p1_growth_saturation_safe_margin_per_step=0.1,
+            p1_saturation_uncertainty_multiplier=4.0,
+        )
+
+        safe = variational_module._p1_saturation_uncertainty(
+            reference,
+            reference,
+            2.0,
+            reference.new_tensor(0.1),
+            config,
+        )
+        saturated = variational_module._p1_saturation_uncertainty(
+            reference,
+            reference,
+            0.0,
+            reference.new_zeros(()),
+            config,
+        )
+
+        torch.testing.assert_close(safe[0], reference)
+        torch.testing.assert_close(safe[1], reference)
+        torch.testing.assert_close(saturated[0], reference.new_tensor(4.0))
+        torch.testing.assert_close(saturated[1], reference.new_tensor(0.2))
+
+    def test_saturation_uncertainty_counteracts_small_decoder_jacobian(
+        self,
+    ) -> None:
+        reference = torch.zeros((), dtype=torch.float64)
+
+        def decode(control: torch.Tensor) -> torch.Tensor:
+            return variational_module._bounded_update(
+                reference,
+                control,
+                1.0,
+                1.0,
+            )
+
+        center_control = reference.clone()
+        saturated_control = reference.new_tensor(math.atanh(0.99))
+        center_jacobian = torch.func.jacrev(decode)(center_control)
+        saturated_jacobian = torch.func.jacrev(decode)(saturated_control)
+        growth_margin = 1.0 - torch.abs(decode(saturated_control))
+        config = NowcastConfig(
+            max_log_growth_per_step=1.0,
+            p1_growth_saturation_safe_margin_per_step=0.1,
+        )
+        saturation = variational_module._p1_saturation_uncertainty(
+            reference,
+            reference,
+            config.p1_motion_saturation_safe_margin_mps,
+            growth_margin,
+            config,
+        )[1]
+
+        self.assertLess(
+            float(saturated_jacobian),
+            0.05 * float(center_jacobian),
+        )
+        self.assertGreater(float(saturation), 0.0)
 
     def test_rejected_lm_trial_retries_with_more_damping(self) -> None:
         observations, frozen = self.stationary_problem()

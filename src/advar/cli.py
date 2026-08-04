@@ -25,7 +25,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v46"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v47"
 
 
 def main() -> None:
@@ -82,6 +82,21 @@ def main() -> None:
         "--forecast-log-growth-confidence-scale",
         type=float,
         help="log-echo uncertainty scale used by live confidence",
+    )
+    parser.add_argument(
+        "--p1-motion-saturation-safe-margin-mps",
+        type=float,
+        help="minimum safe P1 margin below the physical speed limit",
+    )
+    parser.add_argument(
+        "--p1-growth-saturation-safe-margin-per-step",
+        type=float,
+        help="minimum safe P1 margin below the log-growth limit",
+    )
+    parser.add_argument(
+        "--p1-saturation-uncertainty-multiplier",
+        type=float,
+        help="maximum saturation uncertainty in model-error multiples",
     )
     parser.add_argument(
         "--single-pair-uncertainty-multiplier",
@@ -371,6 +386,21 @@ def main() -> None:
             if args.forecast_log_growth_confidence_scale is None
             else args.forecast_log_growth_confidence_scale
         ),
+        p1_motion_saturation_safe_margin_mps=(
+            default_nowcast_config.p1_motion_saturation_safe_margin_mps
+            if args.p1_motion_saturation_safe_margin_mps is None
+            else args.p1_motion_saturation_safe_margin_mps
+        ),
+        p1_growth_saturation_safe_margin_per_step=(
+            default_nowcast_config.p1_growth_saturation_safe_margin_per_step
+            if args.p1_growth_saturation_safe_margin_per_step is None
+            else args.p1_growth_saturation_safe_margin_per_step
+        ),
+        p1_saturation_uncertainty_multiplier=(
+            default_nowcast_config.p1_saturation_uncertainty_multiplier
+            if args.p1_saturation_uncertainty_multiplier is None
+            else args.p1_saturation_uncertainty_multiplier
+        ),
         single_pair_uncertainty_multiplier=(
             default_nowcast_config.single_pair_uncertainty_multiplier
             if args.single_pair_uncertainty_multiplier is None
@@ -561,6 +591,15 @@ def _analysis_config_from_args(
         ),
         "--forecast-log-growth-confidence-scale": (
             args.forecast_log_growth_confidence_scale
+        ),
+        "--p1-motion-saturation-safe-margin-mps": (
+            args.p1_motion_saturation_safe_margin_mps
+        ),
+        "--p1-growth-saturation-safe-margin-per-step": (
+            args.p1_growth_saturation_safe_margin_per_step
+        ),
+        "--p1-saturation-uncertainty-multiplier": (
+            args.p1_saturation_uncertainty_multiplier
         ),
         "--single-pair-uncertainty-multiplier": (
             args.single_pair_uncertainty_multiplier

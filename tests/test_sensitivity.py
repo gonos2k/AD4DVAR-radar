@@ -107,6 +107,12 @@ def metadata_for(
         posterior_log_growth_uncertainty_per_step=(
             state.echo_linear.new_full((), torch.nan)
         ),
+        p1_velocity_saturation_uncertainty_mps=(
+            state.echo_linear.new_full((), torch.nan)
+        ),
+        p1_log_growth_saturation_uncertainty_per_step=(
+            state.echo_linear.new_full((), torch.nan)
+        ),
         minimum_phase_correlation_psr=state.echo_linear.new_tensor(10.0),
         tendency_pair_count=2,
         tendency_source=TendencySource.OBSERVATION,

@@ -200,6 +200,16 @@ class ForecastRunArtifactTests(unittest.TestCase):
             equal_nan=True,
         )
         torch.testing.assert_close(
+            loaded.metadata.p1_velocity_saturation_uncertainty_mps,
+            result.metadata.p1_velocity_saturation_uncertainty_mps,
+            equal_nan=True,
+        )
+        torch.testing.assert_close(
+            loaded.metadata.p1_log_growth_saturation_uncertainty_per_step,
+            result.metadata.p1_log_growth_saturation_uncertainty_per_step,
+            equal_nan=True,
+        )
+        torch.testing.assert_close(
             loaded.forecast_confidence,
             result.forecast_confidence,
         )
