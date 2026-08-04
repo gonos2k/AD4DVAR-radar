@@ -936,6 +936,7 @@ class ForecastMetadata:
     background_source_support: Tensor
     path_verified_source_support: Tensor
     verified_source_support: Tensor
+    local_dynamics_verified_support: Tensor
     observation_verified_source_support: Tensor
     background_verified_source_support: Tensor
     motion_disagreement_px: Tensor
@@ -1050,6 +1051,9 @@ def state_metadata_digest(
                 ),
                 "verified_source_support": tensor_digest(
                     metadata.verified_source_support
+                ),
+                "local_dynamics_verified_support": tensor_digest(
+                    metadata.local_dynamics_verified_support
                 ),
                 "observation_verified_source_support": tensor_digest(
                     metadata.observation_verified_source_support
@@ -1669,6 +1673,14 @@ class ForecastResult:
         )
 
     @property
+    def forecast_local_dynamics_verified_support(self) -> Tensor:
+        return _advected_support_by_lead(
+            self.metadata.local_dynamics_verified_support,
+            self.state,
+            self.run.config,
+        )
+
+    @property
     def forecast_observation_verified_support(self) -> Tensor:
         return _advected_support_by_lead(
             self.metadata.observation_verified_source_support,
@@ -1761,7 +1773,12 @@ class ForecastResult:
             or self.metadata.growth_pair_count == 0
         ):
             return torch.zeros_like(self.valid_mask)
-        return self.radar_state_anchored_valid_mask
+        threshold = self.run.config.minimum_publish_verified_support
+        if threshold is None:
+            threshold = self.run.config.support_presence_threshold
+        return self.radar_state_anchored_valid_mask & (
+            self.forecast_local_dynamics_verified_support >= threshold
+        )
 
     @property
     def background_dynamics_mask(self) -> Tensor:
@@ -1769,7 +1786,12 @@ class ForecastResult:
             return torch.zeros_like(self.valid_mask)
         if self.metadata.tendency_source is not TendencySource.BACKGROUND:
             return torch.zeros_like(self.valid_mask)
-        return self.valid_mask
+        threshold = self.run.config.minimum_publish_verified_support
+        if threshold is None:
+            threshold = self.run.config.support_presence_threshold
+        return self.valid_mask & (
+            self.forecast_local_dynamics_verified_support >= threshold
+        )
 
     @property
     def background_fallback_mask(self) -> Tensor:
@@ -1853,6 +1875,7 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         metadata.background_source_support,
         metadata.path_verified_source_support,
         metadata.verified_source_support,
+        metadata.local_dynamics_verified_support,
         metadata.observation_verified_source_support,
         metadata.background_verified_source_support,
         metadata.motion_disagreement_px,
@@ -1871,6 +1894,7 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         metadata.background_source_support,
         metadata.path_verified_source_support,
         metadata.verified_source_support,
+        metadata.local_dynamics_verified_support,
         metadata.observation_verified_source_support,
         metadata.background_verified_source_support,
     )
@@ -1897,6 +1921,10 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         )
     if metadata.verified_source_support.shape != state.echo_linear.shape:
         raise ValueError("verified_source_support must match the state grid")
+    if metadata.local_dynamics_verified_support.shape != state.echo_linear.shape:
+        raise ValueError(
+            "local_dynamics_verified_support must match the state grid"
+        )
     if (
         metadata.observation_verified_source_support.shape
         != state.echo_linear.shape
@@ -2171,6 +2199,7 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         metadata.background_source_support,
         metadata.path_verified_source_support,
         metadata.verified_source_support,
+        metadata.local_dynamics_verified_support,
         metadata.observation_verified_source_support,
         metadata.background_verified_source_support,
         metadata.motion_disagreement_px,
@@ -2238,6 +2267,12 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
             & (
                 metadata.verified_source_support
                 <= metadata.path_verified_source_support
+            )
+            & (metadata.local_dynamics_verified_support >= 0)
+            & (
+                metadata.local_dynamics_verified_support
+                <= metadata.verified_source_support
+                + config.contract_absolute_tolerance
             )
             & (metadata.observation_verified_source_support >= 0)
             & (metadata.background_verified_source_support >= 0)
@@ -2533,6 +2568,7 @@ def estimate_prepared_state(
         current_source_support,
         current_path_verified_source_support,
         current_verified_source_support,
+        local_dynamics_verified_support,
         observation_verified_source_support,
         background_verified_source_support,
         observation_source_support,
@@ -2546,6 +2582,7 @@ def estimate_prepared_state(
         background_linear,
         observation_paths,
         background_paths,
+        tendency_source,
         config,
         grid_time_contract,
     )
@@ -2618,6 +2655,9 @@ def estimate_prepared_state(
         ),
         verified_source_support=(
             current_verified_source_support.detach().clone()
+        ),
+        local_dynamics_verified_support=(
+            local_dynamics_verified_support.detach().clone()
         ),
         observation_verified_source_support=(
             observation_verified_source_support.detach().clone()
@@ -3865,9 +3905,11 @@ def _merge_current_state(
     background_linear: Tensor,
     observation_paths: _SourceTendencyEstimate,
     background_paths: _SourceTendencyEstimate,
+    tendency_source: TendencySource,
     config: NowcastConfig,
     grid_time_contract: RadarGridTimeContract | None,
 ) -> tuple[
+    Tensor,
     Tensor,
     Tensor,
     Tensor,
@@ -3988,11 +4030,26 @@ def _merge_current_state(
     current_verified_support = (
         observation_verified_support + actual_background_verified_support
     ).clamp(0.0, 1.0)
+    selected_path_masks = (
+        observation_path_masks
+        if tendency_source is TendencySource.OBSERVATION
+        else background_path_masks
+        if tendency_source is TendencySource.BACKGROUND
+        else torch.zeros_like(observation_path_masks)
+    )
+    local_dynamics_verified_support = _local_dynamics_verified_support(
+        current_echo,
+        current_verified_support,
+        selected_path_masks,
+        config,
+        grid_time_contract,
+    )
     return (
         current_echo,
         current_support,
         current_path_verified_support,
         current_verified_support,
+        local_dynamics_verified_support,
         observation_verified_support,
         actual_background_verified_support,
         observation_source_support,
@@ -4001,6 +4058,35 @@ def _merge_current_state(
         observation_contributors,
         background_contributors,
     )
+
+
+def _local_dynamics_verified_support(
+    current_echo: Tensor,
+    state_verified_support: Tensor,
+    selected_path_masks: Tensor,
+    config: NowcastConfig,
+    grid_time_contract: RadarGridTimeContract | None,
+) -> Tensor:
+    echo_threshold = dbz_to_echo(
+        current_echo.new_tensor(config.echo_threshold_dbz),
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
+    )
+    detected = (
+        state_verified_support > config.support_presence_threshold
+    ) & (current_echo >= echo_threshold)
+    past_path_verified = torch.any(selected_path_masks[:2], dim=0)
+    offsets = _pair_echo_offsets(
+        current_echo.shape,
+        config,
+        grid_time_contract,
+    )
+    matched = _dilate_mask(past_path_verified, offsets)
+    return torch.where(
+        detected,
+        state_verified_support * matched.to(dtype=current_echo.dtype),
+        state_verified_support,
+    ).clamp(0.0, 1.0)
 
 
 def _source_path_verification_masks(
@@ -4729,7 +4815,7 @@ def _forecast_confidence(
         )
     )
     verified_support = _advected_support_by_lead(
-        metadata.verified_source_support,
+        metadata.local_dynamics_verified_support,
         state,
         config,
     )

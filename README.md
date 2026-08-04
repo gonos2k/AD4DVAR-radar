@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.24
+# ADVAR 3-frame radar nowcast v0.25
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -393,8 +393,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v44`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v36`
+- `output_contract_version`: 현재 `nowcast-npz-v45`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v37`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -411,9 +411,11 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 - `forecast_dbz`: `[18, H, W]`
 - `valid_mask`, `state_echo_linear`, `source_support`,
   `path_verified_source_support`, `verified_source_support`,
+  `local_dynamics_verified_support`,
   `observation_verified_source_support`,
   `background_verified_source_support`, `forecast_path_verified_support`,
-  `forecast_verified_support`, `forecast_observation_verified_support`,
+  `forecast_verified_support`, `forecast_local_dynamics_verified_support`,
+  `forecast_observation_verified_support`,
   `forecast_background_verified_support`
 - `forecast_velocity_uncertainty_mps`,
   `motion_evidence_uncertainty_multiplier`,
@@ -431,6 +433,10 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 - `source_support`는 상태가 정의됐는지를,
   `path_verified_source_support`는 국지 에코 위치경로가 검증됐는지를,
   `verified_source_support`는 현재시각의 직접 source evidence를 나타낸다.
+  `local_dynamics_verified_support`는 탐지 에코마다 선택된 미래 tendency의
+  source에서 과거→현재 path evidence가 물리 footprint 안에 존재하는지를
+  추가로 요구한다. clear-sky source evidence는 그대로 보존하며 이 필드는
+  국지 확률이나 국지 속도분산이 아닌 보수적인 dynamics evidence mask다.
   과거 source는 물리 footprint 안의 최신 에코와 일치할 때 path evidence만
   제공하며, 최신 결측부를 채운 과거 상태를 state-verified로 승격하지 않는다.
   관측과 배경의 엄격한 evidence support도 별도로 보존한다.
@@ -440,9 +446,11 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   observation/state verified로 기록한다.
   연구모드에서는 예전 persistence를 유지하지만, 운영모드는
   `minimum_publish_verified_support`로 검증되지 않은 경로를 발행에서
-  제외한다. `forecast_path_verified_support`와
-  `forecast_verified_support`는 각 support를 선행시간별로 수송한
-  진단이다. 운용모드는 `minimum_publish_confidence`,
+  제외한다. `forecast_path_verified_support`,
+  `forecast_verified_support`, `forecast_local_dynamics_verified_support`는
+  각 support를 선행시간별로 수송한 진단이다. live confidence와
+  dynamics-anchored mask는 국지 dynamics evidence도 함께 사용한다.
+  운용모드는 `minimum_publish_confidence`,
   `minimum_publish_observation_verified_support`,
   `maximum_publish_background_fraction`도 명시해야 한다.
 - `nowcast_config_json`, `nowcast_config_digest`
