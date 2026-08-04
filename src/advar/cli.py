@@ -10,6 +10,7 @@ import numpy as np
 from numpy.typing import NDArray
 import torch
 
+from .calibration import OperationalCalibrationManifest
 from .nowcast import (
     ForecastResult,
     NowcastConfig,
@@ -24,7 +25,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v43"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v44"
 
 
 def main() -> None:
@@ -110,7 +111,12 @@ def main() -> None:
     )
     parser.add_argument(
         "--operational-calibration-id",
-        help="immutable identifier for the hindcast calibration profile",
+        help="optional assertion matching the calibration manifest identifier",
+    )
+    parser.add_argument(
+        "--operational-calibration-manifest",
+        type=Path,
+        help="canonical hindcast calibration provenance manifest",
     )
     parser.add_argument(
         "--observation-std-dbz",
@@ -237,20 +243,45 @@ def main() -> None:
         help="include optional positivity and transport audits",
     )
     args = parser.parse_args()
+    operational_calibration_manifest = None
+    if args.operational_calibration_manifest is not None:
+        try:
+            operational_calibration_manifest = (
+                OperationalCalibrationManifest.load(
+                    args.operational_calibration_manifest
+                )
+            )
+        except ValueError as error:
+            parser.error(str(error))
     if args.output.suffix != ".npz":
         parser.error("output path must end with .npz")
     if (
         args.mode != "operational"
-        and args.operational_calibration_id is not None
+        and (
+            args.operational_calibration_id is not None
+            or operational_calibration_manifest is not None
+        )
     ):
         parser.error(
-            "--operational-calibration-id requires --mode operational"
+            "operational calibration options require --mode operational"
         )
+    if args.mode == "operational" and operational_calibration_manifest is None:
+        parser.error(
+            "operational mode requires --operational-calibration-manifest"
+        )
+    if (
+        operational_calibration_manifest is not None
+        and args.operational_calibration_id is not None
+        and args.operational_calibration_id
+        != operational_calibration_manifest.calibration_id
+    ):
+        parser.error("operational calibration identifier mismatch")
     if not args.variational and (
         args.mode == "operational"
         or args.amplitude_information_policy is not None
         or args.amplitude_confidence_policy is not None
         or args.operational_calibration_id is not None
+        or operational_calibration_manifest is not None
         or args.observation_std_dbz is not None
         or args.motion_increment_scale_mps is not None
         or args.maximum_detected_error_std is not None
@@ -410,6 +441,9 @@ def main() -> None:
             parser,
             args,
             grid_time_contract=grid_time_contract,
+            operational_calibration_manifest=(
+                operational_calibration_manifest
+            ),
         )
         result, analysis = variational_nowcast(
             frames_tensor,
@@ -420,6 +454,9 @@ def main() -> None:
             background_frames_dbz=background,
             background_age_minutes=args.background_age_minutes,
             grid_time_contract=grid_time_contract,
+            operational_calibration_manifest=(
+                operational_calibration_manifest
+            ),
             audit=args.audit,
         )
     else:
@@ -455,10 +492,15 @@ def _analysis_config_from_args(
     args: argparse.Namespace,
     *,
     grid_time_contract: RadarGridTimeContract | None,
+    operational_calibration_manifest: (
+        OperationalCalibrationManifest | None
+    ),
 ) -> AnalysisConfig:
     defaults = AnalysisConfig()
     calibrated_values = {
-        "--operational-calibration-id": args.operational_calibration_id,
+        "--operational-calibration-manifest": (
+            operational_calibration_manifest
+        ),
         "--observation-std-dbz": args.observation_std_dbz,
         "--minimum-phase-correlation-psr": (
             args.minimum_phase_correlation_psr
@@ -599,7 +641,11 @@ def _analysis_config_from_args(
 
     return AnalysisConfig(
         execution_mode=args.mode,
-        operational_calibration_id=args.operational_calibration_id,
+        operational_calibration_id=(
+            None
+            if operational_calibration_manifest is None
+            else operational_calibration_manifest.calibration_id
+        ),
         detection_limit_dbz=args.echo_threshold_dbz,
         observation_std_dbz=value(
             "observation_std_dbz",

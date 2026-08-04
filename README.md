@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.21
+# ADVAR 3-frame radar nowcast v0.24
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -380,9 +380,12 @@ support·물리면적·관측오차·amplitude
 임계값, 검증된 상태경로·레이더 관측 support 발행 임계값, 선행시간
 confidence, 배경 기여율, 속도불확실성·위치오차 길이척도, 국지 dBZ 상태검증 오차,
 P1 국지 검증 precision·절대 dBZ 오차와
-`--operational-calibration-id`를 모두 요구한다. 이 값은 사람이 읽는
-label이며, 실제 동일성은 전체 설정·격자 정체성·적분기 버전에서 자동 계산한
-`operational_calibration_digest`로 판정한다. 누락된 보정값이
+`--operational-calibration-manifest`를 모두 요구한다. manifest는 사람이
+읽는 calibration ID, radar class, 서로 겹치지 않는 학습·검증기간, 검증지표와
+실행 profile digest를 canonical JSON으로 묶는다. 실제 profile 동일성은 전체
+설정·격자 정체성·적분기 버전에서 자동 계산한
+`operational_calibration_digest`로 판정하며, manifest 자체의 동일성은 별도
+SHA-256 digest로 보존한다. 누락되거나 실행 profile과 불일치하는 manifest가
 있으면 실행 전에 거부하며, 두
 amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값은 실제
 레이더 hindcast에서 얻어야 하며 저장된 `nowcast_config_json`,
@@ -390,8 +393,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v43`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v35`
+- `output_contract_version`: 현재 `nowcast-npz-v44`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v36`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -402,6 +405,9 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 - `analysis_config_json`, `analysis_config_digest`, `analysis_input_digest`
 - `operational_calibration_digest`: 운용 설정과 격자 정체성의 content address;
   연구모드에서는 빈 문자열
+- `operational_calibration_manifest_json`,
+  `operational_calibration_manifest_digest`: 운용 hindcast 보정 근거와 그
+  content address; 연구모드에서는 빈 문자열
 - `forecast_dbz`: `[18, H, W]`
 - `valid_mask`, `state_echo_linear`, `source_support`,
   `path_verified_source_support`, `verified_source_support`,

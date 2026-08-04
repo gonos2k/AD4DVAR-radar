@@ -33,7 +33,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v35"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v36"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 192
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
@@ -143,6 +143,9 @@ _CORE_ARRAY_NAMES = frozenset(
         "analysis_config_digest",
         "analysis_input_digest",
         "operational_calibration_digest",
+        "operational_calibration_manifest_present",
+        "operational_calibration_manifest_json",
+        "operational_calibration_manifest_digest",
     }
 )
 _CLI_EXTRA_ARRAY_NAMES = frozenset(
@@ -495,6 +498,19 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             ""
             if operational_calibration_digest is None
             else operational_calibration_digest
+        ),
+        "operational_calibration_manifest_present": np.asarray(
+            result.run.operational_calibration_manifest_json is not None
+        ),
+        "operational_calibration_manifest_json": np.asarray(
+            ""
+            if result.run.operational_calibration_manifest_json is None
+            else result.run.operational_calibration_manifest_json
+        ),
+        "operational_calibration_manifest_digest": np.asarray(
+            ""
+            if result.run.operational_calibration_manifest_digest is None
+            else result.run.operational_calibration_manifest_digest
         ),
     }
     return seal_forecast_run_arrays(arrays)
@@ -1054,6 +1070,10 @@ def load_forecast_run(
             analysis_config_digest,
             analysis_input_digest,
         ) = _analysis_lineage(loaded_arrays)
+        (
+            operational_calibration_manifest_json,
+            operational_calibration_manifest_digest,
+        ) = _operational_calibration_manifest_lineage(loaded_arrays)
         latest_observation_mask_digest = _digest_scalar(
             loaded_arrays,
             "latest_observation_mask_digest",
@@ -1100,6 +1120,12 @@ def load_forecast_run(
             analysis_config_json=analysis_config_json,
             analysis_config_digest=analysis_config_digest,
             analysis_input_digest=analysis_input_digest,
+            operational_calibration_manifest_json=(
+                operational_calibration_manifest_json
+            ),
+            operational_calibration_manifest_digest=(
+                operational_calibration_manifest_digest
+            ),
             forecast_integrator_version=_string_scalar(
                 loaded_arrays,
                 "forecast_integrator_version",
@@ -1467,6 +1493,40 @@ def _analysis_lineage(
         validated_config_digest,
         _validate_digest("analysis_input_digest", input_digest),
     )
+
+
+def _operational_calibration_manifest_lineage(
+    arrays: _ArtifactArrays,
+) -> tuple[str | None, str | None]:
+    present = _bool_scalar(
+        arrays,
+        "operational_calibration_manifest_present",
+    )
+    manifest_json = _string_scalar(
+        arrays,
+        "operational_calibration_manifest_json",
+    )
+    manifest_digest = _string_scalar(
+        arrays,
+        "operational_calibration_manifest_digest",
+    )
+    if not present:
+        if manifest_json or manifest_digest:
+            raise ValueError(
+                "absent calibration manifest must have empty lineage"
+            )
+        return None, None
+    validated_digest = _validate_digest(
+        "operational_calibration_manifest_digest",
+        manifest_digest,
+    )
+    try:
+        value = json.loads(manifest_json)
+    except json.JSONDecodeError as error:
+        raise ValueError("invalid calibration manifest JSON") from error
+    if json_digest(value) != validated_digest:
+        raise ValueError("operational calibration manifest digest mismatch")
+    return manifest_json, validated_digest
 
 
 def _validate_digest(name: str, value: str) -> str:
