@@ -390,8 +390,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v42`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v34`
+- `output_contract_version`: 현재 `nowcast-npz-v43`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v35`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -424,13 +424,9 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   `radar_anchored_valid_mask`는 state-anchored 호환 alias다.
 - `source_support`는 상태가 정의됐는지를,
   `path_verified_source_support`는 국지 에코 위치경로가 검증됐는지를,
-  `verified_source_support`는 성장증거까지 있는 상태경로인지를 나타낸다.
-  과거 source의 state verification은 물리 footprint 안의 최신 관측과
-  `maximum_local_state_verification_error_dbz` 이내로 일치해야 한다. 기본
-  6 dBZ는 연구용 시작값이며 운용모드는 hindcast 보정값을 명시해야 한다.
-  nonzero-offset 일치는 path evidence로만 사용하며 state evidence는 같은
-  격자점에서만 인정한다. 최신 관측 claim은 최근 source부터 모든
-  과거시각에 걸쳐 공유된다.
+  `verified_source_support`는 현재시각의 직접 source evidence를 나타낸다.
+  과거 source는 물리 footprint 안의 최신 에코와 일치할 때 path evidence만
+  제공하며, 최신 결측부를 채운 과거 상태를 state-verified로 승격하지 않는다.
   관측과 배경의 엄격한 evidence support도 별도로 보존한다.
   수용된 P1은 전체 support를 자동 승격하지 않고, 최신 detected 관측의
   precision 하한과 표준화·절대 dBZ 오차 또는 censored 관측의
