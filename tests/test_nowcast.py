@@ -91,6 +91,8 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         background_source_support=torch.zeros_like(state.echo_linear),
         path_verified_source_support=torch.ones_like(state.echo_linear),
         verified_source_support=torch.ones_like(state.echo_linear),
+        local_motion_verified_support=torch.ones_like(state.echo_linear),
+        local_growth_verified_support=torch.ones_like(state.echo_linear),
         local_dynamics_verified_support=torch.ones_like(state.echo_linear),
         observation_verified_source_support=torch.ones_like(
             state.echo_linear
@@ -2059,25 +2061,254 @@ class NowcastTests(unittest.TestCase):
     def test_local_dynamics_evidence_requires_a_nearby_past_echo(self) -> None:
         nowcast_module = import_module("advar.nowcast")
         config = replace(self.config, pair_echo_dilation_px=0)
-        current_echo = torch.zeros((8, 8), dtype=torch.float64)
+        linear = torch.zeros((3, 8, 8), dtype=torch.float64)
+        masks = torch.zeros_like(linear, dtype=torch.bool)
+        current_echo = linear[2]
         echo = dbz_to_linear(current_echo.new_tensor(20.0), config)
+        linear[1, 2, 2] = echo
         current_echo[2, 2] = echo
         current_echo[5, 5] = echo
+        masks[1:] = linear[1:] > 0
         state_verified = torch.ones_like(current_echo)
-        path_masks = torch.zeros((3, 8, 8), dtype=torch.bool)
-        path_masks[1, 2, 2] = True
+        zero = current_echo.new_zeros(())
+        tendency = nowcast_module._single_pair_tendency(
+            current_echo.new_zeros(2),
+            self._growth_evidence(nowcast_module, zero),
+            current_echo.new_tensor(20.0),
+            selection=TendencyPairSelection.RECENT,
+            source_pair_index=1,
+        )
 
-        local = nowcast_module._local_dynamics_verified_support(
-            current_echo,
-            state_verified,
-            path_masks,
+        local_motion, local_growth = (
+            nowcast_module._selected_component_local_evidence(
+                linear,
+                masks,
+                tendency,
+                current_echo,
+                state_verified,
+                config,
+                None,
+            )
+        )
+
+        self.assertEqual(float(local_motion[2, 2]), 1.0)
+        self.assertEqual(float(local_motion[5, 5]), 0.0)
+        self.assertEqual(float(local_motion[0, 0]), 1.0)
+        self.assertEqual(float(local_growth[2, 2]), 1.0)
+        self.assertEqual(float(local_growth[5, 5]), 0.0)
+
+    def test_local_motion_uses_selected_earlier_pair_only(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = replace(self.config, pair_echo_dilation_px=0)
+        linear = torch.zeros((3, 12, 12), dtype=torch.float64)
+        masks = torch.zeros_like(linear, dtype=torch.bool)
+        echo = dbz_to_linear(linear.new_tensor(20.0), config)
+        linear[0, 6, 1] = echo
+        linear[1, 6, 6] = echo
+        linear[2, 6, 8] = echo
+        masks[:] = linear > 0
+        zero = linear.new_zeros(())
+        earlier = nowcast_module._single_pair_tendency(
+            linear.new_tensor((0.0, 2.0)),
+            self._growth_evidence(nowcast_module, zero),
+            linear.new_tensor(30.0),
+            selection=TendencyPairSelection.EARLIER,
+            source_pair_index=0,
+        )
+
+        local_motion, _ = nowcast_module._selected_component_local_evidence(
+            linear,
+            masks,
+            earlier,
+            linear[2],
+            masks[2].to(dtype=linear.dtype),
             config,
             None,
         )
 
-        self.assertEqual(float(local[2, 2]), 1.0)
-        self.assertEqual(float(local[5, 5]), 0.0)
-        self.assertEqual(float(local[0, 0]), 1.0)
+        self.assertEqual(float(local_motion[6, 8]), 0.0)
+
+    def test_blended_motion_requires_both_selected_sources(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = replace(self.config, pair_echo_dilation_px=0)
+        linear = torch.zeros((3, 12, 12), dtype=torch.float64)
+        masks = torch.zeros_like(linear, dtype=torch.bool)
+        echo = dbz_to_linear(linear.new_tensor(20.0), config)
+        linear[0, 6, 8] = echo
+        linear[1, 6, 4] = echo
+        linear[2, 6, 8] = echo
+        masks[:] = linear > 0
+        zero = linear.new_zeros(())
+        tendency = nowcast_module._single_pair_tendency(
+            linear.new_zeros(2),
+            self._growth_evidence(nowcast_module, zero),
+            linear.new_tensor(20.0),
+            selection=TendencyPairSelection.RECENT,
+            source_pair_index=1,
+        )
+        tendency = replace(
+            tendency,
+            motion_pair_count=2,
+            motion_pair_selection=TendencyPairSelection.BLENDED,
+            motion_pair_spans=((0, 1), (1, 2)),
+        )
+
+        local_motion, _ = nowcast_module._selected_component_local_evidence(
+            linear,
+            masks,
+            tendency,
+            linear[2],
+            masks[2].to(dtype=linear.dtype),
+            config,
+            None,
+        )
+
+        self.assertEqual(float(local_motion[6, 8]), 0.0)
+
+    def test_motion_and_growth_use_their_own_selected_pairs(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = replace(self.config, pair_echo_dilation_px=0)
+        linear = torch.zeros((3, 12, 12), dtype=torch.float64)
+        masks = torch.zeros_like(linear, dtype=torch.bool)
+        echo = dbz_to_linear(linear.new_tensor(20.0), config)
+        linear[0, 6, 1] = echo
+        linear[1, 6, 6] = echo
+        linear[2, 6, 8] = echo
+        masks[:] = linear > 0
+        zero = linear.new_zeros(())
+        tendency = nowcast_module._single_pair_tendency(
+            linear.new_tensor((0.0, 2.0)),
+            self._growth_evidence(nowcast_module, zero),
+            linear.new_tensor(20.0),
+            selection=TendencyPairSelection.RECENT,
+            source_pair_index=1,
+        )
+        tendency = replace(
+            tendency,
+            growth_pair_selection=TendencyPairSelection.EARLIER,
+            growth_pair_spans=((0, 1),),
+        )
+
+        local_motion, local_growth = (
+            nowcast_module._selected_component_local_evidence(
+                linear,
+                masks,
+                tendency,
+                linear[2],
+                masks[2].to(dtype=linear.dtype),
+                config,
+                None,
+            )
+        )
+
+        self.assertEqual(float(local_motion[6, 8]), 1.0)
+        self.assertEqual(float(local_growth[6, 8]), 0.0)
+
+    def test_local_growth_distinguishes_growth_from_decay(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = replace(
+            self.config,
+            pair_echo_dilation_px=0,
+            maximum_local_growth_log_error_per_step=math.log(1.10),
+        )
+        linear = torch.zeros((3, 10, 10), dtype=torch.float64)
+        masks = torch.zeros_like(linear, dtype=torch.bool)
+        previous = linear.new_tensor(100.0)
+        growth = linear.new_tensor(math.log(1.20))
+        linear[1, 3, 3] = previous
+        linear[1, 6, 6] = previous
+        linear[2, 3, 3] = 120.0
+        linear[2, 6, 6] = 80.0
+        masks[1:] = linear[1:] > 0
+        tendency = nowcast_module._single_pair_tendency(
+            linear.new_zeros(2),
+            self._growth_evidence(nowcast_module, growth),
+            linear.new_tensor(20.0),
+            selection=TendencyPairSelection.RECENT,
+            source_pair_index=1,
+        )
+
+        local_motion, local_growth = (
+            nowcast_module._selected_component_local_evidence(
+                linear,
+                masks,
+                tendency,
+                linear[2],
+                masks[2].to(dtype=linear.dtype),
+                config,
+                None,
+            )
+        )
+
+        self.assertEqual(float(local_motion[3, 3]), 1.0)
+        self.assertEqual(float(local_motion[6, 6]), 1.0)
+        self.assertEqual(float(local_growth[3, 3]), 1.0)
+        self.assertEqual(float(local_growth[6, 6]), 0.0)
+
+    def test_one_past_echo_cannot_verify_two_current_echoes(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = replace(self.config, pair_echo_dilation_px=1)
+        linear = torch.zeros((3, 9, 9), dtype=torch.float64)
+        masks = torch.zeros_like(linear, dtype=torch.bool)
+        echo = dbz_to_linear(linear.new_tensor(20.0), config)
+        linear[1, 4, 4] = echo
+        linear[2, 4, 3] = echo
+        linear[2, 4, 5] = echo
+        masks[1:] = linear[1:] > 0
+        zero = linear.new_zeros(())
+        tendency = nowcast_module._single_pair_tendency(
+            linear.new_zeros(2),
+            self._growth_evidence(nowcast_module, zero),
+            linear.new_tensor(20.0),
+            selection=TendencyPairSelection.RECENT,
+            source_pair_index=1,
+        )
+
+        local_motion, _ = nowcast_module._selected_component_local_evidence(
+            linear,
+            masks,
+            tendency,
+            linear[2],
+            masks[2].to(dtype=linear.dtype),
+            config,
+            None,
+        )
+
+        self.assertEqual(float(local_motion[4, 3]), 0.0)
+        self.assertEqual(float(local_motion[4, 5]), 0.0)
+
+    def test_one_offset_past_echo_verifies_one_current_echo(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = replace(self.config, pair_echo_dilation_px=1)
+        linear = torch.zeros((3, 9, 9), dtype=torch.float64)
+        masks = torch.zeros_like(linear, dtype=torch.bool)
+        echo = dbz_to_linear(linear.new_tensor(20.0), config)
+        linear[1, 4, 4] = echo
+        linear[2, 4, 5] = echo
+        masks[1:] = linear[1:] > 0
+        zero = linear.new_zeros(())
+        tendency = nowcast_module._single_pair_tendency(
+            linear.new_zeros(2),
+            self._growth_evidence(nowcast_module, zero),
+            linear.new_tensor(20.0),
+            selection=TendencyPairSelection.RECENT,
+            source_pair_index=1,
+        )
+
+        local_motion, local_growth = (
+            nowcast_module._selected_component_local_evidence(
+                linear,
+                masks,
+                tendency,
+                linear[2],
+                masks[2].to(dtype=linear.dtype),
+                config,
+                None,
+            )
+        )
+
+        self.assertEqual(float(local_motion[4, 5]), 1.0)
+        self.assertEqual(float(local_growth[4, 5]), 1.0)
 
     def test_local_dynamics_evidence_gates_confidence_and_radar_mask(
         self,
@@ -2096,6 +2327,8 @@ class NowcastTests(unittest.TestCase):
         local[5, 5] = 0.0
         metadata = replace(
             observed_metadata(state),
+            local_motion_verified_support=local,
+            local_growth_verified_support=local,
             local_dynamics_verified_support=local,
         )
         latest = linear_to_dbz(echo, config)
@@ -2117,6 +2350,28 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(float(result.forecast_confidence[0, 5, 5]), 0.0)
         self.assertTrue(bool(result.radar_dynamics_anchored_valid_mask[0, 2, 2]))
         self.assertFalse(bool(result.radar_dynamics_anchored_valid_mask[0, 5, 5]))
+
+    def test_issuance_rejects_inconsistent_local_evidence_channels(self) -> None:
+        frames, _ = self._moving_gaussian_frames()
+        result = nowcast(frames, self.config)
+        inconsistent = replace(
+            result.metadata,
+            local_dynamics_verified_support=torch.zeros_like(
+                result.metadata.local_dynamics_verified_support
+            ),
+        )
+        candidate = forecast_result_from_state(
+            result.state,
+            inconsistent,
+            result.run.config,
+            run=result.run,
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "local dynamics support must equal motion/growth intersection",
+        ):
+            candidate.validate_issuance()
 
     def test_operational_publication_excludes_unverified_persistence(
         self,
@@ -2710,6 +2965,8 @@ class NowcastTests(unittest.TestCase):
             background_source_support=torch.zeros_like(support),
             path_verified_source_support=support,
             verified_source_support=support,
+            local_motion_verified_support=support,
+            local_growth_verified_support=support,
             local_dynamics_verified_support=support,
             observation_verified_source_support=support,
             background_verified_source_support=torch.zeros_like(support),

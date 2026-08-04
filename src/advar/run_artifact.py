@@ -33,7 +33,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v37"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v38"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 192
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
@@ -58,6 +58,8 @@ _CORE_ARRAY_NAMES = frozenset(
         "valid_mask_digest",
         "forecast_path_verified_support",
         "forecast_verified_support",
+        "forecast_local_motion_verified_support",
+        "forecast_local_growth_verified_support",
         "forecast_local_dynamics_verified_support",
         "forecast_observation_verified_support",
         "forecast_background_verified_support",
@@ -92,6 +94,8 @@ _CORE_ARRAY_NAMES = frozenset(
         "background_source_support",
         "path_verified_source_support",
         "verified_source_support",
+        "local_motion_verified_support",
+        "local_growth_verified_support",
         "local_dynamics_verified_support",
         "observation_verified_source_support",
         "background_verified_source_support",
@@ -300,6 +304,12 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "forecast_verified_support": _numpy(
             result.forecast_verified_support
         ),
+        "forecast_local_motion_verified_support": _numpy(
+            result.forecast_local_motion_verified_support
+        ),
+        "forecast_local_growth_verified_support": _numpy(
+            result.forecast_local_growth_verified_support
+        ),
         "forecast_local_dynamics_verified_support": _numpy(
             result.forecast_local_dynamics_verified_support
         ),
@@ -396,6 +406,12 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         ),
         "verified_source_support": _numpy(
             metadata.verified_source_support
+        ),
+        "local_motion_verified_support": _numpy(
+            metadata.local_motion_verified_support
+        ),
+        "local_growth_verified_support": _numpy(
+            metadata.local_growth_verified_support
         ),
         "local_dynamics_verified_support": _numpy(
             metadata.local_dynamics_verified_support
@@ -769,6 +785,14 @@ def load_forecast_run(
             loaded_arrays,
             "forecast_verified_support",
         )
+        stored_forecast_local_motion_verified_support = _tensor(
+            loaded_arrays,
+            "forecast_local_motion_verified_support",
+        )
+        stored_forecast_local_growth_verified_support = _tensor(
+            loaded_arrays,
+            "forecast_local_growth_verified_support",
+        )
         stored_forecast_local_dynamics_verified_support = _tensor(
             loaded_arrays,
             "forecast_local_dynamics_verified_support",
@@ -918,6 +942,14 @@ def load_forecast_run(
             verified_source_support=_tensor(
                 loaded_arrays,
                 "verified_source_support",
+            ),
+            local_motion_verified_support=_tensor(
+                loaded_arrays,
+                "local_motion_verified_support",
+            ),
+            local_growth_verified_support=_tensor(
+                loaded_arrays,
+                "local_growth_verified_support",
             ),
             local_dynamics_verified_support=_tensor(
                 loaded_arrays,
@@ -1194,6 +1226,16 @@ def load_forecast_run(
         stored_forecast_verified_support,
     ):
         raise ValueError("forecast verified support mismatch")
+    if not torch.equal(
+        result.forecast_local_motion_verified_support,
+        stored_forecast_local_motion_verified_support,
+    ):
+        raise ValueError("forecast local motion verified support mismatch")
+    if not torch.equal(
+        result.forecast_local_growth_verified_support,
+        stored_forecast_local_growth_verified_support,
+    ):
+        raise ValueError("forecast local growth verified support mismatch")
     if not torch.equal(
         result.forecast_local_dynamics_verified_support,
         stored_forecast_local_dynamics_verified_support,

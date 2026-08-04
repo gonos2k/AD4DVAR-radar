@@ -2450,6 +2450,8 @@ def _analysis_result(
             background_source_support=background_source_support.detach(),
             path_verified_source_support=analysis_verified_support,
             verified_source_support=analysis_verified_support,
+            local_motion_verified_support=analysis_verified_support,
+            local_growth_verified_support=analysis_verified_support,
             local_dynamics_verified_support=analysis_verified_support,
             observation_verified_source_support=analysis_verified_support,
             background_verified_source_support=torch.zeros_like(
@@ -4045,6 +4047,12 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
             metadata.path_verified_source_support.detach()
         ),
         verified_source_support=metadata.verified_source_support.detach(),
+        local_motion_verified_support=(
+            metadata.local_motion_verified_support.detach()
+        ),
+        local_growth_verified_support=(
+            metadata.local_growth_verified_support.detach()
+        ),
         local_dynamics_verified_support=(
             metadata.local_dynamics_verified_support.detach()
         ),

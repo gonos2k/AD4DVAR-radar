@@ -77,6 +77,7 @@ class CliTests(unittest.TestCase):
             phase_correlation_sidelobe_radius_m=2000.0,
             maximum_pair_velocity_disagreement_mps=10.0,
             maximum_pair_growth_disagreement=0.0953,
+            maximum_local_growth_log_error_per_step=0.4055,
             minimum_pair_psr_advantage=3.0,
             minimum_pair_confidence_ratio=1.5,
             long_pair_confidence_penalty=0.5,
@@ -171,6 +172,8 @@ class CliTests(unittest.TestCase):
             "10",
             "--maximum-pair-growth-disagreement",
             "0.0953",
+            "--maximum-local-growth-log-error-per-step",
+            "0.4055",
             "--minimum-pair-psr-advantage",
             "3",
             "--minimum-pair-confidence-ratio",
@@ -255,11 +258,15 @@ class CliTests(unittest.TestCase):
             "source_support",
             "path_verified_source_support",
             "verified_source_support",
+            "local_motion_verified_support",
+            "local_growth_verified_support",
             "local_dynamics_verified_support",
             "observation_verified_source_support",
             "background_verified_source_support",
             "forecast_path_verified_support",
             "forecast_verified_support",
+            "forecast_local_motion_verified_support",
+            "forecast_local_growth_verified_support",
             "forecast_local_dynamics_verified_support",
             "forecast_observation_verified_support",
             "forecast_background_verified_support",
@@ -347,11 +354,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v45",
+                    "nowcast-npz-v46",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v37",
+                    "forecast-run-v38",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))

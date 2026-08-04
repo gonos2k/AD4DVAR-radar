@@ -25,7 +25,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v45"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v46"
 
 
 def main() -> None:
@@ -207,6 +207,10 @@ def main() -> None:
     )
     parser.add_argument(
         "--maximum-pair-growth-disagreement",
+        type=float,
+    )
+    parser.add_argument(
+        "--maximum-local-growth-log-error-per-step",
         type=float,
     )
     parser.add_argument(
@@ -411,6 +415,11 @@ def main() -> None:
             if args.maximum_pair_growth_disagreement is None
             else args.maximum_pair_growth_disagreement
         ),
+        maximum_local_growth_log_error_per_step=(
+            default_nowcast_config.maximum_local_growth_log_error_per_step
+            if args.maximum_local_growth_log_error_per_step is None
+            else args.maximum_local_growth_log_error_per_step
+        ),
         minimum_pair_psr_advantage=(
             default_nowcast_config.minimum_pair_psr_advantage
             if args.minimum_pair_psr_advantage is None
@@ -517,6 +526,9 @@ def _analysis_config_from_args(
         ),
         "--maximum-pair-growth-disagreement": (
             args.maximum_pair_growth_disagreement
+        ),
+        "--maximum-local-growth-log-error-per-step": (
+            args.maximum_local_growth_log_error_per_step
         ),
         "--minimum-pair-psr-advantage": args.minimum_pair_psr_advantage,
         "--minimum-pair-confidence-ratio": (

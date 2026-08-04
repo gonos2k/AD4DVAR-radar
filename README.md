@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.25
+# ADVAR 3-frame radar nowcast v0.26
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -374,7 +374,7 @@ advar-nowcast three_frames.npy forecast.npz --audit
 CLI 기본 `--mode research`는 합성·hindcast 진단용이다. `--mode operational`
 은 `--variational`, 완전한 시각·격자 계약, 물리속도 상한, 물리 causal 및
 amplitude 거리, projected m/s 운동증분 scale, 명시적인
-PSR·pair 운동/성장 불일치·pair 신뢰도 우위·성장 overlap
+PSR·pair 운동/성장 불일치·pair 신뢰도 우위·국지 성장 residual·성장 overlap
 support·물리면적·관측오차·amplitude
 정보량·적분량·면적·성장
 임계값, 검증된 상태경로·레이더 관측 support 발행 임계값, 선행시간
@@ -393,8 +393,8 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v45`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v37`
+- `output_contract_version`: 현재 `nowcast-npz-v46`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v38`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -411,10 +411,13 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 - `forecast_dbz`: `[18, H, W]`
 - `valid_mask`, `state_echo_linear`, `source_support`,
   `path_verified_source_support`, `verified_source_support`,
+  `local_motion_verified_support`, `local_growth_verified_support`,
   `local_dynamics_verified_support`,
   `observation_verified_source_support`,
   `background_verified_source_support`, `forecast_path_verified_support`,
-  `forecast_verified_support`, `forecast_local_dynamics_verified_support`,
+  `forecast_verified_support`, `forecast_local_motion_verified_support`,
+  `forecast_local_growth_verified_support`,
+  `forecast_local_dynamics_verified_support`,
   `forecast_observation_verified_support`,
   `forecast_background_verified_support`
 - `forecast_velocity_uncertainty_mps`,
@@ -433,9 +436,16 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
 - `source_support`는 상태가 정의됐는지를,
   `path_verified_source_support`는 국지 에코 위치경로가 검증됐는지를,
   `verified_source_support`는 현재시각의 직접 source evidence를 나타낸다.
-  `local_dynamics_verified_support`는 탐지 에코마다 선택된 미래 tendency의
-  source에서 과거→현재 path evidence가 물리 footprint 안에 존재하는지를
-  추가로 요구한다. clear-sky source evidence는 그대로 보존하며 이 필드는
+  `local_motion_verified_support`는 실제로 선택된 미래 motion pair의 각
+  과거 source를 최종 운동으로 현재시각까지 다시 정렬했을 때 탐지 에코가
+  물리 footprint 안에서 일치하는지를 요구한다.
+  `local_growth_verified_support`는 실제로 선택된 growth pair마다 같은 정렬을
+  사용해 계산한 국지 log-growth residual이
+  `maximum_local_growth_log_error_per_step` 이내인지를 추가로 요구한다.
+  BLENDED 선택은 선택된 모든 pair의 교집합을 사용하고,
+  `local_dynamics_verified_support`는 motion·growth 두 support의 교집합이다.
+  한 과거 candidate가 여러 현재 에코를 동시에 인증하는 모호한 claim은 모두
+  fail-close한다. clear-sky source evidence는 그대로 보존하며 이 필드들은
   국지 확률이나 국지 속도분산이 아닌 보수적인 dynamics evidence mask다.
   과거 source는 물리 footprint 안의 최신 에코와 일치할 때 path evidence만
   제공하며, 최신 결측부를 채운 과거 상태를 state-verified로 승격하지 않는다.
@@ -447,8 +457,10 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   연구모드에서는 예전 persistence를 유지하지만, 운영모드는
   `minimum_publish_verified_support`로 검증되지 않은 경로를 발행에서
   제외한다. `forecast_path_verified_support`,
-  `forecast_verified_support`, `forecast_local_dynamics_verified_support`는
-  각 support를 선행시간별로 수송한 진단이다. live confidence와
+  `forecast_verified_support`, `forecast_local_motion_verified_support`,
+  `forecast_local_growth_verified_support`,
+  `forecast_local_dynamics_verified_support`는 각 support를 선행시간별로
+  수송한 진단이다. live confidence와
   dynamics-anchored mask는 국지 dynamics evidence도 함께 사용한다.
   운용모드는 `minimum_publish_confidence`,
   `minimum_publish_observation_verified_support`,
