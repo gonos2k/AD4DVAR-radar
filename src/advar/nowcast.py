@@ -74,7 +74,6 @@ class NowcastConfig:
     single_pair_uncertainty_multiplier: float = 2.0
     persistence_uncertainty_multiplier: float = 4.0
     background_tendency_age_uncertainty_scale_minutes: float = 60.0
-    maximum_local_state_verification_error_dbz: float = 6.0
     epsilon: float = 1.0e-6
     support_presence_threshold: float = 1.0e-6
     contract_absolute_tolerance: float = 1.0e-6
@@ -124,7 +123,6 @@ class NowcastConfig:
             self.single_pair_uncertainty_multiplier,
             self.persistence_uncertainty_multiplier,
             self.background_tendency_age_uncertainty_scale_minutes,
-            self.maximum_local_state_verification_error_dbz,
             self.epsilon,
             self.support_presence_threshold,
             self.contract_absolute_tolerance,
@@ -300,10 +298,6 @@ class NowcastConfig:
         for name, value in positive_publication_thresholds.items():
             if value == 0.0:
                 raise ValueError(f"{name} must be in (0, 1]")
-        if self.maximum_local_state_verification_error_dbz <= 0:
-            raise ValueError(
-                "maximum_local_state_verification_error_dbz must be positive"
-            )
         if self.epsilon <= 0:
             raise ValueError("epsilon must be positive")
         if self.support_presence_threshold <= 0:
@@ -3795,23 +3789,19 @@ def _merge_current_state(
     Tensor,
     Tensor,
 ]:
-    observation_path_masks, observation_state_masks = (
-        _source_verification_masks(
-            observation_linear,
-            prepared.observed_mask,
-            observation_paths,
-            config,
-            grid_time_contract,
-        )
+    observation_path_masks = _source_path_verification_masks(
+        observation_linear,
+        prepared.observed_mask,
+        observation_paths,
+        config,
+        grid_time_contract,
     )
-    background_path_masks, background_state_masks = (
-        _source_verification_masks(
-            background_linear,
-            prepared.background_mask,
-            background_paths,
-            config,
-            grid_time_contract,
-        )
+    background_path_masks = _source_path_verification_masks(
+        background_linear,
+        prepared.background_mask,
+        background_paths,
+        config,
+        grid_time_contract,
     )
     (
         observation_echo,
@@ -3831,7 +3821,6 @@ def _merge_current_state(
                 observation_paths.source_support_displacements_yx
             ),
             source_path_verified=observation_path_masks,
-            source_state_verified=observation_state_masks,
         )
     )
     (
@@ -3852,7 +3841,6 @@ def _merge_current_state(
                 background_paths.source_support_displacements_yx
             ),
             source_path_verified=background_path_masks,
-            source_state_verified=background_state_masks,
         )
     )
     observation_support = observation_support.clamp(0.0, 1.0)
@@ -3924,17 +3912,15 @@ def _merge_current_state(
     )
 
 
-def _source_verification_masks(
+def _source_path_verification_masks(
     linear: Tensor,
     masks: Tensor,
     paths: _SourceTendencyEstimate,
     config: NowcastConfig,
     grid_time_contract: RadarGridTimeContract | None,
-) -> tuple[Tensor, Tensor]:
+) -> Tensor:
     path_verified = torch.zeros_like(masks)
-    state_verified = torch.zeros_like(masks)
     path_verified[2] = masks[2]
-    state_verified[2] = masks[2]
     echo_threshold = dbz_to_echo(
         linear.new_tensor(config.echo_threshold_dbz),
         min_dbz=config.min_dbz,
@@ -3947,12 +3933,6 @@ def _source_verification_masks(
         grid_time_contract,
     )
     nearby_current = _dilate_mask(current_detected, offsets)
-    current_dbz = echo_to_dbz(
-        linear[2],
-        min_dbz=config.min_dbz,
-        max_dbz=config.max_dbz,
-    )
-    claimed_current = torch.zeros_like(current_detected)
     for source_index in (1, 0):
         if not bool(paths.source_usable[source_index]):
             continue
@@ -3972,36 +3952,8 @@ def _source_verification_masks(
         candidate_detected = (
             candidate_support > config.support_presence_threshold
         ) & (candidate_echo >= echo_threshold)
-        local_path_verified = candidate_detected & nearby_current
-        path_verified[source_index] = local_path_verified
-        candidate_dbz = echo_to_dbz(
-            candidate_echo,
-            min_dbz=config.min_dbz,
-            max_dbz=config.max_dbz,
-        )
-        step_span = 2 - source_index
-        growth = _growth_evidence_aligned_with_motion(
-            linear,
-            masks,
-            source_index,
-            2,
-            paths.source_displacement_yx[source_index] / step_span,
-            config,
-            grid_time_contract,
-        )
-        if growth.available:
-            local_state_verified = (
-                candidate_detected
-                & current_detected
-                & ~claimed_current
-                & (
-                    torch.abs(candidate_dbz - current_dbz)
-                    <= config.maximum_local_state_verification_error_dbz
-                )
-            )
-            state_verified[source_index] = local_state_verified
-            claimed_current |= local_state_verified
-    return path_verified, state_verified
+        path_verified[source_index] = candidate_detected & nearby_current
+    return path_verified
 
 
 def _pair_echo_offsets(
@@ -4199,22 +4151,17 @@ def _merge_source_frames(
     *,
     source_support_displacements_yx: Tensor | None = None,
     source_path_verified: Tensor | None = None,
-    source_state_verified: Tensor | None = None,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
     expected_shape = masks.shape
     default_verification = source_usable[:, None, None].expand(expected_shape)
     if source_path_verified is None:
         source_path_verified = default_verification
-    if source_state_verified is None:
-        source_state_verified = default_verification
     if (
         source_path_verified.shape != expected_shape
-        or source_state_verified.shape != expected_shape
         or source_path_verified.dtype != torch.bool
-        or source_state_verified.dtype != torch.bool
     ):
         raise ValueError(
-            "source verification masks must be boolean with the source shape"
+            "source path verification must be boolean with the source shape"
         )
     latest_mask = masks[2]
     if bool(torch.all(latest_mask)):
@@ -4229,8 +4176,7 @@ def _merge_source_frames(
             latest_support,
             latest_support
             * source_path_verified[2].to(dtype=linear.dtype),
-            latest_support
-            * source_state_verified[2].to(dtype=linear.dtype),
+            latest_support,
             latest_contributions,
         )
 
@@ -4280,11 +4226,12 @@ def _merge_source_frames(
             * source_path_verified[source_index].to(dtype=linear.dtype)
             + remaining * path_verified_support
         )
-        verified_support = (
+        direct_state_support = (
             candidate_support
-            * source_state_verified[source_index].to(dtype=linear.dtype)
-            + remaining * verified_support
+            if source_index == 2
+            else torch.zeros_like(candidate_support)
         )
+        verified_support = direct_state_support + remaining * verified_support
 
     current_echo = torch.where(
         support > config.support_presence_threshold,

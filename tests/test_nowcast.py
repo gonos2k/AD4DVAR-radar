@@ -1961,80 +1961,16 @@ class NowcastTests(unittest.TestCase):
             source_pair_index=1,
         )
 
-        path_verified, state_verified = (
-            nowcast_module._source_verification_masks(
-                linear,
-                masks,
-                paths,
-                config,
-                None,
-            )
+        path_verified = nowcast_module._source_path_verification_masks(
+            linear,
+            masks,
+            paths,
+            config,
+            None,
         )
 
         self.assertTrue(bool(torch.all(path_verified[1, 3:5, 5:7])))
         self.assertFalse(bool(torch.any(path_verified[1, 11:13, 13:15])))
-        torch.testing.assert_close(state_verified, path_verified)
-
-    def test_local_state_verification_rejects_amplitude_mismatch(self) -> None:
-        nowcast_module = import_module("advar.nowcast")
-        config = replace(self.config, pair_echo_dilation_px=0)
-        linear = torch.zeros((3, 16, 16), dtype=torch.float64)
-        masks = torch.zeros_like(linear, dtype=torch.bool)
-        linear[1, 3:5, 3:5] = dbz_to_linear(
-            linear.new_tensor(20.0),
-            config,
-        )
-        linear[1, 11:13, 11:13] = dbz_to_linear(
-            linear.new_tensor(40.0),
-            config,
-        )
-        linear[2, 3:5, 3:5] = dbz_to_linear(
-            linear.new_tensor(20.0),
-            config,
-        )
-        linear[2, 11:13, 11:13] = dbz_to_linear(
-            linear.new_tensor(10.0),
-            config,
-        )
-        masks[1:] = linear[1:] > 0
-        zero_motion = linear.new_zeros(2)
-        growth = nowcast_module._aligned_growth_evidence(
-            linear[1],
-            linear[2],
-            masks[1],
-            masks[2],
-            zero_motion,
-            config,
-            max_log_growth=config.max_log_growth_per_step,
-            grid_time_contract=None,
-        )
-        self.assertTrue(growth.available)
-        paths = nowcast_module._single_pair_tendency(
-            zero_motion,
-            growth,
-            linear.new_tensor(20.0),
-            selection=TendencyPairSelection.RECENT,
-            source_pair_index=1,
-        )
-        paths = replace(
-            paths,
-            source_log_growth=torch.zeros_like(paths.source_log_growth),
-        )
-
-        path_verified, state_verified = (
-            nowcast_module._source_verification_masks(
-                linear,
-                masks,
-                paths,
-                config,
-                None,
-            )
-        )
-
-        self.assertTrue(bool(torch.all(path_verified[1, 3:5, 3:5])))
-        self.assertTrue(bool(torch.all(path_verified[1, 11:13, 11:13])))
-        self.assertTrue(bool(torch.all(state_verified[1, 3:5, 3:5])))
-        self.assertFalse(bool(torch.any(state_verified[1, 11:13, 11:13])))
 
     def test_nonzero_offset_state_match_is_path_only(self) -> None:
         nowcast_module = import_module("advar.nowcast")
@@ -2071,123 +2007,18 @@ class NowcastTests(unittest.TestCase):
             source_log_growth=torch.zeros_like(paths.source_log_growth),
         )
 
-        path_verified, state_verified = (
-            nowcast_module._source_verification_masks(
-                linear,
-                masks,
-                paths,
-                config,
-                None,
-            )
+        path_verified = nowcast_module._source_path_verification_masks(
+            linear,
+            masks,
+            paths,
+            config,
+            None,
         )
 
         self.assertTrue(bool(path_verified[1, 6, 4]))
         self.assertTrue(bool(path_verified[1, 6, 8]))
-        self.assertTrue(bool(torch.all(state_verified[1, 2:4, 2:4])))
-        self.assertFalse(bool(state_verified[1, 6, 4]))
-        self.assertFalse(bool(state_verified[1, 6, 8]))
 
-    def test_local_state_verification_is_exclusive_across_times(self) -> None:
-        nowcast_module = import_module("advar.nowcast")
-        config = replace(self.config, pair_echo_dilation_px=2)
-        linear = torch.zeros((3, 12, 12), dtype=torch.float64)
-        masks = torch.zeros_like(linear, dtype=torch.bool)
-        echo = dbz_to_linear(linear.new_tensor(20.0), config)
-        linear[:, 2:4, 2:4] = echo
-        linear[0, 6, 6] = echo
-        linear[1, 6, 6] = echo
-        linear[2, 6, 6] = echo
-        masks[:] = linear > 0
-        zero_motion = linear.new_zeros(2)
-        recent_growth = nowcast_module._aligned_growth_evidence(
-            linear[1],
-            linear[2],
-            masks[1],
-            masks[2],
-            zero_motion,
-            config,
-            max_log_growth=config.max_log_growth_per_step,
-            grid_time_contract=None,
-        )
-        self.assertTrue(recent_growth.available)
-        paths = nowcast_module._single_pair_tendency(
-            zero_motion,
-            recent_growth,
-            linear.new_tensor(20.0),
-            selection=TendencyPairSelection.RECENT,
-            source_pair_index=1,
-        )
-        paths = replace(
-            paths,
-            source_displacement_yx=linear.new_zeros((3, 2)),
-            source_log_growth=linear.new_zeros(3),
-            source_usable=torch.ones(3, dtype=torch.bool),
-            source_support_displacements_yx=linear.new_zeros((3, 2, 2)),
-        )
-
-        _, state_verified = nowcast_module._source_verification_masks(
-            linear,
-            masks,
-            paths,
-            config,
-            None,
-        )
-
-        self.assertTrue(bool(state_verified[1, 6, 6]))
-        self.assertFalse(bool(state_verified[0, 6, 6]))
-
-    def test_unavailable_recent_growth_does_not_claim_state_evidence(
-        self,
-    ) -> None:
-        nowcast_module = import_module("advar.nowcast")
-        config = replace(self.config, pair_echo_dilation_px=2)
-        linear = torch.zeros((3, 12, 12), dtype=torch.float64)
-        masks = torch.zeros_like(linear, dtype=torch.bool)
-        echo = dbz_to_linear(linear.new_tensor(20.0), config)
-        linear[0, 2:4, 2:4] = echo
-        linear[2, 2:4, 2:4] = echo
-        linear[0, 6, 6] = echo
-        linear[1, 6, 6] = echo
-        linear[2, 6, 6] = echo
-        masks[:] = linear > 0
-        zero_motion = linear.new_zeros(2)
-        earlier_growth = nowcast_module._aligned_growth_evidence(
-            linear[0],
-            linear[2],
-            masks[0],
-            masks[2],
-            zero_motion,
-            config,
-            max_log_growth=2.0 * config.max_log_growth_per_step,
-            grid_time_contract=None,
-        )
-        self.assertTrue(earlier_growth.available)
-        paths = nowcast_module._single_pair_tendency(
-            zero_motion,
-            earlier_growth,
-            linear.new_tensor(20.0),
-            selection=TendencyPairSelection.LONG,
-        )
-        paths = replace(
-            paths,
-            source_displacement_yx=linear.new_zeros((3, 2)),
-            source_log_growth=linear.new_zeros(3),
-            source_usable=torch.ones(3, dtype=torch.bool),
-            source_support_displacements_yx=linear.new_zeros((3, 2, 2)),
-        )
-
-        _, state_verified = nowcast_module._source_verification_masks(
-            linear,
-            masks,
-            paths,
-            config,
-            None,
-        )
-
-        self.assertFalse(bool(state_verified[1, 6, 6]))
-        self.assertTrue(bool(state_verified[0, 6, 6]))
-
-    def test_path_without_growth_evidence_is_not_state_verified(self) -> None:
+    def test_past_path_evidence_never_promotes_state(self) -> None:
         nowcast_module = import_module("advar.nowcast")
         linear = torch.zeros((3, 8, 8), dtype=torch.float64)
         masks = torch.zeros_like(linear, dtype=torch.bool)
@@ -2214,18 +2045,15 @@ class NowcastTests(unittest.TestCase):
             source_pair_index=1,
         )
 
-        path_verified, state_verified = (
-            nowcast_module._source_verification_masks(
-                linear,
-                masks,
-                paths,
-                self.config,
-                None,
-            )
+        path_verified = nowcast_module._source_path_verification_masks(
+            linear,
+            masks,
+            paths,
+            self.config,
+            None,
         )
 
         self.assertTrue(bool(path_verified[1, 4, 4]))
-        self.assertFalse(bool(state_verified[1, 4, 4]))
 
     def test_operational_publication_excludes_unverified_persistence(
         self,

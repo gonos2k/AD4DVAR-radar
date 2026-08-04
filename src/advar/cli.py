@@ -24,7 +24,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v42"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v43"
 
 
 def main() -> None:
@@ -96,11 +96,6 @@ def main() -> None:
         "--background-tendency-age-uncertainty-scale-minutes",
         type=float,
         help="background age that adds one dynamics uncertainty multiple",
-    )
-    parser.add_argument(
-        "--maximum-local-state-verification-error-dbz",
-        type=float,
-        help="maximum local transported-to-observed dBZ error",
     )
     parser.add_argument(
         "--variational",
@@ -357,11 +352,6 @@ def main() -> None:
             if args.background_tendency_age_uncertainty_scale_minutes is None
             else args.background_tendency_age_uncertainty_scale_minutes
         ),
-        maximum_local_state_verification_error_dbz=(
-            default_nowcast_config.maximum_local_state_verification_error_dbz
-            if args.maximum_local_state_verification_error_dbz is None
-            else args.maximum_local_state_verification_error_dbz
-        ),
         maximum_background_age_minutes=(
             args.maximum_background_age_minutes
         ),
@@ -526,9 +516,6 @@ def _analysis_config_from_args(
         ),
         "--background-tendency-age-uncertainty-scale-minutes": (
             args.background_tendency_age_uncertainty_scale_minutes
-        ),
-        "--maximum-local-state-verification-error-dbz": (
-            args.maximum_local_state_verification_error_dbz
         ),
         "--maximum-motion-speed-mps": args.maximum_motion_speed_mps,
         "--motion-increment-scale-mps": args.motion_increment_scale_mps,
