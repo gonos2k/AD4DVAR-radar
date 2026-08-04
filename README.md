@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.29
+# ADVAR 3-frame radar nowcast v0.30
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -170,6 +170,35 @@ print(analysis.used_fallback)
 print(analysis.initial_objective, analysis.final_objective)
 print(analysis.state.echo_linear)  # 세 장으로 분석된 현재 q(0)
 ```
+
+수용·수렴한 P1 분석은 최종 outer-loop의 IRLS weight, remap cell, active
+control과 관측 분류를 보존한다. 미래 검증장이 도착하면 이 고정 선형화에서
+세 입력시각 전체의 observation FSOI를 matrix-free adjoint로 계산할 수 있다.
+
+```python
+from advar import SensitivityConfig, compute_variational_fsoi
+
+fsoi = compute_variational_fsoi(
+    forecast,
+    analysis,
+    verification_frames_dbz,  # [lead, H, W]
+    sensitivity_config=SensitivityConfig(
+        metric_names=("log_echo_mse",),
+        full_map_lead_minutes=(30, 60, 120, 180),
+    ),
+)
+
+# [selected_lead, metric, observation_time, H, W]
+print(fsoi.observation.maps.shape)
+# 모든 lead·metric에서 -20/-10/0분별 L2 norm
+print(fsoi.observation.norm_by_time.shape)
+```
+
+각 metric의 수반계는 P1 최종 frozen IRLS/GN normal operator와 동일한
+matrix-free JVP/VJP로 PCG 풀이한다. PCG 비수렴, P0/degraded 분석, 실행 digest와
+다른 관측오차·quality 입력, 또는 최종 분석상태를 재현하지 못하는 선형화는
+fail-close한다. 선택 lead에는 전체 지도를, 모든 lead에는 시각별 norm과 tile
+norm을 제공한다.
 
 실제 격자에서는 `AnalysisConfig(causal_support_uncertainty_m=...,
 amplitude_displacement_tolerance_m=...)`로 causal envelope와 진폭 위치허용을
@@ -796,7 +825,7 @@ origin state의 비율을 진단한다. 자동 trust는 이 주변비율을 path
 검증 evidence가 거짓 nonzero trust를 만들지 않는다. 이 배열과 최종 집계값은
 episode schema v16에 보존된다.
 
-### M0의 엄밀한 경계
+### M0와 P1 FSOI의 엄밀한 경계
 
 현재 이동·성장 추정은 FFT peak의 이산 선택을 포함한다. 따라서 M0가
 계산하는 관측 민감도는 최신 영상이 예측 초기장으로 들어가는
@@ -805,11 +834,14 @@ episode schema v16에 보존된다.
 
 - `-20분`, `-10분`: 직접 예측 경로 없음
 - `0분`: 고정된 `(dy, dx, log_growth)`에서 직접 dBZ 민감도 제공
-- 분석을 통한 간접 민감도: P1 implicit FSO가 아직 연결되지 않아 계산 불가
-- 전체 관측 민감도와 FSOI: 계산 불가
+- 분석을 통한 간접 민감도: P0 M0에는 포함하지 않음
+- P1 전체 관측 민감도: 별도 `VariationalFSOI` 계약으로 세 시각 모두 제공
 - 자동 일반화 기억 승격: 비활성
 
-이 구분은 manifest와 SQLite에 명시된다. 간접 민감도를 0으로 저장해
-“효과 없음”으로 오해하게 만들지 않는다. P1은 미분 가능한 잔차와 HVP를
-제공하지만 mixed observation VJP와 implicit 수반계는 아직 구현하지 않았다.
-또한 P1 분석상태는 M0 직접민감도 API에서 provenance 검사로 거부된다.
+이 구분은 M0 manifest와 SQLite에 명시된다. 간접 민감도를 0으로 저장해
+“효과 없음”으로 오해하게 만들지 않는다. P1 `VariationalFSOI`는 최종
+IRLS weight, active set, remap cell, observation classification과 baseline을
+고정한 국지 implicit sensitivity다. outer-loop 선택 자체의 변화, EFSO,
+검증된 baseline-normalized reward와 자동학습 승격은 아직 포함하지 않는다.
+P1 FSOI는 현재 in-memory 결과계약이며 M0 episode ledger에 저장하지 않는다.
+P1 분석상태는 기존 M0 직접민감도 API에서 계속 provenance 검사로 거부된다.

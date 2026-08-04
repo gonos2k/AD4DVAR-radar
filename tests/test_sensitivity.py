@@ -3,13 +3,16 @@ from pathlib import Path
 import math
 import sys
 import unittest
+from unittest.mock import patch
 
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar._digest import tensor_digest  # noqa: E402
+from advar.matrix_free import PCGResult  # noqa: E402
 from advar.nowcast import (  # noqa: E402
+    _forecast_linear_at_step_core,
     _forecast_run_identity_digest,
     DataStatus,
     ForecastMetadata,
@@ -27,13 +30,25 @@ from advar.nowcast import (  # noqa: E402
     nowcast,
     state_metadata_digest,
 )
-from advar.physics import dbz_to_echo, echo_to_dbz  # noqa: E402
+from advar.physics import (  # noqa: E402
+    dbz_to_echo,
+    echo_to_dbz,
+    freeze_remap_cell,
+)
 from advar.sensitivity import (  # noqa: E402
+    _apply_output_cap,
     _metric_evidence_ratios,
     SensitivityConfig,
     compute_sensitivity_snapshot,
+    compute_variational_fsoi,
     extract_context_features,
     forecast_metric,
+)
+from advar.variational import (  # noqa: E402
+    _analysis_trajectory,
+    AnalysisConfig,
+    residual_vector,
+    variational_nowcast,
 )
 
 
@@ -1475,6 +1490,255 @@ class SensitivityTests(unittest.TestCase):
             with self.subTest(values=values):
                 with self.assertRaises((TypeError, ValueError)):
                     SensitivityConfig(**values)
+
+
+class VariationalFSOITests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        coordinates = torch.arange(8, dtype=torch.float64)
+        y, x = torch.meshgrid(coordinates, coordinates, indexing="ij")
+        blob = -10.0 + 40.0 * torch.exp(
+            -((y - 3.5).square() + (x - 3.5).square()) / 4.0
+        )
+        cls.frames = torch.stack((blob, blob - 1.0, blob))
+        cls.nowcast_config = NowcastConfig(horizon_minutes=10)
+        cls.analysis_config = AnalysisConfig(
+            maximum_outer_iterations=8,
+            maximum_pcg_iterations=100,
+            pcg_relative_tolerance=1.0e-8,
+        )
+        cls.forecast, cls.analysis = variational_nowcast(
+            cls.frames,
+            nowcast_config=cls.nowcast_config,
+            analysis_config=cls.analysis_config,
+        )
+        if (
+            not cls.analysis.converged
+            or cls.analysis.degraded
+            or cls.analysis.linearization is None
+        ):
+            raise RuntimeError("variational FSOI fixture did not converge")
+        cls.verification = torch.where(
+            torch.isfinite(cls.forecast.forecast_dbz),
+            cls.forecast.forecast_dbz - 0.5,
+            cls.forecast.forecast_dbz,
+        )
+        cls.sensitivity_config = SensitivityConfig(
+            metric_names=("log_echo_mse",),
+            full_map_lead_minutes=(10,),
+            tile_size=4,
+        )
+        cls.fsoi = compute_variational_fsoi(
+            cls.forecast,
+            cls.analysis,
+            cls.verification,
+            sensitivity_config=cls.sensitivity_config,
+        )
+
+    def test_variational_fsoi_covers_all_observation_times(self) -> None:
+        fsoi = self.fsoi
+        self.assertEqual(fsoi.metric_names, ("log_echo_mse",))
+        self.assertEqual(fsoi.lead_minutes, (10,))
+        self.assertEqual(fsoi.full_map_lead_minutes, (10,))
+        self.assertEqual(fsoi.linearization_contract, "p1-final-frozen-irls-gn-v1")
+        self.assertEqual(
+            fsoi.forecast_run_digest,
+            self.forecast.forecast_run_digest,
+        )
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        self.assertEqual(
+            linearization.forecast_run_digest,
+            self.forecast.forecast_run_digest,
+        )
+        self.assertEqual(
+            fsoi.analysis_input_digest,
+            self.forecast.run.analysis_input_digest,
+        )
+        self.assertEqual(fsoi.forecast_scores.shape, (1, 1))
+        self.assertEqual(fsoi.metric_available.shape, (1, 1))
+        self.assertEqual(fsoi.forecast_cap_active_mask.shape, (1, 8, 8))
+        self.assertEqual(fsoi.observation.maps.shape, (1, 1, 3, 8, 8))
+        self.assertEqual(fsoi.observation.norm_by_time.shape, (1, 1, 3))
+        self.assertEqual(
+            fsoi.observation.tile_norm_by_time.shape,
+            (1, 1, 3, 2, 2),
+        )
+        self.assertTrue(bool(fsoi.metric_available[0, 0]))
+        self.assertGreater(int(fsoi.adjoint_iterations[0, 0]), 0)
+        self.assertLess(float(fsoi.adjoint_relative_residual[0, 0]), 1.0e-8)
+        self.assertTrue(
+            bool(torch.all(fsoi.observation.norm_by_time[0, 0] > 0.0))
+        )
+        censored = ~linearization.observations.detected_mask
+        torch.testing.assert_close(
+            fsoi.observation.maps[0, 0][censored],
+            torch.zeros_like(fsoi.observation.maps[0, 0][censored]),
+        )
+
+    def test_variational_fsoi_matches_dense_and_finite_difference(self) -> None:
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        observations = linearization.observations
+        frozen = linearization.frozen
+        control = self.analysis.control
+        config = self.nowcast_config
+        sensitivity_config = self.sensitivity_config
+
+        residual_fn = lambda value: residual_vector(
+            value,
+            observations,
+            frozen,
+        )
+        jacobian = torch.func.jacrev(residual_fn)(control)
+        normal_matrix = jacobian.mT @ jacobian
+        truth = dbz_to_echo(
+            self.verification[0],
+            min_dbz=config.min_dbz,
+            max_dbz=config.max_dbz,
+        )
+        valid = torch.isfinite(self.verification[0]) & self.forecast.valid_mask[0]
+        lead_cell = freeze_remap_cell(self.analysis.state.displacement_yx)
+        cap_active = self.fsoi.forecast_cap_active_mask[0]
+
+        def score(candidate_control: torch.Tensor) -> torch.Tensor:
+            trajectory = _analysis_trajectory(candidate_control, frozen)
+            state = RadarState(
+                echo_linear=trajectory.frames_linear[-1],
+                displacement_yx=trajectory.displacement_yx,
+                log_growth_per_step=trajectory.log_growth_per_step,
+            )
+            latent = _forecast_linear_at_step_core(
+                state,
+                1,
+                config,
+                lead_cell,
+            )
+            return forecast_metric(
+                "log_echo_mse",
+                _apply_output_cap(latent, cap_active, config),
+                truth,
+                valid,
+                config,
+                sensitivity_config,
+            )
+
+        metric_rhs = torch.func.grad(score)(control)
+        dense_adjoint = torch.linalg.solve(normal_matrix, metric_rhs)
+        observation_count = observations.dbz.numel()
+        observation_scale = torch.where(
+            observations.detected_mask,
+            torch.sqrt(observations.quality_weight)
+            * frozen.irls_sqrt_weight
+            / observations.std_dbz,
+            torch.zeros_like(observations.dbz),
+        )
+        dense_sensitivity = observation_scale * (
+            jacobian[:observation_count] @ dense_adjoint
+        ).reshape_as(observations.dbz)
+        torch.testing.assert_close(
+            self.fsoi.observation.maps[0, 0],
+            dense_sensitivity,
+            rtol=1.0e-5,
+            atol=2.0e-10,
+        )
+
+        time_index, row, column = 2, 4, 4
+        observation_direction = torch.zeros_like(observations.dbz)
+        observation_direction[time_index, row, column] = 1.0
+        control_direction = torch.linalg.solve(
+            normal_matrix,
+            jacobian[:observation_count].mT
+            @ (observation_scale * observation_direction).reshape(-1),
+        )
+        delta = 1.0e-3
+        finite_difference = (
+            score(control + delta * control_direction)
+            - score(control - delta * control_direction)
+        ) / (2.0 * delta)
+        torch.testing.assert_close(
+            finite_difference,
+            self.fsoi.observation.maps[
+                0,
+                0,
+                time_index,
+                row,
+                column,
+            ],
+            rtol=1.0e-5,
+            atol=1.0e-10,
+        )
+
+    def test_variational_fsoi_fails_closed(self) -> None:
+        p0_forecast = nowcast(self.frames, self.nowcast_config)
+        with self.assertRaisesRegex(ValueError, "accepted P1"):
+            compute_variational_fsoi(
+                p0_forecast,
+                self.analysis,
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+            )
+
+        with self.assertRaisesRegex(ValueError, "converged P1"):
+            compute_variational_fsoi(
+                self.forecast,
+                replace(self.analysis, degraded=True),
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+            )
+
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        changed_std = linearization.observations.std_dbz.clone()
+        changed_std[0, 0, 0] += 0.1
+        changed_observations = replace(
+            linearization.observations,
+            std_dbz=changed_std,
+        )
+        changed_analysis = replace(
+            self.analysis,
+            linearization=replace(
+                linearization,
+                observations=changed_observations,
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "input lineage mismatch"):
+            compute_variational_fsoi(
+                self.forecast,
+                changed_analysis,
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+            )
+
+        changed_run_analysis = replace(
+            self.analysis,
+            linearization=replace(
+                linearization,
+                forecast_run_digest="0" * 64,
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "forecast run mismatch"):
+            compute_variational_fsoi(
+                self.forecast,
+                changed_run_analysis,
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+            )
+
+        failed_pcg = PCGResult(
+            solution=torch.zeros_like(self.analysis.control),
+            converged=False,
+            iterations=1,
+            relative_residual=1.0,
+        )
+        with patch("advar.sensitivity.pcg", return_value=failed_pcg):
+            with self.assertRaisesRegex(ValueError, "did not converge"):
+                compute_variational_fsoi(
+                    self.forecast,
+                    self.analysis,
+                    self.verification,
+                    sensitivity_config=self.sensitivity_config,
+                )
 
 
 if __name__ == "__main__":

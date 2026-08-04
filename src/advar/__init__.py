@@ -33,18 +33,23 @@ from .sensitivity import (
     DirectSensitivity,
     SensitivityConfig,
     SensitivitySnapshot,
+    VariationalFSOI,
+    VariationalObservationSensitivity,
     compute_sensitivity_snapshot,
     compute_sensitivity_snapshot_from_run,
+    compute_variational_fsoi,
 )
 from .run_artifact import load_forecast_run, save_forecast_run
 from .variational import (
     AnalysisConfig,
+    AnalysisLinearization,
     AnalysisResult,
     variational_nowcast,
 )
 
 __all__ = [
     "AnalysisConfig",
+    "AnalysisLinearization",
     "AnalysisResult",
     "CalibrationMetric",
     "CalibrationRegime",
@@ -68,9 +73,12 @@ __all__ = [
     "StatePathProvenance",
     "TendencyPairSelection",
     "TendencySource",
+    "VariationalFSOI",
+    "VariationalObservationSensitivity",
     "algorithm_bundle_digest",
     "compute_sensitivity_snapshot",
     "compute_sensitivity_snapshot_from_run",
+    "compute_variational_fsoi",
     "forecast_evidence_fields",
     "load_forecast_run",
     "nowcast",

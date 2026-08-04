@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 import math
+from typing import cast
 
 import torch
 import torch.nn.functional as F
 from torch import Tensor
 
-from ._digest import dataclass_digest
+from ._digest import dataclass_digest, json_digest, tensor_digest
+from .matrix_free import pcg
 from .nowcast import (
     DataStatus,
     DynamicsSource,
@@ -23,7 +26,15 @@ from .nowcast import (
     _forecast_linear_at_step_core,
     forecast_linear_at_step,
 )
-from .physics import dbz_to_echo, freeze_remap_cell
+from .physics import RemapCell, dbz_to_echo, freeze_remap_cell
+from .variational import (
+    AnalysisLinearization,
+    AnalysisObservations,
+    AnalysisResult,
+    FrozenOuterState,
+    _analysis_trajectory,
+    residual_vector,
+)
 
 
 SUPPORTED_METRICS = (
@@ -199,6 +210,35 @@ class DirectSensitivity:
     impact: Tensor | None = None
     tile_impact: Tensor | None = None
     reward: Tensor | None = None
+
+
+@dataclass(frozen=True)
+class VariationalObservationSensitivity:
+    """Total metric sensitivity to dBZ at each of the three input times."""
+
+    maps: Tensor
+    norm_by_time: Tensor
+    tile_norm_by_time: Tensor
+
+
+@dataclass(frozen=True)
+class VariationalFSOI:
+    """Digest-bound P1 sensitivity under one frozen final IRLS/GN model."""
+
+    forecast_run_digest: str
+    analysis_input_digest: str
+    sensitivity_config_digest: str
+    linearization_contract: str
+    metric_names: tuple[str, ...]
+    lead_minutes: tuple[int, ...]
+    full_map_lead_minutes: tuple[int, ...]
+    tile_size: int
+    forecast_scores: Tensor
+    metric_available: Tensor
+    forecast_cap_active_mask: Tensor
+    observation: VariationalObservationSensitivity
+    adjoint_iterations: Tensor
+    adjoint_relative_residual: Tensor
 
 
 @dataclass(frozen=True)
@@ -734,6 +774,432 @@ def compute_sensitivity_snapshot_from_run(
         observation_std_dbz=observation_std_dbz,
         baseline_scores=baseline_scores,
     )
+
+
+def compute_variational_fsoi(
+    result: ForecastResult,
+    analysis: AnalysisResult,
+    verification_frames_dbz: Tensor,
+    *,
+    sensitivity_config: SensitivityConfig | None = None,
+) -> VariationalFSOI:
+    """Compute frozen-final-outer-loop P1 observation sensitivity.
+
+    The final IRLS weights, remap cells, active controls, and observation
+    classification are held fixed. Each forecast-metric adjoint uses the same
+    matrix-free Gauss--Newton normal operator as the accepted analysis.
+    """
+
+    sensitivity_config = sensitivity_config or SensitivityConfig()
+    result.validate_issuance()
+    if result.metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
+        raise ValueError("variational FSOI requires an accepted P1 forecast")
+    if analysis.used_fallback or not analysis.converged or analysis.degraded:
+        raise ValueError("variational FSOI requires a converged P1 analysis")
+    linearization = analysis.linearization
+    if linearization is None:
+        raise ValueError("P1 analysis does not retain a final linearization")
+    if linearization.contract != "p1-final-frozen-irls-gn-v1":
+        raise ValueError("unsupported P1 linearization contract")
+    _validate_variational_fsoi_lineage(result, analysis, linearization)
+
+    nowcast_config = result.run.config
+    observations = linearization.observations
+    frozen = linearization.frozen
+    control = analysis.control
+    _validate_inputs(
+        observations.dbz[-1],
+        verification_frames_dbz,
+        analysis.state,
+        nowcast_config,
+        None,
+    )
+    height, width = analysis.state.echo_linear.shape
+    lead_minutes = tuple(
+        range(
+            nowcast_config.interval_minutes,
+            nowcast_config.horizon_minutes + 1,
+            nowcast_config.interval_minutes,
+        )
+    )
+    full_map_indices = _full_map_indices(
+        sensitivity_config.full_map_lead_minutes,
+        lead_minutes,
+    )
+    selected_position = {
+        index: position for position, index in enumerate(full_map_indices)
+    }
+    lead_count = len(lead_minutes)
+    metric_count = len(sensitivity_config.metric_names)
+    tile_rows = math.ceil(height / sensitivity_config.tile_size)
+    tile_columns = math.ceil(width / sensitivity_config.tile_size)
+    score_shape = (lead_count, metric_count)
+    forecast_scores = control.new_full(score_shape, float("nan"))
+    metric_available = torch.zeros(
+        score_shape,
+        dtype=torch.bool,
+        device=control.device,
+    )
+    selected_count = len(full_map_indices)
+    observation_maps = control.new_full(
+        (selected_count, metric_count, 3, height, width),
+        float("nan"),
+    )
+    observation_norm = control.new_full(
+        (lead_count, metric_count, 3),
+        float("nan"),
+    )
+    tile_observation_norm = control.new_full(
+        (
+            lead_count,
+            metric_count,
+            3,
+            tile_rows,
+            tile_columns,
+        ),
+        float("nan"),
+    )
+    selected_cap_masks = torch.zeros(
+        (selected_count, height, width),
+        dtype=torch.bool,
+        device=control.device,
+    )
+    adjoint_iterations = torch.zeros(
+        score_shape,
+        dtype=torch.int64,
+        device=control.device,
+    )
+    adjoint_relative_residual = control.new_full(
+        score_shape,
+        float("nan"),
+    )
+
+    clean_verification = torch.nan_to_num(
+        verification_frames_dbz,
+        nan=nowcast_config.min_dbz,
+        posinf=nowcast_config.max_dbz,
+        neginf=nowcast_config.min_dbz,
+    )
+    verification_valid = torch.isfinite(verification_frames_dbz)
+    if verification_valid.shape != result.valid_mask.shape:
+        raise ValueError("verification frames must match the forecast shape")
+    verification_valid &= result.valid_mask
+    truth_linear = dbz_to_echo(
+        clean_verification,
+        min_dbz=nowcast_config.min_dbz,
+        max_dbz=nowcast_config.max_dbz,
+    )
+    issued_echo = dbz_to_echo(
+        torch.nan_to_num(
+            result.forecast_dbz,
+            nan=nowcast_config.min_dbz,
+            posinf=nowcast_config.max_dbz,
+            neginf=nowcast_config.min_dbz,
+        ),
+        min_dbz=nowcast_config.min_dbz,
+        max_dbz=nowcast_config.max_dbz,
+    )
+
+    residual_fn, normal_product = _variational_normal_operator(
+        control,
+        observations,
+        frozen,
+    )
+
+    observation_count = observations.dbz.numel()
+    observation_scale = torch.where(
+        observations.detected_mask,
+        (
+            torch.sqrt(observations.quality_weight)
+            * frozen.irls_sqrt_weight
+            / observations.std_dbz
+        ),
+        torch.zeros_like(observations.dbz),
+    )
+    final_state = _variational_state(control, frozen)
+
+    for lead_index in range(lead_count):
+        truth = truth_linear[lead_index]
+        valid = verification_valid[lead_index]
+        lead_cell = freeze_remap_cell(
+            (lead_index + 1) * analysis.state.displacement_yx
+        )
+        latent_prediction = _forecast_linear_at_step_core(
+            final_state,
+            lead_index + 1,
+            nowcast_config,
+            lead_cell,
+        )
+        prediction, cap_active = _freeze_output_cap(
+            latent_prediction,
+            nowcast_config,
+        )
+        nominal_valid = result.valid_mask[lead_index]
+        if not torch.allclose(
+            prediction[nominal_valid],
+            issued_echo[lead_index][nominal_valid],
+            rtol=1.0e-5,
+            atol=1.0e-7,
+        ):
+            raise ValueError(
+                "P1 FSOI model disagrees with the issued forecast"
+            )
+        if lead_index in selected_position:
+            selected_cap_masks[selected_position[lead_index]] = cap_active
+
+        for metric_index, metric_name in enumerate(
+            sensitivity_config.metric_names
+        ):
+
+            score_from_control: Callable[[Tensor], Tensor] = (
+                lambda candidate_control: _variational_forecast_score(
+                    candidate_control,
+                    frozen,
+                    lead_index + 1,
+                    lead_cell,
+                    cap_active,
+                    metric_name,
+                    truth,
+                    valid,
+                    nowcast_config,
+                    sensitivity_config,
+                )
+            )
+
+            if not _metric_has_support(
+                metric_name,
+                prediction,
+                truth,
+                valid,
+                nowcast_config,
+                sensitivity_config,
+            ):
+                continue
+
+            metric_available[lead_index, metric_index] = True
+            score = score_from_control(control)
+            rhs = cast(
+                Tensor,
+                torch.func.grad(score_from_control)(control),
+            ).detach()
+            total_sensitivity, iterations, relative_residual = (
+                _variational_observation_adjoint(
+                    rhs,
+                    control,
+                    observations,
+                    frozen,
+                    residual_fn,
+                    normal_product,
+                    observation_scale,
+                    observation_count,
+                )
+            )
+
+            forecast_scores[lead_index, metric_index] = score.detach()
+            adjoint_iterations[lead_index, metric_index] = iterations
+            adjoint_relative_residual[lead_index, metric_index] = (
+                relative_residual
+            )
+            observation_norm[lead_index, metric_index] = (
+                torch.linalg.vector_norm(
+                    total_sensitivity.reshape(3, -1),
+                    dim=1,
+                )
+            )
+            tile_observation_norm[lead_index, metric_index] = torch.stack(
+                tuple(
+                    _tile_l2(
+                        total_sensitivity[time_index],
+                        sensitivity_config.tile_size,
+                    )
+                    for time_index in range(3)
+                )
+            )
+            if lead_index in selected_position:
+                observation_maps[
+                    selected_position[lead_index], metric_index
+                ] = total_sensitivity
+
+    return VariationalFSOI(
+        forecast_run_digest=result.forecast_run_digest,
+        analysis_input_digest=cast(str, result.run.analysis_input_digest),
+        sensitivity_config_digest=sensitivity_config.digest,
+        linearization_contract=linearization.contract,
+        metric_names=sensitivity_config.metric_names,
+        lead_minutes=lead_minutes,
+        full_map_lead_minutes=sensitivity_config.full_map_lead_minutes,
+        tile_size=sensitivity_config.tile_size,
+        forecast_scores=forecast_scores,
+        metric_available=metric_available,
+        forecast_cap_active_mask=selected_cap_masks,
+        observation=VariationalObservationSensitivity(
+            maps=observation_maps,
+            norm_by_time=observation_norm,
+            tile_norm_by_time=tile_observation_norm,
+        ),
+        adjoint_iterations=adjoint_iterations,
+        adjoint_relative_residual=adjoint_relative_residual,
+    )
+
+
+def _variational_state(
+    control: Tensor,
+    frozen: FrozenOuterState,
+) -> RadarState:
+    trajectory = _analysis_trajectory(control, frozen)
+    return RadarState(
+        echo_linear=trajectory.frames_linear[-1],
+        displacement_yx=trajectory.displacement_yx,
+        log_growth_per_step=trajectory.log_growth_per_step,
+    )
+
+
+def _variational_forecast_score(
+    control: Tensor,
+    frozen: FrozenOuterState,
+    step: int,
+    lead_cell: RemapCell,
+    cap_active: Tensor,
+    metric_name: str,
+    truth: Tensor,
+    valid: Tensor,
+    nowcast_config: NowcastConfig,
+    sensitivity_config: SensitivityConfig,
+) -> Tensor:
+    latent = _forecast_linear_at_step_core(
+        _variational_state(control, frozen),
+        step,
+        nowcast_config,
+        lead_cell,
+    )
+    return forecast_metric(
+        metric_name,
+        _apply_output_cap(latent, cap_active, nowcast_config),
+        truth,
+        valid,
+        nowcast_config,
+        sensitivity_config,
+    )
+
+
+def _variational_normal_operator(
+    control: Tensor,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+) -> tuple[Callable[[Tensor], Tensor], Callable[[Tensor], Tensor]]:
+    residual_fn: Callable[[Tensor], Tensor] = lambda value: residual_vector(
+        value,
+        observations,
+        frozen,
+    )
+    residual_vjp = torch.func.vjp(residual_fn, control)
+    pullback = cast(
+        Callable[[Tensor], tuple[Tensor]],
+        residual_vjp[1],
+    )
+
+    def normal_product(direction: Tensor) -> Tensor:
+        jacobian_direction = cast(
+            Tensor,
+            torch.func.jvp(residual_fn, (control,), (direction,))[1],
+        )
+        return pullback(jacobian_direction)[0]
+
+    return residual_fn, normal_product
+
+
+def _variational_observation_adjoint(
+    rhs: Tensor,
+    control: Tensor,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    residual_fn: Callable[[Tensor], Tensor],
+    normal_product: Callable[[Tensor], Tensor],
+    observation_scale: Tensor,
+    observation_count: int,
+) -> tuple[Tensor, int, float]:
+    try:
+        adjoint = pcg(
+            normal_product,
+            rhs,
+            rtol=frozen.analysis_config.pcg_relative_tolerance,
+            max_iterations=frozen.analysis_config.maximum_pcg_iterations,
+        )
+    except (ArithmeticError, RuntimeError, ValueError) as error:
+        raise ValueError("P1 FSOI adjoint solve failed") from error
+    if not adjoint.converged or not bool(
+        torch.all(torch.isfinite(adjoint.solution))
+    ):
+        raise ValueError("P1 FSOI adjoint solve did not converge")
+
+    jacobian_adjoint = cast(
+        Tensor,
+        torch.func.jvp(
+            residual_fn,
+            (control,),
+            (adjoint.solution,),
+        )[1],
+    )
+    prediction_response = jacobian_adjoint[:observation_count].reshape_as(
+        observations.dbz
+    )
+    # The observation residual is prediction - observation, so implicit
+    # differentiation gives H dc = J.T D dy and a positive D J lambda map.
+    return (
+        (observation_scale * prediction_response).detach(),
+        adjoint.iterations,
+        adjoint.relative_residual,
+    )
+
+
+def _validate_variational_fsoi_lineage(
+    result: ForecastResult,
+    analysis: AnalysisResult,
+    linearization: AnalysisLinearization,
+) -> None:
+    frozen = linearization.frozen
+    observations = linearization.observations
+    if linearization.forecast_run_digest != result.forecast_run_digest:
+        raise ValueError("P1 linearization forecast run mismatch")
+    if frozen.nowcast_config != result.run.config:
+        raise ValueError("P1 linearization nowcast config mismatch")
+    config_digest = dataclass_digest(frozen.analysis_config)
+    if config_digest != result.run.analysis_config_digest:
+        raise ValueError("P1 linearization analysis config mismatch")
+    input_digest = json_digest(
+        {
+            "version": "p1-analysis-input-v1",
+            "analysis_config_digest": config_digest,
+            "observation_std_dbz": tensor_digest(observations.std_dbz),
+            "quality_weight": tensor_digest(observations.quality_weight),
+        }
+    )
+    if input_digest != result.run.analysis_input_digest:
+        raise ValueError("P1 linearization input lineage mismatch")
+    if not torch.equal(
+        analysis.active_field_index,
+        frozen.active_field_index,
+    ):
+        raise ValueError("P1 linearization active controls mismatch")
+    trajectory = _analysis_trajectory(analysis.control, frozen)
+    state_values = (
+        (analysis.state.echo_linear, trajectory.frames_linear[-1]),
+        (analysis.state.displacement_yx, trajectory.displacement_yx),
+        (
+            analysis.state.log_growth_per_step,
+            trajectory.log_growth_per_step,
+        ),
+    )
+    if any(
+        not torch.allclose(
+            actual,
+            expected,
+            rtol=0.0,
+            atol=result.run.config.contract_absolute_tolerance,
+        )
+        for actual, expected in state_values
+    ):
+        raise ValueError("P1 linearization does not reproduce the analysis")
 
 
 def forecast_metric(
