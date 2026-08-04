@@ -53,6 +53,7 @@ class NowcastConfig:
     maximum_pair_motion_disagreement_px: float = 4.0
     maximum_pair_velocity_disagreement_mps: float = 10.0
     maximum_pair_growth_disagreement: float = math.log(1.10)
+    maximum_local_growth_log_error_per_step: float = math.log(1.50)
     minimum_pair_psr_advantage: float = 3.0
     minimum_pair_confidence_ratio: float = 1.5
     long_pair_confidence_penalty: float = 0.5
@@ -109,6 +110,7 @@ class NowcastConfig:
             self.maximum_pair_motion_disagreement_px,
             self.maximum_pair_velocity_disagreement_mps,
             self.maximum_pair_growth_disagreement,
+            self.maximum_local_growth_log_error_per_step,
             self.minimum_pair_psr_advantage,
             self.minimum_pair_confidence_ratio,
             self.long_pair_confidence_penalty,
@@ -165,6 +167,9 @@ class NowcastConfig:
             ),
             "maximum_pair_growth_disagreement": (
                 self.maximum_pair_growth_disagreement
+            ),
+            "maximum_local_growth_log_error_per_step": (
+                self.maximum_local_growth_log_error_per_step
             ),
         }
         for name, value in pair_limits.items():
@@ -766,6 +771,8 @@ class _SourceTendencyEstimate:
     growth_pair_count: int
     motion_pair_selection: TendencyPairSelection
     growth_pair_selection: TendencyPairSelection
+    motion_pair_spans: tuple[tuple[int, int], ...]
+    growth_pair_spans: tuple[tuple[int, int], ...]
     motion_pair_conflict: bool
     growth_pair_conflict: bool
     minimum_growth_overlap_support: Tensor
@@ -936,6 +943,8 @@ class ForecastMetadata:
     background_source_support: Tensor
     path_verified_source_support: Tensor
     verified_source_support: Tensor
+    local_motion_verified_support: Tensor
+    local_growth_verified_support: Tensor
     local_dynamics_verified_support: Tensor
     observation_verified_source_support: Tensor
     background_verified_source_support: Tensor
@@ -1051,6 +1060,12 @@ def state_metadata_digest(
                 ),
                 "verified_source_support": tensor_digest(
                     metadata.verified_source_support
+                ),
+                "local_motion_verified_support": tensor_digest(
+                    metadata.local_motion_verified_support
+                ),
+                "local_growth_verified_support": tensor_digest(
+                    metadata.local_growth_verified_support
                 ),
                 "local_dynamics_verified_support": tensor_digest(
                     metadata.local_dynamics_verified_support
@@ -1681,6 +1696,22 @@ class ForecastResult:
         )
 
     @property
+    def forecast_local_motion_verified_support(self) -> Tensor:
+        return _advected_support_by_lead(
+            self.metadata.local_motion_verified_support,
+            self.state,
+            self.run.config,
+        )
+
+    @property
+    def forecast_local_growth_verified_support(self) -> Tensor:
+        return _advected_support_by_lead(
+            self.metadata.local_growth_verified_support,
+            self.state,
+            self.run.config,
+        )
+
+    @property
     def forecast_observation_verified_support(self) -> Tensor:
         return _advected_support_by_lead(
             self.metadata.observation_verified_source_support,
@@ -1875,6 +1906,8 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         metadata.background_source_support,
         metadata.path_verified_source_support,
         metadata.verified_source_support,
+        metadata.local_motion_verified_support,
+        metadata.local_growth_verified_support,
         metadata.local_dynamics_verified_support,
         metadata.observation_verified_source_support,
         metadata.background_verified_source_support,
@@ -1894,6 +1927,8 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         metadata.background_source_support,
         metadata.path_verified_source_support,
         metadata.verified_source_support,
+        metadata.local_motion_verified_support,
+        metadata.local_growth_verified_support,
         metadata.local_dynamics_verified_support,
         metadata.observation_verified_source_support,
         metadata.background_verified_source_support,
@@ -1921,6 +1956,14 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         )
     if metadata.verified_source_support.shape != state.echo_linear.shape:
         raise ValueError("verified_source_support must match the state grid")
+    if metadata.local_motion_verified_support.shape != state.echo_linear.shape:
+        raise ValueError(
+            "local_motion_verified_support must match the state grid"
+        )
+    if metadata.local_growth_verified_support.shape != state.echo_linear.shape:
+        raise ValueError(
+            "local_growth_verified_support must match the state grid"
+        )
     if metadata.local_dynamics_verified_support.shape != state.echo_linear.shape:
         raise ValueError(
             "local_dynamics_verified_support must match the state grid"
@@ -2199,6 +2242,8 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         metadata.background_source_support,
         metadata.path_verified_source_support,
         metadata.verified_source_support,
+        metadata.local_motion_verified_support,
+        metadata.local_growth_verified_support,
         metadata.local_dynamics_verified_support,
         metadata.observation_verified_source_support,
         metadata.background_verified_source_support,
@@ -2269,6 +2314,18 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
                 <= metadata.path_verified_source_support
             )
             & (metadata.local_dynamics_verified_support >= 0)
+            & (metadata.local_motion_verified_support >= 0)
+            & (
+                metadata.local_motion_verified_support
+                <= metadata.verified_source_support
+                + config.contract_absolute_tolerance
+            )
+            & (metadata.local_growth_verified_support >= 0)
+            & (
+                metadata.local_growth_verified_support
+                <= metadata.verified_source_support
+                + config.contract_absolute_tolerance
+            )
             & (
                 metadata.local_dynamics_verified_support
                 <= metadata.verified_source_support
@@ -2287,6 +2344,19 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         raise ValueError(
             "verified_source_support and evidence channels must be nested "
             "inside source_support"
+        )
+    expected_local_dynamics = torch.minimum(
+        metadata.local_motion_verified_support,
+        metadata.local_growth_verified_support,
+    )
+    if not torch.allclose(
+        metadata.local_dynamics_verified_support,
+        expected_local_dynamics,
+        rtol=0.0,
+        atol=config.contract_absolute_tolerance,
+    ):
+        raise ValueError(
+            "local dynamics support must equal motion/growth intersection"
         )
     source_verified = (
         metadata.observation_verified_source_support
@@ -2568,6 +2638,8 @@ def estimate_prepared_state(
         current_source_support,
         current_path_verified_source_support,
         current_verified_source_support,
+        local_motion_verified_support,
+        local_growth_verified_support,
         local_dynamics_verified_support,
         observation_verified_source_support,
         background_verified_source_support,
@@ -2655,6 +2727,12 @@ def estimate_prepared_state(
         ),
         verified_source_support=(
             current_verified_source_support.detach().clone()
+        ),
+        local_motion_verified_support=(
+            local_motion_verified_support.detach().clone()
+        ),
+        local_growth_verified_support=(
+            local_growth_verified_support.detach().clone()
         ),
         local_dynamics_verified_support=(
             local_dynamics_verified_support.detach().clone()
@@ -2873,6 +2951,12 @@ def _estimate_source_tendencies(
             growth_pair_count=len(growth_indices),
             motion_pair_selection=motion_selection,
             growth_pair_selection=growth_selection,
+            motion_pair_spans=tuple(
+                ((0, 1), (1, 2))[index] for index in motion_indices
+            ),
+            growth_pair_spans=tuple(
+                ((0, 1), (1, 2))[index] for index in growth_indices
+            ),
             motion_pair_conflict=motion_is_inconsistent,
             growth_pair_conflict=growth_is_inconsistent,
             minimum_growth_overlap_support=minimum_growth_support,
@@ -2957,6 +3041,8 @@ def _estimate_source_tendencies(
             growth_pair_count=0,
             motion_pair_selection=TendencyPairSelection.NONE,
             growth_pair_selection=TendencyPairSelection.NONE,
+            motion_pair_spans=(),
+            growth_pair_spans=(),
             motion_pair_conflict=False,
             growth_pair_conflict=False,
             minimum_growth_overlap_support=unavailable_psr,
@@ -3150,6 +3236,12 @@ def _single_pair_tendency(
         reconstruction_extrapolated = True
         reconstruction_recent_psr = psr
     unavailable = psr.new_full((), torch.nan)
+    if selection is TendencyPairSelection.LONG:
+        pair_span = (0, 2)
+    elif source_pair_index is not None:
+        pair_span = (source_pair_index, source_pair_index + 1)
+    else:
+        pair_span = (1, 2)
     return _SourceTendencyEstimate(
         displacement_yx=motion,
         log_growth_per_step=growth,
@@ -3175,6 +3267,8 @@ def _single_pair_tendency(
             if growth_evidence.available
             else TendencyPairSelection.NONE
         ),
+        motion_pair_spans=(pair_span,),
+        growth_pair_spans=(pair_span,) if growth_evidence.available else (),
         motion_pair_conflict=False,
         growth_pair_conflict=False,
         minimum_growth_overlap_support=(
@@ -3298,6 +3392,23 @@ def _combine_single_adjacent_and_long(
         growth_indices,
         linear,
     )
+    adjacent_span = (adjacent_pair_index, adjacent_pair_index + 1)
+    motion_pair_spans = tuple(
+        span
+        for span, used in (
+            (adjacent_span, motion_adjacent),
+            ((0, 2), motion_long),
+        )
+        if used
+    )
+    growth_pair_spans = tuple(
+        span
+        for span, used in (
+            (adjacent_span, growth_adjacent),
+            ((0, 2), growth_long),
+        )
+        if used
+    )
     if motion_selection is TendencyPairSelection.LONG:
         source_paths = _long_source_paths(
             long_motion,
@@ -3357,6 +3468,8 @@ def _combine_single_adjacent_and_long(
         growth_pair_count=int(growth_adjacent) + int(growth_long),
         motion_pair_selection=motion_selection,
         growth_pair_selection=growth_selection,
+        motion_pair_spans=motion_pair_spans,
+        growth_pair_spans=growth_pair_spans,
         motion_pair_conflict=motion_is_inconsistent,
         growth_pair_conflict=growth_is_inconsistent,
         minimum_growth_overlap_support=minimum_growth_support,
@@ -3918,6 +4031,8 @@ def _merge_current_state(
     Tensor,
     Tensor,
     Tensor,
+    Tensor,
+    Tensor,
     float,
     Tensor,
     Tensor,
@@ -4030,25 +4145,41 @@ def _merge_current_state(
     current_verified_support = (
         observation_verified_support + actual_background_verified_support
     ).clamp(0.0, 1.0)
-    selected_path_masks = (
-        observation_path_masks
-        if tendency_source is TendencySource.OBSERVATION
-        else background_path_masks
-        if tendency_source is TendencySource.BACKGROUND
-        else torch.zeros_like(observation_path_masks)
-    )
-    local_dynamics_verified_support = _local_dynamics_verified_support(
+    if tendency_source is TendencySource.OBSERVATION:
+        selected_linear = observation_linear
+        selected_masks = prepared.observed_mask
+        selected_tendency = observation_paths
+    elif tendency_source is TendencySource.BACKGROUND:
+        selected_linear = background_linear
+        selected_masks = prepared.background_mask
+        selected_tendency = background_paths
+    else:
+        selected_linear = observation_linear
+        selected_masks = torch.zeros_like(prepared.observed_mask)
+        selected_tendency = observation_paths
+    (
+        local_motion_verified_support,
+        local_growth_verified_support,
+    ) = _selected_component_local_evidence(
+        selected_linear,
+        selected_masks,
+        selected_tendency,
         current_echo,
         current_verified_support,
-        selected_path_masks,
         config,
         grid_time_contract,
+    )
+    local_dynamics_verified_support = torch.minimum(
+        local_motion_verified_support,
+        local_growth_verified_support,
     )
     return (
         current_echo,
         current_support,
         current_path_verified_support,
         current_verified_support,
+        local_motion_verified_support,
+        local_growth_verified_support,
         local_dynamics_verified_support,
         observation_verified_support,
         actual_background_verified_support,
@@ -4060,13 +4191,15 @@ def _merge_current_state(
     )
 
 
-def _local_dynamics_verified_support(
+def _selected_component_local_evidence(
+    linear: Tensor,
+    masks: Tensor,
+    tendency: _SourceTendencyEstimate,
     current_echo: Tensor,
     state_verified_support: Tensor,
-    selected_path_masks: Tensor,
     config: NowcastConfig,
     grid_time_contract: RadarGridTimeContract | None,
-) -> Tensor:
+) -> tuple[Tensor, Tensor]:
     echo_threshold = dbz_to_echo(
         current_echo.new_tensor(config.echo_threshold_dbz),
         min_dbz=config.min_dbz,
@@ -4075,18 +4208,230 @@ def _local_dynamics_verified_support(
     detected = (
         state_verified_support > config.support_presence_threshold
     ) & (current_echo >= echo_threshold)
-    past_path_verified = torch.any(selected_path_masks[:2], dim=0)
     offsets = _pair_echo_offsets(
         current_echo.shape,
         config,
         grid_time_contract,
     )
-    matched = _dilate_mask(past_path_verified, offsets)
-    return torch.where(
+    motion_matches = _selected_pair_local_matches(
+        linear,
+        masks,
+        tendency,
+        tendency.motion_pair_spans,
+        current_echo,
         detected,
-        state_verified_support * matched.to(dtype=current_echo.dtype),
-        state_verified_support,
-    ).clamp(0.0, 1.0)
+        offsets,
+        config,
+        grid_time_contract,
+        check_growth=False,
+    )
+    growth_matches = _selected_pair_local_matches(
+        linear,
+        masks,
+        tendency,
+        tendency.growth_pair_spans,
+        current_echo,
+        detected,
+        offsets,
+        config,
+        grid_time_contract,
+        check_growth=True,
+    )
+
+    def support_from_matches(matches: Tensor) -> Tensor:
+        return torch.where(
+            detected,
+            state_verified_support * matches.to(dtype=current_echo.dtype),
+            state_verified_support,
+        ).clamp(0.0, 1.0)
+
+    return (
+        support_from_matches(motion_matches),
+        support_from_matches(growth_matches),
+    )
+
+
+def _selected_pair_local_matches(
+    linear: Tensor,
+    masks: Tensor,
+    tendency: _SourceTendencyEstimate,
+    pair_spans: tuple[tuple[int, int], ...],
+    current_echo: Tensor,
+    current_detected: Tensor,
+    offsets: tuple[tuple[int, int], ...],
+    config: NowcastConfig,
+    grid_time_contract: RadarGridTimeContract | None,
+    *,
+    check_growth: bool,
+) -> Tensor:
+    if not pair_spans:
+        return torch.zeros_like(current_detected)
+    matches = current_detected.clone()
+    for previous_index, _ in pair_spans:
+        step_span = 2 - previous_index
+        motion = tendency.displacement_yx
+        candidate_value, candidate_support = _transport_source_candidate(
+            linear[previous_index],
+            masks[previous_index],
+            step_span * motion,
+            motion.expand(step_span, 2),
+            tendency.log_growth_per_step.new_zeros(()),
+            config,
+        )
+        candidate_echo = torch.where(
+            candidate_support > config.support_presence_threshold,
+            candidate_value / candidate_support.clamp_min(config.epsilon),
+            torch.zeros_like(candidate_value),
+        )
+        echo_threshold = dbz_to_echo(
+            candidate_echo.new_tensor(config.echo_threshold_dbz),
+            min_dbz=config.min_dbz,
+            max_dbz=config.max_dbz,
+        )
+        candidate_detected = (
+            candidate_support > config.support_presence_threshold
+        ) & (candidate_echo >= echo_threshold)
+        pair_matches = _exclusive_local_current_matches(
+            candidate_echo,
+            candidate_support,
+            current_echo,
+            candidate_detected,
+            current_detected,
+            offsets,
+            grid_time_contract,
+            config,
+            expected_growth_per_step=(
+                tendency.log_growth_per_step if check_growth else None
+            ),
+            step_span=step_span,
+        )
+        matches &= pair_matches
+    return matches
+
+
+def _exclusive_local_current_matches(
+    candidate_echo: Tensor,
+    candidate_support: Tensor,
+    current_echo: Tensor,
+    candidate_detected: Tensor,
+    current_detected: Tensor,
+    offsets: tuple[tuple[int, int], ...],
+    grid_time_contract: RadarGridTimeContract | None,
+    config: NowcastConfig,
+    *,
+    expected_growth_per_step: Tensor | None,
+    step_span: int,
+) -> Tensor:
+    shape = candidate_echo.shape
+    candidate_ids = torch.arange(
+        candidate_echo.numel(),
+        dtype=torch.int64,
+        device=candidate_echo.device,
+    ).reshape(shape)
+    best_candidate = torch.full(
+        shape,
+        -1,
+        dtype=torch.int64,
+        device=candidate_echo.device,
+    )
+    best_distance = torch.full_like(candidate_echo, torch.inf)
+    best_error = torch.full_like(candidate_echo, torch.inf)
+    best_support = torch.full_like(candidate_echo, -torch.inf)
+    ordered_offsets = sorted(
+        offsets,
+        key=lambda offset: (
+            _offset_distance_squared(offset, grid_time_contract),
+            offset,
+        ),
+    )
+    for offset_y, offset_x in ordered_offsets:
+        slices = _offset_overlap_slices(shape, offset_y, offset_x)
+        if slices is None:
+            continue
+        source_y, source_x, target_y, target_x = slices
+        candidate = candidate_detected[source_y, source_x]
+        current = current_detected[target_y, target_x]
+        if expected_growth_per_step is None:
+            error = torch.zeros_like(candidate_echo[source_y, source_x])
+        else:
+            error = torch.abs(
+                torch.log(
+                    (current_echo[target_y, target_x] + config.ratio_regularizer)
+                    / (
+                        candidate_echo[source_y, source_x]
+                        + config.ratio_regularizer
+                    )
+                )
+                / step_span
+                - expected_growth_per_step
+            )
+        eligible = candidate & current
+        if expected_growth_per_step is not None:
+            eligible &= (
+                error
+                <= config.maximum_local_growth_log_error_per_step
+                + config.contract_absolute_tolerance
+            )
+        distance = _offset_distance_squared(
+            (offset_y, offset_x),
+            grid_time_contract,
+        )
+        old_distance = best_distance[target_y, target_x]
+        old_error = best_error[target_y, target_x]
+        old_support = best_support[target_y, target_x]
+        support = candidate_support[source_y, source_x]
+        better = eligible & (
+            (distance < old_distance)
+            | (
+                (distance == old_distance)
+                & (
+                    (error < old_error)
+                    | ((error == old_error) & (support > old_support))
+                )
+            )
+        )
+        best_distance[target_y, target_x] = torch.where(
+            better,
+            old_distance.new_tensor(distance),
+            old_distance,
+        )
+        best_error[target_y, target_x] = torch.where(
+            better,
+            error,
+            old_error,
+        )
+        best_support[target_y, target_x] = torch.where(
+            better,
+            support,
+            old_support,
+        )
+        best_candidate[target_y, target_x] = torch.where(
+            better,
+            candidate_ids[source_y, source_x],
+            best_candidate[target_y, target_x],
+        )
+    assigned = best_candidate >= 0
+    if not bool(torch.any(assigned)):
+        return assigned
+    counts = torch.bincount(
+        best_candidate[assigned],
+        minlength=candidate_echo.numel(),
+    )
+    candidate_count = counts[best_candidate.clamp_min(0)]
+    return assigned & (candidate_count == 1)
+
+
+def _offset_distance_squared(
+    offset_yx: tuple[int, int],
+    grid_time_contract: RadarGridTimeContract | None,
+) -> float:
+    offset_y, offset_x = offset_yx
+    if grid_time_contract is None:
+        return float(offset_y * offset_y + offset_x * offset_x)
+    projected = grid_time_contract.projected_displacement_xy(
+        torch.tensor((offset_y, offset_x), dtype=torch.float64)
+    )
+    return float(torch.dot(projected, projected))
 
 
 def _source_path_verification_masks(

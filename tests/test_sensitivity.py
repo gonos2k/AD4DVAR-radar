@@ -86,6 +86,8 @@ def metadata_for(
         background_source_support=torch.zeros_like(state.echo_linear),
         path_verified_source_support=torch.ones_like(state.echo_linear),
         verified_source_support=torch.ones_like(state.echo_linear),
+        local_motion_verified_support=torch.ones_like(state.echo_linear),
+        local_growth_verified_support=torch.ones_like(state.echo_linear),
         local_dynamics_verified_support=torch.ones_like(state.echo_linear),
         observation_verified_source_support=torch.ones_like(
             state.echo_linear
@@ -1273,6 +1275,8 @@ class SensitivityTests(unittest.TestCase):
         metadata = replace(
             self.result.metadata,
             verified_source_support=verified,
+            local_motion_verified_support=verified,
+            local_growth_verified_support=verified,
             local_dynamics_verified_support=verified,
             observation_verified_source_support=verified,
         )
