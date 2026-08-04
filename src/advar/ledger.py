@@ -30,7 +30,7 @@ from .sensitivity import (
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
 _INDEX_SCHEMA_VERSION = 3
-_EPISODE_SCHEMA_VERSION = 15
+_EPISODE_SCHEMA_VERSION = 16
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _TRUST_COMPONENTS_V13 = {
     "linearity",
@@ -39,6 +39,13 @@ _TRUST_COMPONENTS_V13 = {
     "pair_consistency",
     "path_evidence",
     "observation_evidence",
+}
+_TRUST_COMPONENTS_V16 = {
+    "linearity",
+    "verification",
+    "metric_support",
+    "pair_consistency",
+    "observation_verified_evidence",
 }
 _MODEL_CONTRACT_SCHEMA_BY_EPISODE_SCHEMA = {
     3: 3,
@@ -757,8 +764,14 @@ def _snapshot_arrays(episode: SensitivityEpisode) -> dict[str, NDArray[Any]]:
         "forecast_cap_active_mask": snapshot.forecast_cap_active_mask,
         "forecast_confidence": snapshot.forecast_confidence,
         "path_evidence_by_metric": snapshot.path_evidence_by_metric,
-        "observation_evidence_by_metric": (
-            snapshot.observation_evidence_by_metric
+        "observation_source_fraction_by_metric": (
+            snapshot.observation_source_fraction_by_metric
+        ),
+        "observation_verified_evidence_by_metric": (
+            snapshot.observation_verified_evidence_by_metric
+        ),
+        "background_verified_evidence_by_metric": (
+            snapshot.background_verified_evidence_by_metric
         ),
         "direct_observation_sensitivity": snapshot.direct.maps,
         "direct_observation_sensitivity_norm": snapshot.direct.norm,
@@ -821,7 +834,9 @@ def _episode_manifest(
             "direct_observation_impact": "error_change",
             "forecast_confidence": "dimensionless_evidence_score",
             "path_evidence_by_metric": "dimensionless",
-            "observation_evidence_by_metric": "dimensionless",
+            "observation_source_fraction_by_metric": "dimensionless",
+            "observation_verified_evidence_by_metric": "dimensionless",
+            "background_verified_evidence_by_metric": "dimensionless",
         },
         "whitened_tile_norm_available": (
             snapshot.whitened_tile_norm_available
@@ -917,9 +932,14 @@ def _verify_manifest(
     if manifest.get("promotion_eligible") is not False:
         raise ValueError("M0 episodes cannot be promoted automatically")
     trust_components = manifest.get("trust_components")
+    expected_trust_components = (
+        _TRUST_COMPONENTS_V16
+        if schema_version >= 16
+        else _TRUST_COMPONENTS_V13
+    )
     if schema_version >= 13 and (
         not isinstance(trust_components, dict)
-        or set(trust_components) != _TRUST_COMPONENTS_V13
+        or set(trust_components) != expected_trust_components
     ):
         raise ValueError("manifest trust component contract is invalid")
     if schema_version >= 15 and (
@@ -927,7 +947,7 @@ def _verify_manifest(
         or manifest.get("reward_available") is not False
     ):
         raise ValueError(
-            "schema 15 requires fail-closed baseline reward lineage"
+            "schema 15 and later require fail-closed baseline reward lineage"
         )
     reward_epsilon = manifest.get("reward_epsilon")
     if (
@@ -961,12 +981,25 @@ def _verify_manifest_layout(manifest: dict[str, Any]) -> None:
         "latest_sensitivity_mask",
         "action_features",
     }
-    evidence_arrays = {
+    legacy_evidence_arrays = {
         "forecast_confidence",
         "path_evidence_by_metric",
         "observation_evidence_by_metric",
     }
-    core = legacy_core | (evidence_arrays if schema_version >= 14 else set())
+    joint_evidence_arrays = {
+        "forecast_confidence",
+        "path_evidence_by_metric",
+        "observation_source_fraction_by_metric",
+        "observation_verified_evidence_by_metric",
+        "background_verified_evidence_by_metric",
+    }
+    if schema_version >= 16:
+        required_evidence_arrays = joint_evidence_arrays
+    elif schema_version >= 14:
+        required_evidence_arrays = legacy_evidence_arrays
+    else:
+        required_evidence_arrays = set()
+    core = legacy_core | required_evidence_arrays
     legacy_optional = {
         "tile_whitened_direct_sensitivity_norm",
         "direct_observation_impact",
@@ -977,9 +1010,9 @@ def _verify_manifest_layout(manifest: dict[str, Any]) -> None:
         "observation_innovation_mask",
         "baseline_scores",
     }
-    optional = legacy_optional | (
-        evidence_arrays if schema_version < 14 else set()
-    )
+    optional = set(legacy_optional)
+    if schema_version < 14:
+        optional |= legacy_evidence_arrays | joint_evidence_arrays
     if schema_version >= 15:
         optional -= {"direct_normalized_reward", "baseline_scores"}
     array_names = set(arrays)
@@ -995,6 +1028,7 @@ def _verify_manifest_layout(manifest: dict[str, Any]) -> None:
             raise ValueError("schema 1 lead_minutes are invalid")
         if array_names not in (
             core | legacy_optional,
+            core | legacy_optional | joint_evidence_arrays,
             core | optional,
         ):
             raise ValueError("manifest arrays do not match episode schema 1")
@@ -1224,7 +1258,18 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         "forecast_cap_active_mask": (selected_count, height, width),
         "forecast_confidence": (lead_count, height, width),
         "path_evidence_by_metric": (lead_count, metric_count),
-        "observation_evidence_by_metric": (lead_count, metric_count),
+        "observation_source_fraction_by_metric": (
+            lead_count,
+            metric_count,
+        ),
+        "observation_verified_evidence_by_metric": (
+            lead_count,
+            metric_count,
+        ),
+        "background_verified_evidence_by_metric": (
+            lead_count,
+            metric_count,
+        ),
         "direct_observation_sensitivity": (
             selected_count,
             metric_count,
@@ -1253,8 +1298,14 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         "forecast_cap_active_mask": snapshot.forecast_cap_active_mask,
         "forecast_confidence": snapshot.forecast_confidence,
         "path_evidence_by_metric": snapshot.path_evidence_by_metric,
-        "observation_evidence_by_metric": (
-            snapshot.observation_evidence_by_metric
+        "observation_source_fraction_by_metric": (
+            snapshot.observation_source_fraction_by_metric
+        ),
+        "observation_verified_evidence_by_metric": (
+            snapshot.observation_verified_evidence_by_metric
+        ),
+        "background_verified_evidence_by_metric": (
+            snapshot.background_verified_evidence_by_metric
         ),
         "direct_observation_sensitivity": snapshot.direct.maps,
         "direct_observation_sensitivity_norm": snapshot.direct.norm,
@@ -1301,7 +1352,9 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         raise ValueError("unavailable control sensitivities must be NaN")
     evidence_values = (
         snapshot.path_evidence_by_metric,
-        snapshot.observation_evidence_by_metric,
+        snapshot.observation_source_fraction_by_metric,
+        snapshot.observation_verified_evidence_by_metric,
+        snapshot.background_verified_evidence_by_metric,
     )
     for value in evidence_values:
         finite = torch.isfinite(value)
@@ -1309,6 +1362,21 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             raise ValueError("metric evidence must be in [0, 1]")
         if bool(torch.any(finite & ~available)):
             raise ValueError("unavailable metrics cannot retain evidence")
+    joint_evidence_available = (
+        torch.isfinite(snapshot.path_evidence_by_metric)
+        & torch.isfinite(snapshot.observation_verified_evidence_by_metric)
+        & torch.isfinite(snapshot.background_verified_evidence_by_metric)
+    )
+    if not torch.allclose(
+        (
+            snapshot.observation_verified_evidence_by_metric
+            + snapshot.background_verified_evidence_by_metric
+        )[joint_evidence_available],
+        snapshot.path_evidence_by_metric[joint_evidence_available],
+        rtol=1.0e-5,
+        atol=1.0e-7,
+    ):
+        raise ValueError("source evidence channels do not close")
 
     latest_norm = snapshot.direct.norm
     latest_tile_norm = snapshot.direct.tile_norm
@@ -1443,6 +1511,8 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         for value in snapshot.trust_components.values()
     ):
         raise ValueError("trust components must be finite")
+    if set(snapshot.trust_components) != _TRUST_COMPONENTS_V16:
+        raise ValueError("trust component contract is invalid")
     expected_trust = math.prod(snapshot.trust_components.values())
     if not math.isclose(
         snapshot.trust_score,
