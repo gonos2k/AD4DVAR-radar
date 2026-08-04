@@ -10,7 +10,10 @@ import numpy as np
 from numpy.typing import NDArray
 import torch
 
-from .calibration import OperationalCalibrationManifest
+from .calibration import (
+    OperationalCalibrationManifest,
+    OperationalDataIdentity,
+)
 from .nowcast import (
     ForecastResult,
     NowcastConfig,
@@ -25,7 +28,7 @@ from .run_artifact import (
 from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v47"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v48"
 
 
 def main() -> None:
@@ -122,7 +125,7 @@ def main() -> None:
         "--mode",
         choices=("research", "operational"),
         default="research",
-        help="research diagnostics or a calibrated fail-closed P1 profile",
+        help="research diagnostics or a calibrated fail-closed P0/P1 profile",
     )
     parser.add_argument(
         "--operational-calibration-id",
@@ -133,6 +136,14 @@ def main() -> None:
         type=Path,
         help="canonical hindcast calibration provenance manifest",
     )
+    parser.add_argument(
+        "--approved-operational-calibration-manifest-digest",
+        help="deployment allowlist entry for the calibration manifest",
+    )
+    parser.add_argument("--radar-class")
+    parser.add_argument("--qc-pipeline-digest")
+    parser.add_argument("--observation-error-model-digest")
+    parser.add_argument("--background-model-digest")
     parser.add_argument(
         "--observation-std-dbz",
         type=float,
@@ -272,6 +283,27 @@ def main() -> None:
             )
         except ValueError as error:
             parser.error(str(error))
+    operational_data_identity = None
+    identity_values = (
+        args.radar_class,
+        args.qc_pipeline_digest,
+        args.observation_error_model_digest,
+        args.background_model_digest,
+    )
+    if any(value is not None for value in identity_values):
+        if any(value is None for value in identity_values):
+            parser.error("operational data identity must be complete")
+        try:
+            operational_data_identity = OperationalDataIdentity(
+                radar_class=args.radar_class,
+                qc_pipeline_digest=args.qc_pipeline_digest,
+                observation_error_model_digest=(
+                    args.observation_error_model_digest
+                ),
+                background_model_digest=args.background_model_digest,
+            )
+        except ValueError as error:
+            parser.error(str(error))
     if args.output.suffix != ".npz":
         parser.error("output path must end with .npz")
     if (
@@ -279,6 +311,8 @@ def main() -> None:
         and (
             args.operational_calibration_id is not None
             or operational_calibration_manifest is not None
+            or args.approved_operational_calibration_manifest_digest is not None
+            or operational_data_identity is not None
         )
     ):
         parser.error(
@@ -289,18 +323,39 @@ def main() -> None:
             "operational mode requires --operational-calibration-manifest"
         )
     if (
+        args.mode == "operational"
+        and args.approved_operational_calibration_manifest_digest is None
+    ):
+        parser.error(
+            "operational mode requires "
+            "--approved-operational-calibration-manifest-digest"
+        )
+    if (
         operational_calibration_manifest is not None
         and args.operational_calibration_id is not None
         and args.operational_calibration_id
         != operational_calibration_manifest.calibration_id
     ):
         parser.error("operational calibration identifier mismatch")
+    if operational_calibration_manifest is not None and (
+        args.approved_operational_calibration_manifest_digest
+        != operational_calibration_manifest.digest
+    ):
+        parser.error("operational calibration manifest is not approved")
+    if operational_calibration_manifest is not None and (
+        operational_calibration_manifest.profile_kind
+        != ("p1" if args.variational else "p0")
+    ):
+        parser.error("operational calibration manifest profile kind mismatch")
+    if (
+        operational_calibration_manifest is not None
+        and operational_data_identity
+        != operational_calibration_manifest.data_identity
+    ):
+        parser.error("operational data identity is not calibrated")
     if not args.variational and (
-        args.mode == "operational"
-        or args.amplitude_information_policy is not None
+        args.amplitude_information_policy is not None
         or args.amplitude_confidence_policy is not None
-        or args.operational_calibration_id is not None
-        or operational_calibration_manifest is not None
         or args.observation_std_dbz is not None
         or args.motion_increment_scale_mps is not None
         or args.maximum_detected_error_std is not None
@@ -322,7 +377,7 @@ def main() -> None:
         or args.amplitude_displacement_tolerance_m is not None
     ):
         parser.error(
-            "operational mode and P1 analysis settings require --variational"
+            "P1 analysis settings require --variational"
         )
 
     frames = np.load(args.input, allow_pickle=False)
@@ -349,6 +404,16 @@ def main() -> None:
         args,
         background_present=background is not None,
     )
+    if args.mode == "operational":
+        _require_operational_values(
+            parser,
+            _operational_nowcast_calibrated_values(
+                args,
+                operational_calibration_manifest,
+                operational_data_identity,
+            ),
+            grid_time_contract,
+        )
 
     default_nowcast_config = NowcastConfig()
     config = NowcastConfig(
@@ -483,6 +548,7 @@ def main() -> None:
             operational_calibration_manifest=(
                 operational_calibration_manifest
             ),
+            operational_data_identity=operational_data_identity,
         )
         result, analysis = variational_nowcast(
             frames_tensor,
@@ -496,6 +562,10 @@ def main() -> None:
             operational_calibration_manifest=(
                 operational_calibration_manifest
             ),
+            operational_calibration_approval_digest=(
+                args.approved_operational_calibration_manifest_digest
+            ),
+            operational_data_identity=operational_data_identity,
             audit=args.audit,
         )
     else:
@@ -506,6 +576,13 @@ def main() -> None:
             background_frames_dbz=background,
             background_age_minutes=args.background_age_minutes,
             grid_time_contract=grid_time_contract,
+            operational_calibration_manifest=(
+                operational_calibration_manifest
+            ),
+            operational_calibration_approval_digest=(
+                args.approved_operational_calibration_manifest_digest
+            ),
+            operational_data_identity=operational_data_identity,
             audit=args.audit,
         )
         analysis = None
@@ -526,31 +603,23 @@ def main() -> None:
     )
 
 
-def _analysis_config_from_args(
-    parser: argparse.ArgumentParser,
+def _operational_nowcast_calibrated_values(
     args: argparse.Namespace,
-    *,
-    grid_time_contract: RadarGridTimeContract | None,
-    operational_calibration_manifest: (
-        OperationalCalibrationManifest | None
-    ),
-) -> AnalysisConfig:
-    defaults = AnalysisConfig()
-    calibrated_values = {
-        "--operational-calibration-manifest": (
-            operational_calibration_manifest
+    manifest: OperationalCalibrationManifest | None,
+    data_identity: OperationalDataIdentity | None,
+) -> dict[str, object | None]:
+    return {
+        "--operational-calibration-manifest": manifest,
+        "--approved-operational-calibration-manifest-digest": (
+            args.approved_operational_calibration_manifest_digest
         ),
-        "--observation-std-dbz": args.observation_std_dbz,
-        "--minimum-phase-correlation-psr": (
-            args.minimum_phase_correlation_psr
-        ),
+        "operational data identity": data_identity,
+        "--minimum-phase-correlation-psr": args.minimum_phase_correlation_psr,
         "--pair-echo-dilation-m": args.pair_echo_dilation_m,
         "--phase-correlation-sidelobe-radius-m": (
             args.phase_correlation_sidelobe_radius_m
         ),
-        "--long-pair-confidence-penalty": (
-            args.long_pair_confidence_penalty
-        ),
+        "--long-pair-confidence-penalty": args.long_pair_confidence_penalty,
         "--maximum-pair-velocity-disagreement-mps": (
             args.maximum_pair_velocity_disagreement_mps
         ),
@@ -592,15 +661,6 @@ def _analysis_config_from_args(
         "--forecast-log-growth-confidence-scale": (
             args.forecast_log_growth_confidence_scale
         ),
-        "--p1-motion-saturation-safe-margin-mps": (
-            args.p1_motion_saturation_safe_margin_mps
-        ),
-        "--p1-growth-saturation-safe-margin-per-step": (
-            args.p1_growth_saturation_safe_margin_per_step
-        ),
-        "--p1-saturation-uncertainty-multiplier": (
-            args.p1_saturation_uncertainty_multiplier
-        ),
         "--single-pair-uncertainty-multiplier": (
             args.single_pair_uncertainty_multiplier
         ),
@@ -611,6 +671,51 @@ def _analysis_config_from_args(
             args.background_tendency_age_uncertainty_scale_minutes
         ),
         "--maximum-motion-speed-mps": args.maximum_motion_speed_mps,
+    }
+
+
+def _require_operational_values(
+    parser: argparse.ArgumentParser,
+    values: dict[str, object | None],
+    grid_time_contract: RadarGridTimeContract | None,
+) -> None:
+    missing = [name for name, value in values.items() if value is None]
+    if grid_time_contract is None:
+        missing.append("grid/time metadata")
+    if missing:
+        parser.error(
+            "operational mode requires explicitly calibrated values for: "
+            + ", ".join(missing)
+        )
+
+
+def _analysis_config_from_args(
+    parser: argparse.ArgumentParser,
+    args: argparse.Namespace,
+    *,
+    grid_time_contract: RadarGridTimeContract | None,
+    operational_calibration_manifest: (
+        OperationalCalibrationManifest | None
+    ),
+    operational_data_identity: OperationalDataIdentity | None,
+) -> AnalysisConfig:
+    defaults = AnalysisConfig()
+    calibrated_values = {
+        **_operational_nowcast_calibrated_values(
+            args,
+            operational_calibration_manifest,
+            operational_data_identity,
+        ),
+        "--observation-std-dbz": args.observation_std_dbz,
+        "--p1-motion-saturation-safe-margin-mps": (
+            args.p1_motion_saturation_safe_margin_mps
+        ),
+        "--p1-growth-saturation-safe-margin-per-step": (
+            args.p1_growth_saturation_safe_margin_per_step
+        ),
+        "--p1-saturation-uncertainty-multiplier": (
+            args.p1_saturation_uncertainty_multiplier
+        ),
         "--motion-increment-scale-mps": args.motion_increment_scale_mps,
         "--causal-support-uncertainty-m": (
             args.causal_support_uncertainty_m
@@ -654,16 +759,11 @@ def _analysis_config_from_args(
         ),
     }
     if args.mode == "operational":
-        missing = [
-            name for name, value in calibrated_values.items() if value is None
-        ]
-        if grid_time_contract is None:
-            missing.append("grid/time metadata")
-        if missing:
-            parser.error(
-                "operational mode requires explicitly calibrated values for: "
-                + ", ".join(missing)
-            )
+        _require_operational_values(
+            parser,
+            calibrated_values,
+            grid_time_contract,
+        )
         if args.amplitude_information_policy not in (
             None,
             "operational_fallback",

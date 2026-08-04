@@ -17,12 +17,15 @@ from advar import cli  # noqa: E402
 from advar import load_forecast_run  # noqa: E402
 from advar.calibration import (  # noqa: E402
     CalibrationMetric,
+    CalibrationRegime,
     OperationalCalibrationManifest,
+    OperationalDataIdentity,
+    algorithm_bundle_digest,
 )
 from advar.nowcast import (  # noqa: E402
     NowcastConfig,
     RadarGridTimeContract,
-    operational_profile_digest,
+    operational_runtime_profile_digest,
 )
 from advar.variational import AnalysisConfig  # noqa: E402
 
@@ -62,6 +65,7 @@ class CliTests(unittest.TestCase):
         *,
         calibration_id: str = "test-calibration-v1",
         forecast_confidence_length_scale_m: float = 10_000.0,
+        variational: bool = True,
     ) -> tuple[str, ...]:
         nowcast_config = NowcastConfig(
             minimum_publish_verified_support=0.95,
@@ -119,14 +123,27 @@ class CliTests(unittest.TestCase):
             projection="EPSG:3857",
             grid_hash="0" * 64,
         )
+        profile_digest = operational_runtime_profile_digest(
+            nowcast_config,
+            grid,
+            analysis_config=(
+                asdict(analysis_config) if variational else None
+            ),
+        )
+        data_identity = OperationalDataIdentity(
+            radar_class="test-radar-class",
+            qc_pipeline_digest="3" * 64,
+            observation_error_model_digest="4" * 64,
+            background_model_digest="5" * 64,
+        )
         manifest = OperationalCalibrationManifest(
             calibration_id=calibration_id,
-            expected_profile_digest=operational_profile_digest(
-                nowcast_config,
-                asdict(analysis_config),
-                grid,
-            ),
-            radar_class="test-radar-class",
+            profile_kind="p1" if variational else "p0",
+            expected_runtime_profile_digest=profile_digest,
+            expected_algorithm_bundle_digest=algorithm_bundle_digest(),
+            calibration_dataset_digest="1" * 64,
+            validation_dataset_digest="2" * 64,
+            data_identity=data_identity,
             training_period=(
                 "2025-01-01T00:00:00Z",
                 "2025-07-01T00:00:00Z",
@@ -135,18 +152,40 @@ class CliTests(unittest.TestCase):
                 "2025-07-01T00:00:00Z",
                 "2026-01-01T00:00:00Z",
             ),
-            validation_metrics=(CalibrationMetric("csi_35", 0.5),),
+            validation_case_count=20,
+            validation_regimes=(
+                CalibrationRegime("convective", 12),
+                CalibrationRegime("stratiform", 8),
+            ),
+            validation_metrics=(
+                CalibrationMetric(
+                    name="csi_35",
+                    definition_digest="6" * 64,
+                    direction="maximize",
+                    acceptance_threshold=0.4,
+                    value=0.5,
+                ),
+            ),
         )
         manifest_path = directory / "operational-calibration.json"
         manifest_path.write_text(manifest.json, encoding="utf-8")
-        return (
-            "--variational",
+        arguments = [
             "--mode",
             "operational",
             "--operational-calibration-id",
             calibration_id,
             "--operational-calibration-manifest",
             str(manifest_path),
+            "--approved-operational-calibration-manifest-digest",
+            manifest.digest,
+            "--radar-class",
+            data_identity.radar_class,
+            "--qc-pipeline-digest",
+            data_identity.qc_pipeline_digest,
+            "--observation-error-model-digest",
+            data_identity.observation_error_model_digest,
+            "--background-model-digest",
+            data_identity.background_model_digest,
             "--valid-times",
             "2026-07-31T00:00:00Z",
             "2026-07-31T00:10:00Z",
@@ -161,8 +200,6 @@ class CliTests(unittest.TestCase):
             "0" * 64,
             "--maximum-motion-speed-mps",
             "100",
-            "--motion-increment-scale-mps",
-            "2",
             "--minimum-phase-correlation-psr",
             "0",
             "--pair-echo-dilation-m",
@@ -201,49 +238,58 @@ class CliTests(unittest.TestCase):
             "0.05",
             "--forecast-log-growth-confidence-scale",
             "1",
-            "--p1-motion-saturation-safe-margin-mps",
-            "2",
-            "--p1-growth-saturation-safe-margin-per-step",
-            "0.04879",
-            "--p1-saturation-uncertainty-multiplier",
-            "4",
             "--single-pair-uncertainty-multiplier",
             "2",
             "--persistence-uncertainty-multiplier",
             "4",
             "--background-tendency-age-uncertainty-scale-minutes",
             "60",
-            "--causal-support-uncertainty-m",
-            "1000",
-            "--amplitude-displacement-tolerance-m",
-            "1000",
-            "--observation-std-dbz",
-            "2",
-            "--maximum-detected-error-std",
-            "10",
-            "--minimum-local-verification-precision",
-            "0.01",
-            "--maximum-local-analysis-verification-error-dbz",
-            "6",
-            "--maximum-unresolved-amplitude-fraction",
-            "1",
-            "--minimum-amplitude-total-quality-weight",
-            "0.001",
-            "--minimum-amplitude-effective-pixel-count",
-            "1",
-            "--minimum-integrated-echo-ratio-for-confidence",
-            "0.01",
-            "--maximum-integrated-echo-ratio-for-confidence",
-            "100",
-            "--minimum-soft-echo-area-ratio-for-confidence",
-            "0.01",
-            "--maximum-soft-echo-area-ratio-for-confidence",
-            "100",
-            "--maximum-established-excess-growth-fraction-for-confidence",
-            "1",
-            "--minimum-object-count-ratio-for-confidence",
-            "0.75",
-        )
+        ]
+        if variational:
+            arguments = ["--variational", *arguments]
+            arguments.extend(
+                (
+                    "--motion-increment-scale-mps",
+                    "2",
+                    "--p1-motion-saturation-safe-margin-mps",
+                    "2",
+                    "--p1-growth-saturation-safe-margin-per-step",
+                    "0.04879",
+                    "--p1-saturation-uncertainty-multiplier",
+                    "4",
+                    "--causal-support-uncertainty-m",
+                    "1000",
+                    "--amplitude-displacement-tolerance-m",
+                    "1000",
+                    "--observation-std-dbz",
+                    "2",
+                    "--maximum-detected-error-std",
+                    "10",
+                    "--minimum-local-verification-precision",
+                    "0.01",
+                    "--maximum-local-analysis-verification-error-dbz",
+                    "6",
+                    "--maximum-unresolved-amplitude-fraction",
+                    "1",
+                    "--minimum-amplitude-total-quality-weight",
+                    "0.001",
+                    "--minimum-amplitude-effective-pixel-count",
+                    "1",
+                    "--minimum-integrated-echo-ratio-for-confidence",
+                    "0.01",
+                    "--maximum-integrated-echo-ratio-for-confidence",
+                    "100",
+                    "--minimum-soft-echo-area-ratio-for-confidence",
+                    "0.01",
+                    "--maximum-soft-echo-area-ratio-for-confidence",
+                    "100",
+                    "--maximum-established-excess-growth-fraction-for-confidence",
+                    "1",
+                    "--minimum-object-count-ratio-for-confidence",
+                    "0.75",
+                )
+            )
+        return tuple(arguments)
 
     def _assert_common_status_fields(self, result: np.lib.npyio.NpzFile) -> None:
         expected = {
@@ -338,10 +384,14 @@ class CliTests(unittest.TestCase):
             "background_path_age_minutes",
             "minimum_growth_overlap_support",
             "minimum_growth_overlap_area_km2",
-            "operational_calibration_digest",
+            "operational_runtime_profile_digest",
             "operational_calibration_manifest_present",
             "operational_calibration_manifest_json",
             "operational_calibration_manifest_digest",
+            "operational_calibration_approval_digest",
+            "operational_data_identity_present",
+            "operational_data_identity_json",
+            "operational_data_identity_digest",
             "min_publish_support",
             "minimum_publish_verified_support",
             "minimum_publish_confidence",
@@ -365,11 +415,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v47",
+                    "nowcast-npz-v48",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v39",
+                    "forecast-run-v40",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -745,6 +795,18 @@ class CliTests(unittest.TestCase):
                     *without_manifest,
                 )
 
+            approval_position = arguments.index(
+                "--approved-operational-calibration-manifest-digest"
+            )
+            without_approval = arguments.copy()
+            del without_approval[approval_position : approval_position + 2]
+            with self.assertRaises(SystemExit), redirect_stderr(io.StringIO()):
+                self._run_cli(
+                    directory,
+                    self._stationary_frames(),
+                    *without_approval,
+                )
+
             identifier_position = arguments.index(
                 "--operational-calibration-id"
             )
@@ -765,7 +827,10 @@ class CliTests(unittest.TestCase):
             )
             arguments[scale_position + 1] = "9000"
 
-            with self.assertRaisesRegex(ValueError, "profile digest mismatch"):
+            with self.assertRaisesRegex(
+                ValueError,
+                "runtime profile digest mismatch",
+            ):
                 self._run_cli(
                     directory,
                     self._stationary_frames(),
@@ -832,7 +897,7 @@ class CliTests(unittest.TestCase):
                     "test-calibration-v1",
                 )
                 self.assertEqual(
-                    len(result["operational_calibration_digest"].item()),
+                    len(result["operational_runtime_profile_digest"].item()),
                     64,
                 )
                 manifest = OperationalCalibrationManifest.from_json(
@@ -844,6 +909,14 @@ class CliTests(unittest.TestCase):
                 self.assertEqual(
                     result["operational_calibration_manifest_digest"].item(),
                     manifest.digest,
+                )
+                self.assertEqual(
+                    result["operational_calibration_approval_digest"].item(),
+                    manifest.digest,
+                )
+                self.assertEqual(
+                    result["operational_data_identity_digest"].item(),
+                    manifest.data_identity.digest,
                 )
                 self.assertEqual(manifest.calibration_id, "test-calibration-v1")
                 self.assertEqual(
@@ -987,8 +1060,52 @@ class CliTests(unittest.TestCase):
                 loaded.run.operational_calibration_manifest_digest,
                 manifest.digest,
             )
+            self.assertEqual(
+                loaded.run.operational_calibration_approval_digest,
+                manifest.digest,
+            )
+            self.assertEqual(
+                loaded.run.operational_data_identity_digest,
+                manifest.data_identity.digest,
+            )
 
-    def test_operational_calibration_digest_tracks_content_not_label(self) -> None:
+    def test_operational_p0_profile_is_supported(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            output_path = self._run_cli(
+                directory,
+                self._stationary_frames(),
+                *self._operational_profile_arguments(
+                    directory,
+                    variational=False,
+                ),
+            )
+
+            with np.load(output_path, allow_pickle=False) as result:
+                self.assertFalse(result["analysis_used"].item())
+                self.assertFalse(result["analysis_config_present"].item())
+                manifest = OperationalCalibrationManifest.from_json(
+                    result["operational_calibration_manifest_json"].item()
+                )
+                self.assertEqual(manifest.profile_kind, "p0")
+                self.assertEqual(
+                    result["operational_calibration_approval_digest"].item(),
+                    manifest.digest,
+                )
+                self.assertEqual(
+                    result["operational_data_identity_digest"].item(),
+                    manifest.data_identity.digest,
+                )
+
+            loaded = load_forecast_run(output_path)
+            loaded.validate_issuance()
+            self.assertIsNone(loaded.run.analysis_config_json)
+            self.assertEqual(
+                loaded.run.operational_calibration_approval_digest,
+                manifest.digest,
+            )
+
+    def test_operational_runtime_profile_tracks_content_not_label(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             for name in ("base", "renamed", "changed"):
@@ -1026,7 +1143,7 @@ class CliTests(unittest.TestCase):
             for output in outputs:
                 with np.load(output, allow_pickle=False) as result:
                     digests.append(
-                        result["operational_calibration_digest"].item()
+                        result["operational_runtime_profile_digest"].item()
                     )
                     manifest_digests.append(
                         result[
@@ -1057,8 +1174,8 @@ class CliTests(unittest.TestCase):
             grid_time_contract_digest=shifted_grid.digest,
         )
         self.assertEqual(
-            base_run.operational_calibration_digest,
-            shifted_run.operational_calibration_digest,
+            base_run.operational_runtime_profile_digest,
+            shifted_run.operational_runtime_profile_digest,
         )
         different_grid = replace(grid, grid_hash="1" * 64)
         different_grid_run = replace(
@@ -1067,8 +1184,8 @@ class CliTests(unittest.TestCase):
             grid_time_contract_digest=different_grid.digest,
         )
         self.assertNotEqual(
-            base_run.operational_calibration_digest,
-            different_grid_run.operational_calibration_digest,
+            base_run.operational_runtime_profile_digest,
+            different_grid_run.operational_runtime_profile_digest,
         )
 
     def test_all_qc_rejected_uses_stale_background(self) -> None:

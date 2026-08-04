@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.27
+# ADVAR 3-frame radar nowcast v0.28
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -372,30 +372,31 @@ advar-nowcast three_frames.npy forecast.npz --audit
 ```
 
 CLI 기본 `--mode research`는 합성·hindcast 진단용이다. `--mode operational`
-은 `--variational`, 완전한 시각·격자 계약, 물리속도 상한, 물리 causal 및
-amplitude 거리, projected m/s 운동증분 scale, 명시적인
+은 P0와 `--variational` P1 profile을 각각 지원한다. 두 profile 모두 완전한
+시각·격자 계약, 물리속도 상한과 명시적인
 PSR·pair 운동/성장 불일치·pair 신뢰도 우위·국지 성장 residual·성장 overlap
-support·물리면적·관측오차·amplitude
-정보량·적분량·면적·성장
+support·물리면적,
 임계값, 검증된 상태경로·레이더 관측 support 발행 임계값, 선행시간
-confidence, 배경 기여율, 속도불확실성·위치오차 길이척도, 국지 dBZ 상태검증 오차,
-P1 posterior의 motion·growth saturation safe margin과 uncertainty 배수,
-P1 국지 검증 precision·절대 dBZ 오차와
-`--operational-calibration-manifest`를 모두 요구한다. manifest는 사람이
-읽는 calibration ID, radar class, 서로 겹치지 않는 학습·검증기간, 검증지표와
-실행 profile digest를 canonical JSON으로 묶는다. 실제 profile 동일성은 전체
-설정·격자 정체성·적분기 버전에서 자동 계산한
-`operational_calibration_digest`로 판정하며, manifest 자체의 동일성은 별도
-SHA-256 digest로 보존한다. 누락되거나 실행 profile과 불일치하는 manifest가
-있으면 실행 전에 거부하며, 두
-amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값은 실제
-레이더 hindcast에서 얻어야 하며 저장된 `nowcast_config_json`,
-`analysis_config_json`과 각 digest에 포함된다.
+confidence, 배경 기여율, 속도불확실성·위치오차 길이척도와
+`--operational-calibration-manifest`를 요구한다. P1은 여기에 관측오차·amplitude
+정보량·적분량·면적·성장, 물리 causal/amplitude 거리, projected m/s 운동증분,
+국지 dBZ·precision, posterior saturation 보정을 추가한다.
+
+manifest v2는 P0/P1 종류, runtime profile, 설치된 `advar` Python module 전체의
+algorithm bundle, calibration/validation dataset, QC·관측오차·배경모델 identity,
+서로 겹치지 않는 기간, validation 사례·regime 분포, metric 정의·방향·수용임계값을
+canonical JSON으로 묶는다. 모든 metric이 임계값을 통과해야 한다. 배포 allowlist의
+manifest digest를 `--approved-operational-calibration-manifest-digest`로 별도
+제공해야 하며, 누락·불일치·algorithm 변경은 실행 전에 거부한다. P1의 두
+amplitude 정책은 `operational_fallback`으로 고정한다.
+실행 시 `--radar-class`, `--qc-pipeline-digest`,
+`--observation-error-model-digest`, `--background-model-digest`도 명시하며,
+manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v47`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v39`
+- `output_contract_version`: 현재 `nowcast-npz-v48`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v40`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -404,11 +405,15 @@ amplitude 정책을 모두 `operational_fallback`으로 고정한다. 보정값�
   `(row, column)` m/s
 - `projected_velocity_mps_xy`: affine 계약을 적용한 projected `(x, y)` m/s
 - `analysis_config_json`, `analysis_config_digest`, `analysis_input_digest`
-- `operational_calibration_digest`: 운용 설정과 격자 정체성의 content address;
-  연구모드에서는 빈 문자열
+- `operational_runtime_profile_digest`: P0/P1 운용 설정과 격자 정체성의
+  content address; 연구모드에서는 빈 문자열
 - `operational_calibration_manifest_json`,
   `operational_calibration_manifest_digest`: 운용 hindcast 보정 근거와 그
   content address; 연구모드에서는 빈 문자열
+- `operational_calibration_approval_digest`: 배포 allowlist가 승인한 manifest
+  digest; 연구모드에서는 빈 문자열
+- `operational_data_identity_json`, `operational_data_identity_digest`: 실행이
+  선언한 radar·QC·관측오차·배경모델 identity와 그 content address
 - `forecast_dbz`: `[18, H, W]`
 - `valid_mask`, `state_echo_linear`, `source_support`,
   `path_verified_source_support`, `verified_source_support`,

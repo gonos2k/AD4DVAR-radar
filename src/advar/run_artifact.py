@@ -33,7 +33,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v39"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v40"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 192
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
@@ -150,10 +150,14 @@ _CORE_ARRAY_NAMES = frozenset(
         "analysis_config_json",
         "analysis_config_digest",
         "analysis_input_digest",
-        "operational_calibration_digest",
+        "operational_runtime_profile_digest",
         "operational_calibration_manifest_present",
         "operational_calibration_manifest_json",
         "operational_calibration_manifest_digest",
+        "operational_calibration_approval_digest",
+        "operational_data_identity_present",
+        "operational_data_identity_json",
+        "operational_data_identity_digest",
     }
 )
 _CLI_EXTRA_ARRAY_NAMES = frozenset(
@@ -259,8 +263,8 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
     latest_observation_mask = result.run.latest_observation_mask
     metadata = result.metadata
     grid_time_contract = result.run.grid_time_contract
-    operational_calibration_digest = (
-        result.run.operational_calibration_digest
+    operational_runtime_profile_digest = (
+        result.run.operational_runtime_profile_digest
     )
     displacement_mps = result.displacement_mps_yx
     projected_velocity = result.projected_velocity_mps_xy
@@ -526,10 +530,10 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             if result.run.analysis_input_digest is None
             else result.run.analysis_input_digest
         ),
-        "operational_calibration_digest": np.asarray(
+        "operational_runtime_profile_digest": np.asarray(
             ""
-            if operational_calibration_digest is None
-            else operational_calibration_digest
+            if operational_runtime_profile_digest is None
+            else operational_runtime_profile_digest
         ),
         "operational_calibration_manifest_present": np.asarray(
             result.run.operational_calibration_manifest_json is not None
@@ -543,6 +547,24 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             ""
             if result.run.operational_calibration_manifest_digest is None
             else result.run.operational_calibration_manifest_digest
+        ),
+        "operational_calibration_approval_digest": np.asarray(
+            ""
+            if result.run.operational_calibration_approval_digest is None
+            else result.run.operational_calibration_approval_digest
+        ),
+        "operational_data_identity_present": np.asarray(
+            result.run.operational_data_identity_json is not None
+        ),
+        "operational_data_identity_json": np.asarray(
+            ""
+            if result.run.operational_data_identity_json is None
+            else result.run.operational_data_identity_json
+        ),
+        "operational_data_identity_digest": np.asarray(
+            ""
+            if result.run.operational_data_identity_digest is None
+            else result.run.operational_data_identity_digest
         ),
     }
     return seal_forecast_run_arrays(arrays)
@@ -1143,7 +1165,12 @@ def load_forecast_run(
         (
             operational_calibration_manifest_json,
             operational_calibration_manifest_digest,
+            operational_calibration_approval_digest,
         ) = _operational_calibration_manifest_lineage(loaded_arrays)
+        (
+            operational_data_identity_json,
+            operational_data_identity_digest,
+        ) = _operational_data_identity_lineage(loaded_arrays)
         latest_observation_mask_digest = _digest_scalar(
             loaded_arrays,
             "latest_observation_mask_digest",
@@ -1196,22 +1223,29 @@ def load_forecast_run(
             operational_calibration_manifest_digest=(
                 operational_calibration_manifest_digest
             ),
+            operational_calibration_approval_digest=(
+                operational_calibration_approval_digest
+            ),
+            operational_data_identity_json=operational_data_identity_json,
+            operational_data_identity_digest=operational_data_identity_digest,
             forecast_integrator_version=_string_scalar(
                 loaded_arrays,
                 "forecast_integrator_version",
             ),
         )
-        stored_calibration_digest = _string_scalar(
+        stored_runtime_profile_digest = _string_scalar(
             loaded_arrays,
-            "operational_calibration_digest",
+            "operational_runtime_profile_digest",
         )
-        expected_calibration_digest = run.operational_calibration_digest
-        if stored_calibration_digest != (
+        expected_runtime_profile_digest = (
+            run.operational_runtime_profile_digest
+        )
+        if stored_runtime_profile_digest != (
             ""
-            if expected_calibration_digest is None
-            else expected_calibration_digest
+            if expected_runtime_profile_digest is None
+            else expected_runtime_profile_digest
         ):
-            raise ValueError("operational calibration digest mismatch")
+            raise ValueError("operational runtime profile digest mismatch")
         stored_state_digest = _digest_scalar(
             loaded_arrays,
             "state_metadata_digest",
@@ -1582,7 +1616,7 @@ def _analysis_lineage(
 
 def _operational_calibration_manifest_lineage(
     arrays: _ArtifactArrays,
-) -> tuple[str | None, str | None]:
+) -> tuple[str | None, str | None, str | None]:
     present = _bool_scalar(
         arrays,
         "operational_calibration_manifest_present",
@@ -1595,12 +1629,16 @@ def _operational_calibration_manifest_lineage(
         arrays,
         "operational_calibration_manifest_digest",
     )
+    approval_digest = _string_scalar(
+        arrays,
+        "operational_calibration_approval_digest",
+    )
     if not present:
-        if manifest_json or manifest_digest:
+        if manifest_json or manifest_digest or approval_digest:
             raise ValueError(
                 "absent calibration manifest must have empty lineage"
             )
-        return None, None
+        return None, None, None
     validated_digest = _validate_digest(
         "operational_calibration_manifest_digest",
         manifest_digest,
@@ -1611,7 +1649,44 @@ def _operational_calibration_manifest_lineage(
         raise ValueError("invalid calibration manifest JSON") from error
     if json_digest(value) != validated_digest:
         raise ValueError("operational calibration manifest digest mismatch")
-    return manifest_json, validated_digest
+    validated_approval = _validate_digest(
+        "operational_calibration_approval_digest",
+        approval_digest,
+    )
+    if validated_approval != validated_digest:
+        raise ValueError("operational calibration manifest is not approved")
+    return manifest_json, validated_digest, validated_approval
+
+
+def _operational_data_identity_lineage(
+    arrays: _ArtifactArrays,
+) -> tuple[str | None, str | None]:
+    present = _bool_scalar(arrays, "operational_data_identity_present")
+    identity_json = _string_scalar(
+        arrays,
+        "operational_data_identity_json",
+    )
+    identity_digest = _string_scalar(
+        arrays,
+        "operational_data_identity_digest",
+    )
+    if not present:
+        if identity_json or identity_digest:
+            raise ValueError(
+                "absent operational data identity must have empty lineage"
+            )
+        return None, None
+    try:
+        value = json.loads(identity_json)
+    except json.JSONDecodeError as error:
+        raise ValueError("invalid operational data identity JSON") from error
+    validated_digest = _validate_digest(
+        "operational_data_identity_digest",
+        identity_digest,
+    )
+    if json_digest(value) != validated_digest:
+        raise ValueError("operational data identity digest mismatch")
+    return identity_json, validated_digest
 
 
 def _validate_digest(name: str, value: str) -> str:
