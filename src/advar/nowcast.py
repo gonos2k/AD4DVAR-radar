@@ -71,6 +71,9 @@ class NowcastConfig:
     forecast_confidence_length_scale_m: float = 10_000.0
     forecast_log_growth_uncertainty_per_step: float = 0.05
     forecast_log_growth_confidence_scale: float = 1.0
+    single_pair_uncertainty_multiplier: float = 2.0
+    persistence_uncertainty_multiplier: float = 4.0
+    background_tendency_age_uncertainty_scale_minutes: float = 60.0
     maximum_local_state_verification_error_dbz: float = 6.0
     epsilon: float = 1.0e-6
     support_presence_threshold: float = 1.0e-6
@@ -118,6 +121,9 @@ class NowcastConfig:
             self.forecast_confidence_length_scale_m,
             self.forecast_log_growth_uncertainty_per_step,
             self.forecast_log_growth_confidence_scale,
+            self.single_pair_uncertainty_multiplier,
+            self.persistence_uncertainty_multiplier,
+            self.background_tendency_age_uncertainty_scale_minutes,
             self.maximum_local_state_verification_error_dbz,
             self.epsilon,
             self.support_presence_threshold,
@@ -233,6 +239,28 @@ class NowcastConfig:
         ):
             raise ValueError(
                 "forecast_log_growth_confidence_scale must be positive"
+            )
+        if isinstance(self.single_pair_uncertainty_multiplier, bool) or (
+            self.single_pair_uncertainty_multiplier < 1.0
+        ):
+            raise ValueError(
+                "single_pair_uncertainty_multiplier must be at least 1"
+            )
+        if isinstance(self.persistence_uncertainty_multiplier, bool) or (
+            self.persistence_uncertainty_multiplier
+            < self.single_pair_uncertainty_multiplier
+        ):
+            raise ValueError(
+                "persistence_uncertainty_multiplier cannot be smaller than "
+                "single_pair_uncertainty_multiplier"
+            )
+        if isinstance(
+            self.background_tendency_age_uncertainty_scale_minutes,
+            bool,
+        ) or self.background_tendency_age_uncertainty_scale_minutes <= 0:
+            raise ValueError(
+                "background_tendency_age_uncertainty_scale_minutes must be "
+                "positive"
             )
         if self.minimum_publish_verified_support is not None and (
             isinstance(self.minimum_publish_verified_support, bool)
@@ -1553,6 +1581,24 @@ class ForecastResult:
         )
 
     @property
+    def motion_evidence_uncertainty_multiplier(self) -> Tensor:
+        return _dynamics_evidence_uncertainty_multiplier(
+            self.state,
+            self.metadata,
+            self.run.config,
+            pair_count=self.metadata.motion_pair_count,
+        )
+
+    @property
+    def growth_evidence_uncertainty_multiplier(self) -> Tensor:
+        return _dynamics_evidence_uncertainty_multiplier(
+            self.state,
+            self.metadata,
+            self.run.config,
+            pair_count=self.metadata.growth_pair_count,
+        )
+
+    @property
     def forecast_position_uncertainty_m(self) -> Tensor:
         return _forecast_position_uncertainty_m(
             self.state,
@@ -1578,6 +1624,10 @@ class ForecastResult:
 
     @property
     def radar_anchored_valid_mask(self) -> Tensor:
+        return self.radar_state_anchored_valid_mask
+
+    @property
+    def radar_state_anchored_valid_mask(self) -> Tensor:
         threshold = (
             self.run.config.minimum_publish_observation_verified_support
         )
@@ -1586,6 +1636,22 @@ class ForecastResult:
         return self.valid_mask & (
             self.forecast_observation_verified_support >= threshold
         )
+
+    @property
+    def radar_dynamics_anchored_valid_mask(self) -> Tensor:
+        if (
+            self.metadata.tendency_source is not TendencySource.OBSERVATION
+            or self.metadata.motion_pair_count == 0
+            or self.metadata.growth_pair_count == 0
+        ):
+            return torch.zeros_like(self.valid_mask)
+        return self.radar_state_anchored_valid_mask
+
+    @property
+    def background_dynamics_mask(self) -> Tensor:
+        if self.metadata.tendency_source is not TendencySource.BACKGROUND:
+            return torch.zeros_like(self.valid_mask)
+        return self.valid_mask
 
     @property
     def background_fallback_mask(self) -> Tensor:
@@ -4421,7 +4487,41 @@ def _forecast_velocity_uncertainty_mps(
             uncertainty,
             0.5 * disagreement.clamp_min(0.0),
         )
-    return uncertainty
+    return uncertainty * _dynamics_evidence_uncertainty_multiplier(
+        state,
+        metadata,
+        config,
+        pair_count=metadata.motion_pair_count,
+    )
+
+
+def _dynamics_evidence_uncertainty_multiplier(
+    state: RadarState,
+    metadata: ForecastMetadata,
+    config: NowcastConfig,
+    *,
+    pair_count: int,
+) -> Tensor:
+    if pair_count == 0:
+        multiplier = config.persistence_uncertainty_multiplier
+    elif pair_count == 1:
+        multiplier = config.single_pair_uncertainty_multiplier
+    else:
+        multiplier = 1.0
+
+    psr = float(metadata.minimum_phase_correlation_psr)
+    if pair_count > 0 and math.isfinite(psr) and psr > 0.0:
+        reference_psr = 2.0 * config.minimum_phase_correlation_psr
+        multiplier *= max(1.0, reference_psr / psr)
+
+    if metadata.tendency_source is TendencySource.BACKGROUND:
+        age = metadata.background_age_minutes
+        if age is None:
+            raise ValueError("background tendency requires background age")
+        multiplier *= 1.0 + (
+            age / config.background_tendency_age_uncertainty_scale_minutes
+        )
+    return state.echo_linear.new_tensor(multiplier)
 
 
 def _forecast_position_uncertainty_m(
@@ -4492,6 +4592,12 @@ def _forecast_log_growth_uncertainty(
             uncertainty_per_step,
             0.5 * disagreement.clamp_min(0.0),
         )
+    uncertainty_per_step *= _dynamics_evidence_uncertainty_multiplier(
+        state,
+        metadata,
+        config,
+        pair_count=metadata.growth_pair_count,
+    )
     retention = math.exp(
         -config.interval_minutes / config.growth_decay_minutes
     )

@@ -1236,14 +1236,17 @@ class SensitivityTests(unittest.TestCase):
             "linearity",
             "verification",
             "metric_support",
-            "path_evidence",
             "observation_evidence",
         ):
             self.assertAlmostEqual(
                 conflict.trust_components[name],
                 baseline.trust_components[name],
             )
-        self.assertAlmostEqual(
+        self.assertLess(
+            conflict.trust_components["path_evidence"],
+            baseline.trust_components["path_evidence"],
+        )
+        self.assertLess(
             conflict.trust_score,
             baseline.trust_score * penalty,
         )
