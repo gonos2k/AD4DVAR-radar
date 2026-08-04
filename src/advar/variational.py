@@ -529,6 +529,16 @@ AmplitudeDiagnosticsSource = Literal[
 
 
 @dataclass(frozen=True)
+class AnalysisLinearization:
+    """Accepted P1 final-outer-loop state needed by an implicit adjoint."""
+
+    observations: AnalysisObservations
+    frozen: FrozenOuterState
+    forecast_run_digest: str | None = None
+    contract: str = "p1-final-frozen-irls-gn-v1"
+
+
+@dataclass(frozen=True)
 class AnalysisResult:
     control: Tensor
     active_field_index: Tensor
@@ -620,6 +630,7 @@ class AnalysisResult:
     field_conditioning_maximum_relative_residual: float | None = None
     motion_control_coordinate_system: str = "grid_yx_px"
     field_smoothness_coordinate_system: str = "index_graph"
+    linearization: AnalysisLinearization | None = None
 
 
 def prepare_analysis(
@@ -2211,6 +2222,14 @@ def variational_nowcast(
         run=run,
         audit=audit,
     )
+    if analysis.linearization is not None:
+        analysis = replace(
+            analysis,
+            linearization=replace(
+                analysis.linearization,
+                forecast_run_digest=forecast.forecast_run_digest,
+            ),
+        )
     return forecast, analysis
 
 
@@ -2771,6 +2790,10 @@ def _analysis_result(
             "projected_orthogonal_graph"
             if frozen.grid_time_contract is not None
             else "index_graph"
+        ),
+        linearization=AnalysisLinearization(
+            observations=observations,
+            frozen=freeze_irls_weights(control, observations, frozen),
         ),
     )
 
