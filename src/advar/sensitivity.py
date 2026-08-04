@@ -221,7 +221,9 @@ class SensitivitySnapshot:
     forecast_cap_active_mask: Tensor
     forecast_confidence: Tensor
     path_evidence_by_metric: Tensor
-    observation_evidence_by_metric: Tensor
+    observation_source_fraction_by_metric: Tensor
+    observation_verified_evidence_by_metric: Tensor
+    background_verified_evidence_by_metric: Tensor
     direct: DirectSensitivity
     latest_sensitivity_mask: Tensor
     observation_std_dbz: Tensor | None
@@ -243,6 +245,12 @@ class SensitivitySnapshot:
     @property
     def whitened_tile_norm_available(self) -> bool:
         return self.direct.whitened_tile_norm is not None
+
+    @property
+    def observation_evidence_by_metric(self) -> Tensor:
+        """Return the legacy observation-source fraction diagnostic."""
+
+        return self.observation_source_fraction_by_metric
 
 
 def compute_sensitivity_snapshot(
@@ -402,8 +410,38 @@ def compute_sensitivity_snapshot(
     forecast_confidence = result.forecast_confidence
     forecast_source_support = result.forecast_source_support
     forecast_observation_support = result.forecast_observation_source_support
+    forecast_verified_support = result.forecast_verified_support
+    confidence_decay = torch.where(
+        forecast_verified_support > 0,
+        forecast_confidence
+        / forecast_verified_support.clamp_min(
+            torch.finfo(forecast_verified_support.dtype).tiny
+        ),
+        0.0,
+    )
+    observation_verified_confidence = (
+        result.forecast_observation_verified_support * confidence_decay
+    )
+    background_verified_confidence = (
+        result.forecast_background_verified_support * confidence_decay
+    )
+    if not torch.allclose(
+        observation_verified_confidence + background_verified_confidence,
+        forecast_confidence,
+        rtol=1.0e-5,
+        atol=nowcast_config.contract_absolute_tolerance,
+    ):
+        raise ValueError("forecast evidence channels do not close")
     path_evidence_by_metric = echo.new_full(score_shape, float("nan"))
-    observation_evidence_by_metric = echo.new_full(
+    observation_source_fraction_by_metric = echo.new_full(
+        score_shape,
+        float("nan"),
+    )
+    observation_verified_evidence_by_metric = echo.new_full(
+        score_shape,
+        float("nan"),
+    )
+    background_verified_evidence_by_metric = echo.new_full(
         score_shape,
         float("nan"),
     )
@@ -527,19 +565,28 @@ def compute_sensitivity_snapshot(
             forecast_gradient = torch.func.grad(metric)(prediction)
             whitened_gradient = direct_gradient * observation_std
             evidence_weight = torch.abs(forecast_gradient.detach())
-            evidence_denominator = (
-                evidence_weight * forecast_source_support[lead_index]
-            ).sum()
-            if float(evidence_denominator) > sensitivity_config.epsilon:
-                path_evidence_by_metric[lead_index, metric_index] = (
-                    evidence_weight * forecast_confidence[lead_index]
-                ).sum() / evidence_denominator
-                observation_evidence_by_metric[
-                    lead_index, metric_index
-                ] = (
-                    evidence_weight
-                    * forecast_observation_support[lead_index]
-                ).sum() / evidence_denominator
+            evidence = _metric_evidence_ratios(
+                evidence_weight,
+                forecast_source_support[lead_index],
+                forecast_confidence[lead_index],
+                forecast_observation_support[lead_index],
+                observation_verified_confidence[lead_index],
+                background_verified_confidence[lead_index],
+                sensitivity_config.epsilon,
+            )
+            if evidence is not None:
+                (
+                    path_evidence_by_metric[lead_index, metric_index],
+                    observation_source_fraction_by_metric[
+                        lead_index, metric_index
+                    ],
+                    observation_verified_evidence_by_metric[
+                        lead_index, metric_index
+                    ],
+                    background_verified_evidence_by_metric[
+                        lead_index, metric_index
+                    ],
+                ) = evidence
 
             forecast_scores[lead_index, metric_index] = score.detach()
             control_sensitivity[lead_index, metric_index] = (
@@ -595,8 +642,7 @@ def compute_sensitivity_snapshot(
         control_sensitivity,
         metric_available,
         all_cap_masks,
-        path_evidence_by_metric,
-        observation_evidence_by_metric,
+        observation_verified_evidence_by_metric,
         nowcast_config,
         sensitivity_config,
     )
@@ -628,8 +674,14 @@ def compute_sensitivity_snapshot(
         forecast_cap_active_mask=selected_cap_masks,
         forecast_confidence=forecast_confidence.detach(),
         path_evidence_by_metric=path_evidence_by_metric.detach(),
-        observation_evidence_by_metric=(
-            observation_evidence_by_metric.detach()
+        observation_source_fraction_by_metric=(
+            observation_source_fraction_by_metric.detach()
+        ),
+        observation_verified_evidence_by_metric=(
+            observation_verified_evidence_by_metric.detach()
+        ),
+        background_verified_evidence_by_metric=(
+            background_verified_evidence_by_metric.detach()
         ),
         direct=DirectSensitivity(
             maps=direct_maps,
@@ -1244,6 +1296,30 @@ def _full_map_indices(
     return tuple(all_minutes.index(value) for value in selected_minutes)
 
 
+def _metric_evidence_ratios(
+    sensitivity_weight: Tensor,
+    source_support: Tensor,
+    forecast_confidence: Tensor,
+    observation_source_support: Tensor,
+    observation_verified_confidence: Tensor,
+    background_verified_confidence: Tensor,
+    epsilon: float,
+) -> tuple[Tensor, Tensor, Tensor, Tensor] | None:
+    denominator = (sensitivity_weight * source_support).sum()
+    if float(denominator) <= epsilon:
+        return None
+
+    def weighted_fraction(evidence: Tensor) -> Tensor:
+        return (sensitivity_weight * evidence).sum() / denominator
+
+    return (
+        weighted_fraction(forecast_confidence),
+        weighted_fraction(observation_source_support),
+        weighted_fraction(observation_verified_confidence),
+        weighted_fraction(background_verified_confidence),
+    )
+
+
 def _trust_components(
     template: RadarState,
     metadata: ForecastMetadata,
@@ -1254,8 +1330,7 @@ def _trust_components(
     gradients: Tensor,
     metric_available: Tensor,
     cap_masks: Tensor,
-    path_evidence_by_metric: Tensor,
-    observation_evidence_by_metric: Tensor,
+    observation_verified_evidence_by_metric: Tensor,
     nowcast_config: NowcastConfig,
     sensitivity_config: SensitivityConfig,
 ) -> dict[str, float]:
@@ -1267,33 +1342,26 @@ def _trust_components(
     pair_consistency_quality = (
         sensitivity_config.pair_conflict_trust_penalty**conflict_count
     )
-    evidence_available = (
-        metric_available
-        & torch.isfinite(path_evidence_by_metric)
-        & torch.isfinite(observation_evidence_by_metric)
+    evidence_available = metric_available & torch.isfinite(
+        observation_verified_evidence_by_metric
     )
     if bool(torch.any(evidence_available)):
-        path_evidence_quality = float(
-            path_evidence_by_metric[evidence_available]
-            .mean()
-            .clamp(0.0, 1.0)
-        )
-        observation_evidence_quality = float(
-            observation_evidence_by_metric[evidence_available]
+        observation_verified_evidence_quality = float(
+            observation_verified_evidence_by_metric[evidence_available]
             .mean()
             .clamp(0.0, 1.0)
         )
     else:
-        path_evidence_quality = 0.0
-        observation_evidence_quality = 0.0
+        observation_verified_evidence_quality = 0.0
     if not bool(torch.any(metric_available)):
         return {
             "linearity": 0.0,
             "verification": float(verification_quality),
             "metric_support": 0.0,
             "pair_consistency": pair_consistency_quality,
-            "path_evidence": path_evidence_quality,
-            "observation_evidence": observation_evidence_quality,
+            "observation_verified_evidence": (
+                observation_verified_evidence_quality
+            ),
         }
 
     delta = control.new_tensor(sensitivity_config.linearity_delta)
@@ -1351,8 +1419,9 @@ def _trust_components(
         "verification": float(verification_quality.detach()),
         "metric_support": float(support_quality.detach()),
         "pair_consistency": pair_consistency_quality,
-        "path_evidence": path_evidence_quality,
-        "observation_evidence": observation_evidence_quality,
+        "observation_verified_evidence": (
+            observation_verified_evidence_quality
+        ),
     }
 
 

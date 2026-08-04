@@ -732,8 +732,8 @@ sensitivity snapshot은 실제
 섞이지 않는다. aggregate state path 뒤에는 관측·배경 각각의 pair 수, conflict,
 extrapolation, age, minimum PSR도 별도 context feature로 저장한다. 혼합 상태가
 하나의 path provenance로 축약되지 않으므로 source별 신뢰도를 나중에 다시
-평가할 수 있다. 현재 episode schema는 v15, model-contract hash schema는
-v11이며 기존 schema 1–14를 그대로 검증한다. 과거 episode에
+평가할 수 있다. 현재 episode schema는 v16, model-contract hash schema는
+v11이며 기존 schema 1–15를 그대로 검증한다. 과거 episode에
 존재하지 않던 conflict나 selection 값을 임의로 보간하지 않으므로 서로 다른
 context 계약이 같은 학습집합으로 섞이지 않는다.
 M0 `trust_components`의 `pair_consistency`는 기본적으로 충돌한 성분 하나당
@@ -741,14 +741,19 @@ M0 `trust_components`의 `pair_consistency`는 기본적으로 충돌한 성분 
 충돌하면 0.25가 되며, 이 값은 sensitivity config digest에 포함된다. 기본값은
 연구용 보수적 prior이고 검색·운용 임계값은 실제 hindcast로 보정해야 한다.
 M0의 선행시간별 `forecast_confidence`는 발행 artifact의 동일 필드를 그대로
-사용한다. 이 값은 검증된 현재 상태 support에 pair disagreement 기반 위치·
-로그성장 불확실성 감쇠를 적용하며 nowcast config digest에 포함된다. 보정된
-확률이 아니라 명시적인 연구용 evidence score다.
+사용한다. 이 값은 검증된 현재 상태 support에 P0 dynamics evidence 또는 P1
+field-conditioned posterior 기반 위치·로그성장 불확실성 감쇠를 적용하며
+nowcast config digest에 포함된다. 보정된 확률이 아니라 명시적인 연구용
+evidence score다.
 `path_evidence_by_metric`은 각 metric의 `abs(dJ/dforecast)`로 이 confidence를
-가중한 값이다. `observation_evidence_by_metric`도 같은 민감도 가중치로 실제
-관측 source support의 기여를 계산한다. 따라서 넓은 맑은 영역이 대류코어의
-path·observation trust를 면적만으로 압도하지 않는다. 두 배열과 최종 집계값은
-episode schema v15에 보존된다.
+가중한 값이다. `observation_source_fraction_by_metric`은 같은 가중치에서 관측
+origin state의 비율을 진단한다. 자동 trust는 이 주변비율을 path evidence와
+따로 곱하지 않고, 관측 source이면서 실제 검증된 교집합을 직접 가중한
+`observation_verified_evidence_by_metric`만 사용한다. 배경 교집합은
+`background_verified_evidence_by_metric`에 별도로 저장하며, 두 검증 채널의
+합은 path evidence와 일치해야 한다. 따라서 공간적으로 분리된 관측 origin과
+검증 evidence가 거짓 nonzero trust를 만들지 않는다. 이 배열과 최종 집계값은
+episode schema v16에 보존된다.
 
 ### M0의 엄밀한 경계
 

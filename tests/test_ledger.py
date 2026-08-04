@@ -279,7 +279,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
 
         manifest = loaded.manifest
-        self.assertEqual(manifest["schema_version"], 15)
+        self.assertEqual(manifest["schema_version"], 16)
         self.assertIs(manifest["baseline_lineage_available"], False)
         self.assertIs(manifest["reward_available"], False)
         self.assertNotIn("baseline_scores", loaded.arrays)
@@ -306,17 +306,17 @@ class EpisodeLedgerTests(unittest.TestCase):
             1.0,
         )
         self.assertEqual(
-            manifest["trust_components"]["path_evidence"],
-            self.snapshot.trust_components["path_evidence"],
-        )
-        self.assertEqual(
-            manifest["trust_components"]["observation_evidence"],
-            self.snapshot.trust_components["observation_evidence"],
+            manifest["trust_components"]["observation_verified_evidence"],
+            self.snapshot.trust_components[
+                "observation_verified_evidence"
+            ],
         )
         for name in (
             "forecast_confidence",
             "path_evidence_by_metric",
-            "observation_evidence_by_metric",
+            "observation_source_fraction_by_metric",
+            "observation_verified_evidence_by_metric",
+            "background_verified_evidence_by_metric",
         ):
             np.testing.assert_array_equal(
                 loaded.arrays[name],
@@ -1016,6 +1016,88 @@ class EpisodeLedgerTests(unittest.TestCase):
                     (len(context_names),),
                 )
 
+    def test_schema_fifteen_evidence_contract_remains_verifiable(
+        self,
+    ) -> None:
+        episode = self.episode("schema-15-evidence")
+        target = self.ledger.append(episode)
+        arrays_path = target / "sensitivity_arrays.npz"
+        manifest_path = target / "manifest.json"
+        checksums_path = target / "checksums.json"
+
+        with np.load(arrays_path, allow_pickle=False) as archive:
+            arrays = {name: archive[name].copy() for name in archive.files}
+        arrays["observation_evidence_by_metric"] = arrays.pop(
+            "observation_source_fraction_by_metric"
+        )
+        arrays.pop("observation_verified_evidence_by_metric")
+        arrays.pop("background_verified_evidence_by_metric")
+        np.savez_compressed(arrays_path, **arrays)
+        arrays_hash = hashlib.sha256(arrays_path.read_bytes()).hexdigest()
+
+        manifest = json.loads(manifest_path.read_text("utf-8"))
+        manifest["schema_version"] = 15
+        manifest["units"]["observation_evidence_by_metric"] = (
+            manifest["units"].pop(
+                "observation_source_fraction_by_metric"
+            )
+        )
+        manifest["units"].pop("observation_verified_evidence_by_metric")
+        manifest["units"].pop("background_verified_evidence_by_metric")
+        joint_trust = manifest["trust_components"].pop(
+            "observation_verified_evidence"
+        )
+        manifest["trust_components"].update(
+            path_evidence=1.0,
+            observation_evidence=joint_trust,
+        )
+        manifest["arrays"] = {
+            name: {"shape": list(value.shape), "dtype": str(value.dtype)}
+            for name, value in arrays.items()
+        }
+        manifest_text = json.dumps(
+            manifest,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        manifest_path.write_text(manifest_text, encoding="utf-8")
+        manifest_hash = hashlib.sha256(
+            manifest_text.encode("utf-8")
+        ).hexdigest()
+        checksums = json.loads(checksums_path.read_text("utf-8"))
+        checksums["manifest.json"] = manifest_hash
+        checksums["sensitivity_arrays.npz"] = arrays_hash
+        checksums_path.write_text(
+            json.dumps(
+                checksums,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            encoding="utf-8",
+        )
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute("DROP TRIGGER episodes_no_update")
+            connection.execute(
+                """
+                UPDATE episodes
+                SET manifest_sha256 = ?, arrays_sha256 = ?
+                WHERE episode_id = ?
+                """,
+                (manifest_hash, arrays_hash, episode.episode_id),
+            )
+
+        reopened = EpisodeLedger(self.root)
+        reopened.verify(episode.episode_id)
+        loaded = reopened.load(episode.episode_id)
+        self.assertEqual(loaded.manifest["schema_version"], 15)
+        self.assertIn("observation_evidence_by_metric", loaded.arrays)
+        self.assertNotIn(
+            "observation_verified_evidence_by_metric",
+            loaded.arrays,
+        )
+
     def test_duplicate_episode_id_is_rejected(self) -> None:
         episode = self.episode()
         self.ledger.append(episode)
@@ -1217,6 +1299,33 @@ class EpisodeLedgerTests(unittest.TestCase):
                     snapshot=replace(
                         self.snapshot,
                         path_evidence_by_metric=invalid_evidence,
+                    ),
+                )
+            )
+
+        invalid_joint_path = self.snapshot.path_evidence_by_metric.clone()
+        invalid_joint_observation = (
+            self.snapshot.observation_verified_evidence_by_metric.clone()
+        )
+        invalid_joint_background = (
+            self.snapshot.background_verified_evidence_by_metric.clone()
+        )
+        invalid_joint_path[0, 0] = 0.5
+        invalid_joint_observation[0, 0] = 0.4
+        invalid_joint_background[0, 0] = 0.2
+        with self.assertRaisesRegex(ValueError, "channels do not close"):
+            self.ledger.append(
+                replace(
+                    self.episode("bad-joint-evidence"),
+                    snapshot=replace(
+                        self.snapshot,
+                        path_evidence_by_metric=invalid_joint_path,
+                        observation_verified_evidence_by_metric=(
+                            invalid_joint_observation
+                        ),
+                        background_verified_evidence_by_metric=(
+                            invalid_joint_background
+                        ),
                     ),
                 )
             )

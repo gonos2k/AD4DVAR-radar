@@ -29,6 +29,7 @@ from advar.nowcast import (  # noqa: E402
 )
 from advar.physics import dbz_to_echo, echo_to_dbz  # noqa: E402
 from advar.sensitivity import (  # noqa: E402
+    _metric_evidence_ratios,
     SensitivityConfig,
     compute_sensitivity_snapshot,
     extract_context_features,
@@ -381,7 +382,15 @@ class SensitivityTests(unittest.TestCase):
         )
         self.assertEqual(snapshot.path_evidence_by_metric.shape, (18, 1))
         self.assertEqual(
-            snapshot.observation_evidence_by_metric.shape,
+            snapshot.observation_source_fraction_by_metric.shape,
+            (18, 1),
+        )
+        self.assertEqual(
+            snapshot.observation_verified_evidence_by_metric.shape,
+            (18, 1),
+        )
+        self.assertEqual(
+            snapshot.background_verified_evidence_by_metric.shape,
             (18, 1),
         )
         self.assertEqual(
@@ -1243,15 +1252,14 @@ class SensitivityTests(unittest.TestCase):
             "linearity",
             "verification",
             "metric_support",
-            "observation_evidence",
         ):
             self.assertAlmostEqual(
                 conflict.trust_components[name],
                 baseline.trust_components[name],
             )
         self.assertLess(
-            conflict.trust_components["path_evidence"],
-            baseline.trust_components["path_evidence"],
+            conflict.trust_components["observation_verified_evidence"],
+            baseline.trust_components["observation_verified_evidence"],
         )
         self.assertLess(
             conflict.trust_score,
@@ -1291,43 +1299,44 @@ class SensitivityTests(unittest.TestCase):
         baseline_available = (
             baseline.metric_available
             & torch.isfinite(baseline.path_evidence_by_metric)
-            & torch.isfinite(baseline.observation_evidence_by_metric)
+            & torch.isfinite(
+                baseline.observation_verified_evidence_by_metric
+            )
         )
         unverified_available = (
             unverified.metric_available
             & torch.isfinite(unverified.path_evidence_by_metric)
-            & torch.isfinite(unverified.observation_evidence_by_metric)
+            & torch.isfinite(
+                unverified.observation_verified_evidence_by_metric
+            )
         )
-        baseline_path_evidence = float(
-            baseline.path_evidence_by_metric[baseline_available].mean()
-        )
-        baseline_observation_evidence = float(
-            baseline.observation_evidence_by_metric[
+        baseline_observation_verified_evidence = float(
+            baseline.observation_verified_evidence_by_metric[
                 baseline_available
             ].mean()
         )
-        unverified_path_evidence = float(
-            unverified.path_evidence_by_metric[unverified_available].mean()
+        unverified_observation_verified_evidence = float(
+            unverified.observation_verified_evidence_by_metric[
+                unverified_available
+            ].mean()
         )
         self.assertAlmostEqual(
-            baseline.trust_components["path_evidence"],
-            baseline_path_evidence,
+            baseline.trust_components["observation_verified_evidence"],
+            baseline_observation_verified_evidence,
         )
         self.assertAlmostEqual(
-            baseline.trust_components["observation_evidence"],
-            baseline_observation_evidence,
+            unverified.trust_components["observation_verified_evidence"],
+            unverified_observation_verified_evidence,
         )
-        self.assertAlmostEqual(
-            unverified.trust_components["path_evidence"],
-            unverified_path_evidence,
+        self.assertLess(
+            unverified_observation_verified_evidence,
+            baseline_observation_verified_evidence,
         )
-        self.assertLess(unverified_path_evidence, baseline_path_evidence)
         for name in (
             "linearity",
             "verification",
             "metric_support",
             "pair_consistency",
-            "observation_evidence",
         ):
             self.assertAlmostEqual(
                 unverified.trust_components[name],
@@ -1336,9 +1345,38 @@ class SensitivityTests(unittest.TestCase):
         self.assertAlmostEqual(
             unverified.trust_score,
             baseline.trust_score
-            * unverified_path_evidence
-            / baseline_path_evidence,
+            * unverified_observation_verified_evidence
+            / baseline_observation_verified_evidence,
         )
+
+    def test_joint_evidence_rejects_spatially_disjoint_marginals(
+        self,
+    ) -> None:
+        weight = torch.ones((2, 2), dtype=torch.float64)
+        observation_source = torch.tensor(
+            [[1.0, 1.0], [0.0, 0.0]],
+            dtype=torch.float64,
+        )
+        background_verified = 1.0 - observation_source
+        evidence = _metric_evidence_ratios(
+            weight,
+            torch.ones_like(weight),
+            background_verified,
+            observation_source,
+            torch.zeros_like(weight),
+            background_verified,
+            self.sensitivity_config.epsilon,
+        )
+
+        self.assertIsNotNone(evidence)
+        assert evidence is not None
+        path, observation_source_fraction, observation_verified, background = (
+            evidence
+        )
+        self.assertEqual(float(path), 0.5)
+        self.assertEqual(float(observation_source_fraction), 0.5)
+        self.assertEqual(float(observation_verified), 0.0)
+        self.assertEqual(float(background), 0.5)
 
     def test_m0_uses_the_issued_forecast_confidence(self) -> None:
         snapshot = compute_sensitivity_snapshot(
