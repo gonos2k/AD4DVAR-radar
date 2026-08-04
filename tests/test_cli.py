@@ -78,6 +78,9 @@ class CliTests(unittest.TestCase):
             maximum_pair_velocity_disagreement_mps=10.0,
             maximum_pair_growth_disagreement=0.0953,
             maximum_local_growth_log_error_per_step=0.4055,
+            p1_motion_saturation_safe_margin_mps=2.0,
+            p1_growth_saturation_safe_margin_per_step=0.04879,
+            p1_saturation_uncertainty_multiplier=4.0,
             minimum_pair_psr_advantage=3.0,
             minimum_pair_confidence_ratio=1.5,
             long_pair_confidence_penalty=0.5,
@@ -198,6 +201,12 @@ class CliTests(unittest.TestCase):
             "0.05",
             "--forecast-log-growth-confidence-scale",
             "1",
+            "--p1-motion-saturation-safe-margin-mps",
+            "2",
+            "--p1-growth-saturation-safe-margin-per-step",
+            "0.04879",
+            "--p1-saturation-uncertainty-multiplier",
+            "4",
             "--single-pair-uncertainty-multiplier",
             "2",
             "--persistence-uncertainty-multiplier",
@@ -278,6 +287,8 @@ class CliTests(unittest.TestCase):
             "maximum_growth_saturation_excess",
             "posterior_velocity_uncertainty_mps",
             "posterior_log_growth_uncertainty_per_step",
+            "p1_velocity_saturation_uncertainty_mps",
+            "p1_log_growth_saturation_uncertainty_per_step",
             "forecast_confidence",
             "radar_anchored_valid_mask",
             "radar_state_anchored_valid_mask",
@@ -354,11 +365,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v46",
+                    "nowcast-npz-v47",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v38",
+                    "forecast-run-v39",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -677,6 +688,11 @@ class CliTests(unittest.TestCase):
                     loaded.metadata.posterior_velocity_uncertainty_mps
                 )
             )
+            self.assertTrue(
+                torch.isnan(
+                    loaded.metadata.p1_velocity_saturation_uncertainty_mps
+                )
+            )
             self.assertFalse(bool(torch.any(loaded.forecast_confidence)))
             self.assertTrue(
                 np.isnan(loaded.metadata.minimum_growth_overlap_support)
@@ -943,6 +959,20 @@ class CliTests(unittest.TestCase):
                         np.isfinite(
                             result[
                                 "posterior_log_growth_uncertainty_per_step"
+                            ].item()
+                        )
+                    )
+                    self.assertTrue(
+                        np.isfinite(
+                            result[
+                                "p1_velocity_saturation_uncertainty_mps"
+                            ].item()
+                        )
+                    )
+                    self.assertTrue(
+                        np.isfinite(
+                            result[
+                                "p1_log_growth_saturation_uncertainty_per_step"
                             ].item()
                         )
                     )

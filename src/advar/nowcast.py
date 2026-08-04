@@ -74,6 +74,9 @@ class NowcastConfig:
     forecast_confidence_length_scale_m: float = 10_000.0
     forecast_log_growth_uncertainty_per_step: float = 0.05
     forecast_log_growth_confidence_scale: float = 1.0
+    p1_motion_saturation_safe_margin_mps: float = 2.0
+    p1_growth_saturation_safe_margin_per_step: float = math.log(1.05)
+    p1_saturation_uncertainty_multiplier: float = 4.0
     single_pair_uncertainty_multiplier: float = 2.0
     persistence_uncertainty_multiplier: float = 4.0
     background_tendency_age_uncertainty_scale_minutes: float = 60.0
@@ -124,6 +127,9 @@ class NowcastConfig:
             self.forecast_confidence_length_scale_m,
             self.forecast_log_growth_uncertainty_per_step,
             self.forecast_log_growth_confidence_scale,
+            self.p1_motion_saturation_safe_margin_mps,
+            self.p1_growth_saturation_safe_margin_per_step,
+            self.p1_saturation_uncertainty_multiplier,
             self.single_pair_uncertainty_multiplier,
             self.persistence_uncertainty_multiplier,
             self.background_tendency_age_uncertainty_scale_minutes,
@@ -245,6 +251,20 @@ class NowcastConfig:
             raise ValueError(
                 "forecast_log_growth_confidence_scale must be positive"
             )
+        p1_saturation_values = {
+            "p1_motion_saturation_safe_margin_mps": (
+                self.p1_motion_saturation_safe_margin_mps
+            ),
+            "p1_growth_saturation_safe_margin_per_step": (
+                self.p1_growth_saturation_safe_margin_per_step
+            ),
+            "p1_saturation_uncertainty_multiplier": (
+                self.p1_saturation_uncertainty_multiplier
+            ),
+        }
+        for name, value in p1_saturation_values.items():
+            if isinstance(value, bool) or value <= 0:
+                raise ValueError(f"{name} must be positive")
         if isinstance(self.single_pair_uncertainty_multiplier, bool) or (
             self.single_pair_uncertainty_multiplier < 1.0
         ):
@@ -954,6 +974,8 @@ class ForecastMetadata:
     maximum_growth_saturation_excess: Tensor
     posterior_velocity_uncertainty_mps: Tensor
     posterior_log_growth_uncertainty_per_step: Tensor
+    p1_velocity_saturation_uncertainty_mps: Tensor
+    p1_log_growth_saturation_uncertainty_per_step: Tensor
     minimum_phase_correlation_psr: Tensor
     tendency_pair_count: int
     tendency_source: TendencySource
@@ -1093,6 +1115,14 @@ def state_metadata_digest(
                 ),
                 "posterior_log_growth_uncertainty_per_step": tensor_digest(
                     metadata.posterior_log_growth_uncertainty_per_step
+                ),
+                "p1_velocity_saturation_uncertainty_mps": tensor_digest(
+                    metadata.p1_velocity_saturation_uncertainty_mps
+                ),
+                "p1_log_growth_saturation_uncertainty_per_step": (
+                    tensor_digest(
+                        metadata.p1_log_growth_saturation_uncertainty_per_step
+                    )
                 ),
                 "minimum_phase_correlation_psr": tensor_digest(
                     metadata.minimum_phase_correlation_psr
@@ -1996,6 +2026,14 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         raise ValueError(
             "posterior_log_growth_uncertainty_per_step must be scalar"
         )
+    if metadata.p1_velocity_saturation_uncertainty_mps.ndim != 0:
+        raise ValueError(
+            "p1_velocity_saturation_uncertainty_mps must be scalar"
+        )
+    if metadata.p1_log_growth_saturation_uncertainty_per_step.ndim != 0:
+        raise ValueError(
+            "p1_log_growth_saturation_uncertainty_per_step must be scalar"
+        )
     selection_counts = {
         TendencyPairSelection.NONE: 0,
         TendencyPairSelection.PERSISTENCE: 0,
@@ -2097,24 +2135,29 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         or not math.isnan(metadata.minimum_growth_overlap_area_km2)
     ):
         raise ValueError("P1 metadata cannot retain P0 path evidence")
-    posterior_values = (
+    p1_uncertainty_values = (
         metadata.posterior_velocity_uncertainty_mps,
         metadata.posterior_log_growth_uncertainty_per_step,
+        metadata.p1_velocity_saturation_uncertainty_mps,
+        metadata.p1_log_growth_saturation_uncertainty_per_step,
     )
-    if any(bool(torch.isinf(value)) for value in posterior_values):
-        raise ValueError("P1 posterior uncertainties cannot be infinite")
-    posterior_available = tuple(
-        bool(torch.isfinite(value)) for value in posterior_values
+    if any(bool(torch.isinf(value)) for value in p1_uncertainty_values):
+        raise ValueError("P1 uncertainties cannot be infinite")
+    p1_uncertainty_available = tuple(
+        bool(torch.isfinite(value)) for value in p1_uncertainty_values
     )
-    if posterior_available[0] != posterior_available[1]:
-        raise ValueError("P1 posterior uncertainties must be jointly available")
     if metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
-        if not all(bool(torch.isnan(value)) for value in posterior_values):
+        if not all(
+            bool(torch.isnan(value)) for value in p1_uncertainty_values
+        ):
             raise ValueError("P0 metadata cannot contain P1 uncertainty")
-    elif all(posterior_available) and any(
-        float(value) < 0.0 for value in posterior_values
-    ):
-        raise ValueError("P1 posterior uncertainties cannot be negative")
+    else:
+        if len(set(p1_uncertainty_available)) != 1:
+            raise ValueError("P1 uncertainties must be jointly available")
+        if all(p1_uncertainty_available) and any(
+            float(value) < 0.0 for value in p1_uncertainty_values
+        ):
+            raise ValueError("P1 uncertainties cannot be negative")
     background_fraction = metadata.background_contribution_fraction
     if (
         not math.isfinite(background_fraction)
@@ -2753,6 +2796,12 @@ def estimate_prepared_state(
             tendency.displacement_yx.new_full((), torch.nan)
         ),
         posterior_log_growth_uncertainty_per_step=(
+            tendency.log_growth_per_step.new_full((), torch.nan)
+        ),
+        p1_velocity_saturation_uncertainty_mps=(
+            tendency.displacement_yx.new_full((), torch.nan)
+        ),
+        p1_log_growth_saturation_uncertainty_per_step=(
             tendency.log_growth_per_step.new_full((), torch.nan)
         ),
         minimum_phase_correlation_psr=(
@@ -5046,9 +5095,21 @@ def _forecast_velocity_uncertainty_mps(
         metadata.dynamics_source is DynamicsSource.P1_VARIATIONAL
         and bool(torch.isfinite(posterior))
     ):
-        return posterior.to(
+        posterior = posterior.to(
             dtype=state.echo_linear.dtype,
             device=state.echo_linear.device,
+        )
+        model_error = posterior.new_tensor(
+            config.forecast_velocity_uncertainty_mps
+        )
+        saturation = metadata.p1_velocity_saturation_uncertainty_mps.to(
+            dtype=posterior.dtype,
+            device=posterior.device,
+        )
+        return torch.sqrt(
+            posterior.square()
+            + model_error.square()
+            + saturation.square()
         )
     uncertainty = state.echo_linear.new_tensor(
         config.forecast_velocity_uncertainty_mps
@@ -5068,10 +5129,14 @@ def _forecast_velocity_uncertainty_mps(
 
 
 def _p1_posterior_is_available(metadata: ForecastMetadata) -> bool:
-    return bool(
-        torch.isfinite(metadata.posterior_velocity_uncertainty_mps)
-    ) and bool(
-        torch.isfinite(metadata.posterior_log_growth_uncertainty_per_step)
+    return all(
+        bool(torch.isfinite(value))
+        for value in (
+            metadata.posterior_velocity_uncertainty_mps,
+            metadata.posterior_log_growth_uncertainty_per_step,
+            metadata.p1_velocity_saturation_uncertainty_mps,
+            metadata.p1_log_growth_saturation_uncertainty_per_step,
+        )
     )
 
 
@@ -5177,9 +5242,23 @@ def _forecast_log_growth_uncertainty(
         metadata.dynamics_source is DynamicsSource.P1_VARIATIONAL
         and bool(torch.isfinite(posterior))
     ):
-        uncertainty_per_step = posterior.to(
+        posterior = posterior.to(
             dtype=state.echo_linear.dtype,
             device=state.echo_linear.device,
+        )
+        model_error = posterior.new_tensor(
+            config.forecast_log_growth_uncertainty_per_step
+        )
+        saturation = (
+            metadata.p1_log_growth_saturation_uncertainty_per_step.to(
+                dtype=posterior.dtype,
+                device=posterior.device,
+            )
+        )
+        uncertainty_per_step = torch.sqrt(
+            posterior.square()
+            + model_error.square()
+            + saturation.square()
         )
     else:
         uncertainty_per_step = state.echo_linear.new_tensor(

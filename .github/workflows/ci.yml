@@ -110,8 +110,8 @@ jobs:
 
           path = Path(os.environ["RUNNER_TEMP"]) / "forecast.npz"
           with np.load(path, allow_pickle=False) as result:
-              assert result["output_contract_version"].item() == "nowcast-npz-v46"
-              assert result["forecast_run_artifact_version"].item() == "forecast-run-v38"
+              assert result["output_contract_version"].item() == "nowcast-npz-v47"
+              assert result["forecast_run_artifact_version"].item() == "forecast-run-v39"
               assert result["operational_calibration_digest"].item() == ""
               assert not result["operational_calibration_manifest_present"].item()
               assert result["operational_calibration_manifest_json"].item() == ""
@@ -129,6 +129,8 @@ jobs:
               assert "forecast_local_growth_verified_support" in result
               assert "forecast_local_dynamics_verified_support" in result
               assert "forecast_confidence" in result
+              assert "p1_velocity_saturation_uncertainty_mps" in result
+              assert "p1_log_growth_saturation_uncertainty_per_step" in result
               assert "motion_evidence_uncertainty_multiplier" in result
               assert "radar_dynamics_anchored_valid_mask" in result
               assert "forecast_position_uncertainty_m" in result
