@@ -126,6 +126,10 @@ class ForecastRunArtifactTests(unittest.TestCase):
             result.metadata.verified_source_support,
         )
         torch.testing.assert_close(
+            loaded.metadata.local_dynamics_verified_support,
+            result.metadata.local_dynamics_verified_support,
+        )
+        torch.testing.assert_close(
             loaded.metadata.observation_verified_source_support,
             result.metadata.observation_verified_source_support,
         )
@@ -140,6 +144,10 @@ class ForecastRunArtifactTests(unittest.TestCase):
         torch.testing.assert_close(
             loaded.forecast_verified_support,
             result.forecast_verified_support,
+        )
+        torch.testing.assert_close(
+            loaded.forecast_local_dynamics_verified_support,
+            result.forecast_local_dynamics_verified_support,
         )
         torch.testing.assert_close(
             loaded.forecast_observation_verified_support,
@@ -728,6 +736,26 @@ class ForecastRunArtifactTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 ValueError,
                 "forecast verified support mismatch",
+            ):
+                load_forecast_run(path)
+
+    def test_load_rejects_resigned_local_dynamics_support(self) -> None:
+        result = nowcast(self.frames())
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                arrays: dict[str, Any] = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                    if name != "forecast_run_artifact_digest"
+                }
+            arrays["forecast_local_dynamics_verified_support"][0, 0, 0] = 0.0
+            self._save_arrays(path, arrays)
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "forecast local dynamics verified support mismatch",
             ):
                 load_forecast_run(path)
 

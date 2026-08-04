@@ -91,6 +91,7 @@ def observed_metadata(state: RadarState) -> ForecastMetadata:
         background_source_support=torch.zeros_like(state.echo_linear),
         path_verified_source_support=torch.ones_like(state.echo_linear),
         verified_source_support=torch.ones_like(state.echo_linear),
+        local_dynamics_verified_support=torch.ones_like(state.echo_linear),
         observation_verified_source_support=torch.ones_like(
             state.echo_linear
         ),
@@ -2055,6 +2056,68 @@ class NowcastTests(unittest.TestCase):
 
         self.assertTrue(bool(path_verified[1, 4, 4]))
 
+    def test_local_dynamics_evidence_requires_a_nearby_past_echo(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = replace(self.config, pair_echo_dilation_px=0)
+        current_echo = torch.zeros((8, 8), dtype=torch.float64)
+        echo = dbz_to_linear(current_echo.new_tensor(20.0), config)
+        current_echo[2, 2] = echo
+        current_echo[5, 5] = echo
+        state_verified = torch.ones_like(current_echo)
+        path_masks = torch.zeros((3, 8, 8), dtype=torch.bool)
+        path_masks[1, 2, 2] = True
+
+        local = nowcast_module._local_dynamics_verified_support(
+            current_echo,
+            state_verified,
+            path_masks,
+            config,
+            None,
+        )
+
+        self.assertEqual(float(local[2, 2]), 1.0)
+        self.assertEqual(float(local[5, 5]), 0.0)
+        self.assertEqual(float(local[0, 0]), 1.0)
+
+    def test_local_dynamics_evidence_gates_confidence_and_radar_mask(
+        self,
+    ) -> None:
+        config = replace(self.config, horizon_minutes=10)
+        echo = torch.zeros((8, 8), dtype=torch.float64)
+        detected = dbz_to_linear(echo.new_tensor(20.0), config)
+        echo[2, 2] = detected
+        echo[5, 5] = detected
+        state = RadarState(
+            echo_linear=echo,
+            displacement_yx=torch.zeros(2, dtype=torch.float64),
+            log_growth_per_step=torch.zeros((), dtype=torch.float64),
+        )
+        local = torch.ones_like(echo)
+        local[5, 5] = 0.0
+        metadata = replace(
+            observed_metadata(state),
+            local_dynamics_verified_support=local,
+        )
+        latest = linear_to_dbz(echo, config)
+        frames = torch.stack((latest, latest, latest))
+
+        result = forecast_result_from_state(
+            state,
+            metadata,
+            config,
+            run=ForecastRunContract.from_inputs(
+                config,
+                frames,
+                torch.ones_like(frames, dtype=torch.bool),
+                None,
+            ),
+        )
+
+        self.assertGreater(float(result.forecast_confidence[0, 2, 2]), 0.0)
+        self.assertEqual(float(result.forecast_confidence[0, 5, 5]), 0.0)
+        self.assertTrue(bool(result.radar_dynamics_anchored_valid_mask[0, 2, 2]))
+        self.assertFalse(bool(result.radar_dynamics_anchored_valid_mask[0, 5, 5]))
+
     def test_operational_publication_excludes_unverified_persistence(
         self,
     ) -> None:
@@ -2387,7 +2450,8 @@ class NowcastTests(unittest.TestCase):
             forecast_velocity_uncertainty_mps=1.0,
             forecast_confidence_length_scale_m=10_000.0,
         )
-        frames = torch.full((3, 8, 8), 20.0)
+        frame = linear_to_dbz(self.echo, config)
+        frames = torch.stack((frame, frame, frame))
 
         result = nowcast(frames, config)
 
@@ -2646,6 +2710,7 @@ class NowcastTests(unittest.TestCase):
             background_source_support=torch.zeros_like(support),
             path_verified_source_support=support,
             verified_source_support=support,
+            local_dynamics_verified_support=support,
             observation_verified_source_support=support,
             background_verified_source_support=torch.zeros_like(support),
             motion_disagreement_px=torch.zeros((), dtype=torch.float64),
