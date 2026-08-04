@@ -16,6 +16,7 @@ from .ledger import (
 from .nowcast import (
     DataStatus,
     DynamicsSource,
+    ForecastEvidenceFields,
     ForecastMetadata,
     ForecastResult,
     NowcastConfig,
@@ -25,6 +26,7 @@ from .nowcast import (
     StatePathProvenance,
     TendencyPairSelection,
     TendencySource,
+    forecast_evidence_fields,
     nowcast,
 )
 from .sensitivity import (
@@ -50,6 +52,7 @@ __all__ = [
     "DynamicsSource",
     "DirectSensitivity",
     "EpisodeLedger",
+    "ForecastEvidenceFields",
     "ForecastMetadata",
     "ForecastResult",
     "LoadedEpisode",
@@ -68,6 +71,7 @@ __all__ = [
     "algorithm_bundle_digest",
     "compute_sensitivity_snapshot",
     "compute_sensitivity_snapshot_from_run",
+    "forecast_evidence_fields",
     "load_forecast_run",
     "nowcast",
     "operational_runtime_profile_digest",

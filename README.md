@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.28
+# ADVAR 3-frame radar nowcast v0.29
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -473,7 +473,9 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
   `forecast_verified_support`, `forecast_local_motion_verified_support`,
   `forecast_local_growth_verified_support`,
   `forecast_local_dynamics_verified_support`는 각 support를 선행시간별로
-  수송한 진단이다. live confidence와
+  수송한 진단이다. 이 선행시간 evidence는 에코와 같은 remap cell에서
+  모든 채널을 한 번에 수송한 immutable `ForecastEvidenceFields`로 계산하여,
+  valid-mask·artifact·M0가 동일한 값을 공유한다. live confidence와
   dynamics-anchored mask는 국지 dynamics evidence도 함께 사용한다.
   운용모드는 `minimum_publish_confidence`,
   `minimum_publish_observation_verified_support`,

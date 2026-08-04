@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, fields, replace
 from datetime import datetime, timezone
 from enum import Enum
 import json
@@ -1771,6 +1771,26 @@ def _validate_state_for_run(
 
 
 @dataclass(frozen=True)
+class ForecastEvidenceFields:
+    source_support: Tensor
+    path_verified_support: Tensor
+    verified_support: Tensor
+    local_motion_verified_support: Tensor
+    local_growth_verified_support: Tensor
+    local_dynamics_verified_support: Tensor
+    observation_source_support: Tensor
+    background_source_support: Tensor
+    observation_verified_support: Tensor
+    background_verified_support: Tensor
+    velocity_uncertainty_mps: Tensor
+    motion_evidence_uncertainty_multiplier: Tensor
+    growth_evidence_uncertainty_multiplier: Tensor
+    position_uncertainty_m: Tensor
+    log_growth_uncertainty: Tensor
+    confidence: Tensor
+
+
+@dataclass(frozen=True)
 class ForecastResult:
     forecast_dbz: Tensor
     valid_mask: Tensor
@@ -1781,6 +1801,7 @@ class ForecastResult:
     run: ForecastRunContract
     state_metadata_digest: str
     forecast_run_digest: str
+    evidence: ForecastEvidenceFields
     audit: ForecastAudit | None = None
 
     @property
@@ -1811,101 +1832,51 @@ class ForecastResult:
 
     @property
     def forecast_verified_support(self) -> Tensor:
-        return _advected_support_by_lead(
-            self.metadata.verified_source_support,
-            self.state,
-            self.run.config,
-        )
+        return self.evidence.verified_support
 
     @property
     def forecast_local_dynamics_verified_support(self) -> Tensor:
-        return _advected_support_by_lead(
-            self.metadata.local_dynamics_verified_support,
-            self.state,
-            self.run.config,
-        )
+        return self.evidence.local_dynamics_verified_support
 
     @property
     def forecast_local_motion_verified_support(self) -> Tensor:
-        return _advected_support_by_lead(
-            self.metadata.local_motion_verified_support,
-            self.state,
-            self.run.config,
-        )
+        return self.evidence.local_motion_verified_support
 
     @property
     def forecast_local_growth_verified_support(self) -> Tensor:
-        return _advected_support_by_lead(
-            self.metadata.local_growth_verified_support,
-            self.state,
-            self.run.config,
-        )
+        return self.evidence.local_growth_verified_support
 
     @property
     def forecast_observation_verified_support(self) -> Tensor:
-        return _advected_support_by_lead(
-            self.metadata.observation_verified_source_support,
-            self.state,
-            self.run.config,
-        )
+        return self.evidence.observation_verified_support
 
     @property
     def forecast_background_verified_support(self) -> Tensor:
-        return _advected_support_by_lead(
-            self.metadata.background_verified_source_support,
-            self.state,
-            self.run.config,
-        )
+        return self.evidence.background_verified_support
 
     @property
     def forecast_velocity_uncertainty_mps(self) -> Tensor:
-        return _forecast_velocity_uncertainty_mps(
-            self.state,
-            self.metadata,
-            self.run.config,
-        )
+        return self.evidence.velocity_uncertainty_mps
 
     @property
     def motion_evidence_uncertainty_multiplier(self) -> Tensor:
-        return _dynamics_evidence_uncertainty_multiplier(
-            self.state,
-            self.metadata,
-            self.run.config,
-            pair_count=self.metadata.motion_pair_count,
-        )
+        return self.evidence.motion_evidence_uncertainty_multiplier
 
     @property
     def growth_evidence_uncertainty_multiplier(self) -> Tensor:
-        return _dynamics_evidence_uncertainty_multiplier(
-            self.state,
-            self.metadata,
-            self.run.config,
-            pair_count=self.metadata.growth_pair_count,
-        )
+        return self.evidence.growth_evidence_uncertainty_multiplier
 
     @property
     def forecast_position_uncertainty_m(self) -> Tensor:
-        return _forecast_position_uncertainty_m(
-            self.state,
-            self.metadata,
-            self.run.config,
-        )
+        return self.evidence.position_uncertainty_m
 
     @property
     def forecast_log_growth_uncertainty(self) -> Tensor:
-        return _forecast_log_growth_uncertainty(
-            self.state,
-            self.metadata,
-            self.run.config,
-        )
+        return self.evidence.log_growth_uncertainty
 
     @property
     def forecast_confidence(self) -> Tensor:
-        return _forecast_confidence(
-            self.state,
-            self.metadata,
-            self.run.config,
-        )
+        return self.evidence.confidence
 
     @property
     def radar_anchored_valid_mask(self) -> Tensor:
@@ -1960,35 +1931,19 @@ class ForecastResult:
 
     @property
     def forecast_path_verified_support(self) -> Tensor:
-        return _advected_support_by_lead(
-            self.metadata.path_verified_source_support,
-            self.state,
-            self.run.config,
-        )
+        return self.evidence.path_verified_support
 
     @property
     def forecast_source_support(self) -> Tensor:
-        return _advected_support_by_lead(
-            self.metadata.source_support,
-            self.state,
-            self.run.config,
-        )
+        return self.evidence.source_support
 
     @property
     def forecast_observation_source_support(self) -> Tensor:
-        return _advected_support_by_lead(
-            self.metadata.observation_source_support,
-            self.state,
-            self.run.config,
-        )
+        return self.evidence.observation_source_support
 
     @property
     def forecast_background_source_support(self) -> Tensor:
-        return _advected_support_by_lead(
-            self.metadata.background_source_support,
-            self.state,
-            self.run.config,
-        )
+        return self.evidence.background_source_support
 
     def validate_issuance(self) -> None:
         if tensor_digest(self.forecast_dbz) != self.forecast_dbz_digest:
@@ -2522,7 +2477,7 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
     ):
         raise ValueError("background age must be finite and nonnegative")
     with torch.no_grad():
-        _, expected_forecast, expected_valid, _, _ = (
+        _, expected_forecast, expected_valid, _, _, expected_evidence = (
             _forecast_fields_from_state(
                 state,
                 metadata,
@@ -2547,6 +2502,14 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         )
     ):
         raise ValueError("forecast does not close against the issued state")
+    for descriptor in fields(ForecastEvidenceFields):
+        actual_value = getattr(result.evidence, descriptor.name)
+        expected_value = getattr(expected_evidence, descriptor.name)
+        if not torch.equal(actual_value, expected_value):
+            raise ValueError(
+                f"forecast evidence field {descriptor.name} does not close "
+                "against the issued state"
+            )
 
 
 def _validate_state_path_provenance(
@@ -4980,13 +4943,19 @@ def _forecast_fields_from_state(
     Tensor,
     PositivityAudit,
     tuple[TransportAudit, ...],
+    ForecastEvidenceFields,
 ]:
+    current_evidence = _current_evidence_supports(state, metadata)
+    current_fields = torch.cat((state.echo_linear[None], current_evidence))
     forecasts = []
+    evidence_by_lead = []
     transport_audits = []
     for step in range(1, config.forecast_steps + 1):
         displacement = step * state.displacement_yx
         cell = freeze_remap_cell(displacement)
-        moved = remap_core(state.echo_linear, displacement, cell)
+        moved_fields = remap_core(current_fields, displacement, cell)
+        moved = moved_fields[0]
+        evidence_by_lead.append(moved_fields[1:].clamp(0.0, 1.0))
         if audit:
             transport_audits.append(
                 audit_transport(
@@ -5015,7 +4984,13 @@ def _forecast_fields_from_state(
         min_dbz=config.min_dbz,
         max_dbz=config.max_dbz,
     )
-    valid_mask = _forecast_valid_mask(state, metadata, config)
+    evidence = _forecast_evidence_fields_from_supports(
+        torch.stack(evidence_by_lead),
+        state,
+        metadata,
+        config,
+    )
+    valid_mask = _forecast_valid_mask(metadata, config, evidence)
     forecast_dbz = torch.where(
         valid_mask,
         forecast_dbz,
@@ -5027,6 +5002,7 @@ def _forecast_fields_from_state(
         valid_mask,
         final_audit,
         tuple(transport_audits),
+        evidence,
     )
 
 
@@ -5053,6 +5029,7 @@ def forecast_from_state(
         valid_mask,
         final_audit,
         transport_audits,
+        evidence,
     ) = _forecast_fields_from_state(
         state,
         metadata,
@@ -5077,6 +5054,7 @@ def forecast_from_state(
             forecast_dbz_digest,
             valid_mask_digest,
         ),
+        evidence=evidence,
         audit=(
             ForecastAudit(
                 input_echo=input_audit,
@@ -5165,42 +5143,24 @@ def nowcast(
 
 
 def _forecast_valid_mask(
-    state: RadarState,
     metadata: ForecastMetadata,
     config: NowcastConfig,
+    evidence: ForecastEvidenceFields,
 ) -> Tensor:
     if metadata.data_status == DataStatus.UNAVAILABLE:
-        return torch.zeros(
-            (config.forecast_steps,) + state.echo_linear.shape,
-            dtype=torch.bool,
-            device=state.echo_linear.device,
-        )
-    source_support = _advected_support_by_lead(
-        metadata.source_support,
-        state,
-        config,
-    )
-    valid = source_support >= config.min_publish_support
+        return torch.zeros_like(evidence.source_support, dtype=torch.bool)
+    valid = evidence.source_support >= config.min_publish_support
     if config.minimum_publish_verified_support is not None:
-        verified_support = _advected_support_by_lead(
-            metadata.verified_source_support,
-            state,
-            config,
-        )
         valid &= (
-            verified_support >= config.minimum_publish_verified_support
+            evidence.verified_support
+            >= config.minimum_publish_verified_support
         )
     if config.minimum_publish_confidence is not None:
-        valid &= _forecast_confidence(state, metadata, config) >= (
+        valid &= evidence.confidence >= (
             config.minimum_publish_confidence
         )
     if config.minimum_publish_observation_verified_support is not None:
-        observation_verified = _advected_support_by_lead(
-            metadata.observation_verified_source_support,
-            state,
-            config,
-        )
-        valid &= observation_verified >= (
+        valid &= evidence.observation_verified_support >= (
             config.minimum_publish_observation_verified_support
         )
     if (
@@ -5299,65 +5259,139 @@ def _dynamics_evidence_uncertainty_multiplier(
     return state.echo_linear.new_tensor(multiplier)
 
 
-def _forecast_position_uncertainty_m(
+def _current_evidence_supports(
+    state: RadarState,
+    metadata: ForecastMetadata,
+) -> Tensor:
+    return torch.stack(
+        (
+            metadata.source_support,
+            metadata.path_verified_source_support,
+            metadata.verified_source_support,
+            metadata.local_motion_verified_support,
+            metadata.local_growth_verified_support,
+            metadata.local_dynamics_verified_support,
+            metadata.observation_source_support,
+            metadata.background_source_support,
+            metadata.observation_verified_source_support,
+            metadata.background_verified_source_support,
+        )
+    ).to(dtype=state.echo_linear.dtype, device=state.echo_linear.device)
+
+
+def forecast_evidence_fields(
     state: RadarState,
     metadata: ForecastMetadata,
     config: NowcastConfig,
-) -> Tensor:
+) -> ForecastEvidenceFields:
+    current_support = _current_evidence_supports(state, metadata)
+    supports_by_lead = []
+    for step in range(1, config.forecast_steps + 1):
+        displacement = step * state.displacement_yx
+        supports_by_lead.append(
+            remap_core(
+                current_support,
+                displacement,
+                freeze_remap_cell(displacement),
+            ).clamp(0.0, 1.0)
+        )
+    return _forecast_evidence_fields_from_supports(
+        torch.stack(supports_by_lead),
+        state,
+        metadata,
+        config,
+    )
+
+
+def _forecast_evidence_fields_from_supports(
+    supports_by_lead: Tensor,
+    state: RadarState,
+    metadata: ForecastMetadata,
+    config: NowcastConfig,
+) -> ForecastEvidenceFields:
+    (
+        source_support,
+        path_verified_support,
+        verified_support,
+        local_motion_verified_support,
+        local_growth_verified_support,
+        local_dynamics_verified_support,
+        observation_source_support,
+        background_source_support,
+        observation_verified_support,
+        background_verified_support,
+    ) = supports_by_lead.unbind(dim=1)
+
+    velocity_uncertainty = _forecast_velocity_uncertainty_mps(
+        state,
+        metadata,
+        config,
+    )
+    motion_multiplier = _dynamics_evidence_uncertainty_multiplier(
+        state,
+        metadata,
+        config,
+        pair_count=metadata.motion_pair_count,
+    )
+    growth_multiplier = _dynamics_evidence_uncertainty_multiplier(
+        state,
+        metadata,
+        config,
+        pair_count=metadata.growth_pair_count,
+    )
     lead_seconds = torch.arange(
         1,
         config.forecast_steps + 1,
         dtype=state.echo_linear.dtype,
         device=state.echo_linear.device,
     ) * (config.interval_minutes * 60.0)
-    return lead_seconds * _forecast_velocity_uncertainty_mps(
-        state,
-        metadata,
-        config,
-    )
-
-
-def _forecast_confidence(
-    state: RadarState,
-    metadata: ForecastMetadata,
-    config: NowcastConfig,
-) -> Tensor:
-    if (
-        metadata.dynamics_source is DynamicsSource.P1_VARIATIONAL
-        and not _p1_posterior_is_available(metadata)
-    ):
-        return state.echo_linear.new_zeros(
-            (config.forecast_steps,) + state.echo_linear.shape
-        )
-    position_uncertainty = _forecast_position_uncertainty_m(
-        state,
-        metadata,
-        config,
-    )
+    position_uncertainty = lead_seconds * velocity_uncertainty
     growth_uncertainty = _forecast_log_growth_uncertainty(
         state,
         metadata,
         config,
     )
-    decay = torch.exp(
-        -0.5
-        * (
-            (
-                position_uncertainty
-                / config.forecast_confidence_length_scale_m
-            ).square()
-            + (
-                growth_uncertainty
-                / config.forecast_log_growth_confidence_scale
-            ).square()
+    if (
+        metadata.dynamics_source is DynamicsSource.P1_VARIATIONAL
+        and not _p1_posterior_is_available(metadata)
+    ):
+        confidence = torch.zeros_like(local_dynamics_verified_support)
+    else:
+        decay = torch.exp(
+            -0.5
+            * (
+                (
+                    position_uncertainty
+                    / config.forecast_confidence_length_scale_m
+                ).square()
+                + (
+                    growth_uncertainty
+                    / config.forecast_log_growth_confidence_scale
+                ).square()
+            )
         )
+        confidence = (
+            local_dynamics_verified_support * decay[:, None, None]
+        ).clamp(0.0, 1.0)
+
+    return ForecastEvidenceFields(
+        source_support=source_support,
+        path_verified_support=path_verified_support,
+        verified_support=verified_support,
+        local_motion_verified_support=local_motion_verified_support,
+        local_growth_verified_support=local_growth_verified_support,
+        local_dynamics_verified_support=local_dynamics_verified_support,
+        observation_source_support=observation_source_support,
+        background_source_support=background_source_support,
+        observation_verified_support=observation_verified_support,
+        background_verified_support=background_verified_support,
+        velocity_uncertainty_mps=velocity_uncertainty,
+        motion_evidence_uncertainty_multiplier=motion_multiplier,
+        growth_evidence_uncertainty_multiplier=growth_multiplier,
+        position_uncertainty_m=position_uncertainty,
+        log_growth_uncertainty=growth_uncertainty,
+        confidence=confidence,
     )
-    verified_support = _advected_support_by_lead(
-        metadata.local_dynamics_verified_support,
-        state,
-        config,
-    )
-    return (verified_support * decay[:, None, None]).clamp(0.0, 1.0)
 
 
 def _forecast_log_growth_uncertainty(
@@ -5418,23 +5452,6 @@ def _forecast_log_growth_uncertainty(
     )
     growth_sum = torch.cumsum(retention**powers, dim=0)
     return growth_sum * uncertainty_per_step
-
-
-def _advected_support_by_lead(
-    current_support: Tensor,
-    state: RadarState,
-    config: NowcastConfig,
-) -> Tensor:
-    source = current_support.to(
-        dtype=state.echo_linear.dtype,
-        device=state.echo_linear.device,
-    )
-    return torch.stack(
-        tuple(
-            remap(source, step * state.displacement_yx).clamp(0.0, 1.0)
-            for step in range(1, config.forecast_steps + 1)
-        )
-    )
 
 
 def _validate_frames(frames: Tensor) -> None:

@@ -162,7 +162,7 @@ def remap_fractions(
 
 
 def shift_zero(echo: Tensor, dy: int, dx: int) -> Tensor:
-    height, width = echo.shape
+    height, width = echo.shape[-2:]
     padded = F.pad(
         echo,
         (
@@ -174,7 +174,11 @@ def shift_zero(echo: Tensor, dy: int, dx: int) -> Tensor:
     )
     start_y = max(-dy, 0)
     start_x = max(-dx, 0)
-    return padded[start_y : start_y + height, start_x : start_x + width]
+    return padded[
+        ...,
+        start_y : start_y + height,
+        start_x : start_x + width,
+    ]
 
 
 def _validate_echo_shape(echo: Tensor) -> None:
