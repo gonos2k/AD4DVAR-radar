@@ -1,6 +1,12 @@
 """Three-frame radar echo nowcasting."""
 
-from .calibration import CalibrationMetric, OperationalCalibrationManifest
+from .calibration import (
+    CalibrationMetric,
+    CalibrationRegime,
+    OperationalCalibrationManifest,
+    OperationalDataIdentity,
+    algorithm_bundle_digest,
+)
 from .ledger import (
     EpisodeLedger,
     LoadedEpisode,
@@ -13,7 +19,7 @@ from .nowcast import (
     ForecastMetadata,
     ForecastResult,
     NowcastConfig,
-    operational_profile_digest,
+    operational_runtime_profile_digest,
     RadarGridTimeContract,
     RadarState,
     StatePathProvenance,
@@ -39,6 +45,7 @@ __all__ = [
     "AnalysisConfig",
     "AnalysisResult",
     "CalibrationMetric",
+    "CalibrationRegime",
     "DataStatus",
     "DynamicsSource",
     "DirectSensitivity",
@@ -49,6 +56,7 @@ __all__ = [
     "ModelContract",
     "NowcastConfig",
     "OperationalCalibrationManifest",
+    "OperationalDataIdentity",
     "RadarGridTimeContract",
     "RadarState",
     "SensitivityConfig",
@@ -57,11 +65,12 @@ __all__ = [
     "StatePathProvenance",
     "TendencyPairSelection",
     "TendencySource",
+    "algorithm_bundle_digest",
     "compute_sensitivity_snapshot",
     "compute_sensitivity_snapshot_from_run",
     "load_forecast_run",
     "nowcast",
-    "operational_profile_digest",
+    "operational_runtime_profile_digest",
     "save_forecast_run",
     "variational_nowcast",
 ]

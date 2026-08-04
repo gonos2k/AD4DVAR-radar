@@ -12,7 +12,10 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from ._digest import json_digest, tensor_digest
-from .calibration import OperationalCalibrationManifest
+from .calibration import (
+    OperationalCalibrationManifest,
+    OperationalDataIdentity,
+)
 from .diagnostics import EchoPositivityError, PositivityAudit, validate_physical_echo
 from .matrix_free import pcg
 from .nowcast import (
@@ -2139,6 +2142,8 @@ def variational_nowcast(
     operational_calibration_manifest: (
         OperationalCalibrationManifest | None
     ) = None,
+    operational_calibration_approval_digest: str | None = None,
+    operational_data_identity: OperationalDataIdentity | None = None,
     audit: bool = False,
 ) -> tuple[ForecastResult, AnalysisResult]:
     nowcast_config = nowcast_config or NowcastConfig()
@@ -2184,6 +2189,19 @@ def variational_nowcast(
             None
             if operational_calibration_manifest is None
             else operational_calibration_manifest.digest
+        ),
+        operational_calibration_approval_digest=(
+            operational_calibration_approval_digest
+        ),
+        operational_data_identity_json=(
+            None
+            if operational_data_identity is None
+            else operational_data_identity.json
+        ),
+        operational_data_identity_digest=(
+            None
+            if operational_data_identity is None
+            else operational_data_identity.digest
         ),
     )
     forecast = forecast_from_state(
