@@ -1379,10 +1379,20 @@ class VariationalAnalysisTests(unittest.TestCase):
     def test_final_linearization_is_polished_to_stationarity(self) -> None:
         coordinates = torch.arange(8, dtype=torch.float64)
         y, x = torch.meshgrid(coordinates, coordinates, indexing="ij")
-        blob = -10.0 + 40.0 * torch.exp(
-            -((y - 3.5).square() + (x - 3.5).square()) / 4.0
+        frames = torch.stack(
+            tuple(
+                -10.0
+                + 40.0
+                * torch.exp(
+                    -(
+                        (y - 3.5).square()
+                        + (x - center_x).square()
+                    )
+                    / 4.0
+                )
+                for center_x in (3.0, 3.5, 4.0)
+            )
         )
-        frames = torch.stack((blob, blob - 1.0, blob))
         config = AnalysisConfig(
             maximum_outer_iterations=8,
             maximum_pcg_iterations=100,
@@ -1410,6 +1420,31 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertEqual(
             result.linearization_gradient_norm,
             result.linearization.gradient_norm,
+        )
+
+    def test_final_linearization_tracks_remap_branch_changes(self) -> None:
+        _, frozen = self.stationary_problem()
+        baseline = replace(
+            frozen.baseline_state,
+            displacement_yx=torch.tensor(
+                (0.9999, 0.25),
+                dtype=torch.float64,
+            ),
+        )
+        frozen = replace(frozen, baseline_state=baseline)
+        control = initial_control(frozen)
+        frozen = variational_module._freeze_analysis_remap_cells(
+            control,
+            frozen,
+        )
+
+        self.assertTrue(
+            variational_module._analysis_remap_cells_match(control, frozen)
+        )
+        crossed = control.clone()
+        crossed[-3] = 1.0e-3
+        self.assertFalse(
+            variational_module._analysis_remap_cells_match(crossed, frozen)
         )
 
     def test_retained_linearization_owns_its_tensor_storage(self) -> None:

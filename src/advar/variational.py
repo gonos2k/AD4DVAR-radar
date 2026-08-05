@@ -60,8 +60,8 @@ AmplitudeConfidencePolicy = Literal[
 AnalysisExecutionMode = Literal["research", "operational"]
 ObservationCommonBiasScope = Literal["per_frame", "all_times"]
 MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT = 64
-P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v6"
-P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v4"
+P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v7"
+P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v5"
 
 
 @dataclass(frozen=True)
@@ -2110,20 +2110,41 @@ def _polish_final_linearization(
 
             for backtrack in range(12):
                 candidate = control + (0.5**backtrack) * linear.solution
+                same_remap_branch = _analysis_remap_cells_match(
+                    candidate,
+                    frozen,
+                )
+                candidate_frozen = (
+                    frozen
+                    if same_remap_branch
+                    else freeze_irls_weights(candidate, observations, frozen)
+                )
                 try:
-                    candidate_residual = residual_fn(candidate)
+                    candidate_residual = residual_vector(
+                        candidate,
+                        observations,
+                        candidate_frozen,
+                    )
                     candidate_frozen_objective = 0.5 * float(
                         torch.dot(candidate_residual, candidate_residual).detach()
                     )
                     candidate_exact_tensor, candidate_trajectory = (
-                        _evaluate_control(candidate, observations, frozen)
+                        _evaluate_control(
+                            candidate,
+                            observations,
+                            candidate_frozen,
+                        )
                     )
                     candidate_exact = float(candidate_exact_tensor.detach())
                 except (EchoPositivityError, RuntimeError, ValueError):
                     continue
                 if not (
                     math.isfinite(candidate_frozen_objective)
-                    and candidate_frozen_objective < current_frozen_objective
+                    and (
+                        not same_remap_branch
+                        or candidate_frozen_objective
+                        < current_frozen_objective
+                    )
                     and math.isfinite(candidate_exact)
                     and candidate_exact
                     <= exact_objective
@@ -2136,7 +2157,7 @@ def _polish_final_linearization(
                     continue
                 candidate_amplitude = _amplitude_diagnostics(
                     observations,
-                    frozen,
+                    candidate_frozen,
                     candidate_trajectory,
                     include_spatial_diagnostics=False,
                 )
@@ -2148,7 +2169,7 @@ def _polish_final_linearization(
                 ):
                     continue
                 if not _analysis_window_is_representable(
-                    frozen,
+                    candidate_frozen,
                     candidate_trajectory.displacement_yx,
                 ):
                     continue
@@ -2156,11 +2177,12 @@ def _polish_final_linearization(
                     config.motion_increment_scale_mps is None
                     and not _motion_is_admissible(
                         candidate_trajectory.displacement_yx,
-                        frozen,
+                        candidate_frozen,
                     )
                 ):
                     continue
                 control = candidate.detach()
+                frozen = candidate_frozen
                 exact_objective = candidate_exact
                 damping = max(config.minimum_damping, 0.5 * damping)
                 polish_iterations += 1
@@ -2175,6 +2197,8 @@ def _polish_final_linearization(
 
     if stationarity is None:
         stationarity = _linearization_stationarity(control, observations, frozen)
+    if not _analysis_remap_cells_match(control, frozen):
+        raise RuntimeError("final linearization changed its frozen remap cell")
     return _FinalLinearizationPolish(
         control=control,
         frozen=frozen,
@@ -5218,10 +5242,30 @@ def _freeze_analysis_remap_cells(
     return replace(
         frozen,
         analysis_remap_cells=tuple(
-            freeze_remap_cell(step * displacement)
-            for step in (1, 2)
+            freeze_remap_cell(step * displacement) for step in (1, 2)
         ),
     )
+
+
+def _analysis_remap_cells_match(
+    control: Tensor,
+    frozen: FrozenOuterState,
+) -> bool:
+    """Return whether ``control`` stays on the retained remap branch."""
+
+    field_size = frozen.active_field_index.numel()
+    displacement, _ = _decode_dynamics(
+        control[field_size:],
+        frozen.baseline_state,
+        frozen.analysis_config,
+        frozen.nowcast_config,
+        frozen.motion_limits_yx,
+        frozen.grid_time_contract,
+    )
+    cells = tuple(
+        freeze_remap_cell(step * displacement) for step in (1, 2)
+    )
+    return cells == frozen.analysis_remap_cells
 
 
 def _softplus_inverse(value: Tensor) -> Tensor:

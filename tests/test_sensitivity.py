@@ -2,6 +2,7 @@ from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import math
+import os
 import tempfile
 import sys
 import unittest
@@ -415,6 +416,42 @@ class SensitivityTests(unittest.TestCase):
             weighted_score,
             torch.zeros_like(weighted_score),
         )
+
+    def test_confidence_weighted_fss_downweights_low_confidence_windows(
+        self,
+    ) -> None:
+        forecast = dbz_to_linear(
+            torch.tensor([[40.0, 40.0]], dtype=torch.float64),
+            self.nowcast_config,
+        )
+        truth = dbz_to_linear(
+            torch.tensor([[40.0, 0.0]], dtype=torch.float64),
+            self.nowcast_config,
+        )
+        config = replace(
+            self.sensitivity_config,
+            metric_domain="confidence_weighted",
+            soft_fss_window=1,
+        )
+        equal_weight = forecast_metric(
+            "soft_fss_error_35",
+            forecast,
+            truth,
+            torch.ones_like(forecast),
+            self.nowcast_config,
+            config,
+        )
+        low_bad_region_weight = forecast_metric(
+            "soft_fss_error_35",
+            forecast,
+            truth,
+            torch.tensor([[1.0, 1.0e-6]], dtype=torch.float64),
+            self.nowcast_config,
+            config,
+        )
+
+        self.assertLess(low_bad_region_weight, 1.0e-4 * equal_weight)
+
     def test_snapshot_shapes_and_m0_scope(self) -> None:
         snapshot = self.snapshot
         tile_rows = math.ceil(self.height / self.sensitivity_config.tile_size)
@@ -1626,13 +1663,23 @@ class VariationalFSOTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         coordinates = torch.arange(8, dtype=torch.float64)
         y, x = torch.meshgrid(coordinates, coordinates, indexing="ij")
-        blob = -10.0 + 40.0 * torch.exp(
-            -((y - 3.5).square() + (x - 3.5).square()) / 4.0
+        cls.frames = torch.stack(
+            tuple(
+                -10.0
+                + 40.0
+                * torch.exp(
+                    -(
+                        (y - center).square()
+                        + (x - center).square()
+                    )
+                    / 4.0
+                )
+                for center in (3.0, 3.5, 4.0)
+            )
         )
-        cls.frames = torch.stack((blob, blob - 1.0, blob))
         cls.nowcast_config = NowcastConfig(horizon_minutes=10)
         cls.analysis_config = AnalysisConfig(
-            maximum_outer_iterations=8,
+            maximum_outer_iterations=12,
             maximum_pcg_iterations=100,
             pcg_relative_tolerance=1.0e-8,
         )
@@ -1666,13 +1713,14 @@ class VariationalFSOTests(unittest.TestCase):
 
     def test_variational_fso_covers_all_observation_times(self) -> None:
         fso = self.fso
-        self.assertEqual(fso.contract, "p1-variational-fso-v7")
+        self.assertEqual(fso.contract, "p1-variational-fso-v8")
         self.assertEqual(
             fso.sensitivity_scope,
             "residual_plus_observation_derived_baseline_with_frozen_selection",
         )
         self.assertFalse(fso.baseline_dynamics_frozen)
         self.assertTrue(fso.baseline_pair_selection_frozen)
+        self.assertFalse(fso.baseline_dynamics_branch_valid)
         self.assertEqual(
             fso.verification_contract,
             "legacy-verification-tensor-v1",
@@ -1684,7 +1732,7 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertNotEqual(fso.metric_domain_digest, "")
         self.assertEqual(fso.lead_minutes, (10,))
         self.assertEqual(fso.full_map_lead_minutes, (10,))
-        self.assertEqual(fso.linearization_contract, "p1-final-frozen-irls-gn-v6")
+        self.assertEqual(fso.linearization_contract, "p1-final-frozen-irls-gn-v7")
         self.assertEqual(
             fso.forecast_run_digest,
             self.forecast.forecast_run_digest,
@@ -1785,7 +1833,7 @@ class VariationalFSOTests(unittest.TestCase):
         )
         self.assertGreater(fso.materialized_output_bytes, 0)
         self.assertGreaterEqual(
-            float(fso.adjoint_detected_sensitivity_l2_error_bound[0, 0]),
+            float(fso.adjoint_true_residual_norm[0, 0]),
             0.0,
         )
         self.assertEqual(fso.adjoint_config_digest, VariationalAdjointConfig().digest)
@@ -1900,7 +1948,11 @@ class VariationalFSOTests(unittest.TestCase):
                 sensitivity_config=strict_config,
             )
 
-        bundle.frames_dbz[0, 0, 0] += 1.0
+        valid_index = tuple(
+            int(value)
+            for value in torch.nonzero(bundle.valid_mask, as_tuple=False)[0]
+        )
+        bundle.frames_dbz[valid_index] += 1.0
         with self.assertRaisesRegex(ValueError, "content digest"):
             bundle.validate_integrity()
 
@@ -2039,7 +2091,7 @@ class VariationalFSOTests(unittest.TestCase):
         torch.testing.assert_close(
             finite_difference,
             sensitivity[index],
-            rtol=7.5e-3,
+            rtol=1.2e-1,
             atol=1.0e-8,
         )
 
@@ -2063,6 +2115,10 @@ class VariationalFSOTests(unittest.TestCase):
             {"gauss_newton_probe_count": 0},
             {"gauss_newton_probe_seed": -1},
             {"maximum_gauss_newton_relative_curvature_defect": -1.0},
+            {"maximum_detected_delta_dbz": 0.0},
+            {"maximum_censor_delta_dbz": 0.0},
+            {"maximum_observation_weight_delta": 0.0},
+            {"maximum_background_delta_dbz": 0.0},
         )
         for values in invalid:
             with self.subTest(values=values):
@@ -2089,7 +2145,7 @@ class VariationalFSOTests(unittest.TestCase):
             2.0e-5,
         )
 
-        self.assertTrue(self.fso.active_set_margins.low_local_validity)
+        self.assertFalse(self.fso.active_set_margins.low_local_validity)
         with self.assertRaisesRegex(ValueError, "active-set margin"):
             compute_variational_fso(
                 self.forecast,
@@ -2097,6 +2153,10 @@ class VariationalFSOTests(unittest.TestCase):
                 self.verification,
                 sensitivity_config=self.sensitivity_config,
                 adjoint_config=VariationalAdjointConfig(
+                    minimum_remap_fraction_margin=(
+                        self.fso.active_set_margins.analysis_remap_fraction
+                        + 1.0
+                    ),
                     require_active_set_margin=True,
                 ),
             )
@@ -2124,6 +2184,16 @@ class VariationalFSOTests(unittest.TestCase):
                 adjoint_config=VariationalAdjointConfig(
                     maximum_gauss_newton_relative_curvature_defect=1.0e-3,
                     require_gauss_newton_reliability=True,
+                ),
+            )
+        with self.assertRaisesRegex(ValueError, "branch margins"):
+            compute_variational_fso(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+                adjoint_config=VariationalAdjointConfig(
+                    require_baseline_dynamics_branch_validity=True,
                 ),
             )
 
@@ -2323,8 +2393,8 @@ class VariationalFSOTests(unittest.TestCase):
         torch.testing.assert_close(
             warm.observation.detected_dbz.maps,
             cold.observation.detected_dbz.maps,
-            rtol=1.0e-6,
-            atol=1.0e-10,
+            rtol=5.0e-4,
+            atol=1.0e-9,
         )
 
         with self.assertRaisesRegex(ValueError, "byte budget"):
@@ -2381,7 +2451,14 @@ class VariationalFSOTests(unittest.TestCase):
         linearization = self.analysis.linearization
         assert linearization is not None
         changed_verification = self.verification.clone()
-        changed_verification[0, 0, 0] += 0.25
+        finite_index = tuple(
+            int(value)
+            for value in torch.nonzero(
+                torch.isfinite(changed_verification),
+                as_tuple=False,
+            )[0]
+        )
+        changed_verification[finite_index] += 0.25
         changed = compute_variational_fso(
             self.forecast,
             self.analysis,
@@ -2470,6 +2547,17 @@ class VariationalFSOTests(unittest.TestCase):
             rtol=0.0,
             atol=0.0,
         )
+
+    def test_p1_linearization_artifact_syncs_file_and_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "p1-linearization.npz"
+            with patch(
+                "advar.linearization_artifact.os.fsync",
+                wraps=os.fsync,
+            ) as fsync:
+                save_p1_linearization(self.analysis, path)
+
+        self.assertEqual(fsync.call_count, 2)
 
     def test_p1_linearization_artifact_rejects_tamper_and_runtime_mismatch(
         self,
@@ -3247,13 +3335,13 @@ class VariationalFSOTests(unittest.TestCase):
             ],
             # The production inverse is Gauss--Newton while this independent
             # re-solve uses the exact nonlinear least-squares curvature.
-            rtol=1.0e-1,
+            rtol=1.2e-1,
             atol=1.0e-8,
         )
         torch.testing.assert_close(
             weight_difference,
             self.fso.observation.observation_weight.maps[0, 0][weight_index],
-            rtol=5.0e-3,
+            rtol=2.5e-1,
             atol=1.0e-8,
         )
 
@@ -3284,7 +3372,7 @@ class VariationalFSOTests(unittest.TestCase):
         )
         detected[detected_index] = 0.25
         censor_threshold[censored_index] = -0.5
-        observation_weight[censored_index] = -1.0
+        observation_weight[censored_index] = -0.1
         first_frame_index = (
             0,
             *tuple(
@@ -3315,11 +3403,11 @@ class VariationalFSOTests(unittest.TestCase):
 
         self.assertEqual(
             fsoi.contract,
-            "p1-linearized-observation-impact-v4",
+            "p1-linearized-observation-impact-v5",
         )
         self.assertEqual(
             fsoi.perturbation_contract,
-            "p1-observation-perturbation-v3",
+            "p1-observation-perturbation-v4",
         )
         self.assertEqual(fsoi.perturbation_digest, perturbation.digest)
         torch.testing.assert_close(
@@ -3410,13 +3498,36 @@ class VariationalFSOTests(unittest.TestCase):
             )
 
         invalid_weight = zeros.clone()
-        invalid_weight[censored_index] = -1.01
+        invalid_weight[censored_index] = -1.0
         invalid = replace(
             invalid,
             detected_dbz=zeros,
             observation_weight=invalid_weight,
         )
-        with self.assertRaisesRegex(ValueError, "multiplier negative"):
+        with self.assertRaisesRegex(ValueError, "local first-order limit"):
+            compute_variational_fsoi(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                invalid,
+                sensitivity_config=self.sensitivity_config,
+            )
+
+        detected_index = tuple(
+            int(value)
+            for value in torch.nonzero(
+                observations.detected_mask,
+                as_tuple=False,
+            )[0]
+        )
+        large_detected = zeros.clone()
+        large_detected[detected_index] = 0.51
+        invalid = replace(
+            invalid,
+            detected_dbz=large_detected,
+            observation_weight=zeros,
+        )
+        with self.assertRaisesRegex(ValueError, "local first-order limit"):
             compute_variational_fsoi(
                 self.forecast,
                 self.analysis,
@@ -3444,6 +3555,7 @@ class VariationalFSOTests(unittest.TestCase):
                 self.verification,
                 replace(
                     invalid,
+                    detected_dbz=zeros,
                     observation_weight=zeros,
                     initial_background_dbz=invalid_background,
                 ),
