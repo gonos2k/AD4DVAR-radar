@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, fields, replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import math
@@ -30,7 +30,7 @@ from .sensitivity import (
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
 _INDEX_SCHEMA_VERSION = 3
-_EPISODE_SCHEMA_VERSION = 16
+_EPISODE_SCHEMA_VERSION = 17
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _TRUST_COMPONENTS_V13 = {
     "linearity",
@@ -250,6 +250,22 @@ class SensitivityEpisode:
             raise ValueError(
                 "model contract grid digest must match the sensitivity snapshot"
             )
+        if self.snapshot.verification_lineage_complete:
+            if (
+                self.snapshot.verification_grid_contract_digest
+                != self.snapshot.grid_time_contract_digest
+            ):
+                raise ValueError(
+                    "verification grid digest must match the forecast grid"
+                )
+            expected_times = _expected_verification_times(
+                self.issue_time,
+                self.snapshot.lead_minutes,
+            )
+            if self.snapshot.verification_valid_times != expected_times:
+                raise ValueError(
+                    "verification valid times must match issue time and leads"
+                )
 
     @property
     def forecast_run_digest(self) -> str:
@@ -817,6 +833,25 @@ def _episode_manifest(
         "issue_time": episode.issue_time,
         "radar_id": episode.radar_id,
         "forecast_run_digest": episode.forecast_run_digest,
+        "verification_contract": snapshot.verification_contract,
+        "verification_bundle_digest": snapshot.verification_bundle_digest,
+        "verification_lineage_complete": (
+            snapshot.verification_lineage_complete
+        ),
+        "verification_valid_times": (
+            None
+            if snapshot.verification_valid_times is None
+            else list(snapshot.verification_valid_times)
+        ),
+        "verification_grid_contract_digest": (
+            snapshot.verification_grid_contract_digest
+        ),
+        "verification_radar_product_digest": (
+            snapshot.verification_radar_product_digest
+        ),
+        "verification_qc_pipeline_digest": (
+            snapshot.verification_qc_pipeline_digest
+        ),
         "contract": asdict(episode.contract),
         "contract_hash": episode.contract.digest,
         "metric_names": list(snapshot.metric_names),
@@ -894,6 +929,21 @@ def _verify_manifest(
         raise ValueError(
             "forecast run provenance does not match the episode schema"
         )
+    verification_keys = {
+        "verification_contract",
+        "verification_bundle_digest",
+        "verification_lineage_complete",
+        "verification_valid_times",
+        "verification_grid_contract_digest",
+        "verification_radar_product_digest",
+        "verification_qc_pipeline_digest",
+    }
+    if schema_version >= 17:
+        _validate_verification_manifest(manifest)
+    elif verification_keys & set(manifest):
+        raise ValueError(
+            "verification provenance does not match the episode schema"
+        )
     contract_values = manifest.get("contract")
     if not isinstance(contract_values, dict):
         raise ValueError("manifest contains an invalid contract")
@@ -925,6 +975,25 @@ def _verify_manifest(
         raise ValueError("manifest contract hash is invalid")
     if contract_hash != row["contract_hash"]:
         raise ValueError("contract hash disagrees with the index")
+    if schema_version >= 17 and manifest.get(
+        "verification_lineage_complete"
+    ):
+        if manifest.get("verification_grid_contract_digest") != (
+            contract_values.get("grid_time_contract_digest")
+        ):
+            raise ValueError(
+                "manifest verification grid disagrees with the forecast grid"
+            )
+        expected_times = _expected_verification_times(
+            manifest.get("issue_time"),
+            manifest.get("lead_minutes"),
+        )
+        if tuple(manifest.get("verification_valid_times", ())) != (
+            expected_times
+        ):
+            raise ValueError(
+                "manifest verification times disagree with issue and leads"
+            )
     if manifest.get("indirect_observation_sensitivity_available") is not False:
         raise ValueError("M0 episodes cannot contain indirect sensitivity")
     if manifest.get("total_observation_sensitivity_available") is not False:
@@ -962,6 +1031,100 @@ def _verify_manifest(
     if not isinstance(manifest.get("arrays"), dict):
         raise ValueError("manifest array schema is missing")
     _verify_manifest_layout(manifest)
+
+
+def _validate_verification_manifest(manifest: dict[str, Any]) -> None:
+    digest = manifest.get("verification_bundle_digest")
+    if not isinstance(digest, str) or re.fullmatch(
+        r"[0-9a-f]{64}", digest
+    ) is None:
+        raise ValueError("manifest verification bundle digest is invalid")
+    complete = manifest.get("verification_lineage_complete")
+    if type(complete) is not bool:
+        raise ValueError("manifest verification lineage flag is invalid")
+    valid_times = manifest.get("verification_valid_times")
+    lineage_digests = tuple(
+        manifest.get(name)
+        for name in (
+            "verification_grid_contract_digest",
+            "verification_radar_product_digest",
+            "verification_qc_pipeline_digest",
+        )
+    )
+    if not complete:
+        if manifest.get("verification_contract") != (
+            "legacy-verification-tensor-v1"
+        ):
+            raise ValueError("manifest incomplete verification contract is invalid")
+        if valid_times is not None or any(
+            value is not None for value in lineage_digests
+        ):
+            raise ValueError("manifest incomplete verification claims lineage")
+        return
+    if manifest.get("verification_contract") != (
+        "radar-verification-bundle-v1"
+    ):
+        raise ValueError("manifest complete verification contract is invalid")
+    if (
+        not isinstance(valid_times, list)
+        or not valid_times
+        or any(not isinstance(value, str) or not value for value in valid_times)
+    ):
+        raise ValueError("manifest verification valid times are invalid")
+    parsed_times = tuple(
+        _canonical_utc_datetime(value, "verification valid time")
+        for value in valid_times
+    )
+    canonical_times = [
+        value.isoformat().replace("+00:00", "Z") for value in parsed_times
+    ]
+    if valid_times != canonical_times or any(
+        later <= earlier
+        for earlier, later in zip(parsed_times, parsed_times[1:])
+    ):
+        raise ValueError(
+            "manifest verification valid times must be canonical and increasing"
+        )
+    if any(
+        not isinstance(value, str)
+        or re.fullmatch(r"[0-9a-f]{64}", value) is None
+        for value in lineage_digests
+    ):
+        raise ValueError("manifest verification lineage digest is invalid")
+
+
+def _canonical_utc_datetime(value: object, name: str) -> datetime:
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{name} must be a timezone-aware ISO-8601 string")
+    normalized = f"{value[:-1]}+00:00" if value.endswith("Z") else value
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError as error:
+        raise ValueError(
+            f"{name} must be a timezone-aware ISO-8601 string"
+        ) from error
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError(f"{name} must include a timezone")
+    return parsed.astimezone(timezone.utc)
+
+
+def _expected_verification_times(
+    issue_time: object,
+    lead_minutes: object,
+) -> tuple[str, ...]:
+    issue = _canonical_utc_datetime(issue_time, "issue_time")
+    if (
+        not isinstance(lead_minutes, (tuple, list))
+        or not lead_minutes
+        or any(type(value) is not int or value <= 0 for value in lead_minutes)
+    ):
+        raise ValueError("lead_minutes must contain positive integers")
+    return tuple(
+        (issue + timedelta(minutes=value))
+        .isoformat()
+        .replace("+00:00", "Z")
+        for value in lead_minutes
+    )
 
 
 def _verify_manifest_layout(manifest: dict[str, Any]) -> None:
@@ -1185,6 +1348,28 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         raise ValueError(
             "grid_time_contract_digest must be a SHA-256 digest"
         )
+    verification_manifest = {
+        "verification_contract": snapshot.verification_contract,
+        "verification_bundle_digest": snapshot.verification_bundle_digest,
+        "verification_lineage_complete": (
+            snapshot.verification_lineage_complete
+        ),
+        "verification_valid_times": (
+            None
+            if snapshot.verification_valid_times is None
+            else list(snapshot.verification_valid_times)
+        ),
+        "verification_grid_contract_digest": (
+            snapshot.verification_grid_contract_digest
+        ),
+        "verification_radar_product_digest": (
+            snapshot.verification_radar_product_digest
+        ),
+        "verification_qc_pipeline_digest": (
+            snapshot.verification_qc_pipeline_digest
+        ),
+    }
+    _validate_verification_manifest(verification_manifest)
     if not math.isfinite(snapshot.trust_score):
         raise ValueError("trust_score must be finite")
     if snapshot.baseline_scores is not None or snapshot.reward_available:

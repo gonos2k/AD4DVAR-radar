@@ -27,7 +27,11 @@ from advar.nowcast import (  # noqa: E402
     RadarGridTimeContract,
     operational_runtime_profile_digest,
 )
-from advar.variational import AnalysisConfig  # noqa: E402
+from advar.variational import (  # noqa: E402
+    AnalysisConfig,
+    observation_common_bias_group_map_digest,
+    observation_common_bias_mode_weights_digest,
+)
 
 
 class CliTests(unittest.TestCase):
@@ -111,6 +115,9 @@ class CliTests(unittest.TestCase):
             maximum_established_excess_growth_fraction_for_confidence=1.0,
             minimum_object_count_ratio_for_confidence=0.75,
             amplitude_confidence_policy="operational_fallback",
+            observation_common_bias_std_dbz=0.0,
+            observation_common_bias_scope="per_frame",
+            observation_common_bias_tile_size_px=0,
         )
         grid = RadarGridTimeContract(
             valid_times=(
@@ -263,6 +270,12 @@ class CliTests(unittest.TestCase):
                     "1000",
                     "--observation-std-dbz",
                     "2",
+                    "--observation-common-bias-std-dbz",
+                    "0",
+                    "--observation-common-bias-scope",
+                    "per_frame",
+                    "--observation-common-bias-tile-size-px",
+                    "0",
                     "--maximum-detected-error-std",
                     "10",
                     "--minimum-local-verification-precision",
@@ -415,11 +428,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v48",
+                    "nowcast-npz-v49",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v40",
+                    "forecast-run-v41",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))
@@ -751,6 +764,75 @@ class CliTests(unittest.TestCase):
             self.assertIsNotNone(loaded.run.analysis_config_digest)
             self.assertIsNotNone(loaded.run.analysis_input_digest)
 
+    def test_variational_cli_binds_common_bias_group_map(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            groups = np.zeros((8, 8), dtype=np.int32)
+            groups[:, 4:] = 10
+            groups[4:, :] += 20
+            group_path = directory / "groups.npy"
+            np.save(group_path, groups, allow_pickle=False)
+            output_path = self._run_cli(
+                directory,
+                np.full((3, 8, 8), 20.0, dtype=np.float32),
+                "--variational",
+                "--observation-common-bias-std-dbz",
+                "0.2",
+                "--observation-common-bias-scope",
+                "all_times",
+                "--observation-common-bias-group-map",
+                str(group_path),
+            )
+            expected_digest = observation_common_bias_group_map_digest(
+                torch.as_tensor(groups, dtype=torch.long),
+                temporal_scope="all_times",
+            )
+            with np.load(output_path, allow_pickle=False) as result:
+                config = json.loads(result["analysis_config_json"].item())
+                self.assertEqual(
+                    config["observation_common_bias_group_map_digest"],
+                    expected_digest,
+                )
+                self.assertEqual(
+                    config["observation_common_bias_tile_size_px"],
+                    0,
+                )
+                self.assertEqual(len(result["analysis_input_digest"].item()), 64)
+
+    def test_variational_cli_binds_overlapping_common_bias_modes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            x_fraction = np.linspace(0.0, 1.0, 8, dtype=np.float32)
+            mode_weights = np.stack(
+                (
+                    np.broadcast_to(np.sqrt(1.0 - x_fraction), (8, 8)),
+                    np.broadcast_to(np.sqrt(x_fraction), (8, 8)),
+                )
+            ).copy()
+            mode_path = directory / "mode-weights.npy"
+            np.save(mode_path, mode_weights, allow_pickle=False)
+            output_path = self._run_cli(
+                directory,
+                np.full((3, 8, 8), 20.0, dtype=np.float32),
+                "--variational",
+                "--observation-common-bias-std-dbz",
+                "0.2",
+                "--observation-common-bias-mode-weights",
+                str(mode_path),
+            )
+            expected_digest = observation_common_bias_mode_weights_digest(
+                torch.as_tensor(mode_weights)
+            )
+            with np.load(output_path, allow_pickle=False) as result:
+                config = json.loads(result["analysis_config_json"].item())
+                self.assertEqual(
+                    config["observation_common_bias_mode_weights_digest"],
+                    expected_digest,
+                )
+                self.assertIsNone(
+                    config["observation_common_bias_group_map_digest"]
+                )
+
     def test_cli_records_operational_amplitude_policy(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             output_path = self._run_cli(
@@ -858,6 +940,9 @@ class CliTests(unittest.TestCase):
             "--minimum-local-verification-precision",
             "--maximum-local-analysis-verification-error-dbz",
             "--minimum-object-count-ratio-for-confidence",
+            "--observation-common-bias-std-dbz",
+            "--observation-common-bias-scope",
+            "--observation-common-bias-tile-size-px",
         )
         for name in required:
             with self.subTest(name=name):
@@ -932,6 +1017,18 @@ class CliTests(unittest.TestCase):
                     0.75,
                 )
                 self.assertEqual(config["motion_increment_scale_mps"], 2.0)
+                self.assertEqual(
+                    config["observation_common_bias_std_dbz"],
+                    0.0,
+                )
+                self.assertEqual(
+                    config["observation_common_bias_scope"],
+                    "per_frame",
+                )
+                self.assertEqual(
+                    config["observation_common_bias_tile_size_px"],
+                    0,
+                )
                 self.assertEqual(
                     nowcast_config["minimum_growth_overlap_support"],
                     4.0,

@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
+from datetime import datetime, timedelta, timezone
 import math
-from typing import cast
+from typing import Literal, cast
 
 import torch
 import torch.nn.functional as F
@@ -23,17 +24,24 @@ from .nowcast import (
     RadarState,
     TendencyPairSelection,
     TendencySource,
+    _estimate_source_tendencies,
     _forecast_linear_at_step_core,
     forecast_linear_at_step,
 )
-from .physics import RemapCell, dbz_to_echo, freeze_remap_cell
+from .physics import RemapCell, dbz_to_echo, echo_to_dbz, freeze_remap_cell
 from .variational import (
+    P1_LINEARIZATION_CONTRACT,
+    AnalysisFeasibilityMargins,
     AnalysisLinearization,
     AnalysisObservations,
     AnalysisResult,
     FrozenOuterState,
+    P1LinearizationState,
+    _apply_observation_error_whitener,
     _analysis_trajectory,
+    _linearization_stationarity,
     residual_vector,
+    validate_analysis_linearization_content,
 )
 
 
@@ -42,6 +50,125 @@ SUPPORTED_METRICS = (
     "soft_fss_error_35",
     "centroid_error",
 )
+
+FSOMetricDomain = Literal[
+    "issued",
+    "radar_dynamics_anchored",
+    "confidence_weighted",
+]
+
+
+def _canonical_verification_time(value: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError("verification valid times must be ISO-8601 strings")
+    normalized = f"{value[:-1]}+00:00" if value.endswith("Z") else value
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError as error:
+        raise ValueError(
+            "verification valid times must be ISO-8601 strings"
+        ) from error
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError("verification valid times must include timezones")
+    return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _require_sha256(name: str, value: str) -> None:
+    if not isinstance(value, str) or len(value) != 64 or any(
+        character not in "0123456789abcdef" for character in value
+    ):
+        raise ValueError(f"{name} must be a lowercase SHA-256 digest")
+
+
+@dataclass(frozen=True)
+class VerificationBundle:
+    """Content-addressed future radar/QC bundle for delayed verification."""
+
+    frames_dbz: Tensor
+    valid_mask: Tensor
+    valid_times: tuple[str, ...]
+    grid_contract_digest: str
+    radar_product_digest: str
+    qc_pipeline_digest: str
+    contract: str = "radar-verification-bundle-v1"
+    content_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.contract != "radar-verification-bundle-v1":
+            raise ValueError("unsupported verification bundle contract")
+        if self.frames_dbz.ndim != 3 or not self.frames_dbz.is_floating_point():
+            raise ValueError(
+                "verification frames must be floating with shape [lead,H,W]"
+            )
+        if (
+            self.valid_mask.dtype != torch.bool
+            or self.valid_mask.shape != self.frames_dbz.shape
+            or self.valid_mask.device != self.frames_dbz.device
+        ):
+            raise ValueError(
+                "verification valid_mask must be boolean and match frames"
+            )
+        if bool(torch.any(self.valid_mask & ~torch.isfinite(self.frames_dbz))):
+            raise ValueError("valid verification cells must contain finite dBZ")
+        if (
+            not isinstance(self.valid_times, tuple)
+            or len(self.valid_times) != self.frames_dbz.shape[0]
+        ):
+            raise ValueError(
+                "verification valid_times must match the lead dimension"
+            )
+        canonical_times = tuple(
+            _canonical_verification_time(value) for value in self.valid_times
+        )
+        parsed_times = tuple(
+            datetime.fromisoformat(value.replace("Z", "+00:00"))
+            for value in canonical_times
+        )
+        if any(
+            later <= earlier
+            for earlier, later in zip(parsed_times, parsed_times[1:])
+        ):
+            raise ValueError("verification valid_times must be increasing")
+        for name, value in (
+            ("grid_contract_digest", self.grid_contract_digest),
+            ("radar_product_digest", self.radar_product_digest),
+            ("qc_pipeline_digest", self.qc_pipeline_digest),
+        ):
+            _require_sha256(name, value)
+        frames = self.frames_dbz.detach().clone()
+        valid = self.valid_mask.detach().clone()
+        object.__setattr__(self, "frames_dbz", frames)
+        object.__setattr__(self, "valid_mask", valid)
+        object.__setattr__(self, "valid_times", canonical_times)
+        object.__setattr__(
+            self,
+            "content_digest",
+            _verification_content_digest(
+                self.contract,
+                frames,
+                valid,
+                canonical_times,
+                self.grid_contract_digest,
+                self.radar_product_digest,
+                self.qc_pipeline_digest,
+            ),
+        )
+
+    def validate_integrity(self) -> None:
+        expected = _verification_content_digest(
+            self.contract,
+            self.frames_dbz,
+            self.valid_mask,
+            self.valid_times,
+            self.grid_contract_digest,
+            self.radar_product_digest,
+            self.qc_pipeline_digest,
+        )
+        if expected != self.content_digest:
+            raise ValueError("verification bundle content digest mismatch")
+
+
+VerificationInput = Tensor | VerificationBundle
 
 CONTEXT_FEATURE_NAMES_V13 = (
     "motion_dy",
@@ -130,6 +257,8 @@ class SensitivityConfig:
     """Fixed metric and compression choices for one sensitivity contract."""
 
     metric_names: tuple[str, ...] = SUPPORTED_METRICS
+    metric_domain: FSOMetricDomain = "issued"
+    require_verification_lineage: bool = False
     full_map_lead_minutes: tuple[int, ...] = (30, 60, 120, 180)
     tile_size: int = 16
     soft_fss_temperature_dbz: float = 2.0
@@ -150,6 +279,14 @@ class SensitivityConfig:
             raise ValueError("at least one metric is required")
         if len(set(self.metric_names)) != len(self.metric_names):
             raise ValueError("metric_names must be unique")
+        if self.metric_domain not in (
+            "issued",
+            "radar_dynamics_anchored",
+            "confidence_weighted",
+        ):
+            raise ValueError("unsupported FSO metric domain")
+        if type(self.require_verification_lineage) is not bool:
+            raise TypeError("require_verification_lineage must be Boolean")
         if not isinstance(self.full_map_lead_minutes, tuple):
             raise TypeError("full_map_lead_minutes must be a tuple")
         if len(set(self.full_map_lead_minutes)) != len(
@@ -201,6 +338,140 @@ class SensitivityConfig:
         return dataclass_digest(self)
 
 
+VariationalPreconditioner = Literal[
+    "none",
+    "prior_smoothness_diagonal",
+]
+
+
+@dataclass(frozen=True)
+class VariationalAdjointConfig:
+    """Execution and local-validity budget for delayed P1 adjoints."""
+
+    lead_minutes: tuple[int, ...] | None = None
+    pcg_relative_tolerance: float | None = None
+    maximum_pcg_iterations: int | None = None
+    maximum_normal_products: int = 10_000
+    maximum_materialized_output_bytes: int = 2 * 1024**3
+    warm_start_by_metric: bool = True
+    preconditioner: VariationalPreconditioner = (
+        "prior_smoothness_diagonal"
+    )
+    minimum_detection_margin_dbz: float = 1.0e-3
+    minimum_remap_fraction_margin: float = 1.0e-4
+    minimum_output_cap_margin_dbz: float = 1.0e-3
+    minimum_publication_margin: float = 1.0e-4
+    require_active_set_margin: bool = False
+    minimum_reachability_margin: float = 1.0e-3
+    minimum_unresolved_amplitude_fraction_margin: float = 1.0e-4
+    minimum_amplitude_confidence_margin: float = 1.0e-3
+    minimum_motion_saturation_margin_fraction: float = 1.0e-3
+    minimum_motion_speed_saturation_margin_mps: float = 0.0
+    minimum_growth_saturation_margin_per_step: float = 1.0e-4
+    require_feasibility_margin: bool = False
+    gauss_newton_probe_count: int = 4
+    gauss_newton_probe_seed: int = 0
+    maximum_gauss_newton_relative_curvature_defect: float = 0.25
+    require_gauss_newton_reliability: bool = False
+
+    def __post_init__(self) -> None:
+        if self.lead_minutes is not None:
+            if not isinstance(self.lead_minutes, tuple):
+                raise TypeError("adjoint lead_minutes must be a tuple")
+            if not self.lead_minutes:
+                raise ValueError("adjoint lead_minutes cannot be empty")
+            if len(set(self.lead_minutes)) != len(self.lead_minutes):
+                raise ValueError("adjoint lead_minutes must be unique")
+            if any(
+                type(value) is not int or value <= 0
+                for value in self.lead_minutes
+            ):
+                raise ValueError(
+                    "adjoint lead_minutes must contain positive integers"
+                )
+            if tuple(sorted(self.lead_minutes)) != self.lead_minutes:
+                raise ValueError("adjoint lead_minutes must be increasing")
+        if self.pcg_relative_tolerance is not None and (
+            isinstance(self.pcg_relative_tolerance, bool)
+            or not math.isfinite(self.pcg_relative_tolerance)
+            or self.pcg_relative_tolerance <= 0.0
+        ):
+            raise ValueError("adjoint PCG tolerance must be positive")
+        if self.maximum_pcg_iterations is not None and (
+            type(self.maximum_pcg_iterations) is not int
+            or self.maximum_pcg_iterations <= 0
+        ):
+            raise ValueError("adjoint PCG iterations must be positive")
+        for name, value in (
+            ("maximum_normal_products", self.maximum_normal_products),
+            (
+                "maximum_materialized_output_bytes",
+                self.maximum_materialized_output_bytes,
+            ),
+        ):
+            if type(value) is not int or value <= 0:
+                raise ValueError(f"{name} must be a positive integer")
+        if type(self.warm_start_by_metric) is not bool:
+            raise TypeError("warm_start_by_metric must be Boolean")
+        if self.preconditioner not in (
+            "none",
+            "prior_smoothness_diagonal",
+        ):
+            raise ValueError("unsupported variational preconditioner")
+        margins = (
+            self.minimum_detection_margin_dbz,
+            self.minimum_remap_fraction_margin,
+            self.minimum_output_cap_margin_dbz,
+            self.minimum_publication_margin,
+            self.minimum_reachability_margin,
+            self.minimum_unresolved_amplitude_fraction_margin,
+            self.minimum_amplitude_confidence_margin,
+            self.minimum_motion_saturation_margin_fraction,
+            self.minimum_motion_speed_saturation_margin_mps,
+            self.minimum_growth_saturation_margin_per_step,
+        )
+        if any(
+            isinstance(value, bool)
+            or not math.isfinite(value)
+            or value < 0.0
+            for value in margins
+        ):
+            raise ValueError("active-set margins must be finite and nonnegative")
+        if type(self.require_active_set_margin) is not bool:
+            raise TypeError("require_active_set_margin must be Boolean")
+        if type(self.require_feasibility_margin) is not bool:
+            raise TypeError("require_feasibility_margin must be Boolean")
+        if (
+            type(self.gauss_newton_probe_count) is not int
+            or self.gauss_newton_probe_count <= 0
+        ):
+            raise ValueError("gauss_newton_probe_count must be positive")
+        if (
+            type(self.gauss_newton_probe_seed) is not int
+            or self.gauss_newton_probe_seed < 0
+        ):
+            raise ValueError("gauss_newton_probe_seed cannot be negative")
+        if (
+            isinstance(
+                self.maximum_gauss_newton_relative_curvature_defect,
+                bool,
+            )
+            or not math.isfinite(
+                self.maximum_gauss_newton_relative_curvature_defect
+            )
+            or self.maximum_gauss_newton_relative_curvature_defect < 0.0
+        ):
+            raise ValueError(
+                "maximum Gauss-Newton curvature defect must be nonnegative"
+            )
+        if type(self.require_gauss_newton_reliability) is not bool:
+            raise TypeError("require_gauss_newton_reliability must be Boolean")
+
+    @property
+    def digest(self) -> str:
+        return dataclass_digest(self)
+
+
 @dataclass(frozen=True)
 class DirectSensitivity:
     maps: Tensor
@@ -213,8 +484,8 @@ class DirectSensitivity:
 
 
 @dataclass(frozen=True)
-class VariationalObservationSensitivity:
-    """Total metric sensitivity to dBZ at each of the three input times."""
+class VariationalSensitivityChannel:
+    """One frozen-model observation-parameter sensitivity channel."""
 
     maps: Tensor
     norm_by_time: Tensor
@@ -222,23 +493,1097 @@ class VariationalObservationSensitivity:
 
 
 @dataclass(frozen=True)
-class VariationalFSOI:
-    """Digest-bound P1 sensitivity under one frozen final IRLS/GN model."""
+class VariationalObservationSensitivity:
+    """Separated frozen-structure P1 observation sensitivities.
 
+    ``detected_dbz`` is the observation-residual path retained by the
+    original frozen-GN contract. ``initial_background_dbz`` is the direct
+    and implicit path through the accepted first-frame values used to build
+    the P1 initial background. ``baseline_dynamics_dbz`` is the direct and
+    implicit path through continuous P0 displacement/growth, with pair,
+    integer FFT peak, and every other discrete selection frozen.
+    ``frozen_structure_input_dbz`` is the sum of these three dBZ paths.
+    """
+
+    detected_dbz: VariationalSensitivityChannel
+    censor_threshold_dbz: VariationalSensitivityChannel
+    observation_weight: VariationalSensitivityChannel
+    initial_background_dbz: VariationalSensitivityChannel
+    baseline_dynamics_dbz: VariationalSensitivityChannel
+    frozen_structure_input_dbz: VariationalSensitivityChannel
+
+
+@dataclass(frozen=True)
+class VariationalActiveSetMargins:
+    """Distances to discrete or piecewise-smooth FSO contract boundaries."""
+
+    detection_classification_dbz: float | None
+    analysis_remap_fraction: float
+    forecast_remap_fraction: float
+    output_cap_dbz: float | None
+    publication_support: float
+    publication_confidence: float | None
+    low_local_validity: bool
+
+
+@dataclass(frozen=True)
+class VariationalFeasibilityMargins:
+    """Accepted P1 interiority relative to hard feasibility boundaries."""
+
+    reachability_support: float
+    unresolved_amplitude_fraction: float
+    amplitude_confidence: float | None
+    motion_saturation_fraction: float
+    motion_speed_saturation_mps: float | None
+    growth_saturation_per_step: float
+    low_interior_validity: bool
+
+
+def _variational_feasibility_margins(
+    margins: AnalysisFeasibilityMargins,
+    config: VariationalAdjointConfig,
+) -> VariationalFeasibilityMargins:
+    low_interior_validity = (
+        margins.reachability_support
+        < config.minimum_reachability_margin
+        or margins.unresolved_amplitude_fraction
+        < config.minimum_unresolved_amplitude_fraction_margin
+        or margins.amplitude_confidence is None
+        or margins.amplitude_confidence
+        < config.minimum_amplitude_confidence_margin
+        or margins.motion_saturation_fraction
+        < config.minimum_motion_saturation_margin_fraction
+        or (
+            config.minimum_motion_speed_saturation_margin_mps > 0.0
+            and (
+                margins.motion_speed_saturation_mps is None
+                or margins.motion_speed_saturation_mps
+                < config.minimum_motion_speed_saturation_margin_mps
+            )
+        )
+        or margins.growth_saturation_per_step
+        < config.minimum_growth_saturation_margin_per_step
+    )
+    return VariationalFeasibilityMargins(
+        reachability_support=margins.reachability_support,
+        unresolved_amplitude_fraction=(
+            margins.unresolved_amplitude_fraction
+        ),
+        amplitude_confidence=margins.amplitude_confidence,
+        motion_saturation_fraction=margins.motion_saturation_fraction,
+        motion_speed_saturation_mps=margins.motion_speed_saturation_mps,
+        growth_saturation_per_step=margins.growth_saturation_per_step,
+        low_interior_validity=low_interior_validity,
+    )
+
+
+@dataclass(frozen=True)
+class VariationalGaussNewtonDiagnostics:
+    """Random-probe defect of exact frozen curvature from GN curvature."""
+
+    relative_curvature_defect: Tensor
+    maximum_relative_curvature_defect: float
+    reliable: bool
+    normal_products: int
+    exact_hessian_products: int
+
+
+@dataclass(frozen=True)
+class VariationalFSO:
+    """Digest-bound P1 FSO under one frozen final IRLS/GN model."""
+
+    contract: str
     forecast_run_digest: str
     analysis_input_digest: str
     sensitivity_config_digest: str
+    adjoint_config_digest: str
     linearization_contract: str
+    linearization_digest: str
+    verification_contract: str
+    verification_bundle_digest: str
+    verification_lineage_complete: bool
+    verification_valid_times: tuple[str, ...] | None
+    verification_grid_contract_digest: str | None
+    verification_radar_product_digest: str | None
+    verification_qc_pipeline_digest: str | None
+    metric_contract_digest: str
+    algorithm_bundle_digest: str
+    numerical_runtime_digest: str
+    variational_fso_digest: str
+    sensitivity_scope: str
+    baseline_dynamics_frozen: bool
+    baseline_pair_selection_frozen: bool
     metric_names: tuple[str, ...]
+    metric_domain: FSOMetricDomain
+    metric_domain_digest: str
     lead_minutes: tuple[int, ...]
     full_map_lead_minutes: tuple[int, ...]
     tile_size: int
     forecast_scores: Tensor
     metric_available: Tensor
+    metric_domain_weight_sum: Tensor
+    metric_domain_weight_fraction: Tensor
     forecast_cap_active_mask: Tensor
     observation: VariationalObservationSensitivity
     adjoint_iterations: Tensor
     adjoint_relative_residual: Tensor
+    adjoint_detected_sensitivity_l2_error_bound: Tensor
+    adjoint_normal_products: Tensor
+    adjoint_warm_started: Tensor
+    total_normal_products: int
+    materialized_output_bytes: int
+    active_set_margins: VariationalActiveSetMargins
+    feasibility_margins: VariationalFeasibilityMargins
+    gauss_newton_diagnostics: VariationalGaussNewtonDiagnostics
+
+
+@dataclass(frozen=True)
+class VariationalObservationPerturbation:
+    """Explicit first-order perturbation applied to the P1 observation model.
+
+    ``detected_dbz`` perturbs detected reflectivity values,
+    ``censor_threshold_dbz`` perturbs the censor threshold for censored events,
+    ``observation_weight`` perturbs the unit objective multiplier for each
+    valid observation. Optional ``initial_background_dbz`` independently
+    perturbs the accepted first-frame values used by the P1 initial
+    background, while optional ``baseline_dynamics_dbz`` perturbs the input
+    dBZ values that generated continuous P0 motion/growth under the retained
+    pair/peak selection. An observation-removal perturbation therefore uses
+    -1 in the weight channel.
+    """
+
+    detected_dbz: Tensor
+    censor_threshold_dbz: Tensor
+    observation_weight: Tensor
+    initial_background_dbz: Tensor | None = None
+    baseline_dynamics_dbz: Tensor | None = None
+    contract: str = "p1-observation-perturbation-v3"
+
+    @property
+    def digest(self) -> str:
+        return json_digest(
+            {
+                "contract": self.contract,
+                "detected_dbz": tensor_digest(self.detected_dbz),
+                "censor_threshold_dbz": tensor_digest(
+                    self.censor_threshold_dbz
+                ),
+                "observation_weight": tensor_digest(
+                    self.observation_weight
+                ),
+                "initial_background_dbz": (
+                    None
+                    if self.initial_background_dbz is None
+                    else tensor_digest(self.initial_background_dbz)
+                ),
+                "baseline_dynamics_dbz": (
+                    None
+                    if self.baseline_dynamics_dbz is None
+                    else tensor_digest(self.baseline_dynamics_dbz)
+                ),
+            }
+        )
+
+
+@dataclass(frozen=True)
+class VariationalImpactChannel:
+    """Signed first-order metric change from one perturbation channel."""
+
+    maps: Tensor
+    sum_by_time: Tensor
+    tile_sum_by_time: Tensor
+
+
+@dataclass(frozen=True)
+class VariationalObservationImpact:
+    """Component and total signed P1 observation-impact estimates."""
+
+    detected_dbz: VariationalImpactChannel
+    censor_threshold_dbz: VariationalImpactChannel
+    observation_weight: VariationalImpactChannel
+    initial_background_dbz: VariationalImpactChannel
+    baseline_dynamics_dbz: VariationalImpactChannel
+    total: VariationalImpactChannel
+
+
+@dataclass(frozen=True)
+class VariationalFSOI:
+    """Explicit-perturbation first-order impact derived from P1 FSO."""
+
+    contract: str
+    fso: VariationalFSO
+    perturbation: VariationalObservationPerturbation
+    perturbation_contract: str
+    perturbation_digest: str
+    observation: VariationalObservationImpact
+    variational_fsoi_digest: str
+
+
+@dataclass
+class _VariationalChannelAccumulator:
+    maps: Tensor
+    by_time: Tensor
+    tile_by_time: Tensor
+
+
+@dataclass(frozen=True)
+class _VariationalAdjointSensitivity:
+    detected_dbz: Tensor
+    censor_threshold_dbz: Tensor
+    observation_weight: Tensor
+
+
+@dataclass(frozen=True)
+class _VariationalAdjointSolve:
+    sensitivity: _VariationalAdjointSensitivity
+    solution: Tensor
+    iterations: int
+    relative_residual: float
+    detected_sensitivity_l2_error_bound: float
+    normal_products: int
+    warm_started: bool
+
+
+@dataclass(frozen=True)
+class _FrozenBaselineDynamicsPath:
+    """Reusable VJP for observation-derived baseline motion and growth."""
+
+    active_mask: Tensor
+    nominal_dynamics: Tensor
+    observation_pullback: Callable[[Tensor], tuple[Tensor]]
+
+
+@dataclass
+class _NormalProductBudget:
+    maximum: int
+    used: int = 0
+
+    def apply(
+        self,
+        operator: Callable[[Tensor], Tensor],
+        value: Tensor,
+    ) -> Tensor:
+        if self.used >= self.maximum:
+            raise ValueError("P1 FSO normal-product budget exhausted")
+        self.used += 1
+        return operator(value)
+
+
+def _metric_domain_weight(
+    result: ForecastResult,
+    verification_finite: Tensor,
+    forecast_index: int,
+    domain: FSOMetricDomain,
+) -> Tensor:
+    """Freeze the spatial domain/weight used by one forecast metric."""
+
+    if verification_finite.dtype is not torch.bool:
+        raise TypeError("verification_finite must be Boolean")
+    if verification_finite.shape != result.valid_mask[forecast_index].shape:
+        raise ValueError("verification domain must match one forecast lead")
+    if domain == "radar_dynamics_anchored":
+        eligible = result.radar_dynamics_anchored_valid_mask[forecast_index]
+        weight = eligible.to(result.state.echo_linear)
+    elif domain == "confidence_weighted":
+        eligible = result.valid_mask[forecast_index]
+        weight = result.forecast_confidence[forecast_index]
+    elif domain == "issued":
+        eligible = result.valid_mask[forecast_index]
+        weight = eligible.to(result.state.echo_linear)
+    else:
+        raise ValueError("unsupported FSO metric domain")
+    return torch.where(
+        verification_finite & eligible,
+        weight,
+        torch.zeros_like(weight),
+    ).detach()
+
+
+def _metric_domain_digest(
+    domain: FSOMetricDomain,
+    lead_minutes: tuple[int, ...],
+    weights: tuple[Tensor, ...],
+) -> str:
+    return json_digest(
+        {
+            "version": "p1-fso-metric-domain-v1",
+            "domain": domain,
+            "lead_minutes": list(lead_minutes),
+            "weight_digests": [tensor_digest(weight) for weight in weights],
+        }
+    )
+
+
+def _deterministic_unit_probe(
+    reference: Tensor,
+    *,
+    seed: int,
+) -> Tensor:
+    generator = torch.Generator(device="cpu")
+    generator.manual_seed(seed)
+    bits = torch.randint(
+        0,
+        2,
+        reference.shape,
+        generator=generator,
+        dtype=torch.int8,
+        device="cpu",
+    )
+    probe = (2 * bits - 1).to(
+        dtype=reference.dtype,
+        device=reference.device,
+    )
+    return probe / torch.linalg.vector_norm(probe)
+
+
+def _gauss_newton_curvature_diagnostics(
+    control: Tensor,
+    residual_fn: Callable[[Tensor], Tensor],
+    normal_product: Callable[[Tensor], Tensor],
+    budget: _NormalProductBudget,
+    config: VariationalAdjointConfig,
+) -> VariationalGaussNewtonDiagnostics:
+    """Compare exact frozen-objective and GN curvature on fixed probes."""
+
+    def objective(value: Tensor) -> Tensor:
+        residual = residual_fn(value)
+        return 0.5 * torch.dot(residual, residual)
+
+    objective_gradient = torch.func.grad(objective)
+    defects = control.new_empty(config.gauss_newton_probe_count)
+    products_before = budget.used
+    for index in range(config.gauss_newton_probe_count):
+        probe = _deterministic_unit_probe(
+            control,
+            seed=config.gauss_newton_probe_seed + index,
+        )
+        exact_product = cast(
+            Tensor,
+            torch.func.jvp(
+                objective_gradient,
+                (control,),
+                (probe,),
+            )[1],
+        )
+        gn_product = budget.apply(normal_product, probe)
+        if not bool(
+            torch.all(torch.isfinite(exact_product))
+            & torch.all(torch.isfinite(gn_product))
+        ):
+            raise ValueError("P1 frozen curvature probe is not finite")
+        denominator = torch.linalg.vector_norm(gn_product)
+        defects[index] = (
+            torch.linalg.vector_norm(exact_product - gn_product)
+            / denominator
+        )
+    maximum = float(torch.amax(defects).detach())
+    reliable = (
+        math.isfinite(maximum)
+        and maximum
+        <= config.maximum_gauss_newton_relative_curvature_defect
+    )
+    diagnostics = VariationalGaussNewtonDiagnostics(
+        relative_curvature_defect=defects.detach(),
+        maximum_relative_curvature_defect=maximum,
+        reliable=reliable,
+        normal_products=budget.used - products_before,
+        exact_hessian_products=config.gauss_newton_probe_count,
+    )
+    if config.require_gauss_newton_reliability and not reliable:
+        raise ValueError("P1 Gauss-Newton curvature approximation is unreliable")
+    return diagnostics
+
+
+def _adjoint_lead_indices(
+    config: VariationalAdjointConfig,
+    all_lead_minutes: tuple[int, ...],
+) -> tuple[int, ...]:
+    if config.lead_minutes is None:
+        return tuple(range(len(all_lead_minutes)))
+    positions = {minutes: index for index, minutes in enumerate(all_lead_minutes)}
+    missing = set(config.lead_minutes) - set(all_lead_minutes)
+    if missing:
+        raise ValueError(f"adjoint leads are outside the forecast: {sorted(missing)}")
+    return tuple(positions[minutes] for minutes in config.lead_minutes)
+
+
+def _prior_smoothness_diagonal_preconditioner(
+    control: Tensor,
+    frozen: FrozenOuterState,
+) -> Callable[[Tensor], Tensor]:
+    diagonal = torch.ones_like(control)
+    field_size = frozen.active_field_index.numel()
+    if field_size > 0 and frozen.smooth_edge_left_index.numel() > 0:
+        edge_weight = (
+            frozen.analysis_config.field_smoothness_weight
+            * frozen.smooth_edge_physical_weight
+        ).to(dtype=control.dtype, device=control.device)
+        field_diagonal = diagonal[:field_size]
+        field_diagonal.scatter_add_(
+            0,
+            frozen.smooth_edge_left_index,
+            edge_weight,
+        )
+        field_diagonal.scatter_add_(
+            0,
+            frozen.smooth_edge_right_index,
+            edge_weight,
+        )
+
+    def apply(value: Tensor) -> Tensor:
+        return value / diagonal
+
+    return apply
+
+
+def _variational_preconditioner(
+    control: Tensor,
+    frozen: FrozenOuterState,
+    config: VariationalAdjointConfig,
+) -> Callable[[Tensor], Tensor] | None:
+    if config.preconditioner == "none":
+        return None
+    return _prior_smoothness_diagonal_preconditioner(control, frozen)
+
+
+def _variational_materialized_output_bytes(
+    reference: Tensor,
+    *,
+    selected_count: int,
+    lead_count: int,
+    metric_count: int,
+    height: int,
+    width: int,
+    tile_rows: int,
+    tile_columns: int,
+    include_impact: bool,
+    gauss_newton_probe_count: int,
+) -> int:
+    channel_elements = (
+        selected_count * metric_count * 3 * height * width
+        + lead_count * metric_count * 3
+        + lead_count * metric_count * 3 * tile_rows * tile_columns
+    )
+    # Six sensitivity channels are always materialized. Explicit FSOI adds
+    # six signed impact channels (five parameters plus their total).
+    channel_count = 12 if include_impact else 6
+    float_elements = (
+        channel_count * channel_elements
+        + 3 * lead_count * metric_count
+        + 2 * lead_count
+        + gauss_newton_probe_count
+    )
+    bool_elements = (
+        selected_count * height * width
+        + 2 * lead_count * metric_count
+    )
+    int64_elements = 2 * lead_count * metric_count
+    return (
+        float_elements * reference.element_size()
+        + bool_elements
+        + int64_elements * 8
+    )
+
+
+def _minimum_masked_value(values: Tensor, mask: Tensor) -> float | None:
+    selected = values.masked_select(mask)
+    if selected.numel() == 0:
+        return None
+    result = float(torch.amin(selected).detach())
+    return result if math.isfinite(result) else None
+
+
+def _remap_fraction_margin(
+    displacement_yx: Tensor,
+    cell: RemapCell,
+) -> float:
+    cell_tensor = displacement_yx.new_tensor((cell.y, cell.x))
+    fraction = displacement_yx - cell_tensor
+    margin = torch.minimum(fraction, 1.0 - fraction)
+    return max(0.0, float(torch.amin(margin).detach()))
+
+
+def _analysis_remap_margin(
+    displacement_yx: Tensor,
+    cells: tuple[RemapCell, RemapCell],
+) -> float:
+    return min(
+        _remap_fraction_margin((index + 1) * displacement_yx, cell)
+        for index, cell in enumerate(cells)
+    )
+
+
+def _publication_margins(
+    result: ForecastResult,
+    forecast_indices: tuple[int, ...],
+) -> tuple[float, float | None]:
+    config = result.run.config
+    support_margins = [
+        torch.abs(
+            result.forecast_source_support[list(forecast_indices)]
+            - config.min_publish_support
+        )
+    ]
+    if config.minimum_publish_verified_support is not None:
+        support_margins.append(
+            torch.abs(
+                result.forecast_verified_support[list(forecast_indices)]
+                - config.minimum_publish_verified_support
+            )
+        )
+    if config.minimum_publish_observation_verified_support is not None:
+        support_margins.append(
+            torch.abs(
+                result.forecast_observation_verified_support[
+                    list(forecast_indices)
+                ]
+                - config.minimum_publish_observation_verified_support
+            )
+        )
+    support_margin = min(
+        float(torch.amin(values).detach()) for values in support_margins
+    )
+    if config.maximum_publish_background_fraction is not None:
+        support_margin = min(
+            support_margin,
+            abs(
+                result.metadata.background_contribution_fraction
+                - config.maximum_publish_background_fraction
+            ),
+        )
+    confidence_margin = None
+    if config.minimum_publish_confidence is not None:
+        confidence_margin = float(
+            torch.amin(
+                torch.abs(
+                    result.forecast_confidence[list(forecast_indices)]
+                    - config.minimum_publish_confidence
+                )
+            ).detach()
+        )
+    return support_margin, confidence_margin
+
+
+def _variational_channel_digest_values(
+    channel: VariationalSensitivityChannel,
+) -> dict[str, str]:
+    return {
+        "maps": tensor_digest(channel.maps),
+        "norm_by_time": tensor_digest(channel.norm_by_time),
+        "tile_norm_by_time": tensor_digest(channel.tile_norm_by_time),
+    }
+
+
+def _variational_impact_digest_values(
+    channel: VariationalImpactChannel,
+) -> dict[str, str]:
+    return {
+        "maps": tensor_digest(channel.maps),
+        "sum_by_time": tensor_digest(channel.sum_by_time),
+        "tile_sum_by_time": tensor_digest(channel.tile_sum_by_time),
+    }
+
+
+@dataclass(frozen=True)
+class _ResolvedVerification:
+    frames_dbz: Tensor
+    valid_mask: Tensor
+    contract: str
+    content_digest: str
+    lineage_complete: bool
+    valid_times: tuple[str, ...] | None
+    grid_contract_digest: str | None
+    radar_product_digest: str | None
+    qc_pipeline_digest: str | None
+
+
+def _verification_content_digest(
+    contract: str,
+    frames_dbz: Tensor,
+    valid_mask: Tensor,
+    valid_times: tuple[str, ...] | None,
+    grid_contract_digest: str | None,
+    radar_product_digest: str | None,
+    qc_pipeline_digest: str | None,
+) -> str:
+    return json_digest(
+        {
+            "version": "verification-bundle-content-v2",
+            "contract": contract,
+            "frames_dbz": tensor_digest(frames_dbz),
+            "valid_mask": tensor_digest(valid_mask),
+            "valid_times": None if valid_times is None else list(valid_times),
+            "grid_contract_digest": grid_contract_digest,
+            "radar_product_digest": radar_product_digest,
+            "qc_pipeline_digest": qc_pipeline_digest,
+        }
+    )
+
+
+def _resolve_verification(
+    verification: VerificationInput,
+    result: ForecastResult,
+    sensitivity_config: SensitivityConfig,
+) -> _ResolvedVerification:
+    if isinstance(verification, VerificationBundle):
+        verification.validate_integrity()
+        resolved = _ResolvedVerification(
+            frames_dbz=verification.frames_dbz,
+            valid_mask=verification.valid_mask,
+            contract=verification.contract,
+            content_digest=verification.content_digest,
+            lineage_complete=True,
+            valid_times=verification.valid_times,
+            grid_contract_digest=verification.grid_contract_digest,
+            radar_product_digest=verification.radar_product_digest,
+            qc_pipeline_digest=verification.qc_pipeline_digest,
+        )
+    else:
+        valid = torch.isfinite(verification)
+        contract = "legacy-verification-tensor-v1"
+        resolved = _ResolvedVerification(
+            frames_dbz=verification,
+            valid_mask=valid,
+            contract=contract,
+            content_digest=_verification_content_digest(
+                contract,
+                verification,
+                valid,
+                None,
+                None,
+                None,
+                None,
+            ),
+            lineage_complete=False,
+            valid_times=None,
+            grid_contract_digest=None,
+            radar_product_digest=None,
+            qc_pipeline_digest=None,
+        )
+    if sensitivity_config.require_verification_lineage and not (
+        resolved.lineage_complete
+    ):
+        raise ValueError(
+            "complete verification lineage requires VerificationBundle"
+        )
+    if not resolved.lineage_complete:
+        return resolved
+    grid = result.run.grid_time_contract
+    if grid is None or result.run.grid_time_contract_digest is None:
+        raise ValueError(
+            "verification lineage requires a forecast grid/time contract"
+        )
+    if resolved.grid_contract_digest != result.run.grid_time_contract_digest:
+        raise ValueError("verification and forecast grid contracts disagree")
+    issue_time = datetime.fromisoformat(
+        grid.valid_times[-1].replace("Z", "+00:00")
+    )
+    expected_times = tuple(
+        (issue_time + timedelta(minutes=minutes))
+        .astimezone(timezone.utc)
+        .isoformat()
+        .replace("+00:00", "Z")
+        for minutes in range(
+            result.run.config.interval_minutes,
+            result.run.config.horizon_minutes + 1,
+            result.run.config.interval_minutes,
+        )
+    )
+    if resolved.valid_times != expected_times:
+        raise ValueError(
+            "verification valid times do not match forecast issue and leads"
+        )
+    return resolved
+
+
+def _validate_verification_lineage_fields(
+    *,
+    contract: str,
+    content_digest: str,
+    lineage_complete: bool,
+    valid_times: tuple[str, ...] | None,
+    grid_contract_digest: str | None,
+    radar_product_digest: str | None,
+    qc_pipeline_digest: str | None,
+) -> None:
+    _require_sha256("verification_bundle_digest", content_digest)
+    if type(lineage_complete) is not bool:
+        raise TypeError("verification_lineage_complete must be Boolean")
+    lineage_values = (
+        grid_contract_digest,
+        radar_product_digest,
+        qc_pipeline_digest,
+    )
+    if not lineage_complete:
+        if contract != "legacy-verification-tensor-v1":
+            raise ValueError("incomplete verification must use legacy contract")
+        if valid_times is not None or any(
+            value is not None for value in lineage_values
+        ):
+            raise ValueError("incomplete verification cannot claim lineage")
+        return
+    if contract != "radar-verification-bundle-v1":
+        raise ValueError("complete verification has the wrong contract")
+    if valid_times is None or not valid_times:
+        raise ValueError("complete verification requires valid times")
+    canonical_times = tuple(
+        _canonical_verification_time(value) for value in valid_times
+    )
+    parsed_times = tuple(
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        for value in canonical_times
+    )
+    if canonical_times != valid_times or any(
+        later <= earlier
+        for earlier, later in zip(parsed_times, parsed_times[1:])
+    ):
+        raise ValueError(
+            "verification valid times must be canonical UTC and increasing"
+        )
+    for name, value in zip(
+        (
+            "verification_grid_contract_digest",
+            "verification_radar_product_digest",
+            "verification_qc_pipeline_digest",
+        ),
+        lineage_values,
+    ):
+        if value is None:
+            raise ValueError(f"{name} is required")
+        _require_sha256(name, value)
+
+
+def _metric_contract_digest(config: SensitivityConfig) -> str:
+    return json_digest(
+        {
+            "version": "p1-forecast-metric-contract-v3",
+            "metric_names": list(config.metric_names),
+            "metric_domain": config.metric_domain,
+            "sensitivity_config_digest": config.digest,
+        }
+    )
+
+
+def variational_fso_digest(fso: VariationalFSO) -> str:
+    """Content digest for a complete frozen-model FSO result."""
+
+    return json_digest(
+        {
+            "version": "p1-variational-fso-digest-v7",
+            "contract": fso.contract,
+            "forecast_run_digest": fso.forecast_run_digest,
+            "analysis_input_digest": fso.analysis_input_digest,
+            "sensitivity_config_digest": fso.sensitivity_config_digest,
+            "adjoint_config_digest": fso.adjoint_config_digest,
+            "linearization_contract": fso.linearization_contract,
+            "linearization_digest": fso.linearization_digest,
+            "verification_contract": fso.verification_contract,
+            "verification_bundle_digest": fso.verification_bundle_digest,
+            "verification_lineage_complete": (
+                fso.verification_lineage_complete
+            ),
+            "verification_valid_times": (
+                None
+                if fso.verification_valid_times is None
+                else list(fso.verification_valid_times)
+            ),
+            "verification_grid_contract_digest": (
+                fso.verification_grid_contract_digest
+            ),
+            "verification_radar_product_digest": (
+                fso.verification_radar_product_digest
+            ),
+            "verification_qc_pipeline_digest": (
+                fso.verification_qc_pipeline_digest
+            ),
+            "metric_contract_digest": fso.metric_contract_digest,
+            "algorithm_bundle_digest": fso.algorithm_bundle_digest,
+            "numerical_runtime_digest": fso.numerical_runtime_digest,
+            "sensitivity_scope": fso.sensitivity_scope,
+            "baseline_dynamics_frozen": fso.baseline_dynamics_frozen,
+            "baseline_pair_selection_frozen": (
+                fso.baseline_pair_selection_frozen
+            ),
+            "metric_names": list(fso.metric_names),
+            "metric_domain": fso.metric_domain,
+            "metric_domain_digest": fso.metric_domain_digest,
+            "lead_minutes": list(fso.lead_minutes),
+            "full_map_lead_minutes": list(fso.full_map_lead_minutes),
+            "tile_size": fso.tile_size,
+            "forecast_scores": tensor_digest(fso.forecast_scores),
+            "metric_available": tensor_digest(fso.metric_available),
+            "metric_domain_weight_sum": tensor_digest(
+                fso.metric_domain_weight_sum
+            ),
+            "metric_domain_weight_fraction": tensor_digest(
+                fso.metric_domain_weight_fraction
+            ),
+            "forecast_cap_active_mask": tensor_digest(
+                fso.forecast_cap_active_mask
+            ),
+            "observation": {
+                "detected_dbz": _variational_channel_digest_values(
+                    fso.observation.detected_dbz
+                ),
+                "censor_threshold_dbz": (
+                    _variational_channel_digest_values(
+                        fso.observation.censor_threshold_dbz
+                    )
+                ),
+                "observation_weight": _variational_channel_digest_values(
+                    fso.observation.observation_weight
+                ),
+                "initial_background_dbz": (
+                    _variational_channel_digest_values(
+                        fso.observation.initial_background_dbz
+                    )
+                ),
+                "baseline_dynamics_dbz": (
+                    _variational_channel_digest_values(
+                        fso.observation.baseline_dynamics_dbz
+                    )
+                ),
+                "frozen_structure_input_dbz": (
+                    _variational_channel_digest_values(
+                        fso.observation.frozen_structure_input_dbz
+                    )
+                ),
+            },
+            "adjoint_iterations": tensor_digest(fso.adjoint_iterations),
+            "adjoint_relative_residual": tensor_digest(
+                fso.adjoint_relative_residual
+            ),
+            "adjoint_detected_sensitivity_l2_error_bound": tensor_digest(
+                fso.adjoint_detected_sensitivity_l2_error_bound
+            ),
+            "adjoint_normal_products": tensor_digest(
+                fso.adjoint_normal_products
+            ),
+            "adjoint_warm_started": tensor_digest(
+                fso.adjoint_warm_started
+            ),
+            "total_normal_products": fso.total_normal_products,
+            "materialized_output_bytes": fso.materialized_output_bytes,
+            "active_set_margins": {
+                "detection_classification_dbz": (
+                    fso.active_set_margins.detection_classification_dbz
+                ),
+                "analysis_remap_fraction": (
+                    fso.active_set_margins.analysis_remap_fraction
+                ),
+                "forecast_remap_fraction": (
+                    fso.active_set_margins.forecast_remap_fraction
+                ),
+                "output_cap_dbz": fso.active_set_margins.output_cap_dbz,
+                "publication_support": (
+                    fso.active_set_margins.publication_support
+                ),
+                "publication_confidence": (
+                    fso.active_set_margins.publication_confidence
+                ),
+                "low_local_validity": (
+                    fso.active_set_margins.low_local_validity
+                ),
+            },
+            "feasibility_margins": {
+                "reachability_support": (
+                    fso.feasibility_margins.reachability_support
+                ),
+                "unresolved_amplitude_fraction": (
+                    fso.feasibility_margins
+                    .unresolved_amplitude_fraction
+                ),
+                "amplitude_confidence": (
+                    fso.feasibility_margins.amplitude_confidence
+                ),
+                "motion_saturation_fraction": (
+                    fso.feasibility_margins.motion_saturation_fraction
+                ),
+                "motion_speed_saturation_mps": (
+                    fso.feasibility_margins
+                    .motion_speed_saturation_mps
+                ),
+                "growth_saturation_per_step": (
+                    fso.feasibility_margins.growth_saturation_per_step
+                ),
+                "low_interior_validity": (
+                    fso.feasibility_margins.low_interior_validity
+                ),
+            },
+            "gauss_newton_diagnostics": {
+                "relative_curvature_defect": tensor_digest(
+                    fso.gauss_newton_diagnostics.relative_curvature_defect
+                ),
+                "maximum_relative_curvature_defect": (
+                    fso.gauss_newton_diagnostics
+                    .maximum_relative_curvature_defect
+                ),
+                "reliable": fso.gauss_newton_diagnostics.reliable,
+                "normal_products": (
+                    fso.gauss_newton_diagnostics.normal_products
+                ),
+                "exact_hessian_products": (
+                    fso.gauss_newton_diagnostics.exact_hessian_products
+                ),
+            },
+        }
+    )
+
+
+def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
+    """Content digest for one explicit first-order impact product."""
+
+    return json_digest(
+        {
+            "version": "p1-variational-fsoi-digest-v4",
+            "contract": fsoi.contract,
+            "variational_fso_digest": fsoi.fso.variational_fso_digest,
+            "perturbation_contract": fsoi.perturbation_contract,
+            "perturbation_digest": fsoi.perturbation_digest,
+            "observation": {
+                "detected_dbz": _variational_impact_digest_values(
+                    fsoi.observation.detected_dbz
+                ),
+                "censor_threshold_dbz": _variational_impact_digest_values(
+                    fsoi.observation.censor_threshold_dbz
+                ),
+                "observation_weight": _variational_impact_digest_values(
+                    fsoi.observation.observation_weight
+                ),
+                "initial_background_dbz": (
+                    _variational_impact_digest_values(
+                        fsoi.observation.initial_background_dbz
+                    )
+                ),
+                "baseline_dynamics_dbz": (
+                    _variational_impact_digest_values(
+                        fsoi.observation.baseline_dynamics_dbz
+                    )
+                ),
+                "total": _variational_impact_digest_values(
+                    fsoi.observation.total
+                ),
+            },
+        }
+    )
+
+
+def validate_variational_fso(fso: VariationalFSO) -> None:
+    """Reject any mutation of a content-addressed FSO result."""
+
+    if fso.contract != "p1-variational-fso-v7":
+        raise ValueError("unsupported P1 FSO contract")
+    if (
+        fso.sensitivity_scope
+        != "residual_plus_observation_derived_baseline_with_frozen_selection"
+        or fso.baseline_dynamics_frozen is not False
+        or fso.baseline_pair_selection_frozen is not True
+    ):
+        raise ValueError("unsupported P1 FSO sensitivity scope")
+    _validate_verification_lineage_fields(
+        contract=fso.verification_contract,
+        content_digest=fso.verification_bundle_digest,
+        lineage_complete=fso.verification_lineage_complete,
+        valid_times=fso.verification_valid_times,
+        grid_contract_digest=fso.verification_grid_contract_digest,
+        radar_product_digest=fso.verification_radar_product_digest,
+        qc_pipeline_digest=fso.verification_qc_pipeline_digest,
+    )
+    if variational_fso_digest(fso) != fso.variational_fso_digest:
+        raise ValueError("P1 FSO result digest mismatch")
+
+
+def validate_variational_fsoi(fsoi: VariationalFSOI) -> None:
+    """Reject any mutation or cross-binding in a P1 impact result."""
+
+    if fsoi.contract != "p1-linearized-observation-impact-v4":
+        raise ValueError("unsupported P1 FSOI contract")
+    validate_variational_fso(fsoi.fso)
+    if fsoi.perturbation.digest != fsoi.perturbation_digest:
+        raise ValueError("P1 FSOI perturbation digest mismatch")
+    if variational_fsoi_digest(fsoi) != fsoi.variational_fsoi_digest:
+        raise ValueError("P1 FSOI result digest mismatch")
+
+
+def _new_variational_channel_accumulator(
+    reference: Tensor,
+    *,
+    selected_count: int,
+    lead_count: int,
+    metric_count: int,
+    height: int,
+    width: int,
+    tile_rows: int,
+    tile_columns: int,
+) -> _VariationalChannelAccumulator:
+    return _VariationalChannelAccumulator(
+        maps=reference.new_full(
+            (selected_count, metric_count, 3, height, width),
+            float("nan"),
+        ),
+        by_time=reference.new_full(
+            (lead_count, metric_count, 3),
+            float("nan"),
+        ),
+        tile_by_time=reference.new_full(
+            (
+                lead_count,
+                metric_count,
+                3,
+                tile_rows,
+                tile_columns,
+            ),
+            float("nan"),
+        ),
+    )
+
+
+def _record_variational_channel(
+    accumulator: _VariationalChannelAccumulator,
+    values: Tensor,
+    *,
+    lead_index: int,
+    metric_index: int,
+    selected_index: int | None,
+    tile_size: int,
+    signed_sum: bool,
+) -> None:
+    if signed_sum:
+        accumulator.by_time[lead_index, metric_index] = values.reshape(
+            3,
+            -1,
+        ).sum(dim=1)
+        tile_function = _tile_sum
+    else:
+        accumulator.by_time[lead_index, metric_index] = (
+            torch.linalg.vector_norm(values.reshape(3, -1), dim=1)
+        )
+        tile_function = _tile_l2
+    accumulator.tile_by_time[lead_index, metric_index] = torch.stack(
+        tuple(tile_function(values[index], tile_size) for index in range(3))
+    )
+    if selected_index is not None:
+        accumulator.maps[selected_index, metric_index] = values
+
+
+def _sensitivity_channel(
+    accumulator: _VariationalChannelAccumulator,
+) -> VariationalSensitivityChannel:
+    return VariationalSensitivityChannel(
+        maps=accumulator.maps,
+        norm_by_time=accumulator.by_time,
+        tile_norm_by_time=accumulator.tile_by_time,
+    )
+
+
+def _impact_channel(
+    accumulator: _VariationalChannelAccumulator,
+) -> VariationalImpactChannel:
+    return VariationalImpactChannel(
+        maps=accumulator.maps,
+        sum_by_time=accumulator.by_time,
+        tile_sum_by_time=accumulator.tile_by_time,
+    )
 
 
 @dataclass(frozen=True)
@@ -247,6 +1592,13 @@ class SensitivitySnapshot:
     nowcast_config_digest: str
     sensitivity_config_digest: str
     grid_time_contract_digest: str | None
+    verification_contract: str
+    verification_bundle_digest: str
+    verification_lineage_complete: bool
+    verification_valid_times: tuple[str, ...] | None
+    verification_grid_contract_digest: str | None
+    verification_radar_product_digest: str | None
+    verification_qc_pipeline_digest: str | None
     metric_names: tuple[str, ...]
     lead_minutes: tuple[int, ...]
     full_map_lead_minutes: tuple[int, ...]
@@ -296,7 +1648,7 @@ class SensitivitySnapshot:
 def compute_sensitivity_snapshot(
     latest_frame_dbz: Tensor,
     result: ForecastResult,
-    verification_frames_dbz: Tensor,
+    verification_frames_dbz: VerificationInput,
     *,
     sensitivity_config: SensitivityConfig | None = None,
     latest_background_dbz: Tensor | None = None,
@@ -320,6 +1672,12 @@ def compute_sensitivity_snapshot(
         )
     nowcast_config = result.run.config
     result.validate_issuance()
+    verification_bundle = _resolve_verification(
+        verification_frames_dbz,
+        result,
+        sensitivity_config,
+    )
+    verification_frames = verification_bundle.frames_dbz
     result.run.validate_latest_frame(latest_frame_dbz)
     result.run.validate_latest_background(latest_background_dbz)
     latest_observation_mask = result.run.latest_observation_mask
@@ -336,7 +1694,7 @@ def compute_sensitivity_snapshot(
         raise ValueError("active_margin_dbz leaves no differentiable range")
     _validate_inputs(
         latest_frame_dbz,
-        verification_frames_dbz,
+        verification_frames,
         state,
         nowcast_config,
         latest_background_dbz,
@@ -360,20 +1718,20 @@ def compute_sensitivity_snapshot(
     tile_columns = math.ceil(width / sensitivity_config.tile_size)
 
     clean_verification = torch.nan_to_num(
-        verification_frames_dbz,
+        verification_frames,
         nan=nowcast_config.min_dbz,
         posinf=nowcast_config.max_dbz,
         neginf=nowcast_config.min_dbz,
     )
-    verification_valid = torch.isfinite(verification_frames_dbz)
+    verification_finite = verification_bundle.valid_mask
     issued_valid = torch.isfinite(result.forecast_dbz)
-    if issued_valid.shape != verification_valid.shape:
+    if issued_valid.shape != verification_finite.shape:
         raise ValueError("issued forecast must match verification shape")
-    if result.valid_mask.shape != verification_valid.shape:
+    if result.valid_mask.shape != verification_finite.shape:
         raise ValueError("forecast valid_mask must match verification shape")
     if not torch.equal(result.valid_mask, issued_valid):
         raise ValueError("forecast valid_mask must match issued finite values")
-    verification_valid = verification_valid & issued_valid
+    verification_valid = verification_finite & issued_valid
     truth_linear = dbz_to_echo(
         clean_verification,
         min_dbz=nowcast_config.min_dbz,
@@ -512,7 +1870,12 @@ def compute_sensitivity_snapshot(
 
     for lead_index in range(lead_count):
         truth = truth_linear[lead_index]
-        valid = verification_valid[lead_index]
+        valid = _metric_domain_weight(
+            result,
+            verification_finite[lead_index],
+            lead_index,
+            sensitivity_config.metric_domain,
+        )
         lead_cell = freeze_remap_cell(
             (lead_index + 1) * state.displacement_yx
         )
@@ -693,6 +2056,21 @@ def compute_sensitivity_snapshot(
         nowcast_config_digest=nowcast_config.digest,
         sensitivity_config_digest=sensitivity_config.digest,
         grid_time_contract_digest=result.run.grid_time_contract_digest,
+        verification_contract=verification_bundle.contract,
+        verification_bundle_digest=verification_bundle.content_digest,
+        verification_lineage_complete=(
+            verification_bundle.lineage_complete
+        ),
+        verification_valid_times=verification_bundle.valid_times,
+        verification_grid_contract_digest=(
+            verification_bundle.grid_contract_digest
+        ),
+        verification_radar_product_digest=(
+            verification_bundle.radar_product_digest
+        ),
+        verification_qc_pipeline_digest=(
+            verification_bundle.qc_pipeline_digest
+        ),
         metric_names=sensitivity_config.metric_names,
         lead_minutes=lead_minutes,
         full_map_lead_minutes=sensitivity_config.full_map_lead_minutes,
@@ -757,7 +2135,7 @@ def compute_sensitivity_snapshot(
 
 def compute_sensitivity_snapshot_from_run(
     result: ForecastResult,
-    verification_frames_dbz: Tensor,
+    verification_frames_dbz: VerificationInput,
     *,
     sensitivity_config: SensitivityConfig | None = None,
     observation_std_dbz: float | Tensor | None = None,
@@ -776,14 +2154,73 @@ def compute_sensitivity_snapshot_from_run(
     )
 
 
-def compute_variational_fsoi(
+def compute_variational_fso(
     result: ForecastResult,
-    analysis: AnalysisResult,
-    verification_frames_dbz: Tensor,
+    analysis: AnalysisResult | P1LinearizationState,
+    verification_frames_dbz: VerificationInput,
     *,
     sensitivity_config: SensitivityConfig | None = None,
+    adjoint_config: VariationalAdjointConfig | None = None,
+) -> VariationalFSO:
+    """Compute frozen-final P1 forecast sensitivity to observations."""
+
+    fso, _ = _compute_variational_products(
+        result,
+        analysis,
+        verification_frames_dbz,
+        sensitivity_config=sensitivity_config,
+        adjoint_config=adjoint_config,
+        observation_perturbation=None,
+    )
+    return fso
+
+
+def compute_variational_fsoi(
+    result: ForecastResult,
+    analysis: AnalysisResult | P1LinearizationState,
+    verification_frames_dbz: VerificationInput,
+    observation_perturbation: VariationalObservationPerturbation,
+    *,
+    sensitivity_config: SensitivityConfig | None = None,
+    adjoint_config: VariationalAdjointConfig | None = None,
 ) -> VariationalFSOI:
-    """Compute frozen-final-outer-loop P1 observation sensitivity.
+    """Compute signed first-order impact for an explicit perturbation."""
+
+    fso, observation_impact = _compute_variational_products(
+        result,
+        analysis,
+        verification_frames_dbz,
+        sensitivity_config=sensitivity_config,
+        adjoint_config=adjoint_config,
+        observation_perturbation=observation_perturbation,
+    )
+    if observation_impact is None:
+        raise RuntimeError("variational FSOI impact was not materialized")
+    fsoi = VariationalFSOI(
+        contract="p1-linearized-observation-impact-v4",
+        fso=fso,
+        perturbation=observation_perturbation,
+        perturbation_contract=observation_perturbation.contract,
+        perturbation_digest=observation_perturbation.digest,
+        observation=observation_impact,
+        variational_fsoi_digest="",
+    )
+    return replace(
+        fsoi,
+        variational_fsoi_digest=variational_fsoi_digest(fsoi),
+    )
+
+
+def _compute_variational_products(
+    result: ForecastResult,
+    analysis: AnalysisResult | P1LinearizationState,
+    verification_frames_dbz: VerificationInput,
+    *,
+    sensitivity_config: SensitivityConfig | None,
+    adjoint_config: VariationalAdjointConfig | None,
+    observation_perturbation: VariationalObservationPerturbation | None,
+) -> tuple[VariationalFSO, VariationalObservationImpact | None]:
+    """Compute frozen-final P1 forecast sensitivity to observations.
 
     The final IRLS weights, remap cells, active controls, and observation
     classification are held fixed. Each forecast-metric adjoint uses the same
@@ -791,36 +2228,67 @@ def compute_variational_fsoi(
     """
 
     sensitivity_config = sensitivity_config or SensitivityConfig()
+    adjoint_config = adjoint_config or VariationalAdjointConfig()
     result.validate_issuance()
+    verification_bundle = _resolve_verification(
+        verification_frames_dbz,
+        result,
+        sensitivity_config,
+    )
+    verification_frames = verification_bundle.frames_dbz
     if result.metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
-        raise ValueError("variational FSOI requires an accepted P1 forecast")
+        raise ValueError("variational FSO requires an accepted P1 forecast")
     if analysis.used_fallback or not analysis.converged or analysis.degraded:
-        raise ValueError("variational FSOI requires a converged P1 analysis")
+        raise ValueError("variational FSO requires a converged P1 analysis")
     linearization = analysis.linearization
     if linearization is None:
         raise ValueError("P1 analysis does not retain a final linearization")
-    if linearization.contract != "p1-final-frozen-irls-gn-v1":
+    if linearization.contract != P1_LINEARIZATION_CONTRACT:
         raise ValueError("unsupported P1 linearization contract")
-    _validate_variational_fsoi_lineage(result, analysis, linearization)
+    _validate_variational_fso_lineage(result, analysis, linearization)
+    feasibility_margins = _variational_feasibility_margins(
+        linearization.feasibility_margins,
+        adjoint_config,
+    )
+    if (
+        adjoint_config.require_feasibility_margin
+        and feasibility_margins.low_interior_validity
+    ):
+        raise ValueError(
+            "P1 FSO feasibility margin is below its requirement"
+        )
 
     nowcast_config = result.run.config
     observations = linearization.observations
     frozen = linearization.frozen
     control = analysis.control
+    if observation_perturbation is not None:
+        _validate_variational_observation_perturbation(
+            observation_perturbation,
+            observations,
+            frozen,
+        )
     _validate_inputs(
         observations.dbz[-1],
-        verification_frames_dbz,
+        verification_frames,
         analysis.state,
         nowcast_config,
         None,
     )
     height, width = analysis.state.echo_linear.shape
-    lead_minutes = tuple(
+    all_lead_minutes = tuple(
         range(
             nowcast_config.interval_minutes,
             nowcast_config.horizon_minutes + 1,
             nowcast_config.interval_minutes,
         )
+    )
+    forecast_indices = _adjoint_lead_indices(
+        adjoint_config,
+        all_lead_minutes,
+    )
+    lead_minutes = tuple(
+        all_lead_minutes[index] for index in forecast_indices
     )
     full_map_indices = _full_map_indices(
         sensitivity_config.full_map_lead_minutes,
@@ -833,6 +2301,26 @@ def compute_variational_fsoi(
     metric_count = len(sensitivity_config.metric_names)
     tile_rows = math.ceil(height / sensitivity_config.tile_size)
     tile_columns = math.ceil(width / sensitivity_config.tile_size)
+    selected_count = len(full_map_indices)
+    materialized_output_bytes = _variational_materialized_output_bytes(
+        control,
+        selected_count=selected_count,
+        lead_count=lead_count,
+        metric_count=metric_count,
+        height=height,
+        width=width,
+        tile_rows=tile_rows,
+        tile_columns=tile_columns,
+        include_impact=observation_perturbation is not None,
+        gauss_newton_probe_count=adjoint_config.gauss_newton_probe_count,
+    )
+    if (
+        materialized_output_bytes
+        > adjoint_config.maximum_materialized_output_bytes
+    ):
+        raise ValueError(
+            "P1 FSO materialized output exceeds its byte budget"
+        )
     score_shape = (lead_count, metric_count)
     forecast_scores = control.new_full(score_shape, float("nan"))
     metric_available = torch.zeros(
@@ -840,25 +2328,58 @@ def compute_variational_fsoi(
         dtype=torch.bool,
         device=control.device,
     )
-    selected_count = len(full_map_indices)
-    observation_maps = control.new_full(
-        (selected_count, metric_count, 3, height, width),
-        float("nan"),
+    channel_shape = {
+        "selected_count": selected_count,
+        "lead_count": lead_count,
+        "metric_count": metric_count,
+        "height": height,
+        "width": width,
+        "tile_rows": tile_rows,
+        "tile_columns": tile_columns,
+    }
+    detected_sensitivity = _new_variational_channel_accumulator(
+        control,
+        **channel_shape,
     )
-    observation_norm = control.new_full(
-        (lead_count, metric_count, 3),
-        float("nan"),
+    censor_sensitivity = _new_variational_channel_accumulator(
+        control,
+        **channel_shape,
     )
-    tile_observation_norm = control.new_full(
-        (
-            lead_count,
-            metric_count,
-            3,
-            tile_rows,
-            tile_columns,
-        ),
-        float("nan"),
+    weight_sensitivity = _new_variational_channel_accumulator(
+        control,
+        **channel_shape,
     )
+    initial_background_sensitivity = _new_variational_channel_accumulator(
+        control,
+        **channel_shape,
+    )
+    baseline_dynamics_sensitivity = _new_variational_channel_accumulator(
+        control,
+        **channel_shape,
+    )
+    frozen_structure_input_sensitivity = (
+        _new_variational_channel_accumulator(
+            control,
+            **channel_shape,
+        )
+    )
+    impact_accumulators: tuple[
+        _VariationalChannelAccumulator,
+        _VariationalChannelAccumulator,
+        _VariationalChannelAccumulator,
+        _VariationalChannelAccumulator,
+        _VariationalChannelAccumulator,
+        _VariationalChannelAccumulator,
+    ] | None = None
+    if observation_perturbation is not None:
+        impact_accumulators = (
+            _new_variational_channel_accumulator(control, **channel_shape),
+            _new_variational_channel_accumulator(control, **channel_shape),
+            _new_variational_channel_accumulator(control, **channel_shape),
+            _new_variational_channel_accumulator(control, **channel_shape),
+            _new_variational_channel_accumulator(control, **channel_shape),
+            _new_variational_channel_accumulator(control, **channel_shape),
+        )
     selected_cap_masks = torch.zeros(
         (selected_count, height, width),
         dtype=torch.bool,
@@ -873,17 +2394,50 @@ def compute_variational_fsoi(
         score_shape,
         float("nan"),
     )
+    adjoint_detected_sensitivity_l2_error_bound = control.new_full(
+        score_shape,
+        float("nan"),
+    )
+    adjoint_normal_products = torch.zeros(
+        score_shape,
+        dtype=torch.int64,
+        device=control.device,
+    )
+    adjoint_warm_started = torch.zeros(
+        score_shape,
+        dtype=torch.bool,
+        device=control.device,
+    )
 
     clean_verification = torch.nan_to_num(
-        verification_frames_dbz,
+        verification_frames,
         nan=nowcast_config.min_dbz,
         posinf=nowcast_config.max_dbz,
         neginf=nowcast_config.min_dbz,
     )
-    verification_valid = torch.isfinite(verification_frames_dbz)
-    if verification_valid.shape != result.valid_mask.shape:
+    verification_finite = verification_bundle.valid_mask
+    if verification_finite.shape != result.valid_mask.shape:
         raise ValueError("verification frames must match the forecast shape")
-    verification_valid &= result.valid_mask
+    metric_domain_weights = tuple(
+        _metric_domain_weight(
+            result,
+            verification_finite[forecast_index],
+            forecast_index,
+            sensitivity_config.metric_domain,
+        )
+        for forecast_index in forecast_indices
+    )
+    metric_domain_weight_sum = torch.stack(
+        tuple(weight.sum() for weight in metric_domain_weights)
+    )
+    metric_domain_weight_fraction = metric_domain_weight_sum / float(
+        height * width
+    )
+    metric_domain_digest = _metric_domain_digest(
+        sensitivity_config.metric_domain,
+        lead_minutes,
+        metric_domain_weights,
+    )
     truth_linear = dbz_to_echo(
         clean_verification,
         min_dbz=nowcast_config.min_dbz,
@@ -905,28 +2459,115 @@ def compute_variational_fsoi(
         observations,
         frozen,
     )
+    baseline_dynamics_path = _prepare_frozen_baseline_dynamics_path(
+        observations,
+        frozen,
+    )
+    normal_product_budget = _NormalProductBudget(
+        maximum=adjoint_config.maximum_normal_products
+    )
+    gauss_newton_diagnostics = _gauss_newton_curvature_diagnostics(
+        control,
+        residual_fn,
+        normal_product,
+        normal_product_budget,
+        adjoint_config,
+    )
+    preconditioner = _variational_preconditioner(
+        control,
+        frozen,
+        adjoint_config,
+    )
+    warm_solutions: dict[int, Tensor] = {}
 
     observation_count = observations.dbz.numel()
-    observation_scale = torch.where(
+    base_observation_scale = (
+        torch.sqrt(observations.quality_weight)
+        * frozen.irls_sqrt_weight
+        / observations.std_dbz
+    )
+    detected_observation_scale = torch.where(
         observations.detected_mask,
-        (
-            torch.sqrt(observations.quality_weight)
-            * frozen.irls_sqrt_weight
-            / observations.std_dbz
-        ),
+        base_observation_scale,
         torch.zeros_like(observations.dbz),
     )
-    final_state = _variational_state(control, frozen)
+    final_trajectory = _analysis_trajectory(control, frozen)
+    analyzed_dbz = echo_to_dbz(
+        final_trajectory.frames_linear,
+        min_dbz=nowcast_config.min_dbz,
+    )
+    censor_response = torch.sigmoid(
+        (
+            analyzed_dbz
+            - frozen.analysis_config.detection_limit_dbz
+        )
+        / frozen.analysis_config.censor_temperature_dbz
+    )
+    censor_error = (
+        frozen.analysis_config.censor_temperature_dbz
+        * F.softplus(
+            (
+                analyzed_dbz
+                - frozen.analysis_config.detection_limit_dbz
+            )
+            / frozen.analysis_config.censor_temperature_dbz
+        )
+    )
+    censor_cross_scale = base_observation_scale * (
+        censor_response
+        + (
+            censor_error
+            / frozen.analysis_config.censor_temperature_dbz
+        )
+        * (1.0 - censor_response)
+    )
+    censor_observation_scale = torch.where(
+        observations.censored_mask,
+        censor_cross_scale,
+        torch.zeros_like(observations.dbz),
+    )
+    weighted_observation_residual = residual_fn(control)[
+        :observation_count
+    ].reshape_as(observations.dbz).detach()
+    final_state = RadarState(
+        echo_linear=final_trajectory.frames_linear[-1],
+        displacement_yx=final_trajectory.displacement_yx,
+        log_growth_per_step=final_trajectory.log_growth_per_step,
+    )
+    detection_margin = _minimum_masked_value(
+        torch.abs(
+            observations.dbz
+            - frozen.analysis_config.detection_limit_dbz
+        ),
+        observations.valid_mask,
+    )
+    analysis_remap_margin = _analysis_remap_margin(
+        final_trajectory.displacement_yx,
+        frozen.analysis_remap_cells,
+    )
+    publication_support_margin, publication_confidence_margin = (
+        _publication_margins(result, forecast_indices)
+    )
+    forecast_remap_margin = math.inf
+    output_cap_margin: float | None = None
 
-    for lead_index in range(lead_count):
-        truth = truth_linear[lead_index]
-        valid = verification_valid[lead_index]
+    for lead_index, forecast_index in enumerate(forecast_indices):
+        truth = truth_linear[forecast_index]
+        valid = metric_domain_weights[lead_index]
+        forecast_step = forecast_index + 1
         lead_cell = freeze_remap_cell(
-            (lead_index + 1) * analysis.state.displacement_yx
+            forecast_step * analysis.state.displacement_yx
+        )
+        forecast_remap_margin = min(
+            forecast_remap_margin,
+            _remap_fraction_margin(
+                forecast_step * analysis.state.displacement_yx,
+                lead_cell,
+            ),
         )
         latent_prediction = _forecast_linear_at_step_core(
             final_state,
-            lead_index + 1,
+            forecast_step,
             nowcast_config,
             lead_cell,
         )
@@ -934,15 +2575,29 @@ def compute_variational_fsoi(
             latent_prediction,
             nowcast_config,
         )
-        nominal_valid = result.valid_mask[lead_index]
+        nominal_valid = result.valid_mask[forecast_index]
+        latent_dbz = echo_to_dbz(
+            latent_prediction,
+            min_dbz=nowcast_config.min_dbz,
+        )
+        lead_cap_margin = _minimum_masked_value(
+            torch.abs(latent_dbz - nowcast_config.max_dbz),
+            nominal_valid,
+        )
+        if lead_cap_margin is not None:
+            output_cap_margin = (
+                lead_cap_margin
+                if output_cap_margin is None
+                else min(output_cap_margin, lead_cap_margin)
+            )
         if not torch.allclose(
             prediction[nominal_valid],
-            issued_echo[lead_index][nominal_valid],
+            issued_echo[forecast_index][nominal_valid],
             rtol=1.0e-5,
             atol=1.0e-7,
         ):
             raise ValueError(
-                "P1 FSOI model disagrees with the issued forecast"
+                "P1 FSO model disagrees with the issued forecast"
             )
         if lead_index in selected_position:
             selected_cap_masks[selected_position[lead_index]] = cap_active
@@ -955,7 +2610,7 @@ def compute_variational_fsoi(
                 lambda candidate_control: _variational_forecast_score(
                     candidate_control,
                     frozen,
-                    lead_index + 1,
+                    forecast_step,
                     lead_cell,
                     cap_active,
                     metric_name,
@@ -982,63 +2637,281 @@ def compute_variational_fsoi(
                 Tensor,
                 torch.func.grad(score_from_control)(control),
             ).detach()
-            total_sensitivity, iterations, relative_residual = (
-                _variational_observation_adjoint(
-                    rhs,
+            initial = (
+                warm_solutions.get(metric_index)
+                if adjoint_config.warm_start_by_metric
+                else None
+            )
+            adjoint_solve = _variational_observation_adjoint(
+                rhs,
+                control,
+                observations,
+                frozen,
+                residual_fn,
+                normal_product,
+                detected_observation_scale,
+                censor_observation_scale,
+                weighted_observation_residual,
+                observation_count,
+                adjoint_config=adjoint_config,
+                preconditioner=preconditioner,
+                initial=initial,
+                budget=normal_product_budget,
+            )
+            if adjoint_config.warm_start_by_metric:
+                warm_solutions[metric_index] = adjoint_solve.solution
+            observation_sensitivity = adjoint_solve.sensitivity
+            background_sensitivity = (
+                _frozen_initial_background_observation_sensitivity(
+                    adjoint_solve.solution,
                     control,
                     observations,
                     frozen,
-                    residual_fn,
-                    normal_product,
-                    observation_scale,
-                    observation_count,
+                    forecast_step=forecast_step,
+                    lead_cell=lead_cell,
+                    cap_active=cap_active,
+                    metric_name=metric_name,
+                    truth=truth,
+                    valid=valid,
+                    nowcast_config=nowcast_config,
+                    sensitivity_config=sensitivity_config,
                 )
+            )
+            dynamics_sensitivity = (
+                _frozen_baseline_dynamics_observation_sensitivity(
+                    baseline_dynamics_path,
+                    adjoint_solve.solution,
+                    control,
+                    observations,
+                    frozen,
+                    forecast_step=forecast_step,
+                    lead_cell=lead_cell,
+                    cap_active=cap_active,
+                    metric_name=metric_name,
+                    truth=truth,
+                    valid=valid,
+                    nowcast_config=nowcast_config,
+                    sensitivity_config=sensitivity_config,
+                )
+            )
+            frozen_structure_input_sensitivity_values = (
+                observation_sensitivity.detected_dbz
+                + background_sensitivity
+                + dynamics_sensitivity
             )
 
             forecast_scores[lead_index, metric_index] = score.detach()
-            adjoint_iterations[lead_index, metric_index] = iterations
+            adjoint_iterations[lead_index, metric_index] = (
+                adjoint_solve.iterations
+            )
             adjoint_relative_residual[lead_index, metric_index] = (
-                relative_residual
+                adjoint_solve.relative_residual
             )
-            observation_norm[lead_index, metric_index] = (
-                torch.linalg.vector_norm(
-                    total_sensitivity.reshape(3, -1),
-                    dim=1,
+            adjoint_detected_sensitivity_l2_error_bound[
+                lead_index,
+                metric_index,
+            ] = adjoint_solve.detected_sensitivity_l2_error_bound
+            adjoint_normal_products[lead_index, metric_index] = (
+                adjoint_solve.normal_products
+            )
+            adjoint_warm_started[lead_index, metric_index] = (
+                adjoint_solve.warm_started
+            )
+            selected_index = selected_position.get(lead_index)
+            sensitivity_channels = (
+                (detected_sensitivity, observation_sensitivity.detected_dbz),
+                (
+                    censor_sensitivity,
+                    observation_sensitivity.censor_threshold_dbz,
+                ),
+                (
+                    weight_sensitivity,
+                    observation_sensitivity.observation_weight,
+                ),
+                (
+                    initial_background_sensitivity,
+                    background_sensitivity,
+                ),
+                (
+                    baseline_dynamics_sensitivity,
+                    dynamics_sensitivity,
+                ),
+                (
+                    frozen_structure_input_sensitivity,
+                    frozen_structure_input_sensitivity_values,
+                ),
+            )
+            for accumulator, values in sensitivity_channels:
+                _record_variational_channel(
+                    accumulator,
+                    values,
+                    lead_index=lead_index,
+                    metric_index=metric_index,
+                    selected_index=selected_index,
+                    tile_size=sensitivity_config.tile_size,
+                    signed_sum=False,
                 )
-            )
-            tile_observation_norm[lead_index, metric_index] = torch.stack(
-                tuple(
-                    _tile_l2(
-                        total_sensitivity[time_index],
-                        sensitivity_config.tile_size,
-                    )
-                    for time_index in range(3)
-                )
-            )
-            if lead_index in selected_position:
-                observation_maps[
-                    selected_position[lead_index], metric_index
-                ] = total_sensitivity
 
-    return VariationalFSOI(
+            if (
+                observation_perturbation is not None
+                and impact_accumulators is not None
+            ):
+                component_impacts = (
+                    observation_sensitivity.detected_dbz
+                    * observation_perturbation.detected_dbz,
+                    observation_sensitivity.censor_threshold_dbz
+                    * observation_perturbation.censor_threshold_dbz,
+                    observation_sensitivity.observation_weight
+                    * observation_perturbation.observation_weight,
+                    background_sensitivity
+                    * _initial_background_perturbation(
+                        observation_perturbation,
+                        observations,
+                    ),
+                    dynamics_sensitivity
+                    * _baseline_dynamics_perturbation(
+                        observation_perturbation,
+                        observations,
+                    ),
+                )
+                total_impact = (
+                    component_impacts[0]
+                    + component_impacts[1]
+                    + component_impacts[2]
+                    + component_impacts[3]
+                    + component_impacts[4]
+                )
+                for accumulator, values in zip(
+                    impact_accumulators,
+                    (*component_impacts, total_impact),
+                    strict=True,
+                ):
+                    _record_variational_channel(
+                        accumulator,
+                        values,
+                        lead_index=lead_index,
+                        metric_index=metric_index,
+                        selected_index=selected_index,
+                        tile_size=sensitivity_config.tile_size,
+                        signed_sum=True,
+                    )
+
+    low_local_validity = (
+        detection_margin is None
+        or detection_margin < adjoint_config.minimum_detection_margin_dbz
+        or analysis_remap_margin
+        < adjoint_config.minimum_remap_fraction_margin
+        or forecast_remap_margin
+        < adjoint_config.minimum_remap_fraction_margin
+        or output_cap_margin is None
+        or output_cap_margin < adjoint_config.minimum_output_cap_margin_dbz
+        or publication_support_margin
+        < adjoint_config.minimum_publication_margin
+        or (
+            publication_confidence_margin is not None
+            and publication_confidence_margin
+            < adjoint_config.minimum_publication_margin
+        )
+    )
+    active_set_margins = VariationalActiveSetMargins(
+        detection_classification_dbz=detection_margin,
+        analysis_remap_fraction=analysis_remap_margin,
+        forecast_remap_fraction=forecast_remap_margin,
+        output_cap_dbz=output_cap_margin,
+        publication_support=publication_support_margin,
+        publication_confidence=publication_confidence_margin,
+        low_local_validity=low_local_validity,
+    )
+    if adjoint_config.require_active_set_margin and low_local_validity:
+        raise ValueError("P1 FSO active-set margin is below its requirement")
+
+    fso = VariationalFSO(
+        contract="p1-variational-fso-v7",
         forecast_run_digest=result.forecast_run_digest,
         analysis_input_digest=cast(str, result.run.analysis_input_digest),
         sensitivity_config_digest=sensitivity_config.digest,
+        adjoint_config_digest=adjoint_config.digest,
         linearization_contract=linearization.contract,
+        linearization_digest=linearization.linearization_digest,
+        verification_contract=verification_bundle.contract,
+        verification_bundle_digest=verification_bundle.content_digest,
+        verification_lineage_complete=(
+            verification_bundle.lineage_complete
+        ),
+        verification_valid_times=verification_bundle.valid_times,
+        verification_grid_contract_digest=(
+            verification_bundle.grid_contract_digest
+        ),
+        verification_radar_product_digest=(
+            verification_bundle.radar_product_digest
+        ),
+        verification_qc_pipeline_digest=(
+            verification_bundle.qc_pipeline_digest
+        ),
+        metric_contract_digest=_metric_contract_digest(sensitivity_config),
+        algorithm_bundle_digest=linearization.algorithm_bundle_digest,
+        numerical_runtime_digest=linearization.numerical_runtime_digest,
+        variational_fso_digest="",
+        sensitivity_scope=(
+            "residual_plus_observation_derived_baseline_with_frozen_selection"
+        ),
+        baseline_dynamics_frozen=False,
+        baseline_pair_selection_frozen=True,
         metric_names=sensitivity_config.metric_names,
+        metric_domain=sensitivity_config.metric_domain,
+        metric_domain_digest=metric_domain_digest,
         lead_minutes=lead_minutes,
         full_map_lead_minutes=sensitivity_config.full_map_lead_minutes,
         tile_size=sensitivity_config.tile_size,
         forecast_scores=forecast_scores,
         metric_available=metric_available,
+        metric_domain_weight_sum=metric_domain_weight_sum,
+        metric_domain_weight_fraction=metric_domain_weight_fraction,
         forecast_cap_active_mask=selected_cap_masks,
         observation=VariationalObservationSensitivity(
-            maps=observation_maps,
-            norm_by_time=observation_norm,
-            tile_norm_by_time=tile_observation_norm,
+            detected_dbz=_sensitivity_channel(detected_sensitivity),
+            censor_threshold_dbz=_sensitivity_channel(censor_sensitivity),
+            observation_weight=_sensitivity_channel(weight_sensitivity),
+            initial_background_dbz=_sensitivity_channel(
+                initial_background_sensitivity
+            ),
+            baseline_dynamics_dbz=_sensitivity_channel(
+                baseline_dynamics_sensitivity
+            ),
+            frozen_structure_input_dbz=_sensitivity_channel(
+                frozen_structure_input_sensitivity
+            ),
         ),
         adjoint_iterations=adjoint_iterations,
         adjoint_relative_residual=adjoint_relative_residual,
+        adjoint_detected_sensitivity_l2_error_bound=(
+            adjoint_detected_sensitivity_l2_error_bound
+        ),
+        adjoint_normal_products=adjoint_normal_products,
+        adjoint_warm_started=adjoint_warm_started,
+        total_normal_products=normal_product_budget.used,
+        materialized_output_bytes=materialized_output_bytes,
+        active_set_margins=active_set_margins,
+        feasibility_margins=feasibility_margins,
+        gauss_newton_diagnostics=gauss_newton_diagnostics,
+    )
+    fso = replace(fso, variational_fso_digest=variational_fso_digest(fso))
+    if impact_accumulators is None:
+        return fso, None
+    return (
+        fso,
+        VariationalObservationImpact(
+            detected_dbz=_impact_channel(impact_accumulators[0]),
+            censor_threshold_dbz=_impact_channel(impact_accumulators[1]),
+            observation_weight=_impact_channel(impact_accumulators[2]),
+            initial_background_dbz=_impact_channel(
+                impact_accumulators[3]
+            ),
+            baseline_dynamics_dbz=_impact_channel(
+                impact_accumulators[4]
+            ),
+            total=_impact_channel(impact_accumulators[5]),
+        ),
     )
 
 
@@ -1115,22 +2988,54 @@ def _variational_observation_adjoint(
     frozen: FrozenOuterState,
     residual_fn: Callable[[Tensor], Tensor],
     normal_product: Callable[[Tensor], Tensor],
-    observation_scale: Tensor,
+    detected_observation_scale: Tensor,
+    censor_observation_scale: Tensor,
+    weighted_observation_residual: Tensor,
     observation_count: int,
-) -> tuple[Tensor, int, float]:
+    *,
+    adjoint_config: VariationalAdjointConfig,
+    preconditioner: Callable[[Tensor], Tensor] | None,
+    initial: Tensor | None,
+    budget: _NormalProductBudget,
+) -> _VariationalAdjointSolve:
+    products_before = budget.used
+
+    def counted_normal_product(value: Tensor) -> Tensor:
+        return budget.apply(normal_product, value)
+
+    relative_tolerance = (
+        frozen.analysis_config.pcg_relative_tolerance
+        if adjoint_config.pcg_relative_tolerance is None
+        else adjoint_config.pcg_relative_tolerance
+    )
+    maximum_iterations = (
+        frozen.analysis_config.maximum_pcg_iterations
+        if adjoint_config.maximum_pcg_iterations is None
+        else adjoint_config.maximum_pcg_iterations
+    )
     try:
         adjoint = pcg(
-            normal_product,
+            counted_normal_product,
             rhs,
-            rtol=frozen.analysis_config.pcg_relative_tolerance,
-            max_iterations=frozen.analysis_config.maximum_pcg_iterations,
+            preconditioner=preconditioner,
+            initial=initial,
+            rtol=relative_tolerance,
+            max_iterations=maximum_iterations,
         )
     except (ArithmeticError, RuntimeError, ValueError) as error:
-        raise ValueError("P1 FSOI adjoint solve failed") from error
+        if str(error) == "P1 FSO normal-product budget exhausted":
+            raise ValueError(
+                "P1 FSO normal-product budget exhausted"
+            ) from error
+        raise ValueError("P1 FSO adjoint solve failed") from error
     if not adjoint.converged or not bool(
         torch.all(torch.isfinite(adjoint.solution))
     ):
-        raise ValueError("P1 FSOI adjoint solve did not converge")
+        raise ValueError("P1 FSO adjoint solve did not converge")
+    rhs_norm = float(torch.linalg.vector_norm(rhs.detach()).cpu())
+    detected_sensitivity_l2_error_bound = (
+        adjoint.relative_residual * rhs_norm
+    )
 
     jacobian_adjoint = cast(
         Tensor,
@@ -1143,22 +3048,495 @@ def _variational_observation_adjoint(
     prediction_response = jacobian_adjoint[:observation_count].reshape_as(
         observations.dbz
     )
-    # The observation residual is prediction - observation, so implicit
-    # differentiation gives H dc = J.T D dy and a positive D J lambda map.
-    return (
-        (observation_scale * prediction_response).detach(),
-        adjoint.iterations,
-        adjoint.relative_residual,
+    # Detected dBZ changes only the residual offset. The censored threshold
+    # also changes the observation Jacobian, so its cross scale includes the
+    # (dJ/dL).T r contribution assembled above. The objective-weight channel
+    # differentiates alpha * 0.5 * r_i**2 at alpha=1.
+    if frozen.analysis_config.observation_common_bias_std_dbz > 0.0:
+        sensitivity = _correlated_observation_parameter_sensitivity(
+            adjoint.solution,
+            control,
+            observations,
+            frozen,
+        )
+    else:
+        sensitivity = _VariationalAdjointSensitivity(
+            detected_dbz=(
+                detected_observation_scale * prediction_response
+            ).detach(),
+            censor_threshold_dbz=(
+                censor_observation_scale * prediction_response
+            ).detach(),
+            observation_weight=(
+                -weighted_observation_residual * prediction_response
+            ).detach(),
+        )
+    return _VariationalAdjointSolve(
+        sensitivity=sensitivity,
+        solution=adjoint.solution.detach(),
+        iterations=adjoint.iterations,
+        relative_residual=adjoint.relative_residual,
+        detected_sensitivity_l2_error_bound=(
+            detected_sensitivity_l2_error_bound
+        ),
+        normal_products=budget.used - products_before,
+        warm_started=initial is not None,
     )
 
 
-def _validate_variational_fsoi_lineage(
+def _frozen_initial_background_observation_sensitivity(
+    adjoint_solution: Tensor,
+    control: Tensor,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    *,
+    forecast_step: int,
+    lead_cell: RemapCell,
+    cap_active: Tensor,
+    metric_name: str,
+    truth: Tensor,
+    valid: Tensor,
+    nowcast_config: NowcastConfig,
+    sensitivity_config: SensitivityConfig,
+) -> Tensor:
+    """Differentiate accepted first-frame values through the P1 background.
+
+    The active field, P0-derived baseline dynamics, remap cells, observation
+    classes, and every other frozen structure remain fixed. The result has the
+    observation shape and is nonzero only where the first frame supplied the
+    P1 initial background.
+    """
+
+    initial_background = frozen.initial_background_dbz.detach()
+
+    def frozen_with_background(candidate: Tensor) -> FrozenOuterState:
+        return replace(frozen, initial_background_dbz=candidate)
+
+    def stationarity_from_background(candidate: Tensor) -> Tensor:
+        def objective(candidate_control: Tensor) -> Tensor:
+            residual = residual_vector(
+                candidate_control,
+                observations,
+                frozen_with_background(candidate),
+            )
+            return 0.5 * torch.dot(residual, residual)
+
+        return cast(Tensor, torch.func.grad(objective)(control))
+
+    stationarity_pullback = cast(
+        Callable[[Tensor], tuple[Tensor]],
+        torch.func.vjp(
+            stationarity_from_background,
+            initial_background,
+        )[1],
+    )
+    implicit = -stationarity_pullback(adjoint_solution)[0]
+
+    def score_from_background(candidate: Tensor) -> Tensor:
+        return _variational_forecast_score(
+            control,
+            frozen_with_background(candidate),
+            forecast_step,
+            lead_cell,
+            cap_active,
+            metric_name,
+            truth,
+            valid,
+            nowcast_config,
+            sensitivity_config,
+        )
+
+    direct = cast(
+        Tensor,
+        torch.func.grad(score_from_background)(initial_background),
+    )
+    accepted_first_frame = (
+        observations.valid_mask[0] & frozen.observed_mask[0]
+    )
+    first_frame = torch.where(
+        accepted_first_frame,
+        direct + implicit,
+        torch.zeros_like(initial_background),
+    )
+    return torch.cat(
+        (
+            first_frame.unsqueeze(0),
+            torch.zeros_like(observations.dbz[1:]),
+        ),
+        dim=0,
+    ).detach()
+
+
+def _prepare_frozen_baseline_dynamics_path(
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+) -> _FrozenBaselineDynamicsPath | None:
+    """Freeze P0 pair/peak branches and retain their continuous VJP."""
+
+    if (
+        frozen.baseline_metadata.tendency_source
+        is not TendencySource.OBSERVATION
+    ):
+        return None
+    observation_dbz = observations.dbz.detach()
+
+    def dynamics_from_observation(candidate: Tensor) -> Tensor:
+        clean = torch.where(
+            frozen.observed_mask,
+            candidate,
+            candidate.new_full((), frozen.nowcast_config.min_dbz),
+        )
+        linear = dbz_to_echo(
+            clean,
+            min_dbz=frozen.nowcast_config.min_dbz,
+            max_dbz=frozen.nowcast_config.max_dbz,
+        )
+        estimate = _estimate_source_tendencies(
+            clean,
+            frozen.observed_mask,
+            linear,
+            frozen.nowcast_config,
+            frozen.grid_time_contract,
+        )
+        return torch.cat(
+            (
+                estimate.displacement_yx,
+                estimate.log_growth_per_step.reshape(1),
+            )
+        )
+
+    nominal_dynamics, pullback = cast(
+        tuple[Tensor, Callable[[Tensor], tuple[Tensor]]],
+        torch.func.vjp(
+            dynamics_from_observation,
+            observation_dbz,
+        ),
+    )
+    expected = torch.cat(
+        (
+            frozen.baseline_state.displacement_yx,
+            frozen.baseline_state.log_growth_per_step.reshape(1),
+        )
+    )
+    tolerance = frozen.nowcast_config.contract_absolute_tolerance
+    if not torch.allclose(
+        nominal_dynamics,
+        expected,
+        rtol=0.0,
+        atol=tolerance,
+    ):
+        raise ValueError(
+            "frozen P0 dynamics path does not reproduce the baseline state"
+        )
+    active = observations.valid_mask & frozen.observed_mask
+    return _FrozenBaselineDynamicsPath(
+        active_mask=active,
+        nominal_dynamics=nominal_dynamics.detach(),
+        observation_pullback=pullback,
+    )
+
+
+def _frozen_baseline_dynamics_observation_sensitivity(
+    path: _FrozenBaselineDynamicsPath | None,
+    adjoint_solution: Tensor,
+    control: Tensor,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    *,
+    forecast_step: int,
+    lead_cell: RemapCell,
+    cap_active: Tensor,
+    metric_name: str,
+    truth: Tensor,
+    valid: Tensor,
+    nowcast_config: NowcastConfig,
+    sensitivity_config: SensitivityConfig,
+) -> Tensor:
+    """Differentiate continuous P0 dynamics with pair/peak selection fixed."""
+
+    if path is None:
+        return torch.zeros_like(observations.dbz)
+
+    def frozen_with_dynamics(candidate: Tensor) -> FrozenOuterState:
+        state = RadarState(
+            echo_linear=frozen.baseline_state.echo_linear,
+            displacement_yx=candidate[:2],
+            log_growth_per_step=candidate[2],
+        )
+        return replace(frozen, baseline_state=state)
+
+    def stationarity_from_dynamics(candidate: Tensor) -> Tensor:
+        def objective(candidate_control: Tensor) -> Tensor:
+            residual = residual_vector(
+                candidate_control,
+                observations,
+                frozen_with_dynamics(candidate),
+            )
+            return 0.5 * torch.dot(residual, residual)
+
+        return cast(Tensor, torch.func.grad(objective)(control))
+
+    stationarity_pullback = cast(
+        Callable[[Tensor], tuple[Tensor]],
+        torch.func.vjp(
+            stationarity_from_dynamics,
+            path.nominal_dynamics,
+        )[1],
+    )
+    implicit = -stationarity_pullback(adjoint_solution)[0]
+
+    def score_from_dynamics(candidate: Tensor) -> Tensor:
+        return _variational_forecast_score(
+            control,
+            frozen_with_dynamics(candidate),
+            forecast_step,
+            lead_cell,
+            cap_active,
+            metric_name,
+            truth,
+            valid,
+            nowcast_config,
+            sensitivity_config,
+        )
+
+    direct = cast(
+        Tensor,
+        torch.func.grad(score_from_dynamics)(path.nominal_dynamics),
+    )
+    observation_gradient = path.observation_pullback(direct + implicit)[0]
+    return torch.where(
+        path.active_mask,
+        observation_gradient,
+        torch.zeros_like(observation_gradient),
+    ).detach()
+
+
+def _correlated_observation_parameter_sensitivity(
+    adjoint_solution: Tensor,
+    control: Tensor,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+) -> _VariationalAdjointSensitivity:
+    """Differentiate frozen stationarity through a non-diagonal whitener."""
+
+    detected_values = observations.dbz.detach()
+    censor_threshold = observations.dbz.new_full(
+        observations.dbz.shape,
+        frozen.analysis_config.detection_limit_dbz,
+    )
+    observation_multiplier = torch.ones_like(observations.dbz)
+
+    def stationarity(
+        candidate_detected: Tensor,
+        candidate_threshold: Tensor,
+        candidate_multiplier: Tensor,
+    ) -> Tensor:
+        def observation_objective(candidate_control: Tensor) -> Tensor:
+            trajectory = _analysis_trajectory(candidate_control, frozen)
+            prediction = echo_to_dbz(
+                trajectory.frames_linear,
+                min_dbz=frozen.nowcast_config.min_dbz,
+            )
+            detected_error = prediction - candidate_detected
+            censored_error = (
+                frozen.analysis_config.censor_temperature_dbz
+                * F.softplus(
+                    (
+                        prediction - candidate_threshold
+                    )
+                    / frozen.analysis_config.censor_temperature_dbz
+                )
+            )
+            error = torch.where(
+                observations.detected_mask,
+                detected_error,
+                torch.where(
+                    observations.censored_mask,
+                    censored_error,
+                    torch.zeros_like(prediction),
+                ),
+            )
+            standardized = (
+                torch.sqrt(observations.quality_weight)
+                * torch.sqrt(candidate_multiplier)
+                * error
+                / observations.std_dbz
+            )
+            whitened = _apply_observation_error_whitener(
+                standardized,
+                observations,
+                frozen.analysis_config,
+            )
+            residual = frozen.irls_sqrt_weight * whitened
+            return 0.5 * torch.dot(residual.flatten(), residual.flatten())
+
+        return cast(
+            Tensor,
+            torch.func.grad(observation_objective)(control),
+        )
+
+    vjp_result = torch.func.vjp(
+        stationarity,
+        detected_values,
+        censor_threshold,
+        observation_multiplier,
+    )
+    pullback = cast(
+        Callable[[Tensor], tuple[Tensor, Tensor, Tensor]],
+        vjp_result[1],
+    )
+    detected_gradient, censor_gradient, weight_gradient = pullback(
+        adjoint_solution
+    )
+    return _VariationalAdjointSensitivity(
+        detected_dbz=torch.where(
+            observations.detected_mask,
+            -detected_gradient,
+            torch.zeros_like(detected_gradient),
+        ).detach(),
+        censor_threshold_dbz=torch.where(
+            observations.censored_mask,
+            -censor_gradient,
+            torch.zeros_like(censor_gradient),
+        ).detach(),
+        observation_weight=torch.where(
+            observations.valid_mask,
+            -weight_gradient,
+            torch.zeros_like(weight_gradient),
+        ).detach(),
+    )
+
+
+def _validate_variational_observation_perturbation(
+    perturbation: VariationalObservationPerturbation,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+) -> None:
+    if perturbation.contract != "p1-observation-perturbation-v3":
+        raise ValueError("unsupported P1 observation perturbation contract")
+    channels = (
+        (
+            "detected_dbz",
+            perturbation.detected_dbz,
+            observations.detected_mask,
+        ),
+        (
+            "censor_threshold_dbz",
+            perturbation.censor_threshold_dbz,
+            observations.censored_mask,
+        ),
+        (
+            "observation_weight",
+            perturbation.observation_weight,
+            observations.valid_mask,
+        ),
+    )
+    for name, values, active_mask in channels:
+        if not isinstance(values, Tensor):
+            raise TypeError(f"{name} perturbation must be a Tensor")
+        if values.shape != observations.dbz.shape:
+            raise ValueError(f"{name} perturbation shape mismatch")
+        if values.dtype != observations.dbz.dtype:
+            raise ValueError(f"{name} perturbation dtype mismatch")
+        if values.device != observations.dbz.device:
+            raise ValueError(f"{name} perturbation device mismatch")
+        if not bool(torch.all(torch.isfinite(values))):
+            raise ValueError(f"{name} perturbation must be finite")
+        if bool(torch.any(values.masked_select(~active_mask) != 0)):
+            raise ValueError(
+                f"{name} perturbation must be zero outside its active mask"
+            )
+    if bool(torch.any(perturbation.observation_weight < -1.0)):
+        raise ValueError(
+            "observation_weight perturbation cannot make the objective "
+            "multiplier negative"
+        )
+    if perturbation.initial_background_dbz is not None:
+        values = perturbation.initial_background_dbz
+        if not isinstance(values, Tensor):
+            raise TypeError(
+                "initial_background_dbz perturbation must be a Tensor"
+            )
+        if values.shape != observations.dbz.shape:
+            raise ValueError(
+                "initial_background_dbz perturbation shape mismatch"
+            )
+        if values.dtype != observations.dbz.dtype:
+            raise ValueError(
+                "initial_background_dbz perturbation dtype mismatch"
+            )
+        if values.device != observations.dbz.device:
+            raise ValueError(
+                "initial_background_dbz perturbation device mismatch"
+            )
+        if not bool(torch.all(torch.isfinite(values))):
+            raise ValueError(
+                "initial_background_dbz perturbation must be finite"
+            )
+        active = torch.zeros_like(observations.valid_mask)
+        active[0] = observations.valid_mask[0] & frozen.observed_mask[0]
+        if bool(torch.any(values.masked_select(~active) != 0)):
+            raise ValueError(
+                "initial_background_dbz perturbation must be zero outside "
+                "accepted first-frame observations"
+            )
+    if perturbation.baseline_dynamics_dbz is not None:
+        values = perturbation.baseline_dynamics_dbz
+        if not isinstance(values, Tensor):
+            raise TypeError(
+                "baseline_dynamics_dbz perturbation must be a Tensor"
+            )
+        if values.shape != observations.dbz.shape:
+            raise ValueError(
+                "baseline_dynamics_dbz perturbation shape mismatch"
+            )
+        if values.dtype != observations.dbz.dtype:
+            raise ValueError(
+                "baseline_dynamics_dbz perturbation dtype mismatch"
+            )
+        if values.device != observations.dbz.device:
+            raise ValueError(
+                "baseline_dynamics_dbz perturbation device mismatch"
+            )
+        if not bool(torch.all(torch.isfinite(values))):
+            raise ValueError(
+                "baseline_dynamics_dbz perturbation must be finite"
+            )
+        active = observations.valid_mask & frozen.observed_mask
+        if bool(torch.any(values.masked_select(~active) != 0)):
+            raise ValueError(
+                "baseline_dynamics_dbz perturbation must be zero outside "
+                "accepted observations"
+            )
+
+
+def _initial_background_perturbation(
+    perturbation: VariationalObservationPerturbation,
+    observations: AnalysisObservations,
+) -> Tensor:
+    values = perturbation.initial_background_dbz
+    return torch.zeros_like(observations.dbz) if values is None else values
+
+
+def _baseline_dynamics_perturbation(
+    perturbation: VariationalObservationPerturbation,
+    observations: AnalysisObservations,
+) -> Tensor:
+    values = perturbation.baseline_dynamics_dbz
+    return torch.zeros_like(observations.dbz) if values is None else values
+
+
+def _validate_variational_fso_lineage(
     result: ForecastResult,
-    analysis: AnalysisResult,
+    analysis: AnalysisResult | P1LinearizationState,
     linearization: AnalysisLinearization,
 ) -> None:
     frozen = linearization.frozen
     observations = linearization.observations
+    validate_analysis_linearization_content(
+        analysis.control,
+        linearization,
+    )
     if linearization.forecast_run_digest != result.forecast_run_digest:
         raise ValueError("P1 linearization forecast run mismatch")
     if frozen.nowcast_config != result.run.config:
@@ -1200,6 +3578,53 @@ def _validate_variational_fsoi_lineage(
         for actual, expected in state_values
     ):
         raise ValueError("P1 linearization does not reproduce the analysis")
+    stationarity = _linearization_stationarity(
+        analysis.control,
+        observations,
+        frozen,
+    )
+    stored_stationarity = (
+        ("residual norm", linearization.residual_norm, stationarity.residual_norm),
+        ("gradient norm", linearization.gradient_norm, stationarity.gradient_norm),
+        (
+            "relative stationarity",
+            linearization.relative_stationarity,
+            stationarity.relative_stationarity,
+        ),
+    )
+    tolerance = 64.0 * torch.finfo(analysis.control.dtype).eps
+    for name, stored, actual in stored_stationarity:
+        if not (
+            math.isfinite(stored)
+            and math.isfinite(actual)
+            and math.isclose(
+                stored,
+                actual,
+                rel_tol=tolerance,
+                abs_tol=tolerance,
+            )
+        ):
+            raise ValueError(f"P1 linearization {name} mismatch")
+    analysis_stationarity = (
+        analysis.linearization_residual_norm,
+        analysis.linearization_gradient_norm,
+        analysis.linearization_relative_stationarity,
+        analysis.linearization_polish_iterations,
+    )
+    retained_stationarity = (
+        linearization.residual_norm,
+        linearization.gradient_norm,
+        linearization.relative_stationarity,
+        linearization.polish_iterations,
+    )
+    if analysis_stationarity != retained_stationarity:
+        raise ValueError("P1 analysis linearization diagnostics mismatch")
+    stationarity_tolerance = (
+        frozen.analysis_config
+        .final_linearization_relative_stationarity_tolerance
+    )
+    if stationarity.relative_stationarity > stationarity_tolerance:
+        raise ValueError("P1 final linearization is not stationary")
 
 
 def forecast_metric(
@@ -1603,7 +4028,9 @@ def _soft_centroid(echo: Tensor, valid: Tensor) -> Tensor:
 def _masked_mean(values: Tensor, valid: Tensor) -> Tensor:
     weights = valid.to(values.dtype)
     count = weights.sum()
-    mean = torch.sum(values * weights) / count.clamp_min(1.0)
+    mean = torch.sum(values * weights) / count.clamp_min(
+        torch.finfo(values.dtype).tiny
+    )
     return torch.where(
         count > 0,
         mean,

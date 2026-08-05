@@ -25,10 +25,16 @@ from .run_artifact import (
     forecast_run_arrays,
     seal_forecast_run_arrays,
 )
-from .variational import AnalysisConfig, AnalysisResult, variational_nowcast
+from .variational import (
+    AnalysisConfig,
+    AnalysisResult,
+    observation_common_bias_group_map_digest,
+    observation_common_bias_mode_weights_digest,
+    variational_nowcast,
+)
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v48"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v49"
 
 
 def main() -> None:
@@ -148,6 +154,38 @@ def main() -> None:
         "--observation-std-dbz",
         type=float,
         help="observation error used by --variational",
+    )
+    parser.add_argument(
+        "--observation-common-bias-std-dbz",
+        type=float,
+        help="additive radar-bias standard deviation used by --variational",
+    )
+    parser.add_argument(
+        "--observation-common-bias-scope",
+        choices=("per_frame", "all_times"),
+        help="whether the additive radar-bias mode varies by input frame",
+    )
+    parser.add_argument(
+        "--observation-common-bias-tile-size-px",
+        type=int,
+        help=(
+            "square common-bias tile size; zero means one domain-wide mode"
+        ),
+    )
+    parser.add_argument(
+        "--observation-common-bias-group-map",
+        type=Path,
+        help=(
+            "optional integer .npy site/group map shaped [H,W] or [3,H,W]"
+        ),
+    )
+    parser.add_argument(
+        "--observation-common-bias-mode-weights",
+        type=Path,
+        help=(
+            "optional float .npy overlapping modes shaped [K,H,W] or "
+            "[3,K,H,W]"
+        ),
     )
     parser.add_argument(
         "--motion-increment-scale-mps",
@@ -357,6 +395,11 @@ def main() -> None:
         args.amplitude_information_policy is not None
         or args.amplitude_confidence_policy is not None
         or args.observation_std_dbz is not None
+        or args.observation_common_bias_std_dbz is not None
+        or args.observation_common_bias_scope is not None
+        or args.observation_common_bias_tile_size_px is not None
+        or args.observation_common_bias_group_map is not None
+        or args.observation_common_bias_mode_weights is not None
         or args.motion_increment_scale_mps is not None
         or args.maximum_detected_error_std is not None
         or args.minimum_local_verification_precision is not None
@@ -389,6 +432,59 @@ def main() -> None:
         if qc_array.shape != frames.shape or qc_array.dtype != np.bool_:
             raise ValueError("QC mask must be boolean with the input shape")
         qc_mask = torch.as_tensor(qc_array, dtype=torch.bool)
+    common_bias_group_index = None
+    common_bias_group_digest = None
+    if args.observation_common_bias_group_map is not None:
+        group_array = np.load(
+            args.observation_common_bias_group_map,
+            allow_pickle=False,
+        )
+        if (
+            group_array.shape not in (frames.shape[1:], frames.shape)
+            or not np.issubdtype(group_array.dtype, np.integer)
+        ):
+            raise ValueError(
+                "common-bias group map must be integer with shape [H, W] "
+                "or [3, H, W]"
+            )
+        common_bias_group_index = torch.as_tensor(
+            group_array,
+            dtype=torch.long,
+        )
+        common_bias_group_digest = observation_common_bias_group_map_digest(
+            common_bias_group_index,
+            temporal_scope=(
+                AnalysisConfig().observation_common_bias_scope
+                if args.observation_common_bias_scope is None
+                else args.observation_common_bias_scope
+            ),
+        )
+    common_bias_mode_weights = None
+    common_bias_mode_digest = None
+    if args.observation_common_bias_mode_weights is not None:
+        mode_array = np.load(
+            args.observation_common_bias_mode_weights,
+            allow_pickle=False,
+        )
+        if (
+            mode_array.ndim not in (3, 4)
+            or tuple(mode_array.shape[-2:]) != frames.shape[-2:]
+            or (mode_array.ndim == 4 and mode_array.shape[0] != 3)
+            or not np.issubdtype(mode_array.dtype, np.floating)
+        ):
+            raise ValueError(
+                "common-bias mode weights must be floating with shape "
+                "[K,H,W] or [3,K,H,W]"
+            )
+        common_bias_mode_weights = torch.as_tensor(
+            mode_array,
+            dtype=torch.float32,
+        )
+        common_bias_mode_digest = (
+            observation_common_bias_mode_weights_digest(
+                common_bias_mode_weights
+            )
+        )
     background = None
     if args.background is not None:
         background_array = np.load(args.background, allow_pickle=False)
@@ -549,6 +645,8 @@ def main() -> None:
                 operational_calibration_manifest
             ),
             operational_data_identity=operational_data_identity,
+            common_bias_group_map_digest=common_bias_group_digest,
+            common_bias_mode_weights_digest=common_bias_mode_digest,
         )
         result, analysis = variational_nowcast(
             frames_tensor,
@@ -556,6 +654,8 @@ def main() -> None:
             analysis_config=analysis_config,
             observation_std_dbz=analysis_config.observation_std_dbz,
             qc_mask=qc_mask,
+            observation_common_bias_group_index=common_bias_group_index,
+            observation_common_bias_mode_weights=common_bias_mode_weights,
             background_frames_dbz=background,
             background_age_minutes=args.background_age_minutes,
             grid_time_contract=grid_time_contract,
@@ -698,6 +798,8 @@ def _analysis_config_from_args(
         OperationalCalibrationManifest | None
     ),
     operational_data_identity: OperationalDataIdentity | None,
+    common_bias_group_map_digest: str | None,
+    common_bias_mode_weights_digest: str | None,
 ) -> AnalysisConfig:
     defaults = AnalysisConfig()
     calibrated_values = {
@@ -707,6 +809,15 @@ def _analysis_config_from_args(
             operational_data_identity,
         ),
         "--observation-std-dbz": args.observation_std_dbz,
+        "--observation-common-bias-std-dbz": (
+            args.observation_common_bias_std_dbz
+        ),
+        "--observation-common-bias-scope": (
+            args.observation_common_bias_scope
+        ),
+        "--observation-common-bias-tile-size-px": (
+            args.observation_common_bias_tile_size_px
+        ),
         "--p1-motion-saturation-safe-margin-mps": (
             args.p1_motion_saturation_safe_margin_mps
         ),
@@ -801,6 +912,26 @@ def _analysis_config_from_args(
         observation_std_dbz=value(
             "observation_std_dbz",
             defaults.observation_std_dbz,
+        ),
+        observation_common_bias_std_dbz=value(
+            "observation_common_bias_std_dbz",
+            defaults.observation_common_bias_std_dbz,
+        ),
+        observation_common_bias_scope=(
+            defaults.observation_common_bias_scope
+            if args.observation_common_bias_scope is None
+            else args.observation_common_bias_scope
+        ),
+        observation_common_bias_tile_size_px=(
+            defaults.observation_common_bias_tile_size_px
+            if args.observation_common_bias_tile_size_px is None
+            else args.observation_common_bias_tile_size_px
+        ),
+        observation_common_bias_group_map_digest=(
+            common_bias_group_map_digest
+        ),
+        observation_common_bias_mode_weights_digest=(
+            common_bias_mode_weights_digest
         ),
         motion_increment_scale_mps=args.motion_increment_scale_mps,
         maximum_latest_detected_error_std=value(

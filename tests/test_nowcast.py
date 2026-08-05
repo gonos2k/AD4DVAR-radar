@@ -613,6 +613,60 @@ class NowcastTests(unittest.TestCase):
         )
         self.assertTrue(search_interior)
 
+    def test_selected_phase_peak_retains_subpixel_input_gradient(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        coordinates = torch.arange(8, dtype=torch.float64)
+        y, x = torch.meshgrid(coordinates, coordinates, indexing="ij")
+
+        def asymmetric_echo(index: int) -> torch.Tensor:
+            return (
+                -10.0
+                + 35.0
+                * torch.exp(
+                    -(
+                        (y - (3.0 + 0.18 * index)).square()
+                        + (x - (3.1 + 0.21 * index)).square()
+                    )
+                    / 3.0
+                )
+                + 8.0
+                * torch.exp(
+                    -(
+                        (y - (5.2 + 0.18 * index)).square()
+                        + (x - (5.7 + 0.21 * index)).square()
+                    )
+                    / 0.8
+                )
+            )
+
+        previous = asymmetric_echo(0)
+        current = asymmetric_echo(1)
+
+        def selected_shift(candidate: torch.Tensor) -> torch.Tensor:
+            shift, _, _ = nowcast_module._phase_correlation_shift_and_psr(
+                candidate,
+                current,
+                self.config,
+            )
+            return shift
+
+        analytic = torch.func.jacrev(selected_shift)(previous)[:, 4, 4]
+        delta = 1.0e-4
+        perturbation = torch.zeros_like(previous)
+        perturbation[4, 4] = delta
+        finite_difference = (
+            selected_shift(previous + perturbation)
+            - selected_shift(previous - perturbation)
+        ) / (2.0 * delta)
+
+        self.assertGreater(float(torch.linalg.vector_norm(analytic)), 0.0)
+        torch.testing.assert_close(
+            analytic,
+            finite_difference,
+            rtol=1.0e-5,
+            atol=1.0e-9,
+        )
+
     def test_physical_psr_is_translation_invariant(self) -> None:
         nowcast_module = import_module("advar.nowcast")
         config = NowcastConfig(
@@ -2135,6 +2189,75 @@ class NowcastTests(unittest.TestCase):
 
         self.assertEqual(float(local_motion[6, 8]), 0.0)
 
+    def test_earlier_pair_requires_its_observed_endpoint(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = replace(self.config, pair_echo_dilation_px=0)
+        linear = torch.zeros((3, 9, 9), dtype=torch.float64)
+        masks = torch.zeros_like(linear, dtype=torch.bool)
+        echo = dbz_to_linear(linear.new_tensor(20.0), config)
+        linear[0, 4, 1] = echo
+        linear[2, 4, 5] = echo
+        masks[:] = linear > 0
+        zero = linear.new_zeros(())
+        tendency = nowcast_module._single_pair_tendency(
+            linear.new_tensor((0.0, 2.0)),
+            self._growth_evidence(nowcast_module, zero),
+            linear.new_tensor(30.0),
+            selection=TendencyPairSelection.EARLIER,
+            source_pair_index=0,
+        )
+
+        local_motion, local_growth = (
+            nowcast_module._selected_component_local_evidence(
+                linear,
+                masks,
+                tendency,
+                linear[2],
+                masks[2].to(dtype=linear.dtype),
+                config,
+                None,
+            )
+        )
+
+        # A direct t0 -> t2 endpoint check would accept this echo.  The
+        # selected evidence is the t0 -> t1 pair, where no endpoint exists.
+        self.assertEqual(float(local_motion[4, 5]), 0.0)
+        self.assertEqual(float(local_growth[4, 5]), 0.0)
+
+    def test_earlier_pair_evidence_is_carried_from_pair_endpoint(self) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        config = replace(self.config, pair_echo_dilation_px=0)
+        linear = torch.zeros((3, 9, 9), dtype=torch.float64)
+        masks = torch.zeros_like(linear, dtype=torch.bool)
+        echo = dbz_to_linear(linear.new_tensor(20.0), config)
+        linear[0, 4, 1] = echo
+        linear[1, 4, 3] = echo
+        linear[2, 4, 5] = echo
+        masks[:] = linear > 0
+        zero = linear.new_zeros(())
+        tendency = nowcast_module._single_pair_tendency(
+            linear.new_tensor((0.0, 2.0)),
+            self._growth_evidence(nowcast_module, zero),
+            linear.new_tensor(30.0),
+            selection=TendencyPairSelection.EARLIER,
+            source_pair_index=0,
+        )
+
+        local_motion, local_growth = (
+            nowcast_module._selected_component_local_evidence(
+                linear,
+                masks,
+                tendency,
+                linear[2],
+                masks[2].to(dtype=linear.dtype),
+                config,
+                None,
+            )
+        )
+
+        self.assertEqual(float(local_motion[4, 5]), 1.0)
+        self.assertEqual(float(local_growth[4, 5]), 1.0)
+
     def test_blended_motion_requires_both_selected_sources(self) -> None:
         nowcast_module = import_module("advar.nowcast")
         config = replace(self.config, pair_echo_dilation_px=0)
@@ -2357,6 +2480,28 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(float(result.forecast_confidence[0, 5, 5]), 0.0)
         self.assertTrue(bool(result.radar_dynamics_anchored_valid_mask[0, 2, 2]))
         self.assertFalse(bool(result.radar_dynamics_anchored_valid_mask[0, 5, 5]))
+
+        p1_metadata = replace(
+            metadata,
+            dynamics_source=DynamicsSource.P1_VARIATIONAL,
+            posterior_velocity_uncertainty_mps=echo.new_tensor(1.0),
+            posterior_log_growth_uncertainty_per_step=echo.new_tensor(0.1),
+            p1_velocity_saturation_uncertainty_mps=echo.new_tensor(0.0),
+            p1_log_growth_saturation_uncertainty_per_step=echo.new_tensor(0.0),
+        )
+        p1_result = forecast_result_from_state(
+            state,
+            p1_metadata,
+            config,
+            run=result.run,
+        )
+
+        self.assertTrue(
+            bool(p1_result.radar_dynamics_anchored_valid_mask[0, 2, 2])
+        )
+        self.assertFalse(
+            bool(p1_result.radar_dynamics_anchored_valid_mask[0, 5, 5])
+        )
 
     def test_issuance_rejects_inconsistent_local_evidence_channels(self) -> None:
         frames, _ = self._moving_gaussian_frames()

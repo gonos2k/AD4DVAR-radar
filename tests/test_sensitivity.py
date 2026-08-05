@@ -1,17 +1,25 @@
 from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import math
+import tempfile
 import sys
 import unittest
 from unittest.mock import patch
 
+import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar._digest import tensor_digest  # noqa: E402
+from advar.linearization_artifact import (  # noqa: E402
+    load_p1_linearization,
+    save_p1_linearization,
+)
 from advar.matrix_free import PCGResult  # noqa: E402
 from advar.nowcast import (  # noqa: E402
+    _estimate_source_tendencies,
     _forecast_linear_at_step_core,
     _forecast_run_identity_digest,
     DataStatus,
@@ -36,13 +44,24 @@ from advar.physics import (  # noqa: E402
     freeze_remap_cell,
 )
 from advar.sensitivity import (  # noqa: E402
+    _gauss_newton_curvature_diagnostics,
     _apply_output_cap,
     _metric_evidence_ratios,
+    _metric_domain_weight,
+    _NormalProductBudget,
+    _remap_fraction_margin,
     SensitivityConfig,
+    VerificationBundle,
+    VariationalAdjointConfig,
+    VariationalObservationPerturbation,
     compute_sensitivity_snapshot,
+    compute_variational_fso,
     compute_variational_fsoi,
     extract_context_features,
     forecast_metric,
+    validate_variational_fso,
+    validate_variational_fsoi,
+    variational_fso_digest,
 )
 from advar.variational import (  # noqa: E402
     _analysis_trajectory,
@@ -332,6 +351,70 @@ class SensitivityTests(unittest.TestCase):
             linear[result.valid_mask],
         )
 
+    def test_metric_domain_policies_freeze_distinct_weights(self) -> None:
+        finite = torch.ones(
+            (self.height, self.width),
+            dtype=torch.bool,
+        )
+        finite[0, 0] = False
+        issued = _metric_domain_weight(
+            self.result,
+            finite,
+            0,
+            "issued",
+        )
+        anchored = _metric_domain_weight(
+            self.result,
+            finite,
+            0,
+            "radar_dynamics_anchored",
+        )
+        confidence = _metric_domain_weight(
+            self.result,
+            finite,
+            0,
+            "confidence_weighted",
+        )
+        torch.testing.assert_close(
+            issued,
+            (finite & self.result.valid_mask[0]).to(issued),
+        )
+        torch.testing.assert_close(
+            anchored,
+            (
+                finite
+                & self.result.radar_dynamics_anchored_valid_mask[0]
+            ).to(anchored),
+        )
+        torch.testing.assert_close(
+            confidence,
+            torch.where(
+                finite & self.result.valid_mask[0],
+                self.result.forecast_confidence[0],
+                torch.zeros_like(confidence),
+            ),
+        )
+        self.assertTrue(bool(torch.all(anchored <= issued)))
+        self.assertTrue(bool(torch.all(confidence <= issued)))
+
+        forecast = torch.tensor([[1.0, 4.0]], dtype=torch.float64)
+        truth = torch.tensor([[1.0, 1.0]], dtype=torch.float64)
+        weight = torch.tensor([[1.0, 0.0]], dtype=torch.float64)
+        weighted_score = forecast_metric(
+            "log_echo_mse",
+            forecast,
+            truth,
+            weight,
+            self.nowcast_config,
+            replace(
+                self.sensitivity_config,
+                metric_domain="confidence_weighted",
+            ),
+        )
+        torch.testing.assert_close(
+            weighted_score,
+            torch.zeros_like(weighted_score),
+        )
     def test_snapshot_shapes_and_m0_scope(self) -> None:
         snapshot = self.snapshot
         tile_rows = math.ceil(self.height / self.sensitivity_config.tile_size)
@@ -1188,6 +1271,50 @@ class SensitivityTests(unittest.TestCase):
         self.assertEqual(context["grid_column_spacing_m"], contract.dx_m)
         self.assertEqual(context["grid_row_spacing_m"], contract.dy_m)
 
+        issue_time = datetime(2026, 8, 2, 0, 20, tzinfo=timezone.utc)
+        verification = VerificationBundle(
+            frames_dbz=self.verification,
+            valid_mask=torch.isfinite(self.verification),
+            valid_times=tuple(
+                (issue_time + timedelta(minutes=lead))
+                .isoformat()
+                .replace("+00:00", "Z")
+                for lead in range(10, 181, 10)
+            ),
+            grid_contract_digest=contract.digest,
+            radar_product_digest="2" * 64,
+            qc_pipeline_digest="3" * 64,
+        )
+        lineage_snapshot = compute_sensitivity_snapshot(
+            self.frames[2],
+            result,
+            verification,
+            sensitivity_config=replace(
+                self.sensitivity_config,
+                require_verification_lineage=True,
+            ),
+        )
+        self.assertTrue(lineage_snapshot.verification_lineage_complete)
+        self.assertEqual(
+            lineage_snapshot.verification_bundle_digest,
+            verification.content_digest,
+        )
+        self.assertEqual(
+            lineage_snapshot.verification_valid_times,
+            verification.valid_times,
+        )
+
+        with self.assertRaisesRegex(ValueError, "VerificationBundle"):
+            compute_sensitivity_snapshot(
+                self.frames[2],
+                result,
+                self.verification,
+                sensitivity_config=replace(
+                    self.sensitivity_config,
+                    require_verification_lineage=True,
+                ),
+            )
+
     def test_area_weighted_echo_is_resolution_invariant(self) -> None:
         physical_integrals = []
         pixel_integrals = []
@@ -1477,6 +1604,7 @@ class SensitivityTests(unittest.TestCase):
         self.assertTrue(bool(torch.isnan(score)))
 
         invalid_configs = (
+            {"metric_domain": "unknown"},
             {"tile_size": 2.5},
             {"soft_fss_window": 4.5},
             {"soft_fss_temperature_dbz": float("nan")},
@@ -1485,6 +1613,7 @@ class SensitivityTests(unittest.TestCase):
             {"pair_conflict_trust_penalty": 0.0},
             {"pair_conflict_trust_penalty": 1.1},
             {"pair_conflict_trust_penalty": float("nan")},
+            {"require_verification_lineage": 1},
         )
         for values in invalid_configs:
             with self.subTest(values=values):
@@ -1492,7 +1621,7 @@ class SensitivityTests(unittest.TestCase):
                     SensitivityConfig(**values)
 
 
-class VariationalFSOITests(unittest.TestCase):
+class VariationalFSOTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         coordinates = torch.arange(8, dtype=torch.float64)
@@ -1517,7 +1646,7 @@ class VariationalFSOITests(unittest.TestCase):
             or cls.analysis.degraded
             or cls.analysis.linearization is None
         ):
-            raise RuntimeError("variational FSOI fixture did not converge")
+            raise RuntimeError("variational FSO fixture did not converge")
         cls.verification = torch.where(
             torch.isfinite(cls.forecast.forecast_dbz),
             cls.forecast.forecast_dbz - 0.5,
@@ -1528,21 +1657,36 @@ class VariationalFSOITests(unittest.TestCase):
             full_map_lead_minutes=(10,),
             tile_size=4,
         )
-        cls.fsoi = compute_variational_fsoi(
+        cls.fso = compute_variational_fso(
             cls.forecast,
             cls.analysis,
             cls.verification,
             sensitivity_config=cls.sensitivity_config,
         )
 
-    def test_variational_fsoi_covers_all_observation_times(self) -> None:
-        fsoi = self.fsoi
-        self.assertEqual(fsoi.metric_names, ("log_echo_mse",))
-        self.assertEqual(fsoi.lead_minutes, (10,))
-        self.assertEqual(fsoi.full_map_lead_minutes, (10,))
-        self.assertEqual(fsoi.linearization_contract, "p1-final-frozen-irls-gn-v1")
+    def test_variational_fso_covers_all_observation_times(self) -> None:
+        fso = self.fso
+        self.assertEqual(fso.contract, "p1-variational-fso-v7")
         self.assertEqual(
-            fsoi.forecast_run_digest,
+            fso.sensitivity_scope,
+            "residual_plus_observation_derived_baseline_with_frozen_selection",
+        )
+        self.assertFalse(fso.baseline_dynamics_frozen)
+        self.assertTrue(fso.baseline_pair_selection_frozen)
+        self.assertEqual(
+            fso.verification_contract,
+            "legacy-verification-tensor-v1",
+        )
+        self.assertFalse(fso.verification_lineage_complete)
+        self.assertIsNone(fso.verification_valid_times)
+        self.assertEqual(fso.metric_names, ("log_echo_mse",))
+        self.assertEqual(fso.metric_domain, "issued")
+        self.assertNotEqual(fso.metric_domain_digest, "")
+        self.assertEqual(fso.lead_minutes, (10,))
+        self.assertEqual(fso.full_map_lead_minutes, (10,))
+        self.assertEqual(fso.linearization_contract, "p1-final-frozen-irls-gn-v6")
+        self.assertEqual(
+            fso.forecast_run_digest,
             self.forecast.forecast_run_digest,
         )
         linearization = self.analysis.linearization
@@ -1551,32 +1695,827 @@ class VariationalFSOITests(unittest.TestCase):
             linearization.forecast_run_digest,
             self.forecast.forecast_run_digest,
         )
+        self.assertEqual(fso.linearization_digest, linearization.linearization_digest)
         self.assertEqual(
-            fsoi.analysis_input_digest,
+            fso.algorithm_bundle_digest,
+            linearization.algorithm_bundle_digest,
+        )
+        self.assertEqual(
+            fso.numerical_runtime_digest,
+            linearization.numerical_runtime_digest,
+        )
+        self.assertEqual(
+            fso.feasibility_margins.reachability_support,
+            linearization.feasibility_margins.reachability_support,
+        )
+        self.assertEqual(
+            fso.feasibility_margins.unresolved_amplitude_fraction,
+            linearization.feasibility_margins.unresolved_amplitude_fraction,
+        )
+        self.assertEqual(
+            fso.feasibility_margins.motion_saturation_fraction,
+            linearization.feasibility_margins.motion_saturation_fraction,
+        )
+        self.assertEqual(
+            fso.feasibility_margins.growth_saturation_per_step,
+            linearization.feasibility_margins.growth_saturation_per_step,
+        )
+        self.assertEqual(
+            fso.variational_fso_digest,
+            variational_fso_digest(fso),
+        )
+        validate_variational_fso(fso)
+        self.assertLessEqual(
+            linearization.relative_stationarity,
+            self.analysis_config
+            .final_linearization_relative_stationarity_tolerance,
+        )
+        self.assertEqual(
+            self.analysis.linearization_relative_stationarity,
+            linearization.relative_stationarity,
+        )
+        self.assertEqual(
+            self.analysis.linearization_polish_iterations,
+            linearization.polish_iterations,
+        )
+        self.assertEqual(
+            fso.analysis_input_digest,
             self.forecast.run.analysis_input_digest,
         )
-        self.assertEqual(fsoi.forecast_scores.shape, (1, 1))
-        self.assertEqual(fsoi.metric_available.shape, (1, 1))
-        self.assertEqual(fsoi.forecast_cap_active_mask.shape, (1, 8, 8))
-        self.assertEqual(fsoi.observation.maps.shape, (1, 1, 3, 8, 8))
-        self.assertEqual(fsoi.observation.norm_by_time.shape, (1, 1, 3))
+        self.assertEqual(fso.forecast_scores.shape, (1, 1))
+        self.assertEqual(fso.metric_available.shape, (1, 1))
+        self.assertEqual(fso.forecast_cap_active_mask.shape, (1, 8, 8))
         self.assertEqual(
-            fsoi.observation.tile_norm_by_time.shape,
+            fso.observation.detected_dbz.maps.shape,
+            (1, 1, 3, 8, 8),
+        )
+        self.assertEqual(
+            fso.observation.detected_dbz.norm_by_time.shape,
+            (1, 1, 3),
+        )
+        self.assertEqual(
+            fso.observation.initial_background_dbz.maps.shape,
+            (1, 1, 3, 8, 8),
+        )
+        self.assertEqual(
+            fso.observation.baseline_dynamics_dbz.maps.shape,
+            (1, 1, 3, 8, 8),
+        )
+        torch.testing.assert_close(
+            fso.observation.frozen_structure_input_dbz.maps,
+            fso.observation.detected_dbz.maps
+            + fso.observation.initial_background_dbz.maps
+            + fso.observation.baseline_dynamics_dbz.maps,
+        )
+        self.assertEqual(
+            int(
+                torch.count_nonzero(
+                    fso.observation.initial_background_dbz.maps[
+                        ..., 1:, :, :
+                    ]
+                )
+            ),
+            0,
+        )
+        self.assertGreater(fso.total_normal_products, 0)
+        self.assertEqual(
+            fso.total_normal_products,
+            int(fso.adjoint_normal_products.sum())
+            + fso.gauss_newton_diagnostics.normal_products,
+        )
+        self.assertGreater(fso.materialized_output_bytes, 0)
+        self.assertGreaterEqual(
+            float(fso.adjoint_detected_sensitivity_l2_error_bound[0, 0]),
+            0.0,
+        )
+        self.assertEqual(fso.adjoint_config_digest, VariationalAdjointConfig().digest)
+        self.assertFalse(bool(fso.adjoint_warm_started[0, 0]))
+        self.assertEqual(
+            fso.gauss_newton_diagnostics.relative_curvature_defect.shape,
+            (VariationalAdjointConfig().gauss_newton_probe_count,),
+        )
+        self.assertEqual(
+            fso.gauss_newton_diagnostics.exact_hessian_products,
+            VariationalAdjointConfig().gauss_newton_probe_count,
+        )
+        self.assertTrue(
+            bool(
+                torch.all(
+                    torch.isfinite(
+                        fso.gauss_newton_diagnostics
+                        .relative_curvature_defect
+                    )
+                )
+            )
+        )
+
+    def test_verification_bundle_binds_time_grid_qc_and_content(self) -> None:
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-05T00:00:00Z",
+                "2026-08-05T00:10:00Z",
+                "2026-08-05T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="4" * 64,
+        )
+        forecast, analysis = variational_nowcast(
+            self.frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+            grid_time_contract=grid,
+        )
+        self.assertTrue(analysis.converged)
+        self.assertFalse(analysis.degraded)
+        verification_frames = torch.where(
+            torch.isfinite(forecast.forecast_dbz),
+            forecast.forecast_dbz - 0.5,
+            forecast.forecast_dbz,
+        )
+        bundle = VerificationBundle(
+            frames_dbz=verification_frames,
+            valid_mask=torch.isfinite(verification_frames),
+            valid_times=("2026-08-05T00:30:00Z",),
+            grid_contract_digest=grid.digest,
+            radar_product_digest="5" * 64,
+            qc_pipeline_digest="6" * 64,
+        )
+        strict_config = replace(
+            self.sensitivity_config,
+            require_verification_lineage=True,
+        )
+        fso = compute_variational_fso(
+            forecast,
+            analysis,
+            bundle,
+            sensitivity_config=strict_config,
+        )
+        self.assertTrue(fso.verification_lineage_complete)
+        self.assertEqual(
+            fso.verification_contract,
+            "radar-verification-bundle-v1",
+        )
+        self.assertEqual(fso.verification_bundle_digest, bundle.content_digest)
+        self.assertEqual(fso.verification_valid_times, bundle.valid_times)
+        self.assertEqual(fso.verification_grid_contract_digest, grid.digest)
+        validate_variational_fso(fso)
+
+        with self.assertRaisesRegex(ValueError, "VerificationBundle"):
+            compute_variational_fso(
+                forecast,
+                analysis,
+                verification_frames,
+                sensitivity_config=strict_config,
+            )
+        wrong_time = VerificationBundle(
+            frames_dbz=verification_frames,
+            valid_mask=torch.isfinite(verification_frames),
+            valid_times=("2026-08-05T00:40:00Z",),
+            grid_contract_digest=grid.digest,
+            radar_product_digest="5" * 64,
+            qc_pipeline_digest="6" * 64,
+        )
+        with self.assertRaisesRegex(ValueError, "valid times"):
+            compute_variational_fso(
+                forecast,
+                analysis,
+                wrong_time,
+                sensitivity_config=strict_config,
+            )
+        wrong_grid = VerificationBundle(
+            frames_dbz=verification_frames,
+            valid_mask=torch.isfinite(verification_frames),
+            valid_times=bundle.valid_times,
+            grid_contract_digest="7" * 64,
+            radar_product_digest="5" * 64,
+            qc_pipeline_digest="6" * 64,
+        )
+        with self.assertRaisesRegex(ValueError, "grid contracts"):
+            compute_variational_fso(
+                forecast,
+                analysis,
+                wrong_grid,
+                sensitivity_config=strict_config,
+            )
+
+        bundle.frames_dbz[0, 0, 0] += 1.0
+        with self.assertRaisesRegex(ValueError, "content digest"):
+            bundle.validate_integrity()
+
+    def test_correlated_observation_fso_matches_perturb_and_resolve(
+        self,
+    ) -> None:
+        analysis_config = replace(
+            self.analysis_config,
+            maximum_outer_iterations=12,
+            observation_common_bias_std_dbz=0.2,
+        )
+        x_fraction = torch.linspace(
+            0.0,
+            1.0,
+            self.frames.shape[-1],
+            dtype=self.frames.dtype,
+        ).expand(self.frames.shape[-2], -1)
+        mode_weights = torch.stack(
+            (torch.sqrt(1.0 - x_fraction), torch.sqrt(x_fraction))
+        )
+        forecast, analysis = variational_nowcast(
+            self.frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=analysis_config,
+            observation_common_bias_mode_weights=mode_weights,
+        )
+        self.assertTrue(analysis.converged, analysis.reason)
+        self.assertFalse(analysis.degraded, analysis.reason)
+        verification = torch.where(
+            torch.isfinite(forecast.forecast_dbz),
+            forecast.forecast_dbz - 0.5,
+            forecast.forecast_dbz,
+        )
+        fso = compute_variational_fso(
+            forecast,
+            analysis,
+            verification,
+            sensitivity_config=self.sensitivity_config,
+        )
+        validate_variational_fso(fso)
+        linearization = analysis.linearization
+        assert linearization is not None
+        original_mode_weights = (
+            linearization.observations.common_bias_mode_weights
+        )
+        assert original_mode_weights is not None
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "overlapping-linearization.npz"
+            save_p1_linearization(analysis, path)
+            restarted = load_p1_linearization(path)
+            assert restarted.linearization is not None
+            restarted_mode_weights = (
+                restarted.linearization.observations.common_bias_mode_weights
+            )
+            assert restarted_mode_weights is not None
+            torch.testing.assert_close(
+                restarted_mode_weights,
+                original_mode_weights,
+            )
+        observations = linearization.observations
+        frozen = linearization.frozen
+        truth = dbz_to_echo(
+            verification[0],
+            min_dbz=self.nowcast_config.min_dbz,
+            max_dbz=self.nowcast_config.max_dbz,
+        )
+        valid = torch.isfinite(verification[0]) & forecast.valid_mask[0]
+        lead_cell = freeze_remap_cell(analysis.state.displacement_yx)
+        cap_active = fso.forecast_cap_active_mask[0]
+
+        def score(candidate_control: torch.Tensor) -> torch.Tensor:
+            trajectory = _analysis_trajectory(candidate_control, frozen)
+            state = RadarState(
+                echo_linear=trajectory.frames_linear[-1],
+                displacement_yx=trajectory.displacement_yx,
+                log_growth_per_step=trajectory.log_growth_per_step,
+            )
+            latent = _forecast_linear_at_step_core(
+                state,
+                1,
+                self.nowcast_config,
+                lead_cell,
+            )
+            return forecast_metric(
+                "log_echo_mse",
+                _apply_output_cap(
+                    latent,
+                    cap_active,
+                    self.nowcast_config,
+                ),
+                truth,
+                valid,
+                self.nowcast_config,
+                self.sensitivity_config,
+            )
+
+        def solve_perturbed(changed_dbz: torch.Tensor) -> torch.Tensor:
+            changed_observations = replace(observations, dbz=changed_dbz)
+            candidate = torch.nn.Parameter(analysis.control.clone())
+            optimizer = torch.optim.LBFGS(
+                (candidate,),
+                lr=0.25,
+                max_iter=100,
+                tolerance_grad=1.0e-12,
+                tolerance_change=1.0e-14,
+                line_search_fn="strong_wolfe",
+            )
+
+            def closure() -> torch.Tensor:
+                optimizer.zero_grad()
+                residual = residual_vector(
+                    candidate,
+                    changed_observations,
+                    frozen,
+                )
+                objective = 0.5 * torch.dot(residual, residual)
+                objective.backward()
+                return objective
+
+            optimizer.step(closure)
+            return candidate.detach()
+
+        sensitivity = fso.observation.detected_dbz.maps[0, 0]
+        flat_index = int(torch.argmax(sensitivity.abs()))
+        index = torch.unravel_index(
+            torch.tensor(flat_index),
+            observations.dbz.shape,
+        )
+        self.assertTrue(bool(observations.detected_mask[index]))
+        delta = 1.0e-3
+        perturbation = torch.zeros_like(observations.dbz)
+        perturbation[index] = delta
+        plus = solve_perturbed(observations.dbz + perturbation)
+        minus = solve_perturbed(observations.dbz - perturbation)
+        finite_difference = (score(plus) - score(minus)) / (2.0 * delta)
+        torch.testing.assert_close(
+            finite_difference,
+            sensitivity[index],
+            rtol=7.5e-3,
+            atol=1.0e-8,
+        )
+
+    def test_adjoint_config_validation_and_active_set_margin(self) -> None:
+        invalid = (
+            {"lead_minutes": ()},
+            {"lead_minutes": (20, 10)},
+            {"lead_minutes": (10, 10)},
+            {"pcg_relative_tolerance": 0.0},
+            {"maximum_pcg_iterations": 0},
+            {"maximum_normal_products": 0},
+            {"maximum_materialized_output_bytes": 0},
+            {"preconditioner": "unknown"},
+            {"minimum_remap_fraction_margin": -1.0},
+            {"minimum_reachability_margin": -1.0},
+            {"minimum_unresolved_amplitude_fraction_margin": -1.0},
+            {"minimum_amplitude_confidence_margin": -1.0},
+            {"minimum_motion_saturation_margin_fraction": -1.0},
+            {"minimum_motion_speed_saturation_margin_mps": -1.0},
+            {"minimum_growth_saturation_margin_per_step": -1.0},
+            {"gauss_newton_probe_count": 0},
+            {"gauss_newton_probe_seed": -1},
+            {"maximum_gauss_newton_relative_curvature_defect": -1.0},
+        )
+        for values in invalid:
+            with self.subTest(values=values):
+                with self.assertRaises((TypeError, ValueError)):
+                    VariationalAdjointConfig(**values)
+
+        displacement = torch.tensor((0.25, 0.40), dtype=torch.float64)
+        self.assertAlmostEqual(
+            _remap_fraction_margin(
+                displacement,
+                freeze_remap_cell(displacement),
+            ),
+            0.25,
+        )
+        near_boundary = torch.tensor(
+            (0.99999, 0.25),
+            dtype=torch.float64,
+        )
+        self.assertLess(
+            _remap_fraction_margin(
+                near_boundary,
+                freeze_remap_cell(near_boundary),
+            ),
+            2.0e-5,
+        )
+
+        self.assertTrue(self.fso.active_set_margins.low_local_validity)
+        with self.assertRaisesRegex(ValueError, "active-set margin"):
+            compute_variational_fso(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+                adjoint_config=VariationalAdjointConfig(
+                    require_active_set_margin=True,
+                ),
+            )
+        feasibility = self.fso.feasibility_margins
+        with self.assertRaisesRegex(ValueError, "feasibility margin"):
+            compute_variational_fso(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+                adjoint_config=VariationalAdjointConfig(
+                    minimum_reachability_margin=(
+                        feasibility.reachability_support + 1.0
+                    ),
+                    require_feasibility_margin=True,
+                ),
+            )
+        self.assertTrue(self.fso.gauss_newton_diagnostics.reliable)
+        with self.assertRaisesRegex(ValueError, "curvature approximation"):
+            compute_variational_fso(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+                adjoint_config=VariationalAdjointConfig(
+                    maximum_gauss_newton_relative_curvature_defect=1.0e-3,
+                    require_gauss_newton_reliability=True,
+                ),
+            )
+
+    def test_feasibility_margins_are_content_addressed(self) -> None:
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        changed_linearization = replace(
+            linearization,
+            feasibility_margins=replace(
+                linearization.feasibility_margins,
+                reachability_support=(
+                    linearization.feasibility_margins.reachability_support
+                    + 0.01
+                ),
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "content digest"):
+            compute_variational_fso(
+                self.forecast,
+                replace(self.analysis, linearization=changed_linearization),
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+            )
+
+        changed_fso = replace(
+            self.fso,
+            feasibility_margins=replace(
+                self.fso.feasibility_margins,
+                growth_saturation_per_step=(
+                    self.fso.feasibility_margins
+                    .growth_saturation_per_step
+                    + 0.01
+                ),
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "result digest"):
+            validate_variational_fso(changed_fso)
+
+    def test_variational_fso_binds_metric_domain_policy(self) -> None:
+        confidence = compute_variational_fso(
+            self.forecast,
+            self.analysis,
+            self.verification,
+            sensitivity_config=replace(
+                self.sensitivity_config,
+                metric_domain="confidence_weighted",
+            ),
+        )
+        anchored = compute_variational_fso(
+            self.forecast,
+            self.analysis,
+            self.verification,
+            sensitivity_config=replace(
+                self.sensitivity_config,
+                metric_domain="radar_dynamics_anchored",
+            ),
+        )
+        self.assertEqual(confidence.metric_domain, "confidence_weighted")
+        self.assertEqual(
+            anchored.metric_domain,
+            "radar_dynamics_anchored",
+        )
+        self.assertNotEqual(
+            confidence.metric_domain_digest,
+            self.fso.metric_domain_digest,
+        )
+        self.assertNotEqual(
+            anchored.metric_domain_digest,
+            self.fso.metric_domain_digest,
+        )
+        self.assertLessEqual(
+            float(confidence.metric_domain_weight_sum[0]),
+            float(self.fso.metric_domain_weight_sum[0]),
+        )
+        self.assertLessEqual(
+            float(anchored.metric_domain_weight_sum[0]),
+            float(self.fso.metric_domain_weight_sum[0]),
+        )
+
+    def test_gauss_newton_curvature_defect_has_analytic_reference(self) -> None:
+        control = torch.ones(1, dtype=torch.float64)
+
+        def residual(value: torch.Tensor) -> torch.Tensor:
+            return torch.cat((value, value.square()))
+
+        def gauss_newton_product(value: torch.Tensor) -> torch.Tensor:
+            return 5.0 * value
+
+        config = VariationalAdjointConfig(
+            gauss_newton_probe_count=1,
+            maximum_gauss_newton_relative_curvature_defect=0.5,
+        )
+        diagnostics = _gauss_newton_curvature_diagnostics(
+            control,
+            residual,
+            gauss_newton_product,
+            _NormalProductBudget(maximum=2),
+            config,
+        )
+        torch.testing.assert_close(
+            diagnostics.relative_curvature_defect,
+            torch.tensor((0.4,), dtype=torch.float64),
+        )
+        self.assertTrue(diagnostics.reliable)
+
+        with self.assertRaisesRegex(ValueError, "curvature approximation"):
+            _gauss_newton_curvature_diagnostics(
+                control,
+                residual,
+                gauss_newton_product,
+                _NormalProductBudget(maximum=2),
+                replace(
+                    config,
+                    maximum_gauss_newton_relative_curvature_defect=0.3,
+                    require_gauss_newton_reliability=True,
+                ),
+            )
+
+    def test_selected_leads_warm_start_and_resource_budgets(self) -> None:
+        nowcast_config = NowcastConfig(horizon_minutes=20)
+        forecast, analysis = variational_nowcast(
+            self.frames,
+            nowcast_config=nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+        self.assertTrue(analysis.converged)
+        self.assertFalse(analysis.degraded)
+        verification = torch.where(
+            torch.isfinite(forecast.forecast_dbz),
+            forecast.forecast_dbz - 0.5,
+            forecast.forecast_dbz,
+        )
+        all_maps = SensitivityConfig(
+            metric_names=("log_echo_mse",),
+            full_map_lead_minutes=(10, 20),
+            tile_size=4,
+        )
+        selected_maps = replace(all_maps, full_map_lead_minutes=(20,))
+        cold = compute_variational_fso(
+            forecast,
+            analysis,
+            verification,
+            sensitivity_config=all_maps,
+            adjoint_config=VariationalAdjointConfig(
+                warm_start_by_metric=False,
+            ),
+        )
+        warm = compute_variational_fso(
+            forecast,
+            analysis,
+            verification,
+            sensitivity_config=all_maps,
+            adjoint_config=VariationalAdjointConfig(),
+        )
+        selected = compute_variational_fso(
+            forecast,
+            analysis,
+            verification,
+            sensitivity_config=selected_maps,
+            adjoint_config=VariationalAdjointConfig(
+                lead_minutes=(20,),
+                warm_start_by_metric=False,
+            ),
+        )
+        unpreconditioned = compute_variational_fso(
+            forecast,
+            analysis,
+            verification,
+            sensitivity_config=selected_maps,
+            adjoint_config=VariationalAdjointConfig(
+                lead_minutes=(20,),
+                warm_start_by_metric=False,
+                preconditioner="none",
+            ),
+        )
+
+        self.assertEqual(selected.lead_minutes, (20,))
+        self.assertEqual(selected.forecast_scores.shape, (1, 1))
+        torch.testing.assert_close(
+            selected.forecast_scores[0],
+            cold.forecast_scores[1],
+        )
+        torch.testing.assert_close(
+            selected.observation.detected_dbz.maps[0],
+            cold.observation.detected_dbz.maps[1],
+            rtol=1.0e-6,
+            atol=1.0e-10,
+        )
+        torch.testing.assert_close(
+            selected.observation.detected_dbz.maps,
+            unpreconditioned.observation.detected_dbz.maps,
+            rtol=1.0e-6,
+            atol=1.0e-10,
+        )
+        self.assertFalse(bool(warm.adjoint_warm_started[0, 0]))
+        self.assertTrue(bool(warm.adjoint_warm_started[1, 0]))
+        torch.testing.assert_close(
+            warm.observation.detected_dbz.maps,
+            cold.observation.detected_dbz.maps,
+            rtol=1.0e-6,
+            atol=1.0e-10,
+        )
+
+        with self.assertRaisesRegex(ValueError, "byte budget"):
+            compute_variational_fso(
+                forecast,
+                analysis,
+                verification,
+                sensitivity_config=selected_maps,
+                adjoint_config=VariationalAdjointConfig(
+                    lead_minutes=(20,),
+                    maximum_materialized_output_bytes=1,
+                ),
+            )
+        with self.assertRaisesRegex(ValueError, "normal-product budget"):
+            compute_variational_fso(
+                forecast,
+                analysis,
+                verification,
+                sensitivity_config=selected_maps,
+                adjoint_config=VariationalAdjointConfig(
+                    lead_minutes=(20,),
+                    maximum_normal_products=1,
+                ),
+            )
+
+    def test_scalar_observation_sensitivity_sign_is_independent(self) -> None:
+        sigma = 2.0
+        truth = -1.5
+        observation = torch.tensor(3.0, dtype=torch.float64)
+
+        def analyzed(value: torch.Tensor) -> torch.Tensor:
+            return value / (1.0 + sigma**2)
+
+        def metric(value: torch.Tensor) -> torch.Tensor:
+            return 0.5 * (analyzed(value) - truth).square()
+
+        expected = (float(analyzed(observation)) - truth) / (1.0 + sigma**2)
+        delta = 1.0e-5
+        finite_difference = (
+            metric(observation + delta) - metric(observation - delta)
+        ) / (2.0 * delta)
+        self.assertGreater(expected, 0.0)
+        torch.testing.assert_close(
+            finite_difference,
+            torch.tensor(expected, dtype=torch.float64),
+            rtol=1.0e-10,
+            atol=1.0e-12,
+        )
+
+    def test_variational_fso_binds_verification_and_output_contents(
+        self,
+    ) -> None:
+        fso = self.fso
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        changed_verification = self.verification.clone()
+        changed_verification[0, 0, 0] += 0.25
+        changed = compute_variational_fso(
+            self.forecast,
+            self.analysis,
+            changed_verification,
+            sensitivity_config=self.sensitivity_config,
+        )
+        self.assertNotEqual(
+            self.fso.verification_bundle_digest,
+            changed.verification_bundle_digest,
+        )
+        self.assertNotEqual(
+            self.fso.variational_fso_digest,
+            changed.variational_fso_digest,
+        )
+
+        changed_scores = self.fso.forecast_scores.clone()
+        changed_scores[0, 0] += 1.0
+        tampered = replace(self.fso, forecast_scores=changed_scores)
+        with self.assertRaisesRegex(ValueError, "result digest mismatch"):
+            validate_variational_fso(tampered)
+        self.assertEqual(
+            fso.observation.detected_dbz.tile_norm_by_time.shape,
             (1, 1, 3, 2, 2),
         )
-        self.assertTrue(bool(fsoi.metric_available[0, 0]))
-        self.assertGreater(int(fsoi.adjoint_iterations[0, 0]), 0)
-        self.assertLess(float(fsoi.adjoint_relative_residual[0, 0]), 1.0e-8)
+        self.assertTrue(bool(fso.metric_available[0, 0]))
+        self.assertGreater(int(fso.adjoint_iterations[0, 0]), 0)
+        self.assertLess(float(fso.adjoint_relative_residual[0, 0]), 1.0e-8)
         self.assertTrue(
-            bool(torch.all(fsoi.observation.norm_by_time[0, 0] > 0.0))
+            bool(
+                torch.all(
+                    fso.observation.detected_dbz.norm_by_time[0, 0] > 0.0
+                )
+            )
         )
         censored = ~linearization.observations.detected_mask
         torch.testing.assert_close(
-            fsoi.observation.maps[0, 0][censored],
-            torch.zeros_like(fsoi.observation.maps[0, 0][censored]),
+            fso.observation.detected_dbz.maps[0, 0][censored],
+            torch.zeros_like(
+                fso.observation.detected_dbz.maps[0, 0][censored]
+            ),
+        )
+        self.assertGreater(
+            float(fso.observation.censor_threshold_dbz.maps.abs().max()),
+            0.0,
+        )
+        self.assertGreater(
+            float(fso.observation.observation_weight.maps.abs().max()),
+            0.0,
+        )
+        torch.testing.assert_close(
+            fso.observation.censor_threshold_dbz.maps[0, 0][
+                linearization.observations.detected_mask
+            ],
+            torch.zeros_like(
+                fso.observation.censor_threshold_dbz.maps[0, 0][
+                    linearization.observations.detected_mask
+                ]
+            ),
         )
 
-    def test_variational_fsoi_matches_dense_and_finite_difference(self) -> None:
+    def test_p1_linearization_artifact_restarts_identical_fso(self) -> None:
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "p1-linearization.npz"
+            save_p1_linearization(self.analysis, path)
+            loaded = load_p1_linearization(path)
+            restarted = compute_variational_fso(
+                self.forecast,
+                loaded,
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+            )
+
+        self.assertEqual(
+            loaded.linearization.linearization_digest,
+            linearization.linearization_digest,
+        )
+        self.assertEqual(
+            restarted.variational_fso_digest,
+            self.fso.variational_fso_digest,
+        )
+        torch.testing.assert_close(
+            restarted.observation.detected_dbz.maps,
+            self.fso.observation.detected_dbz.maps,
+            rtol=0.0,
+            atol=0.0,
+        )
+
+    def test_p1_linearization_artifact_rejects_tamper_and_runtime_mismatch(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "p1-linearization.npz"
+            save_p1_linearization(self.analysis, path)
+            with patch(
+                "advar.linearization_artifact.algorithm_bundle_digest",
+                return_value="0" * 64,
+            ):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "algorithm bundle mismatch",
+                ):
+                    load_p1_linearization(path)
+            with patch(
+                "advar.linearization_artifact.numerical_runtime_identity_digest",
+                return_value="0" * 64,
+            ):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "numerical runtime mismatch",
+                ):
+                    load_p1_linearization(path)
+
+            with np.load(path, allow_pickle=False) as archive:
+                arrays = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                }
+            tensor_name = next(
+                name
+                for name, value in arrays.items()
+                if name.startswith("tensor_") and value.dtype.kind == "f"
+            )
+            arrays[tensor_name].reshape(-1)[0] += 1.0
+            with path.open("wb") as stream:
+                np.savez(stream, **arrays)
+            with self.assertRaisesRegex(
+                ValueError,
+                "artifact digest mismatch",
+            ):
+                load_p1_linearization(path)
+
+    def test_variational_fso_matches_dense_and_finite_difference(self) -> None:
         linearization = self.analysis.linearization
         assert linearization is not None
         observations = linearization.observations
@@ -1599,7 +2538,7 @@ class VariationalFSOITests(unittest.TestCase):
         )
         valid = torch.isfinite(self.verification[0]) & self.forecast.valid_mask[0]
         lead_cell = freeze_remap_cell(self.analysis.state.displacement_yx)
-        cap_active = self.fsoi.forecast_cap_active_mask[0]
+        cap_active = self.fso.forecast_cap_active_mask[0]
 
         def score(candidate_control: torch.Tensor) -> torch.Tensor:
             trajectory = _analysis_trajectory(candidate_control, frozen)
@@ -1637,8 +2576,245 @@ class VariationalFSOITests(unittest.TestCase):
             jacobian[:observation_count] @ dense_adjoint
         ).reshape_as(observations.dbz)
         torch.testing.assert_close(
-            self.fsoi.observation.maps[0, 0],
+            self.fso.observation.detected_dbz.maps[0, 0],
             dense_sensitivity,
+            rtol=1.0e-5,
+            atol=2.0e-10,
+        )
+        prediction_response = (
+            jacobian[:observation_count] @ dense_adjoint
+        ).reshape_as(observations.dbz)
+        base_scale = (
+            torch.sqrt(observations.quality_weight)
+            * frozen.irls_sqrt_weight
+            / observations.std_dbz
+        )
+        analyzed_dbz = echo_to_dbz(
+            _analysis_trajectory(control, frozen).frames_linear,
+            min_dbz=config.min_dbz,
+        )
+        censor_response = torch.sigmoid(
+            (
+                analyzed_dbz
+                - frozen.analysis_config.detection_limit_dbz
+            )
+            / frozen.analysis_config.censor_temperature_dbz
+        )
+        censor_error = (
+            frozen.analysis_config.censor_temperature_dbz
+            * torch.nn.functional.softplus(
+                (
+                    analyzed_dbz
+                    - frozen.analysis_config.detection_limit_dbz
+                )
+                / frozen.analysis_config.censor_temperature_dbz
+            )
+        )
+        censor_scale = torch.where(
+            observations.censored_mask,
+            base_scale
+            * (
+                censor_response
+                + (
+                    censor_error
+                    / frozen.analysis_config.censor_temperature_dbz
+                )
+                * (1.0 - censor_response)
+            ),
+            torch.zeros_like(observations.dbz),
+        )
+        dense_censor_sensitivity = censor_scale * prediction_response
+        torch.testing.assert_close(
+            self.fso.observation.censor_threshold_dbz.maps[0, 0],
+            dense_censor_sensitivity,
+            rtol=1.0e-5,
+            atol=2.0e-10,
+        )
+        weighted_residual = residual_fn(control)[:observation_count].reshape_as(
+            observations.dbz
+        )
+        dense_weight_sensitivity = -weighted_residual * prediction_response
+        torch.testing.assert_close(
+            self.fso.observation.observation_weight.maps[0, 0],
+            dense_weight_sensitivity,
+            rtol=1.0e-5,
+            atol=2.0e-10,
+        )
+
+        def score_from_background(
+            candidate_background: torch.Tensor,
+        ) -> torch.Tensor:
+            candidate_frozen = replace(
+                frozen,
+                initial_background_dbz=candidate_background,
+            )
+            trajectory = _analysis_trajectory(control, candidate_frozen)
+            state = RadarState(
+                echo_linear=trajectory.frames_linear[-1],
+                displacement_yx=trajectory.displacement_yx,
+                log_growth_per_step=trajectory.log_growth_per_step,
+            )
+            latent = _forecast_linear_at_step_core(
+                state,
+                1,
+                config,
+                lead_cell,
+            )
+            return forecast_metric(
+                "log_echo_mse",
+                _apply_output_cap(latent, cap_active, config),
+                truth,
+                valid,
+                config,
+                sensitivity_config,
+            )
+
+        def stationarity_from_background(
+            candidate_background: torch.Tensor,
+        ) -> torch.Tensor:
+            def objective(candidate_control: torch.Tensor) -> torch.Tensor:
+                residual = residual_vector(
+                    candidate_control,
+                    observations,
+                    replace(
+                        frozen,
+                        initial_background_dbz=candidate_background,
+                    ),
+                )
+                return 0.5 * torch.dot(residual, residual)
+
+            return torch.func.grad(objective)(control)
+
+        background_mixed_gradient = torch.func.jacrev(
+            stationarity_from_background
+        )(frozen.initial_background_dbz)
+        direct_background = torch.func.grad(score_from_background)(
+            frozen.initial_background_dbz
+        )
+        dense_background = direct_background - torch.einsum(
+            "chw,c->hw",
+            background_mixed_gradient,
+            dense_adjoint,
+        )
+        expected_background = torch.zeros_like(observations.dbz)
+        expected_background[0] = torch.where(
+            observations.valid_mask[0] & frozen.observed_mask[0],
+            dense_background,
+            torch.zeros_like(dense_background),
+        )
+        torch.testing.assert_close(
+            self.fso.observation.initial_background_dbz.maps[0, 0],
+            expected_background,
+            rtol=1.0e-5,
+            atol=2.0e-10,
+        )
+
+        def dynamics_from_observation(
+            candidate_dbz: torch.Tensor,
+        ) -> torch.Tensor:
+            candidate_linear = dbz_to_echo(
+                candidate_dbz,
+                min_dbz=config.min_dbz,
+                max_dbz=config.max_dbz,
+            )
+            estimate = _estimate_source_tendencies(
+                candidate_dbz,
+                frozen.observed_mask,
+                candidate_linear,
+                config,
+                frozen.grid_time_contract,
+            )
+            return torch.cat(
+                (
+                    estimate.displacement_yx,
+                    estimate.log_growth_per_step.reshape(1),
+                )
+            )
+
+        nominal_dynamics = torch.cat(
+            (
+                frozen.baseline_state.displacement_yx,
+                frozen.baseline_state.log_growth_per_step.reshape(1),
+            )
+        )
+
+        def frozen_from_dynamics(candidate: torch.Tensor):
+            return replace(
+                frozen,
+                baseline_state=RadarState(
+                    echo_linear=frozen.baseline_state.echo_linear,
+                    displacement_yx=candidate[:2],
+                    log_growth_per_step=candidate[2],
+                ),
+            )
+
+        def score_from_dynamics(candidate: torch.Tensor) -> torch.Tensor:
+            candidate_frozen = frozen_from_dynamics(candidate)
+            trajectory = _analysis_trajectory(control, candidate_frozen)
+            state = RadarState(
+                echo_linear=trajectory.frames_linear[-1],
+                displacement_yx=trajectory.displacement_yx,
+                log_growth_per_step=trajectory.log_growth_per_step,
+            )
+            latent = _forecast_linear_at_step_core(
+                state,
+                1,
+                config,
+                lead_cell,
+            )
+            return forecast_metric(
+                "log_echo_mse",
+                _apply_output_cap(latent, cap_active, config),
+                truth,
+                valid,
+                config,
+                sensitivity_config,
+            )
+
+        dynamics_jacobian = torch.func.jacrev(
+            dynamics_from_observation
+        )(observations.dbz)
+        def stationarity_from_dynamics(
+            candidate: torch.Tensor,
+        ) -> torch.Tensor:
+            def objective(candidate_control: torch.Tensor) -> torch.Tensor:
+                residual = residual_vector(
+                    candidate_control,
+                    observations,
+                    frozen_from_dynamics(candidate),
+                )
+                return 0.5 * torch.dot(residual, residual)
+
+            return torch.func.grad(objective)(control)
+
+        dynamics_mixed_gradient = torch.func.jacrev(
+            stationarity_from_dynamics
+        )(nominal_dynamics)
+        dynamics_metric_gradient = torch.func.grad(score_from_dynamics)(
+            nominal_dynamics
+        )
+        dynamics_parameter_sensitivity = dynamics_metric_gradient - (
+            dynamics_mixed_gradient.mT @ dense_adjoint
+        )
+        expected_dynamics = torch.einsum(
+            "dthw,d->thw",
+            dynamics_jacobian,
+            dynamics_parameter_sensitivity,
+        )
+        expected_dynamics = torch.where(
+            observations.valid_mask & frozen.observed_mask,
+            expected_dynamics,
+            torch.zeros_like(expected_dynamics),
+        )
+        torch.testing.assert_close(
+            self.fso.observation.baseline_dynamics_dbz.maps[0, 0],
+            expected_dynamics,
+            rtol=1.0e-5,
+            atol=2.0e-10,
+        )
+        torch.testing.assert_close(
+            self.fso.observation.frozen_structure_input_dbz.maps[0, 0],
+            dense_sensitivity + expected_background + expected_dynamics,
             rtol=1.0e-5,
             atol=2.0e-10,
         )
@@ -1658,7 +2834,7 @@ class VariationalFSOITests(unittest.TestCase):
         ) / (2.0 * delta)
         torch.testing.assert_close(
             finite_difference,
-            self.fsoi.observation.maps[
+            self.fso.observation.detected_dbz.maps[
                 0,
                 0,
                 time_index,
@@ -1669,10 +2845,632 @@ class VariationalFSOITests(unittest.TestCase):
             atol=1.0e-10,
         )
 
-    def test_variational_fsoi_fails_closed(self) -> None:
+    def test_variational_fso_matches_observation_perturb_and_resolve(
+        self,
+    ) -> None:
+        coordinates = torch.arange(8, dtype=torch.float64)
+        y, x = torch.meshgrid(coordinates, coordinates, indexing="ij")
+        moving_frames = torch.stack(
+            tuple(
+                -10.0
+                + 35.0
+                * torch.exp(
+                    -(
+                        (y - (3.0 + 0.18 * index)).square()
+                        + (x - (3.1 + 0.21 * index)).square()
+                    )
+                    / 3.0
+                )
+                + 8.0
+                * torch.exp(
+                    -(
+                        (y - (5.2 + 0.18 * index)).square()
+                        + (x - (5.7 + 0.21 * index)).square()
+                    )
+                    / 0.8
+                )
+                for index in range(3)
+            )
+        )
+        forecast, analysis = variational_nowcast(
+            moving_frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=replace(
+                self.analysis_config,
+                maximum_outer_iterations=12,
+            ),
+        )
+        self.assertTrue(analysis.converged, analysis.reason)
+        self.assertFalse(analysis.degraded, analysis.reason)
+        verification = torch.where(
+            torch.isfinite(forecast.forecast_dbz),
+            forecast.forecast_dbz - 0.5,
+            forecast.forecast_dbz,
+        )
+        fso = compute_variational_fso(
+            forecast,
+            analysis,
+            verification,
+            sensitivity_config=self.sensitivity_config,
+        )
+        self.assertFalse(fso.active_set_margins.low_local_validity)
+
+        linearization = analysis.linearization
+        assert linearization is not None
+        observations = linearization.observations
+        frozen = linearization.frozen
+        config = self.nowcast_config
+        truth = dbz_to_echo(
+            verification[0],
+            min_dbz=config.min_dbz,
+            max_dbz=config.max_dbz,
+        )
+        valid = torch.isfinite(verification[0]) & forecast.valid_mask[0]
+        lead_cell = freeze_remap_cell(analysis.state.displacement_yx)
+        cap_active = fso.forecast_cap_active_mask[0]
+
+        def score(
+            candidate_control: torch.Tensor,
+            candidate_frozen=frozen,
+        ) -> torch.Tensor:
+            trajectory = _analysis_trajectory(
+                candidate_control,
+                candidate_frozen,
+            )
+            state = RadarState(
+                echo_linear=trajectory.frames_linear[-1],
+                displacement_yx=trajectory.displacement_yx,
+                log_growth_per_step=trajectory.log_growth_per_step,
+            )
+            latent = _forecast_linear_at_step_core(
+                state,
+                1,
+                config,
+                lead_cell,
+            )
+            return forecast_metric(
+                "log_echo_mse",
+                _apply_output_cap(latent, cap_active, config),
+                truth,
+                valid,
+                config,
+                self.sensitivity_config,
+            )
+
+        def stationarity_at_control(
+            candidate_observations,
+            candidate_frozen,
+        ) -> torch.Tensor:
+            def objective(candidate_control: torch.Tensor) -> torch.Tensor:
+                residual = residual_vector(
+                    candidate_control,
+                    candidate_observations,
+                    candidate_frozen,
+                )
+                return 0.5 * torch.dot(residual, residual)
+
+            return torch.func.grad(objective)(analysis.control)
+
+        nominal_residual_function = lambda candidate_control: residual_vector(
+            candidate_control,
+            observations,
+            frozen,
+        )
+        nominal_jacobian = torch.func.jacrev(
+            nominal_residual_function
+        )(analysis.control)
+        nominal_normal = nominal_jacobian.mT @ nominal_jacobian
+        nominal_stationarity = stationarity_at_control(observations, frozen)
+
+        def frozen_gn_response(candidate_observations, candidate_frozen):
+            stationarity_change = (
+                stationarity_at_control(
+                    candidate_observations,
+                    candidate_frozen,
+                )
+                - nominal_stationarity
+            )
+            return analysis.control - torch.linalg.solve(
+                nominal_normal,
+                stationarity_change,
+            )
+
+        time_index, row, column = 2, 4, 4
+        delta = 1.0e-3
+        perturbation = torch.zeros_like(observations.dbz)
+        perturbation[time_index, row, column] = delta
+        plus = frozen_gn_response(
+            replace(observations, dbz=observations.dbz + perturbation),
+            frozen,
+        )
+        minus = frozen_gn_response(
+            replace(observations, dbz=observations.dbz - perturbation),
+            frozen,
+        )
+        finite_difference = (score(plus) - score(minus)) / (2.0 * delta)
+
+        torch.testing.assert_close(
+            finite_difference,
+            fso.observation.detected_dbz.maps[
+                0,
+                0,
+                time_index,
+                row,
+                column,
+            ],
+            rtol=5.0e-3,
+            atol=1.0e-8,
+        )
+
+        first_frame_detected = torch.nonzero(
+            observations.detected_mask[0],
+            as_tuple=False,
+        )
+        total_magnitude = torch.abs(
+            fso.observation.frozen_structure_input_dbz.maps[
+                0,
+                0,
+                0,
+            ]
+        )
+        detected_magnitude = total_magnitude[
+            first_frame_detected[:, 0],
+            first_frame_detected[:, 1],
+        ]
+        first_frame_detected = first_frame_detected[
+            int(torch.argmax(detected_magnitude))
+        ]
+        first_row, first_column = (
+            int(first_frame_detected[0]),
+            int(first_frame_detected[1]),
+        )
+        input_delta = 1.0e-2
+        input_perturbation = torch.zeros_like(observations.dbz)
+        input_perturbation[0, first_row, first_column] = input_delta
+        background_perturbation = torch.zeros_like(
+            frozen.initial_background_dbz
+        )
+        background_perturbation[first_row, first_column] = input_delta
+        plus_observations = replace(
+            observations,
+            dbz=observations.dbz + input_perturbation,
+        )
+        minus_observations = replace(
+            observations,
+            dbz=observations.dbz - input_perturbation,
+        )
+
+        def frozen_for_input(
+            candidate_observations,
+            candidate_background: torch.Tensor,
+        ):
+            candidate_linear = dbz_to_echo(
+                candidate_observations.dbz,
+                min_dbz=config.min_dbz,
+                max_dbz=config.max_dbz,
+            )
+            estimate = _estimate_source_tendencies(
+                candidate_observations.dbz,
+                frozen.observed_mask,
+                candidate_linear,
+                config,
+                frozen.grid_time_contract,
+            )
+            return replace(
+                frozen,
+                initial_background_dbz=candidate_background,
+                baseline_state=RadarState(
+                    echo_linear=frozen.baseline_state.echo_linear,
+                    displacement_yx=estimate.displacement_yx,
+                    log_growth_per_step=estimate.log_growth_per_step,
+                ),
+            )
+
+        plus_frozen = frozen_for_input(
+            plus_observations,
+            frozen.initial_background_dbz + background_perturbation,
+        )
+        minus_frozen = frozen_for_input(
+            minus_observations,
+            frozen.initial_background_dbz - background_perturbation,
+        )
+
+        plus = frozen_gn_response(plus_observations, plus_frozen)
+        minus = frozen_gn_response(minus_observations, minus_frozen)
+        frozen_structure_difference = (
+            score(plus, plus_frozen) - score(minus, minus_frozen)
+        ) / (2.0 * input_delta)
+        torch.testing.assert_close(
+            frozen_structure_difference,
+            fso.observation.frozen_structure_input_dbz.maps[
+                0,
+                0,
+                0,
+                first_row,
+                first_column,
+            ],
+            # Re-solve the retained frozen-GN stationarity equation from an
+            # actual input perturbation, including both baseline pathways.
+            rtol=2.0e-2,
+            atol=1.0e-8,
+        )
+
+    def test_censored_and_weight_sensitivity_match_perturb_and_resolve(
+        self,
+    ) -> None:
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        observations = linearization.observations
+        frozen = linearization.frozen
+        control = self.analysis.control
+        config = self.nowcast_config
+        observation_count = observations.dbz.numel()
+        base_scale = (
+            torch.sqrt(observations.quality_weight)
+            * frozen.irls_sqrt_weight
+            / observations.std_dbz
+        )
+        truth = dbz_to_echo(
+            self.verification[0],
+            min_dbz=config.min_dbz,
+            max_dbz=config.max_dbz,
+        )
+        valid = torch.isfinite(self.verification[0]) & self.forecast.valid_mask[0]
+        lead_cell = freeze_remap_cell(self.analysis.state.displacement_yx)
+        cap_active = self.fso.forecast_cap_active_mask[0]
+
+        def score(candidate_control: torch.Tensor) -> torch.Tensor:
+            trajectory = _analysis_trajectory(candidate_control, frozen)
+            state = RadarState(
+                echo_linear=trajectory.frames_linear[-1],
+                displacement_yx=trajectory.displacement_yx,
+                log_growth_per_step=trajectory.log_growth_per_step,
+            )
+            latent = _forecast_linear_at_step_core(
+                state,
+                1,
+                config,
+                lead_cell,
+            )
+            return forecast_metric(
+                "log_echo_mse",
+                _apply_output_cap(latent, cap_active, config),
+                truth,
+                valid,
+                config,
+                self.sensitivity_config,
+            )
+
+        def solve(
+            residual_function,
+            delta: float,
+        ) -> torch.Tensor:
+            candidate = torch.nn.Parameter(control.clone())
+            optimizer = torch.optim.LBFGS(
+                (candidate,),
+                lr=0.25,
+                max_iter=150,
+                tolerance_grad=1.0e-12,
+                tolerance_change=1.0e-14,
+                line_search_fn="strong_wolfe",
+            )
+
+            def closure() -> torch.Tensor:
+                optimizer.zero_grad()
+                residual = residual_function(candidate, delta)
+                objective = 0.5 * torch.dot(residual, residual)
+                objective.backward()
+                return objective
+
+            optimizer.step(closure)
+            return candidate.detach()
+
+        censor_flat_index = int(
+            torch.argmax(
+                self.fso.observation.censor_threshold_dbz.maps[0, 0].abs()
+            )
+        )
+        censor_index = torch.unravel_index(
+            torch.tensor(censor_flat_index),
+            observations.dbz.shape,
+        )
+        censor_mask = torch.zeros_like(observations.dbz, dtype=torch.bool)
+        censor_mask[censor_index] = True
+
+        def censor_residual(
+            candidate_control: torch.Tensor,
+            delta: float,
+        ) -> torch.Tensor:
+            base = residual_vector(candidate_control, observations, frozen)
+            trajectory = _analysis_trajectory(candidate_control, frozen)
+            prediction = echo_to_dbz(
+                trajectory.frames_linear,
+                min_dbz=config.min_dbz,
+            )
+            censor_error = (
+                frozen.analysis_config.censor_temperature_dbz
+                * torch.nn.functional.softplus(
+                    (
+                        prediction
+                        - frozen.analysis_config.detection_limit_dbz
+                        - delta * censor_mask
+                    )
+                    / frozen.analysis_config.censor_temperature_dbz
+                )
+            )
+            observation_block = torch.where(
+                censor_mask,
+                base_scale * censor_error,
+                base[:observation_count].reshape_as(observations.dbz),
+            )
+            return torch.cat(
+                (observation_block.reshape(-1), base[observation_count:])
+            )
+
+        weight_flat_index = int(
+            torch.argmax(
+                self.fso.observation.observation_weight.maps[0, 0].abs()
+            )
+        )
+        weight_index = torch.unravel_index(
+            torch.tensor(weight_flat_index),
+            observations.dbz.shape,
+        )
+        weight_mask = torch.zeros_like(observations.dbz)
+        weight_mask[weight_index] = 1.0
+
+        def weight_residual(
+            candidate_control: torch.Tensor,
+            delta: float,
+        ) -> torch.Tensor:
+            base = residual_vector(candidate_control, observations, frozen)
+            observation_block = base[:observation_count].reshape_as(
+                observations.dbz
+            ) * torch.sqrt(1.0 + delta * weight_mask)
+            return torch.cat(
+                (observation_block.reshape(-1), base[observation_count:])
+            )
+
+        delta = 1.0e-3
+        censor_difference = (
+            score(solve(censor_residual, delta))
+            - score(solve(censor_residual, -delta))
+        ) / (2.0 * delta)
+        weight_difference = (
+            score(solve(weight_residual, delta))
+            - score(solve(weight_residual, -delta))
+        ) / (2.0 * delta)
+        torch.testing.assert_close(
+            censor_difference,
+            self.fso.observation.censor_threshold_dbz.maps[0, 0][
+                censor_index
+            ],
+            # The production inverse is Gauss--Newton while this independent
+            # re-solve uses the exact nonlinear least-squares curvature.
+            rtol=1.0e-1,
+            atol=1.0e-8,
+        )
+        torch.testing.assert_close(
+            weight_difference,
+            self.fso.observation.observation_weight.maps[0, 0][weight_index],
+            rtol=5.0e-3,
+            atol=1.0e-8,
+        )
+
+    def test_variational_fsoi_requires_and_applies_explicit_perturbation(
+        self,
+    ) -> None:
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        observations = linearization.observations
+        detected = torch.zeros_like(observations.dbz)
+        censor_threshold = torch.zeros_like(observations.dbz)
+        observation_weight = torch.zeros_like(observations.dbz)
+        initial_background = torch.zeros_like(observations.dbz)
+        baseline_dynamics = torch.zeros_like(observations.dbz)
+        detected_index = tuple(
+            int(value)
+            for value in torch.nonzero(
+                observations.detected_mask,
+                as_tuple=False,
+            )[0]
+        )
+        censored_index = tuple(
+            int(value)
+            for value in torch.nonzero(
+                observations.censored_mask,
+                as_tuple=False,
+            )[0]
+        )
+        detected[detected_index] = 0.25
+        censor_threshold[censored_index] = -0.5
+        observation_weight[censored_index] = -1.0
+        first_frame_index = (
+            0,
+            *tuple(
+                int(value)
+                for value in torch.nonzero(
+                    observations.valid_mask[0],
+                    as_tuple=False,
+                )[0]
+            ),
+        )
+        initial_background[first_frame_index] = 0.125
+        baseline_dynamics[detected_index] = -0.125
+        perturbation = VariationalObservationPerturbation(
+            detected_dbz=detected,
+            censor_threshold_dbz=censor_threshold,
+            observation_weight=observation_weight,
+            initial_background_dbz=initial_background,
+            baseline_dynamics_dbz=baseline_dynamics,
+        )
+
+        fsoi = compute_variational_fsoi(
+            self.forecast,
+            self.analysis,
+            self.verification,
+            perturbation,
+            sensitivity_config=self.sensitivity_config,
+        )
+
+        self.assertEqual(
+            fsoi.contract,
+            "p1-linearized-observation-impact-v4",
+        )
+        self.assertEqual(
+            fsoi.perturbation_contract,
+            "p1-observation-perturbation-v3",
+        )
+        self.assertEqual(fsoi.perturbation_digest, perturbation.digest)
+        torch.testing.assert_close(
+            fsoi.fso.observation.detected_dbz.maps,
+            self.fso.observation.detected_dbz.maps,
+        )
+        expected_components = (
+            self.fso.observation.detected_dbz.maps[0, 0] * detected,
+            self.fso.observation.censor_threshold_dbz.maps[0, 0]
+            * censor_threshold,
+            self.fso.observation.observation_weight.maps[0, 0]
+            * observation_weight,
+            self.fso.observation.initial_background_dbz.maps[0, 0]
+            * initial_background,
+            self.fso.observation.baseline_dynamics_dbz.maps[0, 0]
+            * baseline_dynamics,
+        )
+        actual_components = (
+            fsoi.observation.detected_dbz.maps[0, 0],
+            fsoi.observation.censor_threshold_dbz.maps[0, 0],
+            fsoi.observation.observation_weight.maps[0, 0],
+            fsoi.observation.initial_background_dbz.maps[0, 0],
+            fsoi.observation.baseline_dynamics_dbz.maps[0, 0],
+        )
+        for actual, expected in zip(
+            actual_components,
+            expected_components,
+            strict=True,
+        ):
+            torch.testing.assert_close(actual, expected)
+        expected_total = sum(
+            expected_components,
+            torch.zeros_like(expected_components[0]),
+        )
+        torch.testing.assert_close(
+            fsoi.observation.total.maps[0, 0],
+            expected_total,
+        )
+        torch.testing.assert_close(
+            fsoi.observation.total.sum_by_time[0, 0],
+            expected_total.reshape(3, -1).sum(dim=1),
+        )
+        torch.testing.assert_close(
+            fsoi.observation.total.tile_sum_by_time,
+            fsoi.observation.detected_dbz.tile_sum_by_time
+            + fsoi.observation.censor_threshold_dbz.tile_sum_by_time
+            + fsoi.observation.observation_weight.tile_sum_by_time
+            + fsoi.observation.initial_background_dbz.tile_sum_by_time
+            + fsoi.observation.baseline_dynamics_dbz.tile_sum_by_time,
+        )
+        validate_variational_fsoi(fsoi)
+        self.assertNotEqual(fsoi.variational_fsoi_digest, "")
+
+        changed = replace(
+            perturbation,
+            detected_dbz=2.0 * perturbation.detected_dbz,
+        )
+        self.assertNotEqual(perturbation.digest, changed.digest)
+
+    def test_variational_fsoi_rejects_invalid_perturbation_contracts(
+        self,
+    ) -> None:
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        observations = linearization.observations
+        zeros = torch.zeros_like(observations.dbz)
+        invalid_detected = zeros.clone()
+        censored_index = tuple(
+            int(value)
+            for value in torch.nonzero(
+                observations.censored_mask,
+                as_tuple=False,
+            )[0]
+        )
+        invalid_detected[censored_index] = 1.0
+        invalid = VariationalObservationPerturbation(
+            detected_dbz=invalid_detected,
+            censor_threshold_dbz=zeros,
+            observation_weight=zeros,
+        )
+        with self.assertRaisesRegex(ValueError, "outside its active mask"):
+            compute_variational_fsoi(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                invalid,
+                sensitivity_config=self.sensitivity_config,
+            )
+
+        invalid_weight = zeros.clone()
+        invalid_weight[censored_index] = -1.01
+        invalid = replace(
+            invalid,
+            detected_dbz=zeros,
+            observation_weight=invalid_weight,
+        )
+        with self.assertRaisesRegex(ValueError, "multiplier negative"):
+            compute_variational_fsoi(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                invalid,
+                sensitivity_config=self.sensitivity_config,
+            )
+
+        invalid_background = zeros.clone()
+        later_valid_index = tuple(
+            int(value)
+            for value in torch.nonzero(
+                observations.valid_mask[1],
+                as_tuple=False,
+            )[0]
+        )
+        invalid_background[(1, *later_valid_index)] = 1.0
+        with self.assertRaisesRegex(
+            ValueError,
+            "accepted first-frame observations",
+        ):
+            compute_variational_fsoi(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                replace(
+                    invalid,
+                    observation_weight=zeros,
+                    initial_background_dbz=invalid_background,
+                ),
+                sensitivity_config=self.sensitivity_config,
+            )
+        with self.assertRaisesRegex(
+            ValueError,
+            "baseline_dynamics_dbz perturbation shape mismatch",
+        ):
+            compute_variational_fsoi(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                replace(
+                    invalid,
+                    detected_dbz=zeros,
+                    observation_weight=zeros,
+                    initial_background_dbz=None,
+                    baseline_dynamics_dbz=zeros[:, :-1],
+                ),
+                sensitivity_config=self.sensitivity_config,
+            )
+
+    def test_variational_fso_fails_closed(self) -> None:
         p0_forecast = nowcast(self.frames, self.nowcast_config)
         with self.assertRaisesRegex(ValueError, "accepted P1"):
-            compute_variational_fsoi(
+            compute_variational_fso(
                 p0_forecast,
                 self.analysis,
                 self.verification,
@@ -1680,7 +3478,7 @@ class VariationalFSOITests(unittest.TestCase):
             )
 
         with self.assertRaisesRegex(ValueError, "converged P1"):
-            compute_variational_fsoi(
+            compute_variational_fso(
                 self.forecast,
                 replace(self.analysis, degraded=True),
                 self.verification,
@@ -1702,8 +3500,8 @@ class VariationalFSOITests(unittest.TestCase):
                 observations=changed_observations,
             ),
         )
-        with self.assertRaisesRegex(ValueError, "input lineage mismatch"):
-            compute_variational_fsoi(
+        with self.assertRaisesRegex(ValueError, "content digest mismatch"):
+            compute_variational_fso(
                 self.forecast,
                 changed_analysis,
                 self.verification,
@@ -1717,10 +3515,40 @@ class VariationalFSOITests(unittest.TestCase):
                 forecast_run_digest="0" * 64,
             ),
         )
-        with self.assertRaisesRegex(ValueError, "forecast run mismatch"):
-            compute_variational_fsoi(
+        with self.assertRaisesRegex(ValueError, "content digest mismatch"):
+            compute_variational_fso(
                 self.forecast,
                 changed_run_analysis,
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+            )
+
+        changed_stationarity_analysis = replace(
+            self.analysis,
+            linearization=replace(
+                linearization,
+                gradient_norm=linearization.gradient_norm + 1.0,
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "content digest mismatch"):
+            compute_variational_fso(
+                self.forecast,
+                changed_stationarity_analysis,
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+            )
+
+        changed_analysis_diagnostics = replace(
+            self.analysis,
+            linearization_gradient_norm=(
+                self.analysis.linearization_gradient_norm or 0.0
+            )
+            + 1.0,
+        )
+        with self.assertRaisesRegex(ValueError, "diagnostics mismatch"):
+            compute_variational_fso(
+                self.forecast,
+                changed_analysis_diagnostics,
                 self.verification,
                 sensitivity_config=self.sensitivity_config,
             )
@@ -1733,12 +3561,35 @@ class VariationalFSOITests(unittest.TestCase):
         )
         with patch("advar.sensitivity.pcg", return_value=failed_pcg):
             with self.assertRaisesRegex(ValueError, "did not converge"):
-                compute_variational_fsoi(
+                compute_variational_fso(
                     self.forecast,
                     self.analysis,
                     self.verification,
                     sensitivity_config=self.sensitivity_config,
                 )
+
+        unpolished_forecast, unpolished_analysis = variational_nowcast(
+            self.frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=replace(
+                self.analysis_config,
+                maximum_final_linearization_polish_iterations=0,
+            ),
+        )
+        self.assertIsNotNone(unpolished_analysis.linearization)
+        assert unpolished_analysis.linearization is not None
+        self.assertGreater(
+            unpolished_analysis.linearization.relative_stationarity,
+            self.analysis_config
+            .final_linearization_relative_stationarity_tolerance,
+        )
+        with self.assertRaisesRegex(ValueError, "not stationary"):
+            compute_variational_fso(
+                unpolished_forecast,
+                unpolished_analysis,
+                self.verification,
+                sensitivity_config=self.sensitivity_config,
+            )
 
 
 if __name__ == "__main__":
