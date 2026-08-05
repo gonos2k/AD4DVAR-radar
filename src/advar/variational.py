@@ -15,6 +15,7 @@ from ._digest import json_digest, tensor_digest
 from .calibration import (
     OperationalCalibrationManifest,
     OperationalDataIdentity,
+    algorithm_bundle_digest,
 )
 from .diagnostics import EchoPositivityError, PositivityAudit, validate_physical_echo
 from .matrix_free import pcg
@@ -29,11 +30,13 @@ from .nowcast import (
     StatePathProvenance,
     TendencyPairSelection,
     TendencySource,
+    _local_component_evidence_from_pair_spans,
     estimate_prepared_state,
     forecast_from_state,
     merge_current_support,
     motion_displacement_limits_yx,
     prepare_input,
+    state_metadata_digest,
 )
 from .physics import (
     RemapCell,
@@ -43,6 +46,7 @@ from .physics import (
     freeze_remap_cell,
     remap,
 )
+from ._runtime import numerical_runtime_identity_digest
 
 
 AmplitudeInformationPolicy = Literal[
@@ -54,6 +58,10 @@ AmplitudeConfidencePolicy = Literal[
     "operational_fallback",
 ]
 AnalysisExecutionMode = Literal["research", "operational"]
+ObservationCommonBiasScope = Literal["per_frame", "all_times"]
+MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT = 64
+P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v6"
+P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v4"
 
 
 @dataclass(frozen=True)
@@ -62,6 +70,11 @@ class AnalysisConfig:
     censor_temperature_dbz: float = 1.0
     observation_std_dbz: float = 2.0
     minimum_observation_std_dbz: float = 0.1
+    observation_common_bias_std_dbz: float = 0.0
+    observation_common_bias_scope: ObservationCommonBiasScope = "per_frame"
+    observation_common_bias_tile_size_px: int = 0
+    observation_common_bias_group_map_digest: str | None = None
+    observation_common_bias_mode_weights_digest: str | None = None
     pseudo_huber_delta: float = 2.0
     echo_transform_scale_dbz: float = 1.0
     transform_epsilon: float = 1.0e-6
@@ -93,6 +106,8 @@ class AnalysisConfig:
     pcg_relative_tolerance: float = 1.0e-5
     gradient_tolerance: float = 1.0e-5
     step_tolerance: float = 1.0e-4
+    final_linearization_relative_stationarity_tolerance: float = 1.0e-4
+    maximum_final_linearization_polish_iterations: int = 4
     initial_damping: float = 1.0e-2
     minimum_damping: float = 1.0e-6
     maximum_damping: float = 1.0e6
@@ -137,12 +152,70 @@ class AnalysisConfig:
             "pcg_relative_tolerance": self.pcg_relative_tolerance,
             "gradient_tolerance": self.gradient_tolerance,
             "step_tolerance": self.step_tolerance,
+            "final_linearization_relative_stationarity_tolerance": (
+                self.final_linearization_relative_stationarity_tolerance
+            ),
             "initial_damping": self.initial_damping,
             "minimum_damping": self.minimum_damping,
             "maximum_damping": self.maximum_damping,
         }
         if not math.isfinite(self.detection_limit_dbz):
             raise ValueError("detection_limit_dbz must be finite")
+        if (
+            not isinstance(self.observation_common_bias_std_dbz, (int, float))
+            or isinstance(self.observation_common_bias_std_dbz, bool)
+            or not math.isfinite(self.observation_common_bias_std_dbz)
+            or self.observation_common_bias_std_dbz < 0.0
+        ):
+            raise ValueError(
+                "observation_common_bias_std_dbz must be finite and "
+                "nonnegative"
+            )
+        if self.observation_common_bias_scope not in (
+            "per_frame",
+            "all_times",
+        ):
+            raise ValueError(
+                "observation_common_bias_scope must be per_frame or all_times"
+            )
+        if (
+            type(self.observation_common_bias_tile_size_px) is not int
+            or self.observation_common_bias_tile_size_px < 0
+        ):
+            raise ValueError(
+                "observation_common_bias_tile_size_px must be a "
+                "nonnegative integer"
+            )
+        if self.observation_common_bias_group_map_digest is not None and (
+            not isinstance(
+                self.observation_common_bias_group_map_digest,
+                str,
+            )
+            or len(self.observation_common_bias_group_map_digest) != 64
+            or any(
+                character not in "0123456789abcdef"
+                for character in self.observation_common_bias_group_map_digest
+            )
+        ):
+            raise ValueError(
+                "observation_common_bias_group_map_digest must be a "
+                "lowercase SHA-256 digest"
+            )
+        if self.observation_common_bias_mode_weights_digest is not None and (
+            not isinstance(
+                self.observation_common_bias_mode_weights_digest,
+                str,
+            )
+            or len(self.observation_common_bias_mode_weights_digest) != 64
+            or any(
+                character not in "0123456789abcdef"
+                for character in self.observation_common_bias_mode_weights_digest
+            )
+        ):
+            raise ValueError(
+                "observation_common_bias_mode_weights_digest must be a "
+                "lowercase SHA-256 digest"
+            )
         for name, value in positive.items():
             if not math.isfinite(value) or value <= 0:
                 raise ValueError(f"{name} must be positive")
@@ -153,6 +226,14 @@ class AnalysisConfig:
         for name, value in integer_limits.items():
             if type(value) is not int or value <= 0:
                 raise ValueError(f"{name} must be positive")
+        if (
+            type(self.maximum_final_linearization_polish_iterations) is not int
+            or self.maximum_final_linearization_polish_iterations < 0
+        ):
+            raise ValueError(
+                "maximum_final_linearization_polish_iterations must be a "
+                "nonnegative integer"
+            )
         if (
             type(self.maximum_damping_retries) is not int
             or self.maximum_damping_retries < 0
@@ -311,6 +392,8 @@ class AnalysisObservations:
     censored_mask: Tensor
     missing_mask: Tensor
     qc_rejected_mask: Tensor
+    common_bias_group_index: Tensor | None = None
+    common_bias_mode_weights: Tensor | None = None
 
 
 @dataclass(frozen=True)
@@ -498,6 +581,75 @@ class _AmplitudeDiagnostics:
         )
 
 
+def _amplitude_confidence_margin(
+    diagnostics: _AmplitudeDiagnostics,
+    config: AnalysisConfig,
+) -> float | None:
+    """Return the smallest signed slack across amplitude-confidence gates."""
+
+    if diagnostics.has_insufficient_information:
+        return None
+    margins: list[Tensor] = []
+
+    def lower(values: Tensor, threshold: float) -> None:
+        available = torch.isfinite(values)
+        if bool(torch.any(available)):
+            margins.append(torch.min(values[available] - threshold))
+
+    def upper(values: Tensor, threshold: float) -> None:
+        available = torch.isfinite(values)
+        if bool(torch.any(available)):
+            margins.append(torch.min(threshold - values[available]))
+
+    lower(
+        diagnostics.integrated_echo_ratio_by_time,
+        config.minimum_integrated_echo_ratio_for_confidence,
+    )
+    upper(
+        diagnostics.integrated_echo_ratio_by_time,
+        config.maximum_integrated_echo_ratio_for_confidence,
+    )
+    lower(
+        diagnostics.displacement_tolerant_soft_echo_area_ratio_by_time,
+        config.minimum_soft_echo_area_ratio_for_confidence,
+    )
+    upper(
+        diagnostics.displacement_tolerant_soft_echo_area_ratio_by_time,
+        config.maximum_soft_echo_area_ratio_for_confidence,
+    )
+    upper(
+        diagnostics.established_echo_excess_growth_fraction_by_time,
+        config.maximum_established_excess_growth_fraction_for_confidence,
+    )
+    upper(
+        diagnostics.maximum_object_unresolved_fraction_by_time,
+        config.maximum_unresolved_amplitude_fraction,
+    )
+    lower(
+        diagnostics.minimum_object_integrated_echo_ratio_by_time,
+        config.minimum_integrated_echo_ratio_for_confidence,
+    )
+    upper(
+        diagnostics.maximum_object_integrated_echo_ratio_by_time,
+        config.maximum_integrated_echo_ratio_for_confidence,
+    )
+    lower(
+        diagnostics.minimum_object_soft_echo_area_ratio_by_time,
+        config.minimum_soft_echo_area_ratio_for_confidence,
+    )
+    upper(
+        diagnostics.maximum_object_soft_echo_area_ratio_by_time,
+        config.maximum_soft_echo_area_ratio_for_confidence,
+    )
+    lower(
+        diagnostics.minimum_object_count_ratio_by_time,
+        config.minimum_object_count_ratio_for_confidence,
+    )
+    if not margins:
+        return None
+    return float(torch.min(torch.stack(margins)).detach())
+
+
 @dataclass(frozen=True)
 class _IdentifiabilityDiagnostics:
     dynamics_data_gram_eigenvalues: tuple[float, float, float]
@@ -529,13 +681,41 @@ AmplitudeDiagnosticsSource = Literal[
 
 
 @dataclass(frozen=True)
+class AnalysisFeasibilityMargins:
+    """Signed distances from hard or operational P1 boundaries.
+
+    Positive values are interior to the accepted-analysis contract.  The
+    amplitude-confidence margin is dimensionless because it combines only
+    dimensionless ratio and fraction gates.  Motion saturation is retained
+    both as a coordinate-independent fraction of the configured bound and,
+    when a physical grid contract exists, in m s-1.
+    """
+
+    reachability_support: float
+    unresolved_amplitude_fraction: float
+    amplitude_confidence: float | None
+    motion_saturation_fraction: float
+    motion_speed_saturation_mps: float | None
+    growth_saturation_per_step: float
+
+
+@dataclass(frozen=True)
 class AnalysisLinearization:
-    """Accepted P1 final-outer-loop state needed by an implicit adjoint."""
+    """Accepted P1 frozen-model state needed by an implicit adjoint."""
 
     observations: AnalysisObservations
     frozen: FrozenOuterState
+    residual_norm: float
+    gradient_norm: float
+    relative_stationarity: float
+    polish_iterations: int
+    feasibility_margins: AnalysisFeasibilityMargins
     forecast_run_digest: str | None = None
-    contract: str = "p1-final-frozen-irls-gn-v1"
+    control_digest: str = ""
+    algorithm_bundle_digest: str = ""
+    numerical_runtime_digest: str = ""
+    linearization_digest: str = ""
+    contract: str = P1_LINEARIZATION_CONTRACT
 
 
 @dataclass(frozen=True)
@@ -630,7 +810,196 @@ class AnalysisResult:
     field_conditioning_maximum_relative_residual: float | None = None
     motion_control_coordinate_system: str = "grid_yx_px"
     field_smoothness_coordinate_system: str = "index_graph"
+    linearization_residual_norm: float | None = None
+    linearization_gradient_norm: float | None = None
+    linearization_relative_stationarity: float | None = None
+    linearization_polish_iterations: int = 0
     linearization: AnalysisLinearization | None = None
+
+
+@dataclass(frozen=True)
+class P1LinearizationState:
+    """Minimum accepted-analysis state needed for delayed P1 FSO."""
+
+    control: Tensor
+    active_field_index: Tensor
+    state: RadarState
+    linearization_residual_norm: float
+    linearization_gradient_norm: float
+    linearization_relative_stationarity: float
+    linearization_polish_iterations: int
+    linearization: AnalysisLinearization
+    converged: bool = True
+    used_fallback: bool = False
+    degraded: bool = False
+
+
+def _canonical_common_bias_group_index(
+    group_index: Tensor,
+    *,
+    frame_shape: tuple[int, int, int],
+    temporal_scope: ObservationCommonBiasScope,
+    device: torch.device,
+) -> Tensor:
+    if group_index.dtype not in (
+        torch.int8,
+        torch.int16,
+        torch.int32,
+        torch.int64,
+        torch.uint8,
+    ):
+        raise TypeError("common-bias group map must use an integer dtype")
+    if group_index.ndim == 2 and tuple(group_index.shape) == frame_shape[1:]:
+        raw = group_index.to(device=device, dtype=torch.long).unsqueeze(0).expand(
+            frame_shape
+        )
+    elif group_index.ndim == 3 and tuple(group_index.shape) == frame_shape:
+        raw = group_index.to(device=device, dtype=torch.long)
+    else:
+        raise ValueError(
+            "common-bias group map must have shape [H, W] or [3, H, W]"
+        )
+    if bool(torch.any(raw < -1)):
+        raise ValueError("common-bias group labels must be -1 or nonnegative")
+    canonical = torch.full_like(raw, -1)
+
+    def compact(values: Tensor, *, offset: int) -> tuple[Tensor, int]:
+        active = values >= 0
+        if not bool(torch.any(active)):
+            return torch.full_like(values, -1), offset
+        labels = values[active]
+        unique_labels, inverse = torch.unique(
+            labels,
+            sorted=True,
+            return_inverse=True,
+        )
+        compacted = torch.full_like(values, -1)
+        compacted[active] = inverse + offset
+        return compacted, offset + unique_labels.numel()
+
+    if temporal_scope == "per_frame":
+        offset = 0
+        frames: list[Tensor] = []
+        for frame in raw:
+            compacted, offset = compact(frame, offset=offset)
+            frames.append(compacted)
+        canonical = torch.stack(frames)
+    else:
+        canonical, _ = compact(raw, offset=0)
+    return canonical.detach().clone()
+
+
+def observation_common_bias_group_map_digest(
+    group_index: Tensor,
+    *,
+    temporal_scope: ObservationCommonBiasScope = "per_frame",
+) -> str:
+    """Digest the canonical spatial partition used by common-bias modes."""
+
+    if temporal_scope not in ("per_frame", "all_times"):
+        raise ValueError("temporal_scope must be per_frame or all_times")
+    if group_index.ndim == 2:
+        frame_shape = (3, group_index.shape[0], group_index.shape[1])
+    elif group_index.ndim == 3 and group_index.shape[0] == 3:
+        frame_shape = (
+            group_index.shape[0],
+            group_index.shape[1],
+            group_index.shape[2],
+        )
+    else:
+        raise ValueError(
+            "common-bias group map must have shape [H, W] or [3, H, W]"
+        )
+    canonical = _canonical_common_bias_group_index(
+        group_index,
+        frame_shape=frame_shape,
+        temporal_scope=temporal_scope,
+        device=group_index.device,
+    )
+    return tensor_digest(canonical)
+
+
+def _canonical_common_bias_mode_weights(
+    mode_weights: Tensor,
+    *,
+    frame_shape: tuple[int, int, int],
+    dtype: torch.dtype,
+    device: torch.device,
+) -> Tensor:
+    if not mode_weights.is_floating_point() or mode_weights.dtype not in (
+        torch.float32,
+        torch.float64,
+    ):
+        raise TypeError(
+            "common-bias mode weights must use float32 or float64"
+        )
+    if (
+        mode_weights.ndim == 3
+        and tuple(mode_weights.shape[-2:]) == frame_shape[1:]
+    ):
+        raw = mode_weights.to(device=device, dtype=dtype).unsqueeze(0).expand(
+            frame_shape[0],
+            mode_weights.shape[0],
+            frame_shape[1],
+            frame_shape[2],
+        )
+    elif (
+        mode_weights.ndim == 4
+        and mode_weights.shape[0] == frame_shape[0]
+        and tuple(mode_weights.shape[-2:]) == frame_shape[1:]
+    ):
+        raw = mode_weights.to(device=device, dtype=dtype)
+    else:
+        raise ValueError(
+            "common-bias mode weights must have shape [K,H,W] or "
+            "[3,K,H,W]"
+        )
+    mode_count = raw.shape[1]
+    if not (1 <= mode_count <= MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT):
+        raise ValueError(
+            "common-bias mode count must be between 1 and "
+            f"{MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT}"
+        )
+    if (
+        not bool(torch.all(torch.isfinite(raw)))
+        or bool(torch.any(raw < 0.0))
+        or bool(torch.any(raw > 1.0))
+    ):
+        raise ValueError("common-bias mode weights must be finite and in [0,1]")
+    if bool(torch.any(torch.sum(raw.square(), dim=1) > 1.0 + 1.0e-6)):
+        raise ValueError(
+            "common-bias mode squared weights must sum to at most one"
+        )
+    if bool(torch.any(torch.sum(raw, dim=(0, 2, 3)) <= 0.0)):
+        raise ValueError("every common-bias mode must have positive support")
+    return raw.detach().clone()
+
+
+def observation_common_bias_mode_weights_digest(
+    mode_weights: Tensor,
+) -> str:
+    """Digest canonical overlapping common-bias basis weights."""
+
+    if mode_weights.ndim == 3:
+        frame_shape = (3, mode_weights.shape[-2], mode_weights.shape[-1])
+    elif mode_weights.ndim == 4 and mode_weights.shape[0] == 3:
+        frame_shape = (
+            mode_weights.shape[0],
+            mode_weights.shape[-2],
+            mode_weights.shape[-1],
+        )
+    else:
+        raise ValueError(
+            "common-bias mode weights must have shape [K,H,W] or "
+            "[3,K,H,W]"
+        )
+    canonical = _canonical_common_bias_mode_weights(
+        mode_weights,
+        frame_shape=frame_shape,
+        dtype=torch.float64,
+        device=mode_weights.device,
+    )
+    return tensor_digest(canonical)
 
 
 def prepare_analysis(
@@ -641,6 +1010,8 @@ def prepare_analysis(
     observation_std_dbz: float | Tensor | None = None,
     quality_weight: float | Tensor | None = None,
     qc_mask: Tensor | None = None,
+    observation_common_bias_group_index: Tensor | None = None,
+    observation_common_bias_mode_weights: Tensor | None = None,
     background_frames_dbz: Tensor | None = None,
     background_age_minutes: float | None = None,
     grid_time_contract: RadarGridTimeContract | None = None,
@@ -705,6 +1076,113 @@ def prepare_analysis(
                 "distance settings"
             )
     _validate_frames(frames_dbz)
+    if (
+        observation_common_bias_group_index is not None
+        and observation_common_bias_mode_weights is not None
+    ):
+        raise ValueError(
+            "common-bias group map and overlapping modes are mutually "
+            "exclusive"
+        )
+    common_bias_group_index = None
+    common_bias_mode_weights = None
+    if observation_common_bias_group_index is not None:
+        if analysis_config.observation_common_bias_std_dbz <= 0.0:
+            raise ValueError(
+                "common-bias group map requires positive common-bias std"
+            )
+        if analysis_config.observation_common_bias_tile_size_px > 0:
+            raise ValueError(
+                "common-bias group map and tile-size modes are mutually "
+                "exclusive"
+            )
+        common_bias_group_index = _canonical_common_bias_group_index(
+            observation_common_bias_group_index,
+            frame_shape=(
+                frames_dbz.shape[0],
+                frames_dbz.shape[1],
+                frames_dbz.shape[2],
+            ),
+            temporal_scope=analysis_config.observation_common_bias_scope,
+            device=frames_dbz.device,
+        )
+        if not bool(torch.any(common_bias_group_index >= 0)):
+            raise ValueError(
+                "common-bias group map must contain at least one group"
+            )
+        group_digest = tensor_digest(common_bias_group_index)
+        expected_digest = (
+            analysis_config.observation_common_bias_group_map_digest
+        )
+        if expected_digest is not None and expected_digest != group_digest:
+            raise ValueError("common-bias group map digest mismatch")
+        if (
+            analysis_config.execution_mode == "operational"
+            and expected_digest is None
+        ):
+            raise ValueError(
+                "operational common-bias group map requires its digest in "
+                "AnalysisConfig"
+            )
+        if expected_digest is None:
+            analysis_config = replace(
+                analysis_config,
+                observation_common_bias_group_map_digest=group_digest,
+            )
+    elif analysis_config.observation_common_bias_group_map_digest is not None:
+        raise ValueError(
+            "common-bias group map digest requires a group map input"
+        )
+    if observation_common_bias_mode_weights is not None:
+        if analysis_config.observation_common_bias_std_dbz <= 0.0:
+            raise ValueError(
+                "common-bias mode weights require positive common-bias std"
+            )
+        if analysis_config.observation_common_bias_tile_size_px > 0:
+            raise ValueError(
+                "common-bias mode weights and tile-size modes are mutually "
+                "exclusive"
+            )
+        common_bias_mode_weights = _canonical_common_bias_mode_weights(
+            observation_common_bias_mode_weights,
+            frame_shape=(
+                frames_dbz.shape[0],
+                frames_dbz.shape[1],
+                frames_dbz.shape[2],
+            ),
+            dtype=frames_dbz.dtype,
+            device=frames_dbz.device,
+        )
+        mode_digest = observation_common_bias_mode_weights_digest(
+            common_bias_mode_weights
+        )
+        expected_mode_digest = (
+            analysis_config.observation_common_bias_mode_weights_digest
+        )
+        if (
+            expected_mode_digest is not None
+            and expected_mode_digest != mode_digest
+        ):
+            raise ValueError("common-bias mode weights digest mismatch")
+        if (
+            analysis_config.execution_mode == "operational"
+            and expected_mode_digest is None
+        ):
+            raise ValueError(
+                "operational common-bias mode weights require their digest "
+                "in AnalysisConfig"
+            )
+        if expected_mode_digest is None:
+            analysis_config = replace(
+                analysis_config,
+                observation_common_bias_mode_weights_digest=mode_digest,
+            )
+    elif (
+        analysis_config.observation_common_bias_mode_weights_digest is not None
+    ):
+        raise ValueError(
+            "common-bias mode weights digest requires a mode input"
+        )
     motion_limits = motion_displacement_limits_yx(
         nowcast_config,
         grid_time_contract,
@@ -763,6 +1241,22 @@ def prepare_analysis(
     )
     quality = _quality_weight(frames_dbz, quality_weight)
     valid = finite & qc & (quality > 0)
+    if (
+        common_bias_group_index is not None
+        and not bool(torch.any((common_bias_group_index >= 0) & valid))
+    ):
+        raise ValueError(
+            "common-bias group map must cover at least one valid observation"
+        )
+    if common_bias_mode_weights is not None and not bool(
+        torch.any(
+            (common_bias_mode_weights > 0.0)
+            & valid.unsqueeze(1)
+        )
+    ):
+        raise ValueError(
+            "common-bias mode weights must cover a valid observation"
+        )
     observed_dbz = torch.nan_to_num(
         frames_dbz,
         nan=nowcast_config.min_dbz,
@@ -794,8 +1288,14 @@ def prepare_analysis(
         censored_mask=censored.detach().clone(),
         missing_mask=prepared.missing_mask.detach().clone(),
         qc_rejected_mask=prepared.qc_rejected_mask.detach().clone(),
+        common_bias_group_index=common_bias_group_index,
+        common_bias_mode_weights=common_bias_mode_weights,
     )
     _validate_observations(observations)
+    _validate_observation_common_bias_contract(
+        observations,
+        analysis_config,
+    )
 
     baseline_state, baseline_metadata = estimate_prepared_state(
         prepared,
@@ -1150,6 +1650,10 @@ def whitened_observation_residual(
     frozen: FrozenOuterState,
 ) -> Tensor:
     _validate_observations(observations)
+    _validate_observation_common_bias_contract(
+        observations,
+        frozen.analysis_config,
+    )
     _validate_control(control, frozen)
     return _whitened_observation_residual(control, observations, frozen)
 
@@ -1159,10 +1663,274 @@ def _whitened_observation_residual(
     observations: AnalysisObservations,
     frozen: FrozenOuterState,
 ) -> Tensor:
-    return (
+    standardized = (
         torch.sqrt(observations.quality_weight)
         * _observation_residual(control, observations, frozen)
         / observations.std_dbz
+    )
+    return _apply_observation_error_whitener(
+        standardized,
+        observations,
+        frozen.analysis_config,
+    )
+
+
+def _apply_observation_error_whitener(
+    values: Tensor,
+    observations: AnalysisObservations,
+    config: AnalysisConfig,
+) -> Tensor:
+    """Apply the symmetric inverse square root of a low-rank bias covariance.
+
+    After diagonal standardization, an additive dBZ bias with standard
+    deviation ``sigma_b`` gives ``C = I + sigma_b**2 a a.T``, where
+    ``a = sqrt(quality) / std``.  The rank-one inverse square root is applied
+    independently per frame or once across all three frames without forming
+    ``C``.  A positive tile size partitions the spatial domain into
+    independent rank-one blocks, including ragged blocks at the lower and
+    right edges.
+    """
+
+    if values.shape != observations.dbz.shape:
+        raise ValueError("observation whitener input must match observations")
+    bias_std = config.observation_common_bias_std_dbz
+    if bias_std == 0.0:
+        return values
+    mode = (
+        torch.sqrt(observations.quality_weight)
+        / observations.std_dbz
+    ) * observations.valid_mask.to(dtype=values.dtype)
+    if observations.common_bias_mode_weights is not None:
+        return _apply_overlapping_observation_error_whitener(
+            values,
+            mode,
+            mode_weights=observations.common_bias_mode_weights,
+            bias_std=bias_std,
+            temporal_scope=config.observation_common_bias_scope,
+        )
+    if observations.common_bias_group_index is not None:
+        return _apply_grouped_observation_error_whitener(
+            values,
+            mode,
+            group_index=observations.common_bias_group_index,
+            bias_std=bias_std,
+        )
+    tile_size = config.observation_common_bias_tile_size_px
+    if tile_size > 0:
+        return _apply_tiled_observation_error_whitener(
+            values,
+            mode,
+            bias_std=bias_std,
+            tile_size=tile_size,
+            temporal_scope=config.observation_common_bias_scope,
+        )
+    dimensions = (
+        (-2, -1)
+        if config.observation_common_bias_scope == "per_frame"
+        else (-3, -2, -1)
+    )
+    mode_norm_squared = torch.sum(
+        mode.square(),
+        dim=dimensions,
+        keepdim=True,
+    )
+    projection = torch.sum(
+        mode * values,
+        dim=dimensions,
+        keepdim=True,
+    )
+    positive = mode_norm_squared > 0.0
+    inverse_sqrt_eigenvalue = torch.rsqrt(
+        1.0 + bias_std**2 * mode_norm_squared
+    )
+    coefficient = torch.where(
+        positive,
+        (1.0 - inverse_sqrt_eigenvalue)
+        / mode_norm_squared.clamp_min(torch.finfo(values.dtype).tiny),
+        torch.zeros_like(mode_norm_squared),
+    )
+    return values - coefficient * mode * projection
+
+
+def _apply_low_rank_inverse_sqrt(
+    values: Tensor,
+    basis: Tensor,
+) -> Tensor:
+    gram = basis @ basis.mT
+    eigenvalues, eigenvectors = torch.linalg.eigh(gram)
+    eigenvalues = eigenvalues.clamp_min(0.0)
+    correction_eigenvalues = torch.where(
+        eigenvalues > torch.finfo(values.dtype).eps,
+        (torch.rsqrt(1.0 + eigenvalues) - 1.0) / eigenvalues,
+        eigenvalues.new_full((), -0.5),
+    )
+    projection = basis @ values
+    mode_correction = eigenvectors @ (
+        correction_eigenvalues * (eigenvectors.mT @ projection)
+    )
+    return values + basis.mT @ mode_correction
+
+
+def _apply_overlapping_observation_error_whitener(
+    values: Tensor,
+    mode: Tensor,
+    *,
+    mode_weights: Tensor,
+    bias_std: float,
+    temporal_scope: ObservationCommonBiasScope,
+) -> Tensor:
+    weighted_basis = (
+        bias_std * mode_weights * mode.unsqueeze(1)
+    )
+    if temporal_scope == "per_frame":
+        frames = tuple(
+            _apply_low_rank_inverse_sqrt(
+                values[index].flatten(),
+                weighted_basis[index].flatten(start_dim=1),
+            ).reshape_as(values[index])
+            for index in range(values.shape[0])
+        )
+        return torch.stack(frames)
+    basis = weighted_basis.permute(1, 0, 2, 3).flatten(start_dim=1)
+    return _apply_low_rank_inverse_sqrt(
+        values.flatten(),
+        basis,
+    ).reshape_as(values)
+
+
+def _apply_grouped_observation_error_whitener(
+    values: Tensor,
+    mode: Tensor,
+    *,
+    group_index: Tensor,
+    bias_std: float,
+) -> Tensor:
+    flat_group = group_index.flatten()
+    active = flat_group >= 0
+    if not bool(torch.any(active)):
+        return values
+    group_count = int(torch.max(flat_group[active]).detach()) + 1
+    safe_group = torch.where(active, flat_group, torch.zeros_like(flat_group))
+    flat_mode = mode.flatten()
+    flat_values = values.flatten()
+    active_float = active.to(dtype=values.dtype)
+    mode_norm_squared = values.new_zeros((group_count,)).scatter_add(
+        0,
+        safe_group,
+        flat_mode.square() * active_float,
+    )
+    projection = values.new_zeros((group_count,)).scatter_add(
+        0,
+        safe_group,
+        flat_mode * flat_values * active_float,
+    )
+    inverse_sqrt_eigenvalue = torch.rsqrt(
+        1.0 + bias_std**2 * mode_norm_squared
+    )
+    coefficient = torch.where(
+        mode_norm_squared > 0.0,
+        (1.0 - inverse_sqrt_eigenvalue)
+        / mode_norm_squared.clamp_min(torch.finfo(values.dtype).tiny),
+        torch.zeros_like(mode_norm_squared),
+    )
+    adjustment = (
+        coefficient[safe_group]
+        * flat_mode
+        * projection[safe_group]
+        * active_float
+    )
+    return (flat_values - adjustment).reshape_as(values)
+
+
+def _apply_tiled_observation_error_whitener(
+    values: Tensor,
+    mode: Tensor,
+    *,
+    bias_std: float,
+    tile_size: int,
+    temporal_scope: ObservationCommonBiasScope,
+) -> Tensor:
+    frame_count, height, width = values.shape
+    padded_height = ((height + tile_size - 1) // tile_size) * tile_size
+    padded_width = ((width + tile_size - 1) // tile_size) * tile_size
+    padding = (0, padded_width - width, 0, padded_height - height)
+
+    def blocks(tensor: Tensor) -> Tensor:
+        return F.pad(tensor, padding).reshape(
+            frame_count,
+            padded_height // tile_size,
+            tile_size,
+            padded_width // tile_size,
+            tile_size,
+        ).permute(0, 1, 3, 2, 4)
+
+    value_blocks = blocks(values)
+    mode_blocks = blocks(mode)
+    dimensions = (
+        (-2, -1)
+        if temporal_scope == "per_frame"
+        else (0, -2, -1)
+    )
+    mode_norm_squared = torch.sum(
+        mode_blocks.square(),
+        dim=dimensions,
+        keepdim=True,
+    )
+    projection = torch.sum(
+        mode_blocks * value_blocks,
+        dim=dimensions,
+        keepdim=True,
+    )
+    inverse_sqrt_eigenvalue = torch.rsqrt(
+        1.0 + bias_std**2 * mode_norm_squared
+    )
+    coefficient = torch.where(
+        mode_norm_squared > 0.0,
+        (1.0 - inverse_sqrt_eigenvalue)
+        / mode_norm_squared.clamp_min(torch.finfo(values.dtype).tiny),
+        torch.zeros_like(mode_norm_squared),
+    )
+    adjusted_blocks = (
+        value_blocks - coefficient * mode_blocks * projection
+    )
+    adjusted = adjusted_blocks.permute(0, 1, 3, 2, 4).reshape(
+        frame_count,
+        padded_height,
+        padded_width,
+    )
+    return adjusted[:, :height, :width]
+
+
+def _observation_marginal_precision(
+    observations: AnalysisObservations,
+    config: AnalysisConfig,
+) -> Tensor:
+    quality = observations.quality_weight
+    return quality / _observation_effective_std_dbz(
+        observations,
+        config,
+    ).square()
+
+
+def _observation_effective_std_dbz(
+    observations: AnalysisObservations,
+    config: AnalysisConfig,
+) -> Tensor:
+    variance_factor = torch.ones_like(observations.quality_weight)
+    if observations.common_bias_group_index is not None:
+        variance_factor = (
+            observations.common_bias_group_index >= 0
+        ).to(dtype=observations.quality_weight.dtype)
+    elif observations.common_bias_mode_weights is not None:
+        variance_factor = torch.sum(
+            observations.common_bias_mode_weights.square(),
+            dim=1,
+        )
+    return torch.sqrt(
+        observations.std_dbz.square()
+        + observations.quality_weight
+        * config.observation_common_bias_std_dbz**2
+        * variance_factor
     )
 
 
@@ -1171,6 +1939,10 @@ def freeze_irls_weights(
     observations: AnalysisObservations,
     frozen: FrozenOuterState,
 ) -> FrozenOuterState:
+    _validate_observation_common_bias_contract(
+        observations,
+        frozen.analysis_config,
+    )
     frozen = _freeze_analysis_remap_cells(control, frozen)
     residual = _whitened_observation_residual(
         control,
@@ -1205,6 +1977,220 @@ def residual_vector(
             _field_smoothness_residual(control, frozen),
         )
     )
+
+
+@dataclass(frozen=True)
+class _LinearizationStationarity:
+    residual_norm: float
+    gradient_norm: float
+    relative_stationarity: float
+
+
+@dataclass(frozen=True)
+class _FinalLinearizationPolish:
+    control: Tensor
+    frozen: FrozenOuterState
+    exact_objective: float
+    stationarity: _LinearizationStationarity
+    iterations: int
+    pcg_iterations: int
+
+
+def _linearization_stationarity(
+    control: Tensor,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+) -> _LinearizationStationarity:
+    residual_fn: Callable[[Tensor], Tensor] = lambda value: residual_vector(
+        value,
+        observations,
+        frozen,
+    )
+    vjp_result = torch.func.vjp(residual_fn, control)
+    residual = cast(Tensor, vjp_result[0])
+    pullback = cast(
+        Callable[[Tensor], tuple[Tensor]],
+        vjp_result[1],
+    )
+    gradient = pullback(residual)[0]
+    residual_norm = float(torch.linalg.vector_norm(residual).detach())
+    gradient_norm = float(torch.linalg.vector_norm(gradient).detach())
+    relative_stationarity = gradient_norm / (1.0 + residual_norm)
+    return _LinearizationStationarity(
+        residual_norm=residual_norm,
+        gradient_norm=gradient_norm,
+        relative_stationarity=relative_stationarity,
+    )
+
+
+def _polish_final_linearization(
+    control: Tensor,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    exact_objective: float,
+) -> _FinalLinearizationPolish:
+    config = frozen.analysis_config
+    frozen = freeze_irls_weights(control, observations, frozen)
+    control = control.detach()
+    damping = config.initial_damping
+    polish_iterations = 0
+    total_pcg_iterations = 0
+    stationarity: _LinearizationStationarity | None = None
+
+    for _ in range(config.maximum_final_linearization_polish_iterations):
+        residual_fn: Callable[[Tensor], Tensor] = lambda value: residual_vector(
+            value,
+            observations,
+            frozen,
+        )
+        vjp_result = torch.func.vjp(residual_fn, control)
+        residual = cast(Tensor, vjp_result[0])
+        pullback = cast(
+            Callable[[Tensor], tuple[Tensor]],
+            vjp_result[1],
+        )
+        gradient = pullback(residual)[0]
+        residual_norm = float(torch.linalg.vector_norm(residual).detach())
+        gradient_norm = float(torch.linalg.vector_norm(gradient).detach())
+        relative_stationarity = gradient_norm / (1.0 + residual_norm)
+        stationarity = _LinearizationStationarity(
+            residual_norm=residual_norm,
+            gradient_norm=gradient_norm,
+            relative_stationarity=relative_stationarity,
+        )
+        if (
+            math.isfinite(relative_stationarity)
+            and relative_stationarity
+            <= config.final_linearization_relative_stationarity_tolerance
+        ):
+            break
+
+        def normal_product(vector: Tensor) -> Tensor:
+            jacobian_vector = cast(
+                Tensor,
+                torch.func.jvp(
+                    residual_fn,
+                    (control,),
+                    (vector,),
+                )[1],
+            )
+            return pullback(jacobian_vector)[0]
+
+        current_frozen_objective = 0.5 * float(torch.dot(residual, residual))
+        current_trajectory = _analysis_trajectory(control, frozen)
+        current_amplitude = _amplitude_diagnostics(
+            observations,
+            frozen,
+            current_trajectory,
+            include_spatial_diagnostics=False,
+        )
+        accepted = False
+        for _ in range(config.maximum_damping_retries + 1):
+            operator: Callable[[Tensor], Tensor] = lambda vector: (
+                normal_product(vector) + damping * vector
+            )
+            try:
+                linear = pcg(
+                    operator,
+                    -gradient,
+                    rtol=config.pcg_relative_tolerance,
+                    max_iterations=config.maximum_pcg_iterations,
+                )
+            except (ArithmeticError, RuntimeError, ValueError):
+                linear = None
+            if linear is None:
+                damping = min(config.maximum_damping, 4.0 * damping)
+                continue
+            total_pcg_iterations += linear.iterations
+            if not linear.converged or not bool(
+                torch.all(torch.isfinite(linear.solution))
+            ):
+                damping = min(config.maximum_damping, 4.0 * damping)
+                continue
+
+            for backtrack in range(12):
+                candidate = control + (0.5**backtrack) * linear.solution
+                try:
+                    candidate_residual = residual_fn(candidate)
+                    candidate_frozen_objective = 0.5 * float(
+                        torch.dot(candidate_residual, candidate_residual).detach()
+                    )
+                    candidate_exact_tensor, candidate_trajectory = (
+                        _evaluate_control(candidate, observations, frozen)
+                    )
+                    candidate_exact = float(candidate_exact_tensor.detach())
+                except (EchoPositivityError, RuntimeError, ValueError):
+                    continue
+                if not (
+                    math.isfinite(candidate_frozen_objective)
+                    and candidate_frozen_objective < current_frozen_objective
+                    and math.isfinite(candidate_exact)
+                    and candidate_exact
+                    <= exact_objective
+                    + _objective_comparison_tolerance(
+                        exact_objective,
+                        candidate_exact,
+                        control.dtype,
+                    )
+                ):
+                    continue
+                candidate_amplitude = _amplitude_diagnostics(
+                    observations,
+                    frozen,
+                    candidate_trajectory,
+                    include_spatial_diagnostics=False,
+                )
+                if not _amplitude_trial_is_admissible(
+                    current_amplitude,
+                    candidate_amplitude,
+                    config.maximum_unresolved_amplitude_fraction,
+                    control.dtype,
+                ):
+                    continue
+                if not _analysis_window_is_representable(
+                    frozen,
+                    candidate_trajectory.displacement_yx,
+                ):
+                    continue
+                if (
+                    config.motion_increment_scale_mps is None
+                    and not _motion_is_admissible(
+                        candidate_trajectory.displacement_yx,
+                        frozen,
+                    )
+                ):
+                    continue
+                control = candidate.detach()
+                exact_objective = candidate_exact
+                damping = max(config.minimum_damping, 0.5 * damping)
+                polish_iterations += 1
+                stationarity = None
+                accepted = True
+                break
+            if accepted:
+                break
+            damping = min(config.maximum_damping, 4.0 * damping)
+        if not accepted:
+            break
+
+    if stationarity is None:
+        stationarity = _linearization_stationarity(control, observations, frozen)
+    return _FinalLinearizationPolish(
+        control=control,
+        frozen=frozen,
+        exact_objective=exact_objective,
+        stationarity=stationarity,
+        iterations=polish_iterations,
+        pcg_iterations=total_pcg_iterations,
+    )
+
+
+def _objective_comparison_tolerance(
+    left: float,
+    right: float,
+    dtype: torch.dtype,
+) -> float:
+    return 32.0 * torch.finfo(dtype).eps * max(1.0, abs(left), abs(right))
 
 
 def _field_smoothness_residual(
@@ -1824,6 +2810,10 @@ def solve_analysis(
     control: Tensor | None = None,
 ) -> AnalysisResult:
     _validate_observations(observations)
+    _validate_observation_common_bias_contract(
+        observations,
+        frozen.analysis_config,
+    )
     reference_control = initial_control(frozen)
     _validate_control(reference_control, frozen)
     reference_frozen = _freeze_analysis_remap_cells(
@@ -2136,6 +3126,7 @@ def solve_analysis(
         converged,
         reason,
         degraded=not converged,
+        polish_final_linearization=converged,
     )
 
 
@@ -2147,6 +3138,8 @@ def variational_nowcast(
     observation_std_dbz: float | Tensor | None = None,
     quality_weight: float | Tensor | None = None,
     qc_mask: Tensor | None = None,
+    observation_common_bias_group_index: Tensor | None = None,
+    observation_common_bias_mode_weights: Tensor | None = None,
     background_frames_dbz: Tensor | None = None,
     background_age_minutes: float | None = None,
     grid_time_contract: RadarGridTimeContract | None = None,
@@ -2171,6 +3164,12 @@ def variational_nowcast(
         observation_std_dbz=observation_std_dbz,
         quality_weight=quality_weight,
         qc_mask=qc_mask,
+        observation_common_bias_group_index=(
+            observation_common_bias_group_index
+        ),
+        observation_common_bias_mode_weights=(
+            observation_common_bias_mode_weights
+        ),
         background_frames_dbz=background_frames_dbz,
         background_age_minutes=background_age_minutes,
         grid_time_contract=grid_time_contract,
@@ -2223,11 +3222,15 @@ def variational_nowcast(
         audit=audit,
     )
     if analysis.linearization is not None:
+        bound_linearization = replace(
+            analysis.linearization,
+            forecast_run_digest=forecast.forecast_run_digest,
+        )
         analysis = replace(
             analysis,
-            linearization=replace(
-                analysis.linearization,
-                forecast_run_digest=forecast.forecast_run_digest,
+            linearization=_content_address_linearization(
+                analysis.control,
+                bound_linearization,
             ),
         )
     return forecast, analysis
@@ -2271,7 +3274,7 @@ def _evaluate_control(
         trajectory.frames_linear,
         min_dbz=frozen.nowcast_config.min_dbz,
     )
-    residual = (
+    standardized = (
         torch.sqrt(observations.quality_weight)
         * _observation_residual_from_prediction(
             prediction,
@@ -2279,6 +3282,11 @@ def _evaluate_control(
             frozen.analysis_config,
         )
         / observations.std_dbz
+    )
+    residual = _apply_observation_error_whitener(
+        standardized,
+        observations,
+        frozen.analysis_config,
     )
     return (
         _robust_objective_from_residual(
@@ -2337,8 +3345,45 @@ def _analysis_result(
     reason: str,
     *,
     degraded: bool = False,
+    polish_final_linearization: bool = False,
 ) -> AnalysisResult:
     frozen = _freeze_analysis_remap_cells(control, frozen)
+    initial_trajectory = _analysis_trajectory(control, frozen)
+    initial_reachability_margin = _analysis_window_reachability_margin(
+        frozen,
+        initial_trajectory.displacement_yx,
+    )
+    if initial_reachability_margin < 0:
+        return _fallback_result(
+            frozen,
+            control,
+            reference_objective,
+            "unrepresentable_analysis_window",
+            outer_iterations,
+            pcg_iterations,
+            minimum_reachability_margin=initial_reachability_margin,
+        )
+    if polish_final_linearization and converged and not degraded:
+        polish = _polish_final_linearization(
+            control,
+            observations,
+            frozen,
+            final_objective,
+        )
+        control = polish.control
+        frozen = polish.frozen
+        final_objective = polish.exact_objective
+        pcg_iterations += polish.pcg_iterations
+        stationarity = polish.stationarity
+        polish_iterations = polish.iterations
+    else:
+        frozen = freeze_irls_weights(control, observations, frozen)
+        stationarity = _linearization_stationarity(
+            control,
+            observations,
+            frozen,
+        )
+        polish_iterations = 0
     trajectory = _analysis_trajectory(control, frozen)
     reachability_margin = _analysis_window_reachability_margin(
         frozen,
@@ -2554,15 +3599,51 @@ def _analysis_result(
         - torch.abs(trajectory.displacement_yx)
     )
     analysis_verified_support = torch.zeros_like(source_support)
+    analysis_motion_verified_support = torch.zeros_like(source_support)
+    analysis_growth_verified_support = torch.zeros_like(source_support)
+    analysis_dynamics_verified_support = torch.zeros_like(source_support)
     if not analysis_degraded:
-        analysis_verified_support = _local_analysis_verified_support(
+        (
+            analysis_verified_support,
+            analysis_motion_verified_support,
+            analysis_growth_verified_support,
+            analysis_dynamics_verified_support,
+        ) = _local_analysis_evidence_supports(
             trajectory,
             observations,
             source_support,
             frozen,
         )
+    feasibility_margins = _analysis_feasibility_margins(
+        frozen,
+        trajectory,
+        amplitude,
+        reachability_margin=reachability_margin,
+        motion_speed_saturation_margin_mps=(
+            motion_speed_saturation_margin
+        ),
+        growth_saturation_margin=growth_saturation_margin,
+    )
+    retained_observations = _clone_analysis_observations(observations)
+    retained_frozen = _clone_frozen_outer_state(frozen)
+    retained_linearization = _content_address_linearization(
+        control,
+        AnalysisLinearization(
+            observations=retained_observations,
+            frozen=retained_frozen,
+            residual_norm=stationarity.residual_norm,
+            gradient_norm=stationarity.gradient_norm,
+            relative_stationarity=stationarity.relative_stationarity,
+            polish_iterations=polish_iterations,
+            feasibility_margins=feasibility_margins,
+            algorithm_bundle_digest=algorithm_bundle_digest(),
+            numerical_runtime_digest=numerical_runtime_identity_digest(
+                control.device
+            ),
+        ),
+    )
     return AnalysisResult(
-        control=control.detach(),
+        control=_clone_tensor(control),
         active_field_index=frozen.active_field_index.detach().clone(),
         state=_detach_state(state),
         metadata=replace(
@@ -2577,9 +3658,9 @@ def _analysis_result(
             background_source_support=background_source_support.detach(),
             path_verified_source_support=analysis_verified_support,
             verified_source_support=analysis_verified_support,
-            local_motion_verified_support=analysis_verified_support,
-            local_growth_verified_support=analysis_verified_support,
-            local_dynamics_verified_support=analysis_verified_support,
+            local_motion_verified_support=analysis_motion_verified_support,
+            local_growth_verified_support=analysis_growth_verified_support,
+            local_dynamics_verified_support=analysis_dynamics_verified_support,
             observation_verified_source_support=analysis_verified_support,
             background_verified_source_support=torch.zeros_like(
                 source_support
@@ -2791,10 +3872,13 @@ def _analysis_result(
             if frozen.grid_time_contract is not None
             else "index_graph"
         ),
-        linearization=AnalysisLinearization(
-            observations=observations,
-            frozen=freeze_irls_weights(control, observations, frozen),
+        linearization_residual_norm=stationarity.residual_norm,
+        linearization_gradient_norm=stationarity.gradient_norm,
+        linearization_relative_stationarity=(
+            stationarity.relative_stationarity
         ),
+        linearization_polish_iterations=polish_iterations,
+        linearization=retained_linearization,
     )
 
 
@@ -2810,9 +3894,10 @@ def _local_analysis_verified_support(
         max_dbz=frozen.nowcast_config.max_dbz,
     )
     absolute_error = torch.abs(observations.dbz[-1] - prediction_dbz)
-    precision = observations.quality_weight[-1] / torch.square(
-        observations.std_dbz[-1]
-    )
+    precision = _observation_marginal_precision(
+        observations,
+        frozen.analysis_config,
+    )[-1]
     standardized_error = torch.sqrt(precision) * absolute_error
     detected_fit = observations.detected_mask[-1] & (
         standardized_error
@@ -2834,6 +3919,58 @@ def _local_analysis_verified_support(
         & (detected_fit | censored_fit)
     )
     return source_support.detach() * local_fit.to(dtype=source_support.dtype)
+
+
+def _local_analysis_evidence_supports(
+    trajectory: AnalysisTrajectory,
+    observations: AnalysisObservations,
+    source_support: Tensor,
+    frozen: FrozenOuterState,
+) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+    state_verified = _local_analysis_verified_support(
+        trajectory,
+        observations,
+        source_support,
+        frozen,
+    )
+    precision = _observation_marginal_precision(
+        observations,
+        frozen.analysis_config,
+    )
+    interval_detected = (
+        observations.valid_mask
+        & observations.detected_mask
+        & (
+            precision
+            >= frozen.analysis_config.minimum_local_verification_precision
+        )
+    )
+    observation_linear = dbz_to_echo(
+        observations.dbz,
+        min_dbz=frozen.nowcast_config.min_dbz,
+        max_dbz=frozen.nowcast_config.max_dbz,
+    )
+    motion_verified, growth_verified = (
+        _local_component_evidence_from_pair_spans(
+            observation_linear,
+            interval_detected,
+            trajectory.displacement_yx,
+            trajectory.log_growth_per_step,
+            ((0, 1), (1, 2)),
+            ((0, 1), (1, 2)),
+            trajectory.frames_linear[-1],
+            state_verified,
+            frozen.nowcast_config,
+            frozen.grid_time_contract,
+        )
+    )
+    dynamics_verified = torch.minimum(motion_verified, growth_verified)
+    return (
+        state_verified,
+        motion_verified,
+        growth_verified,
+        dynamics_verified,
+    )
 
 
 def _analysis_window_is_representable(
@@ -2963,6 +4100,10 @@ def _amplitude_diagnostics(
     minimum_object_count_ratios: list[Tensor] = []
     zero = prediction_dbz.new_zeros(())
     nan = prediction_dbz.new_full((), math.nan)
+    effective_std = _observation_effective_std_dbz(
+        observations,
+        frozen.analysis_config,
+    )
 
     for step in (1, 2):
         initial_reach = remap(
@@ -3007,7 +4148,7 @@ def _amplitude_diagnostics(
         standardized_deficit = (
             torch.sqrt(quality)
             * (observations.dbz[step] - local_prediction)
-            / observations.std_dbz[step]
+            / effective_std[step]
         )
         unresolved = precursor_required & (
             (
@@ -3043,7 +4184,7 @@ def _amplitude_diagnostics(
         floor_excess = torch.clamp_min(
             torch.sqrt(quality)
             * (amplitude_floor - local_prediction)
-            / observations.std_dbz[step],
+            / effective_std[step],
             0.0,
         )
         violation = (
@@ -3406,10 +4547,14 @@ def _established_growth_envelope_diagnostics(
     initial_quality = observations.quality_weight[0].clamp_min(
         analysis.transform_epsilon
     )
+    effective_std = _observation_effective_std_dbz(
+        observations,
+        analysis,
+    )
     initial_upper_dbz = (
         observations.dbz[0]
         + analysis.maximum_detected_error_std
-        * observations.std_dbz[0]
+        * effective_std[0]
         / torch.sqrt(initial_quality)
     ).clamp_max(nowcast.max_dbz)
     initial_upper_dbz = torch.where(
@@ -3461,7 +4606,7 @@ def _established_growth_envelope_diagnostics(
         standardized_excess = (
             torch.sqrt(quality)
             * (observations.dbz[step] - local_envelope_dbz)
-            / observations.std_dbz[step]
+            / effective_std[step]
         )
         excess = established & (
             standardized_excess > analysis.maximum_detected_error_std
@@ -3883,6 +5028,51 @@ def _motion_saturation_margin_mps(
     return float(minimum_margin.detach()) / seconds_per_step
 
 
+def _motion_saturation_margin_fraction(
+    displacement_yx: Tensor,
+    frozen: FrozenOuterState,
+) -> float:
+    limits = frozen.motion_limits_yx
+    active = limits > torch.finfo(limits.dtype).eps
+    if not bool(torch.any(active)):
+        return 1.0
+    margin = (limits[active] - torch.abs(displacement_yx[active])) / limits[
+        active
+    ]
+    return float(torch.min(margin).detach())
+
+
+def _analysis_feasibility_margins(
+    frozen: FrozenOuterState,
+    trajectory: AnalysisTrajectory,
+    amplitude: _AmplitudeDiagnostics,
+    *,
+    reachability_margin: float,
+    motion_speed_saturation_margin_mps: float | None,
+    growth_saturation_margin: Tensor,
+) -> AnalysisFeasibilityMargins:
+    """Materialize signed interior margins used by delayed P1 FSO."""
+
+    unresolved_margin = (
+        frozen.analysis_config.maximum_unresolved_amplitude_fraction
+        - float(amplitude.maximum_gated_unresolved_fraction.detach())
+    )
+    return AnalysisFeasibilityMargins(
+        reachability_support=reachability_margin,
+        unresolved_amplitude_fraction=unresolved_margin,
+        amplitude_confidence=_amplitude_confidence_margin(
+            amplitude,
+            frozen.analysis_config,
+        ),
+        motion_saturation_fraction=_motion_saturation_margin_fraction(
+            trajectory.displacement_yx,
+            frozen,
+        ),
+        motion_speed_saturation_mps=motion_speed_saturation_margin_mps,
+        growth_saturation_per_step=float(growth_saturation_margin.detach()),
+    )
+
+
 def _motion_is_admissible(
     displacement_yx: Tensor,
     frozen: FrozenOuterState,
@@ -4154,6 +5344,112 @@ def _validate_observations(observations: AnalysisObservations) -> None:
         torch.any(observations.qc_rejected_mask & observations.valid_mask)
     ):
         raise ValueError("QC-rejected observations cannot be valid")
+    group_index = observations.common_bias_group_index
+    if group_index is not None and (
+        group_index.shape != shape
+        or group_index.dtype != torch.long
+        or group_index.device != observations.dbz.device
+        or bool(torch.any(group_index < -1))
+    ):
+        raise ValueError(
+            "common_bias_group_index must be a compatible canonical index"
+        )
+    if group_index is not None:
+        active_groups = group_index[group_index >= 0]
+        if active_groups.numel() > 0 and not torch.equal(
+            torch.unique(active_groups, sorted=True),
+            torch.arange(
+                int(torch.max(active_groups).detach()) + 1,
+                dtype=torch.long,
+                device=group_index.device,
+            ),
+        ):
+            raise ValueError("common_bias_group_index must be compact")
+    mode_weights = observations.common_bias_mode_weights
+    if mode_weights is not None and (
+        mode_weights.ndim != 4
+        or mode_weights.shape[0] != shape[0]
+        or tuple(mode_weights.shape[-2:]) != shape[-2:]
+        or not mode_weights.is_floating_point()
+        or mode_weights.dtype != observations.dbz.dtype
+        or mode_weights.device != observations.dbz.device
+        or not (1 <= mode_weights.shape[1] <= MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT)
+        or not bool(torch.all(torch.isfinite(mode_weights)))
+        or bool(torch.any(mode_weights < 0.0))
+        or bool(torch.any(mode_weights > 1.0))
+        or bool(
+            torch.any(
+                torch.sum(mode_weights.square(), dim=1) > 1.0 + 1.0e-6
+            )
+        )
+        or bool(
+            torch.any(torch.sum(mode_weights, dim=(0, 2, 3)) <= 0.0)
+        )
+    ):
+        raise ValueError(
+            "common_bias_mode_weights must be canonical and compatible"
+        )
+
+
+def _validate_observation_common_bias_contract(
+    observations: AnalysisObservations,
+    config: AnalysisConfig,
+) -> None:
+    group_index = observations.common_bias_group_index
+    mode_weights = observations.common_bias_mode_weights
+    expected_digest = config.observation_common_bias_group_map_digest
+    expected_mode_digest = config.observation_common_bias_mode_weights_digest
+    if group_index is not None and mode_weights is not None:
+        raise ValueError(
+            "common-bias group observations and overlapping modes are "
+            "mutually exclusive"
+        )
+    if mode_weights is not None:
+        if config.observation_common_bias_std_dbz <= 0.0:
+            raise ValueError(
+                "common-bias mode observations require positive common-bias "
+                "std"
+            )
+        if config.observation_common_bias_tile_size_px > 0:
+            raise ValueError(
+                "common-bias mode observations and tile modes are mutually "
+                "exclusive"
+            )
+        if expected_digest is not None:
+            raise ValueError(
+                "common-bias mode observations cannot use a group-map digest"
+            )
+        if expected_mode_digest is None:
+            raise ValueError("common-bias mode observations require a digest")
+        if (
+            observation_common_bias_mode_weights_digest(mode_weights)
+            != expected_mode_digest
+        ):
+            raise ValueError("common-bias mode observation digest mismatch")
+        return
+    if expected_mode_digest is not None:
+        raise ValueError(
+            "common-bias mode weights digest requires mode observations"
+        )
+    if group_index is None:
+        if expected_digest is not None:
+            raise ValueError(
+                "common-bias group map digest requires group observations"
+            )
+        return
+    if config.observation_common_bias_std_dbz <= 0.0:
+        raise ValueError(
+            "common-bias group observations require positive common-bias std"
+        )
+    if config.observation_common_bias_tile_size_px > 0:
+        raise ValueError(
+            "common-bias group observations and tile modes are mutually "
+            "exclusive"
+        )
+    if expected_digest is None:
+        raise ValueError("common-bias group observations require a digest")
+    if tensor_digest(group_index) != expected_digest:
+        raise ValueError("common-bias group observation digest mismatch")
 
 
 def _validate_control(
@@ -4189,67 +5485,110 @@ def _validate_control(
         )
 
 
+def _clone_tensor(value: Tensor) -> Tensor:
+    return value.detach().clone()
+
+
+def _clone_analysis_observations(
+    observations: AnalysisObservations,
+) -> AnalysisObservations:
+    return AnalysisObservations(
+        dbz=_clone_tensor(observations.dbz),
+        std_dbz=_clone_tensor(observations.std_dbz),
+        quality_weight=_clone_tensor(observations.quality_weight),
+        valid_mask=_clone_tensor(observations.valid_mask),
+        detected_mask=_clone_tensor(observations.detected_mask),
+        censored_mask=_clone_tensor(observations.censored_mask),
+        missing_mask=_clone_tensor(observations.missing_mask),
+        qc_rejected_mask=_clone_tensor(observations.qc_rejected_mask),
+        common_bias_group_index=(
+            None
+            if observations.common_bias_group_index is None
+            else _clone_tensor(observations.common_bias_group_index)
+        ),
+        common_bias_mode_weights=(
+            None
+            if observations.common_bias_mode_weights is None
+            else _clone_tensor(observations.common_bias_mode_weights)
+        ),
+    )
+
+
 def _detach_state(state: RadarState) -> RadarState:
     return RadarState(
-        echo_linear=state.echo_linear.detach(),
-        displacement_yx=state.displacement_yx.detach(),
-        log_growth_per_step=state.log_growth_per_step.detach(),
+        echo_linear=_clone_tensor(state.echo_linear),
+        displacement_yx=_clone_tensor(state.displacement_yx),
+        log_growth_per_step=_clone_tensor(state.log_growth_per_step),
     )
 
 
 def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
     return ForecastMetadata(
         data_status=metadata.data_status,
-        coverage_by_frame=metadata.coverage_by_frame.detach(),
+        coverage_by_frame=_clone_tensor(metadata.coverage_by_frame),
         background_used=metadata.background_used,
         background_contribution_fraction=(
             metadata.background_contribution_fraction
         ),
         background_age_minutes=metadata.background_age_minutes,
-        source_support=metadata.source_support.detach(),
+        source_support=_clone_tensor(metadata.source_support),
         observation_source_support=(
-            metadata.observation_source_support.detach()
+            _clone_tensor(metadata.observation_source_support)
         ),
-        background_source_support=metadata.background_source_support.detach(),
+        background_source_support=_clone_tensor(
+            metadata.background_source_support
+        ),
         path_verified_source_support=(
-            metadata.path_verified_source_support.detach()
+            _clone_tensor(metadata.path_verified_source_support)
         ),
-        verified_source_support=metadata.verified_source_support.detach(),
+        verified_source_support=_clone_tensor(
+            metadata.verified_source_support
+        ),
         local_motion_verified_support=(
-            metadata.local_motion_verified_support.detach()
+            _clone_tensor(metadata.local_motion_verified_support)
         ),
         local_growth_verified_support=(
-            metadata.local_growth_verified_support.detach()
+            _clone_tensor(metadata.local_growth_verified_support)
         ),
         local_dynamics_verified_support=(
-            metadata.local_dynamics_verified_support.detach()
+            _clone_tensor(metadata.local_dynamics_verified_support)
         ),
         observation_verified_source_support=(
-            metadata.observation_verified_source_support.detach()
+            _clone_tensor(metadata.observation_verified_source_support)
         ),
         background_verified_source_support=(
-            metadata.background_verified_source_support.detach()
+            _clone_tensor(metadata.background_verified_source_support)
         ),
-        motion_disagreement_px=metadata.motion_disagreement_px.detach(),
-        motion_disagreement_mps=metadata.motion_disagreement_mps.detach(),
-        growth_disagreement=metadata.growth_disagreement.detach(),
+        motion_disagreement_px=_clone_tensor(
+            metadata.motion_disagreement_px
+        ),
+        motion_disagreement_mps=_clone_tensor(
+            metadata.motion_disagreement_mps
+        ),
+        growth_disagreement=_clone_tensor(metadata.growth_disagreement),
         maximum_growth_saturation_excess=(
-            metadata.maximum_growth_saturation_excess.detach()
+            _clone_tensor(metadata.maximum_growth_saturation_excess)
         ),
         posterior_velocity_uncertainty_mps=(
-            metadata.posterior_velocity_uncertainty_mps.detach()
+            _clone_tensor(metadata.posterior_velocity_uncertainty_mps)
         ),
         posterior_log_growth_uncertainty_per_step=(
-            metadata.posterior_log_growth_uncertainty_per_step.detach()
+            _clone_tensor(
+                metadata.posterior_log_growth_uncertainty_per_step
+            )
         ),
         p1_velocity_saturation_uncertainty_mps=(
-            metadata.p1_velocity_saturation_uncertainty_mps.detach()
+            _clone_tensor(
+                metadata.p1_velocity_saturation_uncertainty_mps
+            )
         ),
         p1_log_growth_saturation_uncertainty_per_step=(
-            metadata.p1_log_growth_saturation_uncertainty_per_step.detach()
+            _clone_tensor(
+                metadata.p1_log_growth_saturation_uncertainty_per_step
+            )
         ),
         minimum_phase_correlation_psr=(
-            metadata.minimum_phase_correlation_psr.detach()
+            _clone_tensor(metadata.minimum_phase_correlation_psr)
         ),
         tendency_pair_count=metadata.tendency_pair_count,
         tendency_source=metadata.tendency_source,
@@ -4277,3 +5616,223 @@ def _detach_metadata(metadata: ForecastMetadata) -> ForecastMetadata:
             metadata.minimum_growth_overlap_area_km2
         ),
     )
+
+
+def _clone_frozen_outer_state(frozen: FrozenOuterState) -> FrozenOuterState:
+    """Detach the retained adjoint model from all caller-owned storage."""
+
+    return FrozenOuterState(
+        initial_background_dbz=_clone_tensor(frozen.initial_background_dbz),
+        initial_support_mask=_clone_tensor(frozen.initial_support_mask),
+        active_field_index=_clone_tensor(frozen.active_field_index),
+        causal_only_mask=_clone_tensor(frozen.causal_only_mask),
+        causal_seed_mask=_clone_tensor(frozen.causal_seed_mask),
+        detected_masks=_clone_tensor(frozen.detected_masks),
+        observed_mask=_clone_tensor(frozen.observed_mask),
+        background_mask=_clone_tensor(frozen.background_mask),
+        background_age_minutes=frozen.background_age_minutes,
+        baseline_state=_detach_state(frozen.baseline_state),
+        baseline_metadata=_detach_metadata(frozen.baseline_metadata),
+        baseline_frames_dbz=_clone_tensor(frozen.baseline_frames_dbz),
+        irls_sqrt_weight=_clone_tensor(frozen.irls_sqrt_weight),
+        nowcast_config=frozen.nowcast_config,
+        analysis_config=frozen.analysis_config,
+        grid_time_contract=frozen.grid_time_contract,
+        motion_limits_yx=_clone_tensor(frozen.motion_limits_yx),
+        amplitude_displacement_offsets_yx=(
+            frozen.amplitude_displacement_offsets_yx
+        ),
+        analysis_remap_cells=frozen.analysis_remap_cells,
+        smooth_edge_left_index=_clone_tensor(
+            frozen.smooth_edge_left_index
+        ),
+        smooth_edge_right_index=_clone_tensor(
+            frozen.smooth_edge_right_index
+        ),
+        smooth_edge_physical_weight=_clone_tensor(
+            frozen.smooth_edge_physical_weight
+        ),
+    )
+
+
+def _analysis_observations_digest_values(
+    observations: AnalysisObservations,
+) -> dict[str, str | None]:
+    values: dict[str, str | None] = {
+        name: tensor_digest(getattr(observations, name))
+        for name in (
+            "dbz",
+            "std_dbz",
+            "quality_weight",
+            "valid_mask",
+            "detected_mask",
+            "censored_mask",
+            "missing_mask",
+            "qc_rejected_mask",
+        )
+    }
+    values["common_bias_group_index"] = (
+        None
+        if observations.common_bias_group_index is None
+        else tensor_digest(observations.common_bias_group_index)
+    )
+    values["common_bias_mode_weights"] = (
+        None
+        if observations.common_bias_mode_weights is None
+        else tensor_digest(observations.common_bias_mode_weights)
+    )
+    return values
+
+
+def _frozen_outer_state_digest_values(
+    frozen: FrozenOuterState,
+) -> dict[str, object]:
+    grid_digest = (
+        None
+        if frozen.grid_time_contract is None
+        else json_digest(asdict(frozen.grid_time_contract))
+    )
+    return {
+        "initial_background_dbz": tensor_digest(
+            frozen.initial_background_dbz
+        ),
+        "initial_support_mask": tensor_digest(frozen.initial_support_mask),
+        "active_field_index": tensor_digest(frozen.active_field_index),
+        "causal_only_mask": tensor_digest(frozen.causal_only_mask),
+        "causal_seed_mask": tensor_digest(frozen.causal_seed_mask),
+        "detected_masks": tensor_digest(frozen.detected_masks),
+        "observed_mask": tensor_digest(frozen.observed_mask),
+        "background_mask": tensor_digest(frozen.background_mask),
+        "background_age_minutes": frozen.background_age_minutes,
+        "baseline_state_metadata": state_metadata_digest(
+            frozen.baseline_state,
+            frozen.baseline_metadata,
+        ),
+        "baseline_frames_dbz": tensor_digest(frozen.baseline_frames_dbz),
+        "irls_sqrt_weight": tensor_digest(frozen.irls_sqrt_weight),
+        "nowcast_config": frozen.nowcast_config.digest,
+        "analysis_config": json_digest(asdict(frozen.analysis_config)),
+        "grid_time_contract": grid_digest,
+        "motion_limits_yx": tensor_digest(frozen.motion_limits_yx),
+        "amplitude_displacement_offsets_yx": [
+            list(offset)
+            for offset in frozen.amplitude_displacement_offsets_yx
+        ],
+        "analysis_remap_cells": [
+            {"y": cell.y, "x": cell.x}
+            for cell in frozen.analysis_remap_cells
+        ],
+        "smooth_edge_left_index": tensor_digest(
+            frozen.smooth_edge_left_index
+        ),
+        "smooth_edge_right_index": tensor_digest(
+            frozen.smooth_edge_right_index
+        ),
+        "smooth_edge_physical_weight": tensor_digest(
+            frozen.smooth_edge_physical_weight
+        ),
+    }
+
+
+def analysis_linearization_digest(
+    control: Tensor,
+    linearization: AnalysisLinearization,
+) -> str:
+    """Content-address every value used by the delayed P1 adjoint."""
+
+    return json_digest(
+        {
+            "version": P1_LINEARIZATION_DIGEST_CONTRACT,
+            "contract": linearization.contract,
+            "forecast_run_digest": linearization.forecast_run_digest,
+            "control": tensor_digest(control),
+            "observations": _analysis_observations_digest_values(
+                linearization.observations
+            ),
+            "frozen": _frozen_outer_state_digest_values(
+                linearization.frozen
+            ),
+            "stationarity": {
+                "residual_norm": linearization.residual_norm,
+                "gradient_norm": linearization.gradient_norm,
+                "relative_stationarity": (
+                    linearization.relative_stationarity
+                ),
+                "polish_iterations": linearization.polish_iterations,
+            },
+            "feasibility_margins": asdict(
+                linearization.feasibility_margins
+            ),
+            "algorithm_bundle_digest": (
+                linearization.algorithm_bundle_digest
+            ),
+            "numerical_runtime_digest": (
+                linearization.numerical_runtime_digest
+            ),
+        }
+    )
+
+
+def _content_address_linearization(
+    control: Tensor,
+    linearization: AnalysisLinearization,
+) -> AnalysisLinearization:
+    addressed = replace(
+        linearization,
+        control_digest=tensor_digest(control),
+        linearization_digest="",
+    )
+    return replace(
+        addressed,
+        linearization_digest=analysis_linearization_digest(
+            control,
+            addressed,
+        ),
+    )
+
+
+def validate_analysis_linearization_content(
+    control: Tensor,
+    linearization: AnalysisLinearization,
+    *,
+    require_current_environment: bool = True,
+) -> None:
+    """Validate immutable contents and, optionally, replay environment."""
+
+    if linearization.contract != P1_LINEARIZATION_CONTRACT:
+        raise ValueError("unsupported P1 linearization contract")
+    feasibility_values = (
+        linearization.feasibility_margins.reachability_support,
+        linearization.feasibility_margins.unresolved_amplitude_fraction,
+        linearization.feasibility_margins.motion_saturation_fraction,
+        linearization.feasibility_margins.growth_saturation_per_step,
+    )
+    optional_feasibility_values = (
+        linearization.feasibility_margins.amplitude_confidence,
+        linearization.feasibility_margins.motion_speed_saturation_mps,
+    )
+    if not all(math.isfinite(value) for value in feasibility_values) or any(
+        value is not None and not math.isfinite(value)
+        for value in optional_feasibility_values
+    ):
+        raise ValueError("P1 linearization feasibility margins must be finite")
+    _validate_observations(linearization.observations)
+    _validate_observation_common_bias_contract(
+        linearization.observations,
+        linearization.frozen.analysis_config,
+    )
+    if tensor_digest(control) != linearization.control_digest:
+        raise ValueError("P1 linearization control digest mismatch")
+    if (
+        analysis_linearization_digest(control, linearization)
+        != linearization.linearization_digest
+    ):
+        raise ValueError("P1 linearization content digest mismatch")
+    if require_current_environment:
+        if linearization.algorithm_bundle_digest != algorithm_bundle_digest():
+            raise ValueError("P1 linearization algorithm bundle mismatch")
+        if (
+            linearization.numerical_runtime_digest
+            != numerical_runtime_identity_digest(control.device)
+        ):
+            raise ValueError("P1 linearization numerical runtime mismatch")

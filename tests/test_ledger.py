@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import fields, replace
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -133,6 +134,21 @@ SCHEMA_TEN_CONTEXT_FEATURE_NAMES = (
     "area_weighted_echo_available",
     "log1p_linear_reflectivity_integral_km2",
 )
+
+VERIFICATION_LINEAGE_MANIFEST_FIELDS = (
+    "verification_contract",
+    "verification_bundle_digest",
+    "verification_lineage_complete",
+    "verification_valid_times",
+    "verification_grid_contract_digest",
+    "verification_radar_product_digest",
+    "verification_qc_pipeline_digest",
+)
+
+
+def _drop_verification_lineage(manifest: dict[str, object]) -> None:
+    for name in VERIFICATION_LINEAGE_MANIFEST_FIELDS:
+        manifest.pop(name)
 
 
 def _contract(snapshot=None) -> ModelContract:
@@ -279,7 +295,13 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
 
         manifest = loaded.manifest
-        self.assertEqual(manifest["schema_version"], 16)
+        self.assertEqual(manifest["schema_version"], 17)
+        self.assertEqual(
+            manifest["verification_contract"],
+            "legacy-verification-tensor-v1",
+        )
+        self.assertIs(manifest["verification_lineage_complete"], False)
+        self.assertIsNone(manifest["verification_valid_times"])
         self.assertIs(manifest["baseline_lineage_available"], False)
         self.assertIs(manifest["reward_available"], False)
         self.assertNotIn("baseline_scores", loaded.arrays)
@@ -419,6 +441,60 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertFalse(loaded.manifest["impact_available"])
         self.assertFalse(loaded.manifest["reward_available"])
 
+    def test_complete_verification_lineage_round_trips(self) -> None:
+        snapshot = replace(
+            self.snapshot,
+            grid_time_contract_digest="1" * 64,
+            verification_contract="radar-verification-bundle-v1",
+            verification_bundle_digest="2" * 64,
+            verification_lineage_complete=True,
+            verification_valid_times=tuple(
+                (
+                    datetime(2026, 7, 26, tzinfo=timezone.utc)
+                    + timedelta(minutes=lead)
+                )
+                .isoformat()
+                .replace("+00:00", "Z")
+                for lead in range(10, 181, 10)
+            ),
+            verification_grid_contract_digest="1" * 64,
+            verification_radar_product_digest="3" * 64,
+            verification_qc_pipeline_digest="4" * 64,
+        )
+        episode = SensitivityEpisode(
+            episode_id="complete-verification-lineage",
+            issue_time="2026-07-26T00:00:00+00:00",
+            radar_id="KTLX",
+            contract=_contract(snapshot),
+            snapshot=snapshot,
+        )
+        self.ledger.append(episode)
+        loaded = self.ledger.load(episode.episode_id)
+
+        self.assertTrue(loaded.manifest["verification_lineage_complete"])
+        self.assertEqual(
+            loaded.manifest["verification_bundle_digest"],
+            "2" * 64,
+        )
+        self.assertEqual(
+            loaded.manifest["verification_grid_contract_digest"],
+            "1" * 64,
+        )
+
+        with self.assertRaisesRegex(ValueError, "bundle digest"):
+            self.ledger.append(
+                SensitivityEpisode(
+                    episode_id="invalid-verification-lineage",
+                    issue_time="2026-07-26T00:00:00+00:00",
+                    radar_id="KTLX",
+                    contract=_contract(snapshot),
+                    snapshot=replace(
+                        snapshot,
+                        verification_bundle_digest="bad",
+                    ),
+                )
+            )
+
     def test_v2_layout_cannot_claim_schema_one(self) -> None:
         episode = self.episode("v2-as-schema-one")
         target = self.ledger.append(episode)
@@ -426,6 +502,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         checksums_path = target / "checksums.json"
         manifest = json.loads(manifest_path.read_text("utf-8"))
         manifest["schema_version"] = 1
+        _drop_verification_lineage(manifest)
         manifest.pop("forecast_run_digest")
         manifest["contract"].pop("nowcast_config_digest")
         manifest["contract"].pop("sensitivity_config_digest")
@@ -555,6 +632,7 @@ class EpisodeLedgerTests(unittest.TestCase):
 
         manifest = json.loads(manifest_path.read_text("utf-8"))
         manifest["schema_version"] = 1
+        _drop_verification_lineage(manifest)
         manifest["reward_available"] = True
         manifest.pop("baseline_lineage_available")
         manifest.pop("forecast_run_digest")
@@ -656,6 +734,7 @@ class EpisodeLedgerTests(unittest.TestCase):
 
         manifest = json.loads(manifest_path.read_text("utf-8"))
         manifest["schema_version"] = 3
+        _drop_verification_lineage(manifest)
         manifest.pop("forecast_run_digest")
         manifest["contract"].pop("grid_time_contract_digest")
         manifest["context_feature_names"] = list(
@@ -771,6 +850,7 @@ class EpisodeLedgerTests(unittest.TestCase):
 
         manifest = json.loads(manifest_path.read_text("utf-8"))
         manifest["schema_version"] = 4
+        _drop_verification_lineage(manifest)
         manifest["contract"].pop("grid_time_contract_digest")
         manifest["context_feature_names"] = list(
             SCHEMA_TWO_TO_FOUR_CONTEXT_FEATURE_NAMES
@@ -850,6 +930,7 @@ class EpisodeLedgerTests(unittest.TestCase):
 
         manifest = json.loads(manifest_path.read_text("utf-8"))
         manifest["schema_version"] = 5
+        _drop_verification_lineage(manifest)
         manifest["contract"].pop("grid_time_contract_digest")
         manifest["context_feature_names"] = list(
             SCHEMA_FIVE_CONTEXT_FEATURE_NAMES
@@ -945,6 +1026,7 @@ class EpisodeLedgerTests(unittest.TestCase):
 
                 manifest = json.loads(manifest_path.read_text("utf-8"))
                 manifest["schema_version"] = schema_version
+                _drop_verification_lineage(manifest)
                 if schema_version < 11:
                     manifest["contract"].pop("grid_time_contract_digest")
                 manifest["context_feature_names"] = list(context_names)
@@ -1037,6 +1119,7 @@ class EpisodeLedgerTests(unittest.TestCase):
 
         manifest = json.loads(manifest_path.read_text("utf-8"))
         manifest["schema_version"] = 15
+        _drop_verification_lineage(manifest)
         manifest["units"]["observation_evidence_by_metric"] = (
             manifest["units"].pop(
                 "observation_source_fraction_by_metric"

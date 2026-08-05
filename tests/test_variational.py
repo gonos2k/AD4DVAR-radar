@@ -11,6 +11,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from advar._digest import tensor_digest  # noqa: E402
 from advar.matrix_free import (  # noqa: E402
     PCGResult,
     gauss_newton_hvp,
@@ -389,6 +390,535 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
         torch.testing.assert_close(residual_a[1:], residual_b[1:])
         self.assertTrue(bool(torch.all(residual_a[1:] > 0)))
+
+    def test_common_bias_whitener_matches_dense_inverse_square_root(
+        self,
+    ) -> None:
+        observations, frozen = self.stationary_problem(height=3, width=5)
+        values = torch.linspace(
+            -1.0,
+            1.0,
+            observations.dbz.numel(),
+            dtype=observations.dbz.dtype,
+        ).reshape_as(observations.dbz)
+
+        unchanged = variational_module._apply_observation_error_whitener(
+            values,
+            observations,
+            frozen.analysis_config,
+        )
+        self.assertIs(unchanged, values)
+        unchanged_tiled = (
+            variational_module._apply_observation_error_whitener(
+                values,
+                observations,
+                replace(
+                    frozen.analysis_config,
+                    observation_common_bias_tile_size_px=2,
+                ),
+            )
+        )
+        self.assertIs(unchanged_tiled, values)
+
+        for scope in ("per_frame", "all_times"):
+            for tile_size in (0, 2):
+                with self.subTest(scope=scope, tile_size=tile_size):
+                    config = replace(
+                        frozen.analysis_config,
+                        observation_common_bias_std_dbz=1.5,
+                        observation_common_bias_scope=scope,
+                        observation_common_bias_tile_size_px=tile_size,
+                    )
+                    actual = (
+                        variational_module._apply_observation_error_whitener(
+                            values,
+                            observations,
+                            config,
+                        )
+                    )
+                    mode = (
+                        torch.sqrt(observations.quality_weight)
+                        / observations.std_dbz
+                    )
+                    covariance = torch.eye(
+                        values.numel(),
+                        dtype=values.dtype,
+                    )
+                    height, width = values.shape[-2:]
+                    spatial_size = max(height, width) if tile_size == 0 else tile_size
+                    for row in range(0, height, spatial_size):
+                        for column in range(0, width, spatial_size):
+                            frame_groups = (
+                                tuple((index,) for index in range(values.shape[0]))
+                                if scope == "per_frame"
+                                else (tuple(range(values.shape[0])),)
+                            )
+                            for frame_group in frame_groups:
+                                bias_mode = torch.zeros_like(mode)
+                                for frame in frame_group:
+                                    bias_mode[
+                                        frame,
+                                        row : row + spatial_size,
+                                        column : column + spatial_size,
+                                    ] = mode[
+                                        frame,
+                                        row : row + spatial_size,
+                                        column : column + spatial_size,
+                                    ]
+                                flattened_mode = bias_mode.flatten()
+                                covariance = covariance + 1.5**2 * torch.outer(
+                                    flattened_mode,
+                                    flattened_mode,
+                                )
+                    eigenvalues, eigenvectors = torch.linalg.eigh(covariance)
+                    expected = eigenvectors @ (
+                        torch.rsqrt(eigenvalues)
+                        * (eigenvectors.mT @ values.flatten())
+                    )
+                    torch.testing.assert_close(
+                        actual,
+                        expected.reshape_as(values),
+                        rtol=1.0e-12,
+                        atol=1.0e-12,
+                    )
+
+        raw_groups = torch.tensor(
+            (
+                (10, 10, 20, 20, -1),
+                (10, 10, 20, 30, 30),
+                (40, 40, 20, 30, 30),
+            ),
+            dtype=torch.long,
+        )
+        for scope in ("per_frame", "all_times"):
+            with self.subTest(group_scope=scope):
+                canonical = (
+                    variational_module._canonical_common_bias_group_index(
+                        raw_groups,
+                        frame_shape=tuple(observations.dbz.shape),
+                        temporal_scope=scope,
+                        device=observations.dbz.device,
+                    )
+                )
+                grouped_observations = replace(
+                    observations,
+                    common_bias_group_index=canonical,
+                )
+                config = replace(
+                    frozen.analysis_config,
+                    observation_common_bias_std_dbz=1.5,
+                    observation_common_bias_scope=scope,
+                    observation_common_bias_group_map_digest=(
+                        tensor_digest(canonical)
+                    ),
+                )
+                actual = (
+                    variational_module._apply_observation_error_whitener(
+                        values,
+                        grouped_observations,
+                        config,
+                    )
+                )
+                mode = (
+                    torch.sqrt(observations.quality_weight)
+                    / observations.std_dbz
+                )
+                covariance = torch.eye(
+                    values.numel(),
+                    dtype=values.dtype,
+                )
+                for group in torch.unique(canonical[canonical >= 0]):
+                    bias_mode = torch.where(
+                        canonical == group,
+                        mode,
+                        torch.zeros_like(mode),
+                    ).flatten()
+                    covariance = covariance + 1.5**2 * torch.outer(
+                        bias_mode,
+                        bias_mode,
+                    )
+                eigenvalues, eigenvectors = torch.linalg.eigh(covariance)
+                expected = eigenvectors @ (
+                    torch.rsqrt(eigenvalues)
+                    * (eigenvectors.mT @ values.flatten())
+                )
+                torch.testing.assert_close(
+                    actual,
+                    expected.reshape_as(values),
+                    rtol=1.0e-12,
+                    atol=1.0e-12,
+                )
+
+        relabeled_groups = torch.where(
+            raw_groups < 0,
+            raw_groups,
+            raw_groups * 7 + 3,
+        )
+        self.assertEqual(
+            variational_module.observation_common_bias_group_map_digest(
+                raw_groups,
+                temporal_scope="all_times",
+            ),
+            variational_module.observation_common_bias_group_map_digest(
+                relabeled_groups,
+                temporal_scope="all_times",
+            ),
+        )
+
+        x_fraction = torch.linspace(
+            0.0,
+            1.0,
+            observations.dbz.shape[-1],
+            dtype=observations.dbz.dtype,
+        ).expand(observations.dbz.shape[-2], -1)
+        mode_weights = torch.stack(
+            (torch.sqrt(1.0 - x_fraction), torch.sqrt(x_fraction))
+        )
+        for scope in ("per_frame", "all_times"):
+            with self.subTest(overlapping_scope=scope):
+                canonical_weights = (
+                    variational_module._canonical_common_bias_mode_weights(
+                        mode_weights,
+                        frame_shape=(
+                            observations.dbz.shape[0],
+                            observations.dbz.shape[1],
+                            observations.dbz.shape[2],
+                        ),
+                        dtype=observations.dbz.dtype,
+                        device=observations.dbz.device,
+                    )
+                )
+                weighted_observations = replace(
+                    observations,
+                    common_bias_mode_weights=canonical_weights,
+                )
+                mode_digest = (
+                    variational_module
+                    .observation_common_bias_mode_weights_digest(mode_weights)
+                )
+                config = replace(
+                    frozen.analysis_config,
+                    observation_common_bias_std_dbz=1.5,
+                    observation_common_bias_scope=scope,
+                    observation_common_bias_mode_weights_digest=mode_digest,
+                )
+                actual = (
+                    variational_module._apply_observation_error_whitener(
+                        values,
+                        weighted_observations,
+                        config,
+                    )
+                )
+                base_mode = (
+                    torch.sqrt(observations.quality_weight)
+                    / observations.std_dbz
+                )
+                covariance = torch.eye(
+                    values.numel(),
+                    dtype=values.dtype,
+                )
+                frame_groups = (
+                    tuple((index,) for index in range(values.shape[0]))
+                    if scope == "per_frame"
+                    else (tuple(range(values.shape[0])),)
+                )
+                for frame_group in frame_groups:
+                    for mode_index in range(canonical_weights.shape[1]):
+                        bias_mode = torch.zeros_like(values)
+                        for frame in frame_group:
+                            bias_mode[frame] = (
+                                1.5
+                                * base_mode[frame]
+                                * canonical_weights[frame, mode_index]
+                            )
+                        flattened_mode = bias_mode.flatten()
+                        covariance = covariance + torch.outer(
+                            flattened_mode,
+                            flattened_mode,
+                        )
+                eigenvalues, eigenvectors = torch.linalg.eigh(covariance)
+                expected = eigenvectors @ (
+                    torch.rsqrt(eigenvalues)
+                    * (eigenvectors.mT @ values.flatten())
+                )
+                torch.testing.assert_close(
+                    actual,
+                    expected.reshape_as(values),
+                    rtol=1.0e-12,
+                    atol=1.0e-12,
+                )
+
+        self.assertEqual(
+            variational_module.observation_common_bias_mode_weights_digest(
+                mode_weights
+            ),
+            variational_module.observation_common_bias_mode_weights_digest(
+                mode_weights.clone()
+            ),
+        )
+
+        precision = variational_module._observation_marginal_precision(
+            observations,
+            replace(
+                frozen.analysis_config,
+                observation_common_bias_std_dbz=1.5,
+            ),
+        )
+        torch.testing.assert_close(
+            precision,
+            observations.quality_weight
+            / (
+                observations.std_dbz.square()
+                + 1.5**2 * observations.quality_weight
+            ),
+        )
+        grouped_precision = variational_module._observation_marginal_precision(
+            replace(
+                observations,
+                common_bias_group_index=(
+                    variational_module._canonical_common_bias_group_index(
+                        raw_groups,
+                        frame_shape=(
+                            observations.dbz.shape[0],
+                            observations.dbz.shape[1],
+                            observations.dbz.shape[2],
+                        ),
+                        temporal_scope="all_times",
+                        device=observations.dbz.device,
+                    )
+                ),
+            ),
+            replace(
+                frozen.analysis_config,
+                observation_common_bias_std_dbz=1.5,
+            ),
+        )
+        torch.testing.assert_close(
+            grouped_precision[:, 0, -1],
+            observations.quality_weight[:, 0, -1]
+            / observations.std_dbz[:, 0, -1].square(),
+        )
+
+    def test_common_bias_contract_is_validated_and_changes_lineage(self) -> None:
+        for value in (-0.1, float("nan"), float("inf"), True):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "common_bias"):
+                    AnalysisConfig(observation_common_bias_std_dbz=value)
+        with self.assertRaisesRegex(ValueError, "common_bias_scope"):
+            AnalysisConfig(
+                observation_common_bias_scope=cast(
+                    variational_module.ObservationCommonBiasScope,
+                    "invalid",
+                )
+            )
+        for value in (-1, True, 1.5):
+            with self.subTest(tile_size=value):
+                with self.assertRaisesRegex(ValueError, "tile_size"):
+                    AnalysisConfig(
+                        observation_common_bias_tile_size_px=cast(int, value)
+                    )
+        for digest in ("bad", "A" * 64, cast(str, 1)):
+            with self.subTest(group_digest=digest):
+                with self.assertRaisesRegex(ValueError, "group_map_digest"):
+                    AnalysisConfig(
+                        observation_common_bias_group_map_digest=digest
+                    )
+                with self.assertRaisesRegex(ValueError, "mode_weights_digest"):
+                    AnalysisConfig(
+                        observation_common_bias_mode_weights_digest=digest
+                    )
+
+        frames = torch.full((3, 4, 4), 20.0, dtype=torch.float64)
+        diagonal, _ = variational_nowcast(
+            frames,
+            analysis_config=AnalysisConfig(maximum_outer_iterations=1),
+        )
+        correlated, _ = variational_nowcast(
+            frames,
+            analysis_config=AnalysisConfig(
+                maximum_outer_iterations=1,
+                observation_common_bias_std_dbz=1.0,
+            ),
+        )
+        tiled, _ = variational_nowcast(
+            frames,
+            analysis_config=AnalysisConfig(
+                maximum_outer_iterations=1,
+                observation_common_bias_std_dbz=1.0,
+                observation_common_bias_tile_size_px=2,
+            ),
+        )
+        group_map = torch.tensor(
+            (
+                (0, 0, 1, 1),
+                (0, 0, 1, 1),
+                (2, 2, 3, 3),
+                (2, 2, 3, 3),
+            ),
+            dtype=torch.long,
+        )
+        grouped, _ = variational_nowcast(
+            frames,
+            analysis_config=AnalysisConfig(
+                maximum_outer_iterations=1,
+                observation_common_bias_std_dbz=1.0,
+            ),
+            observation_common_bias_group_index=group_map,
+        )
+        mode_weights = torch.zeros((2, 4, 4), dtype=torch.float64)
+        mode_weights[0, :, :2] = 1.0
+        mode_weights[1, :, 2:] = 1.0
+        overlapping, _ = variational_nowcast(
+            frames,
+            analysis_config=AnalysisConfig(
+                maximum_outer_iterations=1,
+                observation_common_bias_std_dbz=1.0,
+            ),
+            observation_common_bias_mode_weights=mode_weights,
+        )
+        self.assertNotEqual(
+            diagonal.run.analysis_config_digest,
+            correlated.run.analysis_config_digest,
+        )
+        self.assertNotEqual(
+            diagonal.forecast_run_digest,
+            correlated.forecast_run_digest,
+        )
+        self.assertNotEqual(
+            correlated.run.analysis_config_digest,
+            tiled.run.analysis_config_digest,
+        )
+        self.assertNotEqual(
+            correlated.forecast_run_digest,
+            tiled.forecast_run_digest,
+        )
+        self.assertNotEqual(
+            correlated.run.analysis_config_digest,
+            grouped.run.analysis_config_digest,
+        )
+        self.assertNotEqual(
+            grouped.run.analysis_config_digest,
+            overlapping.run.analysis_config_digest,
+        )
+        grouped_observations, grouped_frozen = prepare_analysis(
+            frames,
+            analysis_config=AnalysisConfig(
+                observation_common_bias_std_dbz=1.0,
+            ),
+            observation_common_bias_group_index=group_map,
+        )
+        self.assertIsNotNone(grouped_observations.common_bias_group_index)
+        expected_group_digest = (
+            variational_module.observation_common_bias_group_map_digest(
+                group_map
+            )
+        )
+        assert grouped.run.analysis_config_json is not None
+        self.assertIn(expected_group_digest, grouped.run.analysis_config_json)
+        self.assertEqual(
+            grouped_frozen.analysis_config
+            .observation_common_bias_group_map_digest,
+            expected_group_digest,
+        )
+
+        with self.assertRaisesRegex(ValueError, "requires positive"):
+            prepare_analysis(
+                frames,
+                observation_common_bias_group_index=group_map,
+            )
+        with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+            prepare_analysis(
+                frames,
+                analysis_config=AnalysisConfig(
+                    observation_common_bias_std_dbz=1.0,
+                    observation_common_bias_tile_size_px=2,
+                ),
+                observation_common_bias_group_index=group_map,
+            )
+        correlated_config = AnalysisConfig(
+            observation_common_bias_std_dbz=1.0,
+        )
+        with self.assertRaisesRegex(TypeError, "integer dtype"):
+            prepare_analysis(
+                frames,
+                analysis_config=correlated_config,
+                observation_common_bias_group_index=group_map.to(
+                    dtype=torch.float64
+                ),
+            )
+        invalid_groups = group_map.clone()
+        invalid_groups[0, 0] = -2
+        with self.assertRaisesRegex(ValueError, "-1 or nonnegative"):
+            prepare_analysis(
+                frames,
+                analysis_config=correlated_config,
+                observation_common_bias_group_index=invalid_groups,
+            )
+        with self.assertRaisesRegex(ValueError, "at least one group"):
+            prepare_analysis(
+                frames,
+                analysis_config=correlated_config,
+                observation_common_bias_group_index=torch.full_like(
+                    group_map,
+                    -1,
+                ),
+            )
+        invalid_only_group = torch.full_like(group_map, -1)
+        invalid_only_group[0, 0] = 0
+        with self.assertRaisesRegex(ValueError, "valid observation"):
+            prepare_analysis(
+                frames,
+                analysis_config=correlated_config,
+                observation_common_bias_group_index=invalid_only_group,
+                qc_mask=torch.zeros_like(frames, dtype=torch.bool),
+            )
+        with self.assertRaisesRegex(ValueError, "digest mismatch"):
+            prepare_analysis(
+                frames,
+                analysis_config=replace(
+                    correlated_config,
+                    observation_common_bias_group_map_digest="0" * 64,
+                ),
+                observation_common_bias_group_index=group_map,
+            )
+        with self.assertRaisesRegex(ValueError, "require positive"):
+            prepare_analysis(
+                frames,
+                observation_common_bias_mode_weights=mode_weights,
+            )
+        with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+            prepare_analysis(
+                frames,
+                analysis_config=correlated_config,
+                observation_common_bias_group_index=group_map,
+                observation_common_bias_mode_weights=mode_weights,
+            )
+        invalid_mode_weights = torch.ones_like(mode_weights)
+        with self.assertRaisesRegex(ValueError, "sum to at most one"):
+            prepare_analysis(
+                frames,
+                analysis_config=correlated_config,
+                observation_common_bias_mode_weights=invalid_mode_weights,
+            )
+        mode_digest = (
+            variational_module.observation_common_bias_mode_weights_digest(
+                mode_weights
+            )
+        )
+        prepared_modes, prepared_mode_frozen = prepare_analysis(
+            frames,
+            analysis_config=replace(
+                correlated_config,
+                observation_common_bias_mode_weights_digest=mode_digest,
+            ),
+            observation_common_bias_mode_weights=mode_weights,
+        )
+        self.assertIsNotNone(prepared_modes.common_bias_mode_weights)
+        self.assertEqual(
+            prepared_mode_frozen.analysis_config
+            .observation_common_bias_mode_weights_digest,
+            mode_digest,
+        )
 
     def test_missing_qc_rejected_and_observed_clear_are_distinct(self) -> None:
         frames = torch.full((3, 4, 5), 20.0, dtype=torch.float64)
@@ -839,7 +1369,86 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         self.assertGreater(result.outer_iterations, 0)
         self.assertGreater(result.pcg_iterations, 0)
-        self.assertEqual(vjp_calls, result.outer_iterations + 2)
+        self.assertEqual(
+            vjp_calls,
+            result.outer_iterations
+            + result.linearization_polish_iterations
+            + 3,
+        )
+
+    def test_final_linearization_is_polished_to_stationarity(self) -> None:
+        coordinates = torch.arange(8, dtype=torch.float64)
+        y, x = torch.meshgrid(coordinates, coordinates, indexing="ij")
+        blob = -10.0 + 40.0 * torch.exp(
+            -((y - 3.5).square() + (x - 3.5).square()) / 4.0
+        )
+        frames = torch.stack((blob, blob - 1.0, blob))
+        config = AnalysisConfig(
+            maximum_outer_iterations=8,
+            maximum_pcg_iterations=100,
+            pcg_relative_tolerance=1.0e-8,
+        )
+
+        _, result = variational_nowcast(
+            frames,
+            nowcast_config=NowcastConfig(horizon_minutes=10),
+            analysis_config=config,
+        )
+
+        self.assertEqual(result.reason, "step_tolerance")
+        self.assertGreater(result.linearization_polish_iterations, 0)
+        self.assertIsNotNone(result.linearization)
+        assert result.linearization is not None
+        self.assertLessEqual(
+            result.linearization.relative_stationarity,
+            config.final_linearization_relative_stationarity_tolerance,
+        )
+        self.assertEqual(
+            result.linearization_relative_stationarity,
+            result.linearization.relative_stationarity,
+        )
+        self.assertEqual(
+            result.linearization_gradient_norm,
+            result.linearization.gradient_norm,
+        )
+
+    def test_retained_linearization_owns_its_tensor_storage(self) -> None:
+        coordinates = torch.arange(8, dtype=torch.float64)
+        y, x = torch.meshgrid(coordinates, coordinates, indexing="ij")
+        blob = -10.0 + 40.0 * torch.exp(
+            -((y - 3.5).square() + (x - 3.5).square()) / 4.0
+        )
+        frames = torch.stack((blob, blob - 1.0, blob))
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=NowcastConfig(horizon_minutes=10),
+            analysis_config=AnalysisConfig(
+                maximum_outer_iterations=8,
+                maximum_pcg_iterations=100,
+                pcg_relative_tolerance=1.0e-8,
+            ),
+        )
+        result = solve_analysis(observations, frozen)
+        linearization = result.linearization
+        assert linearization is not None
+
+        self.assertNotEqual(
+            linearization.observations.dbz.data_ptr(),
+            observations.dbz.data_ptr(),
+        )
+        self.assertNotEqual(
+            linearization.frozen.irls_sqrt_weight.data_ptr(),
+            frozen.irls_sqrt_weight.data_ptr(),
+        )
+        retained_dbz = linearization.observations.dbz.clone()
+        retained_irls = linearization.frozen.irls_sqrt_weight.clone()
+        observations.dbz.add_(100.0)
+        frozen.irls_sqrt_weight.zero_()
+        torch.testing.assert_close(linearization.observations.dbz, retained_dbz)
+        torch.testing.assert_close(
+            linearization.frozen.irls_sqrt_weight,
+            retained_irls,
+        )
 
     def test_returned_analysis_records_local_identifiability(self) -> None:
         coordinates = torch.arange(8, dtype=torch.float64)
@@ -1648,6 +2257,85 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
 
         self.assertEqual(float(verified[0, 0]), 0.0)
+
+    def test_p1_latest_state_fit_does_not_certify_wrong_motion(self) -> None:
+        frames = torch.full(
+            (3, 7, 9),
+            self.nowcast_config.min_dbz,
+            dtype=torch.float64,
+        )
+        frames[0, 3, 2] = 20.0
+        frames[1, 3, 4] = 20.0
+        frames[2, 3, 4] = 20.0
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+        trajectory = variational_module.AnalysisTrajectory(
+            frames_linear=dbz_to_echo(
+                frames,
+                min_dbz=self.nowcast_config.min_dbz,
+                max_dbz=self.nowcast_config.max_dbz,
+            ),
+            displacement_yx=torch.tensor(
+                (0.0, 2.0),
+                dtype=torch.float64,
+            ),
+            log_growth_per_step=torch.zeros((), dtype=torch.float64),
+        )
+
+        state, motion, growth, dynamics = (
+            variational_module._local_analysis_evidence_supports(
+                trajectory,
+                observations,
+                torch.ones_like(frames[-1]),
+                frozen,
+            )
+        )
+
+        self.assertEqual(float(state[3, 4]), 1.0)
+        self.assertEqual(float(motion[3, 4]), 0.0)
+        self.assertEqual(float(growth[3, 4]), 0.0)
+        self.assertEqual(float(dynamics[3, 4]), 0.0)
+
+    def test_p1_motion_fit_does_not_certify_wrong_growth(self) -> None:
+        frames = torch.full(
+            (3, 7, 9),
+            self.nowcast_config.min_dbz,
+            dtype=torch.float64,
+        )
+        frames[0, 3, 4] = 20.0
+        frames[1, 3, 4] = 20.0
+        frames[2, 3, 4] = 10.0
+        observations, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+        trajectory = variational_module.AnalysisTrajectory(
+            frames_linear=dbz_to_echo(
+                frames,
+                min_dbz=self.nowcast_config.min_dbz,
+                max_dbz=self.nowcast_config.max_dbz,
+            ),
+            displacement_yx=torch.zeros(2, dtype=torch.float64),
+            log_growth_per_step=torch.tensor(0.25, dtype=torch.float64),
+        )
+
+        state, motion, growth, dynamics = (
+            variational_module._local_analysis_evidence_supports(
+                trajectory,
+                observations,
+                torch.ones_like(frames[-1]),
+                frozen,
+            )
+        )
+
+        self.assertEqual(float(state[3, 4]), 1.0)
+        self.assertEqual(float(motion[3, 4]), 1.0)
+        self.assertEqual(float(growth[3, 4]), 0.0)
+        self.assertEqual(float(dynamics[3, 4]), 0.0)
 
     def test_causal_support_back_advects_later_detection(self) -> None:
         detected = torch.zeros((3, 7, 9), dtype=torch.bool)
@@ -3031,6 +3719,22 @@ class VariationalAnalysisTests(unittest.TestCase):
                                 minimum_amplitude_effective_pixel_count=value
                             )
 
+    def test_final_linearization_settings_are_validated(self) -> None:
+        for value in (0.0, -1.0, float("nan"), float("inf")):
+            with self.subTest(relative_stationarity=value):
+                with self.assertRaisesRegex(ValueError, "must be positive"):
+                    AnalysisConfig(
+                        final_linearization_relative_stationarity_tolerance=(
+                            value
+                        )
+                    )
+        for value in (-1, 1.5, True):
+            with self.subTest(polish_iterations=value):
+                with self.assertRaisesRegex(ValueError, "nonnegative integer"):
+                    AnalysisConfig(
+                        maximum_final_linearization_polish_iterations=value
+                    )
+
     def test_amplitude_policy_and_confidence_thresholds_are_validated(
         self,
     ) -> None:
@@ -3159,6 +3863,46 @@ class VariationalAnalysisTests(unittest.TestCase):
                 analysis_config=config,
                 grid_time_contract=contract,
             )
+
+        groups = torch.zeros(frames.shape[-2:], dtype=torch.long)
+        groups[:, frames.shape[-1] // 2 :] = 1
+        physical_nowcast = NowcastConfig(
+            maximum_motion_speed_mps=30.0,
+            pair_echo_dilation_m=1000.0,
+            phase_correlation_sidelobe_radius_m=1000.0,
+        )
+        grouped_config = replace(
+            config,
+            observation_common_bias_std_dbz=1.0,
+        )
+        with self.assertRaisesRegex(ValueError, "requires its digest"):
+            prepare_analysis(
+                frames,
+                nowcast_config=physical_nowcast,
+                analysis_config=grouped_config,
+                observation_common_bias_group_index=groups,
+                grid_time_contract=contract,
+            )
+        group_digest = (
+            variational_module.observation_common_bias_group_map_digest(
+                groups
+            )
+        )
+        grouped_observations, _ = prepare_analysis(
+            frames,
+            nowcast_config=physical_nowcast,
+            analysis_config=replace(
+                grouped_config,
+                observation_common_bias_group_map_digest=group_digest,
+            ),
+            observation_common_bias_group_index=groups,
+            grid_time_contract=contract,
+        )
+        assert grouped_observations.common_bias_group_index is not None
+        self.assertEqual(
+            tensor_digest(grouped_observations.common_bias_group_index),
+            group_digest,
+        )
 
     def test_field_smoothness_weight_must_be_nonnegative(self) -> None:
         for value in (-0.1, float("nan")):

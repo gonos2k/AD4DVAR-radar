@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.30
+# ADVAR 3-frame radar nowcast v0.44
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -159,11 +159,18 @@ pair에 의존했는지를 나타낸다. `background_used`는 두 경로의 논�
 세 관측시각을 함께 분석하려면 다음처럼 사용한다.
 
 ```python
-from advar import variational_nowcast
+from advar import AnalysisConfig, variational_nowcast
 
 forecast, analysis = variational_nowcast(
     frames,
     observation_std_dbz=2.0,
+    analysis_config=AnalysisConfig(
+        # 0.0이면 기존 diagonal-R 계약과 정확히 같다.
+        observation_common_bias_std_dbz=0.5,
+        observation_common_bias_scope="per_frame",
+        # 0은 domain-wide, 양수는 독립 square-tile bias mode다.
+        observation_common_bias_tile_size_px=32,
+    ),
 )
 
 print(analysis.used_fallback)
@@ -171,34 +178,262 @@ print(analysis.initial_objective, analysis.final_objective)
 print(analysis.state.echo_linear)  # 세 장으로 분석된 현재 q(0)
 ```
 
-수용·수렴한 P1 분석은 최종 outer-loop의 IRLS weight, remap cell, active
-control과 관측 분류를 보존한다. 미래 검증장이 도착하면 이 고정 선형화에서
-세 입력시각 전체의 observation FSOI를 matrix-free adjoint로 계산할 수 있다.
+수용·수렴한 P1 분석은 최종 control에서 IRLS weight와 remap cell을 다시
+고정한 뒤, 그 고정 least-squares 모델의 stationarity가 충분해지도록 제한된
+GN polish를 수행한다. polish 뒤에는 기존 amplitude·causal·saturation·objective
+gate를 다시 검사한다. 보존되는 `p1-final-frozen-irls-gn-v6` 선형화에는
+residual norm, gradient norm, 상대 stationarity, polish 횟수와 최종 hard
+feasibility margin이 함께 들어간다.
+관측·분류 mask·최종 IRLS weight·remap cell·prior graph를 포함한 모든 frozen
+입력은 `linearization_digest`에 결합되며, 보존 Tensor는 caller storage와
+분리된 clone이다. 미래 검증장이 도착하면 이 고정 선형화에서 세 입력시각
+전체의 observation 민감도를 matrix-free adjoint로 계산할 수 있다.
 
 ```python
-from advar import SensitivityConfig, compute_variational_fsoi
+from advar import (
+    SensitivityConfig,
+    VerificationBundle,
+    compute_variational_fso,
+)
 
+verification = VerificationBundle(
+    frames_dbz=verification_frames_dbz,
+    valid_mask=verification_qc_mask,
+    valid_times=verification_valid_times,
+    grid_contract_digest=forecast.run.grid_time_contract_digest,
+    radar_product_digest=radar_product_digest,
+    qc_pipeline_digest=qc_pipeline_digest,
+)
+
+fso = compute_variational_fso(
+    forecast,
+    analysis,
+    verification,
+    sensitivity_config=SensitivityConfig(
+        metric_names=("log_echo_mse",),
+        full_map_lead_minutes=(30, 60, 120, 180),
+        require_verification_lineage=True,
+    ),
+)
+
+# [selected_lead, metric, observation_time, H, W]
+print(fso.observation.detected_dbz.maps.shape)
+# censored event의 detection-threshold 민감도
+print(fso.observation.censor_threshold_dbz.maps.shape)
+# detected/censored를 모두 포함한 objective-weight 민감도
+print(fso.observation.observation_weight.maps.shape)
+# 첫 관측이 P1 초기배경으로 들어가는 direct+implicit 민감도
+print(fso.observation.initial_background_dbz.maps.shape)
+# 세 관측이 P0 motion/growth를 만드는 연속 경로(pair/peak 선택 고정)
+print(fso.observation.baseline_dynamics_dbz.maps.shape)
+# residual dBZ, 초기배경, baseline dynamics 경로의 합
+print(fso.observation.frozen_structure_input_dbz.maps.shape)
+# 모든 lead·metric에서 -20/-10/0분별 L2 norm
+print(fso.observation.detected_dbz.norm_by_time.shape)
+# 선형화·검증장·출력 Tensor까지 묶은 결과 identity
+print(fso.linearization_digest, fso.verification_bundle_digest)
+print(fso.variational_fso_digest)
+```
+
+각 metric의 수반계는 P1 최종 frozen IRLS/GN normal operator와 동일한
+matrix-free JVP/VJP로 PCG 풀이한다. PCG 비수렴, P0/degraded 분석, 실행 digest와
+다른 관측오차·quality 입력, 최종 분석상태를 재현하지 못하는 선형화, 또는
+`||J^T r|| / (1 + ||r||)`가
+`AnalysisConfig.final_linearization_relative_stationarity_tolerance`를 넘는
+선형화는 fail-close한다. `maximum_final_linearization_polish_iterations=0`으로
+polish를 끌 수 있지만 이 경우 stationarity를 만족하지 않는 분석에는 수반
+민감도를 제공하지 않는다. 계산하도록 선택한 lead에는 시각별 norm과 tile
+norm을 제공하고, 그중 `SensitivityConfig.full_map_lead_minutes`에는 전체 지도를
+제공한다.
+
+`VerificationBundle`은 검증 dBZ와 QC mask뿐 아니라 각 lead의 정확한 UTC
+valid time, 발행격자 digest, 레이더 product와 QC pipeline identity를 하나의
+content digest로 묶는다. `require_verification_lineage=True`이면 shape만 있는
+legacy Tensor를 거부한다. raw Tensor 입력은 연구 호환용으로 계속 허용하지만
+결과와 M0 원장에 `verification_lineage_complete=False`로 기록되므로 지연 자동
+학습의 완전한 검증자료로 승격할 수 없다.
+
+`compute_variational_fso()`의 `p1-variational-fso-v7` 결과는 영향값이 아니라
+다음 관측 parameter와 frozen 초기배경 경로에 대한 미분이다.
+
+```text
+detected_dbz                 관측잔차를 통한 d(metric) / d(observed dBZ)
+censor_threshold_dbz         d(metric) / d(censor threshold)
+observation_weight           d(metric) / d(objective multiplier alpha), alpha=1
+initial_background_dbz       첫 관측→P1 초기배경의 direct+implicit 경로
+baseline_dynamics_dbz        세 관측→P0 motion/growth의 direct+implicit 경로
+frozen_structure_input_dbz   위 세 dBZ 경로의 합
+```
+
+`initial_background_dbz`는 첫 시각에서 실제 관측이 초기배경을 제공한 화소에만
+존재한다. 이 경로는 metric의 초기배경 직접미분과 frozen GN stationarity를 통한
+제어해의 간접미분을 모두 포함한다. `baseline_dynamics_dbz`는 관측에서 P0
+phase-correlation subpixel displacement와 growth를 거쳐 P1 baseline dynamics로
+들어가는 직접·간접 경로를 포함한다. 이때 observation/background source, pair
+조합, integer FFT peak, support/classification, active control과 remap cell은 nominal
+실행에서 선택된 그대로 고정한다. 따라서 `frozen_structure_input_dbz`는 전체
+preprocessing 총미분이 아니라
+`residual_plus_observation_derived_baseline_with_frozen_selection` 범위의
+piecewise-smooth 민감도다.
+
+`observation_weight` 채널은 detected와 censored 관측을 모두 포함한다. 특정
+관측을 제거하는 국지 perturbation은 `delta_alpha=-1`로 표현한다. 명시적인
+perturbation과 곱한 signed first-order impact가 필요할 때만 별도 FSOI API를
+사용한다.
+
+forecast-error metric의 공간영역은 `SensitivityConfig.metric_domain`으로
+명시한다.
+
+```text
+issued                    finite verification ∩ issued valid mask
+radar_dynamics_anchored   finite verification ∩ radar-dynamics mask
+confidence_weighted       issued domain에 발행 confidence를 frozen weight로 적용
+```
+
+기존 연구결과를 보존하기 위한 기본값은 `issued`다. 자동 observation ranking에는
+`radar_dynamics_anchored`를 명시해야 하며, 이 정책의 강도는 발행 결과의 local
+motion/growth evidence 계약보다 강해질 수 없다. `confidence_weighted`는 미분 중
+confidence를 재계산하지 않고 발행된 값을 상수로 고정한다. 실제 사용 weight의
+digest, lead별 합과 격자면적 대비 유효분율은 FSO 결과에 보존된다.
+
+```python
+from advar import (
+    VariationalObservationPerturbation,
+    compute_variational_fsoi,
+)
+
+perturbation = VariationalObservationPerturbation(
+    detected_dbz=detected_delta_dbz,
+    censor_threshold_dbz=censor_threshold_delta_dbz,
+    observation_weight=observation_weight_delta,
+    # 첫 관측값을 초기배경에서도 함께 바꿀 때만 지정한다.
+    initial_background_dbz=initial_background_delta_dbz,
+    # 같은 입력이 P0 motion/growth에도 들어가는 효과를 포함할 때 지정한다.
+    baseline_dynamics_dbz=baseline_dynamics_delta_dbz,
+)
 fsoi = compute_variational_fsoi(
     forecast,
     analysis,
-    verification_frames_dbz,  # [lead, H, W]
+    verification_frames_dbz,
+    perturbation,
     sensitivity_config=SensitivityConfig(
         metric_names=("log_echo_mse",),
         full_map_lead_minutes=(30, 60, 120, 180),
     ),
 )
 
-# [selected_lead, metric, observation_time, H, W]
-print(fsoi.observation.maps.shape)
-# 모든 lead·metric에서 -20/-10/0분별 L2 norm
-print(fsoi.observation.norm_by_time.shape)
+# component별 signed impact와 합계
+print(fsoi.observation.detected_dbz.maps.shape)
+print(fsoi.observation.initial_background_dbz.maps.shape)
+print(fsoi.observation.baseline_dynamics_dbz.maps.shape)
+print(fsoi.observation.total.sum_by_time.shape)
 ```
 
-각 metric의 수반계는 P1 최종 frozen IRLS/GN normal operator와 동일한
-matrix-free JVP/VJP로 PCG 풀이한다. PCG 비수렴, P0/degraded 분석, 실행 digest와
-다른 관측오차·quality 입력, 또는 최종 분석상태를 재현하지 못하는 선형화는
-fail-close한다. 선택 lead에는 전체 지도를, 모든 lead에는 시각별 norm과 tile
-norm을 제공한다.
+각 impact는 `sensitivity * perturbation`이며 양수는 지정 perturbation에 의해
+forecast-error metric이 1차적으로 증가함을 뜻한다. perturbation Tensor는
+원 관측과 dtype·device·shape가 같고 각 채널의 active mask 밖에서는 정확히
+0이어야 한다. `initial_background_dbz`는 선택사항이며 첫 시각의 accepted
+observation 밖에서는 0이어야 한다. `baseline_dynamics_dbz`도 선택사항이며 accepted
+관측 밖에서는 0이어야 한다. 같은 입력 dBZ perturbation의 모든 frozen-selection
+경로를 평가하려면 해당 위치의 `detected_dbz`, `initial_background_dbz`(첫 시각),
+`baseline_dynamics_dbz`에 같은 delta를 넣는다. `observation_weight`는 새 multiplier가
+음수가 되지 않도록
+`delta_alpha >= -1`을 요구하며, 모든 Tensor와 contract는 perturbation digest에
+결합된다. 이 값은 frozen-GN 국지근사이며 EFSO는 아니다.
+
+대격자 delayed adjoint는 분석 solver 설정과 분리된 실행계약으로 제한한다.
+
+```python
+from advar import VariationalAdjointConfig
+
+fso = compute_variational_fso(
+    forecast,
+    analysis,
+    verification_frames_dbz,
+    sensitivity_config=SensitivityConfig(
+        metric_names=("log_echo_mse",),
+        full_map_lead_minutes=(60, 180),
+    ),
+    adjoint_config=VariationalAdjointConfig(
+        lead_minutes=(60, 180),
+        maximum_normal_products=400,
+        maximum_materialized_output_bytes=512 * 1024**2,
+        warm_start_by_metric=True,
+        gauss_newton_probe_count=4,
+        maximum_gauss_newton_relative_curvature_defect=0.25,
+    ),
+)
+```
+
+`lead_minutes`는 원래 forecast 축에서 실제 수반계를 풀 lead만 고른다. metric별
+직전 lead 해는 다음 PCG의 초기값으로만 사용하며 true residual을 다시 계산한다.
+unit control prior와 field-smoothness graph diagonal preconditioner를 기본으로
+사용한다. normal-product 또는 materialized-output byte 예산을 넘으면 부분 결과를
+반환하지 않고 fail-close한다. `adjoint_iterations`, `adjoint_normal_products`,
+`adjoint_warm_started`, `total_normal_products`로 실제 비용을 감사할 수 있다.
+unit control prior 때문에 normal operator의 최소 고유값은 1 이상이며,
+`adjoint_detected_sensitivity_l2_error_bound`는 true PCG residual에서 유도한
+detected-dBZ sensitivity의 보수적 L2 오차 상한을 기록한다.
+
+동일한 frozen residual objective에 대해 고정-seed unit Rademacher probe마다 exact
+Hessian-vector product와 GN product를 비교한다. `gauss_newton_diagnostics`에는
+probe별 상대 curvature defect, 최댓값, exact/GN product 수와 reliability 판정이
+저장된다. `require_gauss_newton_reliability=True`이면 설정된 최대 defect를 넘는
+분석은 FSO를 발행하지 않는다. probe의 GN product도 전역 normal-product 예산을
+소비한다.
+
+`active_set_margins`는 detection classification, 분석·예측 remap cell, output cap,
+발행 support/confidence 경계까지의 거리를 보존한다. 기본값은
+`low_local_validity` 진단만 발행하고, `require_active_set_margin=True`이면 경계에
+가까운 frozen derivative를 거부한다. 이 margin은 민감도 크기를 보정하는 값이
+아니라 동일 piecewise-smooth 계약이 유지될 국지 유효성 진단이다.
+
+`feasibility_margins`는 최종 분석의 reachability support, 허용 unresolved-amplitude
+fraction까지의 여유, amplitude-confidence gate, motion bound의 정규화 여유와
+물리속도 여유, growth bound까지의 여유를 별도로 보존한다. 이 값은 최종
+linearization digest와 지연 artifact에 결합된다. 기본 연구 설정은
+`low_interior_validity`를 진단으로 남기며,
+`require_feasibility_margin=True`이면 수반계를 풀기 전에 경계에 가까운 분석을
+fail-close한다. 이는 경계해의 KKT 수반계를 근사하지 않는다. 실제 active
+constraint가 있는 분석은 향후 bordered KKT 계약이 구현되기 전까지 자동
+관측순위나 학습 승인에 사용할 수 없다.
+
+실제 artifact의 wall time과 process peak RSS는 다음 도구로 측정한다.
+
+```bash
+python benchmarks/benchmark_variational_fso.py \
+  forecast-run.npz p1-linearization.npz verification.npy \
+  --lead-minutes 60,180 --metrics log_echo_mse \
+  --metric-domain radar_dynamics_anchored --gauss-newton-probes 4 \
+  --max-normal-products 400 --max-output-bytes 536870912
+```
+
+보고되는 `materialized_output_bytes`는 결과 Tensor의 사전 산정량이다. AD tape와
+JVP/VJP workspace까지 포함한 실제 peak memory는 benchmark의 `peak_rss_*`로
+별도 확인해야 한다.
+
+검증장이 도착하기 전에 프로세스가 재시작될 수 있으므로 수용·수렴한 P1의
+최종 선형화는 안전한 NPZ artifact로 보존할 수 있다.
+
+```python
+from advar import load_p1_linearization, save_p1_linearization
+
+save_p1_linearization(analysis, "p1-linearization.npz")
+restarted_analysis = load_p1_linearization("p1-linearization.npz")
+fso = compute_variational_fso(
+    forecast,
+    restarted_analysis,
+    verification_frames_dbz,
+)
+```
+
+`p1-linearization-v4` loader는 pickle을 사용하지 않고 archive 크기·member
+allowlist·각 Tensor digest·전체 artifact digest를 먼저 검사한다. 그 뒤 저장된
+control에서 state와 `J^T r`를 다시 계산한다. algorithm bundle 또는 Python,
+NumPy, PyTorch, backend capability, deterministic-policy로 구성된 numerical
+runtime identity가 달라져도 fail-close한다. 따라서 이 artifact는 임의 환경
+사이의 이식 포맷이 아니라 동일 수치계약에서 3시간 지연 FSO를 재개하는 감사
+포맷이다.
 
 실제 격자에서는 `AnalysisConfig(causal_support_uncertainty_m=...,
 amplitude_displacement_tolerance_m=...)`로 causal envelope와 진폭 위치허용을
@@ -320,8 +555,90 @@ smoothness는 직교 projected grid에만 정의되며, 비직교 affine에서�
 ```text
 detected 또는 censored residual
 → sqrt(quality_weight) / observation_std_dbz
+→ 선택적 additive common-bias covariance whitening
 → 외부 반복에서 고정한 pseudo-Huber IRLS weight
 ```
+
+`observation_common_bias_std_dbz=σ_b`가 양수이면 대각 표준화 뒤의
+additive radar calibration bias를
+
+```text
+C = I + σ_b² a aᵀ,  a = sqrt(quality_weight) / observation_std_dbz
+```
+
+로 모델링하고, `C^{-1/2}`를 rank-one 공식으로 적용한다. dense covariance는
+만들지 않는다. `per_frame`은 세 입력시각마다 독립된 bias mode를,
+`all_times`는 분석창 전체에 지속되는 bias mode를 뜻한다.
+`observation_common_bias_tile_size_px=0`이면 기존처럼 공간 domain 전체가 한
+mode이고, 양수이면 각 square tile이 독립적인 mode가 된다. 격자 크기가 tile
+크기로 나누어지지 않아도 오른쪽·아래쪽 ragged tile을 그대로 사용한다.
+tile과 temporal scope의 조합은 block별 rank-one inverse square root로 계산되어
+dense covariance를 만들지 않는다. 기본 `σ_b=0`, tile size `0`은 기존 residual
+Tensor를 그대로 반환하므로 이전 diagonal-R 결과가 변하지 않는다. 세
+common-bias 설정은 analysis config·forecast run·최종 linearization digest에
+포함된다. P1 FSO의 detected/censored/weight 채널도 같은 비대각 whitening을
+통과한 frozen stationarity의 혼합미분을 사용한다. 운용 P1에서는 bias 크기,
+시간 scope, tile 크기를 calibration profile에 모두 명시해야 한다.
+
+regular tile 대신 실제 레이더·사이트·모자이크 영역을 사용하려면 정수 group
+map을 전달한다. `-1`은 common-bias mode에서 제외되고 0 이상의 같은 label은
+하나의 mode가 된다. label 숫자는 canonical compact partition으로 변환되므로
+임의의 label 재번호화는 같은 digest를 만든다.
+
+```python
+from advar import (
+    AnalysisConfig,
+    observation_common_bias_group_map_digest,
+    variational_nowcast,
+)
+
+group_digest = observation_common_bias_group_map_digest(
+    radar_site_index,
+    temporal_scope="all_times",
+)
+forecast, analysis = variational_nowcast(
+    frames,
+    analysis_config=AnalysisConfig(
+        observation_common_bias_std_dbz=0.5,
+        observation_common_bias_scope="all_times",
+        observation_common_bias_group_map_digest=group_digest,
+    ),
+    observation_common_bias_group_index=radar_site_index,
+)
+```
+
+group map은 `[H,W]` 또는 `[3,H,W]` 정수 Tensor이며 tile mode와 동시에 사용할
+수 없다. 연구모드는 digest를 생략하면 canonical map digest를 자동 결합하지만,
+운용모드는 사전 승인된 `AnalysisConfig`에 정확한 digest가 있어야 한다. map은
+analysis-input·forecast-run·linearization digest와 `p1-linearization-v4`
+artifact에 포함된다. CLI에서는
+`--observation-common-bias-group-map groups.npy`를 사용한다.
+
+레이더 footprint가 겹치거나 seam을 부드럽게 연결해야 하면 `[K,H,W]` 또는
+`[3,K,H,W]` mode-weight Tensor를 사용할 수 있다. 각 weight는 `[0,1]`이고
+화소마다 `sum_k(weight_k**2) <= 1`이어야 하므로 설정된 common-bias 표준편차가
+국지 marginal 상한으로 유지된다. 최대 mode 수는 64다.
+
+```python
+from advar import observation_common_bias_mode_weights_digest
+
+mode_digest = observation_common_bias_mode_weights_digest(mode_weights)
+forecast, analysis = variational_nowcast(
+    frames,
+    analysis_config=AnalysisConfig(
+        observation_common_bias_std_dbz=0.5,
+        observation_common_bias_scope="all_times",
+        observation_common_bias_mode_weights_digest=mode_digest,
+    ),
+    observation_common_bias_mode_weights=mode_weights,
+)
+```
+
+이 경로는 표준화된 mode basis의 작은 `K×K` Gram만 고유분해하여
+`(I + A A.T)^(-1/2)`를 정확히 적용한다. `HW×HW` covariance는 만들지 않는다.
+regular tile·group map·overlapping mode는 서로 배타적이며 mode Tensor와 digest는
+지연 FSO artifact에 보존된다. CLI에서는
+`--observation-common-bias-mode-weights modes.npy`를 사용한다.
 
 잔차벡터에는 표준화된 제어 prior도 그대로 포함한다. 따라서
 Gauss–Newton HVP는 `J.T @ (J @ v)`로 계산되고, LM 증분은 PCG로 푼다.
@@ -407,7 +724,8 @@ PSR·pair 운동/성장 불일치·pair 신뢰도 우위·국지 성장 residual
 support·물리면적,
 임계값, 검증된 상태경로·레이더 관측 support 발행 임계값, 선행시간
 confidence, 배경 기여율, 속도불확실성·위치오차 길이척도와
-`--operational-calibration-manifest`를 요구한다. P1은 여기에 관측오차·amplitude
+`--operational-calibration-manifest`를 요구한다. P1은 여기에 대각 관측오차,
+additive common-bias 크기·시간범위, amplitude
 정보량·적분량·면적·성장, 물리 causal/amplitude 거리, projected m/s 운동증분,
 국지 dBZ·precision, posterior saturation 보정을 추가한다.
 
@@ -424,8 +742,8 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v48`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v40`
+- `output_contract_version`: 현재 `nowcast-npz-v49`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v41`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -478,11 +796,12 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 - `source_support`는 상태가 정의됐는지를,
   `path_verified_source_support`는 국지 에코 위치경로가 검증됐는지를,
   `verified_source_support`는 현재시각의 직접 source evidence를 나타낸다.
-  `local_motion_verified_support`는 실제로 선택된 미래 motion pair의 각
-  과거 source를 최종 운동으로 현재시각까지 다시 정렬했을 때 탐지 에코가
-  물리 footprint 안에서 일치하는지를 요구한다.
-  `local_growth_verified_support`는 실제로 선택된 growth pair마다 같은 정렬을
-  사용해 계산한 국지 log-growth residual이
+  `local_motion_verified_support`는 실제로 선택된 미래 motion pair를 그 pair의
+  관측구간 `(previous_index, current_index)`에서 먼저 검사하고, pair 종료시각의
+  일치 evidence만 선택 운동으로 현재시각까지 수송한다. 따라서 중간시각에서
+  소멸한 에코가 최종시각의 다른 에코와 우연히 만나는 endpoint 일치는 경로를
+  인증하지 않는다. `local_growth_verified_support`도 선택된 growth pair의 실제
+  관측구간에서 계산한 국지 log-growth residual이
   `maximum_local_growth_log_error_per_step` 이내인지를 추가로 요구한다.
   BLENDED 선택은 선택된 모든 pair의 교집합을 사용하고,
   `local_dynamics_verified_support`는 motion·growth 두 support의 교집합이다.
@@ -495,7 +814,11 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
   수용된 P1은 전체 support를 자동 승격하지 않고, 최신 detected 관측의
   precision 하한과 표준화·절대 dBZ 오차 또는 censored 관측의
   precision·detection-limit 조건을 국지적으로 만족한 화소만
-  observation/state verified로 기록한다.
+  observation/state verified로 기록한다. 이 최신 상태 적합도는 P1의
+  motion/growth evidence로 재사용하지 않는다. P1 분석 운동·성장으로 두 인접
+  관측구간을 각각 정렬한 국지 motion/growth evidence를 별도로 계산하며,
+  `radar_dynamics_anchored_valid_mask`는 finite posterior와 이 국지 교집합을
+  모두 요구한다.
   연구모드에서는 예전 persistence를 유지하지만, 운영모드는
   `minimum_publish_verified_support`로 검증되지 않은 경로를 발행에서
   제외한다. `forecast_path_verified_support`,
@@ -802,7 +1125,7 @@ sensitivity snapshot은 실제
 섞이지 않는다. aggregate state path 뒤에는 관측·배경 각각의 pair 수, conflict,
 extrapolation, age, minimum PSR도 별도 context feature로 저장한다. 혼합 상태가
 하나의 path provenance로 축약되지 않으므로 source별 신뢰도를 나중에 다시
-평가할 수 있다. 현재 episode schema는 v16, model-contract hash schema는
+평가할 수 있다. 현재 episode schema는 v17, model-contract hash schema는
 v11이며 기존 schema 1–15를 그대로 검증한다. 과거 episode에
 존재하지 않던 conflict나 selection 값을 임의로 보간하지 않으므로 서로 다른
 context 계약이 같은 학습집합으로 섞이지 않는다.
@@ -823,9 +1146,11 @@ origin state의 비율을 진단한다. 자동 trust는 이 주변비율을 path
 `background_verified_evidence_by_metric`에 별도로 저장하며, 두 검증 채널의
 합은 path evidence와 일치해야 한다. 따라서 공간적으로 분리된 관측 origin과
 검증 evidence가 거짓 nonzero trust를 만들지 않는다. 이 배열과 최종 집계값은
-episode schema v16에 보존된다.
+episode schema v17에 보존된다. 같은 manifest에는 verification contract와
+content digest가 항상 저장되며, 완전한 `VerificationBundle`을 사용한 경우
+valid time·grid·radar product·QC pipeline digest도 함께 보존된다.
 
-### M0와 P1 FSOI의 엄밀한 경계
+### M0와 P1 FSO·FSOI의 엄밀한 경계
 
 현재 이동·성장 추정은 FFT peak의 이산 선택을 포함한다. 따라서 M0가
 계산하는 관측 민감도는 최신 영상이 예측 초기장으로 들어가는
@@ -835,13 +1160,20 @@ episode schema v16에 보존된다.
 - `-20분`, `-10분`: 직접 예측 경로 없음
 - `0분`: 고정된 `(dy, dx, log_growth)`에서 직접 dBZ 민감도 제공
 - 분석을 통한 간접 민감도: P0 M0에는 포함하지 않음
-- P1 전체 관측 민감도: 별도 `VariationalFSOI` 계약으로 세 시각 모두 제공
+- P1 frozen-final 관측 민감도 FSO: `VariationalFSO`로 세 시각 모두 제공
+- P1 signed 관측영향 FSOI: 명시적인 `VariationalObservationPerturbation`이
+  있을 때만 제공
 - 자동 일반화 기억 승격: 비활성
 
 이 구분은 M0 manifest와 SQLite에 명시된다. 간접 민감도를 0으로 저장해
-“효과 없음”으로 오해하게 만들지 않는다. P1 `VariationalFSOI`는 최종
-IRLS weight, active set, remap cell, observation classification과 baseline을
-고정한 국지 implicit sensitivity다. outer-loop 선택 자체의 변화, EFSO,
-검증된 baseline-normalized reward와 자동학습 승격은 아직 포함하지 않는다.
-P1 FSOI는 현재 in-memory 결과계약이며 M0 episode ledger에 저장하지 않는다.
+“효과 없음”으로 오해하게 만들지 않는다. P1 `VariationalFSO`는 detected dBZ,
+censor threshold와 observation objective weight의 frozen-final 국지 implicit
+sensitivity를 분리한다. `VariationalFSOI`는 이 민감도에 digest-bound 명시적
+perturbation을 곱한 signed first-order impact다. 두 계산 모두 최종 IRLS
+weight, active set, remap cell, observation classification과 baseline을 고정하며,
+재계산한 상대 stationarity가 설정 임계값 이하여야 한다. outer-loop 선택
+자체의 변화, EFSO, 검증된 baseline-normalized reward와 자동학습 승격은 아직
+포함하지 않는다. P1 FSO·FSOI 결과 자체는 M0 episode ledger에 저장하지 않지만,
+3시간 지연 재계산에 필요한 frozen linearization은 content-addressed
+`p1-linearization-v4` artifact로 안전하게 보존·재적재할 수 있다.
 P1 분석상태는 기존 M0 직접민감도 API에서 계속 provenance 검사로 거부된다.

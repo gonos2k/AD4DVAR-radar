@@ -1896,9 +1896,14 @@ class ForecastResult:
     @property
     def radar_dynamics_anchored_valid_mask(self) -> Tensor:
         if self.metadata.dynamics_source is DynamicsSource.P1_VARIATIONAL:
-            if _p1_posterior_is_available(self.metadata):
-                return self.radar_state_anchored_valid_mask
-            return torch.zeros_like(self.valid_mask)
+            if not _p1_posterior_is_available(self.metadata):
+                return torch.zeros_like(self.valid_mask)
+            threshold = self.run.config.minimum_publish_verified_support
+            if threshold is None:
+                threshold = self.run.config.support_presence_threshold
+            return self.radar_state_anchored_valid_mask & (
+                self.forecast_local_dynamics_verified_support >= threshold
+            )
         if (
             self.metadata.tendency_source is not TendencySource.OBSERVATION
             or self.metadata.motion_pair_count == 0
@@ -4018,8 +4023,10 @@ def _estimate_available_pair(
         current_dbz - config.echo_threshold_dbz
     ).clamp_min(0.0)
     if (
-        float(torch.linalg.vector_norm(previous_signal)) <= config.epsilon
-        or float(torch.linalg.vector_norm(current_signal)) <= config.epsilon
+        float(torch.linalg.vector_norm(previous_signal).detach())
+        <= config.epsilon
+        or float(torch.linalg.vector_norm(current_signal).detach())
+        <= config.epsilon
     ):
         return None
 
@@ -4312,6 +4319,32 @@ def _selected_component_local_evidence(
     config: NowcastConfig,
     grid_time_contract: RadarGridTimeContract | None,
 ) -> tuple[Tensor, Tensor]:
+    return _local_component_evidence_from_pair_spans(
+        linear,
+        masks,
+        tendency.displacement_yx,
+        tendency.log_growth_per_step,
+        tendency.motion_pair_spans,
+        tendency.growth_pair_spans,
+        current_echo,
+        state_verified_support,
+        config,
+        grid_time_contract,
+    )
+
+
+def _local_component_evidence_from_pair_spans(
+    linear: Tensor,
+    masks: Tensor,
+    displacement_yx: Tensor,
+    log_growth_per_step: Tensor,
+    motion_pair_spans: tuple[tuple[int, int], ...],
+    growth_pair_spans: tuple[tuple[int, int], ...],
+    current_echo: Tensor,
+    state_verified_support: Tensor,
+    config: NowcastConfig,
+    grid_time_contract: RadarGridTimeContract | None,
+) -> tuple[Tensor, Tensor]:
     echo_threshold = dbz_to_echo(
         current_echo.new_tensor(config.echo_threshold_dbz),
         min_dbz=config.min_dbz,
@@ -4325,11 +4358,12 @@ def _selected_component_local_evidence(
         config,
         grid_time_contract,
     )
-    motion_matches = _selected_pair_local_matches(
+    motion_matches = _pair_interval_local_matches(
         linear,
         masks,
-        tendency,
-        tendency.motion_pair_spans,
+        displacement_yx,
+        log_growth_per_step,
+        motion_pair_spans,
         current_echo,
         detected,
         offsets,
@@ -4337,11 +4371,12 @@ def _selected_component_local_evidence(
         grid_time_contract,
         check_growth=False,
     )
-    growth_matches = _selected_pair_local_matches(
+    growth_matches = _pair_interval_local_matches(
         linear,
         masks,
-        tendency,
-        tendency.growth_pair_spans,
+        displacement_yx,
+        log_growth_per_step,
+        growth_pair_spans,
         current_echo,
         detected,
         offsets,
@@ -4363,10 +4398,11 @@ def _selected_component_local_evidence(
     )
 
 
-def _selected_pair_local_matches(
+def _pair_interval_local_matches(
     linear: Tensor,
     masks: Tensor,
-    tendency: _SourceTendencyEstimate,
+    displacement_yx: Tensor,
+    log_growth_per_step: Tensor,
     pair_spans: tuple[tuple[int, int], ...],
     current_echo: Tensor,
     current_detected: Tensor,
@@ -4377,17 +4413,24 @@ def _selected_pair_local_matches(
     check_growth: bool,
 ) -> Tensor:
     if not pair_spans:
-        return torch.zeros_like(current_detected)
-    matches = current_detected.clone()
-    for previous_index, _ in pair_spans:
-        step_span = 2 - previous_index
-        motion = tendency.displacement_yx
+        return torch.zeros_like(current_echo)
+    matches = current_detected.to(dtype=current_echo.dtype)
+    echo_threshold = dbz_to_echo(
+        current_echo.new_tensor(config.echo_threshold_dbz),
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
+    )
+    for previous_index, current_index in pair_spans:
+        if not (0 <= previous_index < current_index <= 2):
+            raise ValueError("pair spans must be ordered analysis-frame indices")
+        step_span = current_index - previous_index
+        motion = displacement_yx
         candidate_value, candidate_support = _transport_source_candidate(
             linear[previous_index],
             masks[previous_index],
             step_span * motion,
             motion.expand(step_span, 2),
-            tendency.log_growth_per_step.new_zeros(()),
+            log_growth_per_step.new_zeros(()),
             config,
         )
         candidate_echo = torch.where(
@@ -4395,29 +4438,41 @@ def _selected_pair_local_matches(
             candidate_value / candidate_support.clamp_min(config.epsilon),
             torch.zeros_like(candidate_value),
         )
-        echo_threshold = dbz_to_echo(
-            candidate_echo.new_tensor(config.echo_threshold_dbz),
-            min_dbz=config.min_dbz,
-            max_dbz=config.max_dbz,
-        )
         candidate_detected = (
             candidate_support > config.support_presence_threshold
         ) & (candidate_echo >= echo_threshold)
-        pair_matches = _exclusive_local_current_matches(
+        pair_current_echo = linear[current_index]
+        pair_current_detected = masks[current_index] & (
+            pair_current_echo >= echo_threshold
+        )
+        pair_matches_at_endpoint = _exclusive_local_current_matches(
             candidate_echo,
             candidate_support,
-            current_echo,
+            pair_current_echo,
             candidate_detected,
-            current_detected,
+            pair_current_detected,
             offsets,
             grid_time_contract,
             config,
             expected_growth_per_step=(
-                tendency.log_growth_per_step if check_growth else None
+                log_growth_per_step if check_growth else None
             ),
             step_span=step_span,
         )
-        matches &= pair_matches
+        pair_matches_at_current = pair_matches_at_endpoint.to(
+            dtype=current_echo.dtype
+        )
+        for _ in range(2 - current_index):
+            pair_matches_at_current = remap(
+                pair_matches_at_current,
+                motion,
+            ).clamp(0.0, 1.0)
+        pair_matches_at_current = torch.where(
+            current_detected,
+            pair_matches_at_current,
+            torch.zeros_like(pair_matches_at_current),
+        )
+        matches = torch.minimum(matches, pair_matches_at_current)
     return matches
 
 
@@ -5628,14 +5683,22 @@ def _phase_correlation_shift_and_psr(
     offset_y = _parabolic_peak_offset(correlation[:, peak_x], peak_y, config)
     offset_x = _parabolic_peak_offset(correlation[peak_y, :], peak_x, config)
 
-    shift_y = peak_y + offset_y
-    shift_x = peak_x + offset_x
-    if shift_y > correlation_height / 2:
-        shift_y -= correlation_height
-    if shift_x > correlation_width / 2:
-        shift_x -= correlation_width
-
-    shift = correlation.new_tensor((shift_y, shift_x))
+    base_shift_y = (
+        peak_y - correlation_height
+        if peak_y > correlation_height / 2
+        else peak_y
+    )
+    base_shift_x = (
+        peak_x - correlation_width
+        if peak_x > correlation_width / 2
+        else peak_x
+    )
+    shift = torch.stack(
+        (
+            correlation.new_tensor(float(base_shift_y)) + offset_y,
+            correlation.new_tensor(float(base_shift_x)) + offset_x,
+        )
+    )
     peak_shift_y = peak_y
     peak_shift_x = peak_x
     if peak_shift_y > correlation_height / 2:
@@ -5737,12 +5800,12 @@ def _parabolic_peak_offset(
     values: Tensor,
     peak: int,
     config: NowcastConfig,
-) -> float:
+) -> Tensor:
     left = values[(peak - 1) % values.numel()]
     center = values[peak]
     right = values[(peak + 1) % values.numel()]
     denominator = left - 2.0 * center + right
     if abs(float(denominator.detach())) <= config.epsilon:
-        return 0.0
+        return denominator.new_zeros(())
     offset = 0.5 * (left - right) / denominator
-    return float(offset.clamp(-0.5, 0.5).detach())
+    return offset.clamp(-0.5, 0.5)
