@@ -181,7 +181,7 @@ print(analysis.state.echo_linear)  # 세 장으로 분석된 현재 q(0)
 수용·수렴한 P1 분석은 최종 control에서 IRLS weight와 remap cell을 다시
 고정한 뒤, 그 고정 least-squares 모델의 stationarity가 충분해지도록 제한된
 GN polish를 수행한다. polish 뒤에는 기존 amplitude·causal·saturation·objective
-gate를 다시 검사한다. 보존되는 `p1-final-frozen-irls-gn-v6` 선형화에는
+gate를 다시 검사한다. 보존되는 `p1-final-frozen-irls-gn-v7` 선형화에는
 residual norm, gradient norm, 상대 stationarity, polish 횟수와 최종 hard
 feasibility margin이 함께 들어간다.
 관측·분류 mask·최종 IRLS weight·remap cell·prior graph를 포함한 모든 frozen
@@ -253,7 +253,7 @@ legacy Tensor를 거부한다. raw Tensor 입력은 연구 호환용으로 계�
 결과와 M0 원장에 `verification_lineage_complete=False`로 기록되므로 지연 자동
 학습의 완전한 검증자료로 승격할 수 없다.
 
-`compute_variational_fso()`의 `p1-variational-fso-v7` 결과는 영향값이 아니라
+`compute_variational_fso()`의 `p1-variational-fso-v8` 결과는 영향값이 아니라
 다음 관측 parameter와 frozen 초기배경 경로에 대한 미분이다.
 
 ```text
@@ -276,9 +276,11 @@ preprocessing 총미분이 아니라
 `residual_plus_observation_derived_baseline_with_frozen_selection` 범위의
 piecewise-smooth 민감도다.
 
-`observation_weight` 채널은 detected와 censored 관측을 모두 포함한다. 특정
-관측을 제거하는 국지 perturbation은 `delta_alpha=-1`로 표현한다. 명시적인
-perturbation과 곱한 signed first-order impact가 필요할 때만 별도 FSOI API를
+`observation_weight` 채널은 detected와 censored 관측을 모두 포함한다. FSOI는
+작은 국지 perturbation만 허용하며 기본 한계는 dBZ 계열 0.5 dBZ, weight 0.1이다.
+`delta_alpha=-1`인 완전 관측 제거는 active structure와 공분산을 바꿀 수 있으므로
+이 1차 계약에서 거부하며, 실제 제거 영향을 구하려면 관측을 제외하고 다시 풀어야
+한다. 명시적인 perturbation과 곱한 signed first-order impact가 필요할 때만 FSOI API를
 사용한다.
 
 forecast-error metric의 공간영역은 `SensitivityConfig.metric_domain`으로
@@ -371,9 +373,15 @@ unit control prior와 field-smoothness graph diagonal preconditioner를 기본�
 사용한다. normal-product 또는 materialized-output byte 예산을 넘으면 부분 결과를
 반환하지 않고 fail-close한다. `adjoint_iterations`, `adjoint_normal_products`,
 `adjoint_warm_started`, `total_normal_products`로 실제 비용을 감사할 수 있다.
-unit control prior 때문에 normal operator의 최소 고유값은 1 이상이며,
-`adjoint_detected_sensitivity_l2_error_bound`는 true PCG residual에서 유도한
-detected-dBZ sensitivity의 보수적 L2 오차 상한을 기록한다.
+`adjoint_true_residual_norm`은 PCG 종료 후 다시 계산한 수반계 residual의 L2 norm을
+기록한다. 이 값은 수반해의 수치 잔차이며, `B H^-1` 연산자 norm을 포함하지 않으므로
+민감도 지도의 L2 오차상한으로 해석하지 않는다.
+
+`baseline_dynamics_dbz`는 FFT peak와 pair 선택을 고정한 연구용 채널이다. 현재
+branch 경계까지의 완전한 margin은 보존하지 않으므로 결과의
+`baseline_dynamics_branch_valid`는 이 경로가 존재할 때 `False`다.
+`require_baseline_dynamics_branch_validity=True`이면 해당 채널을 포함한 계산을
+fail-close한다.
 
 동일한 frozen residual objective에 대해 고정-seed unit Rademacher probe마다 exact
 Hessian-vector product와 GN product를 비교한다. `gauss_newton_diagnostics`에는
@@ -427,7 +435,7 @@ fso = compute_variational_fso(
 )
 ```
 
-`p1-linearization-v4` loader는 pickle을 사용하지 않고 archive 크기·member
+`p1-linearization-v5` loader는 pickle을 사용하지 않고 archive 크기·member
 allowlist·각 Tensor digest·전체 artifact digest를 먼저 검사한다. 그 뒤 저장된
 control에서 state와 `J^T r`를 다시 계산한다. algorithm bundle 또는 Python,
 NumPy, PyTorch, backend capability, deterministic-policy로 구성된 numerical
@@ -610,7 +618,7 @@ forecast, analysis = variational_nowcast(
 group map은 `[H,W]` 또는 `[3,H,W]` 정수 Tensor이며 tile mode와 동시에 사용할
 수 없다. 연구모드는 digest를 생략하면 canonical map digest를 자동 결합하지만,
 운용모드는 사전 승인된 `AnalysisConfig`에 정확한 digest가 있어야 한다. map은
-analysis-input·forecast-run·linearization digest와 `p1-linearization-v4`
+analysis-input·forecast-run·linearization digest와 `p1-linearization-v5`
 artifact에 포함된다. CLI에서는
 `--observation-common-bias-group-map groups.npy`를 사용한다.
 
@@ -1175,5 +1183,5 @@ weight, active set, remap cell, observation classification과 baseline을 고정
 자체의 변화, EFSO, 검증된 baseline-normalized reward와 자동학습 승격은 아직
 포함하지 않는다. P1 FSO·FSOI 결과 자체는 M0 episode ledger에 저장하지 않지만,
 3시간 지연 재계산에 필요한 frozen linearization은 content-addressed
-`p1-linearization-v4` artifact로 안전하게 보존·재적재할 수 있다.
+`p1-linearization-v5` artifact로 안전하게 보존·재적재할 수 있다.
 P1 분석상태는 기존 M0 직접민감도 API에서 계속 provenance 검사로 거부된다.

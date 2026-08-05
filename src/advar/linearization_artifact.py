@@ -48,7 +48,7 @@ from .variational import (
 )
 
 
-P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v4"
+P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v5"
 DEFAULT_MAXIMUM_MEMBER_COUNT = 96
 DEFAULT_MAXIMUM_MEMBER_BYTES = 2 * 1024**3
 DEFAULT_MAXIMUM_TOTAL_EXPANDED_BYTES = 8 * 1024**3
@@ -367,6 +367,14 @@ def save_p1_linearization(
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary_name, output)
+        directory_descriptor = os.open(
+            output.parent,
+            os.O_RDONLY | getattr(os, "O_DIRECTORY", 0),
+        )
+        try:
+            os.fsync(directory_descriptor)
+        finally:
+            os.close(directory_descriptor)
     except BaseException:
         try:
             os.unlink(temporary_name)

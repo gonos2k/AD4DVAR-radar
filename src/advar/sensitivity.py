@@ -373,6 +373,11 @@ class VariationalAdjointConfig:
     gauss_newton_probe_seed: int = 0
     maximum_gauss_newton_relative_curvature_defect: float = 0.25
     require_gauss_newton_reliability: bool = False
+    maximum_detected_delta_dbz: float = 0.5
+    maximum_censor_delta_dbz: float = 0.5
+    maximum_observation_weight_delta: float = 0.1
+    maximum_background_delta_dbz: float = 0.5
+    require_baseline_dynamics_branch_validity: bool = False
 
     def __post_init__(self) -> None:
         if self.lead_minutes is not None:
@@ -466,6 +471,23 @@ class VariationalAdjointConfig:
             )
         if type(self.require_gauss_newton_reliability) is not bool:
             raise TypeError("require_gauss_newton_reliability must be Boolean")
+        if type(self.require_baseline_dynamics_branch_validity) is not bool:
+            raise TypeError(
+                "require_baseline_dynamics_branch_validity must be Boolean"
+            )
+        perturbation_limits = (
+            self.maximum_detected_delta_dbz,
+            self.maximum_censor_delta_dbz,
+            self.maximum_observation_weight_delta,
+            self.maximum_background_delta_dbz,
+        )
+        if any(
+            isinstance(value, bool)
+            or not math.isfinite(value)
+            or value <= 0.0
+            for value in perturbation_limits
+        ):
+            raise ValueError("local FSOI perturbation limits must be positive")
 
     @property
     def digest(self) -> str:
@@ -613,6 +635,7 @@ class VariationalFSO:
     sensitivity_scope: str
     baseline_dynamics_frozen: bool
     baseline_pair_selection_frozen: bool
+    baseline_dynamics_branch_valid: bool
     metric_names: tuple[str, ...]
     metric_domain: FSOMetricDomain
     metric_domain_digest: str
@@ -627,7 +650,7 @@ class VariationalFSO:
     observation: VariationalObservationSensitivity
     adjoint_iterations: Tensor
     adjoint_relative_residual: Tensor
-    adjoint_detected_sensitivity_l2_error_bound: Tensor
+    adjoint_true_residual_norm: Tensor
     adjoint_normal_products: Tensor
     adjoint_warm_started: Tensor
     total_normal_products: int
@@ -648,8 +671,8 @@ class VariationalObservationPerturbation:
     perturbs the accepted first-frame values used by the P1 initial
     background, while optional ``baseline_dynamics_dbz`` perturbs the input
     dBZ values that generated continuous P0 motion/growth under the retained
-    pair/peak selection. An observation-removal perturbation therefore uses
-    -1 in the weight channel.
+    pair/peak selection. All channels are local perturbations; full observation
+    removal requires a separate re-solve rather than this first-order contract.
     """
 
     detected_dbz: Tensor
@@ -657,7 +680,7 @@ class VariationalObservationPerturbation:
     observation_weight: Tensor
     initial_background_dbz: Tensor | None = None
     baseline_dynamics_dbz: Tensor | None = None
-    contract: str = "p1-observation-perturbation-v3"
+    contract: str = "p1-observation-perturbation-v4"
 
     @property
     def digest(self) -> str:
@@ -739,7 +762,7 @@ class _VariationalAdjointSolve:
     solution: Tensor
     iterations: int
     relative_residual: float
-    detected_sensitivity_l2_error_bound: float
+    true_residual_norm: float
     normal_products: int
     warm_started: bool
 
@@ -1269,7 +1292,7 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
 
     return json_digest(
         {
-            "version": "p1-variational-fso-digest-v7",
+            "version": "p1-variational-fso-digest-v8",
             "contract": fso.contract,
             "forecast_run_digest": fso.forecast_run_digest,
             "analysis_input_digest": fso.analysis_input_digest,
@@ -1303,6 +1326,9 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
             "baseline_dynamics_frozen": fso.baseline_dynamics_frozen,
             "baseline_pair_selection_frozen": (
                 fso.baseline_pair_selection_frozen
+            ),
+            "baseline_dynamics_branch_valid": (
+                fso.baseline_dynamics_branch_valid
             ),
             "metric_names": list(fso.metric_names),
             "metric_domain": fso.metric_domain,
@@ -1353,8 +1379,8 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
             "adjoint_relative_residual": tensor_digest(
                 fso.adjoint_relative_residual
             ),
-            "adjoint_detected_sensitivity_l2_error_bound": tensor_digest(
-                fso.adjoint_detected_sensitivity_l2_error_bound
+            "adjoint_true_residual_norm": tensor_digest(
+                fso.adjoint_true_residual_norm
             ),
             "adjoint_normal_products": tensor_digest(
                 fso.adjoint_normal_products
@@ -1435,7 +1461,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 
     return json_digest(
         {
-            "version": "p1-variational-fsoi-digest-v4",
+            "version": "p1-variational-fsoi-digest-v5",
             "contract": fsoi.contract,
             "variational_fso_digest": fsoi.fso.variational_fso_digest,
             "perturbation_contract": fsoi.perturbation_contract,
@@ -1471,7 +1497,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 def validate_variational_fso(fso: VariationalFSO) -> None:
     """Reject any mutation of a content-addressed FSO result."""
 
-    if fso.contract != "p1-variational-fso-v7":
+    if fso.contract != "p1-variational-fso-v8":
         raise ValueError("unsupported P1 FSO contract")
     if (
         fso.sensitivity_scope
@@ -1496,7 +1522,7 @@ def validate_variational_fso(fso: VariationalFSO) -> None:
 def validate_variational_fsoi(fsoi: VariationalFSOI) -> None:
     """Reject any mutation or cross-binding in a P1 impact result."""
 
-    if fsoi.contract != "p1-linearized-observation-impact-v4":
+    if fsoi.contract != "p1-linearized-observation-impact-v5":
         raise ValueError("unsupported P1 FSOI contract")
     validate_variational_fso(fsoi.fso)
     if fsoi.perturbation.digest != fsoi.perturbation_digest:
@@ -2197,7 +2223,7 @@ def compute_variational_fsoi(
     if observation_impact is None:
         raise RuntimeError("variational FSOI impact was not materialized")
     fsoi = VariationalFSOI(
-        contract="p1-linearized-observation-impact-v4",
+        contract="p1-linearized-observation-impact-v5",
         fso=fso,
         perturbation=observation_perturbation,
         perturbation_contract=observation_perturbation.contract,
@@ -2267,6 +2293,7 @@ def _compute_variational_products(
             observation_perturbation,
             observations,
             frozen,
+            adjoint_config,
         )
     _validate_inputs(
         observations.dbz[-1],
@@ -2394,7 +2421,7 @@ def _compute_variational_products(
         score_shape,
         float("nan"),
     )
-    adjoint_detected_sensitivity_l2_error_bound = control.new_full(
+    adjoint_true_residual_norm = control.new_full(
         score_shape,
         float("nan"),
     )
@@ -2463,6 +2490,14 @@ def _compute_variational_products(
         observations,
         frozen,
     )
+    baseline_dynamics_branch_valid = baseline_dynamics_path is None
+    if (
+        adjoint_config.require_baseline_dynamics_branch_validity
+        and not baseline_dynamics_branch_valid
+    ):
+        raise ValueError(
+            "P1 FSO baseline dynamics branch margins are unavailable"
+        )
     normal_product_budget = _NormalProductBudget(
         maximum=adjoint_config.maximum_normal_products
     )
@@ -2707,10 +2742,10 @@ def _compute_variational_products(
             adjoint_relative_residual[lead_index, metric_index] = (
                 adjoint_solve.relative_residual
             )
-            adjoint_detected_sensitivity_l2_error_bound[
+            adjoint_true_residual_norm[
                 lead_index,
                 metric_index,
-            ] = adjoint_solve.detected_sensitivity_l2_error_bound
+            ] = adjoint_solve.true_residual_norm
             adjoint_normal_products[lead_index, metric_index] = (
                 adjoint_solve.normal_products
             )
@@ -2826,7 +2861,7 @@ def _compute_variational_products(
         raise ValueError("P1 FSO active-set margin is below its requirement")
 
     fso = VariationalFSO(
-        contract="p1-variational-fso-v7",
+        contract="p1-variational-fso-v8",
         forecast_run_digest=result.forecast_run_digest,
         analysis_input_digest=cast(str, result.run.analysis_input_digest),
         sensitivity_config_digest=sensitivity_config.digest,
@@ -2857,6 +2892,7 @@ def _compute_variational_products(
         ),
         baseline_dynamics_frozen=False,
         baseline_pair_selection_frozen=True,
+        baseline_dynamics_branch_valid=baseline_dynamics_branch_valid,
         metric_names=sensitivity_config.metric_names,
         metric_domain=sensitivity_config.metric_domain,
         metric_domain_digest=metric_domain_digest,
@@ -2884,9 +2920,7 @@ def _compute_variational_products(
         ),
         adjoint_iterations=adjoint_iterations,
         adjoint_relative_residual=adjoint_relative_residual,
-        adjoint_detected_sensitivity_l2_error_bound=(
-            adjoint_detected_sensitivity_l2_error_bound
-        ),
+        adjoint_true_residual_norm=adjoint_true_residual_norm,
         adjoint_normal_products=adjoint_normal_products,
         adjoint_warm_started=adjoint_warm_started,
         total_normal_products=normal_product_budget.used,
@@ -3033,9 +3067,7 @@ def _variational_observation_adjoint(
     ):
         raise ValueError("P1 FSO adjoint solve did not converge")
     rhs_norm = float(torch.linalg.vector_norm(rhs.detach()).cpu())
-    detected_sensitivity_l2_error_bound = (
-        adjoint.relative_residual * rhs_norm
-    )
+    true_residual_norm = adjoint.relative_residual * rhs_norm
 
     jacobian_adjoint = cast(
         Tensor,
@@ -3076,9 +3108,7 @@ def _variational_observation_adjoint(
         solution=adjoint.solution.detach(),
         iterations=adjoint.iterations,
         relative_residual=adjoint.relative_residual,
-        detected_sensitivity_l2_error_bound=(
-            detected_sensitivity_l2_error_bound
-        ),
+        true_residual_norm=true_residual_norm,
         normal_products=budget.used - products_before,
         warm_started=initial is not None,
     )
@@ -3411,8 +3441,9 @@ def _validate_variational_observation_perturbation(
     perturbation: VariationalObservationPerturbation,
     observations: AnalysisObservations,
     frozen: FrozenOuterState,
+    config: VariationalAdjointConfig,
 ) -> None:
-    if perturbation.contract != "p1-observation-perturbation-v3":
+    if perturbation.contract != "p1-observation-perturbation-v4":
         raise ValueError("unsupported P1 observation perturbation contract")
     channels = (
         (
@@ -3446,11 +3477,21 @@ def _validate_variational_observation_perturbation(
             raise ValueError(
                 f"{name} perturbation must be zero outside its active mask"
             )
-    if bool(torch.any(perturbation.observation_weight < -1.0)):
-        raise ValueError(
-            "observation_weight perturbation cannot make the objective "
-            "multiplier negative"
-        )
+    _require_local_perturbation(
+        "detected_dbz",
+        perturbation.detected_dbz,
+        config.maximum_detected_delta_dbz,
+    )
+    _require_local_perturbation(
+        "censor_threshold_dbz",
+        perturbation.censor_threshold_dbz,
+        config.maximum_censor_delta_dbz,
+    )
+    _require_local_perturbation(
+        "observation_weight",
+        perturbation.observation_weight,
+        config.maximum_observation_weight_delta,
+    )
     if perturbation.initial_background_dbz is not None:
         values = perturbation.initial_background_dbz
         if not isinstance(values, Tensor):
@@ -3508,6 +3549,27 @@ def _validate_variational_observation_perturbation(
                 "baseline_dynamics_dbz perturbation must be zero outside "
                 "accepted observations"
             )
+    for name, values in (
+        ("initial_background_dbz", perturbation.initial_background_dbz),
+        ("baseline_dynamics_dbz", perturbation.baseline_dynamics_dbz),
+    ):
+        if values is not None:
+            _require_local_perturbation(
+                name,
+                values,
+                config.maximum_background_delta_dbz,
+            )
+
+
+def _require_local_perturbation(
+    name: str,
+    values: Tensor,
+    maximum_absolute_value: float,
+) -> None:
+    if bool(torch.any(torch.abs(values) > maximum_absolute_value)):
+        raise ValueError(
+            f"{name} perturbation exceeds the local first-order limit"
+        )
 
 
 def _initial_background_perturbation(
@@ -3993,16 +4055,21 @@ def _soft_fss_error(
         stride=1,
         padding=padding,
     )[0, 0] / denominator
-    local_mask = local_valid > 0.0
-    numerator = _masked_mean(
+    numerator = _weighted_mean(
         (forecast_fraction - truth_fraction).square(),
-        local_mask,
+        local_valid,
+        sensitivity_config.epsilon,
     )
-    reference = _masked_mean(
+    reference = _weighted_mean(
         forecast_fraction.square() + truth_fraction.square(),
-        local_mask,
+        local_valid,
+        sensitivity_config.epsilon,
     )
     return numerator / (reference + sensitivity_config.epsilon)
+
+
+def _weighted_mean(values: Tensor, weights: Tensor, epsilon: float) -> Tensor:
+    return torch.sum(values * weights) / torch.sum(weights).clamp_min(epsilon)
 
 
 def _soft_centroid(echo: Tensor, valid: Tensor) -> Tensor:
