@@ -413,6 +413,10 @@ class CliTests(unittest.TestCase):
             "analysis_converged",
             "analysis_outer_converged",
             "analysis_final_linearization_stationary",
+            "analysis_final_robust_stationary",
+            "analysis_final_irls_fixed_point",
+            "analysis_p1_forecast_eligible",
+            "analysis_posterior_eligible",
             "analysis_fso_eligible",
             "analysis_degraded",
             "analysis_used_fallback",
@@ -431,11 +435,11 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v50",
+                    "nowcast-npz-v51",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
-                    "forecast-run-v41",
+                    "forecast-run-v42",
                 )
                 self.assertEqual(result["data_status"].item(), "OBSERVED")
                 self.assertEqual(result["forecast_dbz"].shape, (18, 8, 8))

@@ -136,8 +136,8 @@ def main() -> None:
         "adjoint_relative_residual": (
             result.adjoint_relative_residual.cpu().tolist()
         ),
-        "adjoint_detected_sensitivity_l2_error_bound": (
-            result.adjoint_detected_sensitivity_l2_error_bound.cpu().tolist()
+        "adjoint_true_residual_norm": (
+            result.adjoint_true_residual_norm.cpu().tolist()
         ),
         "adjoint_warm_started": result.adjoint_warm_started.cpu().tolist(),
         "low_local_validity": result.active_set_margins.low_local_validity,

@@ -72,6 +72,7 @@ def linear_to_dbz(
 class VariationalAnalysisTests(unittest.TestCase):
     nowcast_config = NowcastConfig()
     analysis_config = AnalysisConfig(
+        censored_background_policy="detection_limit",
         maximum_outer_iterations=5,
         maximum_pcg_iterations=50,
         pcg_relative_tolerance=1.0e-7,
@@ -105,6 +106,20 @@ class VariationalAnalysisTests(unittest.TestCase):
             high_frozen.initial_background_dbz,
         )
 
+    def test_default_censored_background_uses_clear_sky_floor(self) -> None:
+        frames = torch.full((3, 4, 5), 4.9, dtype=torch.float64)
+        frames[:, 1, 2] = 20.0
+
+        _, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=AnalysisConfig(),
+        )
+
+        expected = torch.full_like(frames[0], self.nowcast_config.min_dbz)
+        expected[1, 2] = 20.0
+        torch.testing.assert_close(frozen.initial_background_dbz, expected)
+
     def test_external_censored_background_requires_complete_coverage(
         self,
     ) -> None:
@@ -128,6 +143,22 @@ class VariationalAnalysisTests(unittest.TestCase):
             background_age_minutes=0.0,
         )
         torch.testing.assert_close(frozen.initial_background_dbz, background[0])
+
+        high_background = torch.full_like(frames, 20.0)
+        _, capped = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=config,
+            background_frames_dbz=high_background,
+            background_age_minutes=0.0,
+        )
+        detection_limit = torch.full_like(
+            capped.initial_background_dbz,
+            config.detection_limit_dbz,
+        )
+        self.assertTrue(
+            bool(capped.initial_background_dbz.lt(detection_limit).all())
+        )
 
     def test_p1_run_lineage_covers_config_std_and_quality(self) -> None:
         frames = torch.full((3, 6, 6), 20.0, dtype=torch.float64)
@@ -1457,7 +1488,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             vjp_calls,
             result.outer_iterations
             + result.linearization_polish_iterations
-            + 3,
+            + 5,
         )
 
     def test_final_linearization_is_polished_to_stationarity(self) -> None:
@@ -1478,6 +1509,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             )
         )
         config = AnalysisConfig(
+            censored_background_policy="detection_limit",
             maximum_outer_iterations=8,
             maximum_pcg_iterations=100,
             pcg_relative_tolerance=1.0e-8,
@@ -1491,7 +1523,11 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         self.assertIn(
             result.reason,
-            ("step_tolerance", "final_linearization_stationary"),
+            (
+                "step_tolerance",
+                "final_linearization_stationary",
+                "final_robust_irls_fixed_point",
+            ),
         )
         self.assertGreater(result.linearization_polish_iterations, 0)
         self.assertIsNotNone(result.linearization)
@@ -1508,6 +1544,10 @@ class VariationalAnalysisTests(unittest.TestCase):
             result.linearization_gradient_norm,
             result.linearization.gradient_norm,
         )
+        self.assertTrue(result.final_robust_stationary)
+        self.assertTrue(result.final_irls_fixed_point)
+        self.assertTrue(result.p1_forecast_eligible)
+        self.assertTrue(result.posterior_eligible)
 
     def test_final_linearization_tracks_remap_branch_changes(self) -> None:
         _, frozen = self.stationary_problem()
@@ -1545,6 +1585,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             frames,
             nowcast_config=NowcastConfig(horizon_minutes=10),
             analysis_config=AnalysisConfig(
+                censored_background_policy="detection_limit",
                 maximum_outer_iterations=8,
                 maximum_pcg_iterations=100,
                 pcg_relative_tolerance=1.0e-8,
@@ -1849,6 +1890,7 @@ class VariationalAnalysisTests(unittest.TestCase):
                 0,
                 False,
                 "maximum_iterations",
+                degraded=True,
             )
 
         self.assertFalse(result.used_fallback)
@@ -3852,14 +3894,30 @@ class VariationalAnalysisTests(unittest.TestCase):
                             )
 
     def test_final_linearization_settings_are_validated(self) -> None:
-        for value in (0.0, -1.0, float("nan"), float("inf")):
-            with self.subTest(relative_stationarity=value):
-                with self.assertRaisesRegex(ValueError, "must be positive"):
-                    AnalysisConfig(
-                        final_linearization_relative_stationarity_tolerance=(
-                            value
-                        )
-                    )
+        for field_name in (
+            "final_linearization_relative_stationarity_tolerance",
+            "final_robust_relative_stationarity_tolerance",
+            "final_irls_relative_weight_tolerance",
+        ):
+            for value in (0.0, -1.0, float("nan"), float("inf")):
+                with self.subTest(field_name=field_name, value=value):
+                    with self.assertRaisesRegex(ValueError, "must be positive"):
+                        if field_name == (
+                            "final_linearization_relative_stationarity_tolerance"
+                        ):
+                            AnalysisConfig(
+                                final_linearization_relative_stationarity_tolerance=value
+                            )
+                        elif field_name == (
+                            "final_robust_relative_stationarity_tolerance"
+                        ):
+                            AnalysisConfig(
+                                final_robust_relative_stationarity_tolerance=value
+                            )
+                        else:
+                            AnalysisConfig(
+                                final_irls_relative_weight_tolerance=value
+                            )
         for value in (-1, 1.5, True):
             with self.subTest(polish_iterations=value):
                 with self.assertRaisesRegex(ValueError, "nonnegative integer"):

@@ -24,9 +24,12 @@ from .nowcast import (
     RadarState,
     TendencyPairSelection,
     TendencySource,
+    _estimate_available_pair,
     _estimate_source_tendencies,
     _forecast_linear_at_step_core,
+    _phase_correlation_details,
     forecast_linear_at_step,
+    motion_displacement_limits_yx,
 )
 from .physics import RemapCell, dbz_to_echo, echo_to_dbz, freeze_remap_cell
 from .variational import (
@@ -40,6 +43,9 @@ from .variational import (
     _apply_observation_error_whitener,
     _analysis_trajectory,
     _linearization_stationarity,
+    _relative_irls_weight_change,
+    _robust_stationarity,
+    freeze_irls_weights,
     residual_vector,
     validate_analysis_linearization_content,
 )
@@ -783,7 +789,7 @@ class VariationalObservationPerturbation:
     baseline_dynamics_dbz: Tensor | None = None
     physical_radar_dbz_delta: Tensor | None = None
     perturbation_semantics: PerturbationSemantics = "augmented_parameter"
-    contract: str = "p1-observation-perturbation-v5"
+    contract: str = "p1-observation-perturbation-v6"
 
     @classmethod
     def from_radar_dbz_delta(
@@ -799,10 +805,11 @@ class VariationalObservationPerturbation:
             "physical_radar_dbz_delta",
             delta_dbz,
             observations,
-            observations.valid_mask,
+            observations.detected_mask,
+            active_domain="detected observations",
         )
         active_delta = torch.where(
-            observations.valid_mask,
+            observations.detected_mask,
             delta_dbz,
             torch.zeros_like(delta_dbz),
         )
@@ -819,6 +826,52 @@ class VariationalObservationPerturbation:
             baseline_dynamics_dbz=dynamics,
             physical_radar_dbz_delta=active_delta,
             perturbation_semantics="physical_radar_value",
+        )
+
+    @classmethod
+    def from_censor_threshold_delta(
+        cls,
+        delta_dbz: Tensor,
+        linearization: AnalysisLinearization,
+    ) -> VariationalObservationPerturbation:
+        """Perturb the threshold that defines retained censored events."""
+
+        observations = linearization.observations
+        _validate_perturbation_tensor(
+            "censor_threshold_dbz",
+            delta_dbz,
+            observations,
+            observations.censored_mask,
+            active_domain="censored observations",
+        )
+        zeros = torch.zeros_like(delta_dbz)
+        return cls(
+            detected_dbz=zeros,
+            censor_threshold_dbz=delta_dbz,
+            observation_weight=zeros,
+        )
+
+    @classmethod
+    def from_censored_event_weight_delta(
+        cls,
+        delta_weight: Tensor,
+        linearization: AnalysisLinearization,
+    ) -> VariationalObservationPerturbation:
+        """Perturb inclusion weight only for retained censored events."""
+
+        observations = linearization.observations
+        _validate_perturbation_tensor(
+            "observation_weight",
+            delta_weight,
+            observations,
+            observations.censored_mask,
+            active_domain="censored observations",
+        )
+        zeros = torch.zeros_like(delta_weight)
+        return cls(
+            detected_dbz=zeros,
+            censor_threshold_dbz=zeros,
+            observation_weight=delta_weight,
         )
 
     @property
@@ -957,6 +1010,20 @@ class _FrozenBaselineDynamicsPath:
     active_mask: Tensor
     nominal_dynamics: Tensor
     observation_pullback: Callable[[Tensor], tuple[Tensor]]
+
+
+@dataclass(frozen=True)
+class P0TendencyBranchSignature:
+    pair_spans: tuple[tuple[int, int], ...]
+    motion_pair_spans: tuple[tuple[int, int], ...]
+    growth_pair_spans: tuple[tuple[int, int], ...]
+    integer_peak_yx_by_pair: tuple[tuple[int, int], ...]
+    peak_is_search_interior_by_pair: tuple[bool, ...]
+    pair_available_by_span: tuple[bool, ...]
+    motion_selection: TendencyPairSelection
+    growth_selection: TendencyPairSelection
+    motion_conflict: bool
+    growth_conflict: bool
 
 
 @dataclass
@@ -1484,7 +1551,7 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
 
     return json_digest(
         {
-            "version": "p1-variational-fso-digest-v10",
+            "version": "p1-variational-fso-digest-v11",
             "contract": fso.contract,
             "forecast_run_digest": fso.forecast_run_digest,
             "analysis_input_digest": fso.analysis_input_digest,
@@ -1661,7 +1728,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 
     return json_digest(
         {
-            "version": "p1-variational-fsoi-digest-v7",
+            "version": "p1-variational-fsoi-digest-v8",
             "contract": fsoi.contract,
             "variational_fso_digest": fsoi.fso.variational_fso_digest,
             "perturbation_contract": fsoi.perturbation_contract,
@@ -1724,7 +1791,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 def validate_variational_fso(fso: VariationalFSO) -> None:
     """Reject any mutation of a content-addressed FSO result."""
 
-    if fso.contract != "p1-variational-fso-v10":
+    if fso.contract != "p1-variational-fso-v11":
         raise ValueError("unsupported P1 FSO contract")
     if (
         fso.sensitivity_scope
@@ -1763,7 +1830,7 @@ def validate_variational_fso(fso: VariationalFSO) -> None:
 def validate_variational_fsoi(fsoi: VariationalFSOI) -> None:
     """Reject any mutation or cross-binding in a P1 impact result."""
 
-    if fsoi.contract != "p1-linearized-observation-impact-v7":
+    if fsoi.contract != "p1-linearized-observation-impact-v8":
         raise ValueError("unsupported P1 FSOI contract")
     validate_variational_fso(fsoi.fso)
     if fsoi.perturbation.digest != fsoi.perturbation_digest:
@@ -2473,7 +2540,7 @@ def compute_variational_fsoi(
     if perturbation_diagnostics is None:
         raise RuntimeError("variational perturbation was not validated")
     fsoi = VariationalFSOI(
-        contract="p1-linearized-observation-impact-v7",
+        contract="p1-linearized-observation-impact-v8",
         fso=fso,
         perturbation=observation_perturbation,
         perturbation_contract=observation_perturbation.contract,
@@ -2510,6 +2577,13 @@ def _compute_variational_products(
 
     sensitivity_config = sensitivity_config or SensitivityConfig()
     adjoint_config = adjoint_config or VariationalAdjointConfig()
+    if observation_perturbation is not None:
+        adjoint_config = replace(
+            adjoint_config,
+            require_active_set_margin=True,
+            require_feasibility_margin=True,
+            require_gauss_newton_reliability=True,
+        )
     result.validate_issuance()
     verification_bundle = _resolve_verification(
         verification_frames_dbz,
@@ -2524,6 +2598,10 @@ def _compute_variational_products(
         or not analysis.converged
         or analysis.degraded
         or not analysis.final_linearization_stationary
+        or not analysis.final_robust_stationary
+        or not analysis.final_irls_fixed_point
+        or not analysis.p1_forecast_eligible
+        or not analysis.posterior_eligible
         or not analysis.fso_eligible
     ):
         raise ValueError("variational FSO requires a converged P1 analysis")
@@ -3147,7 +3225,7 @@ def _compute_variational_products(
         ),
     )
     fso = VariationalFSO(
-        contract="p1-variational-fso-v10",
+        contract="p1-variational-fso-v11",
         forecast_run_digest=result.forecast_run_digest,
         analysis_input_digest=cast(str, result.run.analysis_input_digest),
         sensitivity_config_digest=sensitivity_config.digest,
@@ -3722,7 +3800,7 @@ def _validate_variational_observation_perturbation(
     frozen: FrozenOuterState,
     config: VariationalAdjointConfig,
 ) -> VariationalPerturbationDiagnostics:
-    if perturbation.contract != "p1-observation-perturbation-v5":
+    if perturbation.contract != "p1-observation-perturbation-v6":
         raise ValueError("unsupported P1 observation perturbation contract")
     if perturbation.perturbation_semantics not in (
         "augmented_parameter",
@@ -3865,7 +3943,8 @@ def _validate_physical_radar_semantics(
         "physical_radar_dbz_delta",
         physical_delta,
         observations,
-        observations.valid_mask,
+        observations.detected_mask,
+        active_domain="detected observations",
     )
     detected, background, dynamics = _physical_radar_channels(
         physical_delta,
@@ -3914,13 +3993,18 @@ def _validate_directional_classification(
         + perturbation.censor_threshold_dbz
     )
     margin = config.minimum_detection_margin_dbz
+    changed_classification = (delta_dbz != 0) | (
+        perturbation.censor_threshold_dbz != 0
+    )
+    changed_detected = observations.detected_mask & changed_classification
+    changed_censored = observations.censored_mask & changed_classification
     detected_valid = torch.all(
-        changed_dbz.masked_select(observations.detected_mask)
-        >= changed_limit.masked_select(observations.detected_mask) + margin
+        changed_dbz.masked_select(changed_detected)
+        >= changed_limit.masked_select(changed_detected) + margin
     )
     censored_valid = torch.all(
-        changed_dbz.masked_select(observations.censored_mask)
-        <= changed_limit.masked_select(observations.censored_mask) - margin
+        changed_dbz.masked_select(changed_censored)
+        <= changed_limit.masked_select(changed_censored) - margin
     )
     if not bool(detected_valid & censored_valid):
         raise ValueError(
@@ -4055,43 +4139,77 @@ def _baseline_branch_is_stable(
         is not TendencySource.OBSERVATION
     ):
         return not bool(torch.any(delta_dbz != 0))
-    changed = observations.dbz + delta_dbz
-    clean = torch.where(
-        frozen.observed_mask,
-        changed,
-        changed.new_full((), frozen.nowcast_config.min_dbz),
+    nominal = _p0_tendency_branch_signature(observations.dbz, frozen)
+    for scale in (0.5, 1.0):
+        changed = observations.dbz + scale * delta_dbz
+        if _p0_tendency_branch_signature(changed, frozen) != nominal:
+            return False
+    return True
+
+
+def _p0_tendency_branch_signature(
+    frames_dbz: Tensor,
+    frozen: FrozenOuterState,
+) -> P0TendencyBranchSignature:
+    floor = frames_dbz.new_full((), frozen.nowcast_config.min_dbz)
+    clean = torch.where(frozen.observed_mask, frames_dbz, floor)
+    linear = dbz_to_echo(
+        clean,
+        min_dbz=frozen.nowcast_config.min_dbz,
+        max_dbz=frozen.nowcast_config.max_dbz,
     )
     estimate = _estimate_source_tendencies(
         clean,
         frozen.observed_mask,
-        dbz_to_echo(
-            clean,
-            min_dbz=frozen.nowcast_config.min_dbz,
-            max_dbz=frozen.nowcast_config.max_dbz,
-        ),
+        linear,
         frozen.nowcast_config,
         frozen.grid_time_contract,
     )
-    metadata = frozen.baseline_metadata
-    same_selection = (
-        estimate.motion_pair_count == metadata.motion_pair_count
-        and estimate.growth_pair_count == metadata.growth_pair_count
-        and estimate.motion_pair_selection is metadata.motion_pair_selection
-        and estimate.growth_pair_selection is metadata.growth_pair_selection
-        and estimate.motion_pair_conflict == metadata.motion_pair_conflict
-        and estimate.growth_pair_conflict == metadata.growth_pair_conflict
+    pair_spans = ((0, 1), (1, 2), (0, 2))
+    peaks: list[tuple[int, int]] = []
+    interiors: list[bool] = []
+    available: list[bool] = []
+    for previous, current in pair_spans:
+        common = frozen.observed_mask[previous] & frozen.observed_mask[current]
+        previous_dbz = torch.where(common, clean[previous], floor)
+        current_dbz = torch.where(common, clean[current], floor)
+        step_span = current - previous
+        limits = motion_displacement_limits_yx(
+            frozen.nowcast_config,
+            frozen.grid_time_contract,
+            previous_dbz,
+        )
+        _, _, interior, peak = _phase_correlation_details(
+            previous_dbz,
+            current_dbz,
+            frozen.nowcast_config,
+            max_displacement_yx=limits * step_span,
+            grid_time_contract=frozen.grid_time_contract,
+        )
+        pair = _estimate_available_pair(
+            clean,
+            frozen.observed_mask,
+            linear,
+            previous,
+            current,
+            frozen.nowcast_config,
+            frozen.grid_time_contract,
+        )
+        peaks.append(peak)
+        interiors.append(interior)
+        available.append(pair is not None)
+    return P0TendencyBranchSignature(
+        pair_spans=pair_spans,
+        motion_pair_spans=estimate.motion_pair_spans,
+        growth_pair_spans=estimate.growth_pair_spans,
+        integer_peak_yx_by_pair=tuple(peaks),
+        peak_is_search_interior_by_pair=tuple(interiors),
+        pair_available_by_span=tuple(available),
+        motion_selection=estimate.motion_pair_selection,
+        growth_selection=estimate.growth_pair_selection,
+        motion_conflict=estimate.motion_pair_conflict,
+        growth_conflict=estimate.growth_pair_conflict,
     )
-    if not same_selection:
-        return False
-    nominal_cells = (
-        freeze_remap_cell(frozen.baseline_state.displacement_yx),
-        freeze_remap_cell(2.0 * frozen.baseline_state.displacement_yx),
-    )
-    changed_cells = (
-        freeze_remap_cell(estimate.displacement_yx),
-        freeze_remap_cell(2.0 * estimate.displacement_yx),
-    )
-    return changed_cells == nominal_cells
 
 
 def _require_local_perturbation(
@@ -4204,12 +4322,18 @@ def _validate_variational_fso_lineage(
         analysis.linearization_residual_norm,
         analysis.linearization_gradient_norm,
         analysis.linearization_relative_stationarity,
+        analysis.robust_gradient_norm,
+        analysis.robust_relative_stationarity,
+        analysis.irls_relative_weight_change,
         analysis.linearization_polish_iterations,
     )
     retained_stationarity = (
         linearization.residual_norm,
         linearization.gradient_norm,
         linearization.relative_stationarity,
+        linearization.robust_gradient_norm,
+        linearization.robust_relative_stationarity,
+        linearization.irls_relative_weight_change,
         linearization.polish_iterations,
     )
     if analysis_stationarity != retained_stationarity:
@@ -4220,6 +4344,49 @@ def _validate_variational_fso_lineage(
     )
     if stationarity.relative_stationarity > stationarity_tolerance:
         raise ValueError("P1 final linearization is not stationary")
+    robust = _robust_stationarity(
+        analysis.control,
+        observations,
+        frozen,
+    )
+    refreshed = freeze_irls_weights(
+        analysis.control,
+        observations,
+        frozen,
+    )
+    weight_change = _relative_irls_weight_change(frozen, refreshed)
+    robust_diagnostics = (
+        (
+            "robust gradient norm",
+            linearization.robust_gradient_norm,
+            robust.gradient_norm,
+        ),
+        (
+            "robust relative stationarity",
+            linearization.robust_relative_stationarity,
+            robust.relative_stationarity,
+        ),
+        (
+            "IRLS relative weight change",
+            linearization.irls_relative_weight_change,
+            weight_change,
+        ),
+    )
+    for name, stored, actual in robust_diagnostics:
+        if not math.isclose(
+            stored,
+            actual,
+            rel_tol=tolerance,
+            abs_tol=tolerance,
+        ):
+            raise ValueError(f"P1 linearization {name} mismatch")
+    if (
+        robust.relative_stationarity
+        > frozen.analysis_config.final_robust_relative_stationarity_tolerance
+        or weight_change
+        > frozen.analysis_config.final_irls_relative_weight_tolerance
+    ):
+        raise ValueError("P1 linearization is not a robust IRLS fixed point")
 
 
 def forecast_metric(

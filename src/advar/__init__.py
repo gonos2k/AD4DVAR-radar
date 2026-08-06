@@ -36,6 +36,7 @@ from .nowcast import (
 )
 from .sensitivity import (
     BaselineDynamicsBranchStatus,
+    P0TendencyBranchSignature,
     DirectSensitivity,
     FSOMetricDomain,
     PerturbationSemantics,
@@ -88,6 +89,7 @@ __all__ = [
     "AnalysisLinearization",
     "AnalysisResult",
     "BaselineDynamicsBranchStatus",
+    "P0TendencyBranchSignature",
     "CensoredBackgroundPolicy",
     "FrozenObservationWhitener",
     "P1LinearizationState",

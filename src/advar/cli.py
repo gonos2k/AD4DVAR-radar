@@ -34,7 +34,7 @@ from .variational import (
 )
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v50"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v51"
 
 
 def main() -> None:
@@ -1099,6 +1099,10 @@ def _output_arrays(
             analysis_converged=np.asarray(False),
             analysis_outer_converged=np.asarray(False),
             analysis_final_linearization_stationary=np.asarray(False),
+            analysis_final_robust_stationary=np.asarray(False),
+            analysis_final_irls_fixed_point=np.asarray(False),
+            analysis_p1_forecast_eligible=np.asarray(False),
+            analysis_posterior_eligible=np.asarray(False),
             analysis_fso_eligible=np.asarray(False),
             analysis_degraded=np.asarray(False),
             analysis_used_fallback=np.asarray(False),
@@ -1112,6 +1116,18 @@ def _output_arrays(
             analysis_final_linearization_stationary=np.asarray(
                 analysis.final_linearization_stationary
             ),
+            analysis_final_robust_stationary=np.asarray(
+                analysis.final_robust_stationary
+            ),
+            analysis_final_irls_fixed_point=np.asarray(
+                analysis.final_irls_fixed_point
+            ),
+            analysis_p1_forecast_eligible=np.asarray(
+                analysis.p1_forecast_eligible
+            ),
+            analysis_posterior_eligible=np.asarray(
+                analysis.posterior_eligible
+            ),
             analysis_fso_eligible=np.asarray(analysis.fso_eligible),
             analysis_degraded=np.asarray(analysis.degraded),
             analysis_used_fallback=np.asarray(analysis.used_fallback),
@@ -1120,6 +1136,21 @@ def _output_arrays(
                 analysis.initial_objective
             ),
             analysis_final_objective=np.asarray(analysis.final_objective),
+            analysis_robust_gradient_norm=np.asarray(
+                np.nan
+                if analysis.robust_gradient_norm is None
+                else analysis.robust_gradient_norm
+            ),
+            analysis_robust_relative_stationarity=np.asarray(
+                np.nan
+                if analysis.robust_relative_stationarity is None
+                else analysis.robust_relative_stationarity
+            ),
+            analysis_irls_relative_weight_change=np.asarray(
+                np.nan
+                if analysis.irls_relative_weight_change is None
+                else analysis.irls_relative_weight_change
+            ),
             analysis_outer_iterations=np.asarray(analysis.outer_iterations),
             analysis_pcg_iterations=np.asarray(analysis.pcg_iterations),
             analysis_minimum_reachability_margin=np.asarray(

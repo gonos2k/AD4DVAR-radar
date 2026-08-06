@@ -34,9 +34,9 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v41"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v42"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-DEFAULT_MAXIMUM_MEMBER_COUNT = 192
+DEFAULT_MAXIMUM_MEMBER_COUNT = 224
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
 DEFAULT_MAXIMUM_TOTAL_EXPANDED_BYTES = 2 * 1024**3
 _ArtifactArrays = Mapping[str, NDArray[Any]]
@@ -174,12 +174,19 @@ _CLI_EXTRA_ARRAY_NAMES = frozenset(
         "analysis_converged",
         "analysis_outer_converged",
         "analysis_final_linearization_stationary",
+        "analysis_final_robust_stationary",
+        "analysis_final_irls_fixed_point",
+        "analysis_p1_forecast_eligible",
+        "analysis_posterior_eligible",
         "analysis_fso_eligible",
         "analysis_degraded",
         "analysis_used_fallback",
         "analysis_reason",
         "analysis_initial_objective",
         "analysis_final_objective",
+        "analysis_robust_gradient_norm",
+        "analysis_robust_relative_stationarity",
+        "analysis_irls_relative_weight_change",
         "analysis_outer_iterations",
         "analysis_pcg_iterations",
         "analysis_minimum_reachability_margin",
