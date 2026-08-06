@@ -637,9 +637,17 @@ class VariationalObservationSensitivity:
     initial_background_dbz: VariationalSensitivityChannel
     baseline_dynamics_dbz: VariationalSensitivityChannel
     frozen_structure_input_dbz: VariationalSensitivityChannel
-    trusted_frozen_structure_input_dbz: (
+    baseline_branch_trusted_frozen_structure_input_dbz: (
         VariationalSensitivityChannel | None
     )
+
+    @property
+    def trusted_frozen_structure_input_dbz(
+        self,
+    ) -> VariationalSensitivityChannel | None:
+        """Compatibility alias for the narrower branch-trust name."""
+
+        return self.baseline_branch_trusted_frozen_structure_input_dbz
 
 
 @dataclass(frozen=True)
@@ -914,6 +922,8 @@ class VariationalPerturbationDiagnostics:
     maximum_per_tile_whitened_norm: float
     observation_weight_l2: float
     directional_classification_valid: bool
+    baseline_dynamics_branch_status: BaselineDynamicsBranchStatus
+    baseline_dynamics_branch_signature_digest: str | None
 
 
 def _physical_radar_channels(
@@ -961,7 +971,13 @@ class VariationalObservationImpact:
     initial_background_dbz: VariationalImpactChannel
     baseline_dynamics_dbz: VariationalImpactChannel
     total: VariationalImpactChannel
-    trusted_total: VariationalImpactChannel | None
+    baseline_branch_trusted_total: VariationalImpactChannel | None
+
+    @property
+    def trusted_total(self) -> VariationalImpactChannel | None:
+        """Compatibility alias; this certifies only the baseline branch."""
+
+        return self.baseline_branch_trusted_total
 
 
 @dataclass(frozen=True)
@@ -974,8 +990,98 @@ class VariationalFSOI:
     perturbation_contract: str
     perturbation_digest: str
     perturbation_diagnostics: VariationalPerturbationDiagnostics
+    baseline_dynamics_branch_status: BaselineDynamicsBranchStatus
     observation: VariationalObservationImpact
     variational_fsoi_digest: str
+
+
+@dataclass(frozen=True)
+class AutomatedLearningPolicy:
+    """One externally approved bundle for automated FSOI learning."""
+
+    sensitivity_config: SensitivityConfig
+    adjoint_config: VariationalAdjointConfig
+    algorithm_bundle_digest: str
+    numerical_runtime_digest: str
+    contract: str = "p1-automated-learning-policy-v1"
+
+    def __post_init__(self) -> None:
+        if self.contract != "p1-automated-learning-policy-v1":
+            raise ValueError("unsupported automated-learning policy")
+        _require_sha256(
+            "algorithm_bundle_digest",
+            self.algorithm_bundle_digest,
+        )
+        _require_sha256(
+            "numerical_runtime_digest",
+            self.numerical_runtime_digest,
+        )
+        sensitivity = self.sensitivity_config
+        if (
+            sensitivity.metric_domain != "radar_dynamics_anchored"
+            or not sensitivity.require_verification_lineage
+            or sensitivity.required_verification_radar_product_digest is None
+            or sensitivity.required_verification_qc_pipeline_digest is None
+        ):
+            raise ValueError(
+                "automated learning requires approved verification lineage"
+            )
+        adjoint = self.adjoint_config
+        if not all(
+            (
+                adjoint.require_active_set_margin,
+                adjoint.require_feasibility_margin,
+                adjoint.require_gauss_newton_reliability,
+                adjoint.require_baseline_dynamics_branch_validity,
+            )
+        ):
+            raise ValueError(
+                "automated learning requires every local-validity gate"
+            )
+
+    @property
+    def digest(self) -> str:
+        return json_digest(
+            {
+                "contract": self.contract,
+                "sensitivity_config_digest": self.sensitivity_config.digest,
+                "adjoint_config_digest": self.adjoint_config.digest,
+                "algorithm_bundle_digest": self.algorithm_bundle_digest,
+                "numerical_runtime_digest": self.numerical_runtime_digest,
+                "perturbation_semantics": "physical_radar_value",
+            }
+        )
+
+
+@dataclass(frozen=True)
+class LearningEligibility:
+    eligible: bool
+    reasons: tuple[str, ...]
+    policy_digest: str
+
+    def __post_init__(self) -> None:
+        if type(self.eligible) is not bool:
+            raise TypeError("learning eligibility must be Boolean")
+        if not isinstance(self.reasons, tuple) or any(
+            not isinstance(reason, str) or not reason
+            for reason in self.reasons
+        ):
+            raise ValueError("learning rejection reasons must be strings")
+        if self.eligible == bool(self.reasons):
+            raise ValueError("learning eligibility and reasons disagree")
+        _require_sha256("learning policy digest", self.policy_digest)
+
+
+@dataclass(frozen=True)
+class VariationalLearningImpact:
+    eligibility: LearningEligibility
+    fsoi: VariationalFSOI | None
+    learning_impact: VariationalImpactChannel | None
+
+    def __post_init__(self) -> None:
+        complete = self.fsoi is not None and self.learning_impact is not None
+        if self.eligibility.eligible != complete:
+            raise ValueError("learning eligibility and impact disagree")
 
 
 @dataclass
@@ -1020,6 +1126,8 @@ class P0TendencyBranchSignature:
     integer_peak_yx_by_pair: tuple[tuple[int, int], ...]
     peak_is_search_interior_by_pair: tuple[bool, ...]
     pair_available_by_span: tuple[bool, ...]
+    growth_evidence_available_by_span: tuple[bool, ...]
+    motion_remap_cells: tuple[RemapCell, RemapCell]
     motion_selection: TendencyPairSelection
     growth_selection: TendencyPairSelection
     motion_conflict: bool
@@ -1549,9 +1657,12 @@ def _metric_contract_digest(config: SensitivityConfig) -> str:
 def variational_fso_digest(fso: VariationalFSO) -> str:
     """Content digest for a complete frozen-model FSO result."""
 
+    trusted_input = (
+        fso.observation.baseline_branch_trusted_frozen_structure_input_dbz
+    )
     return json_digest(
         {
-            "version": "p1-variational-fso-digest-v11",
+            "version": "p1-variational-fso-digest-v12",
             "contract": fso.contract,
             "forecast_run_digest": fso.forecast_run_digest,
             "analysis_input_digest": fso.analysis_input_digest,
@@ -1633,13 +1744,10 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
                         fso.observation.frozen_structure_input_dbz
                     )
                 ),
-                "trusted_frozen_structure_input_dbz": (
+                "baseline_branch_trusted_frozen_structure_input_dbz": (
                     None
-                    if fso.observation.trusted_frozen_structure_input_dbz
-                    is None
-                    else _variational_channel_digest_values(
-                        fso.observation.trusted_frozen_structure_input_dbz
-                    )
+                    if trusted_input is None
+                    else _variational_channel_digest_values(trusted_input)
                 ),
             },
             "adjoint_iterations": tensor_digest(fso.adjoint_iterations),
@@ -1728,7 +1836,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 
     return json_digest(
         {
-            "version": "p1-variational-fsoi-digest-v8",
+            "version": "p1-variational-fsoi-digest-v9",
             "contract": fsoi.contract,
             "variational_fso_digest": fsoi.fso.variational_fso_digest,
             "perturbation_contract": fsoi.perturbation_contract,
@@ -1752,7 +1860,18 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
                     fsoi.perturbation_diagnostics
                     .directional_classification_valid
                 ),
+                "baseline_dynamics_branch_status": (
+                    fsoi.perturbation_diagnostics
+                    .baseline_dynamics_branch_status
+                ),
+                "baseline_dynamics_branch_signature_digest": (
+                    fsoi.perturbation_diagnostics
+                    .baseline_dynamics_branch_signature_digest
+                ),
             },
+            "baseline_dynamics_branch_status": (
+                fsoi.baseline_dynamics_branch_status
+            ),
             "observation": {
                 "detected_dbz": _variational_impact_digest_values(
                     fsoi.observation.detected_dbz
@@ -1776,11 +1895,11 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
                 "total": _variational_impact_digest_values(
                     fsoi.observation.total
                 ),
-                "trusted_total": (
+                "baseline_branch_trusted_total": (
                     None
-                    if fsoi.observation.trusted_total is None
+                    if fsoi.observation.baseline_branch_trusted_total is None
                     else _variational_impact_digest_values(
-                        fsoi.observation.trusted_total
+                        fsoi.observation.baseline_branch_trusted_total
                     )
                 ),
             },
@@ -1791,7 +1910,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 def validate_variational_fso(fso: VariationalFSO) -> None:
     """Reject any mutation of a content-addressed FSO result."""
 
-    if fso.contract != "p1-variational-fso-v11":
+    if fso.contract != "p1-variational-fso-v12":
         raise ValueError("unsupported P1 FSO contract")
     if (
         fso.sensitivity_scope
@@ -1804,14 +1923,16 @@ def validate_variational_fso(fso: VariationalFSO) -> None:
         "not_applicable",
         "certified",
     )
+    trusted_input = (
+        fso.observation.baseline_branch_trusted_frozen_structure_input_dbz
+    )
     if fso.baseline_dynamics_branch_status not in (
         "not_applicable",
         "unknown",
         "certified",
         "invalid",
     ) or (
-        (fso.observation.trusted_frozen_structure_input_dbz is not None)
-        != trusted_branch
+        (trusted_input is not None) != trusted_branch
     ):
         raise ValueError("invalid P1 FSO baseline branch trust contract")
     _validate_verification_lineage_fields(
@@ -1830,15 +1951,23 @@ def validate_variational_fso(fso: VariationalFSO) -> None:
 def validate_variational_fsoi(fsoi: VariationalFSOI) -> None:
     """Reject any mutation or cross-binding in a P1 impact result."""
 
-    if fsoi.contract != "p1-linearized-observation-impact-v8":
+    if fsoi.contract != "p1-linearized-observation-impact-v9":
         raise ValueError("unsupported P1 FSOI contract")
     validate_variational_fso(fsoi.fso)
     if fsoi.perturbation.digest != fsoi.perturbation_digest:
         raise ValueError("P1 FSOI perturbation digest mismatch")
-    expected_trusted = (
-        fsoi.fso.observation.trusted_frozen_structure_input_dbz is not None
+    if (
+        fsoi.baseline_dynamics_branch_status
+        != fsoi.perturbation_diagnostics.baseline_dynamics_branch_status
+    ):
+        raise ValueError("P1 FSOI baseline branch status mismatch")
+    expected_trusted = fsoi.baseline_dynamics_branch_status in (
+        "not_applicable",
+        "certified",
     )
-    if (fsoi.observation.trusted_total is not None) != expected_trusted:
+    if (
+        fsoi.observation.baseline_branch_trusted_total is not None
+    ) != expected_trusted:
         raise ValueError("invalid P1 FSOI trusted-total contract")
     if variational_fsoi_digest(fsoi) != fsoi.variational_fsoi_digest:
         raise ValueError("P1 FSOI result digest mismatch")
@@ -2540,18 +2669,105 @@ def compute_variational_fsoi(
     if perturbation_diagnostics is None:
         raise RuntimeError("variational perturbation was not validated")
     fsoi = VariationalFSOI(
-        contract="p1-linearized-observation-impact-v8",
+        contract="p1-linearized-observation-impact-v9",
         fso=fso,
         perturbation=observation_perturbation,
         perturbation_contract=observation_perturbation.contract,
         perturbation_digest=observation_perturbation.digest,
         perturbation_diagnostics=perturbation_diagnostics,
+        baseline_dynamics_branch_status=(
+            perturbation_diagnostics.baseline_dynamics_branch_status
+        ),
         observation=observation_impact,
         variational_fsoi_digest="",
     )
     return replace(
         fsoi,
         variational_fsoi_digest=variational_fsoi_digest(fsoi),
+    )
+
+
+def compute_variational_fsoi_for_learning(
+    result: ForecastResult,
+    analysis: AnalysisResult | P1LinearizationState,
+    verification_frames_dbz: VerificationInput,
+    observation_perturbation: VariationalObservationPerturbation,
+    *,
+    policy: AutomatedLearningPolicy,
+    approved_policy_digests: frozenset[str],
+) -> VariationalLearningImpact:
+    """Compute FSOI only under an externally approved learning policy."""
+
+    if type(approved_policy_digests) is not frozenset:
+        raise TypeError("approved_policy_digests must be a frozenset")
+    for digest in approved_policy_digests:
+        _require_sha256("approved_policy_digest", digest)
+    if policy.digest not in approved_policy_digests:
+        return _rejected_learning_impact(policy, "unapproved_learning_policy")
+    if (
+        observation_perturbation.perturbation_semantics
+        != "physical_radar_value"
+    ):
+        return _rejected_learning_impact(
+            policy,
+            "physical_radar_perturbation_required",
+        )
+    linearization = analysis.linearization
+    if linearization is None:
+        return _rejected_learning_impact(policy, "linearization_required")
+    if linearization.algorithm_bundle_digest != policy.algorithm_bundle_digest:
+        return _rejected_learning_impact(
+            policy,
+            "algorithm_bundle_not_approved",
+        )
+    if linearization.numerical_runtime_digest != policy.numerical_runtime_digest:
+        return _rejected_learning_impact(
+            policy,
+            "numerical_runtime_not_approved",
+        )
+    try:
+        fsoi = compute_variational_fsoi(
+            result,
+            analysis,
+            verification_frames_dbz,
+            observation_perturbation,
+            sensitivity_config=policy.sensitivity_config,
+            adjoint_config=policy.adjoint_config,
+        )
+    except ValueError as error:
+        return _rejected_learning_impact(policy, str(error))
+    impact = fsoi.observation.baseline_branch_trusted_total
+    if impact is None:
+        return _rejected_learning_impact(
+            policy,
+            "baseline_dynamics_branch_not_certified",
+            fsoi=fsoi,
+        )
+    return VariationalLearningImpact(
+        eligibility=LearningEligibility(
+            eligible=True,
+            reasons=(),
+            policy_digest=policy.digest,
+        ),
+        fsoi=fsoi,
+        learning_impact=impact,
+    )
+
+
+def _rejected_learning_impact(
+    policy: AutomatedLearningPolicy,
+    reason: str,
+    *,
+    fsoi: VariationalFSOI | None = None,
+) -> VariationalLearningImpact:
+    return VariationalLearningImpact(
+        eligibility=LearningEligibility(
+            eligible=False,
+            reasons=(reason,),
+            policy_digest=policy.digest,
+        ),
+        fsoi=fsoi,
+        learning_impact=None,
     )
 
 
@@ -2635,6 +2851,14 @@ def _compute_variational_products(
             frozen,
             adjoint_config,
         )
+        if (
+            adjoint_config.require_baseline_dynamics_branch_validity
+            and perturbation_diagnostics.baseline_dynamics_branch_status
+            not in ("not_applicable", "certified")
+        ):
+            raise ValueError(
+                "P1 FSOI baseline dynamics branch is not certified"
+            )
     _validate_inputs(
         observations.dbz[-1],
         verification_frames,
@@ -2839,6 +3063,7 @@ def _compute_variational_products(
     )
     if (
         adjoint_config.require_baseline_dynamics_branch_validity
+        and observation_perturbation is None
         and not baseline_dynamics_trusted
     ):
         raise ValueError(
@@ -3220,12 +3445,12 @@ def _compute_variational_products(
             baseline_dynamics_sensitivity
         ),
         frozen_structure_input_dbz=frozen_structure_channel,
-        trusted_frozen_structure_input_dbz=(
+        baseline_branch_trusted_frozen_structure_input_dbz=(
             frozen_structure_channel if baseline_dynamics_trusted else None
         ),
     )
     fso = VariationalFSO(
-        contract="p1-variational-fso-v11",
+        contract="p1-variational-fso-v12",
         forecast_run_digest=result.forecast_run_digest,
         analysis_input_digest=cast(str, result.run.analysis_input_digest),
         sensitivity_config_digest=sensitivity_config.digest,
@@ -3284,6 +3509,12 @@ def _compute_variational_products(
     if impact_accumulators is None:
         return fso, None, None
     total_impact = _impact_channel(impact_accumulators[5])
+    if perturbation_diagnostics is None:
+        raise RuntimeError("variational perturbation diagnostics are missing")
+    impact_branch_trusted = (
+        perturbation_diagnostics.baseline_dynamics_branch_status
+        in ("not_applicable", "certified")
+    )
     return (
         fso,
         VariationalObservationImpact(
@@ -3297,8 +3528,8 @@ def _compute_variational_products(
                 impact_accumulators[4]
             ),
             total=total_impact,
-            trusted_total=(
-                total_impact if baseline_dynamics_trusted else None
+            baseline_branch_trusted_total=(
+                total_impact if impact_branch_trusted else None
             ),
         ),
         perturbation_diagnostics,
@@ -4032,11 +4263,14 @@ def _perturbation_diagnostics(
         perturbation,
         observations,
     )
-    if bool(torch.any(baseline_delta != 0)) and not _baseline_branch_is_stable(
-        observations,
-        frozen,
-        baseline_delta,
-    ):
+    baseline_branch_status, baseline_signature_digest = (
+        _baseline_dynamics_branch_certification(
+            observations,
+            frozen,
+            baseline_delta,
+        )
+    )
+    if baseline_branch_status == "invalid":
         raise ValueError(
             "observation perturbation crosses the frozen P0 tendency branch"
         )
@@ -4110,6 +4344,10 @@ def _perturbation_diagnostics(
         maximum_per_tile_whitened_norm=tile_norm,
         observation_weight_l2=weight_l2,
         directional_classification_valid=True,
+        baseline_dynamics_branch_status=baseline_branch_status,
+        baseline_dynamics_branch_signature_digest=(
+            baseline_signature_digest
+        ),
     )
 
 
@@ -4139,12 +4377,33 @@ def _baseline_branch_is_stable(
         is not TendencySource.OBSERVATION
     ):
         return not bool(torch.any(delta_dbz != 0))
+    status, _ = _baseline_dynamics_branch_certification(
+        observations,
+        frozen,
+        delta_dbz,
+    )
+    return status == "certified"
+
+
+def _baseline_dynamics_branch_certification(
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    delta_dbz: Tensor,
+) -> tuple[BaselineDynamicsBranchStatus, str | None]:
+    if (
+        frozen.baseline_metadata.tendency_source
+        is not TendencySource.OBSERVATION
+    ):
+        return "not_applicable", None
     nominal = _p0_tendency_branch_signature(observations.dbz, frozen)
+    signature_digest = dataclass_digest(nominal)
+    if not bool(torch.any(delta_dbz != 0)):
+        return "certified", signature_digest
     for scale in (0.5, 1.0):
         changed = observations.dbz + scale * delta_dbz
         if _p0_tendency_branch_signature(changed, frozen) != nominal:
-            return False
-    return True
+            return "invalid", signature_digest
+    return "certified", signature_digest
 
 
 def _p0_tendency_branch_signature(
@@ -4169,6 +4428,7 @@ def _p0_tendency_branch_signature(
     peaks: list[tuple[int, int]] = []
     interiors: list[bool] = []
     available: list[bool] = []
+    growth_available: list[bool] = []
     for previous, current in pair_spans:
         common = frozen.observed_mask[previous] & frozen.observed_mask[current]
         previous_dbz = torch.where(common, clean[previous], floor)
@@ -4198,6 +4458,7 @@ def _p0_tendency_branch_signature(
         peaks.append(peak)
         interiors.append(interior)
         available.append(pair is not None)
+        growth_available.append(pair is not None and pair[1].available)
     return P0TendencyBranchSignature(
         pair_spans=pair_spans,
         motion_pair_spans=estimate.motion_pair_spans,
@@ -4205,6 +4466,11 @@ def _p0_tendency_branch_signature(
         integer_peak_yx_by_pair=tuple(peaks),
         peak_is_search_interior_by_pair=tuple(interiors),
         pair_available_by_span=tuple(available),
+        growth_evidence_available_by_span=tuple(growth_available),
+        motion_remap_cells=(
+            freeze_remap_cell(estimate.displacement_yx),
+            freeze_remap_cell(2.0 * estimate.displacement_yx),
+        ),
         motion_selection=estimate.motion_pair_selection,
         growth_selection=estimate.growth_pair_selection,
         motion_conflict=estimate.motion_pair_conflict,

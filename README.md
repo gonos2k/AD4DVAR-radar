@@ -266,7 +266,7 @@ legacy Tensor를 거부한다. raw Tensor 입력은 연구 호환용으로 계�
 결과와 M0 원장에 `verification_lineage_complete=False`로 기록되므로 지연 자동
 학습의 완전한 검증자료로 승격할 수 없다.
 
-`compute_variational_fso()`의 `p1-variational-fso-v11` 결과는 영향값이 아니라
+`compute_variational_fso()`의 `p1-variational-fso-v12` 결과는 영향값이 아니라
 다음 관측 parameter와 frozen 초기배경 경로에 대한 미분이다.
 
 ```text
@@ -395,20 +395,36 @@ fso = compute_variational_fso(
 )
 ```
 
-자동학습 경로는 개별 안전 flag를 직접 조합하지 않고 다음 strict profile을
-사용한다.
+자동학습 경로는 두 strict config를 하나의 외부 승인 policy로 묶는다.
 
 ```python
-sensitivity_config = SensitivityConfig.for_automated_learning(
-    radar_product_digest=approved_radar_product_digest,
-    qc_pipeline_digest=approved_qc_pipeline_digest,
+policy = AutomatedLearningPolicy(
+    sensitivity_config=SensitivityConfig.for_automated_learning(
+        radar_product_digest=approved_radar_product_digest,
+        qc_pipeline_digest=approved_qc_pipeline_digest,
+    ),
+    adjoint_config=VariationalAdjointConfig.for_automated_learning(),
+    algorithm_bundle_digest=approved_algorithm_bundle_digest,
+    numerical_runtime_digest=approved_numerical_runtime_digest,
 )
-adjoint_config = VariationalAdjointConfig.for_automated_learning()
+learning = compute_variational_fsoi_for_learning(
+    forecast,
+    analysis,
+    verification_bundle,
+    physical,
+    policy=policy,
+    approved_policy_digests=deployment_policy_allowlist,
+)
+if learning.eligibility.eligible:
+    update_model(learning.learning_impact)
 ```
 
-이 profile은 verification lineage, radar-dynamics domain, active-set·feasibility·
-GN 신뢰도와 baseline branch 인증을 모두 요구한다. 미인증 baseline dynamics가
-있으면 trusted-total sensitivity·impact는 제공하지 않는다.
+이 policy는 verification lineage, radar-dynamics domain, active-set·feasibility·
+GN 신뢰도, physical-radar perturbation과 baseline branch 인증을 모두 요구한다.
+`approved_policy_digests`는 독립적인 allowlist 또는 서명검증 계층에서 공급해야
+하며, caller가 스스로 만든 digest는 승인 근거가 아니다. 일반 결과의
+`baseline_branch_trusted_total`은 baseline branch만 인증한다. 전체 학습 승인은
+`LearningEligibility`만 사용한다.
 
 `lead_minutes`는 원래 forecast 축에서 실제 수반계를 풀 lead만 고른다. metric별
 직전 lead 해는 다음 PCG의 초기값으로만 사용하며 true residual을 다시 계산한다.

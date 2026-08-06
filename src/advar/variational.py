@@ -2932,8 +2932,9 @@ def _posterior_physical_dynamics_uncertainty(
         )
         return torch.cat((projected_velocity, growth.reshape(1)))
 
-    decode_jacobian = torch.func.jacrev(physical_dynamics)(
-        dynamics_control
+    decode_jacobian = cast(
+        Tensor,
+        torch.func.jacrev(physical_dynamics)(dynamics_control),
     ).detach()
     covariance = covariance.to(
         dtype=decode_jacobian.dtype,
