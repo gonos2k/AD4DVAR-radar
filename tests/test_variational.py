@@ -706,14 +706,24 @@ class VariationalAnalysisTests(unittest.TestCase):
                     if scope == "per_frame"
                     else (tuple(range(values.shape[0])),)
                 )
+                weights_by_frame = (
+                    variational_module._common_bias_mode_weights_by_frame(
+                        canonical_weights
+                    )
+                )
                 for frame_group in frame_groups:
-                    for mode_index in range(canonical_weights.shape[1]):
+                    for mode_index in range(canonical_weights.shape[-3]):
                         bias_mode = torch.zeros_like(values)
                         for frame in frame_group:
+                            weight_frame = (
+                                0
+                                if weights_by_frame.shape[0] == 1
+                                else frame
+                            )
                             bias_mode[frame] = (
                                 1.5
                                 * base_mode[frame]
-                                * canonical_weights[frame, mode_index]
+                                * weights_by_frame[weight_frame, mode_index]
                             )
                         flattened_mode = bias_mode.flatten()
                         covariance = covariance + torch.outer(
@@ -792,10 +802,12 @@ class VariationalAnalysisTests(unittest.TestCase):
             0.5,
             dtype=torch.float64,
         )
-        original = variational_module._low_rank_inverse_sqrt_correction
+        original = (
+            variational_module._low_rank_inverse_sqrt_correction_from_gram
+        )
         with patch.object(
             variational_module,
-            "_low_rank_inverse_sqrt_correction",
+            "_low_rank_inverse_sqrt_correction_from_gram",
             wraps=original,
         ) as correction:
             observations, frozen = prepare_analysis(
@@ -813,6 +825,51 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         self.assertEqual(count_after_freeze, 1)
         self.assertEqual(correction.call_count, 1)
+        assert observations.common_bias_mode_weights is not None
+        self.assertEqual(
+            observations.common_bias_mode_weights.shape,
+            (2, 4, 4),
+        )
+        self.assertEqual(
+            frozen.observation_whitener.overlapping_correction.shape,
+            (3, 2, 2),
+        )
+
+    def test_common_bias_storage_budgets_fail_closed(self) -> None:
+        frames = torch.full((3, 4, 4), 20.0, dtype=torch.float64)
+        mode_weights = torch.full(
+            (2, 4, 4),
+            0.5,
+            dtype=torch.float64,
+        )
+        base = AnalysisConfig(observation_common_bias_std_dbz=1.0)
+        with self.assertRaisesRegex(ValueError, "mode weights.*byte budget"):
+            prepare_analysis(
+                frames,
+                analysis_config=replace(
+                    base,
+                    maximum_common_bias_mode_weight_bytes=1,
+                ),
+                observation_common_bias_mode_weights=mode_weights,
+            )
+        with self.assertRaisesRegex(ValueError, "whitener.*byte budget"):
+            prepare_analysis(
+                frames,
+                analysis_config=replace(
+                    base,
+                    maximum_frozen_whitener_bytes=1,
+                ),
+                observation_common_bias_mode_weights=mode_weights,
+            )
+        with self.assertRaisesRegex(ValueError, "linearization.*byte budget"):
+            prepare_analysis(
+                frames,
+                analysis_config=replace(
+                    base,
+                    maximum_linearization_bytes=1,
+                ),
+                observation_common_bias_mode_weights=mode_weights,
+            )
 
     def test_common_bias_contract_is_validated_and_changes_lineage(self) -> None:
         for value in (-0.1, float("nan"), float("inf"), True):
@@ -3924,6 +3981,15 @@ class VariationalAnalysisTests(unittest.TestCase):
                     AnalysisConfig(
                         maximum_final_linearization_polish_iterations=value
                     )
+
+        for field_name in (
+            "maximum_common_bias_mode_weight_bytes",
+            "maximum_frozen_whitener_bytes",
+            "maximum_linearization_bytes",
+        ):
+            with self.subTest(field_name=field_name):
+                with self.assertRaisesRegex(ValueError, "must be positive"):
+                    AnalysisConfig(**{field_name: 0})
 
     def test_amplitude_policy_and_confidence_thresholds_are_validated(
         self,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from collections import deque
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, fields, is_dataclass, replace
 import json
 import math
 from typing import Literal, cast
@@ -65,8 +65,8 @@ CensoredBackgroundPolicy = Literal[
     "external_background",
 ]
 MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT = 64
-P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v10"
-P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v8"
+P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v11"
+P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v9"
 
 
 @dataclass(frozen=True)
@@ -81,6 +81,9 @@ class AnalysisConfig:
     observation_common_bias_tile_size_px: int = 0
     observation_common_bias_group_map_digest: str | None = None
     observation_common_bias_mode_weights_digest: str | None = None
+    maximum_common_bias_mode_weight_bytes: int = 2 * 1024**3
+    maximum_frozen_whitener_bytes: int = 512 * 1024**2
+    maximum_linearization_bytes: int = 8 * 1024**3
     pseudo_huber_delta: float = 2.0
     echo_transform_scale_dbz: float = 1.0
     transform_epsilon: float = 1.0e-6
@@ -245,6 +248,13 @@ class AnalysisConfig:
         integer_limits = {
             "maximum_outer_iterations": self.maximum_outer_iterations,
             "maximum_pcg_iterations": self.maximum_pcg_iterations,
+            "maximum_common_bias_mode_weight_bytes": (
+                self.maximum_common_bias_mode_weight_bytes
+            ),
+            "maximum_frozen_whitener_bytes": (
+                self.maximum_frozen_whitener_bytes
+            ),
+            "maximum_linearization_bytes": self.maximum_linearization_bytes,
         }
         for name, value in integer_limits.items():
             if type(value) is not int or value <= 0:
@@ -424,7 +434,6 @@ class FrozenObservationWhitener:
     """Precomputed constants for the frozen observation-error transform."""
 
     mode: Tensor | None
-    overlapping_basis: Tensor | None
     overlapping_correction: Tensor | None
     per_frame: bool
 
@@ -994,12 +1003,7 @@ def _canonical_common_bias_mode_weights(
         mode_weights.ndim == 3
         and tuple(mode_weights.shape[-2:]) == frame_shape[1:]
     ):
-        raw = mode_weights.to(device=device, dtype=dtype).unsqueeze(0).expand(
-            frame_shape[0],
-            mode_weights.shape[0],
-            frame_shape[1],
-            frame_shape[2],
-        )
+        raw = mode_weights.to(device=device, dtype=dtype)
     elif (
         mode_weights.ndim == 4
         and mode_weights.shape[0] == frame_shape[0]
@@ -1011,7 +1015,8 @@ def _canonical_common_bias_mode_weights(
             "common-bias mode weights must have shape [K,H,W] or "
             "[3,K,H,W]"
         )
-    mode_count = raw.shape[1]
+    by_frame = _common_bias_mode_weights_by_frame(raw)
+    mode_count = raw.shape[-3]
     if not (1 <= mode_count <= MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT):
         raise ValueError(
             "common-bias mode count must be between 1 and "
@@ -1023,11 +1028,13 @@ def _canonical_common_bias_mode_weights(
         or bool(torch.any(raw > 1.0))
     ):
         raise ValueError("common-bias mode weights must be finite and in [0,1]")
-    if bool(torch.any(torch.sum(raw.square(), dim=1) > 1.0 + 1.0e-6)):
+    if bool(
+        torch.any(torch.sum(by_frame.square(), dim=1) > 1.0 + 1.0e-6)
+    ):
         raise ValueError(
             "common-bias mode squared weights must sum to at most one"
         )
-    if bool(torch.any(torch.sum(raw, dim=(0, 2, 3)) <= 0.0)):
+    if bool(torch.any(torch.sum(by_frame, dim=(0, 2, 3)) <= 0.0)):
         raise ValueError("every common-bias mode must have positive support")
     return raw.detach().clone()
 
@@ -1199,6 +1206,14 @@ def prepare_analysis(
             raise ValueError(
                 "common-bias mode weights and tile-size modes are mutually "
                 "exclusive"
+            )
+        mode_bytes = (
+            observation_common_bias_mode_weights.numel()
+            * torch.empty((), dtype=frames_dbz.dtype).element_size()
+        )
+        if mode_bytes > analysis_config.maximum_common_bias_mode_weight_bytes:
+            raise ValueError(
+                "common-bias mode weights exceed their retained byte budget"
             )
         common_bias_mode_weights = _canonical_common_bias_mode_weights(
             observation_common_bias_mode_weights,
@@ -1439,6 +1454,9 @@ def prepare_analysis(
         observations,
         analysis_config,
     )
+    whitener_bytes = _retained_tensor_bytes(observation_whitener)
+    if whitener_bytes > analysis_config.maximum_frozen_whitener_bytes:
+        raise ValueError("frozen observation whitener exceeds its byte budget")
     frozen = FrozenOuterState(
         initial_background_dbz=initial_background_dbz.detach().clone(),
         initial_support_mask=initial_support.detach().clone(),
@@ -1464,6 +1482,9 @@ def prepare_analysis(
         smooth_edge_right_index=smooth_edge_right_index,
         smooth_edge_physical_weight=smooth_edge_physical_weight,
     )
+    linearization_bytes = _retained_tensor_bytes((observations, frozen))
+    if linearization_bytes > analysis_config.maximum_linearization_bytes:
+        raise ValueError("P1 linearization exceeds its retained byte budget")
     control = _warm_started_control(observations, frozen)
     return observations, freeze_irls_weights(
         control,
@@ -1789,7 +1810,7 @@ def _freeze_observation_whitener(
     per_frame = config.observation_common_bias_scope == "per_frame"
     bias_std = config.observation_common_bias_std_dbz
     if bias_std == 0.0:
-        return FrozenObservationWhitener(None, None, None, per_frame)
+        return FrozenObservationWhitener(None, None, per_frame)
     mode = (
         torch.sqrt(observations.quality_weight)
         / observations.std_dbz
@@ -1799,19 +1820,18 @@ def _freeze_observation_whitener(
         return FrozenObservationWhitener(
             mode.detach(),
             None,
-            None,
             per_frame,
         )
-    weighted_basis = bias_std * mode_weights * mode.unsqueeze(1)
-    basis = (
-        weighted_basis.flatten(start_dim=2)
-        if per_frame
-        else weighted_basis.permute(1, 0, 2, 3).flatten(start_dim=1)
+    weights = _common_bias_mode_weights_by_frame(mode_weights)
+    gram = bias_std**2 * torch.einsum(
+        "tkhw,tlhw,thw->tkl" if per_frame else "tkhw,tlhw,thw->kl",
+        weights,
+        weights,
+        mode.square(),
     )
-    correction = _low_rank_inverse_sqrt_correction(basis)
+    correction = _low_rank_inverse_sqrt_correction_from_gram(gram)
     return FrozenObservationWhitener(
         mode.detach(),
-        basis.detach(),
         correction.detach(),
         per_frame,
     )
@@ -1828,7 +1848,7 @@ def _validate_frozen_observation_whitener(
     actual = frozen.observation_whitener
     if actual.per_frame != expected.per_frame:
         raise ValueError("frozen observation whitener scope mismatch")
-    for name in ("mode", "overlapping_basis", "overlapping_correction"):
+    for name in ("mode", "overlapping_correction"):
         actual_value = getattr(actual, name)
         expected_value = getattr(expected, name)
         if (actual_value is None) != (expected_value is None) or (
@@ -1867,14 +1887,15 @@ def _apply_observation_error_whitener(
     if mode is None or mode.shape != values.shape:
         raise ValueError("frozen observation whitener is incompatible")
     if observations.common_bias_mode_weights is not None:
-        basis = whitener.overlapping_basis
         correction = whitener.overlapping_correction
-        if basis is None or correction is None:
+        if correction is None:
             raise ValueError("frozen overlapping whitener is incomplete")
-        return _apply_frozen_low_rank_whitener(
+        return _apply_compact_low_rank_whitener(
             values,
-            basis,
+            observations.common_bias_mode_weights,
+            mode,
             correction,
+            bias_std=bias_std,
             per_frame=whitener.per_frame,
         )
     if observations.common_bias_group_index is not None:
@@ -1924,11 +1945,14 @@ def _apply_observation_error_whitener(
 def _low_rank_inverse_sqrt_correction(
     basis: Tensor,
 ) -> Tensor:
-    gram = basis @ basis.mT
+    return _low_rank_inverse_sqrt_correction_from_gram(basis @ basis.mT)
+
+
+def _low_rank_inverse_sqrt_correction_from_gram(gram: Tensor) -> Tensor:
     eigenvalues, eigenvectors = torch.linalg.eigh(gram)
     eigenvalues = eigenvalues.clamp_min(0.0)
     correction_eigenvalues = torch.where(
-        eigenvalues > torch.finfo(basis.dtype).eps,
+        eigenvalues > torch.finfo(gram.dtype).eps,
         (torch.rsqrt(1.0 + eigenvalues) - 1.0) / eigenvalues,
         eigenvalues.new_full((), -0.5),
     )
@@ -1937,29 +1961,46 @@ def _low_rank_inverse_sqrt_correction(
     )
 
 
-def _apply_frozen_low_rank_whitener(
+def _apply_compact_low_rank_whitener(
     values: Tensor,
-    basis: Tensor,
+    mode_weights: Tensor,
+    mode: Tensor,
     correction: Tensor,
     *,
+    bias_std: float,
     per_frame: bool,
 ) -> Tensor:
+    weights = _common_bias_mode_weights_by_frame(mode_weights)
+    weighted_values = bias_std * mode * values
     if per_frame:
-        flat_values = values.flatten(start_dim=1)
-        projection = torch.matmul(
-            basis,
-            flat_values.unsqueeze(-1),
+        projection = torch.einsum(
+            "tkhw,thw->tk",
+            weights,
+            weighted_values,
         )
-        adjustment = torch.matmul(
-            basis.mT,
-            torch.matmul(correction, projection),
+        coefficients = torch.einsum("tkl,tl->tk", correction, projection)
+        adjustment = bias_std * mode * torch.einsum(
+            "tkhw,tk->thw",
+            weights,
+            coefficients,
         )
-        return (flat_values + adjustment.squeeze(-1)).reshape_as(values)
-    flat_values = values.flatten()
-    projection = basis @ flat_values
-    return (
-        flat_values + basis.mT @ (correction @ projection)
-    ).reshape_as(values)
+        return values + adjustment
+    projection = torch.einsum(
+        "tkhw,thw->k",
+        weights,
+        weighted_values,
+    )
+    coefficients = correction @ projection
+    adjustment = bias_std * mode * torch.einsum(
+        "tkhw,k->thw",
+        weights,
+        coefficients,
+    )
+    return values + adjustment
+
+
+def _common_bias_mode_weights_by_frame(mode_weights: Tensor) -> Tensor:
+    return mode_weights.unsqueeze(0) if mode_weights.ndim == 3 else mode_weights
 
 
 def _apply_grouped_observation_error_whitener(
@@ -2087,7 +2128,9 @@ def _observation_effective_std_dbz(
         ).to(dtype=observations.quality_weight.dtype)
     elif observations.common_bias_mode_weights is not None:
         variance_factor = torch.sum(
-            observations.common_bias_mode_weights.square(),
+            _common_bias_mode_weights_by_frame(
+                observations.common_bias_mode_weights
+            ).square(),
             dim=1,
         )
     return torch.sqrt(
@@ -5750,29 +5793,36 @@ def _validate_observations(observations: AnalysisObservations) -> None:
         ):
             raise ValueError("common_bias_group_index must be compact")
     mode_weights = observations.common_bias_mode_weights
-    if mode_weights is not None and (
-        mode_weights.ndim != 4
-        or mode_weights.shape[0] != shape[0]
-        or tuple(mode_weights.shape[-2:]) != shape[-2:]
-        or not mode_weights.is_floating_point()
-        or mode_weights.dtype != observations.dbz.dtype
-        or mode_weights.device != observations.dbz.device
-        or not (1 <= mode_weights.shape[1] <= MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT)
-        or not bool(torch.all(torch.isfinite(mode_weights)))
-        or bool(torch.any(mode_weights < 0.0))
-        or bool(torch.any(mode_weights > 1.0))
-        or bool(
-            torch.any(
-                torch.sum(mode_weights.square(), dim=1) > 1.0 + 1.0e-6
+    if mode_weights is not None:
+        by_frame = _common_bias_mode_weights_by_frame(mode_weights)
+        shape_valid = (
+            mode_weights.ndim == 3
+            or (mode_weights.ndim == 4 and mode_weights.shape[0] == shape[0])
+        )
+        if (
+            not shape_valid
+            or tuple(mode_weights.shape[-2:]) != shape[-2:]
+            or not mode_weights.is_floating_point()
+            or mode_weights.dtype != observations.dbz.dtype
+            or mode_weights.device != observations.dbz.device
+            or not (
+                1
+                <= mode_weights.shape[-3]
+                <= MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT
             )
-        )
-        or bool(
-            torch.any(torch.sum(mode_weights, dim=(0, 2, 3)) <= 0.0)
-        )
-    ):
-        raise ValueError(
-            "common_bias_mode_weights must be canonical and compatible"
-        )
+            or not bool(torch.all(torch.isfinite(mode_weights)))
+            or bool(torch.any(mode_weights < 0.0))
+            or bool(torch.any(mode_weights > 1.0))
+            or bool(
+                torch.any(
+                    torch.sum(by_frame.square(), dim=1) > 1.0 + 1.0e-6
+                )
+            )
+            or bool(torch.any(torch.sum(by_frame, dim=(0, 2, 3)) <= 0.0))
+        ):
+            raise ValueError(
+                "common_bias_mode_weights must be canonical and compatible"
+            )
 
 
 def _validate_observation_common_bias_contract(
@@ -5871,6 +5921,29 @@ def _validate_control(
 
 def _clone_tensor(value: Tensor) -> Tensor:
     return value.detach().clone()
+
+
+def _retained_tensor_bytes(value: object) -> int:
+    """Count Tensor payload retained by one nested result contract."""
+
+    seen: set[int] = set()
+
+    def count(item: object) -> int:
+        if isinstance(item, Tensor):
+            identity = id(item)
+            if identity in seen:
+                return 0
+            seen.add(identity)
+            return item.numel() * item.element_size()
+        if is_dataclass(item) and not isinstance(item, type):
+            return sum(count(getattr(item, field.name)) for field in fields(item))
+        if isinstance(item, dict):
+            return sum(count(entry) for entry in item.values())
+        if isinstance(item, (tuple, list)):
+            return sum(count(entry) for entry in item)
+        return 0
+
+    return count(value)
 
 
 def _clone_optional_tensor(value: Tensor | None) -> Tensor | None:
@@ -6024,9 +6097,6 @@ def _clone_frozen_outer_state(frozen: FrozenOuterState) -> FrozenOuterState:
         baseline_frames_dbz=_clone_tensor(frozen.baseline_frames_dbz),
         observation_whitener=FrozenObservationWhitener(
             mode=_clone_optional_tensor(frozen.observation_whitener.mode),
-            overlapping_basis=_clone_optional_tensor(
-                frozen.observation_whitener.overlapping_basis
-            ),
             overlapping_correction=_clone_optional_tensor(
                 frozen.observation_whitener.overlapping_correction
             ),
@@ -6114,9 +6184,6 @@ def _frozen_outer_state_digest_values(
         "observation_whitener": {
             "mode": _optional_tensor_digest(
                 frozen.observation_whitener.mode
-            ),
-            "overlapping_basis": _optional_tensor_digest(
-                frozen.observation_whitener.overlapping_basis
             ),
             "overlapping_correction": _optional_tensor_digest(
                 frozen.observation_whitener.overlapping_correction
