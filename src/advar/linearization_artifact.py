@@ -40,6 +40,7 @@ from .variational import (
     AnalysisLinearization,
     AnalysisObservations,
     AnalysisResult,
+    FrozenObservationWhitener,
     FrozenOuterState,
     P1LinearizationState,
     _analysis_trajectory,
@@ -48,7 +49,7 @@ from .variational import (
 )
 
 
-P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v6"
+P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v7"
 DEFAULT_MAXIMUM_MEMBER_COUNT = 96
 DEFAULT_MAXIMUM_MEMBER_BYTES = 2 * 1024**3
 DEFAULT_MAXIMUM_TOTAL_EXPANDED_BYTES = 8 * 1024**3
@@ -62,6 +63,7 @@ _DATACLASS_TYPES = {
         AnalysisLinearization,
         AnalysisObservations,
         ForecastMetadata,
+        FrozenObservationWhitener,
         FrozenOuterState,
         NowcastConfig,
         P1LinearizationState,

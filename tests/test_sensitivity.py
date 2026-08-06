@@ -1651,6 +1651,16 @@ class SensitivityTests(unittest.TestCase):
             {"pair_conflict_trust_penalty": 1.1},
             {"pair_conflict_trust_penalty": float("nan")},
             {"require_verification_lineage": 1},
+            {"required_verification_radar_product_digest": "1" * 64},
+            {
+                "required_verification_radar_product_digest": "1" * 64,
+                "required_verification_qc_pipeline_digest": "2" * 64,
+            },
+            {
+                "require_verification_lineage": True,
+                "required_verification_radar_product_digest": "bad",
+                "required_verification_qc_pipeline_digest": "2" * 64,
+            },
         )
         for values in invalid_configs:
             with self.subTest(values=values):
@@ -1713,14 +1723,17 @@ class VariationalFSOTests(unittest.TestCase):
 
     def test_variational_fso_covers_all_observation_times(self) -> None:
         fso = self.fso
-        self.assertEqual(fso.contract, "p1-variational-fso-v9")
+        self.assertEqual(fso.contract, "p1-variational-fso-v10")
         self.assertEqual(
             fso.sensitivity_scope,
             "residual_plus_observation_derived_baseline_with_frozen_selection",
         )
         self.assertFalse(fso.baseline_dynamics_frozen)
         self.assertTrue(fso.baseline_pair_selection_frozen)
-        self.assertFalse(fso.baseline_dynamics_branch_valid)
+        self.assertEqual(fso.baseline_dynamics_branch_status, "unknown")
+        self.assertIsNone(
+            fso.observation.trusted_frozen_structure_input_dbz
+        )
         self.assertEqual(
             fso.verification_contract,
             "legacy-verification-tensor-v1",
@@ -1732,7 +1745,7 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertNotEqual(fso.metric_domain_digest, "")
         self.assertEqual(fso.lead_minutes, (10,))
         self.assertEqual(fso.full_map_lead_minutes, (10,))
-        self.assertEqual(fso.linearization_contract, "p1-final-frozen-irls-gn-v8")
+        self.assertEqual(fso.linearization_contract, "p1-final-frozen-irls-gn-v9")
         self.assertEqual(
             fso.forecast_run_digest,
             self.forecast.forecast_run_digest,
@@ -1909,6 +1922,28 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertEqual(fso.verification_valid_times, bundle.valid_times)
         self.assertEqual(fso.verification_grid_contract_digest, grid.digest)
         validate_variational_fso(fso)
+
+        approved_config = replace(
+            strict_config,
+            required_verification_radar_product_digest="5" * 64,
+            required_verification_qc_pipeline_digest="6" * 64,
+        )
+        compute_variational_fso(
+            forecast,
+            analysis,
+            bundle,
+            sensitivity_config=approved_config,
+        )
+        with self.assertRaisesRegex(ValueError, "not approved"):
+            compute_variational_fso(
+                forecast,
+                analysis,
+                bundle,
+                sensitivity_config=replace(
+                    approved_config,
+                    required_verification_qc_pipeline_digest="8" * 64,
+                ),
+            )
 
         with self.assertRaisesRegex(ValueError, "VerificationBundle"):
             compute_variational_fso(
@@ -2132,6 +2167,31 @@ class VariationalFSOTests(unittest.TestCase):
             with self.subTest(values=values):
                 with self.assertRaises((TypeError, ValueError)):
                     VariationalAdjointConfig(**values)
+
+        metric_policy = SensitivityConfig.for_automated_learning(
+            radar_product_digest="1" * 64,
+            qc_pipeline_digest="2" * 64,
+        )
+        self.assertEqual(
+            metric_policy.metric_domain,
+            "radar_dynamics_anchored",
+        )
+        self.assertTrue(metric_policy.require_verification_lineage)
+        self.assertEqual(
+            metric_policy.required_verification_radar_product_digest,
+            "1" * 64,
+        )
+        self.assertEqual(
+            metric_policy.required_verification_qc_pipeline_digest,
+            "2" * 64,
+        )
+        adjoint_policy = VariationalAdjointConfig.for_automated_learning()
+        self.assertTrue(adjoint_policy.require_active_set_margin)
+        self.assertTrue(adjoint_policy.require_feasibility_margin)
+        self.assertTrue(adjoint_policy.require_gauss_newton_reliability)
+        self.assertTrue(
+            adjoint_policy.require_baseline_dynamics_branch_validity
+        )
 
         displacement = torch.tensor((0.25, 0.40), dtype=torch.float64)
         self.assertAlmostEqual(
@@ -3411,7 +3471,7 @@ class VariationalFSOTests(unittest.TestCase):
 
         self.assertEqual(
             fsoi.contract,
-            "p1-linearized-observation-impact-v6",
+            "p1-linearized-observation-impact-v7",
         )
         self.assertEqual(
             fsoi.perturbation_contract,
@@ -3471,6 +3531,7 @@ class VariationalFSOTests(unittest.TestCase):
             + fsoi.observation.initial_background_dbz.tile_sum_by_time
             + fsoi.observation.baseline_dynamics_dbz.tile_sum_by_time,
         )
+        self.assertIsNone(fsoi.observation.trusted_total)
         validate_variational_fsoi(fsoi)
         self.assertNotEqual(fsoi.variational_fsoi_digest, "")
 

@@ -181,7 +181,7 @@ print(analysis.state.echo_linear)  # 세 장으로 분석된 현재 q(0)
 수용·수렴한 P1 분석은 최종 control에서 IRLS weight와 remap cell을 다시
 고정한 뒤, 그 고정 least-squares 모델의 stationarity가 충분해지도록 제한된
 GN polish를 수행한다. polish 뒤에는 기존 amplitude·causal·saturation·objective
-gate를 다시 검사한다. 보존되는 `p1-final-frozen-irls-gn-v8` 선형화에는
+gate를 다시 검사한다. 보존되는 `p1-final-frozen-irls-gn-v9` 선형화에는
 residual norm, gradient norm, 상대 stationarity, polish 횟수와 최종 hard
 feasibility margin이 함께 들어간다.
 관측·분류 mask·최종 IRLS weight·remap cell·prior graph를 포함한 모든 frozen
@@ -263,7 +263,7 @@ legacy Tensor를 거부한다. raw Tensor 입력은 연구 호환용으로 계�
 결과와 M0 원장에 `verification_lineage_complete=False`로 기록되므로 지연 자동
 학습의 완전한 검증자료로 승격할 수 없다.
 
-`compute_variational_fso()`의 `p1-variational-fso-v9` 결과는 영향값이 아니라
+`compute_variational_fso()`의 `p1-variational-fso-v10` 결과는 영향값이 아니라
 다음 관측 parameter와 frozen 초기배경 경로에 대한 미분이다.
 
 ```text
@@ -386,6 +386,21 @@ fso = compute_variational_fso(
 )
 ```
 
+자동학습 경로는 개별 안전 flag를 직접 조합하지 않고 다음 strict profile을
+사용한다.
+
+```python
+sensitivity_config = SensitivityConfig.for_automated_learning(
+    radar_product_digest=approved_radar_product_digest,
+    qc_pipeline_digest=approved_qc_pipeline_digest,
+)
+adjoint_config = VariationalAdjointConfig.for_automated_learning()
+```
+
+이 profile은 verification lineage, radar-dynamics domain, active-set·feasibility·
+GN 신뢰도와 baseline branch 인증을 모두 요구한다. 미인증 baseline dynamics가
+있으면 trusted-total sensitivity·impact는 제공하지 않는다.
+
 `lead_minutes`는 원래 forecast 축에서 실제 수반계를 풀 lead만 고른다. metric별
 직전 lead 해는 다음 PCG의 초기값으로만 사용하며 true residual을 다시 계산한다.
 unit control prior와 field-smoothness graph diagonal preconditioner를 기본으로
@@ -396,11 +411,10 @@ unit control prior와 field-smoothness graph diagonal preconditioner를 기본�
 기록한다. 이 값은 수반해의 수치 잔차이며, `B H^-1` 연산자 norm을 포함하지 않으므로
 민감도 지도의 L2 오차상한으로 해석하지 않는다.
 
-`baseline_dynamics_dbz`는 FFT peak와 pair 선택을 고정한 연구용 채널이다. 현재
-branch 경계까지의 완전한 margin은 보존하지 않으므로 결과의
-`baseline_dynamics_branch_valid`는 이 경로가 존재할 때 `False`다.
-`require_baseline_dynamics_branch_validity=True`이면 해당 채널을 포함한 계산을
-fail-close한다.
+`baseline_dynamics_dbz`는 FFT peak와 pair 선택을 고정한 연구용 채널이다. 결과의
+`baseline_dynamics_branch_status`는 경로 없음, 미인증, 인증, 무효를 구분한다.
+미인증·무효 경로가 있으면 trusted-total 채널을 생성하지 않으며,
+`require_baseline_dynamics_branch_validity=True`인 계산은 fail-close한다.
 
 동일한 frozen residual objective에 대해 고정-seed unit Rademacher probe마다 exact
 Hessian-vector product와 GN product를 비교한다. `gauss_newton_diagnostics`에는
@@ -454,7 +468,7 @@ fso = compute_variational_fso(
 )
 ```
 
-`p1-linearization-v6` loader는 pickle을 사용하지 않고 archive 크기·member
+`p1-linearization-v7` loader는 pickle을 사용하지 않고 archive 크기·member
 allowlist·각 Tensor digest·전체 artifact digest를 먼저 검사한다. 그 뒤 저장된
 control에서 state와 `J^T r`를 다시 계산한다. algorithm bundle 또는 Python,
 NumPy, PyTorch, backend capability, deterministic-policy로 구성된 numerical
@@ -606,6 +620,9 @@ common-bias 설정은 analysis config·forecast run·최종 linearization digest
 포함된다. P1 FSO의 detected/censored/weight 채널도 같은 비대각 whitening을
 통과한 frozen stationarity의 혼합미분을 사용한다. 운용 P1에서는 bias 크기,
 시간 scope, tile 크기를 calibration profile에 모두 명시해야 한다.
+overlapping mode의 basis와 작은 correction matrix는 분석 준비 시 한 번만
+고유분해하여 frozen linearization에 저장한다. 이후 residual·JVP·VJP hot path는
+저장된 선형연산만 적용한다.
 
 regular tile 대신 실제 레이더·사이트·모자이크 영역을 사용하려면 정수 group
 map을 전달한다. `-1`은 common-bias mode에서 제외되고 0 이상의 같은 label은
@@ -637,7 +654,7 @@ forecast, analysis = variational_nowcast(
 group map은 `[H,W]` 또는 `[3,H,W]` 정수 Tensor이며 tile mode와 동시에 사용할
 수 없다. 연구모드는 digest를 생략하면 canonical map digest를 자동 결합하지만,
 운용모드는 사전 승인된 `AnalysisConfig`에 정확한 digest가 있어야 한다. map은
-analysis-input·forecast-run·linearization digest와 `p1-linearization-v6`
+analysis-input·forecast-run·linearization digest와 `p1-linearization-v7`
 artifact에 포함된다. CLI에서는
 `--observation-common-bias-group-map groups.npy`를 사용한다.
 
@@ -1204,5 +1221,5 @@ weight, active set, remap cell, observation classification과 baseline을 고정
 자체의 변화, EFSO, 검증된 baseline-normalized reward와 자동학습 승격은 아직
 포함하지 않는다. P1 FSO·FSOI 결과 자체는 M0 episode ledger에 저장하지 않지만,
 3시간 지연 재계산에 필요한 frozen linearization은 content-addressed
-`p1-linearization-v6` artifact로 안전하게 보존·재적재할 수 있다.
+`p1-linearization-v7` artifact로 안전하게 보존·재적재할 수 있다.
 P1 분석상태는 기존 M0 직접민감도 API에서 계속 provenance 검사로 거부된다.

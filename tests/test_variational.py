@@ -752,6 +752,37 @@ class VariationalAnalysisTests(unittest.TestCase):
             / observations.std_dbz[:, 0, -1].square(),
         )
 
+    def test_overlapping_common_bias_factorization_is_frozen_once(
+        self,
+    ) -> None:
+        frames = torch.full((3, 4, 4), 20.0, dtype=torch.float64)
+        mode_weights = torch.full(
+            (2, 4, 4),
+            0.5,
+            dtype=torch.float64,
+        )
+        original = variational_module._low_rank_inverse_sqrt_correction
+        with patch.object(
+            variational_module,
+            "_low_rank_inverse_sqrt_correction",
+            wraps=original,
+        ) as correction:
+            observations, frozen = prepare_analysis(
+                frames,
+                nowcast_config=NowcastConfig(),
+                analysis_config=AnalysisConfig(
+                    observation_common_bias_std_dbz=1.0
+                ),
+                observation_common_bias_mode_weights=mode_weights,
+            )
+            count_after_freeze = correction.call_count
+            control = initial_control(frozen)
+            residual_vector(control, observations, frozen)
+            residual_vector(control, observations, frozen)
+
+        self.assertEqual(count_after_freeze, 1)
+        self.assertEqual(correction.call_count, 1)
+
     def test_common_bias_contract_is_validated_and_changes_lineage(self) -> None:
         for value in (-0.1, float("nan"), float("inf"), True):
             with self.subTest(value=value):

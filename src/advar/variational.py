@@ -65,8 +65,8 @@ CensoredBackgroundPolicy = Literal[
     "external_background",
 ]
 MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT = 64
-P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v8"
-P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v6"
+P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v9"
+P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v7"
 
 
 @dataclass(frozen=True)
@@ -412,6 +412,16 @@ class AnalysisObservations:
 
 
 @dataclass(frozen=True)
+class FrozenObservationWhitener:
+    """Precomputed constants for the frozen observation-error transform."""
+
+    mode: Tensor | None
+    overlapping_basis: Tensor | None
+    overlapping_correction: Tensor | None
+    per_frame: bool
+
+
+@dataclass(frozen=True)
 class FrozenOuterState:
     initial_background_dbz: Tensor
     initial_support_mask: Tensor
@@ -425,6 +435,7 @@ class FrozenOuterState:
     baseline_state: RadarState
     baseline_metadata: ForecastMetadata
     baseline_frames_dbz: Tensor
+    observation_whitener: FrozenObservationWhitener
     irls_sqrt_weight: Tensor
     nowcast_config: NowcastConfig
     analysis_config: AnalysisConfig
@@ -1388,6 +1399,10 @@ def prepare_analysis(
         canonical_observations[0],
         prepared.background_frames_dbz[0],
     )
+    observation_whitener = _freeze_observation_whitener(
+        observations,
+        analysis_config,
+    )
     frozen = FrozenOuterState(
         initial_background_dbz=initial_background_dbz.detach().clone(),
         initial_support_mask=initial_support.detach().clone(),
@@ -1401,6 +1416,7 @@ def prepare_analysis(
         baseline_state=baseline_state,
         baseline_metadata=baseline_metadata,
         baseline_frames_dbz=baseline_frames_dbz.detach().clone(),
+        observation_whitener=observation_whitener,
         irls_sqrt_weight=valid.to(dtype=frames_dbz.dtype).detach().clone(),
         nowcast_config=nowcast_config,
         analysis_config=analysis_config,
@@ -1724,13 +1740,75 @@ def _whitened_observation_residual(
         standardized,
         observations,
         frozen.analysis_config,
+        whitener=frozen.observation_whitener,
     )
+
+
+def _freeze_observation_whitener(
+    observations: AnalysisObservations,
+    config: AnalysisConfig,
+) -> FrozenObservationWhitener:
+    """Build constants reused by every frozen residual evaluation."""
+
+    per_frame = config.observation_common_bias_scope == "per_frame"
+    bias_std = config.observation_common_bias_std_dbz
+    if bias_std == 0.0:
+        return FrozenObservationWhitener(None, None, None, per_frame)
+    mode = (
+        torch.sqrt(observations.quality_weight)
+        / observations.std_dbz
+    ) * observations.valid_mask.to(dtype=observations.dbz.dtype)
+    mode_weights = observations.common_bias_mode_weights
+    if mode_weights is None:
+        return FrozenObservationWhitener(
+            mode.detach(),
+            None,
+            None,
+            per_frame,
+        )
+    weighted_basis = bias_std * mode_weights * mode.unsqueeze(1)
+    basis = (
+        weighted_basis.flatten(start_dim=2)
+        if per_frame
+        else weighted_basis.permute(1, 0, 2, 3).flatten(start_dim=1)
+    )
+    correction = _low_rank_inverse_sqrt_correction(basis)
+    return FrozenObservationWhitener(
+        mode.detach(),
+        basis.detach(),
+        correction.detach(),
+        per_frame,
+    )
+
+
+def _validate_frozen_observation_whitener(
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+) -> None:
+    expected = _freeze_observation_whitener(
+        observations,
+        frozen.analysis_config,
+    )
+    actual = frozen.observation_whitener
+    if actual.per_frame != expected.per_frame:
+        raise ValueError("frozen observation whitener scope mismatch")
+    for name in ("mode", "overlapping_basis", "overlapping_correction"):
+        actual_value = getattr(actual, name)
+        expected_value = getattr(expected, name)
+        if (actual_value is None) != (expected_value is None) or (
+            actual_value is not None
+            and expected_value is not None
+            and not torch.equal(actual_value, expected_value)
+        ):
+            raise ValueError("frozen observation whitener content mismatch")
 
 
 def _apply_observation_error_whitener(
     values: Tensor,
     observations: AnalysisObservations,
     config: AnalysisConfig,
+    *,
+    whitener: FrozenObservationWhitener | None = None,
 ) -> Tensor:
     """Apply the symmetric inverse square root of a low-rank bias covariance.
 
@@ -1748,17 +1826,20 @@ def _apply_observation_error_whitener(
     bias_std = config.observation_common_bias_std_dbz
     if bias_std == 0.0:
         return values
-    mode = (
-        torch.sqrt(observations.quality_weight)
-        / observations.std_dbz
-    ) * observations.valid_mask.to(dtype=values.dtype)
+    whitener = whitener or _freeze_observation_whitener(observations, config)
+    mode = whitener.mode
+    if mode is None or mode.shape != values.shape:
+        raise ValueError("frozen observation whitener is incompatible")
     if observations.common_bias_mode_weights is not None:
-        return _apply_overlapping_observation_error_whitener(
+        basis = whitener.overlapping_basis
+        correction = whitener.overlapping_correction
+        if basis is None or correction is None:
+            raise ValueError("frozen overlapping whitener is incomplete")
+        return _apply_frozen_low_rank_whitener(
             values,
-            mode,
-            mode_weights=observations.common_bias_mode_weights,
-            bias_std=bias_std,
-            temporal_scope=config.observation_common_bias_scope,
+            basis,
+            correction,
+            per_frame=whitener.per_frame,
         )
     if observations.common_bias_group_index is not None:
         return _apply_grouped_observation_error_whitener(
@@ -1804,49 +1885,44 @@ def _apply_observation_error_whitener(
     return values - coefficient * mode * projection
 
 
-def _apply_low_rank_inverse_sqrt(
-    values: Tensor,
+def _low_rank_inverse_sqrt_correction(
     basis: Tensor,
 ) -> Tensor:
     gram = basis @ basis.mT
     eigenvalues, eigenvectors = torch.linalg.eigh(gram)
     eigenvalues = eigenvalues.clamp_min(0.0)
     correction_eigenvalues = torch.where(
-        eigenvalues > torch.finfo(values.dtype).eps,
+        eigenvalues > torch.finfo(basis.dtype).eps,
         (torch.rsqrt(1.0 + eigenvalues) - 1.0) / eigenvalues,
         eigenvalues.new_full((), -0.5),
     )
-    projection = basis @ values
-    mode_correction = eigenvectors @ (
-        correction_eigenvalues * (eigenvectors.mT @ projection)
+    return eigenvectors @ (
+        correction_eigenvalues.unsqueeze(-1) * eigenvectors.mT
     )
-    return values + basis.mT @ mode_correction
 
 
-def _apply_overlapping_observation_error_whitener(
+def _apply_frozen_low_rank_whitener(
     values: Tensor,
-    mode: Tensor,
+    basis: Tensor,
+    correction: Tensor,
     *,
-    mode_weights: Tensor,
-    bias_std: float,
-    temporal_scope: ObservationCommonBiasScope,
+    per_frame: bool,
 ) -> Tensor:
-    weighted_basis = (
-        bias_std * mode_weights * mode.unsqueeze(1)
-    )
-    if temporal_scope == "per_frame":
-        frames = tuple(
-            _apply_low_rank_inverse_sqrt(
-                values[index].flatten(),
-                weighted_basis[index].flatten(start_dim=1),
-            ).reshape_as(values[index])
-            for index in range(values.shape[0])
+    if per_frame:
+        flat_values = values.flatten(start_dim=1)
+        projection = torch.matmul(
+            basis,
+            flat_values.unsqueeze(-1),
         )
-        return torch.stack(frames)
-    basis = weighted_basis.permute(1, 0, 2, 3).flatten(start_dim=1)
-    return _apply_low_rank_inverse_sqrt(
-        values.flatten(),
-        basis,
+        adjustment = torch.matmul(
+            basis.mT,
+            torch.matmul(correction, projection),
+        )
+        return (flat_values + adjustment.squeeze(-1)).reshape_as(values)
+    flat_values = values.flatten()
+    projection = basis @ flat_values
+    return (
+        flat_values + basis.mT @ (correction @ projection)
     ).reshape_as(values)
 
 
@@ -3363,6 +3439,7 @@ def _evaluate_control(
         standardized,
         observations,
         frozen.analysis_config,
+        whitener=frozen.observation_whitener,
     )
     return (
         _robust_objective_from_residual(
@@ -5617,6 +5694,10 @@ def _clone_tensor(value: Tensor) -> Tensor:
     return value.detach().clone()
 
 
+def _clone_optional_tensor(value: Tensor | None) -> Tensor | None:
+    return None if value is None else _clone_tensor(value)
+
+
 def _clone_analysis_observations(
     observations: AnalysisObservations,
 ) -> AnalysisObservations:
@@ -5762,6 +5843,16 @@ def _clone_frozen_outer_state(frozen: FrozenOuterState) -> FrozenOuterState:
         baseline_state=_detach_state(frozen.baseline_state),
         baseline_metadata=_detach_metadata(frozen.baseline_metadata),
         baseline_frames_dbz=_clone_tensor(frozen.baseline_frames_dbz),
+        observation_whitener=FrozenObservationWhitener(
+            mode=_clone_optional_tensor(frozen.observation_whitener.mode),
+            overlapping_basis=_clone_optional_tensor(
+                frozen.observation_whitener.overlapping_basis
+            ),
+            overlapping_correction=_clone_optional_tensor(
+                frozen.observation_whitener.overlapping_correction
+            ),
+            per_frame=frozen.observation_whitener.per_frame,
+        ),
         irls_sqrt_weight=_clone_tensor(frozen.irls_sqrt_weight),
         nowcast_config=frozen.nowcast_config,
         analysis_config=frozen.analysis_config,
@@ -5812,6 +5903,10 @@ def _analysis_observations_digest_values(
     return values
 
 
+def _optional_tensor_digest(value: Tensor | None) -> str | None:
+    return None if value is None else tensor_digest(value)
+
+
 def _frozen_outer_state_digest_values(
     frozen: FrozenOuterState,
 ) -> dict[str, object]:
@@ -5837,6 +5932,18 @@ def _frozen_outer_state_digest_values(
             frozen.baseline_metadata,
         ),
         "baseline_frames_dbz": tensor_digest(frozen.baseline_frames_dbz),
+        "observation_whitener": {
+            "mode": _optional_tensor_digest(
+                frozen.observation_whitener.mode
+            ),
+            "overlapping_basis": _optional_tensor_digest(
+                frozen.observation_whitener.overlapping_basis
+            ),
+            "overlapping_correction": _optional_tensor_digest(
+                frozen.observation_whitener.overlapping_correction
+            ),
+            "per_frame": frozen.observation_whitener.per_frame,
+        },
         "irls_sqrt_weight": tensor_digest(frozen.irls_sqrt_weight),
         "nowcast_config": frozen.nowcast_config.digest,
         "analysis_config": json_digest(asdict(frozen.analysis_config)),
@@ -5948,6 +6055,10 @@ def validate_analysis_linearization_content(
     _validate_observation_common_bias_contract(
         linearization.observations,
         linearization.frozen.analysis_config,
+    )
+    _validate_frozen_observation_whitener(
+        linearization.observations,
+        linearization.frozen,
     )
     if tensor_digest(control) != linearization.control_digest:
         raise ValueError("P1 linearization control digest mismatch")
