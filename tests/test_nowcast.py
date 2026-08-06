@@ -4666,6 +4666,7 @@ class NowcastTests(unittest.TestCase):
             "forecast_confidence_length_scale_m",
             "forecast_log_growth_uncertainty_per_step",
             "forecast_log_growth_confidence_scale",
+            "p1_posterior_saturation_sigma_multiplier",
             "background_tendency_age_uncertainty_scale_minutes",
         ):
             for value in (0.0, -1.0, float("nan"), True):

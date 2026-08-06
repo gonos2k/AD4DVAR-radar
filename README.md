@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.50
+# ADVAR 3-frame radar nowcast v0.51
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -183,8 +183,10 @@ print(analysis.state.echo_linear)  # 세 장으로 분석된 현재 q(0)
 다시 계산하며, frozen stationarity·실제 pseudo-Huber gradient·retained weight
 일관성을 모두 만족해야 P1 forecast, posterior와 FSO를 제공한다. polish 뒤에는
 기존 amplitude·causal·saturation·objective gate도 다시 검사한다. 보존되는
-`p1-final-frozen-irls-gn-v11` 선형화에는 frozen/robust gradient 진단, IRLS
+`p1-final-frozen-irls-gn-v12` 선형화에는 frozen/robust gradient 진단, IRLS
 weight 변화, polish 횟수와 최종 hard feasibility margin이 함께 들어간다.
+stationarity는 격자크기에 따라 작아지는 objective 정규화 대신 active field
+gradient RMS와 표준화된 3개 dynamics gradient 최대값의 큰 값으로 판정한다.
 관측·분류 mask·최종 IRLS weight·remap cell·prior graph를 포함한 모든 frozen
 입력은 `linearization_digest`에 결합되며, 보존 Tensor는 caller storage와
 분리된 clone이다. 미래 검증장이 도착하면 이 고정 선형화에서 세 입력시각
@@ -194,6 +196,9 @@ P1 결과는 `outer_converged`, `final_linearization_stationary`,
 `posterior_eligible`, `fso_eligible`을 분리해 기록한다. 운용모드에서 최종
 robust fixed-point 계약을 만족하지 못하면 P1을 발행하지 않고 P0로 fallback하며,
 연구모드에서도 posterior와 FSO용 선형화는 제공하지 않는다.
+운용모드는 분석 평균의 saturation margin뿐 아니라
+`safe_margin + p1_posterior_saturation_sigma_multiplier × posterior_sigma`를
+요구한다. posterior가 비유한하거나 이 경계를 넘으면 P1을 발행하지 않는다.
 
 탐지한계 아래의 censored 값은 기본적으로 `min_dbz` clear-sky floor로
 canonicalize한다. 따라서 같은 below-detection 사건을 -10 dBZ 또는 4.9 dBZ로
@@ -497,7 +502,7 @@ fso = compute_variational_fso(
 )
 ```
 
-`p1-linearization-v9` loader는 pickle을 사용하지 않고 archive 크기·member
+`p1-linearization-v10` loader는 pickle을 사용하지 않고 archive 크기·member
 allowlist·각 Tensor digest·전체 artifact digest를 먼저 검사한다. 그 뒤 저장된
 control에서 state와 `J^T r`를 다시 계산한다. algorithm bundle 또는 Python,
 NumPy, PyTorch, backend capability, deterministic-policy로 구성된 numerical
@@ -683,7 +688,7 @@ forecast, analysis = variational_nowcast(
 group map은 `[H,W]` 또는 `[3,H,W]` 정수 Tensor이며 tile mode와 동시에 사용할
 수 없다. 연구모드는 digest를 생략하면 canonical map digest를 자동 결합하지만,
 운용모드는 사전 승인된 `AnalysisConfig`에 정확한 digest가 있어야 한다. map은
-analysis-input·forecast-run·linearization digest와 `p1-linearization-v9`
+analysis-input·forecast-run·linearization digest와 `p1-linearization-v10`
 artifact에 포함된다. CLI에서는
 `--observation-common-bias-group-map groups.npy`를 사용한다.
 
@@ -820,7 +825,7 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v51`
+- `output_contract_version`: 현재 `nowcast-npz-v52`
 - `forecast_run_artifact_version`: 현재 `forecast-run-v42`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
@@ -1257,6 +1262,10 @@ weight, active set, remap cell, observation classification과 baseline을 고정
 이하여야 한다. outer-loop 선택
 자체의 변화, EFSO, 검증된 baseline-normalized reward와 자동학습 승격은 아직
 포함하지 않는다. P1 FSO·FSOI 결과 자체는 M0 episode ledger에 저장하지 않지만,
+자동학습 wrapper는 동일 frozen 준비구조에 실제 physical-dBZ perturbation을
+적용해 robust P1 분석을 한 번 다시 풀고, 선택된 lead·metric의 실제 변화와
+1차 예측을 비교한다. Taylor remainder 비율이 승인 policy의 기본 0.1을
+넘거나 remap/output-cap branch가 바뀌면 `first_order_valid=False`로 거부한다.
 3시간 지연 재계산에 필요한 frozen linearization은 content-addressed
-`p1-linearization-v9` artifact로 안전하게 보존·재적재할 수 있다.
+`p1-linearization-v10` artifact로 안전하게 보존·재적재할 수 있다.
 P1 분석상태는 기존 M0 직접민감도 API에서 계속 provenance 검사로 거부된다.

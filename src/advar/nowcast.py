@@ -80,6 +80,7 @@ class NowcastConfig:
     forecast_log_growth_confidence_scale: float = 1.0
     p1_motion_saturation_safe_margin_mps: float = 2.0
     p1_growth_saturation_safe_margin_per_step: float = math.log(1.05)
+    p1_posterior_saturation_sigma_multiplier: float = 2.0
     p1_saturation_uncertainty_multiplier: float = 4.0
     single_pair_uncertainty_multiplier: float = 2.0
     persistence_uncertainty_multiplier: float = 4.0
@@ -133,6 +134,7 @@ class NowcastConfig:
             self.forecast_log_growth_confidence_scale,
             self.p1_motion_saturation_safe_margin_mps,
             self.p1_growth_saturation_safe_margin_per_step,
+            self.p1_posterior_saturation_sigma_multiplier,
             self.p1_saturation_uncertainty_multiplier,
             self.single_pair_uncertainty_multiplier,
             self.persistence_uncertainty_multiplier,
@@ -261,6 +263,9 @@ class NowcastConfig:
             ),
             "p1_growth_saturation_safe_margin_per_step": (
                 self.p1_growth_saturation_safe_margin_per_step
+            ),
+            "p1_posterior_saturation_sigma_multiplier": (
+                self.p1_posterior_saturation_sigma_multiplier
             ),
             "p1_saturation_uncertainty_multiplier": (
                 self.p1_saturation_uncertainty_multiplier
@@ -1606,6 +1611,7 @@ def operational_runtime_profile_digest(
         for name in (
             "p1_motion_saturation_safe_margin_mps",
             "p1_growth_saturation_safe_margin_per_step",
+            "p1_posterior_saturation_sigma_multiplier",
             "p1_saturation_uncertainty_multiplier",
         ):
             nowcast_value.pop(name)

@@ -34,7 +34,7 @@ from .variational import (
 )
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v51"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v52"
 
 
 def main() -> None:
@@ -101,6 +101,11 @@ def main() -> None:
         "--p1-growth-saturation-safe-margin-per-step",
         type=float,
         help="minimum safe P1 margin below the log-growth limit",
+    )
+    parser.add_argument(
+        "--p1-posterior-saturation-sigma-multiplier",
+        type=float,
+        help="posterior standard deviations required inside P1 limits",
     )
     parser.add_argument(
         "--p1-saturation-uncertainty-multiplier",
@@ -557,6 +562,11 @@ def main() -> None:
             if args.p1_growth_saturation_safe_margin_per_step is None
             else args.p1_growth_saturation_safe_margin_per_step
         ),
+        p1_posterior_saturation_sigma_multiplier=(
+            default_nowcast_config.p1_posterior_saturation_sigma_multiplier
+            if args.p1_posterior_saturation_sigma_multiplier is None
+            else args.p1_posterior_saturation_sigma_multiplier
+        ),
         p1_saturation_uncertainty_multiplier=(
             default_nowcast_config.p1_saturation_uncertainty_multiplier
             if args.p1_saturation_uncertainty_multiplier is None
@@ -823,6 +833,9 @@ def _analysis_config_from_args(
         ),
         "--p1-growth-saturation-safe-margin-per-step": (
             args.p1_growth_saturation_safe_margin_per_step
+        ),
+        "--p1-posterior-saturation-sigma-multiplier": (
+            args.p1_posterior_saturation_sigma_multiplier
         ),
         "--p1-saturation-uncertainty-multiplier": (
             args.p1_saturation_uncertainty_multiplier
@@ -1140,6 +1153,26 @@ def _output_arrays(
                 np.nan
                 if analysis.robust_gradient_norm is None
                 else analysis.robust_gradient_norm
+            ),
+            analysis_linearization_field_gradient_rms=np.asarray(
+                np.nan
+                if analysis.linearization_field_gradient_rms is None
+                else analysis.linearization_field_gradient_rms
+            ),
+            analysis_linearization_dynamics_gradient_max=np.asarray(
+                np.nan
+                if analysis.linearization_dynamics_gradient_max is None
+                else analysis.linearization_dynamics_gradient_max
+            ),
+            analysis_robust_field_gradient_rms=np.asarray(
+                np.nan
+                if analysis.robust_field_gradient_rms is None
+                else analysis.robust_field_gradient_rms
+            ),
+            analysis_robust_dynamics_gradient_max=np.asarray(
+                np.nan
+                if analysis.robust_dynamics_gradient_max is None
+                else analysis.robust_dynamics_gradient_max
             ),
             analysis_robust_relative_stationarity=np.asarray(
                 np.nan
