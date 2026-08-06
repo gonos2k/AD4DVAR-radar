@@ -45,11 +45,14 @@ from .variational import (
     P1LinearizationState,
     _analysis_trajectory,
     _linearization_stationarity,
+    _relative_irls_weight_change,
+    _robust_stationarity,
+    freeze_irls_weights,
     validate_analysis_linearization_content,
 )
 
 
-P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v7"
+P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v8"
 DEFAULT_MAXIMUM_MEMBER_COUNT = 96
 DEFAULT_MAXIMUM_MEMBER_BYTES = 2 * 1024**3
 DEFAULT_MAXIMUM_TOTAL_EXPANDED_BYTES = 8 * 1024**3
@@ -285,6 +288,10 @@ def _linearization_state(
         )
     if (
         not analysis.final_linearization_stationary
+        or not analysis.final_robust_stationary
+        or not analysis.final_irls_fixed_point
+        or not analysis.p1_forecast_eligible
+        or not analysis.posterior_eligible
         or not analysis.fso_eligible
     ):
         raise ValueError(
@@ -299,12 +306,18 @@ def _linearization_state(
         analysis.linearization_residual_norm,
         analysis.linearization_gradient_norm,
         analysis.linearization_relative_stationarity,
+        analysis.robust_gradient_norm,
+        analysis.robust_relative_stationarity,
+        analysis.irls_relative_weight_change,
         analysis.linearization_polish_iterations,
     )
     retained = (
         linearization.residual_norm,
         linearization.gradient_norm,
         linearization.relative_stationarity,
+        linearization.robust_gradient_norm,
+        linearization.robust_relative_stationarity,
+        linearization.irls_relative_weight_change,
         linearization.polish_iterations,
     )
     if diagnostics != retained:
@@ -326,9 +339,20 @@ def _linearization_state(
         linearization_relative_stationarity=(
             linearization.relative_stationarity
         ),
+        robust_gradient_norm=linearization.robust_gradient_norm,
+        robust_relative_stationarity=(
+            linearization.robust_relative_stationarity
+        ),
+        irls_relative_weight_change=(
+            linearization.irls_relative_weight_change
+        ),
         linearization_polish_iterations=linearization.polish_iterations,
         linearization=linearization,
         final_linearization_stationary=True,
+        final_robust_stationary=True,
+        final_irls_fixed_point=True,
+        p1_forecast_eligible=True,
+        posterior_eligible=True,
         fso_eligible=True,
         outer_converged=analysis.outer_converged,
     )
@@ -591,6 +615,49 @@ def _validate_loaded_state(state: P1LinearizationState) -> None:
         .final_linearization_relative_stationarity_tolerance
     ):
         raise ValueError("P1 artifact final linearization is not stationary")
+    robust = _robust_stationarity(
+        state.control,
+        linearization.observations,
+        linearization.frozen,
+    )
+    refreshed = freeze_irls_weights(
+        state.control,
+        linearization.observations,
+        linearization.frozen,
+    )
+    weight_change = _relative_irls_weight_change(
+        linearization.frozen,
+        refreshed,
+    )
+    robust_stored = (
+        linearization.robust_gradient_norm,
+        linearization.robust_relative_stationarity,
+        linearization.irls_relative_weight_change,
+    )
+    robust_actual = (
+        robust.gradient_norm,
+        robust.relative_stationarity,
+        weight_change,
+    )
+    if any(
+        not math.isclose(
+            left,
+            right,
+            rel_tol=comparison_tolerance,
+            abs_tol=comparison_tolerance,
+        )
+        for left, right in zip(robust_stored, robust_actual, strict=True)
+    ):
+        raise ValueError("P1 artifact robust diagnostics mismatch")
+    if (
+        robust.relative_stationarity
+        > linearization.frozen.analysis_config
+        .final_robust_relative_stationarity_tolerance
+        or weight_change
+        > linearization.frozen.analysis_config
+        .final_irls_relative_weight_tolerance
+    ):
+        raise ValueError("P1 artifact is not a robust IRLS fixed point")
 
 
 def load_p1_linearization(

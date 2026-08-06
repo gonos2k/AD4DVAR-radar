@@ -65,15 +65,15 @@ CensoredBackgroundPolicy = Literal[
     "external_background",
 ]
 MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT = 64
-P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v9"
-P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v7"
+P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v10"
+P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v8"
 
 
 @dataclass(frozen=True)
 class AnalysisConfig:
     detection_limit_dbz: float = 5.0
     censor_temperature_dbz: float = 1.0
-    censored_background_policy: CensoredBackgroundPolicy = "detection_limit"
+    censored_background_policy: CensoredBackgroundPolicy = "floor"
     observation_std_dbz: float = 2.0
     minimum_observation_std_dbz: float = 0.1
     observation_common_bias_std_dbz: float = 0.0
@@ -113,6 +113,8 @@ class AnalysisConfig:
     gradient_tolerance: float = 1.0e-5
     step_tolerance: float = 1.0e-4
     final_linearization_relative_stationarity_tolerance: float = 1.0e-4
+    final_robust_relative_stationarity_tolerance: float = 1.0e-4
+    final_irls_relative_weight_tolerance: float = 1.0e-4
     maximum_final_linearization_polish_iterations: int = 4
     initial_damping: float = 1.0e-2
     minimum_damping: float = 1.0e-6
@@ -160,6 +162,12 @@ class AnalysisConfig:
             "step_tolerance": self.step_tolerance,
             "final_linearization_relative_stationarity_tolerance": (
                 self.final_linearization_relative_stationarity_tolerance
+            ),
+            "final_robust_relative_stationarity_tolerance": (
+                self.final_robust_relative_stationarity_tolerance
+            ),
+            "final_irls_relative_weight_tolerance": (
+                self.final_irls_relative_weight_tolerance
             ),
             "initial_damping": self.initial_damping,
             "minimum_damping": self.minimum_damping,
@@ -734,6 +742,9 @@ class AnalysisLinearization:
     residual_norm: float
     gradient_norm: float
     relative_stationarity: float
+    robust_gradient_norm: float
+    robust_relative_stationarity: float
+    irls_relative_weight_change: float
     polish_iterations: int
     feasibility_margins: AnalysisFeasibilityMargins
     forecast_run_digest: str | None = None
@@ -839,9 +850,16 @@ class AnalysisResult:
     linearization_residual_norm: float | None = None
     linearization_gradient_norm: float | None = None
     linearization_relative_stationarity: float | None = None
+    robust_gradient_norm: float | None = None
+    robust_relative_stationarity: float | None = None
+    irls_relative_weight_change: float | None = None
     linearization_polish_iterations: int = 0
     linearization: AnalysisLinearization | None = None
     final_linearization_stationary: bool = False
+    final_robust_stationary: bool = False
+    final_irls_fixed_point: bool = False
+    p1_forecast_eligible: bool = False
+    posterior_eligible: bool = False
     fso_eligible: bool = False
     outer_converged: bool = False
 
@@ -856,12 +874,19 @@ class P1LinearizationState:
     linearization_residual_norm: float
     linearization_gradient_norm: float
     linearization_relative_stationarity: float
+    robust_gradient_norm: float
+    robust_relative_stationarity: float
+    irls_relative_weight_change: float
     linearization_polish_iterations: int
     linearization: AnalysisLinearization
     converged: bool = True
     used_fallback: bool = False
     degraded: bool = False
     final_linearization_stationary: bool = True
+    final_robust_stationary: bool = True
+    final_irls_fixed_point: bool = True
+    p1_forecast_eligible: bool = True
+    posterior_eligible: bool = True
     fso_eligible: bool = True
     outer_converged: bool = True
 
@@ -1317,7 +1342,18 @@ def prepare_analysis(
                 "external_background censored policy requires background "
                 "coverage at every censored observation"
             )
-        censor_fill = prepared.background_frames_dbz
+        detection_limit = prepared.frames_dbz.new_full(
+            (),
+            analysis_config.detection_limit_dbz,
+        )
+        below_detection = torch.nextafter(
+            detection_limit,
+            detection_limit.new_full((), -math.inf),
+        )
+        censor_fill = torch.minimum(
+            prepared.background_frames_dbz,
+            below_detection,
+        )
     elif analysis_config.censored_background_policy == "floor":
         censor_fill = prepared.frames_dbz.new_full(
             (),
@@ -2120,6 +2156,8 @@ class _FinalLinearizationPolish:
     frozen: FrozenOuterState
     exact_objective: float
     stationarity: _LinearizationStationarity
+    robust_stationarity: _LinearizationStationarity
+    relative_weight_change: float
     iterations: int
     pcg_iterations: int
 
@@ -2151,6 +2189,39 @@ def _linearization_stationarity(
     )
 
 
+def _robust_stationarity(
+    control: Tensor,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+) -> _LinearizationStationarity:
+    objective = robust_objective(control, observations, frozen)
+    gradient = torch.func.grad(robust_objective, argnums=0)(
+        control,
+        observations,
+        frozen,
+    )
+    gradient_norm = float(torch.linalg.vector_norm(gradient).detach())
+    objective_value = float(objective.detach())
+    return _LinearizationStationarity(
+        residual_norm=objective_value,
+        gradient_norm=gradient_norm,
+        relative_stationarity=(
+            gradient_norm / (1.0 + abs(objective_value))
+        ),
+    )
+
+
+def _relative_irls_weight_change(
+    previous: FrozenOuterState,
+    current: FrozenOuterState,
+) -> float:
+    difference = torch.linalg.vector_norm(
+        current.irls_sqrt_weight - previous.irls_sqrt_weight
+    )
+    scale = 1.0 + torch.linalg.vector_norm(previous.irls_sqrt_weight)
+    return float((difference / scale).detach())
+
+
 def _polish_final_linearization(
     control: Tensor,
     observations: AnalysisObservations,
@@ -2158,12 +2229,18 @@ def _polish_final_linearization(
     exact_objective: float,
 ) -> _FinalLinearizationPolish:
     config = frozen.analysis_config
+    previous_frozen = frozen
     frozen = freeze_irls_weights(control, observations, frozen)
+    relative_weight_change = _relative_irls_weight_change(
+        previous_frozen,
+        frozen,
+    )
     control = control.detach()
     damping = config.initial_damping
     polish_iterations = 0
     total_pcg_iterations = 0
     stationarity: _LinearizationStationarity | None = None
+    robust_stationarity: _LinearizationStationarity | None = None
 
     for _ in range(config.maximum_final_linearization_polish_iterations):
         residual_fn: Callable[[Tensor], Tensor] = lambda value: residual_vector(
@@ -2186,12 +2263,38 @@ def _polish_final_linearization(
             gradient_norm=gradient_norm,
             relative_stationarity=relative_stationarity,
         )
-        if (
+        frozen_stationary = (
             math.isfinite(relative_stationarity)
             and relative_stationarity
             <= config.final_linearization_relative_stationarity_tolerance
-        ):
-            break
+        )
+        if frozen_stationary:
+            refreshed = freeze_irls_weights(control, observations, frozen)
+            relative_weight_change = _relative_irls_weight_change(
+                frozen,
+                refreshed,
+            )
+            frozen = refreshed
+            robust_stationarity = _robust_stationarity(
+                control,
+                observations,
+                frozen,
+            )
+            if (
+                math.isfinite(robust_stationarity.relative_stationarity)
+                and robust_stationarity.relative_stationarity
+                <= config.final_robust_relative_stationarity_tolerance
+                and relative_weight_change
+                <= config.final_irls_relative_weight_tolerance
+            ):
+                stationarity = _linearization_stationarity(
+                    control,
+                    observations,
+                    frozen,
+                )
+                break
+            stationarity = None
+            continue
 
         def normal_product(vector: Tensor) -> Tensor:
             jacobian_vector = cast(
@@ -2236,7 +2339,7 @@ def _polish_final_linearization(
                 damping = min(config.maximum_damping, 4.0 * damping)
                 continue
 
-            for backtrack in range(12):
+            for backtrack in range(24):
                 candidate = control + (0.5**backtrack) * linear.solution
                 same_remap_branch = _analysis_remap_cells_match(
                     candidate,
@@ -2310,11 +2413,21 @@ def _polish_final_linearization(
                 ):
                     continue
                 control = candidate.detach()
-                frozen = candidate_frozen
+                refreshed = freeze_irls_weights(
+                    control,
+                    observations,
+                    candidate_frozen,
+                )
+                relative_weight_change = _relative_irls_weight_change(
+                    frozen,
+                    refreshed,
+                )
+                frozen = refreshed
                 exact_objective = candidate_exact
                 damping = max(config.minimum_damping, 0.5 * damping)
                 polish_iterations += 1
                 stationarity = None
+                robust_stationarity = None
                 accepted = True
                 break
             if accepted:
@@ -2323,8 +2436,18 @@ def _polish_final_linearization(
         if not accepted:
             break
 
-    if stationarity is None:
-        stationarity = _linearization_stationarity(control, observations, frozen)
+    retained_frozen = freeze_irls_weights(control, observations, frozen)
+    relative_weight_change = _relative_irls_weight_change(
+        frozen,
+        retained_frozen,
+    )
+    frozen = retained_frozen
+    stationarity = _linearization_stationarity(control, observations, frozen)
+    robust_stationarity = _robust_stationarity(
+        control,
+        observations,
+        frozen,
+    )
     if not _analysis_remap_cells_match(control, frozen):
         raise RuntimeError("final linearization changed its frozen remap cell")
     return _FinalLinearizationPolish(
@@ -2332,6 +2455,8 @@ def _polish_final_linearization(
         frozen=frozen,
         exact_objective=exact_objective,
         stationarity=stationarity,
+        robust_stationarity=robust_stationarity,
+        relative_weight_change=relative_weight_change,
         iterations=polish_iterations,
         pcg_iterations=total_pcg_iterations,
     )
@@ -2807,8 +2932,9 @@ def _posterior_physical_dynamics_uncertainty(
         )
         return torch.cat((projected_velocity, growth.reshape(1)))
 
-    decode_jacobian = torch.func.jacrev(physical_dynamics)(
-        dynamics_control
+    decode_jacobian = cast(
+        Tensor,
+        torch.func.jacrev(physical_dynamics)(dynamics_control),
     ).detach()
     covariance = covariance.to(
         dtype=decode_jacobian.dtype,
@@ -3530,10 +3656,22 @@ def _analysis_result(
         final_objective = polish.exact_objective
         pcg_iterations += polish.pcg_iterations
         stationarity = polish.stationarity
+        robust_stationarity = polish.robust_stationarity
+        irls_relative_weight_change = polish.relative_weight_change
         polish_iterations = polish.iterations
     else:
+        previous_frozen = frozen
         frozen = freeze_irls_weights(control, observations, frozen)
+        irls_relative_weight_change = _relative_irls_weight_change(
+            previous_frozen,
+            frozen,
+        )
         stationarity = _linearization_stationarity(
+            control,
+            observations,
+            frozen,
+        )
+        robust_stationarity = _robust_stationarity(
             control,
             observations,
             frozen,
@@ -3545,18 +3683,45 @@ def _analysis_result(
         <= frozen.analysis_config
         .final_linearization_relative_stationarity_tolerance
     )
-    converged = final_linearization_stationary
+    final_robust_stationary = (
+        math.isfinite(robust_stationarity.relative_stationarity)
+        and robust_stationarity.relative_stationarity
+        <= frozen.analysis_config
+        .final_robust_relative_stationarity_tolerance
+    )
+    final_irls_fixed_point = (
+        math.isfinite(irls_relative_weight_change)
+        and irls_relative_weight_change
+        <= frozen.analysis_config.final_irls_relative_weight_tolerance
+    )
+    converged = (
+        final_linearization_stationary
+        and final_robust_stationary
+        and final_irls_fixed_point
+    )
     if converged and not outer_converged:
-        reason = "final_linearization_stationary"
-    if (
-        frozen.analysis_config.execution_mode == "operational"
-        and not final_linearization_stationary
-    ):
+        reason = "final_robust_irls_fixed_point"
+    if frozen.analysis_config.execution_mode == "operational" and degraded:
         return _fallback_result(
             frozen,
             control,
             reference_objective,
-            "final_linearization_not_stationary",
+            "degraded_operational_analysis",
+            outer_iterations,
+            pcg_iterations,
+            minimum_reachability_margin=initial_reachability_margin,
+        )
+    if frozen.analysis_config.execution_mode == "operational" and not converged:
+        failure_reason = "final_irls_not_fixed_point"
+        if not final_linearization_stationary:
+            failure_reason = "final_linearization_not_stationary"
+        elif not final_robust_stationary:
+            failure_reason = "final_robust_not_stationary"
+        return _fallback_result(
+            frozen,
+            control,
+            reference_objective,
+            failure_reason,
             outer_iterations,
             pcg_iterations,
             minimum_reachability_margin=initial_reachability_margin,
@@ -3638,8 +3803,7 @@ def _analysis_result(
         )
     analysis_degraded = (
         degraded
-        or (not outer_converged and not polish_final_linearization)
-        or not final_linearization_stationary
+        or not converged
         or amplitude.has_insufficient_information
         or amplitude_confidence_failed
     )
@@ -3803,7 +3967,10 @@ def _analysis_result(
         growth_saturation_margin=growth_saturation_margin,
     )
     retained_linearization = None
-    if final_linearization_stationary:
+    p1_forecast_eligible = converged and not analysis_degraded
+    posterior_eligible = p1_forecast_eligible
+    fso_eligible = p1_forecast_eligible
+    if fso_eligible:
         retained_observations = _clone_analysis_observations(observations)
         retained_frozen = _clone_frozen_outer_state(frozen)
         retained_linearization = _content_address_linearization(
@@ -3814,6 +3981,11 @@ def _analysis_result(
                 residual_norm=stationarity.residual_norm,
                 gradient_norm=stationarity.gradient_norm,
                 relative_stationarity=stationarity.relative_stationarity,
+                robust_gradient_norm=robust_stationarity.gradient_norm,
+                robust_relative_stationarity=(
+                    robust_stationarity.relative_stationarity
+                ),
+                irls_relative_weight_change=irls_relative_weight_change,
                 polish_iterations=polish_iterations,
                 feasibility_margins=feasibility_margins,
                 algorithm_bundle_digest=algorithm_bundle_digest(),
@@ -4057,12 +4229,19 @@ def _analysis_result(
         linearization_relative_stationarity=(
             stationarity.relative_stationarity
         ),
+        robust_gradient_norm=robust_stationarity.gradient_norm,
+        robust_relative_stationarity=(
+            robust_stationarity.relative_stationarity
+        ),
+        irls_relative_weight_change=irls_relative_weight_change,
         linearization_polish_iterations=polish_iterations,
         linearization=retained_linearization,
         final_linearization_stationary=final_linearization_stationary,
-        fso_eligible=(
-            final_linearization_stationary and not analysis_degraded
-        ),
+        final_robust_stationary=final_robust_stationary,
+        final_irls_fixed_point=final_irls_fixed_point,
+        p1_forecast_eligible=p1_forecast_eligible,
+        posterior_eligible=posterior_eligible,
+        fso_eligible=fso_eligible,
         outer_converged=outer_converged,
     )
 
@@ -5992,6 +6171,15 @@ def analysis_linearization_digest(
                 "gradient_norm": linearization.gradient_norm,
                 "relative_stationarity": (
                     linearization.relative_stationarity
+                ),
+                "robust_gradient_norm": (
+                    linearization.robust_gradient_norm
+                ),
+                "robust_relative_stationarity": (
+                    linearization.robust_relative_stationarity
+                ),
+                "irls_relative_weight_change": (
+                    linearization.irls_relative_weight_change
                 ),
                 "polish_iterations": linearization.polish_iterations,
             },

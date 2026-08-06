@@ -45,11 +45,14 @@ from advar.physics import (  # noqa: E402
     freeze_remap_cell,
 )
 from advar.sensitivity import (  # noqa: E402
+    AutomatedLearningPolicy,
+    _baseline_branch_is_stable,
     _gauss_newton_curvature_diagnostics,
     _apply_output_cap,
     _metric_evidence_ratios,
     _metric_domain_weight,
     _NormalProductBudget,
+    _p0_tendency_branch_signature,
     _remap_fraction_margin,
     SensitivityConfig,
     VerificationBundle,
@@ -58,6 +61,7 @@ from advar.sensitivity import (  # noqa: E402
     compute_sensitivity_snapshot,
     compute_variational_fso,
     compute_variational_fsoi,
+    compute_variational_fsoi_for_learning,
     extract_context_features,
     forecast_metric,
     validate_variational_fso,
@@ -1689,6 +1693,7 @@ class VariationalFSOTests(unittest.TestCase):
         )
         cls.nowcast_config = NowcastConfig(horizon_minutes=10)
         cls.analysis_config = AnalysisConfig(
+            censored_background_policy="detection_limit",
             maximum_outer_iterations=12,
             maximum_pcg_iterations=100,
             pcg_relative_tolerance=1.0e-8,
@@ -1723,7 +1728,7 @@ class VariationalFSOTests(unittest.TestCase):
 
     def test_variational_fso_covers_all_observation_times(self) -> None:
         fso = self.fso
-        self.assertEqual(fso.contract, "p1-variational-fso-v10")
+        self.assertEqual(fso.contract, "p1-variational-fso-v12")
         self.assertEqual(
             fso.sensitivity_scope,
             "residual_plus_observation_derived_baseline_with_frozen_selection",
@@ -1745,7 +1750,10 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertNotEqual(fso.metric_domain_digest, "")
         self.assertEqual(fso.lead_minutes, (10,))
         self.assertEqual(fso.full_map_lead_minutes, (10,))
-        self.assertEqual(fso.linearization_contract, "p1-final-frozen-irls-gn-v9")
+        self.assertEqual(
+            fso.linearization_contract,
+            "p1-final-frozen-irls-gn-v10",
+        )
         self.assertEqual(
             fso.forecast_run_digest,
             self.forecast.forecast_run_digest,
@@ -2192,6 +2200,33 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertTrue(
             adjoint_policy.require_baseline_dynamics_branch_validity
         )
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        learning_policy = AutomatedLearningPolicy(
+            sensitivity_config=metric_policy,
+            adjoint_config=adjoint_policy,
+            algorithm_bundle_digest=linearization.algorithm_bundle_digest,
+            numerical_runtime_digest=linearization.numerical_runtime_digest,
+        )
+        self.assertNotEqual(learning_policy.digest, "")
+        with self.assertRaisesRegex(ValueError, "verification lineage"):
+            AutomatedLearningPolicy(
+                sensitivity_config=SensitivityConfig(),
+                adjoint_config=adjoint_policy,
+                algorithm_bundle_digest=linearization.algorithm_bundle_digest,
+                numerical_runtime_digest=(
+                    linearization.numerical_runtime_digest
+                ),
+            )
+        with self.assertRaisesRegex(ValueError, "local-validity gate"):
+            AutomatedLearningPolicy(
+                sensitivity_config=metric_policy,
+                adjoint_config=VariationalAdjointConfig(),
+                algorithm_bundle_digest=linearization.algorithm_bundle_digest,
+                numerical_runtime_digest=(
+                    linearization.numerical_runtime_digest
+                ),
+            )
 
         displacement = torch.tensor((0.25, 0.40), dtype=torch.float64)
         self.assertAlmostEqual(
@@ -3471,11 +3506,11 @@ class VariationalFSOTests(unittest.TestCase):
 
         self.assertEqual(
             fsoi.contract,
-            "p1-linearized-observation-impact-v7",
+            "p1-linearized-observation-impact-v9",
         )
         self.assertEqual(
             fsoi.perturbation_contract,
-            "p1-observation-perturbation-v5",
+            "p1-observation-perturbation-v6",
         )
         self.assertEqual(fsoi.perturbation_digest, perturbation.digest)
         self.assertEqual(
@@ -3531,7 +3566,14 @@ class VariationalFSOTests(unittest.TestCase):
             + fsoi.observation.initial_background_dbz.tile_sum_by_time
             + fsoi.observation.baseline_dynamics_dbz.tile_sum_by_time,
         )
-        self.assertIsNone(fsoi.observation.trusted_total)
+        self.assertIn(
+            fsoi.baseline_dynamics_branch_status,
+            ("certified", "invalid"),
+        )
+        self.assertEqual(
+            fsoi.observation.trusted_total is not None,
+            fsoi.baseline_dynamics_branch_status == "certified",
+        )
         validate_variational_fsoi(fsoi)
         self.assertNotEqual(fsoi.variational_fsoi_digest, "")
 
@@ -3735,6 +3777,54 @@ class VariationalFSOTests(unittest.TestCase):
                 sensitivity_config=self.sensitivity_config,
             )
 
+    def test_baseline_branch_signature_covers_pair_and_peak_identity(
+        self,
+    ) -> None:
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        signature = _p0_tendency_branch_signature(
+            linearization.observations.dbz,
+            linearization.frozen,
+        )
+
+        self.assertEqual(signature.pair_spans, ((0, 1), (1, 2), (0, 2)))
+        self.assertEqual(len(signature.pair_available_by_span), 3)
+        self.assertEqual(len(signature.growth_evidence_available_by_span), 3)
+        self.assertEqual(len(signature.integer_peak_yx_by_pair), 3)
+        self.assertEqual(len(signature.peak_is_search_interior_by_pair), 3)
+        self.assertIsInstance(signature.motion_pair_spans, tuple)
+        self.assertIsInstance(signature.growth_pair_spans, tuple)
+        self.assertEqual(len(signature.motion_remap_cells), 2)
+
+    def test_baseline_branch_validation_checks_half_perturbation(self) -> None:
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        unchanged = _p0_tendency_branch_signature(
+            linearization.observations.dbz,
+            linearization.frozen,
+        )
+        changed = replace(
+            unchanged,
+            motion_conflict=not unchanged.motion_conflict,
+        )
+        with patch(
+            "advar.sensitivity._p0_tendency_branch_signature",
+            side_effect=(unchanged, changed),
+        ) as signature:
+            delta = torch.where(
+                linearization.observations.detected_mask,
+                torch.full_like(linearization.observations.dbz, 0.1),
+                torch.zeros_like(linearization.observations.dbz),
+            )
+            stable = _baseline_branch_is_stable(
+                linearization.observations,
+                linearization.frozen,
+                delta,
+            )
+
+        self.assertFalse(stable)
+        self.assertEqual(signature.call_count, 2)
+
     def test_physical_radar_perturbation_factory_connects_input_paths(
         self,
     ) -> None:
@@ -3776,6 +3866,216 @@ class VariationalFSOTests(unittest.TestCase):
             fsoi.perturbation_diagnostics.perturbed_pixel_count,
             1,
         )
+        self.assertEqual(
+            fsoi.baseline_dynamics_branch_status,
+            "certified",
+        )
+        self.assertIsNotNone(
+            fsoi.perturbation_diagnostics
+            .baseline_dynamics_branch_signature_digest
+        )
+        self.assertIsNotNone(
+            fsoi.observation.baseline_branch_trusted_total
+        )
+
+    def test_learning_policy_is_external_and_requires_physical_input(
+        self,
+    ) -> None:
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        observations = linearization.observations
+        zeros = torch.zeros_like(observations.dbz)
+        policy = AutomatedLearningPolicy(
+            sensitivity_config=SensitivityConfig.for_automated_learning(
+                radar_product_digest="1" * 64,
+                qc_pipeline_digest="2" * 64,
+            ),
+            adjoint_config=(
+                VariationalAdjointConfig.for_automated_learning()
+            ),
+            algorithm_bundle_digest=linearization.algorithm_bundle_digest,
+            numerical_runtime_digest=linearization.numerical_runtime_digest,
+        )
+        physical_delta = zeros.clone()
+        index = tuple(
+            int(value)
+            for value in torch.nonzero(
+                observations.detected_mask,
+                as_tuple=False,
+            )[0]
+        )
+        physical_delta[index] = 0.1
+        physical = VariationalObservationPerturbation.from_radar_dbz_delta(
+            physical_delta,
+            linearization,
+        )
+        rejected = compute_variational_fsoi_for_learning(
+            self.forecast,
+            self.analysis,
+            self.verification,
+            physical,
+            policy=policy,
+            approved_policy_digests=frozenset(),
+        )
+        self.assertFalse(rejected.eligibility.eligible)
+        self.assertEqual(
+            rejected.eligibility.reasons,
+            ("unapproved_learning_policy",),
+        )
+
+        augmented = VariationalObservationPerturbation(
+            detected_dbz=zeros,
+            censor_threshold_dbz=zeros,
+            observation_weight=zeros,
+        )
+        rejected = compute_variational_fsoi_for_learning(
+            self.forecast,
+            self.analysis,
+            self.verification,
+            augmented,
+            policy=policy,
+            approved_policy_digests=frozenset((policy.digest,)),
+        )
+        self.assertFalse(rejected.eligibility.eligible)
+        self.assertEqual(
+            rejected.eligibility.reasons,
+            ("physical_radar_perturbation_required",),
+        )
+
+        wrong_algorithm = replace(
+            policy,
+            algorithm_bundle_digest="3" * 64,
+        )
+        rejected = compute_variational_fsoi_for_learning(
+            self.forecast,
+            self.analysis,
+            self.verification,
+            physical,
+            policy=wrong_algorithm,
+            approved_policy_digests=frozenset((wrong_algorithm.digest,)),
+        )
+        self.assertEqual(
+            rejected.eligibility.reasons,
+            ("algorithm_bundle_not_approved",),
+        )
+
+    def test_approved_learning_policy_certifies_physical_branch(self) -> None:
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-05T00:00:00Z",
+                "2026-08-05T00:10:00Z",
+                "2026-08-05T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="4" * 64,
+        )
+        forecast, analysis = variational_nowcast(
+            self.frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+            grid_time_contract=grid,
+        )
+        linearization = analysis.linearization
+        assert linearization is not None
+        verification_frames = torch.where(
+            torch.isfinite(forecast.forecast_dbz),
+            forecast.forecast_dbz - 0.5,
+            forecast.forecast_dbz,
+        )
+        verification = VerificationBundle(
+            frames_dbz=verification_frames,
+            valid_mask=torch.isfinite(verification_frames),
+            valid_times=("2026-08-05T00:30:00Z",),
+            grid_contract_digest=grid.digest,
+            radar_product_digest="5" * 64,
+            qc_pipeline_digest="6" * 64,
+        )
+        policy = AutomatedLearningPolicy(
+            sensitivity_config=replace(
+                SensitivityConfig.for_automated_learning(
+                    radar_product_digest="5" * 64,
+                    qc_pipeline_digest="6" * 64,
+                ),
+                metric_names=("log_echo_mse",),
+                full_map_lead_minutes=(10,),
+                tile_size=4,
+            ),
+            adjoint_config=(
+                VariationalAdjointConfig.for_automated_learning()
+            ),
+            algorithm_bundle_digest=linearization.algorithm_bundle_digest,
+            numerical_runtime_digest=linearization.numerical_runtime_digest,
+        )
+        delta = torch.zeros_like(linearization.observations.dbz)
+        index = tuple(
+            int(value)
+            for value in torch.nonzero(
+                linearization.observations.detected_mask,
+                as_tuple=False,
+            )[0]
+        )
+        delta[index] = 0.01
+        perturbation = VariationalObservationPerturbation.from_radar_dbz_delta(
+            delta,
+            linearization,
+        )
+
+        learning = compute_variational_fsoi_for_learning(
+            forecast,
+            analysis,
+            verification,
+            perturbation,
+            policy=policy,
+            approved_policy_digests=frozenset((policy.digest,)),
+        )
+
+        self.assertTrue(learning.eligibility.eligible)
+        self.assertEqual(learning.eligibility.reasons, ())
+        assert learning.fsoi is not None
+        self.assertEqual(
+            learning.fsoi.baseline_dynamics_branch_status,
+            "certified",
+        )
+        self.assertIsNotNone(learning.learning_impact)
+
+    def test_censored_perturbations_use_event_specific_factories(self) -> None:
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        observations = linearization.observations
+        delta = torch.zeros_like(observations.dbz)
+        index = tuple(
+            int(value)
+            for value in torch.nonzero(
+                observations.censored_mask,
+                as_tuple=False,
+            )[0]
+        )
+        delta[index] = 0.1
+
+        with self.assertRaisesRegex(ValueError, "detected observations"):
+            VariationalObservationPerturbation.from_radar_dbz_delta(
+                delta,
+                linearization,
+            )
+
+        threshold = (
+            VariationalObservationPerturbation.from_censor_threshold_delta(
+                delta,
+                linearization,
+            )
+        )
+        weight = (
+            VariationalObservationPerturbation.from_censored_event_weight_delta(
+                delta,
+                linearization,
+            )
+        )
+        self.assertEqual(float(threshold.censor_threshold_dbz[index]), 0.1)
+        self.assertEqual(float(weight.observation_weight[index]), 0.1)
+        self.assertEqual(float(threshold.detected_dbz[index]), 0.0)
+        self.assertEqual(float(weight.detected_dbz[index]), 0.0)
 
     def test_variational_fso_fails_closed(self) -> None:
         p0_forecast = nowcast(self.frames, self.nowcast_config)

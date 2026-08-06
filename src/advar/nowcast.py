@@ -5643,6 +5643,24 @@ def _phase_correlation_shift_and_psr(
     max_displacement_yx: Tensor | None = None,
     grid_time_contract: RadarGridTimeContract | None = None,
 ) -> tuple[Tensor, Tensor, bool]:
+    shift, psr, search_interior, _ = _phase_correlation_details(
+        previous_dbz,
+        current_dbz,
+        config,
+        max_displacement_yx=max_displacement_yx,
+        grid_time_contract=grid_time_contract,
+    )
+    return shift, psr, search_interior
+
+
+def _phase_correlation_details(
+    previous_dbz: Tensor,
+    current_dbz: Tensor,
+    config: NowcastConfig,
+    *,
+    max_displacement_yx: Tensor | None = None,
+    grid_time_contract: RadarGridTimeContract | None = None,
+) -> tuple[Tensor, Tensor, bool, tuple[int, int]]:
     previous = (previous_dbz - config.echo_threshold_dbz).clamp_min(0.0)
     current = (current_dbz - config.echo_threshold_dbz).clamp_min(0.0)
 
@@ -5651,7 +5669,7 @@ def _phase_correlation_shift_and_psr(
         * torch.linalg.vector_norm(current)
     )
     if float(energy.detach()) <= config.epsilon:
-        return previous.new_zeros(2), previous.new_zeros(()), False
+        return previous.new_zeros(2), previous.new_zeros(()), False, (0, 0)
 
     height, width = previous.shape
     previous = previous - previous.mean()
@@ -5661,7 +5679,7 @@ def _phase_correlation_shift_and_psr(
         * torch.linalg.vector_norm(current)
     )
     if float(centered_energy.detach()) <= config.epsilon:
-        return previous.new_zeros(2), previous.new_zeros(()), False
+        return previous.new_zeros(2), previous.new_zeros(()), False, (0, 0)
 
     padded_shape = (2 * height, 2 * width)
     cross_power = torch.fft.fft2(current, s=padded_shape) * torch.conj(
@@ -5736,7 +5754,12 @@ def _phase_correlation_shift_and_psr(
     away_from_search_boundary = bool(
         torch.all(torch.abs(integer_peak_shift) < interior_bin_limit)
     )
-    return shift, psr, inside_limits and away_from_search_boundary
+    return (
+        shift,
+        psr,
+        inside_limits and away_from_search_boundary,
+        (int(peak_shift_y), int(peak_shift_x)),
+    )
 
 
 def _peak_to_sidelobe_ratio(
