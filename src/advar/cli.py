@@ -34,7 +34,7 @@ from .variational import (
 )
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v49"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v50"
 
 
 def main() -> None:
@@ -1097,6 +1097,9 @@ def _output_arrays(
         output.update(
             analysis_used=np.asarray(False),
             analysis_converged=np.asarray(False),
+            analysis_outer_converged=np.asarray(False),
+            analysis_final_linearization_stationary=np.asarray(False),
+            analysis_fso_eligible=np.asarray(False),
             analysis_degraded=np.asarray(False),
             analysis_used_fallback=np.asarray(False),
             analysis_reason=np.asarray("not_requested"),
@@ -1105,6 +1108,11 @@ def _output_arrays(
         output.update(
             analysis_used=np.asarray(True),
             analysis_converged=np.asarray(analysis.converged),
+            analysis_outer_converged=np.asarray(analysis.outer_converged),
+            analysis_final_linearization_stationary=np.asarray(
+                analysis.final_linearization_stationary
+            ),
+            analysis_fso_eligible=np.asarray(analysis.fso_eligible),
             analysis_degraded=np.asarray(analysis.degraded),
             analysis_used_fallback=np.asarray(analysis.used_fallback),
             analysis_reason=np.asarray(analysis.reason),

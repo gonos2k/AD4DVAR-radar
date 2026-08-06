@@ -411,6 +411,9 @@ class CliTests(unittest.TestCase):
             "minimum_publish_observation_verified_support",
             "maximum_publish_background_fraction",
             "analysis_converged",
+            "analysis_outer_converged",
+            "analysis_final_linearization_stationary",
+            "analysis_fso_eligible",
             "analysis_degraded",
             "analysis_used_fallback",
             "analysis_reason",
@@ -428,7 +431,7 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v49",
+                    "nowcast-npz-v50",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
@@ -471,6 +474,11 @@ class CliTests(unittest.TestCase):
                     8.0,
                 )
                 self.assertFalse(result["analysis_converged"].item())
+                self.assertFalse(result["analysis_outer_converged"].item())
+                self.assertFalse(
+                    result["analysis_final_linearization_stationary"].item()
+                )
+                self.assertFalse(result["analysis_fso_eligible"].item())
                 self.assertFalse(result["analysis_config_present"].item())
                 self.assertFalse(result["analysis_degraded"].item())
                 self.assertFalse(result["analysis_used_fallback"].item())
@@ -589,6 +597,10 @@ class CliTests(unittest.TestCase):
                     64,
                 )
                 self.assertFalse(result["analysis_used_fallback"].item())
+                self.assertTrue(
+                    result["analysis_final_linearization_stationary"].item()
+                )
+                self.assertTrue(result["analysis_fso_eligible"].item())
                 self.assertEqual(
                     result["dynamics_source"].item(),
                     "P1_VARIATIONAL",

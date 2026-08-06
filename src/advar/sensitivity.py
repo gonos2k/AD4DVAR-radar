@@ -56,6 +56,10 @@ FSOMetricDomain = Literal[
     "radar_dynamics_anchored",
     "confidence_weighted",
 ]
+PerturbationSemantics = Literal[
+    "augmented_parameter",
+    "physical_radar_value",
+]
 
 
 def _canonical_verification_time(value: str) -> str:
@@ -377,6 +381,13 @@ class VariationalAdjointConfig:
     maximum_censor_delta_dbz: float = 0.5
     maximum_observation_weight_delta: float = 0.1
     maximum_background_delta_dbz: float = 0.5
+    maximum_perturbed_pixel_count: int = 4096
+    maximum_perturbed_fraction: float = 0.05
+    maximum_whitened_perturbation_l2: float = 8.0
+    perturbation_tile_size: int = 16
+    maximum_per_tile_whitened_norm: float = 4.0
+    maximum_observation_weight_l2: float = 1.0
+    minimum_observation_multiplier: float = 0.5
     require_baseline_dynamics_branch_validity: bool = False
 
     def __post_init__(self) -> None:
@@ -480,6 +491,9 @@ class VariationalAdjointConfig:
             self.maximum_censor_delta_dbz,
             self.maximum_observation_weight_delta,
             self.maximum_background_delta_dbz,
+            self.maximum_whitened_perturbation_l2,
+            self.maximum_per_tile_whitened_norm,
+            self.maximum_observation_weight_l2,
         )
         if any(
             isinstance(value, bool)
@@ -488,6 +502,32 @@ class VariationalAdjointConfig:
             for value in perturbation_limits
         ):
             raise ValueError("local FSOI perturbation limits must be positive")
+        if (
+            type(self.maximum_perturbed_pixel_count) is not int
+            or self.maximum_perturbed_pixel_count <= 0
+        ):
+            raise ValueError(
+                "maximum_perturbed_pixel_count must be a positive integer"
+            )
+        if (
+            type(self.perturbation_tile_size) is not int
+            or self.perturbation_tile_size <= 0
+        ):
+            raise ValueError(
+                "perturbation_tile_size must be a positive integer"
+            )
+        if (
+            not math.isfinite(self.maximum_perturbed_fraction)
+            or not 0.0 < self.maximum_perturbed_fraction <= 1.0
+        ):
+            raise ValueError("maximum_perturbed_fraction must be in (0, 1]")
+        if (
+            not math.isfinite(self.minimum_observation_multiplier)
+            or not 0.0 < self.minimum_observation_multiplier <= 1.0
+        ):
+            raise ValueError(
+                "minimum_observation_multiplier must be in (0, 1]"
+            )
 
     @property
     def digest(self) -> str:
@@ -680,7 +720,45 @@ class VariationalObservationPerturbation:
     observation_weight: Tensor
     initial_background_dbz: Tensor | None = None
     baseline_dynamics_dbz: Tensor | None = None
-    contract: str = "p1-observation-perturbation-v4"
+    physical_radar_dbz_delta: Tensor | None = None
+    perturbation_semantics: PerturbationSemantics = "augmented_parameter"
+    contract: str = "p1-observation-perturbation-v5"
+
+    @classmethod
+    def from_radar_dbz_delta(
+        cls,
+        delta_dbz: Tensor,
+        linearization: AnalysisLinearization,
+    ) -> VariationalObservationPerturbation:
+        """Map one physical radar-value change through retained input paths."""
+
+        observations = linearization.observations
+        frozen = linearization.frozen
+        _validate_perturbation_tensor(
+            "physical_radar_dbz_delta",
+            delta_dbz,
+            observations,
+            observations.valid_mask,
+        )
+        active_delta = torch.where(
+            observations.valid_mask,
+            delta_dbz,
+            torch.zeros_like(delta_dbz),
+        )
+        detected, background, dynamics = _physical_radar_channels(
+            active_delta,
+            observations,
+            frozen,
+        )
+        return cls(
+            detected_dbz=detected,
+            censor_threshold_dbz=torch.zeros_like(active_delta),
+            observation_weight=torch.zeros_like(active_delta),
+            initial_background_dbz=background,
+            baseline_dynamics_dbz=dynamics,
+            physical_radar_dbz_delta=active_delta,
+            perturbation_semantics="physical_radar_value",
+        )
 
     @property
     def digest(self) -> str:
@@ -704,8 +782,50 @@ class VariationalObservationPerturbation:
                     if self.baseline_dynamics_dbz is None
                     else tensor_digest(self.baseline_dynamics_dbz)
                 ),
+                "physical_radar_dbz_delta": (
+                    None
+                    if self.physical_radar_dbz_delta is None
+                    else tensor_digest(self.physical_radar_dbz_delta)
+                ),
+                "perturbation_semantics": self.perturbation_semantics,
             }
         )
+
+
+@dataclass(frozen=True)
+class VariationalPerturbationDiagnostics:
+    perturbed_pixel_count: int
+    perturbed_fraction: float
+    whitened_l2: float
+    maximum_per_tile_whitened_norm: float
+    observation_weight_l2: float
+    directional_classification_valid: bool
+
+
+def _physical_radar_channels(
+    delta_dbz: Tensor,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+) -> tuple[Tensor, Tensor, Tensor]:
+    detected = torch.where(
+        observations.detected_mask,
+        delta_dbz,
+        torch.zeros_like(delta_dbz),
+    )
+    background = torch.zeros_like(delta_dbz)
+    background[0] = torch.where(
+        observations.detected_mask[0] & frozen.observed_mask[0],
+        delta_dbz[0],
+        torch.zeros_like(delta_dbz[0]),
+    )
+    dynamics = torch.zeros_like(delta_dbz)
+    if frozen.baseline_metadata.tendency_source is TendencySource.OBSERVATION:
+        dynamics = torch.where(
+            observations.detected_mask & frozen.observed_mask,
+            delta_dbz,
+            dynamics,
+        )
+    return detected, background, dynamics
 
 
 @dataclass(frozen=True)
@@ -738,6 +858,7 @@ class VariationalFSOI:
     perturbation: VariationalObservationPerturbation
     perturbation_contract: str
     perturbation_digest: str
+    perturbation_diagnostics: VariationalPerturbationDiagnostics
     observation: VariationalObservationImpact
     variational_fsoi_digest: str
 
@@ -1292,7 +1413,7 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
 
     return json_digest(
         {
-            "version": "p1-variational-fso-digest-v8",
+            "version": "p1-variational-fso-digest-v9",
             "contract": fso.contract,
             "forecast_run_digest": fso.forecast_run_digest,
             "analysis_input_digest": fso.analysis_input_digest,
@@ -1461,11 +1582,31 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 
     return json_digest(
         {
-            "version": "p1-variational-fsoi-digest-v5",
+            "version": "p1-variational-fsoi-digest-v6",
             "contract": fsoi.contract,
             "variational_fso_digest": fsoi.fso.variational_fso_digest,
             "perturbation_contract": fsoi.perturbation_contract,
             "perturbation_digest": fsoi.perturbation_digest,
+            "perturbation_diagnostics": {
+                "perturbed_pixel_count": (
+                    fsoi.perturbation_diagnostics.perturbed_pixel_count
+                ),
+                "perturbed_fraction": (
+                    fsoi.perturbation_diagnostics.perturbed_fraction
+                ),
+                "whitened_l2": fsoi.perturbation_diagnostics.whitened_l2,
+                "maximum_per_tile_whitened_norm": (
+                    fsoi.perturbation_diagnostics
+                    .maximum_per_tile_whitened_norm
+                ),
+                "observation_weight_l2": (
+                    fsoi.perturbation_diagnostics.observation_weight_l2
+                ),
+                "directional_classification_valid": (
+                    fsoi.perturbation_diagnostics
+                    .directional_classification_valid
+                ),
+            },
             "observation": {
                 "detected_dbz": _variational_impact_digest_values(
                     fsoi.observation.detected_dbz
@@ -1497,7 +1638,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 def validate_variational_fso(fso: VariationalFSO) -> None:
     """Reject any mutation of a content-addressed FSO result."""
 
-    if fso.contract != "p1-variational-fso-v8":
+    if fso.contract != "p1-variational-fso-v9":
         raise ValueError("unsupported P1 FSO contract")
     if (
         fso.sensitivity_scope
@@ -1522,7 +1663,7 @@ def validate_variational_fso(fso: VariationalFSO) -> None:
 def validate_variational_fsoi(fsoi: VariationalFSOI) -> None:
     """Reject any mutation or cross-binding in a P1 impact result."""
 
-    if fsoi.contract != "p1-linearized-observation-impact-v5":
+    if fsoi.contract != "p1-linearized-observation-impact-v6":
         raise ValueError("unsupported P1 FSOI contract")
     validate_variational_fso(fsoi.fso)
     if fsoi.perturbation.digest != fsoi.perturbation_digest:
@@ -2190,7 +2331,7 @@ def compute_variational_fso(
 ) -> VariationalFSO:
     """Compute frozen-final P1 forecast sensitivity to observations."""
 
-    fso, _ = _compute_variational_products(
+    fso, _, _ = _compute_variational_products(
         result,
         analysis,
         verification_frames_dbz,
@@ -2212,22 +2353,27 @@ def compute_variational_fsoi(
 ) -> VariationalFSOI:
     """Compute signed first-order impact for an explicit perturbation."""
 
-    fso, observation_impact = _compute_variational_products(
-        result,
-        analysis,
-        verification_frames_dbz,
-        sensitivity_config=sensitivity_config,
-        adjoint_config=adjoint_config,
-        observation_perturbation=observation_perturbation,
+    fso, observation_impact, perturbation_diagnostics = (
+        _compute_variational_products(
+            result,
+            analysis,
+            verification_frames_dbz,
+            sensitivity_config=sensitivity_config,
+            adjoint_config=adjoint_config,
+            observation_perturbation=observation_perturbation,
+        )
     )
     if observation_impact is None:
         raise RuntimeError("variational FSOI impact was not materialized")
+    if perturbation_diagnostics is None:
+        raise RuntimeError("variational perturbation was not validated")
     fsoi = VariationalFSOI(
-        contract="p1-linearized-observation-impact-v5",
+        contract="p1-linearized-observation-impact-v6",
         fso=fso,
         perturbation=observation_perturbation,
         perturbation_contract=observation_perturbation.contract,
         perturbation_digest=observation_perturbation.digest,
+        perturbation_diagnostics=perturbation_diagnostics,
         observation=observation_impact,
         variational_fsoi_digest="",
     )
@@ -2245,7 +2391,11 @@ def _compute_variational_products(
     sensitivity_config: SensitivityConfig | None,
     adjoint_config: VariationalAdjointConfig | None,
     observation_perturbation: VariationalObservationPerturbation | None,
-) -> tuple[VariationalFSO, VariationalObservationImpact | None]:
+) -> tuple[
+    VariationalFSO,
+    VariationalObservationImpact | None,
+    VariationalPerturbationDiagnostics | None,
+]:
     """Compute frozen-final P1 forecast sensitivity to observations.
 
     The final IRLS weights, remap cells, active controls, and observation
@@ -2264,7 +2414,13 @@ def _compute_variational_products(
     verification_frames = verification_bundle.frames_dbz
     if result.metadata.dynamics_source is not DynamicsSource.P1_VARIATIONAL:
         raise ValueError("variational FSO requires an accepted P1 forecast")
-    if analysis.used_fallback or not analysis.converged or analysis.degraded:
+    if (
+        analysis.used_fallback
+        or not analysis.converged
+        or analysis.degraded
+        or not analysis.final_linearization_stationary
+        or not analysis.fso_eligible
+    ):
         raise ValueError("variational FSO requires a converged P1 analysis")
     linearization = analysis.linearization
     if linearization is None:
@@ -2288,8 +2444,9 @@ def _compute_variational_products(
     observations = linearization.observations
     frozen = linearization.frozen
     control = analysis.control
+    perturbation_diagnostics = None
     if observation_perturbation is not None:
-        _validate_variational_observation_perturbation(
+        perturbation_diagnostics = _validate_variational_observation_perturbation(
             observation_perturbation,
             observations,
             frozen,
@@ -2861,7 +3018,7 @@ def _compute_variational_products(
         raise ValueError("P1 FSO active-set margin is below its requirement")
 
     fso = VariationalFSO(
-        contract="p1-variational-fso-v8",
+        contract="p1-variational-fso-v9",
         forecast_run_digest=result.forecast_run_digest,
         analysis_input_digest=cast(str, result.run.analysis_input_digest),
         sensitivity_config_digest=sensitivity_config.digest,
@@ -2931,7 +3088,7 @@ def _compute_variational_products(
     )
     fso = replace(fso, variational_fso_digest=variational_fso_digest(fso))
     if impact_accumulators is None:
-        return fso, None
+        return fso, None, None
     return (
         fso,
         VariationalObservationImpact(
@@ -2946,6 +3103,7 @@ def _compute_variational_products(
             ),
             total=_impact_channel(impact_accumulators[5]),
         ),
+        perturbation_diagnostics,
     )
 
 
@@ -3258,7 +3416,7 @@ def _prepare_frozen_baseline_dynamics_path(
         raise ValueError(
             "frozen P0 dynamics path does not reproduce the baseline state"
         )
-    active = observations.valid_mask & frozen.observed_mask
+    active = observations.detected_mask & frozen.observed_mask
     return _FrozenBaselineDynamicsPath(
         active_mask=active,
         nominal_dynamics=nominal_dynamics.detach(),
@@ -3442,9 +3600,14 @@ def _validate_variational_observation_perturbation(
     observations: AnalysisObservations,
     frozen: FrozenOuterState,
     config: VariationalAdjointConfig,
-) -> None:
-    if perturbation.contract != "p1-observation-perturbation-v4":
+) -> VariationalPerturbationDiagnostics:
+    if perturbation.contract != "p1-observation-perturbation-v5":
         raise ValueError("unsupported P1 observation perturbation contract")
+    if perturbation.perturbation_semantics not in (
+        "augmented_parameter",
+        "physical_radar_value",
+    ):
+        raise ValueError("unsupported observation perturbation semantics")
     channels = (
         (
             "detected_dbz",
@@ -3463,20 +3626,12 @@ def _validate_variational_observation_perturbation(
         ),
     )
     for name, values, active_mask in channels:
-        if not isinstance(values, Tensor):
-            raise TypeError(f"{name} perturbation must be a Tensor")
-        if values.shape != observations.dbz.shape:
-            raise ValueError(f"{name} perturbation shape mismatch")
-        if values.dtype != observations.dbz.dtype:
-            raise ValueError(f"{name} perturbation dtype mismatch")
-        if values.device != observations.dbz.device:
-            raise ValueError(f"{name} perturbation device mismatch")
-        if not bool(torch.all(torch.isfinite(values))):
-            raise ValueError(f"{name} perturbation must be finite")
-        if bool(torch.any(values.masked_select(~active_mask) != 0)):
-            raise ValueError(
-                f"{name} perturbation must be zero outside its active mask"
-            )
+        _validate_perturbation_tensor(
+            name,
+            values,
+            observations,
+            active_mask,
+        )
     _require_local_perturbation(
         "detected_dbz",
         perturbation.detected_dbz,
@@ -3494,61 +3649,25 @@ def _validate_variational_observation_perturbation(
     )
     if perturbation.initial_background_dbz is not None:
         values = perturbation.initial_background_dbz
-        if not isinstance(values, Tensor):
-            raise TypeError(
-                "initial_background_dbz perturbation must be a Tensor"
-            )
-        if values.shape != observations.dbz.shape:
-            raise ValueError(
-                "initial_background_dbz perturbation shape mismatch"
-            )
-        if values.dtype != observations.dbz.dtype:
-            raise ValueError(
-                "initial_background_dbz perturbation dtype mismatch"
-            )
-        if values.device != observations.dbz.device:
-            raise ValueError(
-                "initial_background_dbz perturbation device mismatch"
-            )
-        if not bool(torch.all(torch.isfinite(values))):
-            raise ValueError(
-                "initial_background_dbz perturbation must be finite"
-            )
         active = torch.zeros_like(observations.valid_mask)
         active[0] = observations.valid_mask[0] & frozen.observed_mask[0]
-        if bool(torch.any(values.masked_select(~active) != 0)):
-            raise ValueError(
-                "initial_background_dbz perturbation must be zero outside "
-                "accepted first-frame observations"
-            )
+        _validate_perturbation_tensor(
+            "initial_background_dbz",
+            values,
+            observations,
+            active,
+            active_domain="accepted first-frame observations",
+        )
     if perturbation.baseline_dynamics_dbz is not None:
         values = perturbation.baseline_dynamics_dbz
-        if not isinstance(values, Tensor):
-            raise TypeError(
-                "baseline_dynamics_dbz perturbation must be a Tensor"
-            )
-        if values.shape != observations.dbz.shape:
-            raise ValueError(
-                "baseline_dynamics_dbz perturbation shape mismatch"
-            )
-        if values.dtype != observations.dbz.dtype:
-            raise ValueError(
-                "baseline_dynamics_dbz perturbation dtype mismatch"
-            )
-        if values.device != observations.dbz.device:
-            raise ValueError(
-                "baseline_dynamics_dbz perturbation device mismatch"
-            )
-        if not bool(torch.all(torch.isfinite(values))):
-            raise ValueError(
-                "baseline_dynamics_dbz perturbation must be finite"
-            )
         active = observations.valid_mask & frozen.observed_mask
-        if bool(torch.any(values.masked_select(~active) != 0)):
-            raise ValueError(
-                "baseline_dynamics_dbz perturbation must be zero outside "
-                "accepted observations"
-            )
+        _validate_perturbation_tensor(
+            "baseline_dynamics_dbz",
+            values,
+            observations,
+            active,
+            active_domain="accepted observations",
+        )
     for name, values in (
         ("initial_background_dbz", perturbation.initial_background_dbz),
         ("baseline_dynamics_dbz", perturbation.baseline_dynamics_dbz),
@@ -3559,6 +3678,298 @@ def _validate_variational_observation_perturbation(
                 values,
                 config.maximum_background_delta_dbz,
             )
+    physical_delta = _validate_physical_radar_semantics(
+        perturbation,
+        observations,
+        frozen,
+    )
+    _validate_directional_classification(
+        perturbation,
+        observations,
+        frozen,
+        config,
+        physical_delta,
+    )
+    return _perturbation_diagnostics(
+        perturbation,
+        observations,
+        frozen,
+        config,
+        physical_delta,
+    )
+
+
+def _validate_perturbation_tensor(
+    name: str,
+    values: Tensor,
+    observations: AnalysisObservations,
+    active_mask: Tensor,
+    *,
+    active_domain: str = "its active mask",
+) -> None:
+    if not isinstance(values, Tensor):
+        raise TypeError(f"{name} perturbation must be a Tensor")
+    if values.shape != observations.dbz.shape:
+        raise ValueError(f"{name} perturbation shape mismatch")
+    if values.dtype != observations.dbz.dtype:
+        raise ValueError(f"{name} perturbation dtype mismatch")
+    if values.device != observations.dbz.device:
+        raise ValueError(f"{name} perturbation device mismatch")
+    if not bool(torch.all(torch.isfinite(values))):
+        raise ValueError(f"{name} perturbation must be finite")
+    if bool(torch.any(values.masked_select(~active_mask) != 0)):
+        raise ValueError(
+            f"{name} perturbation must be zero outside {active_domain}"
+        )
+
+
+def _validate_physical_radar_semantics(
+    perturbation: VariationalObservationPerturbation,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+) -> Tensor | None:
+    physical_delta = perturbation.physical_radar_dbz_delta
+    if perturbation.perturbation_semantics == "augmented_parameter":
+        if physical_delta is not None:
+            raise ValueError(
+                "augmented parameter perturbation cannot carry a physical "
+                "dBZ delta"
+            )
+        return None
+    if physical_delta is None:
+        raise ValueError(
+            "physical radar perturbation requires its source dBZ delta"
+        )
+    _validate_perturbation_tensor(
+        "physical_radar_dbz_delta",
+        physical_delta,
+        observations,
+        observations.valid_mask,
+    )
+    detected, background, dynamics = _physical_radar_channels(
+        physical_delta,
+        observations,
+        frozen,
+    )
+    expected = (
+        detected,
+        torch.zeros_like(physical_delta),
+        torch.zeros_like(physical_delta),
+        background,
+        dynamics,
+    )
+    actual = (
+        perturbation.detected_dbz,
+        perturbation.censor_threshold_dbz,
+        perturbation.observation_weight,
+        perturbation.initial_background_dbz,
+        perturbation.baseline_dynamics_dbz,
+    )
+    if any(
+        value is None or not torch.equal(value, canonical)
+        for value, canonical in zip(actual, expected, strict=True)
+    ):
+        raise ValueError(
+            "physical radar perturbation channels are inconsistent"
+        )
+    return physical_delta
+
+
+def _validate_directional_classification(
+    perturbation: VariationalObservationPerturbation,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    config: VariationalAdjointConfig,
+    physical_delta: Tensor | None,
+) -> None:
+    delta_dbz = (
+        perturbation.detected_dbz
+        if physical_delta is None
+        else physical_delta
+    )
+    changed_dbz = observations.dbz + delta_dbz
+    changed_limit = (
+        frozen.analysis_config.detection_limit_dbz
+        + perturbation.censor_threshold_dbz
+    )
+    margin = config.minimum_detection_margin_dbz
+    detected_valid = torch.all(
+        changed_dbz.masked_select(observations.detected_mask)
+        >= changed_limit.masked_select(observations.detected_mask) + margin
+    )
+    censored_valid = torch.all(
+        changed_dbz.masked_select(observations.censored_mask)
+        <= changed_limit.masked_select(observations.censored_mask) - margin
+    )
+    if not bool(detected_valid & censored_valid):
+        raise ValueError(
+            "observation perturbation crosses the detected/censored branch"
+        )
+    if bool(
+        torch.any(
+            1.0 + perturbation.observation_weight
+            < config.minimum_observation_multiplier
+        )
+    ):
+        raise ValueError(
+            "observation perturbation crosses the weight-multiplier branch"
+        )
+
+
+def _perturbation_diagnostics(
+    perturbation: VariationalObservationPerturbation,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    config: VariationalAdjointConfig,
+    physical_delta: Tensor | None,
+) -> VariationalPerturbationDiagnostics:
+    baseline_delta = _baseline_dynamics_perturbation(
+        perturbation,
+        observations,
+    )
+    if bool(torch.any(baseline_delta != 0)) and not _baseline_branch_is_stable(
+        observations,
+        frozen,
+        baseline_delta,
+    ):
+        raise ValueError(
+            "observation perturbation crosses the frozen P0 tendency branch"
+        )
+
+    dbz_channels = (
+        (physical_delta,)
+        if physical_delta is not None
+        else (
+            perturbation.detected_dbz,
+            perturbation.censor_threshold_dbz,
+            perturbation.initial_background_dbz,
+            perturbation.baseline_dynamics_dbz,
+        )
+    )
+    active = perturbation.observation_weight != 0
+    whitened_energy = torch.zeros_like(observations.dbz)
+    for values in dbz_channels:
+        if values is None:
+            continue
+        active |= values != 0
+        standardized = (
+            torch.sqrt(observations.quality_weight)
+            * values
+            / observations.std_dbz
+        )
+        whitened = _apply_observation_error_whitener(
+            standardized,
+            observations,
+            frozen.analysis_config,
+        )
+        whitened_energy += whitened.square()
+
+    pixel_count = int(torch.count_nonzero(active).detach())
+    valid_count = max(1, int(torch.count_nonzero(observations.valid_mask)))
+    fraction = pixel_count / valid_count
+    whitened_l2 = math.sqrt(float(torch.sum(whitened_energy).detach()))
+    tile_norm = _maximum_tile_norm(
+        whitened_energy,
+        config.perturbation_tile_size,
+    )
+    weight_l2 = float(
+        torch.linalg.vector_norm(perturbation.observation_weight).detach()
+    )
+    limits = (
+        (pixel_count, config.maximum_perturbed_pixel_count, "pixel budget"),
+        (fraction, config.maximum_perturbed_fraction, "area fraction"),
+        (
+            whitened_l2,
+            config.maximum_whitened_perturbation_l2,
+            "whitened trust radius",
+        ),
+        (
+            tile_norm,
+            config.maximum_per_tile_whitened_norm,
+            "per-tile trust radius",
+        ),
+        (
+            weight_l2,
+            config.maximum_observation_weight_l2,
+            "weight trust radius",
+        ),
+    )
+    for value, limit, name in limits:
+        if value > limit:
+            raise ValueError(f"observation perturbation exceeds its {name}")
+    return VariationalPerturbationDiagnostics(
+        perturbed_pixel_count=pixel_count,
+        perturbed_fraction=fraction,
+        whitened_l2=whitened_l2,
+        maximum_per_tile_whitened_norm=tile_norm,
+        observation_weight_l2=weight_l2,
+        directional_classification_valid=True,
+    )
+
+
+def _maximum_tile_norm(energy: Tensor, tile_size: int) -> float:
+    maximum = 0.0
+    for frame in energy:
+        for row in range(0, frame.shape[0], tile_size):
+            for column in range(0, frame.shape[1], tile_size):
+                tile = frame[
+                    row : row + tile_size,
+                    column : column + tile_size,
+                ]
+                maximum = max(
+                    maximum,
+                    math.sqrt(float(torch.sum(tile).detach())),
+                )
+    return maximum
+
+
+def _baseline_branch_is_stable(
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    delta_dbz: Tensor,
+) -> bool:
+    if (
+        frozen.baseline_metadata.tendency_source
+        is not TendencySource.OBSERVATION
+    ):
+        return not bool(torch.any(delta_dbz != 0))
+    changed = observations.dbz + delta_dbz
+    clean = torch.where(
+        frozen.observed_mask,
+        changed,
+        changed.new_full((), frozen.nowcast_config.min_dbz),
+    )
+    estimate = _estimate_source_tendencies(
+        clean,
+        frozen.observed_mask,
+        dbz_to_echo(
+            clean,
+            min_dbz=frozen.nowcast_config.min_dbz,
+            max_dbz=frozen.nowcast_config.max_dbz,
+        ),
+        frozen.nowcast_config,
+        frozen.grid_time_contract,
+    )
+    metadata = frozen.baseline_metadata
+    same_selection = (
+        estimate.motion_pair_count == metadata.motion_pair_count
+        and estimate.growth_pair_count == metadata.growth_pair_count
+        and estimate.motion_pair_selection is metadata.motion_pair_selection
+        and estimate.growth_pair_selection is metadata.growth_pair_selection
+        and estimate.motion_pair_conflict == metadata.motion_pair_conflict
+        and estimate.growth_pair_conflict == metadata.growth_pair_conflict
+    )
+    if not same_selection:
+        return False
+    nominal_cells = (
+        freeze_remap_cell(frozen.baseline_state.displacement_yx),
+        freeze_remap_cell(2.0 * frozen.baseline_state.displacement_yx),
+    )
+    changed_cells = (
+        freeze_remap_cell(estimate.displacement_yx),
+        freeze_remap_cell(2.0 * estimate.displacement_yx),
+    )
+    return changed_cells == nominal_cells
 
 
 def _require_local_perturbation(

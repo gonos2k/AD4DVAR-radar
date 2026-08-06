@@ -77,6 +77,58 @@ class VariationalAnalysisTests(unittest.TestCase):
         pcg_relative_tolerance=1.0e-7,
     )
 
+    def test_censored_background_is_independent_of_storage_value(self) -> None:
+        low = torch.full((3, 5, 6), -10.0, dtype=torch.float64)
+        high = torch.full_like(low, 4.9)
+        low[:, 2, 3] = 20.0
+        high[:, 2, 3] = 20.0
+
+        low_observations, low_frozen = prepare_analysis(
+            low,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+        high_observations, high_frozen = prepare_analysis(
+            high,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+        )
+
+        self.assertTrue(
+            torch.equal(
+                low_observations.censored_mask,
+                high_observations.censored_mask,
+            )
+        )
+        torch.testing.assert_close(
+            low_frozen.initial_background_dbz,
+            high_frozen.initial_background_dbz,
+        )
+
+    def test_external_censored_background_requires_complete_coverage(
+        self,
+    ) -> None:
+        frames = torch.full((3, 4, 5), -10.0, dtype=torch.float64)
+        config = replace(
+            self.analysis_config,
+            censored_background_policy="external_background",
+        )
+        with self.assertRaisesRegex(ValueError, "background coverage"):
+            prepare_analysis(
+                frames,
+                nowcast_config=self.nowcast_config,
+                analysis_config=config,
+            )
+        background = torch.full_like(frames, 1.5)
+        _, frozen = prepare_analysis(
+            frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=config,
+            background_frames_dbz=background,
+            background_age_minutes=0.0,
+        )
+        torch.testing.assert_close(frozen.initial_background_dbz, background[0])
+
     def test_p1_run_lineage_covers_config_std_and_quality(self) -> None:
         frames = torch.full((3, 6, 6), 20.0, dtype=torch.float64)
         base_config = AnalysisConfig(
@@ -259,6 +311,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         *,
         height: int = 4,
         width: int = 5,
+        analysis_config: AnalysisConfig | None = None,
     ):
         frames = torch.full(
             (3, height, width),
@@ -268,7 +321,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         return prepare_analysis(
             frames,
             nowcast_config=self.nowcast_config,
-            analysis_config=self.analysis_config,
+            analysis_config=analysis_config or self.analysis_config,
         )
 
     def active_field_position(
@@ -1405,7 +1458,10 @@ class VariationalAnalysisTests(unittest.TestCase):
             analysis_config=config,
         )
 
-        self.assertEqual(result.reason, "step_tolerance")
+        self.assertIn(
+            result.reason,
+            ("step_tolerance", "final_linearization_stationary"),
+        )
         self.assertGreater(result.linearization_polish_iterations, 0)
         self.assertIsNotNone(result.linearization)
         assert result.linearization is not None
@@ -2565,6 +2621,10 @@ class VariationalAnalysisTests(unittest.TestCase):
             value_dbz=self.nowcast_config.min_dbz,
             height=7,
             width=9,
+            analysis_config=replace(
+                self.analysis_config,
+                censored_background_policy="floor",
+            ),
         )
         frozen = replace(
             frozen,
@@ -2615,7 +2675,10 @@ class VariationalAnalysisTests(unittest.TestCase):
         observations, frozen = prepare_analysis(
             frames,
             nowcast_config=self.nowcast_config,
-            analysis_config=self.analysis_config,
+            analysis_config=replace(
+                self.analysis_config,
+                censored_background_policy="floor",
+            ),
             observation_std_dbz=0.5,
         )
 
@@ -2695,7 +2758,10 @@ class VariationalAnalysisTests(unittest.TestCase):
         observations, frozen = prepare_analysis(
             frames,
             nowcast_config=self.nowcast_config,
-            analysis_config=self.analysis_config,
+            analysis_config=replace(
+                self.analysis_config,
+                censored_background_policy="floor",
+            ),
             observation_std_dbz=3.0,
         )
         zero = initial_control(frozen)
