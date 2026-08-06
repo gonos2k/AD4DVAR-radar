@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.44
+# ADVAR 3-frame radar nowcast v0.50
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -183,7 +183,7 @@ print(analysis.state.echo_linear)  # 세 장으로 분석된 현재 q(0)
 다시 계산하며, frozen stationarity·실제 pseudo-Huber gradient·retained weight
 일관성을 모두 만족해야 P1 forecast, posterior와 FSO를 제공한다. polish 뒤에는
 기존 amplitude·causal·saturation·objective gate도 다시 검사한다. 보존되는
-`p1-final-frozen-irls-gn-v10` 선형화에는 frozen/robust gradient 진단, IRLS
+`p1-final-frozen-irls-gn-v11` 선형화에는 frozen/robust gradient 진단, IRLS
 weight 변화, polish 횟수와 최종 hard feasibility margin이 함께 들어간다.
 관측·분류 mask·최종 IRLS weight·remap cell·prior graph를 포함한 모든 frozen
 입력은 `linearization_digest`에 결합되며, 보존 Tensor는 caller storage와
@@ -266,7 +266,7 @@ legacy Tensor를 거부한다. raw Tensor 입력은 연구 호환용으로 계�
 결과와 M0 원장에 `verification_lineage_complete=False`로 기록되므로 지연 자동
 학습의 완전한 검증자료로 승격할 수 없다.
 
-`compute_variational_fso()`의 `p1-variational-fso-v12` 결과는 영향값이 아니라
+`compute_variational_fso()`의 `p1-variational-fso-v13` 결과는 영향값이 아니라
 다음 관측 parameter와 frozen 초기배경 경로에 대한 미분이다.
 
 ```text
@@ -421,6 +421,10 @@ if learning.eligibility.eligible:
 
 이 policy는 verification lineage, radar-dynamics domain, active-set·feasibility·
 GN 신뢰도, physical-radar perturbation과 baseline branch 인증을 모두 요구한다.
+strict factory는 16 km tile, 9 km soft-FSS window, projected-metre centroid와
+256 km² perturbation-area 상한을 사용한다. metre 설정은 grid cell area의
+제곱근으로 한 번 pixel span으로 변환되며, 실제 해석에 사용한 pixel tile 크기는
+FSO 결과에 기록된다. 픽셀 단위 설정은 기존 연구계약과의 호환을 위해 유지된다.
 `approved_policy_digests`는 독립적인 allowlist 또는 서명검증 계층에서 공급해야
 하며, caller가 스스로 만든 digest는 승인 근거가 아니다. 일반 결과의
 `baseline_branch_trusted_total`은 baseline branch만 인증한다. 전체 학습 승인은
@@ -493,7 +497,7 @@ fso = compute_variational_fso(
 )
 ```
 
-`p1-linearization-v8` loader는 pickle을 사용하지 않고 archive 크기·member
+`p1-linearization-v9` loader는 pickle을 사용하지 않고 archive 크기·member
 allowlist·각 Tensor digest·전체 artifact digest를 먼저 검사한다. 그 뒤 저장된
 control에서 state와 `J^T r`를 다시 계산한다. algorithm bundle 또는 Python,
 NumPy, PyTorch, backend capability, deterministic-policy로 구성된 numerical
@@ -679,7 +683,7 @@ forecast, analysis = variational_nowcast(
 group map은 `[H,W]` 또는 `[3,H,W]` 정수 Tensor이며 tile mode와 동시에 사용할
 수 없다. 연구모드는 digest를 생략하면 canonical map digest를 자동 결합하지만,
 운용모드는 사전 승인된 `AnalysisConfig`에 정확한 digest가 있어야 한다. map은
-analysis-input·forecast-run·linearization digest와 `p1-linearization-v8`
+analysis-input·forecast-run·linearization digest와 `p1-linearization-v9`
 artifact에 포함된다. CLI에서는
 `--observation-common-bias-group-map groups.npy`를 사용한다.
 
@@ -705,6 +709,11 @@ forecast, analysis = variational_nowcast(
 
 이 경로는 표준화된 mode basis의 작은 `K×K` Gram만 고유분해하여
 `(I + A A.T)^(-1/2)`를 정확히 적용한다. `HW×HW` covariance는 만들지 않는다.
+최종 선형화에는 대형 weighted basis를 한 벌 더 저장하지 않고 원래 mode
+weights와 작은 correction matrix만 보존한다. `[K,H,W]` 입력도 세 시각으로
+복제하지 않는다. `maximum_common_bias_mode_weight_bytes`,
+`maximum_frozen_whitener_bytes`, `maximum_linearization_bytes`는 큰 allocation 전에
+fail-close한다.
 regular tile·group map·overlapping mode는 서로 배타적이며 mode Tensor와 digest는
 지연 FSO artifact에 보존된다. CLI에서는
 `--observation-common-bias-mode-weights modes.npy`를 사용한다.
@@ -1249,5 +1258,5 @@ weight, active set, remap cell, observation classification과 baseline을 고정
 자체의 변화, EFSO, 검증된 baseline-normalized reward와 자동학습 승격은 아직
 포함하지 않는다. P1 FSO·FSOI 결과 자체는 M0 episode ledger에 저장하지 않지만,
 3시간 지연 재계산에 필요한 frozen linearization은 content-addressed
-`p1-linearization-v8` artifact로 안전하게 보존·재적재할 수 있다.
+`p1-linearization-v9` artifact로 안전하게 보존·재적재할 수 있다.
 P1 분석상태는 기존 M0 직접민감도 API에서 계속 provenance 검사로 거부된다.

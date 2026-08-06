@@ -1647,7 +1647,9 @@ class SensitivityTests(unittest.TestCase):
         invalid_configs = (
             {"metric_domain": "unknown"},
             {"tile_size": 2.5},
+            {"tile_size_m": 0.0},
             {"soft_fss_window": 4.5},
+            {"soft_fss_window_m": 0.0},
             {"soft_fss_temperature_dbz": float("nan")},
             {"active_margin_dbz": float("nan")},
             {"linearity_delta": (0.1, 0.2)},
@@ -1670,6 +1672,59 @@ class SensitivityTests(unittest.TestCase):
             with self.subTest(values=values):
                 with self.assertRaises((TypeError, ValueError)):
                     SensitivityConfig(**values)
+
+    def test_physical_metric_settings_resolve_from_the_grid(self) -> None:
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-05T00:00:00Z",
+                "2026-08-05T00:10:00Z",
+                "2026-08-05T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="4" * 64,
+        )
+        forecast = torch.zeros((5, 5), dtype=torch.float64)
+        truth = torch.zeros_like(forecast)
+        forecast[2, 1] = 10.0
+        truth[2, 3] = 10.0
+        valid = torch.ones_like(forecast, dtype=torch.bool)
+        centroid = forecast_metric(
+            "centroid_error_m2",
+            forecast,
+            truth,
+            valid,
+            self.nowcast_config,
+            SensitivityConfig(metric_names=("centroid_error_m2",)),
+            grid,
+        )
+        self.assertAlmostEqual(float(centroid), 4_000_000.0)
+
+        physical = forecast_metric(
+            "soft_fss_error_35",
+            forecast,
+            truth,
+            valid,
+            self.nowcast_config,
+            SensitivityConfig(
+                metric_names=("soft_fss_error_35",),
+                soft_fss_window_m=5_000.0,
+            ),
+            grid,
+        )
+        pixels = forecast_metric(
+            "soft_fss_error_35",
+            forecast,
+            truth,
+            valid,
+            self.nowcast_config,
+            SensitivityConfig(
+                metric_names=("soft_fss_error_35",),
+                soft_fss_window=5,
+            ),
+        )
+        torch.testing.assert_close(physical, pixels)
 
 
 class VariationalFSOTests(unittest.TestCase):
@@ -1728,7 +1783,7 @@ class VariationalFSOTests(unittest.TestCase):
 
     def test_variational_fso_covers_all_observation_times(self) -> None:
         fso = self.fso
-        self.assertEqual(fso.contract, "p1-variational-fso-v12")
+        self.assertEqual(fso.contract, "p1-variational-fso-v13")
         self.assertEqual(
             fso.sensitivity_scope,
             "residual_plus_observation_derived_baseline_with_frozen_selection",
@@ -1752,7 +1807,7 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertEqual(fso.full_map_lead_minutes, (10,))
         self.assertEqual(
             fso.linearization_contract,
-            "p1-final-frozen-irls-gn-v10",
+            "p1-final-frozen-irls-gn-v11",
         )
         self.assertEqual(
             fso.forecast_run_digest,
@@ -2165,8 +2220,10 @@ class VariationalFSOTests(unittest.TestCase):
             {"maximum_perturbed_pixel_count": 0},
             {"maximum_perturbed_fraction": 0.0},
             {"maximum_perturbed_fraction": 1.1},
+            {"maximum_perturbed_area_km2": 0.0},
             {"maximum_whitened_perturbation_l2": 0.0},
             {"perturbation_tile_size": 0},
+            {"perturbation_tile_size_m": 0.0},
             {"maximum_per_tile_whitened_norm": 0.0},
             {"maximum_observation_weight_l2": 0.0},
             {"minimum_observation_multiplier": 0.0},
@@ -3506,7 +3563,7 @@ class VariationalFSOTests(unittest.TestCase):
 
         self.assertEqual(
             fsoi.contract,
-            "p1-linearized-observation-impact-v9",
+            "p1-linearized-observation-impact-v10",
         )
         self.assertEqual(
             fsoi.perturbation_contract,
@@ -3741,6 +3798,17 @@ class VariationalFSOTests(unittest.TestCase):
                 sensitivity_config=self.sensitivity_config,
                 adjoint_config=VariationalAdjointConfig(
                     maximum_whitened_perturbation_l2=0.01,
+                ),
+            )
+        with self.assertRaisesRegex(ValueError, "requires a grid contract"):
+            compute_variational_fsoi(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                perturbation,
+                sensitivity_config=self.sensitivity_config,
+                adjoint_config=VariationalAdjointConfig(
+                    maximum_perturbed_area_km2=1.0,
                 ),
             )
 
@@ -4038,6 +4106,11 @@ class VariationalFSOTests(unittest.TestCase):
             learning.fsoi.baseline_dynamics_branch_status,
             "certified",
         )
+        self.assertEqual(
+            learning.fsoi.perturbation_diagnostics.perturbed_area_km2,
+            1.0,
+        )
+        self.assertEqual(learning.fsoi.fso.tile_size, 16)
         self.assertIsNotNone(learning.learning_impact)
 
     def test_censored_perturbations_use_event_specific_factories(self) -> None:

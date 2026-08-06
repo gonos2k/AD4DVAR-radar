@@ -55,6 +55,12 @@ SUPPORTED_METRICS = (
     "log_echo_mse",
     "soft_fss_error_35",
     "centroid_error",
+    "centroid_error_m2",
+)
+DEFAULT_METRICS = (
+    "log_echo_mse",
+    "soft_fss_error_35",
+    "centroid_error",
 )
 
 FSOMetricDomain = Literal[
@@ -272,15 +278,17 @@ CONTEXT_FEATURE_NAMES = (
 class SensitivityConfig:
     """Fixed metric and compression choices for one sensitivity contract."""
 
-    metric_names: tuple[str, ...] = SUPPORTED_METRICS
+    metric_names: tuple[str, ...] = DEFAULT_METRICS
     metric_domain: FSOMetricDomain = "issued"
     require_verification_lineage: bool = False
     required_verification_radar_product_digest: str | None = None
     required_verification_qc_pipeline_digest: str | None = None
     full_map_lead_minutes: tuple[int, ...] = (30, 60, 120, 180)
     tile_size: int = 16
+    tile_size_m: float | None = None
     soft_fss_temperature_dbz: float = 2.0
     soft_fss_window: int = 9
+    soft_fss_window_m: float | None = None
     minimum_fss_truth_mass: float = 0.5
     active_margin_dbz: float = 0.1
     linearity_delta: tuple[float, float, float] = (0.05, -0.04, 0.005)
@@ -339,6 +347,16 @@ class SensitivityConfig:
             raise ValueError("full-map leads must be positive integers")
         if type(self.tile_size) is not int or self.tile_size <= 0:
             raise ValueError("tile_size must be positive")
+        for name, value in (
+            ("tile_size_m", self.tile_size_m),
+            ("soft_fss_window_m", self.soft_fss_window_m),
+        ):
+            if value is not None and (
+                isinstance(value, bool)
+                or not math.isfinite(value)
+                or value <= 0.0
+            ):
+                raise ValueError(f"{name} must be positive")
         if (
             not math.isfinite(self.soft_fss_temperature_dbz)
             or self.soft_fss_temperature_dbz <= 0
@@ -386,12 +404,19 @@ class SensitivityConfig:
         """Return the fail-closed metric policy for automated learning."""
 
         return cls(
+            metric_names=(
+                "log_echo_mse",
+                "soft_fss_error_35",
+                "centroid_error_m2",
+            ),
             metric_domain="radar_dynamics_anchored",
             require_verification_lineage=True,
             required_verification_radar_product_digest=(
                 radar_product_digest
             ),
             required_verification_qc_pipeline_digest=qc_pipeline_digest,
+            tile_size_m=16_000.0,
+            soft_fss_window_m=9_000.0,
         )
 
 
@@ -436,8 +461,10 @@ class VariationalAdjointConfig:
     maximum_background_delta_dbz: float = 0.5
     maximum_perturbed_pixel_count: int = 4096
     maximum_perturbed_fraction: float = 0.05
+    maximum_perturbed_area_km2: float | None = None
     maximum_whitened_perturbation_l2: float = 8.0
     perturbation_tile_size: int = 16
+    perturbation_tile_size_m: float | None = None
     maximum_per_tile_whitened_norm: float = 4.0
     maximum_observation_weight_l2: float = 1.0
     minimum_observation_multiplier: float = 0.5
@@ -569,6 +596,16 @@ class VariationalAdjointConfig:
             raise ValueError(
                 "perturbation_tile_size must be a positive integer"
             )
+        for name, value in (
+            ("maximum_perturbed_area_km2", self.maximum_perturbed_area_km2),
+            ("perturbation_tile_size_m", self.perturbation_tile_size_m),
+        ):
+            if value is not None and (
+                isinstance(value, bool)
+                or not math.isfinite(value)
+                or value <= 0.0
+            ):
+                raise ValueError(f"{name} must be positive")
         if (
             not math.isfinite(self.maximum_perturbed_fraction)
             or not 0.0 < self.maximum_perturbed_fraction <= 1.0
@@ -595,6 +632,8 @@ class VariationalAdjointConfig:
             require_feasibility_margin=True,
             require_gauss_newton_reliability=True,
             require_baseline_dynamics_branch_validity=True,
+            maximum_perturbed_area_km2=256.0,
+            perturbation_tile_size_m=16_000.0,
         )
 
 
@@ -918,6 +957,7 @@ class VariationalObservationPerturbation:
 class VariationalPerturbationDiagnostics:
     perturbed_pixel_count: int
     perturbed_fraction: float
+    perturbed_area_km2: float | None
     whitened_l2: float
     maximum_per_tile_whitened_norm: float
     observation_weight_l2: float
@@ -1022,9 +1062,16 @@ class AutomatedLearningPolicy:
             or not sensitivity.require_verification_lineage
             or sensitivity.required_verification_radar_product_digest is None
             or sensitivity.required_verification_qc_pipeline_digest is None
+            or sensitivity.tile_size_m is None
+            or (
+                "soft_fss_error_35" in sensitivity.metric_names
+                and sensitivity.soft_fss_window_m is None
+            )
+            or "centroid_error" in sensitivity.metric_names
         ):
             raise ValueError(
-                "automated learning requires approved verification lineage"
+                "automated learning requires physical metrics and approved "
+                "verification lineage"
             )
         adjoint = self.adjoint_config
         if not all(
@@ -1033,6 +1080,8 @@ class AutomatedLearningPolicy:
                 adjoint.require_feasibility_margin,
                 adjoint.require_gauss_newton_reliability,
                 adjoint.require_baseline_dynamics_branch_validity,
+                adjoint.maximum_perturbed_area_km2 is not None,
+                adjoint.perturbation_tile_size_m is not None,
             )
         ):
             raise ValueError(
@@ -1148,6 +1197,52 @@ class _NormalProductBudget:
             raise ValueError("P1 FSO normal-product budget exhausted")
         self.used += 1
         return operator(value)
+
+
+def _physical_pixel_span(
+    distance_m: float,
+    grid: RadarGridTimeContract | None,
+    *,
+    odd: bool = False,
+) -> int:
+    """Convert one area-equivalent physical span to a pixel count."""
+
+    if grid is None:
+        raise ValueError(
+            "physical sensitivity settings require a grid contract"
+        )
+    spacing_m = math.sqrt(grid.cell_area_m2)
+    pixels = max(1, math.floor(distance_m / spacing_m + 0.5))
+    if odd and pixels % 2 == 0:
+        pixels += 1
+    return pixels
+
+
+def _metric_tile_size(
+    config: SensitivityConfig,
+    grid: RadarGridTimeContract | None,
+) -> int:
+    if config.tile_size_m is None:
+        return config.tile_size
+    return _physical_pixel_span(config.tile_size_m, grid)
+
+
+def _soft_fss_window_size(
+    config: SensitivityConfig,
+    grid: RadarGridTimeContract | None,
+) -> int:
+    if config.soft_fss_window_m is None:
+        return config.soft_fss_window
+    return _physical_pixel_span(config.soft_fss_window_m, grid, odd=True)
+
+
+def _perturbation_tile_size(
+    config: VariationalAdjointConfig,
+    grid: RadarGridTimeContract | None,
+) -> int:
+    if config.perturbation_tile_size_m is None:
+        return config.perturbation_tile_size
+    return _physical_pixel_span(config.perturbation_tile_size_m, grid)
 
 
 def _metric_domain_weight(
@@ -1646,7 +1741,7 @@ def _validate_verification_lineage_fields(
 def _metric_contract_digest(config: SensitivityConfig) -> str:
     return json_digest(
         {
-            "version": "p1-forecast-metric-contract-v3",
+            "version": "p1-forecast-metric-contract-v4",
             "metric_names": list(config.metric_names),
             "metric_domain": config.metric_domain,
             "sensitivity_config_digest": config.digest,
@@ -1662,7 +1757,7 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
     )
     return json_digest(
         {
-            "version": "p1-variational-fso-digest-v12",
+            "version": "p1-variational-fso-digest-v13",
             "contract": fso.contract,
             "forecast_run_digest": fso.forecast_run_digest,
             "analysis_input_digest": fso.analysis_input_digest,
@@ -1836,7 +1931,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 
     return json_digest(
         {
-            "version": "p1-variational-fsoi-digest-v9",
+            "version": "p1-variational-fsoi-digest-v10",
             "contract": fsoi.contract,
             "variational_fso_digest": fsoi.fso.variational_fso_digest,
             "perturbation_contract": fsoi.perturbation_contract,
@@ -1847,6 +1942,9 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
                 ),
                 "perturbed_fraction": (
                     fsoi.perturbation_diagnostics.perturbed_fraction
+                ),
+                "perturbed_area_km2": (
+                    fsoi.perturbation_diagnostics.perturbed_area_km2
                 ),
                 "whitened_l2": fsoi.perturbation_diagnostics.whitened_l2,
                 "maximum_per_tile_whitened_norm": (
@@ -1910,7 +2008,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 def validate_variational_fso(fso: VariationalFSO) -> None:
     """Reject any mutation of a content-addressed FSO result."""
 
-    if fso.contract != "p1-variational-fso-v12":
+    if fso.contract != "p1-variational-fso-v13":
         raise ValueError("unsupported P1 FSO contract")
     if (
         fso.sensitivity_scope
@@ -1951,7 +2049,7 @@ def validate_variational_fso(fso: VariationalFSO) -> None:
 def validate_variational_fsoi(fsoi: VariationalFSOI) -> None:
     """Reject any mutation or cross-binding in a P1 impact result."""
 
-    if fsoi.contract != "p1-linearized-observation-impact-v9":
+    if fsoi.contract != "p1-linearized-observation-impact-v10":
         raise ValueError("unsupported P1 FSOI contract")
     validate_variational_fso(fsoi.fso)
     if fsoi.perturbation.digest != fsoi.perturbation_digest:
@@ -2169,6 +2267,11 @@ def compute_sensitivity_snapshot(
     )
 
     height, width = state.echo_linear.shape
+    grid_time_contract = result.run.grid_time_contract
+    tile_size = _metric_tile_size(
+        sensitivity_config,
+        grid_time_contract,
+    )
     lead_minutes = tuple(
         range(
             nowcast_config.interval_minutes,
@@ -2182,8 +2285,8 @@ def compute_sensitivity_snapshot(
     )
     metric_count = len(sensitivity_config.metric_names)
     lead_count = len(lead_minutes)
-    tile_rows = math.ceil(height / sensitivity_config.tile_size)
-    tile_columns = math.ceil(width / sensitivity_config.tile_size)
+    tile_rows = math.ceil(height / tile_size)
+    tile_columns = math.ceil(width / tile_size)
 
     clean_verification = torch.nan_to_num(
         verification_frames,
@@ -2402,6 +2505,7 @@ def compute_sensitivity_snapshot(
                 valid,
                 nowcast_config,
                 sensitivity_config,
+                grid_time_contract,
             )
             score = metric(prediction)
 
@@ -2468,12 +2572,12 @@ def compute_sensitivity_snapshot(
             )
             tile_direct_norm[lead_index, metric_index] = _tile_l2(
                 direct_gradient.detach(),
-                sensitivity_config.tile_size,
+                tile_size,
             )
             if tile_whitened_norm is not None:
                 tile_whitened_norm[lead_index, metric_index] = _tile_l2(
                     whitened_gradient.detach(),
-                    sensitivity_config.tile_size,
+                    tile_size,
                 )
 
             if lead_index in selected_position:
@@ -2493,7 +2597,7 @@ def compute_sensitivity_snapshot(
                 )
                 tiles = _tile_sum(
                     contribution,
-                    sensitivity_config.tile_size,
+                    tile_size,
                 )
                 tile_impact[lead_index, metric_index] = tiles
                 observation_impact[lead_index, metric_index] = tiles.sum()
@@ -2516,6 +2620,7 @@ def compute_sensitivity_snapshot(
         observation_verified_evidence_by_metric,
         nowcast_config,
         sensitivity_config,
+        grid_time_contract,
     )
     trust_score = math.prod(trust_components.values())
 
@@ -2542,7 +2647,7 @@ def compute_sensitivity_snapshot(
         metric_names=sensitivity_config.metric_names,
         lead_minutes=lead_minutes,
         full_map_lead_minutes=sensitivity_config.full_map_lead_minutes,
-        tile_size=sensitivity_config.tile_size,
+        tile_size=tile_size,
         context_feature_names=CONTEXT_FEATURE_NAMES,
         context_features=extract_context_features(
             latest_frame_dbz,
@@ -2669,7 +2774,7 @@ def compute_variational_fsoi(
     if perturbation_diagnostics is None:
         raise RuntimeError("variational perturbation was not validated")
     fsoi = VariationalFSOI(
-        contract="p1-linearized-observation-impact-v9",
+        contract="p1-linearized-observation-impact-v10",
         fso=fso,
         perturbation=observation_perturbation,
         perturbation_contract=observation_perturbation.contract,
@@ -2890,8 +2995,12 @@ def _compute_variational_products(
     }
     lead_count = len(lead_minutes)
     metric_count = len(sensitivity_config.metric_names)
-    tile_rows = math.ceil(height / sensitivity_config.tile_size)
-    tile_columns = math.ceil(width / sensitivity_config.tile_size)
+    tile_size = _metric_tile_size(
+        sensitivity_config,
+        frozen.grid_time_contract,
+    )
+    tile_rows = math.ceil(height / tile_size)
+    tile_columns = math.ceil(width / tile_size)
     selected_count = len(full_map_indices)
     materialized_output_bytes = _variational_materialized_output_bytes(
         control,
@@ -3354,7 +3463,7 @@ def _compute_variational_products(
                     lead_index=lead_index,
                     metric_index=metric_index,
                     selected_index=selected_index,
-                    tile_size=sensitivity_config.tile_size,
+                    tile_size=tile_size,
                     signed_sum=False,
                 )
 
@@ -3398,7 +3507,7 @@ def _compute_variational_products(
                         lead_index=lead_index,
                         metric_index=metric_index,
                         selected_index=selected_index,
-                        tile_size=sensitivity_config.tile_size,
+                        tile_size=tile_size,
                         signed_sum=True,
                     )
 
@@ -3450,7 +3559,7 @@ def _compute_variational_products(
         ),
     )
     fso = VariationalFSO(
-        contract="p1-variational-fso-v12",
+        contract="p1-variational-fso-v13",
         forecast_run_digest=result.forecast_run_digest,
         analysis_input_digest=cast(str, result.run.analysis_input_digest),
         sensitivity_config_digest=sensitivity_config.digest,
@@ -3487,7 +3596,7 @@ def _compute_variational_products(
         metric_domain_digest=metric_domain_digest,
         lead_minutes=lead_minutes,
         full_map_lead_minutes=sensitivity_config.full_map_lead_minutes,
-        tile_size=sensitivity_config.tile_size,
+        tile_size=tile_size,
         forecast_scores=forecast_scores,
         metric_available=metric_available,
         metric_domain_weight_sum=metric_domain_weight_sum,
@@ -3573,6 +3682,7 @@ def _variational_forecast_score(
         valid,
         nowcast_config,
         sensitivity_config,
+        frozen.grid_time_contract,
     )
 
 
@@ -4307,10 +4417,16 @@ def _perturbation_diagnostics(
     pixel_count = int(torch.count_nonzero(active).detach())
     valid_count = max(1, int(torch.count_nonzero(observations.valid_mask)))
     fraction = pixel_count / valid_count
+    grid = frozen.grid_time_contract
+    area_km2 = (
+        None
+        if grid is None
+        else pixel_count * grid.cell_area_m2 / 1.0e6
+    )
     whitened_l2 = math.sqrt(float(torch.sum(whitened_energy).detach()))
     tile_norm = _maximum_tile_norm(
         whitened_energy,
-        config.perturbation_tile_size,
+        _perturbation_tile_size(config, grid),
     )
     weight_l2 = float(
         torch.linalg.vector_norm(perturbation.observation_weight).detach()
@@ -4337,9 +4453,19 @@ def _perturbation_diagnostics(
     for value, limit, name in limits:
         if value > limit:
             raise ValueError(f"observation perturbation exceeds its {name}")
+    if config.maximum_perturbed_area_km2 is not None:
+        if area_km2 is None:
+            raise ValueError(
+                "physical perturbation area requires a grid contract"
+            )
+        if area_km2 > config.maximum_perturbed_area_km2:
+            raise ValueError(
+                "observation perturbation exceeds its physical area budget"
+            )
     return VariationalPerturbationDiagnostics(
         perturbed_pixel_count=pixel_count,
         perturbed_fraction=fraction,
+        perturbed_area_km2=area_km2,
         whitened_l2=whitened_l2,
         maximum_per_tile_whitened_norm=tile_norm,
         observation_weight_l2=weight_l2,
@@ -4662,6 +4788,7 @@ def forecast_metric(
     valid: Tensor,
     nowcast_config: NowcastConfig,
     sensitivity_config: SensitivityConfig,
+    grid_time_contract: RadarGridTimeContract | None = None,
 ) -> Tensor:
     """Evaluate one differentiable forecast metric."""
 
@@ -4678,10 +4805,25 @@ def forecast_metric(
             valid,
             nowcast_config,
             sensitivity_config,
+            grid_time_contract,
         )
     if name == "centroid_error":
         forecast_center = _soft_centroid(forecast_linear, valid)
         truth_center = _soft_centroid(truth_linear, valid)
+        return torch.sum((forecast_center - truth_center).square())
+    if name == "centroid_error_m2":
+        if grid_time_contract is None:
+            raise ValueError("centroid_error_m2 requires a grid contract")
+        forecast_center = _soft_projected_centroid(
+            forecast_linear,
+            valid,
+            grid_time_contract,
+        )
+        truth_center = _soft_projected_centroid(
+            truth_linear,
+            valid,
+            grid_time_contract,
+        )
         return torch.sum((forecast_center - truth_center).square())
     raise ValueError(f"unsupported metric: {name}")
 
@@ -4973,7 +5115,7 @@ def _metric_has_support(
         )
         truth_mass = torch.sum(truth_event * valid.to(truth.dtype))
         return bool(truth_mass >= sensitivity_config.minimum_fss_truth_mass)
-    if name == "centroid_error":
+    if name in ("centroid_error", "centroid_error_m2"):
         forecast_mass = torch.sum(
             torch.log1p(forecast) * valid.to(forecast.dtype)
         )
@@ -4991,6 +5133,7 @@ def _soft_fss_error(
     valid: Tensor,
     nowcast_config: NowcastConfig,
     sensitivity_config: SensitivityConfig,
+    grid_time_contract: RadarGridTimeContract | None,
 ) -> Tensor:
     floor = 10.0 ** (nowcast_config.min_dbz / 10.0)
     forecast_dbz = 10.0 * torch.log10(forecast + floor)
@@ -4999,7 +5142,10 @@ def _soft_fss_error(
     forecast_event = torch.sigmoid((forecast_dbz - 35.0) / temperature)
     truth_event = torch.sigmoid((truth_dbz - 35.0) / temperature)
 
-    window = sensitivity_config.soft_fss_window
+    window = _soft_fss_window_size(
+        sensitivity_config,
+        grid_time_contract,
+    )
     padding = window // 2
     valid_float = valid.to(forecast.dtype)
     local_valid = F.avg_pool2d(
@@ -5051,6 +5197,35 @@ def _soft_centroid(echo: Tensor, valid: Tensor) -> Tensor:
             torch.sum(weights * x[None, :]) / safe_total,
         )
     )
+    return torch.where(
+        total > torch.finfo(echo.dtype).eps,
+        center,
+        torch.full_like(center, float("nan")),
+    )
+
+
+def _soft_projected_centroid(
+    echo: Tensor,
+    valid: Tensor,
+    grid: RadarGridTimeContract,
+) -> Tensor:
+    """Return the echo centroid in projected metres; origin cancels in errors."""
+
+    height, width = echo.shape
+    row = torch.arange(height, dtype=echo.dtype, device=echo.device)
+    column = torch.arange(width, dtype=echo.dtype, device=echo.device)
+    weights = torch.log1p(echo) * valid.to(echo.dtype)
+    total = weights.sum()
+    safe_total = total.clamp_min(torch.finfo(echo.dtype).eps)
+    center_column_row = torch.stack(
+        (
+            torch.sum(weights * column[None, :]) / safe_total,
+            torch.sum(weights * row[:, None]) / safe_total,
+        )
+    )
+    assert grid.pixel_to_projected_matrix_m is not None
+    matrix = echo.new_tensor(grid.pixel_to_projected_matrix_m)
+    center = matrix @ center_column_row
     return torch.where(
         total > torch.finfo(echo.dtype).eps,
         center,
@@ -5259,6 +5434,7 @@ def _trust_components(
     observation_verified_evidence_by_metric: Tensor,
     nowcast_config: NowcastConfig,
     sensitivity_config: SensitivityConfig,
+    grid_time_contract: RadarGridTimeContract | None,
 ) -> dict[str, float]:
     verification_quality = valid.to(echo.dtype).mean().clamp(0.0, 1.0)
     support_quality = metric_available.to(echo.dtype).mean()
@@ -5324,6 +5500,7 @@ def _trust_components(
                         valid[lead_index],
                         nowcast_config,
                         sensitivity_config,
+                        grid_time_contract,
                     )
                 )
         return torch.stack(scores).mean()
