@@ -1807,7 +1807,7 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertEqual(fso.full_map_lead_minutes, (10,))
         self.assertEqual(
             fso.linearization_contract,
-            "p1-final-frozen-irls-gn-v11",
+            "p1-final-frozen-irls-gn-v12",
         )
         self.assertEqual(
             fso.forecast_run_digest,
@@ -3964,6 +3964,13 @@ class VariationalFSOTests(unittest.TestCase):
             algorithm_bundle_digest=linearization.algorithm_bundle_digest,
             numerical_runtime_digest=linearization.numerical_runtime_digest,
         )
+        for invalid_ratio in (0.0, 1.0, float("nan"), True):
+            with self.subTest(linearity_remainder_ratio=invalid_ratio):
+                with self.assertRaisesRegex(ValueError, "must be in"):
+                    replace(
+                        policy,
+                        maximum_linearity_remainder_ratio=invalid_ratio,
+                    )
         physical_delta = zeros.clone()
         index = tuple(
             int(value)
@@ -4084,7 +4091,28 @@ class VariationalFSOTests(unittest.TestCase):
                 as_tuple=False,
             )[0]
         )
-        delta[index] = 0.01
+        nonlinear_delta = torch.zeros_like(linearization.observations.dbz)
+        nonlinear_delta[index] = 0.01
+        nonlinear = compute_variational_fsoi_for_learning(
+            forecast,
+            analysis,
+            verification,
+            VariationalObservationPerturbation.from_radar_dbz_delta(
+                nonlinear_delta,
+                linearization,
+            ),
+            policy=policy,
+            approved_policy_digests=frozenset((policy.digest,)),
+        )
+        self.assertFalse(nonlinear.eligibility.eligible)
+        self.assertEqual(
+            nonlinear.eligibility.reasons,
+            ("first_order_validation_failed",),
+        )
+        assert nonlinear.first_order_validation is not None
+        self.assertFalse(nonlinear.first_order_validation.first_order_valid)
+
+        delta[index] = 5.0e-6
         perturbation = VariationalObservationPerturbation.from_radar_dbz_delta(
             delta,
             linearization,
@@ -4102,6 +4130,12 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertTrue(learning.eligibility.eligible)
         self.assertEqual(learning.eligibility.reasons, ())
         assert learning.fsoi is not None
+        assert learning.first_order_validation is not None
+        self.assertTrue(learning.first_order_validation.first_order_valid)
+        self.assertTrue(
+            learning.first_order_validation.resolved_analysis_converged
+        )
+        self.assertTrue(learning.first_order_validation.active_branch_valid)
         self.assertEqual(
             learning.fsoi.baseline_dynamics_branch_status,
             "certified",

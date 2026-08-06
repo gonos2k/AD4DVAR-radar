@@ -78,6 +78,48 @@ class VariationalAnalysisTests(unittest.TestCase):
         pcg_relative_tolerance=1.0e-7,
     )
 
+    def test_block_stationarity_is_resolution_stable(self) -> None:
+        field = torch.tensor((2.0, -2.0), dtype=torch.float64)
+        dynamics = torch.tensor((0.1, -0.2, 0.3), dtype=torch.float64)
+        small = torch.cat((field, dynamics))
+        large = torch.cat((field.repeat(16), dynamics))
+
+        small_values = variational_module._block_stationarity(small, 2)
+        large_values = variational_module._block_stationarity(large, 32)
+
+        self.assertEqual(small_values, large_values)
+        self.assertEqual(small_values, (2.0, 0.3, 2.0))
+
+    def test_posterior_saturation_requires_uncertainty_clearance(self) -> None:
+        config = NowcastConfig(
+            p1_posterior_saturation_sigma_multiplier=2.0,
+        )
+        velocity_uncertainty = torch.tensor(0.1, dtype=torch.float64)
+        growth_uncertainty = torch.tensor(0.01, dtype=torch.float64)
+        growth_margin = torch.tensor(
+            config.p1_growth_saturation_safe_margin_per_step + 0.03,
+            dtype=torch.float64,
+        )
+
+        self.assertFalse(
+            variational_module._posterior_saturation_is_safe(
+                2.1,
+                growth_margin,
+                velocity_uncertainty,
+                growth_uncertainty,
+                config,
+            )
+        )
+        self.assertTrue(
+            variational_module._posterior_saturation_is_safe(
+                2.3,
+                growth_margin,
+                velocity_uncertainty,
+                growth_uncertainty,
+                config,
+            )
+        )
+
     def test_censored_background_is_independent_of_storage_value(self) -> None:
         low = torch.full((3, 5, 6), -10.0, dtype=torch.float64)
         high = torch.full_like(low, 4.9)

@@ -47,6 +47,7 @@ from .variational import (
     _robust_stationarity,
     freeze_irls_weights,
     residual_vector,
+    solve_analysis,
     validate_analysis_linearization_content,
 )
 
@@ -1043,10 +1044,11 @@ class AutomatedLearningPolicy:
     adjoint_config: VariationalAdjointConfig
     algorithm_bundle_digest: str
     numerical_runtime_digest: str
-    contract: str = "p1-automated-learning-policy-v1"
+    maximum_linearity_remainder_ratio: float = 0.1
+    contract: str = "p1-automated-learning-policy-v2"
 
     def __post_init__(self) -> None:
-        if self.contract != "p1-automated-learning-policy-v1":
+        if self.contract != "p1-automated-learning-policy-v2":
             raise ValueError("unsupported automated-learning policy")
         _require_sha256(
             "algorithm_bundle_digest",
@@ -1056,6 +1058,14 @@ class AutomatedLearningPolicy:
             "numerical_runtime_digest",
             self.numerical_runtime_digest,
         )
+        if (
+            isinstance(self.maximum_linearity_remainder_ratio, bool)
+            or not math.isfinite(self.maximum_linearity_remainder_ratio)
+            or not 0.0 < self.maximum_linearity_remainder_ratio < 1.0
+        ):
+            raise ValueError(
+                "maximum_linearity_remainder_ratio must be in (0, 1)"
+            )
         sensitivity = self.sensitivity_config
         if (
             sensitivity.metric_domain != "radar_dynamics_anchored"
@@ -1097,6 +1107,9 @@ class AutomatedLearningPolicy:
                 "adjoint_config_digest": self.adjoint_config.digest,
                 "algorithm_bundle_digest": self.algorithm_bundle_digest,
                 "numerical_runtime_digest": self.numerical_runtime_digest,
+                "maximum_linearity_remainder_ratio": (
+                    self.maximum_linearity_remainder_ratio
+                ),
                 "perturbation_semantics": "physical_radar_value",
             }
         )
@@ -1122,15 +1135,36 @@ class LearningEligibility:
 
 
 @dataclass(frozen=True)
+class FirstOrderValidation:
+    """Resolved check of one learning perturbation's Taylor prediction."""
+
+    first_order_prediction: Tensor
+    resolved_metric_change: Tensor
+    linearity_remainder_ratio: Tensor
+    metric_available: Tensor
+    resolved_analysis_converged: bool
+    active_branch_valid: bool
+    first_order_valid: bool
+
+
+@dataclass(frozen=True)
 class VariationalLearningImpact:
     eligibility: LearningEligibility
     fsoi: VariationalFSOI | None
+    first_order_validation: FirstOrderValidation | None
     learning_impact: VariationalImpactChannel | None
 
     def __post_init__(self) -> None:
-        complete = self.fsoi is not None and self.learning_impact is not None
+        complete = (
+            self.fsoi is not None
+            and self.first_order_validation is not None
+            and self.first_order_validation.first_order_valid
+            and self.learning_impact is not None
+        )
         if self.eligibility.eligible != complete:
             raise ValueError("learning eligibility and impact disagree")
+        if self.first_order_validation is not None and self.fsoi is None:
+            raise ValueError("first-order validation requires FSOI")
 
 
 @dataclass
@@ -2848,6 +2882,20 @@ def compute_variational_fsoi_for_learning(
             "baseline_dynamics_branch_not_certified",
             fsoi=fsoi,
         )
+    validation = _validate_first_order_learning_impact(
+        result,
+        analysis,
+        verification_frames_dbz,
+        fsoi,
+        policy,
+    )
+    if not validation.first_order_valid:
+        return _rejected_learning_impact(
+            policy,
+            "first_order_validation_failed",
+            fsoi=fsoi,
+            first_order_validation=validation,
+        )
     return VariationalLearningImpact(
         eligibility=LearningEligibility(
             eligible=True,
@@ -2855,6 +2903,7 @@ def compute_variational_fsoi_for_learning(
             policy_digest=policy.digest,
         ),
         fsoi=fsoi,
+        first_order_validation=validation,
         learning_impact=impact,
     )
 
@@ -2864,6 +2913,7 @@ def _rejected_learning_impact(
     reason: str,
     *,
     fsoi: VariationalFSOI | None = None,
+    first_order_validation: FirstOrderValidation | None = None,
 ) -> VariationalLearningImpact:
     return VariationalLearningImpact(
         eligibility=LearningEligibility(
@@ -2872,7 +2922,208 @@ def _rejected_learning_impact(
             policy_digest=policy.digest,
         ),
         fsoi=fsoi,
+        first_order_validation=first_order_validation,
         learning_impact=None,
+    )
+
+
+def _validate_first_order_learning_impact(
+    result: ForecastResult,
+    analysis: AnalysisResult | P1LinearizationState,
+    verification_input: VerificationInput,
+    fsoi: VariationalFSOI,
+    policy: AutomatedLearningPolicy,
+) -> FirstOrderValidation:
+    """Re-solve one physical perturbation and check its Taylor remainder."""
+
+    linearization = analysis.linearization
+    if linearization is None:
+        raise ValueError("first-order validation requires a linearization")
+    perturbation = fsoi.perturbation
+    delta = perturbation.physical_radar_dbz_delta
+    if delta is None:
+        raise ValueError("first-order validation requires a physical delta")
+
+    observations = linearization.observations
+    frozen = linearization.frozen
+    changed_observations = replace(observations, dbz=observations.dbz + delta)
+    background_delta = _initial_background_perturbation(
+        perturbation,
+        observations,
+    )[0]
+    baseline_dynamics = torch.cat(
+        (
+            frozen.baseline_state.displacement_yx,
+            frozen.baseline_state.log_growth_per_step.reshape(1),
+        )
+    )
+    if (
+        frozen.baseline_metadata.tendency_source
+        is TendencySource.OBSERVATION
+    ):
+        baseline_dynamics = _baseline_dynamics_from_observation(
+            changed_observations.dbz,
+            frozen,
+        )
+    changed_baseline = RadarState(
+        echo_linear=frozen.baseline_state.echo_linear,
+        displacement_yx=baseline_dynamics[:2],
+        log_growth_per_step=baseline_dynamics[2],
+    )
+    changed_frozen = replace(
+        frozen,
+        initial_background_dbz=(
+            frozen.initial_background_dbz + background_delta
+        ),
+        baseline_state=changed_baseline,
+        baseline_frames_dbz=(frozen.baseline_frames_dbz + delta),
+    )
+    resolved = solve_analysis(
+        changed_observations,
+        changed_frozen,
+        control=analysis.control,
+    )
+    resolved_converged = (
+        resolved.converged
+        and not resolved.used_fallback
+        and not resolved.degraded
+        and resolved.p1_forecast_eligible
+    )
+
+    prediction = fsoi.observation.total.sum_by_time.sum(dim=-1).detach()
+    resolved_change = torch.full_like(prediction, float("nan"))
+    remainder = torch.full_like(prediction, float("inf"))
+    available = fsoi.fso.metric_available
+    resolved_linearization = resolved.linearization
+    branch_valid = resolved_converged and resolved_linearization is not None
+    if resolved_linearization is not None:
+        branch_valid = (
+            branch_valid
+            and resolved_linearization.frozen.analysis_remap_cells
+            == frozen.analysis_remap_cells
+        )
+
+    verification = _resolve_verification(
+        verification_input,
+        result,
+        policy.sensitivity_config,
+    )
+    config = result.run.config
+    clean_truth = torch.nan_to_num(
+        verification.frames_dbz,
+        nan=config.min_dbz,
+        posinf=config.max_dbz,
+        neginf=config.min_dbz,
+    ).clamp(config.min_dbz, config.max_dbz)
+    truth_linear = dbz_to_echo(
+        clean_truth,
+        min_dbz=config.min_dbz,
+        max_dbz=config.max_dbz,
+    )
+    finite_truth = verification.valid_mask & torch.isfinite(
+        verification.frames_dbz
+    )
+
+    if resolved_converged:
+        for lead_index, minutes in enumerate(fsoi.fso.lead_minutes):
+            step = minutes // config.interval_minutes
+            forecast_index = step - 1
+            nominal_cell = freeze_remap_cell(
+                step * analysis.state.displacement_yx
+            )
+            changed_cell = freeze_remap_cell(
+                step * resolved.state.displacement_yx
+            )
+            if changed_cell != nominal_cell:
+                branch_valid = False
+            nominal_linear = forecast_linear_at_step(
+                analysis.state,
+                step,
+                config,
+            )
+            changed_linear = forecast_linear_at_step(
+                resolved.state,
+                step,
+                config,
+            )
+            nominal_capped, nominal_cap_active = _freeze_output_cap(
+                nominal_linear,
+                config,
+            )
+            changed_capped, changed_cap_active = _freeze_output_cap(
+                changed_linear,
+                config,
+            )
+            if not torch.equal(nominal_cap_active, changed_cap_active):
+                branch_valid = False
+            metric_weight = _metric_domain_weight(
+                result,
+                finite_truth[forecast_index],
+                forecast_index,
+                policy.sensitivity_config.metric_domain,
+            )
+            for metric_index, metric_name in enumerate(
+                fsoi.fso.metric_names
+            ):
+                if not bool(available[lead_index, metric_index]):
+                    continue
+                nominal_score = forecast_metric(
+                    metric_name,
+                    nominal_capped,
+                    truth_linear[forecast_index],
+                    metric_weight,
+                    config,
+                    policy.sensitivity_config,
+                    frozen.grid_time_contract,
+                )
+                if not torch.allclose(
+                    nominal_score,
+                    fsoi.fso.forecast_scores[lead_index, metric_index],
+                    rtol=0.0,
+                    atol=config.contract_absolute_tolerance,
+                ):
+                    raise ValueError(
+                        "first-order validation does not reproduce the "
+                        "nominal metric"
+                    )
+                changed_score = forecast_metric(
+                    metric_name,
+                    changed_capped,
+                    truth_linear[forecast_index],
+                    metric_weight,
+                    config,
+                    policy.sensitivity_config,
+                    frozen.grid_time_contract,
+                )
+                actual = changed_score - nominal_score
+                resolved_change[lead_index, metric_index] = actual.detach()
+                remainder[lead_index, metric_index] = (
+                    torch.abs(
+                        actual - prediction[lead_index, metric_index]
+                    )
+                    / (torch.abs(actual) + policy.sensitivity_config.epsilon)
+                ).detach()
+
+    selected_remainder = remainder.masked_select(available)
+    first_order_valid = (
+        branch_valid
+        and selected_remainder.numel() > 0
+        and bool(torch.all(torch.isfinite(selected_remainder)))
+        and bool(
+            torch.all(
+                selected_remainder
+                <= policy.maximum_linearity_remainder_ratio
+            )
+        )
+    )
+    return FirstOrderValidation(
+        first_order_prediction=prediction,
+        resolved_metric_change=resolved_change,
+        linearity_remainder_ratio=remainder,
+        metric_available=available.detach().clone(),
+        resolved_analysis_converged=resolved_converged,
+        active_branch_valid=branch_valid,
+        first_order_valid=first_order_valid,
     )
 
 
@@ -3908,29 +4159,7 @@ def _prepare_frozen_baseline_dynamics_path(
     observation_dbz = observations.dbz.detach()
 
     def dynamics_from_observation(candidate: Tensor) -> Tensor:
-        clean = torch.where(
-            frozen.observed_mask,
-            candidate,
-            candidate.new_full((), frozen.nowcast_config.min_dbz),
-        )
-        linear = dbz_to_echo(
-            clean,
-            min_dbz=frozen.nowcast_config.min_dbz,
-            max_dbz=frozen.nowcast_config.max_dbz,
-        )
-        estimate = _estimate_source_tendencies(
-            clean,
-            frozen.observed_mask,
-            linear,
-            frozen.nowcast_config,
-            frozen.grid_time_contract,
-        )
-        return torch.cat(
-            (
-                estimate.displacement_yx,
-                estimate.log_growth_per_step.reshape(1),
-            )
-        )
+        return _baseline_dynamics_from_observation(candidate, frozen)
 
     nominal_dynamics, pullback = cast(
         tuple[Tensor, Callable[[Tensor], tuple[Tensor]]],
@@ -3960,6 +4189,32 @@ def _prepare_frozen_baseline_dynamics_path(
         active_mask=active,
         nominal_dynamics=nominal_dynamics.detach(),
         observation_pullback=pullback,
+    )
+
+
+def _baseline_dynamics_from_observation(
+    frames_dbz: Tensor,
+    frozen: FrozenOuterState,
+) -> Tensor:
+    floor = frames_dbz.new_full((), frozen.nowcast_config.min_dbz)
+    clean = torch.where(frozen.observed_mask, frames_dbz, floor)
+    linear = dbz_to_echo(
+        clean,
+        min_dbz=frozen.nowcast_config.min_dbz,
+        max_dbz=frozen.nowcast_config.max_dbz,
+    )
+    estimate = _estimate_source_tendencies(
+        clean,
+        frozen.observed_mask,
+        linear,
+        frozen.nowcast_config,
+        frozen.grid_time_contract,
+    )
+    return torch.cat(
+        (
+            estimate.displacement_yx,
+            estimate.log_growth_per_step.reshape(1),
+        )
     )
 
 
@@ -4692,6 +4947,16 @@ def _validate_variational_fso_lineage(
         ("residual norm", linearization.residual_norm, stationarity.residual_norm),
         ("gradient norm", linearization.gradient_norm, stationarity.gradient_norm),
         (
+            "field gradient RMS",
+            linearization.field_gradient_rms,
+            stationarity.field_gradient_rms,
+        ),
+        (
+            "dynamics gradient maximum",
+            linearization.dynamics_gradient_max,
+            stationarity.dynamics_gradient_max,
+        ),
+        (
             "relative stationarity",
             linearization.relative_stationarity,
             stationarity.relative_stationarity,
@@ -4713,8 +4978,12 @@ def _validate_variational_fso_lineage(
     analysis_stationarity = (
         analysis.linearization_residual_norm,
         analysis.linearization_gradient_norm,
+        analysis.linearization_field_gradient_rms,
+        analysis.linearization_dynamics_gradient_max,
         analysis.linearization_relative_stationarity,
         analysis.robust_gradient_norm,
+        analysis.robust_field_gradient_rms,
+        analysis.robust_dynamics_gradient_max,
         analysis.robust_relative_stationarity,
         analysis.irls_relative_weight_change,
         analysis.linearization_polish_iterations,
@@ -4722,8 +4991,12 @@ def _validate_variational_fso_lineage(
     retained_stationarity = (
         linearization.residual_norm,
         linearization.gradient_norm,
+        linearization.field_gradient_rms,
+        linearization.dynamics_gradient_max,
         linearization.relative_stationarity,
         linearization.robust_gradient_norm,
+        linearization.robust_field_gradient_rms,
+        linearization.robust_dynamics_gradient_max,
         linearization.robust_relative_stationarity,
         linearization.irls_relative_weight_change,
         linearization.polish_iterations,
@@ -4752,6 +5025,16 @@ def _validate_variational_fso_lineage(
             "robust gradient norm",
             linearization.robust_gradient_norm,
             robust.gradient_norm,
+        ),
+        (
+            "robust field gradient RMS",
+            linearization.robust_field_gradient_rms,
+            robust.field_gradient_rms,
+        ),
+        (
+            "robust dynamics gradient maximum",
+            linearization.robust_dynamics_gradient_max,
+            robust.dynamics_gradient_max,
         ),
         (
             "robust relative stationarity",

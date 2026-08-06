@@ -88,6 +88,7 @@ class CliTests(unittest.TestCase):
             maximum_local_growth_log_error_per_step=0.4055,
             p1_motion_saturation_safe_margin_mps=2.0,
             p1_growth_saturation_safe_margin_per_step=0.04879,
+            p1_posterior_saturation_sigma_multiplier=2.0,
             p1_saturation_uncertainty_multiplier=4.0,
             minimum_pair_psr_advantage=3.0,
             minimum_pair_confidence_ratio=1.5,
@@ -262,6 +263,8 @@ class CliTests(unittest.TestCase):
                     "2",
                     "--p1-growth-saturation-safe-margin-per-step",
                     "0.04879",
+                    "--p1-posterior-saturation-sigma-multiplier",
+                    "2",
                     "--p1-saturation-uncertainty-multiplier",
                     "4",
                     "--causal-support-uncertainty-m",
@@ -435,7 +438,7 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v51",
+                    "nowcast-npz-v52",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
@@ -1084,6 +1087,12 @@ class CliTests(unittest.TestCase):
                         "forecast_log_growth_uncertainty_per_step"
                     ],
                     0.05,
+                )
+                self.assertEqual(
+                    nowcast_config[
+                        "p1_posterior_saturation_sigma_multiplier"
+                    ],
+                    2.0,
                 )
                 self.assertEqual(
                     nowcast_config["forecast_log_growth_confidence_scale"],

@@ -52,7 +52,7 @@ from .variational import (
 )
 
 
-P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v9"
+P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v10"
 DEFAULT_MAXIMUM_MEMBER_COUNT = 96
 DEFAULT_MAXIMUM_MEMBER_BYTES = 2 * 1024**3
 DEFAULT_MAXIMUM_TOTAL_EXPANDED_BYTES = 8 * 1024**3
@@ -305,8 +305,12 @@ def _linearization_state(
     diagnostics = (
         analysis.linearization_residual_norm,
         analysis.linearization_gradient_norm,
+        analysis.linearization_field_gradient_rms,
+        analysis.linearization_dynamics_gradient_max,
         analysis.linearization_relative_stationarity,
         analysis.robust_gradient_norm,
+        analysis.robust_field_gradient_rms,
+        analysis.robust_dynamics_gradient_max,
         analysis.robust_relative_stationarity,
         analysis.irls_relative_weight_change,
         analysis.linearization_polish_iterations,
@@ -314,8 +318,12 @@ def _linearization_state(
     retained = (
         linearization.residual_norm,
         linearization.gradient_norm,
+        linearization.field_gradient_rms,
+        linearization.dynamics_gradient_max,
         linearization.relative_stationarity,
         linearization.robust_gradient_norm,
+        linearization.robust_field_gradient_rms,
+        linearization.robust_dynamics_gradient_max,
         linearization.robust_relative_stationarity,
         linearization.irls_relative_weight_change,
         linearization.polish_iterations,
@@ -336,10 +344,22 @@ def _linearization_state(
         ),
         linearization_residual_norm=linearization.residual_norm,
         linearization_gradient_norm=linearization.gradient_norm,
+        linearization_field_gradient_rms=(
+            linearization.field_gradient_rms
+        ),
+        linearization_dynamics_gradient_max=(
+            linearization.dynamics_gradient_max
+        ),
         linearization_relative_stationarity=(
             linearization.relative_stationarity
         ),
         robust_gradient_norm=linearization.robust_gradient_norm,
+        robust_field_gradient_rms=(
+            linearization.robust_field_gradient_rms
+        ),
+        robust_dynamics_gradient_max=(
+            linearization.robust_dynamics_gradient_max
+        ),
         robust_relative_stationarity=(
             linearization.robust_relative_stationarity
         ),
@@ -591,11 +611,15 @@ def _validate_loaded_state(state: P1LinearizationState) -> None:
     stored = (
         linearization.residual_norm,
         linearization.gradient_norm,
+        linearization.field_gradient_rms,
+        linearization.dynamics_gradient_max,
         linearization.relative_stationarity,
     )
     actual = (
         stationarity.residual_norm,
         stationarity.gradient_norm,
+        stationarity.field_gradient_rms,
+        stationarity.dynamics_gradient_max,
         stationarity.relative_stationarity,
     )
     comparison_tolerance = 64.0 * torch.finfo(state.control.dtype).eps
@@ -631,11 +655,15 @@ def _validate_loaded_state(state: P1LinearizationState) -> None:
     )
     robust_stored = (
         linearization.robust_gradient_norm,
+        linearization.robust_field_gradient_rms,
+        linearization.robust_dynamics_gradient_max,
         linearization.robust_relative_stationarity,
         linearization.irls_relative_weight_change,
     )
     robust_actual = (
         robust.gradient_norm,
+        robust.field_gradient_rms,
+        robust.dynamics_gradient_max,
         robust.relative_stationarity,
         weight_change,
     )

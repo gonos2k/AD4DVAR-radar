@@ -65,8 +65,8 @@ CensoredBackgroundPolicy = Literal[
     "external_background",
 ]
 MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT = 64
-P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v11"
-P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v9"
+P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v12"
+P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v10"
 
 
 @dataclass(frozen=True)
@@ -115,8 +115,8 @@ class AnalysisConfig:
     pcg_relative_tolerance: float = 1.0e-5
     gradient_tolerance: float = 1.0e-5
     step_tolerance: float = 1.0e-4
-    final_linearization_relative_stationarity_tolerance: float = 1.0e-4
-    final_robust_relative_stationarity_tolerance: float = 1.0e-4
+    final_linearization_relative_stationarity_tolerance: float = 2.0e-4
+    final_robust_relative_stationarity_tolerance: float = 2.0e-4
     final_irls_relative_weight_tolerance: float = 1.0e-4
     maximum_final_linearization_polish_iterations: int = 4
     initial_damping: float = 1.0e-2
@@ -750,8 +750,12 @@ class AnalysisLinearization:
     frozen: FrozenOuterState
     residual_norm: float
     gradient_norm: float
+    field_gradient_rms: float
+    dynamics_gradient_max: float
     relative_stationarity: float
     robust_gradient_norm: float
+    robust_field_gradient_rms: float
+    robust_dynamics_gradient_max: float
     robust_relative_stationarity: float
     irls_relative_weight_change: float
     polish_iterations: int
@@ -858,8 +862,12 @@ class AnalysisResult:
     field_smoothness_coordinate_system: str = "index_graph"
     linearization_residual_norm: float | None = None
     linearization_gradient_norm: float | None = None
+    linearization_field_gradient_rms: float | None = None
+    linearization_dynamics_gradient_max: float | None = None
     linearization_relative_stationarity: float | None = None
     robust_gradient_norm: float | None = None
+    robust_field_gradient_rms: float | None = None
+    robust_dynamics_gradient_max: float | None = None
     robust_relative_stationarity: float | None = None
     irls_relative_weight_change: float | None = None
     linearization_polish_iterations: int = 0
@@ -882,8 +890,12 @@ class P1LinearizationState:
     state: RadarState
     linearization_residual_norm: float
     linearization_gradient_norm: float
+    linearization_field_gradient_rms: float
+    linearization_dynamics_gradient_max: float
     linearization_relative_stationarity: float
     robust_gradient_norm: float
+    robust_field_gradient_rms: float
+    robust_dynamics_gradient_max: float
     robust_relative_stationarity: float
     irls_relative_weight_change: float
     linearization_polish_iterations: int
@@ -2190,6 +2202,8 @@ def residual_vector(
 class _LinearizationStationarity:
     residual_norm: float
     gradient_norm: float
+    field_gradient_rms: float
+    dynamics_gradient_max: float
     relative_stationarity: float
 
 
@@ -2203,6 +2217,27 @@ class _FinalLinearizationPolish:
     relative_weight_change: float
     iterations: int
     pcg_iterations: int
+
+
+def _block_stationarity(
+    gradient: Tensor,
+    field_size: int,
+) -> tuple[float, float, float]:
+    """Return resolution-stable field and standardized dynamics gradients."""
+
+    field = gradient[:field_size]
+    field_rms = (
+        0.0
+        if field_size == 0
+        else float(torch.sqrt(torch.mean(field.square())).detach())
+    )
+    dynamics = gradient[field_size:]
+    dynamics_max = (
+        0.0
+        if dynamics.numel() == 0
+        else float(torch.amax(torch.abs(dynamics)).detach())
+    )
+    return field_rms, dynamics_max, max(field_rms, dynamics_max)
 
 
 def _linearization_stationarity(
@@ -2224,10 +2259,15 @@ def _linearization_stationarity(
     gradient = pullback(residual)[0]
     residual_norm = float(torch.linalg.vector_norm(residual).detach())
     gradient_norm = float(torch.linalg.vector_norm(gradient).detach())
-    relative_stationarity = gradient_norm / (1.0 + residual_norm)
+    field_rms, dynamics_max, relative_stationarity = _block_stationarity(
+        gradient,
+        frozen.active_field_index.numel(),
+    )
     return _LinearizationStationarity(
         residual_norm=residual_norm,
         gradient_norm=gradient_norm,
+        field_gradient_rms=field_rms,
+        dynamics_gradient_max=dynamics_max,
         relative_stationarity=relative_stationarity,
     )
 
@@ -2245,12 +2285,16 @@ def _robust_stationarity(
     )
     gradient_norm = float(torch.linalg.vector_norm(gradient).detach())
     objective_value = float(objective.detach())
+    field_rms, dynamics_max, relative_stationarity = _block_stationarity(
+        gradient,
+        frozen.active_field_index.numel(),
+    )
     return _LinearizationStationarity(
         residual_norm=objective_value,
         gradient_norm=gradient_norm,
-        relative_stationarity=(
-            gradient_norm / (1.0 + abs(objective_value))
-        ),
+        field_gradient_rms=field_rms,
+        dynamics_gradient_max=dynamics_max,
+        relative_stationarity=relative_stationarity,
     )
 
 
@@ -2300,10 +2344,15 @@ def _polish_final_linearization(
         gradient = pullback(residual)[0]
         residual_norm = float(torch.linalg.vector_norm(residual).detach())
         gradient_norm = float(torch.linalg.vector_norm(gradient).detach())
-        relative_stationarity = gradient_norm / (1.0 + residual_norm)
+        field_rms, dynamics_max, relative_stationarity = _block_stationarity(
+            gradient,
+            frozen.active_field_index.numel(),
+        )
         stationarity = _LinearizationStationarity(
             residual_norm=residual_norm,
             gradient_norm=gradient_norm,
+            field_gradient_rms=field_rms,
+            dynamics_gradient_max=dynamics_max,
             relative_stationarity=relative_stationarity,
         )
         frozen_stationary = (
@@ -3006,6 +3055,32 @@ def _posterior_physical_dynamics_uncertainty(
     return (
         torch.sqrt(velocity_variance.clamp_min(0.0)),
         torch.sqrt(growth_variance.clamp_min(0.0)),
+    )
+
+
+def _posterior_saturation_is_safe(
+    motion_margin_mps: float | None,
+    growth_margin_per_step: Tensor,
+    velocity_uncertainty_mps: Tensor,
+    growth_uncertainty_per_step: Tensor,
+    config: NowcastConfig,
+) -> bool:
+    """Require the posterior dynamics mass to remain inside safe limits."""
+
+    if motion_margin_mps is None or not bool(
+        torch.isfinite(velocity_uncertainty_mps)
+        & torch.isfinite(growth_uncertainty_per_step)
+    ):
+        return False
+    multiplier = config.p1_posterior_saturation_sigma_multiplier
+    tolerance = config.contract_absolute_tolerance
+    return (
+        motion_margin_mps + tolerance
+        >= config.p1_motion_saturation_safe_margin_mps
+        + multiplier * float(velocity_uncertainty_mps)
+        and float(growth_margin_per_step) + tolerance
+        >= config.p1_growth_saturation_safe_margin_per_step
+        + multiplier * float(growth_uncertainty_per_step)
     )
 
 
@@ -3966,6 +4041,27 @@ def _analysis_result(
         frozen,
         identifiability,
     )
+    if (
+        frozen.analysis_config.execution_mode == "operational"
+        and not _posterior_saturation_is_safe(
+            motion_saturation_margin_mps,
+            growth_saturation_margin,
+            posterior_velocity_uncertainty_mps,
+            posterior_log_growth_uncertainty_per_step,
+            frozen.nowcast_config,
+        )
+    ):
+        return _fallback_result(
+            frozen,
+            control,
+            reference_objective,
+            "posterior_dynamics_saturation_margin",
+            outer_iterations,
+            pcg_iterations,
+            minimum_reachability_margin=reachability_margin,
+            amplitude_diagnostics=amplitude,
+            amplitude_diagnostics_source="rejected_candidate",
+        )
     (
         p1_velocity_saturation_uncertainty_mps,
         p1_log_growth_saturation_uncertainty_per_step,
@@ -4023,8 +4119,16 @@ def _analysis_result(
                 frozen=retained_frozen,
                 residual_norm=stationarity.residual_norm,
                 gradient_norm=stationarity.gradient_norm,
+                field_gradient_rms=stationarity.field_gradient_rms,
+                dynamics_gradient_max=stationarity.dynamics_gradient_max,
                 relative_stationarity=stationarity.relative_stationarity,
                 robust_gradient_norm=robust_stationarity.gradient_norm,
+                robust_field_gradient_rms=(
+                    robust_stationarity.field_gradient_rms
+                ),
+                robust_dynamics_gradient_max=(
+                    robust_stationarity.dynamics_gradient_max
+                ),
                 robust_relative_stationarity=(
                     robust_stationarity.relative_stationarity
                 ),
@@ -4269,10 +4373,18 @@ def _analysis_result(
         ),
         linearization_residual_norm=stationarity.residual_norm,
         linearization_gradient_norm=stationarity.gradient_norm,
+        linearization_field_gradient_rms=stationarity.field_gradient_rms,
+        linearization_dynamics_gradient_max=(
+            stationarity.dynamics_gradient_max
+        ),
         linearization_relative_stationarity=(
             stationarity.relative_stationarity
         ),
         robust_gradient_norm=robust_stationarity.gradient_norm,
+        robust_field_gradient_rms=robust_stationarity.field_gradient_rms,
+        robust_dynamics_gradient_max=(
+            robust_stationarity.dynamics_gradient_max
+        ),
         robust_relative_stationarity=(
             robust_stationarity.relative_stationarity
         ),
@@ -6236,11 +6348,21 @@ def analysis_linearization_digest(
             "stationarity": {
                 "residual_norm": linearization.residual_norm,
                 "gradient_norm": linearization.gradient_norm,
+                "field_gradient_rms": linearization.field_gradient_rms,
+                "dynamics_gradient_max": (
+                    linearization.dynamics_gradient_max
+                ),
                 "relative_stationarity": (
                     linearization.relative_stationarity
                 ),
                 "robust_gradient_norm": (
                     linearization.robust_gradient_norm
+                ),
+                "robust_field_gradient_rms": (
+                    linearization.robust_field_gradient_rms
+                ),
+                "robust_dynamics_gradient_max": (
+                    linearization.robust_dynamics_gradient_max
                 ),
                 "robust_relative_stationarity": (
                     linearization.robust_relative_stationarity
