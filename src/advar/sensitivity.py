@@ -60,6 +60,12 @@ PerturbationSemantics = Literal[
     "augmented_parameter",
     "physical_radar_value",
 ]
+BaselineDynamicsBranchStatus = Literal[
+    "not_applicable",
+    "unknown",
+    "certified",
+    "invalid",
+]
 
 
 def _canonical_verification_time(value: str) -> str:
@@ -263,6 +269,8 @@ class SensitivityConfig:
     metric_names: tuple[str, ...] = SUPPORTED_METRICS
     metric_domain: FSOMetricDomain = "issued"
     require_verification_lineage: bool = False
+    required_verification_radar_product_digest: str | None = None
+    required_verification_qc_pipeline_digest: str | None = None
     full_map_lead_minutes: tuple[int, ...] = (30, 60, 120, 180)
     tile_size: int = 16
     soft_fss_temperature_dbz: float = 2.0
@@ -291,6 +299,27 @@ class SensitivityConfig:
             raise ValueError("unsupported FSO metric domain")
         if type(self.require_verification_lineage) is not bool:
             raise TypeError("require_verification_lineage must be Boolean")
+        required_lineage = (
+            self.required_verification_radar_product_digest,
+            self.required_verification_qc_pipeline_digest,
+        )
+        if (required_lineage[0] is None) != (required_lineage[1] is None):
+            raise ValueError(
+                "verification radar product and QC digests must be paired"
+            )
+        if required_lineage[0] is not None:
+            if not self.require_verification_lineage:
+                raise ValueError(
+                    "approved verification identities require lineage"
+                )
+            _require_sha256(
+                "required_verification_radar_product_digest",
+                required_lineage[0],
+            )
+            _require_sha256(
+                "required_verification_qc_pipeline_digest",
+                cast(str, required_lineage[1]),
+            )
         if not isinstance(self.full_map_lead_minutes, tuple):
             raise TypeError("full_map_lead_minutes must be a tuple")
         if len(set(self.full_map_lead_minutes)) != len(
@@ -340,6 +369,24 @@ class SensitivityConfig:
     @property
     def digest(self) -> str:
         return dataclass_digest(self)
+
+    @classmethod
+    def for_automated_learning(
+        cls,
+        *,
+        radar_product_digest: str,
+        qc_pipeline_digest: str,
+    ) -> SensitivityConfig:
+        """Return the fail-closed metric policy for automated learning."""
+
+        return cls(
+            metric_domain="radar_dynamics_anchored",
+            require_verification_lineage=True,
+            required_verification_radar_product_digest=(
+                radar_product_digest
+            ),
+            required_verification_qc_pipeline_digest=qc_pipeline_digest,
+        )
 
 
 VariationalPreconditioner = Literal[
@@ -533,6 +580,17 @@ class VariationalAdjointConfig:
     def digest(self) -> str:
         return dataclass_digest(self)
 
+    @classmethod
+    def for_automated_learning(cls) -> VariationalAdjointConfig:
+        """Return local-validity gates required by automated learning."""
+
+        return cls(
+            require_active_set_margin=True,
+            require_feasibility_margin=True,
+            require_gauss_newton_reliability=True,
+            require_baseline_dynamics_branch_validity=True,
+        )
+
 
 @dataclass(frozen=True)
 class DirectSensitivity:
@@ -573,6 +631,9 @@ class VariationalObservationSensitivity:
     initial_background_dbz: VariationalSensitivityChannel
     baseline_dynamics_dbz: VariationalSensitivityChannel
     frozen_structure_input_dbz: VariationalSensitivityChannel
+    trusted_frozen_structure_input_dbz: (
+        VariationalSensitivityChannel | None
+    )
 
 
 @dataclass(frozen=True)
@@ -675,7 +736,7 @@ class VariationalFSO:
     sensitivity_scope: str
     baseline_dynamics_frozen: bool
     baseline_pair_selection_frozen: bool
-    baseline_dynamics_branch_valid: bool
+    baseline_dynamics_branch_status: BaselineDynamicsBranchStatus
     metric_names: tuple[str, ...]
     metric_domain: FSOMetricDomain
     metric_domain_digest: str
@@ -847,6 +908,7 @@ class VariationalObservationImpact:
     initial_background_dbz: VariationalImpactChannel
     baseline_dynamics_dbz: VariationalImpactChannel
     total: VariationalImpactChannel
+    trusted_total: VariationalImpactChannel | None
 
 
 @dataclass(frozen=True)
@@ -1337,6 +1399,15 @@ def _resolve_verification(
         raise ValueError(
             "verification valid times do not match forecast issue and leads"
         )
+    required_product = (
+        sensitivity_config.required_verification_radar_product_digest
+    )
+    required_qc = sensitivity_config.required_verification_qc_pipeline_digest
+    if required_product is not None and (
+        resolved.radar_product_digest != required_product
+        or resolved.qc_pipeline_digest != required_qc
+    ):
+        raise ValueError("verification product or QC identity is not approved")
     return resolved
 
 
@@ -1413,7 +1484,7 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
 
     return json_digest(
         {
-            "version": "p1-variational-fso-digest-v9",
+            "version": "p1-variational-fso-digest-v10",
             "contract": fso.contract,
             "forecast_run_digest": fso.forecast_run_digest,
             "analysis_input_digest": fso.analysis_input_digest,
@@ -1448,8 +1519,8 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
             "baseline_pair_selection_frozen": (
                 fso.baseline_pair_selection_frozen
             ),
-            "baseline_dynamics_branch_valid": (
-                fso.baseline_dynamics_branch_valid
+            "baseline_dynamics_branch_status": (
+                fso.baseline_dynamics_branch_status
             ),
             "metric_names": list(fso.metric_names),
             "metric_domain": fso.metric_domain,
@@ -1493,6 +1564,14 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
                 "frozen_structure_input_dbz": (
                     _variational_channel_digest_values(
                         fso.observation.frozen_structure_input_dbz
+                    )
+                ),
+                "trusted_frozen_structure_input_dbz": (
+                    None
+                    if fso.observation.trusted_frozen_structure_input_dbz
+                    is None
+                    else _variational_channel_digest_values(
+                        fso.observation.trusted_frozen_structure_input_dbz
                     )
                 ),
             },
@@ -1582,7 +1661,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 
     return json_digest(
         {
-            "version": "p1-variational-fsoi-digest-v6",
+            "version": "p1-variational-fsoi-digest-v7",
             "contract": fsoi.contract,
             "variational_fso_digest": fsoi.fso.variational_fso_digest,
             "perturbation_contract": fsoi.perturbation_contract,
@@ -1630,6 +1709,13 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
                 "total": _variational_impact_digest_values(
                     fsoi.observation.total
                 ),
+                "trusted_total": (
+                    None
+                    if fsoi.observation.trusted_total is None
+                    else _variational_impact_digest_values(
+                        fsoi.observation.trusted_total
+                    )
+                ),
             },
         }
     )
@@ -1638,7 +1724,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 def validate_variational_fso(fso: VariationalFSO) -> None:
     """Reject any mutation of a content-addressed FSO result."""
 
-    if fso.contract != "p1-variational-fso-v9":
+    if fso.contract != "p1-variational-fso-v10":
         raise ValueError("unsupported P1 FSO contract")
     if (
         fso.sensitivity_scope
@@ -1647,6 +1733,20 @@ def validate_variational_fso(fso: VariationalFSO) -> None:
         or fso.baseline_pair_selection_frozen is not True
     ):
         raise ValueError("unsupported P1 FSO sensitivity scope")
+    trusted_branch = fso.baseline_dynamics_branch_status in (
+        "not_applicable",
+        "certified",
+    )
+    if fso.baseline_dynamics_branch_status not in (
+        "not_applicable",
+        "unknown",
+        "certified",
+        "invalid",
+    ) or (
+        (fso.observation.trusted_frozen_structure_input_dbz is not None)
+        != trusted_branch
+    ):
+        raise ValueError("invalid P1 FSO baseline branch trust contract")
     _validate_verification_lineage_fields(
         contract=fso.verification_contract,
         content_digest=fso.verification_bundle_digest,
@@ -1663,11 +1763,16 @@ def validate_variational_fso(fso: VariationalFSO) -> None:
 def validate_variational_fsoi(fsoi: VariationalFSOI) -> None:
     """Reject any mutation or cross-binding in a P1 impact result."""
 
-    if fsoi.contract != "p1-linearized-observation-impact-v6":
+    if fsoi.contract != "p1-linearized-observation-impact-v7":
         raise ValueError("unsupported P1 FSOI contract")
     validate_variational_fso(fsoi.fso)
     if fsoi.perturbation.digest != fsoi.perturbation_digest:
         raise ValueError("P1 FSOI perturbation digest mismatch")
+    expected_trusted = (
+        fsoi.fso.observation.trusted_frozen_structure_input_dbz is not None
+    )
+    if (fsoi.observation.trusted_total is not None) != expected_trusted:
+        raise ValueError("invalid P1 FSOI trusted-total contract")
     if variational_fsoi_digest(fsoi) != fsoi.variational_fsoi_digest:
         raise ValueError("P1 FSOI result digest mismatch")
 
@@ -2368,7 +2473,7 @@ def compute_variational_fsoi(
     if perturbation_diagnostics is None:
         raise RuntimeError("variational perturbation was not validated")
     fsoi = VariationalFSOI(
-        contract="p1-linearized-observation-impact-v6",
+        contract="p1-linearized-observation-impact-v7",
         fso=fso,
         perturbation=observation_perturbation,
         perturbation_contract=observation_perturbation.contract,
@@ -2647,10 +2752,16 @@ def _compute_variational_products(
         observations,
         frozen,
     )
-    baseline_dynamics_branch_valid = baseline_dynamics_path is None
+    baseline_dynamics_branch_status: BaselineDynamicsBranchStatus = (
+        "not_applicable" if baseline_dynamics_path is None else "unknown"
+    )
+    baseline_dynamics_trusted = baseline_dynamics_branch_status in (
+        "not_applicable",
+        "certified",
+    )
     if (
         adjoint_config.require_baseline_dynamics_branch_validity
-        and not baseline_dynamics_branch_valid
+        and not baseline_dynamics_trusted
     ):
         raise ValueError(
             "P1 FSO baseline dynamics branch margins are unavailable"
@@ -3017,8 +3128,26 @@ def _compute_variational_products(
     if adjoint_config.require_active_set_margin and low_local_validity:
         raise ValueError("P1 FSO active-set margin is below its requirement")
 
+    frozen_structure_channel = _sensitivity_channel(
+        frozen_structure_input_sensitivity
+    )
+    observation_sensitivity = VariationalObservationSensitivity(
+        detected_dbz=_sensitivity_channel(detected_sensitivity),
+        censor_threshold_dbz=_sensitivity_channel(censor_sensitivity),
+        observation_weight=_sensitivity_channel(weight_sensitivity),
+        initial_background_dbz=_sensitivity_channel(
+            initial_background_sensitivity
+        ),
+        baseline_dynamics_dbz=_sensitivity_channel(
+            baseline_dynamics_sensitivity
+        ),
+        frozen_structure_input_dbz=frozen_structure_channel,
+        trusted_frozen_structure_input_dbz=(
+            frozen_structure_channel if baseline_dynamics_trusted else None
+        ),
+    )
     fso = VariationalFSO(
-        contract="p1-variational-fso-v9",
+        contract="p1-variational-fso-v10",
         forecast_run_digest=result.forecast_run_digest,
         analysis_input_digest=cast(str, result.run.analysis_input_digest),
         sensitivity_config_digest=sensitivity_config.digest,
@@ -3049,7 +3178,7 @@ def _compute_variational_products(
         ),
         baseline_dynamics_frozen=False,
         baseline_pair_selection_frozen=True,
-        baseline_dynamics_branch_valid=baseline_dynamics_branch_valid,
+        baseline_dynamics_branch_status=baseline_dynamics_branch_status,
         metric_names=sensitivity_config.metric_names,
         metric_domain=sensitivity_config.metric_domain,
         metric_domain_digest=metric_domain_digest,
@@ -3061,20 +3190,7 @@ def _compute_variational_products(
         metric_domain_weight_sum=metric_domain_weight_sum,
         metric_domain_weight_fraction=metric_domain_weight_fraction,
         forecast_cap_active_mask=selected_cap_masks,
-        observation=VariationalObservationSensitivity(
-            detected_dbz=_sensitivity_channel(detected_sensitivity),
-            censor_threshold_dbz=_sensitivity_channel(censor_sensitivity),
-            observation_weight=_sensitivity_channel(weight_sensitivity),
-            initial_background_dbz=_sensitivity_channel(
-                initial_background_sensitivity
-            ),
-            baseline_dynamics_dbz=_sensitivity_channel(
-                baseline_dynamics_sensitivity
-            ),
-            frozen_structure_input_dbz=_sensitivity_channel(
-                frozen_structure_input_sensitivity
-            ),
-        ),
+        observation=observation_sensitivity,
         adjoint_iterations=adjoint_iterations,
         adjoint_relative_residual=adjoint_relative_residual,
         adjoint_true_residual_norm=adjoint_true_residual_norm,
@@ -3089,6 +3205,7 @@ def _compute_variational_products(
     fso = replace(fso, variational_fso_digest=variational_fso_digest(fso))
     if impact_accumulators is None:
         return fso, None, None
+    total_impact = _impact_channel(impact_accumulators[5])
     return (
         fso,
         VariationalObservationImpact(
@@ -3101,7 +3218,10 @@ def _compute_variational_products(
             baseline_dynamics_dbz=_impact_channel(
                 impact_accumulators[4]
             ),
-            total=_impact_channel(impact_accumulators[5]),
+            total=total_impact,
+            trusted_total=(
+                total_impact if baseline_dynamics_trusted else None
+            ),
         ),
         perturbation_diagnostics,
     )
@@ -3554,6 +3674,7 @@ def _correlated_observation_parameter_sensitivity(
                 standardized,
                 observations,
                 frozen.analysis_config,
+                whitener=frozen.observation_whitener,
             )
             residual = frozen.irls_sqrt_weight * whitened
             return 0.5 * torch.dot(residual.flatten(), residual.flatten())
@@ -3861,6 +3982,7 @@ def _perturbation_diagnostics(
             standardized,
             observations,
             frozen.analysis_config,
+            whitener=frozen.observation_whitener,
         )
         whitened_energy += whitened.square()
 

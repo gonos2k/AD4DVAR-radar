@@ -35,6 +35,7 @@ from .nowcast import (
     nowcast,
 )
 from .sensitivity import (
+    BaselineDynamicsBranchStatus,
     DirectSensitivity,
     FSOMetricDomain,
     PerturbationSemantics,
@@ -72,6 +73,7 @@ from .variational import (
     AnalysisLinearization,
     AnalysisResult,
     CensoredBackgroundPolicy,
+    FrozenObservationWhitener,
     ObservationCommonBiasScope,
     P1LinearizationState,
     analysis_linearization_digest,
@@ -85,7 +87,9 @@ __all__ = [
     "AnalysisFeasibilityMargins",
     "AnalysisLinearization",
     "AnalysisResult",
+    "BaselineDynamicsBranchStatus",
     "CensoredBackgroundPolicy",
+    "FrozenObservationWhitener",
     "P1LinearizationState",
     "P1_LINEARIZATION_ARTIFACT_VERSION",
     "CalibrationMetric",
