@@ -181,13 +181,23 @@ print(analysis.state.echo_linear)  # 세 장으로 분석된 현재 q(0)
 수용·수렴한 P1 분석은 최종 control에서 IRLS weight와 remap cell을 다시
 고정한 뒤, 그 고정 least-squares 모델의 stationarity가 충분해지도록 제한된
 GN polish를 수행한다. polish 뒤에는 기존 amplitude·causal·saturation·objective
-gate를 다시 검사한다. 보존되는 `p1-final-frozen-irls-gn-v7` 선형화에는
+gate를 다시 검사한다. 보존되는 `p1-final-frozen-irls-gn-v8` 선형화에는
 residual norm, gradient norm, 상대 stationarity, polish 횟수와 최종 hard
 feasibility margin이 함께 들어간다.
 관측·분류 mask·최종 IRLS weight·remap cell·prior graph를 포함한 모든 frozen
 입력은 `linearization_digest`에 결합되며, 보존 Tensor는 caller storage와
 분리된 clone이다. 미래 검증장이 도착하면 이 고정 선형화에서 세 입력시각
 전체의 observation 민감도를 matrix-free adjoint로 계산할 수 있다.
+P1 결과는 `outer_converged`, `final_linearization_stationary`, `fso_eligible`을
+분리해 기록한다. 운용모드에서 최종 stationarity를 만족하지 못하면 P1을
+발행하지 않고 P0로 fallback하며, 연구모드에서도 posterior와 FSO용 선형화는
+제공하지 않는다.
+
+탐지한계 아래의 censored 값은 기본적으로 탐지한계 바로 아래 값으로 초기배경을
+canonicalize한다. 따라서 같은 below-detection 사건을 -10 dBZ 또는 4.9 dBZ로
+저장해도 P1 초기배경은 같다. `censored_background_policy`를 `floor` 또는
+`external_background`로 명시할 수도 있으며, 외부배경 정책은 모든 censored
+화소의 배경 coverage를 요구한다.
 
 ```python
 from advar import (
@@ -253,7 +263,7 @@ legacy Tensor를 거부한다. raw Tensor 입력은 연구 호환용으로 계�
 결과와 M0 원장에 `verification_lineage_complete=False`로 기록되므로 지연 자동
 학습의 완전한 검증자료로 승격할 수 없다.
 
-`compute_variational_fso()`의 `p1-variational-fso-v8` 결과는 영향값이 아니라
+`compute_variational_fso()`의 `p1-variational-fso-v9` 결과는 영향값이 아니라
 다음 관측 parameter와 frozen 초기배경 경로에 대한 미분이다.
 
 ```text
@@ -278,6 +288,9 @@ piecewise-smooth 민감도다.
 
 `observation_weight` 채널은 detected와 censored 관측을 모두 포함한다. FSOI는
 작은 국지 perturbation만 허용하며 기본 한계는 dBZ 계열 0.5 dBZ, weight 0.1이다.
+또한 실제 frozen observation whitener로 계산한 전역·tile별 norm, 변경 화소 수와
+면적비를 함께 제한한다. detected/censored 분류나 P0 pair/FFT 선택 branch를 넘는
+방향도 fail-close한다.
 `delta_alpha=-1`인 완전 관측 제거는 active structure와 공분산을 바꿀 수 있으므로
 이 1차 계약에서 거부하며, 실제 제거 영향을 구하려면 관측을 제외하고 다시 풀어야
 한다. 명시적인 perturbation과 곱한 signed first-order impact가 필요할 때만 FSOI API를
@@ -313,6 +326,11 @@ perturbation = VariationalObservationPerturbation(
     # 같은 입력이 P0 motion/growth에도 들어가는 효과를 포함할 때 지정한다.
     baseline_dynamics_dbz=baseline_dynamics_delta_dbz,
 )
+# 하나의 실제 radar dBZ 변경은 다음 factory가 retained input 경로에 자동 배분한다.
+physical = VariationalObservationPerturbation.from_radar_dbz_delta(
+    radar_delta_dbz,
+    analysis.linearization,
+)
 fsoi = compute_variational_fsoi(
     forecast,
     analysis,
@@ -329,6 +347,7 @@ print(fsoi.observation.detected_dbz.maps.shape)
 print(fsoi.observation.initial_background_dbz.maps.shape)
 print(fsoi.observation.baseline_dynamics_dbz.maps.shape)
 print(fsoi.observation.total.sum_by_time.shape)
+print(fsoi.perturbation_diagnostics.whitened_l2)
 ```
 
 각 impact는 `sensitivity * perturbation`이며 양수는 지정 perturbation에 의해
@@ -435,7 +454,7 @@ fso = compute_variational_fso(
 )
 ```
 
-`p1-linearization-v5` loader는 pickle을 사용하지 않고 archive 크기·member
+`p1-linearization-v6` loader는 pickle을 사용하지 않고 archive 크기·member
 allowlist·각 Tensor digest·전체 artifact digest를 먼저 검사한다. 그 뒤 저장된
 control에서 state와 `J^T r`를 다시 계산한다. algorithm bundle 또는 Python,
 NumPy, PyTorch, backend capability, deterministic-policy로 구성된 numerical
@@ -618,7 +637,7 @@ forecast, analysis = variational_nowcast(
 group map은 `[H,W]` 또는 `[3,H,W]` 정수 Tensor이며 tile mode와 동시에 사용할
 수 없다. 연구모드는 digest를 생략하면 canonical map digest를 자동 결합하지만,
 운용모드는 사전 승인된 `AnalysisConfig`에 정확한 digest가 있어야 한다. map은
-analysis-input·forecast-run·linearization digest와 `p1-linearization-v5`
+analysis-input·forecast-run·linearization digest와 `p1-linearization-v6`
 artifact에 포함된다. CLI에서는
 `--observation-common-bias-group-map groups.npy`를 사용한다.
 
@@ -750,7 +769,7 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v49`
+- `output_contract_version`: 현재 `nowcast-npz-v50`
 - `forecast_run_artifact_version`: 현재 `forecast-run-v41`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
@@ -922,7 +941,9 @@ profile에서는 span penalty와 confidence ratio를 모두 hindcast로 보정�
   `background_tendency_used`, `background_age_minutes`
 - `background_contribution_fraction`: 호환성을 위해 유지되는
   `background_state_support_fraction`의 기존 이름
-- `analysis_converged`, `analysis_degraded`, `analysis_used_fallback`
+- `analysis_converged`, `analysis_outer_converged`
+- `analysis_final_linearization_stationary`, `analysis_fso_eligible`
+- `analysis_degraded`, `analysis_used_fallback`
 - `analysis_unresolved_amplitude_fraction_by_time`,
   `analysis_amplitude_violation_score_by_time`: `[-10분, 0분]`
 - `analysis_integrated_echo_ratio_by_time`,
@@ -1183,5 +1204,5 @@ weight, active set, remap cell, observation classification과 baseline을 고정
 자체의 변화, EFSO, 검증된 baseline-normalized reward와 자동학습 승격은 아직
 포함하지 않는다. P1 FSO·FSOI 결과 자체는 M0 episode ledger에 저장하지 않지만,
 3시간 지연 재계산에 필요한 frozen linearization은 content-addressed
-`p1-linearization-v5` artifact로 안전하게 보존·재적재할 수 있다.
+`p1-linearization-v6` artifact로 안전하게 보존·재적재할 수 있다.
 P1 분석상태는 기존 M0 직접민감도 API에서 계속 provenance 검사로 거부된다.

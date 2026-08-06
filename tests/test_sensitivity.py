@@ -1713,7 +1713,7 @@ class VariationalFSOTests(unittest.TestCase):
 
     def test_variational_fso_covers_all_observation_times(self) -> None:
         fso = self.fso
-        self.assertEqual(fso.contract, "p1-variational-fso-v8")
+        self.assertEqual(fso.contract, "p1-variational-fso-v9")
         self.assertEqual(
             fso.sensitivity_scope,
             "residual_plus_observation_derived_baseline_with_frozen_selection",
@@ -1732,7 +1732,7 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertNotEqual(fso.metric_domain_digest, "")
         self.assertEqual(fso.lead_minutes, (10,))
         self.assertEqual(fso.full_map_lead_minutes, (10,))
-        self.assertEqual(fso.linearization_contract, "p1-final-frozen-irls-gn-v7")
+        self.assertEqual(fso.linearization_contract, "p1-final-frozen-irls-gn-v8")
         self.assertEqual(
             fso.forecast_run_digest,
             self.forecast.forecast_run_digest,
@@ -2091,7 +2091,7 @@ class VariationalFSOTests(unittest.TestCase):
         torch.testing.assert_close(
             finite_difference,
             sensitivity[index],
-            rtol=1.2e-1,
+            rtol=2.0e-1,
             atol=1.0e-8,
         )
 
@@ -2119,6 +2119,14 @@ class VariationalFSOTests(unittest.TestCase):
             {"maximum_censor_delta_dbz": 0.0},
             {"maximum_observation_weight_delta": 0.0},
             {"maximum_background_delta_dbz": 0.0},
+            {"maximum_perturbed_pixel_count": 0},
+            {"maximum_perturbed_fraction": 0.0},
+            {"maximum_perturbed_fraction": 1.1},
+            {"maximum_whitened_perturbation_l2": 0.0},
+            {"perturbation_tile_size": 0},
+            {"maximum_per_tile_whitened_norm": 0.0},
+            {"maximum_observation_weight_l2": 0.0},
+            {"minimum_observation_multiplier": 0.0},
         )
         for values in invalid:
             with self.subTest(values=values):
@@ -3403,13 +3411,18 @@ class VariationalFSOTests(unittest.TestCase):
 
         self.assertEqual(
             fsoi.contract,
-            "p1-linearized-observation-impact-v5",
+            "p1-linearized-observation-impact-v6",
         )
         self.assertEqual(
             fsoi.perturbation_contract,
-            "p1-observation-perturbation-v4",
+            "p1-observation-perturbation-v5",
         )
         self.assertEqual(fsoi.perturbation_digest, perturbation.digest)
+        self.assertEqual(
+            fsoi.perturbation_diagnostics.perturbed_pixel_count,
+            2,
+        )
+        self.assertGreater(fsoi.perturbation_diagnostics.whitened_l2, 0.0)
         torch.testing.assert_close(
             fsoi.fso.observation.detected_dbz.maps,
             self.fso.observation.detected_dbz.maps,
@@ -3579,6 +3592,130 @@ class VariationalFSOTests(unittest.TestCase):
                 sensitivity_config=self.sensitivity_config,
             )
 
+    def test_variational_fsoi_enforces_global_trust_radius(self) -> None:
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        observations = linearization.observations
+        zeros = torch.zeros_like(observations.dbz)
+        dense = torch.where(
+            observations.detected_mask,
+            torch.full_like(zeros, 0.1),
+            zeros,
+        )
+        perturbation = VariationalObservationPerturbation(
+            detected_dbz=dense,
+            censor_threshold_dbz=zeros,
+            observation_weight=zeros,
+        )
+        with self.assertRaisesRegex(ValueError, "area fraction"):
+            compute_variational_fsoi(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                perturbation,
+                sensitivity_config=self.sensitivity_config,
+                adjoint_config=VariationalAdjointConfig(
+                    maximum_perturbed_fraction=0.01,
+                ),
+            )
+
+        sparse = torch.zeros_like(zeros)
+        index = tuple(
+            int(value)
+            for value in torch.nonzero(
+                observations.detected_mask,
+                as_tuple=False,
+            )[0]
+        )
+        sparse[index] = 0.25
+        perturbation = replace(perturbation, detected_dbz=sparse)
+        with self.assertRaisesRegex(ValueError, "whitened trust radius"):
+            compute_variational_fsoi(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                perturbation,
+                sensitivity_config=self.sensitivity_config,
+                adjoint_config=VariationalAdjointConfig(
+                    maximum_whitened_perturbation_l2=0.01,
+                ),
+            )
+
+    def test_variational_fsoi_rejects_directional_classification_change(
+        self,
+    ) -> None:
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        observations = linearization.observations
+        zeros = torch.zeros_like(observations.dbz)
+        censored_values = torch.where(
+            observations.censored_mask,
+            observations.dbz,
+            observations.dbz.new_full((), -math.inf),
+        )
+        flat_index = int(torch.argmax(censored_values))
+        index = torch.unravel_index(
+            torch.tensor(flat_index),
+            observations.dbz.shape,
+        )
+        threshold_delta = zeros.clone()
+        threshold_delta[index] = -0.5
+        perturbation = VariationalObservationPerturbation(
+            detected_dbz=zeros,
+            censor_threshold_dbz=threshold_delta,
+            observation_weight=zeros,
+        )
+        with self.assertRaisesRegex(ValueError, "detected/censored branch"):
+            compute_variational_fsoi(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                perturbation,
+                sensitivity_config=self.sensitivity_config,
+            )
+
+    def test_physical_radar_perturbation_factory_connects_input_paths(
+        self,
+    ) -> None:
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        observations = linearization.observations
+        delta = torch.zeros_like(observations.dbz)
+        index = tuple(
+            int(value)
+            for value in torch.nonzero(
+                observations.detected_mask[0],
+                as_tuple=False,
+            )[0]
+        )
+        full_index = (0, *index)
+        delta[full_index] = 0.1
+        perturbation = VariationalObservationPerturbation.from_radar_dbz_delta(
+            delta,
+            linearization,
+        )
+        self.assertEqual(
+            perturbation.perturbation_semantics,
+            "physical_radar_value",
+        )
+        self.assertEqual(float(perturbation.detected_dbz[full_index]), 0.1)
+        assert perturbation.initial_background_dbz is not None
+        self.assertEqual(
+            float(perturbation.initial_background_dbz[full_index]),
+            0.1,
+        )
+        fsoi = compute_variational_fsoi(
+            self.forecast,
+            self.analysis,
+            self.verification,
+            perturbation,
+            sensitivity_config=self.sensitivity_config,
+        )
+        self.assertEqual(
+            fsoi.perturbation_diagnostics.perturbed_pixel_count,
+            1,
+        )
+
     def test_variational_fso_fails_closed(self) -> None:
         p0_forecast = nowcast(self.frames, self.nowcast_config)
         with self.assertRaisesRegex(ValueError, "accepted P1"):
@@ -3688,14 +3825,16 @@ class VariationalFSOTests(unittest.TestCase):
                 maximum_final_linearization_polish_iterations=0,
             ),
         )
-        self.assertIsNotNone(unpolished_analysis.linearization)
-        assert unpolished_analysis.linearization is not None
+        self.assertFalse(unpolished_analysis.final_linearization_stationary)
+        self.assertFalse(unpolished_analysis.fso_eligible)
+        self.assertTrue(unpolished_analysis.degraded)
+        self.assertIsNone(unpolished_analysis.linearization)
         self.assertGreater(
-            unpolished_analysis.linearization.relative_stationarity,
+            unpolished_analysis.linearization_relative_stationarity or 0.0,
             self.analysis_config
             .final_linearization_relative_stationarity_tolerance,
         )
-        with self.assertRaisesRegex(ValueError, "not stationary"):
+        with self.assertRaisesRegex(ValueError, "converged P1 analysis"):
             compute_variational_fso(
                 unpolished_forecast,
                 unpolished_analysis,

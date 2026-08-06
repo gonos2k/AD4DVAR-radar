@@ -59,15 +59,21 @@ AmplitudeConfidencePolicy = Literal[
 ]
 AnalysisExecutionMode = Literal["research", "operational"]
 ObservationCommonBiasScope = Literal["per_frame", "all_times"]
+CensoredBackgroundPolicy = Literal[
+    "detection_limit",
+    "floor",
+    "external_background",
+]
 MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT = 64
-P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v7"
-P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v5"
+P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v8"
+P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v6"
 
 
 @dataclass(frozen=True)
 class AnalysisConfig:
     detection_limit_dbz: float = 5.0
     censor_temperature_dbz: float = 1.0
+    censored_background_policy: CensoredBackgroundPolicy = "detection_limit"
     observation_std_dbz: float = 2.0
     minimum_observation_std_dbz: float = 0.1
     observation_common_bias_std_dbz: float = 0.0
@@ -161,6 +167,15 @@ class AnalysisConfig:
         }
         if not math.isfinite(self.detection_limit_dbz):
             raise ValueError("detection_limit_dbz must be finite")
+        if self.censored_background_policy not in (
+            "detection_limit",
+            "floor",
+            "external_background",
+        ):
+            raise ValueError(
+                "censored_background_policy must be detection_limit, floor, "
+                "or external_background"
+            )
         if (
             not isinstance(self.observation_common_bias_std_dbz, (int, float))
             or isinstance(self.observation_common_bias_std_dbz, bool)
@@ -815,6 +830,9 @@ class AnalysisResult:
     linearization_relative_stationarity: float | None = None
     linearization_polish_iterations: int = 0
     linearization: AnalysisLinearization | None = None
+    final_linearization_stationary: bool = False
+    fso_eligible: bool = False
+    outer_converged: bool = False
 
 
 @dataclass(frozen=True)
@@ -832,6 +850,9 @@ class P1LinearizationState:
     converged: bool = True
     used_fallback: bool = False
     degraded: bool = False
+    final_linearization_stationary: bool = True
+    fso_eligible: bool = True
+    outer_converged: bool = True
 
 
 def _canonical_common_bias_group_index(
@@ -1279,6 +1300,32 @@ def prepare_analysis(
         observed_dbz >= analysis_config.detection_limit_dbz
     )
     censored = valid & ~detected
+    if analysis_config.censored_background_policy == "external_background":
+        if bool(torch.any(censored & ~prepared.background_mask)):
+            raise ValueError(
+                "external_background censored policy requires background "
+                "coverage at every censored observation"
+            )
+        censor_fill = prepared.background_frames_dbz
+    elif analysis_config.censored_background_policy == "floor":
+        censor_fill = prepared.frames_dbz.new_full(
+            (),
+            nowcast_config.min_dbz,
+        )
+    else:
+        detection_limit = prepared.frames_dbz.new_full(
+            (),
+            analysis_config.detection_limit_dbz,
+        )
+        censor_fill = torch.nextafter(
+            detection_limit,
+            detection_limit.new_full((), -math.inf),
+        )
+    canonical_observations = torch.where(
+        censored,
+        censor_fill,
+        prepared.frames_dbz,
+    )
     observations = AnalysisObservations(
         dbz=observed_dbz.detach().clone(),
         std_dbz=std.detach().clone(),
@@ -1336,8 +1383,13 @@ def prepare_analysis(
         prepared.frames_dbz,
         prepared.background_frames_dbz,
     )
+    initial_background_dbz = torch.where(
+        prepared.observed_mask[0],
+        canonical_observations[0],
+        prepared.background_frames_dbz[0],
+    )
     frozen = FrozenOuterState(
-        initial_background_dbz=baseline_frames_dbz[0].detach().clone(),
+        initial_background_dbz=initial_background_dbz.detach().clone(),
         initial_support_mask=initial_support.detach().clone(),
         active_field_index=active_field_index.detach().clone(),
         causal_only_mask=causal_only.detach().clone(),
@@ -3149,8 +3201,8 @@ def solve_analysis(
         total_pcg_iterations,
         converged,
         reason,
-        degraded=not converged,
-        polish_final_linearization=converged,
+        degraded=False,
+        polish_final_linearization=True,
     )
 
 
@@ -3346,6 +3398,7 @@ def _failed_result(
             False,
             reason,
             degraded=True,
+            polish_final_linearization=False,
         )
     return _fallback_result(
         frozen,
@@ -3371,6 +3424,7 @@ def _analysis_result(
     degraded: bool = False,
     polish_final_linearization: bool = False,
 ) -> AnalysisResult:
+    outer_converged = converged
     frozen = _freeze_analysis_remap_cells(control, frozen)
     initial_trajectory = _analysis_trajectory(control, frozen)
     initial_reachability_margin = _analysis_window_reachability_margin(
@@ -3387,7 +3441,7 @@ def _analysis_result(
             pcg_iterations,
             minimum_reachability_margin=initial_reachability_margin,
         )
-    if polish_final_linearization and converged and not degraded:
+    if polish_final_linearization and not degraded:
         polish = _polish_final_linearization(
             control,
             observations,
@@ -3408,6 +3462,28 @@ def _analysis_result(
             frozen,
         )
         polish_iterations = 0
+    final_linearization_stationary = (
+        math.isfinite(stationarity.relative_stationarity)
+        and stationarity.relative_stationarity
+        <= frozen.analysis_config
+        .final_linearization_relative_stationarity_tolerance
+    )
+    converged = final_linearization_stationary
+    if converged and not outer_converged:
+        reason = "final_linearization_stationary"
+    if (
+        frozen.analysis_config.execution_mode == "operational"
+        and not final_linearization_stationary
+    ):
+        return _fallback_result(
+            frozen,
+            control,
+            reference_objective,
+            "final_linearization_not_stationary",
+            outer_iterations,
+            pcg_iterations,
+            minimum_reachability_margin=initial_reachability_margin,
+        )
     trajectory = _analysis_trajectory(control, frozen)
     reachability_margin = _analysis_window_reachability_margin(
         frozen,
@@ -3485,7 +3561,8 @@ def _analysis_result(
         )
     analysis_degraded = (
         degraded
-        or not converged
+        or (not outer_converged and not polish_final_linearization)
+        or not final_linearization_stationary
         or amplitude.has_insufficient_information
         or amplitude_confidence_failed
     )
@@ -3648,24 +3725,26 @@ def _analysis_result(
         ),
         growth_saturation_margin=growth_saturation_margin,
     )
-    retained_observations = _clone_analysis_observations(observations)
-    retained_frozen = _clone_frozen_outer_state(frozen)
-    retained_linearization = _content_address_linearization(
-        control,
-        AnalysisLinearization(
-            observations=retained_observations,
-            frozen=retained_frozen,
-            residual_norm=stationarity.residual_norm,
-            gradient_norm=stationarity.gradient_norm,
-            relative_stationarity=stationarity.relative_stationarity,
-            polish_iterations=polish_iterations,
-            feasibility_margins=feasibility_margins,
-            algorithm_bundle_digest=algorithm_bundle_digest(),
-            numerical_runtime_digest=numerical_runtime_identity_digest(
-                control.device
+    retained_linearization = None
+    if final_linearization_stationary:
+        retained_observations = _clone_analysis_observations(observations)
+        retained_frozen = _clone_frozen_outer_state(frozen)
+        retained_linearization = _content_address_linearization(
+            control,
+            AnalysisLinearization(
+                observations=retained_observations,
+                frozen=retained_frozen,
+                residual_norm=stationarity.residual_norm,
+                gradient_norm=stationarity.gradient_norm,
+                relative_stationarity=stationarity.relative_stationarity,
+                polish_iterations=polish_iterations,
+                feasibility_margins=feasibility_margins,
+                algorithm_bundle_digest=algorithm_bundle_digest(),
+                numerical_runtime_digest=numerical_runtime_identity_digest(
+                    control.device
+                ),
             ),
-        ),
-    )
+        )
     return AnalysisResult(
         control=_clone_tensor(control),
         active_field_index=frozen.active_field_index.detach().clone(),
@@ -3903,6 +3982,11 @@ def _analysis_result(
         ),
         linearization_polish_iterations=polish_iterations,
         linearization=retained_linearization,
+        final_linearization_stationary=final_linearization_stationary,
+        fso_eligible=(
+            final_linearization_stationary and not analysis_degraded
+        ),
+        outer_converged=outer_converged,
     )
 
 

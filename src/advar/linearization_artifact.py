@@ -48,7 +48,7 @@ from .variational import (
 )
 
 
-P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v5"
+P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v6"
 DEFAULT_MAXIMUM_MEMBER_COUNT = 96
 DEFAULT_MAXIMUM_MEMBER_BYTES = 2 * 1024**3
 DEFAULT_MAXIMUM_TOTAL_EXPANDED_BYTES = 8 * 1024**3
@@ -281,6 +281,14 @@ def _linearization_state(
         raise ValueError(
             "P1 linearization artifact requires a converged accepted analysis"
         )
+    if (
+        not analysis.final_linearization_stationary
+        or not analysis.fso_eligible
+    ):
+        raise ValueError(
+            "P1 linearization artifact requires an FSO-eligible stationary "
+            "analysis"
+        )
     linearization = analysis.linearization
     if linearization is None:
         raise ValueError("P1 analysis does not retain a final linearization")
@@ -318,6 +326,9 @@ def _linearization_state(
         ),
         linearization_polish_iterations=linearization.polish_iterations,
         linearization=linearization,
+        final_linearization_stationary=True,
+        fso_eligible=True,
+        outer_converged=analysis.outer_converged,
     )
 
 
