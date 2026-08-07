@@ -47,12 +47,13 @@ from .variational import (
     _linearization_stationarity,
     _relative_irls_weight_change,
     _robust_stationarity,
+    _stationarity_is_acceptable,
     freeze_irls_weights,
     validate_analysis_linearization_content,
 )
 
 
-P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v10"
+P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v11"
 DEFAULT_MAXIMUM_MEMBER_COUNT = 96
 DEFAULT_MAXIMUM_MEMBER_BYTES = 2 * 1024**3
 DEFAULT_MAXIMUM_TOTAL_EXPANDED_BYTES = 8 * 1024**3
@@ -306,10 +307,12 @@ def _linearization_state(
         analysis.linearization_residual_norm,
         analysis.linearization_gradient_norm,
         analysis.linearization_field_gradient_rms,
+        analysis.linearization_field_gradient_max,
         analysis.linearization_dynamics_gradient_max,
         analysis.linearization_relative_stationarity,
         analysis.robust_gradient_norm,
         analysis.robust_field_gradient_rms,
+        analysis.robust_field_gradient_max,
         analysis.robust_dynamics_gradient_max,
         analysis.robust_relative_stationarity,
         analysis.irls_relative_weight_change,
@@ -319,10 +322,12 @@ def _linearization_state(
         linearization.residual_norm,
         linearization.gradient_norm,
         linearization.field_gradient_rms,
+        linearization.field_gradient_max,
         linearization.dynamics_gradient_max,
         linearization.relative_stationarity,
         linearization.robust_gradient_norm,
         linearization.robust_field_gradient_rms,
+        linearization.robust_field_gradient_max,
         linearization.robust_dynamics_gradient_max,
         linearization.robust_relative_stationarity,
         linearization.irls_relative_weight_change,
@@ -347,6 +352,7 @@ def _linearization_state(
         linearization_field_gradient_rms=(
             linearization.field_gradient_rms
         ),
+        linearization_field_gradient_max=linearization.field_gradient_max,
         linearization_dynamics_gradient_max=(
             linearization.dynamics_gradient_max
         ),
@@ -357,6 +363,7 @@ def _linearization_state(
         robust_field_gradient_rms=(
             linearization.robust_field_gradient_rms
         ),
+        robust_field_gradient_max=linearization.robust_field_gradient_max,
         robust_dynamics_gradient_max=(
             linearization.robust_dynamics_gradient_max
         ),
@@ -612,6 +619,7 @@ def _validate_loaded_state(state: P1LinearizationState) -> None:
         linearization.residual_norm,
         linearization.gradient_norm,
         linearization.field_gradient_rms,
+        linearization.field_gradient_max,
         linearization.dynamics_gradient_max,
         linearization.relative_stationarity,
     )
@@ -619,6 +627,7 @@ def _validate_loaded_state(state: P1LinearizationState) -> None:
         stationarity.residual_norm,
         stationarity.gradient_norm,
         stationarity.field_gradient_rms,
+        stationarity.field_gradient_max,
         stationarity.dynamics_gradient_max,
         stationarity.relative_stationarity,
     )
@@ -633,10 +642,13 @@ def _validate_loaded_state(state: P1LinearizationState) -> None:
         for left, right in zip(stored, actual, strict=True)
     ):
         raise ValueError("P1 artifact stationarity diagnostics mismatch")
-    if (
-        stationarity.relative_stationarity
-        > linearization.frozen.analysis_config
-        .final_linearization_relative_stationarity_tolerance
+    config = linearization.frozen.analysis_config
+    if not _stationarity_is_acceptable(
+        stationarity,
+        block_tolerance=(
+            config.final_linearization_relative_stationarity_tolerance
+        ),
+        field_max_tolerance=config.final_field_gradient_max_tolerance,
     ):
         raise ValueError("P1 artifact final linearization is not stationary")
     robust = _robust_stationarity(
@@ -656,6 +668,7 @@ def _validate_loaded_state(state: P1LinearizationState) -> None:
     robust_stored = (
         linearization.robust_gradient_norm,
         linearization.robust_field_gradient_rms,
+        linearization.robust_field_gradient_max,
         linearization.robust_dynamics_gradient_max,
         linearization.robust_relative_stationarity,
         linearization.irls_relative_weight_change,
@@ -663,6 +676,7 @@ def _validate_loaded_state(state: P1LinearizationState) -> None:
     robust_actual = (
         robust.gradient_norm,
         robust.field_gradient_rms,
+        robust.field_gradient_max,
         robust.dynamics_gradient_max,
         robust.relative_stationarity,
         weight_change,
@@ -678,12 +692,12 @@ def _validate_loaded_state(state: P1LinearizationState) -> None:
     ):
         raise ValueError("P1 artifact robust diagnostics mismatch")
     if (
-        robust.relative_stationarity
-        > linearization.frozen.analysis_config
-        .final_robust_relative_stationarity_tolerance
-        or weight_change
-        > linearization.frozen.analysis_config
-        .final_irls_relative_weight_tolerance
+        not _stationarity_is_acceptable(
+            robust,
+            block_tolerance=config.final_robust_relative_stationarity_tolerance,
+            field_max_tolerance=config.final_field_gradient_max_tolerance,
+        )
+        or weight_change > config.final_irls_relative_weight_tolerance
     ):
         raise ValueError("P1 artifact is not a robust IRLS fixed point")
 

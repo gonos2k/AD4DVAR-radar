@@ -34,7 +34,7 @@ from .variational import (
 )
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v52"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v53"
 
 
 def main() -> None:
@@ -1159,6 +1159,11 @@ def _output_arrays(
                 if analysis.linearization_field_gradient_rms is None
                 else analysis.linearization_field_gradient_rms
             ),
+            analysis_linearization_field_gradient_max=np.asarray(
+                np.nan
+                if analysis.linearization_field_gradient_max is None
+                else analysis.linearization_field_gradient_max
+            ),
             analysis_linearization_dynamics_gradient_max=np.asarray(
                 np.nan
                 if analysis.linearization_dynamics_gradient_max is None
@@ -1168,6 +1173,11 @@ def _output_arrays(
                 np.nan
                 if analysis.robust_field_gradient_rms is None
                 else analysis.robust_field_gradient_rms
+            ),
+            analysis_robust_field_gradient_max=np.asarray(
+                np.nan
+                if analysis.robust_field_gradient_max is None
+                else analysis.robust_field_gradient_max
             ),
             analysis_robust_dynamics_gradient_max=np.asarray(
                 np.nan

@@ -88,7 +88,35 @@ class VariationalAnalysisTests(unittest.TestCase):
         large_values = variational_module._block_stationarity(large, 32)
 
         self.assertEqual(small_values, large_values)
-        self.assertEqual(small_values, (2.0, 0.3, 2.0))
+        self.assertEqual(small_values, (2.0, 2.0, 0.3, 2.0))
+
+    def test_sparse_field_gradient_cannot_hide_behind_rms(self) -> None:
+        gradient = torch.zeros(1_000_003, dtype=torch.float64)
+        gradient[0] = 0.1
+
+        field_rms, field_max, dynamics_max, block_score = (
+            variational_module._block_stationarity(gradient, 1_000_000)
+        )
+
+        self.assertLess(field_rms, 2.0e-4)
+        self.assertEqual(field_max, 0.1)
+        self.assertEqual(dynamics_max, 0.0)
+        self.assertLess(block_score, 2.0e-4)
+        stationarity = variational_module._LinearizationStationarity(
+            residual_norm=0.0,
+            gradient_norm=0.1,
+            field_gradient_rms=field_rms,
+            field_gradient_max=field_max,
+            dynamics_gradient_max=dynamics_max,
+            relative_stationarity=block_score,
+        )
+        self.assertFalse(
+            variational_module._stationarity_is_acceptable(
+                stationarity,
+                block_tolerance=2.0e-4,
+                field_max_tolerance=1.0e-2,
+            )
+        )
 
     def test_posterior_saturation_requires_uncertainty_clearance(self) -> None:
         config = NowcastConfig(

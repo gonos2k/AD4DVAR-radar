@@ -1,8 +1,11 @@
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from types import SimpleNamespace
+import json
 import math
 import os
+import stat
 import tempfile
 import sys
 import unittest
@@ -14,6 +17,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar._digest import tensor_digest  # noqa: E402
+import advar.sensitivity as sensitivity_module  # noqa: E402
 from advar.linearization_artifact import (  # noqa: E402
     load_p1_linearization,
     save_p1_linearization,
@@ -1807,7 +1811,7 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertEqual(fso.full_map_lead_minutes, (10,))
         self.assertEqual(
             fso.linearization_contract,
-            "p1-final-frozen-irls-gn-v12",
+            "p1-final-frozen-irls-gn-v13",
         )
         self.assertEqual(
             fso.forecast_run_digest,
@@ -3965,12 +3969,48 @@ class VariationalFSOTests(unittest.TestCase):
             numerical_runtime_digest=linearization.numerical_runtime_digest,
         )
         for invalid_ratio in (0.0, 1.0, float("nan"), True):
-            with self.subTest(linearity_remainder_ratio=invalid_ratio):
+            with self.subTest(linearity_relative_error=invalid_ratio):
                 with self.assertRaisesRegex(ValueError, "must be in"):
                     replace(
                         policy,
-                        maximum_linearity_remainder_ratio=invalid_ratio,
+                        maximum_linearity_relative_error=invalid_ratio,
                     )
+        for invalid_value in (-1.0, float("nan"), True):
+            with self.subTest(linearity_absolute_error=invalid_value):
+                with self.assertRaisesRegex(ValueError, "nonnegative"):
+                    replace(
+                        policy,
+                        maximum_linearity_absolute_error=invalid_value,
+                    )
+        for invalid_value in (0.0, float("nan"), True):
+            with self.subTest(material_impact_threshold=invalid_value):
+                with self.assertRaisesRegex(ValueError, "positive"):
+                    replace(policy, material_impact_threshold=invalid_value)
+        available = torch.ones((1, 1), dtype=torch.bool)
+        prediction = torch.tensor(((1.0e-3,),), dtype=torch.float64)
+        self.assertTrue(
+            sensitivity_module._taylor_step_is_valid(
+                prediction,
+                prediction,
+                available,
+                policy,
+            )
+        )
+        self.assertFalse(
+            sensitivity_module._taylor_step_is_valid(
+                0.5 * prediction,
+                0.2 * prediction,
+                available,
+                policy,
+            )
+        )
+        self.assertFalse(
+            sensitivity_module._material_impact_signs_are_consistent(
+                ((prediction, -prediction),),
+                available,
+                policy.material_impact_threshold,
+            )
+        )
         physical_delta = zeros.clone()
         index = tuple(
             int(value)
@@ -3984,14 +4024,29 @@ class VariationalFSOTests(unittest.TestCase):
             physical_delta,
             linearization,
         )
-        rejected = compute_variational_fsoi_for_learning(
-            self.forecast,
-            self.analysis,
-            self.verification,
-            physical,
-            policy=policy,
-            approved_policy_digests=frozenset(),
-        )
+        with self.assertRaisesRegex(TypeError, "approved_policy_digests"):
+            compute_variational_fsoi_for_learning(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                physical,
+                policy=policy,
+                policy_trust_store_path="/etc/advar/learning-policies.json",
+                approved_policy_digests=frozenset((policy.digest,)),  # type: ignore[call-arg]
+            )
+        with patch.object(
+            sensitivity_module,
+            "_load_approved_learning_policy_digests",
+            return_value=frozenset(),
+        ):
+            rejected = compute_variational_fsoi_for_learning(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                physical,
+                policy=policy,
+                policy_trust_store_path="/etc/advar/learning-policies.json",
+            )
         self.assertFalse(rejected.eligibility.eligible)
         self.assertEqual(
             rejected.eligibility.reasons,
@@ -4003,14 +4058,19 @@ class VariationalFSOTests(unittest.TestCase):
             censor_threshold_dbz=zeros,
             observation_weight=zeros,
         )
-        rejected = compute_variational_fsoi_for_learning(
-            self.forecast,
-            self.analysis,
-            self.verification,
-            augmented,
-            policy=policy,
-            approved_policy_digests=frozenset((policy.digest,)),
-        )
+        with patch.object(
+            sensitivity_module,
+            "_load_approved_learning_policy_digests",
+            return_value=frozenset((policy.digest,)),
+        ):
+            rejected = compute_variational_fsoi_for_learning(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                augmented,
+                policy=policy,
+                policy_trust_store_path="/etc/advar/learning-policies.json",
+            )
         self.assertFalse(rejected.eligibility.eligible)
         self.assertEqual(
             rejected.eligibility.reasons,
@@ -4021,14 +4081,19 @@ class VariationalFSOTests(unittest.TestCase):
             policy,
             algorithm_bundle_digest="3" * 64,
         )
-        rejected = compute_variational_fsoi_for_learning(
-            self.forecast,
-            self.analysis,
-            self.verification,
-            physical,
-            policy=wrong_algorithm,
-            approved_policy_digests=frozenset((wrong_algorithm.digest,)),
-        )
+        with patch.object(
+            sensitivity_module,
+            "_load_approved_learning_policy_digests",
+            return_value=frozenset((wrong_algorithm.digest,)),
+        ):
+            rejected = compute_variational_fsoi_for_learning(
+                self.forecast,
+                self.analysis,
+                self.verification,
+                physical,
+                policy=wrong_algorithm,
+                policy_trust_store_path="/etc/advar/learning-policies.json",
+            )
         self.assertEqual(
             rejected.eligibility.reasons,
             ("algorithm_bundle_not_approved",),
@@ -4093,17 +4158,24 @@ class VariationalFSOTests(unittest.TestCase):
         )
         nonlinear_delta = torch.zeros_like(linearization.observations.dbz)
         nonlinear_delta[index] = 0.01
-        nonlinear = compute_variational_fsoi_for_learning(
-            forecast,
-            analysis,
-            verification,
-            VariationalObservationPerturbation.from_radar_dbz_delta(
-                nonlinear_delta,
-                linearization,
-            ),
-            policy=policy,
-            approved_policy_digests=frozenset((policy.digest,)),
-        )
+        with patch.object(
+            sensitivity_module,
+            "_load_approved_learning_policy_digests",
+            return_value=frozenset((policy.digest,)),
+        ):
+            nonlinear = compute_variational_fsoi_for_learning(
+                forecast,
+                analysis,
+                verification,
+                VariationalObservationPerturbation.from_radar_dbz_delta(
+                    nonlinear_delta,
+                    linearization,
+                ),
+                policy=policy,
+                policy_trust_store_path=(
+                    "/etc/advar/learning-policies.json"
+                ),
+            )
         self.assertFalse(nonlinear.eligibility.eligible)
         self.assertEqual(
             nonlinear.eligibility.reasons,
@@ -4118,14 +4190,21 @@ class VariationalFSOTests(unittest.TestCase):
             linearization,
         )
 
-        learning = compute_variational_fsoi_for_learning(
-            forecast,
-            analysis,
-            verification,
-            perturbation,
-            policy=policy,
-            approved_policy_digests=frozenset((policy.digest,)),
-        )
+        with patch.object(
+            sensitivity_module,
+            "_load_approved_learning_policy_digests",
+            return_value=frozenset((policy.digest,)),
+        ):
+            learning = compute_variational_fsoi_for_learning(
+                forecast,
+                analysis,
+                verification,
+                perturbation,
+                policy=policy,
+                policy_trust_store_path=(
+                    "/etc/advar/learning-policies.json"
+                ),
+            )
 
         self.assertTrue(learning.eligibility.eligible)
         self.assertEqual(learning.eligibility.reasons, ())
@@ -4133,7 +4212,22 @@ class VariationalFSOTests(unittest.TestCase):
         assert learning.first_order_validation is not None
         self.assertTrue(learning.first_order_validation.first_order_valid)
         self.assertTrue(
-            learning.first_order_validation.resolved_analysis_converged
+            learning.first_order_validation
+            .full_step_resolved_analysis_converged
+        )
+        self.assertTrue(
+            learning.first_order_validation
+            .half_step_resolved_analysis_converged
+        )
+        self.assertTrue(learning.first_order_validation.full_step_valid)
+        self.assertTrue(learning.first_order_validation.half_step_valid)
+        self.assertTrue(
+            learning.first_order_validation
+            .sign_consistent_for_material_impacts
+        )
+        self.assertEqual(
+            learning.first_order_validation.metric_domain_contract,
+            "frozen_metric_domain",
         )
         self.assertTrue(learning.first_order_validation.active_branch_valid)
         self.assertEqual(
@@ -4145,7 +4239,46 @@ class VariationalFSOTests(unittest.TestCase):
             1.0,
         )
         self.assertEqual(learning.fsoi.fso.tile_size, 16)
-        self.assertIsNotNone(learning.learning_impact)
+        self.assertIsNotNone(learning.frozen_domain_learning_impact)
+
+    def test_learning_policy_trust_store_requires_root_ownership(self) -> None:
+        digest = "a" * 64
+        document = {
+            "contract": "advar-learning-policy-trust-store-v1",
+            "approved_policy_digests": [digest],
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "learning-policies.json"
+            path.write_text(json.dumps(document), encoding="utf-8")
+            real_fstat = os.fstat
+
+            with patch.object(
+                sensitivity_module.os,
+                "fstat",
+                side_effect=lambda descriptor: SimpleNamespace(
+                    st_mode=stat.S_IFREG | 0o644,
+                    st_uid=1000,
+                    st_size=real_fstat(descriptor).st_size,
+                ),
+            ):
+                with self.assertRaisesRegex(ValueError, "root-owned"):
+                    sensitivity_module._load_approved_learning_policy_digests(
+                        path
+                    )
+            with patch.object(
+                sensitivity_module.os,
+                "fstat",
+                side_effect=lambda descriptor: SimpleNamespace(
+                    st_mode=stat.S_IFREG | 0o644,
+                    st_uid=0,
+                    st_size=real_fstat(descriptor).st_size,
+                ),
+            ):
+                self.assertEqual(
+                    sensitivity_module
+                    ._load_approved_learning_policy_digests(path),
+                    frozenset((digest,)),
+                )
 
     def test_censored_perturbations_use_event_specific_factories(self) -> None:
         linearization = self.analysis.linearization
