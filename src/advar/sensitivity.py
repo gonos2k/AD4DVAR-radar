@@ -5,7 +5,11 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
+import json
 import math
+import os
+from pathlib import Path
+import stat
 from typing import Literal, cast
 
 import torch
@@ -45,6 +49,7 @@ from .variational import (
     _linearization_stationarity,
     _relative_irls_weight_change,
     _robust_stationarity,
+    _stationarity_is_acceptable,
     freeze_irls_weights,
     residual_vector,
     solve_analysis,
@@ -79,6 +84,8 @@ BaselineDynamicsBranchStatus = Literal[
     "certified",
     "invalid",
 ]
+LEARNING_POLICY_TRUST_STORE_CONTRACT = "advar-learning-policy-trust-store-v1"
+MAXIMUM_LEARNING_POLICY_TRUST_STORE_BYTES = 1024 * 1024
 
 
 def _canonical_verification_time(value: str) -> str:
@@ -101,6 +108,57 @@ def _require_sha256(name: str, value: str) -> None:
         character not in "0123456789abcdef" for character in value
     ):
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
+
+
+def _load_approved_learning_policy_digests(
+    path: str | Path,
+) -> frozenset[str]:
+    """Read approved policy digests from a root-owned immutable JSON file."""
+
+    trust_store = Path(path)
+    if not trust_store.is_absolute():
+        raise ValueError("learning policy trust store path must be absolute")
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(trust_store, flags)
+    try:
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise ValueError("learning policy trust store must be a file")
+        if metadata.st_uid != 0 or metadata.st_mode & 0o022:
+            raise ValueError(
+                "learning policy trust store must be root-owned and not "
+                "group/world-writable"
+            )
+        if metadata.st_size > MAXIMUM_LEARNING_POLICY_TRUST_STORE_BYTES:
+            raise ValueError("learning policy trust store is too large")
+        with os.fdopen(descriptor, encoding="utf-8") as stream:
+            descriptor = -1
+            content = stream.read(MAXIMUM_LEARNING_POLICY_TRUST_STORE_BYTES + 1)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+    if len(content) > MAXIMUM_LEARNING_POLICY_TRUST_STORE_BYTES:
+        raise ValueError("learning policy trust store is too large")
+    document = json.loads(content)
+    if not isinstance(document, dict) or set(document) != {
+        "contract",
+        "approved_policy_digests",
+    }:
+        raise ValueError("invalid learning policy trust store")
+    if document["contract"] != LEARNING_POLICY_TRUST_STORE_CONTRACT:
+        raise ValueError("unsupported learning policy trust store")
+    raw_digests = document["approved_policy_digests"]
+    if not isinstance(raw_digests, list) or any(
+        not isinstance(digest, str) for digest in raw_digests
+    ):
+        raise ValueError("approved policy digests must be a list")
+    digests = frozenset(raw_digests)
+    if len(digests) != len(raw_digests):
+        raise ValueError("approved policy digests must be unique")
+    for digest in digests:
+        _require_sha256("approved_policy_digest", digest)
+    return digests
 
 
 @dataclass(frozen=True)
@@ -1044,11 +1102,13 @@ class AutomatedLearningPolicy:
     adjoint_config: VariationalAdjointConfig
     algorithm_bundle_digest: str
     numerical_runtime_digest: str
-    maximum_linearity_remainder_ratio: float = 0.1
-    contract: str = "p1-automated-learning-policy-v2"
+    maximum_linearity_absolute_error: float = 1.0e-6
+    maximum_linearity_relative_error: float = 0.1
+    material_impact_threshold: float = 1.0e-6
+    contract: str = "p1-automated-learning-policy-v3"
 
     def __post_init__(self) -> None:
-        if self.contract != "p1-automated-learning-policy-v2":
+        if self.contract != "p1-automated-learning-policy-v3":
             raise ValueError("unsupported automated-learning policy")
         _require_sha256(
             "algorithm_bundle_digest",
@@ -1059,13 +1119,27 @@ class AutomatedLearningPolicy:
             self.numerical_runtime_digest,
         )
         if (
-            isinstance(self.maximum_linearity_remainder_ratio, bool)
-            or not math.isfinite(self.maximum_linearity_remainder_ratio)
-            or not 0.0 < self.maximum_linearity_remainder_ratio < 1.0
+            isinstance(self.maximum_linearity_absolute_error, bool)
+            or not math.isfinite(self.maximum_linearity_absolute_error)
+            or self.maximum_linearity_absolute_error < 0.0
         ):
             raise ValueError(
-                "maximum_linearity_remainder_ratio must be in (0, 1)"
+                "maximum_linearity_absolute_error must be nonnegative"
             )
+        if (
+            isinstance(self.maximum_linearity_relative_error, bool)
+            or not math.isfinite(self.maximum_linearity_relative_error)
+            or not 0.0 < self.maximum_linearity_relative_error < 1.0
+        ):
+            raise ValueError(
+                "maximum_linearity_relative_error must be in (0, 1)"
+            )
+        if (
+            isinstance(self.material_impact_threshold, bool)
+            or not math.isfinite(self.material_impact_threshold)
+            or self.material_impact_threshold <= 0.0
+        ):
+            raise ValueError("material_impact_threshold must be positive")
         sensitivity = self.sensitivity_config
         if (
             sensitivity.metric_domain != "radar_dynamics_anchored"
@@ -1107,9 +1181,13 @@ class AutomatedLearningPolicy:
                 "adjoint_config_digest": self.adjoint_config.digest,
                 "algorithm_bundle_digest": self.algorithm_bundle_digest,
                 "numerical_runtime_digest": self.numerical_runtime_digest,
-                "maximum_linearity_remainder_ratio": (
-                    self.maximum_linearity_remainder_ratio
+                "maximum_linearity_absolute_error": (
+                    self.maximum_linearity_absolute_error
                 ),
+                "maximum_linearity_relative_error": (
+                    self.maximum_linearity_relative_error
+                ),
+                "material_impact_threshold": self.material_impact_threshold,
                 "perturbation_semantics": "physical_radar_value",
             }
         )
@@ -1136,15 +1214,23 @@ class LearningEligibility:
 
 @dataclass(frozen=True)
 class FirstOrderValidation:
-    """Resolved check of one learning perturbation's Taylor prediction."""
+    """Full/half-step checks on one frozen-domain Taylor prediction."""
 
-    first_order_prediction: Tensor
-    resolved_metric_change: Tensor
-    linearity_remainder_ratio: Tensor
+    full_step_prediction: Tensor
+    full_step_resolved_metric_change: Tensor
+    full_step_absolute_error: Tensor
+    half_step_prediction: Tensor
+    half_step_resolved_metric_change: Tensor
+    half_step_absolute_error: Tensor
     metric_available: Tensor
-    resolved_analysis_converged: bool
+    full_step_resolved_analysis_converged: bool
+    half_step_resolved_analysis_converged: bool
     active_branch_valid: bool
+    full_step_valid: bool
+    half_step_valid: bool
+    sign_consistent_for_material_impacts: bool
     first_order_valid: bool
+    metric_domain_contract: str = "frozen_metric_domain"
 
 
 @dataclass(frozen=True)
@@ -1152,14 +1238,14 @@ class VariationalLearningImpact:
     eligibility: LearningEligibility
     fsoi: VariationalFSOI | None
     first_order_validation: FirstOrderValidation | None
-    learning_impact: VariationalImpactChannel | None
+    frozen_domain_learning_impact: VariationalImpactChannel | None
 
     def __post_init__(self) -> None:
         complete = (
             self.fsoi is not None
             and self.first_order_validation is not None
             and self.first_order_validation.first_order_valid
-            and self.learning_impact is not None
+            and self.frozen_domain_learning_impact is not None
         )
         if self.eligibility.eligible != complete:
             raise ValueError("learning eligibility and impact disagree")
@@ -2833,14 +2919,13 @@ def compute_variational_fsoi_for_learning(
     observation_perturbation: VariationalObservationPerturbation,
     *,
     policy: AutomatedLearningPolicy,
-    approved_policy_digests: frozenset[str],
+    policy_trust_store_path: str | Path,
 ) -> VariationalLearningImpact:
-    """Compute FSOI only under an externally approved learning policy."""
+    """Compute frozen-domain FSOI under a root-owned learning policy."""
 
-    if type(approved_policy_digests) is not frozenset:
-        raise TypeError("approved_policy_digests must be a frozenset")
-    for digest in approved_policy_digests:
-        _require_sha256("approved_policy_digest", digest)
+    approved_policy_digests = _load_approved_learning_policy_digests(
+        policy_trust_store_path
+    )
     if policy.digest not in approved_policy_digests:
         return _rejected_learning_impact(policy, "unapproved_learning_policy")
     if (
@@ -2904,7 +2989,7 @@ def compute_variational_fsoi_for_learning(
         ),
         fsoi=fsoi,
         first_order_validation=validation,
-        learning_impact=impact,
+        frozen_domain_learning_impact=impact,
     )
 
 
@@ -2923,7 +3008,7 @@ def _rejected_learning_impact(
         ),
         fsoi=fsoi,
         first_order_validation=first_order_validation,
-        learning_impact=None,
+        frozen_domain_learning_impact=None,
     )
 
 
@@ -2934,74 +3019,154 @@ def _validate_first_order_learning_impact(
     fsoi: VariationalFSOI,
     policy: AutomatedLearningPolicy,
 ) -> FirstOrderValidation:
-    """Re-solve one physical perturbation and check its Taylor remainder."""
+    """Re-solve full and half perturbations on the nominal metric domain."""
 
+    full_prediction = (
+        fsoi.observation.total.sum_by_time.sum(dim=-1).detach()
+    )
+    half_prediction = 0.5 * full_prediction
+    full = _resolve_learning_step(
+        result,
+        analysis,
+        verification_input,
+        fsoi,
+        policy,
+        scale=1.0,
+    )
+    half = _resolve_learning_step(
+        result,
+        analysis,
+        verification_input,
+        fsoi,
+        policy,
+        scale=0.5,
+    )
+    available = fsoi.fso.metric_available
+    full_error = torch.abs(full.metric_change - full_prediction)
+    half_error = torch.abs(half.metric_change - half_prediction)
+    full_step_valid = _taylor_step_is_valid(
+        full_prediction,
+        full.metric_change,
+        available,
+        policy,
+    )
+    half_step_valid = _taylor_step_is_valid(
+        half_prediction,
+        half.metric_change,
+        available,
+        policy,
+    )
+    sign_consistent = _material_impact_signs_are_consistent(
+        (
+            (full_prediction, full.metric_change),
+            (half_prediction, half.metric_change),
+        ),
+        available,
+        policy.material_impact_threshold,
+    )
+    branch_valid = full.active_branch_valid and half.active_branch_valid
+    first_order_valid = (
+        full.analysis_converged
+        and half.analysis_converged
+        and branch_valid
+        and full_step_valid
+        and half_step_valid
+        and sign_consistent
+    )
+    return FirstOrderValidation(
+        full_step_prediction=full_prediction,
+        full_step_resolved_metric_change=full.metric_change,
+        full_step_absolute_error=full_error,
+        half_step_prediction=half_prediction,
+        half_step_resolved_metric_change=half.metric_change,
+        half_step_absolute_error=half_error,
+        metric_available=available.detach().clone(),
+        full_step_resolved_analysis_converged=full.analysis_converged,
+        half_step_resolved_analysis_converged=half.analysis_converged,
+        active_branch_valid=branch_valid,
+        full_step_valid=full_step_valid,
+        half_step_valid=half_step_valid,
+        sign_consistent_for_material_impacts=sign_consistent,
+        first_order_valid=first_order_valid,
+    )
+
+
+@dataclass(frozen=True)
+class _ResolvedLearningStep:
+    metric_change: Tensor
+    analysis_converged: bool
+    active_branch_valid: bool
+
+
+def _resolve_learning_step(
+    result: ForecastResult,
+    analysis: AnalysisResult | P1LinearizationState,
+    verification_input: VerificationInput,
+    fsoi: VariationalFSOI,
+    policy: AutomatedLearningPolicy,
+    *,
+    scale: float,
+) -> _ResolvedLearningStep:
     linearization = analysis.linearization
     if linearization is None:
         raise ValueError("first-order validation requires a linearization")
     perturbation = fsoi.perturbation
-    delta = perturbation.physical_radar_dbz_delta
-    if delta is None:
+    physical_delta = perturbation.physical_radar_dbz_delta
+    if physical_delta is None:
         raise ValueError("first-order validation requires a physical delta")
-
+    delta = scale * physical_delta
     observations = linearization.observations
     frozen = linearization.frozen
     changed_observations = replace(observations, dbz=observations.dbz + delta)
-    background_delta = _initial_background_perturbation(
-        perturbation,
-        observations,
-    )[0]
+    background_delta = (
+        scale * _initial_background_perturbation(perturbation, observations)[0]
+    )
     baseline_dynamics = torch.cat(
         (
             frozen.baseline_state.displacement_yx,
             frozen.baseline_state.log_growth_per_step.reshape(1),
         )
     )
-    if (
-        frozen.baseline_metadata.tendency_source
-        is TendencySource.OBSERVATION
-    ):
+    if frozen.baseline_metadata.tendency_source is TendencySource.OBSERVATION:
         baseline_dynamics = _baseline_dynamics_from_observation(
             changed_observations.dbz,
             frozen,
         )
-    changed_baseline = RadarState(
-        echo_linear=frozen.baseline_state.echo_linear,
-        displacement_yx=baseline_dynamics[:2],
-        log_growth_per_step=baseline_dynamics[2],
-    )
     changed_frozen = replace(
         frozen,
-        initial_background_dbz=(
-            frozen.initial_background_dbz + background_delta
+        initial_background_dbz=frozen.initial_background_dbz + background_delta,
+        baseline_state=RadarState(
+            echo_linear=frozen.baseline_state.echo_linear,
+            displacement_yx=baseline_dynamics[:2],
+            log_growth_per_step=baseline_dynamics[2],
         ),
-        baseline_state=changed_baseline,
-        baseline_frames_dbz=(frozen.baseline_frames_dbz + delta),
+        baseline_frames_dbz=frozen.baseline_frames_dbz + delta,
     )
     resolved = solve_analysis(
         changed_observations,
         changed_frozen,
         control=analysis.control,
     )
-    resolved_converged = (
+    converged = (
         resolved.converged
         and not resolved.used_fallback
         and not resolved.degraded
         and resolved.p1_forecast_eligible
     )
-
-    prediction = fsoi.observation.total.sum_by_time.sum(dim=-1).detach()
-    resolved_change = torch.full_like(prediction, float("nan"))
-    remainder = torch.full_like(prediction, float("inf"))
-    available = fsoi.fso.metric_available
+    metric_change = torch.full_like(
+        fsoi.fso.forecast_scores,
+        float("nan"),
+    )
     resolved_linearization = resolved.linearization
-    branch_valid = resolved_converged and resolved_linearization is not None
+    branch_valid = converged and resolved_linearization is not None
     if resolved_linearization is not None:
         branch_valid = (
             branch_valid
             and resolved_linearization.frozen.analysis_remap_cells
             == frozen.analysis_remap_cells
         )
+    if not converged:
+        return _ResolvedLearningStep(metric_change, False, branch_valid)
 
     verification = _resolve_verification(
         verification_input,
@@ -3023,108 +3188,102 @@ def _validate_first_order_learning_impact(
     finite_truth = verification.valid_mask & torch.isfinite(
         verification.frames_dbz
     )
-
-    if resolved_converged:
-        for lead_index, minutes in enumerate(fsoi.fso.lead_minutes):
-            step = minutes // config.interval_minutes
-            forecast_index = step - 1
-            nominal_cell = freeze_remap_cell(
-                step * analysis.state.displacement_yx
-            )
-            changed_cell = freeze_remap_cell(
-                step * resolved.state.displacement_yx
-            )
-            if changed_cell != nominal_cell:
-                branch_valid = False
-            nominal_linear = forecast_linear_at_step(
-                analysis.state,
-                step,
-                config,
-            )
-            changed_linear = forecast_linear_at_step(
-                resolved.state,
-                step,
-                config,
-            )
-            nominal_capped, nominal_cap_active = _freeze_output_cap(
-                nominal_linear,
-                config,
-            )
-            changed_capped, changed_cap_active = _freeze_output_cap(
-                changed_linear,
-                config,
-            )
-            if not torch.equal(nominal_cap_active, changed_cap_active):
-                branch_valid = False
-            metric_weight = _metric_domain_weight(
-                result,
-                finite_truth[forecast_index],
-                forecast_index,
-                policy.sensitivity_config.metric_domain,
-            )
-            for metric_index, metric_name in enumerate(
-                fsoi.fso.metric_names
-            ):
-                if not bool(available[lead_index, metric_index]):
-                    continue
-                nominal_score = forecast_metric(
-                    metric_name,
-                    nominal_capped,
-                    truth_linear[forecast_index],
-                    metric_weight,
-                    config,
-                    policy.sensitivity_config,
-                    frozen.grid_time_contract,
-                )
-                if not torch.allclose(
-                    nominal_score,
-                    fsoi.fso.forecast_scores[lead_index, metric_index],
-                    rtol=0.0,
-                    atol=config.contract_absolute_tolerance,
-                ):
-                    raise ValueError(
-                        "first-order validation does not reproduce the "
-                        "nominal metric"
-                    )
-                changed_score = forecast_metric(
-                    metric_name,
-                    changed_capped,
-                    truth_linear[forecast_index],
-                    metric_weight,
-                    config,
-                    policy.sensitivity_config,
-                    frozen.grid_time_contract,
-                )
-                actual = changed_score - nominal_score
-                resolved_change[lead_index, metric_index] = actual.detach()
-                remainder[lead_index, metric_index] = (
-                    torch.abs(
-                        actual - prediction[lead_index, metric_index]
-                    )
-                    / (torch.abs(actual) + policy.sensitivity_config.epsilon)
-                ).detach()
-
-    selected_remainder = remainder.masked_select(available)
-    first_order_valid = (
-        branch_valid
-        and selected_remainder.numel() > 0
-        and bool(torch.all(torch.isfinite(selected_remainder)))
-        and bool(
-            torch.all(
-                selected_remainder
-                <= policy.maximum_linearity_remainder_ratio
-            )
+    available = fsoi.fso.metric_available
+    for lead_index, minutes in enumerate(fsoi.fso.lead_minutes):
+        step = minutes // config.interval_minutes
+        forecast_index = step - 1
+        if freeze_remap_cell(step * resolved.state.displacement_yx) != (
+            freeze_remap_cell(step * analysis.state.displacement_yx)
+        ):
+            branch_valid = False
+        nominal_linear = forecast_linear_at_step(analysis.state, step, config)
+        changed_linear = forecast_linear_at_step(resolved.state, step, config)
+        nominal_capped, nominal_cap_active = _freeze_output_cap(
+            nominal_linear,
+            config,
         )
+        changed_capped, changed_cap_active = _freeze_output_cap(
+            changed_linear,
+            config,
+        )
+        if not torch.equal(nominal_cap_active, changed_cap_active):
+            branch_valid = False
+        metric_weight = _metric_domain_weight(
+            result,
+            finite_truth[forecast_index],
+            forecast_index,
+            policy.sensitivity_config.metric_domain,
+        )
+        for metric_index, metric_name in enumerate(fsoi.fso.metric_names):
+            if not bool(available[lead_index, metric_index]):
+                continue
+            nominal_score = forecast_metric(
+                metric_name,
+                nominal_capped,
+                truth_linear[forecast_index],
+                metric_weight,
+                config,
+                policy.sensitivity_config,
+                frozen.grid_time_contract,
+            )
+            if not torch.allclose(
+                nominal_score,
+                fsoi.fso.forecast_scores[lead_index, metric_index],
+                rtol=0.0,
+                atol=config.contract_absolute_tolerance,
+            ):
+                raise ValueError(
+                    "first-order validation does not reproduce the nominal metric"
+                )
+            changed_score = forecast_metric(
+                metric_name,
+                changed_capped,
+                truth_linear[forecast_index],
+                metric_weight,
+                config,
+                policy.sensitivity_config,
+                frozen.grid_time_contract,
+            )
+            metric_change[lead_index, metric_index] = (
+                changed_score - nominal_score
+            ).detach()
+    return _ResolvedLearningStep(metric_change, converged, branch_valid)
+
+
+def _taylor_step_is_valid(
+    prediction: Tensor,
+    actual: Tensor,
+    available: Tensor,
+    policy: AutomatedLearningPolicy,
+) -> bool:
+    error = torch.abs(actual - prediction)
+    scale = torch.maximum(torch.abs(actual), torch.abs(prediction))
+    tolerance = (
+        policy.maximum_linearity_absolute_error
+        + policy.maximum_linearity_relative_error * scale
     )
-    return FirstOrderValidation(
-        first_order_prediction=prediction,
-        resolved_metric_change=resolved_change,
-        linearity_remainder_ratio=remainder,
-        metric_available=available.detach().clone(),
-        resolved_analysis_converged=resolved_converged,
-        active_branch_valid=branch_valid,
-        first_order_valid=first_order_valid,
+    selected = error.masked_select(available)
+    selected_tolerance = tolerance.masked_select(available)
+    return (
+        selected.numel() > 0
+        and bool(torch.all(torch.isfinite(selected)))
+        and bool(torch.all(selected <= selected_tolerance))
     )
+
+
+def _material_impact_signs_are_consistent(
+    steps: tuple[tuple[Tensor, Tensor], ...],
+    available: Tensor,
+    materiality: float,
+) -> bool:
+    for prediction, actual in steps:
+        material = available & (
+            torch.maximum(torch.abs(prediction), torch.abs(actual))
+            >= materiality
+        )
+        if bool(torch.any(material & (prediction * actual <= 0.0))):
+            return False
+    return True
 
 
 def _compute_variational_products(
@@ -4952,6 +5111,11 @@ def _validate_variational_fso_lineage(
             stationarity.field_gradient_rms,
         ),
         (
+            "field gradient maximum",
+            linearization.field_gradient_max,
+            stationarity.field_gradient_max,
+        ),
+        (
             "dynamics gradient maximum",
             linearization.dynamics_gradient_max,
             stationarity.dynamics_gradient_max,
@@ -4979,10 +5143,12 @@ def _validate_variational_fso_lineage(
         analysis.linearization_residual_norm,
         analysis.linearization_gradient_norm,
         analysis.linearization_field_gradient_rms,
+        analysis.linearization_field_gradient_max,
         analysis.linearization_dynamics_gradient_max,
         analysis.linearization_relative_stationarity,
         analysis.robust_gradient_norm,
         analysis.robust_field_gradient_rms,
+        analysis.robust_field_gradient_max,
         analysis.robust_dynamics_gradient_max,
         analysis.robust_relative_stationarity,
         analysis.irls_relative_weight_change,
@@ -4992,10 +5158,12 @@ def _validate_variational_fso_lineage(
         linearization.residual_norm,
         linearization.gradient_norm,
         linearization.field_gradient_rms,
+        linearization.field_gradient_max,
         linearization.dynamics_gradient_max,
         linearization.relative_stationarity,
         linearization.robust_gradient_norm,
         linearization.robust_field_gradient_rms,
+        linearization.robust_field_gradient_max,
         linearization.robust_dynamics_gradient_max,
         linearization.robust_relative_stationarity,
         linearization.irls_relative_weight_change,
@@ -5003,11 +5171,16 @@ def _validate_variational_fso_lineage(
     )
     if analysis_stationarity != retained_stationarity:
         raise ValueError("P1 analysis linearization diagnostics mismatch")
-    stationarity_tolerance = (
-        frozen.analysis_config
-        .final_linearization_relative_stationarity_tolerance
-    )
-    if stationarity.relative_stationarity > stationarity_tolerance:
+    if not _stationarity_is_acceptable(
+        stationarity,
+        block_tolerance=(
+            frozen.analysis_config
+            .final_linearization_relative_stationarity_tolerance
+        ),
+        field_max_tolerance=(
+            frozen.analysis_config.final_field_gradient_max_tolerance
+        ),
+    ):
         raise ValueError("P1 final linearization is not stationary")
     robust = _robust_stationarity(
         analysis.control,
@@ -5030,6 +5203,11 @@ def _validate_variational_fso_lineage(
             "robust field gradient RMS",
             linearization.robust_field_gradient_rms,
             robust.field_gradient_rms,
+        ),
+        (
+            "robust field gradient maximum",
+            linearization.robust_field_gradient_max,
+            robust.field_gradient_max,
         ),
         (
             "robust dynamics gradient maximum",
@@ -5056,8 +5234,16 @@ def _validate_variational_fso_lineage(
         ):
             raise ValueError(f"P1 linearization {name} mismatch")
     if (
-        robust.relative_stationarity
-        > frozen.analysis_config.final_robust_relative_stationarity_tolerance
+        not _stationarity_is_acceptable(
+            robust,
+            block_tolerance=(
+                frozen.analysis_config
+                .final_robust_relative_stationarity_tolerance
+            ),
+            field_max_tolerance=(
+                frozen.analysis_config.final_field_gradient_max_tolerance
+            ),
+        )
         or weight_change
         > frozen.analysis_config.final_irls_relative_weight_tolerance
     ):

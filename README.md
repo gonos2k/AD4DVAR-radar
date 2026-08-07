@@ -183,10 +183,11 @@ print(analysis.state.echo_linear)  # 세 장으로 분석된 현재 q(0)
 다시 계산하며, frozen stationarity·실제 pseudo-Huber gradient·retained weight
 일관성을 모두 만족해야 P1 forecast, posterior와 FSO를 제공한다. polish 뒤에는
 기존 amplitude·causal·saturation·objective gate도 다시 검사한다. 보존되는
-`p1-final-frozen-irls-gn-v12` 선형화에는 frozen/robust gradient 진단, IRLS
+`p1-final-frozen-irls-gn-v13` 선형화에는 frozen/robust gradient 진단, IRLS
 weight 변화, polish 횟수와 최종 hard feasibility margin이 함께 들어간다.
 stationarity는 격자크기에 따라 작아지는 objective 정규화 대신 active field
-gradient RMS와 표준화된 3개 dynamics gradient 최대값의 큰 값으로 판정한다.
+gradient RMS와 표준화된 3개 dynamics gradient 최대값의 큰 값을 사용하며,
+희소한 국지 오차를 숨기지 않도록 field gradient 최대값도 별도로 제한한다.
 관측·분류 mask·최종 IRLS weight·remap cell·prior graph를 포함한 모든 frozen
 입력은 `linearization_digest`에 결합되며, 보존 Tensor는 caller storage와
 분리된 clone이다. 미래 검증장이 도착하면 이 고정 선형화에서 세 입력시각
@@ -418,10 +419,10 @@ learning = compute_variational_fsoi_for_learning(
     verification_bundle,
     physical,
     policy=policy,
-    approved_policy_digests=deployment_policy_allowlist,
+    policy_trust_store_path="/etc/advar/learning-policies.json",
 )
 if learning.eligibility.eligible:
-    update_model(learning.learning_impact)
+    update_model(learning.frozen_domain_learning_impact)
 ```
 
 이 policy는 verification lineage, radar-dynamics domain, active-set·feasibility·
@@ -430,10 +431,18 @@ strict factory는 16 km tile, 9 km soft-FSS window, projected-metre centroid와
 256 km² perturbation-area 상한을 사용한다. metre 설정은 grid cell area의
 제곱근으로 한 번 pixel span으로 변환되며, 실제 해석에 사용한 pixel tile 크기는
 FSO 결과에 기록된다. 픽셀 단위 설정은 기존 연구계약과의 호환을 위해 유지된다.
-`approved_policy_digests`는 독립적인 allowlist 또는 서명검증 계층에서 공급해야
-하며, caller가 스스로 만든 digest는 승인 근거가 아니다. 일반 결과의
+정책 저장소는 root 소유의 group/world 비쓰기 JSON 파일이어야 하며 symlink와
+상대경로는 거부된다. 따라서 일반 caller가 policy와 allowlist를 함께 만들어
+self-approval할 수 없다. 일반 결과의
 `baseline_branch_trusted_total`은 baseline branch만 인증한다. 전체 학습 승인은
 `LearningEligibility`만 사용한다.
+
+```json
+{
+  "contract": "advar-learning-policy-trust-store-v1",
+  "approved_policy_digests": ["<64-character-lowercase-sha256>"]
+}
+```
 
 `lead_minutes`는 원래 forecast 축에서 실제 수반계를 풀 lead만 고른다. metric별
 직전 lead 해는 다음 PCG의 초기값으로만 사용하며 true residual을 다시 계산한다.
@@ -502,7 +511,7 @@ fso = compute_variational_fso(
 )
 ```
 
-`p1-linearization-v10` loader는 pickle을 사용하지 않고 archive 크기·member
+`p1-linearization-v11` loader는 pickle을 사용하지 않고 archive 크기·member
 allowlist·각 Tensor digest·전체 artifact digest를 먼저 검사한다. 그 뒤 저장된
 control에서 state와 `J^T r`를 다시 계산한다. algorithm bundle 또는 Python,
 NumPy, PyTorch, backend capability, deterministic-policy로 구성된 numerical
@@ -688,7 +697,7 @@ forecast, analysis = variational_nowcast(
 group map은 `[H,W]` 또는 `[3,H,W]` 정수 Tensor이며 tile mode와 동시에 사용할
 수 없다. 연구모드는 digest를 생략하면 canonical map digest를 자동 결합하지만,
 운용모드는 사전 승인된 `AnalysisConfig`에 정확한 digest가 있어야 한다. map은
-analysis-input·forecast-run·linearization digest와 `p1-linearization-v10`
+analysis-input·forecast-run·linearization digest와 `p1-linearization-v11`
 artifact에 포함된다. CLI에서는
 `--observation-common-bias-group-map groups.npy`를 사용한다.
 
@@ -825,7 +834,7 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v52`
+- `output_contract_version`: 현재 `nowcast-npz-v53`
 - `forecast_run_artifact_version`: 현재 `forecast-run-v42`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
@@ -1262,10 +1271,12 @@ weight, active set, remap cell, observation classification과 baseline을 고정
 이하여야 한다. outer-loop 선택
 자체의 변화, EFSO, 검증된 baseline-normalized reward와 자동학습 승격은 아직
 포함하지 않는다. P1 FSO·FSOI 결과 자체는 M0 episode ledger에 저장하지 않지만,
-자동학습 wrapper는 동일 frozen 준비구조에 실제 physical-dBZ perturbation을
-적용해 robust P1 분석을 한 번 다시 풀고, 선택된 lead·metric의 실제 변화와
-1차 예측을 비교한다. Taylor remainder 비율이 승인 policy의 기본 0.1을
-넘거나 remap/output-cap branch가 바뀌면 `first_order_valid=False`로 거부한다.
+자동학습 wrapper는 동일 frozen 준비구조에 실제 physical-dBZ perturbation의
+full step과 half step을 적용해 robust P1 분석을 각각 다시 풀고, 선택된
+lead·metric의 실제 변화와 1차 예측을 비교한다. 절대+상대 Taylor 오차, 물질적
+영향의 부호, remap/output-cap branch 중 하나라도 실패하면
+`first_order_valid=False`로 거부한다. 이 값은 명목 metric domain을 고정한
+조건부 영향이므로 결과명도 `frozen_domain_learning_impact`로 제한한다.
 3시간 지연 재계산에 필요한 frozen linearization은 content-addressed
-`p1-linearization-v10` artifact로 안전하게 보존·재적재할 수 있다.
+`p1-linearization-v11` artifact로 안전하게 보존·재적재할 수 있다.
 P1 분석상태는 기존 M0 직접민감도 API에서 계속 provenance 검사로 거부된다.

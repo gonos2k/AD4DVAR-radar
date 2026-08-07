@@ -438,7 +438,7 @@ class CliTests(unittest.TestCase):
                 self._assert_common_status_fields(result)
                 self.assertEqual(
                     result["output_contract_version"].item(),
-                    "nowcast-npz-v52",
+                    "nowcast-npz-v53",
                 )
                 self.assertEqual(
                     result["forecast_run_artifact_version"].item(),
