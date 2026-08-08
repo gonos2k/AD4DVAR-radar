@@ -753,12 +753,11 @@ class ForecastRunArtifactTests(unittest.TestCase):
         runner = NeuralPriorInferenceRunner(
             self._Prior().eval(),
             lambda value: value[0],
-            feature_extractor_digest="1" * 64,
+            example_frames=frames,
             model_contract_digest="2" * 64,
             feature_schema_digest="3" * 64,
             training_manifest_digest="4" * 64,
-            inference_algorithm_digest="5" * 64,
-            numerical_runtime_digest="6" * 64,
+            allow_constant_uncertainty=True,
             dependency="radar_dependent",
         )
         prior = runner.infer(
@@ -843,12 +842,11 @@ class ForecastRunArtifactTests(unittest.TestCase):
         runner = NeuralPriorInferenceRunner(
             self._Prior().eval(),
             lambda value: value[0],
-            feature_extractor_digest="1" * 64,
+            example_frames=frames,
             model_contract_digest="2" * 64,
             feature_schema_digest="3" * 64,
             training_manifest_digest="4" * 64,
-            inference_algorithm_digest="5" * 64,
-            numerical_runtime_digest="6" * 64,
+            allow_constant_uncertainty=True,
             dependency="radar_dependent",
         )
         prior = runner.infer(frames, input_run=input_run, role="candidate")

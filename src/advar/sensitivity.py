@@ -6866,13 +6866,18 @@ def _compute_variational_products(
                 prior_input_sensitivity = torch.zeros_like(background_sensitivity)
             elif frozen.neural_prior_dependency == "radar_dependent":
                 assert neural_prior_runner is not None
+                prior_cotangent = torch.where(
+                    _neural_prior_derivative_mask(frozen),
+                    background_sensitivity[0],
+                    torch.zeros_like(background_sensitivity[0]),
+                )
+                neural_prior_runner.validate_adjoint_direction(
+                    frozen.input_frames_dbz,
+                    prior_cotangent,
+                )
                 prior_input_sensitivity = neural_prior_runner.vjp(
                     frozen.input_frames_dbz,
-                    torch.where(
-                        _neural_prior_derivative_mask(frozen),
-                        background_sensitivity[0],
-                        torch.zeros_like(background_sensitivity[0]),
-                    ),
+                    prior_cotangent,
                 )
             dynamics_sensitivity = (
                 _frozen_baseline_dynamics_observation_sensitivity(

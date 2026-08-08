@@ -2,15 +2,20 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from datetime import datetime, timezone
-import hashlib
-import hmac
+import io
 import math
 from typing import Literal
 
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+    Ed25519PrivateKey,
+    Ed25519PublicKey,
+)
 import torch
 from torch import Tensor
+from torch import nn
 
 from ._digest import json_digest, tensor_digest
 from .sensitivity import (
@@ -671,24 +676,187 @@ def validate_retrospective_counterfactual_replay(
         raise ValueError("retrospective replay digest mismatch")
 
 
+_ACTION_APPLICATION_CONTRACT = "radar-additive-dbz-action-v1"
+_ACTION_APPLICATION_CONTRACT_DIGEST = json_digest(
+    {"contract": _ACTION_APPLICATION_CONTRACT}
+)
+
+
+@dataclass(frozen=True, init=False)
+class InterventionActionGenerator:
+    """Deterministic exported graph that generates a delta for current frames."""
+
+    _artifact: bytes
+    _shape: tuple[int, ...]
+    _dtype: torch.dtype
+    generator_digest: str
+
+    def __init__(self) -> None:
+        raise TypeError("use InterventionActionGenerator.from_model")
+
+    @classmethod
+    def from_model(
+        cls,
+        model: nn.Module,
+        example_frames: Tensor,
+    ) -> InterventionActionGenerator:
+        if not isinstance(model, nn.Module) or model.training:
+            raise ValueError("action generator must be an eval-mode nn.Module")
+        if not example_frames.is_floating_point():
+            raise TypeError("action generator example must be floating Tensor data")
+        canonical_frames = torch.zeros_like(example_frames)
+        program = torch.export.export(model, (canonical_frames,))
+        stream = io.BytesIO()
+        torch.export.save(program, stream)
+        result = object.__new__(cls)
+        artifact = stream.getvalue()
+        shape = tuple(example_frames.shape)
+        dtype = example_frames.dtype
+        object.__setattr__(result, "_artifact", artifact)
+        object.__setattr__(result, "_shape", shape)
+        object.__setattr__(result, "_dtype", dtype)
+        object.__setattr__(result, "generator_digest", json_digest(
+            {
+                "contract": "exported-intervention-action-generator-v1",
+                "artifact": artifact.hex(),
+                "shape": list(shape),
+                "dtype": str(dtype),
+            }
+        ))
+        # Construction validates the exported graph even when the canonical
+        # zero input is outside the policy's live applicability region.
+        result._run(canonical_frames, require_applicable=False)
+        return result
+
+    def generate(self, frames: Tensor) -> Tensor:
+        return self._run(frames, require_applicable=True)
+
+    def _run(self, frames: Tensor, *, require_applicable: bool) -> Tensor:
+        if tuple(frames.shape) != self._shape or frames.dtype != self._dtype:
+            raise ValueError("action generator input contract changed")
+        program = torch.export.load(io.BytesIO(self._artifact))
+        module = program.module()
+        first = module(frames)
+        second = module(frames)
+        if (
+            not isinstance(first, tuple)
+            or len(first) != 2
+            or not isinstance(second, tuple)
+            or len(second) != 2
+        ):
+            raise ValueError("action generator must return delta and applicability")
+        delta, applicable = first
+        second_delta, second_applicable = second
+        if (
+            not isinstance(delta, Tensor)
+            or delta.shape != frames.shape
+            or not delta.is_floating_point()
+            or not bool(torch.all(torch.isfinite(delta)))
+            or not isinstance(applicable, Tensor)
+            or applicable.numel() != 1
+            or applicable.dtype is not torch.bool
+            or not isinstance(second_delta, Tensor)
+            or not isinstance(second_applicable, Tensor)
+            or not torch.equal(delta, second_delta)
+            or not torch.equal(applicable, second_applicable)
+        ):
+            raise ValueError("action generator output is invalid or nondeterministic")
+        if require_applicable and not bool(applicable.item()):
+            raise ValueError("current input is outside the action policy applicability")
+        return delta.detach().clone()
+
+
 @dataclass(frozen=True)
+class ReusableInterventionPolicyEvidence:
+    """Root-approved generator contract reusable across live input bundles."""
+
+    policy_id: str
+    action_generator_digest: str
+    context_schema_digest: str
+    applicability_region_digest: str
+    execution_policy_digest: str
+    allowed_intervention_types: tuple[ObservationInterventionType, ...]
+    maximum_absolute_delta_dbz: float
+    validation_evidence_digests: tuple[str, ...]
+    contract: str = "reusable-intervention-policy-evidence-v1"
+    policy_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if not self.policy_id or self.policy_id.strip() != self.policy_id:
+            raise ValueError("reusable intervention policy ID must be canonical")
+        for name in (
+            "action_generator_digest",
+            "context_schema_digest",
+            "applicability_region_digest",
+            "execution_policy_digest",
+        ):
+            _require_digest(name, getattr(self, name))
+        if not self.validation_evidence_digests:
+            raise ValueError("reusable intervention policy requires validation")
+        for digest in self.validation_evidence_digests:
+            _require_digest("validation evidence digest", digest)
+        if not self.allowed_intervention_types or len(
+            set(self.allowed_intervention_types)
+        ) != len(self.allowed_intervention_types):
+            raise ValueError("reusable intervention types must be unique")
+        if not math.isfinite(self.maximum_absolute_delta_dbz) or (
+            self.maximum_absolute_delta_dbz <= 0.0
+        ):
+            raise ValueError("reusable intervention delta limit must be positive")
+        object.__setattr__(
+            self,
+            "policy_digest",
+            json_digest(
+                {
+                    key: value
+                    for key, value in self.__dict__.items()
+                    if key != "policy_digest"
+                }
+            ),
+        )
+
+    def validate_integrity(self) -> None:
+        expected = json_digest(
+            {
+                key: value
+                for key, value in self.__dict__.items()
+                if key != "policy_digest"
+            }
+        )
+        if self.policy_digest != expected:
+            raise ValueError("reusable intervention policy digest mismatch")
+
+
+@dataclass(frozen=True, init=False)
 class ProspectiveInterventionDecision:
-    """An action committed before the issue and before future verification."""
+    """A current-input action committed before its publication deadline."""
 
     decision_id: str
     case_id: str
     radar_id: str
     intervention_type: ObservationInterventionType
+    action_policy_digest: str
+    action_generator_digest: str
+    action_context_digest: str
+    action_payload_digest: str
+    action_application_contract_digest: str
     action_digest: str
     input_plan_digest: str
-    actual_input_before_digest: str
+    actual_input_before_frames_digest: str
+    actual_input_before_bundle_digest: str
     decision_basis_digest: str
     decision_policy_digest: str
     decision_trust_store_digest: str
     decided_at: str
-    issue_time: str
-    contract: str = "prospective-intervention-decision-v1"
+    observation_valid_time: str
+    input_available_time: str
+    decision_deadline: str
+    publication_time: str
+    contract: str = "prospective-intervention-decision-v2"
     decision_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("use ProspectiveInterventionDecision.from_policy")
 
     def __post_init__(self) -> None:
         for name in ("decision_id", "case_id", "radar_id"):
@@ -702,20 +870,50 @@ class ProspectiveInterventionDecision:
         ):
             raise ValueError("unsupported prospective intervention type")
         for name in (
+            "action_policy_digest",
+            "action_generator_digest",
+            "action_context_digest",
+            "action_payload_digest",
+            "action_application_contract_digest",
             "action_digest",
             "input_plan_digest",
-            "actual_input_before_digest",
+            "actual_input_before_frames_digest",
+            "actual_input_before_bundle_digest",
             "decision_basis_digest",
             "decision_policy_digest",
             "decision_trust_store_digest",
         ):
             _require_digest(name, getattr(self, name))
         decided = _canonical_time(self.decided_at)
-        issue = _canonical_time(self.issue_time)
-        if decided > issue:
-            raise ValueError("prospective decision must precede its issue")
+        valid = _canonical_time(self.observation_valid_time)
+        available = _canonical_time(self.input_available_time)
+        deadline = _canonical_time(self.decision_deadline)
+        publication = _canonical_time(self.publication_time)
+        if not valid <= available <= decided <= deadline < publication:
+            raise ValueError("prospective decision time order is invalid")
+        if self.action_application_contract_digest != (
+            _ACTION_APPLICATION_CONTRACT_DIGEST
+        ):
+            raise ValueError("unsupported action application contract")
+        expected_action = json_digest(
+            {
+                "contract": "generated-radar-action-v1",
+                "action_policy_digest": self.action_policy_digest,
+                "action_generator_digest": self.action_generator_digest,
+                "action_context_digest": self.action_context_digest,
+                "action_payload_digest": self.action_payload_digest,
+                "action_application_contract_digest": (
+                    self.action_application_contract_digest
+                ),
+            }
+        )
+        if self.action_digest != expected_action:
+            raise ValueError("prospective action was not generated by its policy")
         object.__setattr__(self, "decided_at", decided)
-        object.__setattr__(self, "issue_time", issue)
+        object.__setattr__(self, "observation_valid_time", valid)
+        object.__setattr__(self, "input_available_time", available)
+        object.__setattr__(self, "decision_deadline", deadline)
+        object.__setattr__(self, "publication_time", publication)
         object.__setattr__(
             self,
             "decision_digest",
@@ -728,10 +926,104 @@ class ProspectiveInterventionDecision:
             ),
         )
 
+    @classmethod
+    def from_policy(
+        cls,
+        policy: ReusableInterventionPolicyEvidence,
+        *,
+        action_generator: InterventionActionGenerator,
+        decision_id: str,
+        case_id: str,
+        radar_id: str,
+        intervention_type: ObservationInterventionType,
+        actual_input_before_frames: Tensor,
+        actual_input_before_run: ForecastRunContract,
+        input_plan_digest: str,
+        decision_basis_digest: str,
+        decision_policy_digest: str,
+        decision_trust_store_digest: str,
+        decided_at: str,
+        observation_valid_time: str,
+        input_available_time: str,
+        decision_deadline: str,
+        publication_time: str,
+    ) -> ProspectiveInterventionDecision:
+        """Generate and bind one bounded action to the current input context."""
 
-@dataclass(frozen=True)
+        policy.validate_integrity()
+        actual_input_before_run.validate_integrity()
+        if tensor_digest(actual_input_before_frames) != (
+            actual_input_before_run.input_frames_digest
+        ):
+            raise ValueError("decision frames disagree with the current input run")
+        if actual_input_before_run.input_plan_digest != input_plan_digest:
+            raise ValueError("decision input plan disagrees with the current run")
+        if intervention_type not in policy.allowed_intervention_types:
+            raise ValueError("intervention type is outside the reusable policy")
+        if action_generator.generator_digest != policy.action_generator_digest:
+            raise ValueError("action generator is outside the reusable policy")
+        action_delta_dbz = action_generator.generate(actual_input_before_frames)
+        if float(torch.amax(torch.abs(action_delta_dbz)).detach()) > (
+            policy.maximum_absolute_delta_dbz
+        ):
+            raise ValueError("generated action exceeds its reusable policy")
+        context_digest = json_digest(
+            {
+                "contract": "intervention-action-context-v1",
+                "case_id": case_id,
+                "radar_id": radar_id,
+                "input_plan_digest": input_plan_digest,
+                "input_bundle_digest": actual_input_before_run.input_bundle_digest,
+                "input_frames_digest": tensor_digest(actual_input_before_frames),
+                "context_schema_digest": policy.context_schema_digest,
+                "applicability_region_digest": policy.applicability_region_digest,
+            }
+        )
+        payload_digest = tensor_digest(action_delta_dbz)
+        action_digest = json_digest(
+            {
+                "contract": "generated-radar-action-v1",
+                "action_policy_digest": policy.policy_digest,
+                "action_generator_digest": policy.action_generator_digest,
+                "action_context_digest": context_digest,
+                "action_payload_digest": payload_digest,
+                "action_application_contract_digest": (
+                    _ACTION_APPLICATION_CONTRACT_DIGEST
+                ),
+            }
+        )
+        return _new_prospective_decision(
+            decision_id=decision_id,
+            case_id=case_id,
+            radar_id=radar_id,
+            intervention_type=intervention_type,
+            action_policy_digest=policy.policy_digest,
+            action_generator_digest=policy.action_generator_digest,
+            action_context_digest=context_digest,
+            action_payload_digest=payload_digest,
+            action_application_contract_digest=_ACTION_APPLICATION_CONTRACT_DIGEST,
+            action_digest=action_digest,
+            input_plan_digest=input_plan_digest,
+            actual_input_before_frames_digest=tensor_digest(
+                actual_input_before_frames
+            ),
+            actual_input_before_bundle_digest=(
+                actual_input_before_run.input_bundle_digest
+            ),
+            decision_basis_digest=decision_basis_digest,
+            decision_policy_digest=decision_policy_digest,
+            decision_trust_store_digest=decision_trust_store_digest,
+            decided_at=decided_at,
+            observation_valid_time=observation_valid_time,
+            input_available_time=input_available_time,
+            decision_deadline=decision_deadline,
+            publication_time=publication_time,
+        )
+
+
+@dataclass(frozen=True, init=False)
 class RealizedInterventionReceipt:
-    """Executor receipt recorded before issue for one prospective decision."""
+    """Executor-signed proof of one exact before/action/after transition."""
 
     decision_digest: str
     decision_id: str
@@ -740,17 +1032,26 @@ class RealizedInterventionReceipt:
     intervention_type: ObservationInterventionType
     action_digest: str
     input_plan_digest: str
-    actual_input_before_digest: str
-    actual_input_after_digest: str
+    actual_input_before_frames_digest: str
+    actual_input_after_frames_digest: str
+    actual_input_before_bundle_digest: str
     actual_input_bundle_digest: str
+    action_payload_digest: str
+    action_application_contract_digest: str
     executor_key_id: str
     executor_trust_store_digest: str
     executor_signature: str
     applied_time: str
     receipt_time: str
-    issue_time: str
-    contract: str = "realized-intervention-receipt-v1"
+    observation_valid_time: str
+    input_available_time: str
+    publication_time: str
+    executor_sequence_number: int
+    contract: str = "realized-intervention-receipt-v2"
     receipt_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("use RealizedInterventionReceipt.from_decision")
 
     def __post_init__(self) -> None:
         for name in ("decision_id", "case_id", "radar_id"):
@@ -761,28 +1062,44 @@ class RealizedInterventionReceipt:
             "decision_digest",
             "action_digest",
             "input_plan_digest",
-            "actual_input_before_digest",
-            "actual_input_after_digest",
+            "actual_input_before_frames_digest",
+            "actual_input_after_frames_digest",
+            "actual_input_before_bundle_digest",
             "actual_input_bundle_digest",
+            "action_payload_digest",
+            "action_application_contract_digest",
             "executor_trust_store_digest",
         ):
             _require_digest(name, getattr(self, name))
         if not self.executor_key_id or self.executor_key_id.strip() != self.executor_key_id:
             raise ValueError("executor key ID must be canonical")
-        if len(self.executor_signature) != 64 or any(
+        if len(self.executor_signature) != 128 or any(
             value not in "0123456789abcdef" for value in self.executor_signature
         ):
-            raise ValueError("executor signature must be lowercase SHA-256 HMAC")
-        if self.actual_input_before_digest == self.actual_input_after_digest:
+            raise ValueError("executor signature must be lowercase Ed25519")
+        if (
+            self.actual_input_before_frames_digest
+            == self.actual_input_after_frames_digest
+        ):
             raise ValueError("realized intervention receipt must change input")
+        if self.actual_input_before_bundle_digest == self.actual_input_bundle_digest:
+            raise ValueError("realized intervention receipt must change its bundle")
+        if type(self.executor_sequence_number) is not int or (
+            self.executor_sequence_number < 0
+        ):
+            raise ValueError("executor sequence number must be nonnegative")
         applied = _canonical_time(self.applied_time)
         received = _canonical_time(self.receipt_time)
-        issue = _canonical_time(self.issue_time)
-        if applied > received or received > issue:
-            raise ValueError("receipt must be recorded after action and before issue")
+        valid = _canonical_time(self.observation_valid_time)
+        available = _canonical_time(self.input_available_time)
+        publication = _canonical_time(self.publication_time)
+        if not valid <= available <= applied <= received < publication:
+            raise ValueError("receipt time order is invalid")
         object.__setattr__(self, "applied_time", applied)
         object.__setattr__(self, "receipt_time", received)
-        object.__setattr__(self, "issue_time", issue)
+        object.__setattr__(self, "observation_valid_time", valid)
+        object.__setattr__(self, "input_available_time", available)
+        object.__setattr__(self, "publication_time", publication)
         object.__setattr__(
             self,
             "receipt_digest",
@@ -800,27 +1117,29 @@ class RealizedInterventionReceipt:
         cls,
         decision: ProspectiveInterventionDecision,
         *,
+        actual_input_before_frames: Tensor,
+        actual_input_before_run: ForecastRunContract,
         actual_input_after_frames: Tensor,
         actual_input_after_run: ForecastRunContract,
+        action_generator: InterventionActionGenerator,
         executor_key_id: str,
         executor_trust_store_digest: str,
-        executor_secret: bytes,
+        executor_private_key: Ed25519PrivateKey,
+        executor_sequence_number: int,
         applied_time: str,
         receipt_time: str,
     ) -> RealizedInterventionReceipt:
-        if decision.decision_digest != json_digest(
-            {
-                key: value
-                for key, value in decision.__dict__.items()
-                if key != "decision_digest"
-            }
-        ):
-            raise ValueError("prospective decision digest mismatch")
-        actual_input_after_run.validate_integrity()
-        frames_digest = tensor_digest(actual_input_after_frames)
-        if frames_digest != actual_input_after_run.input_frames_digest:
-            raise ValueError("receipt frames disagree with the actual input run")
-        values = dict(
+        before_digest, frames_digest = validate_intervention_action_transition(
+            decision,
+            action_generator=action_generator,
+            actual_input_before_frames=actual_input_before_frames,
+            actual_input_before_run=actual_input_before_run,
+            actual_input_after_frames=actual_input_after_frames,
+            actual_input_after_run=actual_input_after_run,
+        )
+        applied = _canonical_time(applied_time)
+        received = _canonical_time(receipt_time)
+        values: dict[str, str | int] = dict(
             decision_digest=decision.decision_digest,
             decision_id=decision.decision_id,
             case_id=decision.case_id,
@@ -828,23 +1147,31 @@ class RealizedInterventionReceipt:
             intervention_type=decision.intervention_type,
             action_digest=decision.action_digest,
             input_plan_digest=decision.input_plan_digest,
-            actual_input_before_digest=decision.actual_input_before_digest,
-            actual_input_after_digest=frames_digest,
+            actual_input_before_frames_digest=before_digest,
+            actual_input_after_frames_digest=frames_digest,
+            actual_input_before_bundle_digest=(
+                actual_input_before_run.input_bundle_digest
+            ),
             actual_input_bundle_digest=actual_input_after_run.input_bundle_digest,
+            action_payload_digest=decision.action_payload_digest,
+            action_application_contract_digest=(
+                decision.action_application_contract_digest
+            ),
             executor_key_id=executor_key_id,
             executor_trust_store_digest=executor_trust_store_digest,
             executor_signature="",
-            applied_time=_canonical_time(applied_time),
-            receipt_time=_canonical_time(receipt_time),
-            issue_time=_canonical_time(decision.issue_time),
-            contract="realized-intervention-receipt-v1",
+            applied_time=applied,
+            receipt_time=received,
+            observation_valid_time=decision.observation_valid_time,
+            input_available_time=decision.input_available_time,
+            publication_time=decision.publication_time,
+            executor_sequence_number=executor_sequence_number,
+            contract="realized-intervention-receipt-v2",
         )
-        signature = hmac.new(
-            executor_secret,
-            json_digest(values).encode("ascii"),
-            hashlib.sha256,
-        ).hexdigest()
-        return cls(
+        signature = executor_private_key.sign(
+            json_digest(values).encode("ascii")
+        ).hex()
+        return _new_realized_intervention_receipt(
             decision_digest=decision.decision_digest,
             decision_id=decision.decision_id,
             case_id=decision.case_id,
@@ -852,21 +1179,135 @@ class RealizedInterventionReceipt:
             intervention_type=decision.intervention_type,
             action_digest=decision.action_digest,
             input_plan_digest=decision.input_plan_digest,
-            actual_input_before_digest=decision.actual_input_before_digest,
-            actual_input_after_digest=frames_digest,
+            actual_input_before_frames_digest=before_digest,
+            actual_input_after_frames_digest=frames_digest,
+            actual_input_before_bundle_digest=(
+                actual_input_before_run.input_bundle_digest
+            ),
             actual_input_bundle_digest=actual_input_after_run.input_bundle_digest,
+            action_payload_digest=decision.action_payload_digest,
+            action_application_contract_digest=(
+                decision.action_application_contract_digest
+            ),
             executor_key_id=executor_key_id,
             executor_trust_store_digest=executor_trust_store_digest,
             executor_signature=signature,
-            applied_time=_canonical_time(applied_time),
-            receipt_time=_canonical_time(receipt_time),
-            issue_time=_canonical_time(decision.issue_time),
+            applied_time=applied,
+            receipt_time=received,
+            observation_valid_time=decision.observation_valid_time,
+            input_available_time=decision.input_available_time,
+            publication_time=decision.publication_time,
+            executor_sequence_number=executor_sequence_number,
         )
+
+
+def _new_prospective_decision(
+    **values: object,
+) -> ProspectiveInterventionDecision:
+    values.setdefault("contract", "prospective-intervention-decision-v2")
+    expected = {
+        item.name
+        for item in fields(ProspectiveInterventionDecision)
+        if item.name != "decision_digest"
+    }
+    if set(values) != expected:
+        raise ValueError("prospective decision fields are incomplete")
+    result = object.__new__(ProspectiveInterventionDecision)
+    for name, value in values.items():
+        object.__setattr__(result, name, value)
+    ProspectiveInterventionDecision.__post_init__(result)
+    return result
+
+
+def validate_intervention_action_transition(
+    decision: ProspectiveInterventionDecision,
+    *,
+    action_generator: InterventionActionGenerator,
+    actual_input_before_frames: Tensor,
+    actual_input_before_run: ForecastRunContract,
+    actual_input_after_frames: Tensor,
+    actual_input_after_run: ForecastRunContract,
+) -> tuple[str, str]:
+    """Recompute the exact before/action/after transition without a private key."""
+
+    expected_decision = json_digest(
+        {
+            key: value
+            for key, value in decision.__dict__.items()
+            if key != "decision_digest"
+        }
+    )
+    if decision.decision_digest != expected_decision:
+        raise ValueError("prospective decision digest mismatch")
+    actual_input_before_run.validate_integrity()
+    actual_input_after_run.validate_integrity()
+    before_digest = tensor_digest(actual_input_before_frames)
+    after_digest = tensor_digest(actual_input_after_frames)
+    if (
+        before_digest != decision.actual_input_before_frames_digest
+        or before_digest != actual_input_before_run.input_frames_digest
+        or actual_input_before_run.input_bundle_digest
+        != decision.actual_input_before_bundle_digest
+    ):
+        raise ValueError("receipt before-input disagrees with its decision")
+    if after_digest != actual_input_after_run.input_frames_digest:
+        raise ValueError("receipt frames disagree with the actual input run")
+    if (
+        actual_input_before_run.input_plan_digest != decision.input_plan_digest
+        or actual_input_after_run.input_plan_digest != decision.input_plan_digest
+    ):
+        raise ValueError("receipt runs disagree with the decision input plan")
+    unchanged_run_fields = (
+        "latest_observation_mask_digest",
+        "latest_background_digest",
+        "background_age_minutes",
+        "grid_time_contract_digest",
+        "operational_data_identity_digest",
+    )
+    if (
+        actual_input_before_run.config.digest
+        != actual_input_after_run.config.digest
+        or any(
+            getattr(actual_input_before_run, name)
+            != getattr(actual_input_after_run, name)
+            for name in unchanged_run_fields
+        )
+    ):
+        raise ValueError("receipt changed non-radar input state")
+    if action_generator.generator_digest != decision.action_generator_digest:
+        raise ValueError("receipt action generator disagrees with its decision")
+    action_delta_dbz = action_generator.generate(actual_input_before_frames)
+    if tensor_digest(action_delta_dbz) != decision.action_payload_digest:
+        raise ValueError("receipt action payload disagrees with its decision")
+    expected_after = actual_input_before_frames + action_delta_dbz.to(
+        actual_input_before_frames
+    )
+    if not torch.equal(expected_after, actual_input_after_frames):
+        raise ValueError("receipt after-input is not the approved action result")
+    return before_digest, after_digest
+
+
+def _new_realized_intervention_receipt(
+    **values: object,
+) -> RealizedInterventionReceipt:
+    values.setdefault("contract", "realized-intervention-receipt-v2")
+    expected = {
+        item.name
+        for item in fields(RealizedInterventionReceipt)
+        if item.name != "receipt_digest"
+    }
+    if set(values) != expected:
+        raise ValueError("realized receipt fields are incomplete")
+    result = object.__new__(RealizedInterventionReceipt)
+    for name, value in values.items():
+        object.__setattr__(result, name, value)
+    RealizedInterventionReceipt.__post_init__(result)
+    return result
 
 
 def verify_intervention_receipt_signature(
     receipt: RealizedInterventionReceipt,
-    executor_secret: bytes,
+    executor_public_key: Ed25519PublicKey,
 ) -> None:
     values = {
         key: value
@@ -874,12 +1315,12 @@ def verify_intervention_receipt_signature(
         if key not in ("receipt_digest", "executor_signature")
     }
     values["executor_signature"] = ""
-    expected = hmac.new(
-        executor_secret,
-        json_digest(values).encode("ascii"),
-        hashlib.sha256,
-    ).hexdigest()
-    if not hmac.compare_digest(receipt.executor_signature, expected):
+    try:
+        executor_public_key.verify(
+            bytes.fromhex(receipt.executor_signature),
+            json_digest(values).encode("ascii"),
+        )
+    except InvalidSignature as error:
         raise ValueError("realized receipt executor signature mismatch")
 
 
@@ -912,9 +1353,23 @@ def validate_prospective_intervention(
         (receipt.radar_id, decision.radar_id),
         (receipt.intervention_type, decision.intervention_type),
         (receipt.action_digest, decision.action_digest),
+        (receipt.action_payload_digest, decision.action_payload_digest),
+        (
+            receipt.action_application_contract_digest,
+            decision.action_application_contract_digest,
+        ),
         (receipt.input_plan_digest, decision.input_plan_digest),
-        (receipt.actual_input_before_digest, decision.actual_input_before_digest),
-        (receipt.issue_time, decision.issue_time),
+        (
+            receipt.actual_input_before_frames_digest,
+            decision.actual_input_before_frames_digest,
+        ),
+        (
+            receipt.actual_input_before_bundle_digest,
+            decision.actual_input_before_bundle_digest,
+        ),
+        (receipt.observation_valid_time, decision.observation_valid_time),
+        (receipt.input_available_time, decision.input_available_time),
+        (receipt.publication_time, decision.publication_time),
     )
     if any(actual != expected for actual, expected in pairs):
         raise ValueError("realized receipt disagrees with its decision")

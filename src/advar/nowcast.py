@@ -1678,6 +1678,7 @@ def _validate_input_plan_lineage(
         raise ValueError("invalid input plan JSON") from error
     if not isinstance(payload, dict) or payload.get("contract") not in (
         "neural-prior-input-plan-v1",
+        "neural-prior-input-plan-v2",
         "legacy-opaque-input-plan-v1",
     ):
         raise ValueError("unsupported input plan payload")
@@ -1717,10 +1718,15 @@ def _validate_input_plan_resolution(
     )
     if any(value is None or payload[name] != value for name, value in expected):
         raise ValueError("input plan disagrees with operational data identity")
+    valid_time = (
+        payload["observation_valid_time"]
+        if payload["contract"] == "neural-prior-input-plan-v2"
+        else payload["issue_time"]
+    )
     if (
         payload["grid_contract_digest"] != grid_time_contract.digest
         or tuple(payload["valid_times"]) != grid_time_contract.valid_times
-        or payload["issue_time"] != grid_time_contract.valid_times[-1]
+        or valid_time != grid_time_contract.valid_times[-1]
     ):
         raise ValueError("input plan disagrees with the run grid or times")
 

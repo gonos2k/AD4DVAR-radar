@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from copy import copy
 from dataclasses import asdict, fields, replace
 from datetime import datetime, timedelta, timezone
 import hashlib
@@ -14,19 +15,22 @@ from unittest.mock import patch
 
 import numpy as np
 import torch
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 import advar.ledger as ledger_module
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from advar._digest import tensor_digest  # noqa: E402
+from advar._digest import json_digest, tensor_digest  # noqa: E402
 from advar.ledger import (  # noqa: E402
     EpisodeLedger,
     ModelContract,
     SensitivityEpisode,
 )
 from advar.intervention import (  # noqa: E402
+    InterventionActionGenerator,
     ProspectiveInterventionDecision,
+    ReusableInterventionPolicyEvidence,
     RealizedInterventionReceipt,
     RealizedObservationIntervention,
     RetrospectiveCounterfactualReplay,
@@ -42,7 +46,6 @@ from advar.promotion import (  # noqa: E402
     NeuralPriorInputPlan,
     NeuralPriorPromotionPolicy,
     PromotionMetricScale,
-    RealizedInterventionEvaluation,
     compute_neural_prior_promotion,
 )
 import advar.promotion as promotion_module  # noqa: E402
@@ -272,6 +275,24 @@ class ModelContractTests(unittest.TestCase):
             )
 
 
+class _AddOneAction(torch.nn.Module):
+    def forward(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        return torch.ones_like(frames), torch.tensor(True, device=frames.device)
+
+
+class _AddTwoAction(torch.nn.Module):
+    def forward(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        return (
+            torch.ones_like(frames) * 2.0,
+            torch.tensor(True, device=frames.device),
+        )
+
+
+class _NonpositiveOnlyAction(torch.nn.Module):
+    def forward(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        return torch.ones_like(frames), torch.mean(frames) <= 0.0
+
+
 class EpisodeLedgerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -283,23 +304,23 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.root = Path(self.temporary_directory.name)
         self.ledger = EpisodeLedger(self.root)
 
-    def test_executor_secret_store_must_not_be_world_readable(self) -> None:
+    def test_executor_public_key_store_must_not_be_world_writable(self) -> None:
         path = self.root / "executor.json"
         path.write_text(
             json.dumps(
                 {
-                    "contract": "advar-executor-trust-store-v1",
-                    "keys": {"executor": (b"x" * 32).hex()},
+                    "contract": "advar-executor-trust-store-v2",
+                    "public_keys": {"executor": (b"x" * 32).hex()},
                 }
             ),
             encoding="utf-8",
         )
         metadata = SimpleNamespace(
-            st_mode=stat.S_IFREG | 0o444,
+            st_mode=stat.S_IFREG | 0o666,
             st_uid=0,
         )
         with patch("advar.ledger.os.fstat", return_value=metadata):
-            with self.assertRaisesRegex(ValueError, "root-owned and private"):
+            with self.assertRaisesRegex(ValueError, "root-owned and non-writable"):
                 ledger_module._load_executor_trust_store(path)
 
     def test_holdout_plan_rechecks_clock_before_commit(self) -> None:
@@ -311,7 +332,10 @@ class EpisodeLedgerTests(unittest.TestCase):
             qc_pipeline_digest="3" * 64,
             background_cycle_rule_digest="4" * 64,
             mask_policy_digest="5" * 64,
-            issue_time=issue,
+            observation_valid_time=issue,
+            input_available_time=issue,
+            decision_deadline="2030-01-01T00:02:00Z",
+            publication_time="2030-01-01T00:05:00Z",
         )
         plan = NeuralPriorHoldoutPlan(
             plan_id="clock-plan",
@@ -505,7 +529,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 11)
+        self.assertEqual(version, 12)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -645,104 +669,312 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(receipt_count, 0)
 
     def test_prospective_decision_and_executor_receipt_round_trip(self) -> None:
-        decision = ProspectiveInterventionDecision(
+        before = torch.zeros((3, 2, 2), dtype=torch.float64)
+        delta = torch.ones_like(before)
+        after = before + delta
+        plan_digest = "b" * 64
+        plan_json = json.dumps(
+            {
+                "contract": "legacy-opaque-input-plan-v1",
+                "legacy_digest": plan_digest,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        before_run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            before,
+            torch.ones_like(before, dtype=torch.bool),
+            None,
+            input_plan_json=plan_json,
+            input_plan_digest=plan_digest,
+        )
+        after_run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            after,
+            torch.ones_like(after, dtype=torch.bool),
+            None,
+            input_plan_json=plan_json,
+            input_plan_digest=plan_digest,
+        )
+        action_generator = InterventionActionGenerator.from_model(
+            _AddOneAction().eval(),
+            before,
+        )
+        action_policy = ReusableInterventionPolicyEvidence(
+            policy_id="policy-1",
+            action_generator_digest=action_generator.generator_digest,
+            context_schema_digest="2" * 64,
+            applicability_region_digest="3" * 64,
+            execution_policy_digest="e" * 64,
+            allowed_intervention_types=("realized_qc_intervention",),
+            maximum_absolute_delta_dbz=2.0,
+            validation_evidence_digests=("d" * 64,),
+        )
+        contextual_generator = InterventionActionGenerator.from_model(
+            _NonpositiveOnlyAction().eval(),
+            before,
+        )
+        contextual_policy = replace(
+            action_policy,
+            action_generator_digest=contextual_generator.generator_digest,
+        )
+        positive = torch.ones_like(before)
+        positive_run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            positive,
+            torch.ones_like(positive, dtype=torch.bool),
+            None,
+            input_plan_json=plan_json,
+            input_plan_digest=plan_digest,
+        )
+        with self.assertRaisesRegex(ValueError, "outside the action policy"):
+            ProspectiveInterventionDecision.from_policy(
+                contextual_policy,
+                action_generator=contextual_generator,
+                decision_id="inapplicable-context",
+                case_id="case-1",
+                radar_id="radar-1",
+                intervention_type="realized_qc_intervention",
+                actual_input_before_frames=positive,
+                actual_input_before_run=positive_run,
+                input_plan_digest=plan_digest,
+                decision_basis_digest="d" * 64,
+                decision_policy_digest="e" * 64,
+                decision_trust_store_digest="f" * 64,
+                decided_at="2026-08-08T00:02:00Z",
+                observation_valid_time="2026-08-08T00:00:00Z",
+                input_available_time="2026-08-08T00:01:00Z",
+                decision_deadline="2099-08-08T00:30:00Z",
+                publication_time="2099-08-08T01:00:00Z",
+            )
+        with self.assertRaisesRegex(ValueError, "outside the reusable policy"):
+            ProspectiveInterventionDecision.from_policy(
+                action_policy,
+                action_generator=InterventionActionGenerator.from_model(
+                    _AddTwoAction().eval(), before
+                ),
+                decision_id="wrong-generator",
+                case_id="case-1",
+                radar_id="radar-1",
+                intervention_type="realized_qc_intervention",
+                actual_input_before_frames=before,
+                actual_input_before_run=before_run,
+                input_plan_digest=plan_digest,
+                decision_basis_digest="d" * 64,
+                decision_policy_digest="e" * 64,
+                decision_trust_store_digest="f" * 64,
+                decided_at="2026-08-08T00:02:00Z",
+                observation_valid_time="2026-08-08T00:00:00Z",
+                input_available_time="2026-08-08T00:01:00Z",
+                decision_deadline="2099-08-08T00:30:00Z",
+                publication_time="2099-08-08T01:00:00Z",
+            )
+        decision = ProspectiveInterventionDecision.from_policy(
+            action_policy,
+            action_generator=action_generator,
             decision_id="decision-1",
             case_id="case-1",
             radar_id="radar-1",
             intervention_type="realized_qc_intervention",
-            action_digest="a" * 64,
-            input_plan_digest="b" * 64,
-            actual_input_before_digest="c" * 64,
+            actual_input_before_frames=before,
+            actual_input_before_run=before_run,
+            input_plan_digest=plan_digest,
             decision_basis_digest="d" * 64,
             decision_policy_digest="e" * 64,
             decision_trust_store_digest="f" * 64,
-            decided_at="2026-08-08T00:00:00Z",
-            issue_time="2099-08-08T01:00:00Z",
+            decided_at="2026-08-08T00:02:00Z",
+            observation_valid_time="2026-08-08T00:00:00Z",
+            input_available_time="2026-08-08T00:01:00Z",
+            decision_deadline="2099-08-08T00:30:00Z",
+            publication_time="2099-08-08T01:00:00Z",
         )
-        frames = torch.ones((3, 2, 2), dtype=torch.float64)
-        actual_run = ForecastRunContract.from_inputs(
-            NowcastConfig(),
-            frames,
-            torch.ones_like(frames, dtype=torch.bool),
-            None,
-        )
-        executor_secret = b"x" * 32
+        executor_private = Ed25519PrivateKey.generate()
+        executor_public = executor_private.public_key()
         trust = SimpleNamespace(
             content_digest="f" * 64,
-            approved_policy_digests=frozenset(("e" * 64,)),
+            approved_policy_digests=frozenset(
+                ("e" * 64, action_policy.policy_digest)
+            ),
         )
         executor_trust = SimpleNamespace(
-            keys={"executor-1": executor_secret},
+            keys={"executor-1": executor_public},
             content_digest="0" * 64,
         )
-        with sqlite3.connect(self.ledger.index_path) as connection:
-            connection.execute(
-                "INSERT INTO variational_learning_approvals "
-                "(learning_result_digest, approval_evidence_digest, "
-                "evidence_contract, policy_digest, trust_store_digest, "
-                "fsoi_digest, full_step_analysis_digest, "
-                "half_step_analysis_digest, full_step_forecast_digest, "
-                "half_step_forecast_digest, first_order_validation_digest, "
-                "learning_impact_digest, approved_action_digest, "
-                "nominal_input_bundle_digest, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                tuple("d" * 64 if index == 0 else str(index) * 64 for index in range(12))
-                + ("a" * 64, "c" * 64)
-                + (datetime.now(timezone.utc).isoformat(),),
-            )
         with patch(
             "advar.ledger._load_learning_policy_trust_store", return_value=trust
         ), patch(
             "advar.ledger._load_executor_trust_store", return_value=executor_trust
         ):
-            with self.assertRaisesRegex(ValueError, "disagrees with its approval"):
+            forged = copy(decision)
+            object.__setattr__(forged, "action_payload_digest", "9" * 64)
+            object.__setattr__(
+                forged,
+                "action_digest",
+                json_digest(
+                    {
+                        "contract": "generated-radar-action-v1",
+                        "action_policy_digest": forged.action_policy_digest,
+                        "action_generator_digest": forged.action_generator_digest,
+                        "action_context_digest": forged.action_context_digest,
+                        "action_payload_digest": forged.action_payload_digest,
+                        "action_application_contract_digest": (
+                            forged.action_application_contract_digest
+                        ),
+                    }
+                ),
+            )
+            object.__setattr__(
+                forged,
+                "decision_digest",
+                json_digest(
+                    {
+                        key: value
+                        for key, value in forged.__dict__.items()
+                        if key != "decision_digest"
+                    }
+                ),
+            )
+            with self.assertRaisesRegex(ValueError, "policy output"):
                 self.ledger.append_prospective_intervention_decision(
-                    replace(
-                        decision,
-                        decision_id="decision-wrong-action",
-                        action_digest="9" * 64,
-                    ),
-                    trust_store_path="/etc/advar/policies.json",
-                )
-            with self.assertRaisesRegex(ValueError, "disagrees with its approval"):
-                self.ledger.append_prospective_intervention_decision(
-                    replace(
-                        decision,
-                        decision_id="decision-wrong-input",
-                        actual_input_before_digest="8" * 64,
-                    ),
+                    forged,
+                    action_policy=action_policy,
+                    action_generator=action_generator,
+                    actual_input_before_frames=before,
+                    actual_input_before_run=before_run,
                     trust_store_path="/etc/advar/policies.json",
                 )
             self.ledger.append_prospective_intervention_decision(
                 decision,
+                action_policy=action_policy,
+                action_generator=action_generator,
+                actual_input_before_frames=before,
+                actual_input_before_run=before_run,
                 trust_store_path="/etc/advar/policies.json",
             )
             applied = datetime.now(timezone.utc).isoformat()
             receipt = RealizedInterventionReceipt.from_decision(
                 decision,
-                actual_input_after_frames=frames,
-                actual_input_after_run=actual_run,
+                actual_input_before_frames=before,
+                actual_input_before_run=before_run,
+                actual_input_after_frames=after,
+                actual_input_after_run=after_run,
+                action_generator=action_generator,
                 executor_key_id="executor-1",
                 executor_trust_store_digest=executor_trust.content_digest,
-                executor_secret=executor_secret,
+                executor_private_key=executor_private,
+                executor_sequence_number=1,
                 applied_time=applied,
                 receipt_time=applied,
             )
+            with self.assertRaisesRegex(ValueError, "approved action result"):
+                RealizedInterventionReceipt.from_decision(
+                    decision,
+                    actual_input_before_frames=before,
+                    actual_input_before_run=before_run,
+                    actual_input_after_frames=before,
+                    actual_input_after_run=before_run,
+                    action_generator=action_generator,
+                    executor_key_id="executor-1",
+                    executor_trust_store_digest=executor_trust.content_digest,
+                    executor_private_key=executor_private,
+                    executor_sequence_number=2,
+                    applied_time=applied,
+                    receipt_time=applied,
+                )
+            other_plan = "9" * 64
+            other_plan_json = json.dumps(
+                {
+                    "contract": "legacy-opaque-input-plan-v1",
+                    "legacy_digest": other_plan,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            other_run = ForecastRunContract.from_inputs(
+                NowcastConfig(),
+                after,
+                torch.ones_like(after, dtype=torch.bool),
+                None,
+                input_plan_json=other_plan_json,
+                input_plan_digest=other_plan,
+            )
+            with self.assertRaisesRegex(ValueError, "input plan"):
+                RealizedInterventionReceipt.from_decision(
+                    decision,
+                    actual_input_before_frames=before,
+                    actual_input_before_run=before_run,
+                    actual_input_after_frames=after,
+                    actual_input_after_run=other_run,
+                    action_generator=action_generator,
+                    executor_key_id="executor-1",
+                    executor_trust_store_digest=executor_trust.content_digest,
+                    executor_private_key=executor_private,
+                    executor_sequence_number=2,
+                    applied_time=applied,
+                    receipt_time=applied,
+                )
+            changed_mask_run = ForecastRunContract.from_inputs(
+                NowcastConfig(),
+                after,
+                torch.zeros_like(after, dtype=torch.bool),
+                None,
+                input_plan_json=plan_json,
+                input_plan_digest=plan_digest,
+            )
+            with self.assertRaisesRegex(ValueError, "non-radar input state"):
+                RealizedInterventionReceipt.from_decision(
+                    decision,
+                    actual_input_before_frames=before,
+                    actual_input_before_run=before_run,
+                    actual_input_after_frames=after,
+                    actual_input_after_run=changed_mask_run,
+                    action_generator=action_generator,
+                    executor_key_id="executor-1",
+                    executor_trust_store_digest=executor_trust.content_digest,
+                    executor_private_key=executor_private,
+                    executor_sequence_number=2,
+                    applied_time=applied,
+                    receipt_time=applied,
+                )
             digest = self.ledger.append_realized_intervention_receipt(
                 decision,
                 receipt,
+                action_generator=action_generator,
+                actual_input_before_frames=before,
+                actual_input_before_run=before_run,
+                actual_input_after_frames=after,
+                actual_input_after_run=after_run,
                 trust_store_path="/etc/advar/policies.json",
                 executor_trust_store_path="/etc/advar/executors.json",
             )
 
-            tampered = replace(
-                receipt,
-                actual_input_after_digest="9" * 64,
+            tampered = copy(receipt)
+            object.__setattr__(
+                tampered,
+                "executor_signature",
+                "0" * 128,
+            )
+            object.__setattr__(
+                tampered,
+                "receipt_digest",
+                json_digest(
+                    {
+                        key: value
+                        for key, value in tampered.__dict__.items()
+                        if key != "receipt_digest"
+                    }
+                ),
             )
             with self.assertRaisesRegex(ValueError, "signature"):
                 self.ledger.append_realized_intervention_receipt(
                     decision,
                     tampered,
+                    action_generator=action_generator,
+                    actual_input_before_frames=before,
+                    actual_input_before_run=before_run,
+                    actual_input_after_frames=after,
+                    actual_input_after_run=after_run,
                     trust_store_path="/etc/advar/policies.json",
                     executor_trust_store_path="/etc/advar/executors.json",
                 )
@@ -819,33 +1051,75 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(loaded, audit)
 
     def test_backdated_decision_cannot_be_recorded_after_issue(self) -> None:
-        decision = ProspectiveInterventionDecision(
+        frames = torch.zeros((3, 2, 2), dtype=torch.float64)
+        plan_digest = "b" * 64
+        plan_json = json.dumps(
+            {
+                "contract": "legacy-opaque-input-plan-v1",
+                "legacy_digest": plan_digest,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+            input_plan_json=plan_json,
+            input_plan_digest=plan_digest,
+        )
+        generator = InterventionActionGenerator.from_model(
+            _AddOneAction().eval(), frames
+        )
+        action_policy = ReusableInterventionPolicyEvidence(
+            policy_id="backdated-policy",
+            action_generator_digest=generator.generator_digest,
+            context_schema_digest="2" * 64,
+            applicability_region_digest="3" * 64,
+            execution_policy_digest="e" * 64,
+            allowed_intervention_types=("operator_override",),
+            maximum_absolute_delta_dbz=1.0,
+            validation_evidence_digests=("d" * 64,),
+        )
+        decision = ProspectiveInterventionDecision.from_policy(
+            action_policy,
+            action_generator=generator,
             decision_id="backdated",
             case_id="case-1",
             radar_id="radar-1",
             intervention_type="operator_override",
-            action_digest="a" * 64,
-            input_plan_digest="b" * 64,
-            actual_input_before_digest="c" * 64,
+            actual_input_before_frames=frames,
+            actual_input_before_run=run,
+            input_plan_digest=plan_digest,
             decision_basis_digest="d" * 64,
             decision_policy_digest="e" * 64,
             decision_trust_store_digest="f" * 64,
             decided_at="2020-08-08T00:00:00Z",
-            issue_time="2020-08-08T01:00:00Z",
+            observation_valid_time="2020-08-08T00:00:00Z",
+            input_available_time="2020-08-08T00:00:00Z",
+            decision_deadline="2020-08-08T00:30:00Z",
+            publication_time="2020-08-08T01:00:00Z",
         )
         trust = SimpleNamespace(
             content_digest="f" * 64,
-            approved_policy_digests=frozenset(("e" * 64,)),
+            approved_policy_digests=frozenset(
+                ("e" * 64, action_policy.policy_digest)
+            ),
         )
         with (
             patch(
                 "advar.ledger._load_learning_policy_trust_store",
                 return_value=trust,
             ),
-            self.assertRaisesRegex(ValueError, "recorded before issue"),
+            self.assertRaisesRegex(ValueError, "decision deadline"),
         ):
             self.ledger.append_prospective_intervention_decision(
                 decision,
+                action_policy=action_policy,
+                action_generator=generator,
+                actual_input_before_frames=frames,
+                actual_input_before_run=run,
                 trust_store_path="/etc/advar/policies.json",
             )
 
@@ -1937,7 +2211,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 11)
+        self.assertEqual(version, 12)
 
 
 if __name__ == "__main__":

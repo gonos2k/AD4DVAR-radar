@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from datetime import datetime, timedelta
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
@@ -46,7 +47,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 qc_pipeline_digest="9" * 64,
                 background_cycle_rule_digest=("1" if index == 1 else "2") * 64,
                 mask_policy_digest="3" * 64,
-                issue_time=issue,
+                observation_valid_time=issue,
+                input_available_time=issue,
+                decision_deadline=(
+                    datetime.fromisoformat(issue.replace("Z", "+00:00"))
+                    + timedelta(minutes=2)
+                ).isoformat(),
+                publication_time=(
+                    datetime.fromisoformat(issue.replace("Z", "+00:00"))
+                    + timedelta(minutes=5)
+                ).isoformat(),
             )
             for index, issue in enumerate(
                 ("2026-08-09T00:00:00Z", "2026-08-10T00:00:00Z"),
@@ -177,15 +187,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         change: float,
         *,
         end_to_end: float | None = None,
-    ) -> promotion_module.RealizedInterventionEvaluation:
+        candidate_issuance: float = 0.0,
+        prior_residual_mean_abs: float = 0.5,
+        prior_underdispersion_fraction: float = 0.0,
+        prior_sample_count: int = 16,
+    ) -> promotion_module.PriorHoldoutEvaluation:
         manifest = self.manifest()
         case = manifest.holdout_cases[index - 1]
-        return promotion_module._new_realized_evaluation(
-            intervention_digest=("a" if index == 1 else "b") * 64,
-            intervention_type="realized_qc_intervention",
-            learning_result_digest=("d" if index == 1 else "e") * 64,
-            learning_approval_evidence_digest=("1" if index == 1 else "2") * 64,
-            learning_policy_digest="1" * 64,
+        return promotion_module._new_prior_holdout_evaluation(
             holdout_plan_digest=manifest.holdout_plan_digest,
             candidate_manifest_digest=manifest.manifest_digest,
             candidate_prior_digest=manifest.candidate_prior_digest,
@@ -207,7 +216,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
             parent_inference_evidence_digest=(case.parent_inference_evidence_digest),
             metric_change=torch.tensor([[change]], dtype=torch.float64),
-            candidate_issuance_effect=torch.zeros((1, 1), dtype=torch.float64),
+            candidate_issuance_effect=torch.tensor(
+                [[candidate_issuance]], dtype=torch.float64
+            ),
             parent_issuance_effect=torch.zeros((1, 1), dtype=torch.float64),
             end_to_end_metric_change=torch.tensor(
                 [[change if end_to_end is None else end_to_end]],
@@ -223,22 +234,22 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             coverage_common=torch.tensor([1.0], dtype=torch.float64),
             newly_issued_fraction=torch.tensor([0.0], dtype=torch.float64),
             withdrawn_fraction=torch.tensor([0.0], dtype=torch.float64),
+            prior_standardized_residual_mean_abs=prior_residual_mean_abs,
+            prior_underdispersion_fraction=prior_underdispersion_fraction,
+            prior_uncertainty_sample_count=prior_sample_count,
             issue_time=case.issue_time,
-            applied_time=f"2026-08-{7 + index:02d}T00:00:00Z",
             verification_valid_times=(f"2026-08-{8 + index:02d}T01:00:00Z",),
         )
 
     def policy(self) -> NeuralPriorPromotionPolicy:
         return NeuralPriorPromotionPolicy(
             metric_scales=(PromotionMetricScale("log_echo_mse", 1.0, 0.01),),
-            approved_learning_policy_digests=("1" * 64,),
             approved_candidate_manifest_digests=(self.manifest().manifest_digest,),
             approved_holdout_plan_digests=(self.plan().plan_digest,),
             approved_metric_contract_digests=("b" * 64,),
-            allowed_intervention_types=("realized_qc_intervention",),
-            minimum_realized_interventions=2,
-            minimum_material_interventions=2,
-            minimum_material_intervention_fraction=1.0,
+            minimum_holdout_cases=2,
+            minimum_material_cases=2,
+            minimum_material_case_fraction=1.0,
             minimum_independent_cases=2,
             minimum_distinct_storms=2,
             minimum_distinct_days=2,
@@ -275,6 +286,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertTrue(result.eligible)
         validate_neural_prior_promotion(result)
 
+    def test_promotion_requires_every_preregistered_case(self) -> None:
+        with self.assertRaisesRegex(ValueError, "every planned case"):
+            self.compute((self.evaluation(1, -0.2),))
+
+    def test_prior_holdout_evidence_has_no_intervention_selection_fields(self) -> None:
+        evaluation = self.evaluation(1, -0.2)
+        self.assertFalse(hasattr(evaluation, "intervention_digest"))
+        self.assertFalse(hasattr(evaluation, "population_contract"))
+
     def test_end_to_end_harm_blocks_promotion(self) -> None:
         result = self.compute(
             (
@@ -284,6 +304,23 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertFalse(result.eligible)
         self.assertIn("excessive_end_to_end_degradation", result.rejection_reasons)
+
+    def test_nonfinite_issuance_effect_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "finite metrics"):
+            self.evaluation(1, -0.2, candidate_issuance=float("nan"))
+
+    def test_unreliable_prior_uncertainty_blocks_promotion(self) -> None:
+        result = self.compute(
+            (
+                self.evaluation(
+                    1,
+                    -0.2,
+                    prior_underdispersion_fraction=0.5,
+                ),
+                self.evaluation(2, -0.3),
+            )
+        )
+        self.assertIn("unreliable_prior_uncertainty", result.rejection_reasons)
 
     def test_end_to_end_harm_is_checked_when_common_skill_is_immaterial(self) -> None:
         result = self.compute(
@@ -344,7 +381,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
     def test_direct_evaluation_construction_is_disabled(self) -> None:
         with self.assertRaisesRegex(TypeError, "from_forecasts"):
-            promotion_module.RealizedInterventionEvaluation()
+            promotion_module.PriorHoldoutEvaluation()
 
     def test_legacy_intervention_is_not_a_prospective_receipt(self) -> None:
         legacy = RealizedObservationIntervention(
@@ -366,22 +403,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertNotIsInstance(legacy, RealizedInterventionReceipt)
 
-    def test_prospective_receipt_rejects_backdated_creation(self) -> None:
-        with self.assertRaisesRegex(ValueError, "precede its issue"):
-            ProspectiveInterventionDecision(
-                decision_id="decision-1",
-                case_id="case-1",
-                radar_id="radar-1",
-                intervention_type="realized_qc_intervention",
-                action_digest="a" * 64,
-                input_plan_digest="b" * 64,
-                actual_input_before_digest="c" * 64,
-                decision_basis_digest="d" * 64,
-                decision_policy_digest="e" * 64,
-                decision_trust_store_digest="f" * 64,
-                decided_at="2026-08-09T00:01:00Z",
-                issue_time="2026-08-09T00:00:00Z",
-            )
+    def test_prospective_decision_direct_construction_is_disabled(self) -> None:
+        with self.assertRaisesRegex(TypeError, "from_policy"):
+            ProspectiveInterventionDecision()
+        with self.assertRaisesRegex(TypeError, "from_decision"):
+            RealizedInterventionReceipt()
 
     def test_candidate_manifest_digest_detects_lineage_mutation(self) -> None:
         manifest = self.manifest()
@@ -396,38 +422,6 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         planned_input = next(
             item for item in plan.input_plans
             if item.plan_digest == case.input_plan_digest
-        )
-        decision = ProspectiveInterventionDecision(
-            decision_id="decision-1",
-            case_id=case.case_id,
-            radar_id=case.radar_id,
-            intervention_type="realized_qc_intervention",
-            action_digest="a" * 64,
-            input_plan_digest=case.input_plan_digest,
-            actual_input_before_digest="b" * 64,
-            decision_basis_digest="d" * 64,
-            decision_policy_digest="1" * 64,
-            decision_trust_store_digest="f" * 64,
-            decided_at="2026-08-08T23:00:00Z",
-            issue_time=case.issue_time,
-        )
-        receipt = RealizedInterventionReceipt(
-            decision_digest=decision.decision_digest,
-            decision_id=decision.decision_id,
-            case_id=decision.case_id,
-            radar_id=decision.radar_id,
-            intervention_type=decision.intervention_type,
-            action_digest=decision.action_digest,
-            input_plan_digest=decision.input_plan_digest,
-            actual_input_before_digest=decision.actual_input_before_digest,
-            actual_input_after_digest="a" * 64,
-            actual_input_bundle_digest=case.input_bundle_digest,
-            executor_key_id="executor-1",
-            executor_trust_store_digest="f" * 64,
-            executor_signature="e" * 64,
-            applied_time="2026-08-08T23:30:00Z",
-            receipt_time="2026-08-08T23:31:00Z",
-            issue_time=decision.issue_time,
         )
         grid = SimpleNamespace(valid_times=planned_input.valid_times)
         data_identity = promotion_module.OperationalDataIdentity(
@@ -454,7 +448,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             prior_model_contract_digest=manifest.model_contract_digest,
             prior_feature_schema_digest=manifest.feature_schema_digest,
             prior_inference_algorithm_digest="8" * 64,
-            prior_numerical_runtime_digest="9" * 64,
+            prior_numerical_runtime_digest="4" * 64,
             prior_dependency="radar_dependent",
             input_plan_json=planned_input.json,
             input_plan_resolution_digest=promotion_module.json_digest(
@@ -467,10 +461,13 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         candidate_app = SimpleNamespace(
             application_digest=case.candidate_prior_application_digest,
+            initial_background_dbz=torch.zeros((2, 2)),
+            std_dbz=torch.ones((2, 2)),
+            valid_mask=torch.ones((2, 2), dtype=torch.bool),
             inference_evidence=SimpleNamespace(
                 evidence_digest=case.candidate_inference_evidence_digest,
                 inference_algorithm_digest="8" * 64,
-                numerical_runtime_digest="9" * 64,
+                numerical_runtime_digest="4" * 64,
                 dependency="radar_dependent",
                 input_bundle_digest=case.input_bundle_digest,
                 input_frames_digest=promotion_module.tensor_digest(torch.zeros(3, 2, 2)),
@@ -479,14 +476,18 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 model_contract_digest=manifest.model_contract_digest,
                 feature_schema_digest=manifest.feature_schema_digest,
                 training_manifest_digest=(manifest.candidate_training_manifest_digest),
+                uncertainty_contract="model_spatial",
             ),
         )
         parent_app = SimpleNamespace(
             application_digest=case.parent_prior_application_digest,
+            initial_background_dbz=torch.zeros((2, 2)),
+            std_dbz=torch.ones((2, 2)),
+            valid_mask=torch.ones((2, 2), dtype=torch.bool),
             inference_evidence=SimpleNamespace(
                 evidence_digest=case.parent_inference_evidence_digest,
                 inference_algorithm_digest="8" * 64,
-                numerical_runtime_digest="9" * 64,
+                numerical_runtime_digest="4" * 64,
                 dependency="radar_dependent",
                 input_bundle_digest=case.input_bundle_digest,
                 input_frames_digest=promotion_module.tensor_digest(torch.zeros(3, 2, 2)),
@@ -495,6 +496,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 model_contract_digest=manifest.model_contract_digest,
                 feature_schema_digest=manifest.feature_schema_digest,
                 training_manifest_digest=manifest.parent_training_manifest_digest,
+                uncertainty_contract="model_spatial",
             ),
         )
         candidate_run = SimpleNamespace(
@@ -548,12 +550,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         candidate_runner = SimpleNamespace(
             reproduce=Mock(),
             inference_algorithm_digest="8" * 64,
-            numerical_runtime_digest="9" * 64,
+            numerical_runtime_digest="4" * 64,
         )
         parent_runner = SimpleNamespace(
             reproduce=Mock(),
             inference_algorithm_digest="8" * 64,
-            numerical_runtime_digest="9" * 64,
+            numerical_runtime_digest="4" * 64,
         )
         candidate_weights = torch.full((1, 1, 1), 0.5)
         parent_weights = torch.ones((1, 1, 1))
@@ -590,11 +592,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 side_effect=(torch.tensor([0.9]), torch.tensor([1.0])),
             ),
         ):
-            evaluation = promotion_module.RealizedInterventionEvaluation.from_forecasts(
-                decision,
-                receipt,
+            evaluation = promotion_module.PriorHoldoutEvaluation.from_forecasts(
                 manifest,
-            plan,
+                plan,
                 case_id=case.case_id,
                 candidate_forecast=candidate,
                 parent_forecast=parent,
