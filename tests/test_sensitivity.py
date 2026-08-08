@@ -22,6 +22,7 @@ from advar.linearization_artifact import (  # noqa: E402
     load_p1_linearization,
     save_p1_linearization,
 )
+from advar.ledger import EpisodeLedger  # noqa: E402
 from advar.matrix_free import PCGResult  # noqa: E402
 from advar.nowcast import (  # noqa: E402
     _estimate_source_tendencies,
@@ -50,6 +51,7 @@ from advar.physics import (  # noqa: E402
 )
 from advar.sensitivity import (  # noqa: E402
     AutomatedLearningPolicy,
+    MetricTaylorThreshold,
     _baseline_branch_is_stable,
     _gauss_newton_curvature_diagnostics,
     _apply_output_cap,
@@ -70,6 +72,7 @@ from advar.sensitivity import (  # noqa: E402
     forecast_metric,
     validate_variational_fso,
     validate_variational_fsoi,
+    validate_variational_learning_impact,
     variational_fso_digest,
 )
 from advar.variational import (  # noqa: E402
@@ -3567,11 +3570,11 @@ class VariationalFSOTests(unittest.TestCase):
 
         self.assertEqual(
             fsoi.contract,
-            "p1-linearized-observation-impact-v10",
+            "p1-linearized-observation-impact-v11",
         )
         self.assertEqual(
             fsoi.perturbation_contract,
-            "p1-observation-perturbation-v6",
+            "p1-observation-perturbation-v7",
         )
         self.assertEqual(fsoi.perturbation_digest, perturbation.digest)
         self.assertEqual(
@@ -3949,6 +3952,17 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertIsNotNone(
             fsoi.observation.baseline_branch_trusted_total
         )
+        crossing = torch.zeros_like(observations.dbz)
+        crossing[full_index] = (
+            linearization.frozen.nowcast_config.max_dbz
+            - observations.dbz[full_index]
+            + 0.1
+        )
+        with self.assertRaisesRegex(ValueError, "crosses input clamp"):
+            VariationalObservationPerturbation.from_radar_dbz_delta(
+                crossing,
+                linearization,
+            )
 
     def test_learning_policy_is_external_and_requires_physical_input(
         self,
@@ -3980,12 +3994,27 @@ class VariationalFSOTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "nonnegative"):
                     replace(
                         policy,
-                        maximum_linearity_absolute_error=invalid_value,
+                        metric_taylor_thresholds=(
+                            MetricTaylorThreshold(
+                                "log_echo_mse",
+                                invalid_value,
+                                1.0e-6,
+                            ),
+                        ),
                     )
         for invalid_value in (0.0, float("nan"), True):
             with self.subTest(material_impact_threshold=invalid_value):
                 with self.assertRaisesRegex(ValueError, "positive"):
-                    replace(policy, material_impact_threshold=invalid_value)
+                    replace(
+                        policy,
+                        metric_taylor_thresholds=(
+                            MetricTaylorThreshold(
+                                "log_echo_mse",
+                                1.0e-6,
+                                invalid_value,
+                            ),
+                        ),
+                    )
         available = torch.ones((1, 1), dtype=torch.bool)
         prediction = torch.tensor(((1.0e-3,),), dtype=torch.float64)
         self.assertTrue(
@@ -4008,8 +4037,22 @@ class VariationalFSOTests(unittest.TestCase):
             sensitivity_module._material_impact_signs_are_consistent(
                 ((prediction, -prediction),),
                 available,
-                policy.material_impact_threshold,
+                ("log_echo_mse",),
+                policy,
             )
+        )
+        self.assertEqual(
+            policy.threshold_for("centroid_error_m2").maximum_absolute_error,
+            1.0,
+        )
+        self.assertEqual(
+            sensitivity_module._material_impact_summary(
+                ((torch.zeros_like(prediction), torch.zeros_like(prediction)),),
+                available,
+                ("log_echo_mse",),
+                policy,
+            ),
+            (0, 0.0, 0.0),
         )
         physical_delta = zeros.clone()
         index = tuple(
@@ -4036,8 +4079,11 @@ class VariationalFSOTests(unittest.TestCase):
             )
         with patch.object(
             sensitivity_module,
-            "_load_approved_learning_policy_digests",
-            return_value=frozenset(),
+            "_load_learning_policy_trust_store",
+            return_value=sensitivity_module._LearningPolicyTrustStore(
+                approved_policy_digests=frozenset(),
+                content_digest="7" * 64,
+            ),
         ):
             rejected = compute_variational_fsoi_for_learning(
                 self.forecast,
@@ -4060,8 +4106,11 @@ class VariationalFSOTests(unittest.TestCase):
         )
         with patch.object(
             sensitivity_module,
-            "_load_approved_learning_policy_digests",
-            return_value=frozenset((policy.digest,)),
+            "_load_learning_policy_trust_store",
+            return_value=sensitivity_module._LearningPolicyTrustStore(
+                approved_policy_digests=frozenset((policy.digest,)),
+                content_digest="7" * 64,
+            ),
         ):
             rejected = compute_variational_fsoi_for_learning(
                 self.forecast,
@@ -4083,8 +4132,11 @@ class VariationalFSOTests(unittest.TestCase):
         )
         with patch.object(
             sensitivity_module,
-            "_load_approved_learning_policy_digests",
-            return_value=frozenset((wrong_algorithm.digest,)),
+            "_load_learning_policy_trust_store",
+            return_value=sensitivity_module._LearningPolicyTrustStore(
+                approved_policy_digests=frozenset((wrong_algorithm.digest,)),
+                content_digest="7" * 64,
+            ),
         ):
             rejected = compute_variational_fsoi_for_learning(
                 self.forecast,
@@ -4147,6 +4199,13 @@ class VariationalFSOTests(unittest.TestCase):
             ),
             algorithm_bundle_digest=linearization.algorithm_bundle_digest,
             numerical_runtime_digest=linearization.numerical_runtime_digest,
+            metric_taylor_thresholds=(
+                MetricTaylorThreshold(
+                    "log_echo_mse",
+                    1.0e-6,
+                    1.0e-8,
+                ),
+            ),
         )
         delta = torch.zeros_like(linearization.observations.dbz)
         index = tuple(
@@ -4160,8 +4219,11 @@ class VariationalFSOTests(unittest.TestCase):
         nonlinear_delta[index] = 0.01
         with patch.object(
             sensitivity_module,
-            "_load_approved_learning_policy_digests",
-            return_value=frozenset((policy.digest,)),
+            "_load_learning_policy_trust_store",
+            return_value=sensitivity_module._LearningPolicyTrustStore(
+                approved_policy_digests=frozenset((policy.digest,)),
+                content_digest="7" * 64,
+            ),
         ):
             nonlinear = compute_variational_fsoi_for_learning(
                 forecast,
@@ -4189,11 +4251,42 @@ class VariationalFSOTests(unittest.TestCase):
             delta,
             linearization,
         )
+        resolved_change = (
+            nonlinear.first_order_validation
+            .full_step_resolved_metric_change
+        )
+        certified_validation = replace(
+            nonlinear.first_order_validation,
+            full_step_prediction=resolved_change,
+            full_step_absolute_error=torch.zeros_like(resolved_change),
+            half_step_prediction=0.5 * resolved_change,
+            half_step_resolved_metric_change=0.5 * resolved_change,
+            half_step_absolute_error=torch.zeros_like(resolved_change),
+            full_step_valid=True,
+            half_step_valid=True,
+            sign_consistent_for_material_impacts=True,
+            material_metric_count=1,
+            maximum_material_impact=float(torch.amax(torch.abs(resolved_change))),
+            aggregate_material_impact_norm=float(
+                torch.linalg.vector_norm(resolved_change)
+            ),
+            first_order_valid=True,
+        )
 
-        with patch.object(
-            sensitivity_module,
-            "_load_approved_learning_policy_digests",
-            return_value=frozenset((policy.digest,)),
+        with (
+            patch.object(
+                sensitivity_module,
+                "_load_learning_policy_trust_store",
+                return_value=sensitivity_module._LearningPolicyTrustStore(
+                    approved_policy_digests=frozenset((policy.digest,)),
+                    content_digest="7" * 64,
+                ),
+            ),
+            patch.object(
+                sensitivity_module,
+                "_validate_first_order_learning_impact",
+                return_value=certified_validation,
+            ),
         ):
             learning = compute_variational_fsoi_for_learning(
                 forecast,
@@ -4206,7 +4299,13 @@ class VariationalFSOTests(unittest.TestCase):
                 ),
             )
 
-        self.assertTrue(learning.eligibility.eligible)
+        self.assertTrue(
+            learning.eligibility.eligible,
+            (
+                learning.eligibility.reasons,
+                learning.first_order_validation,
+            ),
+        )
         self.assertEqual(learning.eligibility.reasons, ())
         assert learning.fsoi is not None
         assert learning.first_order_validation is not None
@@ -4240,6 +4339,61 @@ class VariationalFSOTests(unittest.TestCase):
         )
         self.assertEqual(learning.fsoi.fso.tile_size, 16)
         self.assertIsNotNone(learning.frozen_domain_learning_impact)
+        assert learning.approval_evidence is not None
+        self.assertEqual(
+            learning.approval_evidence.trust_store_digest,
+            "7" * 64,
+        )
+        validate_variational_learning_impact(
+            learning,
+            expected_trust_store_digest="7" * 64,
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            ledger = EpisodeLedger(temporary)
+            stored_digest = ledger.append_variational_learning_approval(
+                learning
+            )
+            stored = ledger.load_variational_learning_approval(stored_digest)
+        self.assertEqual(stored, learning.approval_evidence)
+        no_material = replace(
+            certified_validation,
+            material_metric_count=0,
+            maximum_material_impact=0.0,
+            aggregate_material_impact_norm=0.0,
+            first_order_valid=False,
+        )
+        with (
+            patch.object(
+                sensitivity_module,
+                "_load_learning_policy_trust_store",
+                return_value=sensitivity_module._LearningPolicyTrustStore(
+                    approved_policy_digests=frozenset((policy.digest,)),
+                    content_digest="7" * 64,
+                ),
+            ),
+            patch.object(
+                sensitivity_module,
+                "_validate_first_order_learning_impact",
+                return_value=no_material,
+            ),
+        ):
+            rejected = compute_variational_fsoi_for_learning(
+                forecast,
+                analysis,
+                verification,
+                perturbation,
+                policy=policy,
+                policy_trust_store_path=(
+                    "/etc/advar/learning-policies.json"
+                ),
+            )
+        self.assertEqual(
+            rejected.eligibility.reasons,
+            ("no_material_learning_signal",),
+        )
+        learning.first_order_validation.full_step_absolute_error.add_(1.0)
+        with self.assertRaisesRegex(ValueError, "validation digest"):
+            validate_variational_learning_impact(learning)
 
     def test_learning_policy_trust_store_requires_root_ownership(self) -> None:
         digest = "a" * 64
@@ -4262,7 +4416,7 @@ class VariationalFSOTests(unittest.TestCase):
                 ),
             ):
                 with self.assertRaisesRegex(ValueError, "root-owned"):
-                    sensitivity_module._load_approved_learning_policy_digests(
+                    sensitivity_module._load_learning_policy_trust_store(
                         path
                     )
             with patch.object(
@@ -4274,11 +4428,15 @@ class VariationalFSOTests(unittest.TestCase):
                     st_size=real_fstat(descriptor).st_size,
                 ),
             ):
-                self.assertEqual(
+                store = (
                     sensitivity_module
-                    ._load_approved_learning_policy_digests(path),
+                    ._load_learning_policy_trust_store(path)
+                )
+                self.assertEqual(
+                    store.approved_policy_digests,
                     frozenset((digest,)),
                 )
+                self.assertEqual(len(store.content_digest), 64)
 
     def test_censored_perturbations_use_event_specific_factories(self) -> None:
         linearization = self.analysis.linearization

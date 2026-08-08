@@ -88,6 +88,12 @@ LEARNING_POLICY_TRUST_STORE_CONTRACT = "advar-learning-policy-trust-store-v1"
 MAXIMUM_LEARNING_POLICY_TRUST_STORE_BYTES = 1024 * 1024
 
 
+@dataclass(frozen=True)
+class _LearningPolicyTrustStore:
+    approved_policy_digests: frozenset[str]
+    content_digest: str
+
+
 def _canonical_verification_time(value: str) -> str:
     if not isinstance(value, str) or not value:
         raise ValueError("verification valid times must be ISO-8601 strings")
@@ -110,9 +116,9 @@ def _require_sha256(name: str, value: str) -> None:
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
 
 
-def _load_approved_learning_policy_digests(
+def _load_learning_policy_trust_store(
     path: str | Path,
-) -> frozenset[str]:
+) -> _LearningPolicyTrustStore:
     """Read approved policy digests from a root-owned immutable JSON file."""
 
     trust_store = Path(path)
@@ -158,7 +164,15 @@ def _load_approved_learning_policy_digests(
         raise ValueError("approved policy digests must be unique")
     for digest in digests:
         _require_sha256("approved_policy_digest", digest)
-    return digests
+    return _LearningPolicyTrustStore(
+        approved_policy_digests=digests,
+        content_digest=json_digest(
+            {
+                "contract": LEARNING_POLICY_TRUST_STORE_CONTRACT,
+                "approved_policy_digests": sorted(digests),
+            }
+        ),
+    )
 
 
 @dataclass(frozen=True)
@@ -895,7 +909,7 @@ class VariationalObservationPerturbation:
     baseline_dynamics_dbz: Tensor | None = None
     physical_radar_dbz_delta: Tensor | None = None
     perturbation_semantics: PerturbationSemantics = "augmented_parameter"
-    contract: str = "p1-observation-perturbation-v6"
+    contract: str = "p1-observation-perturbation-v7"
 
     @classmethod
     def from_radar_dbz_delta(
@@ -918,6 +932,11 @@ class VariationalObservationPerturbation:
             observations.detected_mask,
             delta_dbz,
             torch.zeros_like(delta_dbz),
+        )
+        _ = _physical_radar_input_margins(
+            active_delta,
+            observations,
+            frozen,
         )
         detected, background, dynamics = _physical_radar_channels(
             active_delta,
@@ -1020,6 +1039,8 @@ class VariationalPerturbationDiagnostics:
     whitened_l2: float
     maximum_per_tile_whitened_norm: float
     observation_weight_l2: float
+    minimum_input_floor_margin_dbz: float | None
+    minimum_input_ceiling_margin_dbz: float | None
     directional_classification_valid: bool
     baseline_dynamics_branch_status: BaselineDynamicsBranchStatus
     baseline_dynamics_branch_signature_digest: str | None
@@ -1049,6 +1070,28 @@ def _physical_radar_channels(
             dynamics,
         )
     return detected, background, dynamics
+
+
+def _physical_radar_input_margins(
+    delta_dbz: Tensor,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+) -> tuple[float | None, float | None]:
+    """Fail closed when a physical perturbation crosses input clipping."""
+
+    changed_mask = delta_dbz != 0
+    if not bool(torch.any(changed_mask)):
+        return None, None
+    changed = (observations.dbz + delta_dbz).masked_select(changed_mask)
+    floor_margin = float(
+        torch.amin(changed - frozen.nowcast_config.min_dbz).detach()
+    )
+    ceiling_margin = float(
+        torch.amin(frozen.nowcast_config.max_dbz - changed).detach()
+    )
+    if floor_margin < 0.0 or ceiling_margin < 0.0:
+        raise ValueError("physical radar perturbation crosses input clamp")
+    return floor_margin, ceiling_margin
 
 
 @dataclass(frozen=True)
@@ -1095,6 +1138,38 @@ class VariationalFSOI:
 
 
 @dataclass(frozen=True)
+class MetricTaylorThreshold:
+    """Dimensionally correct Taylor limits for one forecast metric."""
+
+    metric_name: str
+    maximum_absolute_error: float
+    material_impact_threshold: float
+
+    def __post_init__(self) -> None:
+        if self.metric_name not in SUPPORTED_METRICS:
+            raise ValueError("unsupported Taylor metric")
+        if (
+            isinstance(self.maximum_absolute_error, bool)
+            or not math.isfinite(self.maximum_absolute_error)
+            or self.maximum_absolute_error < 0.0
+        ):
+            raise ValueError("metric Taylor absolute error must be nonnegative")
+        if (
+            isinstance(self.material_impact_threshold, bool)
+            or not math.isfinite(self.material_impact_threshold)
+            or self.material_impact_threshold <= 0.0
+        ):
+            raise ValueError("metric material impact threshold must be positive")
+
+
+DEFAULT_METRIC_TAYLOR_THRESHOLDS = (
+    MetricTaylorThreshold("log_echo_mse", 1.0e-6, 1.0e-6),
+    MetricTaylorThreshold("soft_fss_error_35", 1.0e-6, 1.0e-6),
+    MetricTaylorThreshold("centroid_error_m2", 1.0, 1.0),
+)
+
+
+@dataclass(frozen=True)
 class AutomatedLearningPolicy:
     """One externally approved bundle for automated FSOI learning."""
 
@@ -1102,13 +1177,14 @@ class AutomatedLearningPolicy:
     adjoint_config: VariationalAdjointConfig
     algorithm_bundle_digest: str
     numerical_runtime_digest: str
-    maximum_linearity_absolute_error: float = 1.0e-6
+    metric_taylor_thresholds: tuple[
+        MetricTaylorThreshold, ...
+    ] = DEFAULT_METRIC_TAYLOR_THRESHOLDS
     maximum_linearity_relative_error: float = 0.1
-    material_impact_threshold: float = 1.0e-6
-    contract: str = "p1-automated-learning-policy-v3"
+    contract: str = "p1-automated-learning-policy-v4"
 
     def __post_init__(self) -> None:
-        if self.contract != "p1-automated-learning-policy-v3":
+        if self.contract != "p1-automated-learning-policy-v4":
             raise ValueError("unsupported automated-learning policy")
         _require_sha256(
             "algorithm_bundle_digest",
@@ -1119,14 +1195,6 @@ class AutomatedLearningPolicy:
             self.numerical_runtime_digest,
         )
         if (
-            isinstance(self.maximum_linearity_absolute_error, bool)
-            or not math.isfinite(self.maximum_linearity_absolute_error)
-            or self.maximum_linearity_absolute_error < 0.0
-        ):
-            raise ValueError(
-                "maximum_linearity_absolute_error must be nonnegative"
-            )
-        if (
             isinstance(self.maximum_linearity_relative_error, bool)
             or not math.isfinite(self.maximum_linearity_relative_error)
             or not 0.0 < self.maximum_linearity_relative_error < 1.0
@@ -1134,12 +1202,6 @@ class AutomatedLearningPolicy:
             raise ValueError(
                 "maximum_linearity_relative_error must be in (0, 1)"
             )
-        if (
-            isinstance(self.material_impact_threshold, bool)
-            or not math.isfinite(self.material_impact_threshold)
-            or self.material_impact_threshold <= 0.0
-        ):
-            raise ValueError("material_impact_threshold must be positive")
         sensitivity = self.sensitivity_config
         if (
             sensitivity.metric_domain != "radar_dynamics_anchored"
@@ -1171,6 +1233,35 @@ class AutomatedLearningPolicy:
             raise ValueError(
                 "automated learning requires every local-validity gate"
             )
+        if not isinstance(self.metric_taylor_thresholds, tuple):
+            raise TypeError("metric_taylor_thresholds must be a tuple")
+        names = tuple(
+            threshold.metric_name
+            for threshold in self.metric_taylor_thresholds
+        )
+        if len(set(names)) != len(names):
+            raise ValueError("metric Taylor thresholds must be unique")
+        missing = set(sensitivity.metric_names) - set(names)
+        if missing:
+            raise ValueError(
+                f"missing metric Taylor thresholds: {sorted(missing)}"
+            )
+        object.__setattr__(
+            self,
+            "metric_taylor_thresholds",
+            tuple(
+                sorted(
+                    self.metric_taylor_thresholds,
+                    key=lambda threshold: threshold.metric_name,
+                )
+            ),
+        )
+
+    def threshold_for(self, metric_name: str) -> MetricTaylorThreshold:
+        for threshold in self.metric_taylor_thresholds:
+            if threshold.metric_name == metric_name:
+                return threshold
+        raise ValueError(f"missing Taylor threshold for {metric_name}")
 
     @property
     def digest(self) -> str:
@@ -1181,13 +1272,21 @@ class AutomatedLearningPolicy:
                 "adjoint_config_digest": self.adjoint_config.digest,
                 "algorithm_bundle_digest": self.algorithm_bundle_digest,
                 "numerical_runtime_digest": self.numerical_runtime_digest,
-                "maximum_linearity_absolute_error": (
-                    self.maximum_linearity_absolute_error
-                ),
+                "metric_taylor_thresholds": [
+                    {
+                        "metric_name": threshold.metric_name,
+                        "maximum_absolute_error": (
+                            threshold.maximum_absolute_error
+                        ),
+                        "material_impact_threshold": (
+                            threshold.material_impact_threshold
+                        ),
+                    }
+                    for threshold in self.metric_taylor_thresholds
+                ],
                 "maximum_linearity_relative_error": (
                     self.maximum_linearity_relative_error
                 ),
-                "material_impact_threshold": self.material_impact_threshold,
                 "perturbation_semantics": "physical_radar_value",
             }
         )
@@ -1229,8 +1328,111 @@ class FirstOrderValidation:
     full_step_valid: bool
     half_step_valid: bool
     sign_consistent_for_material_impacts: bool
+    material_metric_count: int
+    maximum_material_impact: float
+    aggregate_material_impact_norm: float
     first_order_valid: bool
+    full_step_analysis_digest: str | None
+    half_step_analysis_digest: str | None
+    full_step_forecast_digest: str | None
+    half_step_forecast_digest: str | None
     metric_domain_contract: str = "frozen_metric_domain"
+    contract: str = "p1-first-order-validation-v2"
+    validation_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.contract != "p1-first-order-validation-v2":
+            raise ValueError("unsupported first-order validation contract")
+        tensor_names = (
+            "full_step_prediction",
+            "full_step_resolved_metric_change",
+            "full_step_absolute_error",
+            "half_step_prediction",
+            "half_step_resolved_metric_change",
+            "half_step_absolute_error",
+            "metric_available",
+        )
+        for name in tensor_names:
+            value = getattr(self, name)
+            if not isinstance(value, Tensor):
+                raise TypeError(f"{name} must be a Tensor")
+            object.__setattr__(self, name, value.detach().clone())
+        if type(self.material_metric_count) is not int or (
+            self.material_metric_count < 0
+        ):
+            raise ValueError("material_metric_count must be nonnegative")
+        for name in (
+            "maximum_material_impact",
+            "aggregate_material_impact_norm",
+        ):
+            value = getattr(self, name)
+            if not math.isfinite(value) or value < 0.0:
+                raise ValueError(f"{name} must be finite and nonnegative")
+        if self.material_metric_count == 0 and (
+            self.maximum_material_impact != 0.0
+            or self.aggregate_material_impact_norm != 0.0
+        ):
+            raise ValueError("empty material signal must have zero magnitude")
+        if (
+            self.aggregate_material_impact_norm
+            < self.maximum_material_impact
+        ):
+            raise ValueError("material impact norm cannot be below its maximum")
+        if self.first_order_valid and self.material_metric_count == 0:
+            raise ValueError("first-order validity requires material impact")
+        for name in (
+            "full_step_analysis_digest",
+            "half_step_analysis_digest",
+            "full_step_forecast_digest",
+            "half_step_forecast_digest",
+        ):
+            value = getattr(self, name)
+            if value is not None:
+                _require_sha256(name, value)
+        object.__setattr__(
+            self,
+            "validation_digest",
+            first_order_validation_digest(self),
+        )
+
+
+@dataclass(frozen=True)
+class LearningApprovalEvidence:
+    """Immutable identities that justify one eligible learning impact."""
+
+    policy_digest: str
+    trust_store_digest: str
+    fsoi_digest: str
+    full_step_analysis_digest: str
+    half_step_analysis_digest: str
+    full_step_forecast_digest: str
+    half_step_forecast_digest: str
+    first_order_validation_digest: str
+    learning_impact_digest: str
+    contract: str = "p1-learning-approval-evidence-v1"
+
+    def __post_init__(self) -> None:
+        if self.contract != "p1-learning-approval-evidence-v1":
+            raise ValueError("unsupported learning approval evidence")
+        for name, value in (
+            ("policy_digest", self.policy_digest),
+            ("trust_store_digest", self.trust_store_digest),
+            ("fsoi_digest", self.fsoi_digest),
+            ("full_step_analysis_digest", self.full_step_analysis_digest),
+            ("half_step_analysis_digest", self.half_step_analysis_digest),
+            ("full_step_forecast_digest", self.full_step_forecast_digest),
+            ("half_step_forecast_digest", self.half_step_forecast_digest),
+            (
+                "first_order_validation_digest",
+                self.first_order_validation_digest,
+            ),
+            ("learning_impact_digest", self.learning_impact_digest),
+        ):
+            _require_sha256(name, value)
+
+    @property
+    def digest(self) -> str:
+        return dataclass_digest(self)
 
 
 @dataclass(frozen=True)
@@ -1239,18 +1441,40 @@ class VariationalLearningImpact:
     fsoi: VariationalFSOI | None
     first_order_validation: FirstOrderValidation | None
     frozen_domain_learning_impact: VariationalImpactChannel | None
+    approval_evidence: LearningApprovalEvidence | None = None
+    contract: str = "p1-variational-learning-impact-v2"
+    learning_result_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
+        if self.contract != "p1-variational-learning-impact-v2":
+            raise ValueError("unsupported variational learning impact")
+        if self.frozen_domain_learning_impact is not None:
+            object.__setattr__(
+                self,
+                "frozen_domain_learning_impact",
+                _clone_variational_impact_channel(
+                    self.frozen_domain_learning_impact
+                ),
+            )
         complete = (
             self.fsoi is not None
             and self.first_order_validation is not None
             and self.first_order_validation.first_order_valid
             and self.frozen_domain_learning_impact is not None
+            and self.approval_evidence is not None
         )
         if self.eligibility.eligible != complete:
             raise ValueError("learning eligibility and impact disagree")
         if self.first_order_validation is not None and self.fsoi is None:
             raise ValueError("first-order validation requires FSOI")
+        if not self.eligibility.eligible and self.approval_evidence is not None:
+            raise ValueError("rejected learning impact cannot carry approval")
+        object.__setattr__(
+            self,
+            "learning_result_digest",
+            variational_learning_impact_digest(self),
+        )
+        validate_variational_learning_impact(self)
 
 
 @dataclass
@@ -1680,6 +1904,123 @@ def _variational_impact_digest_values(
     }
 
 
+def _clone_variational_impact_channel(
+    channel: VariationalImpactChannel,
+) -> VariationalImpactChannel:
+    return VariationalImpactChannel(
+        maps=channel.maps.detach().clone(),
+        sum_by_time=channel.sum_by_time.detach().clone(),
+        tile_sum_by_time=channel.tile_sum_by_time.detach().clone(),
+    )
+
+
+def _variational_impact_digest(channel: VariationalImpactChannel) -> str:
+    return json_digest(
+        {
+            "contract": "p1-frozen-domain-learning-impact-v1",
+            **_variational_impact_digest_values(channel),
+        }
+    )
+
+
+def first_order_validation_digest(
+    validation: FirstOrderValidation,
+) -> str:
+    """Content digest for full/half-step Taylor validation evidence."""
+
+    return json_digest(
+        {
+            "contract": validation.contract,
+            "metric_domain_contract": validation.metric_domain_contract,
+            "full_step_prediction": tensor_digest(
+                validation.full_step_prediction
+            ),
+            "full_step_resolved_metric_change": tensor_digest(
+                validation.full_step_resolved_metric_change
+            ),
+            "full_step_absolute_error": tensor_digest(
+                validation.full_step_absolute_error
+            ),
+            "half_step_prediction": tensor_digest(
+                validation.half_step_prediction
+            ),
+            "half_step_resolved_metric_change": tensor_digest(
+                validation.half_step_resolved_metric_change
+            ),
+            "half_step_absolute_error": tensor_digest(
+                validation.half_step_absolute_error
+            ),
+            "metric_available": tensor_digest(validation.metric_available),
+            "full_step_resolved_analysis_converged": (
+                validation.full_step_resolved_analysis_converged
+            ),
+            "half_step_resolved_analysis_converged": (
+                validation.half_step_resolved_analysis_converged
+            ),
+            "active_branch_valid": validation.active_branch_valid,
+            "full_step_valid": validation.full_step_valid,
+            "half_step_valid": validation.half_step_valid,
+            "sign_consistent_for_material_impacts": (
+                validation.sign_consistent_for_material_impacts
+            ),
+            "material_metric_count": validation.material_metric_count,
+            "maximum_material_impact": validation.maximum_material_impact,
+            "aggregate_material_impact_norm": (
+                validation.aggregate_material_impact_norm
+            ),
+            "first_order_valid": validation.first_order_valid,
+            "full_step_analysis_digest": (
+                validation.full_step_analysis_digest
+            ),
+            "half_step_analysis_digest": (
+                validation.half_step_analysis_digest
+            ),
+            "full_step_forecast_digest": (
+                validation.full_step_forecast_digest
+            ),
+            "half_step_forecast_digest": (
+                validation.half_step_forecast_digest
+            ),
+        }
+    )
+
+
+def variational_learning_impact_digest(
+    learning: VariationalLearningImpact,
+) -> str:
+    """Content digest for the final eligible or rejected learning result."""
+
+    impact = learning.frozen_domain_learning_impact
+    return json_digest(
+        {
+            "contract": learning.contract,
+            "eligibility": {
+                "eligible": learning.eligibility.eligible,
+                "reasons": list(learning.eligibility.reasons),
+                "policy_digest": learning.eligibility.policy_digest,
+            },
+            "fsoi_digest": (
+                None
+                if learning.fsoi is None
+                else learning.fsoi.variational_fsoi_digest
+            ),
+            "first_order_validation_digest": (
+                None
+                if learning.first_order_validation is None
+                else learning.first_order_validation.validation_digest
+            ),
+            "frozen_domain_learning_impact_digest": (
+                None if impact is None else _variational_impact_digest(impact)
+            ),
+            "approval_evidence_digest": (
+                None
+                if learning.approval_evidence is None
+                else learning.approval_evidence.digest
+            ),
+        }
+    )
+
+
 @dataclass(frozen=True)
 class _ResolvedVerification:
     frames_dbz: Tensor
@@ -2051,7 +2392,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 
     return json_digest(
         {
-            "version": "p1-variational-fsoi-digest-v10",
+            "version": "p1-variational-fsoi-digest-v11",
             "contract": fsoi.contract,
             "variational_fso_digest": fsoi.fso.variational_fso_digest,
             "perturbation_contract": fsoi.perturbation_contract,
@@ -2073,6 +2414,14 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
                 ),
                 "observation_weight_l2": (
                     fsoi.perturbation_diagnostics.observation_weight_l2
+                ),
+                "minimum_input_floor_margin_dbz": (
+                    fsoi.perturbation_diagnostics
+                    .minimum_input_floor_margin_dbz
+                ),
+                "minimum_input_ceiling_margin_dbz": (
+                    fsoi.perturbation_diagnostics
+                    .minimum_input_ceiling_margin_dbz
                 ),
                 "directional_classification_valid": (
                     fsoi.perturbation_diagnostics
@@ -2169,7 +2518,7 @@ def validate_variational_fso(fso: VariationalFSO) -> None:
 def validate_variational_fsoi(fsoi: VariationalFSOI) -> None:
     """Reject any mutation or cross-binding in a P1 impact result."""
 
-    if fsoi.contract != "p1-linearized-observation-impact-v10":
+    if fsoi.contract != "p1-linearized-observation-impact-v11":
         raise ValueError("unsupported P1 FSOI contract")
     validate_variational_fso(fsoi.fso)
     if fsoi.perturbation.digest != fsoi.perturbation_digest:
@@ -2189,6 +2538,66 @@ def validate_variational_fsoi(fsoi: VariationalFSOI) -> None:
         raise ValueError("invalid P1 FSOI trusted-total contract")
     if variational_fsoi_digest(fsoi) != fsoi.variational_fsoi_digest:
         raise ValueError("P1 FSOI result digest mismatch")
+
+
+def validate_variational_learning_impact(
+    learning: VariationalLearningImpact,
+    *,
+    expected_trust_store_digest: str | None = None,
+) -> None:
+    """Reject mutation or cross-binding in a final learning decision."""
+
+    if learning.contract != "p1-variational-learning-impact-v2":
+        raise ValueError("unsupported variational learning impact")
+    if expected_trust_store_digest is not None:
+        _require_sha256(
+            "expected_trust_store_digest",
+            expected_trust_store_digest,
+        )
+    validation = learning.first_order_validation
+    if learning.fsoi is not None:
+        validate_variational_fsoi(learning.fsoi)
+    if validation is not None and (
+        first_order_validation_digest(validation)
+        != validation.validation_digest
+    ):
+        raise ValueError("first-order validation digest mismatch")
+    if not learning.eligibility.eligible:
+        if learning.approval_evidence is not None:
+            raise ValueError("rejected learning impact carries approval")
+    else:
+        fsoi = learning.fsoi
+        impact = learning.frozen_domain_learning_impact
+        evidence = learning.approval_evidence
+        if fsoi is None or validation is None or impact is None or evidence is None:
+            raise ValueError("eligible learning impact is incomplete")
+        if not validation.first_order_valid:
+            raise ValueError("eligible learning impact failed validation")
+        expected = {
+            "policy_digest": learning.eligibility.policy_digest,
+            "fsoi_digest": fsoi.variational_fsoi_digest,
+            "full_step_analysis_digest": validation.full_step_analysis_digest,
+            "half_step_analysis_digest": validation.half_step_analysis_digest,
+            "full_step_forecast_digest": validation.full_step_forecast_digest,
+            "half_step_forecast_digest": validation.half_step_forecast_digest,
+            "first_order_validation_digest": validation.validation_digest,
+            "learning_impact_digest": _variational_impact_digest(impact),
+        }
+        if any(
+            value is None or getattr(evidence, name) != value
+            for name, value in expected.items()
+        ):
+            raise ValueError("learning approval evidence mismatch")
+        if (
+            expected_trust_store_digest is not None
+            and evidence.trust_store_digest != expected_trust_store_digest
+        ):
+            raise ValueError("learning trust-store digest mismatch")
+    if (
+        variational_learning_impact_digest(learning)
+        != learning.learning_result_digest
+    ):
+        raise ValueError("variational learning result digest mismatch")
 
 
 def _new_variational_channel_accumulator(
@@ -2894,7 +3303,7 @@ def compute_variational_fsoi(
     if perturbation_diagnostics is None:
         raise RuntimeError("variational perturbation was not validated")
     fsoi = VariationalFSOI(
-        contract="p1-linearized-observation-impact-v10",
+        contract="p1-linearized-observation-impact-v11",
         fso=fso,
         perturbation=observation_perturbation,
         perturbation_contract=observation_perturbation.contract,
@@ -2923,10 +3332,10 @@ def compute_variational_fsoi_for_learning(
 ) -> VariationalLearningImpact:
     """Compute frozen-domain FSOI under a root-owned learning policy."""
 
-    approved_policy_digests = _load_approved_learning_policy_digests(
+    trust_store = _load_learning_policy_trust_store(
         policy_trust_store_path
     )
-    if policy.digest not in approved_policy_digests:
+    if policy.digest not in trust_store.approved_policy_digests:
         return _rejected_learning_impact(policy, "unapproved_learning_policy")
     if (
         observation_perturbation.perturbation_semantics
@@ -2975,12 +3384,49 @@ def compute_variational_fsoi_for_learning(
         policy,
     )
     if not validation.first_order_valid:
+        no_material_signal = validation.material_metric_count == 0 and all(
+            (
+                validation.full_step_resolved_analysis_converged,
+                validation.half_step_resolved_analysis_converged,
+                validation.active_branch_valid,
+                validation.full_step_valid,
+                validation.half_step_valid,
+                validation.sign_consistent_for_material_impacts,
+            )
+        )
+        reason = (
+            "no_material_learning_signal"
+            if no_material_signal
+            else "first_order_validation_failed"
+        )
         return _rejected_learning_impact(
             policy,
-            "first_order_validation_failed",
+            reason,
             fsoi=fsoi,
             first_order_validation=validation,
         )
+    owned_impact = _clone_variational_impact_channel(impact)
+    analysis_digests = (
+        validation.full_step_analysis_digest,
+        validation.half_step_analysis_digest,
+    )
+    forecast_digests = (
+        validation.full_step_forecast_digest,
+        validation.half_step_forecast_digest,
+    )
+    if any(value is None for value in (*analysis_digests, *forecast_digests)):
+        raise RuntimeError("eligible learning validation lacks resolved digests")
+    evidence = LearningApprovalEvidence(
+        policy_digest=policy.digest,
+        trust_store_digest=trust_store.content_digest,
+        fsoi_digest=fsoi.variational_fsoi_digest,
+        full_step_analysis_digest=cast(str, analysis_digests[0]),
+        half_step_analysis_digest=cast(str, analysis_digests[1]),
+        full_step_forecast_digest=cast(str, forecast_digests[0]),
+        half_step_forecast_digest=cast(str, forecast_digests[1]),
+        first_order_validation_digest=validation.validation_digest,
+        learning_impact_digest=_variational_impact_digest(owned_impact),
+    )
     return VariationalLearningImpact(
         eligibility=LearningEligibility(
             eligible=True,
@@ -2989,7 +3435,8 @@ def compute_variational_fsoi_for_learning(
         ),
         fsoi=fsoi,
         first_order_validation=validation,
-        frozen_domain_learning_impact=impact,
+        frozen_domain_learning_impact=owned_impact,
+        approval_evidence=evidence,
     )
 
 
@@ -3062,7 +3509,19 @@ def _validate_first_order_learning_impact(
             (half_prediction, half.metric_change),
         ),
         available,
-        policy.material_impact_threshold,
+        fsoi.fso.metric_names,
+        policy,
+    )
+    material_count, maximum_material, aggregate_material = (
+        _material_impact_summary(
+            (
+                (full_prediction, full.metric_change),
+                (half_prediction, half.metric_change),
+            ),
+            available,
+            fsoi.fso.metric_names,
+            policy,
+        )
     )
     branch_valid = full.active_branch_valid and half.active_branch_valid
     first_order_valid = (
@@ -3072,6 +3531,7 @@ def _validate_first_order_learning_impact(
         and full_step_valid
         and half_step_valid
         and sign_consistent
+        and material_count > 0
     )
     return FirstOrderValidation(
         full_step_prediction=full_prediction,
@@ -3087,7 +3547,14 @@ def _validate_first_order_learning_impact(
         full_step_valid=full_step_valid,
         half_step_valid=half_step_valid,
         sign_consistent_for_material_impacts=sign_consistent,
+        material_metric_count=material_count,
+        maximum_material_impact=maximum_material,
+        aggregate_material_impact_norm=aggregate_material,
         first_order_valid=first_order_valid,
+        full_step_analysis_digest=full.analysis_digest,
+        half_step_analysis_digest=half.analysis_digest,
+        full_step_forecast_digest=full.forecast_digest,
+        half_step_forecast_digest=half.forecast_digest,
     )
 
 
@@ -3096,6 +3563,8 @@ class _ResolvedLearningStep:
     metric_change: Tensor
     analysis_converged: bool
     active_branch_valid: bool
+    analysis_digest: str | None
+    forecast_digest: str | None
 
 
 def _resolve_learning_step(
@@ -3147,17 +3616,18 @@ def _resolve_learning_step(
         changed_frozen,
         control=analysis.control,
     )
+    resolved_linearization = resolved.linearization
     converged = (
         resolved.converged
         and not resolved.used_fallback
         and not resolved.degraded
         and resolved.p1_forecast_eligible
+        and resolved_linearization is not None
     )
     metric_change = torch.full_like(
         fsoi.fso.forecast_scores,
         float("nan"),
     )
-    resolved_linearization = resolved.linearization
     branch_valid = converged and resolved_linearization is not None
     if resolved_linearization is not None:
         branch_valid = (
@@ -3166,7 +3636,15 @@ def _resolve_learning_step(
             == frozen.analysis_remap_cells
         )
     if not converged:
-        return _ResolvedLearningStep(metric_change, False, branch_valid)
+        return _ResolvedLearningStep(
+            metric_change,
+            False,
+            branch_valid,
+            None,
+            None,
+        )
+    if resolved_linearization is None:
+        raise RuntimeError("converged learning re-solve lacks linearization")
 
     verification = _resolve_verification(
         verification_input,
@@ -3189,6 +3667,7 @@ def _resolve_learning_step(
         verification.frames_dbz
     )
     available = fsoi.fso.metric_available
+    changed_forecasts: list[dict[str, str | int]] = []
     for lead_index, minutes in enumerate(fsoi.fso.lead_minutes):
         step = minutes // config.interval_minutes
         forecast_index = step - 1
@@ -3208,6 +3687,12 @@ def _resolve_learning_step(
         )
         if not torch.equal(nominal_cap_active, changed_cap_active):
             branch_valid = False
+        changed_forecasts.append(
+            {
+                "lead_minutes": minutes,
+                "forecast_digest": tensor_digest(changed_capped),
+            }
+        )
         metric_weight = _metric_domain_weight(
             result,
             finite_truth[forecast_index],
@@ -3247,7 +3732,18 @@ def _resolve_learning_step(
             metric_change[lead_index, metric_index] = (
                 changed_score - nominal_score
             ).detach()
-    return _ResolvedLearningStep(metric_change, converged, branch_valid)
+    return _ResolvedLearningStep(
+        metric_change,
+        converged,
+        branch_valid,
+        resolved_linearization.linearization_digest,
+        json_digest(
+            {
+                "contract": "p1-resolved-learning-forecast-v1",
+                "forecasts": changed_forecasts,
+            }
+        ),
+    )
 
 
 def _taylor_step_is_valid(
@@ -3258,8 +3754,14 @@ def _taylor_step_is_valid(
 ) -> bool:
     error = torch.abs(actual - prediction)
     scale = torch.maximum(torch.abs(actual), torch.abs(prediction))
+    absolute_error = prediction.new_tensor(
+        tuple(
+            policy.threshold_for(name).maximum_absolute_error
+            for name in policy.sensitivity_config.metric_names
+        )
+    )
     tolerance = (
-        policy.maximum_linearity_absolute_error
+        absolute_error
         + policy.maximum_linearity_relative_error * scale
     )
     selected = error.masked_select(available)
@@ -3274,8 +3776,16 @@ def _taylor_step_is_valid(
 def _material_impact_signs_are_consistent(
     steps: tuple[tuple[Tensor, Tensor], ...],
     available: Tensor,
-    materiality: float,
+    metric_names: tuple[str, ...],
+    policy: AutomatedLearningPolicy,
 ) -> bool:
+    materiality = available.new_tensor(
+        tuple(
+            policy.threshold_for(name).material_impact_threshold
+            for name in metric_names
+        ),
+        dtype=steps[0][0].dtype,
+    )
     for prediction, actual in steps:
         material = available & (
             torch.maximum(torch.abs(prediction), torch.abs(actual))
@@ -3284,6 +3794,36 @@ def _material_impact_signs_are_consistent(
         if bool(torch.any(material & (prediction * actual <= 0.0))):
             return False
     return True
+
+
+def _material_impact_summary(
+    steps: tuple[tuple[Tensor, Tensor], ...],
+    available: Tensor,
+    metric_names: tuple[str, ...],
+    policy: AutomatedLearningPolicy,
+) -> tuple[int, float, float]:
+    magnitudes = torch.stack(
+        tuple(
+            torch.maximum(torch.abs(prediction), torch.abs(actual))
+            for prediction, actual in steps
+        )
+    ).amax(dim=0)
+    thresholds = magnitudes.new_tensor(
+        tuple(
+            policy.threshold_for(name).material_impact_threshold
+            for name in metric_names
+        )
+    )
+    selected = magnitudes.masked_select(
+        available & (magnitudes >= thresholds)
+    )
+    if selected.numel() == 0:
+        return 0, 0.0, 0.0
+    return (
+        int(selected.numel()),
+        float(torch.amax(selected).detach()),
+        float(torch.linalg.vector_norm(selected).detach()),
+    )
 
 
 def _compute_variational_products(
@@ -4555,7 +5095,7 @@ def _validate_variational_observation_perturbation(
     frozen: FrozenOuterState,
     config: VariationalAdjointConfig,
 ) -> VariationalPerturbationDiagnostics:
-    if perturbation.contract != "p1-observation-perturbation-v6":
+    if perturbation.contract != "p1-observation-perturbation-v7":
         raise ValueError("unsupported P1 observation perturbation contract")
     if perturbation.perturbation_semantics not in (
         "augmented_parameter",
@@ -4727,6 +5267,11 @@ def _validate_physical_radar_semantics(
         raise ValueError(
             "physical radar perturbation channels are inconsistent"
         )
+    _ = _physical_radar_input_margins(
+        physical_delta,
+        observations,
+        frozen,
+    )
     return physical_delta
 
 
@@ -4783,6 +5328,15 @@ def _perturbation_diagnostics(
     config: VariationalAdjointConfig,
     physical_delta: Tensor | None,
 ) -> VariationalPerturbationDiagnostics:
+    floor_margin, ceiling_margin = (
+        (None, None)
+        if physical_delta is None
+        else _physical_radar_input_margins(
+            physical_delta,
+            observations,
+            frozen,
+        )
+    )
     baseline_delta = _baseline_dynamics_perturbation(
         perturbation,
         observations,
@@ -4883,6 +5437,8 @@ def _perturbation_diagnostics(
         whitened_l2=whitened_l2,
         maximum_per_tile_whitened_norm=tile_norm,
         observation_weight_l2=weight_l2,
+        minimum_input_floor_margin_dbz=floor_margin,
+        minimum_input_ceiling_margin_dbz=ceiling_margin,
         directional_classification_valid=True,
         baseline_dynamics_branch_status=baseline_branch_status,
         baseline_dynamics_branch_signature_digest=(

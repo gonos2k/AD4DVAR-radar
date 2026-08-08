@@ -412,6 +412,11 @@ policy = AutomatedLearningPolicy(
     adjoint_config=VariationalAdjointConfig.for_automated_learning(),
     algorithm_bundle_digest=approved_algorithm_bundle_digest,
     numerical_runtime_digest=approved_numerical_runtime_digest,
+    metric_taylor_thresholds=(
+        MetricTaylorThreshold("log_echo_mse", 1e-6, 1e-5),
+        MetricTaylorThreshold("soft_fss_error_35", 1e-6, 1e-5),
+        MetricTaylorThreshold("centroid_error_m2", 1.0, 100.0),
+    ),
 )
 learning = compute_variational_fsoi_for_learning(
     forecast,
@@ -422,6 +427,8 @@ learning = compute_variational_fsoi_for_learning(
     policy_trust_store_path="/etc/advar/learning-policies.json",
 )
 if learning.eligibility.eligible:
+    validate_variational_learning_impact(learning)
+    ledger.append_variational_learning_approval(learning)
     update_model(learning.frozen_domain_learning_impact)
 ```
 
@@ -436,6 +443,14 @@ FSO 결과에 기록된다. 픽셀 단위 설정은 기존 연구계약과의 �
 self-approval할 수 없다. 일반 결과의
 `baseline_branch_trusted_total`은 baseline branch만 인증한다. 전체 학습 승인은
 `LearningEligibility`만 사용한다.
+Taylor 절대오차와 materiality는 단위가 다른 metric마다 따로 지정한다. full/half
+step 중 material metric이 하나도 없으면 `no_material_learning_signal`로 거부한다.
+Physical radar perturbation은 원 입력의 `min_dbz`/`max_dbz` clamp 안에 남아야 한다.
+승인된 `LearningApprovalEvidence`는 policy와 trust-store, FSOI, full/half
+분석·forecast, Taylor validation과 최종 impact digest를 하나로 묶는다.
+`validate_variational_learning_impact()`는 저장 직전에 이 결합을 다시 검사하고,
+`EpisodeLedger.append_variational_learning_approval()`은 대형 P1 Tensor 대신 이
+작은 승인증거만 append-only index에 보존한다.
 
 ```json
 {
@@ -1270,13 +1285,15 @@ weight, active set, remap cell, observation classification과 baseline을 고정
 재계산한 frozen·robust stationarity와 IRLS fixed-point 오차가 설정 임계값
 이하여야 한다. outer-loop 선택
 자체의 변화, EFSO, 검증된 baseline-normalized reward와 자동학습 승격은 아직
-포함하지 않는다. P1 FSO·FSOI 결과 자체는 M0 episode ledger에 저장하지 않지만,
+포함하지 않는다. P1 FSO·FSOI Tensor 자체는 M0 episode ledger에 저장하지 않지만,
 자동학습 wrapper는 동일 frozen 준비구조에 실제 physical-dBZ perturbation의
 full step과 half step을 적용해 robust P1 분석을 각각 다시 풀고, 선택된
 lead·metric의 실제 변화와 1차 예측을 비교한다. 절대+상대 Taylor 오차, 물질적
 영향의 부호, remap/output-cap branch 중 하나라도 실패하면
 `first_order_valid=False`로 거부한다. 이 값은 명목 metric domain을 고정한
 조건부 영향이므로 결과명도 `frozen_domain_learning_impact`로 제한한다.
+material metric이 없는 수치잡음은 학습으로 승격하지 않으며, 승인된 결과는
+content-addressed learning evidence만 원장에 별도로 기록할 수 있다.
 3시간 지연 재계산에 필요한 frozen linearization은 content-addressed
 `p1-linearization-v11` artifact로 안전하게 보존·재적재할 수 있다.
 P1 분석상태는 기존 M0 직접민감도 API에서 계속 provenance 검사로 거부된다.

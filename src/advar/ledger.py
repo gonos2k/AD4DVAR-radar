@@ -23,13 +23,16 @@ from torch import Tensor
 from .sensitivity import (
     CONTEXT_FEATURE_NAMES,
     CONTEXT_FEATURE_NAMES_V13,
+    LearningApprovalEvidence,
     SensitivitySnapshot,
+    VariationalLearningImpact,
+    validate_variational_learning_impact,
 )
 
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 3
+_INDEX_SCHEMA_VERSION = 4
 _EPISODE_SCHEMA_VERSION = 17
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _TRUST_COMPONENTS_V13 = {
@@ -457,6 +460,82 @@ class EpisodeLedger:
             ).fetchall()
         return [dict(row) for row in rows]
 
+    def append_variational_learning_approval(
+        self,
+        learning: VariationalLearningImpact,
+    ) -> str:
+        """Append the digest evidence for one eligible P1 learning result."""
+
+        validate_variational_learning_impact(learning)
+        evidence = learning.approval_evidence
+        if not learning.eligibility.eligible or evidence is None:
+            raise ValueError("only eligible learning impacts can be recorded")
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO variational_learning_approvals (
+                    learning_result_digest, approval_evidence_digest,
+                    evidence_contract, policy_digest, trust_store_digest,
+                    fsoi_digest, full_step_analysis_digest,
+                    half_step_analysis_digest, full_step_forecast_digest,
+                    half_step_forecast_digest,
+                    first_order_validation_digest,
+                    learning_impact_digest, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    learning.learning_result_digest,
+                    evidence.digest,
+                    evidence.contract,
+                    evidence.policy_digest,
+                    evidence.trust_store_digest,
+                    evidence.fsoi_digest,
+                    evidence.full_step_analysis_digest,
+                    evidence.half_step_analysis_digest,
+                    evidence.full_step_forecast_digest,
+                    evidence.half_step_forecast_digest,
+                    evidence.first_order_validation_digest,
+                    evidence.learning_impact_digest,
+                    datetime.now(timezone.utc).isoformat(),
+                ),
+            )
+        return learning.learning_result_digest
+
+    def load_variational_learning_approval(
+        self,
+        learning_result_digest: str,
+    ) -> LearningApprovalEvidence:
+        """Load and verify one immutable P1 learning approval record."""
+
+        with self._connect() as connection:
+            connection.row_factory = sqlite3.Row
+            row = connection.execute(
+                """
+                SELECT * FROM variational_learning_approvals
+                WHERE learning_result_digest = ?
+                """,
+                (learning_result_digest,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(f"unknown learning approval: {learning_result_digest}")
+        evidence = LearningApprovalEvidence(
+            policy_digest=row["policy_digest"],
+            trust_store_digest=row["trust_store_digest"],
+            fsoi_digest=row["fsoi_digest"],
+            full_step_analysis_digest=row["full_step_analysis_digest"],
+            half_step_analysis_digest=row["half_step_analysis_digest"],
+            full_step_forecast_digest=row["full_step_forecast_digest"],
+            half_step_forecast_digest=row["half_step_forecast_digest"],
+            first_order_validation_digest=(
+                row["first_order_validation_digest"]
+            ),
+            learning_impact_digest=row["learning_impact_digest"],
+            contract=row["evidence_contract"],
+        )
+        if evidence.digest != row["approval_evidence_digest"]:
+            raise ValueError("learning approval evidence digest mismatch")
+        return evidence
+
     def _initialize_index(self) -> None:
         with self._connect() as connection:
             connection.execute("PRAGMA journal_mode = WAL")
@@ -487,6 +566,25 @@ class EpisodeLedger:
             _ensure_episode_impacts_schema(connection)
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS variational_learning_approvals (
+                    learning_result_digest TEXT PRIMARY KEY,
+                    approval_evidence_digest TEXT NOT NULL,
+                    evidence_contract TEXT NOT NULL,
+                    policy_digest TEXT NOT NULL,
+                    trust_store_digest TEXT NOT NULL,
+                    fsoi_digest TEXT NOT NULL,
+                    full_step_analysis_digest TEXT NOT NULL,
+                    half_step_analysis_digest TEXT NOT NULL,
+                    full_step_forecast_digest TEXT NOT NULL,
+                    half_step_forecast_digest TEXT NOT NULL,
+                    first_order_validation_digest TEXT NOT NULL,
+                    learning_impact_digest TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE INDEX IF NOT EXISTS episodes_contract_time
                 ON episodes(contract_hash, issue_time)
                 """
@@ -494,7 +592,11 @@ class EpisodeLedger:
             connection.execute(
                 f"PRAGMA user_version = {_INDEX_SCHEMA_VERSION}"
             )
-            for table in ("episodes", "episode_impacts"):
+            for table in (
+                "episodes",
+                "episode_impacts",
+                "variational_learning_approvals",
+            ):
                 connection.execute(
                     f"""
                     CREATE TRIGGER IF NOT EXISTS {table}_no_update
