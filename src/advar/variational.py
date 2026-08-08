@@ -474,6 +474,98 @@ class AnalysisConfig:
 
 
 @dataclass(frozen=True)
+class CommonBiasResourceEstimate:
+    """Allocation-free cost estimate for overlapping bias modes."""
+
+    mode_shape: tuple[int, ...]
+    frame_shape: tuple[int, int, int]
+    dtype: str
+    mode_count: int
+    retained_mode_bytes: int
+    whitener_operations_per_apply: int
+    gram_multiply_adds: int
+    correction_bytes: int
+    frozen_whitener_bytes: int
+    within_budget: bool
+    rejection_reasons: tuple[str, ...]
+
+
+def estimate_common_bias_resources(
+    mode_shape: tuple[int, ...],
+    frame_shape: tuple[int, int, int],
+    *,
+    dtype: torch.dtype,
+    temporal_scope: ObservationCommonBiasScope,
+    config: AnalysisConfig | None = None,
+) -> CommonBiasResourceEstimate:
+    """Estimate dense overlapping-mode cost before allocating its Tensor."""
+
+    config = config or AnalysisConfig()
+    if (
+        len(frame_shape) != 3
+        or frame_shape[0] != 3
+        or any(type(value) is not int or value <= 0 for value in frame_shape)
+    ):
+        raise ValueError("frame_shape must be positive [3,H,W]")
+    if any(type(value) is not int or value <= 0 for value in mode_shape):
+        raise ValueError("mode_shape dimensions must be positive integers")
+    if len(mode_shape) == 3:
+        mode_count, height, width = mode_shape
+        frame_multiplier = frame_shape[0]
+    elif len(mode_shape) == 4 and mode_shape[0] == frame_shape[0]:
+        _, mode_count, height, width = mode_shape
+        frame_multiplier = 1
+    else:
+        raise ValueError("mode_shape must be [K,H,W] or [3,K,H,W]")
+    if (height, width) != frame_shape[1:]:
+        raise ValueError("mode and frame spatial shapes must agree")
+    item_sizes = {torch.float32: 4, torch.float64: 8}
+    if dtype not in item_sizes:
+        raise TypeError("common-bias resource dtype must be float32 or float64")
+    if temporal_scope not in ("per_frame", "all_times"):
+        raise ValueError("unsupported common-bias temporal scope")
+    item_size = item_sizes[dtype]
+    mode_elements = math.prod(mode_shape)
+    retained_bytes = mode_elements * item_size
+    operations_per_apply = 2 * frame_multiplier * mode_elements
+    gram_operations = (
+        frame_shape[0] * mode_count * mode_count * height * width
+    )
+    correction_count = (
+        frame_shape[0] if temporal_scope == "per_frame" else 1
+    )
+    correction_bytes = correction_count * mode_count * mode_count * item_size
+    frozen_bytes = (
+        math.prod(frame_shape) * item_size + correction_bytes
+    )
+    reasons: list[str] = []
+    if not 1 <= mode_count <= MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT:
+        reasons.append("mode_count")
+    if retained_bytes > config.maximum_common_bias_mode_weight_bytes:
+        reasons.append("retained_mode_bytes")
+    if (
+        operations_per_apply
+        > config.maximum_common_bias_whitener_apply_operations
+    ):
+        reasons.append("whitener_operations_per_apply")
+    if frozen_bytes > config.maximum_frozen_whitener_bytes:
+        reasons.append("frozen_whitener_bytes")
+    return CommonBiasResourceEstimate(
+        mode_shape=mode_shape,
+        frame_shape=frame_shape,
+        dtype=str(dtype),
+        mode_count=mode_count,
+        retained_mode_bytes=retained_bytes,
+        whitener_operations_per_apply=operations_per_apply,
+        gram_multiply_adds=gram_operations,
+        correction_bytes=correction_bytes,
+        frozen_whitener_bytes=frozen_bytes,
+        within_budget=not reasons,
+        rejection_reasons=tuple(reasons),
+    )
+
+
+@dataclass(frozen=True)
 class AnalysisObservations:
     dbz: Tensor
     std_dbz: Tensor
@@ -1285,13 +1377,31 @@ def prepare_analysis(
                 "common-bias mode weights and tile-size modes are mutually "
                 "exclusive"
             )
-        mode_bytes = (
-            observation_common_bias_mode_weights.numel()
-            * torch.empty((), dtype=frames_dbz.dtype).element_size()
+        resource_estimate = estimate_common_bias_resources(
+            tuple(observation_common_bias_mode_weights.shape),
+            (
+                frames_dbz.shape[0],
+                frames_dbz.shape[1],
+                frames_dbz.shape[2],
+            ),
+            dtype=frames_dbz.dtype,
+            temporal_scope=analysis_config.observation_common_bias_scope,
+            config=analysis_config,
         )
-        if mode_bytes > analysis_config.maximum_common_bias_mode_weight_bytes:
+        if "retained_mode_bytes" in resource_estimate.rejection_reasons:
             raise ValueError(
                 "common-bias mode weights exceed their retained byte budget"
+            )
+        if (
+            "whitener_operations_per_apply"
+            in resource_estimate.rejection_reasons
+        ):
+            raise ValueError(
+                "common-bias whitener exceeds its apply-operation budget"
+            )
+        if "frozen_whitener_bytes" in resource_estimate.rejection_reasons:
+            raise ValueError(
+                "frozen observation whitener exceeds its byte budget"
             )
         common_bias_mode_weights = _canonical_common_bias_mode_weights(
             observation_common_bias_mode_weights,
@@ -1303,21 +1413,6 @@ def prepare_analysis(
             dtype=frames_dbz.dtype,
             device=frames_dbz.device,
         )
-        frame_multiplier = (
-            frames_dbz.shape[0]
-            if common_bias_mode_weights.ndim == 3
-            else 1
-        )
-        whitener_apply_operations = (
-            2 * frame_multiplier * common_bias_mode_weights.numel()
-        )
-        if (
-            whitener_apply_operations
-            > analysis_config.maximum_common_bias_whitener_apply_operations
-        ):
-            raise ValueError(
-                "common-bias whitener exceeds its apply-operation budget"
-            )
         mode_digest = observation_common_bias_mode_weights_digest(
             common_bias_mode_weights
         )

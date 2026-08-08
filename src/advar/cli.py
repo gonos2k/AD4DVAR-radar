@@ -28,6 +28,7 @@ from .run_artifact import (
 from .variational import (
     AnalysisConfig,
     AnalysisResult,
+    estimate_common_bias_resources,
     observation_common_bias_group_map_digest,
     observation_common_bias_mode_weights_digest,
     variational_nowcast,
@@ -470,6 +471,7 @@ def main() -> None:
         mode_array = np.load(
             args.observation_common_bias_mode_weights,
             allow_pickle=False,
+            mmap_mode="r",
         )
         if (
             mode_array.ndim not in (3, 4)
@@ -481,8 +483,24 @@ def main() -> None:
                 "common-bias mode weights must be floating with shape "
                 "[K,H,W] or [3,K,H,W]"
             )
+        common_bias_scope = (
+            AnalysisConfig().observation_common_bias_scope
+            if args.observation_common_bias_scope is None
+            else args.observation_common_bias_scope
+        )
+        resource_estimate = estimate_common_bias_resources(
+            tuple(mode_array.shape),
+            (frames.shape[0], frames.shape[1], frames.shape[2]),
+            dtype=torch.float32,
+            temporal_scope=common_bias_scope,
+        )
+        if not resource_estimate.within_budget:
+            reasons = ", ".join(resource_estimate.rejection_reasons)
+            raise ValueError(
+                f"common-bias mode preflight rejected: {reasons}"
+            )
         common_bias_mode_weights = torch.as_tensor(
-            mode_array,
+            np.array(mode_array, copy=True),
             dtype=torch.float32,
         )
         common_bias_mode_digest = (
