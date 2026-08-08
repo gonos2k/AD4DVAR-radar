@@ -19,6 +19,7 @@ from advar import (
     load_forecast_run,
     load_p1_linearization,
 )
+from advar._digest import json_digest
 
 
 def _positive_minutes(value: str) -> tuple[int, ...]:
@@ -84,6 +85,12 @@ def main() -> None:
         default=100_000_000_000,
     )
     parser.add_argument("--cold-start", action="store_true")
+    parser.add_argument("--max-wall-seconds", type=float, default=3_600.0)
+    parser.add_argument(
+        "--max-peak-rss-bytes",
+        type=int,
+        default=32 * 1024**3,
+    )
     args = parser.parse_args()
 
     forecast = load_forecast_run(args.forecast_run)
@@ -127,8 +134,13 @@ def main() -> None:
     )
     if whitener_total_operations > args.max_whitener_total_operations:
         raise RuntimeError("common-bias whitener operation budget exceeded")
+    peak_rss_after = _peak_rss_bytes()
+    if elapsed > args.max_wall_seconds:
+        raise RuntimeError("FSO wall-time budget exceeded")
+    if peak_rss_after > args.max_peak_rss_bytes:
+        raise RuntimeError("FSO peak-RSS budget exceeded")
     report = {
-        "contract": "p1-variational-fso-benchmark-v3",
+        "contract": "p1-variational-fso-benchmark-v4",
         "forecast_run_digest": forecast.forecast_run_digest,
         "linearization_digest": result.linearization_digest,
         "variational_fso_digest": result.variational_fso_digest,
@@ -143,7 +155,7 @@ def main() -> None:
         ),
         "wall_seconds": elapsed,
         "peak_rss_before_bytes": rss_before,
-        "peak_rss_after_bytes": _peak_rss_bytes(),
+        "peak_rss_after_bytes": peak_rss_after,
         "materialized_output_bytes": result.materialized_output_bytes,
         "normal_products": result.total_normal_products,
         "whitener_operations_per_apply": (
@@ -168,7 +180,16 @@ def main() -> None:
             .maximum_relative_curvature_defect
         ),
         "gauss_newton_reliable": result.gauss_newton_diagnostics.reliable,
+        "maximum_wall_seconds": args.max_wall_seconds,
+        "maximum_peak_rss_bytes": args.max_peak_rss_bytes,
+        "maximum_normal_products": args.max_normal_products,
+        "maximum_materialized_output_bytes": args.max_output_bytes,
+        "maximum_whitener_total_operations": (
+            args.max_whitener_total_operations
+        ),
+        "benchmark_passed": True,
     }
+    report["benchmark_digest"] = json_digest(report)
     print(
         json.dumps(
             _json_safe(report),
