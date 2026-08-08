@@ -950,6 +950,32 @@ class VariationalAnalysisTests(unittest.TestCase):
                 observation_common_bias_mode_weights=mode_weights,
             )
 
+        observations, frozen = prepare_analysis(
+            frames,
+            analysis_config=base,
+            observation_common_bias_mode_weights=mode_weights,
+        )
+        control = initial_control(frozen)
+        operations = (
+            variational_module._observation_whitener_operations_per_apply(
+                observations
+            )
+        )
+        with (
+            variational_module._count_observation_whitener_applies(
+                operations_per_apply=operations,
+                maximum_total_operations=operations,
+            ),
+            self.assertRaisesRegex(ValueError, "total operation budget"),
+        ):
+            residual_vector(control, observations, frozen)
+            residual_vector(control, observations, frozen)
+
+        self.assertLess(
+            AnalysisConfig().maximum_common_bias_whitener_apply_operations,
+            2 * 64 * 2048**2,
+        )
+
     def test_common_bias_contract_is_validated_and_changes_lineage(self) -> None:
         for value in (-0.1, float("nan"), float("inf"), True):
             with self.subTest(value=value):

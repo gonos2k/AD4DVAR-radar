@@ -33,6 +33,7 @@ from .nowcast import (
     _estimate_source_tendencies,
     _forecast_linear_at_step_core,
     _phase_correlation_details,
+    forecast_from_state,
     forecast_linear_at_step,
     motion_displacement_limits_yx,
 )
@@ -93,6 +94,10 @@ CandidateRankingObjective = Literal[
     "two_sided_diagnostic",
 ]
 LearningSelectionMode = Literal["direct", "ranked_top_k"]
+FirstOrderMetricDomain = Literal[
+    "frozen_metric_domain",
+    "resolved_issuance_domain",
+]
 TileShape = tuple[int, int]
 LEARNING_POLICY_TRUST_STORE_CONTRACT = "advar-learning-policy-trust-store-v1"
 MAXIMUM_LEARNING_POLICY_TRUST_STORE_BYTES = 1024 * 1024
@@ -517,6 +522,7 @@ class VariationalAdjointConfig:
     pcg_relative_tolerance: float | None = None
     maximum_pcg_iterations: int | None = None
     maximum_normal_products: int = 10_000
+    maximum_whitener_total_operations: int = 100_000_000_000
     maximum_materialized_output_bytes: int = 2 * 1024**3
     warm_start_by_metric: bool = True
     preconditioner: VariationalPreconditioner = (
@@ -583,6 +589,10 @@ class VariationalAdjointConfig:
             raise ValueError("adjoint PCG iterations must be positive")
         for name, value in (
             ("maximum_normal_products", self.maximum_normal_products),
+            (
+                "maximum_whitener_total_operations",
+                self.maximum_whitener_total_operations,
+            ),
             (
                 "maximum_materialized_output_bytes",
                 self.maximum_materialized_output_bytes,
@@ -1229,10 +1239,10 @@ class AutomatedLearningPolicy:
     maximum_learning_pcg_iterations: int = 100_000
     maximum_learning_wall_seconds: float = 3_600.0
     maximum_whitener_total_operations: int = 100_000_000_000
-    contract: str = "p1-automated-learning-policy-v6"
+    contract: str = "p1-automated-learning-policy-v7"
 
     def __post_init__(self) -> None:
-        if self.contract != "p1-automated-learning-policy-v6":
+        if self.contract != "p1-automated-learning-policy-v7":
             raise ValueError("unsupported automated-learning policy")
         _require_sha256(
             "algorithm_bundle_digest",
@@ -1341,6 +1351,13 @@ class AutomatedLearningPolicy:
         if self.maximum_total_robust_resolves < required_resolves:
             raise ValueError(
                 "robust-resolve budget must cover full/half candidate checks"
+            )
+        if (
+            self.adjoint_config.maximum_whitener_total_operations
+            > self.maximum_whitener_total_operations
+        ):
+            raise ValueError(
+                "adjoint whitener budget cannot exceed the learning budget"
             )
         if (
             isinstance(self.maximum_learning_wall_seconds, bool)
@@ -1769,13 +1786,18 @@ class FirstOrderValidation:
     full_step_pcg_iterations: int = 0
     half_step_pcg_iterations: int = 0
     observed_whitener_apply_count: int = 0
-    metric_domain_contract: str = "frozen_metric_domain"
-    contract: str = "p1-first-order-validation-v2"
+    metric_domain_contract: FirstOrderMetricDomain = "frozen_metric_domain"
+    contract: str = "p1-first-order-validation-v3"
     validation_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "p1-first-order-validation-v2":
+        if self.contract != "p1-first-order-validation-v3":
             raise ValueError("unsupported first-order validation contract")
+        if self.metric_domain_contract not in (
+            "frozen_metric_domain",
+            "resolved_issuance_domain",
+        ):
+            raise ValueError("unsupported first-order metric domain")
         tensor_names = (
             "full_step_prediction",
             "full_step_resolved_metric_change",
@@ -3825,13 +3847,20 @@ def compute_variational_fso(
 ) -> VariationalFSO:
     """Compute frozen-final P1 forecast sensitivity to observations."""
 
-    with _count_observation_whitener_applies() as counter:
+    resolved_adjoint = adjoint_config or VariationalAdjointConfig()
+    operations_per_apply = _analysis_whitener_operations_per_apply(analysis)
+    with _count_observation_whitener_applies(
+        operations_per_apply=operations_per_apply,
+        maximum_total_operations=(
+            resolved_adjoint.maximum_whitener_total_operations
+        ),
+    ) as counter:
         fso, _, _ = _compute_variational_products(
             result,
             analysis,
             verification_frames_dbz,
             sensitivity_config=sensitivity_config,
-            adjoint_config=adjoint_config,
+            adjoint_config=resolved_adjoint,
             observation_perturbation=None,
         )
     return _bind_fso_whitener_telemetry(fso, analysis, counter[0])
@@ -3848,14 +3877,21 @@ def compute_variational_fsoi(
 ) -> VariationalFSOI:
     """Compute signed first-order impact for an explicit perturbation."""
 
-    with _count_observation_whitener_applies() as counter:
+    resolved_adjoint = adjoint_config or VariationalAdjointConfig()
+    operations_per_apply = _analysis_whitener_operations_per_apply(analysis)
+    with _count_observation_whitener_applies(
+        operations_per_apply=operations_per_apply,
+        maximum_total_operations=(
+            resolved_adjoint.maximum_whitener_total_operations
+        ),
+    ) as counter:
         fso, observation_impact, perturbation_diagnostics = (
             _compute_variational_products(
                 result,
                 analysis,
                 verification_frames_dbz,
                 sensitivity_config=sensitivity_config,
-                adjoint_config=adjoint_config,
+                adjoint_config=resolved_adjoint,
                 observation_perturbation=observation_perturbation,
             )
         )
@@ -3883,6 +3919,48 @@ def compute_variational_fsoi(
     )
 
 
+def validate_variational_fsoi_issuance_impact(
+    result: ForecastResult,
+    analysis: AnalysisResult | P1LinearizationState,
+    verification_frames_dbz: VerificationInput,
+    fsoi: VariationalFSOI,
+    *,
+    policy: AutomatedLearningPolicy,
+) -> FirstOrderValidation:
+    """Re-solve a physical FSOI on the changed issuance domain.
+
+    This is a research diagnostic. Automated learning remains bound to the
+    smoother ``frozen_metric_domain`` contract.
+    """
+
+    validate_variational_fsoi(fsoi)
+    result.validate_issuance()
+    linearization = analysis.linearization
+    if linearization is None:
+        raise ValueError("issuance validation requires a linearization")
+    if fsoi.perturbation.perturbation_semantics != "physical_radar_value":
+        raise ValueError("issuance validation requires a physical perturbation")
+    if fsoi.fso.forecast_run_digest != result.forecast_run_digest:
+        raise ValueError("issuance validation forecast mismatch")
+    if fsoi.fso.linearization_digest != linearization.linearization_digest:
+        raise ValueError("issuance validation linearization mismatch")
+    if fsoi.fso.sensitivity_config_digest != policy.sensitivity_config.digest:
+        raise ValueError("issuance validation sensitivity policy mismatch")
+    if fsoi.fso.adjoint_config_digest != policy.adjoint_config.digest:
+        raise ValueError("issuance validation adjoint policy mismatch")
+    return _validate_first_order_learning_impact(
+        result,
+        analysis,
+        verification_frames_dbz,
+        fsoi,
+        policy,
+        metric_domain_contract="resolved_issuance_domain",
+        maximum_whitener_total_operations=(
+            policy.maximum_whitener_total_operations
+        ),
+    )
+
+
 def _bind_fso_whitener_telemetry(
     fso: VariationalFSO,
     analysis: AnalysisResult | P1LinearizationState,
@@ -3904,6 +3982,17 @@ def _bind_fso_whitener_telemetry(
     return replace(
         updated,
         variational_fso_digest=variational_fso_digest(updated),
+    )
+
+
+def _analysis_whitener_operations_per_apply(
+    analysis: AnalysisResult | P1LinearizationState,
+) -> int:
+    linearization = analysis.linearization
+    if linearization is None:
+        return 0
+    return _observation_whitener_operations_per_apply(
+        linearization.observations
     )
 
 
@@ -4430,14 +4519,45 @@ def _learning_impact_from_fsoi(
             "baseline_dynamics_branch_not_certified",
             fsoi=fsoi,
         )
-    validation_started = time.monotonic()
-    validation = _validate_first_order_learning_impact(
-        result,
-        analysis,
-        verification_frames_dbz,
-        fsoi,
-        policy,
+    base_whitener_applies = (
+        selection.observed_whitener_apply_count
+        if selection.mode == "ranked_top_k"
+        else fsoi.fso.observed_whitener_apply_count
     )
+    base_whitener_operations = (
+        fsoi.fso.whitener_operations_per_apply * base_whitener_applies
+    )
+    remaining_whitener_operations = (
+        policy.maximum_whitener_total_operations - base_whitener_operations
+    )
+    if remaining_whitener_operations <= 0:
+        return _rejected_learning_impact(
+            policy,
+            "common_bias_total_operation_budget_exhausted",
+            fsoi=fsoi,
+        )
+    validation_started = time.monotonic()
+    try:
+        validation = _validate_first_order_learning_impact(
+            result,
+            analysis,
+            verification_frames_dbz,
+            fsoi,
+            policy,
+            maximum_whitener_total_operations=(
+                remaining_whitener_operations
+            ),
+        )
+    except ValueError as error:
+        if str(error) != (
+            "common-bias whitener total operation budget exhausted"
+        ):
+            raise
+        return _rejected_learning_impact(
+            policy,
+            "common_bias_total_operation_budget_exhausted",
+            fsoi=fsoi,
+        )
     if (
         validation.total_resolved_pcg_iterations
         > policy.maximum_learning_pcg_iterations
@@ -4458,11 +4578,6 @@ def _learning_impact_from_fsoi(
             fsoi=fsoi,
             first_order_validation=validation,
         )
-    base_whitener_applies = (
-        selection.observed_whitener_apply_count
-        if selection.mode == "ranked_top_k"
-        else fsoi.fso.observed_whitener_apply_count
-    )
     total_whitener_applies = (
         base_whitener_applies + validation.observed_whitener_apply_count
     )
@@ -4750,14 +4865,21 @@ def _validate_first_order_learning_impact(
     verification_input: VerificationInput,
     fsoi: VariationalFSOI,
     policy: AutomatedLearningPolicy,
+    *,
+    metric_domain_contract: FirstOrderMetricDomain = "frozen_metric_domain",
+    maximum_whitener_total_operations: int | None = None,
 ) -> FirstOrderValidation:
-    """Re-solve full and half perturbations on the nominal metric domain."""
+    """Re-solve full and half perturbations on one explicit metric domain."""
 
     full_prediction = (
         fsoi.observation.total.sum_by_time.sum(dim=-1).detach()
     )
     half_prediction = 0.5 * full_prediction
-    with _count_observation_whitener_applies() as whitener_counter:
+    operations_per_apply = _analysis_whitener_operations_per_apply(analysis)
+    with _count_observation_whitener_applies(
+        operations_per_apply=operations_per_apply,
+        maximum_total_operations=maximum_whitener_total_operations,
+    ) as whitener_counter:
         full = _resolve_learning_step(
             result,
             analysis,
@@ -4765,6 +4887,7 @@ def _validate_first_order_learning_impact(
             fsoi,
             policy,
             scale=1.0,
+            metric_domain_contract=metric_domain_contract,
         )
         half = _resolve_learning_step(
             result,
@@ -4773,6 +4896,7 @@ def _validate_first_order_learning_impact(
             fsoi,
             policy,
             scale=0.5,
+            metric_domain_contract=metric_domain_contract,
         )
     available = fsoi.fso.metric_available
     full_error = torch.abs(full.metric_change - full_prediction)
@@ -4844,6 +4968,7 @@ def _validate_first_order_learning_impact(
         full_step_pcg_iterations=full.pcg_iterations,
         half_step_pcg_iterations=half.pcg_iterations,
         observed_whitener_apply_count=whitener_counter[0],
+        metric_domain_contract=metric_domain_contract,
     )
 
 
@@ -4865,6 +4990,7 @@ def _resolve_learning_step(
     policy: AutomatedLearningPolicy,
     *,
     scale: float,
+    metric_domain_contract: FirstOrderMetricDomain,
 ) -> _ResolvedLearningStep:
     linearization = analysis.linearization
     if linearization is None:
@@ -4936,6 +5062,15 @@ def _resolve_learning_step(
         )
     if resolved_linearization is None:
         raise RuntimeError("converged learning re-solve lacks linearization")
+    resolved_forecast = None
+    if metric_domain_contract == "resolved_issuance_domain":
+        resolved_forecast = forecast_from_state(
+            resolved.state,
+            resolved.metadata,
+            result.run.config,
+            run=result.run,
+        )
+        resolved_forecast.validate_issuance()
 
     verification = _resolve_verification(
         verification_input,
@@ -4984,8 +5119,13 @@ def _resolve_learning_step(
                 "forecast_digest": tensor_digest(changed_capped),
             }
         )
+        metric_result = (
+            result
+            if metric_domain_contract == "frozen_metric_domain"
+            else cast(ForecastResult, resolved_forecast)
+        )
         metric_weight = _metric_domain_weight(
-            result,
+            metric_result,
             finite_truth[forecast_index],
             forecast_index,
             policy.sensitivity_config.metric_domain,
@@ -5028,11 +5168,15 @@ def _resolve_learning_step(
         converged,
         branch_valid,
         resolved_linearization.linearization_digest,
-        json_digest(
-            {
-                "contract": "p1-resolved-learning-forecast-v1",
-                "forecasts": changed_forecasts,
-            }
+        (
+            cast(ForecastResult, resolved_forecast).forecast_run_digest
+            if metric_domain_contract == "resolved_issuance_domain"
+            else json_digest(
+                {
+                    "contract": "p1-resolved-learning-forecast-v1",
+                    "forecasts": changed_forecasts,
+                }
+            )
         ),
         resolved.pcg_iterations,
     )

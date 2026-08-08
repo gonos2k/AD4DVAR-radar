@@ -75,6 +75,7 @@ from advar.sensitivity import (  # noqa: E402
     forecast_metric,
     validate_variational_fso,
     validate_variational_fsoi,
+    validate_variational_fsoi_issuance_impact,
     validate_variational_learning_impact,
     variational_fso_digest,
 )
@@ -2176,6 +2177,16 @@ class VariationalFSOTests(unittest.TestCase):
             fso.whitener_operations_per_apply,
             expected_operations,
         )
+        with self.assertRaisesRegex(ValueError, "total operation budget"):
+            compute_variational_fso(
+                forecast,
+                analysis,
+                verification,
+                sensitivity_config=self.sensitivity_config,
+                adjoint_config=VariationalAdjointConfig(
+                    maximum_whitener_total_operations=expected_operations,
+                ),
+            )
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "overlapping-linearization.npz"
             save_p1_linearization(analysis, path)
@@ -4448,7 +4459,20 @@ class VariationalFSOTests(unittest.TestCase):
             learning,
             expected_trust_store_digest="7" * 64,
         )
-        assert learning.fsoi is not None
+        issuance_validation = validate_variational_fsoi_issuance_impact(
+            forecast,
+            analysis,
+            verification,
+            learning.fsoi,
+            policy=policy,
+        )
+        self.assertEqual(
+            issuance_validation.metric_domain_contract,
+            "resolved_issuance_domain",
+        )
+        self.assertIsNotNone(
+            issuance_validation.full_step_forecast_digest
+        )
         weaker_delta = 0.5 * delta
         candidates = (
             ("stronger", perturbation),

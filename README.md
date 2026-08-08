@@ -393,6 +393,7 @@ fso = compute_variational_fso(
     adjoint_config=VariationalAdjointConfig(
         lead_minutes=(60, 180),
         maximum_normal_products=400,
+        maximum_whitener_total_operations=10_000_000_000,
         maximum_materialized_output_bytes=512 * 1024**2,
         warm_start_by_metric=True,
         gauss_newton_probe_count=4,
@@ -431,6 +432,27 @@ if learning.eligibility.eligible:
     ledger.append_variational_learning_approval(learning)
     update_model(learning.frozen_domain_learning_impact)
 ```
+
+자동학습은 의도적으로 nominal metric weight를 고정한
+`frozen_metric_domain`만 승인한다. perturbation 뒤의 confidence·local evidence·
+valid mask까지 다시 만든 발행영역 변화는 별도 연구 진단으로 확인한다.
+
+```python
+from advar import validate_variational_fsoi_issuance_impact
+
+issuance = validate_variational_fsoi_issuance_impact(
+    forecast,
+    analysis,
+    verification_bundle,
+    learning.fsoi,
+    policy=policy,
+)
+assert issuance.metric_domain_contract == "resolved_issuance_domain"
+```
+
+이 결과는 full/half P1을 다시 풀고 `ForecastResult`도 다시 생성하지만 학습승인이나
+ledger 입력으로 자동 승격하지 않는다. 따라서 frozen-domain의 매끄러운 1차계약과
+발행 mask가 변할 수 있는 재발행 진단이 한 값으로 혼합되지 않는다.
 
 후보가 많을 때는 FSO를 후보마다 다시 풀지 않는다. 하나의 공통 FSO에서 모든
 physical-radar perturbation을 점수화한 뒤 정책이 허용한 상위 K개만
@@ -508,6 +530,10 @@ unit control prior와 field-smoothness graph diagonal preconditioner를 기본�
 `adjoint_true_residual_norm`은 PCG 종료 후 다시 계산한 수반계 residual의 L2 norm을
 기록한다. 이 값은 수반해의 수치 잔차이며, `B H^-1` 연산자 norm을 포함하지 않으므로
 민감도 지도의 L2 오차상한으로 해석하지 않는다.
+Overlapping common-bias mode는 1회 적용량뿐 아니라
+`maximum_whitener_total_operations`도 hot path에서 누적 검사한다. 따라서 PCG가
+끝난 뒤 사후 거부하는 대신 설정된 총 연산량을 넘기기 직전에 중단한다. 기본
+1회 적용 한도는 2048²·64 spatial mode를 분석 준비 단계에서 거부한다.
 
 `baseline_dynamics_dbz`는 FFT peak와 pair 선택을 고정한 연구용 채널이다. 결과의
 `baseline_dynamics_branch_status`는 경로 없음, 미인증, 인증, 무효를 구분한다.
@@ -544,12 +570,14 @@ python benchmarks/benchmark_variational_fso.py \
   forecast-run.npz p1-linearization.npz verification.npy \
   --lead-minutes 60,180 --metrics log_echo_mse \
   --metric-domain radar_dynamics_anchored --gauss-newton-probes 4 \
-  --max-normal-products 400 --max-output-bytes 536870912
+  --max-normal-products 400 --max-output-bytes 536870912 \
+  --max-whitener-total-operations 10000000000
 ```
 
 보고되는 `materialized_output_bytes`는 결과 Tensor의 사전 산정량이다. AD tape와
 JVP/VJP workspace까지 포함한 실제 peak memory는 benchmark의 `peak_rss_*`로
-별도 확인해야 한다.
+별도 확인해야 한다. benchmark v3는 같은 whitener 총 연산 budget을 계산 중에도
+강제하고 실제 apply 횟수와 총 연산량을 함께 기록한다.
 
 검증장이 도착하기 전에 프로세스가 재시작될 수 있으므로 수용·수렴한 P1의
 최종 선형화는 안전한 NPZ artifact로 보존할 수 있다.
