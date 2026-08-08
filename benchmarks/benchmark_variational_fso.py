@@ -78,6 +78,11 @@ def main() -> None:
     parser.add_argument("--max-normal-products", type=int, default=10_000)
     parser.add_argument("--max-output-bytes", type=int, default=2 * 1024**3)
     parser.add_argument("--gauss-newton-probes", type=int, default=4)
+    parser.add_argument(
+        "--max-whitener-total-operations",
+        type=int,
+        default=100_000_000_000,
+    )
     parser.add_argument("--cold-start", action="store_true")
     args = parser.parse_args()
 
@@ -113,8 +118,14 @@ def main() -> None:
         adjoint_config=adjoint_config,
     )
     elapsed = time.perf_counter() - started
+    whitener_total_operations = (
+        result.whitener_operations_per_apply
+        * result.observed_whitener_apply_count
+    )
+    if whitener_total_operations > args.max_whitener_total_operations:
+        raise RuntimeError("common-bias whitener operation budget exceeded")
     report = {
-        "contract": "p1-variational-fso-benchmark-v1",
+        "contract": "p1-variational-fso-benchmark-v2",
         "forecast_run_digest": forecast.forecast_run_digest,
         "linearization_digest": result.linearization_digest,
         "variational_fso_digest": result.variational_fso_digest,
@@ -132,6 +143,13 @@ def main() -> None:
         "peak_rss_after_bytes": _peak_rss_bytes(),
         "materialized_output_bytes": result.materialized_output_bytes,
         "normal_products": result.total_normal_products,
+        "whitener_operations_per_apply": (
+            result.whitener_operations_per_apply
+        ),
+        "observed_whitener_apply_count": (
+            result.observed_whitener_apply_count
+        ),
+        "observed_whitener_total_operations": whitener_total_operations,
         "adjoint_iterations": result.adjoint_iterations.cpu().tolist(),
         "adjoint_relative_residual": (
             result.adjoint_relative_residual.cpu().tolist()

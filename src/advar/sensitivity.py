@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 import json
@@ -10,6 +10,7 @@ import math
 import os
 from pathlib import Path
 import stat
+import time
 from typing import Literal, cast
 
 import torch
@@ -46,8 +47,10 @@ from .variational import (
     P1LinearizationState,
     _apply_observation_error_whitener,
     _analysis_trajectory,
+    _count_observation_whitener_applies,
     _linearization_stationarity,
     _relative_irls_weight_change,
+    _observation_whitener_operations_per_apply,
     _robust_stationarity,
     _stationarity_is_acceptable,
     freeze_irls_weights,
@@ -84,6 +87,13 @@ BaselineDynamicsBranchStatus = Literal[
     "certified",
     "invalid",
 ]
+CandidateRankingObjective = Literal[
+    "absolute_influence",
+    "expected_error_reduction",
+    "two_sided_diagnostic",
+]
+LearningSelectionMode = Literal["direct", "ranked_top_k"]
+TileShape = tuple[int, int]
 LEARNING_POLICY_TRUST_STORE_CONTRACT = "advar-learning-policy-trust-store-v1"
 MAXIMUM_LEARNING_POLICY_TRUST_STORE_BYTES = 1024 * 1024
 
@@ -870,6 +880,7 @@ class VariationalFSO:
     lead_minutes: tuple[int, ...]
     full_map_lead_minutes: tuple[int, ...]
     tile_size: int
+    tile_shape_yx: TileShape
     forecast_scores: Tensor
     metric_available: Tensor
     metric_domain_weight_sum: Tensor
@@ -882,6 +893,8 @@ class VariationalFSO:
     adjoint_normal_products: Tensor
     adjoint_warm_started: Tensor
     total_normal_products: int
+    whitener_operations_per_apply: int
+    observed_whitener_apply_count: int
     materialized_output_bytes: int
     active_set_margins: VariationalActiveSetMargins
     feasibility_margins: VariationalFeasibilityMargins
@@ -1145,6 +1158,8 @@ class MetricTaylorThreshold:
     metric_name: str
     maximum_absolute_error: float
     material_impact_threshold: float
+    ranking_scale: float | None = None
+    ranking_weight: float = 1.0
 
     def __post_init__(self) -> None:
         if self.metric_name not in SUPPORTED_METRICS:
@@ -1161,6 +1176,26 @@ class MetricTaylorThreshold:
             or self.material_impact_threshold <= 0.0
         ):
             raise ValueError("metric material impact threshold must be positive")
+        if self.ranking_scale is not None and (
+            isinstance(self.ranking_scale, bool)
+            or not math.isfinite(self.ranking_scale)
+            or self.ranking_scale <= 0.0
+        ):
+            raise ValueError("metric ranking scale must be positive")
+        if (
+            isinstance(self.ranking_weight, bool)
+            or not math.isfinite(self.ranking_weight)
+            or self.ranking_weight < 0.0
+        ):
+            raise ValueError("metric ranking weight must be nonnegative")
+
+    @property
+    def effective_ranking_scale(self) -> float:
+        return (
+            self.material_impact_threshold
+            if self.ranking_scale is None
+            else self.ranking_scale
+        )
 
 
 DEFAULT_METRIC_TAYLOR_THRESHOLDS = (
@@ -1182,12 +1217,22 @@ class AutomatedLearningPolicy:
         MetricTaylorThreshold, ...
     ] = DEFAULT_METRIC_TAYLOR_THRESHOLDS
     maximum_linearity_relative_error: float = 0.1
+    ranking_objective: CandidateRankingObjective = "expected_error_reduction"
+    ranking_lead_weights: tuple[float, ...] = ()
     maximum_candidate_count: int = 10_000
-    maximum_learning_resolves: int = 32
-    contract: str = "p1-automated-learning-policy-v5"
+    maximum_learning_candidates_to_validate: int = 32
+    maximum_total_robust_resolves: int = 64
+    maximum_candidate_bytes: int = 64 * 1024**2
+    maximum_candidate_nonzeros: int = 1_000_000
+    maximum_candidate_scoring_operations: int = 1_000_000_000
+    maximum_candidate_ranking_wall_seconds: float = 300.0
+    maximum_learning_pcg_iterations: int = 100_000
+    maximum_learning_wall_seconds: float = 3_600.0
+    maximum_whitener_total_operations: int = 100_000_000_000
+    contract: str = "p1-automated-learning-policy-v6"
 
     def __post_init__(self) -> None:
-        if self.contract != "p1-automated-learning-policy-v5":
+        if self.contract != "p1-automated-learning-policy-v6":
             raise ValueError("unsupported automated-learning policy")
         _require_sha256(
             "algorithm_bundle_digest",
@@ -1240,15 +1285,76 @@ class AutomatedLearningPolicy:
             raise ValueError(
                 "automated learning requires a full map for every adjoint lead"
             )
+        adjoint_leads = adjoint.lead_minutes
+        if adjoint_leads is None:
+            raise ValueError("automated learning requires explicit adjoint leads")
+        if self.ranking_objective not in (
+            "absolute_influence",
+            "expected_error_reduction",
+            "two_sided_diagnostic",
+        ):
+            raise ValueError("unsupported candidate ranking objective")
+        if not isinstance(self.ranking_lead_weights, tuple):
+            raise TypeError("ranking_lead_weights must be a tuple")
+        if self.ranking_lead_weights and len(self.ranking_lead_weights) != len(
+            adjoint_leads
+        ):
+            raise ValueError("ranking lead weights must match adjoint leads")
+        if any(
+            isinstance(value, bool)
+            or not math.isfinite(value)
+            or value < 0.0
+            for value in self.ranking_lead_weights
+        ):
+            raise ValueError("ranking lead weights must be nonnegative")
+        if self.ranking_lead_weights and not any(self.ranking_lead_weights):
+            raise ValueError("at least one ranking lead weight must be positive")
         for name, value in (
             ("maximum_candidate_count", self.maximum_candidate_count),
-            ("maximum_learning_resolves", self.maximum_learning_resolves),
+            (
+                "maximum_learning_candidates_to_validate",
+                self.maximum_learning_candidates_to_validate,
+            ),
+            ("maximum_total_robust_resolves", self.maximum_total_robust_resolves),
+            ("maximum_candidate_bytes", self.maximum_candidate_bytes),
+            ("maximum_candidate_nonzeros", self.maximum_candidate_nonzeros),
+            (
+                "maximum_candidate_scoring_operations",
+                self.maximum_candidate_scoring_operations,
+            ),
+            (
+                "maximum_learning_pcg_iterations",
+                self.maximum_learning_pcg_iterations,
+            ),
+            (
+                "maximum_whitener_total_operations",
+                self.maximum_whitener_total_operations,
+            ),
         ):
             if type(value) is not int or value <= 0:
                 raise ValueError(f"{name} must be a positive integer")
-        if self.maximum_learning_resolves > self.maximum_candidate_count:
+        if self.maximum_learning_candidates_to_validate > self.maximum_candidate_count:
             raise ValueError(
-                "maximum_learning_resolves cannot exceed candidate count"
+                "learning validation count cannot exceed candidate count"
+            )
+        required_resolves = 2 * self.maximum_learning_candidates_to_validate
+        if self.maximum_total_robust_resolves < required_resolves:
+            raise ValueError(
+                "robust-resolve budget must cover full/half candidate checks"
+            )
+        if (
+            isinstance(self.maximum_learning_wall_seconds, bool)
+            or not math.isfinite(self.maximum_learning_wall_seconds)
+            or self.maximum_learning_wall_seconds <= 0.0
+        ):
+            raise ValueError("maximum_learning_wall_seconds must be positive")
+        if (
+            isinstance(self.maximum_candidate_ranking_wall_seconds, bool)
+            or not math.isfinite(self.maximum_candidate_ranking_wall_seconds)
+            or self.maximum_candidate_ranking_wall_seconds <= 0.0
+        ):
+            raise ValueError(
+                "maximum_candidate_ranking_wall_seconds must be positive"
             )
         if not isinstance(self.metric_taylor_thresholds, tuple):
             raise TypeError("metric_taylor_thresholds must be a tuple")
@@ -1263,6 +1369,11 @@ class AutomatedLearningPolicy:
             raise ValueError(
                 f"missing metric Taylor thresholds: {sorted(missing)}"
             )
+        if not any(
+            self.threshold_for(name).ranking_weight > 0.0
+            for name in sensitivity.metric_names
+        ):
+            raise ValueError("at least one ranking metric weight must be positive")
         object.__setattr__(
             self,
             "metric_taylor_thresholds",
@@ -1307,25 +1418,174 @@ class AutomatedLearningPolicy:
                         "material_impact_threshold": (
                             threshold.material_impact_threshold
                         ),
+                        "ranking_scale": threshold.effective_ranking_scale,
+                        "ranking_weight": threshold.ranking_weight,
                     }
                     for threshold in self.metric_taylor_thresholds
                 ],
                 "maximum_linearity_relative_error": (
                     self.maximum_linearity_relative_error
                 ),
+                "ranking_objective": self.ranking_objective,
+                "ranking_lead_weights": list(self.resolved_ranking_lead_weights),
                 "maximum_candidate_count": self.maximum_candidate_count,
-                "maximum_learning_resolves": self.maximum_learning_resolves,
+                "maximum_learning_candidates_to_validate": (
+                    self.maximum_learning_candidates_to_validate
+                ),
+                "maximum_total_robust_resolves": (
+                    self.maximum_total_robust_resolves
+                ),
+                "maximum_candidate_bytes": self.maximum_candidate_bytes,
+                "maximum_candidate_nonzeros": self.maximum_candidate_nonzeros,
+                "maximum_candidate_scoring_operations": (
+                    self.maximum_candidate_scoring_operations
+                ),
+                "maximum_candidate_ranking_wall_seconds": (
+                    self.maximum_candidate_ranking_wall_seconds
+                ),
+                "maximum_learning_pcg_iterations": (
+                    self.maximum_learning_pcg_iterations
+                ),
+                "maximum_learning_wall_seconds": self.maximum_learning_wall_seconds,
+                "maximum_whitener_total_operations": (
+                    self.maximum_whitener_total_operations
+                ),
                 "perturbation_semantics": "physical_radar_value",
             }
         )
 
+    @property
+    def resolved_ranking_lead_weights(self) -> tuple[float, ...]:
+        if self.ranking_lead_weights:
+            return self.ranking_lead_weights
+        lead_minutes = self.adjoint_config.lead_minutes
+        if lead_minutes is None:
+            raise RuntimeError("automated learning policy lacks adjoint leads")
+        return (1.0,) * len(lead_minutes)
+
+
+@dataclass(frozen=True)
+class SparseRadarPerturbation:
+    """Sparse physical radar-value delta used by candidate ranking."""
+
+    flat_indices: Tensor
+    delta_values: Tensor
+    shape: tuple[int, int, int]
+    digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.flat_indices.ndim != 1
+            or self.flat_indices.dtype != torch.int64
+        ):
+            raise ValueError("sparse candidate indices must be int64 and 1-D")
+        if (
+            self.delta_values.ndim != 1
+            or not self.delta_values.is_floating_point()
+            or self.delta_values.shape != self.flat_indices.shape
+        ):
+            raise ValueError("sparse candidate values must be floating and 1-D")
+        if len(self.shape) != 3 or any(
+            type(value) is not int or value <= 0 for value in self.shape
+        ):
+            raise ValueError("sparse candidate shape must be positive [3,H,W]")
+        if self.shape[0] != 3:
+            raise ValueError("sparse radar candidates require three input times")
+        indices = self.flat_indices.detach().clone()
+        values = self.delta_values.detach().clone()
+        if indices.numel() == 0:
+            raise ValueError("sparse candidate cannot be empty")
+        if not bool(torch.all(torch.isfinite(values))) or bool(
+            torch.any(values == 0)
+        ):
+            raise ValueError("sparse candidate values must be finite and nonzero")
+        size = math.prod(self.shape)
+        if bool(torch.any(indices < 0)) or bool(torch.any(indices >= size)):
+            raise ValueError("sparse candidate index is outside its shape")
+        if torch.unique(indices).numel() != indices.numel():
+            raise ValueError("sparse candidate indices must be unique")
+        order = torch.argsort(indices)
+        indices = indices[order]
+        values = values[order]
+        object.__setattr__(self, "flat_indices", indices)
+        object.__setattr__(self, "delta_values", values)
+        object.__setattr__(
+            self,
+            "digest",
+            _sparse_radar_perturbation_digest(self),
+        )
+
+    @classmethod
+    def from_dense(cls, delta_dbz: Tensor) -> SparseRadarPerturbation:
+        if delta_dbz.ndim != 3 or not delta_dbz.is_floating_point():
+            raise ValueError("dense radar candidate must be floating [3,H,W]")
+        flat = delta_dbz.reshape(-1)
+        indices = torch.nonzero(flat != 0, as_tuple=False).flatten()
+        return cls(
+            indices.to(torch.int64),
+            flat[indices],
+            (delta_dbz.shape[0], delta_dbz.shape[1], delta_dbz.shape[2]),
+        )
+
+    @property
+    def nonzero_count(self) -> int:
+        return self.flat_indices.numel()
+
+    @property
+    def retained_bytes(self) -> int:
+        return sum(
+            tensor.numel() * tensor.element_size()
+            for tensor in (self.flat_indices, self.delta_values)
+        )
+
+    def materialize(self, reference: Tensor) -> Tensor:
+        if self.digest != _sparse_radar_perturbation_digest(self):
+            raise ValueError("sparse candidate digest mismatch")
+        if tuple(reference.shape) != self.shape:
+            raise ValueError("sparse candidate shape mismatch")
+        result = reference.new_zeros(self.shape).reshape(-1)
+        result.index_copy_(
+            0,
+            self.flat_indices.to(reference.device),
+            self.delta_values.to(dtype=reference.dtype, device=reference.device),
+        )
+        return result.reshape(self.shape)
+
+
+def _sparse_radar_perturbation_digest(
+    perturbation: SparseRadarPerturbation,
+) -> str:
+    return json_digest(
+        {
+            "contract": "sparse-radar-perturbation-v1",
+            "shape": list(perturbation.shape),
+            "flat_indices": tensor_digest(perturbation.flat_indices),
+            "delta_values": tensor_digest(perturbation.delta_values),
+        }
+    )
+
+
+@dataclass(frozen=True)
+class VariationalCandidatePrecheck:
+    candidate_id: str
+    perturbation_digest: str
+    admissible: bool
+    rejection_reason: str | None
+
+    def __post_init__(self) -> None:
+        if not self.candidate_id:
+            raise ValueError("candidate_id must be nonempty")
+        _require_sha256("candidate perturbation digest", self.perturbation_digest)
+        if self.admissible == (self.rejection_reason is not None):
+            raise ValueError("candidate precheck status and reason disagree")
+
 
 @dataclass(frozen=True)
 class VariationalCandidateScore:
-    """One candidate's frozen-domain first-order score."""
+    """One admissible candidate's dimensionless frozen-domain score."""
 
     candidate_id: str
-    perturbation: VariationalObservationPerturbation
+    perturbation: SparseRadarPerturbation
     predicted_metric_change: Tensor
     score: float
     rank: int
@@ -1352,14 +1612,19 @@ class VariationalCandidateRanking:
 
     fso: VariationalFSO
     scores: tuple[VariationalCandidateScore, ...]
-    contract: str = "p1-variational-candidate-ranking-v1"
+    prechecks: tuple[VariationalCandidatePrecheck, ...]
+    policy_digest: str
+    ranking_objective: CandidateRankingObjective
+    candidate_count: int
+    scoring_operations: int
+    whitener_operations_per_apply: int
+    observed_whitener_apply_count: int
+    contract: str = "p1-variational-candidate-ranking-v2"
     ranking_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "p1-variational-candidate-ranking-v1":
+        if self.contract != "p1-variational-candidate-ranking-v2":
             raise ValueError("unsupported candidate ranking")
-        if not self.scores:
-            raise ValueError("candidate ranking cannot be empty")
         if tuple(score.rank for score in self.scores) != tuple(
             range(1, len(self.scores) + 1)
         ):
@@ -1367,6 +1632,26 @@ class VariationalCandidateRanking:
         identifiers = tuple(score.candidate_id for score in self.scores)
         if len(set(identifiers)) != len(identifiers):
             raise ValueError("candidate identifiers must be unique")
+        if self.candidate_count != len(self.prechecks):
+            raise ValueError("candidate count and prechecks disagree")
+        precheck_by_id = {value.candidate_id: value for value in self.prechecks}
+        if len(precheck_by_id) != len(self.prechecks):
+            raise ValueError("candidate precheck identifiers must be unique")
+        if any(
+            score.candidate_id not in precheck_by_id
+            or not precheck_by_id[score.candidate_id].admissible
+            or precheck_by_id[score.candidate_id].perturbation_digest
+            != score.perturbation.digest
+            for score in self.scores
+        ):
+            raise ValueError("ranked candidates must pass their bound precheck")
+        if type(self.scoring_operations) is not int or self.scoring_operations < 0:
+            raise ValueError("candidate scoring operations must be nonnegative")
+        if self.whitener_operations_per_apply < 0 or (
+            self.observed_whitener_apply_count < 0
+        ):
+            raise ValueError("candidate whitener telemetry must be nonnegative")
+        _require_sha256("candidate ranking policy digest", self.policy_digest)
         object.__setattr__(
             self,
             "ranking_digest",
@@ -1381,10 +1666,23 @@ def _variational_candidate_ranking_digest(
         {
             "contract": ranking.contract,
             "fso_digest": ranking.fso.variational_fso_digest,
+            "policy_digest": ranking.policy_digest,
+            "ranking_objective": ranking.ranking_objective,
+            "candidate_count": ranking.candidate_count,
+            "scoring_operations": ranking.scoring_operations,
+            "whitener_operations_per_apply": (
+                ranking.whitener_operations_per_apply
+            ),
+            "observed_whitener_apply_count": (
+                ranking.observed_whitener_apply_count
+            ),
+            "prechecks": [dataclass_digest(value) for value in ranking.prechecks],
             "scores": [
                 {
                     "candidate_id": score.candidate_id,
-                    "perturbation_digest": score.perturbation.digest,
+                    "perturbation_digest": _sparse_radar_perturbation_digest(
+                        score.perturbation
+                    ),
                     "prediction": tensor_digest(
                         score.predicted_metric_change
                     ),
@@ -1395,6 +1693,33 @@ def _variational_candidate_ranking_digest(
             ],
         }
     )
+
+
+@dataclass(frozen=True)
+class RankedLearningOutcome:
+    """One selected result with its complete candidate-ranking lineage."""
+
+    candidate_id: str
+    candidate_rank: int
+    candidate_score: float
+    ranking_digest: str
+    result: VariationalLearningImpact
+
+    def __post_init__(self) -> None:
+        if not self.candidate_id or self.candidate_rank <= 0:
+            raise ValueError("ranked learning outcome identity is invalid")
+        if not math.isfinite(self.candidate_score) or self.candidate_score < 0.0:
+            raise ValueError("ranked learning outcome score is invalid")
+        _require_sha256("ranking_digest", self.ranking_digest)
+        evidence = self.result.approval_evidence
+        if evidence is not None and (
+            evidence.selection_mode != "ranked_top_k"
+            or evidence.candidate_id != self.candidate_id
+            or evidence.candidate_rank != self.candidate_rank
+            or evidence.candidate_score != self.candidate_score
+            or evidence.ranking_digest != self.ranking_digest
+        ):
+            raise ValueError("ranked outcome and approval evidence disagree")
 
 
 @dataclass(frozen=True)
@@ -1441,6 +1766,9 @@ class FirstOrderValidation:
     half_step_analysis_digest: str | None
     full_step_forecast_digest: str | None
     half_step_forecast_digest: str | None
+    full_step_pcg_iterations: int = 0
+    half_step_pcg_iterations: int = 0
+    observed_whitener_apply_count: int = 0
     metric_domain_contract: str = "frozen_metric_domain"
     contract: str = "p1-first-order-validation-v2"
     validation_digest: str = field(init=False)
@@ -1485,6 +1813,15 @@ class FirstOrderValidation:
             raise ValueError("material impact norm cannot be below its maximum")
         if self.first_order_valid and self.material_metric_count == 0:
             raise ValueError("first-order validity requires material impact")
+        for name in ("full_step_pcg_iterations", "half_step_pcg_iterations"):
+            value = getattr(self, name)
+            if type(value) is not int or value < 0:
+                raise ValueError(f"{name} must be nonnegative")
+        if (
+            type(self.observed_whitener_apply_count) is not int
+            or self.observed_whitener_apply_count < 0
+        ):
+            raise ValueError("observed whitener apply count must be nonnegative")
         for name in (
             "full_step_analysis_digest",
             "half_step_analysis_digest",
@@ -1500,6 +1837,10 @@ class FirstOrderValidation:
             first_order_validation_digest(self),
         )
 
+    @property
+    def total_resolved_pcg_iterations(self) -> int:
+        return self.full_step_pcg_iterations + self.half_step_pcg_iterations
+
 
 @dataclass(frozen=True)
 class LearningApprovalEvidence:
@@ -1514,10 +1855,24 @@ class LearningApprovalEvidence:
     half_step_forecast_digest: str
     first_order_validation_digest: str
     learning_impact_digest: str
-    contract: str = "p1-learning-approval-evidence-v1"
+    selection_mode: LearningSelectionMode = "direct"
+    candidate_id: str | None = None
+    candidate_rank: int | None = None
+    candidate_score: float | None = None
+    candidate_perturbation_digest: str | None = None
+    ranking_digest: str | None = None
+    ranking_policy_digest: str | None = None
+    ranking_objective: CandidateRankingObjective | None = None
+    whitener_operations_per_apply: int = 0
+    observed_whitener_apply_count: int = 0
+    observed_whitener_total_operations: int = 0
+    contract: str = "p1-learning-approval-evidence-v2"
 
     def __post_init__(self) -> None:
-        if self.contract != "p1-learning-approval-evidence-v1":
+        if self.contract not in (
+            "p1-learning-approval-evidence-v1",
+            "p1-learning-approval-evidence-v2",
+        ):
             raise ValueError("unsupported learning approval evidence")
         for name, value in (
             ("policy_digest", self.policy_digest),
@@ -1534,9 +1889,96 @@ class LearningApprovalEvidence:
             ("learning_impact_digest", self.learning_impact_digest),
         ):
             _require_sha256(name, value)
+        ranked_values = (
+            self.candidate_id,
+            self.candidate_rank,
+            self.candidate_score,
+            self.candidate_perturbation_digest,
+            self.ranking_digest,
+            self.ranking_policy_digest,
+            self.ranking_objective,
+        )
+        if self.contract == "p1-learning-approval-evidence-v1":
+            if self.selection_mode != "direct" or any(
+                value is not None for value in ranked_values
+            ):
+                raise ValueError("legacy learning evidence cannot carry ranking")
+            if any(
+                (
+                    self.whitener_operations_per_apply,
+                    self.observed_whitener_apply_count,
+                    self.observed_whitener_total_operations,
+                )
+            ):
+                raise ValueError("legacy learning evidence cannot carry telemetry")
+        elif self.selection_mode == "direct":
+            if any(value is not None for value in ranked_values):
+                raise ValueError("direct learning evidence cannot carry ranking")
+        elif self.selection_mode == "ranked_top_k":
+            if any(value is None for value in ranked_values):
+                raise ValueError("ranked learning evidence is incomplete")
+            if not isinstance(self.candidate_id, str) or not self.candidate_id:
+                raise ValueError("ranked candidate_id must be nonempty")
+            if type(self.candidate_rank) is not int or self.candidate_rank <= 0:
+                raise ValueError("ranked candidate_rank must be positive")
+            if (
+                isinstance(self.candidate_score, bool)
+                or not math.isfinite(cast(float, self.candidate_score))
+                or cast(float, self.candidate_score) < 0.0
+            ):
+                raise ValueError("ranked candidate_score must be nonnegative")
+            _require_sha256(
+                "candidate_perturbation_digest",
+                cast(str, self.candidate_perturbation_digest),
+            )
+            _require_sha256("ranking_digest", cast(str, self.ranking_digest))
+            _require_sha256(
+                "ranking_policy_digest",
+                cast(str, self.ranking_policy_digest),
+            )
+        else:
+            raise ValueError("unsupported learning selection mode")
+        for name in (
+            "whitener_operations_per_apply",
+            "observed_whitener_apply_count",
+            "observed_whitener_total_operations",
+        ):
+            value = getattr(self, name)
+            if type(value) is not int or value < 0:
+                raise ValueError(f"{name} must be nonnegative")
+        if self.observed_whitener_total_operations != (
+            self.whitener_operations_per_apply
+            * self.observed_whitener_apply_count
+        ):
+            raise ValueError("learning whitener operation accounting mismatch")
 
     @property
     def digest(self) -> str:
+        if self.contract == "p1-learning-approval-evidence-v1":
+            return json_digest(
+                {
+                    "policy_digest": self.policy_digest,
+                    "trust_store_digest": self.trust_store_digest,
+                    "fsoi_digest": self.fsoi_digest,
+                    "full_step_analysis_digest": (
+                        self.full_step_analysis_digest
+                    ),
+                    "half_step_analysis_digest": (
+                        self.half_step_analysis_digest
+                    ),
+                    "full_step_forecast_digest": (
+                        self.full_step_forecast_digest
+                    ),
+                    "half_step_forecast_digest": (
+                        self.half_step_forecast_digest
+                    ),
+                    "first_order_validation_digest": (
+                        self.first_order_validation_digest
+                    ),
+                    "learning_impact_digest": self.learning_impact_digest,
+                    "contract": self.contract,
+                }
+            )
         return dataclass_digest(self)
 
 
@@ -1648,50 +2090,48 @@ class _NormalProductBudget:
         return operator(value)
 
 
-def _physical_pixel_span(
-    distance_m: float,
-    grid: RadarGridTimeContract | None,
-    *,
-    odd: bool = False,
-) -> int:
-    """Convert one area-equivalent physical span to a pixel count."""
-
-    if grid is None:
-        raise ValueError(
-            "physical sensitivity settings require a grid contract"
-        )
-    spacing_m = math.sqrt(grid.cell_area_m2)
-    pixels = max(1, math.floor(distance_m / spacing_m + 0.5))
-    if odd and pixels % 2 == 0:
-        pixels += 1
-    return pixels
-
-
-def _metric_tile_size(
+def _metric_tile_shape(
     config: SensitivityConfig,
     grid: RadarGridTimeContract | None,
-) -> int:
+) -> TileShape:
     if config.tile_size_m is None:
-        return config.tile_size
-    return _physical_pixel_span(config.tile_size_m, grid)
-
-
-def _soft_fss_window_size(
-    config: SensitivityConfig,
-    grid: RadarGridTimeContract | None,
-) -> int:
-    if config.soft_fss_window_m is None:
-        return config.soft_fss_window
-    return _physical_pixel_span(config.soft_fss_window_m, grid, odd=True)
+        return config.tile_size, config.tile_size
+    if grid is None:
+        raise ValueError("physical sensitivity settings require a grid contract")
+    assert grid.pixel_to_projected_matrix_m is not None
+    (a, b), (c, d) = grid.pixel_to_projected_matrix_m
+    row_spacing = math.hypot(b, d)
+    column_spacing = math.hypot(a, c)
+    return (
+        max(1, math.floor(config.tile_size_m / row_spacing + 0.5)),
+        max(1, math.floor(config.tile_size_m / column_spacing + 0.5)),
+    )
 
 
 def _perturbation_tile_size(
     config: VariationalAdjointConfig,
     grid: RadarGridTimeContract | None,
-) -> int:
+) -> TileShape:
     if config.perturbation_tile_size_m is None:
-        return config.perturbation_tile_size
-    return _physical_pixel_span(config.perturbation_tile_size_m, grid)
+        return config.perturbation_tile_size, config.perturbation_tile_size
+    if grid is None:
+        raise ValueError("physical perturbation tiles require a grid contract")
+    assert grid.pixel_to_projected_matrix_m is not None
+    (a, b), (c, d) = grid.pixel_to_projected_matrix_m
+    return (
+        max(
+            1,
+            math.floor(
+                config.perturbation_tile_size_m / math.hypot(b, d) + 0.5
+            ),
+        ),
+        max(
+            1,
+            math.floor(
+                config.perturbation_tile_size_m / math.hypot(a, c) + 0.5
+            ),
+        ),
+    )
 
 
 def _metric_domain_weight(
@@ -2086,6 +2526,11 @@ def first_order_validation_digest(
             "half_step_forecast_digest": (
                 validation.half_step_forecast_digest
             ),
+            "full_step_pcg_iterations": validation.full_step_pcg_iterations,
+            "half_step_pcg_iterations": validation.half_step_pcg_iterations,
+            "observed_whitener_apply_count": (
+                validation.observed_whitener_apply_count
+            ),
         }
     )
 
@@ -2367,6 +2812,7 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
             "lead_minutes": list(fso.lead_minutes),
             "full_map_lead_minutes": list(fso.full_map_lead_minutes),
             "tile_size": fso.tile_size,
+            "tile_shape_yx": list(fso.tile_shape_yx),
             "forecast_scores": tensor_digest(fso.forecast_scores),
             "metric_available": tensor_digest(fso.metric_available),
             "metric_domain_weight_sum": tensor_digest(
@@ -2425,6 +2871,12 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
                 fso.adjoint_warm_started
             ),
             "total_normal_products": fso.total_normal_products,
+            "whitener_operations_per_apply": (
+                fso.whitener_operations_per_apply
+            ),
+            "observed_whitener_apply_count": (
+                fso.observed_whitener_apply_count
+            ),
             "materialized_output_bytes": fso.materialized_output_bytes,
             "active_set_margins": {
                 "detection_classification_dbz": (
@@ -2582,7 +3034,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 def validate_variational_fso(fso: VariationalFSO) -> None:
     """Reject any mutation of a content-addressed FSO result."""
 
-    if fso.contract != "p1-variational-fso-v13":
+    if fso.contract != "p1-variational-fso-v14":
         raise ValueError("unsupported P1 FSO contract")
     if (
         fso.sensitivity_scope
@@ -2745,7 +3197,7 @@ def _record_variational_channel(
     lead_index: int,
     metric_index: int,
     selected_index: int | None,
-    tile_size: int,
+    tile_size: TileShape,
     signed_sum: bool,
 ) -> None:
     if signed_sum:
@@ -2803,6 +3255,7 @@ class SensitivitySnapshot:
     lead_minutes: tuple[int, ...]
     full_map_lead_minutes: tuple[int, ...]
     tile_size: int
+    tile_shape_yx: TileShape
     context_feature_names: tuple[str, ...]
     context_features: Tensor
     analysis_control: Tensor
@@ -2902,7 +3355,7 @@ def compute_sensitivity_snapshot(
 
     height, width = state.echo_linear.shape
     grid_time_contract = result.run.grid_time_contract
-    tile_size = _metric_tile_size(
+    tile_shape_yx = _metric_tile_shape(
         sensitivity_config,
         grid_time_contract,
     )
@@ -2919,8 +3372,8 @@ def compute_sensitivity_snapshot(
     )
     metric_count = len(sensitivity_config.metric_names)
     lead_count = len(lead_minutes)
-    tile_rows = math.ceil(height / tile_size)
-    tile_columns = math.ceil(width / tile_size)
+    tile_rows = math.ceil(height / tile_shape_yx[0])
+    tile_columns = math.ceil(width / tile_shape_yx[1])
 
     clean_verification = torch.nan_to_num(
         verification_frames,
@@ -3206,12 +3659,12 @@ def compute_sensitivity_snapshot(
             )
             tile_direct_norm[lead_index, metric_index] = _tile_l2(
                 direct_gradient.detach(),
-                tile_size,
+                tile_shape_yx,
             )
             if tile_whitened_norm is not None:
                 tile_whitened_norm[lead_index, metric_index] = _tile_l2(
                     whitened_gradient.detach(),
-                    tile_size,
+                    tile_shape_yx,
                 )
 
             if lead_index in selected_position:
@@ -3231,7 +3684,7 @@ def compute_sensitivity_snapshot(
                 )
                 tiles = _tile_sum(
                     contribution,
-                    tile_size,
+                    tile_shape_yx,
                 )
                 tile_impact[lead_index, metric_index] = tiles
                 observation_impact[lead_index, metric_index] = tiles.sum()
@@ -3281,7 +3734,8 @@ def compute_sensitivity_snapshot(
         metric_names=sensitivity_config.metric_names,
         lead_minutes=lead_minutes,
         full_map_lead_minutes=sensitivity_config.full_map_lead_minutes,
-        tile_size=tile_size,
+        tile_size=max(tile_shape_yx),
+        tile_shape_yx=tile_shape_yx,
         context_feature_names=CONTEXT_FEATURE_NAMES,
         context_features=extract_context_features(
             latest_frame_dbz,
@@ -3371,15 +3825,16 @@ def compute_variational_fso(
 ) -> VariationalFSO:
     """Compute frozen-final P1 forecast sensitivity to observations."""
 
-    fso, _, _ = _compute_variational_products(
-        result,
-        analysis,
-        verification_frames_dbz,
-        sensitivity_config=sensitivity_config,
-        adjoint_config=adjoint_config,
-        observation_perturbation=None,
-    )
-    return fso
+    with _count_observation_whitener_applies() as counter:
+        fso, _, _ = _compute_variational_products(
+            result,
+            analysis,
+            verification_frames_dbz,
+            sensitivity_config=sensitivity_config,
+            adjoint_config=adjoint_config,
+            observation_perturbation=None,
+        )
+    return _bind_fso_whitener_telemetry(fso, analysis, counter[0])
 
 
 def compute_variational_fsoi(
@@ -3393,16 +3848,18 @@ def compute_variational_fsoi(
 ) -> VariationalFSOI:
     """Compute signed first-order impact for an explicit perturbation."""
 
-    fso, observation_impact, perturbation_diagnostics = (
-        _compute_variational_products(
-            result,
-            analysis,
-            verification_frames_dbz,
-            sensitivity_config=sensitivity_config,
-            adjoint_config=adjoint_config,
-            observation_perturbation=observation_perturbation,
+    with _count_observation_whitener_applies() as counter:
+        fso, observation_impact, perturbation_diagnostics = (
+            _compute_variational_products(
+                result,
+                analysis,
+                verification_frames_dbz,
+                sensitivity_config=sensitivity_config,
+                adjoint_config=adjoint_config,
+                observation_perturbation=observation_perturbation,
+            )
         )
-    )
+    fso = _bind_fso_whitener_telemetry(fso, analysis, counter[0])
     if observation_impact is None:
         raise RuntimeError("variational FSOI impact was not materialized")
     if perturbation_diagnostics is None:
@@ -3426,26 +3883,50 @@ def compute_variational_fsoi(
     )
 
 
+def _bind_fso_whitener_telemetry(
+    fso: VariationalFSO,
+    analysis: AnalysisResult | P1LinearizationState,
+    apply_count: int,
+) -> VariationalFSO:
+    linearization = analysis.linearization
+    if linearization is None:
+        raise RuntimeError("P1 FSO lacks a linearization")
+    updated = replace(
+        fso,
+        whitener_operations_per_apply=(
+            _observation_whitener_operations_per_apply(
+                linearization.observations
+            )
+        ),
+        observed_whitener_apply_count=apply_count,
+        variational_fso_digest="",
+    )
+    return replace(
+        updated,
+        variational_fso_digest=variational_fso_digest(updated),
+    )
+
+
 def score_candidate_perturbations(
     fso: VariationalFSO,
-    candidates: tuple[
-        tuple[str, VariationalObservationPerturbation], ...
+    analysis: AnalysisResult | P1LinearizationState,
+    candidates: Iterable[
+        tuple[
+            str,
+            SparseRadarPerturbation | VariationalObservationPerturbation,
+        ]
     ],
     *,
     policy: AutomatedLearningPolicy,
 ) -> VariationalCandidateRanking:
-    """Rank physical-radar candidates without another adjoint solve."""
+    """Stream, precheck, and rank physical-radar candidates with one FSO."""
 
     validate_variational_fso(fso)
-    if not candidates:
-        raise ValueError("at least one learning candidate is required")
-    if len(candidates) > policy.maximum_candidate_count:
-        raise ValueError("learning candidate count exceeds its policy budget")
-    identifiers = tuple(candidate_id for candidate_id, _ in candidates)
-    if any(not isinstance(value, str) or not value for value in identifiers):
-        raise ValueError("learning candidate identifiers must be nonempty")
-    if len(set(identifiers)) != len(candidates):
-        raise ValueError("learning candidate identifiers must be unique")
+    linearization = analysis.linearization
+    if linearization is None:
+        raise ValueError("candidate ranking requires a linearization")
+    if fso.linearization_digest != linearization.linearization_digest:
+        raise ValueError("candidate FSO linearization mismatch")
     if fso.sensitivity_config_digest != policy.sensitivity_config.digest:
         raise ValueError("candidate FSO sensitivity policy mismatch")
     if fso.adjoint_config_digest != policy.ranking_adjoint_config.digest:
@@ -3456,29 +3937,133 @@ def score_candidate_perturbations(
     maps = sensitivity.maps
     if maps.shape[:2] != fso.forecast_scores.shape:
         raise ValueError("candidate FSO map coverage is incomplete")
-    scored: list[
-        tuple[str, VariationalObservationPerturbation, Tensor, float]
-    ] = []
-    for candidate_id, perturbation in candidates:
-        delta = perturbation.physical_radar_dbz_delta
-        if perturbation.perturbation_semantics != "physical_radar_value" or (
-            delta is None
+    scales = maps.new_tensor(
+        tuple(
+            policy.threshold_for(name).effective_ranking_scale
+            for name in fso.metric_names
+        )
+    )
+    metric_weights = maps.new_tensor(
+        tuple(
+            policy.threshold_for(name).ranking_weight
+            for name in fso.metric_names
+        )
+    )
+    lead_weights = maps.new_tensor(policy.resolved_ranking_lead_weights)
+    weighted_scale = lead_weights[:, None] * metric_weights[None, :]
+    flat_maps = maps.reshape(*maps.shape[:2], -1)
+    top: list[tuple[str, SparseRadarPerturbation, Tensor, float]] = []
+    prechecks: list[VariationalCandidatePrecheck] = []
+    identifiers: set[str] = set()
+    candidate_count = 0
+    scoring_operations = 0
+    whitener_apply_count = fso.observed_whitener_apply_count
+    if (
+        fso.whitener_operations_per_apply * whitener_apply_count
+        > policy.maximum_whitener_total_operations
+    ):
+        raise ValueError("common-bias total operation budget exhausted")
+    started = time.monotonic()
+    for candidate_id, candidate in candidates:
+        candidate_count += 1
+        if time.monotonic() - started > (
+            policy.maximum_candidate_ranking_wall_seconds
         ):
-            raise ValueError("candidate must be a physical radar perturbation")
-        if delta.shape != maps.shape[-3:]:
-            raise ValueError("candidate perturbation shape mismatch")
-        prediction = (maps * delta).sum(dim=(-1, -2, -3))
+            raise ValueError("candidate ranking wall-time budget exhausted")
+        if candidate_count > policy.maximum_candidate_count:
+            raise ValueError("learning candidate count exceeds its policy budget")
+        if not isinstance(candidate_id, str) or not candidate_id:
+            raise ValueError("learning candidate identifiers must be nonempty")
+        if candidate_id in identifiers:
+            raise ValueError("learning candidate identifiers must be unique")
+        identifiers.add(candidate_id)
+        sparse = _sparse_candidate(candidate)
+        reason = _candidate_precheck_reason(
+            sparse,
+            linearization,
+            policy,
+        )
+        if reason is not None:
+            prechecks.append(
+                VariationalCandidatePrecheck(
+                    candidate_id=candidate_id,
+                    perturbation_digest=sparse.digest,
+                    admissible=False,
+                    rejection_reason=reason,
+                )
+            )
+            continue
+        operations = sparse.nonzero_count * maps.shape[0] * maps.shape[1]
+        scoring_operations += operations
+        if scoring_operations > policy.maximum_candidate_scoring_operations:
+            raise ValueError("candidate scoring operation budget exhausted")
+        indices = sparse.flat_indices.to(maps.device)
+        values = sparse.delta_values.to(dtype=maps.dtype, device=maps.device)
+        prediction = (
+            flat_maps.index_select(-1, indices) * values[None, None, :]
+        ).sum(dim=-1)
         prediction = torch.where(
             fso.metric_available,
             prediction,
             torch.full_like(prediction, float("nan")),
         )
-        selected = prediction.masked_select(fso.metric_available)
-        score = float(torch.linalg.vector_norm(selected).detach())
-        scored.append((candidate_id, perturbation, prediction.detach(), score))
-    scored.sort(key=lambda item: (-item[3], item[0]))
+        score = _candidate_ranking_score(
+            prediction,
+            fso.metric_available,
+            scales,
+            weighted_scale,
+            policy.ranking_objective,
+        )
+        if score == 0.0:
+            prechecks.append(
+                VariationalCandidatePrecheck(
+                    candidate_id=candidate_id,
+                    perturbation_digest=sparse.digest,
+                    admissible=True,
+                    rejection_reason=None,
+                )
+            )
+            continue
+        would_enter = len(top) < policy.maximum_learning_candidates_to_validate
+        if not would_enter:
+            worst = top[-1]
+            would_enter = (-score, candidate_id) < (-worst[3], worst[0])
+        if would_enter:
+            reason, precheck_applies = _candidate_full_precheck_reason(
+                sparse,
+                linearization,
+                policy,
+            )
+            whitener_apply_count += precheck_applies
+            if (
+                fso.whitener_operations_per_apply * whitener_apply_count
+                > policy.maximum_whitener_total_operations
+            ):
+                raise ValueError("common-bias total operation budget exhausted")
+        prechecks.append(
+            VariationalCandidatePrecheck(
+                candidate_id=candidate_id,
+                perturbation_digest=sparse.digest,
+                admissible=reason is None,
+                rejection_reason=reason,
+            )
+        )
+        if reason is not None or not would_enter:
+            continue
+        top.append((candidate_id, sparse, prediction.detach(), score))
+        top.sort(key=lambda item: (-item[3], item[0]))
+        del top[policy.maximum_learning_candidates_to_validate :]
+    if candidate_count == 0:
+        raise ValueError("at least one learning candidate is required")
     return VariationalCandidateRanking(
         fso=fso,
+        prechecks=tuple(prechecks),
+        policy_digest=policy.digest,
+        ranking_objective=policy.ranking_objective,
+        candidate_count=candidate_count,
+        scoring_operations=scoring_operations,
+        whitener_operations_per_apply=fso.whitener_operations_per_apply,
+        observed_whitener_apply_count=whitener_apply_count,
         scores=tuple(
             VariationalCandidateScore(
                 candidate_id=candidate_id,
@@ -3487,12 +4072,161 @@ def score_candidate_perturbations(
                 score=score,
                 rank=rank,
             )
-            for rank, (candidate_id, perturbation, prediction, score) in enumerate(
-                scored,
-                start=1,
+            for rank, (candidate_id, perturbation, prediction, score) in (
+                enumerate(top, start=1)
             )
         ),
     )
+
+
+def _sparse_candidate(
+    candidate: SparseRadarPerturbation | VariationalObservationPerturbation,
+) -> SparseRadarPerturbation:
+    if isinstance(candidate, SparseRadarPerturbation):
+        return candidate
+    delta = candidate.physical_radar_dbz_delta
+    if candidate.perturbation_semantics != "physical_radar_value" or delta is None:
+        raise ValueError("candidate must be a physical radar perturbation")
+    return SparseRadarPerturbation.from_dense(delta)
+
+
+def _candidate_precheck_reason(
+    candidate: SparseRadarPerturbation,
+    linearization: AnalysisLinearization,
+    policy: AutomatedLearningPolicy,
+) -> str | None:
+    if candidate.retained_bytes > policy.maximum_candidate_bytes:
+        return "candidate_byte_budget_exceeded"
+    if candidate.nonzero_count > policy.maximum_candidate_nonzeros:
+        return "candidate_nonzero_budget_exceeded"
+    observations = linearization.observations
+    frozen = linearization.frozen
+    if candidate.shape != tuple(observations.dbz.shape):
+        return "candidate_perturbation_shape_mismatch"
+    indices = candidate.flat_indices.to(observations.dbz.device)
+    values = candidate.delta_values.to(
+        dtype=observations.dbz.dtype,
+        device=observations.dbz.device,
+    )
+    detected = observations.detected_mask.reshape(-1).index_select(0, indices)
+    if not bool(torch.all(detected)):
+        return "physical_radar_delta_outside_detected_observations"
+    config = policy.adjoint_config
+    if bool(torch.any(torch.abs(values) > config.maximum_detected_delta_dbz)):
+        return "detected_dbz_exceeds_local_perturbation_limit"
+    nominal = observations.dbz.reshape(-1).index_select(0, indices)
+    changed = nominal + values
+    if bool(torch.any(changed < frozen.nowcast_config.min_dbz)) or bool(
+        torch.any(changed > frozen.nowcast_config.max_dbz)
+    ):
+        return "physical_radar_perturbation_crosses_input_clamp"
+    if bool(
+        torch.any(
+            changed
+            < frozen.analysis_config.detection_limit_dbz
+            + config.minimum_detection_margin_dbz
+        )
+    ):
+        return "observation_perturbation_crosses_classification_branch"
+    count = candidate.nonzero_count
+    valid_count = max(1, int(torch.count_nonzero(observations.valid_mask)))
+    if count > config.maximum_perturbed_pixel_count:
+        return "observation_perturbation_exceeds_pixel_budget"
+    if count / valid_count > config.maximum_perturbed_fraction:
+        return "observation_perturbation_exceeds_area_fraction"
+    grid = frozen.grid_time_contract
+    if config.maximum_perturbed_area_km2 is not None:
+        if grid is None:
+            return "physical_perturbation_area_requires_grid_contract"
+        area_km2 = count * grid.cell_area_m2 / 1.0e6
+        if area_km2 > config.maximum_perturbed_area_km2:
+            return "observation_perturbation_exceeds_physical_area_budget"
+    if observations.common_bias_mode_weights is None:
+        quality = observations.quality_weight.reshape(-1).index_select(0, indices)
+        std = observations.std_dbz.reshape(-1).index_select(0, indices)
+        energy = quality * (values / std).square()
+        if math.sqrt(float(torch.sum(energy).detach())) > (
+            config.maximum_whitened_perturbation_l2
+        ):
+            return "observation_perturbation_exceeds_whitened_trust_radius"
+        if _sparse_maximum_tile_norm(
+            indices,
+            energy,
+            observations.dbz.shape,
+            _perturbation_tile_size(config, grid),
+        ) > config.maximum_per_tile_whitened_norm:
+            return "observation_perturbation_exceeds_tile_trust_radius"
+    return None
+
+
+def _candidate_full_precheck_reason(
+    candidate: SparseRadarPerturbation,
+    linearization: AnalysisLinearization,
+    policy: AutomatedLearningPolicy,
+) -> tuple[str | None, int]:
+    counter = [0]
+    try:
+        dense = candidate.materialize(linearization.observations.dbz)
+        perturbation = VariationalObservationPerturbation.from_radar_dbz_delta(
+            dense,
+            linearization,
+        )
+        with _count_observation_whitener_applies() as counter:
+            _validate_variational_observation_perturbation(
+                perturbation,
+                linearization.observations,
+                linearization.frozen,
+                policy.adjoint_config,
+            )
+    except (TypeError, ValueError) as error:
+        return str(error), counter[0]
+    return None, counter[0]
+
+
+def _sparse_maximum_tile_norm(
+    flat_indices: Tensor,
+    energy: Tensor,
+    shape: torch.Size,
+    tile_shape: TileShape,
+) -> float:
+    _, height, width = shape
+    tile_height, tile_width = tile_shape
+    tile_columns = math.ceil(width / tile_width)
+    spatial = flat_indices % (height * width)
+    frame = torch.div(flat_indices, height * width, rounding_mode="floor")
+    row = torch.div(spatial, width, rounding_mode="floor")
+    column = spatial % width
+    tile = (
+        frame * math.ceil(height / tile_height) * tile_columns
+        + torch.div(row, tile_height, rounding_mode="floor") * tile_columns
+        + torch.div(column, tile_width, rounding_mode="floor")
+    )
+    totals = energy.new_zeros(int(torch.amax(tile).detach()) + 1)
+    totals.scatter_add_(0, tile, energy)
+    return math.sqrt(float(torch.amax(totals).detach()))
+
+
+def _candidate_ranking_score(
+    prediction: Tensor,
+    available: Tensor,
+    scales: Tensor,
+    weights: Tensor,
+    objective: CandidateRankingObjective,
+) -> float:
+    normalized = prediction / scales[None, :]
+    normalized = torch.where(available, normalized, 0.0)
+    if objective == "expected_error_reduction":
+        normalized = torch.clamp(-normalized, min=0.0)
+    elif objective == "two_sided_diagnostic":
+        benefit = torch.clamp(-normalized, min=0.0)
+        harm = torch.clamp(normalized, min=0.0)
+        benefit_norm = torch.sum(weights * benefit.square())
+        harm_norm = torch.sum(weights * harm.square())
+        return math.sqrt(float(torch.maximum(benefit_norm, harm_norm).detach()))
+    elif objective != "absolute_influence":
+        raise ValueError("unsupported candidate ranking objective")
+    value = torch.where(available, weights * normalized.square(), 0.0).sum()
+    return math.sqrt(float(value.detach()))
 
 
 def validate_top_k_learning_impacts(
@@ -3503,24 +4237,27 @@ def validate_top_k_learning_impacts(
     *,
     policy: AutomatedLearningPolicy,
     policy_trust_store_path: str | Path,
-    maximum_resolves: int | None = None,
-) -> tuple[VariationalLearningImpact, ...]:
+    maximum_candidates_to_validate: int | None = None,
+) -> tuple[RankedLearningOutcome, ...]:
     """Run full/half robust re-solves only for the highest-ranked candidates."""
 
     validate_variational_fso(ranking.fso)
     if ranking.ranking_digest != _variational_candidate_ranking_digest(ranking):
         raise ValueError("variational candidate ranking digest mismatch")
+    if ranking.policy_digest != policy.digest:
+        raise ValueError("candidate ranking policy mismatch")
     limit = (
-        policy.maximum_learning_resolves
-        if maximum_resolves is None
-        else maximum_resolves
+        policy.maximum_learning_candidates_to_validate
+        if maximum_candidates_to_validate is None
+        else maximum_candidates_to_validate
     )
     if type(limit) is not int or limit <= 0:
-        raise ValueError("maximum_resolves must be a positive integer")
-    if limit > policy.maximum_learning_resolves:
-        raise ValueError("learning resolve count exceeds its policy budget")
-    if len(ranking.scores) > policy.maximum_candidate_count:
+        raise ValueError("maximum_candidates_to_validate must be positive")
+    if limit > policy.maximum_learning_candidates_to_validate:
         raise ValueError("learning candidate count exceeds its policy budget")
+    resolve_limit = policy.maximum_total_robust_resolves
+    if 2 * limit > resolve_limit:
+        raise ValueError("full/half robust resolves exceed their policy budget")
     trust_store = _load_learning_policy_trust_store(policy_trust_store_path)
     rejection = _learning_context_rejection(
         result,
@@ -3532,34 +4269,75 @@ def validate_top_k_learning_impacts(
     )
     if rejection is not None:
         return tuple(
-            _rejected_learning_impact(policy, rejection)
-            for _ in ranking.scores[:limit]
+            RankedLearningOutcome(
+                candidate_id=scored.candidate_id,
+                candidate_rank=scored.rank,
+                candidate_score=scored.score,
+                ranking_digest=ranking.ranking_digest,
+                result=_rejected_learning_impact(policy, rejection),
+            )
+            for scored in ranking.scores[:limit]
         )
     linearization = analysis.linearization
     if linearization is None:
         raise RuntimeError("approved learning context lacks a linearization")
-    outcomes = []
+    outcomes: list[RankedLearningOutcome] = []
+    started = time.monotonic()
+    robust_resolves = 0
+    total_pcg_iterations = 0
     for scored in ranking.scores[:limit]:
-        try:
+        dense = scored.perturbation.materialize(linearization.observations.dbz)
+        perturbation = VariationalObservationPerturbation.from_radar_dbz_delta(
+            dense,
+            linearization,
+        )
+        with _count_observation_whitener_applies() as fsoi_counter:
             fsoi = _variational_fsoi_from_precomputed_fso(
                 ranking.fso,
                 linearization,
-                scored.perturbation,
+                perturbation,
                 policy.adjoint_config,
             )
-        except ValueError as error:
-            outcomes.append(_rejected_learning_impact(policy, str(error)))
-            continue
+        robust_resolves += 2
+        result_for_candidate = _learning_impact_from_fsoi(
+            result,
+            analysis,
+            verification_frames_dbz,
+            fsoi,
+            policy,
+            trust_store.content_digest,
+            selection=_LearningSelection(
+                mode="ranked_top_k",
+                candidate_id=scored.candidate_id,
+                candidate_rank=scored.rank,
+                candidate_score=scored.score,
+                candidate_perturbation_digest=scored.perturbation.digest,
+                ranking_digest=ranking.ranking_digest,
+                ranking_policy_digest=ranking.policy_digest,
+                ranking_objective=ranking.ranking_objective,
+                observed_whitener_apply_count=(
+                    ranking.observed_whitener_apply_count + fsoi_counter[0]
+                ),
+            ),
+        )
+        validation = result_for_candidate.first_order_validation
+        if validation is not None:
+            total_pcg_iterations += validation.total_resolved_pcg_iterations
+        if total_pcg_iterations > policy.maximum_learning_pcg_iterations:
+            raise ValueError("learning PCG iteration budget exhausted")
+        if time.monotonic() - started > policy.maximum_learning_wall_seconds:
+            raise ValueError("learning wall-time budget exhausted")
         outcomes.append(
-            _learning_impact_from_fsoi(
-                result,
-                analysis,
-                verification_frames_dbz,
-                fsoi,
-                policy,
-                trust_store.content_digest,
+            RankedLearningOutcome(
+                candidate_id=scored.candidate_id,
+                candidate_rank=scored.rank,
+                candidate_score=scored.score,
+                ranking_digest=ranking.ranking_digest,
+                result=result_for_candidate,
             )
         )
+    if robust_resolves > resolve_limit:
+        raise RuntimeError("learning robust-resolve accounting failed")
     return tuple(outcomes)
 
 
@@ -3621,6 +4399,19 @@ def compute_variational_fsoi_for_learning(
     )
 
 
+@dataclass(frozen=True)
+class _LearningSelection:
+    mode: LearningSelectionMode
+    candidate_id: str | None = None
+    candidate_rank: int | None = None
+    candidate_score: float | None = None
+    candidate_perturbation_digest: str | None = None
+    ranking_digest: str | None = None
+    ranking_policy_digest: str | None = None
+    ranking_objective: CandidateRankingObjective | None = None
+    observed_whitener_apply_count: int = 0
+
+
 def _learning_impact_from_fsoi(
     result: ForecastResult,
     analysis: AnalysisResult | P1LinearizationState,
@@ -3628,7 +4419,10 @@ def _learning_impact_from_fsoi(
     fsoi: VariationalFSOI,
     policy: AutomatedLearningPolicy,
     trust_store_digest: str,
+    *,
+    selection: _LearningSelection | None = None,
 ) -> VariationalLearningImpact:
+    selection = selection or _LearningSelection(mode="direct")
     impact = fsoi.observation.baseline_branch_trusted_total
     if impact is None:
         return _rejected_learning_impact(
@@ -3636,6 +4430,7 @@ def _learning_impact_from_fsoi(
             "baseline_dynamics_branch_not_certified",
             fsoi=fsoi,
         )
+    validation_started = time.monotonic()
     validation = _validate_first_order_learning_impact(
         result,
         analysis,
@@ -3643,6 +4438,44 @@ def _learning_impact_from_fsoi(
         fsoi,
         policy,
     )
+    if (
+        validation.total_resolved_pcg_iterations
+        > policy.maximum_learning_pcg_iterations
+    ):
+        return _rejected_learning_impact(
+            policy,
+            "learning_pcg_iteration_budget_exhausted",
+            fsoi=fsoi,
+            first_order_validation=validation,
+        )
+    if (
+        time.monotonic() - validation_started
+        > policy.maximum_learning_wall_seconds
+    ):
+        return _rejected_learning_impact(
+            policy,
+            "learning_wall_time_budget_exhausted",
+            fsoi=fsoi,
+            first_order_validation=validation,
+        )
+    base_whitener_applies = (
+        selection.observed_whitener_apply_count
+        if selection.mode == "ranked_top_k"
+        else fsoi.fso.observed_whitener_apply_count
+    )
+    total_whitener_applies = (
+        base_whitener_applies + validation.observed_whitener_apply_count
+    )
+    total_whitener_operations = (
+        fsoi.fso.whitener_operations_per_apply * total_whitener_applies
+    )
+    if total_whitener_operations > policy.maximum_whitener_total_operations:
+        return _rejected_learning_impact(
+            policy,
+            "common_bias_total_operation_budget_exhausted",
+            fsoi=fsoi,
+            first_order_validation=validation,
+        )
     if not validation.first_order_valid:
         no_material_signal = validation.material_metric_count == 0 and all(
             (
@@ -3686,6 +4519,21 @@ def _learning_impact_from_fsoi(
         half_step_forecast_digest=cast(str, forecast_digests[1]),
         first_order_validation_digest=validation.validation_digest,
         learning_impact_digest=_variational_impact_digest(owned_impact),
+        selection_mode=selection.mode,
+        candidate_id=selection.candidate_id,
+        candidate_rank=selection.candidate_rank,
+        candidate_score=selection.candidate_score,
+        candidate_perturbation_digest=(
+            selection.candidate_perturbation_digest
+        ),
+        ranking_digest=selection.ranking_digest,
+        ranking_policy_digest=selection.ranking_policy_digest,
+        ranking_objective=selection.ranking_objective,
+        whitener_operations_per_apply=(
+            fsoi.fso.whitener_operations_per_apply
+        ),
+        observed_whitener_apply_count=total_whitener_applies,
+        observed_whitener_total_operations=total_whitener_operations,
     )
     return VariationalLearningImpact(
         eligibility=LearningEligibility(
@@ -3787,7 +4635,7 @@ def _variational_fsoi_from_precomputed_fso(
         ),
     )
     components = tuple(
-        _impact_from_precomputed_sensitivity(channel, delta, fso.tile_size)
+        _impact_from_precomputed_sensitivity(channel, delta, fso.tile_shape_yx)
         for channel, delta in component_pairs
     )
     total = _sum_impact_channels(components)
@@ -3826,7 +4674,7 @@ def _variational_fsoi_from_precomputed_fso(
 def _impact_from_precomputed_sensitivity(
     sensitivity: VariationalSensitivityChannel,
     delta: Tensor,
-    tile_size: int,
+    tile_size: TileShape,
 ) -> VariationalImpactChannel:
     maps = sensitivity.maps * delta
     if maps.ndim != 5 or maps.shape[2] != 3:
@@ -3839,8 +4687,8 @@ def _impact_from_precomputed_sensitivity(
         metric_count=metric_count,
         height=height,
         width=width,
-        tile_rows=math.ceil(height / tile_size),
-        tile_columns=math.ceil(width / tile_size),
+        tile_rows=math.ceil(height / tile_size[0]),
+        tile_columns=math.ceil(width / tile_size[1]),
     )
     for lead in range(lead_count):
         for metric in range(metric_count):
@@ -3909,22 +4757,23 @@ def _validate_first_order_learning_impact(
         fsoi.observation.total.sum_by_time.sum(dim=-1).detach()
     )
     half_prediction = 0.5 * full_prediction
-    full = _resolve_learning_step(
-        result,
-        analysis,
-        verification_input,
-        fsoi,
-        policy,
-        scale=1.0,
-    )
-    half = _resolve_learning_step(
-        result,
-        analysis,
-        verification_input,
-        fsoi,
-        policy,
-        scale=0.5,
-    )
+    with _count_observation_whitener_applies() as whitener_counter:
+        full = _resolve_learning_step(
+            result,
+            analysis,
+            verification_input,
+            fsoi,
+            policy,
+            scale=1.0,
+        )
+        half = _resolve_learning_step(
+            result,
+            analysis,
+            verification_input,
+            fsoi,
+            policy,
+            scale=0.5,
+        )
     available = fsoi.fso.metric_available
     full_error = torch.abs(full.metric_change - full_prediction)
     half_error = torch.abs(half.metric_change - half_prediction)
@@ -3992,6 +4841,9 @@ def _validate_first_order_learning_impact(
         half_step_analysis_digest=half.analysis_digest,
         full_step_forecast_digest=full.forecast_digest,
         half_step_forecast_digest=half.forecast_digest,
+        full_step_pcg_iterations=full.pcg_iterations,
+        half_step_pcg_iterations=half.pcg_iterations,
+        observed_whitener_apply_count=whitener_counter[0],
     )
 
 
@@ -4002,6 +4854,7 @@ class _ResolvedLearningStep:
     active_branch_valid: bool
     analysis_digest: str | None
     forecast_digest: str | None
+    pcg_iterations: int
 
 
 def _resolve_learning_step(
@@ -4079,6 +4932,7 @@ def _resolve_learning_step(
             branch_valid,
             None,
             None,
+            resolved.pcg_iterations,
         )
     if resolved_linearization is None:
         raise RuntimeError("converged learning re-solve lacks linearization")
@@ -4180,6 +5034,7 @@ def _resolve_learning_step(
                 "forecasts": changed_forecasts,
             }
         ),
+        resolved.pcg_iterations,
     )
 
 
@@ -4382,12 +5237,12 @@ def _compute_variational_products(
     }
     lead_count = len(lead_minutes)
     metric_count = len(sensitivity_config.metric_names)
-    tile_size = _metric_tile_size(
+    tile_shape_yx = _metric_tile_shape(
         sensitivity_config,
         frozen.grid_time_contract,
     )
-    tile_rows = math.ceil(height / tile_size)
-    tile_columns = math.ceil(width / tile_size)
+    tile_rows = math.ceil(height / tile_shape_yx[0])
+    tile_columns = math.ceil(width / tile_shape_yx[1])
     selected_count = len(full_map_indices)
     materialized_output_bytes = _variational_materialized_output_bytes(
         control,
@@ -4850,7 +5705,7 @@ def _compute_variational_products(
                     lead_index=lead_index,
                     metric_index=metric_index,
                     selected_index=selected_index,
-                    tile_size=tile_size,
+                    tile_size=tile_shape_yx,
                     signed_sum=False,
                 )
 
@@ -4894,7 +5749,7 @@ def _compute_variational_products(
                         lead_index=lead_index,
                         metric_index=metric_index,
                         selected_index=selected_index,
-                        tile_size=tile_size,
+                        tile_size=tile_shape_yx,
                         signed_sum=True,
                     )
 
@@ -4946,7 +5801,7 @@ def _compute_variational_products(
         ),
     )
     fso = VariationalFSO(
-        contract="p1-variational-fso-v13",
+        contract="p1-variational-fso-v14",
         forecast_run_digest=result.forecast_run_digest,
         analysis_input_digest=cast(str, result.run.analysis_input_digest),
         sensitivity_config_digest=sensitivity_config.digest,
@@ -4983,7 +5838,8 @@ def _compute_variational_products(
         metric_domain_digest=metric_domain_digest,
         lead_minutes=lead_minutes,
         full_map_lead_minutes=sensitivity_config.full_map_lead_minutes,
-        tile_size=tile_size,
+        tile_size=max(tile_shape_yx),
+        tile_shape_yx=tile_shape_yx,
         forecast_scores=forecast_scores,
         metric_available=metric_available,
         metric_domain_weight_sum=metric_domain_weight_sum,
@@ -4996,6 +5852,8 @@ def _compute_variational_products(
         adjoint_normal_products=adjoint_normal_products,
         adjoint_warm_started=adjoint_warm_started,
         total_normal_products=normal_product_budget.used,
+        whitener_operations_per_apply=0,
+        observed_whitener_apply_count=0,
         materialized_output_bytes=materialized_output_bytes,
         active_set_margins=active_set_margins,
         feasibility_margins=feasibility_margins,
@@ -5884,14 +6742,15 @@ def _perturbation_diagnostics(
     )
 
 
-def _maximum_tile_norm(energy: Tensor, tile_size: int) -> float:
+def _maximum_tile_norm(energy: Tensor, tile_size: TileShape) -> float:
     maximum = 0.0
+    tile_height, tile_width = tile_size
     for frame in energy:
-        for row in range(0, frame.shape[0], tile_size):
-            for column in range(0, frame.shape[1], tile_size):
+        for row in range(0, frame.shape[0], tile_height):
+            for column in range(0, frame.shape[1], tile_width):
                 tile = frame[
-                    row : row + tile_size,
-                    column : column + tile_size,
+                    row : row + tile_height,
+                    column : column + tile_width,
                 ]
                 maximum = max(
                     maximum,
@@ -6604,31 +7463,23 @@ def _soft_fss_error(
     forecast_event = torch.sigmoid((forecast_dbz - 35.0) / temperature)
     truth_event = torch.sigmoid((truth_dbz - 35.0) / temperature)
 
-    window = _soft_fss_window_size(
+    valid_float = valid.to(forecast.dtype)
+    local_valid = _soft_fss_average(
+        valid_float,
         sensitivity_config,
         grid_time_contract,
     )
-    padding = window // 2
-    valid_float = valid.to(forecast.dtype)
-    local_valid = F.avg_pool2d(
-        valid_float[None, None],
-        window,
-        stride=1,
-        padding=padding,
-    )[0, 0]
     denominator = local_valid.clamp_min(sensitivity_config.epsilon)
-    forecast_fraction = F.avg_pool2d(
-        (forecast_event * valid_float)[None, None],
-        window,
-        stride=1,
-        padding=padding,
-    )[0, 0] / denominator
-    truth_fraction = F.avg_pool2d(
-        (truth_event * valid_float)[None, None],
-        window,
-        stride=1,
-        padding=padding,
-    )[0, 0] / denominator
+    forecast_fraction = _soft_fss_average(
+        forecast_event * valid_float,
+        sensitivity_config,
+        grid_time_contract,
+    ) / denominator
+    truth_fraction = _soft_fss_average(
+        truth_event * valid_float,
+        sensitivity_config,
+        grid_time_contract,
+    ) / denominator
     numerator = _weighted_mean(
         (forecast_fraction - truth_fraction).square(),
         local_valid,
@@ -6640,6 +7491,51 @@ def _soft_fss_error(
         sensitivity_config.epsilon,
     )
     return numerator / (reference + sensitivity_config.epsilon)
+
+
+def _soft_fss_average(
+    values: Tensor,
+    config: SensitivityConfig,
+    grid: RadarGridTimeContract | None,
+) -> Tensor:
+    if config.soft_fss_window_m is None:
+        window = config.soft_fss_window
+        return F.avg_pool2d(
+            values[None, None],
+            window,
+            stride=1,
+            padding=window // 2,
+        )[0, 0]
+    if grid is None:
+        raise ValueError("physical FSS requires a grid contract")
+    return _affine_footprint_average(
+        values,
+        grid,
+        0.5 * config.soft_fss_window_m,
+    )
+
+
+def _affine_footprint_average(
+    values: Tensor,
+    grid: RadarGridTimeContract,
+    radius_m: float,
+) -> Tensor:
+    """Average over the exact projected-distance footprint of one grid."""
+
+    radius_y, radius_x = grid.pixel_radius_yx(radius_m)
+    offsets = grid.pixel_offsets_within_distance(
+        radius_m,
+        maximum_radius_yx=(radius_y, radius_x),
+    )
+    kernel = values.new_zeros((2 * radius_y + 1, 2 * radius_x + 1))
+    for row, column in offsets:
+        kernel[row + radius_y, column + radius_x] = 1.0
+    kernel /= len(offsets)
+    return F.conv2d(
+        values[None, None],
+        kernel[None, None],
+        padding=(radius_y, radius_x),
+    )[0, 0]
 
 
 def _weighted_mean(values: Tensor, weights: Tensor, epsilon: float) -> Tensor:
@@ -6708,28 +7604,34 @@ def _masked_mean(values: Tensor, valid: Tensor) -> Tensor:
     )
 
 
-def _tile_l2(values: Tensor, tile_size: int) -> Tensor:
+def _tile_l2(values: Tensor, tile_size: TileShape) -> Tensor:
     tiles = _as_tiles(values, tile_size)
     return torch.sqrt(torch.sum(tiles.square(), dim=(-1, -2)))
 
 
-def _tile_sum(values: Tensor, tile_size: int) -> Tensor:
+def _tile_sum(values: Tensor, tile_size: TileShape) -> Tensor:
     return torch.sum(_as_tiles(values, tile_size), dim=(-1, -2))
 
 
-def _as_tiles(values: Tensor, tile_size: int) -> Tensor:
+def _as_tiles(values: Tensor, tile_size: TileShape) -> Tensor:
     height, width = values.shape
-    tile_rows = math.ceil(height / tile_size)
-    tile_columns = math.ceil(width / tile_size)
+    tile_height, tile_width = tile_size
+    tile_rows = math.ceil(height / tile_height)
+    tile_columns = math.ceil(width / tile_width)
     padded = F.pad(
         values,
-        (0, tile_columns * tile_size - width, 0, tile_rows * tile_size - height),
+        (
+            0,
+            tile_columns * tile_width - width,
+            0,
+            tile_rows * tile_height - height,
+        ),
     )
     return padded.reshape(
         tile_rows,
-        tile_size,
+        tile_height,
         tile_columns,
-        tile_size,
+        tile_width,
     ).permute(0, 2, 1, 3)
 
 

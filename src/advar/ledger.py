@@ -32,8 +32,8 @@ from .sensitivity import (
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 4
-_EPISODE_SCHEMA_VERSION = 17
+_INDEX_SCHEMA_VERSION = 5
+_EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _TRUST_COMPONENTS_V13 = {
     "linearity",
@@ -480,8 +480,14 @@ class EpisodeLedger:
                     half_step_analysis_digest, full_step_forecast_digest,
                     half_step_forecast_digest,
                     first_order_validation_digest,
-                    learning_impact_digest, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    learning_impact_digest, selection_mode, candidate_id,
+                    candidate_rank, candidate_score,
+                    candidate_perturbation_digest, ranking_digest,
+                    ranking_policy_digest, ranking_objective,
+                    whitener_operations_per_apply,
+                    observed_whitener_apply_count,
+                    observed_whitener_total_operations, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     learning.learning_result_digest,
@@ -496,6 +502,17 @@ class EpisodeLedger:
                     evidence.half_step_forecast_digest,
                     evidence.first_order_validation_digest,
                     evidence.learning_impact_digest,
+                    evidence.selection_mode,
+                    evidence.candidate_id,
+                    evidence.candidate_rank,
+                    evidence.candidate_score,
+                    evidence.candidate_perturbation_digest,
+                    evidence.ranking_digest,
+                    evidence.ranking_policy_digest,
+                    evidence.ranking_objective,
+                    evidence.whitener_operations_per_apply,
+                    evidence.observed_whitener_apply_count,
+                    evidence.observed_whitener_total_operations,
                     datetime.now(timezone.utc).isoformat(),
                 ),
             )
@@ -530,6 +547,25 @@ class EpisodeLedger:
                 row["first_order_validation_digest"]
             ),
             learning_impact_digest=row["learning_impact_digest"],
+            selection_mode=row["selection_mode"],
+            candidate_id=row["candidate_id"],
+            candidate_rank=row["candidate_rank"],
+            candidate_score=row["candidate_score"],
+            candidate_perturbation_digest=(
+                row["candidate_perturbation_digest"]
+            ),
+            ranking_digest=row["ranking_digest"],
+            ranking_policy_digest=row["ranking_policy_digest"],
+            ranking_objective=row["ranking_objective"],
+            whitener_operations_per_apply=(
+                row["whitener_operations_per_apply"]
+            ),
+            observed_whitener_apply_count=(
+                row["observed_whitener_apply_count"]
+            ),
+            observed_whitener_total_operations=(
+                row["observed_whitener_total_operations"]
+            ),
             contract=row["evidence_contract"],
         )
         if evidence.digest != row["approval_evidence_digest"]:
@@ -579,10 +615,22 @@ class EpisodeLedger:
                     half_step_forecast_digest TEXT NOT NULL,
                     first_order_validation_digest TEXT NOT NULL,
                     learning_impact_digest TEXT NOT NULL,
+                    selection_mode TEXT NOT NULL DEFAULT 'direct',
+                    candidate_id TEXT,
+                    candidate_rank INTEGER,
+                    candidate_score REAL,
+                    candidate_perturbation_digest TEXT,
+                    ranking_digest TEXT,
+                    ranking_policy_digest TEXT,
+                    ranking_objective TEXT,
+                    whitener_operations_per_apply INTEGER NOT NULL DEFAULT 0,
+                    observed_whitener_apply_count INTEGER NOT NULL DEFAULT 0,
+                    observed_whitener_total_operations INTEGER NOT NULL DEFAULT 0,
                     created_at TEXT NOT NULL
                 )
                 """
             )
+            _ensure_variational_learning_approval_schema(connection)
             connection.execute(
                 """
                 CREATE INDEX IF NOT EXISTS episodes_contract_time
@@ -819,6 +867,38 @@ def _ensure_episode_impacts_schema(
     connection.execute("DROP TABLE episode_impacts_legacy")
 
 
+def _ensure_variational_learning_approval_schema(
+    connection: sqlite3.Connection,
+) -> None:
+    """Add ranked-selection lineage columns to an existing append-only index."""
+
+    columns = {
+        row[1]
+        for row in connection.execute(
+            "PRAGMA table_info(variational_learning_approvals)"
+        ).fetchall()
+    }
+    definitions = {
+        "selection_mode": "TEXT NOT NULL DEFAULT 'direct'",
+        "candidate_id": "TEXT",
+        "candidate_rank": "INTEGER",
+        "candidate_score": "REAL",
+        "candidate_perturbation_digest": "TEXT",
+        "ranking_digest": "TEXT",
+        "ranking_policy_digest": "TEXT",
+        "ranking_objective": "TEXT",
+        "whitener_operations_per_apply": "INTEGER NOT NULL DEFAULT 0",
+        "observed_whitener_apply_count": "INTEGER NOT NULL DEFAULT 0",
+        "observed_whitener_total_operations": "INTEGER NOT NULL DEFAULT 0",
+    }
+    for name, definition in definitions.items():
+        if name not in columns:
+            connection.execute(
+                f"ALTER TABLE variational_learning_approvals "
+                f"ADD COLUMN {name} {definition}"
+            )
+
+
 def _create_episode_impacts_table(connection: sqlite3.Connection) -> None:
     connection.execute(
         """
@@ -960,6 +1040,7 @@ def _episode_manifest(
         "lead_minutes": list(snapshot.lead_minutes),
         "full_map_lead_minutes": list(snapshot.full_map_lead_minutes),
         "tile_size": snapshot.tile_size,
+        "tile_shape_yx": list(snapshot.tile_shape_yx),
         "context_feature_names": list(snapshot.context_feature_names),
         "sensitivity_scope": _sensitivity_scope(),
         "units": {
@@ -1046,6 +1127,16 @@ def _verify_manifest(
         raise ValueError(
             "verification provenance does not match the episode schema"
         )
+    if schema_version >= 18:
+        tile_shape = manifest.get("tile_shape_yx")
+        if (
+            not isinstance(tile_shape, list)
+            or len(tile_shape) != 2
+            or any(type(value) is not int or value <= 0 for value in tile_shape)
+        ):
+            raise ValueError("manifest physical tile shape is invalid")
+    elif "tile_shape_yx" in manifest:
+        raise ValueError("physical tile shape does not match episode schema")
     contract_values = manifest.get("contract")
     if not isinstance(contract_values, dict):
         raise ValueError("manifest contains an invalid contract")
@@ -1516,6 +1607,12 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         raise ValueError("full-map leads must be unique forecast leads")
     if type(snapshot.tile_size) is not int or snapshot.tile_size <= 0:
         raise ValueError("tile_size must be a positive integer")
+    if (
+        len(snapshot.tile_shape_yx) != 2
+        or any(type(value) is not int or value <= 0 for value in snapshot.tile_shape_yx)
+        or snapshot.tile_size != max(snapshot.tile_shape_yx)
+    ):
+        raise ValueError("tile_shape_yx must contain two positive dimensions")
 
     _require_bool_tensor(
         "latest_sensitivity_mask",
@@ -1527,8 +1624,8 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
     lead_count = len(leads)
     metric_count = len(metrics)
     selected_count = len(selected_leads)
-    tile_rows = math.ceil(height / snapshot.tile_size)
-    tile_columns = math.ceil(width / snapshot.tile_size)
+    tile_rows = math.ceil(height / snapshot.tile_shape_yx[0])
+    tile_columns = math.ceil(width / snapshot.tile_shape_yx[1])
 
     core_tensors = {
         "context_features": (len(snapshot.context_feature_names),),

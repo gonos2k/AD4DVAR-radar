@@ -25,6 +25,7 @@ from advar.nowcast import (  # noqa: E402
     nowcast,
 )
 from advar.sensitivity import (  # noqa: E402
+    LearningApprovalEvidence,
     SensitivityConfig,
     compute_sensitivity_snapshot,
 )
@@ -149,6 +150,7 @@ VERIFICATION_LINEAGE_MANIFEST_FIELDS = (
 def _drop_verification_lineage(manifest: dict[str, object]) -> None:
     for name in VERIFICATION_LINEAGE_MANIFEST_FIELDS:
         manifest.pop(name)
+    manifest.pop("tile_shape_yx", None)
 
 
 def _contract(snapshot=None) -> ModelContract:
@@ -295,7 +297,8 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
 
         manifest = loaded.manifest
-        self.assertEqual(manifest["schema_version"], 17)
+        self.assertEqual(manifest["schema_version"], 18)
+        self.assertEqual(manifest["tile_shape_yx"], [16, 16])
         self.assertEqual(
             manifest["verification_contract"],
             "legacy-verification-tensor-v1",
@@ -401,7 +404,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 4)
+        self.assertEqual(version, 5)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -440,6 +443,55 @@ class EpisodeLedgerTests(unittest.TestCase):
             self.assertNotIn(name, loaded.arrays)
         self.assertFalse(loaded.manifest["impact_available"])
         self.assertFalse(loaded.manifest["reward_available"])
+
+    def test_legacy_learning_approval_remains_loadable(self) -> None:
+        evidence = LearningApprovalEvidence(
+            policy_digest="1" * 64,
+            trust_store_digest="2" * 64,
+            fsoi_digest="3" * 64,
+            full_step_analysis_digest="4" * 64,
+            half_step_analysis_digest="5" * 64,
+            full_step_forecast_digest="6" * 64,
+            half_step_forecast_digest="7" * 64,
+            first_order_validation_digest="8" * 64,
+            learning_impact_digest="9" * 64,
+            contract="p1-learning-approval-evidence-v1",
+        )
+        learning_result_digest = "a" * 64
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute(
+                """
+                INSERT INTO variational_learning_approvals (
+                    learning_result_digest, approval_evidence_digest,
+                    evidence_contract, policy_digest, trust_store_digest,
+                    fsoi_digest, full_step_analysis_digest,
+                    half_step_analysis_digest, full_step_forecast_digest,
+                    half_step_forecast_digest,
+                    first_order_validation_digest, learning_impact_digest,
+                    created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    learning_result_digest,
+                    evidence.digest,
+                    evidence.contract,
+                    evidence.policy_digest,
+                    evidence.trust_store_digest,
+                    evidence.fsoi_digest,
+                    evidence.full_step_analysis_digest,
+                    evidence.half_step_analysis_digest,
+                    evidence.full_step_forecast_digest,
+                    evidence.half_step_forecast_digest,
+                    evidence.first_order_validation_digest,
+                    evidence.learning_impact_digest,
+                    datetime.now(timezone.utc).isoformat(),
+                ),
+            )
+
+        loaded = self.ledger.load_variational_learning_approval(
+            learning_result_digest
+        )
+        self.assertEqual(loaded, evidence)
 
     def test_complete_verification_lineage_round_trips(self) -> None:
         snapshot = replace(
@@ -1567,7 +1619,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 4)
+        self.assertEqual(version, 5)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Generator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from collections.abc import Callable
 from collections import deque
 from dataclasses import asdict, dataclass, fields, is_dataclass, replace
@@ -67,6 +70,32 @@ CensoredBackgroundPolicy = Literal[
 MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT = 64
 P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v13"
 P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v11"
+_WHITENER_APPLY_COUNTER: ContextVar[list[int] | None] = ContextVar(
+    "advar_whitener_apply_counter",
+    default=None,
+)
+
+
+@contextmanager
+def _count_observation_whitener_applies() -> Generator[list[int], None, None]:
+    """Count actual low-rank whitener applications in one operation."""
+
+    counter = [0]
+    token = _WHITENER_APPLY_COUNTER.set(counter)
+    try:
+        yield counter
+    finally:
+        _WHITENER_APPLY_COUNTER.reset(token)
+
+
+def _observation_whitener_operations_per_apply(
+    observations: AnalysisObservations,
+) -> int:
+    weights = observations.common_bias_mode_weights
+    if weights is None:
+        return 0
+    frame_multiplier = observations.dbz.shape[0] if weights.ndim == 3 else 1
+    return 2 * frame_multiplier * weights.numel()
 
 
 @dataclass(frozen=True)
@@ -1251,7 +1280,14 @@ def prepare_analysis(
             dtype=frames_dbz.dtype,
             device=frames_dbz.device,
         )
-        whitener_apply_operations = 2 * common_bias_mode_weights.numel()
+        frame_multiplier = (
+            frames_dbz.shape[0]
+            if common_bias_mode_weights.ndim == 3
+            else 1
+        )
+        whitener_apply_operations = (
+            2 * frame_multiplier * common_bias_mode_weights.numel()
+        )
         if (
             whitener_apply_operations
             > analysis_config.maximum_common_bias_whitener_apply_operations
@@ -1924,6 +1960,9 @@ def _apply_observation_error_whitener(
         correction = whitener.overlapping_correction
         if correction is None:
             raise ValueError("frozen overlapping whitener is incomplete")
+        counter = _WHITENER_APPLY_COUNTER.get()
+        if counter is not None:
+            counter[0] += 1
         return _apply_compact_low_rank_whitener(
             values,
             observations.common_bias_mode_weights,

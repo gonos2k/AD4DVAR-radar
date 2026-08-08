@@ -61,6 +61,7 @@ from advar.sensitivity import (  # noqa: E402
     _p0_tendency_branch_signature,
     _remap_fraction_margin,
     SensitivityConfig,
+    SparseRadarPerturbation,
     VerificationBundle,
     VariationalAdjointConfig,
     VariationalObservationPerturbation,
@@ -1733,7 +1734,67 @@ class SensitivityTests(unittest.TestCase):
                 soft_fss_window=5,
             ),
         )
-        torch.testing.assert_close(physical, pixels)
+        self.assertTrue(torch.isfinite(physical))
+        self.assertGreater(abs(float(physical - pixels)), 1.0e-9)
+
+    def test_physical_fss_uses_exact_anisotropic_affine_footprint(self) -> None:
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-05T00:00:00Z",
+                "2026-08-05T00:10:00Z",
+                "2026-08-05T00:20:00Z",
+            ),
+            dx_m=250.0,
+            dy_m=2_000.0,
+            projection="EPSG:5179",
+            grid_hash="5" * 64,
+        )
+        impulse = torch.zeros((9, 41), dtype=torch.float64)
+        impulse[4, 20] = 1.0
+        local = sensitivity_module._affine_footprint_average(
+            impulse,
+            grid,
+            4_500.0,
+        )
+
+        self.assertGreater(float(local[4, 38]), 0.0)
+        self.assertGreater(float(local[6, 20]), 0.0)
+        self.assertEqual(float(local[7, 20]), 0.0)
+        self.assertEqual(
+            sensitivity_module._metric_tile_shape(
+                SensitivityConfig(tile_size_m=9_000.0),
+                grid,
+            ),
+            (5, 36),
+        )
+
+    def test_candidate_ranking_is_dimensionless_and_benefit_directed(self) -> None:
+        available = torch.ones((1, 2), dtype=torch.bool)
+        scales = torch.tensor((0.1, 100.0), dtype=torch.float64)
+        weights = torch.ones((1, 2), dtype=torch.float64)
+        equal_normalized = torch.tensor(
+            ((-0.1, -100.0),),
+            dtype=torch.float64,
+        )
+        harmful = -equal_normalized
+
+        score = sensitivity_module._candidate_ranking_score(
+            equal_normalized,
+            available,
+            scales,
+            weights,
+            "expected_error_reduction",
+        )
+        harmful_score = sensitivity_module._candidate_ranking_score(
+            harmful,
+            available,
+            scales,
+            weights,
+            "expected_error_reduction",
+        )
+
+        self.assertAlmostEqual(score, math.sqrt(2.0))
+        self.assertEqual(harmful_score, 0.0)
 
 
 class VariationalFSOTests(unittest.TestCase):
@@ -1792,7 +1853,7 @@ class VariationalFSOTests(unittest.TestCase):
 
     def test_variational_fso_covers_all_observation_times(self) -> None:
         fso = self.fso
-        self.assertEqual(fso.contract, "p1-variational-fso-v13")
+        self.assertEqual(fso.contract, "p1-variational-fso-v14")
         self.assertEqual(
             fso.sensitivity_scope,
             "residual_plus_observation_derived_baseline_with_frozen_selection",
@@ -2100,12 +2161,21 @@ class VariationalFSOTests(unittest.TestCase):
             sensitivity_config=self.sensitivity_config,
         )
         validate_variational_fso(fso)
+        self.assertGreater(fso.whitener_operations_per_apply, 0)
+        self.assertGreater(fso.observed_whitener_apply_count, 0)
         linearization = analysis.linearization
         assert linearization is not None
         original_mode_weights = (
             linearization.observations.common_bias_mode_weights
         )
         assert original_mode_weights is not None
+        expected_operations = (
+            2 * self.frames.shape[0] * original_mode_weights.numel()
+        )
+        self.assertEqual(
+            fso.whitener_operations_per_apply,
+            expected_operations,
+        )
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "overlapping-linearization.npz"
             save_p1_linearization(analysis, path)
@@ -2277,15 +2347,28 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertNotEqual(learning_policy.digest, "")
         for values in (
             {"maximum_candidate_count": 0},
-            {"maximum_learning_resolves": 0},
+            {"maximum_learning_candidates_to_validate": 0},
+            {"maximum_total_robust_resolves": 0},
             {
                 "maximum_candidate_count": 1,
-                "maximum_learning_resolves": 2,
+                "maximum_learning_candidates_to_validate": 2,
+            },
+            {
+                "maximum_learning_candidates_to_validate": 2,
+                "maximum_total_robust_resolves": 2,
             },
         ):
             with self.subTest(values=values):
                 with self.assertRaises(ValueError):
                     replace(learning_policy, **values)
+        with self.assertRaisesRegex(ValueError, "ranking metric weight"):
+            replace(
+                learning_policy,
+                metric_taylor_thresholds=tuple(
+                    replace(threshold, ranking_weight=0.0)
+                    for threshold in learning_policy.metric_taylor_thresholds
+                ),
+            )
         with self.assertRaisesRegex(ValueError, "verification lineage"):
             AutomatedLearningPolicy(
                 sensitivity_config=SensitivityConfig(),
@@ -4088,7 +4171,7 @@ class VariationalFSOTests(unittest.TestCase):
                 physical,
                 policy=policy,
                 policy_trust_store_path="/etc/advar/learning-policies.json",
-                approved_policy_digests=frozenset((policy.digest,)),  # type: ignore[call-arg]
+                approved_policy_digests=frozenset((policy.digest,)),  # pyright: ignore[reportCallIssue]
             )
         with patch.object(
             sensitivity_module,
@@ -4215,6 +4298,7 @@ class VariationalFSOTests(unittest.TestCase):
             ),
             algorithm_bundle_digest=linearization.algorithm_bundle_digest,
             numerical_runtime_digest=linearization.numerical_runtime_digest,
+            ranking_objective="absolute_influence",
             metric_taylor_thresholds=(
                 MetricTaylorThreshold(
                     "log_echo_mse",
@@ -4385,6 +4469,7 @@ class VariationalFSOTests(unittest.TestCase):
         )
         ranking = score_candidate_perturbations(
             ranking_fso,
+            analysis,
             candidates,
             policy=policy,
         )
@@ -4392,17 +4477,64 @@ class VariationalFSOTests(unittest.TestCase):
             tuple(score.candidate_id for score in ranking.scores),
             ("stronger", "weaker"),
         )
-        with self.assertRaisesRegex(ValueError, "policy budget"):
+        self.assertIsInstance(
+            ranking.scores[0].perturbation,
+            SparseRadarPerturbation,
+        )
+        invalid_delta = 1_000_000.0 * delta
+        screened = score_candidate_perturbations(
+            ranking_fso,
+            analysis,
+            (
+                (
+                    "invalid-high-score",
+                    SparseRadarPerturbation.from_dense(invalid_delta),
+                ),
+                ("valid", perturbation),
+            ),
+            policy=policy,
+        )
+        self.assertEqual(
+            tuple(score.candidate_id for score in screened.scores),
+            ("valid",),
+        )
+        self.assertFalse(screened.prechecks[0].admissible)
+        stream_policy = replace(
+            policy,
+            maximum_learning_candidates_to_validate=2,
+            maximum_total_robust_resolves=4,
+        )
+        streamed = score_candidate_perturbations(
+            ranking_fso,
+            analysis,
+            (
+                (
+                    f"candidate-{index:02d}",
+                    SparseRadarPerturbation.from_dense(
+                        delta * ((index + 1) / 10.0)
+                    ),
+                )
+                for index in range(10)
+            ),
+            policy=stream_policy,
+        )
+        self.assertEqual(streamed.candidate_count, 10)
+        self.assertEqual(len(streamed.scores), 2)
+        with self.assertRaisesRegex(ValueError, "ranking policy mismatch"):
             validate_top_k_learning_impacts(
                 forecast,
                 analysis,
                 verification,
                 ranking,
-                policy=replace(policy, maximum_learning_resolves=1),
+                policy=replace(
+                    policy,
+                    maximum_learning_candidates_to_validate=1,
+                    maximum_total_robust_resolves=2,
+                ),
                 policy_trust_store_path=(
                     "/etc/advar/learning-policies.json"
                 ),
-                maximum_resolves=2,
+                maximum_candidates_to_validate=2,
             )
         with (
             patch.object(
@@ -4436,7 +4568,7 @@ class VariationalFSOTests(unittest.TestCase):
                 policy_trust_store_path=(
                     "/etc/advar/learning-policies.json"
                 ),
-                maximum_resolves=1,
+                maximum_candidates_to_validate=1,
             )
         self.assertEqual(len(top), 1)
         self.assertEqual(validate_mock.call_count, 1)
@@ -4445,6 +4577,50 @@ class VariationalFSOTests(unittest.TestCase):
             validated_fsoi.observation.total.sum_by_time.sum(dim=-1),
             ranking.scores[0].predicted_metric_change,
         )
+        with (
+            patch.object(
+                sensitivity_module,
+                "_load_learning_policy_trust_store",
+                return_value=sensitivity_module._LearningPolicyTrustStore(
+                    approved_policy_digests=frozenset((policy.digest,)),
+                    content_digest="7" * 64,
+                ),
+            ),
+            patch.object(
+                sensitivity_module,
+                "_validate_first_order_learning_impact",
+                return_value=certified_validation,
+            ),
+        ):
+            approved_ranked = validate_top_k_learning_impacts(
+                forecast,
+                analysis,
+                verification,
+                ranking,
+                policy=policy,
+                policy_trust_store_path=(
+                    "/etc/advar/learning-policies.json"
+                ),
+                maximum_candidates_to_validate=1,
+            )
+        self.assertEqual(approved_ranked[0].candidate_id, "stronger")
+        ranked_evidence = approved_ranked[0].result.approval_evidence
+        assert ranked_evidence is not None
+        self.assertEqual(ranked_evidence.selection_mode, "ranked_top_k")
+        self.assertEqual(ranked_evidence.candidate_rank, 1)
+        self.assertEqual(
+            ranked_evidence.ranking_digest,
+            ranking.ranking_digest,
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            ranked_ledger = EpisodeLedger(temporary)
+            ranked_digest = ranked_ledger.append_variational_learning_approval(
+                approved_ranked[0].result
+            )
+            stored_ranked = ranked_ledger.load_variational_learning_approval(
+                ranked_digest
+            )
+        self.assertEqual(stored_ranked, ranked_evidence)
         ranking.scores[0].predicted_metric_change.add_(1.0)
         with self.assertRaisesRegex(ValueError, "ranking digest"):
             validate_top_k_learning_impacts(
@@ -4456,7 +4632,7 @@ class VariationalFSOTests(unittest.TestCase):
                 policy_trust_store_path=(
                     "/etc/advar/learning-policies.json"
                 ),
-                maximum_resolves=1,
+                maximum_candidates_to_validate=1,
             )
         with tempfile.TemporaryDirectory() as temporary:
             ledger = EpisodeLedger(temporary)

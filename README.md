@@ -272,7 +272,7 @@ legacy Tensor를 거부한다. raw Tensor 입력은 연구 호환용으로 계�
 결과와 M0 원장에 `verification_lineage_complete=False`로 기록되므로 지연 자동
 학습의 완전한 검증자료로 승격할 수 없다.
 
-`compute_variational_fso()`의 `p1-variational-fso-v13` 결과는 영향값이 아니라
+`compute_variational_fso()`의 `p1-variational-fso-v14` 결과는 영향값이 아니라
 다음 관측 parameter와 frozen 초기배경 경로에 대한 미분이다.
 
 ```text
@@ -446,7 +446,8 @@ ranking_fso = compute_variational_fso(
 )
 ranking = score_candidate_perturbations(
     ranking_fso,
-    (("tile-17", physical_perturbation),),
+    analysis,
+    (("tile-17", SparseRadarPerturbation.from_dense(radar_delta_dbz)),),
     policy=policy,
 )
 validated = validate_top_k_learning_impacts(
@@ -459,16 +460,23 @@ validated = validate_top_k_learning_impacts(
 )
 ```
 
-`maximum_candidate_count`는 선형 점수 후보 수를, `maximum_learning_resolves`는
-실제 full/half 재분석 후보 수를 제한한다. 사전순위는 진단값이며, 학습에는
-`validate_top_k_learning_impacts()`가 승인한 결과만 사용한다.
+후보는 iterator로 받아 한 번씩 선검사하고 희소 index에서만 sensitivity dot
+product를 계산한다. 점수는 metric별 `ranking_scale`과 `ranking_weight`, lead별
+`ranking_lead_weights`로 무차원화한다. 기본 `expected_error_reduction`은 error가
+감소하는 음의 metric change만 순위에 반영한다. 선검사에 실패한 후보는 top-K를
+점유하지 않으며, ranking에는 후보 ID와 거부 이유가 content-addressed된다.
+`maximum_candidate_count`는 입력 수를,
+`maximum_learning_candidates_to_validate`는 실제 검증 후보 수를,
+`maximum_total_robust_resolves`는 full/half solve의 합을 제한한다. 승인 결과는
+`RankedLearningOutcome`으로 candidate ID·rank·score·ranking digest를 보존한다.
 
 이 policy는 verification lineage, radar-dynamics domain, active-set·feasibility·
 GN 신뢰도, physical-radar perturbation과 baseline branch 인증을 모두 요구한다.
 strict factory는 16 km tile, 9 km soft-FSS window, projected-metre centroid와
-256 km² perturbation-area 상한을 사용한다. metre 설정은 grid cell area의
-제곱근으로 한 번 pixel span으로 변환되며, 실제 해석에 사용한 pixel tile 크기는
-FSO 결과에 기록된다. 픽셀 단위 설정은 기존 연구계약과의 호환을 위해 유지된다.
+256 km² perturbation-area 상한을 사용한다. metre FSS는 full 2×2 grid affine의
+projected-distance footprint를 직접 사용하며, tile은 행·열의 물리 간격을 따로
+해석한다. 실제 `tile_shape_yx`는 FSO 결과에 기록된다. 픽셀 단위 설정은 기존
+연구계약과의 호환을 위해 유지된다.
 정책 저장소는 root 소유의 group/world 비쓰기 JSON 파일이어야 하며 symlink와
 상대경로는 거부된다. 따라서 일반 caller가 policy와 allowlist를 함께 만들어
 self-approval할 수 없다. 일반 결과의
@@ -478,7 +486,8 @@ Taylor 절대오차와 materiality는 단위가 다른 metric마다 따로 지�
 step 중 material metric이 하나도 없으면 `no_material_learning_signal`로 거부한다.
 Physical radar perturbation은 원 입력의 `min_dbz`/`max_dbz` clamp 안에 남아야 한다.
 승인된 `LearningApprovalEvidence`는 policy와 trust-store, FSOI, full/half
-분석·forecast, Taylor validation과 최종 impact digest를 하나로 묶는다.
+분석·forecast, Taylor validation, 후보선정 계보, 실제 common-bias whitener
+apply 횟수와 최종 impact digest를 하나로 묶는다.
 `validate_variational_learning_impact()`는 저장 직전에 이 결합을 다시 검사하고,
 `EpisodeLedger.append_variational_learning_approval()`은 대형 P1 Tensor 대신 이
 작은 승인증거만 append-only index에 보존한다.
