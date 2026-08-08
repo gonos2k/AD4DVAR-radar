@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from collections.abc import Callable
 from collections import deque
-from dataclasses import asdict, dataclass, fields, is_dataclass, replace
+from dataclasses import asdict, dataclass, field, fields, is_dataclass, replace
 import json
+import marshal
 import math
+from types import ModuleType
 from typing import Literal, cast
 
 import torch
 import torch.nn.functional as F
-from torch import Tensor
+from torch import Tensor, nn
 
 from ._digest import json_digest, tensor_digest
 from .calibration import (
@@ -68,8 +69,8 @@ CensoredBackgroundPolicy = Literal[
     "external_background",
 ]
 MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT = 64
-P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v13"
-P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v11"
+P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v14"
+P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v12"
 _WHITENER_APPLY_COUNTER: ContextVar[list[int] | None] = ContextVar(
     "advar_whitener_apply_counter",
     default=None,
@@ -585,73 +586,551 @@ class AnalysisObservations:
     common_bias_mode_weights: Tensor | None = None
 
 
-@dataclass(frozen=True)
-class NeuralPriorApplication:
-    """One neural-prior output that is actually consumed by P1."""
+PriorDependency = Literal["exogenous", "radar_dependent"]
+PriorSupportPolicy = Literal["causal_clip", "expand_control"]
 
-    initial_background_dbz: Tensor
+
+def _require_prior_digest(name: str, value: str) -> None:
+    if len(value) != 64 or any(
+        character not in "0123456789abcdef" for character in value
+    ):
+        raise ValueError(f"{name} must be a lowercase SHA-256 digest")
+
+
+def _module_state_digest(model: nn.Module) -> str:
+    state = model.state_dict()
+    if not state:
+        raise ValueError("neural-prior model must have retained state")
+    return json_digest(
+        {
+            "contract": "neural-prior-model-state-v1",
+            "state": {
+                name: tensor_digest(value.detach())
+                for name, value in sorted(state.items())
+            },
+        }
+    )
+
+
+def _execution_value(value: object) -> object:
+    if isinstance(value, Tensor):
+        return {"tensor": tensor_digest(value)}
+    if isinstance(value, (str, int, float, bool, type(None))):
+        return value
+    if isinstance(value, (tuple, list)):
+        return [_execution_value(item) for item in value]
+    if isinstance(value, dict) and all(isinstance(key, str) for key in value):
+        return {
+            key: _execution_value(item)
+            for key, item in sorted(value.items())
+        }
+    if isinstance(value, ModuleType):
+        return {
+            "module": value.__name__,
+            "version": getattr(value, "__version__", None),
+        }
+    if isinstance(value, type):
+        return {"type": f"{value.__module__}.{value.__qualname__}"}
+    raise TypeError("neural-prior execution state is not content-addressable")
+
+
+def _callable_code_payload(
+    value: object,
+    active: set[int],
+) -> dict[str, object]:
+    """Return a cycle-safe description of one executable callable."""
+
+    target = value.forward if isinstance(value, nn.Module) else value
+    if not hasattr(target, "__code__"):
+        target = getattr(target, "__call__", None)
+    identity = id(getattr(target, "__func__", target))
+    reference = {
+        "module": getattr(target, "__module__", None),
+        "qualname": getattr(target, "__qualname__", None),
+    }
+    if identity in active:
+        return {"recursive_reference": reference}
+    code = getattr(target, "__code__", None)
+    if code is None:
+        raise TypeError("neural-prior callables must expose Python bytecode")
+    active.add(identity)
+    closure = getattr(target, "__closure__", None) or ()
+    closure_values: list[object] = []
+    for cell in closure:
+        closure_values.append(_execution_value(cell.cell_contents))
+    defaults = getattr(target, "__defaults__", None) or ()
+    keyword_defaults = getattr(target, "__kwdefaults__", None) or {}
+    global_values: dict[str, object] = {}
+    namespace = getattr(target, "__globals__", {})
+    for name in sorted(set(code.co_names)):
+        if name not in namespace or name == "__builtins__":
+            continue
+        item = namespace[name]
+        if callable(item) and not isinstance(item, type):
+            global_values[name] = _callable_code_payload(item, active)
+        else:
+            global_values[name] = _execution_value(item)
+    state: dict[str, object] = {}
+    owner = getattr(target, "__self__", None)
+    if owner is not None:
+        for name in sorted(set(code.co_names)):
+            if not hasattr(owner, name):
+                continue
+            item = getattr(owner, name)
+            if isinstance(item, nn.Module):
+                state[name] = {
+                    "module": f"{type(item).__module__}.{type(item).__qualname__}"
+                }
+            elif callable(item) and not isinstance(item, type):
+                state[name] = _callable_code_payload(item, active)
+            else:
+                state[name] = _execution_value(item)
+    if not isinstance(value, nn.Module) and hasattr(value, "__dict__"):
+        for key, item in sorted(vars(value).items()):
+            state[key] = (
+                _callable_code_payload(item, active)
+                if callable(item) and not isinstance(item, type)
+                else _execution_value(item)
+            )
+    active.remove(identity)
+    return {
+        "contract": "python-callable-code-v2",
+        **reference,
+        "bytecode": marshal.dumps(code).hex(),
+        "closure": closure_values,
+        "defaults": _execution_value(defaults),
+        "keyword_defaults": _execution_value(keyword_defaults),
+        "globals": global_values,
+        "state": state,
+    }
+
+
+def _callable_code_digest(value: object) -> str:
+    """Address code, dependencies, and retained callable state."""
+
+    return json_digest(_callable_code_payload(value, set()))
+
+
+def _module_code_digest(model: nn.Module) -> str:
+    modules: dict[str, object] = {}
+    for name, module in model.named_modules():
+        attributes: dict[str, object] = {}
+        forward = module.forward
+        code = getattr(forward, "__code__", None)
+        referenced = set() if code is None else set(code.co_names)
+        for key in sorted(referenced):
+            if not hasattr(module, key):
+                continue
+            value = getattr(module, key)
+            if isinstance(value, nn.Module):
+                continue
+            attributes[key] = (
+                _callable_code_payload(value, set())
+                if callable(value) and not isinstance(value, type)
+                else _execution_value(value)
+            )
+        modules[name] = {
+            "type": f"{type(module).__module__}.{type(module).__qualname__}",
+            "forward": _callable_code_digest(module),
+            "attributes": attributes,
+        }
+    return json_digest(
+        {
+            "contract": "neural-prior-module-code-v2",
+            "modules": modules,
+        }
+    )
+
+
+@dataclass(frozen=True)
+class NeuralPriorInferenceEvidence:
+    """Reproducible evidence for one concrete prior inference."""
+
     neural_prior_digest: str
+    input_bundle_digest: str
+    input_frames_digest: str
+    feature_tensor_digest: str
+    feature_extractor_digest: str
+    feature_extractor_code_digest: str
+    model_code_digest: str
     model_contract_digest: str
     feature_schema_digest: str
     training_manifest_digest: str
-    role: Literal["candidate", "parent"]
-    contract: str = "neural-prior-application-v1"
-    application_digest: str = ""
+    inference_algorithm_digest: str
+    numerical_runtime_digest: str
+    output_background_digest: str
+    execution_contract_digest: str
+    dependency: PriorDependency
+    contract: str = "neural-prior-inference-evidence-v1"
+    evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-application-v1":
-            raise ValueError("unsupported neural-prior application")
-        background = self.initial_background_dbz.detach().clone()
-        if (
-            background.ndim != 2
-            or not background.is_floating_point()
-            or not bool(torch.all(torch.isfinite(background)))
+        if self.contract != "neural-prior-inference-evidence-v1":
+            raise ValueError("unsupported neural-prior inference evidence")
+        for name in (
+            "neural_prior_digest",
+            "input_bundle_digest",
+            "input_frames_digest",
+            "feature_tensor_digest",
+            "feature_extractor_digest",
+            "feature_extractor_code_digest",
+            "model_code_digest",
+            "model_contract_digest",
+            "feature_schema_digest",
+            "training_manifest_digest",
+            "inference_algorithm_digest",
+            "numerical_runtime_digest",
+            "output_background_digest",
+            "execution_contract_digest",
         ):
-            raise ValueError("neural-prior background must be finite and 2-D")
-        for name, value in (
-            ("neural_prior_digest", self.neural_prior_digest),
-            ("model_contract_digest", self.model_contract_digest),
-            ("feature_schema_digest", self.feature_schema_digest),
-            ("training_manifest_digest", self.training_manifest_digest),
-        ):
-            if len(value) != 64 or any(
-                character not in "0123456789abcdef" for character in value
-            ):
-                raise ValueError(f"{name} must be a lowercase SHA-256 digest")
-        if self.role not in ("candidate", "parent"):
-            raise ValueError("neural-prior role must be candidate or parent")
-        digest = json_digest(
-            {
-                "contract": self.contract,
-                "initial_background_dbz": tensor_digest(background),
-                "neural_prior_digest": self.neural_prior_digest,
-                "model_contract_digest": self.model_contract_digest,
-                "feature_schema_digest": self.feature_schema_digest,
-                "training_manifest_digest": self.training_manifest_digest,
-                "role": self.role,
-            }
-        )
-        if self.application_digest and self.application_digest != digest:
-            raise ValueError("neural-prior application digest mismatch")
-        object.__setattr__(self, "initial_background_dbz", background)
-        object.__setattr__(self, "application_digest", digest)
+            _require_prior_digest(name, getattr(self, name))
+        if self.dependency not in ("exogenous", "radar_dependent"):
+            raise ValueError("unsupported neural-prior dependency")
+        object.__setattr__(self, "evidence_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "evidence_digest"
+        }
 
     def validate_integrity(self) -> None:
-        expected = json_digest(
+        if self.evidence_digest != json_digest(self.payload):
+            raise ValueError("neural-prior inference evidence digest mismatch")
+
+
+class NeuralPriorInferenceRunner:
+    """Small deterministic adapter around one evaluated PyTorch prior."""
+
+    def __init__(
+        self,
+        model: nn.Module,
+        feature_extractor: Callable[[Tensor], Tensor],
+        *,
+        feature_extractor_digest: str,
+        model_contract_digest: str,
+        feature_schema_digest: str,
+        training_manifest_digest: str,
+        inference_algorithm_digest: str,
+        numerical_runtime_digest: str,
+        dependency: PriorDependency,
+        prior_std_dbz: float = 1.0,
+        support_policy: PriorSupportPolicy = "causal_clip",
+        maximum_added_area_km2: float = 0.0,
+        maximum_added_echo_integral: float = 0.0,
+    ) -> None:
+        if not isinstance(model, nn.Module) or model.training:
+            raise ValueError("neural-prior model must be an eval-mode nn.Module")
+        if not callable(feature_extractor):
+            raise TypeError("feature_extractor must be callable")
+        for name, value in (
+            ("feature_extractor_digest", feature_extractor_digest),
+            ("model_contract_digest", model_contract_digest),
+            ("feature_schema_digest", feature_schema_digest),
+            ("training_manifest_digest", training_manifest_digest),
+            ("inference_algorithm_digest", inference_algorithm_digest),
+            ("numerical_runtime_digest", numerical_runtime_digest),
+        ):
+            _require_prior_digest(name, value)
+        if dependency not in ("exogenous", "radar_dependent"):
+            raise ValueError("unsupported neural-prior dependency")
+        if not math.isfinite(prior_std_dbz) or prior_std_dbz <= 0.0:
+            raise ValueError("neural-prior uncertainty must be positive")
+        if support_policy not in ("causal_clip", "expand_control"):
+            raise ValueError("unsupported neural-prior support policy")
+        for name, value in (
+            ("maximum_added_area_km2", maximum_added_area_km2),
+            ("maximum_added_echo_integral", maximum_added_echo_integral),
+        ):
+            if not math.isfinite(value) or value < 0.0:
+                raise ValueError(f"{name} must be finite and nonnegative")
+        self.model = model
+        self.feature_extractor = feature_extractor
+        self.feature_extractor_digest = feature_extractor_digest
+        self.model_contract_digest = model_contract_digest
+        self.feature_schema_digest = feature_schema_digest
+        self.training_manifest_digest = training_manifest_digest
+        self.inference_algorithm_digest = inference_algorithm_digest
+        self.numerical_runtime_digest = numerical_runtime_digest
+        self.dependency: PriorDependency = dependency
+        self.prior_std_dbz = prior_std_dbz
+        self.support_policy: PriorSupportPolicy = support_policy
+        self.maximum_added_area_km2 = maximum_added_area_km2
+        self.maximum_added_echo_integral = maximum_added_echo_integral
+        self._model_state_digest = _module_state_digest(model)
+        self._model_code_digest = _module_code_digest(model)
+        self._feature_extractor_code_digest = _callable_code_digest(
+            feature_extractor
+        )
+        self.execution_contract_digest = json_digest(
             {
-                "contract": self.contract,
-                "initial_background_dbz": tensor_digest(
-                    self.initial_background_dbz
+                "contract": "neural-prior-execution-contract-v2",
+                "model_state_digest": self._model_state_digest,
+                "model_code_digest": self._model_code_digest,
+                "feature_extractor_digest": feature_extractor_digest,
+                "feature_extractor_code_digest": (
+                    self._feature_extractor_code_digest
                 ),
-                "neural_prior_digest": self.neural_prior_digest,
-                "model_contract_digest": self.model_contract_digest,
-                "feature_schema_digest": self.feature_schema_digest,
-                "training_manifest_digest": self.training_manifest_digest,
-                "role": self.role,
+                "model_contract_digest": model_contract_digest,
+                "feature_schema_digest": feature_schema_digest,
+                "training_manifest_digest": training_manifest_digest,
+                "inference_algorithm_digest": inference_algorithm_digest,
+                "numerical_runtime_digest": numerical_runtime_digest,
+                "dependency": dependency,
+                "prior_std_dbz": prior_std_dbz,
+                "support_policy": support_policy,
+                "maximum_added_area_km2": maximum_added_area_km2,
+                "maximum_added_echo_integral": maximum_added_echo_integral,
             }
         )
-        if expected != self.application_digest:
+        self.neural_prior_digest = self.execution_contract_digest
+
+    def _validate_state(self) -> None:
+        if _module_state_digest(self.model) != self._model_state_digest:
+            raise ValueError("neural-prior model state changed after approval")
+        if _module_code_digest(self.model) != self._model_code_digest:
+            raise ValueError("neural-prior model code changed after approval")
+        if (
+            _callable_code_digest(self.feature_extractor)
+            != self._feature_extractor_code_digest
+        ):
+            raise ValueError("neural-prior feature code changed after approval")
+
+    def _forward(self, frames_dbz: Tensor) -> tuple[Tensor, Tensor]:
+        features = self.feature_extractor(frames_dbz)
+        output = self.model(features)
+        return features, output
+
+    def _output(self, frames_dbz: Tensor) -> tuple[Tensor, Tensor]:
+        self._validate_state()
+        features, output = self._forward(frames_dbz)
+        if not isinstance(features, Tensor) or not features.is_floating_point():
+            raise TypeError("neural-prior features must be floating Tensor data")
+        if (
+            not isinstance(output, Tensor)
+            or output.ndim != 2
+            or not output.is_floating_point()
+            or not bool(torch.all(torch.isfinite(output)))
+        ):
+            raise ValueError("neural-prior output must be a finite 2-D Tensor")
+        return features, output
+
+    def infer(
+        self,
+        frames_dbz: Tensor,
+        *,
+        input_run: ForecastRunContract,
+        role: Literal["candidate", "parent"],
+    ) -> NeuralPriorApplication:
+        """Run the model now and bind its output to the exact input bundle."""
+
+        input_run.validate_integrity()
+        if tensor_digest(frames_dbz) != input_run.input_frames_digest:
+            raise ValueError("neural-prior frames disagree with the input run")
+        features, output = self._output(frames_dbz)
+        if self.dependency == "radar_dependent":
+            tangent = torch.ones_like(frames_dbz)
+            cotangent = torch.ones_like(output)
+            first = self.jvp(frames_dbz, tangent)
+            second = self.jvp(frames_dbz, tangent)
+            reverse = self.vjp(frames_dbz, cotangent)
+            tolerance = 1.0e-5 if frames_dbz.dtype == torch.float32 else 1.0e-10
+            if not torch.equal(first, second) or not torch.allclose(
+                torch.sum(first * cotangent),
+                torch.sum(tangent * reverse),
+                rtol=tolerance,
+                atol=tolerance,
+            ):
+                raise ValueError("neural-prior derivative is not reproducible")
+        evidence = NeuralPriorInferenceEvidence(
+            neural_prior_digest=self.neural_prior_digest,
+            input_bundle_digest=input_run.input_bundle_digest,
+            input_frames_digest=tensor_digest(frames_dbz),
+            feature_tensor_digest=tensor_digest(features),
+            feature_extractor_digest=self.feature_extractor_digest,
+            feature_extractor_code_digest=self._feature_extractor_code_digest,
+            model_code_digest=self._model_code_digest,
+            model_contract_digest=self.model_contract_digest,
+            feature_schema_digest=self.feature_schema_digest,
+            training_manifest_digest=self.training_manifest_digest,
+            inference_algorithm_digest=self.inference_algorithm_digest,
+            numerical_runtime_digest=self.numerical_runtime_digest,
+            output_background_digest=tensor_digest(output),
+            execution_contract_digest=self.execution_contract_digest,
+            dependency=self.dependency,
+        )
+        return _new_neural_prior_application(
+            initial_background_dbz=output,
+            valid_mask=torch.ones_like(output, dtype=torch.bool),
+            std_dbz=torch.full_like(output, self.prior_std_dbz),
+            inference_evidence=evidence,
+            role=role,
+            support_policy=self.support_policy,
+            maximum_added_area_km2=self.maximum_added_area_km2,
+            maximum_added_echo_integral=self.maximum_added_echo_integral,
+        )
+
+    def reproduce(
+        self,
+        application: NeuralPriorApplication,
+        frames_dbz: Tensor,
+    ) -> None:
+        """Independently rerun one retained application."""
+
+        application.validate_integrity()
+        features, output = self._output(frames_dbz)
+        evidence = application.inference_evidence
+        if (
+            self.neural_prior_digest != evidence.neural_prior_digest
+            or evidence.execution_contract_digest != self.execution_contract_digest
+            or tensor_digest(frames_dbz) != evidence.input_frames_digest
+            or tensor_digest(features) != evidence.feature_tensor_digest
+            or tensor_digest(output) != evidence.output_background_digest
+            or not torch.equal(output, application.initial_background_dbz)
+        ):
+            raise ValueError("neural-prior inference cannot be reproduced")
+
+    def validate_retained_output(
+        self,
+        frames_dbz: Tensor,
+        raw_background_dbz: Tensor,
+        *,
+        execution_contract_digest: str,
+    ) -> None:
+        """Reproduce the raw prior output retained by a restart artifact."""
+
+        if execution_contract_digest != self.execution_contract_digest:
+            raise ValueError("neural-prior execution contract mismatch")
+        _, output = self._output(frames_dbz)
+        if not torch.equal(output, raw_background_dbz):
+            raise ValueError("retained neural-prior output cannot be reproduced")
+
+    def jvp(self, frames_dbz: Tensor, tangent: Tensor) -> Tensor:
+        if self.dependency != "radar_dependent":
+            return frames_dbz.new_zeros(frames_dbz.shape[-2:])
+        self._validate_state()
+        return cast(
+            Tensor,
+            torch.func.jvp(
+                lambda value: self._forward(value)[1],
+                (frames_dbz,),
+                (tangent,),
+            )[1],
+        )
+
+    def vjp(self, frames_dbz: Tensor, cotangent: Tensor) -> Tensor:
+        if self.dependency != "radar_dependent":
+            return torch.zeros_like(frames_dbz)
+        self._validate_state()
+        _, pullback = cast(
+            tuple[Tensor, Callable[[Tensor], tuple[Tensor]]],
+            torch.func.vjp(
+                lambda value: self._forward(value)[1],
+                frames_dbz,
+            ),
+        )
+        return cast(Tensor, pullback(cotangent)[0])
+
+
+@dataclass(frozen=True, init=False)
+class NeuralPriorApplication:
+    """One model-produced prior output that is actually consumed by P1."""
+
+    initial_background_dbz: Tensor
+    valid_mask: Tensor
+    std_dbz: Tensor
+    inference_evidence: NeuralPriorInferenceEvidence
+    role: Literal["candidate", "parent"]
+    support_policy: PriorSupportPolicy
+    maximum_added_area_km2: float
+    maximum_added_echo_integral: float
+    contract: str = "neural-prior-application-v2"
+    application_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("use NeuralPriorInferenceRunner.infer")
+
+    @property
+    def neural_prior_digest(self) -> str:
+        return self.inference_evidence.neural_prior_digest
+
+    @property
+    def model_contract_digest(self) -> str:
+        return self.inference_evidence.model_contract_digest
+
+    @property
+    def feature_schema_digest(self) -> str:
+        return self.inference_evidence.feature_schema_digest
+
+    @property
+    def training_manifest_digest(self) -> str:
+        return self.inference_evidence.training_manifest_digest
+
+    @property
+    def dependency(self) -> PriorDependency:
+        return self.inference_evidence.dependency
+
+    def validate_integrity(self) -> None:
+        self.inference_evidence.validate_integrity()
+        if self.application_digest != _neural_prior_application_digest(self):
             raise ValueError("neural-prior application digest mismatch")
+
+
+def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
+    result = object.__new__(NeuralPriorApplication)
+    object.__setattr__(result, "contract", "neural-prior-application-v2")
+    for name, value in values.items():
+        object.__setattr__(result, name, value)
+    background = result.initial_background_dbz.detach().clone()
+    valid = result.valid_mask.detach().clone()
+    std = result.std_dbz.detach().clone()
+    if (
+        background.ndim != 2
+        or not background.is_floating_point()
+        or not bool(torch.all(torch.isfinite(background)))
+        or valid.shape != background.shape
+        or valid.dtype != torch.bool
+        or std.shape != background.shape
+        or not std.is_floating_point()
+        or not bool(torch.all(torch.isfinite(std) & (std > 0.0)))
+    ):
+        raise ValueError("neural-prior value, validity, or uncertainty is invalid")
+    if result.role not in ("candidate", "parent"):
+        raise ValueError("neural-prior role must be candidate or parent")
+    if result.support_policy not in ("causal_clip", "expand_control"):
+        raise ValueError("unsupported neural-prior support policy")
+    for name in ("maximum_added_area_km2", "maximum_added_echo_integral"):
+        value = getattr(result, name)
+        if not math.isfinite(value) or value < 0.0:
+            raise ValueError(f"{name} must be finite and nonnegative")
+    result.inference_evidence.validate_integrity()
+    if tensor_digest(background) != result.inference_evidence.output_background_digest:
+        raise ValueError("neural-prior output disagrees with inference evidence")
+    object.__setattr__(result, "initial_background_dbz", background)
+    object.__setattr__(result, "valid_mask", valid)
+    object.__setattr__(result, "std_dbz", std)
+    object.__setattr__(
+        result, "application_digest", _neural_prior_application_digest(result)
+    )
+    return result
+
+
+def _neural_prior_application_digest(value: NeuralPriorApplication) -> str:
+    return json_digest(
+        {
+            "contract": value.contract,
+            "initial_background_dbz": tensor_digest(value.initial_background_dbz),
+            "valid_mask": tensor_digest(value.valid_mask),
+            "std_dbz": tensor_digest(value.std_dbz),
+            "inference_evidence_digest": value.inference_evidence.evidence_digest,
+            "role": value.role,
+            "support_policy": value.support_policy,
+            "maximum_added_area_km2": value.maximum_added_area_km2,
+            "maximum_added_echo_integral": value.maximum_added_echo_integral,
+        }
+    )
 
 
 @dataclass(frozen=True)
@@ -691,6 +1170,13 @@ class FrozenOuterState:
     smooth_edge_right_index: Tensor
     smooth_edge_physical_weight: Tensor
     observation_derived_initial_background: bool = True
+    neural_prior_std_dbz: Tensor | None = None
+    neural_prior_valid_mask: Tensor | None = None
+    neural_prior_dependency: PriorDependency | None = None
+    neural_prior_application_digest: str | None = None
+    neural_prior_raw_background_dbz: Tensor | None = None
+    neural_prior_execution_contract_digest: str | None = None
+    neural_prior_role: Literal["candidate", "parent"] | None = None
 
     @property
     def amplitude_displacement_tolerance_yx(self) -> tuple[int, int]:
@@ -1690,6 +2176,83 @@ def prepare_analysis(
         analysis_config.minimum_control_reachability,
         causal_dilation_offsets,
     )
+    baseline_frames_dbz = torch.where(
+        prepared.observed_mask,
+        prepared.frames_dbz,
+        prepared.background_frames_dbz,
+    )
+    initial_background_dbz = torch.where(
+        prepared.observed_mask[0],
+        canonical_observations[0],
+        prepared.background_frames_dbz[0],
+    )
+    prior_std_dbz = None
+    prior_valid_mask = None
+    if neural_prior is not None:
+        neural_prior.validate_integrity()
+        if (
+            neural_prior.initial_background_dbz.shape
+            != initial_background_dbz.shape
+            or neural_prior.initial_background_dbz.dtype != frames_dbz.dtype
+            or neural_prior.initial_background_dbz.device != frames_dbz.device
+        ):
+            raise ValueError(
+                "neural-prior background must match the radar grid, dtype, and device"
+            )
+        prior_background = neural_prior.initial_background_dbz.clamp(
+            nowcast_config.min_dbz,
+            nowcast_config.max_dbz,
+        )
+        prior_valid_mask = neural_prior.valid_mask.to(frames_dbz.device)
+        prior_std_dbz = neural_prior.std_dbz.to(frames_dbz)
+        prior_background = torch.where(
+            prior_valid_mask,
+            prior_background,
+            initial_background_dbz,
+        )
+        prior_support = prior_valid_mask & (
+            prior_background >= analysis_config.detection_limit_dbz
+        )
+        added_support = prior_support & ~initial_support
+        if neural_prior.support_policy == "causal_clip":
+            prior_background = torch.where(
+                initial_support,
+                prior_background,
+                prior_background.new_full((), nowcast_config.min_dbz),
+            )
+            prior_valid_mask = prior_valid_mask & initial_support
+        else:
+            if grid_time_contract is None and bool(torch.any(added_support)):
+                raise ValueError(
+                    "expanded neural-prior support requires a grid contract"
+                )
+            added_area = (
+                0.0
+                if grid_time_contract is None
+                else int(torch.count_nonzero(added_support))
+                * grid_time_contract.cell_area_m2
+                / 1.0e6
+            )
+            added_echo = float(
+                torch.sum(
+                    dbz_to_echo(
+                        prior_background,
+                        min_dbz=nowcast_config.min_dbz,
+                        max_dbz=nowcast_config.max_dbz,
+                    ).masked_select(added_support)
+                ).detach()
+                * (
+                    1.0
+                    if grid_time_contract is None
+                    else grid_time_contract.cell_area_m2 / 1.0e6
+                )
+            )
+            if added_area > neural_prior.maximum_added_area_km2:
+                raise ValueError("neural-prior added area exceeds its budget")
+            if added_echo > neural_prior.maximum_added_echo_integral:
+                raise ValueError("neural-prior added echo exceeds its budget")
+            initial_support = initial_support | prior_support
+        initial_background_dbz = prior_background
     causal_only = initial_support & ~detected[0]
     active_field_index = torch.nonzero(
         initial_support.flatten(),
@@ -1709,31 +2272,6 @@ def prepare_analysis(
         freeze_remap_cell(baseline_state.displacement_yx),
         freeze_remap_cell(2 * baseline_state.displacement_yx),
     )
-    baseline_frames_dbz = torch.where(
-        prepared.observed_mask,
-        prepared.frames_dbz,
-        prepared.background_frames_dbz,
-    )
-    initial_background_dbz = torch.where(
-        prepared.observed_mask[0],
-        canonical_observations[0],
-        prepared.background_frames_dbz[0],
-    )
-    if neural_prior is not None:
-        neural_prior.validate_integrity()
-        if (
-            neural_prior.initial_background_dbz.shape
-            != initial_background_dbz.shape
-            or neural_prior.initial_background_dbz.dtype != frames_dbz.dtype
-            or neural_prior.initial_background_dbz.device != frames_dbz.device
-        ):
-            raise ValueError(
-                "neural-prior background must match the radar grid, dtype, and device"
-            )
-        initial_background_dbz = neural_prior.initial_background_dbz.clamp(
-            nowcast_config.min_dbz,
-            nowcast_config.max_dbz,
-        )
     observation_whitener = _freeze_observation_whitener(
         observations,
         analysis_config,
@@ -1772,6 +2310,29 @@ def prepare_analysis(
         smooth_edge_right_index=smooth_edge_right_index,
         smooth_edge_physical_weight=smooth_edge_physical_weight,
         observation_derived_initial_background=(neural_prior is None),
+        neural_prior_std_dbz=(
+            None if prior_std_dbz is None else prior_std_dbz.detach().clone()
+        ),
+        neural_prior_valid_mask=(
+            None if prior_valid_mask is None else prior_valid_mask.detach().clone()
+        ),
+        neural_prior_dependency=(
+            None if neural_prior is None else neural_prior.dependency
+        ),
+        neural_prior_application_digest=(
+            None if neural_prior is None else neural_prior.application_digest
+        ),
+        neural_prior_raw_background_dbz=(
+            None
+            if neural_prior is None
+            else neural_prior.initial_background_dbz.detach().clone()
+        ),
+        neural_prior_execution_contract_digest=(
+            None
+            if neural_prior is None
+            else neural_prior.inference_evidence.execution_contract_digest
+        ),
+        neural_prior_role=(None if neural_prior is None else neural_prior.role),
     )
     linearization_bytes = _retained_tensor_bytes((observations, frozen))
     if linearization_bytes > analysis_config.maximum_linearization_bytes:
@@ -1966,23 +2527,9 @@ def _analysis_trajectory(
     config = frozen.analysis_config
     nowcast = frozen.nowcast_config
 
-    floor_dbz = nowcast.min_dbz
-    background_offset = (
-        frozen.initial_background_dbz - floor_dbz
-    ) / config.echo_transform_scale_dbz
-    background_latent = _softplus_inverse(
-        background_offset.clamp_min(config.transform_epsilon)
-    )
-    analyzed_offset = config.echo_transform_scale_dbz * F.softplus(
-        background_latent
-        + (
-            config.initial_increment_scale_dbz
-            / config.echo_transform_scale_dbz
-        )
-        * field_control
-    )
+    analyzed_dbz = _initial_analysis_dbz(field_control, frozen)
     initial_echo = dbz_to_echo(
-        floor_dbz + analyzed_offset,
+        analyzed_dbz,
         min_dbz=nowcast.min_dbz,
     )
     displacement, growth = _decode_dynamics(
@@ -2007,6 +2554,28 @@ def _analysis_trajectory(
         frames_linear=torch.stack(frames),
         displacement_yx=displacement,
         log_growth_per_step=growth,
+    )
+
+
+def _initial_analysis_dbz(
+    field_control: Tensor,
+    frozen: FrozenOuterState,
+) -> Tensor:
+    config = frozen.analysis_config
+    floor_dbz = frozen.nowcast_config.min_dbz
+    background_offset = (
+        frozen.initial_background_dbz - floor_dbz
+    ) / config.echo_transform_scale_dbz
+    background_latent = _softplus_inverse(
+        background_offset.clamp_min(config.transform_epsilon)
+    )
+    return floor_dbz + config.echo_transform_scale_dbz * F.softplus(
+        background_latent
+        + (
+            config.initial_increment_scale_dbz
+            / config.echo_transform_scale_dbz
+        )
+        * field_control
     )
 
 
@@ -2479,10 +3048,47 @@ def residual_vector(
     return torch.cat(
         (
             weighted.reshape(-1),
-            control,
+            _control_prior_residual(control, frozen),
             _field_smoothness_residual(control, frozen),
         )
     )
+
+
+def _control_prior_residual(
+    control: Tensor,
+    frozen: FrozenOuterState,
+) -> Tensor:
+    """Scale neural-prior field increments by retained prior uncertainty."""
+
+    prior_std = frozen.neural_prior_std_dbz
+    prior_valid = frozen.neural_prior_valid_mask
+    if prior_std is None or prior_valid is None:
+        return control
+    field_size = frozen.active_field_index.numel()
+    residual = control.clone()
+    flat_std = prior_std.flatten()[frozen.active_field_index]
+    flat_valid = prior_valid.flatten()[frozen.active_field_index]
+    height, width = frozen.initial_background_dbz.shape
+    field_control = torch.zeros_like(frozen.initial_background_dbz).flatten().scatter(
+        0,
+        frozen.active_field_index,
+        control[:field_size],
+    ).reshape(height, width)
+    analyzed = _initial_analysis_dbz(field_control, frozen).flatten()[
+        frozen.active_field_index
+    ]
+    background = frozen.initial_background_dbz.flatten()[
+        frozen.active_field_index
+    ]
+    standardized = (analyzed - background) / flat_std.clamp_min(
+        frozen.analysis_config.transform_epsilon
+    )
+    residual[:field_size] = torch.where(
+        flat_valid,
+        standardized,
+        control[:field_size],
+    )
+    return residual
 
 
 @dataclass(frozen=True)
@@ -3509,7 +4115,11 @@ def _robust_objective_from_residual(
     )
     return (
         robust.sum()
-        + 0.5 * torch.dot(control, control)
+        + 0.5
+        * torch.dot(
+            _control_prior_residual(control, frozen),
+            _control_prior_residual(control, frozen),
+        )
         + _field_smoothness_prior_cost(control, frozen)
     )
 
@@ -3860,6 +4470,8 @@ def variational_nowcast(
     operational_calibration_approval_digest: str | None = None,
     operational_data_identity: OperationalDataIdentity | None = None,
     neural_prior: NeuralPriorApplication | None = None,
+    input_plan_json: str | None = None,
+    input_plan_digest: str | None = None,
     audit: bool = False,
 ) -> tuple[ForecastResult, AnalysisResult]:
     nowcast_config = nowcast_config or NowcastConfig()
@@ -3947,8 +4559,32 @@ def variational_nowcast(
         prior_training_manifest_digest=(
             None if neural_prior is None else neural_prior.training_manifest_digest
         ),
+        prior_inference_evidence_digest=(
+            None
+            if neural_prior is None
+            else neural_prior.inference_evidence.evidence_digest
+        ),
+        prior_inference_algorithm_digest=(
+            None
+            if neural_prior is None
+            else neural_prior.inference_evidence.inference_algorithm_digest
+        ),
+        prior_numerical_runtime_digest=(
+            None
+            if neural_prior is None
+            else neural_prior.inference_evidence.numerical_runtime_digest
+        ),
+        prior_dependency=(None if neural_prior is None else neural_prior.dependency),
         prior_role=None if neural_prior is None else neural_prior.role,
+        input_plan_json=input_plan_json,
+        input_plan_digest=input_plan_digest,
     )
+    if neural_prior is not None:
+        evidence = neural_prior.inference_evidence
+        if evidence.input_bundle_digest != run.input_bundle_digest:
+            raise ValueError("neural-prior inference used a different input bundle")
+        if evidence.input_frames_digest != tensor_digest(frames_dbz):
+            raise ValueError("neural-prior inference used different radar frames")
     forecast = forecast_from_state(
         analysis.state,
         analysis.metadata,
@@ -6386,6 +7022,51 @@ def _validate_control(
         raise ValueError(
             "active_field_index must enumerate initial support in flat order"
         )
+    prior_values = (
+        frozen.neural_prior_std_dbz,
+        frozen.neural_prior_valid_mask,
+        frozen.neural_prior_dependency,
+        frozen.neural_prior_application_digest,
+        frozen.neural_prior_raw_background_dbz,
+        frozen.neural_prior_execution_contract_digest,
+        frozen.neural_prior_role,
+    )
+    if frozen.observation_derived_initial_background:
+        if any(value is not None for value in prior_values):
+            raise ValueError("observation-derived state cannot retain a prior")
+        return
+    (
+        std,
+        valid,
+        dependency,
+        application_digest,
+        raw_background,
+        execution_digest,
+        role,
+    ) = prior_values
+    if (
+        not isinstance(std, Tensor)
+        or std.shape != frozen.initial_background_dbz.shape
+        or std.dtype != frozen.initial_background_dbz.dtype
+        or std.device != frozen.initial_background_dbz.device
+        or not bool(torch.all(torch.isfinite(std) & (std > 0.0)))
+        or not isinstance(valid, Tensor)
+        or valid.shape != frozen.initial_background_dbz.shape
+        or valid.dtype != torch.bool
+        or valid.device != frozen.initial_background_dbz.device
+        or dependency not in ("exogenous", "radar_dependent")
+        or not isinstance(application_digest, str)
+        or not isinstance(raw_background, Tensor)
+        or raw_background.shape != frozen.initial_background_dbz.shape
+        or raw_background.dtype != frozen.initial_background_dbz.dtype
+        or raw_background.device != frozen.initial_background_dbz.device
+        or not bool(torch.all(torch.isfinite(raw_background)))
+        or not isinstance(execution_digest, str)
+        or role not in ("candidate", "parent")
+    ):
+        raise ValueError("retained neural-prior state is incomplete")
+    _require_prior_digest("neural_prior_application_digest", application_digest)
+    _require_prior_digest("neural_prior_execution_contract_digest", execution_digest)
 
 
 def _clone_tensor(value: Tensor) -> Tensor:
@@ -6596,6 +7277,17 @@ def _clone_frozen_outer_state(frozen: FrozenOuterState) -> FrozenOuterState:
         observation_derived_initial_background=(
             frozen.observation_derived_initial_background
         ),
+        neural_prior_std_dbz=_clone_optional_tensor(frozen.neural_prior_std_dbz),
+        neural_prior_valid_mask=_clone_optional_tensor(frozen.neural_prior_valid_mask),
+        neural_prior_dependency=frozen.neural_prior_dependency,
+        neural_prior_application_digest=(frozen.neural_prior_application_digest),
+        neural_prior_raw_background_dbz=_clone_optional_tensor(
+            frozen.neural_prior_raw_background_dbz
+        ),
+        neural_prior_execution_contract_digest=(
+            frozen.neural_prior_execution_contract_digest
+        ),
+        neural_prior_role=frozen.neural_prior_role,
     )
 
 
@@ -6695,6 +7387,23 @@ def _frozen_outer_state_digest_values(
     }
     if not frozen.observation_derived_initial_background:
         values["observation_derived_initial_background"] = False
+        values["neural_prior_std_dbz"] = _optional_tensor_digest(
+            frozen.neural_prior_std_dbz
+        )
+        values["neural_prior_valid_mask"] = _optional_tensor_digest(
+            frozen.neural_prior_valid_mask
+        )
+        values["neural_prior_dependency"] = frozen.neural_prior_dependency
+        values["neural_prior_application_digest"] = (
+            frozen.neural_prior_application_digest
+        )
+        values["neural_prior_raw_background_dbz"] = _optional_tensor_digest(
+            frozen.neural_prior_raw_background_dbz
+        )
+        values["neural_prior_execution_contract_digest"] = (
+            frozen.neural_prior_execution_contract_digest
+        )
+        values["neural_prior_role"] = frozen.neural_prior_role
     return values
 
 

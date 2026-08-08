@@ -12,6 +12,7 @@ from pathlib import Path
 import re
 import shutil
 import sqlite3
+import stat
 import tempfile
 from typing import Any, cast
 
@@ -19,6 +20,8 @@ import numpy as np
 from numpy.typing import NDArray
 import torch
 from torch import Tensor
+
+from ._digest import tensor_digest
 
 from .sensitivity import (
     CONTEXT_FEATURE_NAMES,
@@ -29,11 +32,23 @@ from .sensitivity import (
     _load_learning_policy_trust_store,
     validate_variational_learning_impact,
 )
-from .intervention import RealizedObservationIntervention
+from .intervention import (
+    ProspectiveInterventionDecision,
+    RealizedInterventionReceipt,
+    RealizedObservationIntervention,
+    RetrospectiveCounterfactualReplay,
+    validate_prospective_intervention,
+    validate_retrospective_counterfactual_replay,
+    verify_intervention_receipt_signature,
+)
 from .promotion import (
     NeuralPriorCandidateManifest,
+    LegacyNeuralPriorHoldoutPlanAudit,
+    LegacyNeuralPriorHoldoutPlanCase,
+    NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
+    NeuralPriorInputPlan,
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionEvidence,
     NeuralPriorPromotionPolicy,
@@ -42,14 +57,96 @@ from .promotion import (
     validate_neural_prior_promotion,
     validate_neural_prior_candidate_manifest,
     validate_neural_prior_holdout_plan,
+    _new_realized_evaluation,
 )
 
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
+_EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 10
+_INDEX_SCHEMA_VERSION = 11
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
+
+
+@dataclass(frozen=True)
+class _ExecutorTrustStore:
+    keys: dict[str, bytes]
+    content_digest: str
+
+
+@dataclass(frozen=True)
+class LegacyPromotionEvaluationAudit:
+    """Read-only payload retained before typed Tensor audit evidence existed."""
+
+    evaluation_digest: str
+    payload_json: str
+    contract: str = "legacy-promotion-evaluation-audit-v1"
+    audit_digest: str = ""
+
+    def __post_init__(self) -> None:
+        if re.fullmatch(r"[0-9a-f]{64}", self.evaluation_digest) is None:
+            raise ValueError("invalid legacy promotion evaluation digest")
+        payload = json.loads(self.payload_json)
+        if not isinstance(payload, dict):
+            raise ValueError("invalid legacy promotion evaluation payload")
+        if payload.get("evaluation_digest") != self.evaluation_digest:
+            raise ValueError("legacy promotion evaluation digest mismatch")
+        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        if canonical != self.payload_json:
+            raise ValueError("legacy promotion evaluation payload is not canonical")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _json_digest(
+                {
+                    "contract": self.contract,
+                    "evaluation_digest": self.evaluation_digest,
+                    "payload": payload,
+                }
+            ),
+        )
+
+
+def _load_executor_trust_store(path: str | Path) -> _ExecutorTrustStore:
+    source = Path(path)
+    if not source.is_absolute():
+        raise ValueError("executor trust store path must be absolute")
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(source, flags)
+    try:
+        metadata = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_uid != 0
+            or metadata.st_mode & 0o077
+        ):
+            raise ValueError("executor trust store must be root-owned and private")
+        with os.fdopen(descriptor, encoding="utf-8") as stream:
+            descriptor = -1
+            document = json.load(stream)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+    if not isinstance(document, dict) or set(document) != {"contract", "keys"}:
+        raise ValueError("invalid executor trust store")
+    if document["contract"] != _EXECUTOR_TRUST_STORE_CONTRACT:
+        raise ValueError("unsupported executor trust store")
+    raw = document["keys"]
+    if not isinstance(raw, dict) or not raw:
+        raise ValueError("executor trust store requires keys")
+    keys: dict[str, bytes] = {}
+    for key_id, secret_hex in raw.items():
+        if not isinstance(key_id, str) or not key_id or not isinstance(secret_hex, str):
+            raise ValueError("invalid executor trust-store key")
+        try:
+            secret = bytes.fromhex(secret_hex)
+        except ValueError as error:
+            raise ValueError("invalid executor trust-store secret") from error
+        if len(secret) < 32:
+            raise ValueError("executor trust-store secrets must be at least 256 bits")
+        keys[key_id] = secret
+    return _ExecutorTrustStore(keys=keys, content_digest=_json_digest(document))
 _TRUST_COMPONENTS_V13 = {
     "linearity",
     "verification",
@@ -495,14 +592,15 @@ class EpisodeLedger:
                     half_step_analysis_digest, full_step_forecast_digest,
                     half_step_forecast_digest,
                     first_order_validation_digest,
-                    learning_impact_digest, selection_mode, candidate_id,
+                    learning_impact_digest, approved_action_digest,
+                    nominal_input_bundle_digest, selection_mode, candidate_id,
                     candidate_rank, candidate_score,
                     candidate_perturbation_digest, ranking_digest,
                     ranking_policy_digest, ranking_objective,
                     whitener_operations_per_apply,
                     observed_whitener_apply_count,
                     observed_whitener_total_operations, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     learning.learning_result_digest,
@@ -517,6 +615,8 @@ class EpisodeLedger:
                     evidence.half_step_forecast_digest,
                     evidence.first_order_validation_digest,
                     evidence.learning_impact_digest,
+                    evidence.approved_action_digest,
+                    evidence.nominal_input_bundle_digest,
                     evidence.selection_mode,
                     evidence.candidate_id,
                     evidence.candidate_rank,
@@ -562,6 +662,8 @@ class EpisodeLedger:
                 row["first_order_validation_digest"]
             ),
             learning_impact_digest=row["learning_impact_digest"],
+            approved_action_digest=row["approved_action_digest"],
+            nominal_input_bundle_digest=row["nominal_input_bundle_digest"],
             selection_mode=row["selection_mode"],
             candidate_id=row["candidate_id"],
             candidate_rank=row["candidate_rank"],
@@ -656,6 +758,191 @@ class EpisodeLedger:
             )
         return intervention.intervention_digest
 
+    def append_retrospective_counterfactual_replay(
+        self,
+        replay: RetrospectiveCounterfactualReplay,
+    ) -> str:
+        """Retain a replay for audit without making it promotion evidence."""
+
+        validate_retrospective_counterfactual_replay(replay)
+        payload = asdict(replay)
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT INTO retrospective_counterfactual_replays "
+                "(replay_digest, replay_json, created_at) VALUES (?, ?, ?)",
+                (
+                    replay.replay_digest,
+                    json.dumps(payload, sort_keys=True),
+                    datetime.now(timezone.utc).isoformat(),
+                ),
+            )
+        return replay.replay_digest
+
+    def load_retrospective_counterfactual_replay(
+        self,
+        replay_digest: str,
+    ) -> RetrospectiveCounterfactualReplay:
+        """Load and revalidate one historical replay audit."""
+
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT replay_json FROM retrospective_counterfactual_replays "
+                "WHERE replay_digest = ?",
+                (replay_digest,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(f"unknown retrospective replay: {replay_digest}")
+        values = json.loads(row[0])
+        if not isinstance(values, dict):
+            raise ValueError("invalid retrospective replay payload")
+        values.pop("replay_digest", None)
+        replay = RetrospectiveCounterfactualReplay(**values)
+        if replay.replay_digest != replay_digest:
+            raise ValueError("retrospective replay ledger digest mismatch")
+        validate_retrospective_counterfactual_replay(replay)
+        return replay
+
+    def append_prospective_intervention_decision(
+        self,
+        decision: ProspectiveInterventionDecision,
+        *,
+        trust_store_path: str | Path,
+    ) -> str:
+        """Commit an approved action before its forecast issue time."""
+
+        trust = _load_learning_policy_trust_store(trust_store_path)
+        if trust.content_digest != decision.decision_trust_store_digest:
+            raise ValueError("prospective decision trust-store mismatch")
+        if decision.decision_policy_digest not in trust.approved_policy_digests:
+            raise ValueError("prospective decision policy is not approved")
+        decided = datetime.fromisoformat(decision.decided_at.replace("Z", "+00:00"))
+        issue = datetime.fromisoformat(decision.issue_time.replace("Z", "+00:00"))
+        expected = _json_digest(
+            {
+                key: value
+                for key, value in decision.__dict__.items()
+                if key != "decision_digest"
+            }
+        )
+        if expected != decision.decision_digest:
+            raise ValueError("prospective decision digest mismatch")
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            now = datetime.now(timezone.utc)
+            if decided > now or now >= issue:
+                raise ValueError("prospective decision must be recorded before issue")
+            approval = connection.execute(
+                "SELECT approved_action_digest, nominal_input_bundle_digest "
+                "FROM variational_learning_approvals "
+                "WHERE learning_result_digest = ?",
+                (decision.decision_basis_digest,),
+            ).fetchone()
+            if approval is None:
+                raise ValueError("prospective decision basis is not recorded")
+            if (
+                approval[0] != decision.action_digest
+                or approval[1] != decision.actual_input_before_digest
+            ):
+                raise ValueError("prospective decision disagrees with its approval")
+            connection.execute(
+                "INSERT INTO prospective_intervention_decisions "
+                "(decision_digest, decision_id, decision_json, created_at) "
+                "VALUES (?, ?, ?, ?)",
+                (
+                    decision.decision_digest,
+                    decision.decision_id,
+                    json.dumps(asdict(decision), sort_keys=True),
+                    now.isoformat(),
+                ),
+            )
+            if datetime.now(timezone.utc) >= issue:
+                raise ValueError("prospective decision crossed its issue time")
+        return decision.decision_digest
+
+    def append_realized_intervention_receipt(
+        self,
+        decision: ProspectiveInterventionDecision,
+        receipt: RealizedInterventionReceipt,
+        *,
+        trust_store_path: str | Path,
+        executor_trust_store_path: str | Path,
+    ) -> str:
+        """Record the executor receipt while the issue is still prospective."""
+
+        validate_prospective_intervention(decision, receipt)
+        trust = _load_learning_policy_trust_store(trust_store_path)
+        if trust.content_digest != decision.decision_trust_store_digest:
+            raise ValueError("realized receipt trust-store mismatch")
+        executor_trust = _load_executor_trust_store(executor_trust_store_path)
+        if receipt.executor_trust_store_digest != executor_trust.content_digest:
+            raise ValueError("realized receipt executor trust-store mismatch")
+        secret = executor_trust.keys.get(receipt.executor_key_id)
+        if secret is None:
+            raise ValueError("realized receipt executor is not approved")
+        verify_intervention_receipt_signature(receipt, secret)
+        issue = datetime.fromisoformat(receipt.issue_time.replace("Z", "+00:00"))
+        received = datetime.fromisoformat(receipt.receipt_time.replace("Z", "+00:00"))
+        applied = datetime.fromisoformat(receipt.applied_time.replace("Z", "+00:00"))
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            now = datetime.now(timezone.utc)
+            recorded = connection.execute(
+                "SELECT decision_json, created_at "
+                "FROM prospective_intervention_decisions "
+                "WHERE decision_digest = ?",
+                (decision.decision_digest,),
+            ).fetchone()
+            if recorded is None:
+                raise ValueError("realized receipt decision is not recorded")
+            if json.loads(recorded[0]) != asdict(decision):
+                raise ValueError("recorded prospective decision changed")
+            decision_created = datetime.fromisoformat(recorded[1])
+            if not (
+                decision_created <= applied <= received <= now < issue
+            ):
+                raise ValueError("realized receipt violates trusted clock order")
+            connection.execute(
+                "INSERT INTO realized_intervention_receipts "
+                "(receipt_digest, decision_digest, receipt_json, created_at) "
+                "VALUES (?, ?, ?, ?)",
+                (
+                    receipt.receipt_digest,
+                    receipt.decision_digest,
+                    json.dumps(asdict(receipt), sort_keys=True),
+                    now.isoformat(),
+                ),
+            )
+            if datetime.now(timezone.utc) >= issue:
+                raise ValueError("realized receipt crossed its issue time")
+        return receipt.receipt_digest
+
+    def load_prospective_intervention(
+        self,
+        receipt_digest: str,
+    ) -> tuple[ProspectiveInterventionDecision, RealizedInterventionReceipt]:
+        """Load and verify one causally ordered action and receipt."""
+
+        with self._connect() as connection:
+            connection.row_factory = sqlite3.Row
+            row = connection.execute(
+                "SELECT r.receipt_json, d.decision_json "
+                "FROM realized_intervention_receipts r "
+                "JOIN prospective_intervention_decisions d "
+                "ON d.decision_digest = r.decision_digest "
+                "WHERE r.receipt_digest = ?",
+                (receipt_digest,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(f"unknown realized receipt: {receipt_digest}")
+        decision_values = json.loads(row["decision_json"])
+        receipt_values = json.loads(row["receipt_json"])
+        decision_values.pop("decision_digest", None)
+        receipt_values.pop("receipt_digest", None)
+        decision = ProspectiveInterventionDecision(**decision_values)
+        receipt = RealizedInterventionReceipt(**receipt_values)
+        validate_prospective_intervention(decision, receipt)
+        return decision, receipt
+
     def load_realized_observation_intervention(
         self,
         intervention_digest: str,
@@ -727,16 +1014,30 @@ class EpisodeLedger:
         approved_metrics = set(policy.approved_metric_contract_digests)
         if any(item.metric_contract_digest not in approved_metrics for item in plan.cases):
             raise ValueError("holdout metric contract is not approved")
-        now = datetime.now(timezone.utc)
         registered = datetime.fromisoformat(plan.registered_at.replace("Z", "+00:00"))
-        if registered > now:
-            raise ValueError("holdout plan registration cannot be in the future")
-        if any(
-            now >= datetime.fromisoformat(item.issue_time.replace("Z", "+00:00"))
+        issue_times = tuple(
+            datetime.fromisoformat(item.issue_time.replace("Z", "+00:00"))
             for item in plan.cases
-        ):
-            raise ValueError("holdout plan must be recorded before forecast issue")
+        )
+        started = None
+        if plan.mode == "sealed_historical":
+            assert plan.candidate_training_started_at is not None
+            started = datetime.fromisoformat(
+                plan.candidate_training_started_at.replace("Z", "+00:00")
+            )
         with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            now = datetime.now(timezone.utc)
+            if registered > now:
+                raise ValueError("holdout plan registration cannot be in the future")
+            if plan.mode == "prospective" and any(
+                now >= issue for issue in issue_times
+            ):
+                raise ValueError("holdout plan must be recorded before forecast issue")
+            if started is not None and now >= started:
+                raise ValueError(
+                    "historical holdout must be recorded before candidate training"
+                )
             connection.execute(
                 """
                 INSERT INTO neural_prior_holdout_plans (
@@ -754,12 +1055,19 @@ class EpisodeLedger:
                     now.isoformat(),
                 ),
             )
+            final = datetime.now(timezone.utc)
+            if plan.mode == "prospective" and any(
+                final >= issue for issue in issue_times
+            ):
+                raise ValueError("holdout plan crossed its forecast issue time")
+            if started is not None and final >= started:
+                raise ValueError("holdout plan crossed candidate training time")
         return plan.plan_digest
 
     def load_neural_prior_holdout_plan(
         self,
         plan_digest: str,
-    ) -> NeuralPriorHoldoutPlan:
+    ) -> NeuralPriorHoldoutPlan | LegacyNeuralPriorHoldoutPlanAudit:
         """Load and verify one immutable pre-registered holdout plan."""
 
         with self._connect() as connection:
@@ -775,8 +1083,22 @@ class EpisodeLedger:
         value["candidate_family_digests"] = tuple(
             value["candidate_family_digests"]
         )
+        if value.get("contract") == "neural-prior-holdout-plan-v1":
+            value["cases"] = tuple(
+                LegacyNeuralPriorHoldoutPlanCase(**item) for item in value["cases"]
+            )
+            plan = LegacyNeuralPriorHoldoutPlanAudit(**value)
+            if plan.plan_digest != plan_digest:
+                raise ValueError("legacy neural-prior holdout digest mismatch")
+            return plan
         value["cases"] = tuple(
             NeuralPriorHoldoutPlanCase(**item) for item in value["cases"]
+        )
+        value["input_plans"] = tuple(
+            NeuralPriorInputPlan(
+                **{key: entry for key, entry in item.items() if key != "plan_digest"}
+            )
+            for item in value["input_plans"]
         )
         plan = NeuralPriorHoldoutPlan(**value)
         if plan.plan_digest != plan_digest:
@@ -821,22 +1143,20 @@ class EpisodeLedger:
             ):
                 raise ValueError("promotion holdout plan is not pre-registered")
             plan_created = datetime.fromisoformat(plan_row[1])
-            if any(
+            if plan.mode == "prospective" and any(
                 plan_created
                 >= datetime.fromisoformat(item.issue_time.replace("Z", "+00:00"))
                 for item in plan.cases
             ):
                 raise ValueError("holdout plan was registered after forecast issue")
-            recorded = {
-                row[0]: row[1:]
-                for row in connection.execute(
-                    "SELECT intervention_digest, intervention_type, "
-                    "learning_result_digest, "
-                    "learning_approval_evidence_digest, evidence_contract "
-                    ", input_bundle_after_digest "
-                    "FROM realized_observation_interventions"
+            receipt_rows = tuple(
+                connection.execute(
+                    "SELECT receipt_digest, receipt_json, created_at "
+                    "FROM realized_intervention_receipts"
                 )
-            }
+            )
+            recorded = {row[0]: json.loads(row[1]) for row in receipt_rows}
+            receipt_created_at = {row[0]: row[2] for row in receipt_rows}
             missing = set(evidence.intervention_digests) - set(recorded)
             if missing:
                 raise ValueError("promotion references unrecorded interventions")
@@ -853,42 +1173,66 @@ class EpisodeLedger:
             if training_interventions - set(recorded):
                 raise ValueError("candidate training interventions are not recorded")
             for digest in training_interventions:
-                if recorded[digest][2] not in manifest.training_learning_approval_digests:
-                    raise ValueError("candidate training lineage is inconsistent")
-                if recorded[digest][3] != "realized-observation-intervention-v3":
-                    raise ValueError("candidate training requires causal v3 evidence")
-                if recorded[digest][4] not in manifest.training_input_bundle_digests:
+                if recorded[digest]["actual_input_bundle_digest"] not in (
+                    manifest.training_input_bundle_digests
+                ):
                     raise ValueError("candidate training input lineage is inconsistent")
+                training_decision = connection.execute(
+                    "SELECT decision_json FROM prospective_intervention_decisions "
+                    "WHERE decision_digest = ?",
+                    (recorded[digest]["decision_digest"],),
+                ).fetchone()
+                if training_decision is None:
+                    raise ValueError("candidate training decision is not recorded")
+                decision_payload = json.loads(training_decision[0])
+                if decision_payload["decision_basis_digest"] not in (
+                    manifest.training_learning_approval_digests
+                ):
+                    raise ValueError("training receipt is not linked to its approval")
             if training_interventions & {
                 item.intervention_digest for item in evaluations
             }:
                 raise ValueError("training and promotion interventions overlap")
             for evaluation in evaluations:
                 intervention_row = recorded[evaluation.intervention_digest]
-                if intervention_row[:3] != (
+                receipt_created = datetime.fromisoformat(
+                    receipt_created_at[evaluation.intervention_digest]
+                )
+                issue = datetime.fromisoformat(
+                    evaluation.issue_time.replace("Z", "+00:00")
+                )
+                if receipt_created >= issue:
+                    raise ValueError("promotion receipt was recorded after issue")
+                if (
+                    intervention_row["intervention_type"],
+                    intervention_row["decision_digest"],
+                ) != (
                     evaluation.intervention_type,
-                    evaluation.learning_result_digest,
                     evaluation.learning_approval_evidence_digest,
-                ) or intervention_row[3] != "realized-observation-intervention-v3":
+                ):
                     raise ValueError(
                         "promotion evaluation disagrees with intervention ledger"
                     )
-                learning_row = connection.execute(
-                    "SELECT policy_digest FROM variational_learning_approvals "
-                    "WHERE learning_result_digest = ? AND "
-                    "approval_evidence_digest = ?",
-                    (
-                        evaluation.learning_result_digest,
-                        evaluation.learning_approval_evidence_digest,
-                    ),
+                decision_row = connection.execute(
+                    "SELECT decision_json, created_at "
+                    "FROM prospective_intervention_decisions "
+                    "WHERE decision_digest = ?",
+                    (evaluation.learning_approval_evidence_digest,),
                 ).fetchone()
-                if (
-                    learning_row is None
-                    or learning_row[0] != evaluation.learning_policy_digest
-                ):
+                if decision_row is None:
                     raise ValueError(
-                        "promotion evaluation disagrees with learning ledger"
+                        "promotion evaluation lacks a prospective decision"
                     )
+                decision = json.loads(decision_row[0])
+                if datetime.fromisoformat(decision_row[1]) >= issue:
+                    raise ValueError("promotion decision was recorded after issue")
+                if (
+                    decision["decision_basis_digest"]
+                    != evaluation.learning_result_digest
+                    or decision["decision_policy_digest"]
+                    != evaluation.learning_policy_digest
+                ):
+                    raise ValueError("promotion decision lineage disagrees")
             connection.execute(
                 """
                 INSERT INTO neural_prior_promotions (
@@ -1009,18 +1353,25 @@ class EpisodeLedger:
         if evidence.promotion_evidence_digest != promotion_evidence_digest:
             raise ValueError("neural-prior promotion digest mismatch")
         payloads = json.loads(row["evaluation_payloads_json"])
-        if not isinstance(payloads, list) or tuple(
-            item.get("evaluation_digest") for item in payloads
-            if isinstance(item, dict)
-        ) != evidence.evaluation_digests:
+        evaluations = _decode_evaluation_audit_payloads(payloads)
+        if tuple(item.evaluation_digest for item in evaluations) != (
+            evidence.evaluation_digests
+        ):
             raise ValueError("neural-prior promotion evaluation audit mismatch")
+        _decode_candidate_manifest(
+            row["candidate_manifest_json"],
+            expected_digest=row["candidate_manifest_digest"],
+        )
         return evidence
 
     def load_neural_prior_promotion_evaluations(
         self,
         promotion_evidence_digest: str,
-    ) -> tuple[dict[str, object], ...]:
-        """Load the immutable paired metrics retained for promotion audit."""
+    ) -> tuple[
+        RealizedInterventionEvaluation | LegacyPromotionEvaluationAudit,
+        ...,
+    ]:
+        """Load typed metrics or an explicit read-only legacy audit."""
 
         with self._connect() as connection:
             row = connection.execute(
@@ -1032,12 +1383,7 @@ class EpisodeLedger:
             raise KeyError(
                 f"unknown neural-prior promotion: {promotion_evidence_digest}"
             )
-        value = json.loads(row[0])
-        if not isinstance(value, list) or any(
-            not isinstance(item, dict) for item in value
-        ):
-            raise ValueError("invalid promotion evaluation audit payload")
-        return tuple(value)
+        return _decode_evaluation_audit_payloads(json.loads(row[0]))
 
     def _initialize_index(self) -> None:
         with self._connect() as connection:
@@ -1082,6 +1428,8 @@ class EpisodeLedger:
                     half_step_forecast_digest TEXT NOT NULL,
                     first_order_validation_digest TEXT NOT NULL,
                     learning_impact_digest TEXT NOT NULL,
+                    approved_action_digest TEXT,
+                    nominal_input_bundle_digest TEXT,
                     selection_mode TEXT NOT NULL DEFAULT 'direct',
                     candidate_id TEXT,
                     candidate_rank INTEGER,
@@ -1127,6 +1475,39 @@ class EpisodeLedger:
                     FOREIGN KEY (learning_result_digest)
                         REFERENCES variational_learning_approvals(
                             learning_result_digest
+                        )
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS retrospective_counterfactual_replays (
+                    replay_digest TEXT PRIMARY KEY,
+                    replay_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS prospective_intervention_decisions (
+                    decision_digest TEXT PRIMARY KEY,
+                    decision_id TEXT NOT NULL UNIQUE,
+                    decision_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS realized_intervention_receipts (
+                    receipt_digest TEXT PRIMARY KEY,
+                    decision_digest TEXT NOT NULL UNIQUE,
+                    receipt_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (decision_digest)
+                        REFERENCES prospective_intervention_decisions(
+                            decision_digest
                         )
                 )
                 """
@@ -1197,6 +1578,9 @@ class EpisodeLedger:
                 "episode_impacts",
                 "variational_learning_approvals",
                 "realized_observation_interventions",
+                "retrospective_counterfactual_replays",
+                "prospective_intervention_decisions",
+                "realized_intervention_receipts",
                 "neural_prior_holdout_plans",
                 "neural_prior_promotions",
             ):
@@ -1442,6 +1826,8 @@ def _ensure_variational_learning_approval_schema(
         "ranking_digest": "TEXT",
         "ranking_policy_digest": "TEXT",
         "ranking_objective": "TEXT",
+        "approved_action_digest": "TEXT",
+        "nominal_input_bundle_digest": "TEXT",
         "whitener_operations_per_apply": "INTEGER NOT NULL DEFAULT 0",
         "observed_whitener_apply_count": "INTEGER NOT NULL DEFAULT 0",
         "observed_whitener_total_operations": "INTEGER NOT NULL DEFAULT 0",
@@ -1523,7 +1909,14 @@ def _evaluation_audit_payload(
     result: dict[str, object] = {}
     for name, value in evaluation.__dict__.items():
         if isinstance(value, Tensor):
-            result[name] = value.detach().cpu().tolist()
+            owned = value.detach().cpu()
+            result[name] = {
+                "kind": "tensor",
+                "dtype": str(owned.dtype).removeprefix("torch."),
+                "shape": list(owned.shape),
+                "digest": tensor_digest(owned),
+                "values": owned.tolist(),
+            }
         elif isinstance(value, tuple):
             result[name] = list(value)
         elif hasattr(value, "value"):
@@ -1531,6 +1924,112 @@ def _evaluation_audit_payload(
         else:
             result[name] = value
     return result
+
+
+def _decode_audit_tensor(name: str, value: object) -> Tensor:
+    if not isinstance(value, dict) or set(value) != {
+        "kind",
+        "dtype",
+        "shape",
+        "digest",
+        "values",
+    } or value["kind"] != "tensor":
+        raise ValueError(f"invalid promotion audit tensor: {name}")
+    dtype = getattr(torch, str(value["dtype"]), None)
+    if not isinstance(dtype, torch.dtype):
+        raise ValueError(f"invalid promotion audit dtype: {name}")
+    tensor = torch.tensor(value["values"], dtype=dtype)
+    if list(tensor.shape) != value["shape"] or tensor_digest(tensor) != value["digest"]:
+        raise ValueError(f"promotion audit tensor digest mismatch: {name}")
+    return tensor
+
+
+def _decode_evaluation_audit_payloads(
+    value: object,
+) -> tuple[RealizedInterventionEvaluation | LegacyPromotionEvaluationAudit, ...]:
+    if not isinstance(value, list) or any(not isinstance(item, dict) for item in value):
+        raise ValueError("invalid promotion evaluation audit payload")
+    if value and isinstance(value[0].get("metric_change"), list):
+        audits: list[LegacyPromotionEvaluationAudit] = []
+        for raw in value:
+            assert isinstance(raw, dict)
+            digest = raw.get("evaluation_digest")
+            if not isinstance(digest, str):
+                raise ValueError("legacy promotion evaluation digest is missing")
+            audits.append(
+                LegacyPromotionEvaluationAudit(
+                    evaluation_digest=digest,
+                    payload_json=json.dumps(
+                        raw,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                )
+            )
+        return tuple(audits)
+    evaluations: list[RealizedInterventionEvaluation] = []
+    tensor_names = {
+        "metric_change",
+        "candidate_issuance_effect",
+        "parent_issuance_effect",
+        "end_to_end_metric_change",
+        "metric_available",
+        "coverage_candidate",
+        "coverage_parent",
+        "coverage_common",
+        "newly_issued_fraction",
+        "withdrawn_fraction",
+    }
+    tuple_names = {"lead_minutes", "metric_names", "verification_valid_times"}
+    for raw in value:
+        assert isinstance(raw, dict)
+        values = dict(raw)
+        stored_digest = values.pop("evaluation_digest", None)
+        for name in tensor_names:
+            values[name] = _decode_audit_tensor(name, values[name])
+        for name in tuple_names:
+            values[name] = tuple(values[name])
+        values.pop("contract", None)
+        evaluation = _new_realized_evaluation(**values)
+        if evaluation.evaluation_digest != stored_digest:
+            raise ValueError("promotion evaluation digest mismatch")
+        evaluations.append(evaluation)
+    return tuple(evaluations)
+
+
+def _decode_candidate_manifest(
+    text: str,
+    *,
+    expected_digest: str,
+) -> NeuralPriorCandidateManifest:
+    value = json.loads(text)
+    if not isinstance(value, dict):
+        raise ValueError("invalid candidate manifest audit payload")
+    values = dict(value)
+    stored_digest = values.pop("manifest_digest", None)
+    values["holdout_cases"] = tuple(
+        NeuralPriorHoldoutCase(**item) for item in values["holdout_cases"]
+    )
+    for name in (
+        "training_learning_approval_digests",
+        "training_intervention_digests",
+        "training_case_ids",
+        "training_input_bundle_digests",
+        "training_storm_ids",
+        "training_days",
+        "training_radars",
+        "training_regimes",
+    ):
+        values[name] = tuple(values[name])
+    values["training_time_windows"] = tuple(
+        tuple(item) for item in values["training_time_windows"]
+    )
+    manifest = NeuralPriorCandidateManifest(**values)
+    if manifest.manifest_digest != stored_digest:
+        raise ValueError("candidate manifest digest mismatch")
+    if manifest.manifest_digest != expected_digest:
+        raise ValueError("candidate manifest ledger digest mismatch")
+    return manifest
 
 
 def _create_episode_impacts_table(connection: sqlite3.Connection) -> None:

@@ -8,7 +8,6 @@ import json
 import math
 
 import torch
-import torch.nn.functional as F
 from torch import Tensor
 
 from ._digest import dataclass_digest, json_digest, tensor_digest
@@ -869,7 +868,7 @@ def _minimum_growth_evidence(
 
 
 _FORECAST_INPUT_BUNDLE_VERSION = "forecast-input-bundle-v5"
-_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v8"
+_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v10"
 
 
 def _validate_background_age(
@@ -1207,6 +1206,7 @@ class ForecastRunContract:
     latest_observation_mask_digest: str
     latest_frame_digest: str
     latest_background_digest: str | None
+    input_frames_digest: str
     input_bundle_digest: str
     background_age_minutes: float | None = None
     grid_time_contract: RadarGridTimeContract | None = None
@@ -1224,7 +1224,15 @@ class ForecastRunContract:
     prior_model_contract_digest: str | None = None
     prior_feature_schema_digest: str | None = None
     prior_training_manifest_digest: str | None = None
+    prior_inference_evidence_digest: str | None = None
+    prior_inference_algorithm_digest: str | None = None
+    prior_numerical_runtime_digest: str | None = None
+    prior_dependency: str | None = None
     prior_role: str | None = None
+    prior_lineage_contract: str = "neural-prior-run-lineage-v2"
+    input_plan_json: str | None = None
+    input_plan_digest: str | None = None
+    input_plan_resolution_digest: str | None = None
     forecast_integrator_version: str = FORECAST_INTEGRATOR_VERSION
 
     @classmethod
@@ -1250,7 +1258,13 @@ class ForecastRunContract:
         prior_model_contract_digest: str | None = None,
         prior_feature_schema_digest: str | None = None,
         prior_training_manifest_digest: str | None = None,
+        prior_inference_evidence_digest: str | None = None,
+        prior_inference_algorithm_digest: str | None = None,
+        prior_numerical_runtime_digest: str | None = None,
+        prior_dependency: str | None = None,
         prior_role: str | None = None,
+        input_plan_json: str | None = None,
+        input_plan_digest: str | None = None,
     ) -> ForecastRunContract:
         _validate_frames(frames_dbz)
         latest_frame = frames_dbz[-1]
@@ -1303,7 +1317,18 @@ class ForecastRunContract:
             prior_model_contract_digest,
             prior_feature_schema_digest,
             prior_training_manifest_digest,
+            prior_inference_evidence_digest,
+            prior_inference_algorithm_digest,
+            prior_numerical_runtime_digest,
+            prior_dependency,
             prior_role,
+            "neural-prior-run-lineage-v2",
+        )
+        _validate_input_plan_lineage(input_plan_json, input_plan_digest)
+        _validate_input_plan_resolution(
+            input_plan_json,
+            operational_data_identity_json,
+            grid_time_contract,
         )
         latest_background = (
             None
@@ -1317,6 +1342,27 @@ class ForecastRunContract:
             if background_frames_dbz is None
             else background_frames_dbz[-1].detach().clone()
         )
+        input_bundle_digest = _forecast_input_bundle_digest(
+            frames_dbz,
+            observation_masks,
+            background_frames_dbz,
+            background_age_minutes,
+            grid_time_contract,
+            operational_calibration_manifest_digest,
+            operational_calibration_approval_digest,
+            operational_data_identity_digest,
+        )
+        resolution_digest = (
+            None
+            if input_plan_digest is None
+            else json_digest(
+                {
+                    "contract": "forecast-input-plan-resolution-v1",
+                    "input_plan_digest": input_plan_digest,
+                    "input_bundle_digest": input_bundle_digest,
+                }
+            )
+        )
         return cls(
             config=config,
             _latest_frame_dbz=accepted_frame,
@@ -1325,16 +1371,8 @@ class ForecastRunContract:
             latest_observation_mask_digest=tensor_digest(accepted_mask),
             latest_frame_digest=tensor_digest(latest_frame),
             latest_background_digest=latest_background,
-            input_bundle_digest=_forecast_input_bundle_digest(
-                frames_dbz,
-                observation_masks,
-                background_frames_dbz,
-                background_age_minutes,
-                grid_time_contract,
-                operational_calibration_manifest_digest,
-                operational_calibration_approval_digest,
-                operational_data_identity_digest,
-            ),
+            input_frames_digest=tensor_digest(frames_dbz),
+            input_bundle_digest=input_bundle_digest,
             background_age_minutes=background_age_minutes,
             grid_time_contract=grid_time_contract,
             grid_time_contract_digest=(
@@ -1361,7 +1399,14 @@ class ForecastRunContract:
             prior_model_contract_digest=prior_model_contract_digest,
             prior_feature_schema_digest=prior_feature_schema_digest,
             prior_training_manifest_digest=prior_training_manifest_digest,
+            prior_inference_evidence_digest=prior_inference_evidence_digest,
+            prior_inference_algorithm_digest=prior_inference_algorithm_digest,
+            prior_numerical_runtime_digest=prior_numerical_runtime_digest,
+            prior_dependency=prior_dependency,
             prior_role=prior_role,
+            input_plan_json=input_plan_json,
+            input_plan_digest=input_plan_digest,
+            input_plan_resolution_digest=resolution_digest,
         )
 
     @property
@@ -1410,6 +1455,10 @@ class ForecastRunContract:
             raise ValueError(
                 "forecast integrator version is incompatible with this runtime"
             )
+        _validate_sha256_digest(
+            "input_frames_digest",
+            self.input_frames_digest,
+        )
         _validate_sha256_digest(
             "input_bundle_digest",
             self.input_bundle_digest,
@@ -1520,8 +1569,32 @@ class ForecastRunContract:
             self.prior_model_contract_digest,
             self.prior_feature_schema_digest,
             self.prior_training_manifest_digest,
+            self.prior_inference_evidence_digest,
+            self.prior_inference_algorithm_digest,
+            self.prior_numerical_runtime_digest,
+            self.prior_dependency,
             self.prior_role,
+            self.prior_lineage_contract,
         )
+        _validate_input_plan_lineage(self.input_plan_json, self.input_plan_digest)
+        _validate_input_plan_resolution(
+            self.input_plan_json,
+            self.operational_data_identity_json,
+            self.grid_time_contract,
+        )
+        expected_resolution = (
+            None
+            if self.input_plan_digest is None
+            else json_digest(
+                {
+                    "contract": "forecast-input-plan-resolution-v1",
+                    "input_plan_digest": self.input_plan_digest,
+                    "input_bundle_digest": self.input_bundle_digest,
+                }
+            )
+        )
+        if self.input_plan_resolution_digest != expected_resolution:
+            raise ValueError("input plan resolution digest mismatch")
 
     def validate_latest_frame(self, latest_frame_dbz: Tensor) -> None:
         if tensor_digest(latest_frame_dbz) != self.latest_frame_digest:
@@ -1590,6 +1663,68 @@ def _validate_sha256_digest(name: str, value: str) -> None:
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
 
 
+def _validate_input_plan_lineage(
+    input_plan_json: str | None,
+    input_plan_digest: str | None,
+) -> None:
+    if input_plan_json is None and input_plan_digest is None:
+        return
+    if input_plan_json is None or input_plan_digest is None:
+        raise ValueError("input plan JSON and digest must be provided together")
+    _validate_sha256_digest("input_plan_digest", input_plan_digest)
+    try:
+        payload = json.loads(input_plan_json)
+    except json.JSONDecodeError as error:
+        raise ValueError("invalid input plan JSON") from error
+    if not isinstance(payload, dict) or payload.get("contract") not in (
+        "neural-prior-input-plan-v1",
+        "legacy-opaque-input-plan-v1",
+    ):
+        raise ValueError("unsupported input plan payload")
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    expected = (
+        payload.get("legacy_digest")
+        if payload.get("contract") == "legacy-opaque-input-plan-v1"
+        else json_digest(payload)
+    )
+    if canonical != input_plan_json or expected != input_plan_digest:
+        raise ValueError("input plan payload digest mismatch")
+
+
+def _validate_input_plan_resolution(
+    input_plan_json: str | None,
+    operational_data_identity_json: str | None,
+    grid_time_contract: RadarGridTimeContract | None,
+) -> None:
+    """Bind a prospective selection plan to the actual run identity."""
+
+    if input_plan_json is None:
+        return
+    payload = json.loads(input_plan_json)
+    if payload["contract"] == "legacy-opaque-input-plan-v1":
+        return
+    if operational_data_identity_json is None or grid_time_contract is None:
+        raise ValueError("input-plan runs require data and grid identity")
+    identity = OperationalDataIdentity.from_json(operational_data_identity_json)
+    expected = (
+        ("radar_product_digest", identity.radar_product_digest),
+        ("qc_pipeline_digest", identity.qc_pipeline_digest),
+        (
+            "background_cycle_rule_digest",
+            identity.background_cycle_rule_digest,
+        ),
+        ("mask_policy_digest", identity.mask_policy_digest),
+    )
+    if any(value is None or payload[name] != value for name, value in expected):
+        raise ValueError("input plan disagrees with operational data identity")
+    if (
+        payload["grid_contract_digest"] != grid_time_contract.digest
+        or tuple(payload["valid_times"]) != grid_time_contract.valid_times
+        or payload["issue_time"] != grid_time_contract.valid_times[-1]
+    ):
+        raise ValueError("input plan disagrees with the run grid or times")
+
+
 def _validate_analysis_lineage(
     config_json: str | None,
     config_digest: str | None,
@@ -1621,17 +1756,64 @@ def _validate_neural_prior_lineage(
     model_contract_digest: str | None,
     feature_schema_digest: str | None,
     training_manifest_digest: str | None,
+    inference_evidence_digest: str | None,
+    inference_algorithm_digest: str | None,
+    numerical_runtime_digest: str | None,
+    dependency: str | None,
     role: str | None,
+    contract: str,
 ) -> None:
+    if contract not in (
+        "neural-prior-run-lineage-v1-audit",
+        "neural-prior-run-lineage-v2",
+    ):
+        raise ValueError("unsupported neural-prior run lineage")
     values = (
         prior_digest,
         application_digest,
         model_contract_digest,
         feature_schema_digest,
         training_manifest_digest,
+        inference_evidence_digest,
+        inference_algorithm_digest,
+        numerical_runtime_digest,
+        dependency,
         role,
     )
     if all(value is None for value in values):
+        if contract != "neural-prior-run-lineage-v2":
+            raise ValueError("legacy neural-prior lineage requires prior identity")
+        return
+    if contract == "neural-prior-run-lineage-v1-audit":
+        legacy = (
+            prior_digest,
+            application_digest,
+            model_contract_digest,
+            feature_schema_digest,
+            training_manifest_digest,
+            role,
+        )
+        modern = (
+            inference_evidence_digest,
+            inference_algorithm_digest,
+            numerical_runtime_digest,
+            dependency,
+        )
+        if any(value is None for value in legacy) or any(
+            value is not None for value in modern
+        ):
+            raise ValueError("legacy neural-prior lineage is malformed")
+        for name, digest in (
+            ("neural_prior_digest", prior_digest),
+            ("prior_application_digest", application_digest),
+            ("prior_model_contract_digest", model_contract_digest),
+            ("prior_feature_schema_digest", feature_schema_digest),
+            ("prior_training_manifest_digest", training_manifest_digest),
+        ):
+            assert digest is not None
+            _validate_sha256_digest(name, digest)
+        if role not in ("candidate", "parent"):
+            raise ValueError("prior_role must be candidate or parent")
         return
     if any(value is None for value in values):
         raise ValueError("neural-prior run lineage must be complete")
@@ -1640,6 +1822,10 @@ def _validate_neural_prior_lineage(
     assert model_contract_digest is not None
     assert feature_schema_digest is not None
     assert training_manifest_digest is not None
+    assert inference_evidence_digest is not None
+    assert inference_algorithm_digest is not None
+    assert numerical_runtime_digest is not None
+    assert dependency is not None
     assert role is not None
     for name, digest in (
         ("neural_prior_digest", prior_digest),
@@ -1647,8 +1833,13 @@ def _validate_neural_prior_lineage(
         ("prior_model_contract_digest", model_contract_digest),
         ("prior_feature_schema_digest", feature_schema_digest),
         ("prior_training_manifest_digest", training_manifest_digest),
+        ("prior_inference_evidence_digest", inference_evidence_digest),
+        ("prior_inference_algorithm_digest", inference_algorithm_digest),
+        ("prior_numerical_runtime_digest", numerical_runtime_digest),
     ):
         _validate_sha256_digest(name, digest)
+    if dependency not in ("exogenous", "radar_dependent"):
+        raise ValueError("unsupported prior_dependency")
     if role not in ("candidate", "parent"):
         raise ValueError("prior_role must be candidate or parent")
 
@@ -1801,6 +1992,7 @@ def _forecast_run_identity_digest(
             "forecast_integrator_version": run.forecast_integrator_version,
             "nowcast_config_digest": run.config.digest,
             "input_bundle_digest": run.input_bundle_digest,
+            "input_frames_digest": run.input_frames_digest,
             "latest_frame_digest": run.latest_frame_digest,
             "latest_observation_mask_digest": (
                 run.latest_observation_mask_digest
@@ -1826,7 +2018,20 @@ def _forecast_run_identity_digest(
             "prior_training_manifest_digest": (
                 run.prior_training_manifest_digest
             ),
+            "prior_inference_evidence_digest": (
+                run.prior_inference_evidence_digest
+            ),
+            "prior_inference_algorithm_digest": (
+                run.prior_inference_algorithm_digest
+            ),
+            "prior_numerical_runtime_digest": (
+                run.prior_numerical_runtime_digest
+            ),
+            "prior_dependency": run.prior_dependency,
             "prior_role": run.prior_role,
+            "prior_lineage_contract": run.prior_lineage_contract,
+            "input_plan_digest": run.input_plan_digest,
+            "input_plan_resolution_digest": run.input_plan_resolution_digest,
             "state_metadata_digest": state_digest,
             "forecast_dbz_digest": forecast_digest,
             "valid_mask_digest": valid_mask_digest,

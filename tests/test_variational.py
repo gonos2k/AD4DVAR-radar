@@ -2,12 +2,14 @@ from dataclasses import replace
 import math
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 from collections.abc import Callable
-from typing import cast
+from typing import Literal, cast
 
 import torch
+from torch import nn
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -18,6 +20,10 @@ from advar.matrix_free import (  # noqa: E402
     jvp,
     pcg as matrix_free_pcg,
     vjp,
+)
+from advar.linearization_artifact import (  # noqa: E402
+    load_p1_linearization,
+    save_p1_linearization,
 )
 from advar.nowcast import (  # noqa: E402
     DataStatus,
@@ -37,12 +43,17 @@ from advar.physics import (  # noqa: E402
     echo_to_dbz,
     remap,
 )
-from advar.sensitivity import compute_sensitivity_snapshot  # noqa: E402
+from advar.sensitivity import (  # noqa: E402
+    VariationalObservationPerturbation,
+    compute_sensitivity_snapshot,
+)
 import advar.variational as variational_module  # noqa: E402
+import advar.sensitivity as sensitivity_module  # noqa: E402
 from advar.variational import (  # noqa: E402
     AnalysisConfig,
     FrozenOuterState,
     NeuralPriorApplication,
+    NeuralPriorInferenceRunner,
     analysis_trajectory,
     freeze_irls_weights,
     initial_control,
@@ -54,6 +65,130 @@ from advar.variational import (  # noqa: E402
     variational_nowcast,
     whitened_observation_residual,
 )
+
+
+class _OffsetPrior(nn.Module):
+    def __init__(self, offset: float) -> None:
+        super().__init__()
+        self.offset = nn.Parameter(torch.tensor(offset, dtype=torch.float64))
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return value + self.offset
+
+
+class _ScaledOffsetPrior(nn.Module):
+    def __init__(self, offset: float) -> None:
+        super().__init__()
+        self.offset = nn.Parameter(torch.tensor(offset, dtype=torch.float64))
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return 2.0 * value + self.offset
+
+
+class _ConfigurablePrior(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.offset = nn.Parameter(torch.tensor(1.0, dtype=torch.float64))
+        self.scale = 1.0
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return self.scale * value + self.offset
+
+
+_HELPER_SCALE = 1.0
+
+
+def _helper_feature(value: torch.Tensor) -> torch.Tensor:
+    return value[0] * _HELPER_SCALE
+
+
+class _StatefulExtractor:
+    def __init__(self, scale: float) -> None:
+        self.scale = scale
+
+    def __call__(self, value: torch.Tensor) -> torch.Tensor:
+        return value[0] * self.scale
+
+
+class _PrivateScalePrior(nn.Module):
+    def __init__(self, scale: float) -> None:
+        super().__init__()
+        self.register_buffer("anchor", torch.tensor(0.0, dtype=torch.float64))
+        self._scale = scale
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return value * self._scale + self.anchor
+
+
+_MODEL_HELPER_SCALE = 1.0
+
+
+class _HelperMethodPrior(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.register_buffer("anchor", torch.tensor(0.0, dtype=torch.float64))
+
+    def helper(self, value: torch.Tensor) -> torch.Tensor:
+        return value * _MODEL_HELPER_SCALE
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return self.helper(value) + self.anchor
+
+
+def _prior(
+    frames: torch.Tensor,
+    offset: float,
+    role: str,
+    *,
+    dependency: Literal["exogenous", "radar_dependent"] = "radar_dependent",
+    support_policy: Literal["causal_clip", "expand_control"] = "causal_clip",
+    maximum_added_area_km2: float = 0.0,
+    maximum_added_echo_integral: float = 0.0,
+) -> NeuralPriorApplication:
+    run = ForecastRunContract.from_inputs(
+        NowcastConfig(),
+        frames,
+        torch.ones_like(frames, dtype=torch.bool),
+        None,
+    )
+    runner = _prior_runner(
+        offset,
+        role,
+        dependency=dependency,
+        support_policy=support_policy,
+        maximum_added_area_km2=maximum_added_area_km2,
+        maximum_added_echo_integral=maximum_added_echo_integral,
+    )
+    return runner.infer(
+        frames,
+        input_run=run,
+        role=cast(Literal["candidate", "parent"], role),
+    )
+
+
+def _prior_runner(
+    offset: float,
+    role: str,
+    *,
+    dependency: Literal["exogenous", "radar_dependent"] = "radar_dependent",
+    support_policy: Literal["causal_clip", "expand_control"] = "causal_clip",
+    maximum_added_area_km2: float = 0.0,
+    maximum_added_echo_integral: float = 0.0,
+) -> NeuralPriorInferenceRunner:
+    return NeuralPriorInferenceRunner(
+        _OffsetPrior(offset).eval(),
+        lambda value: value[0],
+        feature_extractor_digest="3" * 64,
+        model_contract_digest="4" * 64,
+        feature_schema_digest="5" * 64,
+        training_manifest_digest=("6" if role == "candidate" else "7") * 64,
+        inference_algorithm_digest="8" * 64,
+        numerical_runtime_digest="9" * 64,
+        dependency=dependency,
+        support_policy=support_policy,
+        maximum_added_area_km2=maximum_added_area_km2,
+        maximum_added_echo_integral=maximum_added_echo_integral,
+    )
 
 
 def advect(echo: torch.Tensor, displacement: torch.Tensor) -> torch.Tensor:
@@ -72,6 +207,295 @@ def linear_to_dbz(
 
 
 class VariationalAnalysisTests(unittest.TestCase):
+    def test_neural_prior_application_requires_reproducible_inference(self) -> None:
+        frames = torch.full((3, 4, 4), -10.0, dtype=torch.float64)
+        runner = _prior_runner(20.0, "candidate")
+        run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        application = runner.infer(
+            frames,
+            input_run=run,
+            role="candidate",
+        )
+
+        runner.reproduce(application, frames)
+        with self.assertRaisesRegex(ValueError, "cannot be reproduced"):
+            runner.reproduce(application, frames + 1.0)
+        with self.assertRaisesRegex(TypeError, "InferenceRunner"):
+            NeuralPriorApplication()
+        application.initial_background_dbz[0, 0] = 99.0
+        with self.assertRaisesRegex(ValueError, "application digest"):
+            runner.reproduce(application, frames)
+
+    def test_radar_dependent_prior_exposes_matching_jvp_and_vjp(self) -> None:
+        frames = torch.arange(48, dtype=torch.float64).reshape(3, 4, 4)
+        tangent = torch.ones_like(frames)
+        cotangent = torch.full((4, 4), 2.0, dtype=torch.float64)
+        runner = _prior_runner(1.0, "candidate")
+
+        torch.testing.assert_close(runner.jvp(frames, tangent), tangent[0])
+        expected = torch.zeros_like(frames)
+        expected[0] = cotangent
+        torch.testing.assert_close(runner.vjp(frames, cotangent), expected)
+
+    def test_prior_execution_digest_binds_the_actual_forward_code(self) -> None:
+        common = dict(
+            feature_extractor_digest="3" * 64,
+            model_contract_digest="4" * 64,
+            feature_schema_digest="5" * 64,
+            training_manifest_digest="6" * 64,
+            inference_algorithm_digest="8" * 64,
+            numerical_runtime_digest="9" * 64,
+            dependency="radar_dependent",
+        )
+        first = NeuralPriorInferenceRunner(
+            _OffsetPrior(1.0).eval(),
+            lambda value: value[0],
+            **common,
+        )
+        second = NeuralPriorInferenceRunner(
+            _ScaledOffsetPrior(1.0).eval(),
+            lambda value: value[0],
+            **common,
+        )
+
+        self.assertNotEqual(
+            first.execution_contract_digest,
+            second.execution_contract_digest,
+        )
+
+    def test_prior_execution_digest_binds_recursive_helpers_and_object_state(
+        self,
+    ) -> None:
+        common = dict(
+            feature_extractor_digest="3" * 64,
+            model_contract_digest="4" * 64,
+            feature_schema_digest="5" * 64,
+            training_manifest_digest="6" * 64,
+            inference_algorithm_digest="8" * 64,
+            numerical_runtime_digest="9" * 64,
+            dependency="radar_dependent",
+        )
+        global _HELPER_SCALE
+        _HELPER_SCALE = 1.0
+        first = NeuralPriorInferenceRunner(
+            _OffsetPrior(0.0).eval(),
+            _helper_feature,
+            **common,
+        )
+        _HELPER_SCALE = 2.0
+        try:
+            second = NeuralPriorInferenceRunner(
+                _OffsetPrior(0.0).eval(),
+                _helper_feature,
+                **common,
+            )
+        finally:
+            _HELPER_SCALE = 1.0
+        stateful_first = NeuralPriorInferenceRunner(
+            _OffsetPrior(0.0).eval(),
+            _StatefulExtractor(1.0),
+            **common,
+        )
+        stateful_second = NeuralPriorInferenceRunner(
+            _OffsetPrior(0.0).eval(),
+            _StatefulExtractor(2.0),
+            **common,
+        )
+        private_first = NeuralPriorInferenceRunner(
+            _PrivateScalePrior(1.0).eval(),
+            lambda value: value[0],
+            **common,
+        )
+        private_second = NeuralPriorInferenceRunner(
+            _PrivateScalePrior(2.0).eval(),
+            lambda value: value[0],
+            **common,
+        )
+
+        self.assertNotEqual(first.neural_prior_digest, second.neural_prior_digest)
+        self.assertNotEqual(
+            stateful_first.neural_prior_digest,
+            stateful_second.neural_prior_digest,
+        )
+        self.assertNotEqual(
+            private_first.neural_prior_digest,
+            private_second.neural_prior_digest,
+        )
+
+        global _MODEL_HELPER_SCALE
+        _MODEL_HELPER_SCALE = 1.0
+        helper_first = NeuralPriorInferenceRunner(
+            _HelperMethodPrior().eval(),
+            lambda value: value[0],
+            **common,
+        )
+        _MODEL_HELPER_SCALE = 2.0
+        try:
+            helper_second = NeuralPriorInferenceRunner(
+                _HelperMethodPrior().eval(),
+                lambda value: value[0],
+                **common,
+            )
+            self.assertNotEqual(
+                helper_first.neural_prior_digest,
+                helper_second.neural_prior_digest,
+            )
+            with self.assertRaisesRegex(ValueError, "model code changed"):
+                values = torch.ones((3, 2, 2), dtype=torch.float64)
+                helper_first.jvp(values, values)
+        finally:
+            _MODEL_HELPER_SCALE = 1.0
+
+        patched = NeuralPriorInferenceRunner(
+            _HelperMethodPrior().eval(),
+            lambda value: value[0],
+            **common,
+        )
+
+        def replacement(
+            model: _HelperMethodPrior,
+            value: torch.Tensor,
+        ) -> torch.Tensor:
+            return value * 3.0 + model.anchor
+
+        with patch.object(_HelperMethodPrior, "helper", replacement):
+            with self.assertRaisesRegex(ValueError, "model code changed"):
+                values = torch.ones((3, 2, 2), dtype=torch.float64)
+                patched.jvp(values, values)
+
+    def test_prior_runner_rejects_mutated_non_parameter_state(self) -> None:
+        model = _ConfigurablePrior().eval()
+        runner = NeuralPriorInferenceRunner(
+            model,
+            lambda value: value[0],
+            feature_extractor_digest="3" * 64,
+            model_contract_digest="4" * 64,
+            feature_schema_digest="5" * 64,
+            training_manifest_digest="6" * 64,
+            inference_algorithm_digest="8" * 64,
+            numerical_runtime_digest="9" * 64,
+            dependency="radar_dependent",
+        )
+        model.scale = 2.0
+
+        with self.assertRaisesRegex(ValueError, "model code changed"):
+            values = torch.ones((3, 2, 2), dtype=torch.float64)
+            runner.jvp(values, values)
+
+    def test_physical_radar_delta_includes_the_prior_jvp(self) -> None:
+        frames = torch.full((3, 4, 4), 20.0, dtype=torch.float64)
+        runner = _prior_runner(1.0, "candidate")
+        application = _prior(frames, 1.0, "candidate")
+        _, analysis = variational_nowcast(frames, neural_prior=application)
+        assert analysis.linearization is not None
+        delta = torch.zeros_like(frames)
+        delta[0, 0, 0] = 0.1
+
+        with self.assertRaisesRegex(ValueError, "requires a runner"):
+            VariationalObservationPerturbation.from_radar_dbz_delta(
+                delta,
+                analysis.linearization,
+            )
+        perturbation = VariationalObservationPerturbation.from_radar_dbz_delta(
+            delta,
+            analysis.linearization,
+            neural_prior_runner=runner,
+            neural_prior_application=application,
+        )
+        assert perturbation.initial_background_dbz is not None
+        torch.testing.assert_close(
+            perturbation.initial_background_dbz[0],
+            delta[0],
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "radar-prior-linearization.npz"
+            save_p1_linearization(analysis, path)
+            restarted = load_p1_linearization(path)
+        restarted_perturbation = (
+            VariationalObservationPerturbation.from_radar_dbz_delta(
+                delta,
+                restarted.linearization,
+                neural_prior_runner=runner,
+            )
+        )
+        assert restarted_perturbation.initial_background_dbz is not None
+        torch.testing.assert_close(
+            restarted_perturbation.initial_background_dbz[0],
+            delta[0],
+        )
+
+    def test_prior_jvp_respects_output_clamp_branch(self) -> None:
+        frames = torch.full((3, 4, 4), 30.0, dtype=torch.float64)
+        application = _prior(frames, 100.0, "candidate")
+        _, frozen = prepare_analysis(frames, neural_prior=application)
+
+        self.assertFalse(
+            bool(torch.any(sensitivity_module._neural_prior_derivative_mask(frozen)))
+        )
+
+    def test_neural_prior_support_is_clipped_or_budgeted(self) -> None:
+        frames = torch.full((3, 4, 4), -10.0, dtype=torch.float64)
+        clipped_runner = _prior_runner(30.0, "candidate")
+        expanded_runner = _prior_runner(
+            30.0,
+            "candidate",
+            support_policy="expand_control",
+            maximum_added_area_km2=16.0,
+            maximum_added_echo_integral=1.0e9,
+        )
+        self.assertNotEqual(
+            clipped_runner.neural_prior_digest,
+            expanded_runner.neural_prior_digest,
+        )
+        clipped = _prior(frames, 30.0, "candidate")
+        _, clipped_frozen = prepare_analysis(frames, neural_prior=clipped)
+        self.assertEqual(clipped_frozen.active_field_index.numel(), 0)
+        self.assertTrue(bool(clipped_frozen.initial_background_dbz.eq(-10.0).all()))
+
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-08T00:00:00Z",
+                "2026-08-08T00:10:00Z",
+                "2026-08-08T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="a" * 64,
+        )
+        expanded = _prior(
+            frames,
+            30.0,
+            "candidate",
+            support_policy="expand_control",
+            maximum_added_area_km2=16.0,
+            maximum_added_echo_integral=1.0e9,
+        )
+        _, expanded_frozen = prepare_analysis(
+            frames,
+            grid_time_contract=contract,
+            neural_prior=expanded,
+        )
+        self.assertEqual(expanded_frozen.active_field_index.numel(), 16)
+        with self.assertRaisesRegex(ValueError, "added area"):
+            prepare_analysis(
+                frames,
+                grid_time_contract=contract,
+                neural_prior=_prior(
+                    frames,
+                    30.0,
+                    "candidate",
+                    support_policy="expand_control",
+                    maximum_added_area_km2=15.0,
+                    maximum_added_echo_integral=1.0e9,
+                ),
+            )
+
     def test_neural_prior_output_changes_the_actual_p1_analysis(self) -> None:
         coordinates = torch.arange(8, dtype=torch.float64)
         y, x = torch.meshgrid(coordinates, coordinates, indexing="ij")
@@ -83,32 +507,15 @@ class VariationalAnalysisTests(unittest.TestCase):
                 for center in (3.0, 3.5, 4.0)
             )
         )
-        common = {
-            "model_contract_digest": "3" * 64,
-            "feature_schema_digest": "4" * 64,
-            "training_manifest_digest": "5" * 64,
-        }
-        candidate = NeuralPriorApplication(
-            frames[0] + 0.5,
-            "1" * 64,
-            role="candidate",
-            **common,
-        )
-        parent = NeuralPriorApplication(
-            frames[0] - 0.5,
-            "2" * 64,
-            role="parent",
-            **common,
-        )
+        candidate = _prior(frames, 0.5, "candidate")
+        parent = _prior(frames, -0.5, "parent")
         observations, candidate_frozen = prepare_analysis(
             frames, neural_prior=candidate
         )
         _, parent_frozen = prepare_analysis(frames, neural_prior=parent)
         candidate_analysis = solve_analysis(observations, candidate_frozen)
         parent_analysis = solve_analysis(observations, parent_frozen)
-        candidate_forecast, _ = variational_nowcast(
-            frames, neural_prior=candidate
-        )
+        candidate_forecast, _ = variational_nowcast(frames, neural_prior=candidate)
         parent_forecast, _ = variational_nowcast(frames, neural_prior=parent)
 
         self.assertNotEqual(candidate.application_digest, parent.application_digest)
@@ -120,12 +527,8 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
         self.assertFalse(
             torch.equal(
-                forecast_linear_at_step(
-                    candidate_analysis.state, 1, NowcastConfig()
-                ),
-                forecast_linear_at_step(
-                    parent_analysis.state, 1, NowcastConfig()
-                ),
+                forecast_linear_at_step(candidate_analysis.state, 1, NowcastConfig()),
+                forecast_linear_at_step(parent_analysis.state, 1, NowcastConfig()),
             )
         )
         self.assertEqual(
@@ -136,6 +539,95 @@ class VariationalAnalysisTests(unittest.TestCase):
             candidate_forecast.run.analysis_input_digest,
             parent_forecast.run.analysis_input_digest,
         )
+
+    def test_neural_prior_uncertainty_residual_uses_dbz_jacobian(self) -> None:
+        frames = torch.full((3, 4, 4), 20.0, dtype=torch.float64)
+        prior = _prior(frames, 0.5, "candidate")
+        observations, frozen = prepare_analysis(frames, neural_prior=prior)
+        control = torch.zeros(
+            frozen.active_field_index.numel() + 3,
+            dtype=frames.dtype,
+        )
+        tangent = torch.zeros_like(control)
+        tangent[0] = 1.0
+        observation_size = observations.dbz.numel()
+        field_size = frozen.active_field_index.numel()
+
+        def prior_residual(value: torch.Tensor) -> torch.Tensor:
+            residual = residual_vector(value, observations, frozen)
+            return residual[observation_size : observation_size + field_size]
+
+        derivative = torch.func.jvp(prior_residual, (control,), (tangent,))[1]
+        epsilon = 1.0e-6
+        finite_difference = (
+            prior_residual(control + epsilon * tangent)
+            - prior_residual(control - epsilon * tangent)
+        ) / (2.0 * epsilon)
+
+        torch.testing.assert_close(
+            derivative,
+            finite_difference,
+            rtol=1.0e-7,
+            atol=1.0e-9,
+        )
+
+    def test_neural_prior_linearization_round_trips_all_prior_contracts(self) -> None:
+        coordinates = torch.arange(8, dtype=torch.float64)
+        y, x = torch.meshgrid(coordinates, coordinates, indexing="ij")
+        frames = torch.stack(
+            tuple(
+                -10.0
+                + 40.0
+                * torch.exp(-((y - center).square() + (x - center).square()) / 4.0)
+                for center in (3.0, 3.5, 4.0)
+            )
+        )
+        prior = _prior(frames, 0.5, "candidate")
+        loose = AnalysisConfig(
+            final_linearization_relative_stationarity_tolerance=1.0e9,
+            final_robust_relative_stationarity_tolerance=1.0e9,
+            final_field_gradient_max_tolerance=1.0e9,
+            final_irls_relative_weight_tolerance=1.0e9,
+        )
+        _, analysis = variational_nowcast(
+            frames,
+            neural_prior=prior,
+            analysis_config=loose,
+        )
+        self.assertTrue(analysis.fso_eligible)
+        assert analysis.linearization is not None
+        original = analysis.linearization.frozen
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "linearization.npz"
+            save_p1_linearization(analysis, path)
+            restarted = load_p1_linearization(path)
+
+        retained = restarted.linearization.frozen
+        self.assertEqual(retained.neural_prior_dependency, "radar_dependent")
+        self.assertEqual(
+            retained.neural_prior_application_digest,
+            prior.application_digest,
+        )
+        self.assertEqual(
+            retained.neural_prior_execution_contract_digest,
+            prior.inference_evidence.execution_contract_digest,
+        )
+        self.assertEqual(retained.neural_prior_role, "candidate")
+        torch.testing.assert_close(
+            retained.neural_prior_raw_background_dbz,
+            prior.initial_background_dbz,
+        )
+        torch.testing.assert_close(
+            retained.neural_prior_std_dbz,
+            original.neural_prior_std_dbz,
+        )
+        self.assertTrue(
+            torch.equal(
+                retained.neural_prior_valid_mask,
+                original.neural_prior_valid_mask,
+            )
+        )
+
     nowcast_config = NowcastConfig()
     analysis_config = AnalysisConfig(
         censored_background_policy="detection_limit",
@@ -292,9 +784,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             capped.initial_background_dbz,
             config.detection_limit_dbz,
         )
-        self.assertTrue(
-            bool(capped.initial_background_dbz.lt(detection_limit).all())
-        )
+        self.assertTrue(bool(capped.initial_background_dbz.lt(detection_limit).all()))
 
     def test_p1_run_lineage_covers_config_std_and_quality(self) -> None:
         frames = torch.full((3, 6, 6), 20.0, dtype=torch.float64)
@@ -333,10 +823,8 @@ class VariationalAnalysisTests(unittest.TestCase):
                 base.run.input_bundle_digest,
             )
             self.assertTrue(
-                variant.run.analysis_config_digest
-                != base.run.analysis_config_digest
-                or variant.run.analysis_input_digest
-                != base.run.analysis_input_digest
+                variant.run.analysis_config_digest != base.run.analysis_config_digest
+                or variant.run.analysis_input_digest != base.run.analysis_input_digest
             )
             self.assertNotEqual(
                 variant.forecast_run_digest,
@@ -399,25 +887,18 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         self.assertFalse(analysis.used_fallback, analysis.reason)
         self.assertTrue(
+            bool(torch.isfinite(analysis.metadata.posterior_velocity_uncertainty_mps))
+        )
+        self.assertTrue(
             bool(
                 torch.isfinite(
-                    analysis.metadata.posterior_velocity_uncertainty_mps
+                    analysis.metadata.posterior_log_growth_uncertainty_per_step
                 )
             )
         )
         self.assertTrue(
             bool(
-                torch.isfinite(
-                    analysis.metadata
-                    .posterior_log_growth_uncertainty_per_step
-                )
-            )
-        )
-        self.assertTrue(
-            bool(
-                torch.isfinite(
-                    analysis.metadata.p1_velocity_saturation_uncertainty_mps
-                )
+                torch.isfinite(analysis.metadata.p1_velocity_saturation_uncertainty_mps)
             )
         )
         expected_velocity_uncertainty = torch.sqrt(
@@ -431,9 +912,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             forecast.forecast_velocity_uncertainty_mps,
             expected_velocity_uncertainty,
         )
-        self.assertTrue(
-            bool(torch.all(forecast.radar_dynamics_anchored_valid_mask))
-        )
+        self.assertTrue(bool(torch.all(forecast.radar_dynamics_anchored_valid_mask)))
 
         stale_pair_diagnostics = replace(
             analysis.metadata,
@@ -467,16 +946,10 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         self.assertFalse(analysis.used_fallback, analysis.reason)
         self.assertTrue(
-            bool(
-                torch.isnan(
-                    analysis.metadata.posterior_velocity_uncertainty_mps
-                )
-            )
+            bool(torch.isnan(analysis.metadata.posterior_velocity_uncertainty_mps))
         )
         self.assertFalse(bool(torch.any(forecast.forecast_confidence)))
-        self.assertFalse(
-            bool(torch.any(forecast.radar_dynamics_anchored_valid_mask))
-        )
+        self.assertFalse(bool(torch.any(forecast.radar_dynamics_anchored_valid_mask)))
 
     def stationary_problem(
         self,
@@ -634,15 +1107,13 @@ class VariationalAnalysisTests(unittest.TestCase):
             frozen.analysis_config,
         )
         self.assertIs(unchanged, values)
-        unchanged_tiled = (
-            variational_module._apply_observation_error_whitener(
-                values,
-                observations,
-                replace(
-                    frozen.analysis_config,
-                    observation_common_bias_tile_size_px=2,
-                ),
-            )
+        unchanged_tiled = variational_module._apply_observation_error_whitener(
+            values,
+            observations,
+            replace(
+                frozen.analysis_config,
+                observation_common_bias_tile_size_px=2,
+            ),
         )
         self.assertIs(unchanged_tiled, values)
 
@@ -655,16 +1126,13 @@ class VariationalAnalysisTests(unittest.TestCase):
                         observation_common_bias_scope=scope,
                         observation_common_bias_tile_size_px=tile_size,
                     )
-                    actual = (
-                        variational_module._apply_observation_error_whitener(
-                            values,
-                            observations,
-                            config,
-                        )
+                    actual = variational_module._apply_observation_error_whitener(
+                        values,
+                        observations,
+                        config,
                     )
                     mode = (
-                        torch.sqrt(observations.quality_weight)
-                        / observations.std_dbz
+                        torch.sqrt(observations.quality_weight) / observations.std_dbz
                     )
                     covariance = torch.eye(
                         values.numel(),
@@ -698,8 +1166,7 @@ class VariationalAnalysisTests(unittest.TestCase):
                                 )
                     eigenvalues, eigenvectors = torch.linalg.eigh(covariance)
                     expected = eigenvectors @ (
-                        torch.rsqrt(eigenvalues)
-                        * (eigenvectors.mT @ values.flatten())
+                        torch.rsqrt(eigenvalues) * (eigenvectors.mT @ values.flatten())
                     )
                     torch.testing.assert_close(
                         actual,
@@ -718,13 +1185,11 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
         for scope in ("per_frame", "all_times"):
             with self.subTest(group_scope=scope):
-                canonical = (
-                    variational_module._canonical_common_bias_group_index(
-                        raw_groups,
-                        frame_shape=tuple(observations.dbz.shape),
-                        temporal_scope=scope,
-                        device=observations.dbz.device,
-                    )
+                canonical = variational_module._canonical_common_bias_group_index(
+                    raw_groups,
+                    frame_shape=tuple(observations.dbz.shape),
+                    temporal_scope=scope,
+                    device=observations.dbz.device,
                 )
                 grouped_observations = replace(
                     observations,
@@ -734,21 +1199,14 @@ class VariationalAnalysisTests(unittest.TestCase):
                     frozen.analysis_config,
                     observation_common_bias_std_dbz=1.5,
                     observation_common_bias_scope=scope,
-                    observation_common_bias_group_map_digest=(
-                        tensor_digest(canonical)
-                    ),
+                    observation_common_bias_group_map_digest=(tensor_digest(canonical)),
                 )
-                actual = (
-                    variational_module._apply_observation_error_whitener(
-                        values,
-                        grouped_observations,
-                        config,
-                    )
+                actual = variational_module._apply_observation_error_whitener(
+                    values,
+                    grouped_observations,
+                    config,
                 )
-                mode = (
-                    torch.sqrt(observations.quality_weight)
-                    / observations.std_dbz
-                )
+                mode = torch.sqrt(observations.quality_weight) / observations.std_dbz
                 covariance = torch.eye(
                     values.numel(),
                     dtype=values.dtype,
@@ -765,8 +1223,7 @@ class VariationalAnalysisTests(unittest.TestCase):
                     )
                 eigenvalues, eigenvectors = torch.linalg.eigh(covariance)
                 expected = eigenvectors @ (
-                    torch.rsqrt(eigenvalues)
-                    * (eigenvectors.mT @ values.flatten())
+                    torch.rsqrt(eigenvalues) * (eigenvectors.mT @ values.flatten())
                 )
                 torch.testing.assert_close(
                     actual,
@@ -819,8 +1276,9 @@ class VariationalAnalysisTests(unittest.TestCase):
                     common_bias_mode_weights=canonical_weights,
                 )
                 mode_digest = (
-                    variational_module
-                    .observation_common_bias_mode_weights_digest(mode_weights)
+                    variational_module.observation_common_bias_mode_weights_digest(
+                        mode_weights
+                    )
                 )
                 config = replace(
                     frozen.analysis_config,
@@ -828,16 +1286,13 @@ class VariationalAnalysisTests(unittest.TestCase):
                     observation_common_bias_scope=scope,
                     observation_common_bias_mode_weights_digest=mode_digest,
                 )
-                actual = (
-                    variational_module._apply_observation_error_whitener(
-                        values,
-                        weighted_observations,
-                        config,
-                    )
+                actual = variational_module._apply_observation_error_whitener(
+                    values,
+                    weighted_observations,
+                    config,
                 )
                 base_mode = (
-                    torch.sqrt(observations.quality_weight)
-                    / observations.std_dbz
+                    torch.sqrt(observations.quality_weight) / observations.std_dbz
                 )
                 covariance = torch.eye(
                     values.numel(),
@@ -858,9 +1313,7 @@ class VariationalAnalysisTests(unittest.TestCase):
                         bias_mode = torch.zeros_like(values)
                         for frame in frame_group:
                             weight_frame = (
-                                0
-                                if weights_by_frame.shape[0] == 1
-                                else frame
+                                0 if weights_by_frame.shape[0] == 1 else frame
                             )
                             bias_mode[frame] = (
                                 1.5
@@ -874,8 +1327,7 @@ class VariationalAnalysisTests(unittest.TestCase):
                         )
                 eigenvalues, eigenvectors = torch.linalg.eigh(covariance)
                 expected = eigenvectors @ (
-                    torch.rsqrt(eigenvalues)
-                    * (eigenvectors.mT @ values.flatten())
+                    torch.rsqrt(eigenvalues) * (eigenvectors.mT @ values.flatten())
                 )
                 torch.testing.assert_close(
                     actual,
@@ -903,10 +1355,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         torch.testing.assert_close(
             precision,
             observations.quality_weight
-            / (
-                observations.std_dbz.square()
-                + 1.5**2 * observations.quality_weight
-            ),
+            / (observations.std_dbz.square() + 1.5**2 * observations.quality_weight),
         )
         grouped_precision = variational_module._observation_marginal_precision(
             replace(
@@ -944,9 +1393,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             0.5,
             dtype=torch.float64,
         )
-        original = (
-            variational_module._low_rank_inverse_sqrt_correction_from_gram
-        )
+        original = variational_module._low_rank_inverse_sqrt_correction_from_gram
         with patch.object(
             variational_module,
             "_low_rank_inverse_sqrt_correction_from_gram",
@@ -955,9 +1402,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             observations, frozen = prepare_analysis(
                 frames,
                 nowcast_config=NowcastConfig(),
-                analysis_config=AnalysisConfig(
-                    observation_common_bias_std_dbz=1.0
-                ),
+                analysis_config=AnalysisConfig(observation_common_bias_std_dbz=1.0),
                 observation_common_bias_mode_weights=mode_weights,
             )
             count_after_freeze = correction.call_count
@@ -1028,10 +1473,8 @@ class VariationalAnalysisTests(unittest.TestCase):
             observation_common_bias_mode_weights=mode_weights,
         )
         control = initial_control(frozen)
-        operations = (
-            variational_module._observation_whitener_operations_per_apply(
-                observations
-            )
+        operations = variational_module._observation_whitener_operations_per_apply(
+            observations
         )
         with (
             variational_module._count_observation_whitener_applies(
@@ -1135,13 +1578,9 @@ class VariationalAnalysisTests(unittest.TestCase):
         for digest in ("bad", "A" * 64, cast(str, 1)):
             with self.subTest(group_digest=digest):
                 with self.assertRaisesRegex(ValueError, "group_map_digest"):
-                    AnalysisConfig(
-                        observation_common_bias_group_map_digest=digest
-                    )
+                    AnalysisConfig(observation_common_bias_group_map_digest=digest)
                 with self.assertRaisesRegex(ValueError, "mode_weights_digest"):
-                    AnalysisConfig(
-                        observation_common_bias_mode_weights_digest=digest
-                    )
+                    AnalysisConfig(observation_common_bias_mode_weights_digest=digest)
 
         frames = torch.full((3, 4, 4), 20.0, dtype=torch.float64)
         diagonal, _ = variational_nowcast(
@@ -1224,15 +1663,12 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
         self.assertIsNotNone(grouped_observations.common_bias_group_index)
         expected_group_digest = (
-            variational_module.observation_common_bias_group_map_digest(
-                group_map
-            )
+            variational_module.observation_common_bias_group_map_digest(group_map)
         )
         assert grouped.run.analysis_config_json is not None
         self.assertIn(expected_group_digest, grouped.run.analysis_config_json)
         self.assertEqual(
-            grouped_frozen.analysis_config
-            .observation_common_bias_group_map_digest,
+            grouped_frozen.analysis_config.observation_common_bias_group_map_digest,
             expected_group_digest,
         )
 
@@ -1257,9 +1693,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             prepare_analysis(
                 frames,
                 analysis_config=correlated_config,
-                observation_common_bias_group_index=group_map.to(
-                    dtype=torch.float64
-                ),
+                observation_common_bias_group_index=group_map.to(dtype=torch.float64),
             )
         invalid_groups = group_map.clone()
         invalid_groups[0, 0] = -2
@@ -1315,10 +1749,8 @@ class VariationalAnalysisTests(unittest.TestCase):
                 analysis_config=correlated_config,
                 observation_common_bias_mode_weights=invalid_mode_weights,
             )
-        mode_digest = (
-            variational_module.observation_common_bias_mode_weights_digest(
-                mode_weights
-            )
+        mode_digest = variational_module.observation_common_bias_mode_weights_digest(
+            mode_weights
         )
         prepared_modes, prepared_mode_frozen = prepare_analysis(
             frames,
@@ -1330,8 +1762,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
         self.assertIsNotNone(prepared_modes.common_bias_mode_weights)
         self.assertEqual(
-            prepared_mode_frozen.analysis_config
-            .observation_common_bias_mode_weights_digest,
+            prepared_mode_frozen.analysis_config.observation_common_bias_mode_weights_digest,
             mode_digest,
         )
 
@@ -1460,13 +1891,11 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
         active_mask = torch.zeros_like(frozen.initial_support_mask)
         active_mask.flatten()[active_index] = True
-        left, right, physical_weight = (
-            variational_module._active_smoothness_graph(
-                active_mask,
-                active_index,
-                frozen.initial_background_dbz,
-                None,
-            )
+        left, right, physical_weight = variational_module._active_smoothness_graph(
+            active_mask,
+            active_index,
+            frozen.initial_background_dbz,
+            None,
         )
         frozen = replace(
             frozen,
@@ -1490,10 +1919,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         torch.testing.assert_close(
             smoothness,
             torch.tensor(
-                (
-                    2.0
-                    * math.sqrt(self.analysis_config.field_smoothness_weight),
-                ),
+                (2.0 * math.sqrt(self.analysis_config.field_smoothness_weight),),
                 dtype=control.dtype,
             ),
         )
@@ -1759,8 +2185,7 @@ class VariationalAnalysisTests(unittest.TestCase):
                 self.assertTrue(bool(torch.all(torch.isfinite(velocity))))
                 self.assertLessEqual(
                     float(torch.linalg.vector_norm(velocity)),
-                    30.0
-                    * (1.0 + 10.0 * torch.finfo(velocity.dtype).eps),
+                    30.0 * (1.0 + 10.0 * torch.finfo(velocity.dtype).eps),
                 )
 
     def test_solver_reuses_pullbacks_and_field_diagnostic_adds_two(self) -> None:
@@ -1786,9 +2211,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertGreater(result.pcg_iterations, 0)
         self.assertEqual(
             vjp_calls,
-            result.outer_iterations
-            + result.linearization_polish_iterations
-            + 5,
+            result.outer_iterations + result.linearization_polish_iterations + 5,
         )
 
     def test_final_linearization_is_polished_to_stationarity(self) -> None:
@@ -1798,13 +2221,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             tuple(
                 -10.0
                 + 40.0
-                * torch.exp(
-                    -(
-                        (y - 3.5).square()
-                        + (x - center_x).square()
-                    )
-                    / 4.0
-                )
+                * torch.exp(-((y - 3.5).square() + (x - center_x).square()) / 4.0)
                 for center_x in (3.0, 3.5, 4.0)
             )
         )
@@ -1865,9 +2282,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             frozen,
         )
 
-        self.assertTrue(
-            variational_module._analysis_remap_cells_match(control, frozen)
-        )
+        self.assertTrue(variational_module._analysis_remap_cells_match(control, frozen))
         crossed = control.clone()
         crossed[-3] = 1.0e-3
         self.assertFalse(
@@ -1929,17 +2344,11 @@ class VariationalAnalysisTests(unittest.TestCase):
         result = solve_analysis(observations, frozen)
 
         self.assertFalse(result.used_fallback, result.reason)
-        self.assertIsNotNone(
-            result.regularized_dynamics_hessian_eigenvalues
-        )
-        self.assertIsNotNone(
-            result.regularized_dynamics_hessian_condition_number
-        )
+        self.assertIsNotNone(result.regularized_dynamics_hessian_eigenvalues)
+        self.assertIsNotNone(result.regularized_dynamics_hessian_condition_number)
         eigenvalues = result.regularized_dynamics_hessian_eigenvalues
         assert eigenvalues is not None
-        condition_number = (
-            result.regularized_dynamics_hessian_condition_number
-        )
+        condition_number = result.regularized_dynamics_hessian_condition_number
         assert condition_number is not None
         diagnostic_frozen = freeze_irls_weights(
             result.control,
@@ -1970,12 +2379,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             dynamics_columns.append(cast(torch.Tensor, jvp_result[1]))
         expected_hessian = torch.stack(
             tuple(
-                torch.stack(
-                    tuple(
-                        torch.dot(left, right)
-                        for right in dynamics_columns
-                    )
-                )
+                torch.stack(tuple(torch.dot(left, right) for right in dynamics_columns))
                 for left in dynamics_columns
             )
         ) + torch.eye(3, dtype=torch.float64)
@@ -2069,8 +2473,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             places=7,
         )
         expected_conditioned_dimension = torch.sum(
-            expected_conditioned_eigenvalues
-            / (1.0 + expected_conditioned_eigenvalues)
+            expected_conditioned_eigenvalues / (1.0 + expected_conditioned_eigenvalues)
         )
         self.assertAlmostEqual(
             result.field_conditioned_dynamics_data_effective_dimension or 0.0,
@@ -2176,9 +2579,7 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         with patch(
             "advar.variational._field_conditioned_dynamics_gram",
-            side_effect=AssertionError(
-                "degraded analysis entered field conditioning"
-            ),
+            side_effect=AssertionError("degraded analysis entered field conditioning"),
         ):
             result = variational_module._analysis_result(
                 initial_control(frozen),
@@ -2196,12 +2597,8 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertFalse(result.used_fallback)
         self.assertTrue(result.degraded)
         self.assertIsNotNone(result.dynamics_data_gram_eigenvalues)
-        self.assertIsNone(
-            result.field_conditioned_dynamics_data_gram_eigenvalues
-        )
-        self.assertIsNone(
-            result.field_conditioned_dynamics_data_effective_dimension
-        )
+        self.assertIsNone(result.field_conditioned_dynamics_data_gram_eigenvalues)
+        self.assertIsNone(result.field_conditioned_dynamics_data_effective_dimension)
 
     def test_ad_hot_path_has_no_boundary_validation(self) -> None:
         observations, frozen = self.stationary_problem()
@@ -2213,12 +2610,15 @@ class VariationalAnalysisTests(unittest.TestCase):
             frozen,
         )
 
-        with patch(
-            "advar.variational._validate_observations",
-            side_effect=AssertionError("observation validation entered"),
-        ), patch(
-            "advar.variational.validate_physical_echo",
-            side_effect=AssertionError("physical audit entered"),
+        with (
+            patch(
+                "advar.variational._validate_observations",
+                side_effect=AssertionError("observation validation entered"),
+            ),
+            patch(
+                "advar.variational.validate_physical_echo",
+                side_effect=AssertionError("physical audit entered"),
+            ),
         ):
             residual = residual_fn(control)
             product = gauss_newton_hvp(
@@ -2297,9 +2697,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             torch.arange(width, dtype=torch.float64),
             indexing="ij",
         )
-        initial = 2.0e4 * torch.exp(
-            -((y - 2.7) ** 2 + (x - 3.1) ** 2) / 2.0
-        )
+        initial = 2.0e4 * torch.exp(-((y - 2.7) ** 2 + (x - 3.1) ** 2) / 2.0)
         displacement = torch.tensor([0.45, -0.35], dtype=torch.float64)
         growth = torch.tensor(0.025, dtype=torch.float64)
         truth = torch.stack(
@@ -2359,9 +2757,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             torch.arange(width, dtype=torch.float64),
             indexing="ij",
         )
-        initial = 2.0e4 * torch.exp(
-            -((y - 2.7) ** 2 + (x - 3.1) ** 2) / 2.0
-        )
+        initial = 2.0e4 * torch.exp(-((y - 2.7) ** 2 + (x - 3.1) ** 2) / 2.0)
         displacement = torch.tensor([-0.35, 0.0], dtype=torch.float64)
         truth = torch.stack(
             (
@@ -2380,9 +2776,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         zero_motion = RadarState(
             echo_linear=baseline.echo_linear,
             displacement_yx=torch.zeros_like(baseline.displacement_yx),
-            log_growth_per_step=torch.zeros_like(
-                baseline.log_growth_per_step
-            ),
+            log_growth_per_step=torch.zeros_like(baseline.log_growth_per_step),
         )
         frozen = replace(
             frozen,
@@ -2449,12 +2843,9 @@ class VariationalAnalysisTests(unittest.TestCase):
             displacement,
         )
         expected_support = (
-            observation_support
-            + (1.0 - observation_support) * background_support
+            observation_support + (1.0 - observation_support) * background_support
         )
-        expected_background_support = (
-            (1.0 - observation_support) * background_support
-        )
+        expected_background_support = (1.0 - observation_support) * background_support
         torch.testing.assert_close(
             result.metadata.source_support,
             expected_support,
@@ -2562,12 +2953,8 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertEqual(result.metadata.state_path_pair_count, 0)
         self.assertTrue(math.isnan(result.metadata.state_path_minimum_psr))
         self.assertIsNone(result.metadata.state_path_age_minutes)
-        self.assertTrue(
-            math.isnan(result.metadata.minimum_growth_overlap_support)
-        )
-        self.assertTrue(
-            math.isnan(result.metadata.minimum_growth_overlap_area_km2)
-        )
+        self.assertTrue(math.isnan(result.metadata.minimum_growth_overlap_support))
+        self.assertTrue(math.isnan(result.metadata.minimum_growth_overlap_area_km2))
 
     def test_p1_verification_excludes_local_latest_observation_mismatch(
         self,
@@ -3089,8 +3476,8 @@ class VariationalAnalysisTests(unittest.TestCase):
             frozen,
         )
         self.assertTrue(torch.isfinite(warm_cost))
-        _, seed_count, seed_prior_cost = (
-            variational_module._causal_seed_diagnostics(frozen)
+        _, seed_count, seed_prior_cost = variational_module._causal_seed_diagnostics(
+            frozen
         )
         self.assertEqual(seed_count, 1)
         self.assertAlmostEqual(
@@ -3449,16 +3836,11 @@ class VariationalAnalysisTests(unittest.TestCase):
             1.0 / 9.0,
         )
         self.assertAlmostEqual(
-            float(
-                diagnostics
-                .displacement_tolerant_soft_echo_area_ratio_by_time[1]
-            ),
+            float(diagnostics.displacement_tolerant_soft_echo_area_ratio_by_time[1]),
             1.0 / 9.0,
             places=5,
         )
-        self.assertTrue(
-            diagnostics.degrades_confidence(self.analysis_config)
-        )
+        self.assertTrue(diagnostics.degrades_confidence(self.analysis_config))
 
     def test_confidence_detects_bidirectional_echo_and_area_errors(
         self,
@@ -3516,15 +3898,11 @@ class VariationalAnalysisTests(unittest.TestCase):
             2,
         )
         self.assertEqual(
-            float(
-                diagnostics.maximum_object_unresolved_fraction_by_time[1]
-            ),
+            float(diagnostics.maximum_object_unresolved_fraction_by_time[1]),
             1.0,
         )
         self.assertLess(
-            float(
-                diagnostics.minimum_object_integrated_echo_ratio_by_time[1]
-            ),
+            float(diagnostics.minimum_object_integrated_echo_ratio_by_time[1]),
             self.analysis_config.minimum_integrated_echo_ratio_for_confidence,
         )
         self.assertTrue(diagnostics.degrades_confidence(self.analysis_config))
@@ -3856,9 +4234,7 @@ class VariationalAnalysisTests(unittest.TestCase):
                 frozen,
                 analysis_trajectory(initial_control(frozen), frozen),
             )
-            counts.append(
-                float(diagnostics.effective_pixel_count_by_time[1])
-            )
+            counts.append(float(diagnostics.effective_pixel_count_by_time[1]))
 
         self.assertEqual(counts, [1.0, 1.0])
 
@@ -3897,9 +4273,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             float(diagnostics.total_quality_weight_by_time[1]),
             1.0e-3,
         )
-        self.assertFalse(
-            bool(diagnostics.information_sufficient_by_time[1])
-        )
+        self.assertFalse(bool(diagnostics.information_sufficient_by_time[1]))
         self.assertEqual(float(diagnostics.maximum_unresolved_fraction), 1.0)
         self.assertEqual(
             float(diagnostics.maximum_gated_unresolved_fraction),
@@ -3985,9 +4359,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
 
         effective_count = 1.25**2 / (1.0 + 0.25**2)
-        expected = (
-            12.0**2 + 7.0**2 + 4.5**2 + 3.5**2
-        ) / effective_count
+        expected = (12.0**2 + 7.0**2 + 4.5**2 + 3.5**2) / effective_count
         self.assertAlmostEqual(
             float(diagnostics.violation_score_by_time[1]),
             expected,
@@ -4018,9 +4390,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             float(diagnostics.effective_pixel_count_by_time[1]),
             1.0,
         )
-        self.assertFalse(
-            bool(diagnostics.information_sufficient_by_time[1])
-        )
+        self.assertFalse(bool(diagnostics.information_sufficient_by_time[1]))
         self.assertEqual(float(diagnostics.maximum_unresolved_fraction), 1.0)
         self.assertEqual(
             float(diagnostics.maximum_gated_unresolved_fraction),
@@ -4169,9 +4539,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         for value in (-0.1, 1.1, float("nan")):
             with self.subTest(value=value):
                 with self.assertRaisesRegex(ValueError, r"must be in \[0, 1\]"):
-                    AnalysisConfig(
-                        maximum_unresolved_amplitude_fraction=value
-                    )
+                    AnalysisConfig(maximum_unresolved_amplitude_fraction=value)
 
     def test_amplitude_information_thresholds_must_be_positive(self) -> None:
         for field_name in (
@@ -4181,13 +4549,8 @@ class VariationalAnalysisTests(unittest.TestCase):
             for value in (0.0, -1.0, float("nan")):
                 with self.subTest(field_name=field_name, value=value):
                     with self.assertRaisesRegex(ValueError, "must be positive"):
-                        if (
-                            field_name
-                            == "minimum_amplitude_total_quality_weight"
-                        ):
-                            AnalysisConfig(
-                                minimum_amplitude_total_quality_weight=value
-                            )
+                        if field_name == "minimum_amplitude_total_quality_weight":
+                            AnalysisConfig(minimum_amplitude_total_quality_weight=value)
                         else:
                             AnalysisConfig(
                                 minimum_amplitude_effective_pixel_count=value
@@ -4215,15 +4578,11 @@ class VariationalAnalysisTests(unittest.TestCase):
                                 final_robust_relative_stationarity_tolerance=value
                             )
                         else:
-                            AnalysisConfig(
-                                final_irls_relative_weight_tolerance=value
-                            )
+                            AnalysisConfig(final_irls_relative_weight_tolerance=value)
         for value in (-1, 1.5, True):
             with self.subTest(polish_iterations=value):
                 with self.assertRaisesRegex(ValueError, "nonnegative integer"):
-                    AnalysisConfig(
-                        maximum_final_linearization_polish_iterations=value
-                    )
+                    AnalysisConfig(maximum_final_linearization_polish_iterations=value)
 
         for field_name in (
             "maximum_common_bias_mode_weight_bytes",
@@ -4275,17 +4634,13 @@ class VariationalAnalysisTests(unittest.TestCase):
                             "minimum_integrated_echo_ratio_for_confidence"
                         ):
                             AnalysisConfig(
-                                minimum_integrated_echo_ratio_for_confidence=(
-                                    value
-                                )
+                                minimum_integrated_echo_ratio_for_confidence=(value)
                             )
                         elif field_name == (
                             "minimum_soft_echo_area_ratio_for_confidence"
                         ):
                             AnalysisConfig(
-                                minimum_soft_echo_area_ratio_for_confidence=(
-                                    value
-                                )
+                                minimum_soft_echo_area_ratio_for_confidence=(value)
                             )
                         elif field_name == (
                             "maximum_established_excess_growth_fraction_for_confidence"
@@ -4328,9 +4683,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "grid/time contract"):
             prepare_analysis(
                 frames,
-                nowcast_config=NowcastConfig(
-                    maximum_motion_speed_mps=30.0
-                ),
+                nowcast_config=NowcastConfig(maximum_motion_speed_mps=30.0),
                 analysis_config=config,
             )
 
@@ -4384,10 +4737,8 @@ class VariationalAnalysisTests(unittest.TestCase):
                 observation_common_bias_group_index=groups,
                 grid_time_contract=contract,
             )
-        group_digest = (
-            variational_module.observation_common_bias_group_map_digest(
-                groups
-            )
+        group_digest = variational_module.observation_common_bias_group_map_digest(
+            groups
         )
         grouped_observations, _ = prepare_analysis(
             frames,
@@ -4457,9 +4808,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
         observations, frozen = prepare_analysis(
             frames,
-            nowcast_config=NowcastConfig(
-                maximum_motion_speed_mps=10.0
-            ),
+            nowcast_config=NowcastConfig(maximum_motion_speed_mps=10.0),
             analysis_config=AnalysisConfig(
                 causal_support_uncertainty_m=1000.0,
                 amplitude_displacement_tolerance_m=750.0,
@@ -4726,9 +5075,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             DataStatus.STALE_BACKGROUND,
         )
         self.assertEqual(float(result.metadata.coverage_by_frame.mean()), 0.0)
-        self.assertTrue(
-            bool(torch.all(torch.isfinite(forecast.forecast_dbz)))
-        )
+        self.assertTrue(bool(torch.all(torch.isfinite(forecast.forecast_dbz))))
         torch.testing.assert_close(forecast.forecast_dbz[0], background[-1])
         torch.testing.assert_close(
             echo_to_dbz(
@@ -4804,9 +5151,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             torch.arange(width, dtype=torch.float64),
             indexing="ij",
         )
-        initial = 2.0e4 * torch.exp(
-            -((y - 2.7) ** 2 + (x - 3.1) ** 2) / 2.0
-        )
+        initial = 2.0e4 * torch.exp(-((y - 2.7) ** 2 + (x - 3.1) ** 2) / 2.0)
         displacement = torch.tensor([-0.35, 0.0], dtype=torch.float64)
         truth = torch.stack(
             (
@@ -4831,9 +5176,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         zero_motion = RadarState(
             echo_linear=baseline.echo_linear,
             displacement_yx=torch.zeros_like(baseline.displacement_yx),
-            log_growth_per_step=torch.zeros_like(
-                baseline.log_growth_per_step
-            ),
+            log_growth_per_step=torch.zeros_like(baseline.log_growth_per_step),
         )
         frozen = replace(
             frozen,

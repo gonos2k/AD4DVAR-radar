@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar._digest import tensor_digest  # noqa: E402
 import advar.sensitivity as sensitivity_module  # noqa: E402
+import advar.linearization_artifact as linearization_artifact_module  # noqa: E402
 from advar.linearization_artifact import (  # noqa: E402
     load_p1_linearization,
     save_p1_linearization,
@@ -1863,10 +1864,10 @@ class VariationalFSOTests(unittest.TestCase):
 
     def test_variational_fso_covers_all_observation_times(self) -> None:
         fso = self.fso
-        self.assertEqual(fso.contract, "p1-variational-fso-v14")
+        self.assertEqual(fso.contract, "p1-variational-fso-v15")
         self.assertEqual(
             fso.sensitivity_scope,
-            "residual_plus_observation_derived_baseline_with_frozen_selection",
+            "residual_plus_input_dependent_initial_state_and_baseline_with_frozen_selection",
         )
         self.assertFalse(fso.baseline_dynamics_frozen)
         self.assertTrue(fso.baseline_pair_selection_frozen)
@@ -1887,7 +1888,7 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertEqual(fso.full_map_lead_minutes, (10,))
         self.assertEqual(
             fso.linearization_contract,
-            "p1-final-frozen-irls-gn-v13",
+            "p1-final-frozen-irls-gn-v14",
         )
         self.assertEqual(
             fso.forecast_run_digest,
@@ -2922,6 +2923,65 @@ class VariationalFSOTests(unittest.TestCase):
 
         self.assertEqual(fsync.call_count, 2)
 
+    def test_legacy_v13_linearization_migrates_without_prior_state(self) -> None:
+        def remove_new_frozen_fields(value: object) -> None:
+            if isinstance(value, dict):
+                if value.get("type") == "FrozenOuterState":
+                    retained = value.get("fields")
+                    assert isinstance(retained, dict)
+                    for name in (
+                        "neural_prior_raw_background_dbz",
+                        "neural_prior_execution_contract_digest",
+                        "neural_prior_role",
+                    ):
+                        retained.pop(name, None)
+                for child in value.values():
+                    remove_new_frozen_fields(child)
+            elif isinstance(value, list):
+                for child in value:
+                    remove_new_frozen_fields(child)
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "p1-linearization.npz"
+            save_p1_linearization(self.analysis, path)
+            with np.load(path, allow_pickle=False) as archive:
+                values = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                }
+            payload = json.loads(str(values["payload_json"].item()))
+            payload["version"] = "p1-linearization-v13"
+            remove_new_frozen_fields(payload["state"])
+            payload_json = json.dumps(
+                payload,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            )
+            tensors = {
+                name: value
+                for name, value in values.items()
+                if name.startswith("tensor_")
+            }
+            values["artifact_version"] = np.asarray("p1-linearization-v13")
+            values["payload_json"] = np.asarray(payload_json)
+            values["artifact_digest"] = np.asarray(
+                linearization_artifact_module._artifact_digest(
+                    "p1-linearization-v13",
+                    payload_json,
+                    tensors,
+                )
+            )
+            with path.open("wb") as stream:
+                np.savez(stream, **values)
+
+            restarted = load_p1_linearization(path)
+
+        self.assertEqual(
+            restarted.linearization.contract,
+            "p1-final-frozen-irls-gn-v14",
+        )
+
     def test_p1_linearization_artifact_rejects_tamper_and_runtime_mismatch(
         self,
     ) -> None:
@@ -3766,7 +3826,7 @@ class VariationalFSOTests(unittest.TestCase):
 
         self.assertEqual(
             fsoi.contract,
-            "p1-linearized-observation-impact-v11",
+            "p1-linearized-observation-impact-v12",
         )
         self.assertEqual(
             fsoi.perturbation_contract,
