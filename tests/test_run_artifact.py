@@ -17,6 +17,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar import (  # noqa: E402
     DynamicsSource,
+    ForecastRunContract,
+    NeuralPriorApplication,
     NowcastConfig,
     RadarGridTimeContract,
     SensitivityConfig,
@@ -26,7 +28,9 @@ from advar import (  # noqa: E402
     load_forecast_run,
     nowcast,
     save_forecast_run,
+    variational_nowcast,
 )
+from advar.variational import prepare_analysis  # noqa: E402
 from advar._digest import tensor_digest  # noqa: E402
 from advar.physics import FORECAST_INTEGRATOR_VERSION  # noqa: E402
 import advar.run_artifact as run_artifact  # noqa: E402
@@ -108,7 +112,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
         self.assertEqual(loaded.forecast_dbz_digest, result.forecast_dbz_digest)
         self.assertEqual(loaded.valid_mask_digest, result.valid_mask_digest)
         self.assertIsNone(loaded.audit)
-        torch.testing.assert_close(loaded.forecast_dbz, result.forecast_dbz)
+        torch.testing.assert_close(
+            loaded.forecast_dbz, result.forecast_dbz, equal_nan=True
+        )
         torch.testing.assert_close(
             loaded.state.echo_linear,
             result.state.echo_linear,
@@ -725,6 +731,73 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 variant.forecast_run_digest,
                 base.forecast_run_digest,
             )
+
+    def test_neural_prior_lineage_round_trips_with_the_run(self) -> None:
+        frames = self.frames()
+        prior = NeuralPriorApplication(
+            initial_background_dbz=frames[0] + 0.25,
+            neural_prior_digest="1" * 64,
+            model_contract_digest="2" * 64,
+            feature_schema_digest="3" * 64,
+            training_manifest_digest="4" * 64,
+            role="candidate",
+        )
+        result, _ = variational_nowcast(frames, neural_prior=prior)
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            save_forecast_run(result, path)
+            loaded = load_forecast_run(path)
+
+        self.assertEqual(loaded.run.neural_prior_digest, "1" * 64)
+        self.assertEqual(loaded.run.prior_application_digest, prior.application_digest)
+        self.assertEqual(loaded.run.prior_model_contract_digest, "2" * 64)
+        self.assertEqual(loaded.run.prior_feature_schema_digest, "3" * 64)
+        self.assertEqual(loaded.run.prior_training_manifest_digest, "4" * 64)
+        self.assertEqual(loaded.run.prior_role, "candidate")
+        self.assertEqual(loaded.forecast_run_digest, result.forecast_run_digest)
+        _, frozen = prepare_analysis(frames, neural_prior=prior)
+        torch.testing.assert_close(
+            frozen.initial_background_dbz,
+            prior.initial_background_dbz,
+        )
+
+    def test_neural_prior_lineage_is_all_or_none(self) -> None:
+        with self.assertRaisesRegex(ValueError, "neural-prior run lineage"):
+            ForecastRunContract.from_inputs(
+                NowcastConfig(),
+                self.frames(),
+                torch.ones_like(self.frames(), dtype=torch.bool),
+                None,
+                neural_prior_digest="1" * 64,
+            )
+
+    def test_v42_artifact_migrates_without_prior_lineage(self) -> None:
+        result = nowcast(self.frames())
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "legacy-v42.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                arrays = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                    if name not in {
+                        "neural_prior_digest",
+                        "prior_application_digest",
+                        "prior_model_contract_digest",
+                        "prior_feature_schema_digest",
+                        "prior_training_manifest_digest",
+                        "prior_role",
+                    }
+                }
+            arrays["forecast_run_artifact_version"] = np.asarray(
+                "forecast-run-v42"
+            )
+            self._save_arrays(path, arrays)
+
+            loaded = load_forecast_run(path)
+
+        self.assertIsNone(loaded.run.neural_prior_digest)
+        torch.testing.assert_close(loaded.forecast_dbz, result.forecast_dbz)
 
     def test_load_rejects_tampered_state(self) -> None:
         result = nowcast(self.frames())

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import fields, is_dataclass
+from dataclasses import MISSING, fields, is_dataclass
 from enum import Enum
 import hashlib
 import json
@@ -217,8 +217,16 @@ def _decode_value(
         raw_fields = value.get("fields")
         if data_type is None or not isinstance(raw_fields, dict):
             raise ValueError("unsupported P1 artifact dataclass")
-        expected = {field.name for field in fields(data_type)}
-        if set(raw_fields) != expected:
+        field_definitions = {field.name: field for field in fields(data_type)}
+        unknown = set(raw_fields) - set(field_definitions)
+        missing_required = {
+            name
+            for name, definition in field_definitions.items()
+            if name not in raw_fields
+            and definition.default is MISSING
+            and definition.default_factory is MISSING
+        }
+        if unknown or missing_required:
             raise ValueError("P1 artifact dataclass fields mismatch")
         decoded = {
             name: _decode_value(item, arrays, map_location=map_location)

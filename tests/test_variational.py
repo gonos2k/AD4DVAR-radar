@@ -29,6 +29,7 @@ from advar.nowcast import (  # noqa: E402
     TendencyPairSelection,
     TendencySource,
     forecast_from_state,
+    forecast_linear_at_step,
 )
 from advar.physics import (  # noqa: E402
     RemapCell,
@@ -41,6 +42,7 @@ import advar.variational as variational_module  # noqa: E402
 from advar.variational import (  # noqa: E402
     AnalysisConfig,
     FrozenOuterState,
+    NeuralPriorApplication,
     analysis_trajectory,
     freeze_irls_weights,
     initial_control,
@@ -70,6 +72,70 @@ def linear_to_dbz(
 
 
 class VariationalAnalysisTests(unittest.TestCase):
+    def test_neural_prior_output_changes_the_actual_p1_analysis(self) -> None:
+        coordinates = torch.arange(8, dtype=torch.float64)
+        y, x = torch.meshgrid(coordinates, coordinates, indexing="ij")
+        frames = torch.stack(
+            tuple(
+                -10.0
+                + 40.0
+                * torch.exp(-((y - center).square() + (x - center).square()) / 4.0)
+                for center in (3.0, 3.5, 4.0)
+            )
+        )
+        common = {
+            "model_contract_digest": "3" * 64,
+            "feature_schema_digest": "4" * 64,
+            "training_manifest_digest": "5" * 64,
+        }
+        candidate = NeuralPriorApplication(
+            frames[0] + 0.5,
+            "1" * 64,
+            role="candidate",
+            **common,
+        )
+        parent = NeuralPriorApplication(
+            frames[0] - 0.5,
+            "2" * 64,
+            role="parent",
+            **common,
+        )
+        observations, candidate_frozen = prepare_analysis(
+            frames, neural_prior=candidate
+        )
+        _, parent_frozen = prepare_analysis(frames, neural_prior=parent)
+        candidate_analysis = solve_analysis(observations, candidate_frozen)
+        parent_analysis = solve_analysis(observations, parent_frozen)
+        candidate_forecast, _ = variational_nowcast(
+            frames, neural_prior=candidate
+        )
+        parent_forecast, _ = variational_nowcast(frames, neural_prior=parent)
+
+        self.assertNotEqual(candidate.application_digest, parent.application_digest)
+        self.assertFalse(
+            torch.equal(
+                candidate_analysis.state.echo_linear,
+                parent_analysis.state.echo_linear,
+            )
+        )
+        self.assertFalse(
+            torch.equal(
+                forecast_linear_at_step(
+                    candidate_analysis.state, 1, NowcastConfig()
+                ),
+                forecast_linear_at_step(
+                    parent_analysis.state, 1, NowcastConfig()
+                ),
+            )
+        )
+        self.assertEqual(
+            candidate_forecast.run.input_bundle_digest,
+            parent_forecast.run.input_bundle_digest,
+        )
+        self.assertNotEqual(
+            candidate_forecast.run.analysis_input_digest,
+            parent_forecast.run.analysis_input_digest,
+        )
     nowcast_config = NowcastConfig()
     analysis_config = AnalysisConfig(
         censored_background_policy="detection_limit",
@@ -262,9 +328,15 @@ class VariationalAnalysisTests(unittest.TestCase):
         self.assertIsNotNone(base.run.analysis_config_digest)
         self.assertIsNotNone(base.run.analysis_input_digest)
         for variant in variants:
-            self.assertNotEqual(
+            self.assertEqual(
                 variant.run.input_bundle_digest,
                 base.run.input_bundle_digest,
+            )
+            self.assertTrue(
+                variant.run.analysis_config_digest
+                != base.run.analysis_config_digest
+                or variant.run.analysis_input_digest
+                != base.run.analysis_input_digest
             )
             self.assertNotEqual(
                 variant.forecast_run_digest,

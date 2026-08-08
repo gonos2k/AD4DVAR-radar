@@ -868,8 +868,8 @@ def _minimum_growth_evidence(
     return minimum_support, minimum_area
 
 
-_FORECAST_INPUT_BUNDLE_VERSION = "forecast-input-bundle-v4"
-_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v6"
+_FORECAST_INPUT_BUNDLE_VERSION = "forecast-input-bundle-v5"
+_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v8"
 
 
 def _validate_background_age(
@@ -1219,6 +1219,12 @@ class ForecastRunContract:
     operational_calibration_approval_digest: str | None = None
     operational_data_identity_json: str | None = None
     operational_data_identity_digest: str | None = None
+    neural_prior_digest: str | None = None
+    prior_application_digest: str | None = None
+    prior_model_contract_digest: str | None = None
+    prior_feature_schema_digest: str | None = None
+    prior_training_manifest_digest: str | None = None
+    prior_role: str | None = None
     forecast_integrator_version: str = FORECAST_INTEGRATOR_VERSION
 
     @classmethod
@@ -1239,6 +1245,12 @@ class ForecastRunContract:
         operational_calibration_approval_digest: str | None = None,
         operational_data_identity_json: str | None = None,
         operational_data_identity_digest: str | None = None,
+        neural_prior_digest: str | None = None,
+        prior_application_digest: str | None = None,
+        prior_model_contract_digest: str | None = None,
+        prior_feature_schema_digest: str | None = None,
+        prior_training_manifest_digest: str | None = None,
+        prior_role: str | None = None,
     ) -> ForecastRunContract:
         _validate_frames(frames_dbz)
         latest_frame = frames_dbz[-1]
@@ -1285,6 +1297,14 @@ class ForecastRunContract:
             operational_data_identity_digest,
             FORECAST_INTEGRATOR_VERSION,
         )
+        _validate_neural_prior_lineage(
+            neural_prior_digest,
+            prior_application_digest,
+            prior_model_contract_digest,
+            prior_feature_schema_digest,
+            prior_training_manifest_digest,
+            prior_role,
+        )
         latest_background = (
             None
             if background_frames_dbz is None
@@ -1311,8 +1331,6 @@ class ForecastRunContract:
                 background_frames_dbz,
                 background_age_minutes,
                 grid_time_contract,
-                analysis_config_digest,
-                analysis_input_digest,
                 operational_calibration_manifest_digest,
                 operational_calibration_approval_digest,
                 operational_data_identity_digest,
@@ -1338,6 +1356,12 @@ class ForecastRunContract:
             ),
             operational_data_identity_json=operational_data_identity_json,
             operational_data_identity_digest=operational_data_identity_digest,
+            neural_prior_digest=neural_prior_digest,
+            prior_application_digest=prior_application_digest,
+            prior_model_contract_digest=prior_model_contract_digest,
+            prior_feature_schema_digest=prior_feature_schema_digest,
+            prior_training_manifest_digest=prior_training_manifest_digest,
+            prior_role=prior_role,
         )
 
     @property
@@ -1490,6 +1514,14 @@ class ForecastRunContract:
             self.operational_data_identity_digest,
             self.forecast_integrator_version,
         )
+        _validate_neural_prior_lineage(
+            self.neural_prior_digest,
+            self.prior_application_digest,
+            self.prior_model_contract_digest,
+            self.prior_feature_schema_digest,
+            self.prior_training_manifest_digest,
+            self.prior_role,
+        )
 
     def validate_latest_frame(self, latest_frame_dbz: Tensor) -> None:
         if tensor_digest(latest_frame_dbz) != self.latest_frame_digest:
@@ -1518,8 +1550,6 @@ def _forecast_input_bundle_digest(
     background_frames_dbz: Tensor | None,
     background_age_minutes: float | None,
     grid_time_contract: RadarGridTimeContract | None,
-    analysis_config_digest: str | None,
-    analysis_input_digest: str | None,
     operational_calibration_manifest_digest: str | None,
     operational_calibration_approval_digest: str | None,
     operational_data_identity_digest: str | None,
@@ -1540,8 +1570,6 @@ def _forecast_input_bundle_digest(
                 if grid_time_contract is None
                 else grid_time_contract.digest
             ),
-            "analysis_config_digest": analysis_config_digest,
-            "analysis_input_digest": analysis_input_digest,
             "operational_calibration_manifest_digest": (
                 operational_calibration_manifest_digest
             ),
@@ -1585,6 +1613,44 @@ def _validate_analysis_lineage(
     if json_digest(config_value) != config_digest:
         raise ValueError("analysis config digest mismatch")
     _validate_sha256_digest("analysis_input_digest", input_digest)
+
+
+def _validate_neural_prior_lineage(
+    prior_digest: str | None,
+    application_digest: str | None,
+    model_contract_digest: str | None,
+    feature_schema_digest: str | None,
+    training_manifest_digest: str | None,
+    role: str | None,
+) -> None:
+    values = (
+        prior_digest,
+        application_digest,
+        model_contract_digest,
+        feature_schema_digest,
+        training_manifest_digest,
+        role,
+    )
+    if all(value is None for value in values):
+        return
+    if any(value is None for value in values):
+        raise ValueError("neural-prior run lineage must be complete")
+    assert prior_digest is not None
+    assert application_digest is not None
+    assert model_contract_digest is not None
+    assert feature_schema_digest is not None
+    assert training_manifest_digest is not None
+    assert role is not None
+    for name, digest in (
+        ("neural_prior_digest", prior_digest),
+        ("prior_application_digest", application_digest),
+        ("prior_model_contract_digest", model_contract_digest),
+        ("prior_feature_schema_digest", feature_schema_digest),
+        ("prior_training_manifest_digest", training_manifest_digest),
+    ):
+        _validate_sha256_digest(name, digest)
+    if role not in ("candidate", "parent"):
+        raise ValueError("prior_role must be candidate or parent")
 
 
 def operational_runtime_profile_digest(
@@ -1753,6 +1819,14 @@ def _forecast_run_identity_digest(
             "operational_data_identity_digest": (
                 run.operational_data_identity_digest
             ),
+            "neural_prior_digest": run.neural_prior_digest,
+            "prior_application_digest": run.prior_application_digest,
+            "prior_model_contract_digest": run.prior_model_contract_digest,
+            "prior_feature_schema_digest": run.prior_feature_schema_digest,
+            "prior_training_manifest_digest": (
+                run.prior_training_manifest_digest
+            ),
+            "prior_role": run.prior_role,
             "state_metadata_digest": state_digest,
             "forecast_dbz_digest": forecast_digest,
             "valid_mask_digest": valid_mask_digest,

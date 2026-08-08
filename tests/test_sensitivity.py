@@ -4473,6 +4473,15 @@ class VariationalFSOTests(unittest.TestCase):
             first_order_valid=True,
         )
 
+        def certified_for_fsoi(*args, **_kwargs):
+            resolved_fsoi = args[3]
+            return replace(
+                certified_validation,
+                source_fsoi_digest=resolved_fsoi.variational_fsoi_digest,
+                nominal_forecast_digest=args[0].forecast_run_digest,
+                nominal_input_bundle_digest=args[0].run.input_bundle_digest,
+            )
+
         with (
             patch.object(
                 sensitivity_module,
@@ -4485,7 +4494,7 @@ class VariationalFSOTests(unittest.TestCase):
             patch.object(
                 sensitivity_module,
                 "_validate_first_order_learning_impact",
-                return_value=certified_validation,
+                side_effect=certified_for_fsoi,
             ),
         ):
             learning = compute_variational_fsoi_for_learning(
@@ -4548,6 +4557,13 @@ class VariationalFSOTests(unittest.TestCase):
             learning,
             expected_trust_store_digest="7" * 64,
         )
+        issuance_validation = validate_variational_fsoi_issuance_impact(
+            forecast,
+            analysis,
+            verification,
+            learning.fsoi,
+            policy=policy,
+        )
         execution_policy = InterventionExecutionPolicy(
                 metric_guardrails=tuple(
                     InterventionMetricGuardrail(
@@ -4573,28 +4589,80 @@ class VariationalFSOTests(unittest.TestCase):
                 intervention_id="radar-correction-20260808-001",
                 intervention_type="realized_sensor_correction",
                 action_digest="8" * 64,
-                applied_time="2026-08-08T12:00:00+09:00",
+                applied_time=forecast.run.grid_time_contract.valid_times[-1],
                 actual_input_before=linearization.frozen.input_frames_dbz,
                 actual_input_after=(
                     linearization.frozen.input_frames_dbz + delta
                 ),
+                nominal_forecast=forecast,
+                case_id="learning-case",
+                radar_id="learning-radar",
+                resolved_issuance_validation=issuance_validation,
                 execution_policy=execution_policy,
                 execution_policy_trust_store_path=(
                     "/etc/advar/intervention-policies.json"
                 ),
             )
+        harmful_issuance = replace(
+            issuance_validation,
+            full_step_resolved_metric_change=torch.ones_like(
+                issuance_validation.full_step_resolved_metric_change
+            ),
+            frozen_domain_state_effect=torch.zeros_like(
+                issuance_validation.full_step_resolved_metric_change
+            ),
+            issuance_policy_effect=torch.ones_like(
+                issuance_validation.full_step_resolved_metric_change
+            ),
+            end_to_end_issuance_effect=torch.ones_like(
+                issuance_validation.full_step_resolved_metric_change
+            ),
+            first_order_valid=True,
+            full_step_resolved_analysis_converged=True,
+            half_step_resolved_analysis_converged=True,
+            active_branch_valid=True,
+        )
+        harmful_policy = replace(
+            execution_policy,
+            approval_class="automation",
+            metric_guardrails=tuple(
+                replace(item, maximum_resolved_harm=0.01)
+                for item in execution_policy.metric_guardrails
+            ),
+        )
+        with patch(
+            "advar.intervention._load_learning_policy_trust_store",
+            return_value=sensitivity_module._LearningPolicyTrustStore(
+                approved_policy_digests=frozenset((harmful_policy.digest,)),
+                content_digest="9" * 64,
+            ),
+        ), self.assertRaisesRegex(ValueError, "resolved intervention harm"):
+            RealizedObservationIntervention.from_learning_result(
+                learning,
+                analysis,
+                intervention_id="resolved-harm",
+                intervention_type="realized_sensor_correction",
+                action_digest="8" * 64,
+                applied_time=forecast.run.grid_time_contract.valid_times[-1],
+                actual_input_before=linearization.frozen.input_frames_dbz,
+                actual_input_after=linearization.frozen.input_frames_dbz + delta,
+                nominal_forecast=forecast,
+                case_id="learning-case",
+                radar_id="learning-radar",
+                resolved_issuance_validation=harmful_issuance,
+                execution_policy=harmful_policy,
+                execution_policy_trust_store_path=(
+                    "/etc/advar/intervention-policies.json"
+                ),
+            )
         validate_realized_observation_intervention(realized)
-        self.assertEqual(realized.applied_time, "2026-08-08T03:00:00Z")
+        self.assertEqual(
+            realized.applied_time,
+            forecast.run.grid_time_contract.valid_times[-1],
+        )
         self.assertEqual(
             realized.learning_result_digest,
             learning.learning_result_digest,
-        )
-        issuance_validation = validate_variational_fsoi_issuance_impact(
-            forecast,
-            analysis,
-            verification,
-            learning.fsoi,
-            policy=policy,
         )
         self.assertEqual(
             issuance_validation.metric_domain_contract,
@@ -4624,6 +4692,78 @@ class VariationalFSOTests(unittest.TestCase):
             issuance_validation.withdrawn_fraction,
         ):
             self.assertIsNotNone(value)
+        assert issuance_validation.coverage_before is not None
+        unrelated_issuance = replace(
+            issuance_validation,
+            source_fsoi_digest="f" * 64,
+        )
+        with patch(
+            "advar.intervention._load_learning_policy_trust_store",
+            return_value=sensitivity_module._LearningPolicyTrustStore(
+                approved_policy_digests=frozenset((execution_policy.digest,)),
+                content_digest="9" * 64,
+            ),
+        ), self.assertRaisesRegex(ValueError, "lineage mismatch"):
+            RealizedObservationIntervention.from_learning_result(
+                learning,
+                analysis,
+                intervention_id="unrelated-validation",
+                intervention_type="realized_sensor_correction",
+                action_digest="8" * 64,
+                applied_time=forecast.run.grid_time_contract.valid_times[-1],
+                actual_input_before=linearization.frozen.input_frames_dbz,
+                actual_input_after=(
+                    linearization.frozen.input_frames_dbz + delta
+                ),
+                nominal_forecast=forecast,
+                case_id="learning-case",
+                radar_id="learning-radar",
+                resolved_issuance_validation=unrelated_issuance,
+                execution_policy=execution_policy,
+                execution_policy_trust_store_path=(
+                    "/etc/advar/intervention-policies.json"
+                ),
+            )
+        unsafe_issuance = replace(
+            issuance_validation,
+            coverage_after=0.5 * issuance_validation.coverage_before,
+            first_order_valid=True,
+            full_step_resolved_analysis_converged=True,
+            half_step_resolved_analysis_converged=True,
+            active_branch_valid=True,
+        )
+        automation_policy = replace(
+            execution_policy,
+            approval_class="automation",
+            minimum_coverage_retention=0.9,
+        )
+        with patch(
+            "advar.intervention._load_learning_policy_trust_store",
+            return_value=sensitivity_module._LearningPolicyTrustStore(
+                approved_policy_digests=frozenset((automation_policy.digest,)),
+                content_digest="9" * 64,
+            ),
+        ), self.assertRaisesRegex(ValueError, "excessive coverage"):
+            RealizedObservationIntervention.from_learning_result(
+                learning,
+                analysis,
+                intervention_id="unsafe-automation",
+                intervention_type="realized_sensor_correction",
+                action_digest="8" * 64,
+                applied_time=forecast.run.grid_time_contract.valid_times[-1],
+                actual_input_before=linearization.frozen.input_frames_dbz,
+                actual_input_after=(
+                    linearization.frozen.input_frames_dbz + delta
+                ),
+                nominal_forecast=forecast,
+                case_id="learning-case",
+                radar_id="learning-radar",
+                resolved_issuance_validation=unsafe_issuance,
+                execution_policy=automation_policy,
+                execution_policy_trust_store_path=(
+                    "/etc/advar/intervention-policies.json"
+                ),
+            )
         weaker_delta = 0.5 * delta
         candidates = (
             ("stronger", perturbation),
@@ -4764,7 +4904,7 @@ class VariationalFSOTests(unittest.TestCase):
             patch.object(
                 sensitivity_module,
                 "_validate_first_order_learning_impact",
-                return_value=certified_validation,
+                side_effect=certified_for_fsoi,
             ),
         ):
             approved_ranked = validate_top_k_learning_impacts(
@@ -4823,6 +4963,15 @@ class VariationalFSOTests(unittest.TestCase):
             aggregate_material_impact_norm=0.0,
             first_order_valid=False,
         )
+
+        def no_material_for_fsoi(*args, **kwargs):
+            bound = certified_for_fsoi(*args, **kwargs)
+            return replace(
+                no_material,
+                source_fsoi_digest=bound.source_fsoi_digest,
+                nominal_forecast_digest=bound.nominal_forecast_digest,
+                nominal_input_bundle_digest=bound.nominal_input_bundle_digest,
+            )
         with (
             patch.object(
                 sensitivity_module,
@@ -4835,7 +4984,7 @@ class VariationalFSOTests(unittest.TestCase):
             patch.object(
                 sensitivity_module,
                 "_validate_first_order_learning_impact",
-                return_value=no_material,
+                side_effect=no_material_for_fsoi,
             ),
         ):
             rejected = compute_variational_fsoi_for_learning(

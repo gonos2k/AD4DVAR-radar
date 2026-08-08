@@ -26,6 +26,9 @@ from advar.intervention import RealizedObservationIntervention  # noqa: E402
 from advar.promotion import (  # noqa: E402
     NeuralPriorCandidateManifest,
     NeuralPriorHoldoutCase,
+    NeuralPriorHoldoutPlan,
+    NeuralPriorHoldoutPlanCase,
+    NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionPolicy,
     PromotionMetricScale,
     RealizedInterventionEvaluation,
@@ -416,7 +419,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 8)
+        self.assertEqual(version, 10)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -521,6 +524,13 @@ class EpisodeLedgerTests(unittest.TestCase):
             learning_approval_evidence_digest=evidence.digest,
             counterfactual_perturbation_digest="f" * 64,
             linearization_digest="0" * 64,
+            case_id="case-1",
+            radar_id="radar-1",
+            issue_time="2027-08-08T00:00:00Z",
+            input_bundle_before_digest="1" * 64,
+            input_bundle_after_digest="2" * 64,
+            resolved_issuance_validation_digest="3" * 64,
+            contract="realized-observation-intervention-v3",
         )
         digest = self.ledger.append_realized_observation_intervention(
             intervention
@@ -546,22 +556,49 @@ class EpisodeLedgerTests(unittest.TestCase):
             self.ledger.load_realized_observation_intervention(legacy_digest),
             legacy_intervention,
         )
+        training_intervention = replace(
+            intervention,
+            intervention_id="training-radar-qc-20260808-001",
+            case_id="training-case",
+        )
+        self.ledger.append_realized_observation_intervention(
+            training_intervention
+        )
+        plan = NeuralPriorHoldoutPlan(
+            plan_id="ledger-holdout",
+            parent_prior_digest="2" * 64,
+            candidate_family_digests=("1" * 64,),
+            cases=(
+                NeuralPriorHoldoutPlanCase(
+                    "case-1", "storm-1", "2027-08-08", "radar-1",
+                    "convective", "near_range", "e" * 64, "d" * 64,
+                    "f" * 64, "2027-08-08T00:00:00Z",
+                ),
+            ),
+            registered_at="2026-01-01T00:00:00Z",
+        )
         manifest = NeuralPriorCandidateManifest(
             candidate_prior_digest="1" * 64,
             parent_prior_digest="2" * 64,
-            training_learning_approval_digests=("3" * 64,),
-            training_intervention_digests=("4" * 64,),
+            training_learning_approval_digests=(evidence.digest,),
+            training_intervention_digests=(training_intervention.intervention_digest,),
             training_dataset_digest="5" * 64,
+            candidate_training_manifest_digest="6" * 64,
+            parent_training_manifest_digest="7" * 64,
             model_contract_digest="6" * 64,
+            feature_schema_digest="8" * 64,
             algorithm_bundle_digest="7" * 64,
             numerical_runtime_digest="8" * 64,
-            holdout_dataset_digest="9" * 64,
+            holdout_dataset_digest=plan.holdout_dataset_digest,
+            holdout_plan_digest=plan.plan_digest,
             training_case_ids=("training-case",),
+            training_input_bundle_digests=("2" * 64,),
             holdout_cases=(
                 NeuralPriorHoldoutCase(
-                    "case-1", "storm-1", "2026-08-08", "radar-1",
+                    "case-1", "storm-1", "2027-08-08", "radar-1",
                     "convective", "near_range",
-                    "a" * 64, "b" * 64,
+                    "e" * 64, "d" * 64, "e" * 64, "f" * 64,
+                    "2027-08-08T00:00:00Z", "a" * 64, "b" * 64,
                 ),
             ),
         )
@@ -571,6 +608,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             learning_result_digest=intervention.learning_result_digest,
             learning_approval_evidence_digest=evidence.digest,
             learning_policy_digest=evidence.policy_digest,
+            holdout_plan_digest=plan.plan_digest,
             candidate_manifest_digest=manifest.manifest_digest,
             candidate_prior_digest=manifest.candidate_prior_digest,
             parent_prior_digest=manifest.parent_prior_digest,
@@ -583,6 +621,8 @@ class EpisodeLedgerTests(unittest.TestCase):
             candidate_forecast_digest="a" * 64,
             parent_forecast_digest="b" * 64,
             metric_change=torch.tensor([[-0.2]], dtype=torch.float64),
+            candidate_issuance_effect=torch.zeros((1, 1), dtype=torch.float64),
+            parent_issuance_effect=torch.zeros((1, 1), dtype=torch.float64),
             metric_available=torch.tensor([[True]]),
             lead_minutes=(60,),
             metric_names=("log_echo_mse",),
@@ -590,9 +630,12 @@ class EpisodeLedgerTests(unittest.TestCase):
             metric_contract_digest="f" * 64,
             coverage_candidate=torch.tensor([1.0], dtype=torch.float64),
             coverage_parent=torch.tensor([1.0], dtype=torch.float64),
-            issue_time="2026-08-08T00:00:00Z",
+            coverage_common=torch.tensor([1.0], dtype=torch.float64),
+            newly_issued_fraction=torch.tensor([0.0], dtype=torch.float64),
+            withdrawn_fraction=torch.tensor([0.0], dtype=torch.float64),
+            issue_time="2027-08-08T00:00:00Z",
             applied_time=intervention.applied_time,
-            verification_valid_times=("2026-08-08T01:00:00Z",),
+            verification_valid_times=("2027-08-08T01:00:00Z",),
         )
         policy = NeuralPriorPromotionPolicy(
             metric_scales=(
@@ -600,6 +643,8 @@ class EpisodeLedgerTests(unittest.TestCase):
             ),
             approved_learning_policy_digests=(evidence.policy_digest,),
             approved_candidate_manifest_digests=(manifest.manifest_digest,),
+            approved_holdout_plan_digests=(plan.plan_digest,),
+            approved_metric_contract_digests=("f" * 64,),
             allowed_intervention_types=("realized_qc_intervention",),
             minimum_realized_interventions=1,
             minimum_material_interventions=1,
@@ -610,21 +655,43 @@ class EpisodeLedgerTests(unittest.TestCase):
             minimum_distinct_radars=1,
             minimum_distinct_regimes=1,
             minimum_distinct_range_regimes=1,
+            minimum_material_clusters=1,
             minimum_beneficial_fraction=1.0,
             maximum_harmful_fraction=0.0,
             minimum_mean_normalized_improvement=0.1,
             bootstrap_samples=16,
         )
         trust = SimpleNamespace(
-            approved_policy_digests=frozenset((policy.digest,)),
+            approved_policy_digests=frozenset(),
             content_digest="4" * 64,
+        )
+        plan_policy = NeuralPriorHoldoutPlanPolicy(
+            approved_plan_digests=(plan.plan_digest,),
+            approved_metric_contract_digests=("f" * 64,),
+            maximum_candidate_family_size=1,
+        )
+        trust.approved_policy_digests = frozenset(
+            (policy.digest, plan_policy.digest)
         )
         with patch(
             "advar.promotion._load_learning_policy_trust_store",
             return_value=trust,
+        ), patch(
+            "advar.ledger._load_learning_policy_trust_store",
+            return_value=trust,
         ):
+            self.ledger.append_neural_prior_holdout_plan(
+                plan,
+                policy=plan_policy,
+                policy_trust_store_path="/etc/advar/learning-policies.json",
+            )
+            self.assertEqual(
+                self.ledger.load_neural_prior_holdout_plan(plan.plan_digest),
+                plan,
+            )
             promotion = compute_neural_prior_promotion(
                 manifest,
+                plan,
                 (evaluation,),
                 policy=policy,
                 policy_trust_store_path=(
@@ -634,6 +701,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             promotion_digest = self.ledger.append_neural_prior_promotion(
                 promotion,
                 manifest,
+                plan,
                 (evaluation,),
                 policy=policy,
                 policy_trust_store_path=(
@@ -644,6 +712,11 @@ class EpisodeLedgerTests(unittest.TestCase):
             self.ledger.load_neural_prior_promotion(promotion_digest),
             promotion,
         )
+        audit = self.ledger.load_neural_prior_promotion_evaluations(
+            promotion_digest
+        )
+        self.assertEqual(audit[0]["evaluation_digest"], evaluation.evaluation_digest)
+        self.assertEqual(audit[0]["metric_change"], [[-0.2]])
 
     def test_complete_verification_lineage_round_trips(self) -> None:
         snapshot = replace(
@@ -1771,7 +1844,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 8)
+        self.assertEqual(version, 10)
 
 
 if __name__ == "__main__":

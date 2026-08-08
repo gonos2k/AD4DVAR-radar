@@ -138,7 +138,11 @@ artifact는 발행장·유효영역, 현재 에코상태, source support, 실제
 `input_bundle_digest`로 묶고, 상태와 발행 결과까지 포함한
 `forecast_run_digest`로 정확한 실행 identity를 고정한다.
 P1 실행은 실제 `AnalysisConfig` JSON과 observation-std·quality-weight의
-analysis input digest도 같은 identity에 포함한다.
+analysis input digest도 같은 identity에 포함한다. `input_bundle_digest`는
+candidate/parent의 동일 외생 입력을 비교할 수 있도록 radar·mask·background·grid
+계보만 나타내며, 분석 설정과 실제 neural-prior application digest는 별도 run
+identity에 결합된다. Neural prior는 metadata로만 선언할 수 없고
+`NeuralPriorApplication.initial_background_dbz`가 실제 P1 초기배경으로 소비돼야 한다.
 재적재 전 ZIP member 수·개별/전체 압축해제 크기·이름, NPY header의
 dtype·shape·선언 payload를 검사하고 알 수 없는 member와 object dtype을
 거부한다. 기본 한도는 160개, member당 1 GiB, 전체 2 GiB이며 API 인자로
@@ -407,14 +411,28 @@ denial = compute_variational_observation_removal_impact(
 
 EFSO는 deterministic P1 FSOI와 분리된 ensemble API다. 실제 analysis ensemble의
 observation-space perturbation과 forecast-error projection, innovation, 관측오차
-통계를 모두 요구하며 단일 분석에서 가짜 ensemble을 만들지 않는다.
+통계를 모두 요구하며 단일 분석에서 가짜 ensemble을 만들지 않는다. 일반 관측오차
+모델은 caller가 임의의 `R⁻¹d`를 넘기는 대신, content-addressed dense precision과
+covariance artifact를 제공해 `R(R⁻¹d)=d` 잔차와 observation ordering을 검증한다.
 
 ```python
-from advar import EnsembleFSOStatistics, compute_ensemble_fso
+from advar import (
+    EnsembleFSOStatistics,
+    PrecisionOperatorArtifact,
+    compute_ensemble_fso,
+)
+
+precision_artifact = PrecisionOperatorArtifact(
+    precision=precision_matrix,
+    covariance=covariance_matrix,
+    observation_index_digest=observation_index_digest,
+)
 
 efso = compute_ensemble_fso(
-    EnsembleFSOStatistics(
-        precision_weighted_innovation=precision_operator(innovation),
+    EnsembleFSOStatistics.from_full_r(
+        innovation=innovation,
+        precision_operator=precision_artifact,
+        maximum_relative_residual=1e-6,
         analysis_observation_perturbations=analysis_y_perturbations,
         forecast_error_projection_by_member=forecast_error_projection,
         lead_minutes=(60, 120),
@@ -422,15 +440,16 @@ efso = compute_ensemble_fso(
         analysis_ensemble_digest=analysis_ensemble_digest,
         forecast_ensemble_digest=forecast_ensemble_digest,
         verification_reference_digest=verification_reference_digest,
-        observation_error_model_digest=observation_error_model_digest,
+        ensemble_member_index_digest=ensemble_member_index_digest,
     )
 )
 ```
 
 대각 관측오차만 사용하는 경우에는
 `EnsembleFSOStatistics.from_diagonal_r(...)` factory를 사용한다. 일반 경로는
-실제 관측오차모델과 결합된 `R⁻¹d`를 요구한다. EFSO impact가 음수이면 해당
-관측이 지정 forecast-error metric을 줄이는 방향이다.
+실제 관측오차모델과 결합되고 잔차가 검증된 `R⁻¹d`를 요구한다. EFSO impact가
+음수이면 해당 관측이 지정 forecast-error metric을 줄이는 방향이다. 결과에는
+ensemble member jackknife 표준오차도 함께 기록된다.
 입력 ensemble perturbation과 forecast projection은 member 축에서 중심화되어야 한다.
 구현식은 Kalnay et al.의 ensemble observation-impact formulation을 따르며 입력
 통계의 의미는 [Tellus A 원문](https://doi.org/10.3402/tellusa.v64i0.18462)에
@@ -511,6 +530,10 @@ realized = RealizedObservationIntervention.from_learning_result(
     applied_time=applied_time,
     actual_input_before=input_before,
     actual_input_after=input_after,
+    nominal_forecast=forecast,
+    case_id=case_id,
+    radar_id=radar_id,
+    resolved_issuance_validation=issuance_validation,
     execution_policy=InterventionExecutionPolicy(
         metric_guardrails=(
             InterventionMetricGuardrail(
@@ -530,8 +553,9 @@ ledger.append_realized_observation_intervention(realized)
 ```
 
 ledger는 대응하는 learning approval이 먼저 저장돼 있고 evidence digest가 정확히
-일치할 때만 실제 개입을 append한다. 자동 prior 승격은 이 realized evidence를
-필수 입력으로 삼아야 한다.
+일치할 때만 실제 개입을 append한다. automation 승인은 resolved-issuance coverage,
+withdrawn area와 background fallback까지 통과해야 하며, metric harm은 각 metric의
+scale로 정규화한다. 자동 prior 승격은 이 causal v3 evidence만 입력으로 사용한다.
 
 여러 실제 개입의 관측결과가 쌓인 뒤에만 prior artifact 승격을 평가한다. 서로
 단위가 다른 forecast-error metric은 정책의 물리 scale로 정규화하며, 최소 표본수,
@@ -539,9 +563,16 @@ ledger는 대응하는 learning approval이 먼저 저장돼 있고 evidence dig
 
 ```python
 from advar import (
+    NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionPolicy,
     PromotionMetricScale,
     compute_neural_prior_promotion,
+)
+
+ledger.append_neural_prior_holdout_plan(
+    holdout_plan,
+    policy=holdout_plan_policy,
+    policy_trust_store_path="/etc/advar/learning-policies.json",
 )
 
 promotion_policy = NeuralPriorPromotionPolicy(
@@ -551,11 +582,14 @@ promotion_policy = NeuralPriorPromotionPolicy(
     ),
     approved_learning_policy_digests=(learning_policy.digest,),
     approved_candidate_manifest_digests=(candidate_manifest.manifest_digest,),
+    approved_holdout_plan_digests=(holdout_plan.plan_digest,),
+    approved_metric_contract_digests=(metric_config.digest,),
     allowed_intervention_types=("realized_qc_intervention",),
     minimum_realized_interventions=20,
 )
 promotion = compute_neural_prior_promotion(
     candidate_manifest,
+    holdout_plan,
     realized_evaluations,
     policy=promotion_policy,
     policy_trust_store_path="/etc/advar/learning-policies.json",
@@ -564,14 +598,24 @@ if promotion.eligible:
     ledger.append_neural_prior_promotion(
         promotion,
         candidate_manifest,
+        holdout_plan,
         realized_evaluations,
         policy=promotion_policy,
         policy_trust_store_path="/etc/advar/learning-policies.json",
     )
 ```
 
-ledger append는 root-owned trust store를 다시 읽고 promotion을 재계산하며, 각
-evaluation이 저장된 intervention·learning approval과 일치하는지도 확인한다.
+holdout plan은 candidate/parent forecast보다 먼저 원장에 등록하며 case별 input,
+미래 frame 내용이 아닌 verification source/QC/grid/valid-time identity, metric
+contract와 issue time을 고정한다. 실제 verification content digest는 결과가 도착한
+뒤 completed holdout case에 결합한다. 두 forecast run은 동일 input
+bundle을 사용하고 candidate/parent prior·model/schema/training manifest identity를
+각자 직접 포함해야 한다. 평가는 parent의 고정 domain에서 paired skill을 계산하고
+candidate native domain과의 차이를 issuance effect로 분리한다. 따라서 candidate가
+어려운 셀을 철회해도 그 셀이 skill 비교에서 사라지지 않는다. ledger append는
+root-owned trust store를 다시 읽고 promotion을
+재계산하며, material 사례의 case/storm/day/radar/regime 다양성과 cluster bootstrap,
+저장된 intervention·learning approval 계보를 다시 검사한다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
 자동학습은 의도적으로 nominal metric weight를 고정한
@@ -597,8 +641,11 @@ assert torch.allclose(
 )
 ```
 
-이 결과는 full/half P1을 다시 풀고 `ForecastResult`도 다시 생성하지만 학습승인이나
-ledger 입력으로 자동 승격하지 않는다. state effect, issuance-policy effect,
+이 결과는 full/half P1을 다시 풀고 `ForecastResult`도 다시 생성한다. 자동 개입은
+이 resolved-issuance 검증을 필수로 사용하지만 frozen-domain 학습값과는 구분한다.
+검증 digest는 source FSOI, nominal forecast와 nominal/full-step input bundle에도
+결합되므로 다른 perturbation이나 다른 사례의 유리한 검증을 재사용할 수 없다.
+state effect, issuance-policy effect,
 end-to-end effect와 coverage before/after, newly-issued/withdrawn fraction을 따로
 보존하므로 발행영역 축소로 생긴 겉보기 개선을 state 개선과 혼합하지 않는다.
 
@@ -1089,7 +1136,7 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
 - `output_contract_version`: 현재 `nowcast-npz-v53`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v42`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v44`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
