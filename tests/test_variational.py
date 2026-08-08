@@ -993,6 +993,14 @@ class VariationalAnalysisTests(unittest.TestCase):
             accepted.gram_multiply_adds,
             3 * 32**2 * 1024**2,
         )
+        gram_rejected = variational_module.estimate_common_bias_resources(
+            (64, 1024, 1024),
+            (3, 1024, 1024),
+            dtype=torch.float32,
+            temporal_scope="all_times",
+        )
+        self.assertFalse(gram_rejected.within_budget)
+        self.assertIn("gram_multiply_adds", gram_rejected.rejection_reasons)
 
         rejected = variational_module.estimate_common_bias_resources(
             (64, 2048, 2048),
@@ -4148,6 +4156,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         for field_name in (
             "maximum_common_bias_mode_weight_bytes",
             "maximum_common_bias_whitener_apply_operations",
+            "maximum_common_bias_gram_multiply_adds",
             "maximum_frozen_whitener_bytes",
             "maximum_linearization_bytes",
         ):

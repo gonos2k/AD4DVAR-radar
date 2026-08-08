@@ -37,10 +37,9 @@ class EnsembleFSOStatistics:
     ensemble from one deterministic P1 analysis.
     """
 
-    innovation: Tensor
+    precision_weighted_innovation: Tensor
     analysis_observation_perturbations: Tensor
     forecast_error_projection_by_member: Tensor
-    inverse_observation_variance: Tensor
     lead_minutes: tuple[int, ...]
     metric_names: tuple[str, ...]
     analysis_ensemble_digest: str
@@ -49,13 +48,16 @@ class EnsembleFSOStatistics:
     observation_error_model_digest: str
     localization: Tensor | None = None
     localization_digest: str | None = None
-    contract: str = "ensemble-fso-statistics-v1"
+    contract: str = "ensemble-fso-full-r-statistics-v2"
     statistics_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "ensemble-fso-statistics-v1":
+        if self.contract != "ensemble-fso-full-r-statistics-v2":
             raise ValueError("unsupported ensemble FSO statistics")
-        innovation = _owned_float_tensor("innovation", self.innovation)
+        innovation = _owned_float_tensor(
+            "precision_weighted_innovation",
+            self.precision_weighted_innovation,
+        )
         observation_ensemble = _owned_float_tensor(
             "analysis_observation_perturbations",
             self.analysis_observation_perturbations,
@@ -64,14 +66,9 @@ class EnsembleFSOStatistics:
             "forecast_error_projection_by_member",
             self.forecast_error_projection_by_member,
         )
-        inverse_variance = _owned_float_tensor(
-            "inverse_observation_variance",
-            self.inverse_observation_variance,
-        )
         compatible = (
             observation_ensemble,
             forecast_projection,
-            inverse_variance,
         )
         if any(
             value.dtype != innovation.dtype or value.device != innovation.device
@@ -96,13 +93,6 @@ class EnsembleFSOStatistics:
             raise ValueError(
                 "forecast error projection must have shape "
                 "[member, lead, metric]"
-            )
-        if inverse_variance.shape != innovation.shape or bool(
-            torch.any(inverse_variance <= 0.0)
-        ):
-            raise ValueError(
-                "inverse observation variance must be positive and match "
-                "the innovation"
             )
         if not self.lead_minutes or any(
             type(value) is not int or value <= 0 for value in self.lead_minutes
@@ -167,7 +157,7 @@ class EnsembleFSOStatistics:
             "forecast error projection",
             forecast_projection,
         )
-        object.__setattr__(self, "innovation", innovation)
+        object.__setattr__(self, "precision_weighted_innovation", innovation)
         object.__setattr__(
             self,
             "analysis_observation_perturbations",
@@ -180,13 +170,51 @@ class EnsembleFSOStatistics:
         )
         object.__setattr__(
             self,
-            "inverse_observation_variance",
-            inverse_variance,
-        )
-        object.__setattr__(
-            self,
             "statistics_digest",
             _ensemble_statistics_digest(self),
+        )
+
+    @classmethod
+    def from_diagonal_r(
+        cls,
+        *,
+        innovation: Tensor,
+        inverse_observation_variance: Tensor,
+        analysis_observation_perturbations: Tensor,
+        forecast_error_projection_by_member: Tensor,
+        lead_minutes: tuple[int, ...],
+        metric_names: tuple[str, ...],
+        analysis_ensemble_digest: str,
+        forecast_ensemble_digest: str,
+        verification_reference_digest: str,
+        observation_error_model_digest: str,
+        localization: Tensor | None = None,
+        localization_digest: str | None = None,
+    ) -> EnsembleFSOStatistics:
+        """Explicitly build the legacy diagonal-R special case."""
+
+        inverse = _owned_float_tensor(
+            "inverse_observation_variance",
+            inverse_observation_variance,
+        )
+        if inverse.shape != innovation.shape or bool(torch.any(inverse <= 0.0)):
+            raise ValueError("diagonal-R precision must be positive and aligned")
+        return cls(
+            precision_weighted_innovation=innovation * inverse,
+            analysis_observation_perturbations=(
+                analysis_observation_perturbations
+            ),
+            forecast_error_projection_by_member=(
+                forecast_error_projection_by_member
+            ),
+            lead_minutes=lead_minutes,
+            metric_names=metric_names,
+            analysis_ensemble_digest=analysis_ensemble_digest,
+            forecast_ensemble_digest=forecast_ensemble_digest,
+            verification_reference_digest=verification_reference_digest,
+            observation_error_model_digest=observation_error_model_digest,
+            localization=localization,
+            localization_digest=localization_digest,
         )
 
 
@@ -202,15 +230,14 @@ def _ensemble_statistics_digest(value: EnsembleFSOStatistics) -> str:
     return json_digest(
         {
             "contract": value.contract,
-            "innovation": tensor_digest(value.innovation),
+            "precision_weighted_innovation": tensor_digest(
+                value.precision_weighted_innovation
+            ),
             "analysis_observation_perturbations": tensor_digest(
                 value.analysis_observation_perturbations
             ),
             "forecast_error_projection_by_member": tensor_digest(
                 value.forecast_error_projection_by_member
-            ),
-            "inverse_observation_variance": tensor_digest(
-                value.inverse_observation_variance
             ),
             "lead_minutes": list(value.lead_minutes),
             "metric_names": list(value.metric_names),
@@ -298,15 +325,20 @@ def compute_ensemble_fso(statistics: EnsembleFSOStatistics) -> EnsembleFSO:
         statistics.analysis_observation_perturbations,
         statistics.forecast_error_projection_by_member,
     ) / (member_count - 1)
-    impact = cross_projection * (
-        statistics.innovation * statistics.inverse_observation_variance
-    )[None, None, :]
+    impact = cross_projection * statistics.precision_weighted_innovation[
+        None, None, :
+    ]
     if statistics.localization is not None:
         impact = impact * statistics.localization
+        support = statistics.localization > 0.0
+    else:
+        support = torch.ones_like(impact, dtype=torch.bool)
+    support_count = support.sum(dim=-1).clamp_min(1)
+    beneficial = ((impact < 0.0) & support).sum(dim=-1) / support_count
     return EnsembleFSO(
         observation_impact=impact,
         total_impact=impact.sum(dim=-1),
-        beneficial_fraction=(impact < 0.0).to(impact.dtype).mean(dim=-1),
+        beneficial_fraction=beneficial.to(impact.dtype),
         lead_minutes=statistics.lead_minutes,
         metric_names=statistics.metric_names,
         statistics_digest=statistics.statistics_digest,

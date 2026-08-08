@@ -24,11 +24,14 @@ from advar.ledger import (  # noqa: E402
 )
 from advar.intervention import RealizedObservationIntervention  # noqa: E402
 from advar.promotion import (  # noqa: E402
+    NeuralPriorCandidateManifest,
+    NeuralPriorHoldoutCase,
     NeuralPriorPromotionPolicy,
     PromotionMetricScale,
     RealizedInterventionEvaluation,
     compute_neural_prior_promotion,
 )
+import advar.promotion as promotion_module  # noqa: E402
 from advar.nowcast import (  # noqa: E402
     NowcastConfig,
     nowcast,
@@ -413,7 +416,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 7)
+        self.assertEqual(version, 8)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -502,7 +505,6 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         self.assertEqual(loaded, evidence)
 
-        observed_change = torch.tensor([[-0.2]], dtype=torch.float64)
         intervention = RealizedObservationIntervention(
             intervention_id="radar-qc-20260808-001",
             intervention_type="realized_qc_intervention",
@@ -510,7 +512,11 @@ class EpisodeLedgerTests(unittest.TestCase):
             applied_time="2026-08-08T01:02:03+09:00",
             actual_input_before_digest="c" * 64,
             actual_input_after_digest="d" * 64,
-            observed_outcome_digest=tensor_digest(observed_change),
+            outcome_resolution_contract_digest="3" * 64,
+            execution_policy_digest="4" * 64,
+            execution_trust_store_digest="5" * 64,
+            predicted_normalized_benefit=0.2,
+            resolved_normalized_benefit=0.2,
             learning_result_digest=learning_result_digest,
             learning_approval_evidence_digest=evidence.digest,
             counterfactual_perturbation_digest="f" * 64,
@@ -523,28 +529,74 @@ class EpisodeLedgerTests(unittest.TestCase):
             self.ledger.load_realized_observation_intervention(digest),
             intervention,
         )
-        evaluation = RealizedInterventionEvaluation.from_evidence(
-            intervention,
-            evidence,
-            metric_change=observed_change,
-            metric_available=torch.ones_like(
-                observed_change,
-                dtype=torch.bool,
+        manifest = NeuralPriorCandidateManifest(
+            candidate_prior_digest="1" * 64,
+            parent_prior_digest="2" * 64,
+            training_learning_approval_digests=("3" * 64,),
+            training_intervention_digests=("4" * 64,),
+            training_dataset_digest="5" * 64,
+            model_contract_digest="6" * 64,
+            algorithm_bundle_digest="7" * 64,
+            numerical_runtime_digest="8" * 64,
+            holdout_dataset_digest="9" * 64,
+            training_case_ids=("training-case",),
+            holdout_cases=(
+                NeuralPriorHoldoutCase(
+                    "case-1", "storm-1", "2026-08-08", "radar-1",
+                    "convective", "near_range",
+                    "a" * 64, "b" * 64,
+                ),
             ),
+        )
+        evaluation = promotion_module._new_realized_evaluation(
+            intervention_digest=intervention.intervention_digest,
+            intervention_type=intervention.intervention_type,
+            learning_result_digest=intervention.learning_result_digest,
+            learning_approval_evidence_digest=evidence.digest,
+            learning_policy_digest=evidence.policy_digest,
+            candidate_manifest_digest=manifest.manifest_digest,
+            candidate_prior_digest=manifest.candidate_prior_digest,
+            parent_prior_digest=manifest.parent_prior_digest,
+            case_id="case-1",
+            storm_id="storm-1",
+            day="2026-08-08",
+            radar_id="radar-1",
+            regime="convective",
+            range_regime="near_range",
+            candidate_forecast_digest="a" * 64,
+            parent_forecast_digest="b" * 64,
+            metric_change=torch.tensor([[-0.2]], dtype=torch.float64),
+            metric_available=torch.tensor([[True]]),
             lead_minutes=(60,),
             metric_names=("log_echo_mse",),
             verification_digest="e" * 64,
+            metric_contract_digest="f" * 64,
+            coverage_candidate=torch.tensor([1.0], dtype=torch.float64),
+            coverage_parent=torch.tensor([1.0], dtype=torch.float64),
+            issue_time="2026-08-08T00:00:00Z",
+            applied_time=intervention.applied_time,
+            verification_valid_times=("2026-08-08T01:00:00Z",),
         )
         policy = NeuralPriorPromotionPolicy(
             metric_scales=(
                 PromotionMetricScale("log_echo_mse", 1.0, 0.01),
             ),
             approved_learning_policy_digests=(evidence.policy_digest,),
+            approved_candidate_manifest_digests=(manifest.manifest_digest,),
             allowed_intervention_types=("realized_qc_intervention",),
             minimum_realized_interventions=1,
+            minimum_material_interventions=1,
+            minimum_material_intervention_fraction=1.0,
+            minimum_independent_cases=1,
+            minimum_distinct_storms=1,
+            minimum_distinct_days=1,
+            minimum_distinct_radars=1,
+            minimum_distinct_regimes=1,
+            minimum_distinct_range_regimes=1,
             minimum_beneficial_fraction=1.0,
             maximum_harmful_fraction=0.0,
             minimum_mean_normalized_improvement=0.1,
+            bootstrap_samples=16,
         )
         trust = SimpleNamespace(
             approved_policy_digests=frozenset((policy.digest,)),
@@ -555,8 +607,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             return_value=trust,
         ):
             promotion = compute_neural_prior_promotion(
-                "1" * 64,
-                "2" * 64,
+                manifest,
                 (evaluation,),
                 policy=policy,
                 policy_trust_store_path=(
@@ -565,6 +616,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             )
             promotion_digest = self.ledger.append_neural_prior_promotion(
                 promotion,
+                manifest,
                 (evaluation,),
                 policy=policy,
                 policy_trust_store_path=(
@@ -1702,7 +1754,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 7)
+        self.assertEqual(version, 8)
 
 
 if __name__ == "__main__":

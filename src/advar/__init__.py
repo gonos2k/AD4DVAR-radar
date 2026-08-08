@@ -25,11 +25,15 @@ from .ensemble_sensitivity import (
     validate_ensemble_fso,
 )
 from .intervention import (
+    InterventionExecutionPolicy,
+    InterventionMetricGuardrail,
     ObservationInterventionType,
     RealizedObservationIntervention,
     validate_realized_observation_intervention,
 )
 from .promotion import (
+    NeuralPriorCandidateManifest,
+    NeuralPriorHoldoutCase,
     NeuralPriorPromotionEvidence,
     NeuralPriorPromotionPolicy,
     PromotionMetricScale,
@@ -155,8 +159,12 @@ __all__ = [
     "FSOMetricDomain",
     "LearningEligibility",
     "LearningApprovalEvidence",
+    "InterventionExecutionPolicy",
+    "InterventionMetricGuardrail",
     "MetricTaylorThreshold",
     "NeuralPriorPromotionEvidence",
+    "NeuralPriorCandidateManifest",
+    "NeuralPriorHoldoutCase",
     "NeuralPriorPromotionPolicy",
     "ObservationInterventionType",
     "ObservationRemovalConfig",

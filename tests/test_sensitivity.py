@@ -23,6 +23,8 @@ from advar.linearization_artifact import (  # noqa: E402
     save_p1_linearization,
 )
 from advar.intervention import (  # noqa: E402
+    InterventionExecutionPolicy,
+    InterventionMetricGuardrail,
     RealizedObservationIntervention,
     validate_realized_observation_intervention,
 )
@@ -4546,19 +4548,41 @@ class VariationalFSOTests(unittest.TestCase):
             learning,
             expected_trust_store_digest="7" * 64,
         )
-        realized = RealizedObservationIntervention.from_learning_result(
-            learning,
-            analysis,
-            intervention_id="radar-correction-20260808-001",
-            intervention_type="realized_sensor_correction",
-            action_digest="8" * 64,
-            applied_time="2026-08-08T12:00:00+09:00",
-            actual_input_before=linearization.frozen.input_frames_dbz,
-            actual_input_after=(
-                linearization.frozen.input_frames_dbz + delta
+        execution_policy = InterventionExecutionPolicy(
+                metric_guardrails=tuple(
+                    InterventionMetricGuardrail(
+                        name,
+                        scale=1.0,
+                        maximum_predicted_harm=1.0e20,
+                        maximum_resolved_harm=1.0e20,
+                    )
+                    for name in learning.fsoi.fso.metric_names
+                ),
+                allowed_intervention_types=("realized_sensor_correction",),
+            )
+        with patch(
+            "advar.intervention._load_learning_policy_trust_store",
+            return_value=sensitivity_module._LearningPolicyTrustStore(
+                approved_policy_digests=frozenset((execution_policy.digest,)),
+                content_digest="9" * 64,
             ),
-            observed_outcome=resolved_change,
-        )
+        ):
+            realized = RealizedObservationIntervention.from_learning_result(
+                learning,
+                analysis,
+                intervention_id="radar-correction-20260808-001",
+                intervention_type="realized_sensor_correction",
+                action_digest="8" * 64,
+                applied_time="2026-08-08T12:00:00+09:00",
+                actual_input_before=linearization.frozen.input_frames_dbz,
+                actual_input_after=(
+                    linearization.frozen.input_frames_dbz + delta
+                ),
+                execution_policy=execution_policy,
+                execution_policy_trust_store_path=(
+                    "/etc/advar/intervention-policies.json"
+                ),
+            )
         validate_realized_observation_intervention(realized)
         self.assertEqual(realized.applied_time, "2026-08-08T03:00:00Z")
         self.assertEqual(
@@ -4579,6 +4603,27 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertIsNotNone(
             issuance_validation.full_step_forecast_digest
         )
+        self.assertIsNotNone(issuance_validation.frozen_domain_state_effect)
+        self.assertIsNotNone(issuance_validation.issuance_policy_effect)
+        self.assertIsNotNone(issuance_validation.end_to_end_issuance_effect)
+        assert issuance_validation.frozen_domain_state_effect is not None
+        assert issuance_validation.issuance_policy_effect is not None
+        assert issuance_validation.end_to_end_issuance_effect is not None
+        torch.testing.assert_close(
+            issuance_validation.frozen_domain_state_effect
+            + issuance_validation.issuance_policy_effect,
+            issuance_validation.end_to_end_issuance_effect,
+            rtol=0.0,
+            atol=0.0,
+            equal_nan=True,
+        )
+        for value in (
+            issuance_validation.coverage_before,
+            issuance_validation.coverage_after,
+            issuance_validation.newly_issued_fraction,
+            issuance_validation.withdrawn_fraction,
+        ):
+            self.assertIsNotNone(value)
         weaker_delta = 0.5 * delta
         candidates = (
             ("stronger", perturbation),

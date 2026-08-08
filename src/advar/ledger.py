@@ -30,6 +30,7 @@ from .sensitivity import (
 )
 from .intervention import RealizedObservationIntervention
 from .promotion import (
+    NeuralPriorCandidateManifest,
     NeuralPriorPromotionEvidence,
     NeuralPriorPromotionPolicy,
     RealizedInterventionEvaluation,
@@ -40,7 +41,7 @@ from .promotion import (
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 7
+_INDEX_SCHEMA_VERSION = 8
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _TRUST_COMPONENTS_V13 = {
@@ -607,11 +608,14 @@ class EpisodeLedger:
                     intervention_digest, intervention_id, intervention_type,
                     action_digest, applied_time,
                     actual_input_before_digest, actual_input_after_digest,
-                    observed_outcome_digest, learning_result_digest,
+                    observed_outcome_digest, execution_policy_digest,
+                    execution_trust_store_digest,
+                    predicted_normalized_benefit,
+                    resolved_normalized_benefit, learning_result_digest,
                     learning_approval_evidence_digest,
                     counterfactual_perturbation_digest,
                     linearization_digest, evidence_contract, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     intervention.intervention_digest,
@@ -621,7 +625,11 @@ class EpisodeLedger:
                     intervention.applied_time,
                     intervention.actual_input_before_digest,
                     intervention.actual_input_after_digest,
-                    intervention.observed_outcome_digest,
+                    intervention.outcome_resolution_contract_digest,
+                    intervention.execution_policy_digest,
+                    intervention.execution_trust_store_digest,
+                    intervention.predicted_normalized_benefit,
+                    intervention.resolved_normalized_benefit,
                     intervention.learning_result_digest,
                     intervention.learning_approval_evidence_digest,
                     intervention.counterfactual_perturbation_digest,
@@ -656,7 +664,11 @@ class EpisodeLedger:
             applied_time=row["applied_time"],
             actual_input_before_digest=row["actual_input_before_digest"],
             actual_input_after_digest=row["actual_input_after_digest"],
-            observed_outcome_digest=row["observed_outcome_digest"],
+            outcome_resolution_contract_digest=row["observed_outcome_digest"],
+            execution_policy_digest=row["execution_policy_digest"],
+            execution_trust_store_digest=row["execution_trust_store_digest"],
+            predicted_normalized_benefit=row["predicted_normalized_benefit"],
+            resolved_normalized_benefit=row["resolved_normalized_benefit"],
             learning_result_digest=row["learning_result_digest"],
             learning_approval_evidence_digest=(
                 row["learning_approval_evidence_digest"]
@@ -674,6 +686,7 @@ class EpisodeLedger:
     def append_neural_prior_promotion(
         self,
         evidence: NeuralPriorPromotionEvidence,
+        manifest: NeuralPriorCandidateManifest,
         evaluations: tuple[RealizedInterventionEvaluation, ...],
         *,
         policy: NeuralPriorPromotionPolicy,
@@ -682,8 +695,7 @@ class EpisodeLedger:
         """Append one eligible promotion linked to realized interventions."""
 
         recomputed = compute_neural_prior_promotion(
-            evidence.candidate_prior_digest,
-            evidence.parent_prior_digest,
+            manifest,
             evaluations,
             policy=policy,
             policy_trust_store_path=policy_trust_store_path,
@@ -737,28 +749,45 @@ class EpisodeLedger:
                 """
                 INSERT INTO neural_prior_promotions (
                     promotion_evidence_digest, candidate_prior_digest,
-                    parent_prior_digest, policy_digest, trust_store_digest,
+                    parent_prior_digest, candidate_manifest_digest,
+                    candidate_manifest_json, policy_digest, trust_store_digest,
                     evaluation_digests_json, intervention_digests_json,
                     realized_intervention_count, material_outcome_count,
-                    beneficial_fraction, harmful_fraction,
-                    mean_normalized_improvement,
+                    distinct_case_count, distinct_storm_count,
+                    distinct_day_count, distinct_radar_count,
+                    distinct_regime_count, distinct_range_regime_count,
+                    beneficial_fraction, beneficial_fraction_lower_bound,
+                    harmful_fraction, harmful_fraction_upper_bound,
+                    mean_normalized_improvement, mean_improvement_lower_bound,
                     maximum_normalized_degradation, eligible,
                     rejection_reasons_json, evidence_contract, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     evidence.promotion_evidence_digest,
                     evidence.candidate_prior_digest,
                     evidence.parent_prior_digest,
+                    evidence.candidate_manifest_digest,
+                    json.dumps(asdict(manifest), sort_keys=True),
                     evidence.policy_digest,
                     evidence.trust_store_digest,
                     json.dumps(list(evidence.evaluation_digests)),
                     json.dumps(list(evidence.intervention_digests)),
                     evidence.realized_intervention_count,
-                    evidence.material_outcome_count,
+                    evidence.material_intervention_count,
+                    evidence.distinct_case_count,
+                    evidence.distinct_storm_count,
+                    evidence.distinct_day_count,
+                    evidence.distinct_radar_count,
+                    evidence.distinct_regime_count,
+                    evidence.distinct_range_regime_count,
                     evidence.beneficial_fraction,
+                    evidence.beneficial_fraction_lower_bound,
                     evidence.harmful_fraction,
+                    evidence.harmful_fraction_upper_bound,
                     evidence.mean_normalized_improvement,
+                    evidence.mean_improvement_lower_bound,
                     evidence.maximum_normalized_degradation,
                     int(evidence.eligible),
                     json.dumps(list(evidence.rejection_reasons)),
@@ -790,6 +819,7 @@ class EpisodeLedger:
         evidence = NeuralPriorPromotionEvidence(
             candidate_prior_digest=row["candidate_prior_digest"],
             parent_prior_digest=row["parent_prior_digest"],
+            candidate_manifest_digest=row["candidate_manifest_digest"],
             policy_digest=row["policy_digest"],
             trust_store_digest=row["trust_store_digest"],
             evaluation_digests=tuple(
@@ -799,12 +829,23 @@ class EpisodeLedger:
                 json.loads(row["intervention_digests_json"])
             ),
             realized_intervention_count=row["realized_intervention_count"],
-            material_outcome_count=row["material_outcome_count"],
+            material_intervention_count=row["material_outcome_count"],
+            distinct_case_count=row["distinct_case_count"],
+            distinct_storm_count=row["distinct_storm_count"],
+            distinct_day_count=row["distinct_day_count"],
+            distinct_radar_count=row["distinct_radar_count"],
+            distinct_regime_count=row["distinct_regime_count"],
+            distinct_range_regime_count=row["distinct_range_regime_count"],
             beneficial_fraction=row["beneficial_fraction"],
+            beneficial_fraction_lower_bound=(
+                row["beneficial_fraction_lower_bound"]
+            ),
             harmful_fraction=row["harmful_fraction"],
+            harmful_fraction_upper_bound=row["harmful_fraction_upper_bound"],
             mean_normalized_improvement=(
                 row["mean_normalized_improvement"]
             ),
+            mean_improvement_lower_bound=row["mean_improvement_lower_bound"],
             maximum_normalized_degradation=(
                 row["maximum_normalized_degradation"]
             ),
@@ -887,6 +928,10 @@ class EpisodeLedger:
                     actual_input_before_digest TEXT NOT NULL,
                     actual_input_after_digest TEXT NOT NULL,
                     observed_outcome_digest TEXT NOT NULL,
+                    execution_policy_digest TEXT NOT NULL,
+                    execution_trust_store_digest TEXT NOT NULL,
+                    predicted_normalized_benefit REAL NOT NULL,
+                    resolved_normalized_benefit REAL NOT NULL,
                     learning_result_digest TEXT NOT NULL,
                     learning_approval_evidence_digest TEXT NOT NULL,
                     counterfactual_perturbation_digest TEXT NOT NULL,
@@ -906,15 +951,26 @@ class EpisodeLedger:
                     promotion_evidence_digest TEXT PRIMARY KEY,
                     candidate_prior_digest TEXT NOT NULL UNIQUE,
                     parent_prior_digest TEXT NOT NULL,
+                    candidate_manifest_digest TEXT NOT NULL,
+                    candidate_manifest_json TEXT NOT NULL,
                     policy_digest TEXT NOT NULL,
                     trust_store_digest TEXT NOT NULL,
                     evaluation_digests_json TEXT NOT NULL,
                     intervention_digests_json TEXT NOT NULL,
                     realized_intervention_count INTEGER NOT NULL,
                     material_outcome_count INTEGER NOT NULL,
+                    distinct_case_count INTEGER NOT NULL,
+                    distinct_storm_count INTEGER NOT NULL,
+                    distinct_day_count INTEGER NOT NULL,
+                    distinct_radar_count INTEGER NOT NULL,
+                    distinct_regime_count INTEGER NOT NULL,
+                    distinct_range_regime_count INTEGER NOT NULL,
                     beneficial_fraction REAL NOT NULL,
+                    beneficial_fraction_lower_bound REAL NOT NULL,
                     harmful_fraction REAL NOT NULL,
+                    harmful_fraction_upper_bound REAL NOT NULL,
                     mean_normalized_improvement REAL NOT NULL,
+                    mean_improvement_lower_bound REAL NOT NULL,
                     maximum_normalized_degradation REAL NOT NULL,
                     eligible INTEGER NOT NULL,
                     rejection_reasons_json TEXT NOT NULL,
@@ -924,6 +980,8 @@ class EpisodeLedger:
                 """
             )
             _ensure_variational_learning_approval_schema(connection)
+            _ensure_realized_intervention_schema(connection)
+            _ensure_neural_prior_promotion_schema(connection)
             connection.execute(
                 """
                 CREATE INDEX IF NOT EXISTS episodes_contract_time
@@ -1190,6 +1248,59 @@ def _ensure_variational_learning_approval_schema(
         if name not in columns:
             connection.execute(
                 f"ALTER TABLE variational_learning_approvals "
+                f"ADD COLUMN {name} {definition}"
+            )
+
+
+def _ensure_realized_intervention_schema(
+    connection: sqlite3.Connection,
+) -> None:
+    columns = {
+        row[1]
+        for row in connection.execute(
+            "PRAGMA table_info(realized_observation_interventions)"
+        ).fetchall()
+    }
+    definitions = {
+        "execution_policy_digest": f"TEXT NOT NULL DEFAULT '{'0' * 64}'",
+        "execution_trust_store_digest": f"TEXT NOT NULL DEFAULT '{'0' * 64}'",
+        "predicted_normalized_benefit": "REAL NOT NULL DEFAULT 0",
+        "resolved_normalized_benefit": "REAL NOT NULL DEFAULT 0",
+    }
+    for name, definition in definitions.items():
+        if name not in columns:
+            connection.execute(
+                "ALTER TABLE realized_observation_interventions "
+                f"ADD COLUMN {name} {definition}"
+            )
+
+
+def _ensure_neural_prior_promotion_schema(
+    connection: sqlite3.Connection,
+) -> None:
+    columns = {
+        row[1]
+        for row in connection.execute(
+            "PRAGMA table_info(neural_prior_promotions)"
+        ).fetchall()
+    }
+    definitions = {
+        "candidate_manifest_digest": f"TEXT NOT NULL DEFAULT '{'0' * 64}'",
+        "candidate_manifest_json": "TEXT NOT NULL DEFAULT '{}'",
+        "distinct_case_count": "INTEGER NOT NULL DEFAULT 0",
+        "distinct_storm_count": "INTEGER NOT NULL DEFAULT 0",
+        "distinct_day_count": "INTEGER NOT NULL DEFAULT 0",
+        "distinct_radar_count": "INTEGER NOT NULL DEFAULT 0",
+        "distinct_regime_count": "INTEGER NOT NULL DEFAULT 0",
+        "distinct_range_regime_count": "INTEGER NOT NULL DEFAULT 0",
+        "beneficial_fraction_lower_bound": "REAL NOT NULL DEFAULT 0",
+        "harmful_fraction_upper_bound": "REAL NOT NULL DEFAULT 1",
+        "mean_improvement_lower_bound": "REAL NOT NULL DEFAULT 0",
+    }
+    for name, definition in definitions.items():
+        if name not in columns:
+            connection.execute(
+                "ALTER TABLE neural_prior_promotions "
                 f"ADD COLUMN {name} {definition}"
             )
 
