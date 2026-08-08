@@ -1,7 +1,14 @@
 from __future__ import annotations
 
 import unittest
+from contextlib import contextmanager
 from dataclasses import replace
+import json
+from pathlib import Path
+import stat
+import tempfile
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import torch
 
@@ -11,7 +18,30 @@ from advar import (
     PrecisionWeightedInnovationEvidence,
     compute_ensemble_fso,
     validate_ensemble_fso,
+    validate_precision_operator_artifact,
 )
+
+
+@contextmanager
+def _precision_trust_store(operator_digest: str):
+    with tempfile.TemporaryDirectory() as temporary:
+        path = Path(temporary) / "precision.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "contract": "advar-precision-operator-trust-store-v2",
+                    "approved_operator_digests": [operator_digest],
+                }
+            ),
+            encoding="utf-8",
+        )
+        metadata = SimpleNamespace(
+            st_mode=stat.S_IFREG | 0o400,
+            st_uid=0,
+            st_size=path.stat().st_size,
+        )
+        with patch("advar.ensemble_sensitivity.os.fstat", return_value=metadata):
+            yield path
 
 
 class EnsembleFSOTests(unittest.TestCase):
@@ -32,12 +62,10 @@ class EnsembleFSOTests(unittest.TestCase):
             ),
             lead_minutes=(60,),
             metric_names=("log_echo_mse",),
-            analysis_ensemble_digest="1" * 64,
-            forecast_ensemble_digest="2" * 64,
             verification_reference_digest="3" * 64,
             observation_error_model_digest="4" * 64,
-            observation_index_digest="5" * 64,
-            ensemble_member_index_digest="6" * 64,
+            observation_ids=("o0", "o1"),
+            ensemble_member_ids=("m0", "m1", "m2"),
         )
 
     def test_computes_direct_ensemble_observation_impact(self) -> None:
@@ -85,7 +113,7 @@ class EnsembleFSOTests(unittest.TestCase):
 
     def test_rejects_uncentered_ensemble(self) -> None:
         statistics = self.statistics()
-        with self.assertRaisesRegex(ValueError, "centered"):
+        with self.assertRaisesRegex(ValueError, "digest|centered"):
             replace(
                 statistics,
                 analysis_observation_perturbations=(
@@ -107,30 +135,155 @@ class EnsembleFSOTests(unittest.TestCase):
         operator = PrecisionOperatorArtifact(
             precision=precision,
             covariance=torch.linalg.inv(precision),
-            observation_index_digest="5" * 64,
+            observation_ids=("o0", "o1"),
+            forecast_run_digest="1" * 64,
+            observation_error_model_digest="2" * 64,
+            calibration_manifest_digest="3" * 64,
         )
-        evidence = PrecisionWeightedInnovationEvidence.from_operator_artifact(
-            innovation=torch.tensor([2.0, -4.0], dtype=torch.float64),
-            operator=operator,
-        )
+        with _precision_trust_store(operator.operator_digest) as trust_store:
+            evidence = PrecisionWeightedInnovationEvidence.from_operator_artifact(
+                innovation=torch.tensor([2.0, -4.0], dtype=torch.float64),
+                operator=operator,
+                trust_store_path=trust_store,
+            )
         torch.testing.assert_close(
             evidence.precision_weighted_innovation,
             torch.tensor([1.0, -1.0], dtype=torch.float64),
         )
         self.assertEqual(evidence.relative_solve_residual, 0.0)
 
+    def test_full_r_factory_requires_root_approved_operator(self) -> None:
+        operator = PrecisionOperatorArtifact(
+            precision=torch.eye(2, dtype=torch.float64),
+            covariance=torch.eye(2, dtype=torch.float64),
+            observation_ids=("o0", "o1"),
+            forecast_run_digest="1" * 64,
+            observation_error_model_digest="2" * 64,
+            calibration_manifest_digest="3" * 64,
+        )
+        with _precision_trust_store("5" * 64) as trust_store:
+            with self.assertRaisesRegex(ValueError, "not trusted"):
+                PrecisionWeightedInnovationEvidence.from_operator_artifact(
+                    innovation=torch.ones(2, dtype=torch.float64),
+                    operator=operator,
+                    trust_store_path=trust_store,
+                )
+
+    def test_full_r_approval_cannot_be_reused_for_another_spd_operator(self) -> None:
+        approved = PrecisionOperatorArtifact(
+            precision=torch.eye(2, dtype=torch.float64),
+            covariance=torch.eye(2, dtype=torch.float64),
+            observation_ids=("o0", "o1"),
+            forecast_run_digest="1" * 64,
+            observation_error_model_digest="2" * 64,
+            calibration_manifest_digest="3" * 64,
+        )
+        other = PrecisionOperatorArtifact(
+            precision=torch.eye(2, dtype=torch.float64) * 2.0,
+            covariance=torch.eye(2, dtype=torch.float64) * 0.5,
+            observation_ids=("o0", "o1"),
+            forecast_run_digest="1" * 64,
+            observation_error_model_digest="2" * 64,
+            calibration_manifest_digest="3" * 64,
+        )
+        with _precision_trust_store(approved.operator_digest) as trust_store:
+            with self.assertRaisesRegex(ValueError, "not trusted"):
+                PrecisionWeightedInnovationEvidence.from_operator_artifact(
+                    innovation=torch.ones(2, dtype=torch.float64),
+                    operator=other,
+                    trust_store_path=trust_store,
+                )
+
     def test_full_r_factory_rejects_an_unverified_precision_vector(self) -> None:
         with self.assertRaisesRegex(ValueError, "inconsistent"):
             PrecisionOperatorArtifact(
                 precision=torch.eye(2, dtype=torch.float64) * 0.5,
                 covariance=torch.eye(2, dtype=torch.float64),
-                observation_index_digest="5" * 64,
+                observation_ids=("o0", "o1"),
+                forecast_run_digest="1" * 64,
+                observation_error_model_digest="2" * 64,
+                calibration_manifest_digest="3" * 64,
             )
+
+    def test_full_r_rejects_an_indefinite_covariance(self) -> None:
+        indefinite = torch.diag(torch.tensor([1.0, -1.0], dtype=torch.float64))
+        with self.assertRaisesRegex(ValueError, "positive definite"):
+            PrecisionOperatorArtifact(
+                precision=indefinite,
+                covariance=indefinite,
+                observation_ids=("o0", "o1"),
+                forecast_run_digest="1" * 64,
+                observation_error_model_digest="2" * 64,
+                calibration_manifest_digest="3" * 64,
+            )
+
+    def test_full_r_rejects_dense_resource_and_condition_budgets(self) -> None:
+        identity = torch.eye(3, dtype=torch.float64)
+        with self.assertRaisesRegex(ValueError, "observation budget"):
+            PrecisionOperatorArtifact(
+                precision=identity,
+                covariance=identity,
+                observation_ids=("o0", "o1", "o2"),
+                forecast_run_digest="1" * 64,
+                observation_error_model_digest="2" * 64,
+                calibration_manifest_digest="3" * 64,
+                maximum_observation_count=2,
+            )
+        with self.assertRaisesRegex(ValueError, "condition number"):
+            PrecisionOperatorArtifact(
+                precision=torch.diag(torch.tensor([1.0, 1.0e-4], dtype=torch.float64)),
+                covariance=torch.diag(torch.tensor([1.0, 1.0e4], dtype=torch.float64)),
+                observation_ids=("o0", "o1"),
+                forecast_run_digest="1" * 64,
+                observation_error_model_digest="2" * 64,
+                calibration_manifest_digest="3" * 64,
+                maximum_condition_number=100.0,
+            )
+        with self.assertRaisesRegex(ValueError, "factorization budget"):
+            PrecisionOperatorArtifact(
+                precision=identity,
+                covariance=identity,
+                observation_ids=("o0", "o1", "o2"),
+                forecast_run_digest="1" * 64,
+                observation_error_model_digest="2" * 64,
+                calibration_manifest_digest="3" * 64,
+                maximum_factorization_flops=100,
+            )
+
+    def test_full_r_operator_mutation_is_detected_before_use(self) -> None:
+        operator = PrecisionOperatorArtifact(
+            precision=torch.eye(2, dtype=torch.float64),
+            covariance=torch.eye(2, dtype=torch.float64),
+            observation_ids=("o0", "o1"),
+            forecast_run_digest="1" * 64,
+            observation_error_model_digest="2" * 64,
+            calibration_manifest_digest="3" * 64,
+        )
+        operator.precision[0, 0] = 2.0
+        with self.assertRaisesRegex(ValueError, "operator digest"):
+            validate_precision_operator_artifact(operator)
+        with _precision_trust_store(operator.operator_digest) as trust_store:
+            with self.assertRaisesRegex(ValueError, "operator digest"):
+                PrecisionWeightedInnovationEvidence.from_operator_artifact(
+                    innovation=torch.ones(2, dtype=torch.float64),
+                    operator=operator,
+                    trust_store_path=trust_store,
+                )
 
     def test_nested_precision_mutation_is_rejected(self) -> None:
         statistics = self.statistics()
         statistics.precision_evidence.precision_weighted_innovation[0] = 99.0
         with self.assertRaisesRegex(ValueError, "precision evidence digest"):
+            compute_ensemble_fso(statistics)
+
+    def test_localization_mutation_is_rejected(self) -> None:
+        statistics = replace(
+            self.statistics(),
+            localization=torch.ones((1, 1, 2), dtype=torch.float64),
+        )
+        assert statistics.localization is not None
+        statistics.localization[0, 0, 0] = 0.0
+        with self.assertRaisesRegex(ValueError, "statistics digest"):
             compute_ensemble_fso(statistics)
 
     def test_member_and_observation_ordering_must_match(self) -> None:

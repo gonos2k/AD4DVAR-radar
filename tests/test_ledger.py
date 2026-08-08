@@ -1,10 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import fields, replace
+from dataclasses import asdict, fields, replace
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 from pathlib import Path
 import sqlite3
+import stat
 import sys
 import tempfile
 from types import SimpleNamespace
@@ -14,6 +15,8 @@ from unittest.mock import patch
 import numpy as np
 import torch
 
+import advar.ledger as ledger_module
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar._digest import tensor_digest  # noqa: E402
@@ -22,13 +25,21 @@ from advar.ledger import (  # noqa: E402
     ModelContract,
     SensitivityEpisode,
 )
-from advar.intervention import RealizedObservationIntervention  # noqa: E402
+from advar.intervention import (  # noqa: E402
+    ProspectiveInterventionDecision,
+    RealizedInterventionReceipt,
+    RealizedObservationIntervention,
+    RetrospectiveCounterfactualReplay,
+)
 from advar.promotion import (  # noqa: E402
+    LegacyNeuralPriorHoldoutPlanAudit,
+    LegacyNeuralPriorHoldoutPlanCase,
     NeuralPriorCandidateManifest,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
     NeuralPriorHoldoutPlanPolicy,
+    NeuralPriorInputPlan,
     NeuralPriorPromotionPolicy,
     PromotionMetricScale,
     RealizedInterventionEvaluation,
@@ -36,6 +47,7 @@ from advar.promotion import (  # noqa: E402
 )
 import advar.promotion as promotion_module  # noqa: E402
 from advar.nowcast import (  # noqa: E402
+    ForecastRunContract,
     NowcastConfig,
     nowcast,
 )
@@ -178,14 +190,10 @@ def _contract(snapshot=None) -> ModelContract:
         grid_geometry_version="grid-v1",
         radar_qc_version="qc-v1",
         nowcast_config_digest=(
-            "a" * 64
-            if snapshot is None
-            else snapshot.nowcast_config_digest
+            "a" * 64 if snapshot is None else snapshot.nowcast_config_digest
         ),
         sensitivity_config_digest=(
-            "b" * 64
-            if snapshot is None
-            else snapshot.sensitivity_config_digest
+            "b" * 64 if snapshot is None else snapshot.sensitivity_config_digest
         ),
         grid_time_contract_digest=(
             None if snapshot is None else snapshot.grid_time_contract_digest
@@ -275,6 +283,91 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.root = Path(self.temporary_directory.name)
         self.ledger = EpisodeLedger(self.root)
 
+    def test_executor_secret_store_must_not_be_world_readable(self) -> None:
+        path = self.root / "executor.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "contract": "advar-executor-trust-store-v1",
+                    "keys": {"executor": (b"x" * 32).hex()},
+                }
+            ),
+            encoding="utf-8",
+        )
+        metadata = SimpleNamespace(
+            st_mode=stat.S_IFREG | 0o444,
+            st_uid=0,
+        )
+        with patch("advar.ledger.os.fstat", return_value=metadata):
+            with self.assertRaisesRegex(ValueError, "root-owned and private"):
+                ledger_module._load_executor_trust_store(path)
+
+    def test_holdout_plan_rechecks_clock_before_commit(self) -> None:
+        issue = "2030-01-01T00:00:00Z"
+        input_plan = NeuralPriorInputPlan(
+            valid_times=(issue,),
+            grid_contract_digest="1" * 64,
+            radar_product_digest="2" * 64,
+            qc_pipeline_digest="3" * 64,
+            background_cycle_rule_digest="4" * 64,
+            mask_policy_digest="5" * 64,
+            issue_time=issue,
+        )
+        plan = NeuralPriorHoldoutPlan(
+            plan_id="clock-plan",
+            parent_prior_digest="6" * 64,
+            candidate_family_digests=("7" * 64,),
+            cases=(
+                NeuralPriorHoldoutPlanCase(
+                    "case-clock",
+                    "storm-clock",
+                    "2029-12-31",
+                    "radar-clock",
+                    "convective",
+                    "near_range",
+                    input_plan.plan_digest,
+                    "8" * 64,
+                    "9" * 64,
+                    issue,
+                ),
+            ),
+            input_plans=(input_plan,),
+            registered_at="2029-01-01T00:00:00Z",
+        )
+        policy = NeuralPriorHoldoutPlanPolicy(
+            approved_plan_digests=(plan.plan_digest,),
+            approved_metric_contract_digests=("9" * 64,),
+            maximum_candidate_family_size=1,
+        )
+        trust = SimpleNamespace(
+            approved_policy_digests=frozenset((policy.digest,)),
+            content_digest="a" * 64,
+        )
+
+        class _CrossingClock(datetime):
+            calls = 0
+
+            @classmethod
+            def now(cls, tz=None):  # type: ignore[no-untyped-def]
+                cls.calls += 1
+                value = (
+                    "2029-12-31T23:59:59+00:00"
+                    if cls.calls == 1
+                    else "2030-01-01T00:00:01+00:00"
+                )
+                return datetime.fromisoformat(value)
+
+        with patch(
+            "advar.ledger._load_learning_policy_trust_store",
+            return_value=trust,
+        ), patch("advar.ledger.datetime", _CrossingClock):
+            with self.assertRaisesRegex(ValueError, "crossed its forecast issue"):
+                self.ledger.append_neural_prior_holdout_plan(
+                    plan,
+                    policy=policy,
+                    policy_trust_store_path="/etc/advar/policies.json",
+                )
+
     def tearDown(self) -> None:
         self.temporary_directory.cleanup()
 
@@ -347,9 +440,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         self.assertEqual(
             manifest["trust_components"]["observation_verified_evidence"],
-            self.snapshot.trust_components[
-                "observation_verified_evidence"
-            ],
+            self.snapshot.trust_components["observation_verified_evidence"],
         )
         for name in (
             "forecast_confidence",
@@ -373,9 +464,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(
             manifest["sensitivity_scope"],
             {
-                "input_0_minutes": (
-                    "partial_direct_latest_dbz_fixed_control"
-                ),
+                "input_0_minutes": ("partial_direct_latest_dbz_fixed_control"),
                 "indirect_analysis_path": (
                     "unavailable_implicit_variational_fso_not_implemented"
                 ),
@@ -394,10 +483,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 )
                 for row in impacts
             },
-            {
-                (lead, "log_echo_mse", 0)
-                for lead in range(10, 181, 10)
-            },
+            {(lead, "log_echo_mse", 0) for lead in range(10, 181, 10)},
         )
         self.assertEqual(
             {
@@ -419,7 +505,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 10)
+        self.assertEqual(version, 11)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -503,9 +589,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 ),
             )
 
-        loaded = self.ledger.load_variational_learning_approval(
-            learning_result_digest
-        )
+        loaded = self.ledger.load_variational_learning_approval(learning_result_digest)
         self.assertEqual(loaded, evidence)
 
         intervention = RealizedObservationIntervention(
@@ -532,9 +616,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             resolved_issuance_validation_digest="3" * 64,
             contract="realized-observation-intervention-v3",
         )
-        digest = self.ledger.append_realized_observation_intervention(
-            intervention
-        )
+        digest = self.ledger.append_realized_observation_intervention(intervention)
         self.assertEqual(
             self.ledger.load_realized_observation_intervention(digest),
             intervention,
@@ -556,167 +638,216 @@ class EpisodeLedgerTests(unittest.TestCase):
             self.ledger.load_realized_observation_intervention(legacy_digest),
             legacy_intervention,
         )
-        training_intervention = replace(
-            intervention,
-            intervention_id="training-radar-qc-20260808-001",
-            case_id="training-case",
-        )
-        self.ledger.append_realized_observation_intervention(
-            training_intervention
-        )
-        plan = NeuralPriorHoldoutPlan(
-            plan_id="ledger-holdout",
-            parent_prior_digest="2" * 64,
-            candidate_family_digests=("1" * 64,),
-            cases=(
-                NeuralPriorHoldoutPlanCase(
-                    "case-1", "storm-1", "2027-08-08", "radar-1",
-                    "convective", "near_range", "e" * 64, "d" * 64,
-                    "f" * 64, "2027-08-08T00:00:00Z",
-                ),
-            ),
-            registered_at="2026-01-01T00:00:00Z",
-        )
-        manifest = NeuralPriorCandidateManifest(
-            candidate_prior_digest="1" * 64,
-            parent_prior_digest="2" * 64,
-            training_learning_approval_digests=(evidence.digest,),
-            training_intervention_digests=(training_intervention.intervention_digest,),
-            training_dataset_digest="5" * 64,
-            candidate_training_manifest_digest="6" * 64,
-            parent_training_manifest_digest="7" * 64,
-            model_contract_digest="6" * 64,
-            feature_schema_digest="8" * 64,
-            algorithm_bundle_digest="7" * 64,
-            numerical_runtime_digest="8" * 64,
-            holdout_dataset_digest=plan.holdout_dataset_digest,
-            holdout_plan_digest=plan.plan_digest,
-            training_case_ids=("training-case",),
-            training_input_bundle_digests=("2" * 64,),
-            holdout_cases=(
-                NeuralPriorHoldoutCase(
-                    "case-1", "storm-1", "2027-08-08", "radar-1",
-                    "convective", "near_range",
-                    "e" * 64, "d" * 64, "e" * 64, "f" * 64,
-                    "2027-08-08T00:00:00Z", "a" * 64, "b" * 64,
-                ),
-            ),
-        )
-        evaluation = promotion_module._new_realized_evaluation(
-            intervention_digest=intervention.intervention_digest,
-            intervention_type=intervention.intervention_type,
-            learning_result_digest=intervention.learning_result_digest,
-            learning_approval_evidence_digest=evidence.digest,
-            learning_policy_digest=evidence.policy_digest,
-            holdout_plan_digest=plan.plan_digest,
-            candidate_manifest_digest=manifest.manifest_digest,
-            candidate_prior_digest=manifest.candidate_prior_digest,
-            parent_prior_digest=manifest.parent_prior_digest,
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            receipt_count = connection.execute(
+                "SELECT COUNT(*) FROM realized_intervention_receipts"
+            ).fetchone()[0]
+        self.assertEqual(receipt_count, 0)
+
+    def test_prospective_decision_and_executor_receipt_round_trip(self) -> None:
+        decision = ProspectiveInterventionDecision(
+            decision_id="decision-1",
             case_id="case-1",
-            storm_id="storm-1",
-            day="2026-08-08",
             radar_id="radar-1",
-            regime="convective",
-            range_regime="near_range",
-            candidate_forecast_digest="a" * 64,
-            parent_forecast_digest="b" * 64,
-            metric_change=torch.tensor([[-0.2]], dtype=torch.float64),
-            candidate_issuance_effect=torch.zeros((1, 1), dtype=torch.float64),
-            parent_issuance_effect=torch.zeros((1, 1), dtype=torch.float64),
-            metric_available=torch.tensor([[True]]),
-            lead_minutes=(60,),
-            metric_names=("log_echo_mse",),
-            verification_digest="e" * 64,
-            metric_contract_digest="f" * 64,
-            coverage_candidate=torch.tensor([1.0], dtype=torch.float64),
-            coverage_parent=torch.tensor([1.0], dtype=torch.float64),
-            coverage_common=torch.tensor([1.0], dtype=torch.float64),
-            newly_issued_fraction=torch.tensor([0.0], dtype=torch.float64),
-            withdrawn_fraction=torch.tensor([0.0], dtype=torch.float64),
-            issue_time="2027-08-08T00:00:00Z",
-            applied_time=intervention.applied_time,
-            verification_valid_times=("2027-08-08T01:00:00Z",),
+            intervention_type="realized_qc_intervention",
+            action_digest="a" * 64,
+            input_plan_digest="b" * 64,
+            actual_input_before_digest="c" * 64,
+            decision_basis_digest="d" * 64,
+            decision_policy_digest="e" * 64,
+            decision_trust_store_digest="f" * 64,
+            decided_at="2026-08-08T00:00:00Z",
+            issue_time="2099-08-08T01:00:00Z",
         )
-        policy = NeuralPriorPromotionPolicy(
-            metric_scales=(
-                PromotionMetricScale("log_echo_mse", 1.0, 0.01),
+        frames = torch.ones((3, 2, 2), dtype=torch.float64)
+        actual_run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        executor_secret = b"x" * 32
+        trust = SimpleNamespace(
+            content_digest="f" * 64,
+            approved_policy_digests=frozenset(("e" * 64,)),
+        )
+        executor_trust = SimpleNamespace(
+            keys={"executor-1": executor_secret},
+            content_digest="0" * 64,
+        )
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute(
+                "INSERT INTO variational_learning_approvals "
+                "(learning_result_digest, approval_evidence_digest, "
+                "evidence_contract, policy_digest, trust_store_digest, "
+                "fsoi_digest, full_step_analysis_digest, "
+                "half_step_analysis_digest, full_step_forecast_digest, "
+                "half_step_forecast_digest, first_order_validation_digest, "
+                "learning_impact_digest, approved_action_digest, "
+                "nominal_input_bundle_digest, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                tuple("d" * 64 if index == 0 else str(index) * 64 for index in range(12))
+                + ("a" * 64, "c" * 64)
+                + (datetime.now(timezone.utc).isoformat(),),
+            )
+        with patch(
+            "advar.ledger._load_learning_policy_trust_store", return_value=trust
+        ), patch(
+            "advar.ledger._load_executor_trust_store", return_value=executor_trust
+        ):
+            with self.assertRaisesRegex(ValueError, "disagrees with its approval"):
+                self.ledger.append_prospective_intervention_decision(
+                    replace(
+                        decision,
+                        decision_id="decision-wrong-action",
+                        action_digest="9" * 64,
+                    ),
+                    trust_store_path="/etc/advar/policies.json",
+                )
+            with self.assertRaisesRegex(ValueError, "disagrees with its approval"):
+                self.ledger.append_prospective_intervention_decision(
+                    replace(
+                        decision,
+                        decision_id="decision-wrong-input",
+                        actual_input_before_digest="8" * 64,
+                    ),
+                    trust_store_path="/etc/advar/policies.json",
+                )
+            self.ledger.append_prospective_intervention_decision(
+                decision,
+                trust_store_path="/etc/advar/policies.json",
+            )
+            applied = datetime.now(timezone.utc).isoformat()
+            receipt = RealizedInterventionReceipt.from_decision(
+                decision,
+                actual_input_after_frames=frames,
+                actual_input_after_run=actual_run,
+                executor_key_id="executor-1",
+                executor_trust_store_digest=executor_trust.content_digest,
+                executor_secret=executor_secret,
+                applied_time=applied,
+                receipt_time=applied,
+            )
+            digest = self.ledger.append_realized_intervention_receipt(
+                decision,
+                receipt,
+                trust_store_path="/etc/advar/policies.json",
+                executor_trust_store_path="/etc/advar/executors.json",
+            )
+
+            tampered = replace(
+                receipt,
+                actual_input_after_digest="9" * 64,
+            )
+            with self.assertRaisesRegex(ValueError, "signature"):
+                self.ledger.append_realized_intervention_receipt(
+                    decision,
+                    tampered,
+                    trust_store_path="/etc/advar/policies.json",
+                    executor_trust_store_path="/etc/advar/executors.json",
+                )
+
+        self.assertEqual(
+            self.ledger.load_prospective_intervention(digest),
+            (decision, receipt),
+        )
+
+    def test_retrospective_replay_is_a_separate_audit_record(self) -> None:
+        replay = RetrospectiveCounterfactualReplay(
+            learning_result_digest="1" * 64,
+            perturbation_digest="2" * 64,
+            nominal_forecast_digest="3" * 64,
+            replayed_at="2026-08-08T00:00:00Z",
+        )
+        self.ledger.append_retrospective_counterfactual_replay(replay)
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            replays = connection.execute(
+                "SELECT COUNT(*) FROM retrospective_counterfactual_replays"
+            ).fetchone()[0]
+            receipts = connection.execute(
+                "SELECT COUNT(*) FROM realized_intervention_receipts"
+            ).fetchone()[0]
+        self.assertEqual((replays, receipts), (1, 0))
+        self.assertEqual(
+            self.ledger.load_retrospective_counterfactual_replay(
+                replay.replay_digest
             ),
-            approved_learning_policy_digests=(evidence.policy_digest,),
-            approved_candidate_manifest_digests=(manifest.manifest_digest,),
-            approved_holdout_plan_digests=(plan.plan_digest,),
-            approved_metric_contract_digests=("f" * 64,),
-            allowed_intervention_types=("realized_qc_intervention",),
-            minimum_realized_interventions=1,
-            minimum_material_interventions=1,
-            minimum_material_intervention_fraction=1.0,
-            minimum_independent_cases=1,
-            minimum_distinct_storms=1,
-            minimum_distinct_days=1,
-            minimum_distinct_radars=1,
-            minimum_distinct_regimes=1,
-            minimum_distinct_range_regimes=1,
-            minimum_material_clusters=1,
-            minimum_beneficial_fraction=1.0,
-            maximum_harmful_fraction=0.0,
-            minimum_mean_normalized_improvement=0.1,
-            bootstrap_samples=16,
+            replay,
+        )
+
+    def test_legacy_holdout_plan_loads_as_read_only_audit(self) -> None:
+        audit = LegacyNeuralPriorHoldoutPlanAudit(
+            plan_id="legacy-plan",
+            parent_prior_digest="1" * 64,
+            candidate_family_digests=("2" * 64,),
+            cases=(
+                LegacyNeuralPriorHoldoutPlanCase(
+                    case_id="case-1",
+                    storm_id="storm-1",
+                    day="2026-08-08",
+                    radar_id="radar-1",
+                    regime="convective",
+                    range_regime="near",
+                    input_bundle_digest="3" * 64,
+                    verification_plan_digest="4" * 64,
+                    metric_contract_digest="5" * 64,
+                    issue_time="2026-08-08T00:00:00Z",
+                ),
+            ),
+            registered_at="2026-08-07T00:00:00Z",
+        )
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute(
+                "INSERT INTO neural_prior_holdout_plans "
+                "(plan_digest, plan_id, plan_json, policy_digest, "
+                "trust_store_digest, registered_at, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    audit.plan_digest,
+                    audit.plan_id,
+                    json.dumps(asdict(audit), sort_keys=True),
+                    "6" * 64,
+                    "7" * 64,
+                    audit.registered_at,
+                    audit.registered_at,
+                ),
+            )
+
+        loaded = self.ledger.load_neural_prior_holdout_plan(audit.plan_digest)
+
+        self.assertIsInstance(loaded, LegacyNeuralPriorHoldoutPlanAudit)
+        self.assertEqual(loaded, audit)
+
+    def test_backdated_decision_cannot_be_recorded_after_issue(self) -> None:
+        decision = ProspectiveInterventionDecision(
+            decision_id="backdated",
+            case_id="case-1",
+            radar_id="radar-1",
+            intervention_type="operator_override",
+            action_digest="a" * 64,
+            input_plan_digest="b" * 64,
+            actual_input_before_digest="c" * 64,
+            decision_basis_digest="d" * 64,
+            decision_policy_digest="e" * 64,
+            decision_trust_store_digest="f" * 64,
+            decided_at="2020-08-08T00:00:00Z",
+            issue_time="2020-08-08T01:00:00Z",
         )
         trust = SimpleNamespace(
-            approved_policy_digests=frozenset(),
-            content_digest="4" * 64,
+            content_digest="f" * 64,
+            approved_policy_digests=frozenset(("e" * 64,)),
         )
-        plan_policy = NeuralPriorHoldoutPlanPolicy(
-            approved_plan_digests=(plan.plan_digest,),
-            approved_metric_contract_digests=("f" * 64,),
-            maximum_candidate_family_size=1,
-        )
-        trust.approved_policy_digests = frozenset(
-            (policy.digest, plan_policy.digest)
-        )
-        with patch(
-            "advar.promotion._load_learning_policy_trust_store",
-            return_value=trust,
-        ), patch(
-            "advar.ledger._load_learning_policy_trust_store",
-            return_value=trust,
+        with (
+            patch(
+                "advar.ledger._load_learning_policy_trust_store",
+                return_value=trust,
+            ),
+            self.assertRaisesRegex(ValueError, "recorded before issue"),
         ):
-            self.ledger.append_neural_prior_holdout_plan(
-                plan,
-                policy=plan_policy,
-                policy_trust_store_path="/etc/advar/learning-policies.json",
+            self.ledger.append_prospective_intervention_decision(
+                decision,
+                trust_store_path="/etc/advar/policies.json",
             )
-            self.assertEqual(
-                self.ledger.load_neural_prior_holdout_plan(plan.plan_digest),
-                plan,
-            )
-            promotion = compute_neural_prior_promotion(
-                manifest,
-                plan,
-                (evaluation,),
-                policy=policy,
-                policy_trust_store_path=(
-                    "/etc/advar/learning-policies.json"
-                ),
-            )
-            promotion_digest = self.ledger.append_neural_prior_promotion(
-                promotion,
-                manifest,
-                plan,
-                (evaluation,),
-                policy=policy,
-                policy_trust_store_path=(
-                    "/etc/advar/learning-policies.json"
-                ),
-            )
-        self.assertEqual(
-            self.ledger.load_neural_prior_promotion(promotion_digest),
-            promotion,
-        )
-        audit = self.ledger.load_neural_prior_promotion_evaluations(
-            promotion_digest
-        )
-        self.assertEqual(audit[0]["evaluation_digest"], evaluation.evaluation_digest)
-        self.assertEqual(audit[0]["metric_change"], [[-0.2]])
 
     def test_complete_verification_lineage_round_trips(self) -> None:
         snapshot = replace(
@@ -726,10 +857,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             verification_bundle_digest="2" * 64,
             verification_lineage_complete=True,
             verification_valid_times=tuple(
-                (
-                    datetime(2026, 7, 26, tzinfo=timezone.utc)
-                    + timedelta(minutes=lead)
-                )
+                (datetime(2026, 7, 26, tzinfo=timezone.utc) + timedelta(minutes=lead))
                 .isoformat()
                 .replace("+00:00", "Z")
                 for lead in range(10, 181, 10)
@@ -784,9 +912,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         manifest["contract"].pop("nowcast_config_digest")
         manifest["contract"].pop("sensitivity_config_digest")
         manifest["contract"].pop("grid_time_contract_digest")
-        manifest["context_feature_names"] = list(
-            SCHEMA_ONE_CONTEXT_FEATURE_NAMES
-        )
+        manifest["context_feature_names"] = list(SCHEMA_ONE_CONTEXT_FEATURE_NAMES)
         manifest["arrays"]["context_features"]["shape"] = [
             len(SCHEMA_ONE_CONTEXT_FEATURE_NAMES)
         ]
@@ -856,9 +982,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             arrays = {name: archive[name].copy() for name in archive.files}
 
         context = arrays["context_features"]
-        arrays["context_features"] = np.concatenate(
-            (context[:6], context[14:23])
-        )
+        arrays["context_features"] = np.concatenate((context[:6], context[14:23]))
 
         def latest_axis(name: str, *, fill: float = 0.0) -> np.ndarray:
             source = arrays[name]
@@ -877,18 +1001,14 @@ class EpisodeLedgerTests(unittest.TestCase):
             "tile_direct_sensitivity_norm"
         )
         arrays["baseline_scores"] = np.ones_like(arrays["forecast_scores"])
-        arrays["direct_normalized_reward"] = -arrays[
-            "direct_observation_impact"
-        ] / arrays["baseline_scores"]
-        arrays["direct_observation_impact"] = latest_axis(
-            "direct_observation_impact"
+        arrays["direct_normalized_reward"] = (
+            -arrays["direct_observation_impact"] / arrays["baseline_scores"]
         )
+        arrays["direct_observation_impact"] = latest_axis("direct_observation_impact")
         arrays["tile_direct_observation_impact"] = latest_axis(
             "tile_direct_observation_impact"
         )
-        arrays["direct_normalized_reward"] = latest_axis(
-            "direct_normalized_reward"
-        )
+        arrays["direct_normalized_reward"] = latest_axis("direct_normalized_reward")
 
         height, width = arrays["latest_sensitivity_mask"].shape
         tile_shape = arrays["tile_direct_sensitivity_norm"].shape
@@ -916,9 +1036,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         manifest["contract"].pop("nowcast_config_digest")
         manifest["contract"].pop("sensitivity_config_digest")
         manifest["contract"].pop("grid_time_contract_digest")
-        manifest["context_feature_names"] = list(
-            SCHEMA_ONE_CONTEXT_FEATURE_NAMES
-        )
+        manifest["context_feature_names"] = list(SCHEMA_ONE_CONTEXT_FEATURE_NAMES)
         interval = manifest["lead_minutes"][0]
         manifest["sensitivity_scope"] = {
             f"input_{-2 * interval}_minutes": "no_direct_forecast_path",
@@ -1003,9 +1121,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         with np.load(arrays_path, allow_pickle=False) as archive:
             arrays = {name: archive[name].copy() for name in archive.files}
         context = arrays["context_features"]
-        arrays["context_features"] = np.concatenate(
-            (context[:6], context[8:23])
-        )
+        arrays["context_features"] = np.concatenate((context[:6], context[8:23]))
         np.savez_compressed(arrays_path, **arrays)
         arrays_hash = hashlib.sha256(arrays_path.read_bytes()).hexdigest()
 
@@ -1119,9 +1235,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         with np.load(arrays_path, allow_pickle=False) as archive:
             arrays = {name: archive[name].copy() for name in archive.files}
         context = arrays["context_features"]
-        arrays["context_features"] = np.concatenate(
-            (context[:6], context[8:23])
-        )
+        arrays["context_features"] = np.concatenate((context[:6], context[8:23]))
         np.savez_compressed(arrays_path, **arrays)
         arrays_hash = hashlib.sha256(arrays_path.read_bytes()).hexdigest()
 
@@ -1209,9 +1323,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         manifest["schema_version"] = 5
         _drop_verification_lineage(manifest)
         manifest["contract"].pop("grid_time_contract_digest")
-        manifest["context_feature_names"] = list(
-            SCHEMA_FIVE_CONTEXT_FEATURE_NAMES
-        )
+        manifest["context_feature_names"] = list(SCHEMA_FIVE_CONTEXT_FEATURE_NAMES)
         manifest["arrays"]["context_features"]["shape"] = [
             len(SCHEMA_FIVE_CONTEXT_FEATURE_NAMES)
         ]
@@ -1290,16 +1402,12 @@ class EpisodeLedgerTests(unittest.TestCase):
                 manifest_path = target / "manifest.json"
                 checksums_path = target / "checksums.json"
                 with np.load(arrays_path, allow_pickle=False) as archive:
-                    arrays = {
-                        name: archive[name].copy() for name in archive.files
-                    }
+                    arrays = {name: archive[name].copy() for name in archive.files}
                 arrays["context_features"] = arrays["context_features"][
                     : len(context_names)
                 ]
                 np.savez_compressed(arrays_path, **arrays)
-                arrays_hash = hashlib.sha256(
-                    arrays_path.read_bytes()
-                ).hexdigest()
+                arrays_hash = hashlib.sha256(arrays_path.read_bytes()).hexdigest()
 
                 manifest = json.loads(manifest_path.read_text("utf-8"))
                 manifest["schema_version"] = schema_version
@@ -1307,9 +1415,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 if schema_version < 11:
                     manifest["contract"].pop("grid_time_contract_digest")
                 manifest["context_feature_names"] = list(context_names)
-                manifest["arrays"]["context_features"]["shape"] = [
-                    len(context_names)
-                ]
+                manifest["arrays"]["context_features"]["shape"] = [len(context_names)]
                 legacy_contract_hash = hashlib.sha256(
                     json.dumps(
                         {
@@ -1363,9 +1469,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 reopened = EpisodeLedger(self.root)
                 reopened.verify(episode.episode_id)
                 loaded = reopened.load(episode.episode_id)
-                self.assertEqual(
-                    loaded.manifest["schema_version"], schema_version
-                )
+                self.assertEqual(loaded.manifest["schema_version"], schema_version)
                 self.assertEqual(
                     loaded.manifest["context_feature_names"],
                     list(context_names),
@@ -1397,16 +1501,12 @@ class EpisodeLedgerTests(unittest.TestCase):
         manifest = json.loads(manifest_path.read_text("utf-8"))
         manifest["schema_version"] = 15
         _drop_verification_lineage(manifest)
-        manifest["units"]["observation_evidence_by_metric"] = (
-            manifest["units"].pop(
-                "observation_source_fraction_by_metric"
-            )
+        manifest["units"]["observation_evidence_by_metric"] = manifest["units"].pop(
+            "observation_source_fraction_by_metric"
         )
         manifest["units"].pop("observation_verified_evidence_by_metric")
         manifest["units"].pop("background_verified_evidence_by_metric")
-        joint_trust = manifest["trust_components"].pop(
-            "observation_verified_evidence"
-        )
+        joint_trust = manifest["trust_components"].pop("observation_verified_evidence")
         manifest["trust_components"].update(
             path_evidence=1.0,
             observation_evidence=joint_trust,
@@ -1422,9 +1522,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             separators=(",", ":"),
         )
         manifest_path.write_text(manifest_text, encoding="utf-8")
-        manifest_hash = hashlib.sha256(
-            manifest_text.encode("utf-8")
-        ).hexdigest()
+        manifest_hash = hashlib.sha256(manifest_text.encode("utf-8")).hexdigest()
         checksums = json.loads(checksums_path.read_text("utf-8"))
         checksums["manifest.json"] = manifest_hash
         checksums["sensitivity_arrays.npz"] = arrays_hash
@@ -1594,8 +1692,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         statements = (
             (
                 "episodes",
-                "UPDATE episodes SET radar_id = radar_id "
-                "WHERE episode_id = ?",
+                "UPDATE episodes SET radar_id = radar_id WHERE episode_id = ?",
             ),
             ("episodes", "DELETE FROM episodes WHERE episode_id = ?"),
             (
@@ -1695,9 +1792,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             forecast_sensitivity=torch.zeros(1),
         )
         with self.assertRaisesRegex(ValueError, "forecast_sensitivity"):
-            self.ledger.append(
-                replace(self.episode("bad-shape"), snapshot=malformed)
-            )
+            self.ledger.append(replace(self.episode("bad-shape"), snapshot=malformed))
 
         direct = self.snapshot.direct.maps.clone()
         direct[0, 0, 0, 0] = 1.0
@@ -1830,9 +1925,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         with sqlite3.connect(root / "index.sqlite") as connection:
             columns = {
                 row[1]: row
-                for row in connection.execute(
-                    "PRAGMA table_info(episode_impacts)"
-                )
+                for row in connection.execute("PRAGMA table_info(episode_impacts)")
             }
             schema = connection.execute(
                 """
@@ -1844,7 +1937,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 10)
+        self.assertEqual(version, 11)
 
 
 if __name__ == "__main__":

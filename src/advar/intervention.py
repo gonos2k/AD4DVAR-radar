@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+import hashlib
+import hmac
 import math
 from typing import Literal
 
@@ -447,7 +449,19 @@ class RealizedObservationIntervention:
             prior_training_manifest_digest=(
                 nominal_forecast.run.prior_training_manifest_digest
             ),
+            prior_inference_evidence_digest=(
+                nominal_forecast.run.prior_inference_evidence_digest
+            ),
+            prior_inference_algorithm_digest=(
+                nominal_forecast.run.prior_inference_algorithm_digest
+            ),
+            prior_numerical_runtime_digest=(
+                nominal_forecast.run.prior_numerical_runtime_digest
+            ),
+            prior_dependency=nominal_forecast.run.prior_dependency,
             prior_role=nominal_forecast.run.prior_role,
+            input_plan_json=nominal_forecast.run.input_plan_json,
+            input_plan_digest=nominal_forecast.run.input_plan_digest,
         )
         if resolved_issuance_validation.full_step_input_bundle_digest != (
             expected_run.input_bundle_digest
@@ -608,6 +622,302 @@ def validate_realized_observation_intervention(
     )
     if reconstructed.intervention_digest != intervention.intervention_digest:
         raise ValueError("realized intervention digest mismatch")
+
+
+@dataclass(frozen=True)
+class RetrospectiveCounterfactualReplay:
+    """A sealed historical replay that can never count as a realized action."""
+
+    learning_result_digest: str
+    perturbation_digest: str
+    nominal_forecast_digest: str
+    replayed_at: str
+    contract: str = "retrospective-counterfactual-replay-v1"
+    replay_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        for name in (
+            "learning_result_digest",
+            "perturbation_digest",
+            "nominal_forecast_digest",
+        ):
+            _require_digest(name, getattr(self, name))
+        object.__setattr__(self, "replayed_at", _canonical_time(self.replayed_at))
+        object.__setattr__(
+            self,
+            "replay_digest",
+            _retrospective_replay_digest(self),
+        )
+
+
+def _retrospective_replay_digest(
+    replay: RetrospectiveCounterfactualReplay,
+) -> str:
+    return json_digest(
+        {
+            "contract": replay.contract,
+            "learning_result_digest": replay.learning_result_digest,
+            "perturbation_digest": replay.perturbation_digest,
+            "nominal_forecast_digest": replay.nominal_forecast_digest,
+            "replayed_at": replay.replayed_at,
+        }
+    )
+
+
+def validate_retrospective_counterfactual_replay(
+    replay: RetrospectiveCounterfactualReplay,
+) -> None:
+    if replay.replay_digest != _retrospective_replay_digest(replay):
+        raise ValueError("retrospective replay digest mismatch")
+
+
+@dataclass(frozen=True)
+class ProspectiveInterventionDecision:
+    """An action committed before the issue and before future verification."""
+
+    decision_id: str
+    case_id: str
+    radar_id: str
+    intervention_type: ObservationInterventionType
+    action_digest: str
+    input_plan_digest: str
+    actual_input_before_digest: str
+    decision_basis_digest: str
+    decision_policy_digest: str
+    decision_trust_store_digest: str
+    decided_at: str
+    issue_time: str
+    contract: str = "prospective-intervention-decision-v1"
+    decision_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        for name in ("decision_id", "case_id", "radar_id"):
+            value = getattr(self, name)
+            if not isinstance(value, str) or not value or value.strip() != value:
+                raise ValueError(f"{name} must be nonempty and canonical")
+        if self.intervention_type not in (
+            "realized_sensor_correction",
+            "realized_qc_intervention",
+            "operator_override",
+        ):
+            raise ValueError("unsupported prospective intervention type")
+        for name in (
+            "action_digest",
+            "input_plan_digest",
+            "actual_input_before_digest",
+            "decision_basis_digest",
+            "decision_policy_digest",
+            "decision_trust_store_digest",
+        ):
+            _require_digest(name, getattr(self, name))
+        decided = _canonical_time(self.decided_at)
+        issue = _canonical_time(self.issue_time)
+        if decided > issue:
+            raise ValueError("prospective decision must precede its issue")
+        object.__setattr__(self, "decided_at", decided)
+        object.__setattr__(self, "issue_time", issue)
+        object.__setattr__(
+            self,
+            "decision_digest",
+            json_digest(
+                {
+                    key: value
+                    for key, value in self.__dict__.items()
+                    if key != "decision_digest"
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
+class RealizedInterventionReceipt:
+    """Executor receipt recorded before issue for one prospective decision."""
+
+    decision_digest: str
+    decision_id: str
+    case_id: str
+    radar_id: str
+    intervention_type: ObservationInterventionType
+    action_digest: str
+    input_plan_digest: str
+    actual_input_before_digest: str
+    actual_input_after_digest: str
+    actual_input_bundle_digest: str
+    executor_key_id: str
+    executor_trust_store_digest: str
+    executor_signature: str
+    applied_time: str
+    receipt_time: str
+    issue_time: str
+    contract: str = "realized-intervention-receipt-v1"
+    receipt_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        for name in ("decision_id", "case_id", "radar_id"):
+            value = getattr(self, name)
+            if not isinstance(value, str) or not value or value.strip() != value:
+                raise ValueError(f"{name} must be nonempty and canonical")
+        for name in (
+            "decision_digest",
+            "action_digest",
+            "input_plan_digest",
+            "actual_input_before_digest",
+            "actual_input_after_digest",
+            "actual_input_bundle_digest",
+            "executor_trust_store_digest",
+        ):
+            _require_digest(name, getattr(self, name))
+        if not self.executor_key_id or self.executor_key_id.strip() != self.executor_key_id:
+            raise ValueError("executor key ID must be canonical")
+        if len(self.executor_signature) != 64 or any(
+            value not in "0123456789abcdef" for value in self.executor_signature
+        ):
+            raise ValueError("executor signature must be lowercase SHA-256 HMAC")
+        if self.actual_input_before_digest == self.actual_input_after_digest:
+            raise ValueError("realized intervention receipt must change input")
+        applied = _canonical_time(self.applied_time)
+        received = _canonical_time(self.receipt_time)
+        issue = _canonical_time(self.issue_time)
+        if applied > received or received > issue:
+            raise ValueError("receipt must be recorded after action and before issue")
+        object.__setattr__(self, "applied_time", applied)
+        object.__setattr__(self, "receipt_time", received)
+        object.__setattr__(self, "issue_time", issue)
+        object.__setattr__(
+            self,
+            "receipt_digest",
+            json_digest(
+                {
+                    key: value
+                    for key, value in self.__dict__.items()
+                    if key != "receipt_digest"
+                }
+            ),
+        )
+
+    @classmethod
+    def from_decision(
+        cls,
+        decision: ProspectiveInterventionDecision,
+        *,
+        actual_input_after_frames: Tensor,
+        actual_input_after_run: ForecastRunContract,
+        executor_key_id: str,
+        executor_trust_store_digest: str,
+        executor_secret: bytes,
+        applied_time: str,
+        receipt_time: str,
+    ) -> RealizedInterventionReceipt:
+        if decision.decision_digest != json_digest(
+            {
+                key: value
+                for key, value in decision.__dict__.items()
+                if key != "decision_digest"
+            }
+        ):
+            raise ValueError("prospective decision digest mismatch")
+        actual_input_after_run.validate_integrity()
+        frames_digest = tensor_digest(actual_input_after_frames)
+        if frames_digest != actual_input_after_run.input_frames_digest:
+            raise ValueError("receipt frames disagree with the actual input run")
+        values = dict(
+            decision_digest=decision.decision_digest,
+            decision_id=decision.decision_id,
+            case_id=decision.case_id,
+            radar_id=decision.radar_id,
+            intervention_type=decision.intervention_type,
+            action_digest=decision.action_digest,
+            input_plan_digest=decision.input_plan_digest,
+            actual_input_before_digest=decision.actual_input_before_digest,
+            actual_input_after_digest=frames_digest,
+            actual_input_bundle_digest=actual_input_after_run.input_bundle_digest,
+            executor_key_id=executor_key_id,
+            executor_trust_store_digest=executor_trust_store_digest,
+            executor_signature="",
+            applied_time=_canonical_time(applied_time),
+            receipt_time=_canonical_time(receipt_time),
+            issue_time=_canonical_time(decision.issue_time),
+            contract="realized-intervention-receipt-v1",
+        )
+        signature = hmac.new(
+            executor_secret,
+            json_digest(values).encode("ascii"),
+            hashlib.sha256,
+        ).hexdigest()
+        return cls(
+            decision_digest=decision.decision_digest,
+            decision_id=decision.decision_id,
+            case_id=decision.case_id,
+            radar_id=decision.radar_id,
+            intervention_type=decision.intervention_type,
+            action_digest=decision.action_digest,
+            input_plan_digest=decision.input_plan_digest,
+            actual_input_before_digest=decision.actual_input_before_digest,
+            actual_input_after_digest=frames_digest,
+            actual_input_bundle_digest=actual_input_after_run.input_bundle_digest,
+            executor_key_id=executor_key_id,
+            executor_trust_store_digest=executor_trust_store_digest,
+            executor_signature=signature,
+            applied_time=_canonical_time(applied_time),
+            receipt_time=_canonical_time(receipt_time),
+            issue_time=_canonical_time(decision.issue_time),
+        )
+
+
+def verify_intervention_receipt_signature(
+    receipt: RealizedInterventionReceipt,
+    executor_secret: bytes,
+) -> None:
+    values = {
+        key: value
+        for key, value in receipt.__dict__.items()
+        if key not in ("receipt_digest", "executor_signature")
+    }
+    values["executor_signature"] = ""
+    expected = hmac.new(
+        executor_secret,
+        json_digest(values).encode("ascii"),
+        hashlib.sha256,
+    ).hexdigest()
+    if not hmac.compare_digest(receipt.executor_signature, expected):
+        raise ValueError("realized receipt executor signature mismatch")
+
+
+def validate_prospective_intervention(
+    decision: ProspectiveInterventionDecision,
+    receipt: RealizedInterventionReceipt,
+) -> None:
+    expected_decision = json_digest(
+        {
+            key: value
+            for key, value in decision.__dict__.items()
+            if key != "decision_digest"
+        }
+    )
+    expected_receipt = json_digest(
+        {
+            key: value
+            for key, value in receipt.__dict__.items()
+            if key != "receipt_digest"
+        }
+    )
+    if decision.decision_digest != expected_decision:
+        raise ValueError("prospective decision digest mismatch")
+    if receipt.receipt_digest != expected_receipt:
+        raise ValueError("realized intervention receipt digest mismatch")
+    pairs = (
+        (receipt.decision_digest, decision.decision_digest),
+        (receipt.decision_id, decision.decision_id),
+        (receipt.case_id, decision.case_id),
+        (receipt.radar_id, decision.radar_id),
+        (receipt.intervention_type, decision.intervention_type),
+        (receipt.action_digest, decision.action_digest),
+        (receipt.input_plan_digest, decision.input_plan_digest),
+        (receipt.actual_input_before_digest, decision.actual_input_before_digest),
+        (receipt.issue_time, decision.issue_time),
+    )
+    if any(actual != expected for actual, expected in pairs):
+        raise ValueError("realized receipt disagrees with its decision")
 
 
 def _normalized_benefit(

@@ -141,8 +141,13 @@ P1 실행은 실제 `AnalysisConfig` JSON과 observation-std·quality-weight의
 analysis input digest도 같은 identity에 포함한다. `input_bundle_digest`는
 candidate/parent의 동일 외생 입력을 비교할 수 있도록 radar·mask·background·grid
 계보만 나타내며, 분석 설정과 실제 neural-prior application digest는 별도 run
-identity에 결합된다. Neural prior는 metadata로만 선언할 수 없고
-`NeuralPriorApplication.initial_background_dbz`가 실제 P1 초기배경으로 소비돼야 한다.
+identity에 결합된다. Neural prior는 metadata나 임의 Tensor로 선언할 수 없다.
+eval-mode PyTorch model을 감싼 `NeuralPriorInferenceRunner`가 input bundle,
+feature/model/schema/training/runtime와 output을 하나의 inference evidence로 묶고,
+그 factory가 만든 `NeuralPriorApplication`만 실제 P1 초기배경으로 소비된다.
+Radar-dependent prior는 FSOI의 JVP/VJP와 full/half 재분석에서 다시 실행된다.
+Prior가 새 echo support를 만들 때는 기존 causal support로 clip하거나, 물리면적·
+echo-integral budget 안에서 control domain을 명시적으로 확장해야 한다.
 재적재 전 ZIP member 수·개별/전체 압축해제 크기·이름, NPY header의
 dtype·shape·선언 payload를 검사하고 알 수 없는 member와 object dtype을
 거부한다. 기본 한도는 160개, member당 1 GiB, 전체 2 GiB이며 API 인자로
@@ -187,7 +192,7 @@ print(analysis.state.echo_linear)  # 세 장으로 분석된 현재 q(0)
 다시 계산하며, frozen stationarity·실제 pseudo-Huber gradient·retained weight
 일관성을 모두 만족해야 P1 forecast, posterior와 FSO를 제공한다. polish 뒤에는
 기존 amplitude·causal·saturation·objective gate도 다시 검사한다. 보존되는
-`p1-final-frozen-irls-gn-v13` 선형화에는 frozen/robust gradient 진단, IRLS
+`p1-final-frozen-irls-gn-v14` 선형화에는 frozen/robust gradient 진단, IRLS
 weight 변화, polish 횟수와 최종 hard feasibility margin이 함께 들어간다.
 stationarity는 격자크기에 따라 작아지는 objective 정규화 대신 active field
 gradient RMS와 표준화된 3개 dynamics gradient 최대값의 큰 값을 사용하며,
@@ -276,7 +281,7 @@ legacy Tensor를 거부한다. raw Tensor 입력은 연구 호환용으로 계�
 결과와 M0 원장에 `verification_lineage_complete=False`로 기록되므로 지연 자동
 학습의 완전한 검증자료로 승격할 수 없다.
 
-`compute_variational_fso()`의 `p1-variational-fso-v14` 결과는 영향값이 아니라
+`compute_variational_fso()`의 `p1-variational-fso-v15` 결과는 영향값이 아니라
 다음 관측 parameter와 frozen 초기배경 경로에 대한 미분이다.
 
 ```text
@@ -299,7 +304,7 @@ nominal·half-step·full-step에서 pair span, pair availability, integer peak�
 selection/conflict signature가 같은지도 검사한다. 따라서
 `frozen_structure_input_dbz`는 전체
 preprocessing 총미분이 아니라
-`residual_plus_observation_derived_baseline_with_frozen_selection` 범위의
+`residual_plus_input_dependent_initial_state_and_baseline_with_frozen_selection` 범위의
 piecewise-smooth 민감도다.
 
 `observation_weight` 채널은 detected와 censored 관측을 모두 포함한다. FSOI는
@@ -414,6 +419,8 @@ observation-space perturbation과 forecast-error projection, innovation, 관측�
 통계를 모두 요구하며 단일 분석에서 가짜 ensemble을 만들지 않는다. 일반 관측오차
 모델은 caller가 임의의 `R⁻¹d`를 넘기는 대신, content-addressed dense precision과
 covariance artifact를 제공해 `R(R⁻¹d)=d` 잔차와 observation ordering을 검증한다.
+Root-owned trust store는 재사용 가능한 승인 토큰이 아니라 정확한
+`operator_digest`를 `approved_operator_digests`에 기록한다.
 
 ```python
 from advar import (
@@ -425,7 +432,10 @@ from advar import (
 precision_artifact = PrecisionOperatorArtifact(
     precision=precision_matrix,
     covariance=covariance_matrix,
-    observation_index_digest=observation_index_digest,
+    observation_ids=observation_ids,
+    forecast_run_digest=forecast.forecast_run_digest,
+    observation_error_model_digest=observation_error_model_digest,
+    calibration_manifest_digest=calibration_manifest_digest,
 )
 
 efso = compute_ensemble_fso(
@@ -433,14 +443,13 @@ efso = compute_ensemble_fso(
         innovation=innovation,
         precision_operator=precision_artifact,
         maximum_relative_residual=1e-6,
+        trust_store_path="/etc/advar/precision-operators.json",
         analysis_observation_perturbations=analysis_y_perturbations,
         forecast_error_projection_by_member=forecast_error_projection,
         lead_minutes=(60, 120),
         metric_names=("log_echo_mse",),
-        analysis_ensemble_digest=analysis_ensemble_digest,
-        forecast_ensemble_digest=forecast_ensemble_digest,
         verification_reference_digest=verification_reference_digest,
-        ensemble_member_index_digest=ensemble_member_index_digest,
+        ensemble_member_ids=ensemble_member_ids,
     )
 )
 ```
@@ -450,6 +459,11 @@ efso = compute_ensemble_fso(
 실제 관측오차모델과 결합되고 잔차가 검증된 `R⁻¹d`를 요구한다. EFSO impact가
 음수이면 해당 관측이 지정 forecast-error metric을 줄이는 방향이다. 결과에는
 ensemble member jackknife 표준오차도 함께 기록된다.
+Dense full-R artifact는 covariance와 precision 양쪽의 Cholesky SPD, 상호 역행렬,
+condition number, observation-count와 byte budget을 통과해야 한다. 사용 직전에도
+operator digest를 다시 계산하므로 승인 뒤 Tensor 변조는 precision evidence로
+전환되지 않는다. 대규모 radar pixel은 dense artifact 대신 block/low-rank
+operator가 필요하며 현재 dense 경로는 예산 안의 연구규모에만 허용된다.
 입력 ensemble perturbation과 forecast projection은 member 축에서 중심화되어야 한다.
 구현식은 Kalnay et al.의 ensemble observation-impact formulation을 따르며 입력
 통계의 의미는 [Tellus A 원문](https://doi.org/10.3402/tellusa.v64i0.18462)에
@@ -510,52 +524,61 @@ if learning.eligibility.eligible:
     ledger.append_variational_learning_approval(learning)
 ```
 
-이 결과는 승인된 counterfactual이며 실제 행동의 결과는 아니다. 센서보정, QC 변경
-또는 operator override가 실제 입력에 적용되고 결과가 관측된 뒤에만 별도 개입
-증거를 만든다.
+이 결과는 승인된 counterfactual이며 실제 행동의 결과는 아니다. 같은 사례의 미래
+verification으로 만든 결과를 과거 행동처럼 기록할 수 없으며, historical 분석은
+`RetrospectiveCounterfactualReplay`로만 감사 보존한다. 실제 행동은 issue 전에
+결정과 실행 receipt가 각각 append-only ledger에 기록돼야 한다.
 
 ```python
 from advar import (
-    InterventionExecutionPolicy,
-    InterventionMetricGuardrail,
-    RealizedObservationIntervention,
+    ProspectiveInterventionDecision,
+    RealizedInterventionReceipt,
 )
 
-realized = RealizedObservationIntervention.from_learning_result(
-    learning,
-    analysis,
-    intervention_id=intervention_id,
-    intervention_type="realized_qc_intervention",
-    action_digest=action_digest,
-    applied_time=applied_time,
-    actual_input_before=input_before,
-    actual_input_after=input_after,
-    nominal_forecast=forecast,
+decision = ProspectiveInterventionDecision(
+    decision_id=decision_id,
     case_id=case_id,
     radar_id=radar_id,
-    resolved_issuance_validation=issuance_validation,
-    execution_policy=InterventionExecutionPolicy(
-        metric_guardrails=(
-            InterventionMetricGuardrail(
-                "log_echo_mse", 0.1, 0.02, 0.02
-            ),
-        ),
-        allowed_intervention_types=("realized_qc_intervention",),
-        minimum_predicted_normalized_benefit=0.05,
-        minimum_resolved_normalized_benefit=0.05,
-        approval_class="automation",
-    ),
-    execution_policy_trust_store_path=(
-        "/etc/advar/intervention-policies.json"
-    ),
+    intervention_type="realized_qc_intervention",
+    action_digest=action_digest,
+    input_plan_digest=input_plan_digest,
+    actual_input_before_digest=input_before_digest,
+    decision_basis_digest=previous_approved_evidence_digest,
+    decision_policy_digest=approved_execution_policy.digest,
+    decision_trust_store_digest=execution_trust_store_digest,
+    decided_at=decided_at,
+    issue_time=issue_time,
 )
-ledger.append_realized_observation_intervention(realized)
+ledger.append_prospective_intervention_decision(
+    decision,
+    trust_store_path="/etc/advar/intervention-policies.json",
+)
+receipt = RealizedInterventionReceipt.from_decision(
+    decision,
+    actual_input_after_frames=input_after_frames,
+    actual_input_after_run=input_after_run,
+    executor_key_id="radar-qc-executor",
+    executor_trust_store_digest=executor_trust_store_digest,
+    executor_secret=executor_secret,
+    applied_time=applied_time,
+    receipt_time=receipt_time,
+)
+ledger.append_realized_intervention_receipt(
+    decision,
+    receipt,
+    trust_store_path="/etc/advar/intervention-policies.json",
+    executor_trust_store_path="/etc/advar/intervention-executors.json",
+)
 ```
 
-ledger는 대응하는 learning approval이 먼저 저장돼 있고 evidence digest가 정확히
-일치할 때만 실제 개입을 append한다. automation 승인은 resolved-issuance coverage,
-withdrawn area와 background fallback까지 통과해야 하며, metric harm은 각 metric의
-scale로 정규화한다. 자동 prior 승격은 이 causal v3 evidence만 입력으로 사용한다.
+ledger는 decision과 receipt가 실제 wall-clock 기준으로 issue 전에 기록됐는지,
+decision의 action/input이 승인된 learning evidence와 같은지, root-owned policy와
+trusted executor가 승인됐는지 다시 검사한다. 대칭 HMAC secret을 담은 executor
+trust store는 root 소유이며 group/world 권한이 없는 `0600` 이하 파일이어야 한다.
+v1–v3 intervention
+자료는 감사용으로 계속 읽을 수 있지만 prior promotion 표본에는 prospective
+receipt만 들어간다. Candidate/parent 평가는 미래 verification이 도착한 뒤 같은
+input plan·actual input bundle과 재현된 prior inference를 사용해 별도로 생성한다.
 
 여러 실제 개입의 관측결과가 쌓인 뒤에만 prior artifact 승격을 평가한다. 서로
 단위가 다른 forecast-error metric은 정책의 물리 scale로 정규화하며, 최소 표본수,
@@ -605,17 +628,23 @@ if promotion.eligible:
     )
 ```
 
-holdout plan은 candidate/parent forecast보다 먼저 원장에 등록하며 case별 input,
-미래 frame 내용이 아닌 verification source/QC/grid/valid-time identity, metric
-contract와 issue time을 고정한다. 실제 verification content digest는 결과가 도착한
-뒤 completed holdout case에 결합한다. 두 forecast run은 동일 input
+holdout plan은 candidate/parent forecast보다 먼저 원장에 등록하며 미래 input
+content digest 대신 input valid-time/source/QC/grid/background/mask 선택규칙의
+`input_plan_digest`를 고정한다. 미래 frame 내용이 아닌 verification
+source/QC/grid/valid-time identity, metric contract와 issue time도 함께 고정한다.
+실제 input·verification content digest는 자료가 도착한 뒤 completed holdout case에
+결합한다. 이미 알려진 historical holdout은 sealed dataset을 candidate training 전에
+등록하는 별도 mode를 사용한다. 두 forecast run은 동일 input
 bundle을 사용하고 candidate/parent prior·model/schema/training manifest identity를
-각자 직접 포함해야 한다. 평가는 parent의 고정 domain에서 paired skill을 계산하고
-candidate native domain과의 차이를 issuance effect로 분리한다. 따라서 candidate가
-어려운 셀을 철회해도 그 셀이 skill 비교에서 사라지지 않는다. ledger append는
+각자 직접 포함해야 하며 retained output은 같은 model/runtime에서 재추론되어야 한다.
+평가는 parent의 고정 domain에서 paired skill을 계산하고 candidate native domain과의
+차이를 issuance effect로 분리한다. end-to-end candidate-minus-parent metric도 모든
+lead·metric의 non-inferiority guard로 사용하므로 작은 신규발행 면적의 큰 error도
+숨길 수 없다. ledger append는
 root-owned trust store를 다시 읽고 promotion을
 재계산하며, material 사례의 case/storm/day/radar/regime 다양성과 cluster bootstrap,
-저장된 intervention·learning approval 계보를 다시 검사한다.
+training/holdout storm·day·time-window 분리, 저장된 prospective receipt 계보를 다시
+검사한다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
 자동학습은 의도적으로 nominal metric weight를 고정한
@@ -792,7 +821,7 @@ fso = compute_variational_fso(
 )
 ```
 
-`p1-linearization-v12` loader는 pickle을 사용하지 않고 archive 크기·member
+`p1-linearization-v14` loader는 pickle을 사용하지 않고 archive 크기·member
 allowlist·각 Tensor digest·전체 artifact digest를 먼저 검사한다. 그 뒤 저장된
 control에서 state와 `J^T r`를 다시 계산한다. algorithm bundle 또는 Python,
 NumPy, PyTorch, backend capability, deterministic-policy로 구성된 numerical
@@ -978,7 +1007,7 @@ forecast, analysis = variational_nowcast(
 group map은 `[H,W]` 또는 `[3,H,W]` 정수 Tensor이며 tile mode와 동시에 사용할
 수 없다. 연구모드는 digest를 생략하면 canonical map digest를 자동 결합하지만,
 운용모드는 사전 승인된 `AnalysisConfig`에 정확한 digest가 있어야 한다. map은
-analysis-input·forecast-run·linearization digest와 `p1-linearization-v12`
+analysis-input·forecast-run·linearization digest와 `p1-linearization-v14`
 artifact에 포함된다. CLI에서는
 `--observation-common-bias-group-map groups.npy`를 사용한다.
 
@@ -1135,8 +1164,8 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v53`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v44`
+- `output_contract_version`: 현재 `nowcast-npz-v54`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v46`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
@@ -1583,5 +1612,5 @@ lead·metric의 실제 변화와 1차 예측을 비교한다. 절대+상대 Tayl
 material metric이 없는 수치잡음은 학습으로 승격하지 않으며, 승인된 결과는
 content-addressed learning evidence만 원장에 별도로 기록할 수 있다.
 3시간 지연 재계산에 필요한 frozen linearization은 content-addressed
-`p1-linearization-v12` artifact로 안전하게 보존·재적재할 수 있다.
+`p1-linearization-v14` artifact로 안전하게 보존·재적재할 수 있다.
 P1 분석상태는 기존 M0 직접민감도 API에서 계속 provenance 검사로 거부된다.

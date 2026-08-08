@@ -110,6 +110,9 @@ class OperationalDataIdentity:
     qc_pipeline_digest: str
     observation_error_model_digest: str
     background_model_digest: str
+    radar_product_digest: str | None = None
+    background_cycle_rule_digest: str | None = None
+    mask_policy_digest: str | None = None
 
     def __post_init__(self) -> None:
         _canonical_string("radar_class", self.radar_class)
@@ -122,10 +125,28 @@ class OperationalDataIdentity:
             ("background_model_digest", self.background_model_digest),
         ):
             _sha256(name, value)
+        plan_values = (
+            self.radar_product_digest,
+            self.background_cycle_rule_digest,
+            self.mask_policy_digest,
+        )
+        if any(value is not None for value in plan_values):
+            if any(value is None for value in plan_values):
+                raise ValueError("input-plan data identity must be complete")
+            for name, value in (
+                ("radar_product_digest", self.radar_product_digest),
+                (
+                    "background_cycle_rule_digest",
+                    self.background_cycle_rule_digest,
+                ),
+                ("mask_policy_digest", self.mask_policy_digest),
+            ):
+                assert value is not None
+                _sha256(name, value)
 
     @property
     def value(self) -> dict[str, str]:
-        return {
+        result = {
             "radar_class": self.radar_class,
             "qc_pipeline_digest": self.qc_pipeline_digest,
             "observation_error_model_digest": (
@@ -133,6 +154,19 @@ class OperationalDataIdentity:
             ),
             "background_model_digest": self.background_model_digest,
         }
+        if self.radar_product_digest is not None:
+            assert self.background_cycle_rule_digest is not None
+            assert self.mask_policy_digest is not None
+            result.update(
+                {
+                    "radar_product_digest": self.radar_product_digest,
+                    "background_cycle_rule_digest": (
+                        self.background_cycle_rule_digest
+                    ),
+                    "mask_policy_digest": self.mask_policy_digest,
+                }
+            )
+        return result
 
     @property
     def json(self) -> str:
@@ -152,12 +186,21 @@ class OperationalDataIdentity:
             value = json.loads(text)
         except (json.JSONDecodeError, TypeError) as error:
             raise ValueError("invalid operational data identity JSON") from error
-        if not isinstance(value, dict) or set(value) != {
+        base_fields = {
             "radar_class",
             "qc_pipeline_digest",
             "observation_error_model_digest",
             "background_model_digest",
-        }:
+        }
+        plan_fields = {
+            "radar_product_digest",
+            "background_cycle_rule_digest",
+            "mask_policy_digest",
+        }
+        if not isinstance(value, dict) or set(value) not in (
+            base_fields,
+            base_fields | plan_fields,
+        ):
             raise ValueError("invalid operational data identity fields")
         identity = cls(
             radar_class=_required_string("radar_class", value["radar_class"]),
@@ -170,6 +213,26 @@ class OperationalDataIdentity:
             ),
             background_model_digest=_required_string(
                 "background_model_digest", value["background_model_digest"]
+            ),
+            radar_product_digest=(
+                _required_string(
+                    "radar_product_digest", value["radar_product_digest"]
+                )
+                if "radar_product_digest" in value
+                else None
+            ),
+            background_cycle_rule_digest=(
+                _required_string(
+                    "background_cycle_rule_digest",
+                    value["background_cycle_rule_digest"],
+                )
+                if "background_cycle_rule_digest" in value
+                else None
+            ),
+            mask_policy_digest=(
+                _required_string("mask_policy_digest", value["mask_policy_digest"])
+                if "mask_policy_digest" in value
+                else None
             ),
         )
         if identity.json != text:

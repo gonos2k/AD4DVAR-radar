@@ -35,10 +35,12 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v44"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v46"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v42",
     "forecast-run-v43",
+    "forecast-run-v44",
+    "forecast-run-v45",
 }
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 224
@@ -54,6 +56,7 @@ _CORE_ARRAY_NAMES = frozenset(
         "nowcast_config_json",
         "nowcast_config_digest",
         "input_bundle_digest",
+        "input_frames_digest",
         "run_background_age_minutes",
         "grid_time_contract_present",
         "grid_time_contract_json",
@@ -169,7 +172,14 @@ _CORE_ARRAY_NAMES = frozenset(
         "prior_model_contract_digest",
         "prior_feature_schema_digest",
         "prior_training_manifest_digest",
+        "prior_inference_evidence_digest",
+        "prior_inference_algorithm_digest",
+        "prior_numerical_runtime_digest",
+        "prior_dependency",
         "prior_role",
+        "input_plan_json",
+        "input_plan_digest",
+        "input_plan_resolution_digest",
     }
 )
 _CLI_EXTRA_ARRAY_NAMES = frozenset(
@@ -308,6 +318,7 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "nowcast_config_json": np.asarray(config_json),
         "nowcast_config_digest": np.asarray(config.digest),
         "input_bundle_digest": np.asarray(result.run.input_bundle_digest),
+        "input_frames_digest": np.asarray(result.run.input_frames_digest),
         "neural_prior_digest": np.asarray(
             "" if result.run.neural_prior_digest is None else result.run.neural_prior_digest
         ),
@@ -331,8 +342,37 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             if result.run.prior_training_manifest_digest is None
             else result.run.prior_training_manifest_digest
         ),
+        "prior_inference_evidence_digest": np.asarray(
+            ""
+            if result.run.prior_inference_evidence_digest is None
+            else result.run.prior_inference_evidence_digest
+        ),
+        "prior_inference_algorithm_digest": np.asarray(
+            ""
+            if result.run.prior_inference_algorithm_digest is None
+            else result.run.prior_inference_algorithm_digest
+        ),
+        "prior_numerical_runtime_digest": np.asarray(
+            ""
+            if result.run.prior_numerical_runtime_digest is None
+            else result.run.prior_numerical_runtime_digest
+        ),
+        "prior_dependency": np.asarray(
+            "" if result.run.prior_dependency is None else result.run.prior_dependency
+        ),
         "prior_role": np.asarray(
             "" if result.run.prior_role is None else result.run.prior_role
+        ),
+        "input_plan_json": np.asarray(
+            "" if result.run.input_plan_json is None else result.run.input_plan_json
+        ),
+        "input_plan_digest": np.asarray(
+            "" if result.run.input_plan_digest is None else result.run.input_plan_digest
+        ),
+        "input_plan_resolution_digest": np.asarray(
+            ""
+            if result.run.input_plan_resolution_digest is None
+            else result.run.input_plan_resolution_digest
         ),
         "run_background_age_minutes": np.asarray(
             np.nan
@@ -1260,6 +1300,11 @@ def load_forecast_run(
                 "latest_frame_digest",
             ),
             latest_background_digest=latest_background_digest,
+            input_frames_digest=(
+                _digest_scalar(loaded_arrays, "input_frames_digest")
+                if "input_frames_digest" in loaded_arrays
+                else _digest_scalar(loaded_arrays, "latest_frame_digest")
+            ),
             input_bundle_digest=_digest_scalar(
                 loaded_arrays,
                 "input_bundle_digest",
@@ -1287,23 +1332,91 @@ def load_forecast_run(
             operational_data_identity_digest=operational_data_identity_digest,
             neural_prior_digest=_optional_digest_scalar(
                 loaded_arrays, "neural_prior_digest"
-            ) if version == FORECAST_RUN_ARTIFACT_VERSION else None,
+            ) if "neural_prior_digest" in loaded_arrays else None,
             prior_application_digest=_optional_digest_scalar(
                 loaded_arrays, "prior_application_digest"
-            ) if version == FORECAST_RUN_ARTIFACT_VERSION else None,
+            ) if "prior_application_digest" in loaded_arrays else None,
             prior_model_contract_digest=_optional_digest_scalar(
                 loaded_arrays, "prior_model_contract_digest"
-            ) if version == FORECAST_RUN_ARTIFACT_VERSION else None,
+            ) if "prior_model_contract_digest" in loaded_arrays else None,
             prior_feature_schema_digest=_optional_digest_scalar(
                 loaded_arrays, "prior_feature_schema_digest"
-            ) if version == FORECAST_RUN_ARTIFACT_VERSION else None,
+            ) if "prior_feature_schema_digest" in loaded_arrays else None,
             prior_training_manifest_digest=_optional_digest_scalar(
                 loaded_arrays, "prior_training_manifest_digest"
-            ) if version == FORECAST_RUN_ARTIFACT_VERSION else None,
+            ) if "prior_training_manifest_digest" in loaded_arrays else None,
+            prior_inference_evidence_digest=_optional_digest_scalar(
+                loaded_arrays, "prior_inference_evidence_digest"
+            ) if "prior_inference_evidence_digest" in loaded_arrays else None,
+            prior_inference_algorithm_digest=_optional_digest_scalar(
+                loaded_arrays, "prior_inference_algorithm_digest"
+            ) if "prior_inference_algorithm_digest" in loaded_arrays else None,
+            prior_numerical_runtime_digest=_optional_digest_scalar(
+                loaded_arrays, "prior_numerical_runtime_digest"
+            ) if "prior_numerical_runtime_digest" in loaded_arrays else None,
+            prior_dependency=(
+                (_string_scalar(loaded_arrays, "prior_dependency") or None)
+                if "prior_dependency" in loaded_arrays
+                else None
+            ),
             prior_role=(
                 (_string_scalar(loaded_arrays, "prior_role") or None)
-                if version == FORECAST_RUN_ARTIFACT_VERSION
+                if "prior_role" in loaded_arrays
                 else None
+            ),
+            prior_lineage_contract=(
+                "neural-prior-run-lineage-v1-audit"
+                if version == "forecast-run-v44"
+                and "neural_prior_digest" in loaded_arrays
+                and bool(_string_scalar(loaded_arrays, "neural_prior_digest"))
+                and "prior_inference_evidence_digest" not in loaded_arrays
+                else "neural-prior-run-lineage-v2"
+            ),
+            input_plan_digest=(
+                _optional_digest_scalar(loaded_arrays, "input_plan_digest")
+                if "input_plan_digest" in loaded_arrays
+                else None
+            ),
+            input_plan_json=(
+                (_string_scalar(loaded_arrays, "input_plan_json") or None)
+                if "input_plan_json" in loaded_arrays
+                else (
+                    None
+                    if "input_plan_digest" not in loaded_arrays
+                    or not _string_scalar(loaded_arrays, "input_plan_digest")
+                    else json.dumps(
+                        {
+                            "contract": "legacy-opaque-input-plan-v1",
+                            "legacy_digest": _string_scalar(
+                                loaded_arrays, "input_plan_digest"
+                            ),
+                        },
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    )
+                )
+            ),
+            input_plan_resolution_digest=(
+                _optional_digest_scalar(
+                    loaded_arrays, "input_plan_resolution_digest"
+                )
+                if "input_plan_resolution_digest" in loaded_arrays
+                else (
+                    None
+                    if "input_plan_digest" not in loaded_arrays
+                    or not _string_scalar(loaded_arrays, "input_plan_digest")
+                    else json_digest(
+                        {
+                            "contract": "forecast-input-plan-resolution-v1",
+                            "input_plan_digest": _string_scalar(
+                                loaded_arrays, "input_plan_digest"
+                            ),
+                            "input_bundle_digest": _digest_scalar(
+                                loaded_arrays, "input_bundle_digest"
+                            ),
+                        }
+                    )
+                )
             ),
             forecast_integrator_version=_string_scalar(
                 loaded_arrays,

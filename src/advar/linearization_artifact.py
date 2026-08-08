@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import MISSING, fields, is_dataclass
+from dataclasses import MISSING, fields, is_dataclass, replace
 from enum import Enum
 import hashlib
 import json
@@ -43,6 +43,8 @@ from .variational import (
     FrozenObservationWhitener,
     FrozenOuterState,
     P1LinearizationState,
+    P1_LINEARIZATION_CONTRACT,
+    _content_address_linearization,
     _analysis_trajectory,
     _linearization_stationarity,
     _relative_irls_weight_change,
@@ -53,7 +55,11 @@ from .variational import (
 )
 
 
-P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v12"
+P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v14"
+_LEGACY_P1_LINEARIZATION_ARTIFACT_VERSIONS = {
+    "p1-linearization-v12",
+    "p1-linearization-v13",
+}
 DEFAULT_MAXIMUM_MEMBER_COUNT = 96
 DEFAULT_MAXIMUM_MEMBER_BYTES = 2 * 1024**3
 DEFAULT_MAXIMUM_TOTAL_EXPANDED_BYTES = 8 * 1024**3
@@ -266,12 +272,13 @@ def _decode_value(
 
 
 def _artifact_digest(
+    version: str,
     payload_json: str,
     arrays: dict[str, NDArray[Any]],
 ) -> str:
     return json_digest(
         {
-            "version": P1_LINEARIZATION_ARTIFACT_VERSION,
+            "version": version,
             "payload_sha256": hashlib.sha256(
                 payload_json.encode("utf-8")
             ).hexdigest(),
@@ -414,7 +421,11 @@ def save_p1_linearization(
         separators=(",", ":"),
         allow_nan=False,
     )
-    artifact_digest = _artifact_digest(payload_json, arrays)
+    artifact_digest = _artifact_digest(
+        P1_LINEARIZATION_ARTIFACT_VERSION,
+        payload_json,
+        arrays,
+    )
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(
@@ -738,7 +749,10 @@ def load_p1_linearization(
     except (OSError, EOFError, ValueError, zipfile.BadZipFile) as error:
         raise ValueError("invalid P1 linearization archive") from error
     version = _scalar_string(loaded, "artifact_version")
-    if version != P1_LINEARIZATION_ARTIFACT_VERSION:
+    if version not in (
+        {P1_LINEARIZATION_ARTIFACT_VERSION}
+        | _LEGACY_P1_LINEARIZATION_ARTIFACT_VERSIONS
+    ):
         raise ValueError(f"unsupported P1 linearization artifact: {version}")
     payload_json = _scalar_string(loaded, "payload_json")
     stored_artifact_digest = _scalar_string(loaded, "artifact_digest")
@@ -747,7 +761,7 @@ def load_p1_linearization(
         for name, value in loaded.items()
         if _TENSOR_NAME.fullmatch(name)
     }
-    if _artifact_digest(payload_json, tensor_arrays) != stored_artifact_digest:
+    if _artifact_digest(version, payload_json, tensor_arrays) != stored_artifact_digest:
         raise ValueError("P1 linearization artifact digest mismatch")
     try:
         payload = json.loads(payload_json)
@@ -758,9 +772,10 @@ def load_p1_linearization(
     referenced_names = _referenced_tensor_names(payload.get("state"))
     if referenced_names != set(tensor_arrays):
         raise ValueError("P1 artifact tensor membership mismatch")
-    if payload.get("algorithm_bundle_digest") != algorithm_bundle_digest():
+    legacy = version in _LEGACY_P1_LINEARIZATION_ARTIFACT_VERSIONS
+    if not legacy and payload.get("algorithm_bundle_digest") != algorithm_bundle_digest():
         raise ValueError("P1 artifact algorithm bundle mismatch")
-    if (
+    if not legacy and (
         payload.get("numerical_runtime_digest")
         != numerical_runtime_identity_digest()
     ):
@@ -772,7 +787,25 @@ def load_p1_linearization(
     )
     if not isinstance(decoded, P1LinearizationState):
         raise ValueError("P1 artifact does not contain a linearization state")
-    if (
+    if legacy:
+        if not decoded.linearization.frozen.observation_derived_initial_background:
+            raise ValueError(
+                "legacy neural-prior linearization requires its original runtime"
+            )
+        migrated_linearization = _content_address_linearization(
+            decoded.control,
+            replace(
+                decoded.linearization,
+                contract=P1_LINEARIZATION_CONTRACT,
+                algorithm_bundle_digest=algorithm_bundle_digest(),
+                numerical_runtime_digest=numerical_runtime_identity_digest(
+                    decoded.control.device
+                ),
+                linearization_digest="",
+            ),
+        )
+        decoded = replace(decoded, linearization=migrated_linearization)
+    if not legacy and (
         payload.get("linearization_digest")
         != decoded.linearization.linearization_digest
     ):

@@ -47,9 +47,12 @@ from .variational import (
     AnalysisObservations,
     AnalysisResult,
     FrozenOuterState,
+    NeuralPriorApplication,
+    NeuralPriorInferenceRunner,
     P1LinearizationState,
     _apply_observation_error_whitener,
     _analysis_trajectory,
+    _analysis_input_lineage,
     _count_observation_whitener_applies,
     _linearization_stationarity,
     _relative_irls_weight_change,
@@ -57,6 +60,7 @@ from .variational import (
     _robust_stationarity,
     _stationarity_is_acceptable,
     freeze_irls_weights,
+    prepare_analysis,
     residual_vector,
     solve_analysis,
     validate_analysis_linearization_content,
@@ -943,6 +947,9 @@ class VariationalObservationPerturbation:
         cls,
         delta_dbz: Tensor,
         linearization: AnalysisLinearization,
+        *,
+        neural_prior_runner: NeuralPriorInferenceRunner | None = None,
+        neural_prior_application: NeuralPriorApplication | None = None,
     ) -> VariationalObservationPerturbation:
         """Map one physical radar-value change through retained input paths."""
 
@@ -969,6 +976,8 @@ class VariationalObservationPerturbation:
             active_delta,
             observations,
             frozen,
+            neural_prior_runner=neural_prior_runner,
+            neural_prior_application=neural_prior_application,
         )
         return cls(
             detected_dbz=detected,
@@ -1077,6 +1086,9 @@ def _physical_radar_channels(
     delta_dbz: Tensor,
     observations: AnalysisObservations,
     frozen: FrozenOuterState,
+    *,
+    neural_prior_runner: NeuralPriorInferenceRunner | None = None,
+    neural_prior_application: NeuralPriorApplication | None = None,
 ) -> tuple[Tensor, Tensor, Tensor]:
     detected = torch.where(
         observations.detected_mask,
@@ -1090,6 +1102,22 @@ def _physical_radar_channels(
             delta_dbz[0],
             torch.zeros_like(delta_dbz[0]),
         )
+    elif frozen.neural_prior_dependency == "radar_dependent":
+        if neural_prior_runner is None:
+            raise ValueError("radar-dependent prior perturbation requires a runner")
+        _validate_retained_prior_runner(
+            frozen,
+            neural_prior_runner,
+            neural_prior_application,
+        )
+        background[0] = torch.where(
+            _neural_prior_derivative_mask(frozen),
+            neural_prior_runner.jvp(
+                frozen.input_frames_dbz,
+                delta_dbz,
+            ),
+            torch.zeros_like(background[0]),
+        )
     dynamics = torch.zeros_like(delta_dbz)
     if frozen.baseline_metadata.tendency_source is TendencySource.OBSERVATION:
         dynamics = torch.where(
@@ -1098,6 +1126,40 @@ def _physical_radar_channels(
             dynamics,
         )
     return detected, background, dynamics
+
+
+def _validate_retained_prior_runner(
+    frozen: FrozenOuterState,
+    runner: NeuralPriorInferenceRunner,
+    application: NeuralPriorApplication | None,
+) -> None:
+    raw = frozen.neural_prior_raw_background_dbz
+    execution_digest = frozen.neural_prior_execution_contract_digest
+    if raw is None or execution_digest is None:
+        raise ValueError("neural-prior restart state is incomplete")
+    if application is not None:
+        if application.application_digest != frozen.neural_prior_application_digest:
+            raise ValueError("neural-prior perturbation application mismatch")
+        runner.reproduce(application, frozen.input_frames_dbz)
+    runner.validate_retained_output(
+        frozen.input_frames_dbz,
+        raw,
+        execution_contract_digest=execution_digest,
+    )
+
+
+def _neural_prior_derivative_mask(
+    frozen: FrozenOuterState,
+) -> Tensor:
+    """Return the retained interior branch of the consumed prior output."""
+
+    valid = frozen.neural_prior_valid_mask
+    raw = frozen.neural_prior_raw_background_dbz
+    if valid is None or raw is None:
+        raise ValueError("neural-prior derivative requires retained prior state")
+    return valid & (raw > frozen.nowcast_config.min_dbz) & (
+        raw < frozen.nowcast_config.max_dbz
+    )
 
 
 def _physical_radar_input_margins(
@@ -2171,6 +2233,8 @@ class LearningApprovalEvidence:
     half_step_forecast_digest: str
     first_order_validation_digest: str
     learning_impact_digest: str
+    approved_action_digest: str | None = None
+    nominal_input_bundle_digest: str | None = None
     selection_mode: LearningSelectionMode = "direct"
     candidate_id: str | None = None
     candidate_rank: int | None = None
@@ -2182,12 +2246,13 @@ class LearningApprovalEvidence:
     whitener_operations_per_apply: int = 0
     observed_whitener_apply_count: int = 0
     observed_whitener_total_operations: int = 0
-    contract: str = "p1-learning-approval-evidence-v2"
+    contract: str = "p1-learning-approval-evidence-v3"
 
     def __post_init__(self) -> None:
         if self.contract not in (
             "p1-learning-approval-evidence-v1",
             "p1-learning-approval-evidence-v2",
+            "p1-learning-approval-evidence-v3",
         ):
             raise ValueError("unsupported learning approval evidence")
         for name, value in (
@@ -2205,6 +2270,23 @@ class LearningApprovalEvidence:
             ("learning_impact_digest", self.learning_impact_digest),
         ):
             _require_sha256(name, value)
+        action_values = (
+            self.approved_action_digest,
+            self.nominal_input_bundle_digest,
+        )
+        if self.contract == "p1-learning-approval-evidence-v3":
+            if any(value is None for value in action_values):
+                raise ValueError("learning action lineage is incomplete")
+            _require_sha256(
+                "approved_action_digest",
+                cast(str, self.approved_action_digest),
+            )
+            _require_sha256(
+                "nominal_input_bundle_digest",
+                cast(str, self.nominal_input_bundle_digest),
+            )
+        elif any(value is not None for value in action_values):
+            raise ValueError("legacy learning evidence cannot carry action lineage")
         ranked_values = (
             self.candidate_id,
             self.candidate_rank,
@@ -3124,7 +3206,7 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
     )
     return json_digest(
         {
-            "version": "p1-variational-fso-digest-v13",
+            "version": "p1-variational-fso-digest-v14",
             "contract": fso.contract,
             "forecast_run_digest": fso.forecast_run_digest,
             "analysis_input_digest": fso.analysis_input_digest,
@@ -3305,7 +3387,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 
     return json_digest(
         {
-            "version": "p1-variational-fsoi-digest-v11",
+            "version": "p1-variational-fsoi-digest-v12",
             "contract": fsoi.contract,
             "variational_fso_digest": fsoi.fso.variational_fso_digest,
             "perturbation_contract": fsoi.perturbation_contract,
@@ -3390,11 +3472,11 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 def validate_variational_fso(fso: VariationalFSO) -> None:
     """Reject any mutation of a content-addressed FSO result."""
 
-    if fso.contract != "p1-variational-fso-v14":
+    if fso.contract != "p1-variational-fso-v15":
         raise ValueError("unsupported P1 FSO contract")
     if (
         fso.sensitivity_scope
-        != "residual_plus_observation_derived_baseline_with_frozen_selection"
+        != "residual_plus_input_dependent_initial_state_and_baseline_with_frozen_selection"
         or fso.baseline_dynamics_frozen is not False
         or fso.baseline_pair_selection_frozen is not True
     ):
@@ -3431,7 +3513,7 @@ def validate_variational_fso(fso: VariationalFSO) -> None:
 def validate_variational_fsoi(fsoi: VariationalFSOI) -> None:
     """Reject any mutation or cross-binding in a P1 impact result."""
 
-    if fsoi.contract != "p1-linearized-observation-impact-v11":
+    if fsoi.contract != "p1-linearized-observation-impact-v12":
         raise ValueError("unsupported P1 FSOI contract")
     validate_variational_fso(fsoi.fso)
     if fsoi.perturbation.digest != fsoi.perturbation_digest:
@@ -3502,6 +3584,10 @@ def validate_variational_learning_impact(
             "half_step_forecast_digest": validation.half_step_forecast_digest,
             "first_order_validation_digest": validation.validation_digest,
             "learning_impact_digest": _variational_impact_digest(impact),
+            "approved_action_digest": fsoi.perturbation_digest,
+            "nominal_input_bundle_digest": (
+                validation.nominal_input_bundle_digest
+            ),
         }
         if any(
             value is None or getattr(evidence, name) != value
@@ -4185,6 +4271,8 @@ def compute_variational_fso(
     *,
     sensitivity_config: SensitivityConfig | None = None,
     adjoint_config: VariationalAdjointConfig | None = None,
+    neural_prior_runner: NeuralPriorInferenceRunner | None = None,
+    neural_prior_application: NeuralPriorApplication | None = None,
 ) -> VariationalFSO:
     """Compute frozen-final P1 forecast sensitivity to observations."""
 
@@ -4203,6 +4291,8 @@ def compute_variational_fso(
             sensitivity_config=sensitivity_config,
             adjoint_config=resolved_adjoint,
             observation_perturbation=None,
+            neural_prior_runner=neural_prior_runner,
+            neural_prior_application=neural_prior_application,
         )
     return _bind_fso_whitener_telemetry(fso, analysis, counter[0])
 
@@ -4215,6 +4305,8 @@ def compute_variational_fsoi(
     *,
     sensitivity_config: SensitivityConfig | None = None,
     adjoint_config: VariationalAdjointConfig | None = None,
+    neural_prior_runner: NeuralPriorInferenceRunner | None = None,
+    neural_prior_application: NeuralPriorApplication | None = None,
 ) -> VariationalFSOI:
     """Compute signed first-order impact for an explicit perturbation."""
 
@@ -4234,6 +4326,8 @@ def compute_variational_fsoi(
                 sensitivity_config=sensitivity_config,
                 adjoint_config=resolved_adjoint,
                 observation_perturbation=observation_perturbation,
+                neural_prior_runner=neural_prior_runner,
+                neural_prior_application=neural_prior_application,
             )
         )
     fso = _bind_fso_whitener_telemetry(fso, analysis, counter[0])
@@ -4242,7 +4336,7 @@ def compute_variational_fsoi(
     if perturbation_diagnostics is None:
         raise RuntimeError("variational perturbation was not validated")
     fsoi = VariationalFSOI(
-        contract="p1-linearized-observation-impact-v11",
+        contract="p1-linearized-observation-impact-v12",
         fso=fso,
         perturbation=observation_perturbation,
         perturbation_contract=observation_perturbation.contract,
@@ -4571,6 +4665,8 @@ def validate_variational_fsoi_issuance_impact(
     fsoi: VariationalFSOI,
     *,
     policy: AutomatedLearningPolicy,
+    neural_prior_runner: NeuralPriorInferenceRunner | None = None,
+    neural_prior_application: NeuralPriorApplication | None = None,
 ) -> FirstOrderValidation:
     """Re-solve a physical FSOI on the changed issuance domain.
 
@@ -4603,6 +4699,8 @@ def validate_variational_fsoi_issuance_impact(
         maximum_whitener_total_operations=(
             policy.maximum_whitener_total_operations
         ),
+        neural_prior_runner=neural_prior_runner,
+        neural_prior_application=neural_prior_application,
     )
 
 
@@ -4652,6 +4750,8 @@ def score_candidate_perturbations(
     ],
     *,
     policy: AutomatedLearningPolicy,
+    neural_prior_runner: NeuralPriorInferenceRunner | None = None,
+    neural_prior_application: NeuralPriorApplication | None = None,
 ) -> VariationalCandidateRanking:
     """Stream, precheck, and rank physical-radar candidates with one FSO."""
 
@@ -4767,6 +4867,8 @@ def score_candidate_perturbations(
                 sparse,
                 linearization,
                 policy,
+                neural_prior_runner=neural_prior_runner,
+                neural_prior_application=neural_prior_application,
             )
             whitener_apply_count += precheck_applies
             if (
@@ -4897,6 +4999,9 @@ def _candidate_full_precheck_reason(
     candidate: SparseRadarPerturbation,
     linearization: AnalysisLinearization,
     policy: AutomatedLearningPolicy,
+    *,
+    neural_prior_runner: NeuralPriorInferenceRunner | None,
+    neural_prior_application: NeuralPriorApplication | None,
 ) -> tuple[str | None, int]:
     counter = [0]
     try:
@@ -4904,6 +5009,8 @@ def _candidate_full_precheck_reason(
         perturbation = VariationalObservationPerturbation.from_radar_dbz_delta(
             dense,
             linearization,
+            neural_prior_runner=neural_prior_runner,
+            neural_prior_application=neural_prior_application,
         )
         with _count_observation_whitener_applies() as counter:
             _validate_variational_observation_perturbation(
@@ -4911,6 +5018,8 @@ def _candidate_full_precheck_reason(
                 linearization.observations,
                 linearization.frozen,
                 policy.adjoint_config,
+                neural_prior_runner=neural_prior_runner,
+                neural_prior_application=neural_prior_application,
             )
     except (TypeError, ValueError) as error:
         return str(error), counter[0]
@@ -4972,6 +5081,8 @@ def validate_top_k_learning_impacts(
     policy: AutomatedLearningPolicy,
     policy_trust_store_path: str | Path,
     maximum_candidates_to_validate: int | None = None,
+    neural_prior_runner: NeuralPriorInferenceRunner | None = None,
+    neural_prior_application: NeuralPriorApplication | None = None,
 ) -> tuple[RankedLearningOutcome, ...]:
     """Run full/half robust re-solves only for the highest-ranked candidates."""
 
@@ -5024,6 +5135,8 @@ def validate_top_k_learning_impacts(
         perturbation = VariationalObservationPerturbation.from_radar_dbz_delta(
             dense,
             linearization,
+            neural_prior_runner=neural_prior_runner,
+            neural_prior_application=neural_prior_application,
         )
         with _count_observation_whitener_applies() as fsoi_counter:
             fsoi = _variational_fsoi_from_precomputed_fso(
@@ -5031,6 +5144,8 @@ def validate_top_k_learning_impacts(
                 linearization,
                 perturbation,
                 policy.adjoint_config,
+                neural_prior_runner=neural_prior_runner,
+                neural_prior_application=neural_prior_application,
             )
         robust_resolves += 2
         result_for_candidate = _learning_impact_from_fsoi(
@@ -5053,6 +5168,8 @@ def validate_top_k_learning_impacts(
                     ranking.observed_whitener_apply_count + fsoi_counter[0]
                 ),
             ),
+            neural_prior_runner=neural_prior_runner,
+            neural_prior_application=neural_prior_application,
         )
         validation = result_for_candidate.first_order_validation
         if validation is not None:
@@ -5083,6 +5200,8 @@ def compute_variational_fsoi_for_learning(
     *,
     policy: AutomatedLearningPolicy,
     policy_trust_store_path: str | Path,
+    neural_prior_runner: NeuralPriorInferenceRunner | None = None,
+    neural_prior_application: NeuralPriorApplication | None = None,
 ) -> VariationalLearningImpact:
     """Compute frozen-domain FSOI under a root-owned learning policy."""
 
@@ -5120,6 +5239,8 @@ def compute_variational_fsoi_for_learning(
             observation_perturbation,
             sensitivity_config=policy.sensitivity_config,
             adjoint_config=policy.adjoint_config,
+            neural_prior_runner=neural_prior_runner,
+            neural_prior_application=neural_prior_application,
         )
     except ValueError as error:
         return _rejected_learning_impact(policy, str(error))
@@ -5130,6 +5251,8 @@ def compute_variational_fsoi_for_learning(
         fsoi,
         policy,
         trust_store.content_digest,
+        neural_prior_runner=neural_prior_runner,
+        neural_prior_application=neural_prior_application,
     )
 
 
@@ -5155,6 +5278,8 @@ def _learning_impact_from_fsoi(
     trust_store_digest: str,
     *,
     selection: _LearningSelection | None = None,
+    neural_prior_runner: NeuralPriorInferenceRunner | None = None,
+    neural_prior_application: NeuralPriorApplication | None = None,
 ) -> VariationalLearningImpact:
     selection = selection or _LearningSelection(mode="direct")
     impact = fsoi.observation.baseline_branch_trusted_total
@@ -5192,6 +5317,8 @@ def _learning_impact_from_fsoi(
             maximum_whitener_total_operations=(
                 remaining_whitener_operations
             ),
+            neural_prior_runner=neural_prior_runner,
+            neural_prior_application=neural_prior_application,
         )
     except ValueError as error:
         if str(error) != (
@@ -5286,6 +5413,8 @@ def _learning_impact_from_fsoi(
         half_step_forecast_digest=cast(str, forecast_digests[1]),
         first_order_validation_digest=validation.validation_digest,
         learning_impact_digest=_variational_impact_digest(owned_impact),
+        approved_action_digest=fsoi.perturbation_digest,
+        nominal_input_bundle_digest=validation.nominal_input_bundle_digest,
         selection_mode=selection.mode,
         candidate_id=selection.candidate_id,
         candidate_rank=selection.candidate_rank,
@@ -5359,6 +5488,9 @@ def _variational_fsoi_from_precomputed_fso(
     linearization: AnalysisLinearization,
     perturbation: VariationalObservationPerturbation,
     adjoint_config: VariationalAdjointConfig,
+    *,
+    neural_prior_runner: NeuralPriorInferenceRunner | None = None,
+    neural_prior_application: NeuralPriorApplication | None = None,
 ) -> VariationalFSOI:
     """Materialize one impact from retained maps without solving another adjoint."""
 
@@ -5377,6 +5509,8 @@ def _variational_fsoi_from_precomputed_fso(
         linearization.observations,
         linearization.frozen,
         adjoint_config,
+        neural_prior_runner=neural_prior_runner,
+        neural_prior_application=neural_prior_application,
     )
     if (
         adjoint_config.require_baseline_dynamics_branch_validity
@@ -5420,7 +5554,7 @@ def _variational_fsoi_from_precomputed_fso(
         baseline_branch_trusted_total=total if trusted else None,
     )
     fsoi = VariationalFSOI(
-        contract="p1-linearized-observation-impact-v11",
+        contract="p1-linearized-observation-impact-v12",
         fso=fso,
         perturbation=perturbation,
         perturbation_contract=perturbation.contract,
@@ -5520,6 +5654,8 @@ def _validate_first_order_learning_impact(
     *,
     metric_domain_contract: FirstOrderMetricDomain = "frozen_metric_domain",
     maximum_whitener_total_operations: int | None = None,
+    neural_prior_runner: NeuralPriorInferenceRunner | None = None,
+    neural_prior_application: NeuralPriorApplication | None = None,
 ) -> FirstOrderValidation:
     """Re-solve full and half perturbations on one explicit metric domain."""
 
@@ -5540,6 +5676,8 @@ def _validate_first_order_learning_impact(
             policy,
             scale=1.0,
             metric_domain_contract=metric_domain_contract,
+            neural_prior_runner=neural_prior_runner,
+            neural_prior_application=neural_prior_application,
         )
         half = _resolve_learning_step(
             result,
@@ -5549,6 +5687,8 @@ def _validate_first_order_learning_impact(
             policy,
             scale=0.5,
             metric_domain_contract=metric_domain_contract,
+            neural_prior_runner=neural_prior_runner,
+            neural_prior_application=neural_prior_application,
         )
     available = fsoi.fso.metric_available
     full_error = torch.abs(full.metric_change - full_prediction)
@@ -5667,6 +5807,8 @@ def _resolve_learning_step(
     *,
     scale: float,
     metric_domain_contract: FirstOrderMetricDomain,
+    neural_prior_runner: NeuralPriorInferenceRunner | None,
+    neural_prior_application: NeuralPriorApplication | None,
 ) -> _ResolvedLearningStep:
     linearization = analysis.linearization
     if linearization is None:
@@ -5678,31 +5820,119 @@ def _resolve_learning_step(
     delta = scale * physical_delta
     observations = linearization.observations
     frozen = linearization.frozen
-    changed_observations = replace(observations, dbz=observations.dbz + delta)
-    background_delta = (
-        scale * _initial_background_perturbation(perturbation, observations)[0]
-    )
-    baseline_dynamics = torch.cat(
-        (
-            frozen.baseline_state.displacement_yx,
-            frozen.baseline_state.log_growth_per_step.reshape(1),
-        )
-    )
-    if frozen.baseline_metadata.tendency_source is TendencySource.OBSERVATION:
-        baseline_dynamics = _baseline_dynamics_from_observation(
-            changed_observations.dbz,
+    changed_frames = frozen.input_frames_dbz + delta
+    changed_prior: NeuralPriorApplication | None = None
+    if frozen.neural_prior_dependency is not None:
+        if neural_prior_runner is None:
+            raise ValueError("neural-prior re-solve requires an inference runner")
+        _validate_retained_prior_runner(
             frozen,
+            neural_prior_runner,
+            neural_prior_application,
         )
-    changed_frozen = replace(
-        frozen,
-        initial_background_dbz=frozen.initial_background_dbz + background_delta,
-        baseline_state=RadarState(
-            echo_linear=frozen.baseline_state.echo_linear,
-            displacement_yx=baseline_dynamics[:2],
-            log_growth_per_step=baseline_dynamics[2],
-        ),
-        baseline_frames_dbz=frozen.baseline_frames_dbz + delta,
-    )
+        preliminary_run = ForecastRunContract.from_inputs(
+            result.run.config,
+            changed_frames,
+            observations.valid_mask,
+            frozen.background_frames_dbz,
+            frozen.background_age_minutes,
+            grid_time_contract=frozen.grid_time_contract,
+            analysis_config_json=result.run.analysis_config_json,
+            analysis_config_digest=result.run.analysis_config_digest,
+            analysis_input_digest=result.run.analysis_input_digest,
+            operational_calibration_manifest_json=(
+                result.run.operational_calibration_manifest_json
+            ),
+            operational_calibration_manifest_digest=(
+                result.run.operational_calibration_manifest_digest
+            ),
+            operational_calibration_approval_digest=(
+                result.run.operational_calibration_approval_digest
+            ),
+            operational_data_identity_json=(result.run.operational_data_identity_json),
+            operational_data_identity_digest=(
+                result.run.operational_data_identity_digest
+            ),
+            input_plan_json=result.run.input_plan_json,
+            input_plan_digest=result.run.input_plan_digest,
+        )
+        changed_prior = neural_prior_runner.infer(
+            changed_frames,
+            input_run=preliminary_run,
+            role=cast(Literal["candidate", "parent"], frozen.neural_prior_role),
+        )
+        retained_raw = frozen.neural_prior_raw_background_dbz
+        assert retained_raw is not None
+        if frozen.neural_prior_dependency == "exogenous" and not torch.equal(
+            changed_prior.initial_background_dbz,
+            retained_raw,
+        ):
+            raise ValueError("exogenous neural prior changed with the radar input")
+        changed_observations, changed_frozen = prepare_analysis(
+            changed_frames,
+            nowcast_config=result.run.config,
+            analysis_config=frozen.analysis_config,
+            observation_std_dbz=observations.std_dbz,
+            quality_weight=observations.quality_weight,
+            qc_mask=observations.valid_mask,
+            observation_common_bias_group_index=(observations.common_bias_group_index),
+            observation_common_bias_mode_weights=(
+                observations.common_bias_mode_weights
+            ),
+            background_frames_dbz=frozen.background_frames_dbz,
+            background_age_minutes=frozen.background_age_minutes,
+            grid_time_contract=frozen.grid_time_contract,
+            neural_prior=changed_prior,
+        )
+    else:
+        changed_observations = replace(observations, dbz=observations.dbz + delta)
+        background_delta = (
+            scale * _initial_background_perturbation(perturbation, observations)[0]
+        )
+        baseline_dynamics = torch.cat(
+            (
+                frozen.baseline_state.displacement_yx,
+                frozen.baseline_state.log_growth_per_step.reshape(1),
+            )
+        )
+        if frozen.baseline_metadata.tendency_source is TendencySource.OBSERVATION:
+            baseline_dynamics = _baseline_dynamics_from_observation(
+                changed_observations.dbz,
+                frozen,
+            )
+        changed_frozen = replace(
+            frozen,
+            initial_background_dbz=(frozen.initial_background_dbz + background_delta),
+            baseline_state=RadarState(
+                echo_linear=frozen.baseline_state.echo_linear,
+                displacement_yx=baseline_dynamics[:2],
+                log_growth_per_step=baseline_dynamics[2],
+            ),
+            baseline_frames_dbz=frozen.baseline_frames_dbz + delta,
+        )
+    if not torch.equal(
+        changed_frozen.active_field_index,
+        frozen.active_field_index,
+    ):
+        metric_change = torch.full_like(fsoi.fso.forecast_scores, float("nan"))
+        return _ResolvedLearningStep(
+            metric_change=metric_change,
+            frozen_domain_state_effect=None,
+            issuance_policy_effect=None,
+            end_to_end_issuance_effect=None,
+            coverage_before=None,
+            coverage_after=None,
+            newly_issued_fraction=None,
+            withdrawn_fraction=None,
+            background_fallback_before=None,
+            background_fallback_after=None,
+            analysis_converged=False,
+            active_branch_valid=False,
+            analysis_digest=None,
+            forecast_digest=None,
+            input_bundle_digest=None,
+            pcg_iterations=0,
+        )
     resolved = solve_analysis(
         changed_observations,
         changed_frozen,
@@ -5761,7 +5991,19 @@ def _resolve_learning_step(
     resolved_forecast = None
     resolved_run = None
     if metric_domain_contract == "resolved_issuance_domain":
-        changed_frames = frozen.input_frames_dbz + delta
+        resolved_analysis_config_json = result.run.analysis_config_json
+        resolved_analysis_config_digest = result.run.analysis_config_digest
+        resolved_analysis_input_digest = result.run.analysis_input_digest
+        if changed_prior is not None:
+            (
+                resolved_analysis_config_json,
+                resolved_analysis_config_digest,
+                resolved_analysis_input_digest,
+            ) = _analysis_input_lineage(
+                changed_observations,
+                changed_frozen.analysis_config,
+                neural_prior_application_digest=(changed_prior.application_digest),
+            )
         resolved_run = ForecastRunContract.from_inputs(
             result.run.config,
             changed_frames,
@@ -5769,9 +6011,9 @@ def _resolve_learning_step(
             frozen.background_frames_dbz,
             frozen.background_age_minutes,
             grid_time_contract=frozen.grid_time_contract,
-            analysis_config_json=result.run.analysis_config_json,
-            analysis_config_digest=result.run.analysis_config_digest,
-            analysis_input_digest=result.run.analysis_input_digest,
+            analysis_config_json=resolved_analysis_config_json,
+            analysis_config_digest=resolved_analysis_config_digest,
+            analysis_input_digest=resolved_analysis_input_digest,
             operational_calibration_manifest_json=(
                 result.run.operational_calibration_manifest_json
             ),
@@ -5787,14 +6029,44 @@ def _resolve_learning_step(
             operational_data_identity_digest=(
                 result.run.operational_data_identity_digest
             ),
-            neural_prior_digest=result.run.neural_prior_digest,
-            prior_application_digest=result.run.prior_application_digest,
-            prior_model_contract_digest=result.run.prior_model_contract_digest,
-            prior_feature_schema_digest=result.run.prior_feature_schema_digest,
-            prior_training_manifest_digest=(
-                result.run.prior_training_manifest_digest
+            neural_prior_digest=(
+                None if changed_prior is None else changed_prior.neural_prior_digest
             ),
-            prior_role=result.run.prior_role,
+            prior_application_digest=(
+                None if changed_prior is None else changed_prior.application_digest
+            ),
+            prior_model_contract_digest=(
+                None if changed_prior is None else changed_prior.model_contract_digest
+            ),
+            prior_feature_schema_digest=(
+                None if changed_prior is None else changed_prior.feature_schema_digest
+            ),
+            prior_training_manifest_digest=(
+                None
+                if changed_prior is None
+                else changed_prior.training_manifest_digest
+            ),
+            prior_inference_evidence_digest=(
+                None
+                if changed_prior is None
+                else changed_prior.inference_evidence.evidence_digest
+            ),
+            prior_inference_algorithm_digest=(
+                None
+                if changed_prior is None
+                else changed_prior.inference_evidence.inference_algorithm_digest
+            ),
+            prior_numerical_runtime_digest=(
+                None
+                if changed_prior is None
+                else changed_prior.inference_evidence.numerical_runtime_digest
+            ),
+            prior_dependency=(
+                None if changed_prior is None else changed_prior.dependency
+            ),
+            prior_role=None if changed_prior is None else changed_prior.role,
+            input_plan_json=result.run.input_plan_json,
+            input_plan_digest=result.run.input_plan_digest,
         )
         resolved_forecast = forecast_from_state(
             resolved.state,
@@ -6069,6 +6341,8 @@ def _compute_variational_products(
     sensitivity_config: SensitivityConfig | None,
     adjoint_config: VariationalAdjointConfig | None,
     observation_perturbation: VariationalObservationPerturbation | None,
+    neural_prior_runner: NeuralPriorInferenceRunner | None,
+    neural_prior_application: NeuralPriorApplication | None,
 ) -> tuple[
     VariationalFSO,
     VariationalObservationImpact | None,
@@ -6133,6 +6407,14 @@ def _compute_variational_products(
     observations = linearization.observations
     frozen = linearization.frozen
     control = analysis.control
+    if frozen.neural_prior_dependency == "radar_dependent":
+        if neural_prior_runner is None:
+            raise ValueError("radar-dependent prior FSO requires an inference runner")
+        _validate_retained_prior_runner(
+            frozen,
+            neural_prior_runner,
+            neural_prior_application,
+        )
     perturbation_diagnostics = None
     if observation_perturbation is not None:
         perturbation_diagnostics = _validate_variational_observation_perturbation(
@@ -6140,6 +6422,8 @@ def _compute_variational_products(
             observations,
             frozen,
             adjoint_config,
+            neural_prior_runner=neural_prior_runner,
+            neural_prior_application=neural_prior_application,
         )
         if (
             adjoint_config.require_baseline_dynamics_branch_validity
@@ -6577,6 +6861,19 @@ def _compute_variational_products(
                     sensitivity_config=sensitivity_config,
                 )
             )
+            prior_input_sensitivity = background_sensitivity
+            if frozen.neural_prior_dependency == "exogenous":
+                prior_input_sensitivity = torch.zeros_like(background_sensitivity)
+            elif frozen.neural_prior_dependency == "radar_dependent":
+                assert neural_prior_runner is not None
+                prior_input_sensitivity = neural_prior_runner.vjp(
+                    frozen.input_frames_dbz,
+                    torch.where(
+                        _neural_prior_derivative_mask(frozen),
+                        background_sensitivity[0],
+                        torch.zeros_like(background_sensitivity[0]),
+                    ),
+                )
             dynamics_sensitivity = (
                 _frozen_baseline_dynamics_observation_sensitivity(
                     baseline_dynamics_path,
@@ -6596,7 +6893,7 @@ def _compute_variational_products(
             )
             frozen_structure_input_sensitivity_values = (
                 observation_sensitivity.detected_dbz
-                + background_sensitivity
+                + prior_input_sensitivity
                 + dynamics_sensitivity
             )
 
@@ -6744,7 +7041,7 @@ def _compute_variational_products(
         ),
     )
     fso = VariationalFSO(
-        contract="p1-variational-fso-v14",
+        contract="p1-variational-fso-v15",
         forecast_run_digest=result.forecast_run_digest,
         analysis_input_digest=cast(str, result.run.analysis_input_digest),
         sensitivity_config_digest=sensitivity_config.digest,
@@ -6771,7 +7068,7 @@ def _compute_variational_products(
         numerical_runtime_digest=linearization.numerical_runtime_digest,
         variational_fso_digest="",
         sensitivity_scope=(
-            "residual_plus_observation_derived_baseline_with_frozen_selection"
+            "residual_plus_input_dependent_initial_state_and_baseline_with_frozen_selection"
         ),
         baseline_dynamics_frozen=False,
         baseline_pair_selection_frozen=True,
@@ -7068,6 +7365,10 @@ def _frozen_initial_background_observation_sensitivity(
     accepted_first_frame = (
         observations.valid_mask[0] & frozen.observed_mask[0]
     )
+    if not frozen.observation_derived_initial_background:
+        if frozen.neural_prior_valid_mask is None:
+            raise ValueError("neural-prior background validity is missing")
+        accepted_first_frame = frozen.neural_prior_valid_mask
     first_frame = torch.where(
         accepted_first_frame,
         direct + implicit,
@@ -7332,6 +7633,9 @@ def _validate_variational_observation_perturbation(
     observations: AnalysisObservations,
     frozen: FrozenOuterState,
     config: VariationalAdjointConfig,
+    *,
+    neural_prior_runner: NeuralPriorInferenceRunner | None = None,
+    neural_prior_application: NeuralPriorApplication | None = None,
 ) -> VariationalPerturbationDiagnostics:
     if perturbation.contract != "p1-observation-perturbation-v7":
         raise ValueError("unsupported P1 observation perturbation contract")
@@ -7382,7 +7686,12 @@ def _validate_variational_observation_perturbation(
     if perturbation.initial_background_dbz is not None:
         values = perturbation.initial_background_dbz
         active = torch.zeros_like(observations.valid_mask)
-        active[0] = observations.valid_mask[0] & frozen.observed_mask[0]
+        if frozen.neural_prior_dependency == "radar_dependent":
+            if frozen.neural_prior_valid_mask is None:
+                raise ValueError("neural-prior perturbation lacks a valid mask")
+            active[0] = frozen.neural_prior_valid_mask
+        else:
+            active[0] = observations.valid_mask[0] & frozen.observed_mask[0]
         _validate_perturbation_tensor(
             "initial_background_dbz",
             values,
@@ -7414,6 +7723,8 @@ def _validate_variational_observation_perturbation(
         perturbation,
         observations,
         frozen,
+        neural_prior_runner=neural_prior_runner,
+        neural_prior_application=neural_prior_application,
     )
     _validate_directional_classification(
         perturbation,
@@ -7459,6 +7770,9 @@ def _validate_physical_radar_semantics(
     perturbation: VariationalObservationPerturbation,
     observations: AnalysisObservations,
     frozen: FrozenOuterState,
+    *,
+    neural_prior_runner: NeuralPriorInferenceRunner | None = None,
+    neural_prior_application: NeuralPriorApplication | None = None,
 ) -> Tensor | None:
     physical_delta = perturbation.physical_radar_dbz_delta
     if perturbation.perturbation_semantics == "augmented_parameter":
@@ -7483,6 +7797,8 @@ def _validate_physical_radar_semantics(
         physical_delta,
         observations,
         frozen,
+        neural_prior_runner=neural_prior_runner,
+        neural_prior_application=neural_prior_application,
     )
     expected = (
         detected,
@@ -7858,6 +8174,11 @@ def _validate_variational_fso_lineage(
     config_digest = dataclass_digest(frozen.analysis_config)
     if config_digest != result.run.analysis_config_digest:
         raise ValueError("P1 linearization analysis config mismatch")
+    if (
+        frozen.neural_prior_application_digest != result.run.prior_application_digest
+        or frozen.neural_prior_dependency != result.run.prior_dependency
+    ):
+        raise ValueError("P1 linearization neural-prior lineage mismatch")
     input_digest = json_digest(
         {
             "version": "p1-analysis-input-v2",

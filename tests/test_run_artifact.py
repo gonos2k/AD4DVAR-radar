@@ -12,6 +12,7 @@ import zipfile
 
 import numpy as np
 import torch
+from torch import nn
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -19,6 +20,7 @@ from advar import (  # noqa: E402
     DynamicsSource,
     ForecastRunContract,
     NeuralPriorApplication,
+    NeuralPriorInferenceRunner,
     NowcastConfig,
     RadarGridTimeContract,
     SensitivityConfig,
@@ -38,6 +40,14 @@ from advar.run_artifact import seal_forecast_run_arrays  # noqa: E402
 
 
 class ForecastRunArtifactTests(unittest.TestCase):
+    class _Prior(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.offset = nn.Parameter(torch.tensor(0.25, dtype=torch.float64))
+
+        def forward(self, value: torch.Tensor) -> torch.Tensor:
+            return value + self.offset
+
     def _save_arrays(self, path: Path, arrays: dict[str, Any]) -> None:
         np.savez_compressed(path, **seal_forecast_run_arrays(arrays))
 
@@ -734,12 +744,26 @@ class ForecastRunArtifactTests(unittest.TestCase):
 
     def test_neural_prior_lineage_round_trips_with_the_run(self) -> None:
         frames = self.frames()
-        prior = NeuralPriorApplication(
-            initial_background_dbz=frames[0] + 0.25,
-            neural_prior_digest="1" * 64,
+        input_run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        runner = NeuralPriorInferenceRunner(
+            self._Prior().eval(),
+            lambda value: value[0],
+            feature_extractor_digest="1" * 64,
             model_contract_digest="2" * 64,
             feature_schema_digest="3" * 64,
             training_manifest_digest="4" * 64,
+            inference_algorithm_digest="5" * 64,
+            numerical_runtime_digest="6" * 64,
+            dependency="radar_dependent",
+        )
+        prior = runner.infer(
+            frames,
+            input_run=input_run,
             role="candidate",
         )
         result, _ = variational_nowcast(frames, neural_prior=prior)
@@ -748,17 +772,26 @@ class ForecastRunArtifactTests(unittest.TestCase):
             save_forecast_run(result, path)
             loaded = load_forecast_run(path)
 
-        self.assertEqual(loaded.run.neural_prior_digest, "1" * 64)
+        self.assertEqual(loaded.run.neural_prior_digest, prior.neural_prior_digest)
         self.assertEqual(loaded.run.prior_application_digest, prior.application_digest)
         self.assertEqual(loaded.run.prior_model_contract_digest, "2" * 64)
         self.assertEqual(loaded.run.prior_feature_schema_digest, "3" * 64)
         self.assertEqual(loaded.run.prior_training_manifest_digest, "4" * 64)
+        self.assertEqual(
+            loaded.run.prior_inference_evidence_digest,
+            prior.inference_evidence.evidence_digest,
+        )
+        self.assertEqual(loaded.run.prior_dependency, "radar_dependent")
         self.assertEqual(loaded.run.prior_role, "candidate")
         self.assertEqual(loaded.forecast_run_digest, result.forecast_run_digest)
         _, frozen = prepare_analysis(frames, neural_prior=prior)
         torch.testing.assert_close(
             frozen.initial_background_dbz,
-            prior.initial_background_dbz,
+            torch.where(
+                frozen.initial_support_mask,
+                prior.initial_background_dbz,
+                torch.full_like(prior.initial_background_dbz, -10.0),
+            ),
         )
 
     def test_neural_prior_lineage_is_all_or_none(self) -> None:
@@ -798,6 +831,55 @@ class ForecastRunArtifactTests(unittest.TestCase):
 
         self.assertIsNone(loaded.run.neural_prior_digest)
         torch.testing.assert_close(loaded.forecast_dbz, result.forecast_dbz)
+
+    def test_v44_artifact_preserves_existing_prior_lineage(self) -> None:
+        frames = self.frames()
+        input_run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        runner = NeuralPriorInferenceRunner(
+            self._Prior().eval(),
+            lambda value: value[0],
+            feature_extractor_digest="1" * 64,
+            model_contract_digest="2" * 64,
+            feature_schema_digest="3" * 64,
+            training_manifest_digest="4" * 64,
+            inference_algorithm_digest="5" * 64,
+            numerical_runtime_digest="6" * 64,
+            dependency="radar_dependent",
+        )
+        prior = runner.infer(frames, input_run=input_run, role="candidate")
+        result, _ = variational_nowcast(frames, neural_prior=prior)
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "legacy-v44.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                arrays = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                    if name not in {
+                        "prior_inference_evidence_digest",
+                        "prior_inference_algorithm_digest",
+                        "prior_numerical_runtime_digest",
+                        "prior_dependency",
+                    }
+                }
+            arrays["forecast_run_artifact_version"] = np.asarray(
+                "forecast-run-v44"
+            )
+            self._save_arrays(path, arrays)
+
+            loaded = load_forecast_run(path)
+
+        self.assertEqual(loaded.run.neural_prior_digest, prior.neural_prior_digest)
+        self.assertEqual(
+            loaded.run.prior_lineage_contract,
+            "neural-prior-run-lineage-v1-audit",
+        )
+        self.assertIsNone(loaded.run.prior_inference_evidence_digest)
 
     def test_load_rejects_tampered_state(self) -> None:
         result = nowcast(self.frames())

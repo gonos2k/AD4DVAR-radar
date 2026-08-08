@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
+import json
 import math
 from pathlib import Path
 import random
@@ -13,14 +14,15 @@ import torch
 from torch import Tensor
 
 from ._digest import json_digest, tensor_digest
+from .calibration import OperationalDataIdentity
 from .intervention import (
     ObservationInterventionType,
-    RealizedObservationIntervention,
-    validate_realized_observation_intervention,
+    ProspectiveInterventionDecision,
+    RealizedInterventionReceipt,
+    validate_prospective_intervention,
 )
 from .nowcast import ForecastResult
 from .sensitivity import (
-    LearningApprovalEvidence,
     SensitivityConfig,
     VerificationBundle,
     _ResolvedVerification,
@@ -31,6 +33,7 @@ from .sensitivity import (
     _resolved_forecast_domain_weights,
     _resolved_forecast_scores,
 )
+from .variational import NeuralPriorApplication, NeuralPriorInferenceRunner
 
 
 PromotionRejectionReason = Literal[
@@ -55,6 +58,7 @@ PromotionRejectionReason = Literal[
     "excessive_harmful_fraction",
     "insufficient_mean_improvement",
     "excessive_single_degradation",
+    "excessive_end_to_end_degradation",
     "excessive_issuance_change",
 ]
 
@@ -77,6 +81,7 @@ class PromotionMetricScale:
     material_change: float
     weight: float = 1.0
     maximum_normalized_degradation: float = 1.0
+    maximum_end_to_end_normalized_degradation: float = 1.0
 
     def __post_init__(self) -> None:
         if not isinstance(self.metric_name, str) or not self.metric_name:
@@ -89,6 +94,10 @@ class PromotionMetricScale:
                 "maximum_normalized_degradation",
                 self.maximum_normalized_degradation,
             ),
+            (
+                "maximum_end_to_end_normalized_degradation",
+                self.maximum_end_to_end_normalized_degradation,
+            ),
         ):
             if (
                 isinstance(value, bool)
@@ -96,6 +105,55 @@ class PromotionMetricScale:
                 or value <= 0.0
             ):
                 raise ValueError(f"promotion metric {name} must be positive")
+
+
+@dataclass(frozen=True)
+class NeuralPriorInputPlan:
+    """Content-addressed future input-selection rules, never future data."""
+
+    valid_times: tuple[str, ...]
+    grid_contract_digest: str
+    radar_product_digest: str
+    qc_pipeline_digest: str
+    background_cycle_rule_digest: str
+    mask_policy_digest: str
+    issue_time: str
+    contract: str = "neural-prior-input-plan-v1"
+    plan_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        for name in (
+            "grid_contract_digest",
+            "radar_product_digest",
+            "qc_pipeline_digest",
+            "background_cycle_rule_digest",
+            "mask_policy_digest",
+        ):
+            _require_digest(name, getattr(self, name))
+        times = tuple(_canonical_time(value) for value in self.valid_times)
+        issue = _canonical_time(self.issue_time)
+        if not times or times[-1] != issue:
+            raise ValueError("input plan must end at its forecast issue time")
+        object.__setattr__(self, "valid_times", times)
+        object.__setattr__(self, "issue_time", issue)
+        object.__setattr__(self, "plan_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "valid_times": list(self.valid_times),
+            "grid_contract_digest": self.grid_contract_digest,
+            "radar_product_digest": self.radar_product_digest,
+            "qc_pipeline_digest": self.qc_pipeline_digest,
+            "background_cycle_rule_digest": self.background_cycle_rule_digest,
+            "mask_policy_digest": self.mask_policy_digest,
+            "issue_time": self.issue_time,
+        }
+
+    @property
+    def json(self) -> str:
+        return json.dumps(self.payload, sort_keys=True, separators=(",", ":"))
 
 
 @dataclass(frozen=True)
@@ -108,7 +166,7 @@ class NeuralPriorHoldoutPlanCase:
     radar_id: str
     regime: str
     range_regime: str
-    input_bundle_digest: str
+    input_plan_digest: str
     verification_plan_digest: str
     metric_contract_digest: str
     issue_time: str
@@ -116,12 +174,50 @@ class NeuralPriorHoldoutPlanCase:
     def __post_init__(self) -> None:
         _validate_holdout_case_identity(self)
         for name in (
-            "input_bundle_digest",
+            "input_plan_digest",
             "verification_plan_digest",
             "metric_contract_digest",
         ):
             _require_digest(name, getattr(self, name))
         object.__setattr__(self, "issue_time", _canonical_time(self.issue_time))
+
+
+@dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanCase:
+    """Read-only v1 case retained for audit, never for promotion."""
+
+    case_id: str
+    storm_id: str
+    day: str
+    radar_id: str
+    regime: str
+    range_regime: str
+    input_bundle_digest: str
+    verification_plan_digest: str
+    metric_contract_digest: str
+    issue_time: str
+
+
+@dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanAudit:
+    plan_id: str
+    parent_prior_digest: str
+    candidate_family_digests: tuple[str, ...]
+    cases: tuple[LegacyNeuralPriorHoldoutPlanCase, ...]
+    registered_at: str
+    contract: str = "neural-prior-holdout-plan-v1"
+    plan_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        payload = {
+            "contract": self.contract,
+            "plan_id": self.plan_id,
+            "parent_prior_digest": self.parent_prior_digest,
+            "candidate_family_digests": list(self.candidate_family_digests),
+            "cases": [item.__dict__ for item in self.cases],
+            "registered_at": self.registered_at,
+        }
+        object.__setattr__(self, "plan_digest", json_digest(payload))
 
 
 @dataclass(frozen=True)
@@ -132,12 +228,16 @@ class NeuralPriorHoldoutPlan:
     parent_prior_digest: str
     candidate_family_digests: tuple[str, ...]
     cases: tuple[NeuralPriorHoldoutPlanCase, ...]
+    input_plans: tuple[NeuralPriorInputPlan, ...]
     registered_at: str
-    contract: str = "neural-prior-holdout-plan-v1"
+    mode: Literal["prospective", "sealed_historical"] = "prospective"
+    sealed_historical_dataset_digest: str | None = None
+    candidate_training_started_at: str | None = None
+    contract: str = "neural-prior-holdout-plan-v2"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v1":
+        if self.contract != "neural-prior-holdout-plan-v2":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -153,12 +253,35 @@ class NeuralPriorHoldoutPlan:
         case_ids = tuple(item.case_id for item in self.cases)
         if not case_ids or len(set(case_ids)) != len(case_ids):
             raise ValueError("holdout plan cases must be nonempty and unique")
-        input_digests = tuple(item.input_bundle_digest for item in self.cases)
-        if len(set(input_digests)) != len(input_digests):
-            raise ValueError("holdout cases must use distinct inputs")
+        input_plans = tuple(item.input_plan_digest for item in self.cases)
+        if len(set(input_plans)) != len(input_plans):
+            raise ValueError("holdout cases must use distinct input plans")
+        retained_plans = {item.plan_digest: item for item in self.input_plans}
+        if set(retained_plans) != set(input_plans):
+            raise ValueError("holdout input-plan payloads are incomplete")
         registered = _canonical_time(self.registered_at)
-        if any(registered >= item.issue_time for item in self.cases):
-            raise ValueError("holdout plan must precede every issue time")
+        if self.mode == "prospective":
+            if self.sealed_historical_dataset_digest is not None or (
+                self.candidate_training_started_at is not None
+            ):
+                raise ValueError("prospective holdout cannot use a sealed dataset")
+            if any(registered >= item.issue_time for item in self.cases):
+                raise ValueError("holdout plan must precede every issue time")
+        elif self.mode == "sealed_historical":
+            if self.sealed_historical_dataset_digest is None or (
+                self.candidate_training_started_at is None
+            ):
+                raise ValueError("historical holdout requires a sealed dataset")
+            _require_digest(
+                "sealed_historical_dataset_digest",
+                self.sealed_historical_dataset_digest,
+            )
+            started = _canonical_time(self.candidate_training_started_at)
+            if registered >= started:
+                raise ValueError("historical holdout must be sealed before training")
+            object.__setattr__(self, "candidate_training_started_at", started)
+        else:
+            raise ValueError("unsupported holdout plan mode")
         object.__setattr__(self, "registered_at", registered)
         object.__setattr__(self, "plan_digest", json_digest(_holdout_plan_payload(self)))
 
@@ -221,6 +344,7 @@ class NeuralPriorHoldoutCase:
     radar_id: str
     regime: str
     range_regime: str
+    input_plan_digest: str
     input_bundle_digest: str
     verification_plan_digest: str
     verification_bundle_digest: str
@@ -228,21 +352,34 @@ class NeuralPriorHoldoutCase:
     issue_time: str
     candidate_forecast_digest: str
     parent_forecast_digest: str
+    candidate_prior_application_digest: str
+    parent_prior_application_digest: str
+    candidate_inference_evidence_digest: str
+    parent_inference_evidence_digest: str
 
     def __post_init__(self) -> None:
         _validate_holdout_case_identity(self)
         for name in (
+            "input_plan_digest",
             "input_bundle_digest",
             "verification_plan_digest",
             "verification_bundle_digest",
             "metric_contract_digest",
             "candidate_forecast_digest",
             "parent_forecast_digest",
+            "candidate_prior_application_digest",
+            "parent_prior_application_digest",
+            "candidate_inference_evidence_digest",
+            "parent_inference_evidence_digest",
         ):
             _require_digest(name, getattr(self, name))
         object.__setattr__(self, "issue_time", _canonical_time(self.issue_time))
         if self.candidate_forecast_digest == self.parent_forecast_digest:
             raise ValueError("candidate and parent holdout forecasts must differ")
+        if self.candidate_prior_application_digest == (
+            self.parent_prior_application_digest
+        ):
+            raise ValueError("candidate and parent prior applications must differ")
 
     def plan_case(self) -> NeuralPriorHoldoutPlanCase:
         return NeuralPriorHoldoutPlanCase(
@@ -252,7 +389,7 @@ class NeuralPriorHoldoutCase:
             radar_id=self.radar_id,
             regime=self.regime,
             range_regime=self.range_regime,
-            input_bundle_digest=self.input_bundle_digest,
+            input_plan_digest=self.input_plan_digest,
             verification_plan_digest=self.verification_plan_digest,
             metric_contract_digest=self.metric_contract_digest,
             issue_time=self.issue_time,
@@ -290,7 +427,11 @@ def _holdout_plan_payload(plan: NeuralPriorHoldoutPlan) -> dict[str, object]:
         "parent_prior_digest": plan.parent_prior_digest,
         "candidate_family_digests": list(plan.candidate_family_digests),
         "cases": [item.__dict__ for item in plan.cases],
+        "input_plans": [item.payload for item in plan.input_plans],
         "registered_at": plan.registered_at,
+        "mode": plan.mode,
+        "sealed_historical_dataset_digest": (plan.sealed_historical_dataset_digest),
+        "candidate_training_started_at": plan.candidate_training_started_at,
     }
 
 
@@ -303,7 +444,7 @@ def _holdout_dataset_digest(
             "cases": [
                 {
                     "case_id": item.case_id,
-                    "input_bundle_digest": item.input_bundle_digest,
+                    "input_plan_digest": item.input_plan_digest,
                     "verification_plan_digest": item.verification_plan_digest,
                     "metric_contract_digest": item.metric_contract_digest,
                     "issue_time": item.issue_time,
@@ -343,6 +484,29 @@ def verification_plan_digest(
     )
 
 
+def input_plan_digest(
+    *,
+    valid_times: tuple[str, ...],
+    grid_contract_digest: str,
+    radar_product_digest: str,
+    qc_pipeline_digest: str,
+    background_cycle_rule_digest: str,
+    mask_policy_digest: str,
+    issue_time: str,
+) -> str:
+    """Identify future input selection rules without claiming future content."""
+
+    return NeuralPriorInputPlan(
+        valid_times=valid_times,
+        grid_contract_digest=grid_contract_digest,
+        radar_product_digest=radar_product_digest,
+        qc_pipeline_digest=qc_pipeline_digest,
+        background_cycle_rule_digest=background_cycle_rule_digest,
+        mask_policy_digest=mask_policy_digest,
+        issue_time=issue_time,
+    ).plan_digest
+
+
 @dataclass(frozen=True)
 class NeuralPriorCandidateManifest:
     """Immutable training/holdout lineage for exactly one prior candidate."""
@@ -362,12 +526,17 @@ class NeuralPriorCandidateManifest:
     holdout_plan_digest: str
     training_case_ids: tuple[str, ...]
     training_input_bundle_digests: tuple[str, ...]
+    training_storm_ids: tuple[str, ...]
+    training_days: tuple[str, ...]
+    training_radars: tuple[str, ...]
+    training_regimes: tuple[str, ...]
+    training_time_windows: tuple[tuple[str, str], ...]
     holdout_cases: tuple[NeuralPriorHoldoutCase, ...]
-    contract: str = "neural-prior-candidate-manifest-v1"
+    contract: str = "neural-prior-candidate-manifest-v2"
     manifest_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-candidate-manifest-v1":
+        if self.contract != "neural-prior-candidate-manifest-v2":
             raise ValueError("unsupported neural-prior candidate manifest")
         for name in (
             "candidate_prior_digest",
@@ -415,6 +584,39 @@ class NeuralPriorCandidateManifest:
             item.input_bundle_digest for item in self.holdout_cases
         }:
             raise ValueError("training and holdout inputs must be disjoint")
+        identities = (
+            self.training_storm_ids,
+            self.training_days,
+            self.training_radars,
+            self.training_regimes,
+        )
+        if any(
+            not values
+            or len(set(values)) != len(values)
+            or any(not value or value.strip() != value for value in values)
+            for values in identities
+        ):
+            raise ValueError("training event identities must be nonempty and unique")
+        holdout_storms = {item.storm_id for item in self.holdout_cases}
+        holdout_days = {item.day for item in self.holdout_cases}
+        if set(self.training_storm_ids) & holdout_storms:
+            raise ValueError("training and holdout storms must be disjoint")
+        if set(self.training_days) & holdout_days:
+            raise ValueError("training and holdout days must be disjoint")
+        if not self.training_time_windows:
+            raise ValueError("training time windows must be nonempty")
+        windows = tuple(
+            (_canonical_time(start), _canonical_time(end))
+            for start, end in self.training_time_windows
+        )
+        if any(start >= end for start, end in windows):
+            raise ValueError("training time windows must have positive duration")
+        holdout_issues = tuple(item.issue_time for item in self.holdout_cases)
+        if any(
+            start <= issue <= end for start, end in windows for issue in holdout_issues
+        ):
+            raise ValueError("training windows overlap holdout issues")
+        object.__setattr__(self, "training_time_windows", windows)
         planned_cases = tuple(item.plan_case() for item in self.holdout_cases)
         if self.holdout_dataset_digest != _holdout_dataset_digest(planned_cases):
             raise ValueError("holdout dataset digest does not match its cases")
@@ -435,34 +637,41 @@ def _candidate_manifest_payload(
     manifest: NeuralPriorCandidateManifest,
 ) -> dict[str, object]:
     return {
-                    "contract": manifest.contract,
-                    "candidate_prior_digest": manifest.candidate_prior_digest,
-                    "parent_prior_digest": manifest.parent_prior_digest,
-                    "training_learning_approval_digests": list(
-                        manifest.training_learning_approval_digests
-                    ),
-                    "training_intervention_digests": list(
-                        manifest.training_intervention_digests
-                    ),
-                    "training_input_bundle_digests": list(
-                        manifest.training_input_bundle_digests
-                    ),
-                    "training_dataset_digest": manifest.training_dataset_digest,
-                    "candidate_training_manifest_digest": (
-                        manifest.candidate_training_manifest_digest
-                    ),
-                    "parent_training_manifest_digest": (
-                        manifest.parent_training_manifest_digest
-                    ),
-                    "model_contract_digest": manifest.model_contract_digest,
-                    "feature_schema_digest": manifest.feature_schema_digest,
-                    "algorithm_bundle_digest": manifest.algorithm_bundle_digest,
-                    "numerical_runtime_digest": manifest.numerical_runtime_digest,
-                    "holdout_dataset_digest": manifest.holdout_dataset_digest,
-                    "holdout_plan_digest": manifest.holdout_plan_digest,
-                    "training_case_ids": list(manifest.training_case_ids),
-                    "holdout_cases": [item.__dict__ for item in manifest.holdout_cases],
-                }
+        "contract": manifest.contract,
+        "candidate_prior_digest": manifest.candidate_prior_digest,
+        "parent_prior_digest": manifest.parent_prior_digest,
+        "training_learning_approval_digests": list(
+            manifest.training_learning_approval_digests
+        ),
+        "training_intervention_digests": list(
+            manifest.training_intervention_digests
+        ),
+        "training_input_bundle_digests": list(
+            manifest.training_input_bundle_digests
+        ),
+        "training_dataset_digest": manifest.training_dataset_digest,
+        "candidate_training_manifest_digest": (
+            manifest.candidate_training_manifest_digest
+        ),
+        "parent_training_manifest_digest": (
+            manifest.parent_training_manifest_digest
+        ),
+        "model_contract_digest": manifest.model_contract_digest,
+        "feature_schema_digest": manifest.feature_schema_digest,
+        "algorithm_bundle_digest": manifest.algorithm_bundle_digest,
+        "numerical_runtime_digest": manifest.numerical_runtime_digest,
+        "holdout_dataset_digest": manifest.holdout_dataset_digest,
+        "holdout_plan_digest": manifest.holdout_plan_digest,
+        "training_case_ids": list(manifest.training_case_ids),
+        "training_storm_ids": list(manifest.training_storm_ids),
+        "training_days": list(manifest.training_days),
+        "training_radars": list(manifest.training_radars),
+        "training_regimes": list(manifest.training_regimes),
+        "training_time_windows": [
+            list(value) for value in manifest.training_time_windows
+        ],
+        "holdout_cases": [item.__dict__ for item in manifest.holdout_cases],
+    }
 
 
 def validate_neural_prior_holdout_plan(plan: NeuralPriorHoldoutPlan) -> None:
@@ -498,9 +707,14 @@ class RealizedInterventionEvaluation:
     range_regime: str
     candidate_forecast_digest: str
     parent_forecast_digest: str
+    candidate_prior_application_digest: str
+    parent_prior_application_digest: str
+    candidate_inference_evidence_digest: str
+    parent_inference_evidence_digest: str
     metric_change: Tensor
     candidate_issuance_effect: Tensor
     parent_issuance_effect: Tensor
+    end_to_end_metric_change: Tensor
     metric_available: Tensor
     lead_minutes: tuple[int, ...]
     metric_names: tuple[str, ...]
@@ -534,6 +748,10 @@ class RealizedInterventionEvaluation:
             "parent_prior_digest",
             "candidate_forecast_digest",
             "parent_forecast_digest",
+            "candidate_prior_application_digest",
+            "parent_prior_application_digest",
+            "candidate_inference_evidence_digest",
+            "parent_inference_evidence_digest",
             "verification_digest",
             "metric_contract_digest",
         ):
@@ -542,6 +760,7 @@ class RealizedInterventionEvaluation:
         change = self.metric_change.detach().clone()
         candidate_policy = self.candidate_issuance_effect.detach().clone()
         parent_policy = self.parent_issuance_effect.detach().clone()
+        end_to_end = self.end_to_end_metric_change.detach().clone()
         available = self.metric_available.detach().clone()
         candidate_coverage = self.coverage_candidate.detach().clone()
         parent_coverage = self.coverage_parent.detach().clone()
@@ -552,6 +771,7 @@ class RealizedInterventionEvaluation:
             change.shape != expected
             or candidate_policy.shape != expected
             or parent_policy.shape != expected
+            or end_to_end.shape != expected
             or available.shape != expected
             or available.dtype is not torch.bool
             or candidate_coverage.shape != (len(self.lead_minutes),)
@@ -588,6 +808,7 @@ class RealizedInterventionEvaluation:
         object.__setattr__(self, "metric_change", change)
         object.__setattr__(self, "candidate_issuance_effect", candidate_policy)
         object.__setattr__(self, "parent_issuance_effect", parent_policy)
+        object.__setattr__(self, "end_to_end_metric_change", end_to_end)
         object.__setattr__(self, "metric_available", available)
         object.__setattr__(self, "coverage_candidate", candidate_coverage)
         object.__setattr__(self, "coverage_parent", parent_coverage)
@@ -599,8 +820,8 @@ class RealizedInterventionEvaluation:
     @classmethod
     def from_forecasts(
         cls,
-        intervention: RealizedObservationIntervention,
-        learning_evidence: LearningApprovalEvidence,
+        decision: ProspectiveInterventionDecision,
+        receipt: RealizedInterventionReceipt,
         manifest: NeuralPriorCandidateManifest,
         plan: NeuralPriorHoldoutPlan,
         *,
@@ -609,18 +830,19 @@ class RealizedInterventionEvaluation:
         parent_forecast: ForecastResult,
         verification: VerificationBundle,
         metric_config: SensitivityConfig,
+        candidate_prior_application: NeuralPriorApplication,
+        parent_prior_application: NeuralPriorApplication,
+        candidate_prior_runner: NeuralPriorInferenceRunner,
+        parent_prior_runner: NeuralPriorInferenceRunner,
+        input_frames_dbz: Tensor,
     ) -> RealizedInterventionEvaluation:
         """Recompute holdout change; no caller-provided outcome is accepted."""
 
-        validate_realized_observation_intervention(intervention)
+        validate_prospective_intervention(decision, receipt)
         validate_neural_prior_holdout_plan(plan)
         validate_neural_prior_candidate_manifest(manifest)
-        if intervention.contract != "realized-observation-intervention-v3":
-            raise ValueError("holdout evaluation requires causal v3 intervention")
         candidate_forecast.validate_issuance()
         parent_forecast.validate_issuance()
-        if intervention.learning_approval_evidence_digest != learning_evidence.digest:
-            raise ValueError("intervention and learning approval disagree")
         if manifest.holdout_plan_digest != plan.plan_digest:
             raise ValueError("candidate manifest and holdout plan disagree")
         if manifest.candidate_prior_digest not in plan.candidate_family_digests or (
@@ -629,13 +851,19 @@ class RealizedInterventionEvaluation:
             raise ValueError("candidate priors are outside the holdout plan")
         case = manifest.holdout_case(case_id)
         planned_case = plan.case(case_id)
+        input_plan = next(
+            item for item in plan.input_plans
+            if item.plan_digest == planned_case.input_plan_digest
+        )
         if case.plan_case() != planned_case:
             raise ValueError("completed holdout case disagrees with its plan")
         if (
-            intervention.case_id != case.case_id
-            or intervention.radar_id != case.radar_id
-            or intervention.issue_time != case.issue_time
-            or intervention.input_bundle_after_digest != case.input_bundle_digest
+            receipt.case_id != case.case_id
+            or receipt.radar_id != case.radar_id
+            or receipt.issue_time != case.issue_time
+            or receipt.actual_input_bundle_digest != case.input_bundle_digest
+            or receipt.input_plan_digest != case.input_plan_digest
+            or decision.input_plan_digest != case.input_plan_digest
         ):
             raise ValueError("intervention does not belong to the holdout case")
         candidate_digest = _forecast_result_content_digest(candidate_forecast)
@@ -659,6 +887,42 @@ class RealizedInterventionEvaluation:
         ):
             raise ValueError("candidate and parent holdout inputs disagree")
         if (
+            candidate_forecast.run.input_plan_digest != case.input_plan_digest
+            or parent_forecast.run.input_plan_digest != case.input_plan_digest
+        ):
+            raise ValueError("holdout forecast input plan disagrees")
+        for run in (candidate_forecast.run, parent_forecast.run):
+            grid = run.grid_time_contract
+            if grid is None:
+                raise ValueError("holdout forecast grid contract is missing")
+            expected_resolution = json_digest(
+                {
+                    "contract": "forecast-input-plan-resolution-v1",
+                    "input_plan_digest": input_plan.plan_digest,
+                    "input_bundle_digest": run.input_bundle_digest,
+                }
+            )
+            if (
+                run.input_plan_json != input_plan.json
+                or run.input_plan_resolution_digest != expected_resolution
+                or run.grid_time_contract_digest != input_plan.grid_contract_digest
+                or tuple(grid.valid_times) != input_plan.valid_times
+                or run.operational_data_identity_json is None
+            ):
+                raise ValueError("holdout input plan was not resolved by the run")
+            identity = OperationalDataIdentity.from_json(
+                run.operational_data_identity_json
+            )
+            if (
+                identity.radar_product_digest
+                != input_plan.radar_product_digest
+                or identity.qc_pipeline_digest != input_plan.qc_pipeline_digest
+                or identity.background_cycle_rule_digest
+                != input_plan.background_cycle_rule_digest
+                or identity.mask_policy_digest != input_plan.mask_policy_digest
+            ):
+                raise ValueError("holdout input identity disagrees with its plan")
+        if (
             candidate_forecast.run.neural_prior_digest
             != manifest.candidate_prior_digest
             or candidate_forecast.run.prior_role != "candidate"
@@ -674,6 +938,60 @@ class RealizedInterventionEvaluation:
             == parent_forecast.run.prior_application_digest
         ):
             raise ValueError("holdout forecasts must consume distinct prior outputs")
+        candidate_prior_runner.reproduce(
+            candidate_prior_application,
+            input_frames_dbz,
+        )
+        parent_prior_runner.reproduce(
+            parent_prior_application,
+            input_frames_dbz,
+        )
+        for run, application in (
+            (candidate_forecast.run, candidate_prior_application),
+            (parent_forecast.run, parent_prior_application),
+        ):
+            evidence = application.inference_evidence
+            if (
+                application.application_digest
+                not in (
+                    case.candidate_prior_application_digest,
+                    case.parent_prior_application_digest,
+                )
+                or run.prior_application_digest != application.application_digest
+                or run.prior_inference_evidence_digest != evidence.evidence_digest
+                or run.prior_inference_algorithm_digest
+                != evidence.inference_algorithm_digest
+                or run.prior_numerical_runtime_digest
+                != evidence.numerical_runtime_digest
+                or run.prior_dependency != evidence.dependency
+                or run.neural_prior_digest != evidence.neural_prior_digest
+                or run.prior_model_contract_digest != evidence.model_contract_digest
+                or run.prior_feature_schema_digest != evidence.feature_schema_digest
+                or run.prior_training_manifest_digest
+                != evidence.training_manifest_digest
+                or evidence.input_bundle_digest != case.input_bundle_digest
+                or evidence.input_frames_digest != tensor_digest(input_frames_dbz)
+                or evidence.execution_contract_digest != run.neural_prior_digest
+            ):
+                raise ValueError("holdout prior inference evidence disagrees")
+        if (
+            candidate_prior_application.application_digest
+            != case.candidate_prior_application_digest
+            or parent_prior_application.application_digest
+            != case.parent_prior_application_digest
+            or candidate_prior_application.inference_evidence.evidence_digest
+            != case.candidate_inference_evidence_digest
+            or parent_prior_application.inference_evidence.evidence_digest
+            != case.parent_inference_evidence_digest
+        ):
+            raise ValueError("holdout prior inference is not manifested")
+        if (
+            candidate_prior_runner.inference_algorithm_digest
+            != parent_prior_runner.inference_algorithm_digest
+            or candidate_prior_runner.numerical_runtime_digest
+            != parent_prior_runner.numerical_runtime_digest
+        ):
+            raise ValueError("candidate and parent inference runtimes disagree")
         for run, training_digest in (
             (candidate_forecast.run, manifest.candidate_training_manifest_digest),
             (parent_forecast.run, manifest.parent_training_manifest_digest),
@@ -772,6 +1090,7 @@ class RealizedInterventionEvaluation:
         change = candidate_common - parent_common
         candidate_policy = candidate_native - candidate_common
         parent_policy = parent_native - parent_common
+        end_to_end = candidate_native - parent_native
         candidate_coverage = _forecast_coverage(
             candidate_forecast, resolved_candidate, leads, metric_config
         )
@@ -807,11 +1126,11 @@ class RealizedInterventionEvaluation:
         if issue_time != case.issue_time:
             raise ValueError("holdout issue time is not pre-registered")
         return _new_realized_evaluation(
-            intervention_digest=intervention.intervention_digest,
-            intervention_type=intervention.intervention_type,
-            learning_result_digest=intervention.learning_result_digest,
-            learning_approval_evidence_digest=learning_evidence.digest,
-            learning_policy_digest=learning_evidence.policy_digest,
+            intervention_digest=receipt.receipt_digest,
+            intervention_type=receipt.intervention_type,
+            learning_result_digest=decision.decision_basis_digest,
+            learning_approval_evidence_digest=decision.decision_digest,
+            learning_policy_digest=decision.decision_policy_digest,
             holdout_plan_digest=plan.plan_digest,
             candidate_manifest_digest=manifest.manifest_digest,
             candidate_prior_digest=manifest.candidate_prior_digest,
@@ -824,9 +1143,22 @@ class RealizedInterventionEvaluation:
             range_regime=case.range_regime,
             candidate_forecast_digest=candidate_digest,
             parent_forecast_digest=parent_digest,
+            candidate_prior_application_digest=(
+                candidate_prior_application.application_digest
+            ),
+            parent_prior_application_digest=(
+                parent_prior_application.application_digest
+            ),
+            candidate_inference_evidence_digest=(
+                candidate_prior_application.inference_evidence.evidence_digest
+            ),
+            parent_inference_evidence_digest=(
+                parent_prior_application.inference_evidence.evidence_digest
+            ),
             metric_change=change,
             candidate_issuance_effect=candidate_policy,
             parent_issuance_effect=parent_policy,
+            end_to_end_metric_change=end_to_end,
             metric_available=available,
             lead_minutes=leads,
             metric_names=metric_config.metric_names,
@@ -838,7 +1170,7 @@ class RealizedInterventionEvaluation:
             newly_issued_fraction=newly_issued,
             withdrawn_fraction=withdrawn,
             issue_time=issue_time,
-            applied_time=intervention.applied_time,
+            applied_time=receipt.applied_time,
             verification_valid_times=verification.valid_times,
         )
 
@@ -895,11 +1227,24 @@ def _evaluation_digest(value: RealizedInterventionEvaluation) -> str:
             "range_regime": value.range_regime,
             "candidate_forecast_digest": value.candidate_forecast_digest,
             "parent_forecast_digest": value.parent_forecast_digest,
+            "candidate_prior_application_digest": (
+                value.candidate_prior_application_digest
+            ),
+            "parent_prior_application_digest": (
+                value.parent_prior_application_digest
+            ),
+            "candidate_inference_evidence_digest": (
+                value.candidate_inference_evidence_digest
+            ),
+            "parent_inference_evidence_digest": (
+                value.parent_inference_evidence_digest
+            ),
             "metric_change": tensor_digest(value.metric_change),
             "candidate_issuance_effect": tensor_digest(
                 value.candidate_issuance_effect
             ),
             "parent_issuance_effect": tensor_digest(value.parent_issuance_effect),
+            "end_to_end_metric_change": tensor_digest(value.end_to_end_metric_change),
             "metric_available": tensor_digest(value.metric_available),
             "lead_minutes": list(value.lead_minutes),
             "metric_names": list(value.metric_names),
@@ -946,10 +1291,10 @@ class NeuralPriorPromotionPolicy:
     maximum_coverage_loss: float = 0.05
     maximum_newly_issued_fraction: float = 0.05
     maximum_withdrawn_fraction: float = 0.05
-    contract: str = "neural-prior-promotion-policy-v3"
+    contract: str = "neural-prior-promotion-policy-v4"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-policy-v3":
+        if self.contract != "neural-prior-promotion-policy-v4":
             raise ValueError("unsupported neural-prior promotion policy")
         if not self.metric_scales or len({x.metric_name for x in self.metric_scales}) != len(self.metric_scales):
             raise ValueError("promotion metric scales must be unique")
@@ -1138,35 +1483,51 @@ class NeuralPriorPromotionEvidence:
 def _intervention_score(
     evaluation: RealizedInterventionEvaluation,
     policy: NeuralPriorPromotionPolicy,
-) -> tuple[float | None, float, bool]:
+) -> tuple[float | None, float, bool, bool]:
     scales = {item.metric_name: item for item in policy.metric_scales}
     values: list[Tensor] = []
     weights: list[Tensor] = []
     maximum_degradation = 0.0
     metric_limit_exceeded = False
+    end_to_end_limit_exceeded = False
     for index, name in enumerate(evaluation.metric_names):
         if name not in scales:
             raise ValueError("promotion policy lacks an evaluation metric scale")
         item = scales[name]
+        end_to_end = (
+            evaluation.end_to_end_metric_change[:, index].masked_select(
+                evaluation.metric_available[:, index]
+            )
+            / item.scale
+        )
+        if bool(torch.any(end_to_end > item.maximum_end_to_end_normalized_degradation)):
+            end_to_end_limit_exceeded = True
         selected = evaluation.metric_available[:, index] & (
             torch.abs(evaluation.metric_change[:, index]) >= item.material_change
         )
         if not bool(torch.any(selected)):
             continue
         normalized = evaluation.metric_change[:, index].masked_select(selected) / item.scale
-        maximum_degradation = max(maximum_degradation, float(torch.amax(torch.clamp(normalized, min=0))))
-        if maximum_degradation > item.maximum_normalized_degradation:
+        metric_degradation = float(torch.amax(torch.clamp(normalized, min=0)))
+        maximum_degradation = max(maximum_degradation, metric_degradation)
+        if metric_degradation > item.maximum_normalized_degradation:
             metric_limit_exceeded = True
         values.append(-normalized)
         weights.append(torch.full_like(normalized, item.weight))
     if not values:
-        return None, maximum_degradation, metric_limit_exceeded
+        return (
+            None,
+            maximum_degradation,
+            metric_limit_exceeded,
+            end_to_end_limit_exceeded,
+        )
     value = torch.cat(values)
     weight = torch.cat(weights)
     return (
         float(torch.sum(value * weight) / torch.sum(weight)),
         maximum_degradation,
         metric_limit_exceeded,
+        end_to_end_limit_exceeded,
     )
 
 
@@ -1273,11 +1634,16 @@ def compute_neural_prior_promotion(
             )
         ):
             reasons.append("excessive_issuance_change")
-        score, degradation, metric_limit_exceeded = _intervention_score(
-            evaluation, policy
-        )
+        (
+            score,
+            degradation,
+            metric_limit_exceeded,
+            end_to_end_limit_exceeded,
+        ) = _intervention_score(evaluation, policy)
         if metric_limit_exceeded:
             reasons.append("excessive_single_degradation")
+        if end_to_end_limit_exceeded:
+            reasons.append("excessive_end_to_end_degradation")
         maximum_degradation = max(maximum_degradation, degradation)
         if score is not None:
             scores.append(score)
