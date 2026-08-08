@@ -74,18 +74,39 @@ _WHITENER_APPLY_COUNTER: ContextVar[list[int] | None] = ContextVar(
     "advar_whitener_apply_counter",
     default=None,
 )
+_WHITENER_TOTAL_OPERATION_LIMIT: ContextVar[tuple[int, int] | None] = (
+    ContextVar(
+        "advar_whitener_total_operation_limit",
+        default=None,
+    )
+)
 
 
 @contextmanager
-def _count_observation_whitener_applies() -> Generator[list[int], None, None]:
-    """Count actual low-rank whitener applications in one operation."""
+def _count_observation_whitener_applies(
+    *,
+    operations_per_apply: int = 0,
+    maximum_total_operations: int | None = None,
+) -> Generator[list[int], None, None]:
+    """Count and optionally limit low-rank whitener applications."""
+
+    if operations_per_apply < 0:
+        raise ValueError("whitener operations per apply cannot be negative")
+    if maximum_total_operations is not None and maximum_total_operations <= 0:
+        raise ValueError("whitener total operation limit must be positive")
 
     counter = [0]
-    token = _WHITENER_APPLY_COUNTER.set(counter)
+    counter_token = _WHITENER_APPLY_COUNTER.set(counter)
+    limit_token = _WHITENER_TOTAL_OPERATION_LIMIT.set(
+        None
+        if maximum_total_operations is None or operations_per_apply == 0
+        else (operations_per_apply, maximum_total_operations)
+    )
     try:
         yield counter
     finally:
-        _WHITENER_APPLY_COUNTER.reset(token)
+        _WHITENER_TOTAL_OPERATION_LIMIT.reset(limit_token)
+        _WHITENER_APPLY_COUNTER.reset(counter_token)
 
 
 def _observation_whitener_operations_per_apply(
@@ -111,7 +132,7 @@ class AnalysisConfig:
     observation_common_bias_group_map_digest: str | None = None
     observation_common_bias_mode_weights_digest: str | None = None
     maximum_common_bias_mode_weight_bytes: int = 2 * 1024**3
-    maximum_common_bias_whitener_apply_operations: int = 512 * 1024**2
+    maximum_common_bias_whitener_apply_operations: int = 256 * 1024**2
     maximum_frozen_whitener_bytes: int = 512 * 1024**2
     maximum_linearization_bytes: int = 8 * 1024**3
     pseudo_huber_delta: float = 2.0
@@ -1963,6 +1984,11 @@ def _apply_observation_error_whitener(
         counter = _WHITENER_APPLY_COUNTER.get()
         if counter is not None:
             counter[0] += 1
+            limit = _WHITENER_TOTAL_OPERATION_LIMIT.get()
+            if limit is not None and counter[0] * limit[0] > limit[1]:
+                raise ValueError(
+                    "common-bias whitener total operation budget exhausted"
+                )
         return _apply_compact_low_rank_whitener(
             values,
             observations.common_bias_mode_weights,

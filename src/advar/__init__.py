@@ -75,6 +75,7 @@ from .sensitivity import (
     validate_top_k_learning_impacts,
     validate_variational_fso,
     validate_variational_fsoi,
+    validate_variational_fsoi_issuance_impact,
     validate_variational_learning_impact,
 )
 from .run_artifact import load_forecast_run, save_forecast_run
@@ -169,6 +170,7 @@ __all__ = [
     "validate_top_k_learning_impacts",
     "validate_variational_fso",
     "validate_variational_fsoi",
+    "validate_variational_fsoi_issuance_impact",
     "validate_variational_learning_impact",
     "forecast_evidence_fields",
     "load_forecast_run",

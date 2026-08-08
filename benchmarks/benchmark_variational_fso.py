@@ -106,6 +106,9 @@ def main() -> None:
         maximum_materialized_output_bytes=args.max_output_bytes,
         warm_start_by_metric=not args.cold_start,
         gauss_newton_probe_count=args.gauss_newton_probes,
+        maximum_whitener_total_operations=(
+            args.max_whitener_total_operations
+        ),
     )
 
     rss_before = _peak_rss_bytes()
@@ -125,7 +128,7 @@ def main() -> None:
     if whitener_total_operations > args.max_whitener_total_operations:
         raise RuntimeError("common-bias whitener operation budget exceeded")
     report = {
-        "contract": "p1-variational-fso-benchmark-v2",
+        "contract": "p1-variational-fso-benchmark-v3",
         "forecast_run_digest": forecast.forecast_run_digest,
         "linearization_digest": result.linearization_digest,
         "variational_fso_digest": result.variational_fso_digest,
@@ -150,6 +153,7 @@ def main() -> None:
             result.observed_whitener_apply_count
         ),
         "observed_whitener_total_operations": whitener_total_operations,
+        "whitener_budget_enforced_online": True,
         "adjoint_iterations": result.adjoint_iterations.cpu().tolist(),
         "adjoint_relative_residual": (
             result.adjoint_relative_residual.cpu().tolist()
