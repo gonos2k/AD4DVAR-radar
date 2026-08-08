@@ -82,6 +82,7 @@ class AnalysisConfig:
     observation_common_bias_group_map_digest: str | None = None
     observation_common_bias_mode_weights_digest: str | None = None
     maximum_common_bias_mode_weight_bytes: int = 2 * 1024**3
+    maximum_common_bias_whitener_apply_operations: int = 512 * 1024**2
     maximum_frozen_whitener_bytes: int = 512 * 1024**2
     maximum_linearization_bytes: int = 8 * 1024**3
     pseudo_huber_delta: float = 2.0
@@ -254,6 +255,9 @@ class AnalysisConfig:
             "maximum_pcg_iterations": self.maximum_pcg_iterations,
             "maximum_common_bias_mode_weight_bytes": (
                 self.maximum_common_bias_mode_weight_bytes
+            ),
+            "maximum_common_bias_whitener_apply_operations": (
+                self.maximum_common_bias_whitener_apply_operations
             ),
             "maximum_frozen_whitener_bytes": (
                 self.maximum_frozen_whitener_bytes
@@ -1247,6 +1251,14 @@ def prepare_analysis(
             dtype=frames_dbz.dtype,
             device=frames_dbz.device,
         )
+        whitener_apply_operations = 2 * common_bias_mode_weights.numel()
+        if (
+            whitener_apply_operations
+            > analysis_config.maximum_common_bias_whitener_apply_operations
+        ):
+            raise ValueError(
+                "common-bias whitener exceeds its apply-operation budget"
+            )
         mode_digest = observation_common_bias_mode_weights_digest(
             common_bias_mode_weights
         )

@@ -701,6 +701,7 @@ class VariationalAdjointConfig:
         """Return local-validity gates required by automated learning."""
 
         return cls(
+            lead_minutes=(30, 60, 120, 180),
             require_active_set_margin=True,
             require_feasibility_margin=True,
             require_gauss_newton_reliability=True,
@@ -1181,10 +1182,12 @@ class AutomatedLearningPolicy:
         MetricTaylorThreshold, ...
     ] = DEFAULT_METRIC_TAYLOR_THRESHOLDS
     maximum_linearity_relative_error: float = 0.1
-    contract: str = "p1-automated-learning-policy-v4"
+    maximum_candidate_count: int = 10_000
+    maximum_learning_resolves: int = 32
+    contract: str = "p1-automated-learning-policy-v5"
 
     def __post_init__(self) -> None:
-        if self.contract != "p1-automated-learning-policy-v4":
+        if self.contract != "p1-automated-learning-policy-v5":
             raise ValueError("unsupported automated-learning policy")
         _require_sha256(
             "algorithm_bundle_digest",
@@ -1233,6 +1236,20 @@ class AutomatedLearningPolicy:
             raise ValueError(
                 "automated learning requires every local-validity gate"
             )
+        if adjoint.lead_minutes != sensitivity.full_map_lead_minutes:
+            raise ValueError(
+                "automated learning requires a full map for every adjoint lead"
+            )
+        for name, value in (
+            ("maximum_candidate_count", self.maximum_candidate_count),
+            ("maximum_learning_resolves", self.maximum_learning_resolves),
+        ):
+            if type(value) is not int or value <= 0:
+                raise ValueError(f"{name} must be a positive integer")
+        if self.maximum_learning_resolves > self.maximum_candidate_count:
+            raise ValueError(
+                "maximum_learning_resolves cannot exceed candidate count"
+            )
         if not isinstance(self.metric_taylor_thresholds, tuple):
             raise TypeError("metric_taylor_thresholds must be a tuple")
         names = tuple(
@@ -1264,6 +1281,15 @@ class AutomatedLearningPolicy:
         raise ValueError(f"missing Taylor threshold for {metric_name}")
 
     @property
+    def ranking_adjoint_config(self) -> VariationalAdjointConfig:
+        """Use strict numerics while deferring candidate-specific branch checks."""
+
+        return replace(
+            self.adjoint_config,
+            require_baseline_dynamics_branch_validity=False,
+        )
+
+    @property
     def digest(self) -> str:
         return json_digest(
             {
@@ -1287,9 +1313,88 @@ class AutomatedLearningPolicy:
                 "maximum_linearity_relative_error": (
                     self.maximum_linearity_relative_error
                 ),
+                "maximum_candidate_count": self.maximum_candidate_count,
+                "maximum_learning_resolves": self.maximum_learning_resolves,
                 "perturbation_semantics": "physical_radar_value",
             }
         )
+
+
+@dataclass(frozen=True)
+class VariationalCandidateScore:
+    """One candidate's frozen-domain first-order score."""
+
+    candidate_id: str
+    perturbation: VariationalObservationPerturbation
+    predicted_metric_change: Tensor
+    score: float
+    rank: int
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.candidate_id, str) or not self.candidate_id:
+            raise ValueError("candidate_id must be a nonempty string")
+        if not isinstance(self.predicted_metric_change, Tensor):
+            raise TypeError("candidate prediction must be a Tensor")
+        object.__setattr__(
+            self,
+            "predicted_metric_change",
+            self.predicted_metric_change.detach().clone(),
+        )
+        if not math.isfinite(self.score) or self.score < 0.0:
+            raise ValueError("candidate score must be finite and nonnegative")
+        if type(self.rank) is not int or self.rank <= 0:
+            raise ValueError("candidate rank must be a positive integer")
+
+
+@dataclass(frozen=True)
+class VariationalCandidateRanking:
+    """Content-bound ranking produced from one shared FSO solve."""
+
+    fso: VariationalFSO
+    scores: tuple[VariationalCandidateScore, ...]
+    contract: str = "p1-variational-candidate-ranking-v1"
+    ranking_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.contract != "p1-variational-candidate-ranking-v1":
+            raise ValueError("unsupported candidate ranking")
+        if not self.scores:
+            raise ValueError("candidate ranking cannot be empty")
+        if tuple(score.rank for score in self.scores) != tuple(
+            range(1, len(self.scores) + 1)
+        ):
+            raise ValueError("candidate ranks must be contiguous")
+        identifiers = tuple(score.candidate_id for score in self.scores)
+        if len(set(identifiers)) != len(identifiers):
+            raise ValueError("candidate identifiers must be unique")
+        object.__setattr__(
+            self,
+            "ranking_digest",
+            _variational_candidate_ranking_digest(self),
+        )
+
+
+def _variational_candidate_ranking_digest(
+    ranking: VariationalCandidateRanking,
+) -> str:
+    return json_digest(
+        {
+            "contract": ranking.contract,
+            "fso_digest": ranking.fso.variational_fso_digest,
+            "scores": [
+                {
+                    "candidate_id": score.candidate_id,
+                    "perturbation_digest": score.perturbation.digest,
+                    "prediction": tensor_digest(
+                        score.predicted_metric_change
+                    ),
+                    "score": score.score,
+                    "rank": score.rank,
+                }
+                for score in ranking.scores
+            ],
+        }
+    )
 
 
 @dataclass(frozen=True)
@@ -3321,6 +3426,143 @@ def compute_variational_fsoi(
     )
 
 
+def score_candidate_perturbations(
+    fso: VariationalFSO,
+    candidates: tuple[
+        tuple[str, VariationalObservationPerturbation], ...
+    ],
+    *,
+    policy: AutomatedLearningPolicy,
+) -> VariationalCandidateRanking:
+    """Rank physical-radar candidates without another adjoint solve."""
+
+    validate_variational_fso(fso)
+    if not candidates:
+        raise ValueError("at least one learning candidate is required")
+    if len(candidates) > policy.maximum_candidate_count:
+        raise ValueError("learning candidate count exceeds its policy budget")
+    identifiers = tuple(candidate_id for candidate_id, _ in candidates)
+    if any(not isinstance(value, str) or not value for value in identifiers):
+        raise ValueError("learning candidate identifiers must be nonempty")
+    if len(set(identifiers)) != len(candidates):
+        raise ValueError("learning candidate identifiers must be unique")
+    if fso.sensitivity_config_digest != policy.sensitivity_config.digest:
+        raise ValueError("candidate FSO sensitivity policy mismatch")
+    if fso.adjoint_config_digest != policy.ranking_adjoint_config.digest:
+        raise ValueError("candidate FSO adjoint policy mismatch")
+    if fso.lead_minutes != fso.full_map_lead_minutes:
+        raise ValueError("candidate ranking requires a full map for every lead")
+    sensitivity = fso.observation.frozen_structure_input_dbz
+    maps = sensitivity.maps
+    if maps.shape[:2] != fso.forecast_scores.shape:
+        raise ValueError("candidate FSO map coverage is incomplete")
+    scored: list[
+        tuple[str, VariationalObservationPerturbation, Tensor, float]
+    ] = []
+    for candidate_id, perturbation in candidates:
+        delta = perturbation.physical_radar_dbz_delta
+        if perturbation.perturbation_semantics != "physical_radar_value" or (
+            delta is None
+        ):
+            raise ValueError("candidate must be a physical radar perturbation")
+        if delta.shape != maps.shape[-3:]:
+            raise ValueError("candidate perturbation shape mismatch")
+        prediction = (maps * delta).sum(dim=(-1, -2, -3))
+        prediction = torch.where(
+            fso.metric_available,
+            prediction,
+            torch.full_like(prediction, float("nan")),
+        )
+        selected = prediction.masked_select(fso.metric_available)
+        score = float(torch.linalg.vector_norm(selected).detach())
+        scored.append((candidate_id, perturbation, prediction.detach(), score))
+    scored.sort(key=lambda item: (-item[3], item[0]))
+    return VariationalCandidateRanking(
+        fso=fso,
+        scores=tuple(
+            VariationalCandidateScore(
+                candidate_id=candidate_id,
+                perturbation=perturbation,
+                predicted_metric_change=prediction,
+                score=score,
+                rank=rank,
+            )
+            for rank, (candidate_id, perturbation, prediction, score) in enumerate(
+                scored,
+                start=1,
+            )
+        ),
+    )
+
+
+def validate_top_k_learning_impacts(
+    result: ForecastResult,
+    analysis: AnalysisResult | P1LinearizationState,
+    verification_frames_dbz: VerificationInput,
+    ranking: VariationalCandidateRanking,
+    *,
+    policy: AutomatedLearningPolicy,
+    policy_trust_store_path: str | Path,
+    maximum_resolves: int | None = None,
+) -> tuple[VariationalLearningImpact, ...]:
+    """Run full/half robust re-solves only for the highest-ranked candidates."""
+
+    validate_variational_fso(ranking.fso)
+    if ranking.ranking_digest != _variational_candidate_ranking_digest(ranking):
+        raise ValueError("variational candidate ranking digest mismatch")
+    limit = (
+        policy.maximum_learning_resolves
+        if maximum_resolves is None
+        else maximum_resolves
+    )
+    if type(limit) is not int or limit <= 0:
+        raise ValueError("maximum_resolves must be a positive integer")
+    if limit > policy.maximum_learning_resolves:
+        raise ValueError("learning resolve count exceeds its policy budget")
+    if len(ranking.scores) > policy.maximum_candidate_count:
+        raise ValueError("learning candidate count exceeds its policy budget")
+    trust_store = _load_learning_policy_trust_store(policy_trust_store_path)
+    rejection = _learning_context_rejection(
+        result,
+        analysis,
+        ranking.fso,
+        verification_frames_dbz,
+        policy,
+        trust_store,
+    )
+    if rejection is not None:
+        return tuple(
+            _rejected_learning_impact(policy, rejection)
+            for _ in ranking.scores[:limit]
+        )
+    linearization = analysis.linearization
+    if linearization is None:
+        raise RuntimeError("approved learning context lacks a linearization")
+    outcomes = []
+    for scored in ranking.scores[:limit]:
+        try:
+            fsoi = _variational_fsoi_from_precomputed_fso(
+                ranking.fso,
+                linearization,
+                scored.perturbation,
+                policy.adjoint_config,
+            )
+        except ValueError as error:
+            outcomes.append(_rejected_learning_impact(policy, str(error)))
+            continue
+        outcomes.append(
+            _learning_impact_from_fsoi(
+                result,
+                analysis,
+                verification_frames_dbz,
+                fsoi,
+                policy,
+                trust_store.content_digest,
+            )
+        )
+    return tuple(outcomes)
+
+
 def compute_variational_fsoi_for_learning(
     result: ForecastResult,
     analysis: AnalysisResult | P1LinearizationState,
@@ -3369,6 +3611,24 @@ def compute_variational_fsoi_for_learning(
         )
     except ValueError as error:
         return _rejected_learning_impact(policy, str(error))
+    return _learning_impact_from_fsoi(
+        result,
+        analysis,
+        verification_frames_dbz,
+        fsoi,
+        policy,
+        trust_store.content_digest,
+    )
+
+
+def _learning_impact_from_fsoi(
+    result: ForecastResult,
+    analysis: AnalysisResult | P1LinearizationState,
+    verification_frames_dbz: VerificationInput,
+    fsoi: VariationalFSOI,
+    policy: AutomatedLearningPolicy,
+    trust_store_digest: str,
+) -> VariationalLearningImpact:
     impact = fsoi.observation.baseline_branch_trusted_total
     if impact is None:
         return _rejected_learning_impact(
@@ -3418,7 +3678,7 @@ def compute_variational_fsoi_for_learning(
         raise RuntimeError("eligible learning validation lacks resolved digests")
     evidence = LearningApprovalEvidence(
         policy_digest=policy.digest,
-        trust_store_digest=trust_store.content_digest,
+        trust_store_digest=trust_store_digest,
         fsoi_digest=fsoi.variational_fsoi_digest,
         full_step_analysis_digest=cast(str, analysis_digests[0]),
         half_step_analysis_digest=cast(str, analysis_digests[1]),
@@ -3437,6 +3697,183 @@ def compute_variational_fsoi_for_learning(
         first_order_validation=validation,
         frozen_domain_learning_impact=owned_impact,
         approval_evidence=evidence,
+    )
+
+
+def _learning_context_rejection(
+    result: ForecastResult,
+    analysis: AnalysisResult | P1LinearizationState,
+    fso: VariationalFSO,
+    verification_input: VerificationInput,
+    policy: AutomatedLearningPolicy,
+    trust_store: _LearningPolicyTrustStore,
+) -> str | None:
+    if policy.digest not in trust_store.approved_policy_digests:
+        return "unapproved_learning_policy"
+    linearization = analysis.linearization
+    if linearization is None:
+        return "linearization_required"
+    if fso.forecast_run_digest != result.forecast_run_digest:
+        return "candidate_FSO_forecast_mismatch"
+    if fso.linearization_digest != linearization.linearization_digest:
+        return "candidate_FSO_linearization_mismatch"
+    if fso.sensitivity_config_digest != policy.sensitivity_config.digest:
+        return "candidate_FSO_sensitivity_policy_mismatch"
+    if fso.adjoint_config_digest != policy.ranking_adjoint_config.digest:
+        return "candidate_FSO_adjoint_policy_mismatch"
+    if linearization.algorithm_bundle_digest != policy.algorithm_bundle_digest:
+        return "algorithm_bundle_not_approved"
+    if linearization.numerical_runtime_digest != policy.numerical_runtime_digest:
+        return "numerical_runtime_not_approved"
+    try:
+        _validate_variational_fso_lineage(result, analysis, linearization)
+        verification = _resolve_verification(
+            verification_input,
+            result,
+            policy.sensitivity_config,
+        )
+    except ValueError as error:
+        return str(error)
+    if verification.content_digest != fso.verification_bundle_digest:
+        return "candidate_FSO_verification_mismatch"
+    return None
+
+
+def _variational_fsoi_from_precomputed_fso(
+    fso: VariationalFSO,
+    linearization: AnalysisLinearization,
+    perturbation: VariationalObservationPerturbation,
+    adjoint_config: VariationalAdjointConfig,
+) -> VariationalFSOI:
+    """Materialize one impact from retained maps without solving another adjoint."""
+
+    if fso.linearization_digest != linearization.linearization_digest:
+        raise ValueError("precomputed FSO linearization mismatch")
+    ranking_config = replace(
+        adjoint_config,
+        require_baseline_dynamics_branch_validity=False,
+    )
+    if fso.adjoint_config_digest != ranking_config.digest:
+        raise ValueError("precomputed FSO adjoint config mismatch")
+    if fso.lead_minutes != fso.full_map_lead_minutes:
+        raise ValueError("precomputed FSO does not retain every lead map")
+    diagnostics = _validate_variational_observation_perturbation(
+        perturbation,
+        linearization.observations,
+        linearization.frozen,
+        adjoint_config,
+    )
+    if (
+        adjoint_config.require_baseline_dynamics_branch_validity
+        and diagnostics.baseline_dynamics_branch_status
+        not in ("not_applicable", "certified")
+    ):
+        raise ValueError("P1 FSOI baseline dynamics branch is not certified")
+    observations = linearization.observations
+    component_pairs = (
+        (fso.observation.detected_dbz, perturbation.detected_dbz),
+        (
+            fso.observation.censor_threshold_dbz,
+            perturbation.censor_threshold_dbz,
+        ),
+        (fso.observation.observation_weight, perturbation.observation_weight),
+        (
+            fso.observation.initial_background_dbz,
+            _initial_background_perturbation(perturbation, observations),
+        ),
+        (
+            fso.observation.baseline_dynamics_dbz,
+            _baseline_dynamics_perturbation(perturbation, observations),
+        ),
+    )
+    components = tuple(
+        _impact_from_precomputed_sensitivity(channel, delta, fso.tile_size)
+        for channel, delta in component_pairs
+    )
+    total = _sum_impact_channels(components)
+    trusted = diagnostics.baseline_dynamics_branch_status in (
+        "not_applicable",
+        "certified",
+    )
+    observation = VariationalObservationImpact(
+        detected_dbz=components[0],
+        censor_threshold_dbz=components[1],
+        observation_weight=components[2],
+        initial_background_dbz=components[3],
+        baseline_dynamics_dbz=components[4],
+        total=total,
+        baseline_branch_trusted_total=total if trusted else None,
+    )
+    fsoi = VariationalFSOI(
+        contract="p1-linearized-observation-impact-v11",
+        fso=fso,
+        perturbation=perturbation,
+        perturbation_contract=perturbation.contract,
+        perturbation_digest=perturbation.digest,
+        perturbation_diagnostics=diagnostics,
+        baseline_dynamics_branch_status=(
+            diagnostics.baseline_dynamics_branch_status
+        ),
+        observation=observation,
+        variational_fsoi_digest="",
+    )
+    return replace(
+        fsoi,
+        variational_fsoi_digest=variational_fsoi_digest(fsoi),
+    )
+
+
+def _impact_from_precomputed_sensitivity(
+    sensitivity: VariationalSensitivityChannel,
+    delta: Tensor,
+    tile_size: int,
+) -> VariationalImpactChannel:
+    maps = sensitivity.maps * delta
+    if maps.ndim != 5 or maps.shape[2] != 3:
+        raise ValueError("precomputed sensitivity maps have an invalid shape")
+    lead_count, metric_count, _, height, width = maps.shape
+    accumulator = _new_variational_channel_accumulator(
+        maps,
+        selected_count=lead_count,
+        lead_count=lead_count,
+        metric_count=metric_count,
+        height=height,
+        width=width,
+        tile_rows=math.ceil(height / tile_size),
+        tile_columns=math.ceil(width / tile_size),
+    )
+    for lead in range(lead_count):
+        for metric in range(metric_count):
+            _record_variational_channel(
+                accumulator,
+                maps[lead, metric],
+                lead_index=lead,
+                metric_index=metric,
+                selected_index=lead,
+                tile_size=tile_size,
+                signed_sum=True,
+            )
+    return _impact_channel(accumulator)
+
+
+def _sum_impact_channels(
+    channels: tuple[VariationalImpactChannel, ...],
+) -> VariationalImpactChannel:
+    if not channels:
+        raise ValueError("at least one impact channel is required")
+    return VariationalImpactChannel(
+        maps=sum(
+            (channel.maps for channel in channels),
+            torch.zeros_like(channels[0].maps),
+        ),
+        sum_by_time=sum(
+            (channel.sum_by_time for channel in channels),
+            torch.zeros_like(channels[0].sum_by_time),
+        ),
+        tile_sum_by_time=sum(
+            (channel.tile_sum_by_time for channel in channels),
+            torch.zeros_like(channels[0].tile_sum_by_time),
+        ),
     )
 
 
