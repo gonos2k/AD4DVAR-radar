@@ -922,6 +922,15 @@ class VariationalAnalysisTests(unittest.TestCase):
                 ),
                 observation_common_bias_mode_weights=mode_weights,
             )
+        with self.assertRaisesRegex(ValueError, "apply-operation budget"):
+            prepare_analysis(
+                frames,
+                analysis_config=replace(
+                    base,
+                    maximum_common_bias_whitener_apply_operations=1,
+                ),
+                observation_common_bias_mode_weights=mode_weights,
+            )
         with self.assertRaisesRegex(ValueError, "whitener.*byte budget"):
             prepare_analysis(
                 frames,
@@ -4054,6 +4063,7 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         for field_name in (
             "maximum_common_bias_mode_weight_bytes",
+            "maximum_common_bias_whitener_apply_operations",
             "maximum_frozen_whitener_bytes",
             "maximum_linearization_bytes",
         ):

@@ -68,6 +68,8 @@ from advar.sensitivity import (  # noqa: E402
     compute_variational_fso,
     compute_variational_fsoi,
     compute_variational_fsoi_for_learning,
+    score_candidate_perturbations,
+    validate_top_k_learning_impacts,
     extract_context_features,
     forecast_metric,
     validate_variational_fso,
@@ -2273,6 +2275,17 @@ class VariationalFSOTests(unittest.TestCase):
             numerical_runtime_digest=linearization.numerical_runtime_digest,
         )
         self.assertNotEqual(learning_policy.digest, "")
+        for values in (
+            {"maximum_candidate_count": 0},
+            {"maximum_learning_resolves": 0},
+            {
+                "maximum_candidate_count": 1,
+                "maximum_learning_resolves": 2,
+            },
+        ):
+            with self.subTest(values=values):
+                with self.assertRaises(ValueError):
+                    replace(learning_policy, **values)
         with self.assertRaisesRegex(ValueError, "verification lineage"):
             AutomatedLearningPolicy(
                 sensitivity_config=SensitivityConfig(),
@@ -4195,7 +4208,10 @@ class VariationalFSOTests(unittest.TestCase):
                 tile_size=4,
             ),
             adjoint_config=(
-                VariationalAdjointConfig.for_automated_learning()
+                replace(
+                    VariationalAdjointConfig.for_automated_learning(),
+                    lead_minutes=(10,),
+                )
             ),
             algorithm_bundle_digest=linearization.algorithm_bundle_digest,
             numerical_runtime_digest=linearization.numerical_runtime_digest,
@@ -4348,6 +4364,100 @@ class VariationalFSOTests(unittest.TestCase):
             learning,
             expected_trust_store_digest="7" * 64,
         )
+        assert learning.fsoi is not None
+        weaker_delta = 0.5 * delta
+        candidates = (
+            ("stronger", perturbation),
+            (
+                "weaker",
+                VariationalObservationPerturbation.from_radar_dbz_delta(
+                    weaker_delta,
+                    linearization,
+                ),
+            ),
+        )
+        ranking_fso = compute_variational_fso(
+            forecast,
+            analysis,
+            verification,
+            sensitivity_config=policy.sensitivity_config,
+            adjoint_config=policy.ranking_adjoint_config,
+        )
+        ranking = score_candidate_perturbations(
+            ranking_fso,
+            candidates,
+            policy=policy,
+        )
+        self.assertEqual(
+            tuple(score.candidate_id for score in ranking.scores),
+            ("stronger", "weaker"),
+        )
+        with self.assertRaisesRegex(ValueError, "policy budget"):
+            validate_top_k_learning_impacts(
+                forecast,
+                analysis,
+                verification,
+                ranking,
+                policy=replace(policy, maximum_learning_resolves=1),
+                policy_trust_store_path=(
+                    "/etc/advar/learning-policies.json"
+                ),
+                maximum_resolves=2,
+            )
+        with (
+            patch.object(
+                sensitivity_module,
+                "_load_learning_policy_trust_store",
+                return_value=sensitivity_module._LearningPolicyTrustStore(
+                    approved_policy_digests=frozenset((policy.digest,)),
+                    content_digest="7" * 64,
+                ),
+            ),
+            patch.object(
+                sensitivity_module,
+                "_learning_impact_from_fsoi",
+                return_value=sensitivity_module._rejected_learning_impact(
+                    policy,
+                    "test_validation_stub",
+                ),
+            ) as validate_mock,
+            patch.object(
+                sensitivity_module,
+                "pcg",
+                side_effect=AssertionError("adjoint must not be recomputed"),
+            ),
+        ):
+            top = validate_top_k_learning_impacts(
+                forecast,
+                analysis,
+                verification,
+                ranking,
+                policy=policy,
+                policy_trust_store_path=(
+                    "/etc/advar/learning-policies.json"
+                ),
+                maximum_resolves=1,
+            )
+        self.assertEqual(len(top), 1)
+        self.assertEqual(validate_mock.call_count, 1)
+        validated_fsoi = validate_mock.call_args.args[3]
+        torch.testing.assert_close(
+            validated_fsoi.observation.total.sum_by_time.sum(dim=-1),
+            ranking.scores[0].predicted_metric_change,
+        )
+        ranking.scores[0].predicted_metric_change.add_(1.0)
+        with self.assertRaisesRegex(ValueError, "ranking digest"):
+            validate_top_k_learning_impacts(
+                forecast,
+                analysis,
+                verification,
+                ranking,
+                policy=policy,
+                policy_trust_store_path=(
+                    "/etc/advar/learning-policies.json"
+                ),
+                maximum_resolves=1,
+            )
         with tempfile.TemporaryDirectory() as temporary:
             ledger = EpisodeLedger(temporary)
             stored_digest = ledger.append_variational_learning_approval(

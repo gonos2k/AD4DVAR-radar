@@ -432,6 +432,37 @@ if learning.eligibility.eligible:
     update_model(learning.frozen_domain_learning_impact)
 ```
 
+후보가 많을 때는 FSO를 후보마다 다시 풀지 않는다. 하나의 공통 FSO에서 모든
+physical-radar perturbation을 점수화한 뒤 정책이 허용한 상위 K개만
+full/half robust P1 re-solve로 검증한다.
+
+```python
+ranking_fso = compute_variational_fso(
+    forecast,
+    analysis,
+    verification_bundle,
+    sensitivity_config=policy.sensitivity_config,
+    adjoint_config=policy.ranking_adjoint_config,
+)
+ranking = score_candidate_perturbations(
+    ranking_fso,
+    (("tile-17", physical_perturbation),),
+    policy=policy,
+)
+validated = validate_top_k_learning_impacts(
+    forecast,
+    analysis,
+    verification_bundle,
+    ranking,
+    policy=policy,
+    policy_trust_store_path="/etc/advar/learning-policies.json",
+)
+```
+
+`maximum_candidate_count`는 선형 점수 후보 수를, `maximum_learning_resolves`는
+실제 full/half 재분석 후보 수를 제한한다. 사전순위는 진단값이며, 학습에는
+`validate_top_k_learning_impacts()`가 승인한 결과만 사용한다.
+
 이 policy는 verification lineage, radar-dynamics domain, active-set·feasibility·
 GN 신뢰도, physical-radar perturbation과 baseline branch 인증을 모두 요구한다.
 strict factory는 16 km tile, 9 km soft-FSS window, projected-metre centroid와
@@ -741,8 +772,9 @@ forecast, analysis = variational_nowcast(
 최종 선형화에는 대형 weighted basis를 한 벌 더 저장하지 않고 원래 mode
 weights와 작은 correction matrix만 보존한다. `[K,H,W]` 입력도 세 시각으로
 복제하지 않는다. `maximum_common_bias_mode_weight_bytes`,
-`maximum_frozen_whitener_bytes`, `maximum_linearization_bytes`는 큰 allocation 전에
-fail-close한다.
+`maximum_common_bias_whitener_apply_operations`,
+`maximum_frozen_whitener_bytes`, `maximum_linearization_bytes`는 큰 allocation이나
+비현실적인 `K×T×H×W` 적용 전에 fail-close한다.
 regular tile·group map·overlapping mode는 서로 배타적이며 mode Tensor와 digest는
 지연 FSO artifact에 보존된다. CLI에서는
 `--observation-common-bias-mode-weights modes.npy`를 사용한다.
