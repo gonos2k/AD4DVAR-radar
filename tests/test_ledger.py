@@ -529,6 +529,23 @@ class EpisodeLedgerTests(unittest.TestCase):
             self.ledger.load_realized_observation_intervention(digest),
             intervention,
         )
+        legacy_intervention = replace(
+            intervention,
+            intervention_id="legacy-radar-qc-20260808-001",
+            outcome_resolution_contract_digest="6" * 64,
+            execution_policy_digest="0" * 64,
+            execution_trust_store_digest="0" * 64,
+            predicted_normalized_benefit=0.0,
+            resolved_normalized_benefit=0.0,
+            contract="realized-observation-intervention-v1",
+        )
+        legacy_digest = self.ledger.append_realized_observation_intervention(
+            legacy_intervention
+        )
+        self.assertEqual(
+            self.ledger.load_realized_observation_intervention(legacy_digest),
+            legacy_intervention,
+        )
         manifest = NeuralPriorCandidateManifest(
             candidate_prior_digest="1" * 64,
             parent_prior_digest="2" * 64,

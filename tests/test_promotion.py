@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import torch
 
 import advar.promotion as promotion_module
+from advar._digest import json_digest
 from advar import (
     LearningApprovalEvidence,
     NeuralPriorCandidateManifest,
@@ -234,6 +235,49 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             promotion_module.RealizedInterventionEvaluation()  # type: ignore[call-arg]
 
+    def test_legacy_intervention_remains_auditable_but_not_promotable(self) -> None:
+        legacy = RealizedObservationIntervention(
+            intervention_id="legacy-qc",
+            intervention_type="realized_qc_intervention",
+            action_digest="a" * 64,
+            applied_time="2026-08-08T00:00:00Z",
+            actual_input_before_digest="b" * 64,
+            actual_input_after_digest="c" * 64,
+            outcome_resolution_contract_digest="d" * 64,
+            execution_policy_digest="0" * 64,
+            execution_trust_store_digest="0" * 64,
+            predicted_normalized_benefit=0.0,
+            resolved_normalized_benefit=0.0,
+            learning_result_digest="e" * 64,
+            learning_approval_evidence_digest="f" * 64,
+            counterfactual_perturbation_digest="1" * 64,
+            linearization_digest="2" * 64,
+            contract="realized-observation-intervention-v1",
+        )
+        self.assertEqual(
+            legacy.intervention_digest,
+            json_digest(
+                {
+                    "contract": legacy.contract,
+                    "intervention_id": legacy.intervention_id,
+                    "intervention_type": legacy.intervention_type,
+                    "action_digest": legacy.action_digest,
+                    "applied_time": legacy.applied_time,
+                    "actual_input_before_digest": legacy.actual_input_before_digest,
+                    "actual_input_after_digest": legacy.actual_input_after_digest,
+                    "observed_outcome_digest": "d" * 64,
+                    "learning_result_digest": legacy.learning_result_digest,
+                    "learning_approval_evidence_digest": (
+                        legacy.learning_approval_evidence_digest
+                    ),
+                    "counterfactual_perturbation_digest": (
+                        legacy.counterfactual_perturbation_digest
+                    ),
+                    "linearization_digest": legacy.linearization_digest,
+                }
+            ),
+        )
+
     def test_forecast_factory_recomputes_candidate_minus_parent(self) -> None:
         manifest = self.manifest()
         learning = self.learning_evidence()
@@ -258,6 +302,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         run = SimpleNamespace(
             grid_time_contract_digest="2" * 64,
             grid_time_contract=grid,
+            config=SimpleNamespace(digest="3" * 64),
+            analysis_config_digest="4" * 64,
+            operational_calibration_manifest_digest="5" * 64,
+            operational_data_identity_digest="6" * 64,
         )
         candidate = SimpleNamespace(run=run, state=object(), validate_issuance=lambda: None)
         parent = SimpleNamespace(run=run, state=object(), validate_issuance=lambda: None)
