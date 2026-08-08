@@ -135,6 +135,42 @@ class _HelperMethodPrior(nn.Module):
         return self.helper(value) + self.anchor
 
 
+class _SpatialUncertaintyPrior(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.register_buffer("anchor", torch.tensor(0.25, dtype=torch.float64))
+
+    def forward(
+        self,
+        value: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        mean = value + self.anchor
+        std = 0.5 + 0.01 * torch.abs(value)
+        valid = value > -5.0
+        support = torch.sigmoid(value)
+        return mean, std, valid, support
+
+
+class _StochasticPrior(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.register_buffer("anchor", torch.tensor(0.0, dtype=torch.float64))
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return value + self.anchor + torch.rand_like(value)
+
+
+class _MutatingPrior(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.register_buffer("counter", torch.tensor(0.0, dtype=torch.float64))
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        with torch.no_grad():
+            self.counter.add_(1.0)
+        return value + self.counter
+
+
 def _prior(
     frames: torch.Tensor,
     offset: float,
@@ -154,6 +190,7 @@ def _prior(
     runner = _prior_runner(
         offset,
         role,
+        example_frames=frames,
         dependency=dependency,
         support_policy=support_policy,
         maximum_added_area_km2=maximum_added_area_km2,
@@ -170,20 +207,22 @@ def _prior_runner(
     offset: float,
     role: str,
     *,
+    example_frames: torch.Tensor | None = None,
     dependency: Literal["exogenous", "radar_dependent"] = "radar_dependent",
     support_policy: Literal["causal_clip", "expand_control"] = "causal_clip",
     maximum_added_area_km2: float = 0.0,
     maximum_added_echo_integral: float = 0.0,
 ) -> NeuralPriorInferenceRunner:
+    if example_frames is None:
+        example_frames = torch.zeros((3, 4, 4), dtype=torch.float64)
     return NeuralPriorInferenceRunner(
         _OffsetPrior(offset).eval(),
         lambda value: value[0],
-        feature_extractor_digest="3" * 64,
+        example_frames=example_frames,
         model_contract_digest="4" * 64,
         feature_schema_digest="5" * 64,
         training_manifest_digest=("6" if role == "candidate" else "7") * 64,
-        inference_algorithm_digest="8" * 64,
-        numerical_runtime_digest="9" * 64,
+        allow_constant_uncertainty=True,
         dependency=dependency,
         support_policy=support_policy,
         maximum_added_area_km2=maximum_added_area_km2,
@@ -231,6 +270,122 @@ class VariationalAnalysisTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "application digest"):
             runner.reproduce(application, frames)
 
+    def test_prior_runner_rejects_caller_declared_execution_identity(self) -> None:
+        common = dict(
+            example_frames=torch.zeros((3, 4, 4), dtype=torch.float64),
+            model_contract_digest="4" * 64,
+            feature_schema_digest="5" * 64,
+            training_manifest_digest="6" * 64,
+            allow_constant_uncertainty=True,
+            dependency="exogenous",
+        )
+        for name in (
+            "feature_extractor_digest",
+            "inference_algorithm_digest",
+            "numerical_runtime_digest",
+        ):
+            with self.subTest(name=name):
+                with self.assertRaisesRegex(ValueError, "declared"):
+                    NeuralPriorInferenceRunner(
+                        _OffsetPrior(1.0).eval(),
+                        lambda value: value[0],
+                        **common,
+                        **{name: "f" * 64},
+                    )
+
+    def test_prior_runner_preserves_spatial_uncertainty_outputs(self) -> None:
+        frames = torch.linspace(-10.0, 10.0, 48, dtype=torch.float64).reshape(
+            3, 4, 4
+        )
+        run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        runner = NeuralPriorInferenceRunner(
+            _SpatialUncertaintyPrior().eval(),
+            lambda value: value[0],
+            example_frames=frames,
+            model_contract_digest="4" * 64,
+            feature_schema_digest="5" * 64,
+            training_manifest_digest="6" * 64,
+            dependency="radar_dependent",
+        )
+
+        application = runner.infer(frames, input_run=run, role="candidate")
+
+        self.assertEqual(
+            application.inference_evidence.uncertainty_contract,
+            "model_spatial",
+        )
+        self.assertGreater(float(torch.std(application.std_dbz).detach()), 0.0)
+        self.assertFalse(bool(torch.all(application.valid_mask)))
+        self.assertGreater(
+            float(torch.std(application.support_probability).detach()),
+            0.0,
+        )
+        runner.reproduce(application, frames)
+
+    def test_stochastic_and_stateful_prior_inference_fail_closed(self) -> None:
+        frames = torch.zeros((3, 4, 4), dtype=torch.float64)
+        run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        common = dict(
+            example_frames=frames,
+            model_contract_digest="4" * 64,
+            feature_schema_digest="5" * 64,
+            training_manifest_digest="6" * 64,
+            allow_constant_uncertainty=True,
+            dependency="exogenous",
+        )
+        stochastic = NeuralPriorInferenceRunner(
+            _StochasticPrior().eval(),
+            lambda value: value[0],
+            **common,
+        )
+        application = stochastic.infer(frames, input_run=run, role="candidate")
+        with self.assertRaisesRegex(ValueError, "cannot be reproduced"):
+            stochastic.reproduce(application, frames)
+
+        mutating = NeuralPriorInferenceRunner(
+            _MutatingPrior().eval(),
+            lambda value: value[0],
+            **common,
+        )
+        with self.assertRaisesRegex(ValueError, "model state changed"):
+            mutating.infer(frames, input_run=run, role="candidate")
+
+    def test_random_and_actual_adjoint_direction_defects_fail_closed(self) -> None:
+        frames = torch.arange(48, dtype=torch.float64).reshape(3, 4, 4)
+        run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        runner = _prior_runner(1.0, "candidate", example_frames=frames)
+        with patch.object(
+            runner,
+            "jvp",
+            return_value=torch.zeros((4, 4), dtype=torch.float64),
+        ):
+            with self.assertRaisesRegex(ValueError, "derivative defect"):
+                runner.infer(frames, input_run=run, role="candidate")
+
+        cotangent = torch.arange(16, dtype=torch.float64).reshape(4, 4)
+        with patch.object(
+            runner,
+            "vjp",
+            return_value=torch.zeros_like(frames),
+        ):
+            with self.assertRaisesRegex(ValueError, "adjoint-direction defect"):
+                runner.validate_adjoint_direction(frames, cotangent)
+
     def test_radar_dependent_prior_exposes_matching_jvp_and_vjp(self) -> None:
         frames = torch.arange(48, dtype=torch.float64).reshape(3, 4, 4)
         tangent = torch.ones_like(frames)
@@ -244,12 +399,11 @@ class VariationalAnalysisTests(unittest.TestCase):
 
     def test_prior_execution_digest_binds_the_actual_forward_code(self) -> None:
         common = dict(
-            feature_extractor_digest="3" * 64,
+            example_frames=torch.zeros((3, 4, 4), dtype=torch.float64),
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
             training_manifest_digest="6" * 64,
-            inference_algorithm_digest="8" * 64,
-            numerical_runtime_digest="9" * 64,
+            allow_constant_uncertainty=True,
             dependency="radar_dependent",
         )
         first = NeuralPriorInferenceRunner(
@@ -262,22 +416,37 @@ class VariationalAnalysisTests(unittest.TestCase):
             lambda value: value[0],
             **common,
         )
+        same_model_different_example = NeuralPriorInferenceRunner(
+            _OffsetPrior(1.0).eval(),
+            lambda value: value[0],
+            **{
+                **common,
+                "example_frames": torch.ones(
+                    (3, 4, 4),
+                    dtype=torch.float64,
+                ),
+            },
+        )
 
         self.assertNotEqual(
             first.execution_contract_digest,
             second.execution_contract_digest,
         )
+        self.assertEqual(
+            first.execution_contract_digest,
+            same_model_different_example.execution_contract_digest,
+        )
 
-    def test_prior_execution_digest_binds_recursive_helpers_and_object_state(
+    def test_prior_execution_digest_binds_exported_graph_and_object_state(
         self,
     ) -> None:
+        example_frames = torch.ones((3, 2, 2), dtype=torch.float64)
         common = dict(
-            feature_extractor_digest="3" * 64,
+            example_frames=example_frames,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
             training_manifest_digest="6" * 64,
-            inference_algorithm_digest="8" * 64,
-            numerical_runtime_digest="9" * 64,
+            allow_constant_uncertainty=True,
             dependency="radar_dependent",
         )
         global _HELPER_SCALE
@@ -345,9 +514,21 @@ class VariationalAnalysisTests(unittest.TestCase):
                 helper_first.neural_prior_digest,
                 helper_second.neural_prior_digest,
             )
-            with self.assertRaisesRegex(ValueError, "model code changed"):
-                values = torch.ones((3, 2, 2), dtype=torch.float64)
-                helper_first.jvp(values, values)
+            run = ForecastRunContract.from_inputs(
+                NowcastConfig(),
+                example_frames,
+                torch.ones_like(example_frames, dtype=torch.bool),
+                None,
+            )
+            frozen = helper_first.infer(
+                example_frames,
+                input_run=run,
+                role="candidate",
+            )
+            torch.testing.assert_close(
+                frozen.initial_background_dbz,
+                torch.ones((2, 2), dtype=torch.float64),
+            )
         finally:
             _MODEL_HELPER_SCALE = 1.0
 
@@ -364,28 +545,48 @@ class VariationalAnalysisTests(unittest.TestCase):
             return value * 3.0 + model.anchor
 
         with patch.object(_HelperMethodPrior, "helper", replacement):
-            with self.assertRaisesRegex(ValueError, "model code changed"):
-                values = torch.ones((3, 2, 2), dtype=torch.float64)
-                patched.jvp(values, values)
+            run = ForecastRunContract.from_inputs(
+                NowcastConfig(),
+                example_frames,
+                torch.ones_like(example_frames, dtype=torch.bool),
+                None,
+            )
+            frozen = patched.infer(
+                example_frames,
+                input_run=run,
+                role="candidate",
+            )
+            torch.testing.assert_close(
+                frozen.initial_background_dbz,
+                torch.ones((2, 2), dtype=torch.float64),
+            )
 
     def test_prior_runner_rejects_mutated_non_parameter_state(self) -> None:
+        values = torch.ones((3, 2, 2), dtype=torch.float64)
         model = _ConfigurablePrior().eval()
         runner = NeuralPriorInferenceRunner(
             model,
             lambda value: value[0],
-            feature_extractor_digest="3" * 64,
+            example_frames=values,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
             training_manifest_digest="6" * 64,
-            inference_algorithm_digest="8" * 64,
-            numerical_runtime_digest="9" * 64,
+            allow_constant_uncertainty=True,
             dependency="radar_dependent",
         )
         model.scale = 2.0
 
-        with self.assertRaisesRegex(ValueError, "model code changed"):
-            values = torch.ones((3, 2, 2), dtype=torch.float64)
-            runner.jvp(values, values)
+        run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            values,
+            torch.ones_like(values, dtype=torch.bool),
+            None,
+        )
+        frozen = runner.infer(values, input_run=run, role="candidate")
+        torch.testing.assert_close(
+            frozen.initial_background_dbz,
+            torch.full((2, 2), 2.0, dtype=torch.float64),
+        )
 
     def test_physical_radar_delta_includes_the_prior_jvp(self) -> None:
         frames = torch.full((3, 4, 4), 20.0, dtype=torch.float64)

@@ -20,8 +20,10 @@ import numpy as np
 from numpy.typing import NDArray
 import torch
 from torch import Tensor
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from ._digest import tensor_digest
+from .nowcast import ForecastRunContract
 
 from .sensitivity import (
     CONTEXT_FEATURE_NAMES,
@@ -33,13 +35,18 @@ from .sensitivity import (
     validate_variational_learning_impact,
 )
 from .intervention import (
+    InterventionActionGenerator,
     ProspectiveInterventionDecision,
+    ReusableInterventionPolicyEvidence,
     RealizedInterventionReceipt,
     RealizedObservationIntervention,
     RetrospectiveCounterfactualReplay,
     validate_prospective_intervention,
+    validate_intervention_action_transition,
     validate_retrospective_counterfactual_replay,
     verify_intervention_receipt_signature,
+    _new_prospective_decision,
+    _new_realized_intervention_receipt,
 )
 from .promotion import (
     NeuralPriorCandidateManifest,
@@ -52,26 +59,26 @@ from .promotion import (
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionEvidence,
     NeuralPriorPromotionPolicy,
-    RealizedInterventionEvaluation,
+    PriorHoldoutEvaluation,
     compute_neural_prior_promotion,
     validate_neural_prior_promotion,
     validate_neural_prior_candidate_manifest,
     validate_neural_prior_holdout_plan,
-    _new_realized_evaluation,
+    _new_prior_holdout_evaluation,
 )
 
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
-_EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v1"
+_EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 11
+_INDEX_SCHEMA_VERSION = 12
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 
 
 @dataclass(frozen=True)
 class _ExecutorTrustStore:
-    keys: dict[str, bytes]
+    keys: dict[str, Ed25519PublicKey]
     content_digest: str
 
 
@@ -119,33 +126,37 @@ def _load_executor_trust_store(path: str | Path) -> _ExecutorTrustStore:
         if (
             not stat.S_ISREG(metadata.st_mode)
             or metadata.st_uid != 0
-            or metadata.st_mode & 0o077
+            or metadata.st_mode & 0o022
         ):
-            raise ValueError("executor trust store must be root-owned and private")
+            raise ValueError("executor trust store must be root-owned and non-writable")
         with os.fdopen(descriptor, encoding="utf-8") as stream:
             descriptor = -1
             document = json.load(stream)
     finally:
         if descriptor >= 0:
             os.close(descriptor)
-    if not isinstance(document, dict) or set(document) != {"contract", "keys"}:
+    if not isinstance(document, dict) or set(document) != {
+        "contract",
+        "public_keys",
+    }:
         raise ValueError("invalid executor trust store")
     if document["contract"] != _EXECUTOR_TRUST_STORE_CONTRACT:
         raise ValueError("unsupported executor trust store")
-    raw = document["keys"]
+    raw = document["public_keys"]
     if not isinstance(raw, dict) or not raw:
         raise ValueError("executor trust store requires keys")
-    keys: dict[str, bytes] = {}
-    for key_id, secret_hex in raw.items():
-        if not isinstance(key_id, str) or not key_id or not isinstance(secret_hex, str):
+    keys: dict[str, Ed25519PublicKey] = {}
+    for key_id, public_hex in raw.items():
+        if not isinstance(key_id, str) or not key_id or not isinstance(public_hex, str):
             raise ValueError("invalid executor trust-store key")
         try:
-            secret = bytes.fromhex(secret_hex)
+            public = bytes.fromhex(public_hex)
+            key = Ed25519PublicKey.from_public_bytes(public)
         except ValueError as error:
-            raise ValueError("invalid executor trust-store secret") from error
-        if len(secret) < 32:
-            raise ValueError("executor trust-store secrets must be at least 256 bits")
-        keys[key_id] = secret
+            raise ValueError("invalid executor trust-store public key") from error
+        if len(public) != 32:
+            raise ValueError("executor public keys must contain 32 bytes")
+        keys[key_id] = key
     return _ExecutorTrustStore(keys=keys, content_digest=_json_digest(document))
 _TRUST_COMPONENTS_V13 = {
     "linearity",
@@ -806,17 +817,60 @@ class EpisodeLedger:
         self,
         decision: ProspectiveInterventionDecision,
         *,
+        action_policy: ReusableInterventionPolicyEvidence,
+        action_generator: InterventionActionGenerator,
+        actual_input_before_frames: Tensor,
+        actual_input_before_run: ForecastRunContract,
         trust_store_path: str | Path,
     ) -> str:
-        """Commit an approved action before its forecast issue time."""
+        """Commit a policy-generated current-input action before its deadline."""
 
+        action_policy.validate_integrity()
+        reproduced = ProspectiveInterventionDecision.from_policy(
+            action_policy,
+            action_generator=action_generator,
+            decision_id=decision.decision_id,
+            case_id=decision.case_id,
+            radar_id=decision.radar_id,
+            intervention_type=decision.intervention_type,
+            actual_input_before_frames=actual_input_before_frames,
+            actual_input_before_run=actual_input_before_run,
+            input_plan_digest=decision.input_plan_digest,
+            decision_basis_digest=decision.decision_basis_digest,
+            decision_policy_digest=decision.decision_policy_digest,
+            decision_trust_store_digest=decision.decision_trust_store_digest,
+            decided_at=decision.decided_at,
+            observation_valid_time=decision.observation_valid_time,
+            input_available_time=decision.input_available_time,
+            decision_deadline=decision.decision_deadline,
+            publication_time=decision.publication_time,
+        )
+        if reproduced.decision_digest != decision.decision_digest:
+            raise ValueError("prospective decision is not the policy output")
         trust = _load_learning_policy_trust_store(trust_store_path)
         if trust.content_digest != decision.decision_trust_store_digest:
             raise ValueError("prospective decision trust-store mismatch")
         if decision.decision_policy_digest not in trust.approved_policy_digests:
             raise ValueError("prospective decision policy is not approved")
+        if action_policy.policy_digest not in trust.approved_policy_digests:
+            raise ValueError("reusable intervention policy is not approved")
+        if (
+            decision.action_policy_digest != action_policy.policy_digest
+            or decision.action_generator_digest
+            != action_policy.action_generator_digest
+            or decision.decision_policy_digest
+            != action_policy.execution_policy_digest
+            or decision.decision_basis_digest
+            not in action_policy.validation_evidence_digests
+        ):
+            raise ValueError("prospective decision disagrees with its action policy")
         decided = datetime.fromisoformat(decision.decided_at.replace("Z", "+00:00"))
-        issue = datetime.fromisoformat(decision.issue_time.replace("Z", "+00:00"))
+        deadline = datetime.fromisoformat(
+            decision.decision_deadline.replace("Z", "+00:00")
+        )
+        publication = datetime.fromisoformat(
+            decision.publication_time.replace("Z", "+00:00")
+        )
         expected = _json_digest(
             {
                 key: value
@@ -829,21 +883,22 @@ class EpisodeLedger:
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             now = datetime.now(timezone.utc)
-            if decided > now or now >= issue:
-                raise ValueError("prospective decision must be recorded before issue")
-            approval = connection.execute(
-                "SELECT approved_action_digest, nominal_input_bundle_digest "
-                "FROM variational_learning_approvals "
-                "WHERE learning_result_digest = ?",
-                (decision.decision_basis_digest,),
+            if decided > now or now > deadline or deadline >= publication:
+                raise ValueError("prospective decision missed its decision deadline")
+            retained = connection.execute(
+                "SELECT policy_json FROM reusable_intervention_policies "
+                "WHERE policy_digest = ?",
+                (action_policy.policy_digest,),
             ).fetchone()
-            if approval is None:
-                raise ValueError("prospective decision basis is not recorded")
-            if (
-                approval[0] != decision.action_digest
-                or approval[1] != decision.actual_input_before_digest
-            ):
-                raise ValueError("prospective decision disagrees with its approval")
+            policy_json = json.dumps(asdict(action_policy), sort_keys=True)
+            if retained is not None and retained[0] != policy_json:
+                raise ValueError("recorded reusable intervention policy changed")
+            if retained is None:
+                connection.execute(
+                    "INSERT INTO reusable_intervention_policies "
+                    "(policy_digest, policy_json, created_at) VALUES (?, ?, ?)",
+                    (action_policy.policy_digest, policy_json, now.isoformat()),
+                )
             connection.execute(
                 "INSERT INTO prospective_intervention_decisions "
                 "(decision_digest, decision_id, decision_json, created_at) "
@@ -855,8 +910,8 @@ class EpisodeLedger:
                     now.isoformat(),
                 ),
             )
-            if datetime.now(timezone.utc) >= issue:
-                raise ValueError("prospective decision crossed its issue time")
+            if datetime.now(timezone.utc) > deadline:
+                raise ValueError("prospective decision crossed its deadline")
         return decision.decision_digest
 
     def append_realized_intervention_receipt(
@@ -864,23 +919,47 @@ class EpisodeLedger:
         decision: ProspectiveInterventionDecision,
         receipt: RealizedInterventionReceipt,
         *,
+        action_generator: InterventionActionGenerator,
+        actual_input_before_frames: Tensor,
+        actual_input_before_run: ForecastRunContract,
+        actual_input_after_frames: Tensor,
+        actual_input_after_run: ForecastRunContract,
         trust_store_path: str | Path,
         executor_trust_store_path: str | Path,
     ) -> str:
         """Record the executor receipt while the issue is still prospective."""
 
         validate_prospective_intervention(decision, receipt)
+        before_digest, after_digest = validate_intervention_action_transition(
+            decision,
+            action_generator=action_generator,
+            actual_input_before_frames=actual_input_before_frames,
+            actual_input_before_run=actual_input_before_run,
+            actual_input_after_frames=actual_input_after_frames,
+            actual_input_after_run=actual_input_after_run,
+        )
+        if (
+            receipt.actual_input_before_frames_digest != before_digest
+            or receipt.actual_input_after_frames_digest != after_digest
+            or receipt.actual_input_before_bundle_digest
+            != actual_input_before_run.input_bundle_digest
+            or receipt.actual_input_bundle_digest
+            != actual_input_after_run.input_bundle_digest
+        ):
+            raise ValueError("realized receipt transition evidence disagrees")
         trust = _load_learning_policy_trust_store(trust_store_path)
         if trust.content_digest != decision.decision_trust_store_digest:
             raise ValueError("realized receipt trust-store mismatch")
         executor_trust = _load_executor_trust_store(executor_trust_store_path)
         if receipt.executor_trust_store_digest != executor_trust.content_digest:
             raise ValueError("realized receipt executor trust-store mismatch")
-        secret = executor_trust.keys.get(receipt.executor_key_id)
-        if secret is None:
+        public_key = executor_trust.keys.get(receipt.executor_key_id)
+        if public_key is None:
             raise ValueError("realized receipt executor is not approved")
-        verify_intervention_receipt_signature(receipt, secret)
-        issue = datetime.fromisoformat(receipt.issue_time.replace("Z", "+00:00"))
+        verify_intervention_receipt_signature(receipt, public_key)
+        publication = datetime.fromisoformat(
+            receipt.publication_time.replace("Z", "+00:00")
+        )
         received = datetime.fromisoformat(receipt.receipt_time.replace("Z", "+00:00"))
         applied = datetime.fromisoformat(receipt.applied_time.replace("Z", "+00:00"))
         with self._connect() as connection:
@@ -898,22 +977,34 @@ class EpisodeLedger:
                 raise ValueError("recorded prospective decision changed")
             decision_created = datetime.fromisoformat(recorded[1])
             if not (
-                decision_created <= applied <= received <= now < issue
+                decision_created <= applied <= received <= now < publication
             ):
                 raise ValueError("realized receipt violates trusted clock order")
+            previous_sequence = connection.execute(
+                "SELECT MAX(executor_sequence_number) "
+                "FROM realized_intervention_receipts WHERE executor_key_id = ?",
+                (receipt.executor_key_id,),
+            ).fetchone()[0]
+            if previous_sequence is not None and (
+                receipt.executor_sequence_number <= previous_sequence
+            ):
+                raise ValueError("executor receipt sequence must increase")
             connection.execute(
                 "INSERT INTO realized_intervention_receipts "
-                "(receipt_digest, decision_digest, receipt_json, created_at) "
-                "VALUES (?, ?, ?, ?)",
+                "(receipt_digest, decision_digest, executor_key_id, "
+                "executor_sequence_number, receipt_json, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
                 (
                     receipt.receipt_digest,
                     receipt.decision_digest,
+                    receipt.executor_key_id,
+                    receipt.executor_sequence_number,
                     json.dumps(asdict(receipt), sort_keys=True),
                     now.isoformat(),
                 ),
             )
-            if datetime.now(timezone.utc) >= issue:
-                raise ValueError("realized receipt crossed its issue time")
+            if datetime.now(timezone.utc) >= publication:
+                raise ValueError("realized receipt crossed publication time")
         return receipt.receipt_digest
 
     def load_prospective_intervention(
@@ -936,10 +1027,15 @@ class EpisodeLedger:
             raise KeyError(f"unknown realized receipt: {receipt_digest}")
         decision_values = json.loads(row["decision_json"])
         receipt_values = json.loads(row["receipt_json"])
-        decision_values.pop("decision_digest", None)
-        receipt_values.pop("receipt_digest", None)
-        decision = ProspectiveInterventionDecision(**decision_values)
-        receipt = RealizedInterventionReceipt(**receipt_values)
+        retained_decision_digest = decision_values.pop("decision_digest", None)
+        retained_receipt_digest = receipt_values.pop("receipt_digest", None)
+        decision = _new_prospective_decision(**decision_values)
+        receipt = _new_realized_intervention_receipt(**receipt_values)
+        if (
+            decision.decision_digest != retained_decision_digest
+            or receipt.receipt_digest != retained_receipt_digest
+        ):
+            raise ValueError("prospective intervention storage digest mismatch")
         validate_prospective_intervention(decision, receipt)
         return decision, receipt
 
@@ -1110,12 +1206,12 @@ class EpisodeLedger:
         evidence: NeuralPriorPromotionEvidence,
         manifest: NeuralPriorCandidateManifest,
         plan: NeuralPriorHoldoutPlan,
-        evaluations: tuple[RealizedInterventionEvaluation, ...],
+        evaluations: tuple[PriorHoldoutEvaluation, ...],
         *,
         policy: NeuralPriorPromotionPolicy,
         policy_trust_store_path: str | Path,
     ) -> str:
-        """Append one eligible promotion linked to realized interventions."""
+        """Append one promotion over every preregistered holdout case."""
 
         recomputed = compute_neural_prior_promotion(
             manifest,
@@ -1156,10 +1252,6 @@ class EpisodeLedger:
                 )
             )
             recorded = {row[0]: json.loads(row[1]) for row in receipt_rows}
-            receipt_created_at = {row[0]: row[2] for row in receipt_rows}
-            missing = set(evidence.intervention_digests) - set(recorded)
-            if missing:
-                raise ValueError("promotion references unrecorded interventions")
             recorded_approvals = {
                 row[0]
                 for row in connection.execute(
@@ -1189,50 +1281,6 @@ class EpisodeLedger:
                     manifest.training_learning_approval_digests
                 ):
                     raise ValueError("training receipt is not linked to its approval")
-            if training_interventions & {
-                item.intervention_digest for item in evaluations
-            }:
-                raise ValueError("training and promotion interventions overlap")
-            for evaluation in evaluations:
-                intervention_row = recorded[evaluation.intervention_digest]
-                receipt_created = datetime.fromisoformat(
-                    receipt_created_at[evaluation.intervention_digest]
-                )
-                issue = datetime.fromisoformat(
-                    evaluation.issue_time.replace("Z", "+00:00")
-                )
-                if receipt_created >= issue:
-                    raise ValueError("promotion receipt was recorded after issue")
-                if (
-                    intervention_row["intervention_type"],
-                    intervention_row["decision_digest"],
-                ) != (
-                    evaluation.intervention_type,
-                    evaluation.learning_approval_evidence_digest,
-                ):
-                    raise ValueError(
-                        "promotion evaluation disagrees with intervention ledger"
-                    )
-                decision_row = connection.execute(
-                    "SELECT decision_json, created_at "
-                    "FROM prospective_intervention_decisions "
-                    "WHERE decision_digest = ?",
-                    (evaluation.learning_approval_evidence_digest,),
-                ).fetchone()
-                if decision_row is None:
-                    raise ValueError(
-                        "promotion evaluation lacks a prospective decision"
-                    )
-                decision = json.loads(decision_row[0])
-                if datetime.fromisoformat(decision_row[1]) >= issue:
-                    raise ValueError("promotion decision was recorded after issue")
-                if (
-                    decision["decision_basis_digest"]
-                    != evaluation.learning_result_digest
-                    or decision["decision_policy_digest"]
-                    != evaluation.learning_policy_digest
-                ):
-                    raise ValueError("promotion decision lineage disagrees")
             connection.execute(
                 """
                 INSERT INTO neural_prior_promotions (
@@ -1268,9 +1316,9 @@ class EpisodeLedger:
                         [_evaluation_audit_payload(item) for item in evaluations],
                         sort_keys=True,
                     ),
-                    json.dumps(list(evidence.intervention_digests)),
-                    evidence.realized_intervention_count,
-                    evidence.material_intervention_count,
+                    json.dumps([]),
+                    evidence.holdout_case_count,
+                    evidence.material_case_count,
                     evidence.distinct_case_count,
                     evidence.distinct_storm_count,
                     evidence.distinct_day_count,
@@ -1320,11 +1368,8 @@ class EpisodeLedger:
             evaluation_digests=tuple(
                 json.loads(row["evaluation_digests_json"])
             ),
-            intervention_digests=tuple(
-                json.loads(row["intervention_digests_json"])
-            ),
-            realized_intervention_count=row["realized_intervention_count"],
-            material_intervention_count=row["material_outcome_count"],
+            holdout_case_count=row["realized_intervention_count"],
+            material_case_count=row["material_outcome_count"],
             distinct_case_count=row["distinct_case_count"],
             distinct_storm_count=row["distinct_storm_count"],
             distinct_day_count=row["distinct_day_count"],
@@ -1368,7 +1413,7 @@ class EpisodeLedger:
         self,
         promotion_evidence_digest: str,
     ) -> tuple[
-        RealizedInterventionEvaluation | LegacyPromotionEvaluationAudit,
+        PriorHoldoutEvaluation | LegacyPromotionEvaluationAudit,
         ...,
     ]:
         """Load typed metrics or an explicit read-only legacy audit."""
@@ -1490,6 +1535,15 @@ class EpisodeLedger:
             )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS reusable_intervention_policies (
+                    policy_digest TEXT PRIMARY KEY,
+                    policy_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS prospective_intervention_decisions (
                     decision_digest TEXT PRIMARY KEY,
                     decision_id TEXT NOT NULL UNIQUE,
@@ -1503,6 +1557,8 @@ class EpisodeLedger:
                 CREATE TABLE IF NOT EXISTS realized_intervention_receipts (
                     receipt_digest TEXT PRIMARY KEY,
                     decision_digest TEXT NOT NULL UNIQUE,
+                    executor_key_id TEXT NOT NULL DEFAULT '',
+                    executor_sequence_number INTEGER NOT NULL DEFAULT 0,
                     receipt_json TEXT NOT NULL,
                     created_at TEXT NOT NULL,
                     FOREIGN KEY (decision_digest)
@@ -1563,6 +1619,7 @@ class EpisodeLedger:
             )
             _ensure_variational_learning_approval_schema(connection)
             _ensure_realized_intervention_schema(connection)
+            _ensure_prospective_receipt_schema(connection)
             _ensure_neural_prior_promotion_schema(connection)
             connection.execute(
                 """
@@ -1579,6 +1636,7 @@ class EpisodeLedger:
                 "variational_learning_approvals",
                 "realized_observation_interventions",
                 "retrospective_counterfactual_replays",
+                "reusable_intervention_policies",
                 "prospective_intervention_decisions",
                 "realized_intervention_receipts",
                 "neural_prior_holdout_plans",
@@ -1869,6 +1927,25 @@ def _ensure_realized_intervention_schema(
             )
 
 
+def _ensure_prospective_receipt_schema(connection: sqlite3.Connection) -> None:
+    columns = {
+        row[1]
+        for row in connection.execute(
+            "PRAGMA table_info(realized_intervention_receipts)"
+        ).fetchall()
+    }
+    definitions = {
+        "executor_key_id": "TEXT NOT NULL DEFAULT ''",
+        "executor_sequence_number": "INTEGER NOT NULL DEFAULT 0",
+    }
+    for name, definition in definitions.items():
+        if name not in columns:
+            connection.execute(
+                "ALTER TABLE realized_intervention_receipts "
+                f"ADD COLUMN {name} {definition}"
+            )
+
+
 def _ensure_neural_prior_promotion_schema(
     connection: sqlite3.Connection,
 ) -> None:
@@ -1902,7 +1979,7 @@ def _ensure_neural_prior_promotion_schema(
 
 
 def _evaluation_audit_payload(
-    evaluation: RealizedInterventionEvaluation,
+    evaluation: PriorHoldoutEvaluation,
 ) -> dict[str, object]:
     """Serialize the small paired-evaluation payload for later audit."""
 
@@ -1946,10 +2023,13 @@ def _decode_audit_tensor(name: str, value: object) -> Tensor:
 
 def _decode_evaluation_audit_payloads(
     value: object,
-) -> tuple[RealizedInterventionEvaluation | LegacyPromotionEvaluationAudit, ...]:
+) -> tuple[PriorHoldoutEvaluation | LegacyPromotionEvaluationAudit, ...]:
     if not isinstance(value, list) or any(not isinstance(item, dict) for item in value):
         raise ValueError("invalid promotion evaluation audit payload")
-    if value and isinstance(value[0].get("metric_change"), list):
+    if value and (
+        isinstance(value[0].get("metric_change"), list)
+        or value[0].get("contract") != "prior-holdout-evaluation-v2"
+    ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:
             assert isinstance(raw, dict)
@@ -1967,7 +2047,7 @@ def _decode_evaluation_audit_payloads(
                 )
             )
         return tuple(audits)
-    evaluations: list[RealizedInterventionEvaluation] = []
+    evaluations: list[PriorHoldoutEvaluation] = []
     tensor_names = {
         "metric_change",
         "candidate_issuance_effect",
@@ -1990,7 +2070,7 @@ def _decode_evaluation_audit_payloads(
         for name in tuple_names:
             values[name] = tuple(values[name])
         values.pop("contract", None)
-        evaluation = _new_realized_evaluation(**values)
+        evaluation = _new_prior_holdout_evaluation(**values)
         if evaluation.evaluation_digest != stored_digest:
             raise ValueError("promotion evaluation digest mismatch")
         evaluations.append(evaluation)

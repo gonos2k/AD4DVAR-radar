@@ -15,12 +15,6 @@ from torch import Tensor
 
 from ._digest import json_digest, tensor_digest
 from .calibration import OperationalDataIdentity
-from .intervention import (
-    ObservationInterventionType,
-    ProspectiveInterventionDecision,
-    RealizedInterventionReceipt,
-    validate_prospective_intervention,
-)
 from .nowcast import ForecastResult
 from .sensitivity import (
     SensitivityConfig,
@@ -41,9 +35,9 @@ PromotionRejectionReason = Literal[
     "unapproved_candidate_manifest",
     "unapproved_holdout_plan",
     "unapproved_metric_contract",
-    "insufficient_realized_interventions",
-    "insufficient_material_interventions",
-    "insufficient_material_intervention_fraction",
+    "insufficient_holdout_cases",
+    "insufficient_material_cases",
+    "insufficient_material_case_fraction",
     "insufficient_independent_cases",
     "insufficient_distinct_storms",
     "insufficient_distinct_days",
@@ -51,8 +45,6 @@ PromotionRejectionReason = Literal[
     "insufficient_distinct_regimes",
     "insufficient_distinct_range_regimes",
     "insufficient_material_clusters",
-    "unapproved_learning_policy",
-    "unsupported_intervention_type",
     "no_material_outcome",
     "insufficient_beneficial_fraction",
     "excessive_harmful_fraction",
@@ -60,6 +52,7 @@ PromotionRejectionReason = Literal[
     "excessive_single_degradation",
     "excessive_end_to_end_degradation",
     "excessive_issuance_change",
+    "unreliable_prior_uncertainty",
 ]
 
 
@@ -117,8 +110,11 @@ class NeuralPriorInputPlan:
     qc_pipeline_digest: str
     background_cycle_rule_digest: str
     mask_policy_digest: str
-    issue_time: str
-    contract: str = "neural-prior-input-plan-v1"
+    observation_valid_time: str
+    input_available_time: str
+    decision_deadline: str
+    publication_time: str
+    contract: str = "neural-prior-input-plan-v2"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -131,11 +127,19 @@ class NeuralPriorInputPlan:
         ):
             _require_digest(name, getattr(self, name))
         times = tuple(_canonical_time(value) for value in self.valid_times)
-        issue = _canonical_time(self.issue_time)
-        if not times or times[-1] != issue:
-            raise ValueError("input plan must end at its forecast issue time")
+        valid = _canonical_time(self.observation_valid_time)
+        available = _canonical_time(self.input_available_time)
+        deadline = _canonical_time(self.decision_deadline)
+        publication = _canonical_time(self.publication_time)
+        if not times or times[-1] != valid:
+            raise ValueError("input plan must end at its observation valid time")
+        if not valid <= available <= deadline < publication:
+            raise ValueError("input plan latency window is invalid")
         object.__setattr__(self, "valid_times", times)
-        object.__setattr__(self, "issue_time", issue)
+        object.__setattr__(self, "observation_valid_time", valid)
+        object.__setattr__(self, "input_available_time", available)
+        object.__setattr__(self, "decision_deadline", deadline)
+        object.__setattr__(self, "publication_time", publication)
         object.__setattr__(self, "plan_digest", json_digest(self.payload))
 
     @property
@@ -148,7 +152,10 @@ class NeuralPriorInputPlan:
             "qc_pipeline_digest": self.qc_pipeline_digest,
             "background_cycle_rule_digest": self.background_cycle_rule_digest,
             "mask_policy_digest": self.mask_policy_digest,
-            "issue_time": self.issue_time,
+            "observation_valid_time": self.observation_valid_time,
+            "input_available_time": self.input_available_time,
+            "decision_deadline": self.decision_deadline,
+            "publication_time": self.publication_time,
         }
 
     @property
@@ -492,7 +499,10 @@ def input_plan_digest(
     qc_pipeline_digest: str,
     background_cycle_rule_digest: str,
     mask_policy_digest: str,
-    issue_time: str,
+    observation_valid_time: str,
+    input_available_time: str,
+    decision_deadline: str,
+    publication_time: str,
 ) -> str:
     """Identify future input selection rules without claiming future content."""
 
@@ -503,7 +513,10 @@ def input_plan_digest(
         qc_pipeline_digest=qc_pipeline_digest,
         background_cycle_rule_digest=background_cycle_rule_digest,
         mask_policy_digest=mask_policy_digest,
-        issue_time=issue_time,
+        observation_valid_time=observation_valid_time,
+        input_available_time=input_available_time,
+        decision_deadline=decision_deadline,
+        publication_time=publication_time,
     ).plan_digest
 
 
@@ -687,14 +700,9 @@ def validate_neural_prior_candidate_manifest(
 
 
 @dataclass(frozen=True, init=False)
-class RealizedInterventionEvaluation:
-    """Forecast-derived candidate-minus-parent change on one holdout case."""
+class PriorHoldoutEvaluation:
+    """Paired prior holdout result over the full preregistered population."""
 
-    intervention_digest: str
-    intervention_type: ObservationInterventionType
-    learning_result_digest: str
-    learning_approval_evidence_digest: str
-    learning_policy_digest: str
     holdout_plan_digest: str
     candidate_manifest_digest: str
     candidate_prior_digest: str
@@ -725,23 +733,21 @@ class RealizedInterventionEvaluation:
     coverage_common: Tensor
     newly_issued_fraction: Tensor
     withdrawn_fraction: Tensor
+    prior_standardized_residual_mean_abs: float
+    prior_underdispersion_fraction: float
+    prior_uncertainty_sample_count: int
     issue_time: str
-    applied_time: str
     verification_valid_times: tuple[str, ...]
-    contract: str = "realized-intervention-evaluation-v2"
+    contract: str = "prior-holdout-evaluation-v2"
     evaluation_digest: str = field(init=False)
 
     def __init__(self) -> None:
-        raise TypeError("use RealizedInterventionEvaluation.from_forecasts")
+        raise TypeError("use PriorHoldoutEvaluation.from_forecasts")
 
     def __post_init__(self) -> None:
-        if self.contract != "realized-intervention-evaluation-v2":
-            raise ValueError("unsupported realized intervention evaluation")
+        if self.contract != "prior-holdout-evaluation-v2":
+            raise ValueError("unsupported prior holdout evaluation")
         for name in (
-            "intervention_digest",
-            "learning_result_digest",
-            "learning_approval_evidence_digest",
-            "learning_policy_digest",
             "holdout_plan_digest",
             "candidate_manifest_digest",
             "candidate_prior_digest",
@@ -779,11 +785,15 @@ class RealizedInterventionEvaluation:
             or common_coverage.shape != (len(self.lead_minutes),)
             or newly_issued.shape != (len(self.lead_minutes),)
             or withdrawn.shape != (len(self.lead_minutes),)
-            or not change.is_floating_point()
+            or any(
+                not value.is_floating_point()
+                for value in (change, candidate_policy, parent_policy, end_to_end)
+            )
         ):
             raise ValueError("realized evaluation shapes disagree")
-        if not bool(torch.any(available)) or not bool(
-            torch.all(torch.isfinite(change[available]))
+        if not bool(torch.any(available)) or any(
+            not bool(torch.all(torch.isfinite(value[available])))
+            for value in (change, candidate_policy, parent_policy, end_to_end)
         ):
             raise ValueError("realized evaluation must contain finite metrics")
         for coverage in (
@@ -793,18 +803,28 @@ class RealizedInterventionEvaluation:
             newly_issued,
             withdrawn,
         ):
-            if bool(torch.any((coverage < 0.0) | (coverage > 1.0))):
+            if not bool(torch.all(torch.isfinite(coverage))) or bool(
+                torch.any((coverage < 0.0) | (coverage > 1.0))
+            ):
                 raise ValueError("realized evaluation coverage must be in [0,1]")
         if self.candidate_prior_digest == self.parent_prior_digest:
             raise ValueError("candidate and parent priors must differ")
-        applied = datetime.fromisoformat(self.applied_time.replace("Z", "+00:00"))
+        if (
+            not math.isfinite(self.prior_standardized_residual_mean_abs)
+            or self.prior_standardized_residual_mean_abs < 0.0
+            or not math.isfinite(self.prior_underdispersion_fraction)
+            or not 0.0 <= self.prior_underdispersion_fraction <= 1.0
+            or type(self.prior_uncertainty_sample_count) is not int
+            or self.prior_uncertainty_sample_count <= 0
+        ):
+            raise ValueError("prior uncertainty reliability evidence is invalid")
         issue = datetime.fromisoformat(self.issue_time.replace("Z", "+00:00"))
         valid = tuple(
             datetime.fromisoformat(value.replace("Z", "+00:00"))
             for value in self.verification_valid_times
         )
-        if applied > issue or any(issue >= value for value in valid):
-            raise ValueError("intervention, issue, and verification times disagree")
+        if any(issue >= value for value in valid):
+            raise ValueError("holdout issue and verification times disagree")
         object.__setattr__(self, "metric_change", change)
         object.__setattr__(self, "candidate_issuance_effect", candidate_policy)
         object.__setattr__(self, "parent_issuance_effect", parent_policy)
@@ -820,8 +840,6 @@ class RealizedInterventionEvaluation:
     @classmethod
     def from_forecasts(
         cls,
-        decision: ProspectiveInterventionDecision,
-        receipt: RealizedInterventionReceipt,
         manifest: NeuralPriorCandidateManifest,
         plan: NeuralPriorHoldoutPlan,
         *,
@@ -835,10 +853,9 @@ class RealizedInterventionEvaluation:
         candidate_prior_runner: NeuralPriorInferenceRunner,
         parent_prior_runner: NeuralPriorInferenceRunner,
         input_frames_dbz: Tensor,
-    ) -> RealizedInterventionEvaluation:
-        """Recompute holdout change; no caller-provided outcome is accepted."""
+    ) -> PriorHoldoutEvaluation:
+        """Evaluate every planned prior case without intervention selection."""
 
-        validate_prospective_intervention(decision, receipt)
         validate_neural_prior_holdout_plan(plan)
         validate_neural_prior_candidate_manifest(manifest)
         candidate_forecast.validate_issuance()
@@ -857,15 +874,6 @@ class RealizedInterventionEvaluation:
         )
         if case.plan_case() != planned_case:
             raise ValueError("completed holdout case disagrees with its plan")
-        if (
-            receipt.case_id != case.case_id
-            or receipt.radar_id != case.radar_id
-            or receipt.issue_time != case.issue_time
-            or receipt.actual_input_bundle_digest != case.input_bundle_digest
-            or receipt.input_plan_digest != case.input_plan_digest
-            or decision.input_plan_digest != case.input_plan_digest
-        ):
-            raise ValueError("intervention does not belong to the holdout case")
         candidate_digest = _forecast_result_content_digest(candidate_forecast)
         parent_digest = _forecast_result_content_digest(parent_forecast)
         if (
@@ -972,6 +980,7 @@ class RealizedInterventionEvaluation:
                 or evidence.input_bundle_digest != case.input_bundle_digest
                 or evidence.input_frames_digest != tensor_digest(input_frames_dbz)
                 or evidence.execution_contract_digest != run.neural_prior_digest
+                or evidence.uncertainty_contract != "model_spatial"
             ):
                 raise ValueError("holdout prior inference evidence disagrees")
         if (
@@ -990,8 +999,32 @@ class RealizedInterventionEvaluation:
             != parent_prior_runner.inference_algorithm_digest
             or candidate_prior_runner.numerical_runtime_digest
             != parent_prior_runner.numerical_runtime_digest
+            or candidate_prior_runner.numerical_runtime_digest
+            != manifest.numerical_runtime_digest
         ):
-            raise ValueError("candidate and parent inference runtimes disagree")
+            raise ValueError("holdout inference runtime is not manifested")
+        prior_reference = input_frames_dbz[0]
+        prior_valid = (
+            candidate_prior_application.valid_mask
+            & torch.isfinite(prior_reference)
+            & torch.isfinite(candidate_prior_application.initial_background_dbz)
+            & torch.isfinite(candidate_prior_application.std_dbz)
+            & (candidate_prior_application.std_dbz > 0.0)
+        )
+        prior_sample_count = int(torch.count_nonzero(prior_valid))
+        if prior_sample_count == 0:
+            raise ValueError("holdout has no valid prior uncertainty samples")
+        standardized = torch.abs(
+            (
+                candidate_prior_application.initial_background_dbz
+                - prior_reference
+            )
+            / candidate_prior_application.std_dbz
+        ).masked_select(prior_valid)
+        standardized_mean = float(torch.mean(standardized).detach())
+        underdispersion_fraction = float(
+            torch.mean((standardized > 2.0).to(standardized)).detach()
+        )
         for run, training_digest in (
             (candidate_forecast.run, manifest.candidate_training_manifest_digest),
             (parent_forecast.run, manifest.parent_training_manifest_digest),
@@ -1125,12 +1158,7 @@ class RealizedInterventionEvaluation:
             raise ValueError("candidate and parent issue times disagree")
         if issue_time != case.issue_time:
             raise ValueError("holdout issue time is not pre-registered")
-        return _new_realized_evaluation(
-            intervention_digest=receipt.receipt_digest,
-            intervention_type=receipt.intervention_type,
-            learning_result_digest=decision.decision_basis_digest,
-            learning_approval_evidence_digest=decision.decision_digest,
-            learning_policy_digest=decision.decision_policy_digest,
+        return _new_prior_holdout_evaluation(
             holdout_plan_digest=plan.plan_digest,
             candidate_manifest_digest=manifest.manifest_digest,
             candidate_prior_digest=manifest.candidate_prior_digest,
@@ -1169,24 +1197,26 @@ class RealizedInterventionEvaluation:
             coverage_common=common_coverage,
             newly_issued_fraction=newly_issued,
             withdrawn_fraction=withdrawn,
+            prior_standardized_residual_mean_abs=standardized_mean,
+            prior_underdispersion_fraction=underdispersion_fraction,
+            prior_uncertainty_sample_count=prior_sample_count,
             issue_time=issue_time,
-            applied_time=receipt.applied_time,
             verification_valid_times=verification.valid_times,
         )
 
 
-def _new_realized_evaluation(**values: object) -> RealizedInterventionEvaluation:
+def _new_prior_holdout_evaluation(**values: object) -> PriorHoldoutEvaluation:
     """Internal constructor used only after forecast-derived values exist."""
 
-    result = object.__new__(RealizedInterventionEvaluation)
+    result = object.__new__(PriorHoldoutEvaluation)
     object.__setattr__(
         result,
         "contract",
-        "realized-intervention-evaluation-v2",
+        "prior-holdout-evaluation-v2",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
-    RealizedInterventionEvaluation.__post_init__(result)
+    PriorHoldoutEvaluation.__post_init__(result)
     return result
 
 
@@ -1206,15 +1236,10 @@ def _forecast_coverage(
     return values
 
 
-def _evaluation_digest(value: RealizedInterventionEvaluation) -> str:
+def _evaluation_digest(value: PriorHoldoutEvaluation) -> str:
     return json_digest(
         {
             "contract": value.contract,
-            "intervention_digest": value.intervention_digest,
-            "intervention_type": value.intervention_type,
-            "learning_result_digest": value.learning_result_digest,
-            "learning_approval_evidence_digest": value.learning_approval_evidence_digest,
-            "learning_policy_digest": value.learning_policy_digest,
             "holdout_plan_digest": value.holdout_plan_digest,
             "candidate_manifest_digest": value.candidate_manifest_digest,
             "candidate_prior_digest": value.candidate_prior_digest,
@@ -1255,8 +1280,14 @@ def _evaluation_digest(value: RealizedInterventionEvaluation) -> str:
             "coverage_common": tensor_digest(value.coverage_common),
             "newly_issued_fraction": tensor_digest(value.newly_issued_fraction),
             "withdrawn_fraction": tensor_digest(value.withdrawn_fraction),
+            "prior_standardized_residual_mean_abs": (
+                value.prior_standardized_residual_mean_abs
+            ),
+            "prior_underdispersion_fraction": (
+                value.prior_underdispersion_fraction
+            ),
+            "prior_uncertainty_sample_count": value.prior_uncertainty_sample_count,
             "issue_time": value.issue_time,
-            "applied_time": value.applied_time,
             "verification_valid_times": list(value.verification_valid_times),
         }
     )
@@ -1267,14 +1298,12 @@ class NeuralPriorPromotionPolicy:
     """Root-approved cluster-aware limits for promoting one prior."""
 
     metric_scales: tuple[PromotionMetricScale, ...]
-    approved_learning_policy_digests: tuple[str, ...]
     approved_candidate_manifest_digests: tuple[str, ...]
     approved_holdout_plan_digests: tuple[str, ...]
     approved_metric_contract_digests: tuple[str, ...]
-    allowed_intervention_types: tuple[ObservationInterventionType, ...]
-    minimum_realized_interventions: int = 20
-    minimum_material_interventions: int = 20
-    minimum_material_intervention_fraction: float = 0.8
+    minimum_holdout_cases: int = 20
+    minimum_material_cases: int = 20
+    minimum_material_case_fraction: float = 0.8
     minimum_independent_cases: int = 20
     minimum_distinct_storms: int = 5
     minimum_distinct_days: int = 5
@@ -1291,15 +1320,16 @@ class NeuralPriorPromotionPolicy:
     maximum_coverage_loss: float = 0.05
     maximum_newly_issued_fraction: float = 0.05
     maximum_withdrawn_fraction: float = 0.05
-    contract: str = "neural-prior-promotion-policy-v4"
+    maximum_prior_standardized_residual_mean_abs: float = 2.0
+    maximum_prior_underdispersion_fraction: float = 0.1
+    minimum_prior_uncertainty_samples_per_case: int = 1
+    contract: str = "neural-prior-promotion-policy-v6"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-policy-v4":
+        if self.contract != "neural-prior-promotion-policy-v6":
             raise ValueError("unsupported neural-prior promotion policy")
         if not self.metric_scales or len({x.metric_name for x in self.metric_scales}) != len(self.metric_scales):
             raise ValueError("promotion metric scales must be unique")
-        for digest in self.approved_learning_policy_digests:
-            _require_digest("approved learning policy digest", digest)
         if not self.approved_candidate_manifest_digests:
             raise ValueError("promotion policy must approve candidate manifests")
         for digest in self.approved_candidate_manifest_digests:
@@ -1313,13 +1343,9 @@ class NeuralPriorPromotionPolicy:
             + self.approved_metric_contract_digests
         ):
             _require_digest("approved promotion contract digest", digest)
-        if not self.allowed_intervention_types or len(
-            set(self.allowed_intervention_types)
-        ) != len(self.allowed_intervention_types):
-            raise ValueError("promotion intervention types must be unique")
         integer_limits = (
-            self.minimum_realized_interventions,
-            self.minimum_material_interventions,
+            self.minimum_holdout_cases,
+            self.minimum_material_cases,
             self.minimum_independent_cases,
             self.minimum_distinct_storms,
             self.minimum_distinct_days,
@@ -1327,18 +1353,20 @@ class NeuralPriorPromotionPolicy:
             self.minimum_distinct_regimes,
             self.minimum_distinct_range_regimes,
             self.minimum_material_clusters,
+            self.minimum_prior_uncertainty_samples_per_case,
             self.bootstrap_samples,
         )
         if any(type(value) is not int or value <= 0 for value in integer_limits):
             raise ValueError("promotion count limits must be positive integers")
         probabilities = (
-            self.minimum_material_intervention_fraction,
+            self.minimum_material_case_fraction,
             self.minimum_beneficial_fraction,
             self.maximum_harmful_fraction,
             self.confidence_level,
             self.maximum_coverage_loss,
             self.maximum_newly_issued_fraction,
             self.maximum_withdrawn_fraction,
+            self.maximum_prior_underdispersion_fraction,
         )
         if any(not math.isfinite(value) or not 0 <= value <= 1 for value in probabilities):
             raise ValueError("promotion fractions must be inside [0,1]")
@@ -1351,6 +1379,10 @@ class NeuralPriorPromotionPolicy:
                 "maximum_single_normalized_degradation",
                 self.maximum_single_normalized_degradation,
             ),
+            (
+                "maximum_prior_standardized_residual_mean_abs",
+                self.maximum_prior_standardized_residual_mean_abs,
+            ),
         ):
             if not math.isfinite(value) or value < 0.0:
                 raise ValueError(f"{name} must be finite and nonnegative")
@@ -1360,7 +1392,6 @@ class NeuralPriorPromotionPolicy:
         return json_digest({
             "contract": self.contract,
             "metric_scales": [item.__dict__ for item in self.metric_scales],
-            "approved_learning_policy_digests": sorted(self.approved_learning_policy_digests),
             "approved_candidate_manifest_digests": sorted(
                 self.approved_candidate_manifest_digests
             ),
@@ -1370,10 +1401,9 @@ class NeuralPriorPromotionPolicy:
             "approved_metric_contract_digests": sorted(
                 self.approved_metric_contract_digests
             ),
-            "allowed_intervention_types": sorted(self.allowed_intervention_types),
-            "minimum_realized_interventions": self.minimum_realized_interventions,
-            "minimum_material_interventions": self.minimum_material_interventions,
-            "minimum_material_intervention_fraction": self.minimum_material_intervention_fraction,
+            "minimum_holdout_cases": self.minimum_holdout_cases,
+            "minimum_material_cases": self.minimum_material_cases,
+            "minimum_material_case_fraction": self.minimum_material_case_fraction,
             "minimum_independent_cases": self.minimum_independent_cases,
             "minimum_distinct_storms": self.minimum_distinct_storms,
             "minimum_distinct_days": self.minimum_distinct_days,
@@ -1392,6 +1422,15 @@ class NeuralPriorPromotionPolicy:
             "maximum_coverage_loss": self.maximum_coverage_loss,
             "maximum_newly_issued_fraction": self.maximum_newly_issued_fraction,
             "maximum_withdrawn_fraction": self.maximum_withdrawn_fraction,
+            "maximum_prior_standardized_residual_mean_abs": (
+                self.maximum_prior_standardized_residual_mean_abs
+            ),
+            "maximum_prior_underdispersion_fraction": (
+                self.maximum_prior_underdispersion_fraction
+            ),
+            "minimum_prior_uncertainty_samples_per_case": (
+                self.minimum_prior_uncertainty_samples_per_case
+            ),
         })
 
 
@@ -1403,9 +1442,8 @@ class NeuralPriorPromotionEvidence:
     policy_digest: str
     trust_store_digest: str
     evaluation_digests: tuple[str, ...]
-    intervention_digests: tuple[str, ...]
-    realized_intervention_count: int
-    material_intervention_count: int
+    holdout_case_count: int
+    material_case_count: int
     distinct_case_count: int
     distinct_storm_count: int
     distinct_day_count: int
@@ -1421,22 +1459,20 @@ class NeuralPriorPromotionEvidence:
     maximum_normalized_degradation: float
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v2"
+    contract: str = "neural-prior-promotion-evidence-v3"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v2":
+        if self.contract != "neural-prior-promotion-evidence-v3":
             raise ValueError("unsupported neural-prior promotion evidence")
         for name in ("candidate_prior_digest", "parent_prior_digest", "candidate_manifest_digest", "policy_digest", "trust_store_digest"):
             _require_digest(name, getattr(self, name))
-        for digest in self.evaluation_digests + self.intervention_digests:
+        for digest in self.evaluation_digests:
             _require_digest("promotion member digest", digest)
-        if len(self.evaluation_digests) != len(self.intervention_digests) or (
-            self.realized_intervention_count != len(self.evaluation_digests)
-        ):
+        if self.holdout_case_count != len(self.evaluation_digests):
             raise ValueError("promotion evidence member counts disagree")
         counts = (
-            self.material_intervention_count,
+            self.material_case_count,
             self.distinct_case_count,
             self.distinct_storm_count,
             self.distinct_day_count,
@@ -1445,7 +1481,7 @@ class NeuralPriorPromotionEvidence:
             self.distinct_range_regime_count,
         )
         if any(type(value) is not int or value < 0 for value in counts) or any(
-            value > self.realized_intervention_count for value in counts
+            value > self.holdout_case_count for value in counts
         ):
             raise ValueError("promotion evidence counts are invalid")
         fractions = (
@@ -1480,8 +1516,8 @@ class NeuralPriorPromotionEvidence:
         }
 
 
-def _intervention_score(
-    evaluation: RealizedInterventionEvaluation,
+def _holdout_score(
+    evaluation: PriorHoldoutEvaluation,
     policy: NeuralPriorPromotionPolicy,
 ) -> tuple[float | None, float, bool, bool]:
     scales = {item.metric_name: item for item in policy.metric_scales}
@@ -1524,7 +1560,7 @@ def _intervention_score(
     value = torch.cat(values)
     weight = torch.cat(weights)
     return (
-        float(torch.sum(value * weight) / torch.sum(weight)),
+        float((torch.sum(value * weight) / torch.sum(weight)).detach()),
         maximum_degradation,
         metric_limit_exceeded,
         end_to_end_limit_exceeded,
@@ -1567,7 +1603,7 @@ def _cluster_bounds(
 def compute_neural_prior_promotion(
     manifest: NeuralPriorCandidateManifest,
     plan: NeuralPriorHoldoutPlan,
-    evaluations: tuple[RealizedInterventionEvaluation, ...],
+    evaluations: tuple[PriorHoldoutEvaluation, ...],
     *,
     policy: NeuralPriorPromotionPolicy,
     policy_trust_store_path: str | Path,
@@ -1586,21 +1622,22 @@ def compute_neural_prior_promotion(
         plan.plan_digest not in policy.approved_holdout_plan_digests
     ):
         reasons.append("unapproved_holdout_plan")
-    if len(evaluations) < policy.minimum_realized_interventions:
-        reasons.append("insufficient_realized_interventions")
-    if len({item.intervention_digest for item in evaluations}) != len(evaluations):
-        raise ValueError("promotion interventions must be unique")
-    if set(manifest.training_intervention_digests) & {
-        item.intervention_digest for item in evaluations
-    }:
-        raise ValueError("training and promotion interventions must be disjoint")
+    planned_case_ids = {item.case_id for item in plan.cases}
+    manifested_case_ids = {item.case_id for item in manifest.holdout_cases}
+    evaluated_case_ids = {item.case_id for item in evaluations}
+    if manifested_case_ids != planned_case_ids:
+        raise ValueError("candidate manifest must complete every planned case")
+    if evaluated_case_ids != planned_case_ids or len(evaluations) != len(plan.cases):
+        raise ValueError("promotion requires one outcome for every planned case")
+    if len(evaluations) < policy.minimum_holdout_cases:
+        reasons.append("insufficient_holdout_cases")
     scores: list[float] = []
     clusters: list[tuple[str, str, str]] = []
-    material_evaluations: list[RealizedInterventionEvaluation] = []
+    material_evaluations: list[PriorHoldoutEvaluation] = []
     maximum_degradation = 0.0
     for evaluation in evaluations:
         if evaluation.evaluation_digest != _evaluation_digest(evaluation):
-            raise ValueError("realized intervention evaluation digest mismatch")
+            raise ValueError("prior holdout evaluation digest mismatch")
         if (
             evaluation.candidate_manifest_digest != manifest.manifest_digest
             or evaluation.holdout_plan_digest != plan.plan_digest
@@ -1613,10 +1650,15 @@ def compute_neural_prior_promotion(
             policy.approved_metric_contract_digests
         ):
             reasons.append("unapproved_metric_contract")
-        if evaluation.learning_policy_digest not in policy.approved_learning_policy_digests:
-            reasons.append("unapproved_learning_policy")
-        if evaluation.intervention_type not in policy.allowed_intervention_types:
-            reasons.append("unsupported_intervention_type")
+        if (
+            evaluation.prior_uncertainty_sample_count
+            < policy.minimum_prior_uncertainty_samples_per_case
+            or evaluation.prior_standardized_residual_mean_abs
+            > policy.maximum_prior_standardized_residual_mean_abs
+            or evaluation.prior_underdispersion_fraction
+            > policy.maximum_prior_underdispersion_fraction
+        ):
+            reasons.append("unreliable_prior_uncertainty")
         if bool(torch.any(evaluation.coverage_parent - evaluation.coverage_candidate > policy.maximum_coverage_loss)):
             reasons.append("excessive_single_degradation")
         if (
@@ -1639,7 +1681,7 @@ def compute_neural_prior_promotion(
             degradation,
             metric_limit_exceeded,
             end_to_end_limit_exceeded,
-        ) = _intervention_score(evaluation, policy)
+        ) = _holdout_score(evaluation, policy)
         if metric_limit_exceeded:
             reasons.append("excessive_single_degradation")
         if end_to_end_limit_exceeded:
@@ -1652,10 +1694,10 @@ def compute_neural_prior_promotion(
     material_count = len(scores)
     if material_count == 0:
         reasons.append("no_material_outcome")
-    if material_count < policy.minimum_material_interventions:
-        reasons.append("insufficient_material_interventions")
-    if material_count / max(1, len(evaluations)) < policy.minimum_material_intervention_fraction:
-        reasons.append("insufficient_material_intervention_fraction")
+    if material_count < policy.minimum_material_cases:
+        reasons.append("insufficient_material_cases")
+    if material_count / max(1, len(evaluations)) < policy.minimum_material_case_fraction:
+        reasons.append("insufficient_material_case_fraction")
     cases = {item.case_id for item in material_evaluations}
     storms = {item.storm_id for item in material_evaluations}
     days = {item.day for item in material_evaluations}
@@ -1705,9 +1747,8 @@ def compute_neural_prior_promotion(
         policy_digest=policy.digest,
         trust_store_digest=trust.content_digest,
         evaluation_digests=tuple(item.evaluation_digest for item in evaluations),
-        intervention_digests=tuple(item.intervention_digest for item in evaluations),
-        realized_intervention_count=len(evaluations),
-        material_intervention_count=material_count,
+        holdout_case_count=len(evaluations),
+        material_case_count=material_count,
         distinct_case_count=len(cases),
         distinct_storm_count=len(storms),
         distinct_day_count=len(days),

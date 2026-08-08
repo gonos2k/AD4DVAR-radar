@@ -5,10 +5,9 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from collections import deque
 from dataclasses import asdict, dataclass, field, fields, is_dataclass, replace
+import io
 import json
-import marshal
 import math
-from types import ModuleType
 from typing import Literal, cast
 
 import torch
@@ -612,134 +611,44 @@ def _module_state_digest(model: nn.Module) -> str:
     )
 
 
-def _execution_value(value: object) -> object:
-    if isinstance(value, Tensor):
-        return {"tensor": tensor_digest(value)}
-    if isinstance(value, (str, int, float, bool, type(None))):
-        return value
-    if isinstance(value, (tuple, list)):
-        return [_execution_value(item) for item in value]
-    if isinstance(value, dict) and all(isinstance(key, str) for key in value):
-        return {
-            key: _execution_value(item)
-            for key, item in sorted(value.items())
-        }
-    if isinstance(value, ModuleType):
-        return {
-            "module": value.__name__,
-            "version": getattr(value, "__version__", None),
-        }
-    if isinstance(value, type):
-        return {"type": f"{value.__module__}.{value.__qualname__}"}
-    raise TypeError("neural-prior execution state is not content-addressable")
+class _FeatureGraph(nn.Module):
+    def __init__(self, feature_extractor: Callable[[Tensor], Tensor]) -> None:
+        super().__init__()
+        self.feature_extractor = feature_extractor
+
+    def forward(self, frames: Tensor) -> Tensor:
+        return self.feature_extractor(frames)
 
 
-def _callable_code_payload(
-    value: object,
-    active: set[int],
-) -> dict[str, object]:
-    """Return a cycle-safe description of one executable callable."""
+class _PriorPipeline(nn.Module):
+    def __init__(
+        self,
+        model: nn.Module,
+        feature_extractor: Callable[[Tensor], Tensor],
+    ) -> None:
+        super().__init__()
+        self.model = model
+        self.feature_graph = _FeatureGraph(feature_extractor)
 
-    target = value.forward if isinstance(value, nn.Module) else value
-    if not hasattr(target, "__code__"):
-        target = getattr(target, "__call__", None)
-    identity = id(getattr(target, "__func__", target))
-    reference = {
-        "module": getattr(target, "__module__", None),
-        "qualname": getattr(target, "__qualname__", None),
-    }
-    if identity in active:
-        return {"recursive_reference": reference}
-    code = getattr(target, "__code__", None)
-    if code is None:
-        raise TypeError("neural-prior callables must expose Python bytecode")
-    active.add(identity)
-    closure = getattr(target, "__closure__", None) or ()
-    closure_values: list[object] = []
-    for cell in closure:
-        closure_values.append(_execution_value(cell.cell_contents))
-    defaults = getattr(target, "__defaults__", None) or ()
-    keyword_defaults = getattr(target, "__kwdefaults__", None) or {}
-    global_values: dict[str, object] = {}
-    namespace = getattr(target, "__globals__", {})
-    for name in sorted(set(code.co_names)):
-        if name not in namespace or name == "__builtins__":
-            continue
-        item = namespace[name]
-        if callable(item) and not isinstance(item, type):
-            global_values[name] = _callable_code_payload(item, active)
-        else:
-            global_values[name] = _execution_value(item)
-    state: dict[str, object] = {}
-    owner = getattr(target, "__self__", None)
-    if owner is not None:
-        for name in sorted(set(code.co_names)):
-            if not hasattr(owner, name):
-                continue
-            item = getattr(owner, name)
-            if isinstance(item, nn.Module):
-                state[name] = {
-                    "module": f"{type(item).__module__}.{type(item).__qualname__}"
-                }
-            elif callable(item) and not isinstance(item, type):
-                state[name] = _callable_code_payload(item, active)
-            else:
-                state[name] = _execution_value(item)
-    if not isinstance(value, nn.Module) and hasattr(value, "__dict__"):
-        for key, item in sorted(vars(value).items()):
-            state[key] = (
-                _callable_code_payload(item, active)
-                if callable(item) and not isinstance(item, type)
-                else _execution_value(item)
-            )
-    active.remove(identity)
-    return {
-        "contract": "python-callable-code-v2",
-        **reference,
-        "bytecode": marshal.dumps(code).hex(),
-        "closure": closure_values,
-        "defaults": _execution_value(defaults),
-        "keyword_defaults": _execution_value(keyword_defaults),
-        "globals": global_values,
-        "state": state,
-    }
+    def forward(self, frames: Tensor) -> tuple[Tensor, ...]:
+        features = self.feature_graph(frames)
+        raw = self.model(features)
+        if isinstance(raw, tuple):
+            return (features, *raw)
+        return features, raw
 
 
-def _callable_code_digest(value: object) -> str:
-    """Address code, dependencies, and retained callable state."""
-
-    return json_digest(_callable_code_payload(value, set()))
-
-
-def _module_code_digest(model: nn.Module) -> str:
-    modules: dict[str, object] = {}
-    for name, module in model.named_modules():
-        attributes: dict[str, object] = {}
-        forward = module.forward
-        code = getattr(forward, "__code__", None)
-        referenced = set() if code is None else set(code.co_names)
-        for key in sorted(referenced):
-            if not hasattr(module, key):
-                continue
-            value = getattr(module, key)
-            if isinstance(value, nn.Module):
-                continue
-            attributes[key] = (
-                _callable_code_payload(value, set())
-                if callable(value) and not isinstance(value, type)
-                else _execution_value(value)
-            )
-        modules[name] = {
-            "type": f"{type(module).__module__}.{type(module).__qualname__}",
-            "forward": _callable_code_digest(module),
-            "attributes": attributes,
-        }
-    return json_digest(
+def _export_graph(module: nn.Module, argument: Tensor) -> tuple[nn.Module, str]:
+    program = torch.export.export(module, (argument,))
+    target = io.BytesIO()
+    torch.export.save(program, target)
+    digest = json_digest(
         {
-            "contract": "neural-prior-module-code-v2",
-            "modules": modules,
+            "contract": "torch-exported-graph-v1",
+            "bytes": target.getvalue().hex(),
         }
     )
+    return program.module(), digest
 
 
 @dataclass(frozen=True)
@@ -753,19 +662,26 @@ class NeuralPriorInferenceEvidence:
     feature_extractor_digest: str
     feature_extractor_code_digest: str
     model_code_digest: str
+    exported_graph_digest: str
+    model_artifact_digest: str
     model_contract_digest: str
     feature_schema_digest: str
     training_manifest_digest: str
     inference_algorithm_digest: str
     numerical_runtime_digest: str
     output_background_digest: str
+    output_std_digest: str
+    output_valid_mask_digest: str
+    output_support_probability_digest: str
+    maximum_derivative_defect: float
+    uncertainty_contract: Literal["model_spatial", "constant_research"]
     execution_contract_digest: str
     dependency: PriorDependency
-    contract: str = "neural-prior-inference-evidence-v1"
+    contract: str = "neural-prior-inference-evidence-v2"
     evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-inference-evidence-v1":
+        if self.contract != "neural-prior-inference-evidence-v2":
             raise ValueError("unsupported neural-prior inference evidence")
         for name in (
             "neural_prior_digest",
@@ -775,17 +691,28 @@ class NeuralPriorInferenceEvidence:
             "feature_extractor_digest",
             "feature_extractor_code_digest",
             "model_code_digest",
+            "exported_graph_digest",
+            "model_artifact_digest",
             "model_contract_digest",
             "feature_schema_digest",
             "training_manifest_digest",
             "inference_algorithm_digest",
             "numerical_runtime_digest",
             "output_background_digest",
+            "output_std_digest",
+            "output_valid_mask_digest",
+            "output_support_probability_digest",
             "execution_contract_digest",
         ):
             _require_prior_digest(name, getattr(self, name))
         if self.dependency not in ("exogenous", "radar_dependent"):
             raise ValueError("unsupported neural-prior dependency")
+        if self.uncertainty_contract not in ("model_spatial", "constant_research"):
+            raise ValueError("unsupported neural-prior uncertainty contract")
+        if not math.isfinite(self.maximum_derivative_defect) or (
+            self.maximum_derivative_defect < 0.0
+        ):
+            raise ValueError("neural-prior derivative defect must be nonnegative")
         object.__setattr__(self, "evidence_digest", json_digest(self.payload))
 
     @property
@@ -809,14 +736,18 @@ class NeuralPriorInferenceRunner:
         model: nn.Module,
         feature_extractor: Callable[[Tensor], Tensor],
         *,
-        feature_extractor_digest: str,
+        example_frames: Tensor,
+        feature_extractor_digest: str | None = None,
         model_contract_digest: str,
         feature_schema_digest: str,
         training_manifest_digest: str,
-        inference_algorithm_digest: str,
-        numerical_runtime_digest: str,
+        inference_algorithm_digest: str | None = None,
+        numerical_runtime_digest: str | None = None,
         dependency: PriorDependency,
         prior_std_dbz: float = 1.0,
+        allow_constant_uncertainty: bool = False,
+        derivative_probe_count: int = 4,
+        maximum_derivative_defect: float = 1.0e-4,
         support_policy: PriorSupportPolicy = "causal_clip",
         maximum_added_area_km2: float = 0.0,
         maximum_added_echo_integral: float = 0.0,
@@ -826,18 +757,72 @@ class NeuralPriorInferenceRunner:
         if not callable(feature_extractor):
             raise TypeError("feature_extractor must be callable")
         for name, value in (
-            ("feature_extractor_digest", feature_extractor_digest),
             ("model_contract_digest", model_contract_digest),
             ("feature_schema_digest", feature_schema_digest),
             ("training_manifest_digest", training_manifest_digest),
-            ("inference_algorithm_digest", inference_algorithm_digest),
-            ("numerical_runtime_digest", numerical_runtime_digest),
         ):
             _require_prior_digest(name, value)
+        if not example_frames.is_floating_point() or example_frames.ndim != 3:
+            raise ValueError("neural-prior example frames must be floating [T,H,W]")
+        canonical_frames = torch.zeros_like(example_frames)
+        with torch.no_grad():
+            example_features = feature_extractor(canonical_frames)
+        if (
+            not isinstance(example_features, Tensor)
+            or not example_features.is_floating_point()
+        ):
+            raise TypeError("neural-prior features must be floating Tensor data")
+        _, feature_graph_digest = _export_graph(
+            _FeatureGraph(feature_extractor),
+            canonical_frames,
+        )
+        _, model_graph_digest = _export_graph(model, example_features)
+        exported_pipeline, exported_graph_digest = _export_graph(
+            _PriorPipeline(model, feature_extractor).eval(),
+            canonical_frames,
+        )
+        actual_feature_digest = feature_graph_digest
+        actual_algorithm_digest = json_digest(
+            {
+                "contract": "advar-neural-prior-inference-algorithm-v3",
+                "export": "torch.export",
+                "derivatives": "rademacher-jvp-vjp-finite-difference",
+                "output": "mean-std-valid-support",
+            }
+        )
+        for name, claimed, actual in (
+            (
+                "feature_extractor_digest",
+                feature_extractor_digest,
+                actual_feature_digest,
+            ),
+            (
+                "inference_algorithm_digest",
+                inference_algorithm_digest,
+                actual_algorithm_digest,
+            ),
+        ):
+            if claimed is not None and claimed != actual:
+                raise ValueError(f"declared {name} is not the executed artifact")
+        actual_runtime_digest = numerical_runtime_identity_digest(
+            example_frames.device
+        )
+        if numerical_runtime_digest is not None and (
+            numerical_runtime_digest != actual_runtime_digest
+        ):
+            raise ValueError("declared neural-prior runtime is not the actual runtime")
         if dependency not in ("exogenous", "radar_dependent"):
             raise ValueError("unsupported neural-prior dependency")
         if not math.isfinite(prior_std_dbz) or prior_std_dbz <= 0.0:
             raise ValueError("neural-prior uncertainty must be positive")
+        if type(allow_constant_uncertainty) is not bool:
+            raise TypeError("allow_constant_uncertainty must be bool")
+        if type(derivative_probe_count) is not int or derivative_probe_count < 3:
+            raise ValueError("neural-prior derivative probes must be at least three")
+        if not math.isfinite(maximum_derivative_defect) or not (
+            0.0 < maximum_derivative_defect < 1.0
+        ):
+            raise ValueError("maximum neural-prior derivative defect is invalid")
         if support_policy not in ("causal_clip", "expand_control"):
             raise ValueError("unsupported neural-prior support policy")
         for name, value in (
@@ -848,38 +833,47 @@ class NeuralPriorInferenceRunner:
                 raise ValueError(f"{name} must be finite and nonnegative")
         self.model = model
         self.feature_extractor = feature_extractor
-        self.feature_extractor_digest = feature_extractor_digest
+        self.feature_extractor_digest = actual_feature_digest
         self.model_contract_digest = model_contract_digest
         self.feature_schema_digest = feature_schema_digest
         self.training_manifest_digest = training_manifest_digest
-        self.inference_algorithm_digest = inference_algorithm_digest
-        self.numerical_runtime_digest = numerical_runtime_digest
+        self.inference_algorithm_digest = actual_algorithm_digest
+        self.numerical_runtime_digest = actual_runtime_digest
         self.dependency: PriorDependency = dependency
         self.prior_std_dbz = prior_std_dbz
+        self.allow_constant_uncertainty = allow_constant_uncertainty
+        self.derivative_probe_count = derivative_probe_count
+        self.maximum_derivative_defect = maximum_derivative_defect
         self.support_policy: PriorSupportPolicy = support_policy
         self.maximum_added_area_km2 = maximum_added_area_km2
         self.maximum_added_echo_integral = maximum_added_echo_integral
         self._model_state_digest = _module_state_digest(model)
-        self._model_code_digest = _module_code_digest(model)
-        self._feature_extractor_code_digest = _callable_code_digest(
-            feature_extractor
-        )
+        self._model_code_digest = model_graph_digest
+        self._feature_extractor_code_digest = feature_graph_digest
+        self._exported_pipeline_digest = exported_graph_digest
+        self._exported_pipeline = exported_pipeline
+        self._example_shape = tuple(example_frames.shape)
+        self._example_dtype = example_frames.dtype
         self.execution_contract_digest = json_digest(
             {
-                "contract": "neural-prior-execution-contract-v2",
+                "contract": "neural-prior-execution-contract-v3",
                 "model_state_digest": self._model_state_digest,
                 "model_code_digest": self._model_code_digest,
-                "feature_extractor_digest": feature_extractor_digest,
+                "feature_extractor_digest": actual_feature_digest,
                 "feature_extractor_code_digest": (
                     self._feature_extractor_code_digest
                 ),
+                "exported_graph_digest": exported_graph_digest,
                 "model_contract_digest": model_contract_digest,
                 "feature_schema_digest": feature_schema_digest,
                 "training_manifest_digest": training_manifest_digest,
-                "inference_algorithm_digest": inference_algorithm_digest,
-                "numerical_runtime_digest": numerical_runtime_digest,
+                "inference_algorithm_digest": actual_algorithm_digest,
+                "numerical_runtime_digest": actual_runtime_digest,
                 "dependency": dependency,
                 "prior_std_dbz": prior_std_dbz,
+                "allow_constant_uncertainty": allow_constant_uncertainty,
+                "derivative_probe_count": derivative_probe_count,
+                "maximum_derivative_defect": maximum_derivative_defect,
                 "support_policy": support_policy,
                 "maximum_added_area_km2": maximum_added_area_km2,
                 "maximum_added_echo_integral": maximum_added_echo_integral,
@@ -890,22 +884,38 @@ class NeuralPriorInferenceRunner:
     def _validate_state(self) -> None:
         if _module_state_digest(self.model) != self._model_state_digest:
             raise ValueError("neural-prior model state changed after approval")
-        if _module_code_digest(self.model) != self._model_code_digest:
-            raise ValueError("neural-prior model code changed after approval")
+
+    def _validate_input_contract(self, frames_dbz: Tensor) -> None:
         if (
-            _callable_code_digest(self.feature_extractor)
-            != self._feature_extractor_code_digest
+            tuple(frames_dbz.shape) != self._example_shape
+            or frames_dbz.dtype != self._example_dtype
         ):
-            raise ValueError("neural-prior feature code changed after approval")
+            raise ValueError("neural-prior input shape or dtype changed")
 
     def _forward(self, frames_dbz: Tensor) -> tuple[Tensor, Tensor]:
-        features = self.feature_extractor(frames_dbz)
-        output = self.model(features)
-        return features, output
+        self._validate_input_contract(frames_dbz)
+        raw = self._exported_pipeline(frames_dbz)
+        if not isinstance(raw, tuple) or len(raw) < 2:
+            raise RuntimeError("exported neural-prior pipeline output is invalid")
+        return cast(Tensor, raw[0]), cast(Tensor, raw[1])
 
-    def _output(self, frames_dbz: Tensor) -> tuple[Tensor, Tensor]:
+    def _output(
+        self, frames_dbz: Tensor
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         self._validate_state()
-        features, output = self._forward(frames_dbz)
+        self._validate_input_contract(frames_dbz)
+        raw = self._exported_pipeline(frames_dbz)
+        if isinstance(raw, tuple) and len(raw) == 5:
+            features, output, std, valid, support = raw
+        elif isinstance(raw, tuple) and len(raw) == 2 and self.allow_constant_uncertainty:
+            features, output = raw
+            std = torch.full_like(output, self.prior_std_dbz)
+            valid = torch.ones_like(output, dtype=torch.bool)
+            support = torch.ones_like(output)
+        else:
+            raise ValueError(
+                "neural-prior model must return mean/std/valid/support output"
+            )
         if not isinstance(features, Tensor) or not features.is_floating_point():
             raise TypeError("neural-prior features must be floating Tensor data")
         if (
@@ -915,7 +925,68 @@ class NeuralPriorInferenceRunner:
             or not bool(torch.all(torch.isfinite(output)))
         ):
             raise ValueError("neural-prior output must be a finite 2-D Tensor")
-        return features, output
+        if (
+            not isinstance(std, Tensor)
+            or std.shape != output.shape
+            or not bool(torch.all(torch.isfinite(std) & (std > 0.0)))
+            or not isinstance(valid, Tensor)
+            or valid.shape != output.shape
+            or valid.dtype is not torch.bool
+            or not isinstance(support, Tensor)
+            or support.shape != output.shape
+            or not bool(torch.all(torch.isfinite(support)))
+            or bool(torch.any((support < 0.0) | (support > 1.0)))
+        ):
+            raise ValueError("neural-prior uncertainty output is invalid")
+        self._validate_state()
+        return features, output, std, valid, support
+
+    def _validate_derivatives(self, frames_dbz: Tensor, output: Tensor) -> float:
+        if self.dependency != "radar_dependent":
+            return 0.0
+        generator = torch.Generator(device="cpu").manual_seed(0)
+        defects: list[float] = []
+        step = 1.0e-3 if frames_dbz.dtype == torch.float32 else 1.0e-5
+        epsilon = torch.finfo(frames_dbz.dtype).eps
+        for _ in range(self.derivative_probe_count):
+            tangent = (
+                torch.randint(
+                    0,
+                    2,
+                    frames_dbz.shape,
+                    generator=generator,
+                    dtype=torch.int8,
+                ).to(frames_dbz) * 2.0 - 1.0
+            )
+            cotangent = (
+                torch.randint(
+                    0,
+                    2,
+                    output.shape,
+                    generator=generator,
+                    dtype=torch.int8,
+                ).to(output) * 2.0 - 1.0
+            )
+            forward = self.jvp(frames_dbz, tangent)
+            reverse = self.vjp(frames_dbz, cotangent)
+            left = torch.sum(forward * cotangent)
+            right = torch.sum(tangent * reverse)
+            dual = torch.abs(left - right) / (
+                torch.abs(left) + torch.abs(right) + epsilon
+            )
+            plus = self._forward(frames_dbz + step * tangent)[1]
+            minus = self._forward(frames_dbz - step * tangent)[1]
+            finite_difference = (plus - minus) / (2.0 * step)
+            fd = torch.linalg.vector_norm(forward - finite_difference) / (
+                torch.linalg.vector_norm(forward)
+                + torch.linalg.vector_norm(finite_difference)
+                + epsilon
+            )
+            defects.extend((float(dual.detach()), float(fd.detach())))
+        defect = max(defects)
+        if defect > self.maximum_derivative_defect:
+            raise ValueError("neural-prior derivative defect exceeds its contract")
+        return defect
 
     def infer(
         self,
@@ -929,21 +1000,8 @@ class NeuralPriorInferenceRunner:
         input_run.validate_integrity()
         if tensor_digest(frames_dbz) != input_run.input_frames_digest:
             raise ValueError("neural-prior frames disagree with the input run")
-        features, output = self._output(frames_dbz)
-        if self.dependency == "radar_dependent":
-            tangent = torch.ones_like(frames_dbz)
-            cotangent = torch.ones_like(output)
-            first = self.jvp(frames_dbz, tangent)
-            second = self.jvp(frames_dbz, tangent)
-            reverse = self.vjp(frames_dbz, cotangent)
-            tolerance = 1.0e-5 if frames_dbz.dtype == torch.float32 else 1.0e-10
-            if not torch.equal(first, second) or not torch.allclose(
-                torch.sum(first * cotangent),
-                torch.sum(tangent * reverse),
-                rtol=tolerance,
-                atol=tolerance,
-            ):
-                raise ValueError("neural-prior derivative is not reproducible")
+        features, output, std, valid, support = self._output(frames_dbz)
+        derivative_defect = self._validate_derivatives(frames_dbz, output)
         evidence = NeuralPriorInferenceEvidence(
             neural_prior_digest=self.neural_prior_digest,
             input_bundle_digest=input_run.input_bundle_digest,
@@ -952,19 +1010,31 @@ class NeuralPriorInferenceRunner:
             feature_extractor_digest=self.feature_extractor_digest,
             feature_extractor_code_digest=self._feature_extractor_code_digest,
             model_code_digest=self._model_code_digest,
+            exported_graph_digest=self._exported_pipeline_digest,
+            model_artifact_digest=self._model_state_digest,
             model_contract_digest=self.model_contract_digest,
             feature_schema_digest=self.feature_schema_digest,
             training_manifest_digest=self.training_manifest_digest,
             inference_algorithm_digest=self.inference_algorithm_digest,
             numerical_runtime_digest=self.numerical_runtime_digest,
             output_background_digest=tensor_digest(output),
+            output_std_digest=tensor_digest(std),
+            output_valid_mask_digest=tensor_digest(valid),
+            output_support_probability_digest=tensor_digest(support),
+            maximum_derivative_defect=derivative_defect,
+            uncertainty_contract=(
+                "constant_research"
+                if self.allow_constant_uncertainty
+                else "model_spatial"
+            ),
             execution_contract_digest=self.execution_contract_digest,
             dependency=self.dependency,
         )
         return _new_neural_prior_application(
             initial_background_dbz=output,
-            valid_mask=torch.ones_like(output, dtype=torch.bool),
-            std_dbz=torch.full_like(output, self.prior_std_dbz),
+            valid_mask=valid,
+            std_dbz=std,
+            support_probability=support,
             inference_evidence=evidence,
             role=role,
             support_policy=self.support_policy,
@@ -980,7 +1050,7 @@ class NeuralPriorInferenceRunner:
         """Independently rerun one retained application."""
 
         application.validate_integrity()
-        features, output = self._output(frames_dbz)
+        features, output, std, valid, support = self._output(frames_dbz)
         evidence = application.inference_evidence
         if (
             self.neural_prior_digest != evidence.neural_prior_digest
@@ -988,6 +1058,11 @@ class NeuralPriorInferenceRunner:
             or tensor_digest(frames_dbz) != evidence.input_frames_digest
             or tensor_digest(features) != evidence.feature_tensor_digest
             or tensor_digest(output) != evidence.output_background_digest
+            or tensor_digest(std) != evidence.output_std_digest
+            or tensor_digest(valid) != evidence.output_valid_mask_digest
+            or tensor_digest(support)
+            != evidence.output_support_probability_digest
+            or self._exported_pipeline_digest != evidence.exported_graph_digest
             or not torch.equal(output, application.initial_background_dbz)
         ):
             raise ValueError("neural-prior inference cannot be reproduced")
@@ -1003,7 +1078,7 @@ class NeuralPriorInferenceRunner:
 
         if execution_contract_digest != self.execution_contract_digest:
             raise ValueError("neural-prior execution contract mismatch")
-        _, output = self._output(frames_dbz)
+        _, output, _, _, _ = self._output(frames_dbz)
         if not torch.equal(output, raw_background_dbz):
             raise ValueError("retained neural-prior output cannot be reproduced")
 
@@ -1033,6 +1108,37 @@ class NeuralPriorInferenceRunner:
         )
         return cast(Tensor, pullback(cotangent)[0])
 
+    def validate_adjoint_direction(
+        self,
+        frames_dbz: Tensor,
+        cotangent: Tensor,
+    ) -> None:
+        """Check the exact FSO cotangent against an independent JVP."""
+
+        if self.dependency != "radar_dependent":
+            return
+        self._validate_input_contract(frames_dbz)
+        generator = torch.Generator(device="cpu").manual_seed(1)
+        tangent = (
+            torch.randint(
+                0,
+                2,
+                frames_dbz.shape,
+                generator=generator,
+                dtype=torch.int8,
+            ).to(frames_dbz) * 2.0 - 1.0
+        )
+        forward = self.jvp(frames_dbz, tangent)
+        reverse = self.vjp(frames_dbz, cotangent)
+        left = torch.sum(forward * cotangent)
+        right = torch.sum(tangent * reverse)
+        epsilon = torch.finfo(frames_dbz.dtype).eps
+        defect = torch.abs(left - right) / (
+            torch.abs(left) + torch.abs(right) + epsilon
+        )
+        if float(defect.detach()) > self.maximum_derivative_defect:
+            raise ValueError("neural-prior adjoint-direction defect is too large")
+
 
 @dataclass(frozen=True, init=False)
 class NeuralPriorApplication:
@@ -1041,6 +1147,7 @@ class NeuralPriorApplication:
     initial_background_dbz: Tensor
     valid_mask: Tensor
     std_dbz: Tensor
+    support_probability: Tensor
     inference_evidence: NeuralPriorInferenceEvidence
     role: Literal["candidate", "parent"]
     support_policy: PriorSupportPolicy
@@ -1086,6 +1193,7 @@ def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
     background = result.initial_background_dbz.detach().clone()
     valid = result.valid_mask.detach().clone()
     std = result.std_dbz.detach().clone()
+    support = result.support_probability.detach().clone()
     if (
         background.ndim != 2
         or not background.is_floating_point()
@@ -1095,6 +1203,10 @@ def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
         or std.shape != background.shape
         or not std.is_floating_point()
         or not bool(torch.all(torch.isfinite(std) & (std > 0.0)))
+        or support.shape != background.shape
+        or not support.is_floating_point()
+        or bool(torch.any(~torch.isfinite(support)))
+        or bool(torch.any((support < 0.0) | (support > 1.0)))
     ):
         raise ValueError("neural-prior value, validity, or uncertainty is invalid")
     if result.role not in ("candidate", "parent"):
@@ -1108,9 +1220,17 @@ def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
     result.inference_evidence.validate_integrity()
     if tensor_digest(background) != result.inference_evidence.output_background_digest:
         raise ValueError("neural-prior output disagrees with inference evidence")
+    if (
+        tensor_digest(std) != result.inference_evidence.output_std_digest
+        or tensor_digest(valid) != result.inference_evidence.output_valid_mask_digest
+        or tensor_digest(support)
+        != result.inference_evidence.output_support_probability_digest
+    ):
+        raise ValueError("neural-prior uncertainty disagrees with inference evidence")
     object.__setattr__(result, "initial_background_dbz", background)
     object.__setattr__(result, "valid_mask", valid)
     object.__setattr__(result, "std_dbz", std)
+    object.__setattr__(result, "support_probability", support)
     object.__setattr__(
         result, "application_digest", _neural_prior_application_digest(result)
     )
@@ -1124,6 +1244,7 @@ def _neural_prior_application_digest(value: NeuralPriorApplication) -> str:
             "initial_background_dbz": tensor_digest(value.initial_background_dbz),
             "valid_mask": tensor_digest(value.valid_mask),
             "std_dbz": tensor_digest(value.std_dbz),
+            "support_probability": tensor_digest(value.support_probability),
             "inference_evidence_digest": value.inference_evidence.evidence_digest,
             "role": value.role,
             "support_policy": value.support_policy,
@@ -2203,7 +2324,9 @@ def prepare_analysis(
             nowcast_config.min_dbz,
             nowcast_config.max_dbz,
         )
-        prior_valid_mask = neural_prior.valid_mask.to(frames_dbz.device)
+        prior_valid_mask = neural_prior.valid_mask.to(frames_dbz.device) & (
+            neural_prior.support_probability.to(frames_dbz) >= 0.5
+        )
         prior_std_dbz = neural_prior.std_dbz.to(frames_dbz)
         prior_background = torch.where(
             prior_valid_mask,

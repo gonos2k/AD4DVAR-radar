@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.51
+# ADVAR 3-frame radar nowcast v0.61
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -142,10 +142,13 @@ analysis input digest도 같은 identity에 포함한다. `input_bundle_digest`�
 candidate/parent의 동일 외생 입력을 비교할 수 있도록 radar·mask·background·grid
 계보만 나타내며, 분석 설정과 실제 neural-prior application digest는 별도 run
 identity에 결합된다. Neural prior는 metadata나 임의 Tensor로 선언할 수 없다.
-eval-mode PyTorch model을 감싼 `NeuralPriorInferenceRunner`가 input bundle,
-feature/model/schema/training/runtime와 output을 하나의 inference evidence로 묶고,
-그 factory가 만든 `NeuralPriorApplication`만 실제 P1 초기배경으로 소비된다.
-Radar-dependent prior는 FSOI의 JVP/VJP와 full/half 재분석에서 다시 실행된다.
+eval-mode PyTorch model을 감싼 `NeuralPriorInferenceRunner`가 feature transform과
+model을 `torch.export` graph로 고정하고, model state·실제 numerical runtime·input
+bundle·공간별 mean/std/valid/support output을 하나의 inference evidence로 묶는다.
+승인 후에는 원래 Python callable이 아니라 export된 graph 자체를 실행하며, 그
+factory가 만든 `NeuralPriorApplication`만 실제 P1 초기배경으로 소비된다.
+Radar-dependent prior는 deterministic Rademacher JVP/VJP·finite-difference 검사를
+통과해야 하고 FSOI의 실제 adjoint cotangent와 full/half 재분석에서도 다시 실행된다.
 Prior가 새 echo support를 만들 때는 기존 causal support로 clip하거나, 물리면적·
 echo-integral budget 안에서 control domain을 명시적으로 확장해야 한다.
 재적재 전 ZIP member 수·개별/전체 압축해제 크기·이름, NPY header의
@@ -526,63 +529,97 @@ if learning.eligibility.eligible:
 
 이 결과는 승인된 counterfactual이며 실제 행동의 결과는 아니다. 같은 사례의 미래
 verification으로 만든 결과를 과거 행동처럼 기록할 수 없으며, historical 분석은
-`RetrospectiveCounterfactualReplay`로만 감사 보존한다. 실제 행동은 issue 전에
-결정과 실행 receipt가 각각 append-only ledger에 기록돼야 한다.
+`RetrospectiveCounterfactualReplay`로만 감사 보존한다. 실제 행동은 publication
+deadline 전에 결정과 실행 receipt가 각각 append-only ledger에 기록돼야 한다.
 
 ```python
 from advar import (
+    InterventionActionGenerator,
     ProspectiveInterventionDecision,
     RealizedInterventionReceipt,
+    ReusableInterventionPolicyEvidence,
 )
 
-decision = ProspectiveInterventionDecision(
+action_generator = InterventionActionGenerator.from_model(
+    action_model.eval(),
+    input_before_frames,
+)
+action_policy = ReusableInterventionPolicyEvidence(
+    policy_id="radar-qc-v1",
+    action_generator_digest=action_generator.generator_digest,
+    context_schema_digest=context_schema_digest,
+    applicability_region_digest=applicability_region_digest,
+    execution_policy_digest=execution_policy_digest,
+    allowed_intervention_types=("realized_qc_intervention",),
+    maximum_absolute_delta_dbz=0.5,
+    validation_evidence_digests=validation_evidence_digests,
+)
+decision = ProspectiveInterventionDecision.from_policy(
+    action_policy,
+    action_generator=action_generator,
     decision_id=decision_id,
     case_id=case_id,
     radar_id=radar_id,
     intervention_type="realized_qc_intervention",
-    action_digest=action_digest,
+    actual_input_before_frames=input_before_frames,
+    actual_input_before_run=input_before_run,
     input_plan_digest=input_plan_digest,
-    actual_input_before_digest=input_before_digest,
-    decision_basis_digest=previous_approved_evidence_digest,
-    decision_policy_digest=approved_execution_policy.digest,
+    decision_basis_digest=validated_policy_evidence_digest,
+    decision_policy_digest=action_policy.execution_policy_digest,
     decision_trust_store_digest=execution_trust_store_digest,
     decided_at=decided_at,
-    issue_time=issue_time,
+    observation_valid_time=observation_valid_time,
+    input_available_time=input_available_time,
+    decision_deadline=decision_deadline,
+    publication_time=publication_time,
 )
 ledger.append_prospective_intervention_decision(
     decision,
+    action_policy=action_policy,
+    action_generator=action_generator,
+    actual_input_before_frames=input_before_frames,
+    actual_input_before_run=input_before_run,
     trust_store_path="/etc/advar/intervention-policies.json",
 )
 receipt = RealizedInterventionReceipt.from_decision(
     decision,
+    actual_input_before_frames=input_before_frames,
+    actual_input_before_run=input_before_run,
     actual_input_after_frames=input_after_frames,
     actual_input_after_run=input_after_run,
+    action_generator=action_generator,
     executor_key_id="radar-qc-executor",
     executor_trust_store_digest=executor_trust_store_digest,
-    executor_secret=executor_secret,
+    executor_private_key=executor_private_key,
+    executor_sequence_number=executor_sequence_number,
     applied_time=applied_time,
     receipt_time=receipt_time,
 )
 ledger.append_realized_intervention_receipt(
     decision,
     receipt,
+    action_generator=action_generator,
+    actual_input_before_frames=input_before_frames,
+    actual_input_before_run=input_before_run,
+    actual_input_after_frames=input_after_frames,
+    actual_input_after_run=input_after_run,
     trust_store_path="/etc/advar/intervention-policies.json",
     executor_trust_store_path="/etc/advar/intervention-executors.json",
 )
 ```
 
-ledger는 decision과 receipt가 실제 wall-clock 기준으로 issue 전에 기록됐는지,
-decision의 action/input이 승인된 learning evidence와 같은지, root-owned policy와
-trusted executor가 승인됐는지 다시 검사한다. 대칭 HMAC secret을 담은 executor
-trust store는 root 소유이며 group/world 권한이 없는 `0600` 이하 파일이어야 한다.
-v1–v3 intervention
-자료는 감사용으로 계속 읽을 수 있지만 prior promotion 표본에는 prospective
-receipt만 들어간다. Candidate/parent 평가는 미래 verification이 도착한 뒤 같은
-input plan·actual input bundle과 재현된 prior inference를 사용해 별도로 생성한다.
+action model은 `(delta_dbz, applicable)`을 반환한다. export된 generator가 현재 input
+context에서 applicability와 delta를 계산하므로 과거 사례의 Tensor를 새 사례에
+재사용하지 않는다. 시간계약은 observation valid, input available, decision deadline,
+publication을 분리한다. ledger는 root-approved action policy를 다시 실행해 decision을
+재현하고, receipt에서는 `after == before + generated_delta`와 input plan을 다시
+검사한다. Executor trust store에는 Ed25519 public key만 들어가며 private key는 executor
+밖으로 나오지 않는다. v1–v3 intervention 자료는 read-only 감사용으로 보존된다.
 
-여러 실제 개입의 관측결과가 쌓인 뒤에만 prior artifact 승격을 평가한다. 서로
-단위가 다른 forecast-error metric은 정책의 물리 scale로 정규화하며, 최소 표본수,
-개선·악화 비율, 평균개선과 최악 단일악화를 모두 통과해야 한다.
+Prior artifact 승격은 intervention 실행 여부와 무관하게 사전등록된 holdout 전체를
+candidate/parent paired forecast로 평가한다. 서로 단위가 다른 forecast-error metric은
+정책의 물리 scale로 정규화하며, 최소 표본수, 개선·악화 비율, 평균개선과 최악
+단일악화를 모두 통과해야 한다.
 
 ```python
 from advar import (
@@ -603,17 +640,18 @@ promotion_policy = NeuralPriorPromotionPolicy(
         PromotionMetricScale("log_echo_mse", 0.1, 0.01),
         PromotionMetricScale("soft_fss_error_35", 0.05, 0.005),
     ),
-    approved_learning_policy_digests=(learning_policy.digest,),
     approved_candidate_manifest_digests=(candidate_manifest.manifest_digest,),
     approved_holdout_plan_digests=(holdout_plan.plan_digest,),
     approved_metric_contract_digests=(metric_config.digest,),
-    allowed_intervention_types=("realized_qc_intervention",),
-    minimum_realized_interventions=20,
+    minimum_holdout_cases=20,
+    minimum_material_cases=20,
+    maximum_prior_standardized_residual_mean_abs=2.0,
+    maximum_prior_underdispersion_fraction=0.1,
 )
 promotion = compute_neural_prior_promotion(
     candidate_manifest,
     holdout_plan,
-    realized_evaluations,
+    prior_holdout_evaluations,
     policy=promotion_policy,
     policy_trust_store_path="/etc/advar/learning-policies.json",
 )
@@ -622,7 +660,7 @@ if promotion.eligible:
         promotion,
         candidate_manifest,
         holdout_plan,
-        realized_evaluations,
+        prior_holdout_evaluations,
         policy=promotion_policy,
         policy_trust_store_path="/etc/advar/learning-policies.json",
     )
@@ -641,10 +679,16 @@ bundle을 사용하고 candidate/parent prior·model/schema/training manifest id
 차이를 issuance effect로 분리한다. end-to-end candidate-minus-parent metric도 모든
 lead·metric의 non-inferiority guard로 사용하므로 작은 신규발행 면적의 큰 error도
 숨길 수 없다. ledger append는
-root-owned trust store를 다시 읽고 promotion을
-재계산하며, material 사례의 case/storm/day/radar/regime 다양성과 cluster bootstrap,
-training/holdout storm·day·time-window 분리, 저장된 prospective receipt 계보를 다시
-검사한다.
+root-owned trust store를 다시 읽고 promotion을 재계산하며, plan의 모든 case가
+manifest와 evaluation에 정확히 한 번씩 존재해야 한다. 결측·forecast 실패는 유리한
+subset 선택으로 제거할 수 없고 promotion이 fail-close한다. Prior promotion은 전체
+preregistered forecast population의 `PriorHoldoutEvaluation`을 사용하며, intervention을
+선택·실행한 사례만 모은 action-effect population과 분리된다. Material 사례의
+case/storm/day/radar/regime 다양성과 cluster bootstrap, training/holdout
+storm·day·time-window 분리도 다시 검사한다.
+Candidate prior의 spatial `std_dbz`도 holdout 입력에 대한 standardized residual과
+under-dispersion 비율로 검증한다. 평균 skill이 좋아도 불확실성을 과소추정한 prior는
+승격하지 않는다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
 자동학습은 의도적으로 nominal metric weight를 고정한
