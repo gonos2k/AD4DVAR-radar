@@ -498,6 +498,8 @@ class FrozenObservationWhitener:
 
 @dataclass(frozen=True)
 class FrozenOuterState:
+    input_frames_dbz: Tensor
+    background_frames_dbz: Tensor | None
     initial_background_dbz: Tensor
     initial_support_mask: Tensor
     active_field_index: Tensor
@@ -1549,6 +1551,12 @@ def prepare_analysis(
     if whitener_bytes > analysis_config.maximum_frozen_whitener_bytes:
         raise ValueError("frozen observation whitener exceeds its byte budget")
     frozen = FrozenOuterState(
+        input_frames_dbz=frames_dbz.detach().clone(),
+        background_frames_dbz=(
+            None
+            if background_frames_dbz is None
+            else background_frames_dbz.detach().clone()
+        ),
         initial_background_dbz=initial_background_dbz.detach().clone(),
         initial_support_mask=initial_support.detach().clone(),
         active_field_index=active_field_index.detach().clone(),
@@ -6323,6 +6331,10 @@ def _clone_frozen_outer_state(frozen: FrozenOuterState) -> FrozenOuterState:
     """Detach the retained adjoint model from all caller-owned storage."""
 
     return FrozenOuterState(
+        input_frames_dbz=_clone_tensor(frozen.input_frames_dbz),
+        background_frames_dbz=_clone_optional_tensor(
+            frozen.background_frames_dbz
+        ),
         initial_background_dbz=_clone_tensor(frozen.initial_background_dbz),
         initial_support_mask=_clone_tensor(frozen.initial_support_mask),
         active_field_index=_clone_tensor(frozen.active_field_index),
@@ -6405,6 +6417,10 @@ def _frozen_outer_state_digest_values(
         else json_digest(asdict(frozen.grid_time_contract))
     )
     return {
+        "input_frames_dbz": tensor_digest(frozen.input_frames_dbz),
+        "background_frames_dbz": _optional_tensor_digest(
+            frozen.background_frames_dbz
+        ),
         "initial_background_dbz": tensor_digest(
             frozen.initial_background_dbz
         ),
@@ -6561,6 +6577,20 @@ def validate_analysis_linearization_content(
     ):
         raise ValueError("P1 linearization feasibility margins must be finite")
     _validate_observations(linearization.observations)
+    retained_input = linearization.frozen.input_frames_dbz
+    if (
+        retained_input.shape != linearization.observations.dbz.shape
+        or retained_input.dtype != linearization.observations.dbz.dtype
+        or retained_input.device != linearization.observations.dbz.device
+    ):
+        raise ValueError("retained P1 input frames are incompatible")
+    retained_background = linearization.frozen.background_frames_dbz
+    if retained_background is not None and (
+        retained_background.shape != retained_input.shape
+        or retained_background.dtype != retained_input.dtype
+        or retained_background.device != retained_input.device
+    ):
+        raise ValueError("retained P1 background frames are incompatible")
     _validate_observation_common_bias_contract(
         linearization.observations,
         linearization.frozen.analysis_config,

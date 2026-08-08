@@ -28,11 +28,12 @@ from .sensitivity import (
     VariationalLearningImpact,
     validate_variational_learning_impact,
 )
+from .intervention import RealizedObservationIntervention
 
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 5
+_INDEX_SCHEMA_VERSION = 6
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _TRUST_COMPONENTS_V13 = {
@@ -572,6 +573,97 @@ class EpisodeLedger:
             raise ValueError("learning approval evidence digest mismatch")
         return evidence
 
+    def append_realized_observation_intervention(
+        self,
+        intervention: RealizedObservationIntervention,
+    ) -> str:
+        """Append one realized action linked to approved learning evidence."""
+
+        if not isinstance(intervention, RealizedObservationIntervention):
+            raise TypeError("intervention must be realized evidence")
+        with self._connect() as connection:
+            approved = connection.execute(
+                """
+                SELECT approval_evidence_digest
+                FROM variational_learning_approvals
+                WHERE learning_result_digest = ?
+                """,
+                (intervention.learning_result_digest,),
+            ).fetchone()
+            if approved is None:
+                raise ValueError("intervention learning result is not recorded")
+            if approved[0] != intervention.learning_approval_evidence_digest:
+                raise ValueError("intervention learning approval mismatch")
+            connection.execute(
+                """
+                INSERT INTO realized_observation_interventions (
+                    intervention_digest, intervention_id, intervention_type,
+                    action_digest, applied_time,
+                    actual_input_before_digest, actual_input_after_digest,
+                    observed_outcome_digest, learning_result_digest,
+                    learning_approval_evidence_digest,
+                    counterfactual_perturbation_digest,
+                    linearization_digest, evidence_contract, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    intervention.intervention_digest,
+                    intervention.intervention_id,
+                    intervention.intervention_type,
+                    intervention.action_digest,
+                    intervention.applied_time,
+                    intervention.actual_input_before_digest,
+                    intervention.actual_input_after_digest,
+                    intervention.observed_outcome_digest,
+                    intervention.learning_result_digest,
+                    intervention.learning_approval_evidence_digest,
+                    intervention.counterfactual_perturbation_digest,
+                    intervention.linearization_digest,
+                    intervention.contract,
+                    datetime.now(timezone.utc).isoformat(),
+                ),
+            )
+        return intervention.intervention_digest
+
+    def load_realized_observation_intervention(
+        self,
+        intervention_digest: str,
+    ) -> RealizedObservationIntervention:
+        """Load and verify one immutable realized intervention."""
+
+        with self._connect() as connection:
+            connection.row_factory = sqlite3.Row
+            row = connection.execute(
+                """
+                SELECT * FROM realized_observation_interventions
+                WHERE intervention_digest = ?
+                """,
+                (intervention_digest,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(f"unknown realized intervention: {intervention_digest}")
+        intervention = RealizedObservationIntervention(
+            intervention_id=row["intervention_id"],
+            intervention_type=row["intervention_type"],
+            action_digest=row["action_digest"],
+            applied_time=row["applied_time"],
+            actual_input_before_digest=row["actual_input_before_digest"],
+            actual_input_after_digest=row["actual_input_after_digest"],
+            observed_outcome_digest=row["observed_outcome_digest"],
+            learning_result_digest=row["learning_result_digest"],
+            learning_approval_evidence_digest=(
+                row["learning_approval_evidence_digest"]
+            ),
+            counterfactual_perturbation_digest=(
+                row["counterfactual_perturbation_digest"]
+            ),
+            linearization_digest=row["linearization_digest"],
+            contract=row["evidence_contract"],
+        )
+        if intervention.intervention_digest != intervention_digest:
+            raise ValueError("realized intervention digest mismatch")
+        return intervention
+
     def _initialize_index(self) -> None:
         with self._connect() as connection:
             connection.execute("PRAGMA journal_mode = WAL")
@@ -630,6 +722,30 @@ class EpisodeLedger:
                 )
                 """
             )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS realized_observation_interventions (
+                    intervention_digest TEXT PRIMARY KEY,
+                    intervention_id TEXT NOT NULL UNIQUE,
+                    intervention_type TEXT NOT NULL,
+                    action_digest TEXT NOT NULL,
+                    applied_time TEXT NOT NULL,
+                    actual_input_before_digest TEXT NOT NULL,
+                    actual_input_after_digest TEXT NOT NULL,
+                    observed_outcome_digest TEXT NOT NULL,
+                    learning_result_digest TEXT NOT NULL,
+                    learning_approval_evidence_digest TEXT NOT NULL,
+                    counterfactual_perturbation_digest TEXT NOT NULL,
+                    linearization_digest TEXT NOT NULL,
+                    evidence_contract TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (learning_result_digest)
+                        REFERENCES variational_learning_approvals(
+                            learning_result_digest
+                        )
+                )
+                """
+            )
             _ensure_variational_learning_approval_schema(connection)
             connection.execute(
                 """
@@ -644,6 +760,7 @@ class EpisodeLedger:
                 "episodes",
                 "episode_impacts",
                 "variational_learning_approvals",
+                "realized_observation_interventions",
             ):
                 connection.execute(
                     f"""

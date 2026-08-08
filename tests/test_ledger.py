@@ -20,6 +20,7 @@ from advar.ledger import (  # noqa: E402
     ModelContract,
     SensitivityEpisode,
 )
+from advar.intervention import RealizedObservationIntervention  # noqa: E402
 from advar.nowcast import (  # noqa: E402
     NowcastConfig,
     nowcast,
@@ -404,7 +405,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 5)
+        self.assertEqual(version, 6)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -492,6 +493,27 @@ class EpisodeLedgerTests(unittest.TestCase):
             learning_result_digest
         )
         self.assertEqual(loaded, evidence)
+
+        intervention = RealizedObservationIntervention(
+            intervention_id="radar-qc-20260808-001",
+            intervention_type="realized_qc_intervention",
+            action_digest="b" * 64,
+            applied_time="2026-08-08T01:02:03+09:00",
+            actual_input_before_digest="c" * 64,
+            actual_input_after_digest="d" * 64,
+            observed_outcome_digest="e" * 64,
+            learning_result_digest=learning_result_digest,
+            learning_approval_evidence_digest=evidence.digest,
+            counterfactual_perturbation_digest="f" * 64,
+            linearization_digest="0" * 64,
+        )
+        digest = self.ledger.append_realized_observation_intervention(
+            intervention
+        )
+        self.assertEqual(
+            self.ledger.load_realized_observation_intervention(digest),
+            intervention,
+        )
 
     def test_complete_verification_lineage_round_trips(self) -> None:
         snapshot = replace(
@@ -1619,7 +1641,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 5)
+        self.assertEqual(version, 6)
 
 
 if __name__ == "__main__":
