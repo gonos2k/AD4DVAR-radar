@@ -323,6 +323,8 @@ class RealizedInterventionEvaluation:
         """Recompute holdout change; no caller-provided outcome is accepted."""
 
         validate_realized_observation_intervention(intervention)
+        if intervention.contract != "realized-observation-intervention-v2":
+            raise ValueError("holdout evaluation requires resolved v2 intervention")
         candidate_forecast.validate_issuance()
         parent_forecast.validate_issuance()
         if intervention.learning_approval_evidence_digest != learning_evidence.digest:
@@ -341,6 +343,16 @@ class RealizedInterventionEvaluation:
             or candidate_forecast.run.grid_time_contract is None
         ):
             raise ValueError("candidate and parent holdout grids disagree")
+        run_identities = (
+            "analysis_config_digest",
+            "operational_calibration_manifest_digest",
+            "operational_data_identity_digest",
+        )
+        if candidate_forecast.run.config.digest != parent_forecast.run.config.digest or any(
+            getattr(candidate_forecast.run, name) != getattr(parent_forecast.run, name)
+            for name in run_identities
+        ):
+            raise ValueError("candidate and parent holdout run profiles disagree")
         resolved_candidate = _resolve_verification(
             verification, candidate_forecast, metric_config
         )

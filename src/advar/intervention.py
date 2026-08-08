@@ -168,7 +168,10 @@ class RealizedObservationIntervention:
     intervention_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "realized-observation-intervention-v2":
+        if self.contract not in (
+            "realized-observation-intervention-v1",
+            "realized-observation-intervention-v2",
+        ):
             raise ValueError("unsupported realized observation intervention")
         if (
             not isinstance(self.intervention_id, str)
@@ -205,20 +208,30 @@ class RealizedObservationIntervention:
             value = getattr(self, name)
             if not math.isfinite(value):
                 raise ValueError(f"{name} must be finite")
-        object.__setattr__(
-            self,
-            "intervention_digest",
-            json_digest(
+        payload: dict[str, object] = {
+            "contract": self.contract,
+            "intervention_id": self.intervention_id,
+            "intervention_type": self.intervention_type,
+            "action_digest": self.action_digest,
+            "applied_time": self.applied_time,
+            "actual_input_before_digest": self.actual_input_before_digest,
+            "actual_input_after_digest": self.actual_input_after_digest,
+            "learning_result_digest": self.learning_result_digest,
+            "learning_approval_evidence_digest": (
+                self.learning_approval_evidence_digest
+            ),
+            "counterfactual_perturbation_digest": (
+                self.counterfactual_perturbation_digest
+            ),
+            "linearization_digest": self.linearization_digest,
+        }
+        if self.contract == "realized-observation-intervention-v1":
+            payload["observed_outcome_digest"] = (
+                self.outcome_resolution_contract_digest
+            )
+        else:
+            payload.update(
                 {
-                    "contract": self.contract,
-                    "intervention_id": self.intervention_id,
-                    "intervention_type": self.intervention_type,
-                    "action_digest": self.action_digest,
-                    "applied_time": self.applied_time,
-                    "actual_input_before_digest": (
-                        self.actual_input_before_digest
-                    ),
-                    "actual_input_after_digest": self.actual_input_after_digest,
                     "outcome_resolution_contract_digest": (
                         self.outcome_resolution_contract_digest
                     ),
@@ -232,17 +245,9 @@ class RealizedObservationIntervention:
                     "resolved_normalized_benefit": (
                         self.resolved_normalized_benefit
                     ),
-                    "learning_result_digest": self.learning_result_digest,
-                    "learning_approval_evidence_digest": (
-                        self.learning_approval_evidence_digest
-                    ),
-                    "counterfactual_perturbation_digest": (
-                        self.counterfactual_perturbation_digest
-                    ),
-                    "linearization_digest": self.linearization_digest,
                 }
-            ),
-        )
+            )
+        object.__setattr__(self, "intervention_digest", json_digest(payload))
 
     @classmethod
     def from_learning_result(
