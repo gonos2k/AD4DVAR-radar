@@ -42,6 +42,8 @@ from .sensitivity import (
     FirstOrderValidation,
     FSOMetricDomain,
     LearningEligibility,
+    LearningApprovalEvidence,
+    MetricTaylorThreshold,
     PerturbationSemantics,
     SensitivityConfig,
     SensitivitySnapshot,
@@ -66,6 +68,7 @@ from .sensitivity import (
     compute_variational_fsoi_for_learning,
     validate_variational_fso,
     validate_variational_fsoi,
+    validate_variational_learning_impact,
 )
 from .run_artifact import load_forecast_run, save_forecast_run
 from .linearization_artifact import (
@@ -112,6 +115,8 @@ __all__ = [
     "ForecastResult",
     "FSOMetricDomain",
     "LearningEligibility",
+    "LearningApprovalEvidence",
+    "MetricTaylorThreshold",
     "PerturbationSemantics",
     "LoadedEpisode",
     "ModelContract",
@@ -150,6 +155,7 @@ __all__ = [
     "compute_variational_fsoi_for_learning",
     "validate_variational_fso",
     "validate_variational_fsoi",
+    "validate_variational_learning_impact",
     "forecast_evidence_fields",
     "load_forecast_run",
     "load_p1_linearization",
