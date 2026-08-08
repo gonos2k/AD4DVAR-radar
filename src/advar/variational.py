@@ -133,6 +133,7 @@ class AnalysisConfig:
     observation_common_bias_mode_weights_digest: str | None = None
     maximum_common_bias_mode_weight_bytes: int = 2 * 1024**3
     maximum_common_bias_whitener_apply_operations: int = 256 * 1024**2
+    maximum_common_bias_gram_multiply_adds: int = 8 * 1024**3
     maximum_frozen_whitener_bytes: int = 512 * 1024**2
     maximum_linearization_bytes: int = 8 * 1024**3
     pseudo_huber_delta: float = 2.0
@@ -308,6 +309,9 @@ class AnalysisConfig:
             ),
             "maximum_common_bias_whitener_apply_operations": (
                 self.maximum_common_bias_whitener_apply_operations
+            ),
+            "maximum_common_bias_gram_multiply_adds": (
+                self.maximum_common_bias_gram_multiply_adds
             ),
             "maximum_frozen_whitener_bytes": (
                 self.maximum_frozen_whitener_bytes
@@ -548,6 +552,8 @@ def estimate_common_bias_resources(
         > config.maximum_common_bias_whitener_apply_operations
     ):
         reasons.append("whitener_operations_per_apply")
+    if gram_operations > config.maximum_common_bias_gram_multiply_adds:
+        reasons.append("gram_multiply_adds")
     if frozen_bytes > config.maximum_frozen_whitener_bytes:
         reasons.append("frozen_whitener_bytes")
     return CommonBiasResourceEstimate(
@@ -1398,6 +1404,10 @@ def prepare_analysis(
         ):
             raise ValueError(
                 "common-bias whitener exceeds its apply-operation budget"
+            )
+        if "gram_multiply_adds" in resource_estimate.rejection_reasons:
+            raise ValueError(
+                "common-bias Gram construction exceeds its operation budget"
             )
         if "frozen_whitener_bytes" in resource_estimate.rejection_reasons:
             raise ValueError(

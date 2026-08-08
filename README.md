@@ -414,10 +414,9 @@ from advar import EnsembleFSOStatistics, compute_ensemble_fso
 
 efso = compute_ensemble_fso(
     EnsembleFSOStatistics(
-        innovation=innovation,
+        precision_weighted_innovation=precision_operator(innovation),
         analysis_observation_perturbations=analysis_y_perturbations,
         forecast_error_projection_by_member=forecast_error_projection,
-        inverse_observation_variance=inverse_observation_variance,
         lead_minutes=(60, 120),
         metric_names=("log_echo_mse",),
         analysis_ensemble_digest=analysis_ensemble_digest,
@@ -428,7 +427,10 @@ efso = compute_ensemble_fso(
 )
 ```
 
-EFSO impact가 음수이면 해당 관측이 지정 forecast-error metric을 줄이는 방향이다.
+대각 관측오차만 사용하는 경우에는
+`EnsembleFSOStatistics.from_diagonal_r(...)` factory를 사용한다. 일반 경로는
+실제 관측오차모델과 결합된 `R⁻¹d`를 요구한다. EFSO impact가 음수이면 해당
+관측이 지정 forecast-error metric을 줄이는 방향이다.
 입력 ensemble perturbation과 forecast projection은 member 축에서 중심화되어야 한다.
 구현식은 Kalnay et al.의 ensemble observation-impact formulation을 따르며 입력
 통계의 의미는 [Tellus A 원문](https://doi.org/10.3402/tellusa.v64i0.18462)에
@@ -494,7 +496,11 @@ if learning.eligibility.eligible:
 증거를 만든다.
 
 ```python
-from advar import RealizedObservationIntervention
+from advar import (
+    InterventionExecutionPolicy,
+    InterventionMetricGuardrail,
+    RealizedObservationIntervention,
+)
 
 realized = RealizedObservationIntervention.from_learning_result(
     learning,
@@ -505,7 +511,20 @@ realized = RealizedObservationIntervention.from_learning_result(
     applied_time=applied_time,
     actual_input_before=input_before,
     actual_input_after=input_after,
-    observed_outcome=observed_outcome,
+    execution_policy=InterventionExecutionPolicy(
+        metric_guardrails=(
+            InterventionMetricGuardrail(
+                "log_echo_mse", 0.1, 0.02, 0.02
+            ),
+        ),
+        allowed_intervention_types=("realized_qc_intervention",),
+        minimum_predicted_normalized_benefit=0.05,
+        minimum_resolved_normalized_benefit=0.05,
+        approval_class="automation",
+    ),
+    execution_policy_trust_store_path=(
+        "/etc/advar/intervention-policies.json"
+    ),
 )
 ledger.append_realized_observation_intervention(realized)
 ```
@@ -531,12 +550,12 @@ promotion_policy = NeuralPriorPromotionPolicy(
         PromotionMetricScale("soft_fss_error_35", 0.05, 0.005),
     ),
     approved_learning_policy_digests=(learning_policy.digest,),
+    approved_candidate_manifest_digests=(candidate_manifest.manifest_digest,),
     allowed_intervention_types=("realized_qc_intervention",),
     minimum_realized_interventions=20,
 )
 promotion = compute_neural_prior_promotion(
-    candidate_prior_digest,
-    parent_prior_digest,
+    candidate_manifest,
     realized_evaluations,
     policy=promotion_policy,
     policy_trust_store_path="/etc/advar/learning-policies.json",
@@ -544,6 +563,7 @@ promotion = compute_neural_prior_promotion(
 if promotion.eligible:
     ledger.append_neural_prior_promotion(
         promotion,
+        candidate_manifest,
         realized_evaluations,
         policy=promotion_policy,
         policy_trust_store_path="/etc/advar/learning-policies.json",
@@ -569,11 +589,18 @@ issuance = validate_variational_fsoi_issuance_impact(
     policy=policy,
 )
 assert issuance.metric_domain_contract == "resolved_issuance_domain"
+assert torch.allclose(
+    issuance.frozen_domain_state_effect
+    + issuance.issuance_policy_effect,
+    issuance.end_to_end_issuance_effect,
+    equal_nan=True,
+)
 ```
 
 이 결과는 full/half P1을 다시 풀고 `ForecastResult`도 다시 생성하지만 학습승인이나
-ledger 입력으로 자동 승격하지 않는다. 따라서 frozen-domain의 매끄러운 1차계약과
-발행 mask가 변할 수 있는 재발행 진단이 한 값으로 혼합되지 않는다.
+ledger 입력으로 자동 승격하지 않는다. state effect, issuance-policy effect,
+end-to-end effect와 coverage before/after, newly-issued/withdrawn fraction을 따로
+보존하므로 발행영역 축소로 생긴 겉보기 개선을 state 개선과 혼합하지 않는다.
 
 후보가 많을 때는 FSO를 후보마다 다시 풀지 않는다. 하나의 공통 FSO에서 모든
 physical-radar perturbation을 점수화한 뒤 정책이 허용한 상위 K개만

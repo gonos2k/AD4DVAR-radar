@@ -2000,6 +2000,13 @@ class FirstOrderValidation:
     full_step_pcg_iterations: int = 0
     half_step_pcg_iterations: int = 0
     observed_whitener_apply_count: int = 0
+    frozen_domain_state_effect: Tensor | None = None
+    issuance_policy_effect: Tensor | None = None
+    end_to_end_issuance_effect: Tensor | None = None
+    coverage_before: Tensor | None = None
+    coverage_after: Tensor | None = None
+    newly_issued_fraction: Tensor | None = None
+    withdrawn_fraction: Tensor | None = None
     metric_domain_contract: FirstOrderMetricDomain = "frozen_metric_domain"
     contract: str = "p1-first-order-validation-v3"
     validation_digest: str = field(init=False)
@@ -2026,6 +2033,51 @@ class FirstOrderValidation:
             if not isinstance(value, Tensor):
                 raise TypeError(f"{name} must be a Tensor")
             object.__setattr__(self, name, value.detach().clone())
+        issuance_names = (
+            "frozen_domain_state_effect",
+            "issuance_policy_effect",
+            "end_to_end_issuance_effect",
+            "coverage_before",
+            "coverage_after",
+            "newly_issued_fraction",
+            "withdrawn_fraction",
+        )
+        issuance = tuple(getattr(self, name) for name in issuance_names)
+        if self.metric_domain_contract == "resolved_issuance_domain":
+            if any(value is None for value in issuance):
+                raise ValueError("resolved issuance decomposition is incomplete")
+            for name, value in zip(issuance_names, issuance, strict=True):
+                assert value is not None
+                object.__setattr__(self, name, value.detach().clone())
+            state = self.frozen_domain_state_effect
+            policy = self.issuance_policy_effect
+            total = self.end_to_end_issuance_effect
+            assert state is not None and policy is not None and total is not None
+            if state.shape != self.full_step_prediction.shape or (
+                policy.shape != state.shape or total.shape != state.shape
+            ):
+                raise ValueError("resolved issuance metric shapes disagree")
+            if not torch.allclose(
+                state + policy, total, rtol=0.0, atol=0.0, equal_nan=True
+            ):
+                raise ValueError("resolved issuance effects do not close")
+            if not torch.allclose(
+                total,
+                self.full_step_resolved_metric_change,
+                rtol=0.0,
+                atol=0.0,
+                equal_nan=True,
+            ):
+                raise ValueError("end-to-end effect and resolved change disagree")
+            for name in issuance_names[3:]:
+                value = getattr(self, name)
+                assert value is not None
+                if value.shape != (self.full_step_prediction.shape[0],) or bool(
+                    torch.any((value < 0.0) | (value > 1.0))
+                ):
+                    raise ValueError("resolved issuance coverage is invalid")
+        elif any(value is not None for value in issuance):
+            raise ValueError("frozen-domain validation cannot carry issuance effects")
         if type(self.material_metric_count) is not int or (
             self.material_metric_count < 0
         ):
@@ -2767,8 +2819,31 @@ def first_order_validation_digest(
             "observed_whitener_apply_count": (
                 validation.observed_whitener_apply_count
             ),
+            "frozen_domain_state_effect": _optional_tensor_digest(
+                validation.frozen_domain_state_effect
+            ),
+            "issuance_policy_effect": _optional_tensor_digest(
+                validation.issuance_policy_effect
+            ),
+            "end_to_end_issuance_effect": _optional_tensor_digest(
+                validation.end_to_end_issuance_effect
+            ),
+            "coverage_before": _optional_tensor_digest(
+                validation.coverage_before
+            ),
+            "coverage_after": _optional_tensor_digest(validation.coverage_after),
+            "newly_issued_fraction": _optional_tensor_digest(
+                validation.newly_issued_fraction
+            ),
+            "withdrawn_fraction": _optional_tensor_digest(
+                validation.withdrawn_fraction
+            ),
         }
     )
+
+
+def _optional_tensor_digest(value: Tensor | None) -> str | None:
+    return None if value is None else tensor_digest(value)
 
 
 def variational_learning_impact_digest(
@@ -5457,6 +5532,13 @@ def _validate_first_order_learning_impact(
         full_step_pcg_iterations=full.pcg_iterations,
         half_step_pcg_iterations=half.pcg_iterations,
         observed_whitener_apply_count=whitener_counter[0],
+        frozen_domain_state_effect=full.frozen_domain_state_effect,
+        issuance_policy_effect=full.issuance_policy_effect,
+        end_to_end_issuance_effect=full.end_to_end_issuance_effect,
+        coverage_before=full.coverage_before,
+        coverage_after=full.coverage_after,
+        newly_issued_fraction=full.newly_issued_fraction,
+        withdrawn_fraction=full.withdrawn_fraction,
         metric_domain_contract=metric_domain_contract,
     )
 
@@ -5464,6 +5546,13 @@ def _validate_first_order_learning_impact(
 @dataclass(frozen=True)
 class _ResolvedLearningStep:
     metric_change: Tensor
+    frozen_domain_state_effect: Tensor | None
+    issuance_policy_effect: Tensor | None
+    end_to_end_issuance_effect: Tensor | None
+    coverage_before: Tensor | None
+    coverage_after: Tensor | None
+    newly_issued_fraction: Tensor | None
+    withdrawn_fraction: Tensor | None
     analysis_converged: bool
     active_branch_valid: bool
     analysis_digest: str | None
@@ -5533,6 +5622,14 @@ def _resolve_learning_step(
         fsoi.fso.forecast_scores,
         float("nan"),
     )
+    resolved_domain = metric_domain_contract == "resolved_issuance_domain"
+    state_effect = torch.full_like(metric_change, float("nan")) if resolved_domain else None
+    policy_effect = torch.full_like(metric_change, float("nan")) if resolved_domain else None
+    total_effect = torch.full_like(metric_change, float("nan")) if resolved_domain else None
+    coverage_before = metric_change.new_zeros(len(fsoi.fso.lead_minutes)) if resolved_domain else None
+    coverage_after = metric_change.new_zeros(len(fsoi.fso.lead_minutes)) if resolved_domain else None
+    newly_issued = metric_change.new_zeros(len(fsoi.fso.lead_minutes)) if resolved_domain else None
+    withdrawn = metric_change.new_zeros(len(fsoi.fso.lead_minutes)) if resolved_domain else None
     branch_valid = converged and resolved_linearization is not None
     if resolved_linearization is not None:
         branch_valid = (
@@ -5542,12 +5639,19 @@ def _resolve_learning_step(
         )
     if not converged:
         return _ResolvedLearningStep(
-            metric_change,
-            False,
-            branch_valid,
-            None,
-            None,
-            resolved.pcg_iterations,
+            metric_change=metric_change,
+            frozen_domain_state_effect=state_effect,
+            issuance_policy_effect=policy_effect,
+            end_to_end_issuance_effect=total_effect,
+            coverage_before=coverage_before,
+            coverage_after=coverage_after,
+            newly_issued_fraction=newly_issued,
+            withdrawn_fraction=withdrawn,
+            analysis_converged=False,
+            active_branch_valid=branch_valid,
+            analysis_digest=None,
+            forecast_digest=None,
+            pcg_iterations=resolved.pcg_iterations,
         )
     if resolved_linearization is None:
         raise RuntimeError("converged learning re-solve lacks linearization")
@@ -5608,17 +5712,34 @@ def _resolve_learning_step(
                 "forecast_digest": tensor_digest(changed_capped),
             }
         )
-        metric_result = (
-            result
-            if metric_domain_contract == "frozen_metric_domain"
-            else cast(ForecastResult, resolved_forecast)
-        )
-        metric_weight = _metric_domain_weight(
-            metric_result,
+        nominal_weight = _metric_domain_weight(
+            result,
             finite_truth[forecast_index],
             forecast_index,
             policy.sensitivity_config.metric_domain,
         )
+        changed_weight = (
+            nominal_weight
+            if not resolved_domain
+            else _metric_domain_weight(
+                cast(ForecastResult, resolved_forecast),
+                finite_truth[forecast_index],
+                forecast_index,
+                policy.sensitivity_config.metric_domain,
+            )
+        )
+        if resolved_domain:
+            assert coverage_before is not None
+            assert coverage_after is not None
+            assert newly_issued is not None
+            assert withdrawn is not None
+            valid_count = torch.count_nonzero(finite_truth[forecast_index]).clamp_min(1)
+            nominal_support = nominal_weight > 0
+            changed_support = changed_weight > 0
+            coverage_before[lead_index] = torch.count_nonzero(nominal_support).to(metric_change) / valid_count
+            coverage_after[lead_index] = torch.count_nonzero(changed_support).to(metric_change) / valid_count
+            newly_issued[lead_index] = torch.count_nonzero(changed_support & ~nominal_support).to(metric_change) / valid_count
+            withdrawn[lead_index] = torch.count_nonzero(nominal_support & ~changed_support).to(metric_change) / valid_count
         for metric_index, metric_name in enumerate(fsoi.fso.metric_names):
             if not bool(available[lead_index, metric_index]):
                 continue
@@ -5626,7 +5747,7 @@ def _resolve_learning_step(
                 metric_name,
                 nominal_capped,
                 truth_linear[forecast_index],
-                metric_weight,
+                nominal_weight,
                 config,
                 policy.sensitivity_config,
                 frozen.grid_time_contract,
@@ -5640,24 +5761,57 @@ def _resolve_learning_step(
                 raise ValueError(
                     "first-order validation does not reproduce the nominal metric"
                 )
-            changed_score = forecast_metric(
+            changed_nominal_domain_score = forecast_metric(
                 metric_name,
                 changed_capped,
                 truth_linear[forecast_index],
-                metric_weight,
+                nominal_weight,
                 config,
                 policy.sensitivity_config,
                 frozen.grid_time_contract,
             )
-            metric_change[lead_index, metric_index] = (
-                changed_score - nominal_score
-            ).detach()
+            if resolved_domain:
+                changed_resolved_domain_score = forecast_metric(
+                    metric_name,
+                    changed_capped,
+                    truth_linear[forecast_index],
+                    changed_weight,
+                    config,
+                    policy.sensitivity_config,
+                    frozen.grid_time_contract,
+                )
+                assert state_effect is not None
+                assert policy_effect is not None
+                assert total_effect is not None
+                state_effect[lead_index, metric_index] = (
+                    changed_nominal_domain_score - nominal_score
+                ).detach()
+                policy_effect[lead_index, metric_index] = (
+                    changed_resolved_domain_score - changed_nominal_domain_score
+                ).detach()
+                total_effect[lead_index, metric_index] = (
+                    changed_resolved_domain_score - nominal_score
+                ).detach()
+                metric_change[lead_index, metric_index] = total_effect[
+                    lead_index, metric_index
+                ]
+            else:
+                metric_change[lead_index, metric_index] = (
+                    changed_nominal_domain_score - nominal_score
+                ).detach()
     return _ResolvedLearningStep(
-        metric_change,
-        converged,
-        branch_valid,
-        resolved_linearization.linearization_digest,
-        (
+        metric_change=metric_change,
+        frozen_domain_state_effect=state_effect,
+        issuance_policy_effect=policy_effect,
+        end_to_end_issuance_effect=total_effect,
+        coverage_before=coverage_before,
+        coverage_after=coverage_after,
+        newly_issued_fraction=newly_issued,
+        withdrawn_fraction=withdrawn,
+        analysis_converged=converged,
+        active_branch_valid=branch_valid,
+        analysis_digest=resolved_linearization.linearization_digest,
+        forecast_digest=(
             cast(ForecastResult, resolved_forecast).forecast_run_digest
             if metric_domain_contract == "resolved_issuance_domain"
             else json_digest(
@@ -5667,7 +5821,7 @@ def _resolve_learning_step(
                 }
             )
         ),
-        resolved.pcg_iterations,
+        pcg_iterations=resolved.pcg_iterations,
     )
 
 
