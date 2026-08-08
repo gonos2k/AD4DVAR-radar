@@ -976,6 +976,64 @@ class VariationalAnalysisTests(unittest.TestCase):
             2 * 64 * 2048**2,
         )
 
+    def test_common_bias_resources_are_estimated_without_allocation(self) -> None:
+        accepted = variational_module.estimate_common_bias_resources(
+            (32, 1024, 1024),
+            (3, 1024, 1024),
+            dtype=torch.float32,
+            temporal_scope="all_times",
+        )
+        self.assertTrue(accepted.within_budget)
+        self.assertEqual(accepted.retained_mode_bytes, 128 * 1024**2)
+        self.assertEqual(
+            accepted.whitener_operations_per_apply,
+            2 * 3 * 32 * 1024**2,
+        )
+        self.assertEqual(
+            accepted.gram_multiply_adds,
+            3 * 32**2 * 1024**2,
+        )
+
+        rejected = variational_module.estimate_common_bias_resources(
+            (64, 2048, 2048),
+            (3, 2048, 2048),
+            dtype=torch.float32,
+            temporal_scope="all_times",
+        )
+        self.assertFalse(rejected.within_budget)
+        self.assertEqual(rejected.retained_mode_bytes, 1024**3)
+        self.assertEqual(
+            rejected.whitener_operations_per_apply,
+            2 * 3 * 64 * 2048**2,
+        )
+        self.assertIn(
+            "whitener_operations_per_apply",
+            rejected.rejection_reasons,
+        )
+
+        time_specific = variational_module.estimate_common_bias_resources(
+            (3, 32, 1024, 1024),
+            (3, 1024, 1024),
+            dtype=torch.float32,
+            temporal_scope="per_frame",
+        )
+        self.assertEqual(
+            time_specific.whitener_operations_per_apply,
+            accepted.whitener_operations_per_apply,
+        )
+        self.assertEqual(
+            time_specific.retained_mode_bytes,
+            3 * accepted.retained_mode_bytes,
+        )
+
+        with self.assertRaisesRegex(ValueError, "positive integers"):
+            variational_module.estimate_common_bias_resources(
+                (0, 1024, 1024),
+                (3, 1024, 1024),
+                dtype=torch.float32,
+                temporal_scope="all_times",
+            )
+
     def test_common_bias_contract_is_validated_and_changes_lineage(self) -> None:
         for value in (-0.1, float("nan"), float("inf"), True):
             with self.subTest(value=value):

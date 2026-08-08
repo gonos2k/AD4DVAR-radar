@@ -852,6 +852,48 @@ class CliTests(unittest.TestCase):
                     config["observation_common_bias_group_map_digest"]
                 )
 
+    def test_variational_cli_rejects_modes_before_materializing_them(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            mode_path = directory / "mode-weights.npy"
+            np.save(
+                mode_path,
+                np.ones((2, 8, 8), dtype=np.float32),
+                allow_pickle=False,
+            )
+            with (
+                patch(
+                    "advar.cli.estimate_common_bias_resources"
+                ) as estimate,
+                patch(
+                    "advar.cli.np.array",
+                    side_effect=AssertionError("mode array was materialized"),
+                ),
+                self.assertRaisesRegex(ValueError, "preflight rejected"),
+            ):
+                estimate.return_value.within_budget = False
+                estimate.return_value.rejection_reasons = (
+                    "whitener_operations_per_apply",
+                )
+                self._run_cli(
+                    directory,
+                    np.full((3, 8, 8), 20.0, dtype=np.float32),
+                    "--variational",
+                    "--observation-common-bias-std-dbz",
+                    "0.2",
+                    "--observation-common-bias-mode-weights",
+                    str(mode_path),
+                )
+
+            estimate.assert_called_once_with(
+                (2, 8, 8),
+                (3, 8, 8),
+                dtype=torch.float32,
+                temporal_scope="per_frame",
+            )
+
     def test_cli_records_operational_amplitude_policy(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             output_path = self._run_cli(

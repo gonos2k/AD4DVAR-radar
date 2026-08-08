@@ -936,6 +936,25 @@ weights와 작은 correction matrix만 보존한다. `[K,H,W]` 입력도 세 시
 `maximum_common_bias_whitener_apply_operations`,
 `maximum_frozen_whitener_bytes`, `maximum_linearization_bytes`는 큰 allocation이나
 비현실적인 `K×T×H×W` 적용 전에 fail-close한다.
+
+대형 `.npy`를 만들거나 읽기 전에 shape와 dtype만으로 같은 예산을 확인할 수 있다.
+
+```python
+import torch
+from advar import estimate_common_bias_resources
+
+estimate = estimate_common_bias_resources(
+    (64, 2048, 2048),
+    (3, 2048, 2048),
+    dtype=torch.float32,
+    temporal_scope="all_times",
+)
+assert not estimate.within_budget
+```
+
+CLI도 mode 파일을 read-only mmap으로 열어 이 검사를 먼저 수행하고, 통과한 경우에만
+한 번 복사해 Tensor로 만든다. 이 정적 추정은 불가능한 입력의 조기 차단용이며,
+허용된 입력의 실제 wall time과 peak RSS는 benchmark로 별도 검증해야 한다.
 regular tile·group map·overlapping mode는 서로 배타적이며 mode Tensor와 digest는
 지연 FSO artifact에 보존된다. CLI에서는
 `--observation-common-bias-mode-weights modes.npy`를 사용한다.
