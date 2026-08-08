@@ -377,6 +377,63 @@ observation 밖에서는 0이어야 한다. `baseline_dynamics_dbz`도 선택사
 `delta_alpha >= -1`을 요구하며, 모든 Tensor와 contract는 perturbation digest에
 결합된다. 이 값은 frozen-GN 국지근사이며 EFSO는 아니다.
 
+완전 관측제거는 국지 FSOI로 근사하지 않는다. 원래 세 입력장과 외부배경을
+linearization에 보존하고, 지정 관측을 QC에서 제외한 뒤 P0 baseline, active
+support, common-bias whitener, robust P1, posterior와 발행 forecast를 모두 다시
+계산한다.
+
+```python
+from advar import (
+    ObservationRemovalConfig,
+    compute_variational_observation_removal_impact,
+)
+
+denial = compute_variational_observation_removal_impact(
+    forecast,
+    analysis,
+    verification_bundle,
+    removal_mask,
+    sensitivity_config=sensitivity_config,
+    removal_config=ObservationRemovalConfig(
+        maximum_removed_observation_count=256,
+        maximum_removed_fraction=0.01,
+    ),
+)
+```
+
+`denial.metric_change`는 제거 후 score에서 nominal score를 뺀 비선형 영향이다.
+양수는 제거가 오차를 늘렸음을 뜻한다. count·fraction·union-area와 전체 whitener
+연산 budget을 넘거나 제거 후 eligible P1이 나오지 않으면 부분결과 없이 거부한다.
+
+EFSO는 deterministic P1 FSOI와 분리된 ensemble API다. 실제 analysis ensemble의
+observation-space perturbation과 forecast-error projection, innovation, 관측오차
+통계를 모두 요구하며 단일 분석에서 가짜 ensemble을 만들지 않는다.
+
+```python
+from advar import EnsembleFSOStatistics, compute_ensemble_fso
+
+efso = compute_ensemble_fso(
+    EnsembleFSOStatistics(
+        innovation=innovation,
+        analysis_observation_perturbations=analysis_y_perturbations,
+        forecast_error_projection_by_member=forecast_error_projection,
+        inverse_observation_variance=inverse_observation_variance,
+        lead_minutes=(60, 120),
+        metric_names=("log_echo_mse",),
+        analysis_ensemble_digest=analysis_ensemble_digest,
+        forecast_ensemble_digest=forecast_ensemble_digest,
+        verification_reference_digest=verification_reference_digest,
+        observation_error_model_digest=observation_error_model_digest,
+    )
+)
+```
+
+EFSO impact가 음수이면 해당 관측이 지정 forecast-error metric을 줄이는 방향이다.
+입력 ensemble perturbation과 forecast projection은 member 축에서 중심화되어야 한다.
+구현식은 Kalnay et al.의 ensemble observation-impact formulation을 따르며 입력
+통계의 의미는 [Tellus A 원문](https://doi.org/10.3402/tellusa.v64i0.18462)에
+명시된 계약으로 고정한다.
+
 대격자 delayed adjoint는 분석 solver 설정과 분리된 실행계약으로 제한한다.
 
 ```python
@@ -430,8 +487,32 @@ learning = compute_variational_fsoi_for_learning(
 if learning.eligibility.eligible:
     validate_variational_learning_impact(learning)
     ledger.append_variational_learning_approval(learning)
-    update_model(learning.frozen_domain_learning_impact)
 ```
+
+이 결과는 승인된 counterfactual이며 실제 행동의 결과는 아니다. 센서보정, QC 변경
+또는 operator override가 실제 입력에 적용되고 결과가 관측된 뒤에만 별도 개입
+증거를 만든다.
+
+```python
+from advar import RealizedObservationIntervention
+
+realized = RealizedObservationIntervention.from_learning_result(
+    learning,
+    analysis,
+    intervention_id=intervention_id,
+    intervention_type="realized_qc_intervention",
+    action_digest=action_digest,
+    applied_time=applied_time,
+    actual_input_before=input_before,
+    actual_input_after=input_after,
+    observed_outcome=observed_outcome,
+)
+ledger.append_realized_observation_intervention(realized)
+```
+
+ledger는 대응하는 learning approval이 먼저 저장돼 있고 evidence digest가 정확히
+일치할 때만 실제 개입을 append한다. 자동 prior 승격은 이 realized evidence를
+필수 입력으로 삼아야 한다.
 
 자동학습은 의도적으로 nominal metric weight를 고정한
 `frozen_metric_domain`만 승인한다. perturbation 뒤의 confidence·local evidence·
@@ -594,7 +675,7 @@ fso = compute_variational_fso(
 )
 ```
 
-`p1-linearization-v11` loader는 pickle을 사용하지 않고 archive 크기·member
+`p1-linearization-v12` loader는 pickle을 사용하지 않고 archive 크기·member
 allowlist·각 Tensor digest·전체 artifact digest를 먼저 검사한다. 그 뒤 저장된
 control에서 state와 `J^T r`를 다시 계산한다. algorithm bundle 또는 Python,
 NumPy, PyTorch, backend capability, deterministic-policy로 구성된 numerical
@@ -780,7 +861,7 @@ forecast, analysis = variational_nowcast(
 group map은 `[H,W]` 또는 `[3,H,W]` 정수 Tensor이며 tile mode와 동시에 사용할
 수 없다. 연구모드는 digest를 생략하면 canonical map digest를 자동 결합하지만,
 운용모드는 사전 승인된 `AnalysisConfig`에 정확한 digest가 있어야 한다. map은
-analysis-input·forecast-run·linearization digest와 `p1-linearization-v11`
+analysis-input·forecast-run·linearization digest와 `p1-linearization-v12`
 artifact에 포함된다. CLI에서는
 `--observation-common-bias-group-map groups.npy`를 사용한다.
 
@@ -1343,7 +1424,8 @@ valid time·grid·radar product·QC pipeline digest도 함께 보존된다.
 - P1 frozen-final 관측 민감도 FSO: `VariationalFSO`로 세 시각 모두 제공
 - P1 signed 관측영향 FSOI: 명시적인 `VariationalObservationPerturbation`이
   있을 때만 제공
-- 자동 일반화 기억 승격: 비활성
+- 자동 일반화 기억 승격: counterfactual approval과 realized intervention을
+  분리해 저장하며, 모델 갱신기는 별도 정책으로 유지
 
 이 구분은 M0 manifest와 SQLite에 명시된다. 간접 민감도를 0으로 저장해
 “효과 없음”으로 오해하게 만들지 않는다. P1 `VariationalFSO`는 detected dBZ,
@@ -1353,8 +1435,9 @@ perturbation을 곱한 signed first-order impact다. 두 계산 모두 최종 IR
 weight, active set, remap cell, observation classification과 baseline을 고정하며,
 재계산한 frozen·robust stationarity와 IRLS fixed-point 오차가 설정 임계값
 이하여야 한다. outer-loop 선택
-자체의 변화, EFSO, 검증된 baseline-normalized reward와 자동학습 승격은 아직
-포함하지 않는다. P1 FSO·FSOI Tensor 자체는 M0 episode ledger에 저장하지 않지만,
+자체의 변화와 검증된 baseline-normalized reward는 포함하지 않는다. EFSO는 실제
+ensemble 통계를 요구하는 별도 API이며 deterministic FSOI와 혼합하지 않는다.
+P1 FSO·FSOI Tensor 자체는 M0 episode ledger에 저장하지 않지만,
 자동학습 wrapper는 동일 frozen 준비구조에 실제 physical-dBZ perturbation의
 full step과 half step을 적용해 robust P1 분석을 각각 다시 풀고, 선택된
 lead·metric의 실제 변화와 1차 예측을 비교한다. 절대+상대 Taylor 오차, 물질적
@@ -1364,5 +1447,5 @@ lead·metric의 실제 변화와 1차 예측을 비교한다. 절대+상대 Tayl
 material metric이 없는 수치잡음은 학습으로 승격하지 않으며, 승인된 결과는
 content-addressed learning evidence만 원장에 별도로 기록할 수 있다.
 3시간 지연 재계산에 필요한 frozen linearization은 content-addressed
-`p1-linearization-v11` artifact로 안전하게 보존·재적재할 수 있다.
+`p1-linearization-v12` artifact로 안전하게 보존·재적재할 수 있다.
 P1 분석상태는 기존 M0 직접민감도 API에서 계속 provenance 검사로 거부된다.

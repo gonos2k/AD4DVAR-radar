@@ -22,6 +22,10 @@ from advar.linearization_artifact import (  # noqa: E402
     load_p1_linearization,
     save_p1_linearization,
 )
+from advar.intervention import (  # noqa: E402
+    RealizedObservationIntervention,
+    validate_realized_observation_intervention,
+)
 from advar.ledger import EpisodeLedger  # noqa: E402
 from advar.matrix_free import PCGResult  # noqa: E402
 from advar.nowcast import (  # noqa: E402
@@ -52,6 +56,7 @@ from advar.physics import (  # noqa: E402
 from advar.sensitivity import (  # noqa: E402
     AutomatedLearningPolicy,
     MetricTaylorThreshold,
+    ObservationRemovalConfig,
     _baseline_branch_is_stable,
     _gauss_newton_curvature_diagnostics,
     _apply_output_cap,
@@ -68,6 +73,7 @@ from advar.sensitivity import (  # noqa: E402
     compute_sensitivity_snapshot,
     compute_variational_fso,
     compute_variational_fsoi,
+    compute_variational_observation_removal_impact,
     compute_variational_fsoi_for_learning,
     score_candidate_perturbations,
     validate_top_k_learning_impacts,
@@ -77,6 +83,7 @@ from advar.sensitivity import (  # noqa: E402
     validate_variational_fsoi,
     validate_variational_fsoi_issuance_impact,
     validate_variational_learning_impact,
+    validate_observation_removal_impact,
     variational_fso_digest,
 )
 from advar.variational import (  # noqa: E402
@@ -2816,11 +2823,91 @@ class VariationalFSOTests(unittest.TestCase):
             self.fso.variational_fso_digest,
         )
         torch.testing.assert_close(
+            loaded.linearization.frozen.input_frames_dbz,
+            linearization.frozen.input_frames_dbz,
+            rtol=0.0,
+            atol=0.0,
+            equal_nan=True,
+        )
+        self.assertIsNone(
+            loaded.linearization.frozen.background_frames_dbz
+        )
+        self.assertIsNone(linearization.frozen.background_frames_dbz)
+        torch.testing.assert_close(
             restarted.observation.detected_dbz.maps,
             self.fso.observation.detected_dbz.maps,
             rtol=0.0,
             atol=0.0,
         )
+
+    def test_observation_removal_rebuilds_the_full_analysis(self) -> None:
+        linearization = self.analysis.linearization
+        assert linearization is not None
+        mask = torch.zeros_like(linearization.observations.valid_mask)
+        index = torch.nonzero(
+            linearization.observations.valid_mask,
+            as_tuple=False,
+        )[0]
+        mask[tuple(int(value) for value in index)] = True
+
+        impact = compute_variational_observation_removal_impact(
+            self.forecast,
+            self.analysis,
+            self.verification,
+            mask,
+            sensitivity_config=self.sensitivity_config,
+            removal_config=ObservationRemovalConfig(
+                maximum_removed_fraction=1.0,
+                maximum_removed_area_km2=None,
+            ),
+        )
+        validate_observation_removal_impact(impact)
+
+        self.assertEqual(impact.removed_observation_count, 1)
+        self.assertNotEqual(
+            impact.removed_forecast_digest,
+            impact.nominal_forecast_digest,
+        )
+        self.assertNotEqual(
+            impact.removed_linearization_digest,
+            linearization.linearization_digest,
+        )
+        torch.testing.assert_close(
+            impact.metric_change[impact.metric_available],
+            (impact.removed_scores - impact.nominal_scores)[
+                impact.metric_available
+            ],
+            rtol=0.0,
+            atol=0.0,
+        )
+        self.assertEqual(
+            len(impact.observation_removal_impact_digest),
+            64,
+        )
+
+    def test_observation_removal_rejects_unaccepted_input(self) -> None:
+        qc_mask = torch.ones_like(self.frames, dtype=torch.bool)
+        qc_mask[0, 0, 0] = False
+        forecast, analysis = variational_nowcast(
+            self.frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=self.analysis_config,
+            qc_mask=qc_mask,
+        )
+        linearization = analysis.linearization
+        assert linearization is not None
+        mask = torch.zeros_like(linearization.observations.valid_mask)
+        mask[0, 0, 0] = True
+        with self.assertRaisesRegex(ValueError, "accepted observations"):
+            compute_variational_observation_removal_impact(
+                forecast,
+                analysis,
+                forecast.forecast_dbz,
+                mask,
+                removal_config=ObservationRemovalConfig(
+                    maximum_removed_area_km2=None,
+                ),
+            )
 
     def test_p1_linearization_artifact_syncs_file_and_directory(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -4458,6 +4545,25 @@ class VariationalFSOTests(unittest.TestCase):
         validate_variational_learning_impact(
             learning,
             expected_trust_store_digest="7" * 64,
+        )
+        realized = RealizedObservationIntervention.from_learning_result(
+            learning,
+            analysis,
+            intervention_id="radar-correction-20260808-001",
+            intervention_type="realized_sensor_correction",
+            action_digest="8" * 64,
+            applied_time="2026-08-08T12:00:00+09:00",
+            actual_input_before=linearization.frozen.input_frames_dbz,
+            actual_input_after=(
+                linearization.frozen.input_frames_dbz + delta
+            ),
+            observed_outcome=resolved_change,
+        )
+        validate_realized_observation_intervention(realized)
+        self.assertEqual(realized.applied_time, "2026-08-08T03:00:00Z")
+        self.assertEqual(
+            realized.learning_result_digest,
+            learning.learning_result_digest,
         )
         issuance_validation = validate_variational_fsoi_issuance_impact(
             forecast,

@@ -18,6 +18,7 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from ._digest import dataclass_digest, json_digest, tensor_digest
+from .calibration import OperationalCalibrationManifest, OperationalDataIdentity
 from .matrix_free import pcg
 from .nowcast import (
     DataStatus,
@@ -58,6 +59,7 @@ from .variational import (
     residual_vector,
     solve_analysis,
     validate_analysis_linearization_content,
+    variational_nowcast,
 )
 
 
@@ -1159,6 +1161,218 @@ class VariationalFSOI:
     baseline_dynamics_branch_status: BaselineDynamicsBranchStatus
     observation: VariationalObservationImpact
     variational_fsoi_digest: str
+
+
+@dataclass(frozen=True)
+class ObservationRemovalConfig:
+    """Budget for an explicit, nonlocal observation-denial experiment."""
+
+    maximum_removed_observation_count: int = 4096
+    maximum_removed_fraction: float = 0.05
+    maximum_removed_area_km2: float | None = 256.0
+    maximum_whitener_total_operations: int = 100_000_000_000
+    contract: str = "p1-observation-removal-config-v1"
+
+    def __post_init__(self) -> None:
+        if self.contract != "p1-observation-removal-config-v1":
+            raise ValueError("unsupported observation-removal config")
+        if (
+            type(self.maximum_removed_observation_count) is not int
+            or self.maximum_removed_observation_count <= 0
+        ):
+            raise ValueError("maximum removed observation count must be positive")
+        if (
+            isinstance(self.maximum_removed_fraction, bool)
+            or not math.isfinite(self.maximum_removed_fraction)
+            or not 0.0 < self.maximum_removed_fraction <= 1.0
+        ):
+            raise ValueError("maximum removed fraction must be in (0, 1]")
+        if self.maximum_removed_area_km2 is not None and (
+            isinstance(self.maximum_removed_area_km2, bool)
+            or not math.isfinite(self.maximum_removed_area_km2)
+            or self.maximum_removed_area_km2 <= 0.0
+        ):
+            raise ValueError("maximum removed area must be positive")
+        if (
+            type(self.maximum_whitener_total_operations) is not int
+            or self.maximum_whitener_total_operations <= 0
+        ):
+            raise ValueError("removal whitener operation budget must be positive")
+
+    @property
+    def digest(self) -> str:
+        return dataclass_digest(self)
+
+
+@dataclass(frozen=True)
+class ObservationRemovalRequest:
+    """A set of accepted observations removed from the full P1 input."""
+
+    removal_mask: Tensor
+    linearization_digest: str
+    contract: str = "p1-observation-removal-request-v1"
+    request_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.contract != "p1-observation-removal-request-v1":
+            raise ValueError("unsupported observation-removal request")
+        if (
+            not isinstance(self.removal_mask, Tensor)
+            or self.removal_mask.dtype is not torch.bool
+            or self.removal_mask.ndim != 3
+        ):
+            raise TypeError("removal mask must be a Boolean [time, y, x] Tensor")
+        if not bool(torch.any(self.removal_mask)):
+            raise ValueError("removal mask must select at least one observation")
+        _require_sha256("linearization_digest", self.linearization_digest)
+        owned = self.removal_mask.detach().clone()
+        object.__setattr__(self, "removal_mask", owned)
+        object.__setattr__(
+            self,
+            "request_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "removal_mask": tensor_digest(owned),
+                    "linearization_digest": self.linearization_digest,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
+class ObservationRemovalImpact:
+    """Resolved forecast-error change after a full observation denial."""
+
+    request: ObservationRemovalRequest
+    nominal_scores: Tensor
+    removed_scores: Tensor
+    metric_change: Tensor
+    metric_available: Tensor
+    lead_minutes: tuple[int, ...]
+    metric_names: tuple[str, ...]
+    metric_domain: FSOMetricDomain
+    nominal_forecast_digest: str
+    removed_forecast_digest: str
+    removed_linearization_digest: str
+    verification_bundle_digest: str
+    sensitivity_config_digest: str
+    removal_config_digest: str
+    removed_observation_count: int
+    removed_fraction: float
+    removed_area_km2: float | None
+    whitener_operations_per_apply: int
+    observed_whitener_apply_count: int
+    observed_whitener_total_operations: int
+    contract: str = "p1-resolved-observation-removal-impact-v1"
+    observation_removal_impact_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.contract != "p1-resolved-observation-removal-impact-v1":
+            raise ValueError("unsupported observation-removal impact")
+        for name in (
+            "nominal_scores",
+            "removed_scores",
+            "metric_change",
+            "metric_available",
+        ):
+            value = getattr(self, name)
+            if not isinstance(value, Tensor):
+                raise TypeError(f"{name} must be a Tensor")
+            object.__setattr__(self, name, value.detach().clone())
+        expected_shape = (len(self.lead_minutes), len(self.metric_names))
+        if any(
+            getattr(self, name).shape != expected_shape
+            for name in (
+                "nominal_scores",
+                "removed_scores",
+                "metric_change",
+                "metric_available",
+            )
+        ):
+            raise ValueError("observation-removal metric shapes disagree")
+        if self.metric_available.dtype is not torch.bool:
+            raise TypeError("observation-removal availability must be Boolean")
+        available = self.metric_available
+        if not torch.allclose(
+            self.metric_change[available],
+            (self.removed_scores - self.nominal_scores)[available],
+            rtol=0.0,
+            atol=0.0,
+        ):
+            raise ValueError("observation-removal metric change is inconsistent")
+        for name in (
+            "nominal_forecast_digest",
+            "removed_forecast_digest",
+            "removed_linearization_digest",
+            "verification_bundle_digest",
+            "sensitivity_config_digest",
+            "removal_config_digest",
+        ):
+            _require_sha256(name, getattr(self, name))
+        if type(self.removed_observation_count) is not int or (
+            self.removed_observation_count <= 0
+        ):
+            raise ValueError("removed observation count must be positive")
+        if not 0.0 < self.removed_fraction <= 1.0:
+            raise ValueError("removed observation fraction must be in (0, 1]")
+        if self.removed_area_km2 is not None and self.removed_area_km2 <= 0.0:
+            raise ValueError("removed observation area must be positive")
+        for name in (
+            "whitener_operations_per_apply",
+            "observed_whitener_apply_count",
+            "observed_whitener_total_operations",
+        ):
+            if type(getattr(self, name)) is not int or getattr(self, name) < 0:
+                raise ValueError(f"{name} must be nonnegative")
+        if self.observed_whitener_total_operations != (
+            self.whitener_operations_per_apply
+            * self.observed_whitener_apply_count
+        ):
+            raise ValueError("observation-removal whitener accounting mismatch")
+        object.__setattr__(
+            self,
+            "observation_removal_impact_digest",
+            _observation_removal_impact_digest(self),
+        )
+
+
+def _observation_removal_impact_digest(
+    impact: ObservationRemovalImpact,
+) -> str:
+    return json_digest(
+        {
+            "contract": impact.contract,
+            "request_digest": impact.request.request_digest,
+            "nominal_scores": tensor_digest(impact.nominal_scores),
+            "removed_scores": tensor_digest(impact.removed_scores),
+            "metric_change": tensor_digest(impact.metric_change),
+            "metric_available": tensor_digest(impact.metric_available),
+            "lead_minutes": list(impact.lead_minutes),
+            "metric_names": list(impact.metric_names),
+            "metric_domain": impact.metric_domain,
+            "nominal_forecast_digest": impact.nominal_forecast_digest,
+            "removed_forecast_digest": impact.removed_forecast_digest,
+            "removed_linearization_digest": (
+                impact.removed_linearization_digest
+            ),
+            "verification_bundle_digest": impact.verification_bundle_digest,
+            "sensitivity_config_digest": impact.sensitivity_config_digest,
+            "removal_config_digest": impact.removal_config_digest,
+            "removed_observation_count": impact.removed_observation_count,
+            "removed_fraction": impact.removed_fraction,
+            "removed_area_km2": impact.removed_area_km2,
+            "whitener_operations_per_apply": (
+                impact.whitener_operations_per_apply
+            ),
+            "observed_whitener_apply_count": (
+                impact.observed_whitener_apply_count
+            ),
+            "observed_whitener_total_operations": (
+                impact.observed_whitener_total_operations
+            ),
+        }
+    )
 
 
 @dataclass(frozen=True)
@@ -3917,6 +4131,281 @@ def compute_variational_fsoi(
         fsoi,
         variational_fsoi_digest=variational_fsoi_digest(fsoi),
     )
+
+
+def compute_variational_observation_removal_impact(
+    result: ForecastResult,
+    analysis: AnalysisResult | P1LinearizationState,
+    verification_frames_dbz: VerificationInput,
+    removal_mask: Tensor,
+    *,
+    sensitivity_config: SensitivityConfig | None = None,
+    removal_config: ObservationRemovalConfig | None = None,
+) -> ObservationRemovalImpact:
+    """Rebuild P0/P1 and forecast after removing accepted observations.
+
+    This is a nonlinear denial experiment, not a first-order FSOI. The
+    analysis background, active support, common-bias whitener, robust optimum,
+    posterior, confidence, and issuance domain are all recomputed.
+    """
+
+    result.validate_issuance()
+    linearization = analysis.linearization
+    if linearization is None:
+        raise ValueError("observation removal requires a P1 linearization")
+    validate_analysis_linearization_content(analysis.control, linearization)
+    request = ObservationRemovalRequest(
+        removal_mask=removal_mask,
+        linearization_digest=linearization.linearization_digest,
+    )
+    observations = linearization.observations
+    frozen = linearization.frozen
+    mask = request.removal_mask.to(observations.valid_mask.device)
+    if mask.shape != observations.valid_mask.shape:
+        raise ValueError("removal mask must match the observation grid")
+    if bool(torch.any(mask & ~observations.valid_mask)):
+        raise ValueError("only accepted observations can be removed")
+    removal = removal_config or ObservationRemovalConfig()
+    removed_count = int(torch.count_nonzero(mask))
+    valid_count = int(torch.count_nonzero(observations.valid_mask))
+    removed_fraction = removed_count / max(1, valid_count)
+    if removed_count > removal.maximum_removed_observation_count:
+        raise ValueError("observation removal exceeds its count budget")
+    if removed_fraction > removal.maximum_removed_fraction:
+        raise ValueError("observation removal exceeds its fraction budget")
+    grid = frozen.grid_time_contract
+    union_count = int(torch.count_nonzero(torch.any(mask, dim=0)))
+    removed_area_km2 = (
+        None if grid is None else union_count * grid.cell_area_m2 / 1.0e6
+    )
+    if removal.maximum_removed_area_km2 is not None:
+        if removed_area_km2 is None:
+            raise ValueError("physical removal budget requires a grid contract")
+        if removed_area_km2 > removal.maximum_removed_area_km2:
+            raise ValueError("observation removal exceeds its area budget")
+
+    original_qc = ~observations.qc_rejected_mask
+    changed_qc = original_qc & ~mask
+    manifest = _operational_manifest_from_run(result)
+    identity = _operational_identity_from_run(result)
+    operations_per_apply = _observation_whitener_operations_per_apply(
+        observations
+    )
+    with _count_observation_whitener_applies(
+        operations_per_apply=operations_per_apply,
+        maximum_total_operations=removal.maximum_whitener_total_operations,
+    ) as counter:
+        removed_forecast, removed_analysis = variational_nowcast(
+            frozen.input_frames_dbz,
+            nowcast_config=frozen.nowcast_config,
+            analysis_config=frozen.analysis_config,
+            observation_std_dbz=observations.std_dbz,
+            quality_weight=observations.quality_weight,
+            qc_mask=changed_qc,
+            observation_common_bias_group_index=(
+                observations.common_bias_group_index
+            ),
+            observation_common_bias_mode_weights=(
+                observations.common_bias_mode_weights
+            ),
+            background_frames_dbz=frozen.background_frames_dbz,
+            background_age_minutes=frozen.background_age_minutes,
+            grid_time_contract=grid,
+            operational_calibration_manifest=manifest,
+            operational_calibration_approval_digest=(
+                result.run.operational_calibration_approval_digest
+            ),
+            operational_data_identity=identity,
+        )
+    removed_linearization = removed_analysis.linearization
+    if (
+        not removed_analysis.converged
+        or removed_analysis.used_fallback
+        or removed_analysis.degraded
+        or not removed_analysis.p1_forecast_eligible
+        or removed_linearization is None
+    ):
+        raise RuntimeError(
+            "observation-removal analysis did not produce an eligible P1"
+        )
+    removed_forecast.validate_issuance()
+    config = sensitivity_config or SensitivityConfig()
+    leads = config.full_map_lead_minutes
+    if not leads:
+        raise ValueError("observation removal requires at least one lead")
+    interval = result.run.config.interval_minutes
+    if any(
+        minutes % interval != 0
+        or minutes > result.run.config.horizon_minutes
+        for minutes in leads
+    ):
+        raise ValueError("observation-removal leads must be issued forecast leads")
+    verification = _resolve_verification(
+        verification_frames_dbz,
+        result,
+        config,
+    )
+    _ = _resolve_verification(
+        verification_frames_dbz,
+        removed_forecast,
+        config,
+    )
+    nominal_scores, nominal_available = _resolved_forecast_scores(
+        result,
+        analysis.state,
+        verification,
+        leads,
+        config,
+    )
+    removed_scores, removed_available = _resolved_forecast_scores(
+        removed_forecast,
+        removed_analysis.state,
+        verification,
+        leads,
+        config,
+    )
+    available = nominal_available & removed_available
+    metric_change = torch.where(
+        available,
+        removed_scores - nominal_scores,
+        torch.full_like(nominal_scores, float("nan")),
+    )
+    return ObservationRemovalImpact(
+        request=request,
+        nominal_scores=nominal_scores,
+        removed_scores=removed_scores,
+        metric_change=metric_change,
+        metric_available=available,
+        lead_minutes=leads,
+        metric_names=config.metric_names,
+        metric_domain=config.metric_domain,
+        nominal_forecast_digest=_forecast_result_content_digest(result),
+        removed_forecast_digest=_forecast_result_content_digest(
+            removed_forecast
+        ),
+        removed_linearization_digest=(
+            removed_linearization.linearization_digest
+        ),
+        verification_bundle_digest=verification.content_digest,
+        sensitivity_config_digest=config.digest,
+        removal_config_digest=removal.digest,
+        removed_observation_count=removed_count,
+        removed_fraction=removed_fraction,
+        removed_area_km2=removed_area_km2,
+        whitener_operations_per_apply=operations_per_apply,
+        observed_whitener_apply_count=counter[0],
+        observed_whitener_total_operations=operations_per_apply * counter[0],
+    )
+
+
+def validate_observation_removal_impact(
+    impact: ObservationRemovalImpact,
+) -> None:
+    """Validate a resolved denial result before durable use."""
+
+    expected_request = json_digest(
+        {
+            "contract": impact.request.contract,
+            "removal_mask": tensor_digest(impact.request.removal_mask),
+            "linearization_digest": impact.request.linearization_digest,
+        }
+    )
+    if impact.request.request_digest != expected_request:
+        raise ValueError("observation-removal request digest mismatch")
+    if (
+        impact.observation_removal_impact_digest
+        != _observation_removal_impact_digest(impact)
+    ):
+        raise ValueError("observation-removal impact digest mismatch")
+
+
+def _forecast_result_content_digest(result: ForecastResult) -> str:
+    return json_digest(
+        {
+            "contract": "forecast-result-content-v1",
+            "forecast_run_digest": result.forecast_run_digest,
+            "forecast_dbz_digest": result.forecast_dbz_digest,
+            "valid_mask_digest": result.valid_mask_digest,
+            "state_metadata_digest": result.state_metadata_digest,
+        }
+    )
+
+
+def _operational_manifest_from_run(
+    result: ForecastResult,
+) -> OperationalCalibrationManifest | None:
+    value = result.run.operational_calibration_manifest_json
+    return None if value is None else OperationalCalibrationManifest.from_json(value)
+
+
+def _operational_identity_from_run(
+    result: ForecastResult,
+) -> OperationalDataIdentity | None:
+    value = result.run.operational_data_identity_json
+    return None if value is None else OperationalDataIdentity.from_json(value)
+
+
+def _resolved_forecast_scores(
+    result: ForecastResult,
+    state: RadarState,
+    verification: _ResolvedVerification,
+    leads: tuple[int, ...],
+    config: SensitivityConfig,
+) -> tuple[Tensor, Tensor]:
+    nowcast = result.run.config
+    clean_truth = torch.nan_to_num(
+        verification.frames_dbz,
+        nan=nowcast.min_dbz,
+        posinf=nowcast.max_dbz,
+        neginf=nowcast.min_dbz,
+    ).clamp(nowcast.min_dbz, nowcast.max_dbz)
+    truth_linear = dbz_to_echo(
+        clean_truth,
+        min_dbz=nowcast.min_dbz,
+        max_dbz=nowcast.max_dbz,
+    )
+    finite_truth = verification.valid_mask & torch.isfinite(
+        verification.frames_dbz
+    )
+    scores = state.echo_linear.new_full(
+        (len(leads), len(config.metric_names)),
+        float("nan"),
+    )
+    available = torch.zeros_like(scores, dtype=torch.bool)
+    for lead_index, minutes in enumerate(leads):
+        step = minutes // nowcast.interval_minutes
+        forecast_index = step - 1
+        forecast, _ = _freeze_output_cap(
+            forecast_linear_at_step(state, step, nowcast),
+            nowcast,
+        )
+        weight = _metric_domain_weight(
+            result,
+            finite_truth[forecast_index],
+            forecast_index,
+            config.metric_domain,
+        )
+        for metric_index, name in enumerate(config.metric_names):
+            if not _metric_has_support(
+                name,
+                forecast,
+                truth_linear[forecast_index],
+                weight,
+                nowcast,
+                config,
+            ):
+                continue
+            scores[lead_index, metric_index] = forecast_metric(
+                name,
+                forecast,
+                truth_linear[forecast_index],
+                weight,
+                nowcast,
+                config,
+                result.run.grid_time_contract,
+            )
+            available[lead_index, metric_index] = True
+    return scores.detach(), available.detach()
 
 
 def validate_variational_fsoi_issuance_impact(
