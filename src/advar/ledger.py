@@ -26,22 +26,28 @@ from .sensitivity import (
     LearningApprovalEvidence,
     SensitivitySnapshot,
     VariationalLearningImpact,
+    _load_learning_policy_trust_store,
     validate_variational_learning_impact,
 )
 from .intervention import RealizedObservationIntervention
 from .promotion import (
     NeuralPriorCandidateManifest,
+    NeuralPriorHoldoutPlan,
+    NeuralPriorHoldoutPlanCase,
+    NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionEvidence,
     NeuralPriorPromotionPolicy,
     RealizedInterventionEvaluation,
     compute_neural_prior_promotion,
     validate_neural_prior_promotion,
+    validate_neural_prior_candidate_manifest,
+    validate_neural_prior_holdout_plan,
 )
 
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 8
+_INDEX_SCHEMA_VERSION = 10
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _TRUST_COMPONENTS_V13 = {
@@ -614,8 +620,12 @@ class EpisodeLedger:
                     resolved_normalized_benefit, learning_result_digest,
                     learning_approval_evidence_digest,
                     counterfactual_perturbation_digest,
-                    linearization_digest, evidence_contract, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    linearization_digest, case_id, radar_id, issue_time,
+                    input_bundle_before_digest, input_bundle_after_digest,
+                    resolved_issuance_validation_digest,
+                    evidence_contract, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                          ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     intervention.intervention_digest,
@@ -634,6 +644,12 @@ class EpisodeLedger:
                     intervention.learning_approval_evidence_digest,
                     intervention.counterfactual_perturbation_digest,
                     intervention.linearization_digest,
+                    intervention.case_id,
+                    intervention.radar_id,
+                    intervention.issue_time,
+                    intervention.input_bundle_before_digest,
+                    intervention.input_bundle_after_digest,
+                    intervention.resolved_issuance_validation_digest,
                     intervention.contract,
                     datetime.now(timezone.utc).isoformat(),
                 ),
@@ -677,16 +693,101 @@ class EpisodeLedger:
                 row["counterfactual_perturbation_digest"]
             ),
             linearization_digest=row["linearization_digest"],
+            case_id=row["case_id"],
+            radar_id=row["radar_id"],
+            issue_time=row["issue_time"],
+            input_bundle_before_digest=row["input_bundle_before_digest"],
+            input_bundle_after_digest=row["input_bundle_after_digest"],
+            resolved_issuance_validation_digest=(
+                row["resolved_issuance_validation_digest"]
+            ),
             contract=row["evidence_contract"],
         )
         if intervention.intervention_digest != intervention_digest:
             raise ValueError("realized intervention digest mismatch")
         return intervention
 
+    def append_neural_prior_holdout_plan(
+        self,
+        plan: NeuralPriorHoldoutPlan,
+        *,
+        policy: NeuralPriorHoldoutPlanPolicy,
+        policy_trust_store_path: str | Path,
+    ) -> str:
+        """Pre-register one approved plan before its first forecast issue."""
+
+        trust = _load_learning_policy_trust_store(policy_trust_store_path)
+        validate_neural_prior_holdout_plan(plan)
+        if policy.digest not in trust.approved_policy_digests:
+            raise ValueError("holdout plan policy is not approved")
+        if plan.plan_digest not in policy.approved_plan_digests:
+            raise ValueError("holdout plan is not approved")
+        if len(plan.candidate_family_digests) > policy.maximum_candidate_family_size:
+            raise ValueError("holdout candidate family exceeds policy")
+        approved_metrics = set(policy.approved_metric_contract_digests)
+        if any(item.metric_contract_digest not in approved_metrics for item in plan.cases):
+            raise ValueError("holdout metric contract is not approved")
+        now = datetime.now(timezone.utc)
+        registered = datetime.fromisoformat(plan.registered_at.replace("Z", "+00:00"))
+        if registered > now:
+            raise ValueError("holdout plan registration cannot be in the future")
+        if any(
+            now >= datetime.fromisoformat(item.issue_time.replace("Z", "+00:00"))
+            for item in plan.cases
+        ):
+            raise ValueError("holdout plan must be recorded before forecast issue")
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO neural_prior_holdout_plans (
+                    plan_digest, plan_id, plan_json, policy_digest,
+                    trust_store_digest, registered_at, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    plan.plan_digest,
+                    plan.plan_id,
+                    json.dumps(asdict(plan), sort_keys=True),
+                    policy.digest,
+                    trust.content_digest,
+                    plan.registered_at,
+                    now.isoformat(),
+                ),
+            )
+        return plan.plan_digest
+
+    def load_neural_prior_holdout_plan(
+        self,
+        plan_digest: str,
+    ) -> NeuralPriorHoldoutPlan:
+        """Load and verify one immutable pre-registered holdout plan."""
+
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT plan_json FROM neural_prior_holdout_plans "
+                "WHERE plan_digest = ?",
+                (plan_digest,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(f"unknown neural-prior holdout plan: {plan_digest}")
+        value = json.loads(row[0])
+        value.pop("plan_digest", None)
+        value["candidate_family_digests"] = tuple(
+            value["candidate_family_digests"]
+        )
+        value["cases"] = tuple(
+            NeuralPriorHoldoutPlanCase(**item) for item in value["cases"]
+        )
+        plan = NeuralPriorHoldoutPlan(**value)
+        if plan.plan_digest != plan_digest:
+            raise ValueError("neural-prior holdout plan digest mismatch")
+        return plan
+
     def append_neural_prior_promotion(
         self,
         evidence: NeuralPriorPromotionEvidence,
         manifest: NeuralPriorCandidateManifest,
+        plan: NeuralPriorHoldoutPlan,
         evaluations: tuple[RealizedInterventionEvaluation, ...],
         *,
         policy: NeuralPriorPromotionPolicy,
@@ -696,10 +797,13 @@ class EpisodeLedger:
 
         recomputed = compute_neural_prior_promotion(
             manifest,
+            plan,
             evaluations,
             policy=policy,
             policy_trust_store_path=policy_trust_store_path,
         )
+        validate_neural_prior_holdout_plan(plan)
+        validate_neural_prior_candidate_manifest(manifest)
         if (
             recomputed.promotion_evidence_digest
             != evidence.promotion_evidence_digest
@@ -707,25 +811,65 @@ class EpisodeLedger:
             raise ValueError("neural-prior promotion evidence is not reproducible")
         validate_neural_prior_promotion(evidence)
         with self._connect() as connection:
+            plan_row = connection.execute(
+                "SELECT plan_json, created_at FROM neural_prior_holdout_plans "
+                "WHERE plan_digest = ?",
+                (plan.plan_digest,),
+            ).fetchone()
+            if plan_row is None or plan_row[0] != json.dumps(
+                asdict(plan), sort_keys=True
+            ):
+                raise ValueError("promotion holdout plan is not pre-registered")
+            plan_created = datetime.fromisoformat(plan_row[1])
+            if any(
+                plan_created
+                >= datetime.fromisoformat(item.issue_time.replace("Z", "+00:00"))
+                for item in plan.cases
+            ):
+                raise ValueError("holdout plan was registered after forecast issue")
             recorded = {
                 row[0]: row[1:]
                 for row in connection.execute(
                     "SELECT intervention_digest, intervention_type, "
                     "learning_result_digest, "
-                    "learning_approval_evidence_digest "
+                    "learning_approval_evidence_digest, evidence_contract "
+                    ", input_bundle_after_digest "
                     "FROM realized_observation_interventions"
                 )
             }
             missing = set(evidence.intervention_digests) - set(recorded)
             if missing:
                 raise ValueError("promotion references unrecorded interventions")
+            recorded_approvals = {
+                row[0]
+                for row in connection.execute(
+                    "SELECT approval_evidence_digest "
+                    "FROM variational_learning_approvals"
+                )
+            }
+            if set(manifest.training_learning_approval_digests) - recorded_approvals:
+                raise ValueError("candidate training approvals are not recorded")
+            training_interventions = set(manifest.training_intervention_digests)
+            if training_interventions - set(recorded):
+                raise ValueError("candidate training interventions are not recorded")
+            for digest in training_interventions:
+                if recorded[digest][2] not in manifest.training_learning_approval_digests:
+                    raise ValueError("candidate training lineage is inconsistent")
+                if recorded[digest][3] != "realized-observation-intervention-v3":
+                    raise ValueError("candidate training requires causal v3 evidence")
+                if recorded[digest][4] not in manifest.training_input_bundle_digests:
+                    raise ValueError("candidate training input lineage is inconsistent")
+            if training_interventions & {
+                item.intervention_digest for item in evaluations
+            }:
+                raise ValueError("training and promotion interventions overlap")
             for evaluation in evaluations:
                 intervention_row = recorded[evaluation.intervention_digest]
-                if intervention_row != (
+                if intervention_row[:3] != (
                     evaluation.intervention_type,
                     evaluation.learning_result_digest,
                     evaluation.learning_approval_evidence_digest,
-                ):
+                ) or intervention_row[3] != "realized-observation-intervention-v3":
                     raise ValueError(
                         "promotion evaluation disagrees with intervention ledger"
                     )
@@ -750,8 +894,10 @@ class EpisodeLedger:
                 INSERT INTO neural_prior_promotions (
                     promotion_evidence_digest, candidate_prior_digest,
                     parent_prior_digest, candidate_manifest_digest,
-                    candidate_manifest_json, policy_digest, trust_store_digest,
-                    evaluation_digests_json, intervention_digests_json,
+                    candidate_manifest_json, holdout_plan_digest,
+                    policy_digest, trust_store_digest,
+                    evaluation_digests_json, evaluation_payloads_json,
+                    intervention_digests_json,
                     realized_intervention_count, material_outcome_count,
                     distinct_case_count, distinct_storm_count,
                     distinct_day_count, distinct_radar_count,
@@ -761,8 +907,8 @@ class EpisodeLedger:
                     mean_normalized_improvement, mean_improvement_lower_bound,
                     maximum_normalized_degradation, eligible,
                     rejection_reasons_json, evidence_contract, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     evidence.promotion_evidence_digest,
@@ -770,9 +916,14 @@ class EpisodeLedger:
                     evidence.parent_prior_digest,
                     evidence.candidate_manifest_digest,
                     json.dumps(asdict(manifest), sort_keys=True),
+                    plan.plan_digest,
                     evidence.policy_digest,
                     evidence.trust_store_digest,
                     json.dumps(list(evidence.evaluation_digests)),
+                    json.dumps(
+                        [_evaluation_audit_payload(item) for item in evaluations],
+                        sort_keys=True,
+                    ),
                     json.dumps(list(evidence.intervention_digests)),
                     evidence.realized_intervention_count,
                     evidence.material_intervention_count,
@@ -857,7 +1008,36 @@ class EpisodeLedger:
         )
         if evidence.promotion_evidence_digest != promotion_evidence_digest:
             raise ValueError("neural-prior promotion digest mismatch")
+        payloads = json.loads(row["evaluation_payloads_json"])
+        if not isinstance(payloads, list) or tuple(
+            item.get("evaluation_digest") for item in payloads
+            if isinstance(item, dict)
+        ) != evidence.evaluation_digests:
+            raise ValueError("neural-prior promotion evaluation audit mismatch")
         return evidence
+
+    def load_neural_prior_promotion_evaluations(
+        self,
+        promotion_evidence_digest: str,
+    ) -> tuple[dict[str, object], ...]:
+        """Load the immutable paired metrics retained for promotion audit."""
+
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT evaluation_payloads_json FROM neural_prior_promotions "
+                "WHERE promotion_evidence_digest = ?",
+                (promotion_evidence_digest,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(
+                f"unknown neural-prior promotion: {promotion_evidence_digest}"
+            )
+        value = json.loads(row[0])
+        if not isinstance(value, list) or any(
+            not isinstance(item, dict) for item in value
+        ):
+            raise ValueError("invalid promotion evaluation audit payload")
+        return tuple(value)
 
     def _initialize_index(self) -> None:
         with self._connect() as connection:
@@ -936,6 +1116,12 @@ class EpisodeLedger:
                     learning_approval_evidence_digest TEXT NOT NULL,
                     counterfactual_perturbation_digest TEXT NOT NULL,
                     linearization_digest TEXT NOT NULL,
+                    case_id TEXT NOT NULL DEFAULT '',
+                    radar_id TEXT NOT NULL DEFAULT '',
+                    issue_time TEXT NOT NULL DEFAULT '',
+                    input_bundle_before_digest TEXT NOT NULL DEFAULT '',
+                    input_bundle_after_digest TEXT NOT NULL DEFAULT '',
+                    resolved_issuance_validation_digest TEXT NOT NULL DEFAULT '',
                     evidence_contract TEXT NOT NULL,
                     created_at TEXT NOT NULL,
                     FOREIGN KEY (learning_result_digest)
@@ -947,15 +1133,30 @@ class EpisodeLedger:
             )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS neural_prior_holdout_plans (
+                    plan_digest TEXT PRIMARY KEY,
+                    plan_id TEXT NOT NULL UNIQUE,
+                    plan_json TEXT NOT NULL,
+                    policy_digest TEXT NOT NULL,
+                    trust_store_digest TEXT NOT NULL,
+                    registered_at TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS neural_prior_promotions (
                     promotion_evidence_digest TEXT PRIMARY KEY,
                     candidate_prior_digest TEXT NOT NULL UNIQUE,
                     parent_prior_digest TEXT NOT NULL,
                     candidate_manifest_digest TEXT NOT NULL,
                     candidate_manifest_json TEXT NOT NULL,
+                    holdout_plan_digest TEXT NOT NULL,
                     policy_digest TEXT NOT NULL,
                     trust_store_digest TEXT NOT NULL,
                     evaluation_digests_json TEXT NOT NULL,
+                    evaluation_payloads_json TEXT NOT NULL,
                     intervention_digests_json TEXT NOT NULL,
                     realized_intervention_count INTEGER NOT NULL,
                     material_outcome_count INTEGER NOT NULL,
@@ -996,6 +1197,7 @@ class EpisodeLedger:
                 "episode_impacts",
                 "variational_learning_approvals",
                 "realized_observation_interventions",
+                "neural_prior_holdout_plans",
                 "neural_prior_promotions",
             ):
                 connection.execute(
@@ -1266,6 +1468,12 @@ def _ensure_realized_intervention_schema(
         "execution_trust_store_digest": f"TEXT NOT NULL DEFAULT '{'0' * 64}'",
         "predicted_normalized_benefit": "REAL NOT NULL DEFAULT 0",
         "resolved_normalized_benefit": "REAL NOT NULL DEFAULT 0",
+        "case_id": "TEXT NOT NULL DEFAULT ''",
+        "radar_id": "TEXT NOT NULL DEFAULT ''",
+        "issue_time": "TEXT NOT NULL DEFAULT ''",
+        "input_bundle_before_digest": "TEXT NOT NULL DEFAULT ''",
+        "input_bundle_after_digest": "TEXT NOT NULL DEFAULT ''",
+        "resolved_issuance_validation_digest": "TEXT NOT NULL DEFAULT ''",
     }
     for name, definition in definitions.items():
         if name not in columns:
@@ -1287,6 +1495,7 @@ def _ensure_neural_prior_promotion_schema(
     definitions = {
         "candidate_manifest_digest": f"TEXT NOT NULL DEFAULT '{'0' * 64}'",
         "candidate_manifest_json": "TEXT NOT NULL DEFAULT '{}'",
+        "holdout_plan_digest": f"TEXT NOT NULL DEFAULT '{'0' * 64}'",
         "distinct_case_count": "INTEGER NOT NULL DEFAULT 0",
         "distinct_storm_count": "INTEGER NOT NULL DEFAULT 0",
         "distinct_day_count": "INTEGER NOT NULL DEFAULT 0",
@@ -1296,6 +1505,7 @@ def _ensure_neural_prior_promotion_schema(
         "beneficial_fraction_lower_bound": "REAL NOT NULL DEFAULT 0",
         "harmful_fraction_upper_bound": "REAL NOT NULL DEFAULT 1",
         "mean_improvement_lower_bound": "REAL NOT NULL DEFAULT 0",
+        "evaluation_payloads_json": "TEXT NOT NULL DEFAULT '[]'",
     }
     for name, definition in definitions.items():
         if name not in columns:
@@ -1303,6 +1513,24 @@ def _ensure_neural_prior_promotion_schema(
                 "ALTER TABLE neural_prior_promotions "
                 f"ADD COLUMN {name} {definition}"
             )
+
+
+def _evaluation_audit_payload(
+    evaluation: RealizedInterventionEvaluation,
+) -> dict[str, object]:
+    """Serialize the small paired-evaluation payload for later audit."""
+
+    result: dict[str, object] = {}
+    for name, value in evaluation.__dict__.items():
+        if isinstance(value, Tensor):
+            result[name] = value.detach().cpu().tolist()
+        elif isinstance(value, tuple):
+            result[name] = list(value)
+        elif hasattr(value, "value"):
+            result[name] = value.value
+        else:
+            result[name] = value
+    return result
 
 
 def _create_episode_impacts_table(connection: sqlite3.Connection) -> None:

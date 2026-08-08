@@ -31,10 +31,15 @@ from .nowcast import (
     TendencyPairSelection,
     TendencySource,
     forecast_evidence_fields,
+    forecast_from_state,
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v42"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v44"
+_LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
+    "forecast-run-v42",
+    "forecast-run-v43",
+}
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 224
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
@@ -159,6 +164,12 @@ _CORE_ARRAY_NAMES = frozenset(
         "operational_data_identity_present",
         "operational_data_identity_json",
         "operational_data_identity_digest",
+        "neural_prior_digest",
+        "prior_application_digest",
+        "prior_model_contract_digest",
+        "prior_feature_schema_digest",
+        "prior_training_manifest_digest",
+        "prior_role",
     }
 )
 _CLI_EXTRA_ARRAY_NAMES = frozenset(
@@ -297,6 +308,32 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "nowcast_config_json": np.asarray(config_json),
         "nowcast_config_digest": np.asarray(config.digest),
         "input_bundle_digest": np.asarray(result.run.input_bundle_digest),
+        "neural_prior_digest": np.asarray(
+            "" if result.run.neural_prior_digest is None else result.run.neural_prior_digest
+        ),
+        "prior_application_digest": np.asarray(
+            ""
+            if result.run.prior_application_digest is None
+            else result.run.prior_application_digest
+        ),
+        "prior_model_contract_digest": np.asarray(
+            ""
+            if result.run.prior_model_contract_digest is None
+            else result.run.prior_model_contract_digest
+        ),
+        "prior_feature_schema_digest": np.asarray(
+            ""
+            if result.run.prior_feature_schema_digest is None
+            else result.run.prior_feature_schema_digest
+        ),
+        "prior_training_manifest_digest": np.asarray(
+            ""
+            if result.run.prior_training_manifest_digest is None
+            else result.run.prior_training_manifest_digest
+        ),
+        "prior_role": np.asarray(
+            "" if result.run.prior_role is None else result.run.prior_role
+        ),
         "run_background_age_minutes": np.asarray(
             np.nan
             if result.run.background_age_minutes is None
@@ -791,7 +828,10 @@ def load_forecast_run(
             version_name: np.array(archive[version_name], copy=True)
         }
         version = _string_scalar(loaded_arrays, version_name)
-        if version != FORECAST_RUN_ARTIFACT_VERSION:
+        if version not in (
+            {FORECAST_RUN_ARTIFACT_VERSION}
+            | _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS
+        ):
             raise ValueError(f"unsupported forecast run artifact: {version}")
 
         loaded_arrays.update(
@@ -1245,6 +1285,26 @@ def load_forecast_run(
             ),
             operational_data_identity_json=operational_data_identity_json,
             operational_data_identity_digest=operational_data_identity_digest,
+            neural_prior_digest=_optional_digest_scalar(
+                loaded_arrays, "neural_prior_digest"
+            ) if version == FORECAST_RUN_ARTIFACT_VERSION else None,
+            prior_application_digest=_optional_digest_scalar(
+                loaded_arrays, "prior_application_digest"
+            ) if version == FORECAST_RUN_ARTIFACT_VERSION else None,
+            prior_model_contract_digest=_optional_digest_scalar(
+                loaded_arrays, "prior_model_contract_digest"
+            ) if version == FORECAST_RUN_ARTIFACT_VERSION else None,
+            prior_feature_schema_digest=_optional_digest_scalar(
+                loaded_arrays, "prior_feature_schema_digest"
+            ) if version == FORECAST_RUN_ARTIFACT_VERSION else None,
+            prior_training_manifest_digest=_optional_digest_scalar(
+                loaded_arrays, "prior_training_manifest_digest"
+            ) if version == FORECAST_RUN_ARTIFACT_VERSION else None,
+            prior_role=(
+                (_string_scalar(loaded_arrays, "prior_role") or None)
+                if version == FORECAST_RUN_ARTIFACT_VERSION
+                else None
+            ),
             forecast_integrator_version=_string_scalar(
                 loaded_arrays,
                 "forecast_integrator_version",
@@ -1289,6 +1349,13 @@ def load_forecast_run(
             evidence=forecast_evidence_fields(state, metadata, config),
             audit=None,
         )
+        if version in _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS:
+            migrated = forecast_from_state(state, metadata, config, run=run)
+            if not torch.equal(migrated.forecast_dbz, forecast_dbz) or not torch.equal(
+                migrated.valid_mask, valid_mask
+            ):
+                raise ValueError("legacy forecast payload cannot be migrated")
+            result = migrated
     result.validate_issuance()
     if not torch.equal(
         result.forecast_path_verified_support,
@@ -1602,6 +1669,14 @@ def _string_scalar(arrays: _ArtifactArrays, name: str) -> str:
 
 def _digest_scalar(arrays: _ArtifactArrays, name: str) -> str:
     return _validate_digest(name, _string_scalar(arrays, name))
+
+
+def _optional_digest_scalar(
+    arrays: _ArtifactArrays,
+    name: str,
+) -> str | None:
+    value = _string_scalar(arrays, name)
+    return None if not value else _validate_digest(name, value)
 
 
 def _analysis_lineage(

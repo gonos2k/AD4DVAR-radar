@@ -586,6 +586,75 @@ class AnalysisObservations:
 
 
 @dataclass(frozen=True)
+class NeuralPriorApplication:
+    """One neural-prior output that is actually consumed by P1."""
+
+    initial_background_dbz: Tensor
+    neural_prior_digest: str
+    model_contract_digest: str
+    feature_schema_digest: str
+    training_manifest_digest: str
+    role: Literal["candidate", "parent"]
+    contract: str = "neural-prior-application-v1"
+    application_digest: str = ""
+
+    def __post_init__(self) -> None:
+        if self.contract != "neural-prior-application-v1":
+            raise ValueError("unsupported neural-prior application")
+        background = self.initial_background_dbz.detach().clone()
+        if (
+            background.ndim != 2
+            or not background.is_floating_point()
+            or not bool(torch.all(torch.isfinite(background)))
+        ):
+            raise ValueError("neural-prior background must be finite and 2-D")
+        for name, value in (
+            ("neural_prior_digest", self.neural_prior_digest),
+            ("model_contract_digest", self.model_contract_digest),
+            ("feature_schema_digest", self.feature_schema_digest),
+            ("training_manifest_digest", self.training_manifest_digest),
+        ):
+            if len(value) != 64 or any(
+                character not in "0123456789abcdef" for character in value
+            ):
+                raise ValueError(f"{name} must be a lowercase SHA-256 digest")
+        if self.role not in ("candidate", "parent"):
+            raise ValueError("neural-prior role must be candidate or parent")
+        digest = json_digest(
+            {
+                "contract": self.contract,
+                "initial_background_dbz": tensor_digest(background),
+                "neural_prior_digest": self.neural_prior_digest,
+                "model_contract_digest": self.model_contract_digest,
+                "feature_schema_digest": self.feature_schema_digest,
+                "training_manifest_digest": self.training_manifest_digest,
+                "role": self.role,
+            }
+        )
+        if self.application_digest and self.application_digest != digest:
+            raise ValueError("neural-prior application digest mismatch")
+        object.__setattr__(self, "initial_background_dbz", background)
+        object.__setattr__(self, "application_digest", digest)
+
+    def validate_integrity(self) -> None:
+        expected = json_digest(
+            {
+                "contract": self.contract,
+                "initial_background_dbz": tensor_digest(
+                    self.initial_background_dbz
+                ),
+                "neural_prior_digest": self.neural_prior_digest,
+                "model_contract_digest": self.model_contract_digest,
+                "feature_schema_digest": self.feature_schema_digest,
+                "training_manifest_digest": self.training_manifest_digest,
+                "role": self.role,
+            }
+        )
+        if expected != self.application_digest:
+            raise ValueError("neural-prior application digest mismatch")
+
+
+@dataclass(frozen=True)
 class FrozenObservationWhitener:
     """Precomputed constants for the frozen observation-error transform."""
 
@@ -621,6 +690,7 @@ class FrozenOuterState:
     smooth_edge_left_index: Tensor
     smooth_edge_right_index: Tensor
     smooth_edge_physical_weight: Tensor
+    observation_derived_initial_background: bool = True
 
     @property
     def amplitude_displacement_tolerance_yx(self) -> tuple[int, int]:
@@ -1255,6 +1325,7 @@ def prepare_analysis(
     background_frames_dbz: Tensor | None = None,
     background_age_minutes: float | None = None,
     grid_time_contract: RadarGridTimeContract | None = None,
+    neural_prior: NeuralPriorApplication | None = None,
 ) -> tuple[AnalysisObservations, FrozenOuterState]:
     nowcast_config = nowcast_config or NowcastConfig()
     analysis_config = analysis_config or AnalysisConfig()
@@ -1648,6 +1719,21 @@ def prepare_analysis(
         canonical_observations[0],
         prepared.background_frames_dbz[0],
     )
+    if neural_prior is not None:
+        neural_prior.validate_integrity()
+        if (
+            neural_prior.initial_background_dbz.shape
+            != initial_background_dbz.shape
+            or neural_prior.initial_background_dbz.dtype != frames_dbz.dtype
+            or neural_prior.initial_background_dbz.device != frames_dbz.device
+        ):
+            raise ValueError(
+                "neural-prior background must match the radar grid, dtype, and device"
+            )
+        initial_background_dbz = neural_prior.initial_background_dbz.clamp(
+            nowcast_config.min_dbz,
+            nowcast_config.max_dbz,
+        )
     observation_whitener = _freeze_observation_whitener(
         observations,
         analysis_config,
@@ -1685,6 +1771,7 @@ def prepare_analysis(
         smooth_edge_left_index=smooth_edge_left_index,
         smooth_edge_right_index=smooth_edge_right_index,
         smooth_edge_physical_weight=smooth_edge_physical_weight,
+        observation_derived_initial_background=(neural_prior is None),
     )
     linearization_bytes = _retained_tensor_bytes((observations, frozen))
     if linearization_bytes > analysis_config.maximum_linearization_bytes:
@@ -3772,6 +3859,7 @@ def variational_nowcast(
     ) = None,
     operational_calibration_approval_digest: str | None = None,
     operational_data_identity: OperationalDataIdentity | None = None,
+    neural_prior: NeuralPriorApplication | None = None,
     audit: bool = False,
 ) -> tuple[ForecastResult, AnalysisResult]:
     nowcast_config = nowcast_config or NowcastConfig()
@@ -3797,13 +3885,20 @@ def variational_nowcast(
         background_frames_dbz=background_frames_dbz,
         background_age_minutes=background_age_minutes,
         grid_time_contract=grid_time_contract,
+        neural_prior=neural_prior,
     )
     analysis = solve_analysis(observations, frozen)
     (
         analysis_config_json,
         analysis_config_digest,
         analysis_input_digest,
-    ) = _analysis_input_lineage(observations, frozen.analysis_config)
+    ) = _analysis_input_lineage(
+        observations,
+        frozen.analysis_config,
+        neural_prior_application_digest=(
+            None if neural_prior is None else neural_prior.application_digest
+        ),
+    )
     run = ForecastRunContract.from_inputs(
         nowcast_config,
         frames_dbz,
@@ -3837,6 +3932,22 @@ def variational_nowcast(
             if operational_data_identity is None
             else operational_data_identity.digest
         ),
+        neural_prior_digest=(
+            None if neural_prior is None else neural_prior.neural_prior_digest
+        ),
+        prior_application_digest=(
+            None if neural_prior is None else neural_prior.application_digest
+        ),
+        prior_model_contract_digest=(
+            None if neural_prior is None else neural_prior.model_contract_digest
+        ),
+        prior_feature_schema_digest=(
+            None if neural_prior is None else neural_prior.feature_schema_digest
+        ),
+        prior_training_manifest_digest=(
+            None if neural_prior is None else neural_prior.training_manifest_digest
+        ),
+        prior_role=None if neural_prior is None else neural_prior.role,
     )
     forecast = forecast_from_state(
         analysis.state,
@@ -3863,6 +3974,8 @@ def variational_nowcast(
 def _analysis_input_lineage(
     observations: AnalysisObservations,
     config: AnalysisConfig,
+    *,
+    neural_prior_application_digest: str | None = None,
 ) -> tuple[str, str, str]:
     config_value = asdict(config)
     config_json = json.dumps(
@@ -3874,10 +3987,13 @@ def _analysis_input_lineage(
     config_digest = json_digest(config_value)
     input_digest = json_digest(
         {
-            "version": "p1-analysis-input-v1",
+            "version": "p1-analysis-input-v2",
             "analysis_config_digest": config_digest,
             "observation_std_dbz": tensor_digest(observations.std_dbz),
             "quality_weight": tensor_digest(observations.quality_weight),
+            "neural_prior_application_digest": (
+                neural_prior_application_digest
+            ),
         }
     )
     return config_json, config_digest, input_digest
@@ -6477,6 +6593,9 @@ def _clone_frozen_outer_state(frozen: FrozenOuterState) -> FrozenOuterState:
         smooth_edge_physical_weight=_clone_tensor(
             frozen.smooth_edge_physical_weight
         ),
+        observation_derived_initial_background=(
+            frozen.observation_derived_initial_background
+        ),
     )
 
 
@@ -6521,7 +6640,7 @@ def _frozen_outer_state_digest_values(
         if frozen.grid_time_contract is None
         else json_digest(asdict(frozen.grid_time_contract))
     )
-    return {
+    values: dict[str, object] = {
         "input_frames_dbz": tensor_digest(frozen.input_frames_dbz),
         "background_frames_dbz": _optional_tensor_digest(
             frozen.background_frames_dbz
@@ -6574,6 +6693,9 @@ def _frozen_outer_state_digest_values(
             frozen.smooth_edge_physical_weight
         ),
     }
+    if not frozen.observation_derived_initial_background:
+        values["observation_derived_initial_background"] = False
+    return values
 
 
 def analysis_linearization_digest(

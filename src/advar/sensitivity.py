@@ -25,6 +25,7 @@ from .nowcast import (
     DynamicsSource,
     ForecastMetadata,
     ForecastResult,
+    ForecastRunContract,
     NowcastConfig,
     RadarGridTimeContract,
     RadarState,
@@ -1083,11 +1084,12 @@ def _physical_radar_channels(
         torch.zeros_like(delta_dbz),
     )
     background = torch.zeros_like(delta_dbz)
-    background[0] = torch.where(
-        observations.detected_mask[0] & frozen.observed_mask[0],
-        delta_dbz[0],
-        torch.zeros_like(delta_dbz[0]),
-    )
+    if frozen.observation_derived_initial_background:
+        background[0] = torch.where(
+            observations.detected_mask[0] & frozen.observed_mask[0],
+            delta_dbz[0],
+            torch.zeros_like(delta_dbz[0]),
+        )
     dynamics = torch.zeros_like(delta_dbz)
     if frozen.baseline_metadata.tendency_source is TendencySource.OBSERVATION:
         dynamics = torch.where(
@@ -1976,6 +1978,9 @@ class LearningEligibility:
 class FirstOrderValidation:
     """Full/half-step checks on one frozen-domain Taylor prediction."""
 
+    source_fsoi_digest: str
+    nominal_forecast_digest: str
+    nominal_input_bundle_digest: str
     full_step_prediction: Tensor
     full_step_resolved_metric_change: Tensor
     full_step_absolute_error: Tensor
@@ -1997,6 +2002,8 @@ class FirstOrderValidation:
     half_step_analysis_digest: str | None
     full_step_forecast_digest: str | None
     half_step_forecast_digest: str | None
+    full_step_input_bundle_digest: str | None = None
+    half_step_input_bundle_digest: str | None = None
     full_step_pcg_iterations: int = 0
     half_step_pcg_iterations: int = 0
     observed_whitener_apply_count: int = 0
@@ -2007,18 +2014,26 @@ class FirstOrderValidation:
     coverage_after: Tensor | None = None
     newly_issued_fraction: Tensor | None = None
     withdrawn_fraction: Tensor | None = None
+    background_fallback_before: Tensor | None = None
+    background_fallback_after: Tensor | None = None
     metric_domain_contract: FirstOrderMetricDomain = "frozen_metric_domain"
-    contract: str = "p1-first-order-validation-v3"
+    contract: str = "p1-first-order-validation-v4"
     validation_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "p1-first-order-validation-v3":
+        if self.contract != "p1-first-order-validation-v4":
             raise ValueError("unsupported first-order validation contract")
         if self.metric_domain_contract not in (
             "frozen_metric_domain",
             "resolved_issuance_domain",
         ):
             raise ValueError("unsupported first-order metric domain")
+        for name in (
+            "source_fsoi_digest",
+            "nominal_forecast_digest",
+            "nominal_input_bundle_digest",
+        ):
+            _require_sha256(name, getattr(self, name))
         tensor_names = (
             "full_step_prediction",
             "full_step_resolved_metric_change",
@@ -2041,6 +2056,8 @@ class FirstOrderValidation:
             "coverage_after",
             "newly_issued_fraction",
             "withdrawn_fraction",
+            "background_fallback_before",
+            "background_fallback_after",
         )
         issuance = tuple(getattr(self, name) for name in issuance_names)
         if self.metric_domain_contract == "resolved_issuance_domain":
@@ -2115,10 +2132,21 @@ class FirstOrderValidation:
             "half_step_analysis_digest",
             "full_step_forecast_digest",
             "half_step_forecast_digest",
+            "full_step_input_bundle_digest",
+            "half_step_input_bundle_digest",
         ):
             value = getattr(self, name)
             if value is not None:
                 _require_sha256(name, value)
+        input_digests = (
+            self.full_step_input_bundle_digest,
+            self.half_step_input_bundle_digest,
+        )
+        if self.metric_domain_contract == "resolved_issuance_domain":
+            if any(value is None for value in input_digests):
+                raise ValueError("resolved issuance input lineage is incomplete")
+        elif any(value is not None for value in input_digests):
+            raise ValueError("frozen validation cannot carry resolved inputs")
         object.__setattr__(
             self,
             "validation_digest",
@@ -2764,6 +2792,11 @@ def first_order_validation_digest(
     return json_digest(
         {
             "contract": validation.contract,
+            "source_fsoi_digest": validation.source_fsoi_digest,
+            "nominal_forecast_digest": validation.nominal_forecast_digest,
+            "nominal_input_bundle_digest": (
+                validation.nominal_input_bundle_digest
+            ),
             "metric_domain_contract": validation.metric_domain_contract,
             "full_step_prediction": tensor_digest(
                 validation.full_step_prediction
@@ -2814,6 +2847,12 @@ def first_order_validation_digest(
             "half_step_forecast_digest": (
                 validation.half_step_forecast_digest
             ),
+            "full_step_input_bundle_digest": (
+                validation.full_step_input_bundle_digest
+            ),
+            "half_step_input_bundle_digest": (
+                validation.half_step_input_bundle_digest
+            ),
             "full_step_pcg_iterations": validation.full_step_pcg_iterations,
             "half_step_pcg_iterations": validation.half_step_pcg_iterations,
             "observed_whitener_apply_count": (
@@ -2837,6 +2876,12 @@ def first_order_validation_digest(
             ),
             "withdrawn_fraction": _optional_tensor_digest(
                 validation.withdrawn_fraction
+            ),
+            "background_fallback_before": _optional_tensor_digest(
+                validation.background_fallback_before
+            ),
+            "background_fallback_after": _optional_tensor_digest(
+                validation.background_fallback_after
             ),
         }
     )
@@ -3425,6 +3470,13 @@ def validate_variational_learning_impact(
     validation = learning.first_order_validation
     if learning.fsoi is not None:
         validate_variational_fsoi(learning.fsoi)
+    if learning.fsoi is not None and validation is not None and (
+        validation.source_fsoi_digest
+        != learning.fsoi.variational_fsoi_digest
+        or validation.nominal_forecast_digest
+        != learning.fsoi.fso.forecast_run_digest
+    ):
+        raise ValueError("first-order validation lineage mismatch")
     if validation is not None and (
         first_order_validation_digest(validation)
         != validation.validation_digest
@@ -4426,6 +4478,8 @@ def _resolved_forecast_scores(
     verification: _ResolvedVerification,
     leads: tuple[int, ...],
     config: SensitivityConfig,
+    *,
+    domain_weights: Tensor | None = None,
 ) -> tuple[Tensor, Tensor]:
     nowcast = result.run.config
     clean_truth = torch.nan_to_num(
@@ -4454,11 +4508,15 @@ def _resolved_forecast_scores(
             forecast_linear_at_step(state, step, nowcast),
             nowcast,
         )
-        weight = _metric_domain_weight(
-            result,
-            finite_truth[forecast_index],
-            forecast_index,
-            config.metric_domain,
+        weight = (
+            _metric_domain_weight(
+                result,
+                finite_truth[forecast_index],
+                forecast_index,
+                config.metric_domain,
+            )
+            if domain_weights is None
+            else domain_weights[lead_index]
         )
         for metric_index, name in enumerate(config.metric_names):
             if not _metric_has_support(
@@ -4481,6 +4539,29 @@ def _resolved_forecast_scores(
             )
             available[lead_index, metric_index] = True
     return scores.detach(), available.detach()
+
+
+def _resolved_forecast_domain_weights(
+    result: ForecastResult,
+    verification: _ResolvedVerification,
+    leads: tuple[int, ...],
+    config: SensitivityConfig,
+) -> Tensor:
+    """Return one frozen metric-domain weight per requested lead."""
+
+    finite = verification.valid_mask & torch.isfinite(verification.frames_dbz)
+    weights = []
+    for minutes in leads:
+        forecast_index = minutes // result.run.config.interval_minutes - 1
+        weights.append(
+            _metric_domain_weight(
+                result,
+                finite[forecast_index],
+                forecast_index,
+                config.metric_domain,
+            )
+        )
+    return torch.stack(weights).detach()
 
 
 def validate_variational_fsoi_issuance_impact(
@@ -5123,6 +5204,13 @@ def _learning_impact_from_fsoi(
             fsoi=fsoi,
         )
     if (
+        validation.source_fsoi_digest != fsoi.variational_fsoi_digest
+        or validation.nominal_forecast_digest != result.forecast_run_digest
+        or validation.nominal_input_bundle_digest
+        != result.run.input_bundle_digest
+    ):
+        raise ValueError("first-order validation lineage mismatch")
+    if (
         validation.total_resolved_pcg_iterations
         > policy.maximum_learning_pcg_iterations
     ):
@@ -5508,6 +5596,9 @@ def _validate_first_order_learning_impact(
         and material_count > 0
     )
     return FirstOrderValidation(
+        source_fsoi_digest=fsoi.variational_fsoi_digest,
+        nominal_forecast_digest=result.forecast_run_digest,
+        nominal_input_bundle_digest=result.run.input_bundle_digest,
         full_step_prediction=full_prediction,
         full_step_resolved_metric_change=full.metric_change,
         full_step_absolute_error=full_error,
@@ -5529,6 +5620,8 @@ def _validate_first_order_learning_impact(
         half_step_analysis_digest=half.analysis_digest,
         full_step_forecast_digest=full.forecast_digest,
         half_step_forecast_digest=half.forecast_digest,
+        full_step_input_bundle_digest=full.input_bundle_digest,
+        half_step_input_bundle_digest=half.input_bundle_digest,
         full_step_pcg_iterations=full.pcg_iterations,
         half_step_pcg_iterations=half.pcg_iterations,
         observed_whitener_apply_count=whitener_counter[0],
@@ -5539,6 +5632,8 @@ def _validate_first_order_learning_impact(
         coverage_after=full.coverage_after,
         newly_issued_fraction=full.newly_issued_fraction,
         withdrawn_fraction=full.withdrawn_fraction,
+        background_fallback_before=full.background_fallback_before,
+        background_fallback_after=full.background_fallback_after,
         metric_domain_contract=metric_domain_contract,
     )
 
@@ -5553,10 +5648,13 @@ class _ResolvedLearningStep:
     coverage_after: Tensor | None
     newly_issued_fraction: Tensor | None
     withdrawn_fraction: Tensor | None
+    background_fallback_before: Tensor | None
+    background_fallback_after: Tensor | None
     analysis_converged: bool
     active_branch_valid: bool
     analysis_digest: str | None
     forecast_digest: str | None
+    input_bundle_digest: str | None
     pcg_iterations: int
 
 
@@ -5630,6 +5728,8 @@ def _resolve_learning_step(
     coverage_after = metric_change.new_zeros(len(fsoi.fso.lead_minutes)) if resolved_domain else None
     newly_issued = metric_change.new_zeros(len(fsoi.fso.lead_minutes)) if resolved_domain else None
     withdrawn = metric_change.new_zeros(len(fsoi.fso.lead_minutes)) if resolved_domain else None
+    fallback_before = metric_change.new_zeros(len(fsoi.fso.lead_minutes)) if resolved_domain else None
+    fallback_after = metric_change.new_zeros(len(fsoi.fso.lead_minutes)) if resolved_domain else None
     branch_valid = converged and resolved_linearization is not None
     if resolved_linearization is not None:
         branch_valid = (
@@ -5647,21 +5747,60 @@ def _resolve_learning_step(
             coverage_after=coverage_after,
             newly_issued_fraction=newly_issued,
             withdrawn_fraction=withdrawn,
+            background_fallback_before=fallback_before,
+            background_fallback_after=fallback_after,
             analysis_converged=False,
             active_branch_valid=branch_valid,
             analysis_digest=None,
             forecast_digest=None,
+            input_bundle_digest=None,
             pcg_iterations=resolved.pcg_iterations,
         )
     if resolved_linearization is None:
         raise RuntimeError("converged learning re-solve lacks linearization")
     resolved_forecast = None
+    resolved_run = None
     if metric_domain_contract == "resolved_issuance_domain":
+        changed_frames = frozen.input_frames_dbz + delta
+        resolved_run = ForecastRunContract.from_inputs(
+            result.run.config,
+            changed_frames,
+            changed_observations.valid_mask,
+            frozen.background_frames_dbz,
+            frozen.background_age_minutes,
+            grid_time_contract=frozen.grid_time_contract,
+            analysis_config_json=result.run.analysis_config_json,
+            analysis_config_digest=result.run.analysis_config_digest,
+            analysis_input_digest=result.run.analysis_input_digest,
+            operational_calibration_manifest_json=(
+                result.run.operational_calibration_manifest_json
+            ),
+            operational_calibration_manifest_digest=(
+                result.run.operational_calibration_manifest_digest
+            ),
+            operational_calibration_approval_digest=(
+                result.run.operational_calibration_approval_digest
+            ),
+            operational_data_identity_json=(
+                result.run.operational_data_identity_json
+            ),
+            operational_data_identity_digest=(
+                result.run.operational_data_identity_digest
+            ),
+            neural_prior_digest=result.run.neural_prior_digest,
+            prior_application_digest=result.run.prior_application_digest,
+            prior_model_contract_digest=result.run.prior_model_contract_digest,
+            prior_feature_schema_digest=result.run.prior_feature_schema_digest,
+            prior_training_manifest_digest=(
+                result.run.prior_training_manifest_digest
+            ),
+            prior_role=result.run.prior_role,
+        )
         resolved_forecast = forecast_from_state(
             resolved.state,
             resolved.metadata,
             result.run.config,
-            run=result.run,
+            run=resolved_run,
         )
         resolved_forecast.validate_issuance()
 
@@ -5733,6 +5872,8 @@ def _resolve_learning_step(
             assert coverage_after is not None
             assert newly_issued is not None
             assert withdrawn is not None
+            assert fallback_before is not None
+            assert fallback_after is not None
             valid_count = torch.count_nonzero(finite_truth[forecast_index]).clamp_min(1)
             nominal_support = nominal_weight > 0
             changed_support = changed_weight > 0
@@ -5740,6 +5881,16 @@ def _resolve_learning_step(
             coverage_after[lead_index] = torch.count_nonzero(changed_support).to(metric_change) / valid_count
             newly_issued[lead_index] = torch.count_nonzero(changed_support & ~nominal_support).to(metric_change) / valid_count
             withdrawn[lead_index] = torch.count_nonzero(nominal_support & ~changed_support).to(metric_change) / valid_count
+            nominal_fallback = result.background_fallback_mask[forecast_index]
+            changed_fallback = cast(
+                ForecastResult, resolved_forecast
+            ).background_fallback_mask[forecast_index]
+            fallback_before[lead_index] = torch.count_nonzero(
+                nominal_fallback & finite_truth[forecast_index]
+            ).to(metric_change) / valid_count
+            fallback_after[lead_index] = torch.count_nonzero(
+                changed_fallback & finite_truth[forecast_index]
+            ).to(metric_change) / valid_count
         for metric_index, metric_name in enumerate(fsoi.fso.metric_names):
             if not bool(available[lead_index, metric_index]):
                 continue
@@ -5808,6 +5959,8 @@ def _resolve_learning_step(
         coverage_after=coverage_after,
         newly_issued_fraction=newly_issued,
         withdrawn_fraction=withdrawn,
+        background_fallback_before=fallback_before,
+        background_fallback_after=fallback_after,
         analysis_converged=converged,
         active_branch_valid=branch_valid,
         analysis_digest=resolved_linearization.linearization_digest,
@@ -5820,6 +5973,9 @@ def _resolve_learning_step(
                     "forecasts": changed_forecasts,
                 }
             )
+        ),
+        input_bundle_digest=(
+            None if resolved_run is None else resolved_run.input_bundle_digest
         ),
         pcg_iterations=resolved.pcg_iterations,
     )
@@ -7704,10 +7860,13 @@ def _validate_variational_fso_lineage(
         raise ValueError("P1 linearization analysis config mismatch")
     input_digest = json_digest(
         {
-            "version": "p1-analysis-input-v1",
+            "version": "p1-analysis-input-v2",
             "analysis_config_digest": config_digest,
             "observation_std_dbz": tensor_digest(observations.std_dbz),
             "quality_weight": tensor_digest(observations.quality_weight),
+            "neural_prior_application_digest": (
+                result.run.prior_application_digest
+            ),
         }
     )
     if input_digest != result.run.analysis_input_digest:
