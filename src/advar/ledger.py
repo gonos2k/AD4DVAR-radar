@@ -29,11 +29,18 @@ from .sensitivity import (
     validate_variational_learning_impact,
 )
 from .intervention import RealizedObservationIntervention
+from .promotion import (
+    NeuralPriorPromotionEvidence,
+    NeuralPriorPromotionPolicy,
+    RealizedInterventionEvaluation,
+    compute_neural_prior_promotion,
+    validate_neural_prior_promotion,
+)
 
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 6
+_INDEX_SCHEMA_VERSION = 7
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _TRUST_COMPONENTS_V13 = {
@@ -664,6 +671,153 @@ class EpisodeLedger:
             raise ValueError("realized intervention digest mismatch")
         return intervention
 
+    def append_neural_prior_promotion(
+        self,
+        evidence: NeuralPriorPromotionEvidence,
+        evaluations: tuple[RealizedInterventionEvaluation, ...],
+        *,
+        policy: NeuralPriorPromotionPolicy,
+        policy_trust_store_path: str | Path,
+    ) -> str:
+        """Append one eligible promotion linked to realized interventions."""
+
+        recomputed = compute_neural_prior_promotion(
+            evidence.candidate_prior_digest,
+            evidence.parent_prior_digest,
+            evaluations,
+            policy=policy,
+            policy_trust_store_path=policy_trust_store_path,
+        )
+        if (
+            recomputed.promotion_evidence_digest
+            != evidence.promotion_evidence_digest
+        ):
+            raise ValueError("neural-prior promotion evidence is not reproducible")
+        validate_neural_prior_promotion(evidence)
+        with self._connect() as connection:
+            recorded = {
+                row[0]: row[1:]
+                for row in connection.execute(
+                    "SELECT intervention_digest, intervention_type, "
+                    "learning_result_digest, "
+                    "learning_approval_evidence_digest "
+                    "FROM realized_observation_interventions"
+                )
+            }
+            missing = set(evidence.intervention_digests) - set(recorded)
+            if missing:
+                raise ValueError("promotion references unrecorded interventions")
+            for evaluation in evaluations:
+                intervention_row = recorded[evaluation.intervention_digest]
+                if intervention_row != (
+                    evaluation.intervention_type,
+                    evaluation.learning_result_digest,
+                    evaluation.learning_approval_evidence_digest,
+                ):
+                    raise ValueError(
+                        "promotion evaluation disagrees with intervention ledger"
+                    )
+                learning_row = connection.execute(
+                    "SELECT policy_digest FROM variational_learning_approvals "
+                    "WHERE learning_result_digest = ? AND "
+                    "approval_evidence_digest = ?",
+                    (
+                        evaluation.learning_result_digest,
+                        evaluation.learning_approval_evidence_digest,
+                    ),
+                ).fetchone()
+                if (
+                    learning_row is None
+                    or learning_row[0] != evaluation.learning_policy_digest
+                ):
+                    raise ValueError(
+                        "promotion evaluation disagrees with learning ledger"
+                    )
+            connection.execute(
+                """
+                INSERT INTO neural_prior_promotions (
+                    promotion_evidence_digest, candidate_prior_digest,
+                    parent_prior_digest, policy_digest, trust_store_digest,
+                    evaluation_digests_json, intervention_digests_json,
+                    realized_intervention_count, material_outcome_count,
+                    beneficial_fraction, harmful_fraction,
+                    mean_normalized_improvement,
+                    maximum_normalized_degradation, eligible,
+                    rejection_reasons_json, evidence_contract, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    evidence.promotion_evidence_digest,
+                    evidence.candidate_prior_digest,
+                    evidence.parent_prior_digest,
+                    evidence.policy_digest,
+                    evidence.trust_store_digest,
+                    json.dumps(list(evidence.evaluation_digests)),
+                    json.dumps(list(evidence.intervention_digests)),
+                    evidence.realized_intervention_count,
+                    evidence.material_outcome_count,
+                    evidence.beneficial_fraction,
+                    evidence.harmful_fraction,
+                    evidence.mean_normalized_improvement,
+                    evidence.maximum_normalized_degradation,
+                    int(evidence.eligible),
+                    json.dumps(list(evidence.rejection_reasons)),
+                    evidence.contract,
+                    datetime.now(timezone.utc).isoformat(),
+                ),
+            )
+        return evidence.promotion_evidence_digest
+
+    def load_neural_prior_promotion(
+        self,
+        promotion_evidence_digest: str,
+    ) -> NeuralPriorPromotionEvidence:
+        """Load and validate one immutable prior-promotion decision."""
+
+        with self._connect() as connection:
+            connection.row_factory = sqlite3.Row
+            row = connection.execute(
+                """
+                SELECT * FROM neural_prior_promotions
+                WHERE promotion_evidence_digest = ?
+                """,
+                (promotion_evidence_digest,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(
+                f"unknown neural-prior promotion: {promotion_evidence_digest}"
+            )
+        evidence = NeuralPriorPromotionEvidence(
+            candidate_prior_digest=row["candidate_prior_digest"],
+            parent_prior_digest=row["parent_prior_digest"],
+            policy_digest=row["policy_digest"],
+            trust_store_digest=row["trust_store_digest"],
+            evaluation_digests=tuple(
+                json.loads(row["evaluation_digests_json"])
+            ),
+            intervention_digests=tuple(
+                json.loads(row["intervention_digests_json"])
+            ),
+            realized_intervention_count=row["realized_intervention_count"],
+            material_outcome_count=row["material_outcome_count"],
+            beneficial_fraction=row["beneficial_fraction"],
+            harmful_fraction=row["harmful_fraction"],
+            mean_normalized_improvement=(
+                row["mean_normalized_improvement"]
+            ),
+            maximum_normalized_degradation=(
+                row["maximum_normalized_degradation"]
+            ),
+            eligible=bool(row["eligible"]),
+            rejection_reasons=tuple(
+                json.loads(row["rejection_reasons_json"])
+            ),
+            contract=row["evidence_contract"],
+        )
+        if evidence.promotion_evidence_digest != promotion_evidence_digest:
+            raise ValueError("neural-prior promotion digest mismatch")
+        return evidence
+
     def _initialize_index(self) -> None:
         with self._connect() as connection:
             connection.execute("PRAGMA journal_mode = WAL")
@@ -746,6 +900,29 @@ class EpisodeLedger:
                 )
                 """
             )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS neural_prior_promotions (
+                    promotion_evidence_digest TEXT PRIMARY KEY,
+                    candidate_prior_digest TEXT NOT NULL UNIQUE,
+                    parent_prior_digest TEXT NOT NULL,
+                    policy_digest TEXT NOT NULL,
+                    trust_store_digest TEXT NOT NULL,
+                    evaluation_digests_json TEXT NOT NULL,
+                    intervention_digests_json TEXT NOT NULL,
+                    realized_intervention_count INTEGER NOT NULL,
+                    material_outcome_count INTEGER NOT NULL,
+                    beneficial_fraction REAL NOT NULL,
+                    harmful_fraction REAL NOT NULL,
+                    mean_normalized_improvement REAL NOT NULL,
+                    maximum_normalized_degradation REAL NOT NULL,
+                    eligible INTEGER NOT NULL,
+                    rejection_reasons_json TEXT NOT NULL,
+                    evidence_contract TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
             _ensure_variational_learning_approval_schema(connection)
             connection.execute(
                 """
@@ -761,6 +938,7 @@ class EpisodeLedger:
                 "episode_impacts",
                 "variational_learning_approvals",
                 "realized_observation_interventions",
+                "neural_prior_promotions",
             ):
                 connection.execute(
                     f"""

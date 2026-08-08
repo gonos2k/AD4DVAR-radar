@@ -514,6 +514,46 @@ ledger는 대응하는 learning approval이 먼저 저장돼 있고 evidence dig
 일치할 때만 실제 개입을 append한다. 자동 prior 승격은 이 realized evidence를
 필수 입력으로 삼아야 한다.
 
+여러 실제 개입의 관측결과가 쌓인 뒤에만 prior artifact 승격을 평가한다. 서로
+단위가 다른 forecast-error metric은 정책의 물리 scale로 정규화하며, 최소 표본수,
+개선·악화 비율, 평균개선과 최악 단일악화를 모두 통과해야 한다.
+
+```python
+from advar import (
+    NeuralPriorPromotionPolicy,
+    PromotionMetricScale,
+    compute_neural_prior_promotion,
+)
+
+promotion_policy = NeuralPriorPromotionPolicy(
+    metric_scales=(
+        PromotionMetricScale("log_echo_mse", 0.1, 0.01),
+        PromotionMetricScale("soft_fss_error_35", 0.05, 0.005),
+    ),
+    approved_learning_policy_digests=(learning_policy.digest,),
+    allowed_intervention_types=("realized_qc_intervention",),
+    minimum_realized_interventions=20,
+)
+promotion = compute_neural_prior_promotion(
+    candidate_prior_digest,
+    parent_prior_digest,
+    realized_evaluations,
+    policy=promotion_policy,
+    policy_trust_store_path="/etc/advar/learning-policies.json",
+)
+if promotion.eligible:
+    ledger.append_neural_prior_promotion(
+        promotion,
+        realized_evaluations,
+        policy=promotion_policy,
+        policy_trust_store_path="/etc/advar/learning-policies.json",
+    )
+```
+
+ledger append는 root-owned trust store를 다시 읽고 promotion을 재계산하며, 각
+evaluation이 저장된 intervention·learning approval과 일치하는지도 확인한다.
+따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
+
 자동학습은 의도적으로 nominal metric weight를 고정한
 `frozen_metric_domain`만 승인한다. perturbation 뒤의 confidence·local evidence·
 valid mask까지 다시 만든 발행영역 변화는 별도 연구 진단으로 확인한다.
@@ -652,13 +692,16 @@ python benchmarks/benchmark_variational_fso.py \
   --lead-minutes 60,180 --metrics log_echo_mse \
   --metric-domain radar_dynamics_anchored --gauss-newton-probes 4 \
   --max-normal-products 400 --max-output-bytes 536870912 \
-  --max-whitener-total-operations 10000000000
+  --max-whitener-total-operations 10000000000 \
+  --max-wall-seconds 900 --max-peak-rss-bytes 17179869184
 ```
 
 보고되는 `materialized_output_bytes`는 결과 Tensor의 사전 산정량이다. AD tape와
 JVP/VJP workspace까지 포함한 실제 peak memory는 benchmark의 `peak_rss_*`로
-별도 확인해야 한다. benchmark v3는 같은 whitener 총 연산 budget을 계산 중에도
-강제하고 실제 apply 횟수와 총 연산량을 함께 기록한다.
+별도 확인해야 한다. benchmark v4는 같은 whitener 총 연산 budget을 계산 중에도
+강제하고 실제 apply 횟수와 총 연산량을 함께 기록한다. wall time·peak RSS·normal
+product·결과 byte budget도 같은 실행에서 검사하며, grid shape와 모든 결과를
+`benchmark_digest`로 내용주소화한다.
 
 검증장이 도착하기 전에 프로세스가 재시작될 수 있으므로 수용·수렴한 P1의
 최종 선형화는 안전한 NPZ artifact로 보존할 수 있다.

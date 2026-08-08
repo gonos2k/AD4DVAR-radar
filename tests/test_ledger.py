@@ -7,6 +7,7 @@ from pathlib import Path
 import sqlite3
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -15,12 +16,19 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from advar._digest import tensor_digest  # noqa: E402
 from advar.ledger import (  # noqa: E402
     EpisodeLedger,
     ModelContract,
     SensitivityEpisode,
 )
 from advar.intervention import RealizedObservationIntervention  # noqa: E402
+from advar.promotion import (  # noqa: E402
+    NeuralPriorPromotionPolicy,
+    PromotionMetricScale,
+    RealizedInterventionEvaluation,
+    compute_neural_prior_promotion,
+)
 from advar.nowcast import (  # noqa: E402
     NowcastConfig,
     nowcast,
@@ -405,7 +413,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 6)
+        self.assertEqual(version, 7)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -494,6 +502,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         self.assertEqual(loaded, evidence)
 
+        observed_change = torch.tensor([[-0.2]], dtype=torch.float64)
         intervention = RealizedObservationIntervention(
             intervention_id="radar-qc-20260808-001",
             intervention_type="realized_qc_intervention",
@@ -501,7 +510,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             applied_time="2026-08-08T01:02:03+09:00",
             actual_input_before_digest="c" * 64,
             actual_input_after_digest="d" * 64,
-            observed_outcome_digest="e" * 64,
+            observed_outcome_digest=tensor_digest(observed_change),
             learning_result_digest=learning_result_digest,
             learning_approval_evidence_digest=evidence.digest,
             counterfactual_perturbation_digest="f" * 64,
@@ -513,6 +522,58 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(
             self.ledger.load_realized_observation_intervention(digest),
             intervention,
+        )
+        evaluation = RealizedInterventionEvaluation.from_evidence(
+            intervention,
+            evidence,
+            metric_change=observed_change,
+            metric_available=torch.ones_like(
+                observed_change,
+                dtype=torch.bool,
+            ),
+            lead_minutes=(60,),
+            metric_names=("log_echo_mse",),
+            verification_digest="e" * 64,
+        )
+        policy = NeuralPriorPromotionPolicy(
+            metric_scales=(
+                PromotionMetricScale("log_echo_mse", 1.0, 0.01),
+            ),
+            approved_learning_policy_digests=(evidence.policy_digest,),
+            allowed_intervention_types=("realized_qc_intervention",),
+            minimum_realized_interventions=1,
+            minimum_beneficial_fraction=1.0,
+            maximum_harmful_fraction=0.0,
+            minimum_mean_normalized_improvement=0.1,
+        )
+        trust = SimpleNamespace(
+            approved_policy_digests=frozenset((policy.digest,)),
+            content_digest="4" * 64,
+        )
+        with patch(
+            "advar.promotion._load_learning_policy_trust_store",
+            return_value=trust,
+        ):
+            promotion = compute_neural_prior_promotion(
+                "1" * 64,
+                "2" * 64,
+                (evaluation,),
+                policy=policy,
+                policy_trust_store_path=(
+                    "/etc/advar/learning-policies.json"
+                ),
+            )
+            promotion_digest = self.ledger.append_neural_prior_promotion(
+                promotion,
+                (evaluation,),
+                policy=policy,
+                policy_trust_store_path=(
+                    "/etc/advar/learning-policies.json"
+                ),
+            )
+        self.assertEqual(
+            self.ledger.load_neural_prior_promotion(promotion_digest),
+            promotion,
         )
 
     def test_complete_verification_lineage_round_trips(self) -> None:
@@ -1641,7 +1702,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 6)
+        self.assertEqual(version, 7)
 
 
 if __name__ == "__main__":
