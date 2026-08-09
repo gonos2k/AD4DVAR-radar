@@ -95,6 +95,7 @@ from advar.variational import (  # noqa: E402
     NeuralPriorInferenceRunner,
     NeuralPriorProbabilityContract,
     NeuralPriorStateContract,
+    neural_prior_state_censor_policy_digest,
     residual_vector,
     variational_nowcast,
 )
@@ -1903,12 +1904,31 @@ class VariationalFSOTests(unittest.TestCase):
             example_frames=self.frames,
             state_contract=NeuralPriorStateContract(
                 state_product_digest="a" * 64,
+                state_qc_pipeline_digest="9" * 64,
+                state_mask_policy_digest="3" * 64,
+                state_censor_policy_digest=neural_prior_state_censor_policy_digest(
+                    detection_limit_dbz=5.0,
+                    censor_temperature_dbz=1.0,
+                    censored_background_policy=(
+                        self.analysis_config.censored_background_policy
+                    ),
+                    minimum_dbz=-10.0,
+                    maximum_dbz=70.0,
+                ),
                 support_threshold_dbz=5.0,
+                minimum_state_dbz=-10.0,
+                maximum_state_dbz=70.0,
+                minimum_state_std_dbz=0.1,
+                maximum_state_std_dbz=20.0,
+                valid_decision_probability=0.6,
+                support_decision_probability=0.7,
             ),
             probability_contract=NeuralPriorProbabilityContract(
                 support_threshold_dbz=5.0,
                 support_product_digest="a" * 64,
                 qc_pipeline_digest="9" * 64,
+                reflectivity_resolution_dbz=0.5,
+                quantization_origin_dbz=-10.0,
             ),
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
@@ -1963,9 +1983,13 @@ class VariationalFSOTests(unittest.TestCase):
         )
         total_from_components = torch.sum(fsoi.observation.total.sum_by_time)
         torch.testing.assert_close(total_from_components, total_from_map)
-        self.assertEqual(
+        self.assertAlmostEqual(
             fsoi.fso.active_set_margins.neural_prior_support_probability,
-            0.5,
+            0.3,
+        )
+        self.assertAlmostEqual(
+            fsoi.fso.active_set_margins.neural_prior_valid_probability,
+            0.4,
         )
         self.assertNotEqual(
             float(torch.sum(fsoi.observation.initial_background_dbz.sum_by_time)),

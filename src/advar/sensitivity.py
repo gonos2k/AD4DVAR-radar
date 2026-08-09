@@ -1164,16 +1164,14 @@ def _neural_prior_derivative_mask(
     raw = frozen.neural_prior_raw_background_dbz
     if valid is None or raw is None:
         raise ValueError("neural-prior derivative requires retained prior state")
-    return valid & (raw > frozen.nowcast_config.min_dbz) & (
-        raw < frozen.nowcast_config.max_dbz
-    )
+    return valid
 
 
 def _neural_prior_support_margin(
     frozen: FrozenOuterState,
     application: NeuralPriorApplication | None,
 ) -> float | None:
-    """Distance from retained soft support to its hard 0.5 branch."""
+    """Distance from retained soft support to its contracted hard branch."""
 
     if frozen.neural_prior_dependency is None:
         return None
@@ -1186,7 +1184,14 @@ def _neural_prior_support_margin(
     )
     if selected.numel() == 0:
         return None
-    return float(torch.amin(torch.abs(selected - 0.5)).detach())
+    return float(
+        torch.amin(
+            torch.abs(
+                selected
+                - application.state_contract.support_decision_probability
+            )
+        ).detach()
+    )
 
 
 def _neural_prior_valid_margin(
@@ -1206,7 +1211,14 @@ def _neural_prior_valid_margin(
     selected = application.valid_probability
     if selected.numel() == 0:
         return None
-    return float(torch.amin(torch.abs(selected - 0.5)).detach())
+    return float(
+        torch.amin(
+            torch.abs(
+                selected
+                - application.state_contract.valid_decision_probability
+            )
+        ).detach()
+    )
 
 
 def _physical_radar_input_margins(

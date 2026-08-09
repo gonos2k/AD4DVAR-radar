@@ -35,7 +35,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v49"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v50"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v42",
     "forecast-run-v43",
@@ -44,6 +44,7 @@ _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v46",
     "forecast-run-v47",
     "forecast-run-v48",
+    "forecast-run-v49",
 }
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 224
@@ -186,6 +187,11 @@ _CORE_ARRAY_NAMES = frozenset(
         "prior_numerical_runtime_digest",
         "prior_dependency",
         "prior_role",
+        "prior_promotion_evidence_digest",
+        "prior_regime_classification_evidence_digest",
+        "prior_deployment_selection_digest",
+        "prior_deployment_fallback_reason",
+        "prior_deployment_lineage_contract",
         "input_plan_json",
         "input_plan_digest",
         "input_plan_resolution_digest",
@@ -366,6 +372,29 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             ""
             if result.run.prior_application_digest is None
             else result.run.prior_application_digest
+        ),
+        "prior_promotion_evidence_digest": np.asarray(
+            ""
+            if result.run.prior_promotion_evidence_digest is None
+            else result.run.prior_promotion_evidence_digest
+        ),
+        "prior_regime_classification_evidence_digest": np.asarray(
+            ""
+            if result.run.prior_regime_classification_evidence_digest is None
+            else result.run.prior_regime_classification_evidence_digest
+        ),
+        "prior_deployment_selection_digest": np.asarray(
+            ""
+            if result.run.prior_deployment_selection_digest is None
+            else result.run.prior_deployment_selection_digest
+        ),
+        "prior_deployment_fallback_reason": np.asarray(
+            ""
+            if result.run.prior_deployment_fallback_reason is None
+            else result.run.prior_deployment_fallback_reason
+        ),
+        "prior_deployment_lineage_contract": np.asarray(
+            result.run.prior_deployment_lineage_contract
         ),
         "prior_model_contract_digest": np.asarray(
             ""
@@ -1320,6 +1349,19 @@ def load_forecast_run(
         grid_time_contract, grid_time_contract_digest = (
             _grid_time_contract(loaded_arrays)
         )
+        if "prior_deployment_lineage_contract" in loaded_arrays:
+            prior_deployment_lineage_contract = _string_scalar(
+                loaded_arrays,
+                "prior_deployment_lineage_contract",
+            )
+        elif version in _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS:
+            prior_deployment_lineage_contract = (
+                "neural-prior-deployment-lineage-v0-audit"
+            )
+        else:
+            raise ValueError(
+                "current forecast run lacks deployment lineage contract"
+            )
         run = ForecastRunContract(
             config=config,
             _latest_frame_dbz=_tensor(loaded_arrays, "latest_frame_dbz"),
@@ -1439,6 +1481,42 @@ def load_forecast_run(
                 (_string_scalar(loaded_arrays, "prior_role") or None)
                 if "prior_role" in loaded_arrays
                 else None
+            ),
+            prior_promotion_evidence_digest=(
+                _optional_digest_scalar(
+                    loaded_arrays, "prior_promotion_evidence_digest"
+                )
+                if "prior_promotion_evidence_digest" in loaded_arrays
+                else None
+            ),
+            prior_regime_classification_evidence_digest=(
+                _optional_digest_scalar(
+                    loaded_arrays,
+                    "prior_regime_classification_evidence_digest",
+                )
+                if "prior_regime_classification_evidence_digest"
+                in loaded_arrays
+                else None
+            ),
+            prior_deployment_selection_digest=(
+                _optional_digest_scalar(
+                    loaded_arrays, "prior_deployment_selection_digest"
+                )
+                if "prior_deployment_selection_digest" in loaded_arrays
+                else None
+            ),
+            prior_deployment_fallback_reason=(
+                (
+                    _string_scalar(
+                        loaded_arrays, "prior_deployment_fallback_reason"
+                    )
+                    or None
+                )
+                if "prior_deployment_fallback_reason" in loaded_arrays
+                else None
+            ),
+            prior_deployment_lineage_contract=(
+                prior_deployment_lineage_contract
             ),
             prior_lineage_contract=(
                 "neural-prior-run-lineage-v1-audit"
