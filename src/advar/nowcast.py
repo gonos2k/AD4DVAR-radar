@@ -868,7 +868,7 @@ def _minimum_growth_evidence(
 
 
 _FORECAST_INPUT_BUNDLE_VERSION = "forecast-input-bundle-v5"
-_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v10"
+_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v11"
 
 
 def _validate_background_age(
@@ -1212,6 +1212,7 @@ class ForecastRunContract:
     observation_std_dbz_digest: str | None
     background_frames_digest: str | None
     fixed_input_context_digest: str | None
+    full_analysis_input_digest: str | None
     input_bundle_digest: str
     background_age_minutes: float | None = None
     grid_time_contract: RadarGridTimeContract | None = None
@@ -1422,6 +1423,10 @@ class ForecastRunContract:
             operational_data_identity_digest=operational_data_identity_digest,
             input_plan_digest=input_plan_digest,
         )
+        full_analysis_input_digest = _forecast_full_analysis_input_digest(
+            input_frames_digest=tensor_digest(frames_dbz),
+            fixed_input_context_digest=fixed_input_context_digest,
+        )
         resolution_digest = (
             None
             if input_plan_digest is None
@@ -1449,6 +1454,7 @@ class ForecastRunContract:
             observation_std_dbz_digest=observation_std_dbz_digest,
             background_frames_digest=background_frames_digest,
             fixed_input_context_digest=fixed_input_context_digest,
+            full_analysis_input_digest=full_analysis_input_digest,
             input_bundle_digest=input_bundle_digest,
             background_age_minutes=background_age_minutes,
             grid_time_contract=grid_time_contract,
@@ -1565,11 +1571,17 @@ class ForecastRunContract:
                 "fixed_input_context_digest",
                 self.fixed_input_context_digest,
             )
+        if self.full_analysis_input_digest is not None:
+            _validate_sha256_digest(
+                "full_analysis_input_digest",
+                self.full_analysis_input_digest,
+            )
         full_context_values = (
             self.observation_masks_digest,
             self.observation_quality_weight_digest,
             self.observation_std_dbz_digest,
             self.fixed_input_context_digest,
+            self.full_analysis_input_digest,
         )
         if any(value is None for value in full_context_values) and not all(
             value is None for value in full_context_values
@@ -1732,6 +1744,12 @@ class ForecastRunContract:
             )
             if self.fixed_input_context_digest != expected_fixed_context:
                 raise ValueError("fixed input context digest mismatch")
+            expected_full_input = _forecast_full_analysis_input_digest(
+                input_frames_digest=self.input_frames_digest,
+                fixed_input_context_digest=expected_fixed_context,
+            )
+            if self.full_analysis_input_digest != expected_full_input:
+                raise ValueError("full analysis input digest mismatch")
 
     def validate_latest_frame(self, latest_frame_dbz: Tensor) -> None:
         if tensor_digest(latest_frame_dbz) != self.latest_frame_digest:
@@ -1792,6 +1810,27 @@ def _forecast_input_bundle_digest(
             "operational_data_identity_digest": (
                 operational_data_identity_digest
             ),
+        }
+    )
+
+
+def _forecast_full_analysis_input_digest(
+    *,
+    input_frames_digest: str,
+    fixed_input_context_digest: str,
+) -> str:
+    """Address every tensor and contract that can change one analysis."""
+
+    _validate_sha256_digest("input_frames_digest", input_frames_digest)
+    _validate_sha256_digest(
+        "fixed_input_context_digest",
+        fixed_input_context_digest,
+    )
+    return json_digest(
+        {
+            "contract": "forecast-full-analysis-input-v1",
+            "input_frames_digest": input_frames_digest,
+            "fixed_input_context_digest": fixed_input_context_digest,
         }
     )
 
@@ -2184,6 +2223,7 @@ def _forecast_run_identity_digest(
             "observation_std_dbz_digest": run.observation_std_dbz_digest,
             "background_frames_digest": run.background_frames_digest,
             "fixed_input_context_digest": run.fixed_input_context_digest,
+            "full_analysis_input_digest": run.full_analysis_input_digest,
             "latest_frame_digest": run.latest_frame_digest,
             "latest_observation_mask_digest": (
                 run.latest_observation_mask_digest

@@ -131,6 +131,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             range_regime=planned.range_regime,
             input_plan_digest=planned.input_plan_digest,
             input_bundle_digest=("e" if index == 1 else "f") * 64,
+            full_analysis_input_digest=("1" if index == 1 else "2") * 64,
+            fixed_input_context_digest=("a" if index == 1 else "b") * 64,
+            observation_quality_weight_digest=(
+                "c" if index == 1 else "d"
+            ) * 64,
+            observation_std_dbz_digest=("4" if index == 1 else "5") * 64,
             verification_plan_digest=planned.verification_plan_digest,
             verification_bundle_digest="a" * 64,
             metric_contract_digest=planned.metric_contract_digest,
@@ -254,6 +260,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         prior_candidate_valid_fraction: float = 1.0,
         prior_parent_valid_fraction: float = 1.0,
         prior_candidate_valid_area_km2: float = 4.0,
+        prior_gaussian_nll: float = 0.5,
+        parent_prior_gaussian_nll: float = 0.5,
+        prior_support_brier_score: float = 0.05,
+        parent_prior_support_brier_score: float = 0.05,
+        parent_prior_underdispersion_fraction: float | None = None,
     ) -> promotion_module.PriorHoldoutEvaluation:
         manifest = self.manifest()
         case = manifest.holdout_cases[index - 1]
@@ -299,8 +310,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             withdrawn_fraction=torch.tensor([0.0], dtype=torch.float64),
             prior_standardized_residual_mean_abs=prior_residual_mean_abs,
             prior_underdispersion_fraction=prior_underdispersion_fraction,
-            prior_gaussian_nll=0.5,
-            prior_support_brier_score=0.05,
+            prior_gaussian_nll=prior_gaussian_nll,
+            prior_support_brier_score=prior_support_brier_score,
+            parent_prior_underdispersion_fraction=(
+                prior_underdispersion_fraction
+                if parent_prior_underdispersion_fraction is None
+                else parent_prior_underdispersion_fraction
+            ),
+            parent_prior_gaussian_nll=parent_prior_gaussian_nll,
+            parent_prior_support_brier_score=parent_prior_support_brier_score,
             prior_candidate_valid_fraction=prior_candidate_valid_fraction,
             prior_parent_valid_fraction=prior_parent_valid_fraction,
             prior_candidate_valid_area_km2=prior_candidate_valid_area_km2,
@@ -393,6 +411,26 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
         )
         self.assertIn("unreliable_prior_uncertainty", result.rejection_reasons)
+
+    def test_prior_uncertainty_must_not_regress_against_parent(self) -> None:
+        result = self.compute(
+            (
+                self.evaluation(
+                    1,
+                    -0.2,
+                    prior_gaussian_nll=3.9,
+                    parent_prior_gaussian_nll=1.0,
+                ),
+                self.evaluation(
+                    2,
+                    -0.3,
+                    prior_gaussian_nll=3.9,
+                    parent_prior_gaussian_nll=1.0,
+                ),
+            )
+        )
+        self.assertFalse(result.eligible)
+        self.assertIn("inferior_prior_uncertainty", result.rejection_reasons)
 
     def test_self_selected_one_percent_validity_blocks_promotion(self) -> None:
         result = self.compute(
@@ -530,6 +568,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             grid_time_contract_digest="2" * 64,
             grid_time_contract=grid,
             input_bundle_digest=case.input_bundle_digest,
+            full_analysis_input_digest=case.full_analysis_input_digest,
+            fixed_input_context_digest=case.fixed_input_context_digest,
+            observation_quality_weight_digest=(
+                case.observation_quality_weight_digest
+            ),
+            observation_std_dbz_digest=case.observation_std_dbz_digest,
             input_plan_digest=case.input_plan_digest,
             config=SimpleNamespace(digest="3" * 64, interval_minutes=10),
             analysis_config_digest="4" * 64,
@@ -564,6 +608,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 numerical_runtime_digest="4" * 64,
                 dependency="radar_dependent",
                 input_bundle_digest=case.input_bundle_digest,
+                full_analysis_input_digest=case.full_analysis_input_digest,
                 input_frames_digest=promotion_module.tensor_digest(torch.zeros(3, 2, 2)),
                 execution_contract_digest=manifest.candidate_prior_digest,
                 neural_prior_digest=manifest.candidate_prior_digest,
@@ -592,6 +637,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 numerical_runtime_digest="4" * 64,
                 dependency="radar_dependent",
                 input_bundle_digest=case.input_bundle_digest,
+                full_analysis_input_digest=case.full_analysis_input_digest,
                 input_frames_digest=promotion_module.tensor_digest(torch.zeros(3, 2, 2)),
                 execution_contract_digest=manifest.parent_prior_digest,
                 neural_prior_digest=manifest.parent_prior_digest,
@@ -726,6 +772,59 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertAlmostEqual(evaluation.prior_abstention_increase_vs_parent, 0.75)
         candidate_runner.reproduce.assert_called_once()
         parent_runner.reproduce.assert_called_once()
+
+        parent_run.observation_quality_weight_digest = "0" * 64
+        with patch.object(
+            promotion_module,
+            "_forecast_result_content_digest",
+            side_effect=(
+                case.candidate_forecast_digest,
+                case.parent_forecast_digest,
+            ),
+        ), self.assertRaisesRegex(ValueError, "holdout inputs disagree"):
+            promotion_module.PriorHoldoutEvaluation.from_forecasts(
+                manifest,
+                plan,
+                case_id=case.case_id,
+                candidate_forecast=candidate,
+                parent_forecast=parent,
+                verification=verification,
+                metric_config=config,
+                candidate_prior_application=candidate_app,
+                parent_prior_application=parent_app,
+                candidate_prior_runner=candidate_runner,
+                parent_prior_runner=parent_runner,
+                input_frames_dbz=torch.zeros((3, 2, 2)),
+                uncertainty_target=self.uncertainty_target(1),
+            )
+        parent_run.observation_quality_weight_digest = (
+            case.observation_quality_weight_digest
+        )
+        parent_run.observation_std_dbz_digest = "0" * 64
+        with patch.object(
+            promotion_module,
+            "_forecast_result_content_digest",
+            side_effect=(
+                case.candidate_forecast_digest,
+                case.parent_forecast_digest,
+            ),
+        ), self.assertRaisesRegex(ValueError, "holdout inputs disagree"):
+            promotion_module.PriorHoldoutEvaluation.from_forecasts(
+                manifest,
+                plan,
+                case_id=case.case_id,
+                candidate_forecast=candidate,
+                parent_forecast=parent,
+                verification=verification,
+                metric_config=config,
+                candidate_prior_application=candidate_app,
+                parent_prior_application=parent_app,
+                candidate_prior_runner=candidate_runner,
+                parent_prior_runner=parent_runner,
+                input_frames_dbz=torch.zeros((3, 2, 2)),
+                uncertainty_target=self.uncertainty_target(1),
+            )
+        parent_run.observation_std_dbz_digest = case.observation_std_dbz_digest
 
         candidate_app.inference_evidence.prior_output_valid_time = (
             "2026-08-09T01:00:00Z"

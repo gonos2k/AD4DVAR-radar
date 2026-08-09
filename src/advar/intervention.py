@@ -1198,7 +1198,8 @@ class ActionSafetyDiagnostics:
     changed_area_km2: float
     global_diagonal_standardized_l2: float
     maximum_tile_diagonal_standardized_l2: float
-    quality_weight_l2: float
+    global_quality_precision_scale_l2: float
+    maximum_tile_quality_precision_scale_l2: float
     minimum_input_floor_margin_dbz: float
     minimum_input_ceiling_margin_dbz: float
     changed_invalid_pixel_count: int
@@ -1210,7 +1211,7 @@ class ActionSafetyDiagnostics:
             for key, value in self.__dict__.items()
             if key != "diagnostics_digest"
         }
-        payload = {"contract": "action-safety-diagnostics-v2", **values}
+        payload = {"contract": "action-safety-diagnostics-v3", **values}
         object.__setattr__(
             self,
             "diagnostics_digest",
@@ -1225,7 +1226,7 @@ class ActionSafetyDiagnostics:
             if key != "diagnostics_digest"
         }
         return json.dumps(
-            {"contract": "action-safety-diagnostics-v2", **values},
+            {"contract": "action-safety-diagnostics-v3", **values},
             sort_keys=True,
             separators=(",", ":"),
         )
@@ -1299,7 +1300,7 @@ def _compute_action_safety(
     )
     area_km2 = float(torch.count_nonzero(union)) * cell_area_m2 / 1.0e6
     delta = torch.zeros_like(context._frames_dbz)
-    quality_delta = torch.zeros_like(context._quality_weight)
+    quality_precision_delta = torch.zeros_like(context._quality_weight)
     if isinstance(action, DbzCorrectionAction):
         delta = action.delta_dbz.to(delta)
     elif isinstance(action, QcMaskAction):
@@ -1309,7 +1310,12 @@ def _compute_action_safety(
             raise ValueError("QC action quality weights must be inside [0, 1]")
         if bool(torch.any(action.quality_weight_after.masked_select(~action.valid_mask_after) != 0.0)):
             raise ValueError("QC-rejected observations must have zero quality weight")
-        quality_delta = action.quality_weight_after.to(quality_delta) - context._quality_weight
+        if bool(torch.any(action.quality_weight_after > context._quality_weight)):
+            raise ValueError("prospective QC may only reject or deweight observations")
+        quality_precision_delta = (
+            torch.sqrt(action.quality_weight_after.to(context._quality_weight))
+            - torch.sqrt(context._quality_weight)
+        ) / context._observation_std_dbz
     else:
         delta = torch.where(
             action.override_mask,
@@ -1337,7 +1343,13 @@ def _compute_action_safety(
     )
     global_norm = float(torch.linalg.vector_norm(whitened))
     tile_norm = _maximum_tile_l2(whitened, policy.perturbation_tile_size)
-    quality_norm = float(torch.linalg.vector_norm(quality_delta))
+    quality_precision_norm = float(
+        torch.linalg.vector_norm(quality_precision_delta)
+    )
+    quality_precision_tile_norm = _maximum_tile_l2(
+        quality_precision_delta,
+        policy.perturbation_tile_size,
+    )
     if delta.numel():
         maximum_delta = float(torch.amax(torch.abs(delta)))
     else:
@@ -1357,7 +1369,16 @@ def _compute_action_safety(
             policy.maximum_tile_diagonal_standardized_l2,
             "tile diagonal-standardized",
         ),
-        (quality_norm, policy.maximum_quality_weight_l2, "quality-weight"),
+        (
+            quality_precision_norm,
+            policy.maximum_global_quality_precision_scale_l2,
+            "global QC precision-scale",
+        ),
+        (
+            quality_precision_tile_norm,
+            policy.maximum_tile_quality_precision_scale_l2,
+            "tile QC precision-scale",
+        ),
     )
     for actual, maximum, name in limits:
         if actual > maximum:
@@ -1379,7 +1400,10 @@ def _compute_action_safety(
         changed_area_km2=area_km2,
         global_diagonal_standardized_l2=global_norm,
         maximum_tile_diagonal_standardized_l2=tile_norm,
-        quality_weight_l2=quality_norm,
+        global_quality_precision_scale_l2=quality_precision_norm,
+        maximum_tile_quality_precision_scale_l2=(
+            quality_precision_tile_norm
+        ),
         minimum_input_floor_margin_dbz=floor_margin,
         minimum_input_ceiling_margin_dbz=ceiling_margin,
         changed_invalid_pixel_count=changed_invalid,
@@ -1463,14 +1487,18 @@ class ReusableInterventionPolicyEvidence:
     maximum_changed_area_km2: float = 256.0
     maximum_global_diagonal_standardized_l2: float = 8.0
     maximum_tile_diagonal_standardized_l2: float = 4.0
-    maximum_quality_weight_l2: float = 1.0
+    maximum_global_quality_precision_scale_l2: float = 1.0
+    maximum_tile_quality_precision_scale_l2: float = 1.0
     perturbation_tile_size: int = 16
     observation_error_contract: Literal["diagonal_only"] = "diagonal_only"
-    contract: str = "reusable-intervention-policy-evidence-v3"
+    execution_authority: Literal["operator_reviewed_only"] = (
+        "operator_reviewed_only"
+    )
+    contract: str = "reusable-intervention-policy-evidence-v4"
     policy_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "reusable-intervention-policy-evidence-v3":
+        if self.contract != "reusable-intervention-policy-evidence-v4":
             raise ValueError("unsupported reusable intervention policy")
         if not self.policy_id or self.policy_id.strip() != self.policy_id:
             raise ValueError("reusable intervention policy ID must be canonical")
@@ -1491,6 +1519,10 @@ class ReusableInterventionPolicyEvidence:
             raise ValueError("unsupported reusable intervention type")
         if self.observation_error_contract != "diagonal_only":
             raise ValueError("prospective action policy requires diagonal R")
+        if self.execution_authority != "operator_reviewed_only":
+            raise ValueError(
+                "automatic action requires a current-case benefit contract"
+            )
         if not math.isfinite(self.maximum_absolute_delta_dbz) or (
             self.maximum_absolute_delta_dbz <= 0.0
         ):
@@ -1506,7 +1538,8 @@ class ReusableInterventionPolicyEvidence:
             "maximum_changed_area_km2",
             "maximum_global_diagonal_standardized_l2",
             "maximum_tile_diagonal_standardized_l2",
-            "maximum_quality_weight_l2",
+            "maximum_global_quality_precision_scale_l2",
+            "maximum_tile_quality_precision_scale_l2",
         ):
             value = getattr(self, name)
             if not math.isfinite(value) or value <= 0.0:
@@ -1560,6 +1593,7 @@ class ProspectiveInterventionDecision:
     input_plan_resolution_digest: str
     actual_input_before_frames_digest: str
     actual_input_before_bundle_digest: str
+    actual_input_before_full_analysis_input_digest: str
     decision_basis_digest: str
     decision_policy_digest: str
     decision_trust_store_digest: str
@@ -1568,14 +1602,14 @@ class ProspectiveInterventionDecision:
     input_available_time: str
     decision_deadline: str
     publication_time: str
-    contract: str = "prospective-intervention-decision-v4"
+    contract: str = "prospective-intervention-decision-v5"
     decision_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use ProspectiveInterventionDecision.from_policy")
 
     def __post_init__(self) -> None:
-        if self.contract != "prospective-intervention-decision-v4":
+        if self.contract != "prospective-intervention-decision-v5":
             raise ValueError("unsupported prospective intervention decision")
         for name in ("decision_id", "case_id", "radar_id"):
             value = getattr(self, name)
@@ -1602,6 +1636,7 @@ class ProspectiveInterventionDecision:
             "input_plan_resolution_digest",
             "actual_input_before_frames_digest",
             "actual_input_before_bundle_digest",
+            "actual_input_before_full_analysis_input_digest",
             "decision_basis_digest",
             "decision_policy_digest",
             "decision_trust_store_digest",
@@ -1630,7 +1665,7 @@ class ProspectiveInterventionDecision:
         )
         if (
             not isinstance(diagnostics, dict)
-            or diagnostics.get("contract") != "action-safety-diagnostics-v2"
+            or diagnostics.get("contract") != "action-safety-diagnostics-v3"
             or canonical_diagnostics != self.action_safety_diagnostics_json
             or json_digest(diagnostics) != self.action_safety_diagnostics_digest
         ):
@@ -1705,8 +1740,11 @@ class ProspectiveInterventionDecision:
             actual_input_context.input_plan_resolution_digest
         ):
             raise ValueError("decision input-plan resolution disagrees with the run")
-        if actual_input_before_run.fixed_input_context_digest is None:
-            raise ValueError("prospective decision requires complete fixed input context")
+        if (
+            actual_input_before_run.fixed_input_context_digest is None
+            or actual_input_before_run.full_analysis_input_digest is None
+        ):
+            raise ValueError("prospective decision requires complete input identity")
         if actual_input_before_run.input_plan_json is None:
             raise ValueError("prospective decision requires input-plan JSON")
         try:
@@ -1762,6 +1800,9 @@ class ProspectiveInterventionDecision:
                     actual_input_context.input_plan_resolution_digest
                 ),
                 "input_bundle_digest": actual_input_before_run.input_bundle_digest,
+                "full_analysis_input_digest": (
+                    actual_input_before_run.full_analysis_input_digest
+                ),
                 "intervention_input_context_digest": (
                     actual_input_context.context_digest
                 ),
@@ -1812,6 +1853,9 @@ class ProspectiveInterventionDecision:
             actual_input_before_bundle_digest=(
                 actual_input_before_run.input_bundle_digest
             ),
+            actual_input_before_full_analysis_input_digest=(
+                actual_input_before_run.full_analysis_input_digest
+            ),
             decision_basis_digest=decision_basis_digest,
             decision_policy_digest=decision_policy_digest,
             decision_trust_store_digest=decision_trust_store_digest,
@@ -1845,6 +1889,8 @@ class RealizedInterventionReceipt:
     actual_input_bundle_digest: str
     fixed_input_context_before_digest: str
     fixed_input_context_after_digest: str
+    full_analysis_input_before_digest: str
+    full_analysis_input_after_digest: str
     action_payload_digest: str
     action_application_contract_digest: str
     action_safety_diagnostics_digest: str
@@ -1858,14 +1904,14 @@ class RealizedInterventionReceipt:
     input_available_time: str
     publication_time: str
     executor_sequence_number: int
-    contract: str = "realized-intervention-receipt-v4"
+    contract: str = "realized-intervention-receipt-v5"
     receipt_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use RealizedInterventionReceipt.from_decision")
 
     def __post_init__(self) -> None:
-        if self.contract != "realized-intervention-receipt-v4":
+        if self.contract != "realized-intervention-receipt-v5":
             raise ValueError("unsupported realized intervention receipt")
         for name in ("decision_id", "case_id", "radar_id"):
             value = getattr(self, name)
@@ -1886,6 +1932,8 @@ class RealizedInterventionReceipt:
             "actual_input_bundle_digest",
             "fixed_input_context_before_digest",
             "fixed_input_context_after_digest",
+            "full_analysis_input_before_digest",
+            "full_analysis_input_after_digest",
             "action_payload_digest",
             "action_application_contract_digest",
             "action_safety_diagnostics_digest",
@@ -1908,8 +1956,10 @@ class RealizedInterventionReceipt:
             == self.actual_quality_weight_after_digest
         ):
             raise ValueError("realized intervention receipt must change input")
-        if self.actual_input_before_bundle_digest == self.actual_input_bundle_digest:
-            raise ValueError("realized intervention receipt must change its bundle")
+        if self.full_analysis_input_before_digest == (
+            self.full_analysis_input_after_digest
+        ):
+            raise ValueError("realized intervention receipt must change its full input")
         if type(self.executor_sequence_number) is not int or (
             self.executor_sequence_number < 0
         ):
@@ -1969,8 +2019,15 @@ class RealizedInterventionReceipt:
         received = _canonical_time(receipt_time)
         before_fixed_context = actual_input_before_run.fixed_input_context_digest
         after_fixed_context = actual_input_after_run.fixed_input_context_digest
-        if before_fixed_context is None or after_fixed_context is None:
-            raise ValueError("prospective receipt requires complete fixed input context")
+        before_full_input = actual_input_before_run.full_analysis_input_digest
+        after_full_input = actual_input_after_run.full_analysis_input_digest
+        if (
+            before_fixed_context is None
+            or after_fixed_context is None
+            or before_full_input is None
+            or after_full_input is None
+        ):
+            raise ValueError("prospective receipt requires complete input identity")
         values: dict[str, str | int] = dict(
             decision_digest=decision.decision_digest,
             decision_id=decision.decision_id,
@@ -1994,6 +2051,8 @@ class RealizedInterventionReceipt:
             actual_input_bundle_digest=actual_input_after_run.input_bundle_digest,
             fixed_input_context_before_digest=before_fixed_context,
             fixed_input_context_after_digest=after_fixed_context,
+            full_analysis_input_before_digest=before_full_input,
+            full_analysis_input_after_digest=after_full_input,
             action_payload_digest=decision.action_payload_digest,
             action_application_contract_digest=(
                 decision.action_application_contract_digest
@@ -2011,7 +2070,7 @@ class RealizedInterventionReceipt:
             input_available_time=decision.input_available_time,
             publication_time=decision.publication_time,
             executor_sequence_number=executor_sequence_number,
-            contract="realized-intervention-receipt-v4",
+            contract="realized-intervention-receipt-v5",
         )
         signature = executor_private_key.sign(
             json_digest(values).encode("ascii")
@@ -2039,6 +2098,8 @@ class RealizedInterventionReceipt:
             actual_input_bundle_digest=actual_input_after_run.input_bundle_digest,
             fixed_input_context_before_digest=before_fixed_context,
             fixed_input_context_after_digest=after_fixed_context,
+            full_analysis_input_before_digest=before_full_input,
+            full_analysis_input_after_digest=after_full_input,
             action_payload_digest=decision.action_payload_digest,
             action_application_contract_digest=(
                 decision.action_application_contract_digest
@@ -2062,7 +2123,7 @@ class RealizedInterventionReceipt:
 def _new_prospective_decision(
     **values: object,
 ) -> ProspectiveInterventionDecision:
-    values.setdefault("contract", "prospective-intervention-decision-v4")
+    values.setdefault("contract", "prospective-intervention-decision-v5")
     expected = {
         item.name
         for item in fields(ProspectiveInterventionDecision)
@@ -2131,6 +2192,13 @@ def validate_intervention_action_transition(
         != decision.applicability_mask_digest
     ):
         raise ValueError("receipt before-context disagrees with its decision")
+    if (
+        actual_input_before_run.full_analysis_input_digest
+        != decision.actual_input_before_full_analysis_input_digest
+        or actual_input_before_run.full_analysis_input_digest is None
+        or actual_input_after_run.full_analysis_input_digest is None
+    ):
+        raise ValueError("receipt full input identity disagrees with its decision")
     if (
         actual_input_before_context.radar_id
         != actual_input_after_context.radar_id
@@ -2213,14 +2281,29 @@ def validate_intervention_action_transition(
         after_quality_weight=after_quality,
     )
     if isinstance(action, QcMaskAction):
+        if (
+            tensor_digest(before_masks) == tensor_digest(after_masks)
+            and tensor_digest(before_quality) == tensor_digest(after_quality)
+        ):
+            raise ValueError("QC receipt did not change mask or quality")
         if actual_input_before_run.fixed_input_context_digest == (
             actual_input_after_run.fixed_input_context_digest
         ):
             raise ValueError("QC receipt did not change its fixed input context")
-    elif actual_input_before_run.fixed_input_context_digest != (
-        actual_input_after_run.fixed_input_context_digest
+    else:
+        if before_digest == after_digest or (
+            actual_input_before_run.input_bundle_digest
+            == actual_input_after_run.input_bundle_digest
+        ):
+            raise ValueError("dBZ receipt did not change its radar input bundle")
+        if actual_input_before_run.fixed_input_context_digest != (
+            actual_input_after_run.fixed_input_context_digest
+        ):
+            raise ValueError("receipt changed non-radar input state")
+    if actual_input_before_run.full_analysis_input_digest == (
+        actual_input_after_run.full_analysis_input_digest
     ):
-        raise ValueError("receipt changed non-radar input state")
+        raise ValueError("receipt did not change its full analysis input")
     action_artifact_digest = json_digest(
         {
             "contract": "intervention-action-artifact-v1",
@@ -2251,7 +2334,7 @@ def validate_intervention_action_transition(
 def _new_realized_intervention_receipt(
     **values: object,
 ) -> RealizedInterventionReceipt:
-    values.setdefault("contract", "realized-intervention-receipt-v4")
+    values.setdefault("contract", "realized-intervention-receipt-v5")
     expected = {
         item.name
         for item in fields(RealizedInterventionReceipt)
@@ -2331,6 +2414,10 @@ def validate_prospective_intervention(
         (
             receipt.actual_input_before_bundle_digest,
             decision.actual_input_before_bundle_digest,
+        ),
+        (
+            receipt.full_analysis_input_before_digest,
+            decision.actual_input_before_full_analysis_input_digest,
         ),
         (
             receipt.action_safety_diagnostics_digest,

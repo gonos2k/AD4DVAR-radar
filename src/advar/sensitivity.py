@@ -2090,6 +2090,7 @@ class FirstOrderValidation:
     source_fsoi_digest: str
     nominal_forecast_digest: str
     nominal_input_bundle_digest: str
+    nominal_full_analysis_input_digest: str
     full_step_prediction: Tensor
     full_step_resolved_metric_change: Tensor
     full_step_absolute_error: Tensor
@@ -2126,11 +2127,11 @@ class FirstOrderValidation:
     background_fallback_before: Tensor | None = None
     background_fallback_after: Tensor | None = None
     metric_domain_contract: FirstOrderMetricDomain = "frozen_metric_domain"
-    contract: str = "p1-first-order-validation-v4"
+    contract: str = "p1-first-order-validation-v5"
     validation_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "p1-first-order-validation-v4":
+        if self.contract != "p1-first-order-validation-v5":
             raise ValueError("unsupported first-order validation contract")
         if self.metric_domain_contract not in (
             "frozen_metric_domain",
@@ -2141,6 +2142,7 @@ class FirstOrderValidation:
             "source_fsoi_digest",
             "nominal_forecast_digest",
             "nominal_input_bundle_digest",
+            "nominal_full_analysis_input_digest",
         ):
             _require_sha256(name, getattr(self, name))
         tensor_names = (
@@ -2282,6 +2284,7 @@ class LearningApprovalEvidence:
     learning_impact_digest: str
     approved_action_digest: str | None = None
     nominal_input_bundle_digest: str | None = None
+    nominal_full_analysis_input_digest: str | None = None
     selection_mode: LearningSelectionMode = "direct"
     candidate_id: str | None = None
     candidate_rank: int | None = None
@@ -2293,13 +2296,14 @@ class LearningApprovalEvidence:
     whitener_operations_per_apply: int = 0
     observed_whitener_apply_count: int = 0
     observed_whitener_total_operations: int = 0
-    contract: str = "p1-learning-approval-evidence-v3"
+    contract: str = "p1-learning-approval-evidence-v4"
 
     def __post_init__(self) -> None:
         if self.contract not in (
             "p1-learning-approval-evidence-v1",
             "p1-learning-approval-evidence-v2",
             "p1-learning-approval-evidence-v3",
+            "p1-learning-approval-evidence-v4",
         ):
             raise ValueError("unsupported learning approval evidence")
         for name, value in (
@@ -2320,8 +2324,14 @@ class LearningApprovalEvidence:
         action_values = (
             self.approved_action_digest,
             self.nominal_input_bundle_digest,
+            self.nominal_full_analysis_input_digest,
         )
-        if self.contract == "p1-learning-approval-evidence-v3":
+        if self.contract in (
+            "p1-learning-approval-evidence-v3",
+            "p1-learning-approval-evidence-v4",
+        ):
+            if self.contract == "p1-learning-approval-evidence-v3":
+                action_values = action_values[:2]
             if any(value is None for value in action_values):
                 raise ValueError("learning action lineage is incomplete")
             _require_sha256(
@@ -2332,6 +2342,11 @@ class LearningApprovalEvidence:
                 "nominal_input_bundle_digest",
                 cast(str, self.nominal_input_bundle_digest),
             )
+            if self.contract == "p1-learning-approval-evidence-v4":
+                _require_sha256(
+                    "nominal_full_analysis_input_digest",
+                    cast(str, self.nominal_full_analysis_input_digest),
+                )
         elif any(value is not None for value in action_values):
             raise ValueError("legacy learning evidence cannot carry action lineage")
         ranked_values = (
@@ -2925,6 +2940,9 @@ def first_order_validation_digest(
             "nominal_forecast_digest": validation.nominal_forecast_digest,
             "nominal_input_bundle_digest": (
                 validation.nominal_input_bundle_digest
+            ),
+            "nominal_full_analysis_input_digest": (
+                validation.nominal_full_analysis_input_digest
             ),
             "metric_domain_contract": validation.metric_domain_contract,
             "full_step_prediction": tensor_digest(
@@ -5391,6 +5409,8 @@ def _learning_impact_from_fsoi(
         or validation.nominal_forecast_digest != result.forecast_run_digest
         or validation.nominal_input_bundle_digest
         != result.run.input_bundle_digest
+        or validation.nominal_full_analysis_input_digest
+        != result.run.full_analysis_input_digest
     ):
         raise ValueError("first-order validation lineage mismatch")
     if (
@@ -5471,6 +5491,9 @@ def _learning_impact_from_fsoi(
         learning_impact_digest=_variational_impact_digest(owned_impact),
         approved_action_digest=fsoi.perturbation_digest,
         nominal_input_bundle_digest=validation.nominal_input_bundle_digest,
+        nominal_full_analysis_input_digest=(
+            validation.nominal_full_analysis_input_digest
+        ),
         selection_mode=selection.mode,
         candidate_id=selection.candidate_id,
         candidate_rank=selection.candidate_rank,
@@ -5791,10 +5814,15 @@ def _validate_first_order_learning_impact(
         and sign_consistent
         and material_count > 0
     )
+    if result.run.full_analysis_input_digest is None:
+        raise ValueError("learning validation requires full input identity")
     return FirstOrderValidation(
         source_fsoi_digest=fsoi.variational_fsoi_digest,
         nominal_forecast_digest=result.forecast_run_digest,
         nominal_input_bundle_digest=result.run.input_bundle_digest,
+        nominal_full_analysis_input_digest=(
+            result.run.full_analysis_input_digest
+        ),
         full_step_prediction=full_prediction,
         full_step_resolved_metric_change=full.metric_change,
         full_step_absolute_error=full_error,

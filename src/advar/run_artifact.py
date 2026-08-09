@@ -35,13 +35,14 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v47"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v48"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v42",
     "forecast-run-v43",
     "forecast-run-v44",
     "forecast-run-v45",
     "forecast-run-v46",
+    "forecast-run-v47",
 }
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 224
@@ -63,6 +64,7 @@ _CORE_ARRAY_NAMES = frozenset(
         "observation_std_dbz_digest",
         "background_frames_digest",
         "fixed_input_context_digest",
+        "full_analysis_input_digest",
         "run_background_age_minutes",
         "grid_time_contract_present",
         "grid_time_contract_json",
@@ -304,6 +306,7 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             result.run.observation_quality_weight_digest,
             result.run.observation_std_dbz_digest,
             result.run.fixed_input_context_digest,
+            result.run.full_analysis_input_digest,
         )
     ):
         raise ValueError("current run artifacts require complete input context")
@@ -351,6 +354,9 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         ),
         "fixed_input_context_digest": np.asarray(
             result.run.fixed_input_context_digest
+        ),
+        "full_analysis_input_digest": np.asarray(
+            result.run.full_analysis_input_digest
         ),
         "neural_prior_digest": np.asarray(
             "" if result.run.neural_prior_digest is None else result.run.neural_prior_digest
@@ -1367,6 +1373,11 @@ def load_forecast_run(
             fixed_input_context_digest=(
                 _digest_scalar(loaded_arrays, "fixed_input_context_digest")
                 if "fixed_input_context_digest" in loaded_arrays
+                else None
+            ),
+            full_analysis_input_digest=(
+                _digest_scalar(loaded_arrays, "full_analysis_input_digest")
+                if "full_analysis_input_digest" in loaded_arrays
                 else None
             ),
             input_bundle_digest=_digest_scalar(

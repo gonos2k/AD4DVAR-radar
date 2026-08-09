@@ -324,6 +324,30 @@ class _RejectAllQcAction(torch.nn.Module):
         )
 
 
+class _DeweightOnlyQcAction(torch.nn.Module):
+    def forward(
+        self,
+        context: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        return (
+            context[1].to(torch.bool),
+            context[2] * 0.5,
+            torch.tensor(True, device=context.device),
+        )
+
+
+class _UpweightQcAction(torch.nn.Module):
+    def forward(
+        self,
+        context: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        return (
+            context[1].to(torch.bool),
+            torch.ones_like(context[2]),
+            torch.tensor(True, device=context.device),
+        )
+
+
 class _ValidOnlyAddAction(torch.nn.Module):
     def forward(self, context: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return context[1], torch.tensor(True, device=context.device)
@@ -1352,6 +1376,8 @@ class EpisodeLedgerTests(unittest.TestCase):
                 replace(strict_policy, maximum_changed_fraction=1.0),
                 **{**common, "radar_id": "radar-2"},
             )
+        with self.assertRaisesRegex(ValueError, "current-case benefit"):
+            replace(strict_policy, execution_authority="automatic")
         relaxed = replace(strict_policy, maximum_changed_fraction=1.0)
         correlated_run = replace(
             run,
@@ -1388,7 +1414,8 @@ class EpisodeLedgerTests(unittest.TestCase):
             relaxed,
             action_generator_digest=qc_generator.generator_digest,
             allowed_intervention_types=("realized_qc_intervention",),
-            maximum_quality_weight_l2=4.0,
+            maximum_global_quality_precision_scale_l2=4.0,
+            maximum_tile_quality_precision_scale_l2=4.0,
         )
         qc_action = qc_generator.generate(context)
         self.assertIsInstance(qc_action, QcMaskAction)
@@ -1433,6 +1460,120 @@ class EpisodeLedgerTests(unittest.TestCase):
             qc_receipt.actual_input_before_masks_digest,
             qc_receipt.actual_input_after_masks_digest,
         )
+
+        deweight_generator = InterventionActionGenerator.from_model(
+            _DeweightOnlyQcAction().eval(),
+            context,
+            intervention_type="realized_qc_intervention",
+            action_reason="confidence deweighting",
+        )
+        deweight_policy = replace(
+            qc_policy,
+            action_generator_digest=deweight_generator.generator_digest,
+        )
+        deweight_decision = ProspectiveInterventionDecision.from_policy(
+            deweight_policy,
+            **{
+                **common,
+                "decision_id": "quality-only",
+                "action_generator": deweight_generator,
+                "intervention_type": "realized_qc_intervention",
+            },
+        )
+        deweighted_quality = torch.full_like(frames, 0.5)
+        deweighted_run, deweighted_context, _, _ = _prospective_run_and_context(
+            frames,
+            masks,
+            quality_weight=deweighted_quality,
+        )
+        deweight_receipt = RealizedInterventionReceipt.from_decision(
+            deweight_decision,
+            actual_input_before_context=context,
+            actual_input_before_run=run,
+            actual_input_after_context=deweighted_context,
+            actual_input_after_run=deweighted_run,
+            action_policy=deweight_policy,
+            action_generator=deweight_generator,
+            executor_key_id="executor-quality",
+            executor_trust_store_digest="0" * 64,
+            executor_private_key=Ed25519PrivateKey.generate(),
+            executor_sequence_number=1,
+            applied_time=receipt_time,
+            receipt_time=receipt_time,
+        )
+        self.assertEqual(
+            deweight_receipt.actual_input_before_bundle_digest,
+            deweight_receipt.actual_input_bundle_digest,
+        )
+        self.assertNotEqual(
+            deweight_receipt.full_analysis_input_before_digest,
+            deweight_receipt.full_analysis_input_after_digest,
+        )
+
+        low_quality = torch.full_like(frames, 0.01)
+        low_std = torch.full_like(frames, 0.1)
+        low_run, low_context, low_plan, _ = _prospective_run_and_context(
+            frames,
+            masks,
+            quality_weight=low_quality,
+            observation_std_dbz=low_std,
+        )
+        reject_low_generator = InterventionActionGenerator.from_model(
+            _RejectAllQcAction().eval(),
+            low_context,
+            intervention_type="realized_qc_intervention",
+            action_reason="low-confidence rejection",
+        )
+        reject_low_policy = replace(
+            qc_policy,
+            action_generator_digest=reject_low_generator.generator_digest,
+            maximum_global_quality_precision_scale_l2=1.0,
+            maximum_tile_quality_precision_scale_l2=1.0,
+        )
+        with self.assertRaisesRegex(ValueError, "precision-scale"):
+            ProspectiveInterventionDecision.from_policy(
+                reject_low_policy,
+                **{
+                    **common,
+                    "decision_id": "precision-radius",
+                    "action_generator": reject_low_generator,
+                    "actual_input_context": low_context,
+                    "actual_input_before_run": low_run,
+                    "input_plan_digest": low_plan,
+                    "intervention_type": "realized_qc_intervention",
+                },
+            )
+
+        quarter_quality = torch.full_like(frames, 0.25)
+        quarter_run, quarter_context, quarter_plan, _ = (
+            _prospective_run_and_context(
+                frames,
+                masks,
+                quality_weight=quarter_quality,
+            )
+        )
+        upweight_generator = InterventionActionGenerator.from_model(
+            _UpweightQcAction().eval(),
+            quarter_context,
+            intervention_type="realized_qc_intervention",
+            action_reason="untrusted restoration",
+        )
+        with self.assertRaisesRegex(ValueError, "reject or deweight"):
+            ProspectiveInterventionDecision.from_policy(
+                replace(
+                    qc_policy,
+                    action_generator_digest=upweight_generator.generator_digest,
+                ),
+                **{
+                    **common,
+                    "decision_id": "qc-upweight",
+                    "action_generator": upweight_generator,
+                    "actual_input_context": quarter_context,
+                    "actual_input_before_run": quarter_run,
+                    "input_plan_digest": quarter_plan,
+                    "intervention_type": "realized_qc_intervention",
+                },
+            )
         override_generator = InterventionActionGenerator.from_model(
             _SinglePixelOverrideAction().eval(),
             context,
