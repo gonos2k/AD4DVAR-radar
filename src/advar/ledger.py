@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, fields, replace
+from dataclasses import asdict, dataclass, field, fields, replace
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
@@ -34,6 +34,7 @@ from .nowcast import (
     ForecastRunContract,
     _forecast_full_analysis_input_digest,
     _forecast_input_bundle_digest,
+    _forecast_input_plan_resolution_digest,
 )
 
 from .sensitivity import (
@@ -48,6 +49,7 @@ from .sensitivity import (
 from .intervention import (
     InterventionInputContext,
     InterventionActionGenerator,
+    OperatorActionApproval,
     ProspectiveInterventionDecision,
     ReusableInterventionPolicyEvidence,
     RealizedInterventionReceipt,
@@ -58,11 +60,14 @@ from .intervention import (
     validate_action_tensor_replay,
     validate_retrospective_counterfactual_replay,
     verify_intervention_receipt_signature,
+    verify_operator_action_approval_signature,
     _compute_action_safety,
     _new_prospective_decision,
+    _new_operator_action_approval,
     _new_realized_intervention_receipt,
 )
 from .promotion import (
+    LegacyNeuralPriorCandidateManifestAuditV2,
     NeuralPriorCandidateManifest,
     LegacyNeuralPriorHoldoutPlanAudit,
     LegacyNeuralPriorHoldoutPlanCase,
@@ -76,6 +81,8 @@ from .promotion import (
     PriorUncertaintyTargetPlan,
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionEvidence,
+    LegacyNeuralPriorPromotionEvidenceAuditV3,
+    LegacyNeuralPriorPromotionEvidenceAuditV4,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     compute_neural_prior_promotion,
@@ -88,8 +95,9 @@ from .promotion import (
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
+_OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 12
+_INDEX_SCHEMA_VERSION = 13
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
@@ -105,13 +113,21 @@ class _ExecutorTrustStore:
 
 
 @dataclass(frozen=True)
+class _OperatorTrustStore:
+    keys: dict[str, Ed25519PublicKey]
+    roles: dict[str, frozenset[str]]
+    content_digest: str
+
+
+@dataclass(frozen=True)
 class LegacyPromotionEvaluationAudit:
     """Read-only payload retained before typed Tensor audit evidence existed."""
 
     evaluation_digest: str
     payload_json: str
     contract: str = "legacy-promotion-evaluation-audit-v1"
-    audit_digest: str = ""
+    content_digest_verified: bool = field(init=False)
+    audit_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
         if re.fullmatch(r"[0-9a-f]{64}", self.evaluation_digest) is None:
@@ -124,6 +140,23 @@ class LegacyPromotionEvaluationAudit:
         canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         if canonical != self.payload_json:
             raise ValueError("legacy promotion evaluation payload is not canonical")
+        normalized = dict(payload)
+        normalized.pop("evaluation_digest")
+        tensor_payloads = [
+            value
+            for value in normalized.values()
+            if isinstance(value, dict) and value.get("kind") == "tensor"
+        ]
+        verified = bool(tensor_payloads)
+        if verified:
+            for name, value in tuple(normalized.items()):
+                if not isinstance(value, dict) or value.get("kind") != "tensor":
+                    continue
+                tensor = _decode_audit_tensor(name, value)
+                normalized[name] = tensor_digest(tensor)
+            if _json_digest(normalized) != self.evaluation_digest:
+                raise ValueError("legacy promotion evaluation digest mismatch")
+        object.__setattr__(self, "content_digest_verified", verified)
         object.__setattr__(
             self,
             "audit_digest",
@@ -132,6 +165,7 @@ class LegacyPromotionEvaluationAudit:
                     "contract": self.contract,
                     "evaluation_digest": self.evaluation_digest,
                     "payload": payload,
+                    "content_digest_verified": verified,
                 }
             ),
         )
@@ -139,7 +173,7 @@ class LegacyPromotionEvaluationAudit:
 
 @dataclass(frozen=True)
 class LegacyProspectiveInterventionDecisionAudit:
-    """Digest-verified PR #89 decision retained without execution reuse."""
+    """Pre-operator-signature decision retained without execution reuse."""
 
     decision_digest: str
     payload_json: str
@@ -151,6 +185,8 @@ class LegacyProspectiveInterventionDecisionAudit:
             payload.get("contract") not in {
                 "prospective-intervention-decision-v2",
                 "prospective-intervention-decision-v3",
+                "prospective-intervention-decision-v4",
+                "prospective-intervention-decision-v5",
             }
             or payload.get("decision_digest") != self.decision_digest
         ):
@@ -173,7 +209,7 @@ class LegacyProspectiveInterventionDecisionAudit:
 
 @dataclass(frozen=True)
 class LegacyRealizedInterventionReceiptAudit:
-    """Signed PR #89 receipt retained without durable transition replay."""
+    """Earlier signed receipt retained without current approval semantics."""
 
     receipt_digest: str
     decision_digest: str
@@ -186,6 +222,8 @@ class LegacyRealizedInterventionReceiptAudit:
             payload.get("contract") not in {
                 "realized-intervention-receipt-v2",
                 "realized-intervention-receipt-v3",
+                "realized-intervention-receipt-v4",
+                "realized-intervention-receipt-v5",
             }
             or payload.get("receipt_digest") != self.receipt_digest
             or payload.get("decision_digest") != self.decision_digest
@@ -250,6 +288,68 @@ def _load_executor_trust_store(path: str | Path) -> _ExecutorTrustStore:
             raise ValueError("executor public keys must contain 32 bytes")
         keys[key_id] = key
     return _ExecutorTrustStore(keys=keys, content_digest=_json_digest(document))
+
+
+def _load_operator_trust_store(path: str | Path) -> _OperatorTrustStore:
+    """Load a root-owned public-key store used only for action review."""
+
+    source = Path(path)
+    if not source.is_absolute():
+        raise ValueError("operator trust store path must be absolute")
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(source, flags)
+    try:
+        metadata = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_uid != 0
+            or metadata.st_mode & 0o022
+        ):
+            raise ValueError("operator trust store must be root-owned and non-writable")
+        with os.fdopen(descriptor, encoding="utf-8") as stream:
+            descriptor = -1
+            document = json.load(stream)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+    if not isinstance(document, dict) or set(document) != {"contract", "operators"}:
+        raise ValueError("invalid operator trust store")
+    if document["contract"] != _OPERATOR_TRUST_STORE_CONTRACT:
+        raise ValueError("unsupported operator trust store")
+    raw = document["operators"]
+    if not isinstance(raw, dict) or not raw:
+        raise ValueError("operator trust store requires operators")
+    keys: dict[str, Ed25519PublicKey] = {}
+    roles: dict[str, frozenset[str]] = {}
+    for key_id, record in raw.items():
+        if (
+            not isinstance(key_id, str)
+            or not key_id
+            or not isinstance(record, dict)
+            or set(record) != {"public_key", "roles"}
+            or not isinstance(record["public_key"], str)
+            or not isinstance(record["roles"], list)
+            or not record["roles"]
+            or any(
+                not isinstance(role, str) or not role or role.strip() != role
+                for role in record["roles"]
+            )
+        ):
+            raise ValueError("invalid operator trust-store entry")
+        try:
+            public = bytes.fromhex(record["public_key"])
+            key = Ed25519PublicKey.from_public_bytes(public)
+        except ValueError as error:
+            raise ValueError("invalid operator trust-store public key") from error
+        if len(public) != 32:
+            raise ValueError("operator public keys must contain 32 bytes")
+        keys[key_id] = key
+        roles[key_id] = frozenset(record["roles"])
+    return _OperatorTrustStore(
+        keys=keys,
+        roles=roles,
+        content_digest=_json_digest(document),
+    )
 
 
 def _torch_dtype(value: str) -> torch.dtype:
@@ -336,6 +436,10 @@ def _artifact_intervention_context(
         (
             "input_plan_resolution_digest",
             manifest[f"{prefix}_input_plan_resolution_digest"],
+        ),
+        (
+            "analysis_input_identity_digest",
+            manifest.get(f"{prefix}_analysis_input_identity_digest"),
         ),
         ("context_schema_digest", manifest[f"{prefix}_context_schema_digest"]),
         (
@@ -1091,7 +1195,7 @@ class EpisodeLedger:
             )
             (temporary / "generator.pt2").write_bytes(generator_bytes)
             manifest: dict[str, object] = {
-                "contract": "durable-intervention-action-artifact-v3",
+                "contract": "durable-intervention-action-artifact-v4",
                 "receipt_digest": receipt.receipt_digest,
                 "action_artifact_digest": receipt.action_artifact_digest,
                 "action_payload_digest": receipt.action_payload_digest,
@@ -1150,6 +1254,12 @@ class EpisodeLedger:
                 ),
                 "after_full_analysis_input_digest": (
                     after_run.full_analysis_input_digest
+                ),
+                "before_analysis_input_identity_digest": (
+                    before.analysis_input_identity_digest
+                ),
+                "after_analysis_input_identity_digest": (
+                    after.analysis_input_identity_digest
                 ),
                 "input_plan_digest": before.input_plan_digest,
                 "before_input_plan_resolution_digest": (
@@ -1243,7 +1353,10 @@ class EpisodeLedger:
         manifest = json.loads((source / "manifest.json").read_text("utf-8"))
         if not isinstance(manifest, dict) or (
             manifest.get("contract")
-            != "durable-intervention-action-artifact-v3"
+            not in {
+                "durable-intervention-action-artifact-v3",
+                "durable-intervention-action-artifact-v4",
+            }
             or manifest.get("receipt_digest") != receipt.receipt_digest
             or manifest.get("action_artifact_digest")
             != receipt.action_artifact_digest
@@ -1360,54 +1473,6 @@ class EpisodeLedger:
                     manifest[f"{prefix}_grid_time_contract_digest"],
                 ),
             )
-            expected_resolution = _json_digest(
-                {
-                    "contract": "forecast-input-plan-resolution-v1",
-                    "input_plan_digest": manifest["input_plan_digest"],
-                    "input_bundle_digest": expected_bundle,
-                }
-            )
-            if (
-                expected_bundle != manifest[f"{prefix}_input_bundle_digest"]
-                or expected_resolution
-                != manifest[f"{prefix}_input_plan_resolution_digest"]
-            ):
-                raise ValueError("durable intervention input bundle changed")
-            expected_context = _json_digest(
-                {
-                    "contract": "intervention-input-context-v3",
-                    "input_bundle_digest": manifest[
-                        f"{prefix}_input_bundle_digest"
-                    ],
-                    "input_plan_digest": manifest["input_plan_digest"],
-                    "input_plan_resolution_digest": manifest[
-                        f"{prefix}_input_plan_resolution_digest"
-                    ],
-                    "frames_digest": tensor_digest(tensors[f"{prefix}_frames"]),
-                    "observation_masks_digest": mask_digest,
-                    "quality_weight_digest": quality_digest,
-                    "observation_std_dbz_digest": std_digest,
-                    "background_frames_digest": background_digest,
-                    "radar_id": manifest[f"{prefix}_radar_id"],
-                    "context_schema_digest": manifest[
-                        f"{prefix}_context_schema_digest"
-                    ],
-                    "applicability_region_digest": manifest[
-                        f"{prefix}_applicability_region_digest"
-                    ],
-                    "applicability_mask_digest": manifest[
-                        f"{prefix}_applicability_mask_digest"
-                    ],
-                    "canonicalization_contract_digest": manifest[
-                        f"{prefix}_canonicalization_contract_digest"
-                    ],
-                    "minimum_dbz": manifest["minimum_dbz"],
-                    "maximum_dbz": manifest["maximum_dbz"],
-                    "missing_fill_dbz": manifest["missing_fill_dbz"],
-                }
-            )
-            if expected_context != manifest[f"{prefix}_context_digest"]:
-                raise ValueError("durable intervention context digest mismatch")
             expected_fixed = _json_digest(
                 {
                     "contract": "forecast-fixed-input-context-v1",
@@ -1433,6 +1498,79 @@ class EpisodeLedger:
                     "input_plan_digest": manifest["input_plan_digest"],
                 }
             )
+            expected_full = _forecast_full_analysis_input_digest(
+                input_frames_digest=tensor_digest(tensors[f"{prefix}_frames"]),
+                fixed_input_context_digest=expected_fixed,
+            )
+            if manifest["contract"] == "durable-intervention-action-artifact-v4":
+                expected_resolution = _forecast_input_plan_resolution_digest(
+                    input_plan_digest=cast(str, manifest["input_plan_digest"]),
+                    full_analysis_input_digest=expected_full,
+                )
+            else:
+                expected_resolution = _json_digest(
+                    {
+                        "contract": "forecast-input-plan-resolution-v1",
+                        "input_plan_digest": manifest["input_plan_digest"],
+                        "input_bundle_digest": expected_bundle,
+                    }
+                )
+            if (
+                expected_bundle != manifest[f"{prefix}_input_bundle_digest"]
+                or expected_resolution
+                != manifest[f"{prefix}_input_plan_resolution_digest"]
+            ):
+                raise ValueError("durable intervention input bundle changed")
+            expected_context = _json_digest(
+                {
+                    "contract": (
+                        "intervention-input-context-v4"
+                        if manifest["contract"]
+                        == "durable-intervention-action-artifact-v4"
+                        else "intervention-input-context-v3"
+                    ),
+                    "input_bundle_digest": manifest[
+                        f"{prefix}_input_bundle_digest"
+                    ],
+                    "input_plan_digest": manifest["input_plan_digest"],
+                    "input_plan_resolution_digest": manifest[
+                        f"{prefix}_input_plan_resolution_digest"
+                    ],
+                    **(
+                        {
+                            "analysis_input_identity_digest": manifest[
+                                f"{prefix}_analysis_input_identity_digest"
+                            ]
+                        }
+                        if manifest["contract"]
+                        == "durable-intervention-action-artifact-v4"
+                        else {}
+                    ),
+                    "frames_digest": tensor_digest(tensors[f"{prefix}_frames"]),
+                    "observation_masks_digest": mask_digest,
+                    "quality_weight_digest": quality_digest,
+                    "observation_std_dbz_digest": std_digest,
+                    "background_frames_digest": background_digest,
+                    "radar_id": manifest[f"{prefix}_radar_id"],
+                    "context_schema_digest": manifest[
+                        f"{prefix}_context_schema_digest"
+                    ],
+                    "applicability_region_digest": manifest[
+                        f"{prefix}_applicability_region_digest"
+                    ],
+                    "applicability_mask_digest": manifest[
+                        f"{prefix}_applicability_mask_digest"
+                    ],
+                    "canonicalization_contract_digest": manifest[
+                        f"{prefix}_canonicalization_contract_digest"
+                    ],
+                    "minimum_dbz": manifest["minimum_dbz"],
+                    "maximum_dbz": manifest["maximum_dbz"],
+                    "missing_fill_dbz": manifest["missing_fill_dbz"],
+                }
+            )
+            if expected_context != manifest[f"{prefix}_context_digest"]:
+                raise ValueError("durable intervention context digest mismatch")
             retained_fixed = getattr(
                 receipt,
                 f"fixed_input_context_{prefix}_digest",
@@ -1442,10 +1580,6 @@ class EpisodeLedger:
                 or expected_fixed != retained_fixed
             ):
                 raise ValueError("durable fixed input context changed")
-            expected_full = _forecast_full_analysis_input_digest(
-                input_frames_digest=tensor_digest(tensors[f"{prefix}_frames"]),
-                fixed_input_context_digest=expected_fixed,
-            )
             retained_full = getattr(
                 receipt,
                 f"full_analysis_input_{prefix}_digest",
@@ -1455,6 +1589,23 @@ class EpisodeLedger:
                 or expected_full != retained_full
             ):
                 raise ValueError("durable full analysis input changed")
+            if manifest["contract"] == "durable-intervention-action-artifact-v4":
+                expected_identity = _json_digest(
+                    {
+                        "frames_digest": tensor_digest(
+                            tensors[f"{prefix}_frames"]
+                        ),
+                        "fixed_context_digest": expected_fixed,
+                        "full_data_digest": expected_full,
+                        "input_plan_digest": manifest["input_plan_digest"],
+                        "plan_resolution_digest": expected_resolution,
+                        "contract": "analysis-input-identity-v1",
+                    }
+                )
+                if expected_identity != manifest[
+                    f"{prefix}_analysis_input_identity_digest"
+                ]:
+                    raise ValueError("durable analysis input identity changed")
         context_tensor = _intervention_context_tensor(
             tensors["before_frames"],
             tensors["before_masks"],
@@ -1566,11 +1717,13 @@ class EpisodeLedger:
         self,
         decision: ProspectiveInterventionDecision,
         *,
+        operator_approval: OperatorActionApproval,
         action_policy: ReusableInterventionPolicyEvidence,
         action_generator: InterventionActionGenerator,
         actual_input_before_context: InterventionInputContext,
         actual_input_before_run: ForecastRunContract,
         trust_store_path: str | Path,
+        operator_trust_store_path: str | Path,
     ) -> str:
         """Commit a policy-generated current-input action before its deadline."""
 
@@ -1629,10 +1782,53 @@ class EpisodeLedger:
         )
         if expected != decision.decision_digest:
             raise ValueError("prospective decision digest mismatch")
+        operator_trust = _load_operator_trust_store(operator_trust_store_path)
+        if operator_approval.operator_trust_store_digest != (
+            operator_trust.content_digest
+        ):
+            raise ValueError("operator approval trust-store mismatch")
+        public_key = operator_trust.keys.get(operator_approval.operator_key_id)
+        approved_roles = operator_trust.roles.get(
+            operator_approval.operator_key_id,
+            frozenset(),
+        )
+        if public_key is None or operator_approval.operator_role not in approved_roles:
+            raise ValueError("operator is not approved for the declared role")
+        if (
+            operator_approval.decision_digest != decision.decision_digest
+            or operator_approval.action_digest != decision.action_digest
+            or operator_approval.full_analysis_input_digest
+            != decision.actual_input_before_full_analysis_input_digest
+            or operator_approval.safety_diagnostics_digest
+            != decision.action_safety_diagnostics_digest
+        ):
+            raise ValueError("operator approval is bound to another decision")
+        expected_approval_digest = _json_digest(
+            {
+                key: value
+                for key, value in operator_approval.__dict__.items()
+                if key != "approval_digest"
+            }
+        )
+        if operator_approval.approval_digest != expected_approval_digest:
+            raise ValueError("operator action approval digest mismatch")
+        verify_operator_action_approval_signature(operator_approval, public_key)
+        reviewed = datetime.fromisoformat(
+            operator_approval.reviewed_at.replace("Z", "+00:00")
+        )
+        expires = datetime.fromisoformat(
+            operator_approval.expires_at.replace("Z", "+00:00")
+        )
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             now = datetime.now(timezone.utc)
-            if decided > now or now > deadline or deadline >= publication:
+            if (
+                decided > reviewed
+                or reviewed > now
+                or now >= expires
+                or expires > deadline
+                or deadline >= publication
+            ):
                 raise ValueError("prospective decision missed its decision deadline")
             retained = connection.execute(
                 "SELECT policy_json FROM reusable_intervention_policies "
@@ -1650,12 +1846,15 @@ class EpisodeLedger:
                 )
             connection.execute(
                 "INSERT INTO prospective_intervention_decisions "
-                "(decision_digest, decision_id, decision_json, created_at) "
-                "VALUES (?, ?, ?, ?)",
+                "(decision_digest, decision_id, decision_json, "
+                "operator_approval_digest, operator_approval_json, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
                 (
                     decision.decision_digest,
                     decision.decision_id,
                     json.dumps(asdict(decision), sort_keys=True),
+                    operator_approval.approval_digest,
+                    json.dumps(asdict(operator_approval), sort_keys=True),
                     now.isoformat(),
                 ),
             )
@@ -1676,6 +1875,7 @@ class EpisodeLedger:
         actual_input_after_run: ForecastRunContract,
         trust_store_path: str | Path,
         executor_trust_store_path: str | Path,
+        operator_trust_store_path: str | Path,
     ) -> str:
         """Record the executor receipt while the issue is still prospective."""
 
@@ -1714,6 +1914,7 @@ class EpisodeLedger:
         if public_key is None:
             raise ValueError("realized receipt executor is not approved")
         verify_intervention_receipt_signature(receipt, public_key)
+        operator_trust = _load_operator_trust_store(operator_trust_store_path)
         publication = datetime.fromisoformat(
             receipt.publication_time.replace("Z", "+00:00")
         )
@@ -1723,7 +1924,8 @@ class EpisodeLedger:
             connection.execute("BEGIN IMMEDIATE")
             now = datetime.now(timezone.utc)
             recorded = connection.execute(
-                "SELECT decision_json, created_at "
+                "SELECT decision_json, operator_approval_digest, "
+                "operator_approval_json, created_at "
                 "FROM prospective_intervention_decisions "
                 "WHERE decision_digest = ?",
                 (decision.decision_digest,),
@@ -1732,9 +1934,37 @@ class EpisodeLedger:
                 raise ValueError("realized receipt decision is not recorded")
             if json.loads(recorded[0]) != asdict(decision):
                 raise ValueError("recorded prospective decision changed")
-            decision_created = datetime.fromisoformat(recorded[1])
+            if not recorded[1] or not recorded[2]:
+                raise ValueError("realized receipt requires operator approval")
+            approval_values = json.loads(recorded[2])
+            retained_approval_digest = approval_values.pop(
+                "approval_digest",
+                None,
+            )
+            approval = _new_operator_action_approval(**approval_values)
+            if (
+                approval.approval_digest != retained_approval_digest
+                or approval.approval_digest != recorded[1]
+                or approval.decision_digest != decision.decision_digest
+                or approval.operator_trust_store_digest
+                != operator_trust.content_digest
+            ):
+                raise ValueError("recorded operator approval changed")
+            operator_key = operator_trust.keys.get(approval.operator_key_id)
+            if operator_key is None or approval.operator_role not in (
+                operator_trust.roles.get(approval.operator_key_id, frozenset())
+            ):
+                raise ValueError("recorded operator is not approved")
+            verify_operator_action_approval_signature(approval, operator_key)
+            decision_created = datetime.fromisoformat(recorded[3])
+            approval_expiry = datetime.fromisoformat(
+                approval.expires_at.replace("Z", "+00:00")
+            )
             if not (
-                decision_created <= applied <= received <= now < publication
+                decision_created
+                <= applied
+                < approval_expiry
+                and applied <= received <= now < publication
             ):
                 raise ValueError("realized receipt violates trusted clock order")
             previous_sequence = connection.execute(
@@ -1779,8 +2009,13 @@ class EpisodeLedger:
         receipt_digest: str,
         *,
         executor_trust_store_path: str | Path,
+        operator_trust_store_path: str | Path | None = None,
     ) -> (
-        tuple[ProspectiveInterventionDecision, RealizedInterventionReceipt]
+        tuple[
+            ProspectiveInterventionDecision,
+            RealizedInterventionReceipt,
+            OperatorActionApproval,
+        ]
         | tuple[
             LegacyProspectiveInterventionDecisionAudit,
             LegacyRealizedInterventionReceiptAudit,
@@ -1791,7 +2026,8 @@ class EpisodeLedger:
         with self._connect() as connection:
             connection.row_factory = sqlite3.Row
             row = connection.execute(
-                "SELECT r.receipt_json, d.decision_json "
+                "SELECT r.receipt_json, d.decision_json, "
+                "d.operator_approval_digest, d.operator_approval_json "
                 "FROM realized_intervention_receipts r "
                 "JOIN prospective_intervention_decisions d "
                 "ON d.decision_digest = r.decision_digest "
@@ -1811,8 +2047,15 @@ class EpisodeLedger:
                 "prospective-intervention-decision-v3",
                 "realized-intervention-receipt-v3",
             ),
+            (
+                "prospective-intervention-decision-v4",
+                "realized-intervention-receipt-v4",
+            ),
         }
-        if (
+        approval_missing = not row["operator_approval_digest"] or not row[
+            "operator_approval_json"
+        ]
+        if approval_missing or (
             decision_values.get("contract"),
             receipt_values.get("contract"),
         ) in legacy_contracts:
@@ -1890,6 +2133,50 @@ class EpisodeLedger:
         if public_key is None:
             raise ValueError("realized receipt executor is not approved")
         verify_intervention_receipt_signature(receipt, public_key)
+        if operator_trust_store_path is None:
+            raise ValueError("current prospective action requires operator trust store")
+        try:
+            approval_values = json.loads(row["operator_approval_json"])
+        except json.JSONDecodeError as error:
+            raise ValueError("stored operator approval is invalid") from error
+        if not isinstance(approval_values, dict):
+            raise ValueError("stored operator approval is invalid")
+        retained_approval_digest = approval_values.pop("approval_digest", None)
+        approval = _new_operator_action_approval(**approval_values)
+        if (
+            approval.approval_digest != retained_approval_digest
+            or approval.approval_digest != row["operator_approval_digest"]
+            or approval.decision_digest != decision.decision_digest
+            or approval.action_digest != decision.action_digest
+            or approval.full_analysis_input_digest
+            != decision.actual_input_before_full_analysis_input_digest
+            or approval.safety_diagnostics_digest
+            != decision.action_safety_diagnostics_digest
+        ):
+            raise ValueError("stored operator approval changed")
+        decided_at = datetime.fromisoformat(
+            decision.decided_at.replace("Z", "+00:00")
+        )
+        reviewed_at = datetime.fromisoformat(
+            approval.reviewed_at.replace("Z", "+00:00")
+        )
+        expires_at = datetime.fromisoformat(
+            approval.expires_at.replace("Z", "+00:00")
+        )
+        deadline = datetime.fromisoformat(
+            decision.decision_deadline.replace("Z", "+00:00")
+        )
+        if not decided_at <= reviewed_at < expires_at <= deadline:
+            raise ValueError("stored operator approval time order is invalid")
+        operator_trust = _load_operator_trust_store(operator_trust_store_path)
+        if approval.operator_trust_store_digest != operator_trust.content_digest:
+            raise ValueError("operator approval trust-store mismatch")
+        operator_key = operator_trust.keys.get(approval.operator_key_id)
+        if operator_key is None or approval.operator_role not in (
+            operator_trust.roles.get(approval.operator_key_id, frozenset())
+        ):
+            raise ValueError("stored operator is not approved")
+        verify_operator_action_approval_signature(approval, operator_key)
         with self._connect() as connection:
             sequences = connection.execute(
                 "SELECT executor_sequence_number FROM "
@@ -1929,7 +2216,7 @@ class EpisodeLedger:
         self._replay_intervention_action_artifact(
             decision, receipt, action_policy
         )
-        return decision, receipt
+        return decision, receipt, approval
 
     def load_realized_observation_intervention(
         self,
@@ -2253,10 +2540,12 @@ class EpisodeLedger:
                     prior_gaussian_nll_increase_upper_bound,
                     prior_support_brier_increase_upper_bound,
                     prior_underdispersion_increase_upper_bound,
+                    prior_echo_intensity_nll_increase_upper_bound,
+                    prior_clear_sky_false_echo_increase_upper_bound,
                     eligible,
                     rejection_reasons_json, evidence_contract, created_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     evidence.promotion_evidence_digest,
@@ -2288,9 +2577,11 @@ class EpisodeLedger:
                     evidence.mean_normalized_improvement,
                     evidence.mean_improvement_lower_bound,
                     evidence.maximum_normalized_degradation,
-                    evidence.prior_gaussian_nll_increase_upper_bound,
+                    0.0,
                     evidence.prior_support_brier_increase_upper_bound,
                     evidence.prior_underdispersion_increase_upper_bound,
+                    evidence.prior_echo_intensity_nll_increase_upper_bound,
+                    evidence.prior_clear_sky_false_echo_increase_upper_bound,
                     int(evidence.eligible),
                     json.dumps(list(evidence.rejection_reasons)),
                     evidence.contract,
@@ -2302,7 +2593,11 @@ class EpisodeLedger:
     def load_neural_prior_promotion(
         self,
         promotion_evidence_digest: str,
-    ) -> NeuralPriorPromotionEvidence:
+    ) -> (
+        NeuralPriorPromotionEvidence
+        | LegacyNeuralPriorPromotionEvidenceAuditV3
+        | LegacyNeuralPriorPromotionEvidenceAuditV4
+    ):
         """Load and validate one immutable prior-promotion decision."""
 
         with self._connect() as connection:
@@ -2318,57 +2613,103 @@ class EpisodeLedger:
             raise KeyError(
                 f"unknown neural-prior promotion: {promotion_evidence_digest}"
             )
-        evidence = NeuralPriorPromotionEvidence(
-            candidate_prior_digest=row["candidate_prior_digest"],
-            parent_prior_digest=row["parent_prior_digest"],
-            candidate_manifest_digest=row["candidate_manifest_digest"],
-            policy_digest=row["policy_digest"],
-            trust_store_digest=row["trust_store_digest"],
-            evaluation_digests=tuple(
+        common_payload: dict[str, object] = {
+            "candidate_prior_digest": row["candidate_prior_digest"],
+            "parent_prior_digest": row["parent_prior_digest"],
+            "candidate_manifest_digest": row["candidate_manifest_digest"],
+            "policy_digest": row["policy_digest"],
+            "trust_store_digest": row["trust_store_digest"],
+            "evaluation_digests": tuple(
                 json.loads(row["evaluation_digests_json"])
             ),
-            holdout_case_count=row["realized_intervention_count"],
-            material_case_count=row["material_outcome_count"],
-            distinct_case_count=row["distinct_case_count"],
-            distinct_storm_count=row["distinct_storm_count"],
-            distinct_day_count=row["distinct_day_count"],
-            distinct_radar_count=row["distinct_radar_count"],
-            distinct_regime_count=row["distinct_regime_count"],
-            distinct_range_regime_count=row["distinct_range_regime_count"],
-            beneficial_fraction=row["beneficial_fraction"],
-            beneficial_fraction_lower_bound=(
+            "holdout_case_count": row["realized_intervention_count"],
+            "material_case_count": row["material_outcome_count"],
+            "distinct_case_count": row["distinct_case_count"],
+            "distinct_storm_count": row["distinct_storm_count"],
+            "distinct_day_count": row["distinct_day_count"],
+            "distinct_radar_count": row["distinct_radar_count"],
+            "distinct_regime_count": row["distinct_regime_count"],
+            "distinct_range_regime_count": row["distinct_range_regime_count"],
+            "beneficial_fraction": row["beneficial_fraction"],
+            "beneficial_fraction_lower_bound": (
                 row["beneficial_fraction_lower_bound"]
             ),
-            harmful_fraction=row["harmful_fraction"],
-            harmful_fraction_upper_bound=row["harmful_fraction_upper_bound"],
-            mean_normalized_improvement=(
-                row["mean_normalized_improvement"]
-            ),
-            mean_improvement_lower_bound=row["mean_improvement_lower_bound"],
-            maximum_normalized_degradation=(
+            "harmful_fraction": row["harmful_fraction"],
+            "harmful_fraction_upper_bound": row["harmful_fraction_upper_bound"],
+            "mean_normalized_improvement": row["mean_normalized_improvement"],
+            "mean_improvement_lower_bound": row["mean_improvement_lower_bound"],
+            "maximum_normalized_degradation": (
                 row["maximum_normalized_degradation"]
             ),
-            prior_gaussian_nll_increase_upper_bound=(
-                row["prior_gaussian_nll_increase_upper_bound"]
-            ),
-            prior_support_brier_increase_upper_bound=(
-                row["prior_support_brier_increase_upper_bound"]
-            ),
-            prior_underdispersion_increase_upper_bound=(
-                row["prior_underdispersion_increase_upper_bound"]
-            ),
-            eligible=bool(row["eligible"]),
-            rejection_reasons=tuple(
+            "eligible": bool(row["eligible"]),
+            "rejection_reasons": tuple(
                 json.loads(row["rejection_reasons_json"])
             ),
-            contract=row["evidence_contract"],
-        )
-        if evidence.promotion_evidence_digest != promotion_evidence_digest:
-            raise ValueError("neural-prior promotion digest mismatch")
+            "contract": row["evidence_contract"],
+        }
+        contract = row["evidence_contract"]
+        if contract == "neural-prior-promotion-evidence-v3":
+            evidence: (
+                NeuralPriorPromotionEvidence
+                | LegacyNeuralPriorPromotionEvidenceAuditV3
+                | LegacyNeuralPriorPromotionEvidenceAuditV4
+            ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
+                promotion_evidence_digest=promotion_evidence_digest,
+                payload_json=json.dumps(
+                    common_payload,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+            )
+        else:
+            v4_payload = {
+                **common_payload,
+                "prior_gaussian_nll_increase_upper_bound": (
+                    row["prior_gaussian_nll_increase_upper_bound"]
+                ),
+                "prior_support_brier_increase_upper_bound": (
+                    row["prior_support_brier_increase_upper_bound"]
+                ),
+                "prior_underdispersion_increase_upper_bound": (
+                    row["prior_underdispersion_increase_upper_bound"]
+                ),
+            }
+            if contract == "neural-prior-promotion-evidence-v4":
+                evidence = LegacyNeuralPriorPromotionEvidenceAuditV4(
+                    promotion_evidence_digest=promotion_evidence_digest,
+                    payload_json=json.dumps(
+                        v4_payload,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                )
+            else:
+                if contract != "neural-prior-promotion-evidence-v5":
+                    raise ValueError("unsupported neural-prior promotion evidence")
+                v5_payload = {
+                    **common_payload,
+                    "prior_echo_intensity_nll_increase_upper_bound": (
+                        row["prior_echo_intensity_nll_increase_upper_bound"]
+                    ),
+                    "prior_support_brier_increase_upper_bound": (
+                        row["prior_support_brier_increase_upper_bound"]
+                    ),
+                    "prior_clear_sky_false_echo_increase_upper_bound": (
+                        row["prior_clear_sky_false_echo_increase_upper_bound"]
+                    ),
+                    "prior_underdispersion_increase_upper_bound": (
+                        row["prior_underdispersion_increase_upper_bound"]
+                    ),
+                }
+                evidence = NeuralPriorPromotionEvidence(
+                    **cast(Any, v5_payload)
+                )
+                if evidence.promotion_evidence_digest != promotion_evidence_digest:
+                    raise ValueError("neural-prior promotion digest mismatch")
         payloads = json.loads(row["evaluation_payloads_json"])
         evaluations = _decode_evaluation_audit_payloads(payloads)
         if tuple(item.evaluation_digest for item in evaluations) != (
-            evidence.evaluation_digests
+            tuple(cast(tuple[str, ...], common_payload["evaluation_digests"]))
         ):
             raise ValueError("neural-prior promotion evaluation audit mismatch")
         _decode_candidate_manifest(
@@ -2517,6 +2858,8 @@ class EpisodeLedger:
                     decision_digest TEXT PRIMARY KEY,
                     decision_id TEXT NOT NULL UNIQUE,
                     decision_json TEXT NOT NULL,
+                    operator_approval_digest TEXT NOT NULL DEFAULT '',
+                    operator_approval_json TEXT NOT NULL DEFAULT '',
                     created_at TEXT NOT NULL
                 )
                 """
@@ -2582,6 +2925,8 @@ class EpisodeLedger:
                     prior_gaussian_nll_increase_upper_bound REAL NOT NULL,
                     prior_support_brier_increase_upper_bound REAL NOT NULL,
                     prior_underdispersion_increase_upper_bound REAL NOT NULL,
+                    prior_echo_intensity_nll_increase_upper_bound REAL NOT NULL,
+                    prior_clear_sky_false_echo_increase_upper_bound REAL NOT NULL,
                     eligible INTEGER NOT NULL,
                     rejection_reasons_json TEXT NOT NULL,
                     evidence_contract TEXT NOT NULL,
@@ -2592,6 +2937,7 @@ class EpisodeLedger:
             _ensure_variational_learning_approval_schema(connection)
             _ensure_realized_intervention_schema(connection)
             _ensure_prospective_receipt_schema(connection)
+            _ensure_prospective_decision_schema(connection)
             _ensure_neural_prior_promotion_schema(connection)
             connection.execute(
                 """
@@ -2919,6 +3265,27 @@ def _ensure_prospective_receipt_schema(connection: sqlite3.Connection) -> None:
             )
 
 
+def _ensure_prospective_decision_schema(connection: sqlite3.Connection) -> None:
+    """Add signed-review columns without fabricating evidence for old rows."""
+
+    columns = {
+        row[1]
+        for row in connection.execute(
+            "PRAGMA table_info(prospective_intervention_decisions)"
+        ).fetchall()
+    }
+    definitions = {
+        "operator_approval_digest": "TEXT NOT NULL DEFAULT ''",
+        "operator_approval_json": "TEXT NOT NULL DEFAULT ''",
+    }
+    for name, definition in definitions.items():
+        if name not in columns:
+            connection.execute(
+                "ALTER TABLE prospective_intervention_decisions "
+                f"ADD COLUMN {name} {definition}"
+            )
+
+
 def _ensure_neural_prior_promotion_schema(
     connection: sqlite3.Connection,
 ) -> None:
@@ -2944,6 +3311,12 @@ def _ensure_neural_prior_promotion_schema(
         "prior_gaussian_nll_increase_upper_bound": "REAL NOT NULL DEFAULT 0",
         "prior_support_brier_increase_upper_bound": "REAL NOT NULL DEFAULT 0",
         "prior_underdispersion_increase_upper_bound": "REAL NOT NULL DEFAULT 0",
+        "prior_echo_intensity_nll_increase_upper_bound": (
+            "REAL NOT NULL DEFAULT 0"
+        ),
+        "prior_clear_sky_false_echo_increase_upper_bound": (
+            "REAL NOT NULL DEFAULT 0"
+        ),
         "evaluation_payloads_json": "TEXT NOT NULL DEFAULT '[]'",
     }
     for name, definition in definitions.items():
@@ -3004,7 +3377,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v5"
+        or value[0].get("contract") != "prior-holdout-evaluation-v6"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:
@@ -3057,12 +3430,24 @@ def _decode_candidate_manifest(
     text: str,
     *,
     expected_digest: str,
-) -> NeuralPriorCandidateManifest:
+) -> NeuralPriorCandidateManifest | LegacyNeuralPriorCandidateManifestAuditV2:
     value = json.loads(text)
     if not isinstance(value, dict):
         raise ValueError("invalid candidate manifest audit payload")
     values = dict(value)
     stored_digest = values.pop("manifest_digest", None)
+    if values.get("contract") == "neural-prior-candidate-manifest-v2":
+        audit = LegacyNeuralPriorCandidateManifestAuditV2(
+            manifest_digest=str(stored_digest),
+            payload_json=json.dumps(
+                value,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+        )
+        if audit.manifest_digest != expected_digest:
+            raise ValueError("candidate manifest ledger digest mismatch")
+        return audit
     values["holdout_cases"] = tuple(
         NeuralPriorHoldoutCase(**item) for item in values["holdout_cases"]
     )

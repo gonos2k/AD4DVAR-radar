@@ -1,7 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import asdict, replace
 from datetime import datetime, timedelta
+from pathlib import Path
+import json
+import sqlite3
+import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
@@ -12,6 +16,7 @@ import advar.promotion as promotion_module
 import advar.ledger as ledger_module
 from advar.nowcast import _validate_input_plan_resolution
 from advar import (
+    EpisodeLedger,
     NeuralPriorCandidateManifest,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
@@ -122,6 +127,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def completed_case(self, index: int) -> NeuralPriorHoldoutCase:
         planned = self.plan().cases[index - 1]
         uncertainty_target = self.uncertainty_target(index)
+        full_digest = ("1" if index == 1 else "2") * 64
         return NeuralPriorHoldoutCase(
             case_id=planned.case_id,
             storm_id=planned.storm_id,
@@ -130,8 +136,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             regime=planned.regime,
             range_regime=planned.range_regime,
             input_plan_digest=planned.input_plan_digest,
+            input_plan_resolution_digest=(
+                promotion_module._forecast_input_plan_resolution_digest(
+                    input_plan_digest=planned.input_plan_digest,
+                    full_analysis_input_digest=full_digest,
+                )
+            ),
             input_bundle_digest=("e" if index == 1 else "f") * 64,
-            full_analysis_input_digest=("1" if index == 1 else "2") * 64,
+            full_analysis_input_digest=full_digest,
             fixed_input_context_digest=("a" if index == 1 else "b") * 64,
             observation_quality_weight_digest=(
                 "c" if index == 1 else "d"
@@ -157,7 +169,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         plan = self.plan()
         target_plan = plan.uncertainty_target_plans[index - 1]
         verification = VerificationBundle(
-            frames_dbz=torch.ones((1, 2, 2)),
+            frames_dbz=torch.tensor([[[10.0, 1.0], [10.0, 1.0]]]),
             valid_mask=torch.ones((1, 2, 2), dtype=torch.bool),
             valid_times=(target_plan.target_valid_time,),
             grid_contract_digest=target_plan.grid_contract_digest,
@@ -260,10 +272,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         prior_candidate_valid_fraction: float = 1.0,
         prior_parent_valid_fraction: float = 1.0,
         prior_candidate_valid_area_km2: float = 4.0,
-        prior_gaussian_nll: float = 0.5,
-        parent_prior_gaussian_nll: float = 0.5,
+        prior_echo_intensity_nll: float = 0.5,
+        parent_prior_echo_intensity_nll: float = 0.5,
         prior_support_brier_score: float = 0.05,
         parent_prior_support_brier_score: float = 0.05,
+        prior_clear_sky_false_echo_score: float = 0.05,
+        parent_prior_clear_sky_false_echo_score: float = 0.05,
         parent_prior_underdispersion_fraction: float | None = None,
     ) -> promotion_module.PriorHoldoutEvaluation:
         manifest = self.manifest()
@@ -310,15 +324,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             withdrawn_fraction=torch.tensor([0.0], dtype=torch.float64),
             prior_standardized_residual_mean_abs=prior_residual_mean_abs,
             prior_underdispersion_fraction=prior_underdispersion_fraction,
-            prior_gaussian_nll=prior_gaussian_nll,
+            prior_echo_intensity_nll=prior_echo_intensity_nll,
             prior_support_brier_score=prior_support_brier_score,
+            prior_clear_sky_false_echo_score=prior_clear_sky_false_echo_score,
             parent_prior_underdispersion_fraction=(
                 prior_underdispersion_fraction
                 if parent_prior_underdispersion_fraction is None
                 else parent_prior_underdispersion_fraction
             ),
-            parent_prior_gaussian_nll=parent_prior_gaussian_nll,
+            parent_prior_echo_intensity_nll=parent_prior_echo_intensity_nll,
             parent_prior_support_brier_score=parent_prior_support_brier_score,
+            parent_prior_clear_sky_false_echo_score=(
+                parent_prior_clear_sky_false_echo_score
+            ),
             prior_candidate_valid_fraction=prior_candidate_valid_fraction,
             prior_parent_valid_fraction=prior_parent_valid_fraction,
             prior_candidate_valid_area_km2=prior_candidate_valid_area_km2,
@@ -327,6 +345,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
             prior_uncertainty_target_digest=case.uncertainty_target_digest,
             prior_uncertainty_sample_count=prior_sample_count,
+            prior_echo_intensity_sample_count=prior_sample_count // 2,
+            prior_clear_sky_sample_count=(
+                prior_sample_count - prior_sample_count // 2
+            ),
             issue_time=case.issue_time,
             verification_valid_times=(f"2026-08-{8 + index:02d}T01:00:00Z",),
         )
@@ -376,6 +398,106 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertTrue(result.eligible)
         validate_neural_prior_promotion(result)
 
+    def test_current_promotion_round_trips_durable_v5_evidence(self) -> None:
+        evaluations = (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
+        evidence = self.compute(evaluations)
+        manifest = self.manifest()
+        plan = self.plan()
+        policy = self.policy()
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            with sqlite3.connect(ledger.index_path) as connection:
+                connection.execute(
+                    "INSERT INTO neural_prior_holdout_plans "
+                    "(plan_digest, plan_id, plan_json, policy_digest, "
+                    "trust_store_digest, registered_at, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        plan.plan_digest,
+                        plan.plan_id,
+                        json.dumps(asdict(plan), sort_keys=True),
+                        "6" * 64,
+                        "7" * 64,
+                        plan.registered_at,
+                        "2026-08-07T00:00:00+00:00",
+                    ),
+                )
+                approval_schema = connection.execute(
+                    "PRAGMA table_info(variational_learning_approvals)"
+                ).fetchall()
+                approval_columns = [str(row[1]) for row in approval_schema]
+                approval_overrides: dict[str, object] = {
+                    "learning_result_digest": "8" * 64,
+                    "approval_evidence_digest": "a" * 64,
+                    "created_at": "2026-07-01T00:00:00+00:00",
+                }
+                approval_values = [
+                    approval_overrides.get(
+                        str(row[1]),
+                        0 if str(row[2]).upper() == "INTEGER" else 0.0
+                        if str(row[2]).upper() == "REAL"
+                        else "",
+                    )
+                    for row in approval_schema
+                ]
+                connection.execute(
+                    f"INSERT INTO variational_learning_approvals "
+                    f"({','.join(approval_columns)}) VALUES "
+                    f"({','.join('?' for _ in approval_columns)})",
+                    approval_values,
+                )
+                connection.execute(
+                    "INSERT INTO prospective_intervention_decisions "
+                    "(decision_digest, decision_id, decision_json, created_at) "
+                    "VALUES (?, ?, ?, ?)",
+                    (
+                        "e" * 64,
+                        "training-decision",
+                        json.dumps(
+                            {"decision_basis_digest": "a" * 64},
+                            sort_keys=True,
+                        ),
+                        "2026-07-01T00:00:00+00:00",
+                    ),
+                )
+                connection.execute(
+                    "INSERT INTO realized_intervention_receipts "
+                    "(receipt_digest, decision_digest, receipt_json, created_at) "
+                    "VALUES (?, ?, ?, ?)",
+                    (
+                        "f" * 64,
+                        "e" * 64,
+                        json.dumps(
+                            {
+                                "actual_input_bundle_digest": "0" * 64,
+                                "decision_digest": "e" * 64,
+                            },
+                            sort_keys=True,
+                        ),
+                        "2026-07-01T00:00:00+00:00",
+                    ),
+                )
+            trust = _LearningPolicyTrustStore(
+                approved_policy_digests=frozenset((policy.digest,)),
+                content_digest="b" * 64,
+            )
+            with patch.object(
+                promotion_module,
+                "_load_learning_policy_trust_store",
+                return_value=trust,
+            ):
+                stored = ledger.append_neural_prior_promotion(
+                    evidence,
+                    manifest,
+                    plan,
+                    evaluations,
+                    policy=policy,
+                    policy_trust_store_path="/etc/advar/learning-policies.json",
+                )
+            loaded = ledger.load_neural_prior_promotion(stored)
+            self.assertEqual(loaded.promotion_evidence_digest, stored)
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v5")
+
     def test_promotion_requires_every_preregistered_case(self) -> None:
         with self.assertRaisesRegex(ValueError, "every planned case"):
             self.compute((self.evaluation(1, -0.2),))
@@ -418,14 +540,80 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 self.evaluation(
                     1,
                     -0.2,
-                    prior_gaussian_nll=3.9,
-                    parent_prior_gaussian_nll=1.0,
+                    prior_echo_intensity_nll=3.9,
+                    parent_prior_echo_intensity_nll=1.0,
                 ),
                 self.evaluation(
                     2,
                     -0.3,
-                    prior_gaussian_nll=3.9,
-                    parent_prior_gaussian_nll=1.0,
+                    prior_echo_intensity_nll=3.9,
+                    parent_prior_echo_intensity_nll=1.0,
+                ),
+            )
+        )
+        self.assertFalse(result.eligible)
+        self.assertIn("inferior_prior_uncertainty", result.rejection_reasons)
+
+    def test_clear_sky_gain_cannot_hide_echo_intensity_regression(self) -> None:
+        result = self.compute(
+            (
+                self.evaluation(
+                    1,
+                    -0.2,
+                    prior_echo_intensity_nll=1.5,
+                    parent_prior_echo_intensity_nll=0.5,
+                    prior_clear_sky_false_echo_score=0.0,
+                    parent_prior_clear_sky_false_echo_score=0.2,
+                ),
+                self.evaluation(
+                    2,
+                    -0.3,
+                    prior_echo_intensity_nll=1.5,
+                    parent_prior_echo_intensity_nll=0.5,
+                    prior_clear_sky_false_echo_score=0.0,
+                    parent_prior_clear_sky_false_echo_score=0.2,
+                ),
+            )
+        )
+        self.assertFalse(result.eligible)
+        self.assertIn("inferior_prior_uncertainty", result.rejection_reasons)
+
+    def test_clear_sky_hurdle_score_is_floor_representation_invariant(self) -> None:
+        application = SimpleNamespace(
+            initial_background_dbz=torch.zeros((1, 3)),
+            std_dbz=torch.ones((1, 3)),
+            support_probability=torch.full((1, 3), 0.2),
+        )
+        mask = torch.ones((1, 3), dtype=torch.bool)
+        support = torch.zeros((1, 3), dtype=torch.bool)
+        scores = [
+            promotion_module._prior_uncertainty_scores(
+                application,
+                torch.full((1, 3), floor),
+                support,
+                mask,
+            )
+            for floor in (-10.0, 0.0, 4.9)
+        ]
+        self.assertEqual(scores[0], scores[1])
+        self.assertEqual(scores[1], scores[2])
+        self.assertEqual(scores[0][2], 0.0)
+        self.assertEqual(scores[0][-2:], (0, 3))
+
+    def test_regime_specific_uncertainty_regression_is_not_averaged_away(self) -> None:
+        result = self.compute(
+            (
+                self.evaluation(
+                    1,
+                    -0.2,
+                    prior_support_brier_score=0.2,
+                    parent_prior_support_brier_score=0.1,
+                ),
+                self.evaluation(
+                    2,
+                    -0.3,
+                    prior_support_brier_score=0.0,
+                    parent_prior_support_brier_score=0.1,
                 ),
             )
         )
@@ -586,13 +774,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             prior_numerical_runtime_digest="4" * 64,
             prior_dependency="radar_dependent",
             input_plan_json=planned_input.json,
-            input_plan_resolution_digest=promotion_module.json_digest(
-                {
-                    "contract": "forecast-input-plan-resolution-v1",
-                    "input_plan_digest": case.input_plan_digest,
-                    "input_bundle_digest": case.input_bundle_digest,
-                }
-            ),
+            input_plan_resolution_digest=case.input_plan_resolution_digest,
         )
         candidate_app = SimpleNamespace(
             application_digest=case.candidate_prior_application_digest,
