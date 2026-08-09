@@ -34,7 +34,11 @@ from advar import (  # noqa: E402
     save_forecast_run,
     variational_nowcast,
 )
-from advar.variational import prepare_analysis  # noqa: E402
+from advar.variational import (  # noqa: E402
+    _new_neural_prior_deployment_selection,
+    neural_prior_state_censor_policy_digest,
+    prepare_analysis,
+)
 from advar._digest import tensor_digest  # noqa: E402
 from advar.physics import FORECAST_INTEGRATOR_VERSION  # noqa: E402
 import advar.run_artifact as run_artifact  # noqa: E402
@@ -49,6 +53,34 @@ class ForecastRunArtifactTests(unittest.TestCase):
 
         def forward(self, value: torch.Tensor) -> torch.Tensor:
             return value + self.offset
+
+    def _state_contract(self) -> NeuralPriorStateContract:
+        return NeuralPriorStateContract(
+            state_product_digest="a" * 64,
+            state_qc_pipeline_digest="9" * 64,
+            state_mask_policy_digest="3" * 64,
+            state_censor_policy_digest=neural_prior_state_censor_policy_digest(
+                detection_limit_dbz=5.0,
+                censor_temperature_dbz=1.0,
+                censored_background_policy="floor",
+                minimum_dbz=-10.0,
+                maximum_dbz=70.0,
+            ),
+            support_threshold_dbz=5.0,
+            minimum_state_dbz=-10.0,
+            maximum_state_dbz=70.0,
+            minimum_state_std_dbz=0.1,
+            maximum_state_std_dbz=20.0,
+        )
+
+    def _probability_contract(self) -> NeuralPriorProbabilityContract:
+        return NeuralPriorProbabilityContract(
+            support_threshold_dbz=5.0,
+            support_product_digest="a" * 64,
+            qc_pipeline_digest="9" * 64,
+            reflectivity_resolution_dbz=0.5,
+            quantization_origin_dbz=-10.0,
+        )
 
     def _save_arrays(self, path: Path, arrays: dict[str, Any]) -> None:
         np.savez_compressed(path, **seal_forecast_run_arrays(arrays))
@@ -756,15 +788,8 @@ class ForecastRunArtifactTests(unittest.TestCase):
             self._Prior().eval(),
             lambda value: value[0],
             example_frames=frames,
-            state_contract=NeuralPriorStateContract(
-                state_product_digest="a" * 64,
-                support_threshold_dbz=5.0,
-            ),
-            probability_contract=NeuralPriorProbabilityContract(
-                support_threshold_dbz=5.0,
-                support_product_digest="a" * 64,
-                qc_pipeline_digest="9" * 64,
-            ),
+            state_contract=self._state_contract(),
+            probability_contract=self._probability_contract(),
             model_contract_digest="2" * 64,
             feature_schema_digest="3" * 64,
             training_manifest_digest="4" * 64,
@@ -804,6 +829,135 @@ class ForecastRunArtifactTests(unittest.TestCase):
             frozen.initial_background_dbz.masked_select(active_prior),
             prior.state_background_dbz.masked_select(active_prior),
         )
+
+    def test_deployment_selection_lineage_round_trips_with_the_run(self) -> None:
+        frames = self.frames()
+        input_run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        runner = NeuralPriorInferenceRunner(
+            self._Prior().eval(),
+            lambda value: value[0],
+            example_frames=frames,
+            state_contract=self._state_contract(),
+            probability_contract=self._probability_contract(),
+            model_contract_digest="2" * 64,
+            feature_schema_digest="3" * 64,
+            training_manifest_digest="4" * 64,
+            allow_constant_uncertainty=True,
+            dependency="radar_dependent",
+        )
+        assert input_run.full_analysis_input_digest is not None
+        selection = _new_neural_prior_deployment_selection(
+            selected_prior_digest=runner.neural_prior_digest,
+            selected_role="candidate",
+            full_analysis_input_digest=input_run.full_analysis_input_digest,
+            promotion_evidence_digest="5" * 64,
+            regime_classification_evidence_digest="6" * 64,
+            fallback_reason="certified_candidate",
+        )
+        prior = runner.infer(
+            frames,
+            input_run=input_run,
+            role="candidate",
+            deployment_selection=selection,
+        )
+        result, _ = variational_nowcast(frames, neural_prior=prior)
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            save_forecast_run(result, path)
+            loaded = load_forecast_run(path)
+
+        self.assertEqual(
+            loaded.run.prior_promotion_evidence_digest,
+            selection.promotion_evidence_digest,
+        )
+        self.assertEqual(
+            loaded.run.prior_regime_classification_evidence_digest,
+            selection.regime_classification_evidence_digest,
+        )
+        self.assertEqual(
+            loaded.run.prior_deployment_selection_digest,
+            selection.selection_digest,
+        )
+        self.assertEqual(
+            loaded.run.prior_deployment_fallback_reason,
+            "certified_candidate",
+        )
+
+    def test_v49_candidate_run_loads_as_deployment_audit(self) -> None:
+        frames = self.frames()
+        input_run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        runner = NeuralPriorInferenceRunner(
+            self._Prior().eval(),
+            lambda value: value[0],
+            example_frames=frames,
+            state_contract=self._state_contract(),
+            probability_contract=self._probability_contract(),
+            model_contract_digest="2" * 64,
+            feature_schema_digest="3" * 64,
+            training_manifest_digest="4" * 64,
+            allow_constant_uncertainty=True,
+            dependency="radar_dependent",
+        )
+        prior = runner.infer(frames, input_run=input_run, role="candidate")
+        result, _ = variational_nowcast(frames, neural_prior=prior)
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "legacy-v49.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                arrays = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                    if name
+                    not in {
+                        "prior_promotion_evidence_digest",
+                        "prior_regime_classification_evidence_digest",
+                        "prior_deployment_selection_digest",
+                        "prior_deployment_fallback_reason",
+                        "prior_deployment_lineage_contract",
+                    }
+                }
+            arrays["forecast_run_artifact_version"] = np.asarray(
+                "forecast-run-v49"
+            )
+            self._save_arrays(path, arrays)
+
+            loaded = load_forecast_run(path)
+
+        self.assertEqual(loaded.run.prior_role, "candidate")
+        self.assertEqual(
+            loaded.run.prior_deployment_lineage_contract,
+            "neural-prior-deployment-lineage-v0-audit",
+        )
+        self.assertIsNone(loaded.run.prior_deployment_selection_digest)
+
+    def test_v50_cannot_omit_deployment_lineage_contract(self) -> None:
+        result = nowcast(self.frames())
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                arrays = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                    if name != "prior_deployment_lineage_contract"
+                }
+            self._save_arrays(path, arrays)
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "lacks deployment lineage contract",
+            ):
+                load_forecast_run(path)
 
     def test_neural_prior_lineage_is_all_or_none(self) -> None:
         with self.assertRaisesRegex(ValueError, "neural-prior run lineage"):
@@ -855,15 +1009,8 @@ class ForecastRunArtifactTests(unittest.TestCase):
             self._Prior().eval(),
             lambda value: value[0],
             example_frames=frames,
-            state_contract=NeuralPriorStateContract(
-                state_product_digest="a" * 64,
-                support_threshold_dbz=5.0,
-            ),
-            probability_contract=NeuralPriorProbabilityContract(
-                support_threshold_dbz=5.0,
-                support_product_digest="a" * 64,
-                qc_pipeline_digest="9" * 64,
-            ),
+            state_contract=self._state_contract(),
+            probability_contract=self._probability_contract(),
             model_contract_digest="2" * 64,
             feature_schema_digest="3" * 64,
             training_manifest_digest="4" * 64,
