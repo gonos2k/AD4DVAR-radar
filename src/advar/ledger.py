@@ -30,7 +30,11 @@ from .action_artifacts import (
     validate_artifact_directory,
 )
 from .action_contracts import canonicalize_action_frames
-from .nowcast import ForecastRunContract, _forecast_input_bundle_digest
+from .nowcast import (
+    ForecastRunContract,
+    _forecast_full_analysis_input_digest,
+    _forecast_input_bundle_digest,
+)
 
 from .sensitivity import (
     CONTEXT_FEATURE_NAMES,
@@ -802,14 +806,16 @@ class EpisodeLedger:
                     half_step_forecast_digest,
                     first_order_validation_digest,
                     learning_impact_digest, approved_action_digest,
-                    nominal_input_bundle_digest, selection_mode, candidate_id,
+                    nominal_input_bundle_digest,
+                    nominal_full_analysis_input_digest,
+                    selection_mode, candidate_id,
                     candidate_rank, candidate_score,
                     candidate_perturbation_digest, ranking_digest,
                     ranking_policy_digest, ranking_objective,
                     whitener_operations_per_apply,
                     observed_whitener_apply_count,
                     observed_whitener_total_operations, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     learning.learning_result_digest,
@@ -826,6 +832,7 @@ class EpisodeLedger:
                     evidence.learning_impact_digest,
                     evidence.approved_action_digest,
                     evidence.nominal_input_bundle_digest,
+                    evidence.nominal_full_analysis_input_digest,
                     evidence.selection_mode,
                     evidence.candidate_id,
                     evidence.candidate_rank,
@@ -873,6 +880,9 @@ class EpisodeLedger:
             learning_impact_digest=row["learning_impact_digest"],
             approved_action_digest=row["approved_action_digest"],
             nominal_input_bundle_digest=row["nominal_input_bundle_digest"],
+            nominal_full_analysis_input_digest=(
+                row["nominal_full_analysis_input_digest"]
+            ),
             selection_mode=row["selection_mode"],
             candidate_id=row["candidate_id"],
             candidate_rank=row["candidate_rank"],
@@ -1081,7 +1091,7 @@ class EpisodeLedger:
             )
             (temporary / "generator.pt2").write_bytes(generator_bytes)
             manifest: dict[str, object] = {
-                "contract": "durable-intervention-action-artifact-v2",
+                "contract": "durable-intervention-action-artifact-v3",
                 "receipt_digest": receipt.receipt_digest,
                 "action_artifact_digest": receipt.action_artifact_digest,
                 "action_payload_digest": receipt.action_payload_digest,
@@ -1134,6 +1144,12 @@ class EpisodeLedger:
                 ),
                 "after_fixed_input_context_digest": (
                     after_run.fixed_input_context_digest
+                ),
+                "before_full_analysis_input_digest": (
+                    before_run.full_analysis_input_digest
+                ),
+                "after_full_analysis_input_digest": (
+                    after_run.full_analysis_input_digest
                 ),
                 "input_plan_digest": before.input_plan_digest,
                 "before_input_plan_resolution_digest": (
@@ -1227,7 +1243,7 @@ class EpisodeLedger:
         manifest = json.loads((source / "manifest.json").read_text("utf-8"))
         if not isinstance(manifest, dict) or (
             manifest.get("contract")
-            != "durable-intervention-action-artifact-v2"
+            != "durable-intervention-action-artifact-v3"
             or manifest.get("receipt_digest") != receipt.receipt_digest
             or manifest.get("action_artifact_digest")
             != receipt.action_artifact_digest
@@ -1242,6 +1258,8 @@ class EpisodeLedger:
             != decision.intervention_input_context_digest
             or manifest.get("before_fixed_input_context_digest")
             != decision.actual_input_before_fixed_context_digest
+            or manifest.get("before_full_analysis_input_digest")
+            != decision.actual_input_before_full_analysis_input_digest
             or manifest.get("before_applicability_mask_digest")
             != decision.applicability_mask_digest
         ):
@@ -1424,6 +1442,19 @@ class EpisodeLedger:
                 or expected_fixed != retained_fixed
             ):
                 raise ValueError("durable fixed input context changed")
+            expected_full = _forecast_full_analysis_input_digest(
+                input_frames_digest=tensor_digest(tensors[f"{prefix}_frames"]),
+                fixed_input_context_digest=expected_fixed,
+            )
+            retained_full = getattr(
+                receipt,
+                f"full_analysis_input_{prefix}_digest",
+            )
+            if (
+                expected_full != manifest[f"{prefix}_full_analysis_input_digest"]
+                or expected_full != retained_full
+            ):
+                raise ValueError("durable full analysis input changed")
         context_tensor = _intervention_context_tensor(
             tensors["before_frames"],
             tensors["before_masks"],
@@ -1667,6 +1698,10 @@ class EpisodeLedger:
             != actual_input_before_run.input_bundle_digest
             or receipt.actual_input_bundle_digest
             != actual_input_after_run.input_bundle_digest
+            or receipt.full_analysis_input_before_digest
+            != actual_input_before_run.full_analysis_input_digest
+            or receipt.full_analysis_input_after_digest
+            != actual_input_after_run.full_analysis_input_digest
         ):
             raise ValueError("realized receipt transition evidence disagrees")
         trust = _load_learning_policy_trust_store(trust_store_path)
@@ -2214,10 +2249,14 @@ class EpisodeLedger:
                     beneficial_fraction, beneficial_fraction_lower_bound,
                     harmful_fraction, harmful_fraction_upper_bound,
                     mean_normalized_improvement, mean_improvement_lower_bound,
-                    maximum_normalized_degradation, eligible,
+                    maximum_normalized_degradation,
+                    prior_gaussian_nll_increase_upper_bound,
+                    prior_support_brier_increase_upper_bound,
+                    prior_underdispersion_increase_upper_bound,
+                    eligible,
                     rejection_reasons_json, evidence_contract, created_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     evidence.promotion_evidence_digest,
@@ -2249,6 +2288,9 @@ class EpisodeLedger:
                     evidence.mean_normalized_improvement,
                     evidence.mean_improvement_lower_bound,
                     evidence.maximum_normalized_degradation,
+                    evidence.prior_gaussian_nll_increase_upper_bound,
+                    evidence.prior_support_brier_increase_upper_bound,
+                    evidence.prior_underdispersion_increase_upper_bound,
                     int(evidence.eligible),
                     json.dumps(list(evidence.rejection_reasons)),
                     evidence.contract,
@@ -2305,6 +2347,15 @@ class EpisodeLedger:
             mean_improvement_lower_bound=row["mean_improvement_lower_bound"],
             maximum_normalized_degradation=(
                 row["maximum_normalized_degradation"]
+            ),
+            prior_gaussian_nll_increase_upper_bound=(
+                row["prior_gaussian_nll_increase_upper_bound"]
+            ),
+            prior_support_brier_increase_upper_bound=(
+                row["prior_support_brier_increase_upper_bound"]
+            ),
+            prior_underdispersion_increase_upper_bound=(
+                row["prior_underdispersion_increase_upper_bound"]
             ),
             eligible=bool(row["eligible"]),
             rejection_reasons=tuple(
@@ -2392,6 +2443,7 @@ class EpisodeLedger:
                     learning_impact_digest TEXT NOT NULL,
                     approved_action_digest TEXT,
                     nominal_input_bundle_digest TEXT,
+                    nominal_full_analysis_input_digest TEXT,
                     selection_mode TEXT NOT NULL DEFAULT 'direct',
                     candidate_id TEXT,
                     candidate_rank INTEGER,
@@ -2527,6 +2579,9 @@ class EpisodeLedger:
                     mean_normalized_improvement REAL NOT NULL,
                     mean_improvement_lower_bound REAL NOT NULL,
                     maximum_normalized_degradation REAL NOT NULL,
+                    prior_gaussian_nll_increase_upper_bound REAL NOT NULL,
+                    prior_support_brier_increase_upper_bound REAL NOT NULL,
+                    prior_underdispersion_increase_upper_bound REAL NOT NULL,
                     eligible INTEGER NOT NULL,
                     rejection_reasons_json TEXT NOT NULL,
                     evidence_contract TEXT NOT NULL,
@@ -2803,6 +2858,7 @@ def _ensure_variational_learning_approval_schema(
         "ranking_objective": "TEXT",
         "approved_action_digest": "TEXT",
         "nominal_input_bundle_digest": "TEXT",
+        "nominal_full_analysis_input_digest": "TEXT",
         "whitener_operations_per_apply": "INTEGER NOT NULL DEFAULT 0",
         "observed_whitener_apply_count": "INTEGER NOT NULL DEFAULT 0",
         "observed_whitener_total_operations": "INTEGER NOT NULL DEFAULT 0",
@@ -2885,6 +2941,9 @@ def _ensure_neural_prior_promotion_schema(
         "beneficial_fraction_lower_bound": "REAL NOT NULL DEFAULT 0",
         "harmful_fraction_upper_bound": "REAL NOT NULL DEFAULT 1",
         "mean_improvement_lower_bound": "REAL NOT NULL DEFAULT 0",
+        "prior_gaussian_nll_increase_upper_bound": "REAL NOT NULL DEFAULT 0",
+        "prior_support_brier_increase_upper_bound": "REAL NOT NULL DEFAULT 0",
+        "prior_underdispersion_increase_upper_bound": "REAL NOT NULL DEFAULT 0",
         "evaluation_payloads_json": "TEXT NOT NULL DEFAULT '[]'",
     }
     for name, definition in definitions.items():
@@ -2945,7 +3004,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v4"
+        or value[0].get("contract") != "prior-holdout-evaluation-v5"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:

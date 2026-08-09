@@ -671,6 +671,7 @@ class NeuralPriorInferenceEvidence:
 
     neural_prior_digest: str
     input_bundle_digest: str
+    full_analysis_input_digest: str
     input_frames_digest: str
     feature_tensor_digest: str
     feature_extractor_digest: str
@@ -699,15 +700,16 @@ class NeuralPriorInferenceEvidence:
     uncertainty_contract: Literal["model_spatial", "constant_research"]
     execution_contract_digest: str
     dependency: PriorDependency
-    contract: str = "neural-prior-inference-evidence-v4"
+    contract: str = "neural-prior-inference-evidence-v5"
     evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-inference-evidence-v4":
+        if self.contract != "neural-prior-inference-evidence-v5":
             raise ValueError("unsupported neural-prior inference evidence")
         for name in (
             "neural_prior_digest",
             "input_bundle_digest",
+            "full_analysis_input_digest",
             "input_frames_digest",
             "feature_tensor_digest",
             "feature_extractor_digest",
@@ -1163,6 +1165,8 @@ class NeuralPriorInferenceRunner:
         """Run the model now and bind its output to the exact input bundle."""
 
         input_run.validate_integrity()
+        if input_run.full_analysis_input_digest is None:
+            raise ValueError("neural-prior inference requires full input identity")
         if self._certified_derivative_defect > self.maximum_derivative_defect:
             raise ValueError("neural-prior derivative defect exceeds its contract")
         if tensor_digest(frames_dbz) != input_run.input_frames_digest:
@@ -1189,6 +1193,7 @@ class NeuralPriorInferenceRunner:
         evidence = NeuralPriorInferenceEvidence(
             neural_prior_digest=self.neural_prior_digest,
             input_bundle_digest=input_run.input_bundle_digest,
+            full_analysis_input_digest=input_run.full_analysis_input_digest,
             input_frames_digest=tensor_digest(frames_dbz),
             feature_tensor_digest=tensor_digest(features),
             feature_extractor_digest=self.feature_extractor_digest,
@@ -4963,7 +4968,11 @@ def variational_nowcast(
     )
     if neural_prior is not None:
         evidence = neural_prior.inference_evidence
-        if evidence.input_bundle_digest != run.input_bundle_digest:
+        if (
+            evidence.input_bundle_digest != run.input_bundle_digest
+            or evidence.full_analysis_input_digest
+            != run.full_analysis_input_digest
+        ):
             raise ValueError("neural-prior inference used a different input bundle")
         if evidence.input_frames_digest != tensor_digest(frames_dbz):
             raise ValueError("neural-prior inference used different radar frames")

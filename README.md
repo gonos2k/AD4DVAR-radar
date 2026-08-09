@@ -643,9 +643,17 @@ before/action/after 전이를 다시 검사한다. Executor trust store에는 Ed
 
 Decision은 전체 `InterventionInputContext`, fixed-input context와 applicability mask
 digest를 직접 보존한다. Receipt 생성·재적재 시 같은 context에서 action 안전진단을
-다시 계산해 decision의 진단 digest와 비교한다. 현재 prospective 자동실행의 norm은
-명시적인 diagonal-R 표준화 거리이며, `observation_common_bias_std_dbz > 0`인 run은
-상관 관측오차용 Mahalanobis action 계약이 추가될 때까지 fail-close한다. NaN/Inf와
+다시 계산해 decision의 진단 digest와 비교한다. `full_analysis_input_digest`는 radar
+frame과 mask·quality·observation std·background·calibration을 포함하는 fixed context를
+하나로 묶으며, receipt와 candidate/parent holdout의 입력 동일성은 이 digest를 기준으로
+판정한다. Quality-only QC는 input bundle이 그대로여도 full-input identity의 변경으로
+정상 기록된다. QC 크기는 raw quality 차이가 아니라
+`(sqrt(Q_after) - sqrt(Q_before)) / observation_std_dbz`의 전역·tile L2 norm으로
+제한하고, prospective QC는 reject/deweight만 허용한다. 현재 prospective 실행은
+`operator_reviewed_only`이며 current-case benefit 계약이 없는 automatic policy는
+생성 단계에서 fail-close한다. dBZ action norm은 명시적인 diagonal-R 표준화 거리이고,
+`observation_common_bias_std_dbz > 0`인 run은 상관 관측오차용 Mahalanobis action
+계약이 추가될 때까지 거부한다. NaN/Inf와
 invalid 관측은 `min_dbz`로 canonicalize되고 finite valid 값만 물리 clamp에 들어간다.
 이 canonicalization도 digest에 포함된다. 장기 action artifact는 파일·member·expanded
 byte 상한을 allocation 전에 검사한 뒤 서명과 before/action/after 전이를 재생한다.
@@ -727,8 +735,10 @@ case/storm/day/radar/regime 다양성과 cluster bootstrap, training/holdout
 storm·day·time-window 분리도 다시 검사한다.
 Candidate prior의 spatial `std_dbz`는 모델 입력과 분리된 withheld target에 대한
 Gaussian NLL과 standardized residual로, `support_probability`는 Brier score로
-검증한다. 평균 skill이 좋아도 불확실성을 과소추정하거나 support 확률이 보정되지
-않은 prior는 승격하지 않는다. Initial-state prior의 target valid time은 prior output
+검증한다. Candidate와 parent를 동일한 사전등록 target mask에서 paired 평가하고,
+storm/day/radar cluster bootstrap으로 구한 NLL·Brier·underdispersion 증가의 상한도
+정책 한계를 넘어서는 안 된다. 따라서 절대 calibration 상한만 가까스로 통과하면서
+parent보다 불확실성이 크게 악화된 candidate는 승격되지 않는다. Initial-state prior의 target valid time은 prior output
 valid time과 같아야 하며, 같은 source/time을 쓰는 withheld target은 실제 feature-
 exclusion mask가 target mask를 덮었는지 계산해 확인한다. 불확실성 score는 candidate가
 스스로 선택한 valid 영역이 아니라 사전등록 target mask에서 계산하고, 최소 valid
@@ -1253,7 +1263,7 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
 - `output_contract_version`: 현재 `nowcast-npz-v55`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v47`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v48`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
