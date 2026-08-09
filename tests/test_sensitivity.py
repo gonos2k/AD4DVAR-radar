@@ -94,6 +94,7 @@ from advar.variational import (  # noqa: E402
     AnalysisConfig,
     NeuralPriorInferenceRunner,
     NeuralPriorProbabilityContract,
+    NeuralPriorStateContract,
     residual_vector,
     variational_nowcast,
 )
@@ -249,12 +250,21 @@ class _SpatialStdPrior(torch.nn.Module):
     def forward(
         self,
         frames: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, ...]:
         mean = frames[0] + self.anchor
         std = torch.exp(0.02 * frames[0])
         valid = torch.ones_like(mean)
-        support = torch.ones_like(mean)
-        return mean, std, valid, support
+        state_support = (mean >= 5.0).to(mean)
+        event_probability = torch.ones_like(mean)
+        return (
+            mean,
+            std,
+            valid,
+            state_support,
+            event_probability,
+            mean,
+            std,
+        )
 
 
 class SensitivityTests(unittest.TestCase):
@@ -1891,6 +1901,10 @@ class VariationalFSOTests(unittest.TestCase):
             _SpatialStdPrior().eval(),
             lambda value: value,
             example_frames=self.frames,
+            state_contract=NeuralPriorStateContract(
+                state_product_digest="a" * 64,
+                support_threshold_dbz=5.0,
+            ),
             probability_contract=NeuralPriorProbabilityContract(
                 support_threshold_dbz=5.0,
                 support_product_digest="a" * 64,

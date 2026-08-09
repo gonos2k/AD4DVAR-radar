@@ -596,6 +596,50 @@ def _require_prior_digest(name: str, value: str) -> None:
         raise ValueError(f"{name} must be a lowercase SHA-256 digest")
 
 
+@dataclass(frozen=True)
+class NeuralPriorStateContract:
+    """Meaning of the deterministic Gaussian state consumed by P1."""
+
+    state_product_digest: str
+    support_threshold_dbz: float
+    state_variable: Literal["radar_reflectivity_dbz"] = (
+        "radar_reflectivity_dbz"
+    )
+    state_distribution: Literal["gaussian_dbz"] = "gaussian_dbz"
+    support_semantics: Literal["state_presence_confidence"] = (
+        "state_presence_confidence"
+    )
+    contract: str = "neural-prior-state-contract-v1"
+    contract_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.contract != "neural-prior-state-contract-v1":
+            raise ValueError("unsupported neural-prior state contract")
+        _require_prior_digest("state product digest", self.state_product_digest)
+        if not math.isfinite(self.support_threshold_dbz):
+            raise ValueError("neural-prior state support threshold must be finite")
+        if (
+            self.state_variable != "radar_reflectivity_dbz"
+            or self.state_distribution != "gaussian_dbz"
+            or self.support_semantics != "state_presence_confidence"
+        ):
+            raise ValueError("unsupported neural-prior state semantics")
+        object.__setattr__(
+            self,
+            "contract_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "state_product_digest": self.state_product_digest,
+                    "support_threshold_dbz": self.support_threshold_dbz,
+                    "state_variable": self.state_variable,
+                    "state_distribution": self.state_distribution,
+                    "support_semantics": self.support_semantics,
+                }
+            ),
+        )
+
+
 def _module_state_digest(model: nn.Module) -> str:
     state = model.state_dict()
     if not state:
@@ -760,11 +804,15 @@ class NeuralPriorInferenceEvidence:
     training_manifest_digest: str
     inference_algorithm_digest: str
     numerical_runtime_digest: str
-    output_background_digest: str
-    output_std_digest: str
-    output_valid_mask_digest: str
-    output_valid_probability_digest: str
-    output_support_probability_digest: str
+    output_state_background_digest: str
+    output_state_std_digest: str
+    output_state_valid_mask_digest: str
+    output_state_valid_probability_digest: str
+    output_state_support_probability_digest: str
+    output_event_probability_digest: str
+    output_truncated_location_digest: str
+    output_truncated_scale_digest: str
+    state_contract_digest: str
     probability_contract_digest: str
     support_event_digest: str
     prior_output_valid_time: str | None
@@ -778,11 +826,11 @@ class NeuralPriorInferenceEvidence:
     uncertainty_contract: Literal["model_spatial", "constant_research"]
     execution_contract_digest: str
     dependency: PriorDependency
-    contract: str = "neural-prior-inference-evidence-v6"
+    contract: str = "neural-prior-inference-evidence-v7"
     evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-inference-evidence-v6":
+        if self.contract != "neural-prior-inference-evidence-v7":
             raise ValueError("unsupported neural-prior inference evidence")
         for name in (
             "neural_prior_digest",
@@ -800,11 +848,15 @@ class NeuralPriorInferenceEvidence:
             "training_manifest_digest",
             "inference_algorithm_digest",
             "numerical_runtime_digest",
-            "output_background_digest",
-            "output_std_digest",
-            "output_valid_mask_digest",
-            "output_valid_probability_digest",
-            "output_support_probability_digest",
+            "output_state_background_digest",
+            "output_state_std_digest",
+            "output_state_valid_mask_digest",
+            "output_state_valid_probability_digest",
+            "output_state_support_probability_digest",
+            "output_event_probability_digest",
+            "output_truncated_location_digest",
+            "output_truncated_scale_digest",
+            "state_contract_digest",
             "probability_contract_digest",
             "support_event_digest",
             "feature_exclusion_mask_digest",
@@ -862,6 +914,7 @@ class NeuralPriorInferenceRunner:
         model_contract_digest: str,
         feature_schema_digest: str,
         training_manifest_digest: str,
+        state_contract: NeuralPriorStateContract,
         probability_contract: NeuralPriorProbabilityContract,
         inference_algorithm_digest: str | None = None,
         numerical_runtime_digest: str | None = None,
@@ -887,6 +940,8 @@ class NeuralPriorInferenceRunner:
             ("training_manifest_digest", training_manifest_digest),
         ):
             _require_prior_digest(name, value)
+        if not isinstance(state_contract, NeuralPriorStateContract):
+            raise TypeError("neural-prior state contract is required")
         if not isinstance(probability_contract, NeuralPriorProbabilityContract):
             raise TypeError("neural-prior probability contract is required")
         if not example_frames.is_floating_point() or example_frames.ndim != 3:
@@ -943,10 +998,11 @@ class NeuralPriorInferenceRunner:
         actual_feature_digest = feature_graph_digest
         actual_algorithm_digest = json_digest(
             {
-                "contract": "advar-neural-prior-inference-algorithm-v5",
+                "contract": "advar-neural-prior-inference-algorithm-v6",
                 "export": "torch.export",
                 "derivatives": "rademacher-jvp-vjp-finite-difference",
-                "output": "mean-log-std-valid-probability-support",
+                "output": "state-and-hurdle-probability-heads",
+                "state_contract_digest": state_contract.contract_digest,
                 "probability_contract_digest": (
                     probability_contract.contract_digest
                 ),
@@ -1004,6 +1060,7 @@ class NeuralPriorInferenceRunner:
         self.model_contract_digest = model_contract_digest
         self.feature_schema_digest = feature_schema_digest
         self.training_manifest_digest = training_manifest_digest
+        self.state_contract = state_contract
         self.probability_contract = probability_contract
         self.inference_algorithm_digest = actual_algorithm_digest
         self.numerical_runtime_digest = actual_runtime_digest
@@ -1029,7 +1086,7 @@ class NeuralPriorInferenceRunner:
         self._example_dtype = example_frames.dtype
         self.execution_contract_digest = json_digest(
             {
-                "contract": "neural-prior-execution-contract-v6",
+                "contract": "neural-prior-execution-contract-v7",
                 "model_state_digest": self._model_state_digest,
                 "model_code_digest": self._model_code_digest,
                 "feature_extractor_digest": actual_feature_digest,
@@ -1040,6 +1097,7 @@ class NeuralPriorInferenceRunner:
                 "model_contract_digest": model_contract_digest,
                 "feature_schema_digest": feature_schema_digest,
                 "training_manifest_digest": training_manifest_digest,
+                "state_contract_digest": state_contract.contract_digest,
                 "probability_contract_digest": (
                     probability_contract.contract_digest
                 ),
@@ -1086,11 +1144,11 @@ class NeuralPriorInferenceRunner:
     def _derivative_outputs(self, frames_dbz: Tensor) -> tuple[Tensor, Tensor]:
         self._validate_input_contract(frames_dbz)
         raw = self._exported_pipeline(frames_dbz)
-        if isinstance(raw, tuple) and len(raw) == 5:
+        if isinstance(raw, tuple) and len(raw) == 8:
             return cast(Tensor, raw[1]), torch.log(cast(Tensor, raw[2]))
         if isinstance(raw, tuple) and len(raw) == 2 and self.allow_constant_uncertainty:
-            mean = cast(Tensor, raw[1])
-            return mean, torch.full_like(mean, math.log(self.prior_std_dbz))
+            state = cast(Tensor, raw[1])
+            return state, torch.full_like(state, math.log(self.prior_std_dbz))
         else:
             raise RuntimeError("exported neural-prior pipeline output is invalid")
 
@@ -1103,38 +1161,55 @@ class NeuralPriorInferenceRunner:
         Tensor,
         Tensor,
         Tensor,
+        Tensor,
+        Tensor,
+        Tensor,
         Literal["probabilistic", "exogenous_static"],
     ]:
         self._validate_state()
         self._validate_input_contract(frames_dbz)
         raw = self._exported_pipeline(frames_dbz)
-        if isinstance(raw, tuple) and len(raw) == 5:
-            features, output, std, valid, support = raw
+        if isinstance(raw, tuple) and len(raw) == 8:
+            (
+                features,
+                state_background,
+                state_std,
+                valid,
+                state_support,
+                event_probability,
+                truncated_location,
+                truncated_scale,
+            ) = raw
         elif isinstance(raw, tuple) and len(raw) == 2 and self.allow_constant_uncertainty:
-            features, output = raw
-            std = torch.full_like(output, self.prior_std_dbz)
-            valid = torch.ones_like(output, dtype=torch.bool)
-            support = torch.ones_like(output)
+            features, state_background = raw
+            state_std = torch.full_like(state_background, self.prior_std_dbz)
+            valid = torch.ones_like(state_background, dtype=torch.bool)
+            state_support = (
+                state_background >= self.state_contract.support_threshold_dbz
+            ).to(state_background)
+            event_probability = state_support
+            truncated_location = state_background
+            truncated_scale = state_std
         else:
             raise ValueError(
-                "neural-prior model must return mean/std/valid/support output"
+                "neural-prior model must return separate state and probability heads"
             )
         if not isinstance(features, Tensor) or not features.is_floating_point():
             raise TypeError("neural-prior features must be floating Tensor data")
         if (
-            not isinstance(output, Tensor)
-            or output.ndim != 2
-            or not output.is_floating_point()
-            or not bool(torch.all(torch.isfinite(output)))
+            not isinstance(state_background, Tensor)
+            or state_background.ndim != 2
+            or not state_background.is_floating_point()
+            or not bool(torch.all(torch.isfinite(state_background)))
         ):
-            raise ValueError("neural-prior output must be a finite 2-D Tensor")
+            raise ValueError("neural-prior state must be a finite 2-D Tensor")
         if isinstance(valid, Tensor) and valid.dtype is torch.bool:
             if self.dependency != "exogenous" and not self.allow_constant_uncertainty:
                 raise ValueError(
                     "radar-dependent prior validity must be a probability"
                 )
             valid_mask = valid
-            valid_probability = valid.to(output)
+            valid_probability = valid.to(state_background)
             validity_contract: Literal[
                 "probabilistic", "exogenous_static"
             ] = "exogenous_static"
@@ -1143,30 +1218,60 @@ class NeuralPriorInferenceRunner:
                 torch.any((valid < 0.0) | (valid > 1.0))
             ):
                 raise ValueError("neural-prior validity probability is invalid")
-            valid_probability = valid
+            valid_probability = valid.to(state_background)
             valid_mask = valid >= 0.5
             validity_contract = "probabilistic"
         else:
             raise ValueError("neural-prior validity output is invalid")
         if (
-            not isinstance(std, Tensor)
-            or std.shape != output.shape
-            or not bool(torch.all(torch.isfinite(std) & (std > 0.0)))
-            or valid_mask.shape != output.shape
-            or not isinstance(support, Tensor)
-            or support.shape != output.shape
-            or not bool(torch.all(torch.isfinite(support)))
-            or bool(torch.any((support < 0.0) | (support > 1.0)))
+            not isinstance(state_std, Tensor)
+            or state_std.shape != state_background.shape
+            or not bool(torch.all(torch.isfinite(state_std) & (state_std > 0.0)))
+            or valid_mask.shape != state_background.shape
+            or not isinstance(state_support, Tensor)
+            or state_support.shape != state_background.shape
+            or not bool(torch.all(torch.isfinite(state_support)))
+            or bool(torch.any((state_support < 0.0) | (state_support > 1.0)))
         ):
-            raise ValueError("neural-prior uncertainty output is invalid")
+            raise ValueError("neural-prior state output is invalid")
+        for name, value in (
+            ("event probability", event_probability),
+            ("truncated location", truncated_location),
+            ("truncated scale", truncated_scale),
+        ):
+            if (
+                not isinstance(value, Tensor)
+                or value.shape != state_background.shape
+                or not value.is_floating_point()
+                or not bool(torch.all(torch.isfinite(value)))
+            ):
+                raise ValueError(f"neural-prior {name} output is invalid")
+        if (
+            bool(torch.any((event_probability < 0.0) | (event_probability > 1.0)))
+            or bool(torch.any(truncated_scale <= 0.0))
+        ):
+            raise ValueError("neural-prior probability output is invalid")
+        active_state = valid_mask & (state_support >= 0.5)
+        if bool(
+            torch.any(
+                active_state
+                & (state_background < self.state_contract.support_threshold_dbz)
+            )
+        ):
+            raise ValueError(
+                "neural-prior active state lies below its support threshold"
+            )
         self._validate_state()
         return (
             features,
-            output,
-            std,
+            state_background,
+            state_std,
             valid_mask,
             valid_probability,
-            support,
+            state_support,
+            event_probability,
+            truncated_location,
+            truncated_scale,
             validity_contract,
         )
 
@@ -1266,15 +1371,26 @@ class NeuralPriorInferenceRunner:
             data_identity = OperationalDataIdentity.from_json(
                 input_run.operational_data_identity_json
             )
-            if data_identity.qc_pipeline_digest != (
-                self.probability_contract.qc_pipeline_digest
+            if (
+                data_identity.radar_product_digest is not None
+                and data_identity.radar_product_digest
+                != self.state_contract.state_product_digest
             ):
                 raise ValueError(
-                    "neural-prior probability event disagrees with input QC"
+                    "neural-prior state product disagrees with analysis input"
                 )
-        features, output, std, valid, valid_probability, support, validity = (
-            self._output(frames_dbz)
-        )
+        (
+            features,
+            state_background,
+            state_std,
+            state_valid,
+            state_valid_probability,
+            state_support,
+            event_probability,
+            truncated_location,
+            truncated_scale,
+            validity,
+        ) = self._output(frames_dbz)
         run_local_defect = self._validate_derivatives(
             frames_dbz,
             probe_count=self.run_derivative_probe_count,
@@ -1307,11 +1423,19 @@ class NeuralPriorInferenceRunner:
             training_manifest_digest=self.training_manifest_digest,
             inference_algorithm_digest=self.inference_algorithm_digest,
             numerical_runtime_digest=self.numerical_runtime_digest,
-            output_background_digest=tensor_digest(output),
-            output_std_digest=tensor_digest(std),
-            output_valid_mask_digest=tensor_digest(valid),
-            output_valid_probability_digest=tensor_digest(valid_probability),
-            output_support_probability_digest=tensor_digest(support),
+            output_state_background_digest=tensor_digest(state_background),
+            output_state_std_digest=tensor_digest(state_std),
+            output_state_valid_mask_digest=tensor_digest(state_valid),
+            output_state_valid_probability_digest=tensor_digest(
+                state_valid_probability
+            ),
+            output_state_support_probability_digest=tensor_digest(
+                state_support
+            ),
+            output_event_probability_digest=tensor_digest(event_probability),
+            output_truncated_location_digest=tensor_digest(truncated_location),
+            output_truncated_scale_digest=tensor_digest(truncated_scale),
+            state_contract_digest=self.state_contract.contract_digest,
             probability_contract_digest=(
                 self.probability_contract.contract_digest
             ),
@@ -1341,11 +1465,15 @@ class NeuralPriorInferenceRunner:
             dependency=self.dependency,
         )
         return _new_neural_prior_application(
-            initial_background_dbz=output,
-            valid_mask=valid,
-            valid_probability=valid_probability,
-            std_dbz=std,
-            support_probability=support,
+            state_background_dbz=state_background,
+            state_valid_mask=state_valid,
+            state_valid_probability=state_valid_probability,
+            state_std_dbz=state_std,
+            state_support_probability=state_support,
+            event_probability=event_probability,
+            truncated_location_dbz=truncated_location,
+            truncated_scale_dbz=truncated_scale,
+            state_contract=self.state_contract,
             inference_evidence=evidence,
             role=role,
             support_policy=self.support_policy,
@@ -1361,24 +1489,44 @@ class NeuralPriorInferenceRunner:
         """Independently rerun one retained application."""
 
         application.validate_integrity()
-        features, output, std, valid, valid_probability, support, validity = (
-            self._output(frames_dbz)
-        )
+        (
+            features,
+            state_background,
+            state_std,
+            state_valid,
+            state_valid_probability,
+            state_support,
+            event_probability,
+            truncated_location,
+            truncated_scale,
+            validity,
+        ) = self._output(frames_dbz)
         evidence = application.inference_evidence
         if (
             self.neural_prior_digest != evidence.neural_prior_digest
             or evidence.execution_contract_digest != self.execution_contract_digest
             or tensor_digest(frames_dbz) != evidence.input_frames_digest
             or tensor_digest(features) != evidence.feature_tensor_digest
-            or tensor_digest(output) != evidence.output_background_digest
-            or tensor_digest(std) != evidence.output_std_digest
-            or tensor_digest(valid) != evidence.output_valid_mask_digest
-            or tensor_digest(valid_probability)
-            != evidence.output_valid_probability_digest
-            or tensor_digest(support)
-            != evidence.output_support_probability_digest
+            or tensor_digest(state_background)
+            != evidence.output_state_background_digest
+            or tensor_digest(state_std) != evidence.output_state_std_digest
+            or tensor_digest(state_valid)
+            != evidence.output_state_valid_mask_digest
+            or tensor_digest(state_valid_probability)
+            != evidence.output_state_valid_probability_digest
+            or tensor_digest(state_support)
+            != evidence.output_state_support_probability_digest
+            or tensor_digest(event_probability)
+            != evidence.output_event_probability_digest
+            or tensor_digest(truncated_location)
+            != evidence.output_truncated_location_digest
+            or tensor_digest(truncated_scale)
+            != evidence.output_truncated_scale_digest
             or self._exported_pipeline_digest != evidence.exported_graph_digest
-            or not torch.equal(output, application.initial_background_dbz)
+            or not torch.equal(
+                state_background,
+                application.state_background_dbz,
+            )
             or validity != evidence.validity_contract
         ):
             raise ValueError("neural-prior inference cannot be reproduced")
@@ -1394,8 +1542,8 @@ class NeuralPriorInferenceRunner:
 
         if execution_contract_digest != self.execution_contract_digest:
             raise ValueError("neural-prior execution contract mismatch")
-        _, output, _, _, _, _, _ = self._output(frames_dbz)
-        if not torch.equal(output, raw_background_dbz):
+        _, state_background, _, _, _, _, _, _, _, _ = self._output(frames_dbz)
+        if not torch.equal(state_background, raw_background_dbz):
             raise ValueError("retained neural-prior output cannot be reproduced")
 
     def jvp(self, frames_dbz: Tensor, tangent: Tensor) -> Tensor:
@@ -1497,17 +1645,21 @@ class NeuralPriorInferenceRunner:
 class NeuralPriorApplication:
     """One model-produced prior output that is actually consumed by P1."""
 
-    initial_background_dbz: Tensor
-    valid_mask: Tensor
-    valid_probability: Tensor
-    std_dbz: Tensor
-    support_probability: Tensor
+    state_background_dbz: Tensor
+    state_valid_mask: Tensor
+    state_valid_probability: Tensor
+    state_std_dbz: Tensor
+    state_support_probability: Tensor
+    event_probability: Tensor
+    truncated_location_dbz: Tensor
+    truncated_scale_dbz: Tensor
+    state_contract: NeuralPriorStateContract
     inference_evidence: NeuralPriorInferenceEvidence
     role: Literal["candidate", "parent"]
     support_policy: PriorSupportPolicy
     maximum_added_area_km2: float
     maximum_added_echo_integral: float
-    contract: str = "neural-prior-application-v5"
+    contract: str = "neural-prior-application-v6"
     application_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -1538,8 +1690,34 @@ class NeuralPriorApplication:
         return self.inference_evidence.probability_contract_digest
 
     @property
+    def state_contract_digest(self) -> str:
+        return self.state_contract.contract_digest
+
+    @property
     def support_event_digest(self) -> str:
         return self.inference_evidence.support_event_digest
+
+    @property
+    def initial_background_dbz(self) -> Tensor:
+        """Compatibility alias for the deterministic state background."""
+
+        return self.state_background_dbz
+
+    @property
+    def valid_mask(self) -> Tensor:
+        return self.state_valid_mask
+
+    @property
+    def valid_probability(self) -> Tensor:
+        return self.state_valid_probability
+
+    @property
+    def std_dbz(self) -> Tensor:
+        return self.state_std_dbz
+
+    @property
+    def support_probability(self) -> Tensor:
+        return self.state_support_probability
 
     def validate_integrity(self) -> None:
         self.inference_evidence.validate_integrity()
@@ -1549,14 +1727,17 @@ class NeuralPriorApplication:
 
 def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
     result = object.__new__(NeuralPriorApplication)
-    object.__setattr__(result, "contract", "neural-prior-application-v5")
+    object.__setattr__(result, "contract", "neural-prior-application-v6")
     for name, value in values.items():
         object.__setattr__(result, name, value)
-    background = result.initial_background_dbz.detach().clone()
-    valid = result.valid_mask.detach().clone()
-    valid_probability = result.valid_probability.detach().clone()
-    std = result.std_dbz.detach().clone()
-    support = result.support_probability.detach().clone()
+    background = result.state_background_dbz.detach().clone()
+    valid = result.state_valid_mask.detach().clone()
+    valid_probability = result.state_valid_probability.detach().clone()
+    std = result.state_std_dbz.detach().clone()
+    support = result.state_support_probability.detach().clone()
+    event_probability = result.event_probability.detach().clone()
+    truncated_location = result.truncated_location_dbz.detach().clone()
+    truncated_scale = result.truncated_scale_dbz.detach().clone()
     if (
         background.ndim != 2
         or not background.is_floating_point()
@@ -1575,6 +1756,17 @@ def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
         or not support.is_floating_point()
         or bool(torch.any(~torch.isfinite(support)))
         or bool(torch.any((support < 0.0) | (support > 1.0)))
+        or event_probability.shape != background.shape
+        or not event_probability.is_floating_point()
+        or bool(torch.any(~torch.isfinite(event_probability)))
+        or bool(torch.any((event_probability < 0.0) | (event_probability > 1.0)))
+        or truncated_location.shape != background.shape
+        or not truncated_location.is_floating_point()
+        or bool(torch.any(~torch.isfinite(truncated_location)))
+        or truncated_scale.shape != background.shape
+        or not truncated_scale.is_floating_point()
+        or bool(torch.any(~torch.isfinite(truncated_scale)))
+        or bool(torch.any(truncated_scale <= 0.0))
     ):
         raise ValueError("neural-prior value, validity, or uncertainty is invalid")
     if result.role not in ("candidate", "parent"):
@@ -1586,22 +1778,50 @@ def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
         if not math.isfinite(value) or value < 0.0:
             raise ValueError(f"{name} must be finite and nonnegative")
     result.inference_evidence.validate_integrity()
-    if tensor_digest(background) != result.inference_evidence.output_background_digest:
+    if not isinstance(result.state_contract, NeuralPriorStateContract):
+        raise TypeError("neural-prior state contract is required")
+    if bool(
+        torch.any(
+            valid
+            & (support >= 0.5)
+            & (background < result.state_contract.support_threshold_dbz)
+        )
+    ):
+        raise ValueError("neural-prior active state lies below its threshold")
+    if (
+        result.state_contract.contract_digest
+        != result.inference_evidence.state_contract_digest
+    ):
+        raise ValueError("neural-prior state contract disagrees with inference")
+    if (
+        tensor_digest(background)
+        != result.inference_evidence.output_state_background_digest
+    ):
         raise ValueError("neural-prior output disagrees with inference evidence")
     if (
-        tensor_digest(std) != result.inference_evidence.output_std_digest
-        or tensor_digest(valid) != result.inference_evidence.output_valid_mask_digest
+        tensor_digest(std) != result.inference_evidence.output_state_std_digest
+        or tensor_digest(valid)
+        != result.inference_evidence.output_state_valid_mask_digest
         or tensor_digest(valid_probability)
-        != result.inference_evidence.output_valid_probability_digest
+        != result.inference_evidence.output_state_valid_probability_digest
         or tensor_digest(support)
-        != result.inference_evidence.output_support_probability_digest
+        != result.inference_evidence.output_state_support_probability_digest
+        or tensor_digest(event_probability)
+        != result.inference_evidence.output_event_probability_digest
+        or tensor_digest(truncated_location)
+        != result.inference_evidence.output_truncated_location_digest
+        or tensor_digest(truncated_scale)
+        != result.inference_evidence.output_truncated_scale_digest
     ):
         raise ValueError("neural-prior uncertainty disagrees with inference evidence")
-    object.__setattr__(result, "initial_background_dbz", background)
-    object.__setattr__(result, "valid_mask", valid)
-    object.__setattr__(result, "valid_probability", valid_probability)
-    object.__setattr__(result, "std_dbz", std)
-    object.__setattr__(result, "support_probability", support)
+    object.__setattr__(result, "state_background_dbz", background)
+    object.__setattr__(result, "state_valid_mask", valid)
+    object.__setattr__(result, "state_valid_probability", valid_probability)
+    object.__setattr__(result, "state_std_dbz", std)
+    object.__setattr__(result, "state_support_probability", support)
+    object.__setattr__(result, "event_probability", event_probability)
+    object.__setattr__(result, "truncated_location_dbz", truncated_location)
+    object.__setattr__(result, "truncated_scale_dbz", truncated_scale)
     object.__setattr__(
         result, "application_digest", _neural_prior_application_digest(result)
     )
@@ -1612,11 +1832,21 @@ def _neural_prior_application_digest(value: NeuralPriorApplication) -> str:
     return json_digest(
         {
             "contract": value.contract,
-            "initial_background_dbz": tensor_digest(value.initial_background_dbz),
-            "valid_mask": tensor_digest(value.valid_mask),
-            "valid_probability": tensor_digest(value.valid_probability),
-            "std_dbz": tensor_digest(value.std_dbz),
-            "support_probability": tensor_digest(value.support_probability),
+            "state_background_dbz": tensor_digest(value.state_background_dbz),
+            "state_valid_mask": tensor_digest(value.state_valid_mask),
+            "state_valid_probability": tensor_digest(
+                value.state_valid_probability
+            ),
+            "state_std_dbz": tensor_digest(value.state_std_dbz),
+            "state_support_probability": tensor_digest(
+                value.state_support_probability
+            ),
+            "event_probability": tensor_digest(value.event_probability),
+            "truncated_location_dbz": tensor_digest(
+                value.truncated_location_dbz
+            ),
+            "truncated_scale_dbz": tensor_digest(value.truncated_scale_dbz),
+            "state_contract_digest": value.state_contract.contract_digest,
             "inference_evidence_digest": value.inference_evidence.evidence_digest,
             "role": value.role,
             "support_policy": value.support_policy,
@@ -2683,23 +2913,29 @@ def prepare_analysis(
     prior_valid_mask = None
     if neural_prior is not None:
         neural_prior.validate_integrity()
+        if neural_prior.state_contract.support_threshold_dbz != (
+            analysis_config.detection_limit_dbz
+        ):
+            raise ValueError(
+                "neural-prior state support threshold disagrees with analysis"
+            )
         if (
-            neural_prior.initial_background_dbz.shape
+            neural_prior.state_background_dbz.shape
             != initial_background_dbz.shape
-            or neural_prior.initial_background_dbz.dtype != frames_dbz.dtype
-            or neural_prior.initial_background_dbz.device != frames_dbz.device
+            or neural_prior.state_background_dbz.dtype != frames_dbz.dtype
+            or neural_prior.state_background_dbz.device != frames_dbz.device
         ):
             raise ValueError(
                 "neural-prior background must match the radar grid, dtype, and device"
             )
-        prior_background = neural_prior.initial_background_dbz.clamp(
+        prior_background = neural_prior.state_background_dbz.clamp(
             nowcast_config.min_dbz,
             nowcast_config.max_dbz,
         )
-        prior_valid_mask = neural_prior.valid_mask.to(frames_dbz.device) & (
-            neural_prior.support_probability.to(frames_dbz) >= 0.5
+        prior_valid_mask = neural_prior.state_valid_mask.to(frames_dbz.device) & (
+            neural_prior.state_support_probability.to(frames_dbz) >= 0.5
         )
-        prior_std_dbz = neural_prior.std_dbz.to(frames_dbz)
+        prior_std_dbz = neural_prior.state_std_dbz.to(frames_dbz)
         prior_background = torch.where(
             prior_valid_mask,
             prior_background,
@@ -4971,6 +5207,21 @@ def variational_nowcast(
     audit: bool = False,
 ) -> tuple[ForecastResult, AnalysisResult]:
     nowcast_config = nowcast_config or NowcastConfig()
+    if neural_prior is not None:
+        if (
+            neural_prior.inference_evidence.input_frames_digest
+            != tensor_digest(frames_dbz)
+        ):
+            raise ValueError("neural-prior application belongs to different input")
+        if (
+            operational_data_identity is not None
+            and operational_data_identity.radar_product_digest is not None
+            and neural_prior.state_contract.state_product_digest
+            != operational_data_identity.radar_product_digest
+        ):
+            raise ValueError(
+                "neural-prior state product disagrees with analysis product"
+            )
     if grid_time_contract is not None:
         grid_time_contract.validate_for(
             nowcast_config,

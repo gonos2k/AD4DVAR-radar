@@ -86,6 +86,7 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV3,
     LegacyNeuralPriorPromotionEvidenceAuditV4,
     LegacyNeuralPriorPromotionEvidenceAuditV5,
+    LegacyNeuralPriorPromotionEvidenceAuditV6,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     compute_neural_prior_promotion,
@@ -100,7 +101,7 @@ _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 14
+_INDEX_SCHEMA_VERSION = 15
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
@@ -2558,88 +2559,97 @@ class EpisodeLedger:
                     manifest.training_learning_approval_digests
                 ):
                     raise ValueError("training receipt is not linked to its approval")
-            connection.execute(
-                """
-                INSERT INTO neural_prior_promotions (
-                    promotion_evidence_digest, candidate_prior_digest,
-                    parent_prior_digest, candidate_manifest_digest,
-                    candidate_manifest_json, holdout_plan_digest,
-                    policy_digest, trust_store_digest,
-                    evaluation_digests_json, evaluation_payloads_json,
-                    intervention_digests_json,
-                    realized_intervention_count, material_outcome_count,
-                    distinct_case_count, distinct_storm_count,
-                    distinct_day_count, distinct_radar_count,
-                    distinct_regime_count, distinct_range_regime_count,
-                    beneficial_fraction, beneficial_fraction_lower_bound,
-                    harmful_fraction, harmful_fraction_upper_bound,
-                    mean_normalized_improvement, mean_improvement_lower_bound,
-                    maximum_normalized_degradation,
-                    prior_gaussian_nll_increase_upper_bound,
-                    prior_support_brier_increase_upper_bound,
-                    prior_underdispersion_increase_upper_bound,
-                    prior_echo_intensity_nll_increase_upper_bound,
-                    prior_clear_sky_false_echo_increase_upper_bound,
-                    prior_echo_component_status,
-                    prior_clear_sky_component_status,
-                    prior_echo_case_count,
-                    prior_clear_sky_case_count,
-                    prior_echo_cluster_count,
-                    prior_clear_sky_cluster_count,
-                    simultaneous_inference_test_count,
-                    eligible,
-                    rejection_reasons_json, evidence_contract, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                          ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    evidence.promotion_evidence_digest,
-                    evidence.candidate_prior_digest,
-                    evidence.parent_prior_digest,
-                    evidence.candidate_manifest_digest,
-                    json.dumps(asdict(manifest), sort_keys=True),
-                    plan.plan_digest,
-                    evidence.policy_digest,
-                    evidence.trust_store_digest,
-                    json.dumps(list(evidence.evaluation_digests)),
-                    json.dumps(
-                        [_evaluation_audit_payload(item) for item in evaluations],
-                        sort_keys=True,
-                    ),
-                    json.dumps([]),
-                    evidence.holdout_case_count,
-                    evidence.material_case_count,
-                    evidence.distinct_case_count,
-                    evidence.distinct_storm_count,
-                    evidence.distinct_day_count,
-                    evidence.distinct_radar_count,
-                    evidence.distinct_regime_count,
-                    evidence.distinct_range_regime_count,
-                    evidence.beneficial_fraction,
-                    evidence.beneficial_fraction_lower_bound,
-                    evidence.harmful_fraction,
-                    evidence.harmful_fraction_upper_bound,
-                    evidence.mean_normalized_improvement,
-                    evidence.mean_improvement_lower_bound,
-                    evidence.maximum_normalized_degradation,
-                    0.0,
-                    evidence.prior_support_brier_increase_upper_bound,
-                    evidence.prior_underdispersion_increase_upper_bound,
-                    evidence.prior_echo_intensity_nll_increase_upper_bound,
-                    evidence.prior_clear_sky_false_echo_increase_upper_bound,
-                    evidence.prior_echo_component_status,
-                    evidence.prior_clear_sky_component_status,
-                    evidence.prior_echo_case_count,
-                    evidence.prior_clear_sky_case_count,
-                    evidence.prior_echo_cluster_count,
-                    evidence.prior_clear_sky_cluster_count,
-                    evidence.simultaneous_inference_test_count,
-                    int(evidence.eligible),
-                    json.dumps(list(evidence.rejection_reasons)),
-                    evidence.contract,
-                    datetime.now(timezone.utc).isoformat(),
+            promotion_row: dict[str, object] = {
+                "promotion_evidence_digest": evidence.promotion_evidence_digest,
+                "candidate_prior_digest": evidence.candidate_prior_digest,
+                "parent_prior_digest": evidence.parent_prior_digest,
+                "candidate_manifest_digest": evidence.candidate_manifest_digest,
+                "candidate_manifest_json": json.dumps(
+                    asdict(manifest), sort_keys=True
                 ),
+                "holdout_plan_digest": plan.plan_digest,
+                "policy_digest": evidence.policy_digest,
+                "trust_store_digest": evidence.trust_store_digest,
+                "evaluation_digests_json": json.dumps(
+                    list(evidence.evaluation_digests)
+                ),
+                "evaluation_payloads_json": json.dumps(
+                    [_evaluation_audit_payload(item) for item in evaluations],
+                    sort_keys=True,
+                ),
+                "intervention_digests_json": json.dumps([]),
+                "realized_intervention_count": evidence.holdout_case_count,
+                "material_outcome_count": evidence.material_case_count,
+                "distinct_case_count": evidence.distinct_case_count,
+                "distinct_storm_count": evidence.distinct_storm_count,
+                "distinct_day_count": evidence.distinct_day_count,
+                "distinct_radar_count": evidence.distinct_radar_count,
+                "distinct_regime_count": evidence.distinct_regime_count,
+                "distinct_range_regime_count": (
+                    evidence.distinct_range_regime_count
+                ),
+                "beneficial_fraction": evidence.beneficial_fraction,
+                "beneficial_fraction_lower_bound": (
+                    evidence.beneficial_fraction_lower_bound
+                ),
+                "harmful_fraction": evidence.harmful_fraction,
+                "harmful_fraction_upper_bound": evidence.harmful_fraction_upper_bound,
+                "mean_normalized_improvement": (
+                    evidence.mean_normalized_improvement
+                ),
+                "mean_improvement_lower_bound": evidence.mean_improvement_lower_bound,
+                "maximum_normalized_degradation": (
+                    evidence.maximum_normalized_degradation
+                ),
+                "prior_gaussian_nll_increase_upper_bound": 0.0,
+                "prior_support_brier_increase_upper_bound": (
+                    evidence.prior_support_brier_increase_upper_bound
+                ),
+                "prior_underdispersion_increase_upper_bound": 0.0,
+                "prior_conditional_underdispersion_increase_upper_bound": (
+                    evidence.prior_conditional_underdispersion_increase_upper_bound
+                ),
+                "prior_echo_support_miss_increase_upper_bound": (
+                    evidence.prior_echo_support_miss_increase_upper_bound
+                ),
+                "prior_echo_object_miss_increase_upper_bound": (
+                    evidence.prior_echo_object_miss_increase_upper_bound
+                ),
+                "prior_echo_intensity_nll_increase_upper_bound": (
+                    evidence.prior_echo_intensity_nll_increase_upper_bound
+                ),
+                "prior_clear_sky_false_echo_increase_upper_bound": (
+                    evidence.prior_clear_sky_false_echo_increase_upper_bound
+                ),
+                "prior_echo_component_status": evidence.prior_echo_component_status,
+                "prior_clear_sky_component_status": (
+                    evidence.prior_clear_sky_component_status
+                ),
+                "prior_echo_case_count": evidence.prior_echo_case_count,
+                "prior_clear_sky_case_count": evidence.prior_clear_sky_case_count,
+                "prior_echo_cluster_count": evidence.prior_echo_cluster_count,
+                "prior_clear_sky_cluster_count": (
+                    evidence.prior_clear_sky_cluster_count
+                ),
+                "simultaneous_inference_test_count": (
+                    evidence.simultaneous_inference_test_count
+                ),
+                "eligible": int(evidence.eligible),
+                "rejection_reasons_json": json.dumps(
+                    list(evidence.rejection_reasons)
+                ),
+                "evidence_contract": evidence.contract,
+                "evidence_payload_json": json.dumps(
+                    evidence._payload(), sort_keys=True
+                ),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+            columns = tuple(promotion_row)
+            connection.execute(
+                "INSERT INTO neural_prior_promotions "
+                f"({','.join(columns)}) VALUES "
+                f"({','.join('?' for _ in columns)})",
+                tuple(promotion_row[name] for name in columns),
             )
         return evidence.promotion_evidence_digest
 
@@ -2651,6 +2661,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV3
         | LegacyNeuralPriorPromotionEvidenceAuditV4
         | LegacyNeuralPriorPromotionEvidenceAuditV5
+        | LegacyNeuralPriorPromotionEvidenceAuditV6
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -2708,6 +2719,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV3
                 | LegacyNeuralPriorPromotionEvidenceAuditV4
                 | LegacyNeuralPriorPromotionEvidenceAuditV5
+                | LegacyNeuralPriorPromotionEvidenceAuditV6
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -2764,10 +2776,6 @@ class EpisodeLedger:
                         ),
                     )
                 else:
-                    if contract != "neural-prior-promotion-evidence-v6":
-                        raise ValueError(
-                            "unsupported neural-prior promotion evidence"
-                        )
                     v6_payload = {
                         **v5_payload,
                         "prior_echo_component_status": (
@@ -2791,9 +2799,99 @@ class EpisodeLedger:
                         ),
                     }
                     v6_payload["contract"] = contract
-                    evidence = NeuralPriorPromotionEvidence(
-                        **cast(Any, v6_payload)
-                    )
+                    if contract == "neural-prior-promotion-evidence-v6":
+                        evidence = LegacyNeuralPriorPromotionEvidenceAuditV6(
+                            promotion_evidence_digest=promotion_evidence_digest,
+                            payload_json=json.dumps(
+                                v6_payload,
+                                sort_keys=True,
+                                separators=(",", ":"),
+                            ),
+                        )
+                    elif contract == "neural-prior-promotion-evidence-v7":
+                        raw_payload = json.loads(row["evidence_payload_json"])
+                        if not isinstance(raw_payload, dict):
+                            raise ValueError(
+                                "invalid neural-prior promotion evidence payload"
+                            )
+                        raw_payload["evaluation_digests"] = tuple(
+                            raw_payload["evaluation_digests"]
+                        )
+                        raw_payload["rejection_reasons"] = tuple(
+                            raw_payload["rejection_reasons"]
+                        )
+                        raw_payload[
+                            "certified_applicability_regime_groups"
+                        ] = tuple(
+                            tuple(item)
+                            for item in raw_payload[
+                                "certified_applicability_regime_groups"
+                            ]
+                        )
+                        indexed_v7 = {
+                            **common_payload,
+                            "prior_echo_intensity_nll_increase_upper_bound": (
+                                row[
+                                    "prior_echo_intensity_nll_increase_upper_bound"
+                                ]
+                            ),
+                            "prior_support_brier_increase_upper_bound": (
+                                row["prior_support_brier_increase_upper_bound"]
+                            ),
+                            "prior_clear_sky_false_echo_increase_upper_bound": (
+                                row[
+                                    "prior_clear_sky_false_echo_increase_upper_bound"
+                                ]
+                            ),
+                            "prior_conditional_underdispersion_increase_upper_bound": (
+                                row[
+                                    "prior_conditional_underdispersion_increase_upper_bound"
+                                ]
+                            ),
+                            "prior_echo_support_miss_increase_upper_bound": (
+                                row[
+                                    "prior_echo_support_miss_increase_upper_bound"
+                                ]
+                            ),
+                            "prior_echo_object_miss_increase_upper_bound": (
+                                row[
+                                    "prior_echo_object_miss_increase_upper_bound"
+                                ]
+                            ),
+                            "prior_echo_component_status": row[
+                                "prior_echo_component_status"
+                            ],
+                            "prior_clear_sky_component_status": row[
+                                "prior_clear_sky_component_status"
+                            ],
+                            "prior_echo_case_count": row["prior_echo_case_count"],
+                            "prior_clear_sky_case_count": row[
+                                "prior_clear_sky_case_count"
+                            ],
+                            "prior_echo_cluster_count": row[
+                                "prior_echo_cluster_count"
+                            ],
+                            "prior_clear_sky_cluster_count": row[
+                                "prior_clear_sky_cluster_count"
+                            ],
+                            "simultaneous_inference_test_count": row[
+                                "simultaneous_inference_test_count"
+                            ],
+                        }
+                        if any(
+                            raw_payload.get(name) != value
+                            for name, value in indexed_v7.items()
+                        ):
+                            raise ValueError(
+                                "neural-prior promotion index disagrees with payload"
+                            )
+                        evidence = NeuralPriorPromotionEvidence(
+                            **cast(Any, raw_payload)
+                        )
+                    else:
+                        raise ValueError(
+                            "unsupported neural-prior promotion evidence"
+                        )
                 if evidence.promotion_evidence_digest != promotion_evidence_digest:
                     raise ValueError("neural-prior promotion digest mismatch")
         payloads = json.loads(row["evaluation_payloads_json"])
@@ -3015,6 +3113,9 @@ class EpisodeLedger:
                     prior_gaussian_nll_increase_upper_bound REAL NOT NULL,
                     prior_support_brier_increase_upper_bound REAL NOT NULL,
                     prior_underdispersion_increase_upper_bound REAL NOT NULL,
+                    prior_conditional_underdispersion_increase_upper_bound REAL NOT NULL,
+                    prior_echo_support_miss_increase_upper_bound REAL NOT NULL,
+                    prior_echo_object_miss_increase_upper_bound REAL NOT NULL,
                     prior_echo_intensity_nll_increase_upper_bound REAL NOT NULL,
                     prior_clear_sky_false_echo_increase_upper_bound REAL NOT NULL,
                     prior_echo_component_status TEXT NOT NULL,
@@ -3027,6 +3128,7 @@ class EpisodeLedger:
                     eligible INTEGER NOT NULL,
                     rejection_reasons_json TEXT NOT NULL,
                     evidence_contract TEXT NOT NULL,
+                    evidence_payload_json TEXT NOT NULL,
                     created_at TEXT NOT NULL
                 )
                 """
@@ -3408,6 +3510,15 @@ def _ensure_neural_prior_promotion_schema(
         "prior_gaussian_nll_increase_upper_bound": "REAL NOT NULL DEFAULT 0",
         "prior_support_brier_increase_upper_bound": "REAL NOT NULL DEFAULT 0",
         "prior_underdispersion_increase_upper_bound": "REAL NOT NULL DEFAULT 0",
+        "prior_conditional_underdispersion_increase_upper_bound": (
+            "REAL NOT NULL DEFAULT 0"
+        ),
+        "prior_echo_support_miss_increase_upper_bound": (
+            "REAL NOT NULL DEFAULT 0"
+        ),
+        "prior_echo_object_miss_increase_upper_bound": (
+            "REAL NOT NULL DEFAULT 0"
+        ),
         "prior_echo_intensity_nll_increase_upper_bound": (
             "REAL NOT NULL DEFAULT 0"
         ),
@@ -3422,6 +3533,7 @@ def _ensure_neural_prior_promotion_schema(
         "prior_clear_sky_cluster_count": "INTEGER NOT NULL DEFAULT 0",
         "simultaneous_inference_test_count": "INTEGER NOT NULL DEFAULT 0",
         "evaluation_payloads_json": "TEXT NOT NULL DEFAULT '[]'",
+        "evidence_payload_json": "TEXT NOT NULL DEFAULT ''",
     }
     for name, definition in definitions.items():
         if name not in columns:
@@ -3481,7 +3593,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v7"
+        or value[0].get("contract") != "prior-holdout-evaluation-v8"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:

@@ -52,6 +52,7 @@ from advar.promotion import (  # noqa: E402
     LegacyNeuralPriorHoldoutPlanV4Audit,
     LegacyNeuralPriorPromotionEvidenceAuditV3,
     LegacyNeuralPriorPromotionEvidenceAuditV5,
+    LegacyNeuralPriorPromotionEvidenceAuditV6,
     NeuralPriorPromotionEvidence,
     NeuralPriorCandidateManifest,
     NeuralPriorHoldoutCase,
@@ -769,7 +770,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 14)
+        self.assertEqual(version, 15)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -2398,6 +2399,106 @@ class EpisodeLedgerTests(unittest.TestCase):
             LegacyNeuralPriorCandidateManifestAuditV3,
         )
 
+    def test_v6_promotion_and_v7_evaluation_load_audit_only(self) -> None:
+        manifest_payload: dict[str, object] = {
+            "contract": "neural-prior-candidate-manifest-v3",
+            "candidate_prior_digest": "1" * 64,
+            "parent_prior_digest": "2" * 64,
+            "holdout_cases": [{"case_id": "legacy-v6-case"}],
+        }
+        manifest_digest = json_digest(manifest_payload)
+        manifest_payload["manifest_digest"] = manifest_digest
+        evaluation_payload = {
+            "contract": "prior-holdout-evaluation-v7",
+            "evaluation_digest": "e" * 64,
+        }
+        payload: dict[str, object] = {
+            "candidate_prior_digest": "1" * 64,
+            "parent_prior_digest": "2" * 64,
+            "candidate_manifest_digest": manifest_digest,
+            "policy_digest": "3" * 64,
+            "trust_store_digest": "4" * 64,
+            "evaluation_digests": ("e" * 64,),
+            "holdout_case_count": 1,
+            "material_case_count": 0,
+            "distinct_case_count": 0,
+            "distinct_storm_count": 0,
+            "distinct_day_count": 0,
+            "distinct_radar_count": 0,
+            "distinct_regime_count": 0,
+            "distinct_range_regime_count": 0,
+            "beneficial_fraction": 0.0,
+            "beneficial_fraction_lower_bound": 0.0,
+            "harmful_fraction": 0.0,
+            "harmful_fraction_upper_bound": 0.0,
+            "mean_normalized_improvement": 0.0,
+            "mean_improvement_lower_bound": 0.0,
+            "maximum_normalized_degradation": 0.0,
+            "prior_echo_intensity_nll_increase_upper_bound": 0.0,
+            "prior_support_brier_increase_upper_bound": 0.0,
+            "prior_clear_sky_false_echo_increase_upper_bound": 0.0,
+            "prior_underdispersion_increase_upper_bound": 0.0,
+            "prior_echo_component_status": "not_applicable",
+            "prior_clear_sky_component_status": "not_applicable",
+            "prior_echo_case_count": 0,
+            "prior_clear_sky_case_count": 0,
+            "prior_echo_cluster_count": 0,
+            "prior_clear_sky_cluster_count": 0,
+            "simultaneous_inference_test_count": 1,
+            "eligible": False,
+            "rejection_reasons": ("no_material_outcome",),
+            "contract": "neural-prior-promotion-evidence-v6",
+        }
+        evidence_digest = json_digest(payload)
+        overrides: dict[str, object] = {
+            "promotion_evidence_digest": evidence_digest,
+            "candidate_manifest_json": json.dumps(manifest_payload, sort_keys=True),
+            "holdout_plan_digest": "5" * 64,
+            "evaluation_digests_json": json.dumps(["e" * 64]),
+            "evaluation_payloads_json": json.dumps([evaluation_payload]),
+            "intervention_digests_json": "[]",
+            "rejection_reasons_json": json.dumps(["no_material_outcome"]),
+            "evidence_contract": payload["contract"],
+            "created_at": "2026-08-01T00:00:00+00:00",
+        }
+        column_mapping = {
+            "realized_intervention_count": "holdout_case_count",
+            "material_outcome_count": "material_case_count",
+        }
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            schema = connection.execute(
+                "PRAGMA table_info(neural_prior_promotions)"
+            ).fetchall()
+            columns = [str(row[1]) for row in schema]
+            values: list[object] = []
+            for row in schema:
+                name = str(row[1])
+                source = column_mapping.get(name, name)
+                if name in overrides:
+                    values.append(overrides[name])
+                elif source in payload:
+                    values.append(payload[source])
+                elif str(row[2]).upper() == "INTEGER":
+                    values.append(0)
+                elif str(row[2]).upper() == "REAL":
+                    values.append(0.0)
+                else:
+                    values.append("")
+            connection.execute(
+                f"INSERT INTO neural_prior_promotions "
+                f"({','.join(columns)}) VALUES "
+                f"({','.join('?' for _ in columns)})",
+                values,
+            )
+
+        loaded = self.ledger.load_neural_prior_promotion(evidence_digest)
+        evaluations = self.ledger.load_neural_prior_promotion_evaluations(
+            evidence_digest
+        )
+        self.assertIsInstance(loaded, LegacyNeuralPriorPromotionEvidenceAuditV6)
+        self.assertIsInstance(evaluations[0], ledger_module.LegacyPromotionEvaluationAudit)
+        self.assertFalse(evaluations[0].statistical_reuse_permitted)
+
     def test_backdated_decision_cannot_be_recorded_after_issue(self) -> None:
         frames = torch.zeros((3, 2, 2), dtype=torch.float64)
         run, context, plan_digest, _ = _prospective_run_and_context(
@@ -3564,7 +3665,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 14)
+        self.assertEqual(version, 15)
 
 
 if __name__ == "__main__":

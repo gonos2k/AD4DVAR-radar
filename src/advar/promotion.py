@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
+from itertools import product
 import json
 import math
 from pathlib import Path
@@ -28,6 +29,7 @@ from .sensitivity import (
     _resolved_forecast_scores,
 )
 from .variational import (
+    _connected_component_flat_indices,
     NeuralPriorApplication,
     NeuralPriorInferenceRunner,
 )
@@ -62,6 +64,10 @@ PromotionRejectionReason = Literal[
     "insufficient_uncertainty_clusters",
     "insufficient_echo_clusters",
     "insufficient_clear_clusters",
+    "insufficient_component_samples",
+    "insufficient_component_area",
+    "insufficient_echo_objects",
+    "insufficient_bootstrap_tail_resolution",
 ]
 PriorComponentStatus = Literal["available", "not_applicable"]
 
@@ -1185,14 +1191,18 @@ class PriorHoldoutEvaluation:
     coverage_common: Tensor
     newly_issued_fraction: Tensor
     withdrawn_fraction: Tensor
-    prior_standardized_residual_mean_abs: float | None
-    prior_underdispersion_fraction: float | None
+    prior_conditional_pit_residual_mean_abs: float | None
+    prior_conditional_underdispersion_fraction: float | None
     prior_echo_intensity_nll: float | None
     prior_support_brier_score: float
+    prior_echo_support_miss_score: float | None
+    prior_echo_object_miss_score: float | None
     prior_clear_sky_false_echo_score: float | None
-    parent_prior_underdispersion_fraction: float | None
+    parent_prior_conditional_underdispersion_fraction: float | None
     parent_prior_echo_intensity_nll: float | None
     parent_prior_support_brier_score: float
+    parent_prior_echo_support_miss_score: float | None
+    parent_prior_echo_object_miss_score: float | None
     parent_prior_clear_sky_false_echo_score: float | None
     prior_echo_intensity_status: PriorComponentStatus
     prior_clear_sky_status: PriorComponentStatus
@@ -1204,16 +1214,19 @@ class PriorHoldoutEvaluation:
     prior_uncertainty_sample_count: int
     prior_echo_intensity_sample_count: int
     prior_clear_sky_sample_count: int
+    prior_echo_area_km2: float
+    prior_clear_sky_area_km2: float
+    prior_echo_object_count: int
     issue_time: str
     verification_valid_times: tuple[str, ...]
-    contract: str = "prior-holdout-evaluation-v7"
+    contract: str = "prior-holdout-evaluation-v8"
     evaluation_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use PriorHoldoutEvaluation.from_forecasts")
 
     def __post_init__(self) -> None:
-        if self.contract != "prior-holdout-evaluation-v7":
+        if self.contract != "prior-holdout-evaluation-v8":
             raise ValueError("unsupported prior holdout evaluation")
         for name in (
             "holdout_plan_digest",
@@ -1289,11 +1302,15 @@ class PriorHoldoutEvaluation:
         ):
             raise ValueError("prior component status is invalid")
         echo_values = (
-            self.prior_standardized_residual_mean_abs,
-            self.prior_underdispersion_fraction,
+            self.prior_conditional_pit_residual_mean_abs,
+            self.prior_conditional_underdispersion_fraction,
             self.prior_echo_intensity_nll,
-            self.parent_prior_underdispersion_fraction,
+            self.prior_echo_support_miss_score,
+            self.prior_echo_object_miss_score,
+            self.parent_prior_conditional_underdispersion_fraction,
             self.parent_prior_echo_intensity_nll,
+            self.parent_prior_echo_support_miss_score,
+            self.parent_prior_echo_object_miss_score,
         )
         clear_values = (
             self.prior_clear_sky_false_echo_score,
@@ -1312,6 +1329,9 @@ class PriorHoldoutEvaluation:
             )
             or echo_available != (self.prior_echo_intensity_sample_count > 0)
             or clear_available != (self.prior_clear_sky_sample_count > 0)
+            or echo_available != (self.prior_echo_area_km2 > 0.0)
+            or clear_available != (self.prior_clear_sky_area_km2 > 0.0)
+            or echo_available != (self.prior_echo_object_count > 0)
         ):
             raise ValueError("prior component applicability is inconsistent")
         if (
@@ -1325,6 +1345,12 @@ class PriorHoldoutEvaluation:
             or self.prior_echo_intensity_sample_count < 0
             or type(self.prior_clear_sky_sample_count) is not int
             or self.prior_clear_sky_sample_count < 0
+            or not math.isfinite(self.prior_echo_area_km2)
+            or self.prior_echo_area_km2 < 0.0
+            or not math.isfinite(self.prior_clear_sky_area_km2)
+            or self.prior_clear_sky_area_km2 < 0.0
+            or type(self.prior_echo_object_count) is not int
+            or self.prior_echo_object_count < 0
             or self.prior_echo_intensity_sample_count
             + self.prior_clear_sky_sample_count
             != self.prior_uncertainty_sample_count
@@ -1344,9 +1370,11 @@ class PriorHoldoutEvaluation:
                 any(not math.isfinite(value) for value in echo_floats)
                 or echo_floats[0] < 0.0
                 or not 0.0 <= echo_floats[1] <= 1.0
-                or not 0.0
-                <= echo_floats[3]
-                <= 1.0
+                or not 0.0 <= echo_floats[3] <= 1.0
+                or not 0.0 <= echo_floats[4] <= 1.0
+                or not 0.0 <= echo_floats[5] <= 1.0
+                or not 0.0 <= echo_floats[7] <= 1.0
+                or not 0.0 <= echo_floats[8] <= 1.0
             ):
                 raise ValueError("prior echo-intensity evidence is invalid")
         if clear_available:
@@ -1577,8 +1605,17 @@ class PriorHoldoutEvaluation:
         )
         candidate_probability = candidate_prior_runner.probability_contract
         parent_probability = parent_prior_runner.probability_contract
+        candidate_state = candidate_prior_runner.state_contract
+        parent_state = parent_prior_runner.state_contract
         if (
-            candidate_probability.contract_digest
+            candidate_state.contract_digest != parent_state.contract_digest
+            or candidate_state.state_product_digest
+            != input_plan.radar_product_digest
+            or candidate_evidence.state_contract_digest
+            != candidate_state.contract_digest
+            or parent_evidence.state_contract_digest
+            != candidate_state.contract_digest
+            or candidate_probability.contract_digest
             != parent_probability.contract_digest
             or candidate_probability.contract_digest
             != target_plan.prior_probability_contract_digest
@@ -1660,43 +1697,27 @@ class PriorHoldoutEvaluation:
         prior_valid = (
             uncertainty_target._valid_mask.to(input_frames_dbz.device)
             & torch.isfinite(prior_reference)
-            & torch.isfinite(candidate_prior_application.initial_background_dbz)
-            & torch.isfinite(candidate_prior_application.std_dbz)
-            & (candidate_prior_application.std_dbz > 0.0)
-            & torch.isfinite(parent_prior_application.initial_background_dbz)
-            & torch.isfinite(parent_prior_application.std_dbz)
-            & (parent_prior_application.std_dbz > 0.0)
+            & torch.isfinite(candidate_prior_application.truncated_location_dbz)
+            & torch.isfinite(candidate_prior_application.truncated_scale_dbz)
+            & (candidate_prior_application.truncated_scale_dbz > 0.0)
+            & torch.isfinite(parent_prior_application.truncated_location_dbz)
+            & torch.isfinite(parent_prior_application.truncated_scale_dbz)
+            & (parent_prior_application.truncated_scale_dbz > 0.0)
         )
         prior_sample_count = int(torch.count_nonzero(prior_valid))
         if prior_sample_count == 0:
             raise ValueError("holdout has no valid prior uncertainty samples")
         support_target = uncertainty_target._echo_support.to(
-            candidate_prior_application.support_probability.device
+            candidate_prior_application.event_probability.device
         )
-        (
-            standardized_mean,
-            underdispersion_fraction,
-            echo_intensity_nll,
-            support_brier,
-            clear_sky_false_echo,
-            echo_sample_count,
-            clear_sample_count,
-        ) = _prior_uncertainty_scores(
+        candidate_scores = _prior_uncertainty_scores(
             candidate_prior_application,
             prior_reference,
             support_target,
             prior_valid,
             support_threshold_dbz=target_plan.support_threshold_dbz,
         )
-        (
-            _,
-            parent_underdispersion_fraction,
-            parent_echo_intensity_nll,
-            parent_support_brier,
-            parent_clear_sky_false_echo,
-            parent_echo_sample_count,
-            parent_clear_sample_count,
-        ) = _prior_uncertainty_scores(
+        parent_scores = _prior_uncertainty_scores(
             parent_prior_application,
             prior_reference,
             support_target,
@@ -1704,8 +1725,10 @@ class PriorHoldoutEvaluation:
             support_threshold_dbz=target_plan.support_threshold_dbz,
         )
         if (
-            parent_echo_sample_count != echo_sample_count
-            or parent_clear_sample_count != clear_sample_count
+            parent_scores.echo_sample_count
+            != candidate_scores.echo_sample_count
+            or parent_scores.clear_sample_count
+            != candidate_scores.clear_sample_count
         ):
             raise ValueError("candidate and parent hurdle-score domains disagree")
         candidate_valid_fraction = float(
@@ -1723,6 +1746,31 @@ class PriorHoldoutEvaluation:
         grid = candidate_forecast.run.grid_time_contract
         if grid is None:
             raise ValueError("holdout prior coverage requires a physical grid")
+        echo_area_km2 = (
+            candidate_scores.echo_sample_count * grid.cell_area_m2 / 1.0e6
+        )
+        clear_area_km2 = (
+            candidate_scores.clear_sample_count * grid.cell_area_m2 / 1.0e6
+        )
+        echo_objects = _connected_component_flat_indices(
+            prior_valid & support_target.to(prior_valid)
+        )
+        echo_object_count = len(echo_objects)
+
+        def object_miss_score(application: NeuralPriorApplication) -> float | None:
+            if not echo_objects:
+                return None
+            flat_probability = application.event_probability.flatten()
+            object_scores = torch.stack(
+                tuple(
+                    (1.0 - torch.mean(flat_probability[index])).square()
+                    for index in echo_objects
+                )
+            )
+            return float(torch.mean(object_scores).detach())
+
+        candidate_object_miss = object_miss_score(candidate_prior_application)
+        parent_object_miss = object_miss_score(parent_prior_application)
         candidate_valid_area_km2 = (
             float(
                 torch.count_nonzero(
@@ -1905,24 +1953,42 @@ class PriorHoldoutEvaluation:
             coverage_common=common_coverage,
             newly_issued_fraction=newly_issued,
             withdrawn_fraction=withdrawn,
-            prior_standardized_residual_mean_abs=standardized_mean,
-            prior_underdispersion_fraction=underdispersion_fraction,
-            prior_echo_intensity_nll=echo_intensity_nll,
-            prior_support_brier_score=support_brier,
-            prior_clear_sky_false_echo_score=clear_sky_false_echo,
-            parent_prior_underdispersion_fraction=(
-                parent_underdispersion_fraction
+            prior_conditional_pit_residual_mean_abs=(
+                candidate_scores.conditional_pit_residual_mean_abs
             ),
-            parent_prior_echo_intensity_nll=parent_echo_intensity_nll,
-            parent_prior_support_brier_score=parent_support_brier,
+            prior_conditional_underdispersion_fraction=(
+                candidate_scores.conditional_underdispersion_fraction
+            ),
+            prior_echo_intensity_nll=candidate_scores.echo_intensity_nll,
+            prior_support_brier_score=candidate_scores.support_brier_score,
+            prior_echo_support_miss_score=(
+                candidate_scores.echo_support_miss_score
+            ),
+            prior_echo_object_miss_score=candidate_object_miss,
+            prior_clear_sky_false_echo_score=(
+                candidate_scores.clear_sky_false_echo_score
+            ),
+            parent_prior_conditional_underdispersion_fraction=(
+                parent_scores.conditional_underdispersion_fraction
+            ),
+            parent_prior_echo_intensity_nll=parent_scores.echo_intensity_nll,
+            parent_prior_support_brier_score=parent_scores.support_brier_score,
+            parent_prior_echo_support_miss_score=(
+                parent_scores.echo_support_miss_score
+            ),
+            parent_prior_echo_object_miss_score=parent_object_miss,
             parent_prior_clear_sky_false_echo_score=(
-                parent_clear_sky_false_echo
+                parent_scores.clear_sky_false_echo_score
             ),
             prior_echo_intensity_status=(
-                "available" if echo_sample_count else "not_applicable"
+                "available"
+                if candidate_scores.echo_sample_count
+                else "not_applicable"
             ),
             prior_clear_sky_status=(
-                "available" if clear_sample_count else "not_applicable"
+                "available"
+                if candidate_scores.clear_sample_count
+                else "not_applicable"
             ),
             prior_candidate_valid_fraction=candidate_valid_fraction,
             prior_parent_valid_fraction=parent_valid_fraction,
@@ -1930,11 +1996,72 @@ class PriorHoldoutEvaluation:
             prior_abstention_increase_vs_parent=abstention_increase,
             prior_uncertainty_target_digest=uncertainty_target.target_digest,
             prior_uncertainty_sample_count=prior_sample_count,
-            prior_echo_intensity_sample_count=echo_sample_count,
-            prior_clear_sky_sample_count=clear_sample_count,
+            prior_echo_intensity_sample_count=(
+                candidate_scores.echo_sample_count
+            ),
+            prior_clear_sky_sample_count=candidate_scores.clear_sample_count,
+            prior_echo_area_km2=echo_area_km2,
+            prior_clear_sky_area_km2=clear_area_km2,
+            prior_echo_object_count=echo_object_count,
             issue_time=issue_time,
             verification_valid_times=verification.valid_times,
         )
+
+
+@dataclass(frozen=True)
+class _PriorUncertaintyScores:
+    conditional_pit_residual_mean_abs: float | None
+    conditional_underdispersion_fraction: float | None
+    echo_intensity_nll: float | None
+    support_brier_score: float
+    echo_support_miss_score: float | None
+    clear_sky_false_echo_score: float | None
+    echo_sample_count: int
+    clear_sample_count: int
+
+
+def _truncated_gaussian_diagnostics(
+    location_dbz: Tensor,
+    scale_dbz: Tensor,
+    reference_dbz: Tensor,
+    *,
+    support_threshold_dbz: float,
+) -> tuple[Tensor, Tensor]:
+    """Stable float64 NLL and conditional-PIT residual for a lower truncation."""
+
+    location = location_dbz.to(torch.float64)
+    scale = scale_dbz.to(torch.float64)
+    reference = reference_dbz.to(torch.float64)
+    if (
+        not bool(torch.all(torch.isfinite(location)))
+        or not bool(torch.all(torch.isfinite(scale) & (scale > 0.0)))
+        or not bool(torch.all(torch.isfinite(reference)))
+        or bool(torch.any(reference < support_threshold_dbz))
+    ):
+        raise ValueError("truncated-Gaussian inputs violate their support")
+    lower = (support_threshold_dbz - location) / scale
+    standardized = (reference - location) / scale
+    log_survival_lower = torch.special.log_ndtr(-lower)
+    log_survival_reference = torch.special.log_ndtr(-standardized)
+    nll = (
+        0.5 * standardized.square()
+        + torch.log(scale)
+        + 0.5 * math.log(2.0 * math.pi)
+        + log_survival_lower
+    )
+    log_survival_ratio = torch.minimum(
+        log_survival_reference - log_survival_lower,
+        torch.zeros((), dtype=torch.float64, device=location.device),
+    )
+    conditional_cdf = -torch.expm1(log_survival_ratio)
+    epsilon = torch.finfo(torch.float64).eps
+    conditional_cdf = conditional_cdf.clamp(epsilon, 1.0 - epsilon)
+    pit_residual = torch.special.ndtri(conditional_cdf)
+    if not bool(torch.all(torch.isfinite(nll))) or not bool(
+        torch.all(torch.isfinite(pit_residual))
+    ):
+        raise ValueError("truncated-Gaussian score is not finite")
+    return nll, pit_residual
 
 
 def _prior_uncertainty_scores(
@@ -1944,15 +2071,7 @@ def _prior_uncertainty_scores(
     evaluation_mask: Tensor,
     *,
     support_threshold_dbz: float,
-) -> tuple[
-    float | None,
-    float | None,
-    float | None,
-    float,
-    float | None,
-    int,
-    int,
-]:
+) -> _PriorUncertaintyScores:
     """Score support everywhere and truncated intensity only on echoes."""
 
     echo_mask = evaluation_mask & support_target.to(
@@ -1968,45 +2087,47 @@ def _prior_uncertainty_scores(
     mean_absolute: float | None = None
     underdispersion: float | None = None
     intensity_nll: float | None = None
+    echo_support_miss: float | None = None
     if echo_count:
-        mean = application.initial_background_dbz.masked_select(echo_mask)
+        location = application.truncated_location_dbz.masked_select(echo_mask)
         reference = reference_dbz.masked_select(echo_mask)
-        std = application.std_dbz.masked_select(echo_mask)
-        signed = (mean - reference) / std
-        absolute = torch.abs(signed)
+        scale = application.truncated_scale_dbz.masked_select(echo_mask)
+        nll, pit_residual = _truncated_gaussian_diagnostics(
+            location,
+            scale,
+            reference,
+            support_threshold_dbz=support_threshold_dbz,
+        )
+        absolute = torch.abs(pit_residual)
         mean_absolute = float(torch.mean(absolute).detach())
         underdispersion = float(
             torch.mean((absolute > 2.0).to(absolute)).detach()
         )
-        lower = (support_threshold_dbz - mean) / std
-        survival = torch.special.ndtr(-lower).clamp_min(
-            torch.finfo(std.dtype).tiny
+        intensity_nll = float(torch.mean(nll).detach())
+        echo_probability = application.event_probability.masked_select(
+            echo_mask
         )
-        intensity_nll = float(
-            torch.mean(
-                0.5 * signed.square()
-                + torch.log(std)
-                + 0.5 * math.log(2.0 * math.pi)
-                + torch.log(survival)
-            ).detach()
+        echo_support_miss = float(
+            torch.mean((1.0 - echo_probability).square()).detach()
         )
-    support = application.support_probability.masked_select(evaluation_mask)
-    target = support_target.to(application.support_probability).masked_select(
+    support = application.event_probability.masked_select(evaluation_mask)
+    target = support_target.to(application.event_probability).masked_select(
         evaluation_mask
     )
     brier = float(torch.mean((support - target).square()).detach())
-    clear_probability = application.support_probability.masked_select(clear_mask)
+    clear_probability = application.event_probability.masked_select(clear_mask)
     clear_false_echo = None if clear_count == 0 else float(
         torch.mean(clear_probability.square()).detach()
     )
-    return (
-        mean_absolute,
-        underdispersion,
-        intensity_nll,
-        brier,
-        clear_false_echo,
-        echo_count,
-        clear_count,
+    return _PriorUncertaintyScores(
+        conditional_pit_residual_mean_abs=mean_absolute,
+        conditional_underdispersion_fraction=underdispersion,
+        echo_intensity_nll=intensity_nll,
+        support_brier_score=brier,
+        echo_support_miss_score=echo_support_miss,
+        clear_sky_false_echo_score=clear_false_echo,
+        echo_sample_count=echo_count,
+        clear_sample_count=clear_count,
     )
 
 
@@ -2017,7 +2138,7 @@ def _new_prior_holdout_evaluation(**values: object) -> PriorHoldoutEvaluation:
     object.__setattr__(
         result,
         "contract",
-        "prior-holdout-evaluation-v7",
+        "prior-holdout-evaluation-v8",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -2085,25 +2206,37 @@ def _evaluation_digest(value: PriorHoldoutEvaluation) -> str:
             "coverage_common": tensor_digest(value.coverage_common),
             "newly_issued_fraction": tensor_digest(value.newly_issued_fraction),
             "withdrawn_fraction": tensor_digest(value.withdrawn_fraction),
-            "prior_standardized_residual_mean_abs": (
-                value.prior_standardized_residual_mean_abs
+            "prior_conditional_pit_residual_mean_abs": (
+                value.prior_conditional_pit_residual_mean_abs
             ),
-            "prior_underdispersion_fraction": (
-                value.prior_underdispersion_fraction
+            "prior_conditional_underdispersion_fraction": (
+                value.prior_conditional_underdispersion_fraction
             ),
             "prior_echo_intensity_nll": value.prior_echo_intensity_nll,
             "prior_support_brier_score": value.prior_support_brier_score,
+            "prior_echo_support_miss_score": (
+                value.prior_echo_support_miss_score
+            ),
+            "prior_echo_object_miss_score": (
+                value.prior_echo_object_miss_score
+            ),
             "prior_clear_sky_false_echo_score": (
                 value.prior_clear_sky_false_echo_score
             ),
-            "parent_prior_underdispersion_fraction": (
-                value.parent_prior_underdispersion_fraction
+            "parent_prior_conditional_underdispersion_fraction": (
+                value.parent_prior_conditional_underdispersion_fraction
             ),
             "parent_prior_echo_intensity_nll": (
                 value.parent_prior_echo_intensity_nll
             ),
             "parent_prior_support_brier_score": (
                 value.parent_prior_support_brier_score
+            ),
+            "parent_prior_echo_support_miss_score": (
+                value.parent_prior_echo_support_miss_score
+            ),
+            "parent_prior_echo_object_miss_score": (
+                value.parent_prior_echo_object_miss_score
             ),
             "parent_prior_clear_sky_false_echo_score": (
                 value.parent_prior_clear_sky_false_echo_score
@@ -2128,6 +2261,9 @@ def _evaluation_digest(value: PriorHoldoutEvaluation) -> str:
                 value.prior_echo_intensity_sample_count
             ),
             "prior_clear_sky_sample_count": value.prior_clear_sky_sample_count,
+            "prior_echo_area_km2": value.prior_echo_area_km2,
+            "prior_clear_sky_area_km2": value.prior_clear_sky_area_km2,
+            "prior_echo_object_count": value.prior_echo_object_count,
             "issue_time": value.issue_time,
             "verification_valid_times": list(value.verification_valid_times),
         }
@@ -2161,12 +2297,19 @@ class NeuralPriorPromotionPolicy:
     maximum_coverage_loss: float = 0.05
     maximum_newly_issued_fraction: float = 0.05
     maximum_withdrawn_fraction: float = 0.05
-    maximum_prior_standardized_residual_mean_abs: float = 2.0
-    maximum_prior_underdispersion_fraction: float = 0.1
+    maximum_prior_conditional_pit_residual_mean_abs: float = 2.0
+    maximum_prior_conditional_underdispersion_fraction: float = 0.1
     maximum_prior_echo_intensity_nll: float = 4.0
     maximum_prior_support_brier_score: float = 0.25
+    maximum_prior_echo_support_miss_score: float = 0.25
+    maximum_prior_echo_object_miss_score: float = 0.25
     maximum_prior_clear_sky_false_echo_score: float = 0.25
     minimum_prior_uncertainty_samples_per_case: int = 1
+    minimum_prior_echo_pixels_per_case: int = 16
+    minimum_prior_clear_pixels_per_case: int = 16
+    minimum_prior_echo_area_km2_per_case: float = 1.0
+    minimum_prior_clear_area_km2_per_case: float = 1.0
+    minimum_prior_echo_objects_per_case: int = 1
     minimum_prior_echo_cases: int = 5
     minimum_prior_clear_cases: int = 5
     minimum_prior_echo_clusters: int = 5
@@ -2174,21 +2317,25 @@ class NeuralPriorPromotionPolicy:
     minimum_uncertainty_cases_per_regime: int = 2
     minimum_echo_cases_per_regime: int = 2
     minimum_clear_cases_per_regime: int = 2
-    minimum_uncertainty_clusters_per_regime: int = 2
-    minimum_echo_clusters_per_regime: int = 2
-    minimum_clear_clusters_per_regime: int = 2
+    minimum_uncertainty_clusters_per_regime: int = 5
+    minimum_echo_clusters_per_regime: int = 5
+    minimum_clear_clusters_per_regime: int = 5
     minimum_prior_valid_fraction: float = 0.5
     minimum_prior_valid_area_km2: float = 1.0
     maximum_abstention_increase_vs_parent: float = 0.05
     prior_abstention_penalty_weight: float = 1.0
     maximum_prior_echo_intensity_nll_increase: float = 0.0
     maximum_prior_support_brier_increase: float = 0.0
+    maximum_prior_echo_support_miss_increase: float = 0.0
+    maximum_prior_echo_object_miss_increase: float = 0.0
     maximum_prior_clear_sky_false_echo_increase: float = 0.0
-    maximum_prior_underdispersion_increase: float = 0.0
-    contract: str = "neural-prior-promotion-policy-v11"
+    maximum_prior_conditional_underdispersion_increase: float = 0.0
+    minimum_bootstrap_tail_replicates: int = 20
+    maximum_exact_sign_clusters: int = 16
+    contract: str = "neural-prior-promotion-policy-v12"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-policy-v11":
+        if self.contract != "neural-prior-promotion-policy-v12":
             raise ValueError("unsupported neural-prior promotion policy")
         if not self.metric_scales or len({x.metric_name for x in self.metric_scales}) != len(self.metric_scales):
             raise ValueError("promotion metric scales must be unique")
@@ -2216,6 +2363,9 @@ class NeuralPriorPromotionPolicy:
             self.minimum_distinct_range_regimes,
             self.minimum_material_clusters,
             self.minimum_prior_uncertainty_samples_per_case,
+            self.minimum_prior_echo_pixels_per_case,
+            self.minimum_prior_clear_pixels_per_case,
+            self.minimum_prior_echo_objects_per_case,
             self.minimum_prior_echo_cases,
             self.minimum_prior_clear_cases,
             self.minimum_prior_echo_clusters,
@@ -2226,6 +2376,8 @@ class NeuralPriorPromotionPolicy:
             self.minimum_uncertainty_clusters_per_regime,
             self.minimum_echo_clusters_per_regime,
             self.minimum_clear_clusters_per_regime,
+            self.minimum_bootstrap_tail_replicates,
+            self.maximum_exact_sign_clusters,
             self.bootstrap_samples,
         )
         if any(type(value) is not int or value <= 0 for value in integer_limits):
@@ -2238,14 +2390,18 @@ class NeuralPriorPromotionPolicy:
             self.maximum_coverage_loss,
             self.maximum_newly_issued_fraction,
             self.maximum_withdrawn_fraction,
-            self.maximum_prior_underdispersion_fraction,
+            self.maximum_prior_conditional_underdispersion_fraction,
             self.maximum_prior_support_brier_score,
+            self.maximum_prior_echo_support_miss_score,
+            self.maximum_prior_echo_object_miss_score,
             self.maximum_prior_clear_sky_false_echo_score,
             self.minimum_prior_valid_fraction,
             self.maximum_abstention_increase_vs_parent,
         )
         if any(not math.isfinite(value) or not 0 <= value <= 1 for value in probabilities):
             raise ValueError("promotion fractions must be inside [0,1]")
+        if not 0.0 < self.confidence_level < 1.0:
+            raise ValueError("promotion confidence level must be inside (0,1)")
         for name, value in (
             (
                 "minimum_mean_normalized_improvement",
@@ -2256,14 +2412,22 @@ class NeuralPriorPromotionPolicy:
                 self.maximum_single_normalized_degradation,
             ),
             (
-                "maximum_prior_standardized_residual_mean_abs",
-                self.maximum_prior_standardized_residual_mean_abs,
+                "maximum_prior_conditional_pit_residual_mean_abs",
+                self.maximum_prior_conditional_pit_residual_mean_abs,
             ),
             (
                 "maximum_prior_echo_intensity_nll",
                 self.maximum_prior_echo_intensity_nll,
             ),
             ("minimum_prior_valid_area_km2", self.minimum_prior_valid_area_km2),
+            (
+                "minimum_prior_echo_area_km2_per_case",
+                self.minimum_prior_echo_area_km2_per_case,
+            ),
+            (
+                "minimum_prior_clear_area_km2_per_case",
+                self.minimum_prior_clear_area_km2_per_case,
+            ),
             (
                 "prior_abstention_penalty_weight",
                 self.prior_abstention_penalty_weight,
@@ -2277,12 +2441,20 @@ class NeuralPriorPromotionPolicy:
                 self.maximum_prior_support_brier_increase,
             ),
             (
+                "maximum_prior_echo_support_miss_increase",
+                self.maximum_prior_echo_support_miss_increase,
+            ),
+            (
+                "maximum_prior_echo_object_miss_increase",
+                self.maximum_prior_echo_object_miss_increase,
+            ),
+            (
                 "maximum_prior_clear_sky_false_echo_increase",
                 self.maximum_prior_clear_sky_false_echo_increase,
             ),
             (
-                "maximum_prior_underdispersion_increase",
-                self.maximum_prior_underdispersion_increase,
+                "maximum_prior_conditional_underdispersion_increase",
+                self.maximum_prior_conditional_underdispersion_increase,
             ),
         ):
             if not math.isfinite(value) or value < 0.0:
@@ -2323,11 +2495,11 @@ class NeuralPriorPromotionPolicy:
             "maximum_coverage_loss": self.maximum_coverage_loss,
             "maximum_newly_issued_fraction": self.maximum_newly_issued_fraction,
             "maximum_withdrawn_fraction": self.maximum_withdrawn_fraction,
-            "maximum_prior_standardized_residual_mean_abs": (
-                self.maximum_prior_standardized_residual_mean_abs
+            "maximum_prior_conditional_pit_residual_mean_abs": (
+                self.maximum_prior_conditional_pit_residual_mean_abs
             ),
-            "maximum_prior_underdispersion_fraction": (
-                self.maximum_prior_underdispersion_fraction
+            "maximum_prior_conditional_underdispersion_fraction": (
+                self.maximum_prior_conditional_underdispersion_fraction
             ),
             "maximum_prior_echo_intensity_nll": (
                 self.maximum_prior_echo_intensity_nll
@@ -2335,11 +2507,32 @@ class NeuralPriorPromotionPolicy:
             "maximum_prior_support_brier_score": (
                 self.maximum_prior_support_brier_score
             ),
+            "maximum_prior_echo_support_miss_score": (
+                self.maximum_prior_echo_support_miss_score
+            ),
+            "maximum_prior_echo_object_miss_score": (
+                self.maximum_prior_echo_object_miss_score
+            ),
             "maximum_prior_clear_sky_false_echo_score": (
                 self.maximum_prior_clear_sky_false_echo_score
             ),
             "minimum_prior_uncertainty_samples_per_case": (
                 self.minimum_prior_uncertainty_samples_per_case
+            ),
+            "minimum_prior_echo_pixels_per_case": (
+                self.minimum_prior_echo_pixels_per_case
+            ),
+            "minimum_prior_clear_pixels_per_case": (
+                self.minimum_prior_clear_pixels_per_case
+            ),
+            "minimum_prior_echo_area_km2_per_case": (
+                self.minimum_prior_echo_area_km2_per_case
+            ),
+            "minimum_prior_clear_area_km2_per_case": (
+                self.minimum_prior_clear_area_km2_per_case
+            ),
+            "minimum_prior_echo_objects_per_case": (
+                self.minimum_prior_echo_objects_per_case
             ),
             "minimum_prior_echo_cases": self.minimum_prior_echo_cases,
             "minimum_prior_clear_cases": self.minimum_prior_clear_cases,
@@ -2373,12 +2566,22 @@ class NeuralPriorPromotionPolicy:
             "maximum_prior_support_brier_increase": (
                 self.maximum_prior_support_brier_increase
             ),
+            "maximum_prior_echo_support_miss_increase": (
+                self.maximum_prior_echo_support_miss_increase
+            ),
+            "maximum_prior_echo_object_miss_increase": (
+                self.maximum_prior_echo_object_miss_increase
+            ),
             "maximum_prior_clear_sky_false_echo_increase": (
                 self.maximum_prior_clear_sky_false_echo_increase
             ),
-            "maximum_prior_underdispersion_increase": (
-                self.maximum_prior_underdispersion_increase
+            "maximum_prior_conditional_underdispersion_increase": (
+                self.maximum_prior_conditional_underdispersion_increase
             ),
+            "minimum_bootstrap_tail_replicates": (
+                self.minimum_bootstrap_tail_replicates
+            ),
+            "maximum_exact_sign_clusters": self.maximum_exact_sign_clusters,
         })
 
 
@@ -2477,6 +2680,28 @@ class LegacyNeuralPriorPromotionEvidenceAuditV5:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV6:
+    """Original v6 decision retained before prior-state score closure."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v6"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v6",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
@@ -2501,8 +2726,10 @@ class NeuralPriorPromotionEvidence:
     maximum_normalized_degradation: float
     prior_echo_intensity_nll_increase_upper_bound: float
     prior_support_brier_increase_upper_bound: float
+    prior_echo_support_miss_increase_upper_bound: float
+    prior_echo_object_miss_increase_upper_bound: float
     prior_clear_sky_false_echo_increase_upper_bound: float
-    prior_underdispersion_increase_upper_bound: float
+    prior_conditional_underdispersion_increase_upper_bound: float
     prior_echo_component_status: PriorComponentStatus
     prior_clear_sky_component_status: PriorComponentStatus
     prior_echo_case_count: int
@@ -2510,13 +2737,23 @@ class NeuralPriorPromotionEvidence:
     prior_echo_cluster_count: int
     prior_clear_sky_cluster_count: int
     simultaneous_inference_test_count: int
+    simultaneous_inference_method: Literal[
+        "exact_sign_enumeration", "studentized_multiplier"
+    ]
+    simultaneous_inference_effective_replicates: int
+    simultaneous_inference_critical_quantile: float
+    simultaneous_inference_monte_carlo_standard_error: float
+    simultaneous_inference_tail_replicates: float
+    cluster_bootstrap_tail_replicates: float
+    certified_applicability_regime_groups: tuple[tuple[str, str], ...]
+    requires_parent_fallback_outside_certified_applicability: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v6"
+    contract: str = "neural-prior-promotion-evidence-v7"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v6":
+        if self.contract != "neural-prior-promotion-evidence-v7":
             raise ValueError("unsupported neural-prior promotion evidence")
         for name in ("candidate_prior_digest", "parent_prior_digest", "candidate_manifest_digest", "policy_digest", "trust_store_digest"):
             _require_digest(name, getattr(self, name))
@@ -2579,11 +2816,37 @@ class NeuralPriorPromotionEvidence:
             for value in (
                 self.prior_echo_intensity_nll_increase_upper_bound,
                 self.prior_support_brier_increase_upper_bound,
+                self.prior_echo_support_miss_increase_upper_bound,
+                self.prior_echo_object_miss_increase_upper_bound,
                 self.prior_clear_sky_false_echo_increase_upper_bound,
-                self.prior_underdispersion_increase_upper_bound,
+                self.prior_conditional_underdispersion_increase_upper_bound,
             )
         ):
             raise ValueError("promotion uncertainty bounds are invalid")
+        if (
+            self.simultaneous_inference_method
+            not in ("exact_sign_enumeration", "studentized_multiplier")
+            or type(self.simultaneous_inference_effective_replicates) is not int
+            or self.simultaneous_inference_effective_replicates <= 0
+            or not math.isfinite(self.simultaneous_inference_critical_quantile)
+            or not math.isfinite(
+                self.simultaneous_inference_monte_carlo_standard_error
+            )
+            or self.simultaneous_inference_monte_carlo_standard_error < 0.0
+            or not math.isfinite(self.simultaneous_inference_tail_replicates)
+            or self.simultaneous_inference_tail_replicates < 0.0
+            or not math.isfinite(self.cluster_bootstrap_tail_replicates)
+            or self.cluster_bootstrap_tail_replicates < 0.0
+            or self.requires_parent_fallback_outside_certified_applicability
+            is not True
+            or len(set(self.certified_applicability_regime_groups))
+            != len(self.certified_applicability_regime_groups)
+            or any(
+                not regime or not range_regime
+                for regime, range_regime in self.certified_applicability_regime_groups
+            )
+        ):
+            raise ValueError("promotion simultaneous-inference evidence is invalid")
         if self.eligible != (not self.rejection_reasons):
             raise ValueError("promotion eligibility and reasons disagree")
         object.__setattr__(self, "promotion_evidence_digest", json_digest(self._payload()))
@@ -2682,7 +2945,14 @@ def _cluster_bounds(
 
 @dataclass(frozen=True)
 class _UncertaintyComparison:
-    component: Literal["intensity", "support", "clear", "underdispersion"]
+    component: Literal[
+        "intensity",
+        "support",
+        "echo_miss",
+        "object_miss",
+        "clear",
+        "underdispersion",
+    ]
     group: tuple[str, str] | None
     values: tuple[float, ...]
     clusters: tuple[tuple[str, str, str], ...]
@@ -2704,13 +2974,24 @@ def _cluster_means(
     }
 
 
+@dataclass(frozen=True)
+class _SimultaneousInferenceResult:
+    bounds: dict[str, float]
+    test_count: int
+    method: Literal["exact_sign_enumeration", "studentized_multiplier"]
+    effective_replicates: int
+    critical_quantile: float
+    monte_carlo_standard_error: float
+    tail_replicates: float
+
+
 def _simultaneous_uncertainty_upper_bounds(
     comparisons: tuple[_UncertaintyComparison, ...],
     policy: NeuralPriorPromotionPolicy,
     *,
     candidate_family_size: int,
-) -> tuple[dict[str, float], int]:
-    """Shared-cluster max-stat UCBs, Bonferroni-adjusted across candidates."""
+) -> _SimultaneousInferenceResult:
+    """Studentized shared-cluster max-stat UCBs across all score families."""
 
     if not comparisons:
         raise ValueError("simultaneous inference requires comparisons")
@@ -2721,40 +3002,82 @@ def _simultaneous_uncertainty_upper_bounds(
         sum(values.values()) / len(values)
         for _, values in retained
     )
+    standard_errors = tuple(
+        math.sqrt(
+            sum((value - mean) ** 2 for value in values.values())
+            / (len(values) * (len(values) - 1))
+        )
+        if len(values) > 1
+        else 0.0
+        for (_, values), mean in zip(retained, observed, strict=True)
+    )
     cluster_universe = tuple(
         sorted({key for _, values in retained for key in values})
     )
-    generator = random.Random(1)
-    maximum_centered_statistics: list[float] = []
-    for _ in range(policy.bootstrap_samples):
-        multipliers = {
-            key: -1.0 if generator.randrange(2) == 0 else 1.0
-            for key in cluster_universe
-        }
-        centered: list[float] = []
-        for index, (_, cluster_values) in enumerate(retained):
-            centered.append(
-                sum(
-                    multipliers[key] * (value - observed[index])
-                    for key, value in cluster_values.items()
-                )
-                / len(cluster_values)
+    if len(cluster_universe) <= policy.maximum_exact_sign_clusters:
+        multiplier_rows = product((-1.0, 1.0), repeat=len(cluster_universe))
+        method: Literal[
+            "exact_sign_enumeration", "studentized_multiplier"
+        ] = "exact_sign_enumeration"
+        effective_replicates = 2 ** len(cluster_universe)
+    else:
+        generator = random.Random(1)
+        multiplier_rows = (
+            tuple(
+                -1.0 if generator.randrange(2) == 0 else 1.0
+                for _ in cluster_universe
             )
-        maximum_centered_statistics.append(max(centered))
+            for _ in range(policy.bootstrap_samples)
+        )
+        method = "studentized_multiplier"
+        effective_replicates = policy.bootstrap_samples
+    maximum_statistics: list[float] = []
+    for row in multiplier_rows:
+        multipliers = dict(zip(cluster_universe, row, strict=True))
+        studentized: list[float] = []
+        for index, (_, cluster_values) in enumerate(retained):
+            centered = sum(
+                multipliers[key] * (value - observed[index])
+                for key, value in cluster_values.items()
+            ) / len(cluster_values)
+            standard_error = standard_errors[index]
+            studentized.append(
+                centered / standard_error if standard_error > 0.0 else 0.0
+            )
+        maximum_statistics.append(max(studentized))
     alpha = (1.0 - policy.confidence_level) / (2.0 * candidate_family_size)
-    ordered = sorted(maximum_centered_statistics)
+    ordered = sorted(maximum_statistics)
     index = min(
         len(ordered) - 1,
-        max(0, int((1.0 - alpha) * len(ordered))),
+        max(0, math.ceil((1.0 - alpha) * len(ordered)) - 1),
     )
     critical = ordered[index]
     bounds: dict[str, float] = {}
-    for (comparison, _), mean in zip(retained, observed, strict=True):
+    for (comparison, _), mean, standard_error in zip(
+        retained,
+        observed,
+        standard_errors,
+        strict=True,
+    ):
         bounds[comparison.component] = max(
             bounds.get(comparison.component, -math.inf),
-            mean + critical,
+            mean + critical * standard_error,
         )
-    return bounds, candidate_family_size * len(comparisons)
+    tail_replicates = effective_replicates * alpha
+    monte_carlo_error = (
+        0.0
+        if method == "exact_sign_enumeration"
+        else math.sqrt(alpha * (1.0 - alpha) / effective_replicates)
+    )
+    return _SimultaneousInferenceResult(
+        bounds=bounds,
+        test_count=candidate_family_size * len(comparisons),
+        method=method,
+        effective_replicates=effective_replicates,
+        critical_quantile=1.0 - alpha,
+        monte_carlo_standard_error=monte_carlo_error,
+        tail_replicates=tail_replicates,
+    )
 
 
 def compute_neural_prior_promotion(
@@ -2797,11 +3120,20 @@ def compute_neural_prior_promotion(
     material_evaluations: list[PriorHoldoutEvaluation] = []
     maximum_degradation = 0.0
     uncertainty_records: dict[
-        Literal["intensity", "support", "clear", "underdispersion"],
+        Literal[
+            "intensity",
+            "support",
+            "echo_miss",
+            "object_miss",
+            "clear",
+            "underdispersion",
+        ],
         list[tuple[PriorHoldoutEvaluation, float, tuple[str, str, str]]],
     ] = {
         "intensity": [],
         "support": [],
+        "echo_miss": [],
+        "object_miss": [],
         "clear": [],
         "underdispersion": [],
     }
@@ -2832,8 +3164,12 @@ def compute_neural_prior_promotion(
         if evaluation.prior_echo_intensity_status == "available":
             assert evaluation.prior_echo_intensity_nll is not None
             assert evaluation.parent_prior_echo_intensity_nll is not None
-            assert evaluation.prior_underdispersion_fraction is not None
-            assert evaluation.parent_prior_underdispersion_fraction is not None
+            assert evaluation.prior_echo_support_miss_score is not None
+            assert evaluation.parent_prior_echo_support_miss_score is not None
+            assert evaluation.prior_echo_object_miss_score is not None
+            assert evaluation.parent_prior_echo_object_miss_score is not None
+            assert evaluation.prior_conditional_underdispersion_fraction is not None
+            assert evaluation.parent_prior_conditional_underdispersion_fraction is not None
             uncertainty_records["intensity"].append(
                 (
                     evaluation,
@@ -2845,8 +3181,24 @@ def compute_neural_prior_promotion(
             uncertainty_records["underdispersion"].append(
                 (
                     evaluation,
-                    evaluation.prior_underdispersion_fraction
-                    - evaluation.parent_prior_underdispersion_fraction,
+                    evaluation.prior_conditional_underdispersion_fraction
+                    - evaluation.parent_prior_conditional_underdispersion_fraction,
+                    uncertainty_cluster,
+                )
+            )
+            uncertainty_records["echo_miss"].append(
+                (
+                    evaluation,
+                    evaluation.prior_echo_support_miss_score
+                    - evaluation.parent_prior_echo_support_miss_score,
+                    uncertainty_cluster,
+                )
+            )
+            uncertainty_records["object_miss"].append(
+                (
+                    evaluation,
+                    evaluation.prior_echo_object_miss_score
+                    - evaluation.parent_prior_echo_object_miss_score,
                     uncertainty_cluster,
                 )
             )
@@ -2873,14 +3225,20 @@ def compute_neural_prior_promotion(
         ):
             reasons.append("unreliable_prior_uncertainty")
         if evaluation.prior_echo_intensity_status == "available":
-            assert evaluation.prior_standardized_residual_mean_abs is not None
-            assert evaluation.prior_underdispersion_fraction is not None
+            assert evaluation.prior_conditional_pit_residual_mean_abs is not None
+            assert evaluation.prior_conditional_underdispersion_fraction is not None
             assert evaluation.prior_echo_intensity_nll is not None
+            assert evaluation.prior_echo_support_miss_score is not None
+            assert evaluation.prior_echo_object_miss_score is not None
             if (
-                evaluation.prior_standardized_residual_mean_abs
-                > policy.maximum_prior_standardized_residual_mean_abs
-                or evaluation.prior_underdispersion_fraction
-                > policy.maximum_prior_underdispersion_fraction
+                evaluation.prior_conditional_pit_residual_mean_abs
+                > policy.maximum_prior_conditional_pit_residual_mean_abs
+                or evaluation.prior_conditional_underdispersion_fraction
+                > policy.maximum_prior_conditional_underdispersion_fraction
+                or evaluation.prior_echo_support_miss_score
+                > policy.maximum_prior_echo_support_miss_score
+                or evaluation.prior_echo_object_miss_score
+                > policy.maximum_prior_echo_object_miss_score
                 or (
                     evaluation.prior_echo_intensity_nll
                     + policy.prior_abstention_penalty_weight
@@ -2889,12 +3247,37 @@ def compute_neural_prior_promotion(
                 > policy.maximum_prior_echo_intensity_nll
             ):
                 reasons.append("unreliable_prior_uncertainty")
+            if (
+                evaluation.prior_echo_intensity_sample_count
+                < policy.minimum_prior_echo_pixels_per_case
+            ):
+                reasons.append("insufficient_component_samples")
+            if (
+                evaluation.prior_echo_area_km2
+                < policy.minimum_prior_echo_area_km2_per_case
+            ):
+                reasons.append("insufficient_component_area")
+            if (
+                evaluation.prior_echo_object_count
+                < policy.minimum_prior_echo_objects_per_case
+            ):
+                reasons.append("insufficient_echo_objects")
         if evaluation.prior_clear_sky_status == "available":
             assert evaluation.prior_clear_sky_false_echo_score is not None
             if evaluation.prior_clear_sky_false_echo_score > (
                 policy.maximum_prior_clear_sky_false_echo_score
             ):
                 reasons.append("unreliable_prior_uncertainty")
+            if (
+                evaluation.prior_clear_sky_sample_count
+                < policy.minimum_prior_clear_pixels_per_case
+            ):
+                reasons.append("insufficient_component_samples")
+            if (
+                evaluation.prior_clear_sky_area_km2
+                < policy.minimum_prior_clear_area_km2_per_case
+            ):
+                reasons.append("insufficient_component_area")
         if (
             evaluation.prior_candidate_valid_fraction
             < policy.minimum_prior_valid_fraction
@@ -2976,6 +3359,15 @@ def compute_neural_prior_promotion(
         )
     else:
         beneficial = harmful = mean = lower_beneficial = upper_harmful = lower_mean = 0.0
+    family_size = len(plan.candidate_family_digests)
+    cluster_bootstrap_tail_replicates = policy.bootstrap_samples * (
+        (1.0 - policy.confidence_level) / (2.0 * family_size)
+    )
+    if (
+        cluster_bootstrap_tail_replicates
+        < policy.minimum_bootstrap_tail_replicates
+    ):
+        reasons.append("insufficient_bootstrap_tail_resolution")
     if lower_beneficial < policy.minimum_beneficial_fraction:
         reasons.append("insufficient_beneficial_fraction")
     if upper_harmful > policy.maximum_harmful_fraction:
@@ -2997,40 +3389,58 @@ def compute_neural_prior_promotion(
     if len(clear_clusters) < policy.minimum_prior_clear_clusters:
         reasons.append("insufficient_clear_clusters")
     groups = sorted({(item.regime, item.range_regime) for item in evaluations})
+    certified_groups: list[tuple[str, str]] = []
     for group in groups:
         support_group = [
             item
             for item in uncertainty_records["support"]
             if (item[0].regime, item[0].range_regime) == group
         ]
-        if len(support_group) < policy.minimum_uncertainty_cases_per_regime:
-            reasons.append("insufficient_uncertainty_clusters")
-        if len({item[2] for item in support_group}) < (
+        support_cases_ok = (
+            len(support_group) >= policy.minimum_uncertainty_cases_per_regime
+        )
+        support_clusters_ok = len({item[2] for item in support_group}) >= (
             policy.minimum_uncertainty_clusters_per_regime
-        ):
+        )
+        if not support_cases_ok:
+            reasons.append("insufficient_uncertainty_clusters")
+        if not support_clusters_ok:
             reasons.append("insufficient_uncertainty_clusters")
         echo_group = [
             item
             for item in echo_records
             if (item[0].regime, item[0].range_regime) == group
         ]
-        if echo_group and len(echo_group) < policy.minimum_echo_cases_per_regime:
-            reasons.append("insufficient_prior_echo_cases")
-        if echo_group and len({item[2] for item in echo_group}) < (
+        echo_cases_ok = len(echo_group) >= policy.minimum_echo_cases_per_regime
+        echo_clusters_ok = len({item[2] for item in echo_group}) >= (
             policy.minimum_echo_clusters_per_regime
-        ):
+        )
+        if echo_group and not echo_cases_ok:
+            reasons.append("insufficient_prior_echo_cases")
+        if echo_group and not echo_clusters_ok:
             reasons.append("insufficient_echo_clusters")
         clear_group = [
             item
             for item in clear_records
             if (item[0].regime, item[0].range_regime) == group
         ]
-        if clear_group and len(clear_group) < policy.minimum_clear_cases_per_regime:
-            reasons.append("insufficient_prior_clear_cases")
-        if clear_group and len({item[2] for item in clear_group}) < (
+        clear_cases_ok = len(clear_group) >= policy.minimum_clear_cases_per_regime
+        clear_clusters_ok = len({item[2] for item in clear_group}) >= (
             policy.minimum_clear_clusters_per_regime
-        ):
+        )
+        if clear_group and not clear_cases_ok:
+            reasons.append("insufficient_prior_clear_cases")
+        if clear_group and not clear_clusters_ok:
             reasons.append("insufficient_clear_clusters")
+        if (
+            support_cases_ok
+            and support_clusters_ok
+            and echo_cases_ok
+            and echo_clusters_ok
+            and clear_cases_ok
+            and clear_clusters_ok
+        ):
+            certified_groups.append(group)
     comparisons: list[_UncertaintyComparison] = []
     for component, records in uncertainty_records.items():
         if not records:
@@ -3060,26 +3470,34 @@ def compute_neural_prior_promotion(
                     clusters=tuple(item[2] for item in selected),
                 )
             )
-    family_size = len(plan.candidate_family_digests)
-    simultaneous_bounds, simultaneous_test_count = (
-        _simultaneous_uncertainty_upper_bounds(
-            tuple(comparisons),
-            policy,
-            candidate_family_size=family_size,
-        )
+    simultaneous = _simultaneous_uncertainty_upper_bounds(
+        tuple(comparisons),
+        policy,
+        candidate_family_size=family_size,
     )
+    if (
+        simultaneous.method == "studentized_multiplier"
+        and simultaneous.tail_replicates
+        < policy.minimum_bootstrap_tail_replicates
+    ):
+        reasons.append("insufficient_bootstrap_tail_resolution")
+    simultaneous_bounds = simultaneous.bounds
     intensity_nll_upper = simultaneous_bounds.get("intensity", 0.0)
     brier_upper = simultaneous_bounds["support"]
+    echo_miss_upper = simultaneous_bounds.get("echo_miss", 0.0)
+    object_miss_upper = simultaneous_bounds.get("object_miss", 0.0)
     clear_sky_upper = simultaneous_bounds.get("clear", 0.0)
     underdispersion_upper = simultaneous_bounds.get("underdispersion", 0.0)
     if (
         intensity_nll_upper
         > policy.maximum_prior_echo_intensity_nll_increase
         or brier_upper > policy.maximum_prior_support_brier_increase
+        or echo_miss_upper > policy.maximum_prior_echo_support_miss_increase
+        or object_miss_upper > policy.maximum_prior_echo_object_miss_increase
         or clear_sky_upper
         > policy.maximum_prior_clear_sky_false_echo_increase
         or underdispersion_upper
-        > policy.maximum_prior_underdispersion_increase
+        > policy.maximum_prior_conditional_underdispersion_increase
     ):
         reasons.append("inferior_prior_uncertainty")
     unique = tuple(dict.fromkeys(reasons))
@@ -3107,8 +3525,10 @@ def compute_neural_prior_promotion(
         maximum_normalized_degradation=maximum_degradation,
         prior_echo_intensity_nll_increase_upper_bound=intensity_nll_upper,
         prior_support_brier_increase_upper_bound=brier_upper,
+        prior_echo_support_miss_increase_upper_bound=echo_miss_upper,
+        prior_echo_object_miss_increase_upper_bound=object_miss_upper,
         prior_clear_sky_false_echo_increase_upper_bound=clear_sky_upper,
-        prior_underdispersion_increase_upper_bound=(
+        prior_conditional_underdispersion_increase_upper_bound=(
             underdispersion_upper
         ),
         prior_echo_component_status=(
@@ -3121,7 +3541,21 @@ def compute_neural_prior_promotion(
         prior_clear_sky_case_count=len(clear_records),
         prior_echo_cluster_count=len(echo_clusters),
         prior_clear_sky_cluster_count=len(clear_clusters),
-        simultaneous_inference_test_count=simultaneous_test_count,
+        simultaneous_inference_test_count=simultaneous.test_count,
+        simultaneous_inference_method=simultaneous.method,
+        simultaneous_inference_effective_replicates=(
+            simultaneous.effective_replicates
+        ),
+        simultaneous_inference_critical_quantile=(
+            simultaneous.critical_quantile
+        ),
+        simultaneous_inference_monte_carlo_standard_error=(
+            simultaneous.monte_carlo_standard_error
+        ),
+        simultaneous_inference_tail_replicates=simultaneous.tail_replicates,
+        cluster_bootstrap_tail_replicates=cluster_bootstrap_tail_replicates,
+        certified_applicability_regime_groups=tuple(certified_groups),
+        requires_parent_fallback_outside_certified_applicability=True,
         eligible=not unique,
         rejection_reasons=unique,
     )
@@ -3132,3 +3566,20 @@ def validate_neural_prior_promotion(evidence: NeuralPriorPromotionEvidence) -> N
         raise ValueError("neural-prior promotion evidence digest mismatch")
     if not evidence.eligible:
         raise ValueError("neural-prior promotion evidence is not eligible")
+
+
+def validate_neural_prior_promotion_applicability(
+    evidence: NeuralPriorPromotionEvidence,
+    *,
+    regime: str,
+    range_regime: str,
+) -> None:
+    """Fail closed to the parent prior outside statistically certified regimes."""
+
+    validate_neural_prior_promotion(evidence)
+    if (regime, range_regime) not in (
+        evidence.certified_applicability_regime_groups
+    ):
+        raise ValueError(
+            "neural prior is uncertified for this regime; use the parent prior"
+        )

@@ -23,6 +23,7 @@ from advar import (
     NeuralPriorHoldoutPlanCase,
     NeuralPriorPromotionPolicy,
     NeuralPriorProbabilityContract,
+    NeuralPriorStateContract,
     PriorUncertaintyTarget,
     PriorUncertaintyTargetPlan,
     PromotionMetricScale,
@@ -33,12 +34,19 @@ from advar import (
     compute_neural_prior_promotion,
     validate_neural_prior_candidate_manifest,
     validate_neural_prior_promotion,
+    validate_neural_prior_promotion_applicability,
     verification_plan_digest,
 )
 from advar.sensitivity import _LearningPolicyTrustStore
 
 
 class NeuralPriorPromotionTests(unittest.TestCase):
+    def state_contract(self) -> NeuralPriorStateContract:
+        return NeuralPriorStateContract(
+            state_product_digest="a" * 64,
+            support_threshold_dbz=5.0,
+        )
+
     def probability_contract(self) -> NeuralPriorProbabilityContract:
         return NeuralPriorProbabilityContract(
             support_threshold_dbz=5.0,
@@ -290,6 +298,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         parent_prior_echo_intensity_nll: float = 0.5,
         prior_support_brier_score: float = 0.05,
         parent_prior_support_brier_score: float = 0.05,
+        prior_echo_support_miss_score: float = 0.05,
+        parent_prior_echo_support_miss_score: float = 0.05,
+        prior_echo_object_miss_score: float = 0.05,
+        parent_prior_echo_object_miss_score: float = 0.05,
         prior_clear_sky_false_echo_score: float = 0.05,
         parent_prior_clear_sky_false_echo_score: float = 0.05,
         parent_prior_underdispersion_fraction: float | None = None,
@@ -298,6 +310,20 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     ) -> promotion_module.PriorHoldoutEvaluation:
         manifest = self.manifest()
         case = manifest.holdout_cases[index - 1]
+        echo_count = (
+            prior_sample_count
+            if echo_available and not clear_available
+            else prior_sample_count // 2
+            if echo_available
+            else 0
+        )
+        clear_count = (
+            prior_sample_count
+            if clear_available and not echo_available
+            else prior_sample_count - prior_sample_count // 2
+            if clear_available
+            else 0
+        )
         return promotion_module._new_prior_holdout_evaluation(
             holdout_plan_digest=manifest.holdout_plan_digest,
             candidate_manifest_digest=manifest.manifest_digest,
@@ -338,20 +364,26 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             coverage_common=torch.tensor([1.0], dtype=torch.float64),
             newly_issued_fraction=torch.tensor([0.0], dtype=torch.float64),
             withdrawn_fraction=torch.tensor([0.0], dtype=torch.float64),
-            prior_standardized_residual_mean_abs=(
+            prior_conditional_pit_residual_mean_abs=(
                 prior_residual_mean_abs if echo_available else None
             ),
-            prior_underdispersion_fraction=(
+            prior_conditional_underdispersion_fraction=(
                 prior_underdispersion_fraction if echo_available else None
             ),
             prior_echo_intensity_nll=(
                 prior_echo_intensity_nll if echo_available else None
             ),
             prior_support_brier_score=prior_support_brier_score,
+            prior_echo_support_miss_score=(
+                prior_echo_support_miss_score if echo_available else None
+            ),
+            prior_echo_object_miss_score=(
+                prior_echo_object_miss_score if echo_available else None
+            ),
             prior_clear_sky_false_echo_score=(
                 prior_clear_sky_false_echo_score if clear_available else None
             ),
-            parent_prior_underdispersion_fraction=(
+            parent_prior_conditional_underdispersion_fraction=(
                 None
                 if not echo_available
                 else prior_underdispersion_fraction
@@ -362,6 +394,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 parent_prior_echo_intensity_nll if echo_available else None
             ),
             parent_prior_support_brier_score=parent_prior_support_brier_score,
+            parent_prior_echo_support_miss_score=(
+                parent_prior_echo_support_miss_score if echo_available else None
+            ),
+            parent_prior_echo_object_miss_score=(
+                parent_prior_echo_object_miss_score if echo_available else None
+            ),
             parent_prior_clear_sky_false_echo_score=(
                 parent_prior_clear_sky_false_echo_score
                 if clear_available
@@ -381,20 +419,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
             prior_uncertainty_target_digest=case.uncertainty_target_digest,
             prior_uncertainty_sample_count=prior_sample_count,
-            prior_echo_intensity_sample_count=(
-                prior_sample_count
-                if echo_available and not clear_available
-                else prior_sample_count // 2
-                if echo_available
-                else 0
-            ),
-            prior_clear_sky_sample_count=(
-                prior_sample_count
-                if clear_available and not echo_available
-                else prior_sample_count - prior_sample_count // 2
-                if clear_available
-                else 0
-            ),
+            prior_echo_intensity_sample_count=echo_count,
+            prior_clear_sky_sample_count=clear_count,
+            prior_echo_area_km2=echo_count * 0.25,
+            prior_clear_sky_area_km2=clear_count * 0.25,
+            prior_echo_object_count=1 if echo_available else 0,
             issue_time=case.issue_time,
             verification_valid_times=(f"2026-08-{8 + index:02d}T01:00:00Z",),
         )
@@ -425,10 +454,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             minimum_uncertainty_clusters_per_regime=1,
             minimum_echo_clusters_per_regime=1,
             minimum_clear_clusters_per_regime=1,
+            minimum_prior_echo_pixels_per_case=1,
+            minimum_prior_clear_pixels_per_case=1,
+            minimum_prior_echo_area_km2_per_case=0.0,
+            minimum_prior_clear_area_km2_per_case=0.0,
+            minimum_prior_echo_objects_per_case=1,
+            minimum_bootstrap_tail_replicates=1,
             minimum_beneficial_fraction=1.0,
             maximum_harmful_fraction=0.0,
             minimum_mean_normalized_improvement=0.1,
-            bootstrap_samples=32,
+            bootstrap_samples=64,
         )
 
     def compute(self, evaluations):
@@ -457,7 +492,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertTrue(result.eligible)
         validate_neural_prior_promotion(result)
 
-    def test_current_promotion_round_trips_durable_v6_evidence(self) -> None:
+    def test_current_promotion_round_trips_durable_v7_evidence(self) -> None:
         evaluations = (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
         evidence = self.compute(evaluations)
         manifest = self.manifest()
@@ -555,7 +590,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v6")
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v7")
 
     def test_promotion_requires_every_preregistered_case(self) -> None:
         with self.assertRaisesRegex(ValueError, "every planned case"):
@@ -639,9 +674,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
     def test_clear_sky_hurdle_score_is_floor_representation_invariant(self) -> None:
         application = SimpleNamespace(
-            initial_background_dbz=torch.zeros((1, 3)),
-            std_dbz=torch.ones((1, 3)),
-            support_probability=torch.full((1, 3), 0.2),
+            truncated_location_dbz=torch.zeros((1, 3)),
+            truncated_scale_dbz=torch.ones((1, 3)),
+            event_probability=torch.full((1, 3), 0.2),
         )
         mask = torch.ones((1, 3), dtype=torch.bool)
         support = torch.zeros((1, 3), dtype=torch.bool)
@@ -657,8 +692,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         ]
         self.assertEqual(scores[0], scores[1])
         self.assertEqual(scores[1], scores[2])
-        self.assertIsNone(scores[0][2])
-        self.assertEqual(scores[0][-2:], (0, 3))
+        self.assertIsNone(scores[0].echo_intensity_nll)
+        self.assertEqual(scores[0].echo_sample_count, 0)
+        self.assertEqual(scores[0].clear_sample_count, 3)
 
     def test_pure_clear_and_pure_echo_cases_use_component_applicability(self) -> None:
         policy = replace(
@@ -709,7 +745,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def test_simultaneous_uncertainty_count_covers_family_components_groups(
         self,
     ) -> None:
-        components = ("intensity", "support", "clear", "underdispersion")
+        components = (
+            "intensity",
+            "support",
+            "echo_miss",
+            "object_miss",
+            "clear",
+            "underdispersion",
+        )
         groups = (None,) + tuple((f"regime-{i}", "range") for i in range(6))
         comparisons = tuple(
             promotion_module._UncertaintyComparison(
@@ -723,13 +766,207 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             for group in groups
         )
 
-        _, count = promotion_module._simultaneous_uncertainty_upper_bounds(
+        result = promotion_module._simultaneous_uncertainty_upper_bounds(
             comparisons,
             self.policy(),
             candidate_family_size=10,
         )
 
-        self.assertEqual(count, 10 * 4 * 7)
+        self.assertEqual(result.test_count, 10 * 6 * 7)
+        self.assertEqual(result.method, "exact_sign_enumeration")
+        self.assertEqual(result.effective_replicates, 4)
+
+    def test_truncated_tail_score_is_stable_and_differentiable(self) -> None:
+        for lower in (0.0, 5.0, 8.0, 12.0, 20.0):
+            location = torch.tensor([5.0 - lower], dtype=torch.float32, requires_grad=True)
+            scale = torch.ones(1, dtype=torch.float32, requires_grad=True)
+            reference = torch.tensor([5.0], dtype=torch.float32)
+            nll, _ = promotion_module._truncated_gaussian_diagnostics(
+                location,
+                scale,
+                reference,
+                support_threshold_dbz=5.0,
+            )
+            expected = (
+                0.5 * lower**2
+                + 0.5 * torch.log(torch.tensor(2.0 * torch.pi, dtype=torch.float64))
+                + torch.special.log_ndtr(torch.tensor(-lower, dtype=torch.float64))
+            )
+            torch.testing.assert_close(nll[0], expected)
+            nll.sum().backward()
+            self.assertTrue(torch.isfinite(location.grad).all())
+            self.assertTrue(torch.isfinite(scale.grad).all())
+
+    def test_echo_miss_is_not_hidden_by_clear_sky_prevalence(self) -> None:
+        application = SimpleNamespace(
+            truncated_location_dbz=torch.full((1000,), 5.0),
+            truncated_scale_dbz=torch.ones(1000),
+            event_probability=torch.zeros(1000),
+        )
+        support = torch.zeros(1000, dtype=torch.bool)
+        support[0] = True
+        scores = promotion_module._prior_uncertainty_scores(
+            application,
+            torch.where(support, 5.0, -10.0),
+            support,
+            torch.ones(1000, dtype=torch.bool),
+            support_threshold_dbz=5.0,
+        )
+        self.assertAlmostEqual(scores.support_brier_score, 0.001)
+        self.assertEqual(scores.echo_support_miss_score, 1.0)
+        self.assertEqual(scores.clear_sky_false_echo_score, 0.0)
+
+    def test_conditional_pit_replaces_raw_truncated_z_score(self) -> None:
+        lower = 8.0
+        log_lower_survival = torch.special.log_ndtr(
+            torch.tensor(-lower, dtype=torch.float64)
+        )
+        left, right = lower, lower + 4.0
+        for _ in range(80):
+            midpoint = (left + right) / 2.0
+            log_ratio = float(
+                torch.special.log_ndtr(
+                    torch.tensor(-midpoint, dtype=torch.float64)
+                )
+                - log_lower_survival
+            )
+            conditional_cdf = -torch.expm1(
+                torch.tensor(log_ratio, dtype=torch.float64)
+            ).item()
+            if conditional_cdf < 0.5:
+                left = midpoint
+            else:
+                right = midpoint
+        reference = torch.tensor([(left + right) / 2.0], dtype=torch.float64)
+        _, pit = promotion_module._truncated_gaussian_diagnostics(
+            torch.tensor([0.0], dtype=torch.float64),
+            torch.tensor([1.0], dtype=torch.float64),
+            reference,
+            support_threshold_dbz=8.0,
+        )
+        self.assertGreater(float(reference[0]), 8.0)
+        self.assertAlmostEqual(float(pit[0]), 0.0, places=8)
+
+    def test_component_geometry_rejects_single_pixel_evidence(self) -> None:
+        policy = replace(
+            self.policy(),
+            minimum_prior_echo_pixels_per_case=2,
+            minimum_prior_echo_area_km2_per_case=1.0,
+        )
+        result = self.compute_with_policy(
+            (
+                self.evaluation(1, -0.2, prior_sample_count=2),
+                self.evaluation(2, -0.3, prior_sample_count=2),
+            ),
+            policy,
+        )
+        self.assertIn("insufficient_component_samples", result.rejection_reasons)
+        self.assertIn("insufficient_component_area", result.rejection_reasons)
+
+    def test_missed_echo_objects_fail_the_probability_guard(self) -> None:
+        result = self.compute(
+            (
+                self.evaluation(
+                    1,
+                    -0.2,
+                    prior_echo_object_miss_score=1.0,
+                    parent_prior_echo_object_miss_score=0.0,
+                ),
+                self.evaluation(
+                    2,
+                    -0.3,
+                    prior_echo_object_miss_score=1.0,
+                    parent_prior_echo_object_miss_score=0.0,
+                ),
+            )
+        )
+        self.assertIn("unreliable_prior_uncertainty", result.rejection_reasons)
+        self.assertIn("inferior_prior_uncertainty", result.rejection_reasons)
+
+    def test_bootstrap_tail_resolution_fails_closed(self) -> None:
+        policy = replace(
+            self.policy(),
+            bootstrap_samples=10,
+            minimum_bootstrap_tail_replicates=1,
+        )
+        result = self.compute_with_policy(
+            (self.evaluation(1, -0.2), self.evaluation(2, -0.3)),
+            policy,
+        )
+        self.assertIn(
+            "insufficient_bootstrap_tail_resolution",
+            result.rejection_reasons,
+        )
+
+    def test_family_ten_with_one_thousand_bootstraps_is_rejected(self) -> None:
+        plan = replace(
+            self.plan(),
+            candidate_family_digests=("c" * 64,)
+            + tuple(character * 64 for character in "012345678"),
+        )
+        manifest = replace(
+            self.manifest(),
+            holdout_plan_digest=plan.plan_digest,
+        )
+        rebound: list[promotion_module.PriorHoldoutEvaluation] = []
+        for evaluation in (
+            self.evaluation(1, -0.2),
+            self.evaluation(2, -0.3),
+        ):
+            values = {
+                name: value
+                for name, value in evaluation.__dict__.items()
+                if name not in {"contract", "evaluation_digest"}
+            }
+            values["holdout_plan_digest"] = plan.plan_digest
+            values["candidate_manifest_digest"] = manifest.manifest_digest
+            rebound.append(
+                promotion_module._new_prior_holdout_evaluation(**values)
+            )
+        policy = replace(
+            self.policy(),
+            approved_candidate_manifest_digests=(manifest.manifest_digest,),
+            approved_holdout_plan_digests=(plan.plan_digest,),
+            bootstrap_samples=1000,
+            minimum_bootstrap_tail_replicates=20,
+        )
+        trust = _LearningPolicyTrustStore(
+            approved_policy_digests=frozenset((policy.digest,)),
+            content_digest="b" * 64,
+        )
+        with patch.object(
+            promotion_module,
+            "_load_learning_policy_trust_store",
+            return_value=trust,
+        ):
+            result = compute_neural_prior_promotion(
+                manifest,
+                plan,
+                tuple(rebound),
+                policy=policy,
+                policy_trust_store_path="/etc/advar/learning-policies.json",
+            )
+        self.assertAlmostEqual(result.cluster_bootstrap_tail_replicates, 2.5)
+        self.assertIn(
+            "insufficient_bootstrap_tail_resolution",
+            result.rejection_reasons,
+        )
+
+    def test_uncertified_regime_requires_parent_fallback(self) -> None:
+        evidence = self.compute(
+            (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
+        )
+        validate_neural_prior_promotion_applicability(
+            evidence,
+            regime="convective",
+            range_regime="near_range",
+        )
+        with self.assertRaisesRegex(ValueError, "parent prior"):
+            validate_neural_prior_promotion_applicability(
+                evidence,
+                regime="unseen",
+                range_regime="far_range",
+            )
 
     def test_regime_specific_uncertainty_regression_is_not_averaged_away(self) -> None:
         result = self.compute(
@@ -944,6 +1181,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 [[True, False], [False, False]], dtype=torch.bool
             ),
             support_probability=torch.zeros((2, 2)),
+            truncated_location_dbz=torch.zeros((2, 2)),
+            truncated_scale_dbz=torch.ones((2, 2)),
+            event_probability=torch.zeros((2, 2)),
             inference_evidence=SimpleNamespace(
                 evidence_digest=case.candidate_inference_evidence_digest,
                 inference_algorithm_digest="8" * 64,
@@ -964,6 +1204,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 support_event_digest=(
                     self.probability_contract().support_event_digest
                 ),
+                state_contract_digest=self.state_contract().contract_digest,
                 prior_output_valid_time="2026-08-09T00:00:00Z",
                 feature_source_valid_times=planned_input.valid_times,
                 feature_source_identity_digests=("a" * 64,),
@@ -979,6 +1220,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             std_dbz=torch.ones((2, 2)),
             valid_mask=torch.ones((2, 2), dtype=torch.bool),
             support_probability=torch.zeros((2, 2)),
+            truncated_location_dbz=torch.zeros((2, 2)),
+            truncated_scale_dbz=torch.ones((2, 2)),
+            event_probability=torch.zeros((2, 2)),
             inference_evidence=SimpleNamespace(
                 evidence_digest=case.parent_inference_evidence_digest,
                 inference_algorithm_digest="8" * 64,
@@ -999,6 +1243,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 support_event_digest=(
                     self.probability_contract().support_event_digest
                 ),
+                state_contract_digest=self.state_contract().contract_digest,
                 prior_output_valid_time="2026-08-09T00:00:00Z",
                 feature_source_valid_times=planned_input.valid_times,
                 feature_source_identity_digests=("a" * 64,),
@@ -1061,6 +1306,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             inference_algorithm_digest="8" * 64,
             numerical_runtime_digest="4" * 64,
             feature_exclusion_mask=torch.zeros((3, 2, 2), dtype=torch.bool),
+            state_contract=self.state_contract(),
             probability_contract=self.probability_contract(),
         )
         parent_runner = SimpleNamespace(
@@ -1068,6 +1314,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             inference_algorithm_digest="8" * 64,
             numerical_runtime_digest="4" * 64,
             feature_exclusion_mask=torch.zeros((3, 2, 2), dtype=torch.bool),
+            state_contract=self.state_contract(),
             probability_contract=self.probability_contract(),
         )
         candidate_weights = torch.full((1, 1, 1), 0.5)
