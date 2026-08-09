@@ -612,12 +612,25 @@ def _module_state_digest(model: nn.Module) -> str:
 
 
 class _FeatureGraph(nn.Module):
-    def __init__(self, feature_extractor: Callable[[Tensor], Tensor]) -> None:
+    exclusion_mask: Tensor
+
+    def __init__(
+        self,
+        feature_extractor: Callable[[Tensor], Tensor],
+        exclusion_mask: Tensor,
+    ) -> None:
         super().__init__()
         self.feature_extractor = feature_extractor
+        self.register_buffer("exclusion_mask", exclusion_mask)
+        self.exclusion_mask = exclusion_mask
 
     def forward(self, frames: Tensor) -> Tensor:
-        return self.feature_extractor(frames)
+        retained = torch.where(
+            cast(Tensor, self.exclusion_mask),
+            torch.zeros((), dtype=frames.dtype, device=frames.device),
+            frames,
+        )
+        return self.feature_extractor(retained)
 
 
 class _PriorPipeline(nn.Module):
@@ -625,10 +638,11 @@ class _PriorPipeline(nn.Module):
         self,
         model: nn.Module,
         feature_extractor: Callable[[Tensor], Tensor],
+        exclusion_mask: Tensor,
     ) -> None:
         super().__init__()
         self.model = model
-        self.feature_graph = _FeatureGraph(feature_extractor)
+        self.feature_graph = _FeatureGraph(feature_extractor, exclusion_mask)
 
     def forward(self, frames: Tensor) -> tuple[Tensor, ...]:
         features = self.feature_graph(frames)
@@ -672,16 +686,24 @@ class NeuralPriorInferenceEvidence:
     output_background_digest: str
     output_std_digest: str
     output_valid_mask_digest: str
+    output_valid_probability_digest: str
     output_support_probability_digest: str
-    maximum_derivative_defect: float
+    prior_output_valid_time: str | None
+    feature_source_valid_times: tuple[str, ...]
+    feature_source_identity_digests: tuple[str, ...]
+    feature_exclusion_mask_digest: str
+    feature_exclusion_contract_digest: str
+    artifact_derivative_defect: float
+    run_local_derivative_defect: float
+    validity_contract: Literal["probabilistic", "exogenous_static"]
     uncertainty_contract: Literal["model_spatial", "constant_research"]
     execution_contract_digest: str
     dependency: PriorDependency
-    contract: str = "neural-prior-inference-evidence-v3"
+    contract: str = "neural-prior-inference-evidence-v4"
     evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-inference-evidence-v3":
+        if self.contract != "neural-prior-inference-evidence-v4":
             raise ValueError("unsupported neural-prior inference evidence")
         for name in (
             "neural_prior_digest",
@@ -701,7 +723,10 @@ class NeuralPriorInferenceEvidence:
             "output_background_digest",
             "output_std_digest",
             "output_valid_mask_digest",
+            "output_valid_probability_digest",
             "output_support_probability_digest",
+            "feature_exclusion_mask_digest",
+            "feature_exclusion_contract_digest",
             "execution_contract_digest",
         ):
             _require_prior_digest(name, getattr(self, name))
@@ -709,10 +734,24 @@ class NeuralPriorInferenceEvidence:
             raise ValueError("unsupported neural-prior dependency")
         if self.uncertainty_contract not in ("model_spatial", "constant_research"):
             raise ValueError("unsupported neural-prior uncertainty contract")
-        if not math.isfinite(self.maximum_derivative_defect) or (
-            self.maximum_derivative_defect < 0.0
+        if self.validity_contract not in ("probabilistic", "exogenous_static"):
+            raise ValueError("unsupported neural-prior validity contract")
+        for defect in (
+            self.artifact_derivative_defect,
+            self.run_local_derivative_defect,
         ):
-            raise ValueError("neural-prior derivative defect must be nonnegative")
+            if not math.isfinite(defect) or defect < 0.0:
+                raise ValueError("neural-prior derivative defect must be nonnegative")
+        if (self.prior_output_valid_time is None) != (
+            not self.feature_source_valid_times
+        ):
+            raise ValueError("neural-prior feature times are incomplete")
+        if len(self.feature_source_identity_digests) != len(
+            self.feature_source_valid_times
+        ):
+            raise ValueError("neural-prior feature source identities are incomplete")
+        for digest in self.feature_source_identity_digests:
+            _require_prior_digest("feature source identity digest", digest)
         object.__setattr__(self, "evidence_digest", json_digest(self.payload))
 
     @property
@@ -747,10 +786,13 @@ class NeuralPriorInferenceRunner:
         prior_std_dbz: float = 1.0,
         allow_constant_uncertainty: bool = False,
         derivative_probe_count: int = 4,
+        run_derivative_probe_count: int = 2,
         maximum_derivative_defect: float = 1.0e-4,
         support_policy: PriorSupportPolicy = "causal_clip",
         maximum_added_area_km2: float = 0.0,
         maximum_added_echo_integral: float = 0.0,
+        feature_exclusion_mask: Tensor | None = None,
+        feature_exclusion_contract_digest: str | None = None,
     ) -> None:
         if not isinstance(model, nn.Module) or model.training:
             raise ValueError("neural-prior model must be an eval-mode nn.Module")
@@ -765,29 +807,61 @@ class NeuralPriorInferenceRunner:
         if not example_frames.is_floating_point() or example_frames.ndim != 3:
             raise ValueError("neural-prior example frames must be floating [T,H,W]")
         canonical_frames = torch.zeros_like(example_frames)
+        retained_exclusion_mask = (
+            torch.zeros_like(example_frames, dtype=torch.bool)
+            if feature_exclusion_mask is None
+            else feature_exclusion_mask.detach().clone()
+        )
+        if (
+            retained_exclusion_mask.shape != example_frames.shape
+            or retained_exclusion_mask.dtype is not torch.bool
+        ):
+            raise ValueError("neural-prior feature exclusion mask is invalid")
+        actual_exclusion_contract_digest = json_digest(
+            {
+                "contract": "neural-prior-feature-exclusion-v1",
+                "mask_digest": tensor_digest(retained_exclusion_mask),
+                "replacement": "zero",
+            }
+        )
+        if feature_exclusion_contract_digest is not None and (
+            feature_exclusion_contract_digest
+            != actual_exclusion_contract_digest
+        ):
+            raise ValueError("declared feature exclusion is not the executed mask")
         with torch.no_grad():
-            example_features = feature_extractor(canonical_frames)
+            example_features = feature_extractor(
+                torch.where(
+                    retained_exclusion_mask,
+                    torch.zeros_like(canonical_frames),
+                    canonical_frames,
+                )
+            )
         if (
             not isinstance(example_features, Tensor)
             or not example_features.is_floating_point()
         ):
             raise TypeError("neural-prior features must be floating Tensor data")
         _, feature_graph_digest = _export_graph(
-            _FeatureGraph(feature_extractor),
+            _FeatureGraph(feature_extractor, retained_exclusion_mask),
             canonical_frames,
         )
         _, model_graph_digest = _export_graph(model, example_features)
         exported_pipeline, exported_graph_digest = _export_graph(
-            _PriorPipeline(model, feature_extractor).eval(),
+            _PriorPipeline(
+                model,
+                feature_extractor,
+                retained_exclusion_mask,
+            ).eval(),
             canonical_frames,
         )
         actual_feature_digest = feature_graph_digest
         actual_algorithm_digest = json_digest(
             {
-                "contract": "advar-neural-prior-inference-algorithm-v3",
+                "contract": "advar-neural-prior-inference-algorithm-v4",
                 "export": "torch.export",
                 "derivatives": "rademacher-jvp-vjp-finite-difference",
-                "output": "mean-std-valid-support",
+                "output": "mean-log-std-valid-probability-support",
             }
         )
         for name, claimed, actual in (
@@ -819,6 +893,11 @@ class NeuralPriorInferenceRunner:
             raise TypeError("allow_constant_uncertainty must be bool")
         if type(derivative_probe_count) is not int or derivative_probe_count < 3:
             raise ValueError("neural-prior derivative probes must be at least three")
+        if (
+            type(run_derivative_probe_count) is not int
+            or run_derivative_probe_count < 1
+        ):
+            raise ValueError("run-local derivative probes must be positive")
         if not math.isfinite(maximum_derivative_defect) or not (
             0.0 < maximum_derivative_defect < 1.0
         ):
@@ -843,10 +922,15 @@ class NeuralPriorInferenceRunner:
         self.prior_std_dbz = prior_std_dbz
         self.allow_constant_uncertainty = allow_constant_uncertainty
         self.derivative_probe_count = derivative_probe_count
+        self.run_derivative_probe_count = run_derivative_probe_count
         self.maximum_derivative_defect = maximum_derivative_defect
         self.support_policy: PriorSupportPolicy = support_policy
         self.maximum_added_area_km2 = maximum_added_area_km2
         self.maximum_added_echo_integral = maximum_added_echo_integral
+        self._feature_exclusion_mask = retained_exclusion_mask
+        self.feature_exclusion_contract_digest = (
+            actual_exclusion_contract_digest
+        )
         self._model_state_digest = _module_state_digest(model)
         self._model_code_digest = model_graph_digest
         self._feature_extractor_code_digest = feature_graph_digest
@@ -856,7 +940,7 @@ class NeuralPriorInferenceRunner:
         self._example_dtype = example_frames.dtype
         self.execution_contract_digest = json_digest(
             {
-                "contract": "neural-prior-execution-contract-v4",
+                "contract": "neural-prior-execution-contract-v5",
                 "model_state_digest": self._model_state_digest,
                 "model_code_digest": self._model_code_digest,
                 "feature_extractor_digest": actual_feature_digest,
@@ -873,16 +957,27 @@ class NeuralPriorInferenceRunner:
                 "prior_std_dbz": prior_std_dbz,
                 "allow_constant_uncertainty": allow_constant_uncertainty,
                 "derivative_probe_count": derivative_probe_count,
+                "run_derivative_probe_count": run_derivative_probe_count,
                 "maximum_derivative_defect": maximum_derivative_defect,
                 "support_policy": support_policy,
                 "maximum_added_area_km2": maximum_added_area_km2,
                 "maximum_added_echo_integral": maximum_added_echo_integral,
+                "feature_exclusion_contract_digest": (
+                    actual_exclusion_contract_digest
+                ),
             }
         )
         self.neural_prior_digest = self.execution_contract_digest
         self._certified_derivative_defect = self._validate_derivatives(
-            canonical_frames
+            canonical_frames,
+            probe_count=derivative_probe_count,
         )
+
+    @property
+    def feature_exclusion_mask(self) -> Tensor:
+        """Return the exact mask applied before feature extraction."""
+
+        return self._feature_exclusion_mask.detach().clone()
 
     def _validate_state(self) -> None:
         if _module_state_digest(self.model) != self._model_state_digest:
@@ -908,7 +1003,15 @@ class NeuralPriorInferenceRunner:
 
     def _output(
         self, frames_dbz: Tensor
-    ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+    ) -> tuple[
+        Tensor,
+        Tensor,
+        Tensor,
+        Tensor,
+        Tensor,
+        Tensor,
+        Literal["probabilistic", "exogenous_static"],
+    ]:
         self._validate_state()
         self._validate_input_contract(frames_dbz)
         raw = self._exported_pipeline(frames_dbz)
@@ -932,13 +1035,31 @@ class NeuralPriorInferenceRunner:
             or not bool(torch.all(torch.isfinite(output)))
         ):
             raise ValueError("neural-prior output must be a finite 2-D Tensor")
+        if isinstance(valid, Tensor) and valid.dtype is torch.bool:
+            if self.dependency != "exogenous" and not self.allow_constant_uncertainty:
+                raise ValueError(
+                    "radar-dependent prior validity must be a probability"
+                )
+            valid_mask = valid
+            valid_probability = valid.to(output)
+            validity_contract: Literal[
+                "probabilistic", "exogenous_static"
+            ] = "exogenous_static"
+        elif isinstance(valid, Tensor) and valid.is_floating_point():
+            if not bool(torch.all(torch.isfinite(valid))) or bool(
+                torch.any((valid < 0.0) | (valid > 1.0))
+            ):
+                raise ValueError("neural-prior validity probability is invalid")
+            valid_probability = valid
+            valid_mask = valid >= 0.5
+            validity_contract = "probabilistic"
+        else:
+            raise ValueError("neural-prior validity output is invalid")
         if (
             not isinstance(std, Tensor)
             or std.shape != output.shape
             or not bool(torch.all(torch.isfinite(std) & (std > 0.0)))
-            or not isinstance(valid, Tensor)
-            or valid.shape != output.shape
-            or valid.dtype is not torch.bool
+            or valid_mask.shape != output.shape
             or not isinstance(support, Tensor)
             or support.shape != output.shape
             or not bool(torch.all(torch.isfinite(support)))
@@ -946,9 +1067,22 @@ class NeuralPriorInferenceRunner:
         ):
             raise ValueError("neural-prior uncertainty output is invalid")
         self._validate_state()
-        return features, output, std, valid, support
+        return (
+            features,
+            output,
+            std,
+            valid_mask,
+            valid_probability,
+            support,
+            validity_contract,
+        )
 
-    def _validate_derivatives(self, frames_dbz: Tensor) -> float:
+    def _validate_derivatives(
+        self,
+        frames_dbz: Tensor,
+        *,
+        probe_count: int,
+    ) -> float:
         if self.dependency != "radar_dependent":
             return 0.0
         mean, log_std = self._derivative_outputs(frames_dbz)
@@ -956,7 +1090,7 @@ class NeuralPriorInferenceRunner:
         defects: list[float] = []
         step = 1.0e-3 if frames_dbz.dtype == torch.float32 else 1.0e-5
         epsilon = torch.finfo(frames_dbz.dtype).eps
-        for _ in range(self.derivative_probe_count):
+        for _ in range(probe_count):
             tangent = (
                 torch.randint(
                     0,
@@ -1033,8 +1167,25 @@ class NeuralPriorInferenceRunner:
             raise ValueError("neural-prior derivative defect exceeds its contract")
         if tensor_digest(frames_dbz) != input_run.input_frames_digest:
             raise ValueError("neural-prior frames disagree with the input run")
-        features, output, std, valid, support = self._output(frames_dbz)
-        derivative_defect = self._certified_derivative_defect
+        features, output, std, valid, valid_probability, support, validity = (
+            self._output(frames_dbz)
+        )
+        run_local_defect = self._validate_derivatives(
+            frames_dbz,
+            probe_count=self.run_derivative_probe_count,
+        )
+        grid = input_run.grid_time_contract
+        feature_source_valid_times = () if grid is None else tuple(grid.valid_times)
+        source_identity = input_run.input_bundle_digest
+        if input_run.operational_data_identity_json is not None:
+            retained_source_identity = OperationalDataIdentity.from_json(
+                input_run.operational_data_identity_json
+            ).radar_product_digest
+            if retained_source_identity is not None:
+                source_identity = retained_source_identity
+        feature_source_identity_digests = tuple(
+            source_identity for _ in feature_source_valid_times
+        )
         evidence = NeuralPriorInferenceEvidence(
             neural_prior_digest=self.neural_prior_digest,
             input_bundle_digest=input_run.input_bundle_digest,
@@ -1053,8 +1204,24 @@ class NeuralPriorInferenceRunner:
             output_background_digest=tensor_digest(output),
             output_std_digest=tensor_digest(std),
             output_valid_mask_digest=tensor_digest(valid),
+            output_valid_probability_digest=tensor_digest(valid_probability),
             output_support_probability_digest=tensor_digest(support),
-            maximum_derivative_defect=derivative_defect,
+            prior_output_valid_time=(
+                None
+                if not feature_source_valid_times
+                else feature_source_valid_times[0]
+            ),
+            feature_source_valid_times=feature_source_valid_times,
+            feature_source_identity_digests=feature_source_identity_digests,
+            feature_exclusion_mask_digest=tensor_digest(
+                self._feature_exclusion_mask
+            ),
+            feature_exclusion_contract_digest=(
+                self.feature_exclusion_contract_digest
+            ),
+            artifact_derivative_defect=self._certified_derivative_defect,
+            run_local_derivative_defect=run_local_defect,
+            validity_contract=validity,
             uncertainty_contract=(
                 "constant_research"
                 if self.allow_constant_uncertainty
@@ -1066,6 +1233,7 @@ class NeuralPriorInferenceRunner:
         return _new_neural_prior_application(
             initial_background_dbz=output,
             valid_mask=valid,
+            valid_probability=valid_probability,
             std_dbz=std,
             support_probability=support,
             inference_evidence=evidence,
@@ -1083,7 +1251,9 @@ class NeuralPriorInferenceRunner:
         """Independently rerun one retained application."""
 
         application.validate_integrity()
-        features, output, std, valid, support = self._output(frames_dbz)
+        features, output, std, valid, valid_probability, support, validity = (
+            self._output(frames_dbz)
+        )
         evidence = application.inference_evidence
         if (
             self.neural_prior_digest != evidence.neural_prior_digest
@@ -1093,10 +1263,13 @@ class NeuralPriorInferenceRunner:
             or tensor_digest(output) != evidence.output_background_digest
             or tensor_digest(std) != evidence.output_std_digest
             or tensor_digest(valid) != evidence.output_valid_mask_digest
+            or tensor_digest(valid_probability)
+            != evidence.output_valid_probability_digest
             or tensor_digest(support)
             != evidence.output_support_probability_digest
             or self._exported_pipeline_digest != evidence.exported_graph_digest
             or not torch.equal(output, application.initial_background_dbz)
+            or validity != evidence.validity_contract
         ):
             raise ValueError("neural-prior inference cannot be reproduced")
 
@@ -1111,7 +1284,7 @@ class NeuralPriorInferenceRunner:
 
         if execution_contract_digest != self.execution_contract_digest:
             raise ValueError("neural-prior execution contract mismatch")
-        _, output, _, _, _ = self._output(frames_dbz)
+        _, output, _, _, _, _, _ = self._output(frames_dbz)
         if not torch.equal(output, raw_background_dbz):
             raise ValueError("retained neural-prior output cannot be reproduced")
 
@@ -1169,11 +1342,11 @@ class NeuralPriorInferenceRunner:
         frames_dbz: Tensor,
         mean_cotangent: Tensor,
         log_std_cotangent: Tensor | None = None,
-    ) -> None:
+    ) -> float:
         """Check the exact FSO cotangent against an independent JVP."""
 
         if self.dependency != "radar_dependent":
-            return
+            return 0.0
         self._validate_input_contract(frames_dbz)
         generator = torch.Generator(device="cpu").manual_seed(1)
         tangent = (
@@ -1204,8 +1377,10 @@ class NeuralPriorInferenceRunner:
         defect = torch.abs(left - right) / (
             torch.abs(left) + torch.abs(right) + epsilon
         )
-        if float(defect.detach()) > self.maximum_derivative_defect:
+        value = float(defect.detach())
+        if value > self.maximum_derivative_defect:
             raise ValueError("neural-prior adjoint-direction defect is too large")
+        return value
 
 
 @dataclass(frozen=True, init=False)
@@ -1214,6 +1389,7 @@ class NeuralPriorApplication:
 
     initial_background_dbz: Tensor
     valid_mask: Tensor
+    valid_probability: Tensor
     std_dbz: Tensor
     support_probability: Tensor
     inference_evidence: NeuralPriorInferenceEvidence
@@ -1221,7 +1397,7 @@ class NeuralPriorApplication:
     support_policy: PriorSupportPolicy
     maximum_added_area_km2: float
     maximum_added_echo_integral: float
-    contract: str = "neural-prior-application-v3"
+    contract: str = "neural-prior-application-v4"
     application_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -1255,11 +1431,12 @@ class NeuralPriorApplication:
 
 def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
     result = object.__new__(NeuralPriorApplication)
-    object.__setattr__(result, "contract", "neural-prior-application-v3")
+    object.__setattr__(result, "contract", "neural-prior-application-v4")
     for name, value in values.items():
         object.__setattr__(result, name, value)
     background = result.initial_background_dbz.detach().clone()
     valid = result.valid_mask.detach().clone()
+    valid_probability = result.valid_probability.detach().clone()
     std = result.std_dbz.detach().clone()
     support = result.support_probability.detach().clone()
     if (
@@ -1268,6 +1445,11 @@ def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
         or not bool(torch.all(torch.isfinite(background)))
         or valid.shape != background.shape
         or valid.dtype != torch.bool
+        or valid_probability.shape != background.shape
+        or not valid_probability.is_floating_point()
+        or not bool(torch.all(torch.isfinite(valid_probability)))
+        or bool(torch.any((valid_probability < 0.0) | (valid_probability > 1.0)))
+        or not torch.equal(valid, valid_probability >= 0.5)
         or std.shape != background.shape
         or not std.is_floating_point()
         or not bool(torch.all(torch.isfinite(std) & (std > 0.0)))
@@ -1291,12 +1473,15 @@ def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
     if (
         tensor_digest(std) != result.inference_evidence.output_std_digest
         or tensor_digest(valid) != result.inference_evidence.output_valid_mask_digest
+        or tensor_digest(valid_probability)
+        != result.inference_evidence.output_valid_probability_digest
         or tensor_digest(support)
         != result.inference_evidence.output_support_probability_digest
     ):
         raise ValueError("neural-prior uncertainty disagrees with inference evidence")
     object.__setattr__(result, "initial_background_dbz", background)
     object.__setattr__(result, "valid_mask", valid)
+    object.__setattr__(result, "valid_probability", valid_probability)
     object.__setattr__(result, "std_dbz", std)
     object.__setattr__(result, "support_probability", support)
     object.__setattr__(
@@ -1311,6 +1496,7 @@ def _neural_prior_application_digest(value: NeuralPriorApplication) -> str:
             "contract": value.contract,
             "initial_background_dbz": tensor_digest(value.initial_background_dbz),
             "valid_mask": tensor_digest(value.valid_mask),
+            "valid_probability": tensor_digest(value.valid_probability),
             "std_dbz": tensor_digest(value.std_dbz),
             "support_probability": tensor_digest(value.support_probability),
             "inference_evidence_digest": value.inference_evidence.evidence_digest,

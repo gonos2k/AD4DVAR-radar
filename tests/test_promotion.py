@@ -78,7 +78,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 target_valid_time=valid_time,
             )
             for index, valid_time in enumerate(
-                ("2026-08-09T01:00:00Z", "2026-08-10T01:00:00Z"),
+                ("2026-08-09T00:00:00Z", "2026-08-10T00:00:00Z"),
                 start=1,
             )
         )
@@ -251,6 +251,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         prior_residual_mean_abs: float = 0.5,
         prior_underdispersion_fraction: float = 0.0,
         prior_sample_count: int = 16,
+        prior_candidate_valid_fraction: float = 1.0,
+        prior_parent_valid_fraction: float = 1.0,
+        prior_candidate_valid_area_km2: float = 4.0,
     ) -> promotion_module.PriorHoldoutEvaluation:
         manifest = self.manifest()
         case = manifest.holdout_cases[index - 1]
@@ -298,6 +301,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             prior_underdispersion_fraction=prior_underdispersion_fraction,
             prior_gaussian_nll=0.5,
             prior_support_brier_score=0.05,
+            prior_candidate_valid_fraction=prior_candidate_valid_fraction,
+            prior_parent_valid_fraction=prior_parent_valid_fraction,
+            prior_candidate_valid_area_km2=prior_candidate_valid_area_km2,
+            prior_abstention_increase_vs_parent=(
+                prior_parent_valid_fraction - prior_candidate_valid_fraction
+            ),
             prior_uncertainty_target_digest=case.uncertainty_target_digest,
             prior_uncertainty_sample_count=prior_sample_count,
             issue_time=case.issue_time,
@@ -383,6 +392,22 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 self.evaluation(2, -0.3),
             )
         )
+        self.assertIn("unreliable_prior_uncertainty", result.rejection_reasons)
+
+    def test_self_selected_one_percent_validity_blocks_promotion(self) -> None:
+        result = self.compute(
+            (
+                self.evaluation(
+                    1,
+                    -0.2,
+                    prior_candidate_valid_fraction=0.01,
+                    prior_candidate_valid_area_km2=0.04,
+                ),
+                self.evaluation(2, -0.3),
+            )
+        )
+
+        self.assertFalse(result.eligible)
         self.assertIn("unreliable_prior_uncertainty", result.rejection_reasons)
 
     def test_end_to_end_harm_is_checked_when_common_skill_is_immaterial(self) -> None:
@@ -486,7 +511,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             item for item in plan.input_plans
             if item.plan_digest == case.input_plan_digest
         )
-        grid = SimpleNamespace(valid_times=planned_input.valid_times)
+        grid = SimpleNamespace(
+            valid_times=planned_input.valid_times,
+            cell_area_m2=1_000_000.0,
+        )
         data_identity = promotion_module.OperationalDataIdentity(
             radar_class="test",
             qc_pipeline_digest=planned_input.qc_pipeline_digest,
@@ -526,7 +554,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             application_digest=case.candidate_prior_application_digest,
             initial_background_dbz=torch.zeros((2, 2)),
             std_dbz=torch.ones((2, 2)),
-            valid_mask=torch.ones((2, 2), dtype=torch.bool),
+            valid_mask=torch.tensor(
+                [[True, False], [False, False]], dtype=torch.bool
+            ),
             support_probability=torch.zeros((2, 2)),
             inference_evidence=SimpleNamespace(
                 evidence_digest=case.candidate_inference_evidence_digest,
@@ -541,6 +571,13 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 feature_schema_digest=manifest.feature_schema_digest,
                 training_manifest_digest=(manifest.candidate_training_manifest_digest),
                 uncertainty_contract="model_spatial",
+                prior_output_valid_time="2026-08-09T00:00:00Z",
+                feature_source_valid_times=planned_input.valid_times,
+                feature_source_identity_digests=("a" * 64,),
+                feature_exclusion_contract_digest="5" * 64,
+                feature_exclusion_mask_digest=promotion_module.tensor_digest(
+                    torch.zeros((3, 2, 2), dtype=torch.bool)
+                ),
             ),
         )
         parent_app = SimpleNamespace(
@@ -562,6 +599,13 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 feature_schema_digest=manifest.feature_schema_digest,
                 training_manifest_digest=manifest.parent_training_manifest_digest,
                 uncertainty_contract="model_spatial",
+                prior_output_valid_time="2026-08-09T00:00:00Z",
+                feature_source_valid_times=planned_input.valid_times,
+                feature_source_identity_digests=("a" * 64,),
+                feature_exclusion_contract_digest="5" * 64,
+                feature_exclusion_mask_digest=promotion_module.tensor_digest(
+                    torch.zeros((3, 2, 2), dtype=torch.bool)
+                ),
             ),
         )
         candidate_run = SimpleNamespace(
@@ -616,11 +660,13 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             reproduce=Mock(),
             inference_algorithm_digest="8" * 64,
             numerical_runtime_digest="4" * 64,
+            feature_exclusion_mask=torch.zeros((3, 2, 2), dtype=torch.bool),
         )
         parent_runner = SimpleNamespace(
             reproduce=Mock(),
             inference_algorithm_digest="8" * 64,
             numerical_runtime_digest="4" * 64,
+            feature_exclusion_mask=torch.zeros((3, 2, 2), dtype=torch.bool),
         )
         candidate_weights = torch.full((1, 1, 1), 0.5)
         parent_weights = torch.ones((1, 1, 1))
@@ -674,8 +720,74 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
         self.assertAlmostEqual(float(evaluation.metric_change[0, 0]), -0.2)
         self.assertAlmostEqual(float(evaluation.end_to_end_metric_change[0, 0]), -0.25)
+        self.assertEqual(evaluation.prior_uncertainty_sample_count, 4)
+        self.assertAlmostEqual(evaluation.prior_candidate_valid_fraction, 0.25)
+        self.assertAlmostEqual(evaluation.prior_candidate_valid_area_km2, 1.0)
+        self.assertAlmostEqual(evaluation.prior_abstention_increase_vs_parent, 0.75)
         candidate_runner.reproduce.assert_called_once()
         parent_runner.reproduce.assert_called_once()
+
+        candidate_app.inference_evidence.prior_output_valid_time = (
+            "2026-08-09T01:00:00Z"
+        )
+        with patch.object(
+            promotion_module,
+            "_forecast_result_content_digest",
+            side_effect=(
+                case.candidate_forecast_digest,
+                case.parent_forecast_digest,
+            ),
+        ):
+            with self.assertRaisesRegex(ValueError, "target time"):
+                promotion_module.PriorHoldoutEvaluation.from_forecasts(
+                    manifest,
+                    plan,
+                    case_id=case.case_id,
+                    candidate_forecast=candidate,
+                    parent_forecast=parent,
+                    verification=verification,
+                    metric_config=config,
+                    candidate_prior_application=candidate_app,
+                    parent_prior_application=parent_app,
+                    candidate_prior_runner=candidate_runner,
+                    parent_prior_runner=parent_runner,
+                    input_frames_dbz=torch.zeros((3, 2, 2)),
+                    uncertainty_target=self.uncertainty_target(1),
+                )
+
+        candidate_app.inference_evidence.prior_output_valid_time = (
+            "2026-08-09T00:00:00Z"
+        )
+        candidate_app.inference_evidence.feature_source_identity_digests = (
+            "6" * 64,
+        )
+        parent_app.inference_evidence.feature_source_identity_digests = (
+            "6" * 64,
+        )
+        with patch.object(
+            promotion_module,
+            "_forecast_result_content_digest",
+            side_effect=(
+                case.candidate_forecast_digest,
+                case.parent_forecast_digest,
+            ),
+        ):
+            with self.assertRaisesRegex(ValueError, "visible to the features"):
+                promotion_module.PriorHoldoutEvaluation.from_forecasts(
+                    manifest,
+                    plan,
+                    case_id=case.case_id,
+                    candidate_forecast=candidate,
+                    parent_forecast=parent,
+                    verification=verification,
+                    metric_config=config,
+                    candidate_prior_application=candidate_app,
+                    parent_prior_application=parent_app,
+                    candidate_prior_runner=candidate_runner,
+                    parent_prior_runner=parent_runner,
+                    input_frames_dbz=torch.zeros((3, 2, 2)),
+                    uncertainty_target=self.uncertainty_target(1),
+                )
 
 
 if __name__ == "__main__":

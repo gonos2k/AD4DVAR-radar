@@ -19,6 +19,10 @@ from torch import Tensor
 from torch import nn
 
 from ._digest import json_digest, tensor_digest
+from .action_contracts import (
+    action_input_canonicalization_digest,
+    canonicalize_action_frames,
+)
 from .sensitivity import (
     FirstOrderValidation,
     VariationalLearningImpact,
@@ -687,7 +691,7 @@ _ACTION_CONTRACT_BY_TYPE: dict[ObservationInterventionType, str] = {
 }
 _INTERVENTION_CONTEXT_SCHEMA_DIGEST = json_digest(
     {
-        "contract": "intervention-generator-context-schema-v1",
+        "contract": "intervention-generator-context-schema-v2",
         "channels": (
             "canonical_dbz",
             "observation_valid",
@@ -733,6 +737,11 @@ class InterventionInputContext:
     input_plan_resolution_digest: str
     context_schema_digest: str
     applicability_region_digest: str
+    applicability_mask_digest: str
+    canonicalization_contract_digest: str
+    min_dbz: float
+    max_dbz: float
+    missing_fill_dbz: float
     context_digest: str
 
     def __init__(self) -> None:
@@ -808,17 +817,23 @@ class InterventionInputContext:
             raise ValueError("intervention background disagrees with the input run")
         if run.input_plan_digest is None or run.input_plan_resolution_digest is None:
             raise ValueError("prospective intervention requires a resolved input plan")
+        canonicalization_contract_digest = action_input_canonicalization_digest(
+            minimum_dbz=run.config.min_dbz,
+            maximum_dbz=run.config.max_dbz,
+            missing_fill_dbz=run.config.min_dbz,
+        )
+        applicability_mask_digest = tensor_digest(applicability_mask)
         applicability_region_digest = json_digest(
             {
                 "contract": "intervention-applicability-region-v1",
                 "radar_id": radar_id,
                 "grid_time_contract_digest": run.grid_time_contract_digest,
-                "mask_digest": tensor_digest(applicability_mask),
+                "mask_digest": applicability_mask_digest,
             }
         )
         context_digest = json_digest(
             {
-                "contract": "intervention-input-context-v2",
+                "contract": "intervention-input-context-v3",
                 "input_bundle_digest": run.input_bundle_digest,
                 "input_plan_digest": run.input_plan_digest,
                 "input_plan_resolution_digest": run.input_plan_resolution_digest,
@@ -830,6 +845,13 @@ class InterventionInputContext:
                 "radar_id": radar_id,
                 "context_schema_digest": _INTERVENTION_CONTEXT_SCHEMA_DIGEST,
                 "applicability_region_digest": applicability_region_digest,
+                "applicability_mask_digest": applicability_mask_digest,
+                "canonicalization_contract_digest": (
+                    canonicalization_contract_digest
+                ),
+                "minimum_dbz": run.config.min_dbz,
+                "maximum_dbz": run.config.max_dbz,
+                "missing_fill_dbz": run.config.min_dbz,
             }
         )
         result = object.__new__(cls)
@@ -851,6 +873,14 @@ class InterventionInputContext:
             ("input_plan_resolution_digest", run.input_plan_resolution_digest),
             ("context_schema_digest", _INTERVENTION_CONTEXT_SCHEMA_DIGEST),
             ("applicability_region_digest", applicability_region_digest),
+            ("applicability_mask_digest", applicability_mask_digest),
+            (
+                "canonicalization_contract_digest",
+                canonicalization_contract_digest,
+            ),
+            ("min_dbz", run.config.min_dbz),
+            ("max_dbz", run.config.max_dbz),
+            ("missing_fill_dbz", run.config.min_dbz),
             ("context_digest", context_digest),
         ):
             object.__setattr__(result, name, value)
@@ -883,12 +913,25 @@ class InterventionInputContext:
         return self._applicability_mask.clone()
 
     def generator_tensor(self) -> Tensor:
-        frames = torch.nan_to_num(self._frames_dbz)
-        finite = torch.isfinite(self._frames_dbz).to(frames)
+        finite_mask = torch.isfinite(self._frames_dbz)
+        frames = canonicalize_action_frames(
+            self._frames_dbz,
+            self._observation_masks,
+            minimum_dbz=self.min_dbz,
+            maximum_dbz=self.max_dbz,
+            missing_fill_dbz=self.missing_fill_dbz,
+        )
+        finite = finite_mask.to(frames)
         background = (
             torch.zeros_like(frames)
             if self._background_frames_dbz is None
-            else torch.nan_to_num(self._background_frames_dbz)
+            else canonicalize_action_frames(
+                self._background_frames_dbz,
+                torch.ones_like(self._background_frames_dbz, dtype=torch.bool),
+                minimum_dbz=self.min_dbz,
+                maximum_dbz=self.max_dbz,
+                missing_fill_dbz=self.missing_fill_dbz,
+            )
         )
         background_present = torch.full_like(
             frames,
@@ -1153,8 +1196,8 @@ class ActionSafetyDiagnostics:
     changed_pixel_count: int
     changed_fraction: float
     changed_area_km2: float
-    global_whitened_l2: float
-    maximum_tile_whitened_l2: float
+    global_diagonal_standardized_l2: float
+    maximum_tile_diagonal_standardized_l2: float
     quality_weight_l2: float
     minimum_input_floor_margin_dbz: float
     minimum_input_ceiling_margin_dbz: float
@@ -1167,7 +1210,7 @@ class ActionSafetyDiagnostics:
             for key, value in self.__dict__.items()
             if key != "diagnostics_digest"
         }
-        payload = {"contract": "action-safety-diagnostics-v1", **values}
+        payload = {"contract": "action-safety-diagnostics-v2", **values}
         object.__setattr__(
             self,
             "diagnostics_digest",
@@ -1182,7 +1225,7 @@ class ActionSafetyDiagnostics:
             if key != "diagnostics_digest"
         }
         return json.dumps(
-            {"contract": "action-safety-diagnostics-v1", **values},
+            {"contract": "action-safety-diagnostics-v2", **values},
             sort_keys=True,
             separators=(",", ":"),
         )
@@ -1216,6 +1259,32 @@ def _validate_action_safety(
     run: ForecastRunContract,
     policy: ReusableInterventionPolicyEvidence,
 ) -> ActionSafetyDiagnostics:
+    if _run_uses_correlated_observation_error(run):
+        raise ValueError(
+            "prospective action requires diagonal observation error"
+        )
+    grid = run.grid_time_contract
+    if grid is None:
+        raise ValueError("prospective action safety requires a physical grid")
+    return _compute_action_safety(
+        action,
+        context,
+        policy,
+        minimum_dbz=run.config.min_dbz,
+        maximum_dbz=run.config.max_dbz,
+        cell_area_m2=grid.cell_area_m2,
+    )
+
+
+def _compute_action_safety(
+    action: InterventionAction,
+    context: InterventionInputContext,
+    policy: ReusableInterventionPolicyEvidence,
+    *,
+    minimum_dbz: float,
+    maximum_dbz: float,
+    cell_area_m2: float,
+) -> ActionSafetyDiagnostics:
     expected_contract = _ACTION_CONTRACT_BY_TYPE[action_type(action)]
     if action.contract != expected_contract:
         raise ValueError("intervention type and action contract disagree")
@@ -1228,10 +1297,7 @@ def _validate_action_safety(
     changed_invalid = int(
         torch.count_nonzero(changed & ~context._observation_masks)
     )
-    grid = run.grid_time_contract
-    if grid is None:
-        raise ValueError("prospective action safety requires a physical grid")
-    area_km2 = float(torch.count_nonzero(union)) * grid.cell_area_m2 / 1.0e6
+    area_km2 = float(torch.count_nonzero(union)) * cell_area_m2 / 1.0e6
     delta = torch.zeros_like(context._frames_dbz)
     quality_delta = torch.zeros_like(context._quality_weight)
     if isinstance(action, DbzCorrectionAction):
@@ -1259,8 +1325,8 @@ def _validate_action_safety(
     changed_values = changed_dbz.masked_select((delta != 0.0) & finite)
     if changed_values.numel() and bool(
         torch.any(
-            (changed_values < run.config.min_dbz)
-            | (changed_values > run.config.max_dbz)
+            (changed_values < minimum_dbz)
+            | (changed_values > maximum_dbz)
         )
     ):
         raise ValueError("action crosses the physical radar input clamp")
@@ -1281,8 +1347,16 @@ def _validate_action_safety(
         (count, policy.maximum_changed_pixel_count, "changed-pixel"),
         (changed_fraction, policy.maximum_changed_fraction, "changed-fraction"),
         (area_km2, policy.maximum_changed_area_km2, "changed-area"),
-        (global_norm, policy.maximum_global_whitened_l2, "global whitened"),
-        (tile_norm, policy.maximum_tile_whitened_l2, "tile whitened"),
+        (
+            global_norm,
+            policy.maximum_global_diagonal_standardized_l2,
+            "global diagonal-standardized",
+        ),
+        (
+            tile_norm,
+            policy.maximum_tile_diagonal_standardized_l2,
+            "tile diagonal-standardized",
+        ),
         (quality_norm, policy.maximum_quality_weight_l2, "quality-weight"),
     )
     for actual, maximum, name in limits:
@@ -1290,12 +1364,12 @@ def _validate_action_safety(
             raise ValueError(f"generated action exceeds its {name} safety limit")
     finite_frames = changed_dbz.masked_select(finite)
     floor_margin = (
-        float(torch.amin(finite_frames - run.config.min_dbz))
+        float(torch.amin(finite_frames - minimum_dbz))
         if finite_frames.numel()
         else float("inf")
     )
     ceiling_margin = (
-        float(torch.amin(run.config.max_dbz - finite_frames))
+        float(torch.amin(maximum_dbz - finite_frames))
         if finite_frames.numel()
         else float("inf")
     )
@@ -1303,12 +1377,29 @@ def _validate_action_safety(
         changed_pixel_count=count,
         changed_fraction=changed_fraction,
         changed_area_km2=area_km2,
-        global_whitened_l2=global_norm,
-        maximum_tile_whitened_l2=tile_norm,
+        global_diagonal_standardized_l2=global_norm,
+        maximum_tile_diagonal_standardized_l2=tile_norm,
         quality_weight_l2=quality_norm,
         minimum_input_floor_margin_dbz=floor_margin,
         minimum_input_ceiling_margin_dbz=ceiling_margin,
         changed_invalid_pixel_count=changed_invalid,
+    )
+
+
+def _run_uses_correlated_observation_error(run: ForecastRunContract) -> bool:
+    if run.analysis_config_json is None:
+        return False
+    try:
+        config = json.loads(run.analysis_config_json)
+    except json.JSONDecodeError as error:
+        raise ValueError("prospective action analysis config is invalid") from error
+    if not isinstance(config, dict):
+        raise ValueError("prospective action analysis config is invalid")
+    bias_std = config.get("observation_common_bias_std_dbz", 0.0)
+    return bool(
+        isinstance(bias_std, (int, float))
+        and not isinstance(bias_std, bool)
+        and bias_std > 0.0
     )
 
 
@@ -1370,15 +1461,16 @@ class ReusableInterventionPolicyEvidence:
     maximum_changed_pixel_count: int = 4096
     maximum_changed_fraction: float = 0.05
     maximum_changed_area_km2: float = 256.0
-    maximum_global_whitened_l2: float = 8.0
-    maximum_tile_whitened_l2: float = 4.0
+    maximum_global_diagonal_standardized_l2: float = 8.0
+    maximum_tile_diagonal_standardized_l2: float = 4.0
     maximum_quality_weight_l2: float = 1.0
     perturbation_tile_size: int = 16
-    contract: str = "reusable-intervention-policy-evidence-v2"
+    observation_error_contract: Literal["diagonal_only"] = "diagonal_only"
+    contract: str = "reusable-intervention-policy-evidence-v3"
     policy_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "reusable-intervention-policy-evidence-v2":
+        if self.contract != "reusable-intervention-policy-evidence-v3":
             raise ValueError("unsupported reusable intervention policy")
         if not self.policy_id or self.policy_id.strip() != self.policy_id:
             raise ValueError("reusable intervention policy ID must be canonical")
@@ -1397,6 +1489,8 @@ class ReusableInterventionPolicyEvidence:
             raise ValueError("one reusable policy must have exactly one action type")
         if self.allowed_intervention_types[0] not in _ACTION_CONTRACT_BY_TYPE:
             raise ValueError("unsupported reusable intervention type")
+        if self.observation_error_contract != "diagonal_only":
+            raise ValueError("prospective action policy requires diagonal R")
         if not math.isfinite(self.maximum_absolute_delta_dbz) or (
             self.maximum_absolute_delta_dbz <= 0.0
         ):
@@ -1410,8 +1504,8 @@ class ReusableInterventionPolicyEvidence:
         for name in (
             "maximum_changed_fraction",
             "maximum_changed_area_km2",
-            "maximum_global_whitened_l2",
-            "maximum_tile_whitened_l2",
+            "maximum_global_diagonal_standardized_l2",
+            "maximum_tile_diagonal_standardized_l2",
             "maximum_quality_weight_l2",
         ):
             value = getattr(self, name)
@@ -1454,6 +1548,9 @@ class ProspectiveInterventionDecision:
     action_policy_digest: str
     action_generator_digest: str
     action_context_digest: str
+    intervention_input_context_digest: str
+    actual_input_before_fixed_context_digest: str
+    applicability_mask_digest: str
     action_payload_digest: str
     action_application_contract_digest: str
     action_safety_diagnostics_digest: str
@@ -1471,14 +1568,14 @@ class ProspectiveInterventionDecision:
     input_available_time: str
     decision_deadline: str
     publication_time: str
-    contract: str = "prospective-intervention-decision-v3"
+    contract: str = "prospective-intervention-decision-v4"
     decision_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use ProspectiveInterventionDecision.from_policy")
 
     def __post_init__(self) -> None:
-        if self.contract != "prospective-intervention-decision-v3":
+        if self.contract != "prospective-intervention-decision-v4":
             raise ValueError("unsupported prospective intervention decision")
         for name in ("decision_id", "case_id", "radar_id"):
             value = getattr(self, name)
@@ -1494,6 +1591,9 @@ class ProspectiveInterventionDecision:
             "action_policy_digest",
             "action_generator_digest",
             "action_context_digest",
+            "intervention_input_context_digest",
+            "actual_input_before_fixed_context_digest",
+            "applicability_mask_digest",
             "action_payload_digest",
             "action_application_contract_digest",
             "action_safety_diagnostics_digest",
@@ -1530,7 +1630,7 @@ class ProspectiveInterventionDecision:
         )
         if (
             not isinstance(diagnostics, dict)
-            or diagnostics.get("contract") != "action-safety-diagnostics-v1"
+            or diagnostics.get("contract") != "action-safety-diagnostics-v2"
             or canonical_diagnostics != self.action_safety_diagnostics_json
             or json_digest(diagnostics) != self.action_safety_diagnostics_digest
         ):
@@ -1605,6 +1705,8 @@ class ProspectiveInterventionDecision:
             actual_input_context.input_plan_resolution_digest
         ):
             raise ValueError("decision input-plan resolution disagrees with the run")
+        if actual_input_before_run.fixed_input_context_digest is None:
+            raise ValueError("prospective decision requires complete fixed input context")
         if actual_input_before_run.input_plan_json is None:
             raise ValueError("prospective decision requires input-plan JSON")
         try:
@@ -1690,6 +1792,11 @@ class ProspectiveInterventionDecision:
             action_policy_digest=policy.policy_digest,
             action_generator_digest=policy.action_generator_digest,
             action_context_digest=context_digest,
+            intervention_input_context_digest=actual_input_context.context_digest,
+            actual_input_before_fixed_context_digest=(
+                actual_input_before_run.fixed_input_context_digest
+            ),
+            applicability_mask_digest=actual_input_context.applicability_mask_digest,
             action_payload_digest=payload_digest,
             action_application_contract_digest=application_digest,
             action_safety_diagnostics_digest=diagnostics.diagnostics_digest,
@@ -1751,14 +1858,14 @@ class RealizedInterventionReceipt:
     input_available_time: str
     publication_time: str
     executor_sequence_number: int
-    contract: str = "realized-intervention-receipt-v3"
+    contract: str = "realized-intervention-receipt-v4"
     receipt_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use RealizedInterventionReceipt.from_decision")
 
     def __post_init__(self) -> None:
-        if self.contract != "realized-intervention-receipt-v3":
+        if self.contract != "realized-intervention-receipt-v4":
             raise ValueError("unsupported realized intervention receipt")
         for name in ("decision_id", "case_id", "radar_id"):
             value = getattr(self, name)
@@ -1840,6 +1947,7 @@ class RealizedInterventionReceipt:
         actual_input_before_run: ForecastRunContract,
         actual_input_after_context: InterventionInputContext,
         actual_input_after_run: ForecastRunContract,
+        action_policy: ReusableInterventionPolicyEvidence,
         action_generator: InterventionActionGenerator,
         executor_key_id: str,
         executor_trust_store_digest: str,
@@ -1850,6 +1958,7 @@ class RealizedInterventionReceipt:
     ) -> RealizedInterventionReceipt:
         transition = validate_intervention_action_transition(
             decision,
+            action_policy=action_policy,
             action_generator=action_generator,
             actual_input_before_context=actual_input_before_context,
             actual_input_before_run=actual_input_before_run,
@@ -1902,7 +2011,7 @@ class RealizedInterventionReceipt:
             input_available_time=decision.input_available_time,
             publication_time=decision.publication_time,
             executor_sequence_number=executor_sequence_number,
-            contract="realized-intervention-receipt-v3",
+            contract="realized-intervention-receipt-v4",
         )
         signature = executor_private_key.sign(
             json_digest(values).encode("ascii")
@@ -1953,7 +2062,7 @@ class RealizedInterventionReceipt:
 def _new_prospective_decision(
     **values: object,
 ) -> ProspectiveInterventionDecision:
-    values.setdefault("contract", "prospective-intervention-decision-v3")
+    values.setdefault("contract", "prospective-intervention-decision-v4")
     expected = {
         item.name
         for item in fields(ProspectiveInterventionDecision)
@@ -1976,12 +2085,14 @@ class InterventionActionTransition:
     after_masks_digest: str
     before_quality_weight_digest: str
     after_quality_weight_digest: str
+    action_safety_diagnostics_digest: str
     action_artifact_digest: str
 
 
 def validate_intervention_action_transition(
     decision: ProspectiveInterventionDecision,
     *,
+    action_policy: ReusableInterventionPolicyEvidence,
     action_generator: InterventionActionGenerator,
     actual_input_before_context: InterventionInputContext,
     actual_input_before_run: ForecastRunContract,
@@ -1990,6 +2101,9 @@ def validate_intervention_action_transition(
 ) -> InterventionActionTransition:
     """Recompute the exact before/action/after transition without a private key."""
 
+    action_policy.validate_integrity()
+    if action_policy.policy_digest != decision.action_policy_digest:
+        raise ValueError("receipt action policy disagrees with its decision")
     expected_decision = json_digest(
         {
             key: value
@@ -2008,6 +2122,15 @@ def validate_intervention_action_transition(
         != actual_input_after_run.input_bundle_digest
     ):
         raise ValueError("receipt context disagrees with its input run")
+    if (
+        actual_input_before_context.context_digest
+        != decision.intervention_input_context_digest
+        or actual_input_before_run.fixed_input_context_digest
+        != decision.actual_input_before_fixed_context_digest
+        or actual_input_before_context.applicability_mask_digest
+        != decision.applicability_mask_digest
+    ):
+        raise ValueError("receipt before-context disagrees with its decision")
     if (
         actual_input_before_context.radar_id
         != actual_input_after_context.radar_id
@@ -2046,6 +2169,7 @@ def validate_intervention_action_transition(
     ):
         raise ValueError("receipt runs disagree with the decision input plan")
     unchanged_run_fields = (
+        "analysis_config_digest",
         "observation_std_dbz_digest",
         "background_frames_digest",
         "background_age_minutes",
@@ -2071,6 +2195,14 @@ def validate_intervention_action_transition(
         raise ValueError("receipt action payload disagrees with its decision")
     if action_type(action) != decision.intervention_type:
         raise ValueError("receipt action type disagrees with its decision")
+    diagnostics = _validate_action_safety(
+        action,
+        actual_input_before_context,
+        actual_input_before_run,
+        action_policy,
+    )
+    if diagnostics.diagnostics_digest != decision.action_safety_diagnostics_digest:
+        raise ValueError("receipt action safety disagrees with its decision")
     validate_action_tensor_replay(
         action,
         before_frames=before_frames,
@@ -2111,6 +2243,7 @@ def validate_intervention_action_transition(
         after_masks_digest=tensor_digest(after_masks),
         before_quality_weight_digest=tensor_digest(before_quality),
         after_quality_weight_digest=tensor_digest(after_quality),
+        action_safety_diagnostics_digest=diagnostics.diagnostics_digest,
         action_artifact_digest=action_artifact_digest,
     )
 
@@ -2118,7 +2251,7 @@ def validate_intervention_action_transition(
 def _new_realized_intervention_receipt(
     **values: object,
 ) -> RealizedInterventionReceipt:
-    values.setdefault("contract", "realized-intervention-receipt-v3")
+    values.setdefault("contract", "realized-intervention-receipt-v4")
     expected = {
         item.name
         for item in fields(RealizedInterventionReceipt)

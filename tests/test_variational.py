@@ -146,7 +146,7 @@ class _SpatialUncertaintyPrior(nn.Module):
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         mean = value + self.anchor
         std = 0.5 + 0.01 * torch.abs(value)
-        valid = value > -5.0
+        valid = torch.sigmoid(value + 5.0)
         support = torch.sigmoid(value)
         return mean, std, valid, support
 
@@ -162,9 +162,42 @@ class _UncertaintyOnlyPrior(nn.Module):
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         mean = torch.zeros_like(value) + self.anchor
         std = torch.exp(0.1 * value)
-        valid = torch.ones_like(value, dtype=torch.bool)
+        valid = torch.ones_like(value)
         support = torch.sigmoid(value)
         return mean, std, valid, support
+
+
+class _LiveKinkPrior(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.register_buffer("threshold", torch.tensor(10.0, dtype=torch.float64))
+
+    def forward(
+        self,
+        value: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        mean = torch.relu(value - self.threshold)
+        std = torch.ones_like(value)
+        valid_probability = torch.ones_like(value)
+        support = torch.ones_like(value)
+        return mean, std, valid_probability, support
+
+
+class _RadarDependentBooleanValidityPrior(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.register_buffer("anchor", torch.tensor(0.0, dtype=torch.float64))
+
+    def forward(
+        self,
+        value: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        return (
+            value + self.anchor,
+            torch.ones_like(value),
+            value >= 0.0,
+            torch.ones_like(value),
+        )
 
 
 class _StochasticPrior(nn.Module):
@@ -335,6 +368,10 @@ class VariationalAnalysisTests(unittest.TestCase):
             application.inference_evidence.uncertainty_contract,
             "model_spatial",
         )
+        self.assertEqual(
+            application.inference_evidence.validity_contract,
+            "probabilistic",
+        )
         self.assertGreater(float(torch.std(application.std_dbz).detach()), 0.0)
         self.assertFalse(bool(torch.all(application.valid_mask)))
         self.assertGreater(
@@ -342,6 +379,51 @@ class VariationalAnalysisTests(unittest.TestCase):
             0.0,
         )
         runner.reproduce(application, frames)
+
+    def test_prior_runner_certifies_derivatives_at_the_live_input(self) -> None:
+        frames = torch.full((3, 4, 4), 10.0, dtype=torch.float64)
+        run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        runner = NeuralPriorInferenceRunner(
+            _LiveKinkPrior().eval(),
+            lambda value: value[0],
+            example_frames=frames,
+            model_contract_digest="4" * 64,
+            feature_schema_digest="5" * 64,
+            training_manifest_digest="6" * 64,
+            dependency="radar_dependent",
+            maximum_derivative_defect=0.1,
+        )
+        self.assertLessEqual(
+            runner._certified_derivative_defect,
+            runner.maximum_derivative_defect,
+        )
+        with self.assertRaisesRegex(ValueError, "derivative defect"):
+            runner.infer(frames, input_run=run, role="candidate")
+
+    def test_radar_dependent_prior_requires_probabilistic_validity(self) -> None:
+        frames = torch.zeros((3, 4, 4), dtype=torch.float64)
+        run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        runner = NeuralPriorInferenceRunner(
+            _RadarDependentBooleanValidityPrior().eval(),
+            lambda value: value[0],
+            example_frames=frames,
+            model_contract_digest="4" * 64,
+            feature_schema_digest="5" * 64,
+            training_manifest_digest="6" * 64,
+            dependency="radar_dependent",
+        )
+        with self.assertRaisesRegex(ValueError, "validity must be a probability"):
+            runner.infer(frames, input_run=run, role="candidate")
 
     def test_stochastic_and_stateful_prior_inference_fail_closed(self) -> None:
         frames = torch.zeros((3, 4, 4), dtype=torch.float64)

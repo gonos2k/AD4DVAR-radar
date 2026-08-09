@@ -24,6 +24,12 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from ._digest import tensor_digest
+from .action_artifacts import (
+    expanded_tensor_bytes,
+    preflight_npz_archive,
+    validate_artifact_directory,
+)
+from .action_contracts import canonicalize_action_frames
 from .nowcast import ForecastRunContract, _forecast_input_bundle_digest
 
 from .sensitivity import (
@@ -48,6 +54,7 @@ from .intervention import (
     validate_action_tensor_replay,
     validate_retrospective_counterfactual_replay,
     verify_intervention_receipt_signature,
+    _compute_action_safety,
     _new_prospective_decision,
     _new_realized_intervention_receipt,
 )
@@ -81,6 +88,10 @@ _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
 _INDEX_SCHEMA_VERSION = 12
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
+_MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
+_MAXIMUM_ACTION_ARTIFACT_FILE_BYTES = 2 * 1024**3
+_MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES = 8 * 1024**3
+_MAXIMUM_ACTION_GENERATOR_BYTES = 512 * 1024**2
 
 
 @dataclass(frozen=True)
@@ -133,7 +144,10 @@ class LegacyProspectiveInterventionDecisionAudit:
     def __post_init__(self) -> None:
         payload = json.loads(self.payload_json)
         if not isinstance(payload, dict) or (
-            payload.get("contract") != "prospective-intervention-decision-v2"
+            payload.get("contract") not in {
+                "prospective-intervention-decision-v2",
+                "prospective-intervention-decision-v3",
+            }
             or payload.get("decision_digest") != self.decision_digest
         ):
             raise ValueError("invalid legacy prospective decision")
@@ -165,7 +179,10 @@ class LegacyRealizedInterventionReceiptAudit:
     def __post_init__(self) -> None:
         payload = json.loads(self.payload_json)
         if not isinstance(payload, dict) or (
-            payload.get("contract") != "realized-intervention-receipt-v2"
+            payload.get("contract") not in {
+                "realized-intervention-receipt-v2",
+                "realized-intervention-receipt-v3",
+            }
             or payload.get("receipt_digest") != self.receipt_digest
             or payload.get("decision_digest") != self.decision_digest
         ):
@@ -249,13 +266,30 @@ def _intervention_context_tensor(
     std: Tensor,
     background: Tensor | None,
     applicability: Tensor,
+    *,
+    minimum_dbz: float,
+    maximum_dbz: float,
+    missing_fill_dbz: float,
 ) -> Tensor:
-    canonical_frames = torch.nan_to_num(frames)
-    finite = torch.isfinite(frames).to(canonical_frames)
+    finite_mask = torch.isfinite(frames)
+    canonical_frames = canonicalize_action_frames(
+        frames,
+        masks,
+        minimum_dbz=minimum_dbz,
+        maximum_dbz=maximum_dbz,
+        missing_fill_dbz=missing_fill_dbz,
+    )
+    finite = finite_mask.to(canonical_frames)
     canonical_background = (
         torch.zeros_like(canonical_frames)
         if background is None
-        else torch.nan_to_num(background)
+        else canonicalize_action_frames(
+            background,
+            torch.ones_like(background, dtype=torch.bool),
+            minimum_dbz=minimum_dbz,
+            maximum_dbz=maximum_dbz,
+            missing_fill_dbz=missing_fill_dbz,
+        )
     )
     background_present = torch.full_like(
         canonical_frames,
@@ -273,6 +307,53 @@ def _intervention_context_tensor(
             applicability.to(canonical_frames),
         )
     )
+
+
+def _artifact_intervention_context(
+    manifest: dict[str, object],
+    tensors: dict[str, Tensor],
+    background: Tensor | None,
+    *,
+    prefix: str = "before",
+) -> InterventionInputContext:
+    """Rebuild the immutable action context from its durable tensor members."""
+
+    result = object.__new__(InterventionInputContext)
+    values: tuple[tuple[str, object], ...] = (
+        ("_frames_dbz", tensors[f"{prefix}_frames"]),
+        ("_observation_masks", tensors[f"{prefix}_masks"]),
+        ("_quality_weight", tensors[f"{prefix}_quality"]),
+        ("_observation_std_dbz", tensors[f"{prefix}_std"]),
+        ("_background_frames_dbz", background),
+        ("_applicability_mask", tensors[f"{prefix}_applicability"]),
+        ("radar_id", manifest[f"{prefix}_radar_id"]),
+        ("input_bundle_digest", manifest[f"{prefix}_input_bundle_digest"]),
+        ("input_plan_digest", manifest["input_plan_digest"]),
+        (
+            "input_plan_resolution_digest",
+            manifest[f"{prefix}_input_plan_resolution_digest"],
+        ),
+        ("context_schema_digest", manifest[f"{prefix}_context_schema_digest"]),
+        (
+            "applicability_region_digest",
+            manifest[f"{prefix}_applicability_region_digest"],
+        ),
+        (
+            "applicability_mask_digest",
+            manifest[f"{prefix}_applicability_mask_digest"],
+        ),
+        (
+            "canonicalization_contract_digest",
+            manifest[f"{prefix}_canonicalization_contract_digest"],
+        ),
+        ("min_dbz", manifest["minimum_dbz"]),
+        ("max_dbz", manifest["maximum_dbz"]),
+        ("missing_fill_dbz", manifest["missing_fill_dbz"]),
+        ("context_digest", manifest[f"{prefix}_context_digest"]),
+    )
+    for name, value in values:
+        object.__setattr__(result, name, value)
+    return result
 _TRUST_COMPONENTS_V13 = {
     "linearity",
     "verification",
@@ -932,7 +1013,9 @@ class EpisodeLedger:
 
     def _write_intervention_action_artifact(
         self,
+        decision: ProspectiveInterventionDecision,
         receipt: RealizedInterventionReceipt,
+        action_policy: ReusableInterventionPolicyEvidence,
         generator: InterventionActionGenerator,
         before: InterventionInputContext,
         before_run: ForecastRunContract,
@@ -941,8 +1024,29 @@ class EpisodeLedger:
     ) -> None:
         target = self.interventions_dir / receipt.receipt_digest
         if target.exists():
-            self._replay_intervention_action_artifact(receipt)
+            self._replay_intervention_action_artifact(
+                decision, receipt, action_policy
+            )
             return
+        generator_bytes = generator.artifact_bytes
+        if len(generator_bytes) > _MAXIMUM_ACTION_GENERATOR_BYTES:
+            raise ValueError("action generator artifact exceeds its byte budget")
+        expanded_bytes = expanded_tensor_bytes((
+            before.frames_dbz,
+            before.observation_masks,
+            before.quality_weight,
+            before.observation_std_dbz,
+            before.applicability_mask,
+            after.frames_dbz,
+            after.observation_masks,
+            after.quality_weight,
+            after.observation_std_dbz,
+            after.applicability_mask,
+            before.background_frames_dbz,
+            after.background_frames_dbz,
+        ))
+        if expanded_bytes > _MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES:
+            raise ValueError("action transition artifact exceeds its expanded-byte budget")
         temporary = Path(
             tempfile.mkdtemp(
                 prefix=f".{receipt.receipt_digest}.",
@@ -975,9 +1079,9 @@ class EpisodeLedger:
                 ),
                 after_applicability=after.applicability_mask.detach().cpu().numpy(),
             )
-            (temporary / "generator.pt2").write_bytes(generator.artifact_bytes)
+            (temporary / "generator.pt2").write_bytes(generator_bytes)
             manifest: dict[str, object] = {
-                "contract": "durable-intervention-action-artifact-v1",
+                "contract": "durable-intervention-action-artifact-v2",
                 "receipt_digest": receipt.receipt_digest,
                 "action_artifact_digest": receipt.action_artifact_digest,
                 "action_payload_digest": receipt.action_payload_digest,
@@ -986,6 +1090,11 @@ class EpisodeLedger:
                 "generator_dtype": str(generator._dtype),
                 "intervention_type": generator.intervention_type,
                 "action_reason": generator.action_reason,
+                "action_policy_digest": action_policy.policy_digest,
+                "action_policy_json": asdict(action_policy),
+                "action_safety_diagnostics_digest": (
+                    receipt.action_safety_diagnostics_digest
+                ),
                 "before_context_digest": before.context_digest,
                 "after_context_digest": after.context_digest,
                 "before_radar_id": before.radar_id,
@@ -1004,6 +1113,20 @@ class EpisodeLedger:
                 "after_applicability_mask_digest": tensor_digest(
                     after.applicability_mask
                 ),
+                "before_canonicalization_contract_digest": (
+                    before.canonicalization_contract_digest
+                ),
+                "after_canonicalization_contract_digest": (
+                    after.canonicalization_contract_digest
+                ),
+                "minimum_dbz": before.min_dbz,
+                "maximum_dbz": before.max_dbz,
+                "missing_fill_dbz": before.missing_fill_dbz,
+                "cell_area_m2": before_run.grid_time_contract.cell_area_m2
+                if before_run.grid_time_contract is not None
+                else None,
+                "analysis_config_json": before_run.analysis_config_json,
+                "analysis_config_digest": before_run.analysis_config_digest,
                 "before_input_bundle_digest": before.input_bundle_digest,
                 "after_input_bundle_digest": after.input_bundle_digest,
                 "before_fixed_input_context_digest": (
@@ -1050,6 +1173,12 @@ class EpisodeLedger:
                 _json_text(checksums),
                 encoding="utf-8",
             )
+            if any(
+                (temporary / name).stat().st_size
+                > _MAXIMUM_ACTION_ARTIFACT_FILE_BYTES
+                for name in (*checksums, "checksums.json")
+            ):
+                raise ValueError("action artifact member exceeds its file-byte budget")
             for name in (*checksums, "checksums.json"):
                 _fsync_file(temporary / name)
             _fsync_directory(temporary)
@@ -1061,14 +1190,27 @@ class EpisodeLedger:
 
     def _replay_intervention_action_artifact(
         self,
+        decision: ProspectiveInterventionDecision,
         receipt: RealizedInterventionReceipt,
+        action_policy: ReusableInterventionPolicyEvidence,
     ) -> None:
         source = self.interventions_dir / receipt.receipt_digest
         if not source.is_dir() or source.is_symlink():
             raise ValueError("durable intervention artifact is missing")
+        validate_artifact_directory(
+            source,
+            expected_members=frozenset(
+                {
+                    "checksums.json",
+                    "manifest.json",
+                    "generator.pt2",
+                    "transition.npz",
+                }
+            ),
+            maximum_members=_MAXIMUM_ACTION_ARTIFACT_MEMBERS,
+            maximum_file_bytes=_MAXIMUM_ACTION_ARTIFACT_FILE_BYTES,
+        )
         checksum_path = source / "checksums.json"
-        if not checksum_path.is_file() or checksum_path.is_symlink():
-            raise ValueError("durable intervention checksums are invalid")
         checksums = json.loads(checksum_path.read_text("utf-8"))
         expected_members = {"manifest.json", "generator.pt2", "transition.npz"}
         if not isinstance(checksums, dict) or set(checksums) != expected_members:
@@ -1076,23 +1218,49 @@ class EpisodeLedger:
         if any(
             not (source / name).is_file()
             or (source / name).is_symlink()
+            or (source / name).stat().st_size
+            > _MAXIMUM_ACTION_ARTIFACT_FILE_BYTES
             or _file_digest(source / name) != digest
             for name, digest in checksums.items()
         ):
             raise ValueError("durable intervention artifact checksum mismatch")
         manifest = json.loads((source / "manifest.json").read_text("utf-8"))
         if not isinstance(manifest, dict) or (
-            manifest.get("receipt_digest") != receipt.receipt_digest
+            manifest.get("contract")
+            != "durable-intervention-action-artifact-v2"
+            or manifest.get("receipt_digest") != receipt.receipt_digest
             or manifest.get("action_artifact_digest")
             != receipt.action_artifact_digest
             or manifest.get("before_input_bundle_digest")
             != receipt.actual_input_before_bundle_digest
             or manifest.get("after_input_bundle_digest")
             != receipt.actual_input_bundle_digest
+            or manifest.get("action_policy_digest") != action_policy.policy_digest
+            or manifest.get("action_safety_diagnostics_digest")
+            != receipt.action_safety_diagnostics_digest
+            or manifest.get("before_context_digest")
+            != decision.intervention_input_context_digest
+            or manifest.get("before_fixed_input_context_digest")
+            != decision.actual_input_before_fixed_context_digest
+            or manifest.get("before_applicability_mask_digest")
+            != decision.applicability_mask_digest
         ):
             raise ValueError("durable intervention artifact manifest mismatch")
-        with np.load(source / "transition.npz", allow_pickle=False) as arrays:
-            expected_arrays = {
+        retained_policy_json = manifest.get("action_policy_json")
+        if not isinstance(retained_policy_json, dict):
+            raise ValueError("durable intervention policy is invalid")
+        policy_payload = dict(cast(dict[str, object], retained_policy_json))
+        policy_payload.pop("policy_digest", None)
+        for name in ("allowed_intervention_types", "validation_evidence_digests"):
+            policy_payload[name] = tuple(cast(list[object], policy_payload[name]))
+        retained_policy = ReusableInterventionPolicyEvidence(
+            **cast(Any, policy_payload)
+        )
+        if retained_policy.policy_digest != action_policy.policy_digest:
+            raise ValueError("durable intervention policy changed")
+        transition_path = source / "transition.npz"
+        expected_arrays = frozenset(
+            {
                 "before_frames",
                 "before_masks",
                 "before_quality",
@@ -1106,6 +1274,14 @@ class EpisodeLedger:
                 "after_background",
                 "after_applicability",
             }
+        )
+        preflight_npz_archive(
+            transition_path,
+            expected_members=expected_arrays,
+            maximum_members=_MAXIMUM_ACTION_ARTIFACT_MEMBERS,
+            maximum_expanded_bytes=_MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES,
+        )
+        with np.load(transition_path, allow_pickle=False) as arrays:
             if set(arrays.files) != expected_arrays:
                 raise ValueError("durable intervention tensor members are invalid")
             tensors = {
@@ -1181,7 +1357,7 @@ class EpisodeLedger:
                 raise ValueError("durable intervention input bundle changed")
             expected_context = _json_digest(
                 {
-                    "contract": "intervention-input-context-v2",
+                    "contract": "intervention-input-context-v3",
                     "input_bundle_digest": manifest[
                         f"{prefix}_input_bundle_digest"
                     ],
@@ -1201,6 +1377,15 @@ class EpisodeLedger:
                     "applicability_region_digest": manifest[
                         f"{prefix}_applicability_region_digest"
                     ],
+                    "applicability_mask_digest": manifest[
+                        f"{prefix}_applicability_mask_digest"
+                    ],
+                    "canonicalization_contract_digest": manifest[
+                        f"{prefix}_canonicalization_contract_digest"
+                    ],
+                    "minimum_dbz": manifest["minimum_dbz"],
+                    "maximum_dbz": manifest["maximum_dbz"],
+                    "missing_fill_dbz": manifest["missing_fill_dbz"],
                 }
             )
             if expected_context != manifest[f"{prefix}_context_digest"]:
@@ -1246,6 +1431,9 @@ class EpisodeLedger:
             tensors["before_std"],
             before_background,
             tensors["before_applicability"],
+            minimum_dbz=float(manifest["minimum_dbz"]),
+            maximum_dbz=float(manifest["maximum_dbz"]),
+            missing_fill_dbz=float(manifest["missing_fill_dbz"]),
         )
         generator = InterventionActionGenerator.from_artifact(
             artifact=(source / "generator.pt2").read_bytes(),
@@ -1260,6 +1448,42 @@ class EpisodeLedger:
             raise ValueError("durable action type disagrees with its receipt")
         if action.payload_digest != receipt.action_payload_digest:
             raise ValueError("durable action payload changed")
+        analysis_config_json = manifest.get("analysis_config_json")
+        analysis_config_digest = manifest.get("analysis_config_digest")
+        if (analysis_config_json is None) != (analysis_config_digest is None):
+            raise ValueError("durable action analysis config is incomplete")
+        if analysis_config_json is not None:
+            if not isinstance(analysis_config_json, str) or not isinstance(
+                analysis_config_digest, str
+            ):
+                raise ValueError("durable action analysis config is invalid")
+            try:
+                analysis_config = json.loads(analysis_config_json)
+            except json.JSONDecodeError as error:
+                raise ValueError(
+                    "durable action analysis config is invalid"
+                ) from error
+            if (
+                not isinstance(analysis_config, dict)
+                or _json_digest(analysis_config) != analysis_config_digest
+                or float(
+                    analysis_config.get("observation_common_bias_std_dbz", 0.0)
+                )
+                > 0.0
+            ):
+                raise ValueError(
+                    "durable prospective action used correlated observation error"
+                )
+        diagnostics = _compute_action_safety(
+            action,
+            _artifact_intervention_context(manifest, tensors, before_background),
+            retained_policy,
+            minimum_dbz=float(manifest["minimum_dbz"]),
+            maximum_dbz=float(manifest["maximum_dbz"]),
+            cell_area_m2=float(manifest["cell_area_m2"]),
+        )
+        if diagnostics.diagnostics_digest != receipt.action_safety_diagnostics_digest:
+            raise ValueError("durable action safety diagnostics changed")
         validate_action_tensor_replay(
             action,
             before_frames=tensors["before_frames"],
@@ -1413,6 +1637,7 @@ class EpisodeLedger:
         decision: ProspectiveInterventionDecision,
         receipt: RealizedInterventionReceipt,
         *,
+        action_policy: ReusableInterventionPolicyEvidence,
         action_generator: InterventionActionGenerator,
         actual_input_before_context: InterventionInputContext,
         actual_input_before_run: ForecastRunContract,
@@ -1426,6 +1651,7 @@ class EpisodeLedger:
         validate_prospective_intervention(decision, receipt)
         transition = validate_intervention_action_transition(
             decision,
+            action_policy=action_policy,
             action_generator=action_generator,
             actual_input_before_context=actual_input_before_context,
             actual_input_before_run=actual_input_before_run,
@@ -1486,7 +1712,9 @@ class EpisodeLedger:
             ):
                 raise ValueError("executor receipt sequence must increase")
             self._write_intervention_action_artifact(
+                decision,
                 receipt,
+                action_policy,
                 action_generator,
                 actual_input_before_context,
                 actual_input_before_run,
@@ -1539,12 +1767,20 @@ class EpisodeLedger:
             raise KeyError(f"unknown realized receipt: {receipt_digest}")
         decision_values = json.loads(row["decision_json"])
         receipt_values = json.loads(row["receipt_json"])
+        legacy_contracts = {
+            (
+                "prospective-intervention-decision-v2",
+                "realized-intervention-receipt-v2",
+            ),
+            (
+                "prospective-intervention-decision-v3",
+                "realized-intervention-receipt-v3",
+            ),
+        }
         if (
-            decision_values.get("contract")
-            == "prospective-intervention-decision-v2"
-            and receipt_values.get("contract")
-            == "realized-intervention-receipt-v2"
-        ):
+            decision_values.get("contract"),
+            receipt_values.get("contract"),
+        ) in legacy_contracts:
             decision_digest = decision_values.get("decision_digest")
             retained_receipt_digest = receipt_values.get("receipt_digest")
             if not isinstance(decision_digest, str) or (
@@ -1629,7 +1865,35 @@ class EpisodeLedger:
         values = [int(row[0]) for row in sequences]
         if values != sorted(set(values)):
             raise ValueError("executor receipt sequence ledger is invalid")
-        self._replay_intervention_action_artifact(receipt)
+        with self._connect() as connection:
+            policy_row = connection.execute(
+                "SELECT policy_json FROM reusable_intervention_policies "
+                "WHERE policy_digest = ?",
+                (decision.action_policy_digest,),
+            ).fetchone()
+        if policy_row is None or not isinstance(policy_row[0], str):
+            raise ValueError("prospective intervention policy is not retained")
+        policy_values = json.loads(policy_row[0])
+        if not isinstance(policy_values, dict):
+            raise ValueError("prospective intervention policy is invalid")
+        retained_policy_digest = policy_values.pop("policy_digest", None)
+        policy_values["allowed_intervention_types"] = tuple(
+            policy_values["allowed_intervention_types"]
+        )
+        policy_values["validation_evidence_digests"] = tuple(
+            policy_values["validation_evidence_digests"]
+        )
+        action_policy = ReusableInterventionPolicyEvidence(
+            **cast(Any, policy_values)
+        )
+        if (
+            action_policy.policy_digest != retained_policy_digest
+            or action_policy.policy_digest != decision.action_policy_digest
+        ):
+            raise ValueError("prospective intervention policy digest mismatch")
+        self._replay_intervention_action_artifact(
+            decision, receipt, action_policy
+        )
         return decision, receipt
 
     def load_realized_observation_intervention(
@@ -2681,7 +2945,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v3"
+        or value[0].get("contract") != "prior-holdout-evaluation-v4"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:

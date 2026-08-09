@@ -251,7 +251,7 @@ class _SpatialStdPrior(torch.nn.Module):
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         mean = frames[0] + self.anchor
         std = torch.exp(0.02 * frames[0])
-        valid = torch.ones_like(mean, dtype=torch.bool)
+        valid = torch.ones_like(mean)
         support = torch.ones_like(mean)
         return mean, std, valid, support
 
@@ -1954,7 +1954,11 @@ class VariationalFSOTests(unittest.TestCase):
 
     def test_variational_fso_covers_all_observation_times(self) -> None:
         fso = self.fso
-        self.assertEqual(fso.contract, "p1-variational-fso-v16")
+        self.assertEqual(fso.contract, "p1-variational-fso-v17")
+        self.assertGreaterEqual(
+            fso.neural_prior_adjoint_direction_maximum_defect,
+            0.0,
+        )
         self.assertEqual(
             fso.sensitivity_scope,
             "residual_plus_input_dependent_initial_state_and_baseline_with_frozen_selection",
