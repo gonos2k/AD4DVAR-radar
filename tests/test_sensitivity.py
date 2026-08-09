@@ -93,6 +93,7 @@ from advar.variational import (  # noqa: E402
     _analysis_trajectory,
     AnalysisConfig,
     NeuralPriorInferenceRunner,
+    NeuralPriorProbabilityContract,
     residual_vector,
     variational_nowcast,
 )
@@ -1890,6 +1891,11 @@ class VariationalFSOTests(unittest.TestCase):
             _SpatialStdPrior().eval(),
             lambda value: value,
             example_frames=self.frames,
+            probability_contract=NeuralPriorProbabilityContract(
+                support_threshold_dbz=5.0,
+                support_product_digest="a" * 64,
+                qc_pipeline_digest="9" * 64,
+            ),
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
             training_manifest_digest="6" * 64,

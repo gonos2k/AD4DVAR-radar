@@ -68,12 +68,14 @@ from .intervention import (
 )
 from .promotion import (
     LegacyNeuralPriorCandidateManifestAuditV2,
+    LegacyNeuralPriorCandidateManifestAuditV3,
     NeuralPriorCandidateManifest,
     LegacyNeuralPriorHoldoutPlanAudit,
     LegacyNeuralPriorHoldoutPlanCase,
     LegacyNeuralPriorHoldoutPlanV2Audit,
     LegacyNeuralPriorHoldoutPlanV2Case,
     LegacyNeuralPriorHoldoutPlanV3Audit,
+    LegacyNeuralPriorHoldoutPlanV4Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
@@ -83,6 +85,7 @@ from .promotion import (
     NeuralPriorPromotionEvidence,
     LegacyNeuralPriorPromotionEvidenceAuditV3,
     LegacyNeuralPriorPromotionEvidenceAuditV4,
+    LegacyNeuralPriorPromotionEvidenceAuditV5,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     compute_neural_prior_promotion,
@@ -97,7 +100,7 @@ _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 13
+_INDEX_SCHEMA_VERSION = 14
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
@@ -127,6 +130,7 @@ class LegacyPromotionEvaluationAudit:
     payload_json: str
     contract: str = "legacy-promotion-evaluation-audit-v1"
     content_digest_verified: bool = field(init=False)
+    statistical_reuse_permitted: bool = field(init=False, default=False)
     audit_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -157,6 +161,7 @@ class LegacyPromotionEvaluationAudit:
             if _json_digest(normalized) != self.evaluation_digest:
                 raise ValueError("legacy promotion evaluation digest mismatch")
         object.__setattr__(self, "content_digest_verified", verified)
+        object.__setattr__(self, "statistical_reuse_permitted", False)
         object.__setattr__(
             self,
             "audit_digest",
@@ -166,6 +171,7 @@ class LegacyPromotionEvaluationAudit:
                     "evaluation_digest": self.evaluation_digest,
                     "payload": payload,
                     "content_digest_verified": verified,
+                    "statistical_reuse_permitted": False,
                 }
             ),
         )
@@ -2166,7 +2172,12 @@ class EpisodeLedger:
         deadline = datetime.fromisoformat(
             decision.decision_deadline.replace("Z", "+00:00")
         )
-        if not decided_at <= reviewed_at < expires_at <= deadline:
+        applied_at = datetime.fromisoformat(
+            receipt.applied_time.replace("Z", "+00:00")
+        )
+        if not (
+            decided_at <= reviewed_at <= applied_at < expires_at <= deadline
+        ):
             raise ValueError("stored operator approval time order is invalid")
         operator_trust = _load_operator_trust_store(operator_trust_store_path)
         if approval.operator_trust_store_digest != operator_trust.content_digest:
@@ -2347,6 +2358,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanAudit
         | LegacyNeuralPriorHoldoutPlanV2Audit
         | LegacyNeuralPriorHoldoutPlanV3Audit
+        | LegacyNeuralPriorHoldoutPlanV4Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -2416,6 +2428,32 @@ class EpisodeLedger:
             if plan_v3.plan_digest != plan_digest:
                 raise ValueError("legacy v3 neural-prior holdout digest mismatch")
             return plan_v3
+        if value.get("contract") == "neural-prior-holdout-plan-v4":
+            value["cases"] = tuple(
+                NeuralPriorHoldoutPlanCase(**item) for item in value["cases"]
+            )
+            value["input_plans"] = tuple(
+                NeuralPriorInputPlan(
+                    **{
+                        key: entry
+                        for key, entry in item.items()
+                        if key != "plan_digest"
+                    }
+                )
+                for item in value["input_plans"]
+            )
+            value["uncertainty_target_plans"] = tuple(
+                {
+                    key: entry
+                    for key, entry in item.items()
+                    if key != "plan_digest"
+                }
+                for item in value["uncertainty_target_plans"]
+            )
+            plan_v4 = LegacyNeuralPriorHoldoutPlanV4Audit(**value)
+            if plan_v4.plan_digest != plan_digest:
+                raise ValueError("legacy v4 neural-prior holdout digest mismatch")
+            return plan_v4
         value["cases"] = tuple(
             NeuralPriorHoldoutPlanCase(**item) for item in value["cases"]
         )
@@ -2430,7 +2468,7 @@ class EpisodeLedger:
                 **{
                     key: entry
                     for key, entry in item.items()
-                    if key != "plan_digest"
+                    if key not in {"plan_digest", "support_event_digest"}
                 }
             )
             for item in value["uncertainty_target_plans"]
@@ -2542,10 +2580,18 @@ class EpisodeLedger:
                     prior_underdispersion_increase_upper_bound,
                     prior_echo_intensity_nll_increase_upper_bound,
                     prior_clear_sky_false_echo_increase_upper_bound,
+                    prior_echo_component_status,
+                    prior_clear_sky_component_status,
+                    prior_echo_case_count,
+                    prior_clear_sky_case_count,
+                    prior_echo_cluster_count,
+                    prior_clear_sky_cluster_count,
+                    simultaneous_inference_test_count,
                     eligible,
                     rejection_reasons_json, evidence_contract, created_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                          ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     evidence.promotion_evidence_digest,
@@ -2582,6 +2628,13 @@ class EpisodeLedger:
                     evidence.prior_underdispersion_increase_upper_bound,
                     evidence.prior_echo_intensity_nll_increase_upper_bound,
                     evidence.prior_clear_sky_false_echo_increase_upper_bound,
+                    evidence.prior_echo_component_status,
+                    evidence.prior_clear_sky_component_status,
+                    evidence.prior_echo_case_count,
+                    evidence.prior_clear_sky_case_count,
+                    evidence.prior_echo_cluster_count,
+                    evidence.prior_clear_sky_cluster_count,
+                    evidence.simultaneous_inference_test_count,
                     int(evidence.eligible),
                     json.dumps(list(evidence.rejection_reasons)),
                     evidence.contract,
@@ -2597,6 +2650,7 @@ class EpisodeLedger:
         NeuralPriorPromotionEvidence
         | LegacyNeuralPriorPromotionEvidenceAuditV3
         | LegacyNeuralPriorPromotionEvidenceAuditV4
+        | LegacyNeuralPriorPromotionEvidenceAuditV5
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -2653,6 +2707,7 @@ class EpisodeLedger:
                 NeuralPriorPromotionEvidence
                 | LegacyNeuralPriorPromotionEvidenceAuditV3
                 | LegacyNeuralPriorPromotionEvidenceAuditV4
+                | LegacyNeuralPriorPromotionEvidenceAuditV5
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -2684,8 +2739,6 @@ class EpisodeLedger:
                     ),
                 )
             else:
-                if contract != "neural-prior-promotion-evidence-v5":
-                    raise ValueError("unsupported neural-prior promotion evidence")
                 v5_payload = {
                     **common_payload,
                     "prior_echo_intensity_nll_increase_upper_bound": (
@@ -2701,9 +2754,46 @@ class EpisodeLedger:
                         row["prior_underdispersion_increase_upper_bound"]
                     ),
                 }
-                evidence = NeuralPriorPromotionEvidence(
-                    **cast(Any, v5_payload)
-                )
+                if contract == "neural-prior-promotion-evidence-v5":
+                    evidence = LegacyNeuralPriorPromotionEvidenceAuditV5(
+                        promotion_evidence_digest=promotion_evidence_digest,
+                        payload_json=json.dumps(
+                            v5_payload,
+                            sort_keys=True,
+                            separators=(",", ":"),
+                        ),
+                    )
+                else:
+                    if contract != "neural-prior-promotion-evidence-v6":
+                        raise ValueError(
+                            "unsupported neural-prior promotion evidence"
+                        )
+                    v6_payload = {
+                        **v5_payload,
+                        "prior_echo_component_status": (
+                            row["prior_echo_component_status"]
+                        ),
+                        "prior_clear_sky_component_status": (
+                            row["prior_clear_sky_component_status"]
+                        ),
+                        "prior_echo_case_count": row["prior_echo_case_count"],
+                        "prior_clear_sky_case_count": (
+                            row["prior_clear_sky_case_count"]
+                        ),
+                        "prior_echo_cluster_count": (
+                            row["prior_echo_cluster_count"]
+                        ),
+                        "prior_clear_sky_cluster_count": (
+                            row["prior_clear_sky_cluster_count"]
+                        ),
+                        "simultaneous_inference_test_count": (
+                            row["simultaneous_inference_test_count"]
+                        ),
+                    }
+                    v6_payload["contract"] = contract
+                    evidence = NeuralPriorPromotionEvidence(
+                        **cast(Any, v6_payload)
+                    )
                 if evidence.promotion_evidence_digest != promotion_evidence_digest:
                     raise ValueError("neural-prior promotion digest mismatch")
         payloads = json.loads(row["evaluation_payloads_json"])
@@ -2927,6 +3017,13 @@ class EpisodeLedger:
                     prior_underdispersion_increase_upper_bound REAL NOT NULL,
                     prior_echo_intensity_nll_increase_upper_bound REAL NOT NULL,
                     prior_clear_sky_false_echo_increase_upper_bound REAL NOT NULL,
+                    prior_echo_component_status TEXT NOT NULL,
+                    prior_clear_sky_component_status TEXT NOT NULL,
+                    prior_echo_case_count INTEGER NOT NULL,
+                    prior_clear_sky_case_count INTEGER NOT NULL,
+                    prior_echo_cluster_count INTEGER NOT NULL,
+                    prior_clear_sky_cluster_count INTEGER NOT NULL,
+                    simultaneous_inference_test_count INTEGER NOT NULL,
                     eligible INTEGER NOT NULL,
                     rejection_reasons_json TEXT NOT NULL,
                     evidence_contract TEXT NOT NULL,
@@ -3317,6 +3414,13 @@ def _ensure_neural_prior_promotion_schema(
         "prior_clear_sky_false_echo_increase_upper_bound": (
             "REAL NOT NULL DEFAULT 0"
         ),
+        "prior_echo_component_status": "TEXT NOT NULL DEFAULT ''",
+        "prior_clear_sky_component_status": "TEXT NOT NULL DEFAULT ''",
+        "prior_echo_case_count": "INTEGER NOT NULL DEFAULT 0",
+        "prior_clear_sky_case_count": "INTEGER NOT NULL DEFAULT 0",
+        "prior_echo_cluster_count": "INTEGER NOT NULL DEFAULT 0",
+        "prior_clear_sky_cluster_count": "INTEGER NOT NULL DEFAULT 0",
+        "simultaneous_inference_test_count": "INTEGER NOT NULL DEFAULT 0",
         "evaluation_payloads_json": "TEXT NOT NULL DEFAULT '[]'",
     }
     for name, definition in definitions.items():
@@ -3377,7 +3481,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v6"
+        or value[0].get("contract") != "prior-holdout-evaluation-v7"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:
@@ -3430,7 +3534,11 @@ def _decode_candidate_manifest(
     text: str,
     *,
     expected_digest: str,
-) -> NeuralPriorCandidateManifest | LegacyNeuralPriorCandidateManifestAuditV2:
+) -> (
+    NeuralPriorCandidateManifest
+    | LegacyNeuralPriorCandidateManifestAuditV2
+    | LegacyNeuralPriorCandidateManifestAuditV3
+):
     value = json.loads(text)
     if not isinstance(value, dict):
         raise ValueError("invalid candidate manifest audit payload")
@@ -3448,6 +3556,18 @@ def _decode_candidate_manifest(
         if audit.manifest_digest != expected_digest:
             raise ValueError("candidate manifest ledger digest mismatch")
         return audit
+    if values.get("contract") == "neural-prior-candidate-manifest-v3":
+        audit_v3 = LegacyNeuralPriorCandidateManifestAuditV3(
+            manifest_digest=str(stored_digest),
+            payload_json=json.dumps(
+                value,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+        )
+        if audit_v3.manifest_digest != expected_digest:
+            raise ValueError("candidate manifest ledger digest mismatch")
+        return audit_v3
     values["holdout_cases"] = tuple(
         NeuralPriorHoldoutCase(**item) for item in values["holdout_cases"]
     )

@@ -666,6 +666,82 @@ def _export_graph(module: nn.Module, argument: Tensor) -> tuple[nn.Module, str]:
 
 
 @dataclass(frozen=True)
+class NeuralPriorProbabilityContract:
+    """Meaning of the probability channels emitted by one neural prior."""
+
+    support_threshold_dbz: float
+    support_product_digest: str
+    qc_pipeline_digest: str
+    support_variable: Literal["radar_reflectivity_dbz"] = (
+        "radar_reflectivity_dbz"
+    )
+    support_operator: Literal[">="] = ">="
+    intensity_conditioning: Literal["conditional_on_support"] = (
+        "conditional_on_support"
+    )
+    intensity_variable: Literal["radar_reflectivity_dbz"] = (
+        "radar_reflectivity_dbz"
+    )
+    intensity_distribution: Literal["truncated_gaussian_dbz"] = (
+        "truncated_gaussian_dbz"
+    )
+    intensity_parameterization: Literal["pre_truncation_location_scale"] = (
+        "pre_truncation_location_scale"
+    )
+    contract: str = "neural-prior-probability-contract-v1"
+    support_event_digest: str = field(init=False)
+    contract_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.contract != "neural-prior-probability-contract-v1":
+            raise ValueError("unsupported neural-prior probability contract")
+        if not math.isfinite(self.support_threshold_dbz):
+            raise ValueError("neural-prior support threshold must be finite")
+        _require_prior_digest(
+            "probability support product digest",
+            self.support_product_digest,
+        )
+        _require_prior_digest("probability QC pipeline digest", self.qc_pipeline_digest)
+        if (
+            self.support_variable != "radar_reflectivity_dbz"
+            or self.support_operator != ">="
+            or self.intensity_conditioning != "conditional_on_support"
+            or self.intensity_variable != "radar_reflectivity_dbz"
+            or self.intensity_distribution != "truncated_gaussian_dbz"
+            or self.intensity_parameterization
+            != "pre_truncation_location_scale"
+        ):
+            raise ValueError("unsupported neural-prior probability semantics")
+        support_event = json_digest(
+            {
+                "contract": "radar-support-event-v1",
+                "variable": self.support_variable,
+                "operator": self.support_operator,
+                "threshold_dbz": self.support_threshold_dbz,
+                "support_product_digest": self.support_product_digest,
+                "qc_pipeline_digest": self.qc_pipeline_digest,
+            }
+        )
+        object.__setattr__(self, "support_event_digest", support_event)
+        object.__setattr__(
+            self,
+            "contract_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "support_event_digest": support_event,
+                    "intensity_conditioning": self.intensity_conditioning,
+                    "intensity_variable": self.intensity_variable,
+                    "intensity_distribution": self.intensity_distribution,
+                    "intensity_parameterization": (
+                        self.intensity_parameterization
+                    ),
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorInferenceEvidence:
     """Reproducible evidence for one concrete prior inference."""
 
@@ -689,6 +765,8 @@ class NeuralPriorInferenceEvidence:
     output_valid_mask_digest: str
     output_valid_probability_digest: str
     output_support_probability_digest: str
+    probability_contract_digest: str
+    support_event_digest: str
     prior_output_valid_time: str | None
     feature_source_valid_times: tuple[str, ...]
     feature_source_identity_digests: tuple[str, ...]
@@ -700,11 +778,11 @@ class NeuralPriorInferenceEvidence:
     uncertainty_contract: Literal["model_spatial", "constant_research"]
     execution_contract_digest: str
     dependency: PriorDependency
-    contract: str = "neural-prior-inference-evidence-v5"
+    contract: str = "neural-prior-inference-evidence-v6"
     evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-inference-evidence-v5":
+        if self.contract != "neural-prior-inference-evidence-v6":
             raise ValueError("unsupported neural-prior inference evidence")
         for name in (
             "neural_prior_digest",
@@ -727,6 +805,8 @@ class NeuralPriorInferenceEvidence:
             "output_valid_mask_digest",
             "output_valid_probability_digest",
             "output_support_probability_digest",
+            "probability_contract_digest",
+            "support_event_digest",
             "feature_exclusion_mask_digest",
             "feature_exclusion_contract_digest",
             "execution_contract_digest",
@@ -782,6 +862,7 @@ class NeuralPriorInferenceRunner:
         model_contract_digest: str,
         feature_schema_digest: str,
         training_manifest_digest: str,
+        probability_contract: NeuralPriorProbabilityContract,
         inference_algorithm_digest: str | None = None,
         numerical_runtime_digest: str | None = None,
         dependency: PriorDependency,
@@ -806,6 +887,8 @@ class NeuralPriorInferenceRunner:
             ("training_manifest_digest", training_manifest_digest),
         ):
             _require_prior_digest(name, value)
+        if not isinstance(probability_contract, NeuralPriorProbabilityContract):
+            raise TypeError("neural-prior probability contract is required")
         if not example_frames.is_floating_point() or example_frames.ndim != 3:
             raise ValueError("neural-prior example frames must be floating [T,H,W]")
         canonical_frames = torch.zeros_like(example_frames)
@@ -860,10 +943,13 @@ class NeuralPriorInferenceRunner:
         actual_feature_digest = feature_graph_digest
         actual_algorithm_digest = json_digest(
             {
-                "contract": "advar-neural-prior-inference-algorithm-v4",
+                "contract": "advar-neural-prior-inference-algorithm-v5",
                 "export": "torch.export",
                 "derivatives": "rademacher-jvp-vjp-finite-difference",
                 "output": "mean-log-std-valid-probability-support",
+                "probability_contract_digest": (
+                    probability_contract.contract_digest
+                ),
             }
         )
         for name, claimed, actual in (
@@ -918,6 +1004,7 @@ class NeuralPriorInferenceRunner:
         self.model_contract_digest = model_contract_digest
         self.feature_schema_digest = feature_schema_digest
         self.training_manifest_digest = training_manifest_digest
+        self.probability_contract = probability_contract
         self.inference_algorithm_digest = actual_algorithm_digest
         self.numerical_runtime_digest = actual_runtime_digest
         self.dependency: PriorDependency = dependency
@@ -942,7 +1029,7 @@ class NeuralPriorInferenceRunner:
         self._example_dtype = example_frames.dtype
         self.execution_contract_digest = json_digest(
             {
-                "contract": "neural-prior-execution-contract-v5",
+                "contract": "neural-prior-execution-contract-v6",
                 "model_state_digest": self._model_state_digest,
                 "model_code_digest": self._model_code_digest,
                 "feature_extractor_digest": actual_feature_digest,
@@ -953,6 +1040,10 @@ class NeuralPriorInferenceRunner:
                 "model_contract_digest": model_contract_digest,
                 "feature_schema_digest": feature_schema_digest,
                 "training_manifest_digest": training_manifest_digest,
+                "probability_contract_digest": (
+                    probability_contract.contract_digest
+                ),
+                "support_event_digest": probability_contract.support_event_digest,
                 "inference_algorithm_digest": actual_algorithm_digest,
                 "numerical_runtime_digest": actual_runtime_digest,
                 "dependency": dependency,
@@ -1171,6 +1262,16 @@ class NeuralPriorInferenceRunner:
             raise ValueError("neural-prior derivative defect exceeds its contract")
         if tensor_digest(frames_dbz) != input_run.input_frames_digest:
             raise ValueError("neural-prior frames disagree with the input run")
+        if input_run.operational_data_identity_json is not None:
+            data_identity = OperationalDataIdentity.from_json(
+                input_run.operational_data_identity_json
+            )
+            if data_identity.qc_pipeline_digest != (
+                self.probability_contract.qc_pipeline_digest
+            ):
+                raise ValueError(
+                    "neural-prior probability event disagrees with input QC"
+                )
         features, output, std, valid, valid_probability, support, validity = (
             self._output(frames_dbz)
         )
@@ -1211,6 +1312,10 @@ class NeuralPriorInferenceRunner:
             output_valid_mask_digest=tensor_digest(valid),
             output_valid_probability_digest=tensor_digest(valid_probability),
             output_support_probability_digest=tensor_digest(support),
+            probability_contract_digest=(
+                self.probability_contract.contract_digest
+            ),
+            support_event_digest=self.probability_contract.support_event_digest,
             prior_output_valid_time=(
                 None
                 if not feature_source_valid_times
@@ -1402,7 +1507,7 @@ class NeuralPriorApplication:
     support_policy: PriorSupportPolicy
     maximum_added_area_km2: float
     maximum_added_echo_integral: float
-    contract: str = "neural-prior-application-v4"
+    contract: str = "neural-prior-application-v5"
     application_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -1428,6 +1533,14 @@ class NeuralPriorApplication:
     def dependency(self) -> PriorDependency:
         return self.inference_evidence.dependency
 
+    @property
+    def probability_contract_digest(self) -> str:
+        return self.inference_evidence.probability_contract_digest
+
+    @property
+    def support_event_digest(self) -> str:
+        return self.inference_evidence.support_event_digest
+
     def validate_integrity(self) -> None:
         self.inference_evidence.validate_integrity()
         if self.application_digest != _neural_prior_application_digest(self):
@@ -1436,7 +1549,7 @@ class NeuralPriorApplication:
 
 def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
     result = object.__new__(NeuralPriorApplication)
-    object.__setattr__(result, "contract", "neural-prior-application-v4")
+    object.__setattr__(result, "contract", "neural-prior-application-v5")
     for name, value in values.items():
         object.__setattr__(result, name, value)
     background = result.initial_background_dbz.detach().clone()

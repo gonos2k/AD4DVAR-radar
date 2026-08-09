@@ -54,6 +54,7 @@ from advar.variational import (  # noqa: E402
     FrozenOuterState,
     NeuralPriorApplication,
     NeuralPriorInferenceRunner,
+    NeuralPriorProbabilityContract,
     analysis_trajectory,
     freeze_irls_weights,
     initial_control,
@@ -64,6 +65,13 @@ from advar.variational import (  # noqa: E402
     solve_analysis,
     variational_nowcast,
     whitened_observation_residual,
+)
+
+
+_PRIOR_PROBABILITY_CONTRACT = NeuralPriorProbabilityContract(
+    support_threshold_dbz=5.0,
+    support_product_digest="a" * 64,
+    qc_pipeline_digest="9" * 64,
 )
 
 
@@ -268,6 +276,7 @@ def _prior_runner(
         _OffsetPrior(offset).eval(),
         lambda value: value[0],
         example_frames=example_frames,
+        probability_contract=_PRIOR_PROBABILITY_CONTRACT,
         model_contract_digest="4" * 64,
         feature_schema_digest="5" * 64,
         training_manifest_digest=("6" if role == "candidate" else "7") * 64,
@@ -322,6 +331,7 @@ class VariationalAnalysisTests(unittest.TestCase):
     def test_prior_runner_rejects_caller_declared_execution_identity(self) -> None:
         common = dict(
             example_frames=torch.zeros((3, 4, 4), dtype=torch.float64),
+            probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
             training_manifest_digest="6" * 64,
@@ -356,6 +366,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             _SpatialUncertaintyPrior().eval(),
             lambda value: value[0],
             example_frames=frames,
+            probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
             training_manifest_digest="6" * 64,
@@ -378,7 +389,40 @@ class VariationalAnalysisTests(unittest.TestCase):
             float(torch.std(application.support_probability).detach()),
             0.0,
         )
+        self.assertEqual(
+            application.inference_evidence.probability_contract_digest,
+            _PRIOR_PROBABILITY_CONTRACT.contract_digest,
+        )
+        self.assertEqual(
+            application.inference_evidence.support_event_digest,
+            _PRIOR_PROBABILITY_CONTRACT.support_event_digest,
+        )
         runner.reproduce(application, frames)
+
+    def test_prior_support_threshold_changes_probability_identity(self) -> None:
+        threshold_35 = NeuralPriorProbabilityContract(
+            support_threshold_dbz=35.0,
+            support_product_digest="a" * 64,
+            qc_pipeline_digest="9" * 64,
+        )
+        other_product = NeuralPriorProbabilityContract(
+            support_threshold_dbz=5.0,
+            support_product_digest="b" * 64,
+            qc_pipeline_digest="9" * 64,
+        )
+
+        self.assertNotEqual(
+            threshold_35.support_event_digest,
+            _PRIOR_PROBABILITY_CONTRACT.support_event_digest,
+        )
+        self.assertNotEqual(
+            other_product.support_event_digest,
+            _PRIOR_PROBABILITY_CONTRACT.support_event_digest,
+        )
+        self.assertNotEqual(
+            threshold_35.contract_digest,
+            _PRIOR_PROBABILITY_CONTRACT.contract_digest,
+        )
 
     def test_prior_runner_certifies_derivatives_at_the_live_input(self) -> None:
         frames = torch.full((3, 4, 4), 10.0, dtype=torch.float64)
@@ -392,6 +436,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             _LiveKinkPrior().eval(),
             lambda value: value[0],
             example_frames=frames,
+            probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
             training_manifest_digest="6" * 64,
@@ -417,6 +462,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             _RadarDependentBooleanValidityPrior().eval(),
             lambda value: value[0],
             example_frames=frames,
+            probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
             training_manifest_digest="6" * 64,
@@ -435,6 +481,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
         common = dict(
             example_frames=frames,
+            probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
             training_manifest_digest="6" * 64,
@@ -501,6 +548,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             _UncertaintyOnlyPrior().eval(),
             lambda value: value[0],
             example_frames=frames,
+            probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
             training_manifest_digest="6" * 64,
@@ -527,6 +575,7 @@ class VariationalAnalysisTests(unittest.TestCase):
     def test_prior_execution_digest_binds_the_actual_forward_code(self) -> None:
         common = dict(
             example_frames=torch.zeros((3, 4, 4), dtype=torch.float64),
+            probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
             training_manifest_digest="6" * 64,
@@ -570,6 +619,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         example_frames = torch.ones((3, 2, 2), dtype=torch.float64)
         common = dict(
             example_frames=example_frames,
+            probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
             training_manifest_digest="6" * 64,
@@ -695,6 +745,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             model,
             lambda value: value[0],
             example_frames=values,
+            probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
             training_manifest_digest="6" * 64,
