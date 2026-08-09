@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.61
+# ADVAR 3-frame radar nowcast v0.63
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -759,8 +759,10 @@ withheld radar/time/mask), QC, feature-exclusion 및 independence evidence를
 Tensor로 만들 수 없고, plan에 고정된 radar product·QC·grid·valid time과 일치하는
 content-addressed `VerificationBundle`에서만 생성한다.
 P1 state head에는 별도의 `NeuralPriorStateCalibrationPlan`을 사전등록한다. State target은
-state product·QC·mask·censor policy와 prior output valid time에 결합되고 feature에서
-withhold됐음을 검증한다. Candidate와 parent의 state interval-Gaussian NLL·PIT,
+state product·QC·mask·censor·floor policy, dBZ resolution·quantization origin과 prior output
+valid time에 결합되고 feature에서 withhold됐음을 검증한다. Target은 이 측정계보를 실제
+자료와 함께 attestation한 `radar-verification-bundle-v2`에서만 생성된다. Candidate와
+parent의 state interval-Gaussian NLL·PIT,
 support Brier·pixel/object miss·false-support 및 validity Brier를 같은 target에서 paired
 평가한다. 절대 calibration과 cluster max-statistic 비열화 상한을 모두 통과하지 못하면
 forecast skill이 좋아도 `state_calibration_eligible=False`이며 posterior/confidence용
@@ -787,8 +789,10 @@ hurdle-probability head를 별도 계약으로 출력한다. State product와 su
 truncated location/scale은 P1 초기장으로 재사용되지 않는다. Probability head는 모델
 입력과 분리된 withheld target의 positive-echo 화소에서 float64 `log_ndtr` 기반 conditional
 truncated-Gaussian intensity NLL로 검증한다. Radar dBZ의 해상도·quantization origin·첫
-threshold bin 규칙을 계약에 포함하고, 점 likelihood 대신 관측 bin의 interval mass를
-사용한다. Conditional PIT도 interval midpoint를 사용하므로 threshold와 정확히 같은
+threshold bin 규칙을 계약에 포함한다. 관측값은 origin 기반 dBZ lattice에 있어야 하며,
+off-lattice 값은 다른 측정계약으로 간주해 거부한다. 점 likelihood 대신 관측 bin의
+interval mass를 사용하고, 양·음 tail은 각각 survival/CDF log-mass로 계산해 극단값도
+유한한 score로 유지한다. Conditional PIT도 interval midpoint를 사용하므로 threshold와 정확히 같은
 양자화 값이 모델과 무관하게 극단 residual이 되지 않는다. Event probability는
 고정 target mask 전체 Brier뿐 아니라 pixel-level echo miss, connected echo-object miss와
 clear false-echo score로 각각 검증한다.
@@ -805,15 +809,23 @@ Candidate family 크기는 Bonferroni로, 현재 candidate의 component와 regim
 cluster sign replicate의 studentized max statistic으로 함께 보정한다. 작은 cluster 집합은
 모든 sign pattern을 정확히 열거하고, 큰 집합은 요구 tail replicate 수를 충족해야 한다.
 검정 방법·유효 replicate·critical quantile·Monte Carlo 오차와 실제 simultaneous test 수를
-promotion evidence에 보존한다. Echo와 clear 증거가 모두 충족된 regime/range만 deployment
-applicability에 포함되며 그 밖에서는 parent prior로 fail-close한다.
-실제 배포에서는 caller가 regime 문자열을 넘기지 않는다. Exported
+promotion evidence에 보존한다. Echo와 clear 증거가 모두 충족된 classifier-output
+regime/range만 deployment applicability에 포함되며 그 밖에서는 parent prior로
+fail-close한다. 한 group의 표본이 부족하면 그 group만 인증에서 제외하며, 정책이
+`require_all_registered_regimes_certified`를 명시한 경우에만 candidate 전체를 거부한다.
+실제 배포에서는 caller가 regime 문자열이나 operational role을 넘기지 않는다. Exported
 `NeuralPriorRegimeClassifier`가 현재 `full_analysis_input_digest`에 결합된
-`RegimeClassificationEvidence`를 만들고, `infer_deployed_neural_prior()`가 promotion
-evidence·classifier·confidence·certified group을 함께 확인한 뒤 candidate 또는 parent를
-선택한다. 선택 digest, promotion evidence, regime evidence와 fallback reason은 forecast
-run identity 및 v50 artifact에 남는다. PR #95의 v49 run은 이 새 증거를 소급 생성하지
-않고 `neural-prior-deployment-lineage-v0-audit`로만 읽힌다.
+`RegimeClassificationEvidence`를 만들고, 모든 holdout case에서도 동일 classifier를
+실행한다. Reference-label accuracy·regime recall·confidence calibration·false routing과
+unknown/OOD abstention을 통과해야 deployment evidence가 유효하다. Range logits는 domain에
+존재하는 band 집합으로 해석하며 활성 band가 모두 인증돼야 candidate를 선택한다.
+`infer_deployed_neural_prior()`는 root-owned trust store가 승인한
+`DeployedNeuralPriorPolicy`의 confidence rule까지 확인한 뒤 candidate 또는 parent를
+선택한다. 연구용 `NeuralPriorInferenceRunner.infer()`는 operational input을 항상 거부한다.
+선택 digest, promotion evidence, classifier evidence, deployment policy·trust-store digest와
+fallback reason은 forecast run identity 및 v51 artifact에 남는다. v50 run은 policy 승인
+이전 계약을 `neural-prior-deployment-lineage-v1-audit`로, v49 이하는
+`neural-prior-deployment-lineage-v0-audit`로만 읽는다.
 따라서 clear-sky 개선으로 echo intensity 악화를 상쇄하거나 절대 calibration 상한만
 가까스로 통과하면서 parent보다 불확실성이 크게 악화된 candidate는 승격되지 않는다. Initial-state prior의 target valid time은 prior output
 valid time과 같아야 하며, 같은 source/time을 쓰는 withheld target은 실제 feature-
@@ -822,9 +834,9 @@ exclusion mask가 target mask를 덮었는지 계산해 확인한다. 불확실�
 fraction·면적과 parent 대비 abstention 증가 및 NLL abstention penalty를 함께 적용한다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
-현재 promotion evidence는 v8, candidate manifest는 v5, holdout plan은 v6,
-holdout evaluation은 v9이다. v3/v4/v5/v6/v7 promotion evidence와 v2/v3/v4 candidate
-manifest, v1-v5 holdout plan 및 v1-v8 evaluation은 원래 payload와 digest를 그대로 검증하는
+현재 promotion evidence는 v9, candidate manifest는 v5, holdout plan은 v7,
+holdout evaluation은 v10이다. v3/v4/v5/v6/v7/v8 promotion evidence와 v2/v3/v4 candidate
+manifest, v1-v6 holdout plan 및 v1-v9 evaluation은 원래 payload와 digest를 그대로 검증하는
 read-only audit 타입으로만 적재된다. Migration 때 추가된 UCB 컬럼의 기본값 0을 과거
 증거의 계산값으로 해석하거나 과거 row를 현재 승격판정에 재사용하지 않는다.
 
@@ -1345,8 +1357,8 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v56`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v50`
+- `output_contract_version`: 현재 `nowcast-npz-v57`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v51`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age

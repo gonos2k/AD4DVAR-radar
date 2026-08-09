@@ -53,10 +53,12 @@ from advar.promotion import (  # noqa: E402
     LegacyNeuralPriorHoldoutPlanV3Audit,
     LegacyNeuralPriorHoldoutPlanV4Audit,
     LegacyNeuralPriorHoldoutPlanV5Audit,
+    LegacyNeuralPriorHoldoutPlanV6Audit,
     LegacyNeuralPriorPromotionEvidenceAuditV3,
     LegacyNeuralPriorPromotionEvidenceAuditV5,
     LegacyNeuralPriorPromotionEvidenceAuditV6,
     LegacyNeuralPriorPromotionEvidenceAuditV7,
+    LegacyNeuralPriorPromotionEvidenceAuditV8,
     NeuralPriorPromotionEvidence,
     NeuralPriorCandidateManifest,
     NeuralPriorHoldoutCase,
@@ -588,6 +590,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             qc_pipeline_digest="3" * 64,
             mask_policy_digest="5" * 64,
             censor_policy_digest="f" * 64,
+            floor_representation_contract_digest="a" * 64,
             grid_contract_digest="1" * 64,
             feature_exclusion_contract_digest="c" * 64,
             independence_evidence_digest="d" * 64,
@@ -2190,6 +2193,42 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertIsInstance(loaded_v5, LegacyNeuralPriorHoldoutPlanV5Audit)
         self.assertEqual(loaded_v5.plan_digest, v5_digest)
 
+        normalized_v6: dict[str, object] = {
+            "contract": "neural-prior-holdout-plan-v6",
+            "plan_id": "legacy-v6-plan",
+            "parent_prior_digest": "7" * 64,
+            "candidate_family_digests": ["8" * 64],
+            "cases": [],
+            "input_plans": [],
+            "uncertainty_target_plans": [],
+            "state_calibration_target_plans": [],
+            "registered_at": "2026-08-07T00:00:00Z",
+            "mode": "prospective",
+            "sealed_historical_dataset_digest": None,
+            "candidate_training_started_at": None,
+        }
+        v6_digest = json_digest(normalized_v6)
+        stored_v6 = {**normalized_v6, "plan_digest": v6_digest}
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute(
+                "INSERT INTO neural_prior_holdout_plans "
+                "(plan_digest, plan_id, plan_json, policy_digest, "
+                "trust_store_digest, registered_at, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    v6_digest,
+                    "legacy-v6-plan",
+                    json.dumps(stored_v6, sort_keys=True, separators=(",", ":")),
+                    "9" * 64,
+                    "a" * 64,
+                    "2026-08-07T00:00:00Z",
+                    "2026-08-07T00:00:00Z",
+                ),
+            )
+        loaded_v6 = self.ledger.load_neural_prior_holdout_plan(v6_digest)
+        self.assertIsInstance(loaded_v6, LegacyNeuralPriorHoldoutPlanV6Audit)
+        self.assertEqual(loaded_v6.plan_digest, v6_digest)
+
     def test_legacy_v2_prospective_receipt_loads_as_signed_audit(self) -> None:
         private_key = Ed25519PrivateKey.generate()
         executor_trust = SimpleNamespace(
@@ -2700,6 +2739,126 @@ class EpisodeLedgerTests(unittest.TestCase):
             decoded_manifest,
             LegacyNeuralPriorCandidateManifestAuditV4,
         )
+
+    def test_v8_promotion_loads_as_pre_classifier_audit(self) -> None:
+        manifest_payload: dict[str, object] = {
+            "contract": "neural-prior-candidate-manifest-v4",
+            "candidate_prior_digest": "1" * 64,
+            "parent_prior_digest": "2" * 64,
+            "holdout_cases": [{"case_id": "legacy-v8-case"}],
+        }
+        manifest_digest = json_digest(manifest_payload)
+        manifest_payload["manifest_digest"] = manifest_digest
+        payload: dict[str, object] = {
+            "candidate_prior_digest": "1" * 64,
+            "parent_prior_digest": "2" * 64,
+            "candidate_manifest_digest": manifest_digest,
+            "policy_digest": "3" * 64,
+            "trust_store_digest": "4" * 64,
+            "evaluation_digests": (),
+            "holdout_case_count": 0,
+            "material_case_count": 0,
+            "distinct_case_count": 0,
+            "distinct_storm_count": 0,
+            "distinct_day_count": 0,
+            "distinct_radar_count": 0,
+            "distinct_regime_count": 0,
+            "distinct_range_regime_count": 0,
+            "beneficial_fraction": 0.0,
+            "beneficial_fraction_lower_bound": 0.0,
+            "harmful_fraction": 0.0,
+            "harmful_fraction_upper_bound": 0.0,
+            "mean_normalized_improvement": 0.0,
+            "mean_improvement_lower_bound": 0.0,
+            "maximum_normalized_degradation": 0.0,
+            "prior_echo_intensity_nll_increase_upper_bound": 0.0,
+            "prior_support_brier_increase_upper_bound": 0.0,
+            "prior_echo_support_miss_increase_upper_bound": 0.0,
+            "prior_echo_object_miss_increase_upper_bound": 0.0,
+            "prior_clear_sky_false_echo_increase_upper_bound": 0.0,
+            "prior_conditional_underdispersion_increase_upper_bound": 0.0,
+            "state_gaussian_nll_increase_upper_bound": 0.0,
+            "state_underdispersion_increase_upper_bound": 0.0,
+            "state_support_brier_increase_upper_bound": 0.0,
+            "state_echo_support_miss_increase_upper_bound": 0.0,
+            "state_echo_object_miss_increase_upper_bound": 0.0,
+            "state_false_support_increase_upper_bound": 0.0,
+            "state_valid_brier_increase_upper_bound": 0.0,
+            "deployment_regime_classifier_digest": "5" * 64,
+            "prior_echo_component_status": "not_applicable",
+            "prior_clear_sky_component_status": "not_applicable",
+            "prior_echo_case_count": 0,
+            "prior_clear_sky_case_count": 0,
+            "prior_echo_cluster_count": 0,
+            "prior_clear_sky_cluster_count": 0,
+            "simultaneous_inference_test_count": 1,
+            "simultaneous_inference_method": "exact_sign_enumeration",
+            "simultaneous_inference_effective_replicates": 1,
+            "simultaneous_inference_critical_quantile": 0.95,
+            "simultaneous_inference_monte_carlo_standard_error": 0.0,
+            "simultaneous_inference_tail_replicates": 0.05,
+            "cluster_bootstrap_tail_replicates": 0.05,
+            "certified_applicability_regime_groups": (),
+            "requires_parent_fallback_outside_certified_applicability": True,
+            "state_calibration_eligible": False,
+            "deployment_eligible": False,
+            "eligible": False,
+            "rejection_reasons": ("no_material_outcome",),
+            "contract": "neural-prior-promotion-evidence-v8",
+        }
+        evidence_digest = json_digest(payload)
+        overrides: dict[str, object] = {
+            "promotion_evidence_digest": evidence_digest,
+            "candidate_manifest_json": json.dumps(
+                manifest_payload,
+                sort_keys=True,
+            ),
+            "holdout_plan_digest": "6" * 64,
+            "evaluation_digests_json": "[]",
+            "evaluation_payloads_json": "[]",
+            "intervention_digests_json": "[]",
+            "rejection_reasons_json": json.dumps(["no_material_outcome"]),
+            "evidence_contract": payload["contract"],
+            "evidence_payload_json": json.dumps(payload, sort_keys=True),
+            "created_at": "2026-08-01T00:00:00+00:00",
+        }
+        column_mapping = {
+            "realized_intervention_count": "holdout_case_count",
+            "material_outcome_count": "material_case_count",
+        }
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            schema = connection.execute(
+                "PRAGMA table_info(neural_prior_promotions)"
+            ).fetchall()
+            columns = [str(row[1]) for row in schema]
+            values: list[object] = []
+            for row in schema:
+                name = str(row[1])
+                source = column_mapping.get(name, name)
+                if name in overrides:
+                    values.append(overrides[name])
+                elif source in payload:
+                    values.append(payload[source])
+                elif str(row[2]).upper() == "INTEGER":
+                    values.append(0)
+                elif str(row[2]).upper() == "REAL":
+                    values.append(0.0)
+                else:
+                    values.append("")
+            connection.execute(
+                f"INSERT INTO neural_prior_promotions "
+                f"({','.join(columns)}) VALUES "
+                f"({','.join('?' for _ in columns)})",
+                values,
+            )
+
+        loaded = self.ledger.load_neural_prior_promotion(evidence_digest)
+
+        self.assertIsInstance(
+            loaded,
+            LegacyNeuralPriorPromotionEvidenceAuditV8,
+        )
+        self.assertNotIsInstance(loaded, NeuralPriorPromotionEvidence)
 
     def test_backdated_decision_cannot_be_recorded_after_issue(self) -> None:
         frames = torch.zeros((3, 2, 2), dtype=torch.float64)

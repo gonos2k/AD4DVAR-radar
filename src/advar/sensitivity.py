@@ -207,11 +207,20 @@ class VerificationBundle:
     grid_contract_digest: str
     radar_product_digest: str
     qc_pipeline_digest: str
+    mask_policy_digest: str | None = None
+    censor_policy_digest: str | None = None
+    reflectivity_resolution_dbz: float | None = None
+    quantization_origin_dbz: float | None = None
+    threshold_bin_convention: str | None = None
+    floor_representation_contract_digest: str | None = None
     contract: str = "radar-verification-bundle-v1"
     content_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "radar-verification-bundle-v1":
+        if self.contract not in {
+            "radar-verification-bundle-v1",
+            "radar-verification-bundle-v2",
+        }:
             raise ValueError("unsupported verification bundle contract")
         if self.frames_dbz.ndim != 3 or not self.frames_dbz.is_floating_point():
             raise ValueError(
@@ -252,6 +261,39 @@ class VerificationBundle:
             ("qc_pipeline_digest", self.qc_pipeline_digest),
         ):
             _require_sha256(name, value)
+        measurement_values = (
+            self.mask_policy_digest,
+            self.censor_policy_digest,
+            self.reflectivity_resolution_dbz,
+            self.quantization_origin_dbz,
+            self.threshold_bin_convention,
+            self.floor_representation_contract_digest,
+        )
+        if self.contract == "radar-verification-bundle-v1":
+            if any(value is not None for value in measurement_values):
+                raise ValueError(
+                    "legacy verification bundles cannot claim v2 measurement lineage"
+                )
+        else:
+            for name in (
+                "mask_policy_digest",
+                "censor_policy_digest",
+                "floor_representation_contract_digest",
+            ):
+                value = getattr(self, name)
+                if value is None:
+                    raise ValueError("v2 verification measurement lineage is incomplete")
+                _require_sha256(name, value)
+            if (
+                self.reflectivity_resolution_dbz is None
+                or not math.isfinite(self.reflectivity_resolution_dbz)
+                or self.reflectivity_resolution_dbz <= 0.0
+                or self.quantization_origin_dbz is None
+                or not math.isfinite(self.quantization_origin_dbz)
+                or self.threshold_bin_convention
+                != "threshold_edge_centered_bins"
+            ):
+                raise ValueError("v2 verification quantization contract is invalid")
         frames = self.frames_dbz.detach().clone()
         valid = self.valid_mask.detach().clone()
         object.__setattr__(self, "frames_dbz", frames)
@@ -268,6 +310,12 @@ class VerificationBundle:
                 self.grid_contract_digest,
                 self.radar_product_digest,
                 self.qc_pipeline_digest,
+                self.mask_policy_digest,
+                self.censor_policy_digest,
+                self.reflectivity_resolution_dbz,
+                self.quantization_origin_dbz,
+                self.threshold_bin_convention,
+                self.floor_representation_contract_digest,
             ),
         )
 
@@ -280,6 +328,12 @@ class VerificationBundle:
             self.grid_contract_digest,
             self.radar_product_digest,
             self.qc_pipeline_digest,
+            self.mask_policy_digest,
+            self.censor_policy_digest,
+            self.reflectivity_resolution_dbz,
+            self.quantization_origin_dbz,
+            self.threshold_bin_convention,
+            self.floor_representation_contract_digest,
         )
         if expected != self.content_digest:
             raise ValueError("verification bundle content digest mismatch")
@@ -3107,19 +3161,38 @@ def _verification_content_digest(
     grid_contract_digest: str | None,
     radar_product_digest: str | None,
     qc_pipeline_digest: str | None,
+    mask_policy_digest: str | None = None,
+    censor_policy_digest: str | None = None,
+    reflectivity_resolution_dbz: float | None = None,
+    quantization_origin_dbz: float | None = None,
+    threshold_bin_convention: str | None = None,
+    floor_representation_contract_digest: str | None = None,
 ) -> str:
-    return json_digest(
-        {
-            "version": "verification-bundle-content-v2",
-            "contract": contract,
-            "frames_dbz": tensor_digest(frames_dbz),
-            "valid_mask": tensor_digest(valid_mask),
-            "valid_times": None if valid_times is None else list(valid_times),
-            "grid_contract_digest": grid_contract_digest,
-            "radar_product_digest": radar_product_digest,
-            "qc_pipeline_digest": qc_pipeline_digest,
-        }
-    )
+    payload: dict[str, object] = {
+        "version": "verification-bundle-content-v2",
+        "contract": contract,
+        "frames_dbz": tensor_digest(frames_dbz),
+        "valid_mask": tensor_digest(valid_mask),
+        "valid_times": None if valid_times is None else list(valid_times),
+        "grid_contract_digest": grid_contract_digest,
+        "radar_product_digest": radar_product_digest,
+        "qc_pipeline_digest": qc_pipeline_digest,
+    }
+    if contract == "radar-verification-bundle-v2":
+        payload.update(
+            {
+                "version": "verification-bundle-content-v3",
+                "mask_policy_digest": mask_policy_digest,
+                "censor_policy_digest": censor_policy_digest,
+                "reflectivity_resolution_dbz": reflectivity_resolution_dbz,
+                "quantization_origin_dbz": quantization_origin_dbz,
+                "threshold_bin_convention": threshold_bin_convention,
+                "floor_representation_contract_digest": (
+                    floor_representation_contract_digest
+                ),
+            }
+        )
+    return json_digest(payload)
 
 
 def _resolve_verification(

@@ -868,7 +868,7 @@ def _minimum_growth_evidence(
 
 
 _FORECAST_INPUT_BUNDLE_VERSION = "forecast-input-bundle-v5"
-_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v13"
+_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v14"
 
 
 def _validate_background_age(
@@ -1290,10 +1290,12 @@ class ForecastRunContract:
     prior_role: str | None = None
     prior_promotion_evidence_digest: str | None = None
     prior_regime_classification_evidence_digest: str | None = None
+    prior_deployment_policy_digest: str | None = None
+    prior_deployment_policy_trust_store_digest: str | None = None
     prior_deployment_selection_digest: str | None = None
     prior_deployment_fallback_reason: str | None = None
     prior_deployment_lineage_contract: str = (
-        "neural-prior-deployment-lineage-v1"
+        "neural-prior-deployment-lineage-v2"
     )
     prior_lineage_contract: str = "neural-prior-run-lineage-v2"
     input_plan_json: str | None = None
@@ -1333,6 +1335,8 @@ class ForecastRunContract:
         prior_role: str | None = None,
         prior_promotion_evidence_digest: str | None = None,
         prior_regime_classification_evidence_digest: str | None = None,
+        prior_deployment_policy_digest: str | None = None,
+        prior_deployment_policy_trust_store_digest: str | None = None,
         prior_deployment_selection_digest: str | None = None,
         prior_deployment_fallback_reason: str | None = None,
         input_plan_json: str | None = None,
@@ -1436,9 +1440,13 @@ class ForecastRunContract:
             regime_classification_evidence_digest=(
                 prior_regime_classification_evidence_digest
             ),
+            deployment_policy_digest=prior_deployment_policy_digest,
+            deployment_policy_trust_store_digest=(
+                prior_deployment_policy_trust_store_digest
+            ),
             deployment_selection_digest=prior_deployment_selection_digest,
             fallback_reason=prior_deployment_fallback_reason,
-            contract="neural-prior-deployment-lineage-v1",
+            contract="neural-prior-deployment-lineage-v2",
         )
         _validate_input_plan_lineage(input_plan_json, input_plan_digest)
         _validate_input_plan_resolution(
@@ -1562,6 +1570,10 @@ class ForecastRunContract:
             prior_promotion_evidence_digest=prior_promotion_evidence_digest,
             prior_regime_classification_evidence_digest=(
                 prior_regime_classification_evidence_digest
+            ),
+            prior_deployment_policy_digest=prior_deployment_policy_digest,
+            prior_deployment_policy_trust_store_digest=(
+                prior_deployment_policy_trust_store_digest
             ),
             prior_deployment_selection_digest=prior_deployment_selection_digest,
             prior_deployment_fallback_reason=prior_deployment_fallback_reason,
@@ -1804,6 +1816,10 @@ class ForecastRunContract:
             promotion_evidence_digest=self.prior_promotion_evidence_digest,
             regime_classification_evidence_digest=(
                 self.prior_regime_classification_evidence_digest
+            ),
+            deployment_policy_digest=self.prior_deployment_policy_digest,
+            deployment_policy_trust_store_digest=(
+                self.prior_deployment_policy_trust_store_digest
             ),
             deployment_selection_digest=self.prior_deployment_selection_digest,
             fallback_reason=self.prior_deployment_fallback_reason,
@@ -2228,18 +2244,23 @@ def _validate_prior_deployment_lineage(
     prior_role: str | None,
     promotion_evidence_digest: str | None,
     regime_classification_evidence_digest: str | None,
+    deployment_policy_digest: str | None,
+    deployment_policy_trust_store_digest: str | None,
     deployment_selection_digest: str | None,
     fallback_reason: str | None,
     contract: str,
 ) -> None:
     if contract not in {
         "neural-prior-deployment-lineage-v0-audit",
-        "neural-prior-deployment-lineage-v1",
+        "neural-prior-deployment-lineage-v1-audit",
+        "neural-prior-deployment-lineage-v2",
     }:
         raise ValueError("unsupported neural-prior deployment lineage")
     values = (
         promotion_evidence_digest,
         regime_classification_evidence_digest,
+        deployment_policy_digest,
+        deployment_policy_trust_store_digest,
         deployment_selection_digest,
         fallback_reason,
     )
@@ -2247,21 +2268,47 @@ def _validate_prior_deployment_lineage(
         if any(value is not None for value in values):
             raise ValueError("legacy deployment lineage cannot claim evidence")
         return
+    if contract == "neural-prior-deployment-lineage-v1-audit":
+        legacy_values = (
+            promotion_evidence_digest,
+            regime_classification_evidence_digest,
+            deployment_selection_digest,
+            fallback_reason,
+        )
+        if all(value is None for value in legacy_values):
+            return
+        if any(value is None for value in legacy_values) or prior_role is None:
+            raise ValueError("legacy deployment lineage is incomplete")
+        for name, digest in (
+            ("prior_promotion_evidence_digest", promotion_evidence_digest),
+            (
+                "prior_regime_classification_evidence_digest",
+                regime_classification_evidence_digest,
+            ),
+            ("prior_deployment_selection_digest", deployment_selection_digest),
+        ):
+            assert digest is not None
+            _validate_sha256_digest(name, digest)
+        return
     if all(value is None for value in values):
-        if analysis_config_json is not None and prior_role == "candidate":
+        if analysis_config_json is not None and prior_role is not None:
             analysis = json.loads(analysis_config_json)
             if (
                 isinstance(analysis, dict)
                 and analysis.get("execution_mode") == "operational"
             ):
                 raise ValueError(
-                    "operational candidate prior requires deployment lineage"
+                    "operational neural prior requires deployment lineage"
                 )
         return
+    if contract != "neural-prior-deployment-lineage-v2":
+        raise ValueError("legacy deployment lineage is audit-only")
     if any(value is None for value in values) or prior_role is None:
         raise ValueError("neural-prior deployment lineage must be complete")
     assert promotion_evidence_digest is not None
     assert regime_classification_evidence_digest is not None
+    assert deployment_policy_digest is not None
+    assert deployment_policy_trust_store_digest is not None
     assert deployment_selection_digest is not None
     assert fallback_reason is not None
     for name, digest in (
@@ -2270,13 +2317,20 @@ def _validate_prior_deployment_lineage(
             "prior_regime_classification_evidence_digest",
             regime_classification_evidence_digest,
         ),
+        ("prior_deployment_policy_digest", deployment_policy_digest),
+        (
+            "prior_deployment_policy_trust_store_digest",
+            deployment_policy_trust_store_digest,
+        ),
         ("prior_deployment_selection_digest", deployment_selection_digest),
     ):
         _validate_sha256_digest(name, digest)
     if fallback_reason not in {
         "certified_candidate",
         "uncertified_regime",
+        "uncertified_range_band",
         "low_regime_confidence",
+        "ood_or_abstained",
         "promotion_ineligible",
         "no_certified_regime",
     } or (
@@ -2484,6 +2538,12 @@ def _forecast_run_identity_digest(
             ),
             "prior_regime_classification_evidence_digest": (
                 run.prior_regime_classification_evidence_digest
+            ),
+            "prior_deployment_policy_digest": (
+                run.prior_deployment_policy_digest
+            ),
+            "prior_deployment_policy_trust_store_digest": (
+                run.prior_deployment_policy_trust_store_digest
             ),
             "prior_deployment_selection_digest": (
                 run.prior_deployment_selection_digest
