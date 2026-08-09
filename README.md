@@ -542,6 +542,7 @@ deadline 전에 결정과 실행 receipt가 각각 append-only ledger에 기록�
 from advar import (
     InterventionActionGenerator,
     InterventionInputContext,
+    OperatorActionApproval,
     ProspectiveInterventionDecision,
     RealizedInterventionReceipt,
     ReusableInterventionPolicyEvidence,
@@ -594,13 +595,25 @@ decision = ProspectiveInterventionDecision.from_policy(
     decision_deadline=decision_deadline,
     publication_time=publication_time,
 )
+operator_approval = OperatorActionApproval.from_decision(
+    decision,
+    operator_key_id=operator_key_id,
+    operator_role="duty-meteorologist",
+    operator_trust_store_digest=operator_trust_store_digest,
+    operator_private_key=operator_private_key,
+    reviewed_at=reviewed_at,
+    expires_at=decision_deadline,
+    operator_comment_digest=operator_comment_digest,
+)
 ledger.append_prospective_intervention_decision(
     decision,
+    operator_approval=operator_approval,
     action_policy=action_policy,
     action_generator=action_generator,
     actual_input_before_context=input_before_context,
     actual_input_before_run=input_before_run,
     trust_store_path="/etc/advar/intervention-policies.json",
+    operator_trust_store_path="/etc/advar/intervention-operators.json",
 )
 receipt = RealizedInterventionReceipt.from_decision(
     decision,
@@ -628,6 +641,7 @@ ledger.append_realized_intervention_receipt(
     actual_input_after_run=input_after_run,
     trust_store_path="/etc/advar/intervention-policies.json",
     executor_trust_store_path="/etc/advar/intervention-executors.json",
+    operator_trust_store_path="/etc/advar/intervention-operators.json",
 )
 ```
 
@@ -641,13 +655,23 @@ before/action/after 전이를 다시 검사한다. Executor trust store에는 Ed
 들어가며 private key는 executor 밖으로 나오지 않는다. 이전 v1/v2 intervention
 계약은 read-only 감사용으로 보존된다.
 
+`operator_reviewed_only`는 정책 문자열만으로 충족되지 않는다. 각 decision에는
+decision/action/full-input/safety digest와 검토 역할·만료시각을 묶은
+`OperatorActionApproval`의 Ed25519 서명이 필요하다. Operator trust store는 검토자
+public key와 허용 role만 보존하며, executor 서명과 operator 서명은 각각 사전 승인과
+사후 실행이라는 서로 다른 사실을 증명한다. 서명이 없거나 다른 input/action에 대한
+서명이면 decision append가 거부된다.
+
 Decision은 전체 `InterventionInputContext`, fixed-input context와 applicability mask
 digest를 직접 보존한다. Receipt 생성·재적재 시 같은 context에서 action 안전진단을
-다시 계산해 decision의 진단 digest와 비교한다. `full_analysis_input_digest`는 radar
+다시 계산해 decision의 진단 digest와 비교한다. `AnalysisInputIdentity.full_data_digest`
+(run의 `full_analysis_input_digest`)는 radar
 frame과 mask·quality·observation std·background·calibration을 포함하는 fixed context를
 하나로 묶으며, receipt와 candidate/parent holdout의 입력 동일성은 이 digest를 기준으로
 판정한다. Quality-only QC는 input bundle이 그대로여도 full-input identity의 변경으로
-정상 기록된다. QC 크기는 raw quality 차이가 아니라
+정상 기록된다. `forecast-input-plan-resolution-v2`도 plan digest와 이 full-data
+digest를 결합하므로 quality/std만 달라져도 resolved plan identity가 달라진다. v1
+resolution은 기존 artifact의 read-only 무결성 검증에만 허용한다. QC 크기는 raw quality 차이가 아니라
 `(sqrt(Q_after) - sqrt(Q_before)) / observation_std_dbz`의 전역·tile L2 norm으로
 제한하고, prospective QC는 reject/deweight만 허용한다. 현재 prospective 실행은
 `operator_reviewed_only`이며 current-case benefit 계약이 없는 automatic policy는
@@ -733,17 +757,26 @@ preregistered forecast population의 `PriorHoldoutEvaluation`을 사용하며, i
 선택·실행한 사례만 모은 action-effect population과 분리된다. Material 사례의
 case/storm/day/radar/regime 다양성과 cluster bootstrap, training/holdout
 storm·day·time-window 분리도 다시 검사한다.
-Candidate prior의 spatial `std_dbz`는 모델 입력과 분리된 withheld target에 대한
-Gaussian NLL과 standardized residual로, `support_probability`는 Brier score로
-검증한다. Candidate와 parent를 동일한 사전등록 target mask에서 paired 평가하고,
-storm/day/radar cluster bootstrap으로 구한 NLL·Brier·underdispersion 증가의 상한도
-정책 한계를 넘어서는 안 된다. 따라서 절대 calibration 상한만 가까스로 통과하면서
-parent보다 불확실성이 크게 악화된 candidate는 승격되지 않는다. Initial-state prior의 target valid time은 prior output
+Candidate prior의 spatial `std_dbz`는 모델 입력과 분리된 withheld target의
+positive-echo 화소에서만 conditional Gaussian intensity NLL과 standardized residual로
+검증하고, `support_probability`는 고정 target mask 전체에서 Brier score로 검증한다.
+Clear-sky에서는 support probability의 false-echo score를 별도로 계산하므로 동일한
+no-echo를 -10/0/4.9 dBZ 중 어떤 floor로 저장해도 intensity score가 달라지지 않는다.
+Candidate와 parent를 동일한 사전등록 target mask에서 paired 평가하고,
+storm/day/radar cluster bootstrap으로 구한 intensity-NLL·support-Brier·clear-sky·
+underdispersion 증가의 전역 및 regime별 최악 상한도 정책 한계를 넘어서는 안 된다.
+따라서 clear-sky 개선으로 echo intensity 악화를 상쇄하거나 절대 calibration 상한만
+가까스로 통과하면서 parent보다 불확실성이 크게 악화된 candidate는 승격되지 않는다. Initial-state prior의 target valid time은 prior output
 valid time과 같아야 하며, 같은 source/time을 쓰는 withheld target은 실제 feature-
 exclusion mask가 target mask를 덮었는지 계산해 확인한다. 불확실성 score는 candidate가
 스스로 선택한 valid 영역이 아니라 사전등록 target mask에서 계산하고, 최소 valid
 fraction·면적과 parent 대비 abstention 증가 및 NLL abstention penalty를 함께 적용한다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
+
+현재 promotion evidence는 v5, candidate manifest는 v3이다. v3/v4 promotion evidence와
+pre-full-input v2 candidate manifest는 원래 payload와 digest를 그대로 검증하는
+read-only audit 타입으로만 적재된다. Migration 때 추가된 UCB 컬럼의 기본값 0을 과거
+증거의 계산값으로 해석하거나 과거 row를 현재 승격판정에 재사용하지 않는다.
 
 자동학습은 의도적으로 nominal metric weight를 고정한
 `frozen_metric_domain`만 승인한다. perturbation 뒤의 confidence·local evidence·
@@ -1263,7 +1296,7 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
 - `output_contract_version`: 현재 `nowcast-npz-v55`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v48`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v49`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age

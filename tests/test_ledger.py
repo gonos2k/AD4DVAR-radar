@@ -32,6 +32,7 @@ from advar.ledger import (  # noqa: E402
 from advar.intervention import (  # noqa: E402
     InterventionActionGenerator,
     InterventionInputContext,
+    OperatorActionApproval,
     OperatorOverrideAction,
     QcMaskAction,
     ProspectiveInterventionDecision,
@@ -47,6 +48,8 @@ from advar.promotion import (  # noqa: E402
     LegacyNeuralPriorHoldoutPlanV2Audit,
     LegacyNeuralPriorHoldoutPlanV2Case,
     LegacyNeuralPriorHoldoutPlanV3Audit,
+    LegacyNeuralPriorPromotionEvidenceAuditV3,
+    NeuralPriorPromotionEvidence,
     NeuralPriorCandidateManifest,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
@@ -471,6 +474,28 @@ def _prospective_run_and_context(
     return run, context, input_plan.plan_digest, input_plan.json
 
 
+def _operator_approval(
+    decision: ProspectiveInterventionDecision,
+) -> tuple[OperatorActionApproval, SimpleNamespace, Ed25519PrivateKey]:
+    private_key = Ed25519PrivateKey.generate()
+    trust = SimpleNamespace(
+        keys={"operator-1": private_key.public_key()},
+        roles={"operator-1": frozenset(("duty-meteorologist",))},
+        content_digest="1" * 64,
+    )
+    approval = OperatorActionApproval.from_decision(
+        decision,
+        operator_key_id="operator-1",
+        operator_role="duty-meteorologist",
+        operator_trust_store_digest=trust.content_digest,
+        operator_private_key=private_key,
+        reviewed_at=decision.decided_at,
+        expires_at=decision.decision_deadline,
+        operator_comment_digest="2" * 64,
+    )
+    return approval, trust, private_key
+
+
 class EpisodeLedgerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -500,6 +525,27 @@ class EpisodeLedgerTests(unittest.TestCase):
         with patch("advar.ledger.os.fstat", return_value=metadata):
             with self.assertRaisesRegex(ValueError, "root-owned and non-writable"):
                 ledger_module._load_executor_trust_store(path)
+
+    def test_operator_public_key_store_must_not_be_world_writable(self) -> None:
+        path = self.root / "operators.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "contract": "advar-operator-trust-store-v1",
+                    "operators": {
+                        "operator": {
+                            "public_key": (b"x" * 32).hex(),
+                            "roles": ["duty-meteorologist"],
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        metadata = SimpleNamespace(st_mode=stat.S_IFREG | 0o666, st_uid=0)
+        with patch("advar.ledger.os.fstat", return_value=metadata):
+            with self.assertRaisesRegex(ValueError, "root-owned and non-writable"):
+                ledger_module._load_operator_trust_store(path)
 
     def test_holdout_plan_rechecks_clock_before_commit(self) -> None:
         issue = "2030-01-01T00:00:00Z"
@@ -719,7 +765,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 12)
+        self.assertEqual(version, 13)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -981,10 +1027,15 @@ class EpisodeLedgerTests(unittest.TestCase):
             keys={"executor-1": executor_public},
             content_digest="0" * 64,
         )
+        operator_approval, operator_trust, operator_private = _operator_approval(
+            decision
+        )
         with patch(
             "advar.ledger._load_learning_policy_trust_store", return_value=trust
         ), patch(
             "advar.ledger._load_executor_trust_store", return_value=executor_trust
+        ), patch(
+            "advar.ledger._load_operator_trust_store", return_value=operator_trust
         ):
             forged = copy(decision)
             object.__setattr__(forged, "action_payload_digest", "9" * 64)
@@ -1021,19 +1072,70 @@ class EpisodeLedgerTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "policy output"):
                 self.ledger.append_prospective_intervention_decision(
                     forged,
+                    operator_approval=operator_approval,
                     action_policy=action_policy,
                     action_generator=action_generator,
                     actual_input_before_context=before_context,
                     actual_input_before_run=before_run,
                     trust_store_path="/etc/advar/policies.json",
+                    operator_trust_store_path="/etc/advar/operators.json",
+                )
+            other_decision = copy(decision)
+            object.__setattr__(other_decision, "decision_digest", "9" * 64)
+            other_approval = OperatorActionApproval.from_decision(
+                other_decision,
+                operator_key_id="operator-1",
+                operator_role="duty-meteorologist",
+                operator_trust_store_digest=operator_trust.content_digest,
+                operator_private_key=operator_private,
+                reviewed_at=decision.decided_at,
+                expires_at=decision.decision_deadline,
+                operator_comment_digest="2" * 64,
+            )
+            with self.assertRaisesRegex(ValueError, "another decision"):
+                self.ledger.append_prospective_intervention_decision(
+                    decision,
+                    operator_approval=other_approval,
+                    action_policy=action_policy,
+                    action_generator=action_generator,
+                    actual_input_before_context=before_context,
+                    actual_input_before_run=before_run,
+                    trust_store_path="/etc/advar/policies.json",
+                    operator_trust_store_path="/etc/advar/operators.json",
+                )
+            forged_approval = copy(operator_approval)
+            object.__setattr__(forged_approval, "operator_signature", "0" * 128)
+            object.__setattr__(
+                forged_approval,
+                "approval_digest",
+                json_digest(
+                    {
+                        key: value
+                        for key, value in forged_approval.__dict__.items()
+                        if key != "approval_digest"
+                    }
+                ),
+            )
+            with self.assertRaisesRegex(ValueError, "operator.*signature"):
+                self.ledger.append_prospective_intervention_decision(
+                    decision,
+                    operator_approval=forged_approval,
+                    action_policy=action_policy,
+                    action_generator=action_generator,
+                    actual_input_before_context=before_context,
+                    actual_input_before_run=before_run,
+                    trust_store_path="/etc/advar/policies.json",
+                    operator_trust_store_path="/etc/advar/operators.json",
                 )
             self.ledger.append_prospective_intervention_decision(
                 decision,
+                operator_approval=operator_approval,
                 action_policy=action_policy,
                 action_generator=action_generator,
                 actual_input_before_context=before_context,
                 actual_input_before_run=before_run,
                 trust_store_path="/etc/advar/policies.json",
+                operator_trust_store_path="/etc/advar/operators.json",
             )
             applied = datetime.now(timezone.utc).isoformat()
             receipt = RealizedInterventionReceipt.from_decision(
@@ -1187,6 +1289,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                     actual_input_after_run=after_run,
                     trust_store_path="/etc/advar/policies.json",
                     executor_trust_store_path="/etc/advar/executors.json",
+                    operator_trust_store_path="/etc/advar/operators.json",
                 )
             digest = self.ledger.append_realized_intervention_receipt(
                 decision,
@@ -1199,6 +1302,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 actual_input_after_run=after_run,
                 trust_store_path="/etc/advar/policies.json",
                 executor_trust_store_path="/etc/advar/executors.json",
+                operator_trust_store_path="/etc/advar/operators.json",
             )
 
             tampered = copy(receipt)
@@ -1230,18 +1334,23 @@ class EpisodeLedgerTests(unittest.TestCase):
                     actual_input_after_run=after_run,
                     trust_store_path="/etc/advar/policies.json",
                     executor_trust_store_path="/etc/advar/executors.json",
+                    operator_trust_store_path="/etc/advar/operators.json",
                 )
 
         with patch(
             "advar.ledger._load_executor_trust_store",
             return_value=executor_trust,
+        ), patch(
+            "advar.ledger._load_operator_trust_store",
+            return_value=operator_trust,
         ):
             self.assertEqual(
                 self.ledger.load_prospective_intervention(
                     digest,
                     executor_trust_store_path="/etc/advar/executors.json",
+                    operator_trust_store_path="/etc/advar/operators.json",
                 ),
-                (decision, receipt),
+                (decision, receipt, operator_approval),
             )
             artifact_dir = self.ledger.interventions_dir / digest
             manifest_path = artifact_dir / "manifest.json"
@@ -1269,6 +1378,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 self.ledger.load_prospective_intervention(
                     digest,
                     executor_trust_store_path="/etc/advar/executors.json",
+                    operator_trust_store_path="/etc/advar/operators.json",
                 )
             manifest_path.write_bytes(original_manifest)
             checksums_path.write_bytes(original_checksums)
@@ -1280,6 +1390,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 self.ledger.load_prospective_intervention(
                     digest,
                     executor_trust_store_path="/etc/advar/executors.json",
+                    operator_trust_store_path="/etc/advar/operators.json",
                 )
             unexpected = artifact_dir / "unexpected.bin"
             unexpected.write_bytes(b"unexpected")
@@ -1287,6 +1398,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 self.ledger.load_prospective_intervention(
                     digest,
                     executor_trust_store_path="/etc/advar/executors.json",
+                    operator_trust_store_path="/etc/advar/operators.json",
                 )
             unexpected.unlink()
             artifact = self.ledger.interventions_dir / digest / "generator.pt2"
@@ -1295,6 +1407,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 self.ledger.load_prospective_intervention(
                     digest,
                     executor_trust_store_path="/etc/advar/executors.json",
+                    operator_trust_store_path="/etc/advar/operators.json",
                 )
 
     def test_typed_actions_plan_times_and_global_radius_fail_closed(self) -> None:
@@ -1508,6 +1621,10 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertNotEqual(
             deweight_receipt.full_analysis_input_before_digest,
             deweight_receipt.full_analysis_input_after_digest,
+        )
+        self.assertNotEqual(
+            run.input_plan_resolution_digest,
+            deweighted_run.input_plan_resolution_digest,
         )
 
         low_quality = torch.full_like(frames, 0.01)
@@ -1980,6 +2097,92 @@ class EpisodeLedgerTests(unittest.TestCase):
             LegacyRealizedInterventionReceiptAudit,
         )
 
+    def test_v3_promotion_and_pre_full_input_manifest_load_audit_only(self) -> None:
+        candidate_digest = "1" * 64
+        parent_digest = "2" * 64
+        manifest_payload: dict[str, object] = {
+            "contract": "neural-prior-candidate-manifest-v2",
+            "candidate_prior_digest": candidate_digest,
+            "parent_prior_digest": parent_digest,
+            "holdout_cases": [{"case_id": "legacy-case"}],
+        }
+        manifest_digest = json_digest(manifest_payload)
+        manifest_payload["manifest_digest"] = manifest_digest
+        promotion_payload: dict[str, object] = {
+            "candidate_prior_digest": candidate_digest,
+            "parent_prior_digest": parent_digest,
+            "candidate_manifest_digest": manifest_digest,
+            "policy_digest": "3" * 64,
+            "trust_store_digest": "4" * 64,
+            "evaluation_digests": (),
+            "holdout_case_count": 0,
+            "material_case_count": 0,
+            "distinct_case_count": 0,
+            "distinct_storm_count": 0,
+            "distinct_day_count": 0,
+            "distinct_radar_count": 0,
+            "distinct_regime_count": 0,
+            "distinct_range_regime_count": 0,
+            "beneficial_fraction": 0.0,
+            "beneficial_fraction_lower_bound": 0.0,
+            "harmful_fraction": 0.0,
+            "harmful_fraction_upper_bound": 0.0,
+            "mean_normalized_improvement": 0.0,
+            "mean_improvement_lower_bound": 0.0,
+            "maximum_normalized_degradation": 0.0,
+            "eligible": False,
+            "rejection_reasons": ("no_material_outcome",),
+            "contract": "neural-prior-promotion-evidence-v3",
+        }
+        evidence_digest = json_digest(promotion_payload)
+        overrides: dict[str, object] = {
+            "promotion_evidence_digest": evidence_digest,
+            "candidate_prior_digest": candidate_digest,
+            "parent_prior_digest": parent_digest,
+            "candidate_manifest_digest": manifest_digest,
+            "candidate_manifest_json": json.dumps(
+                manifest_payload,
+                sort_keys=True,
+            ),
+            "holdout_plan_digest": "5" * 64,
+            "policy_digest": promotion_payload["policy_digest"],
+            "trust_store_digest": promotion_payload["trust_store_digest"],
+            "evaluation_digests_json": "[]",
+            "evaluation_payloads_json": "[]",
+            "intervention_digests_json": "[]",
+            "rejection_reasons_json": json.dumps(["no_material_outcome"]),
+            "evidence_contract": promotion_payload["contract"],
+            "created_at": "2026-08-01T00:00:00+00:00",
+        }
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            schema = connection.execute(
+                "PRAGMA table_info(neural_prior_promotions)"
+            ).fetchall()
+            columns = [str(row[1]) for row in schema]
+            values: list[object] = []
+            for row in schema:
+                name = str(row[1])
+                if name in overrides:
+                    values.append(overrides[name])
+                elif str(row[2]).upper() == "INTEGER":
+                    values.append(0)
+                elif str(row[2]).upper() == "REAL":
+                    values.append(0.0)
+                else:
+                    values.append("")
+            placeholders = ",".join("?" for _ in columns)
+            connection.execute(
+                f"INSERT INTO neural_prior_promotions "
+                f"({','.join(columns)}) VALUES ({placeholders})",
+                values,
+            )
+        loaded = self.ledger.load_neural_prior_promotion(evidence_digest)
+        self.assertIsInstance(loaded, LegacyNeuralPriorPromotionEvidenceAuditV3)
+        self.assertNotIsInstance(loaded, NeuralPriorPromotionEvidence)
+        self.assertFalse(
+            hasattr(loaded, "prior_echo_intensity_nll_increase_upper_bound")
+        )
+
     def test_backdated_decision_cannot_be_recorded_after_issue(self) -> None:
         frames = torch.zeros((3, 2, 2), dtype=torch.float64)
         run, context, plan_digest, _ = _prospective_run_and_context(
@@ -2035,20 +2238,27 @@ class EpisodeLedgerTests(unittest.TestCase):
                 ("e" * 64, action_policy.policy_digest)
             ),
         )
+        operator_approval, operator_trust, _ = _operator_approval(decision)
         with (
             patch(
                 "advar.ledger._load_learning_policy_trust_store",
                 return_value=trust,
             ),
+            patch(
+                "advar.ledger._load_operator_trust_store",
+                return_value=operator_trust,
+            ),
             self.assertRaisesRegex(ValueError, "decision deadline"),
         ):
             self.ledger.append_prospective_intervention_decision(
                 decision,
+                operator_approval=operator_approval,
                 action_policy=action_policy,
                 action_generator=generator,
                 actual_input_before_context=context,
                 actual_input_before_run=run,
                 trust_store_path="/etc/advar/policies.json",
+                operator_trust_store_path="/etc/advar/operators.json",
             )
 
     def test_complete_verification_lineage_round_trips(self) -> None:
@@ -3139,7 +3349,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 12)
+        self.assertEqual(version, 13)
 
 
 if __name__ == "__main__":

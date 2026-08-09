@@ -735,6 +735,7 @@ class InterventionInputContext:
     input_bundle_digest: str
     input_plan_digest: str
     input_plan_resolution_digest: str
+    analysis_input_identity_digest: str
     context_schema_digest: str
     applicability_region_digest: str
     applicability_mask_digest: str
@@ -815,8 +816,13 @@ class InterventionInputContext:
         )
         if background_digest != run.background_frames_digest:
             raise ValueError("intervention background disagrees with the input run")
-        if run.input_plan_digest is None or run.input_plan_resolution_digest is None:
-            raise ValueError("prospective intervention requires a resolved input plan")
+        analysis_identity = run.analysis_input_identity
+        if analysis_identity is None:
+            raise ValueError(
+                "prospective intervention requires a v2 resolved input plan"
+            )
+        assert run.input_plan_digest is not None
+        assert run.input_plan_resolution_digest is not None
         canonicalization_contract_digest = action_input_canonicalization_digest(
             minimum_dbz=run.config.min_dbz,
             maximum_dbz=run.config.max_dbz,
@@ -833,10 +839,13 @@ class InterventionInputContext:
         )
         context_digest = json_digest(
             {
-                "contract": "intervention-input-context-v3",
+                "contract": "intervention-input-context-v4",
                 "input_bundle_digest": run.input_bundle_digest,
                 "input_plan_digest": run.input_plan_digest,
                 "input_plan_resolution_digest": run.input_plan_resolution_digest,
+                "analysis_input_identity_digest": (
+                    analysis_identity.identity_digest
+                ),
                 "frames_digest": tensor_digest(frames_dbz),
                 "observation_masks_digest": tensor_digest(observation_masks),
                 "quality_weight_digest": tensor_digest(quality_weight),
@@ -871,6 +880,10 @@ class InterventionInputContext:
             ("input_bundle_digest", run.input_bundle_digest),
             ("input_plan_digest", run.input_plan_digest),
             ("input_plan_resolution_digest", run.input_plan_resolution_digest),
+            (
+                "analysis_input_identity_digest",
+                analysis_identity.identity_digest,
+            ),
             ("context_schema_digest", _INTERVENTION_CONTEXT_SCHEMA_DIGEST),
             ("applicability_region_digest", applicability_region_digest),
             ("applicability_mask_digest", applicability_mask_digest),
@@ -1865,6 +1878,148 @@ class ProspectiveInterventionDecision:
             decision_deadline=plan_times["decision_deadline"],
             publication_time=plan_times["publication_time"],
         )
+
+
+@dataclass(frozen=True, init=False)
+class OperatorActionApproval:
+    """Operator-signed approval of one exact prospective decision."""
+
+    decision_digest: str
+    action_digest: str
+    full_analysis_input_digest: str
+    safety_diagnostics_digest: str
+    operator_key_id: str
+    operator_role: str
+    operator_trust_store_digest: str
+    reviewed_at: str
+    expires_at: str
+    operator_comment_digest: str
+    operator_signature: str
+    contract: str = "operator-action-approval-v1"
+    approval_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("use OperatorActionApproval.from_decision")
+
+    def __post_init__(self) -> None:
+        if self.contract != "operator-action-approval-v1":
+            raise ValueError("unsupported operator action approval")
+        for name in (
+            "decision_digest",
+            "action_digest",
+            "full_analysis_input_digest",
+            "safety_diagnostics_digest",
+            "operator_trust_store_digest",
+            "operator_comment_digest",
+        ):
+            _require_digest(name, getattr(self, name))
+        for name in ("operator_key_id", "operator_role"):
+            value = getattr(self, name)
+            if not isinstance(value, str) or not value or value.strip() != value:
+                raise ValueError(f"{name} must be nonempty and canonical")
+        reviewed = _canonical_time(self.reviewed_at)
+        expires = _canonical_time(self.expires_at)
+        if reviewed >= expires:
+            raise ValueError("operator approval must expire after review")
+        if (
+            not isinstance(self.operator_signature, str)
+            or len(self.operator_signature) != 128
+            or any(character not in "0123456789abcdef" for character in self.operator_signature)
+        ):
+            raise ValueError("operator signature must be lowercase Ed25519")
+        object.__setattr__(self, "reviewed_at", reviewed)
+        object.__setattr__(self, "expires_at", expires)
+        object.__setattr__(
+            self,
+            "approval_digest",
+            json_digest(
+                {
+                    key: value
+                    for key, value in self.__dict__.items()
+                    if key != "approval_digest"
+                }
+            ),
+        )
+
+    @classmethod
+    def from_decision(
+        cls,
+        decision: ProspectiveInterventionDecision,
+        *,
+        operator_key_id: str,
+        operator_role: str,
+        operator_trust_store_digest: str,
+        operator_private_key: Ed25519PrivateKey,
+        reviewed_at: str,
+        expires_at: str,
+        operator_comment_digest: str,
+    ) -> OperatorActionApproval:
+        reviewed = _canonical_time(reviewed_at)
+        expires = _canonical_time(expires_at)
+        decided = _canonical_time(decision.decided_at)
+        deadline = _canonical_time(decision.decision_deadline)
+        if not decided <= reviewed < expires <= deadline:
+            raise ValueError("operator approval is outside the decision window")
+        values = {
+            "decision_digest": decision.decision_digest,
+            "action_digest": decision.action_digest,
+            "full_analysis_input_digest": (
+                decision.actual_input_before_full_analysis_input_digest
+            ),
+            "safety_diagnostics_digest": (
+                decision.action_safety_diagnostics_digest
+            ),
+            "operator_key_id": operator_key_id,
+            "operator_role": operator_role,
+            "operator_trust_store_digest": operator_trust_store_digest,
+            "reviewed_at": reviewed,
+            "expires_at": expires,
+            "operator_comment_digest": operator_comment_digest,
+            "operator_signature": "",
+            "contract": "operator-action-approval-v1",
+        }
+        signature = operator_private_key.sign(
+            json_digest(values).encode("ascii")
+        ).hex()
+        return _new_operator_action_approval(
+            **{**values, "operator_signature": signature}
+        )
+
+
+def _new_operator_action_approval(**values: object) -> OperatorActionApproval:
+    expected = {
+        item.name
+        for item in fields(OperatorActionApproval)
+        if item.name != "approval_digest"
+    }
+    if set(values) != expected:
+        raise ValueError("operator action approval fields are incomplete")
+    result = object.__new__(OperatorActionApproval)
+    for name, value in values.items():
+        object.__setattr__(result, name, value)
+    OperatorActionApproval.__post_init__(result)
+    return result
+
+
+def verify_operator_action_approval_signature(
+    approval: OperatorActionApproval,
+    operator_public_key: Ed25519PublicKey,
+) -> None:
+    """Verify one approval without access to an operator private key."""
+
+    values = {
+        key: value
+        for key, value in approval.__dict__.items()
+        if key != "approval_digest"
+    }
+    values["operator_signature"] = ""
+    try:
+        operator_public_key.verify(
+            bytes.fromhex(approval.operator_signature),
+            json_digest(values).encode("ascii"),
+        )
+    except (InvalidSignature, ValueError) as error:
+        raise ValueError("operator action approval signature mismatch") from error
 
 
 @dataclass(frozen=True, init=False)

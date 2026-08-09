@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass, fields, replace
+from dataclasses import asdict, dataclass, field, fields, replace
 from datetime import datetime, timezone
 from enum import Enum
 import json
@@ -868,7 +868,7 @@ def _minimum_growth_evidence(
 
 
 _FORECAST_INPUT_BUNDLE_VERSION = "forecast-input-bundle-v5"
-_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v11"
+_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v12"
 
 
 def _validate_background_age(
@@ -1198,6 +1198,59 @@ class ForecastAudit:
 
 
 @dataclass(frozen=True)
+class AnalysisInputIdentity:
+    """One explicit identity for analysis data and its resolved input plan."""
+
+    frames_digest: str
+    fixed_context_digest: str
+    full_data_digest: str
+    input_plan_digest: str | None
+    plan_resolution_digest: str | None
+    contract: str = "analysis-input-identity-v1"
+    identity_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.contract != "analysis-input-identity-v1":
+            raise ValueError("unsupported analysis input identity")
+        _validate_sha256_digest("frames_digest", self.frames_digest)
+        _validate_sha256_digest("fixed_context_digest", self.fixed_context_digest)
+        _validate_sha256_digest("full_data_digest", self.full_data_digest)
+        if self.full_data_digest != _forecast_full_analysis_input_digest(
+            input_frames_digest=self.frames_digest,
+            fixed_input_context_digest=self.fixed_context_digest,
+        ):
+            raise ValueError("analysis full-data identity mismatch")
+        if (self.input_plan_digest is None) != (
+            self.plan_resolution_digest is None
+        ):
+            raise ValueError("analysis input plan identity is incomplete")
+        if self.input_plan_digest is not None:
+            assert self.plan_resolution_digest is not None
+            _validate_sha256_digest("input_plan_digest", self.input_plan_digest)
+            _validate_sha256_digest(
+                "plan_resolution_digest",
+                self.plan_resolution_digest,
+            )
+            expected = _forecast_input_plan_resolution_digest(
+                input_plan_digest=self.input_plan_digest,
+                full_analysis_input_digest=self.full_data_digest,
+            )
+            if self.plan_resolution_digest != expected:
+                raise ValueError("analysis input plan resolution is not v2")
+        object.__setattr__(
+            self,
+            "identity_digest",
+            json_digest(
+                {
+                    key: value
+                    for key, value in self.__dict__.items()
+                    if key != "identity_digest"
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class ForecastRunContract:
     config: NowcastConfig
     _latest_frame_dbz: Tensor
@@ -1430,12 +1483,9 @@ class ForecastRunContract:
         resolution_digest = (
             None
             if input_plan_digest is None
-            else json_digest(
-                {
-                    "contract": "forecast-input-plan-resolution-v1",
-                    "input_plan_digest": input_plan_digest,
-                    "input_bundle_digest": input_bundle_digest,
-                }
+            else _forecast_input_plan_resolution_digest(
+                input_plan_digest=input_plan_digest,
+                full_analysis_input_digest=full_analysis_input_digest,
             )
         )
         return cls(
@@ -1496,6 +1546,26 @@ class ForecastRunContract:
     def latest_frame_dbz(self) -> Tensor:
         self.validate_integrity()
         return self._latest_frame_dbz.clone()
+
+    @property
+    def analysis_input_identity(self) -> AnalysisInputIdentity | None:
+        """Return the current v2 data/plan identity, or None for legacy runs."""
+
+        if (
+            self.fixed_input_context_digest is None
+            or self.full_analysis_input_digest is None
+        ):
+            return None
+        try:
+            return AnalysisInputIdentity(
+                frames_digest=self.input_frames_digest,
+                fixed_context_digest=self.fixed_input_context_digest,
+                full_data_digest=self.full_analysis_input_digest,
+                input_plan_digest=self.input_plan_digest,
+                plan_resolution_digest=self.input_plan_resolution_digest,
+            )
+        except ValueError:
+            return None
 
     @property
     def latest_observation_mask(self) -> Tensor:
@@ -1706,18 +1776,27 @@ class ForecastRunContract:
             self.operational_data_identity_json,
             self.grid_time_contract,
         )
-        expected_resolution = (
+        expected_resolution_v2 = (
             None
             if self.input_plan_digest is None
-            else json_digest(
-                {
-                    "contract": "forecast-input-plan-resolution-v1",
-                    "input_plan_digest": self.input_plan_digest,
-                    "input_bundle_digest": self.input_bundle_digest,
-                }
+            or self.full_analysis_input_digest is None
+            else _forecast_input_plan_resolution_digest(
+                input_plan_digest=self.input_plan_digest,
+                full_analysis_input_digest=self.full_analysis_input_digest,
             )
         )
-        if self.input_plan_resolution_digest != expected_resolution:
+        legacy_resolution_v1 = (
+            None
+            if self.input_plan_digest is None
+            else _legacy_forecast_input_plan_resolution_digest_v1(
+                input_plan_digest=self.input_plan_digest,
+                input_bundle_digest=self.input_bundle_digest,
+            )
+        )
+        if self.input_plan_resolution_digest not in (
+            expected_resolution_v2,
+            legacy_resolution_v1,
+        ):
             raise ValueError("input plan resolution digest mismatch")
         if self.observation_masks_digest is not None:
             assert self.observation_quality_weight_digest is not None
@@ -1819,7 +1898,7 @@ def _forecast_full_analysis_input_digest(
     input_frames_digest: str,
     fixed_input_context_digest: str,
 ) -> str:
-    """Address every tensor and contract that can change one analysis."""
+    """Address every data tensor and data-source contract for one analysis."""
 
     _validate_sha256_digest("input_frames_digest", input_frames_digest)
     _validate_sha256_digest(
@@ -1831,6 +1910,43 @@ def _forecast_full_analysis_input_digest(
             "contract": "forecast-full-analysis-input-v1",
             "input_frames_digest": input_frames_digest,
             "fixed_input_context_digest": fixed_input_context_digest,
+        }
+    )
+
+
+def _forecast_input_plan_resolution_digest(
+    *,
+    input_plan_digest: str,
+    full_analysis_input_digest: str,
+) -> str:
+    """Resolve an input plan against the complete analysis data identity."""
+
+    _validate_sha256_digest("input_plan_digest", input_plan_digest)
+    _validate_sha256_digest(
+        "full_analysis_input_digest",
+        full_analysis_input_digest,
+    )
+    return json_digest(
+        {
+            "contract": "forecast-input-plan-resolution-v2",
+            "input_plan_digest": input_plan_digest,
+            "full_analysis_input_digest": full_analysis_input_digest,
+        }
+    )
+
+
+def _legacy_forecast_input_plan_resolution_digest_v1(
+    *,
+    input_plan_digest: str,
+    input_bundle_digest: str,
+) -> str:
+    """Reproduce a historical v1 resolution without promoting it to current."""
+
+    return json_digest(
+        {
+            "contract": "forecast-input-plan-resolution-v1",
+            "input_plan_digest": input_plan_digest,
+            "input_bundle_digest": input_bundle_digest,
         }
     )
 
