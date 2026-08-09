@@ -35,7 +35,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v50"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v51"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v42",
     "forecast-run-v43",
@@ -45,9 +45,10 @@ _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v47",
     "forecast-run-v48",
     "forecast-run-v49",
+    "forecast-run-v50",
 }
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-DEFAULT_MAXIMUM_MEMBER_COUNT = 224
+DEFAULT_MAXIMUM_MEMBER_COUNT = 256
 DEFAULT_MAXIMUM_MEMBER_BYTES = 1024**3
 DEFAULT_MAXIMUM_TOTAL_EXPANDED_BYTES = 2 * 1024**3
 _ArtifactArrays = Mapping[str, NDArray[Any]]
@@ -189,6 +190,8 @@ _CORE_ARRAY_NAMES = frozenset(
         "prior_role",
         "prior_promotion_evidence_digest",
         "prior_regime_classification_evidence_digest",
+        "prior_deployment_policy_digest",
+        "prior_deployment_policy_trust_store_digest",
         "prior_deployment_selection_digest",
         "prior_deployment_fallback_reason",
         "prior_deployment_lineage_contract",
@@ -382,6 +385,16 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             ""
             if result.run.prior_regime_classification_evidence_digest is None
             else result.run.prior_regime_classification_evidence_digest
+        ),
+        "prior_deployment_policy_digest": np.asarray(
+            ""
+            if result.run.prior_deployment_policy_digest is None
+            else result.run.prior_deployment_policy_digest
+        ),
+        "prior_deployment_policy_trust_store_digest": np.asarray(
+            ""
+            if result.run.prior_deployment_policy_trust_store_digest is None
+            else result.run.prior_deployment_policy_trust_store_digest
         ),
         "prior_deployment_selection_digest": np.asarray(
             ""
@@ -1354,6 +1367,10 @@ def load_forecast_run(
                 loaded_arrays,
                 "prior_deployment_lineage_contract",
             )
+            if version == "forecast-run-v50":
+                prior_deployment_lineage_contract = (
+                    "neural-prior-deployment-lineage-v1-audit"
+                )
         elif version in _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS:
             prior_deployment_lineage_contract = (
                 "neural-prior-deployment-lineage-v0-audit"
@@ -1495,6 +1512,22 @@ def load_forecast_run(
                     "prior_regime_classification_evidence_digest",
                 )
                 if "prior_regime_classification_evidence_digest"
+                in loaded_arrays
+                else None
+            ),
+            prior_deployment_policy_digest=(
+                _optional_digest_scalar(
+                    loaded_arrays, "prior_deployment_policy_digest"
+                )
+                if "prior_deployment_policy_digest" in loaded_arrays
+                else None
+            ),
+            prior_deployment_policy_trust_store_digest=(
+                _optional_digest_scalar(
+                    loaded_arrays,
+                    "prior_deployment_policy_trust_store_digest",
+                )
+                if "prior_deployment_policy_trust_store_digest"
                 in loaded_arrays
                 else None
             ),

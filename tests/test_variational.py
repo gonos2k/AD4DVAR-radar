@@ -442,7 +442,7 @@ class VariationalAnalysisTests(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError, "certified.*selector"):
             variational_module.NeuralPriorDeploymentSelection()
-        with self.assertRaisesRegex(ValueError, "deployment selection"):
+        with self.assertRaisesRegex(ValueError, "deployed inference API"):
             runner.infer(frames, input_run=run, role="candidate")
 
         wrong_input = _new_neural_prior_deployment_selection(
@@ -451,15 +451,36 @@ class VariationalAnalysisTests(unittest.TestCase):
             full_analysis_input_digest="0" * 64,
             promotion_evidence_digest="1" * 64,
             regime_classification_evidence_digest="2" * 64,
+            deployment_policy_digest="3" * 64,
+            deployment_policy_trust_store_digest="4" * 64,
             fallback_reason="certified_candidate",
         )
-        with self.assertRaisesRegex(ValueError, "selection disagrees"):
+        with self.assertRaisesRegex(ValueError, "deployed inference API"):
             runner.infer(
                 frames,
                 input_run=run,
                 role="candidate",
                 deployment_selection=wrong_input,
             )
+        forged_parent_selection = _new_neural_prior_deployment_selection(
+            selected_prior_digest=runner.neural_prior_digest,
+            selected_role="parent",
+            full_analysis_input_digest=run.full_analysis_input_digest,
+            promotion_evidence_digest="1" * 64,
+            regime_classification_evidence_digest="2" * 64,
+            deployment_policy_digest="3" * 64,
+            deployment_policy_trust_store_digest="4" * 64,
+            fallback_reason="promotion_ineligible",
+        )
+        with self.assertRaisesRegex(ValueError, "deployed inference API"):
+            runner.infer(
+                frames,
+                input_run=run,
+                role="parent",
+                deployment_selection=forged_parent_selection,
+            )
+        with self.assertRaisesRegex(ValueError, "deployed inference API"):
+            runner.infer(frames, input_run=run, role="parent")
 
     def test_prior_runner_rejects_caller_declared_execution_identity(self) -> None:
         common = dict(

@@ -857,6 +857,8 @@ class ForecastRunArtifactTests(unittest.TestCase):
             full_analysis_input_digest=input_run.full_analysis_input_digest,
             promotion_evidence_digest="5" * 64,
             regime_classification_evidence_digest="6" * 64,
+            deployment_policy_digest="7" * 64,
+            deployment_policy_trust_store_digest="8" * 64,
             fallback_reason="certified_candidate",
         )
         prior = runner.infer(
@@ -882,6 +884,10 @@ class ForecastRunArtifactTests(unittest.TestCase):
         self.assertEqual(
             loaded.run.prior_deployment_selection_digest,
             selection.selection_digest,
+        )
+        self.assertEqual(
+            loaded.run.prior_deployment_policy_digest,
+            selection.deployment_policy_digest,
         )
         self.assertEqual(
             loaded.run.prior_deployment_fallback_reason,
@@ -940,7 +946,74 @@ class ForecastRunArtifactTests(unittest.TestCase):
         )
         self.assertIsNone(loaded.run.prior_deployment_selection_digest)
 
-    def test_v50_cannot_omit_deployment_lineage_contract(self) -> None:
+    def test_v50_deployment_lineage_loads_as_policy_audit(self) -> None:
+        frames = self.frames()
+        input_run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        runner = NeuralPriorInferenceRunner(
+            self._Prior().eval(),
+            lambda value: value[0],
+            example_frames=frames,
+            state_contract=self._state_contract(),
+            probability_contract=self._probability_contract(),
+            model_contract_digest="2" * 64,
+            feature_schema_digest="3" * 64,
+            training_manifest_digest="4" * 64,
+            allow_constant_uncertainty=True,
+            dependency="radar_dependent",
+        )
+        assert input_run.full_analysis_input_digest is not None
+        selection = _new_neural_prior_deployment_selection(
+            selected_prior_digest=runner.neural_prior_digest,
+            selected_role="candidate",
+            full_analysis_input_digest=input_run.full_analysis_input_digest,
+            promotion_evidence_digest="5" * 64,
+            regime_classification_evidence_digest="6" * 64,
+            deployment_policy_digest="7" * 64,
+            deployment_policy_trust_store_digest="8" * 64,
+            fallback_reason="certified_candidate",
+        )
+        prior = runner.infer(
+            frames,
+            input_run=input_run,
+            role="candidate",
+            deployment_selection=selection,
+        )
+        result, _ = variational_nowcast(frames, neural_prior=prior)
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "legacy-v50.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                arrays = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                    if name
+                    not in {
+                        "prior_deployment_policy_digest",
+                        "prior_deployment_policy_trust_store_digest",
+                    }
+                }
+            arrays["forecast_run_artifact_version"] = np.asarray(
+                "forecast-run-v50"
+            )
+            self._save_arrays(path, arrays)
+
+            loaded = load_forecast_run(path)
+
+        self.assertEqual(
+            loaded.run.prior_deployment_lineage_contract,
+            "neural-prior-deployment-lineage-v1-audit",
+        )
+        self.assertIsNone(loaded.run.prior_deployment_policy_digest)
+        self.assertIsNone(
+            loaded.run.prior_deployment_policy_trust_store_digest
+        )
+
+    def test_v51_cannot_omit_deployment_lineage_contract(self) -> None:
         result = nowcast(self.frames())
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "run.npz"

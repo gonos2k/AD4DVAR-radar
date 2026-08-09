@@ -919,27 +919,33 @@ class NeuralPriorDeploymentSelection:
     full_analysis_input_digest: str
     promotion_evidence_digest: str
     regime_classification_evidence_digest: str
+    deployment_policy_digest: str
+    deployment_policy_trust_store_digest: str
     fallback_reason: Literal[
         "certified_candidate",
         "uncertified_regime",
+        "uncertified_range_band",
         "low_regime_confidence",
+        "ood_or_abstained",
         "promotion_ineligible",
         "no_certified_regime",
     ]
-    contract: str = "neural-prior-deployment-selection-v1"
+    contract: str = "neural-prior-deployment-selection-v2"
     selection_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use the certified neural-prior deployment selector")
 
     def validate_integrity(self) -> None:
-        if self.contract != "neural-prior-deployment-selection-v1":
+        if self.contract != "neural-prior-deployment-selection-v2":
             raise ValueError("unsupported neural-prior deployment selection")
         for name in (
             "selected_prior_digest",
             "full_analysis_input_digest",
             "promotion_evidence_digest",
             "regime_classification_evidence_digest",
+            "deployment_policy_digest",
+            "deployment_policy_trust_store_digest",
         ):
             _require_prior_digest(name, getattr(self, name))
         if self.selected_role not in ("candidate", "parent"):
@@ -967,7 +973,7 @@ def _new_neural_prior_deployment_selection(
     object.__setattr__(
         result,
         "contract",
-        "neural-prior-deployment-selection-v1",
+        "neural-prior-deployment-selection-v2",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -1577,7 +1583,52 @@ class NeuralPriorInferenceRunner:
         role: Literal["candidate", "parent"],
         deployment_selection: NeuralPriorDeploymentSelection | None = None,
     ) -> NeuralPriorApplication:
-        """Run the model now and bind its output to the exact input bundle."""
+        """Run research inference; operational callers must use deployment."""
+
+        input_run.validate_integrity()
+        retained_analysis_json = getattr(input_run, "analysis_config_json", None)
+        if retained_analysis_json is not None:
+            execution_values = json.loads(retained_analysis_json)
+            if (
+                isinstance(execution_values, dict)
+                and execution_values.get("execution_mode") == "operational"
+            ):
+                raise ValueError(
+                    "operational neural prior requires the deployed inference API"
+                )
+        return self._infer(
+            frames_dbz,
+            input_run=input_run,
+            role=role,
+            deployment_selection=deployment_selection,
+        )
+
+    def _infer_deployed(
+        self,
+        frames_dbz: Tensor,
+        *,
+        input_run: ForecastRunContract,
+        deployment_selection: NeuralPriorDeploymentSelection,
+    ) -> NeuralPriorApplication:
+        """Internal operational entry reached only after certified selection."""
+
+        deployment_selection.validate_integrity()
+        return self._infer(
+            frames_dbz,
+            input_run=input_run,
+            role=deployment_selection.selected_role,
+            deployment_selection=deployment_selection,
+        )
+
+    def _infer(
+        self,
+        frames_dbz: Tensor,
+        *,
+        input_run: ForecastRunContract,
+        role: Literal["candidate", "parent"],
+        deployment_selection: NeuralPriorDeploymentSelection | None = None,
+    ) -> NeuralPriorApplication:
+        """Execute inference after the public entry point has authorized its mode."""
 
         input_run.validate_integrity()
         if input_run.full_analysis_input_digest is None:
@@ -1594,10 +1645,10 @@ class NeuralPriorInferenceRunner:
                 execution_mode = execution_values.get("execution_mode")
         if deployment_selection is not None:
             deployment_selection.validate_integrity()
-        if role == "candidate" and execution_mode == "operational":
+        if execution_mode == "operational":
             if deployment_selection is None:
                 raise ValueError(
-                    "operational candidate prior requires a deployment selection"
+                    "operational neural prior requires a deployment selection"
                 )
             if (
                 deployment_selection.selected_role != role
@@ -5649,11 +5700,10 @@ def variational_nowcast(
             )
         if (
             analysis_config.execution_mode == "operational"
-            and neural_prior.role == "candidate"
             and neural_prior.deployment_selection is None
         ):
             raise ValueError(
-                "operational candidate prior requires certified deployment selection"
+                "operational neural prior requires certified deployment selection"
             )
     if grid_time_contract is not None:
         grid_time_contract.validate_for(
@@ -5769,6 +5819,16 @@ def variational_nowcast(
             None
             if neural_prior is None or neural_prior.deployment_selection is None
             else neural_prior.deployment_selection.regime_classification_evidence_digest
+        ),
+        prior_deployment_policy_digest=(
+            None
+            if neural_prior is None or neural_prior.deployment_selection is None
+            else neural_prior.deployment_selection.deployment_policy_digest
+        ),
+        prior_deployment_policy_trust_store_digest=(
+            None
+            if neural_prior is None or neural_prior.deployment_selection is None
+            else neural_prior.deployment_selection.deployment_policy_trust_store_digest
         ),
         prior_deployment_selection_digest=(
             None
