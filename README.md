@@ -144,12 +144,19 @@ candidate/parent의 동일 외생 입력을 비교할 수 있도록 radar·mask�
 identity에 결합된다. Neural prior는 metadata나 임의 Tensor로 선언할 수 없다.
 eval-mode PyTorch model을 감싼 `NeuralPriorInferenceRunner`가 feature transform과
 model을 `torch.export` graph로 고정하고, model state·실제 numerical runtime·input
-bundle·공간별 mean/std/valid/support output을 하나의 inference evidence로 묶는다.
-`NeuralPriorProbabilityContract`는 support channel을 특정 검증 radar product와 QC
-pipeline의 `P(Z >= threshold_dbz)` 사건에 결합하고, mean/std channel을 그 support 사건에서
-절단되는 Gaussian의 pre-truncation location/scale로 정의한다. Prior runner, holdout target plan,
+bundle·공간별 state/probability output을 하나의 inference evidence로 묶는다.
+`NeuralPriorStateContract`는 P1 background/std/support를 분석 radar product와 detection
+threshold에 결합한다. 별도의 `NeuralPriorProbabilityContract`는 event-probability channel을
+특정 검증 radar product와 QC pipeline의 `P(Z >= threshold_dbz)` 사건에 결합하고,
+truncated-location/scale channel을 그 support 사건에서 절단되는 Gaussian의
+pre-truncation parameter로 정의한다. Prior runner, holdout target plan,
 completed case와 inference evidence의 probability/support-event digest가 모두 같지
 않으면 paired 평가가 시작되기 전에 거부된다.
+Full probabilistic model의 exported output 순서는
+`(state_background_dbz, state_std_dbz, state_valid_probability,
+state_support_probability, event_probability, truncated_location_dbz,
+truncated_scale_dbz)`이다. 첫 네 channel만 P1이 소비하고 마지막 세 channel만 hurdle
+calibration이 소비한다.
 승인 후에는 원래 Python callable이 아니라 export된 graph 자체를 실행하며, 그
 factory가 만든 `NeuralPriorApplication`만 실제 P1 초기배경으로 소비된다.
 Radar-dependent prior는 deterministic Rademacher JVP/VJP·finite-difference 검사를
@@ -716,8 +723,9 @@ promotion_policy = NeuralPriorPromotionPolicy(
     approved_metric_contract_digests=(metric_config.digest,),
     minimum_holdout_cases=20,
     minimum_material_cases=20,
-    maximum_prior_standardized_residual_mean_abs=2.0,
-    maximum_prior_underdispersion_fraction=0.1,
+    maximum_prior_conditional_pit_residual_mean_abs=2.0,
+    maximum_prior_conditional_underdispersion_fraction=0.1,
+    maximum_prior_echo_support_miss_score=0.25,
 )
 promotion = compute_neural_prior_promotion(
     candidate_manifest,
@@ -762,19 +770,29 @@ preregistered forecast population의 `PriorHoldoutEvaluation`을 사용하며, i
 선택·실행한 사례만 모은 action-effect population과 분리된다. Material 사례의
 case/storm/day/radar/regime 다양성과 cluster bootstrap, training/holdout
 storm·day·time-window 분리도 다시 검사한다.
-Candidate prior의 spatial `std_dbz`는 모델 입력과 분리된 withheld target의
-positive-echo 화소에서만 conditional truncated-Gaussian intensity NLL과 standardized residual로
-검증하고, `support_probability`는 고정 target mask 전체에서 Brier score로 검증한다.
+Neural prior는 P1이 소비하는 deterministic Gaussian state head와 holdout calibration용
+hurdle-probability head를 별도 계약으로 출력한다. State product와 support threshold는
+분석 radar product와 detection limit에 정확히 일치해야 하며, probability head의
+truncated location/scale은 P1 초기장으로 재사용되지 않는다. Probability head는 모델
+입력과 분리된 withheld target의 positive-echo 화소에서 float64 `log_ndtr` 기반 conditional
+truncated-Gaussian intensity NLL과 conditional PIT residual로 검증한다. Event probability는
+고정 target mask 전체 Brier뿐 아니라 pixel-level echo miss, connected echo-object miss와
+clear false-echo score로 각각 검증한다.
 Clear-sky에서는 support probability의 false-echo score를 별도로 계산하므로 동일한
 no-echo를 -10/0/4.9 dBZ 중 어떤 floor로 저장해도 intensity score가 달라지지 않는다.
 Candidate와 parent를 동일한 사전등록 target mask에서 paired 평가하고,
-storm/day/radar cluster bootstrap으로 구한 intensity-NLL·support-Brier·clear-sky·
-underdispersion 증가의 전역 및 regime별 최악 상한도 정책 한계를 넘어서는 안 된다.
+storm/day/radar cluster bootstrap으로 구한 intensity-NLL·support-Brier·echo-miss·
+clear-sky·conditional-underdispersion 증가의 전역 및 regime별 최악 상한도 정책 한계를
+넘어서는 안 된다.
 순수 clear case의 intensity component와 순수 echo case의 clear component는 실패가
 아니라 `NOT_APPLICABLE`로 기록한다. 대신 전체 및 regime별 echo/clear 사례·독립
-cluster 최소수를 각각 요구한다. Candidate family 크기는 Bonferroni로, 현재 candidate의
-component와 regime 비교는 동일 cluster-bootstrap replicate의 max statistic으로 함께
-보정하며 실제 simultaneous test 수를 promotion evidence에 보존한다.
+cluster 최소수뿐 아니라 case별 component 화소수·물리면적과 echo object 수도 요구한다.
+Candidate family 크기는 Bonferroni로, 현재 candidate의 component와 regime 비교는 동일
+cluster sign replicate의 studentized max statistic으로 함께 보정한다. 작은 cluster 집합은
+모든 sign pattern을 정확히 열거하고, 큰 집합은 요구 tail replicate 수를 충족해야 한다.
+검정 방법·유효 replicate·critical quantile·Monte Carlo 오차와 실제 simultaneous test 수를
+promotion evidence에 보존한다. Echo와 clear 증거가 모두 충족된 regime/range만 deployment
+applicability에 포함되며 그 밖에서는 parent prior로 fail-close한다.
 따라서 clear-sky 개선으로 echo intensity 악화를 상쇄하거나 절대 calibration 상한만
 가까스로 통과하면서 parent보다 불확실성이 크게 악화된 candidate는 승격되지 않는다. Initial-state prior의 target valid time은 prior output
 valid time과 같아야 하며, 같은 source/time을 쓰는 withheld target은 실제 feature-
@@ -783,7 +801,7 @@ exclusion mask가 target mask를 덮었는지 계산해 확인한다. 불확실�
 fraction·면적과 parent 대비 abstention 증가 및 NLL abstention penalty를 함께 적용한다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
-현재 promotion evidence는 v6, candidate manifest는 v4이다. v3/v4/v5 promotion evidence와
+현재 promotion evidence는 v7, candidate manifest는 v4이다. v3/v4/v5/v6 promotion evidence와
 pre-probability v2/v3 candidate manifest는 원래 payload와 digest를 그대로 검증하는
 read-only audit 타입으로만 적재된다. Migration 때 추가된 UCB 컬럼의 기본값 0을 과거
 증거의 계산값으로 해석하거나 과거 row를 현재 승격판정에 재사용하지 않는다.

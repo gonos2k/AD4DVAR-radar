@@ -3,6 +3,7 @@ import math
 from pathlib import Path
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 from collections.abc import Callable
@@ -14,6 +15,7 @@ from torch import nn
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar._digest import tensor_digest  # noqa: E402
+from advar.calibration import OperationalDataIdentity  # noqa: E402
 from advar.matrix_free import (  # noqa: E402
     PCGResult,
     gauss_newton_hvp,
@@ -55,6 +57,7 @@ from advar.variational import (  # noqa: E402
     NeuralPriorApplication,
     NeuralPriorInferenceRunner,
     NeuralPriorProbabilityContract,
+    NeuralPriorStateContract,
     analysis_trajectory,
     freeze_irls_weights,
     initial_control,
@@ -72,6 +75,10 @@ _PRIOR_PROBABILITY_CONTRACT = NeuralPriorProbabilityContract(
     support_threshold_dbz=5.0,
     support_product_digest="a" * 64,
     qc_pipeline_digest="9" * 64,
+)
+_PRIOR_STATE_CONTRACT = NeuralPriorStateContract(
+    state_product_digest="a" * 64,
+    support_threshold_dbz=5.0,
 )
 
 
@@ -151,12 +158,47 @@ class _SpatialUncertaintyPrior(nn.Module):
     def forward(
         self,
         value: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, ...]:
         mean = value + self.anchor
         std = 0.5 + 0.01 * torch.abs(value)
         valid = torch.sigmoid(value + 5.0)
-        support = torch.sigmoid(value)
-        return mean, std, valid, support
+        state_support = torch.sigmoid(mean - 5.0)
+        event_probability = torch.sigmoid(value)
+        return (
+            mean,
+            std,
+            valid,
+            state_support,
+            event_probability,
+            mean,
+            std,
+        )
+
+
+class _SeparatedStateProbabilityPrior(nn.Module):
+    def __init__(self, state_value: float = 10.0) -> None:
+        super().__init__()
+        self.register_buffer(
+            "state_value", torch.tensor(state_value, dtype=torch.float64)
+        )
+
+    def forward(self, value: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        state = torch.ones_like(value) * self.state_value
+        state_std = torch.full_like(value, 2.0)
+        state_valid = torch.ones_like(value)
+        state_support = torch.ones_like(value)
+        event_probability = torch.full_like(value, 0.8)
+        truncated_location = torch.full_like(value, -3.0)
+        truncated_scale = torch.full_like(value, 4.0)
+        return (
+            state,
+            state_std,
+            state_valid,
+            state_support,
+            event_probability,
+            truncated_location,
+            truncated_scale,
+        )
 
 
 class _UncertaintyOnlyPrior(nn.Module):
@@ -167,12 +209,21 @@ class _UncertaintyOnlyPrior(nn.Module):
     def forward(
         self,
         value: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, ...]:
         mean = torch.zeros_like(value) + self.anchor
         std = torch.exp(0.1 * value)
         valid = torch.ones_like(value)
-        support = torch.sigmoid(value)
-        return mean, std, valid, support
+        state_support = torch.zeros_like(value)
+        event_probability = torch.sigmoid(value)
+        return (
+            mean,
+            std,
+            valid,
+            state_support,
+            event_probability,
+            mean,
+            std,
+        )
 
 
 class _LiveKinkPrior(nn.Module):
@@ -183,12 +234,21 @@ class _LiveKinkPrior(nn.Module):
     def forward(
         self,
         value: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, ...]:
         mean = torch.relu(value - self.threshold)
         std = torch.ones_like(value)
         valid_probability = torch.ones_like(value)
-        support = torch.ones_like(value)
-        return mean, std, valid_probability, support
+        state_support = (mean >= 5.0).to(mean)
+        event_probability = torch.ones_like(value)
+        return (
+            mean,
+            std,
+            valid_probability,
+            state_support,
+            event_probability,
+            mean,
+            std,
+        )
 
 
 class _RadarDependentBooleanValidityPrior(nn.Module):
@@ -199,11 +259,16 @@ class _RadarDependentBooleanValidityPrior(nn.Module):
     def forward(
         self,
         value: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, ...]:
+        state = value + self.anchor
+        state_support = (state >= 5.0).to(state)
         return (
-            value + self.anchor,
+            state,
             torch.ones_like(value),
             value >= 0.0,
+            state_support,
+            torch.ones_like(value),
+            state,
             torch.ones_like(value),
         )
 
@@ -276,6 +341,7 @@ def _prior_runner(
         _OffsetPrior(offset).eval(),
         lambda value: value[0],
         example_frames=example_frames,
+        state_contract=_PRIOR_STATE_CONTRACT,
         probability_contract=_PRIOR_PROBABILITY_CONTRACT,
         model_contract_digest="4" * 64,
         feature_schema_digest="5" * 64,
@@ -331,6 +397,7 @@ class VariationalAnalysisTests(unittest.TestCase):
     def test_prior_runner_rejects_caller_declared_execution_identity(self) -> None:
         common = dict(
             example_frames=torch.zeros((3, 4, 4), dtype=torch.float64),
+            state_contract=_PRIOR_STATE_CONTRACT,
             probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
@@ -366,6 +433,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             _SpatialUncertaintyPrior().eval(),
             lambda value: value[0],
             example_frames=frames,
+            state_contract=_PRIOR_STATE_CONTRACT,
             probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
@@ -398,6 +466,97 @@ class VariationalAnalysisTests(unittest.TestCase):
             _PRIOR_PROBABILITY_CONTRACT.support_event_digest,
         )
         runner.reproduce(application, frames)
+
+    def test_p1_consumes_state_head_not_truncated_probability_location(self) -> None:
+        frames = torch.full((3, 4, 4), 20.0, dtype=torch.float64)
+        run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        runner = NeuralPriorInferenceRunner(
+            _SeparatedStateProbabilityPrior().eval(),
+            lambda value: value[0],
+            example_frames=frames,
+            state_contract=_PRIOR_STATE_CONTRACT,
+            probability_contract=_PRIOR_PROBABILITY_CONTRACT,
+            model_contract_digest="4" * 64,
+            feature_schema_digest="5" * 64,
+            training_manifest_digest="6" * 64,
+            dependency="exogenous",
+        )
+        application = runner.infer(frames, input_run=run, role="candidate")
+        _, frozen = prepare_analysis(frames, neural_prior=application)
+
+        self.assertTrue(
+            bool(frozen.initial_background_dbz.eq(10.0).all())
+        )
+        self.assertTrue(
+            bool(application.truncated_location_dbz.eq(-3.0).all())
+        )
+
+    def test_state_support_threshold_must_match_analysis_detection_limit(self) -> None:
+        frames = torch.full((3, 4, 4), 20.0, dtype=torch.float64)
+        runner = NeuralPriorInferenceRunner(
+            _SeparatedStateProbabilityPrior(state_value=40.0).eval(),
+            lambda value: value[0],
+            example_frames=frames,
+            state_contract=NeuralPriorStateContract(
+                state_product_digest="a" * 64,
+                support_threshold_dbz=35.0,
+            ),
+            probability_contract=_PRIOR_PROBABILITY_CONTRACT,
+            model_contract_digest="4" * 64,
+            feature_schema_digest="5" * 64,
+            training_manifest_digest="6" * 64,
+            dependency="exogenous",
+        )
+        run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        application = runner.infer(frames, input_run=run, role="candidate")
+        with self.assertRaisesRegex(ValueError, "support threshold"):
+            prepare_analysis(frames, neural_prior=application)
+
+    def test_state_product_must_match_analysis_radar_product(self) -> None:
+        frames = torch.full((3, 4, 4), 20.0, dtype=torch.float64)
+        identity = OperationalDataIdentity(
+            radar_class="test",
+            qc_pipeline_digest="9" * 64,
+            observation_error_model_digest="1" * 64,
+            background_model_digest="2" * 64,
+            radar_product_digest="a" * 64,
+            background_cycle_rule_digest="3" * 64,
+            mask_policy_digest="4" * 64,
+        )
+        run = SimpleNamespace(
+            validate_integrity=lambda: None,
+            full_analysis_input_digest="f" * 64,
+            input_frames_digest=tensor_digest(frames),
+            operational_data_identity_json=identity.json,
+            input_bundle_digest="e" * 64,
+            grid_time_contract=None,
+        )
+        runner = NeuralPriorInferenceRunner(
+            _SeparatedStateProbabilityPrior().eval(),
+            lambda value: value[0],
+            example_frames=frames,
+            state_contract=NeuralPriorStateContract(
+                state_product_digest="b" * 64,
+                support_threshold_dbz=5.0,
+            ),
+            probability_contract=_PRIOR_PROBABILITY_CONTRACT,
+            model_contract_digest="4" * 64,
+            feature_schema_digest="5" * 64,
+            training_manifest_digest="6" * 64,
+            dependency="exogenous",
+        )
+        with self.assertRaisesRegex(ValueError, "state product"):
+            runner.infer(frames, input_run=run, role="candidate")
 
     def test_prior_support_threshold_changes_probability_identity(self) -> None:
         threshold_35 = NeuralPriorProbabilityContract(
@@ -436,6 +595,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             _LiveKinkPrior().eval(),
             lambda value: value[0],
             example_frames=frames,
+            state_contract=_PRIOR_STATE_CONTRACT,
             probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
@@ -462,6 +622,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             _RadarDependentBooleanValidityPrior().eval(),
             lambda value: value[0],
             example_frames=frames,
+            state_contract=_PRIOR_STATE_CONTRACT,
             probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
@@ -481,6 +642,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
         common = dict(
             example_frames=frames,
+            state_contract=_PRIOR_STATE_CONTRACT,
             probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
@@ -548,6 +710,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             _UncertaintyOnlyPrior().eval(),
             lambda value: value[0],
             example_frames=frames,
+            state_contract=_PRIOR_STATE_CONTRACT,
             probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
@@ -575,6 +738,7 @@ class VariationalAnalysisTests(unittest.TestCase):
     def test_prior_execution_digest_binds_the_actual_forward_code(self) -> None:
         common = dict(
             example_frames=torch.zeros((3, 4, 4), dtype=torch.float64),
+            state_contract=_PRIOR_STATE_CONTRACT,
             probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
@@ -619,6 +783,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         example_frames = torch.ones((3, 2, 2), dtype=torch.float64)
         common = dict(
             example_frames=example_frames,
+            state_contract=_PRIOR_STATE_CONTRACT,
             probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
@@ -745,6 +910,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             model,
             lambda value: value[0],
             example_frames=values,
+            state_contract=_PRIOR_STATE_CONTRACT,
             probability_contract=_PRIOR_PROBABILITY_CONTRACT,
             model_contract_digest="4" * 64,
             feature_schema_digest="5" * 64,
@@ -874,19 +1040,19 @@ class VariationalAnalysisTests(unittest.TestCase):
                     maximum_added_echo_integral=1.0e9,
                 ),
             )
-        with self.assertRaisesRegex(ValueError, "added area"):
-            prepare_analysis(
+        _, subthreshold_frozen = prepare_analysis(
+            frames,
+            grid_time_contract=contract,
+            neural_prior=_prior(
                 frames,
-                grid_time_contract=contract,
-                neural_prior=_prior(
-                    frames,
-                    14.9,
-                    "candidate",
-                    support_policy="expand_control",
-                    maximum_added_area_km2=0.0,
-                    maximum_added_echo_integral=1.0e9,
-                ),
-            )
+                14.9,
+                "candidate",
+                support_policy="expand_control",
+                maximum_added_area_km2=0.0,
+                maximum_added_echo_integral=1.0e9,
+            ),
+        )
+        self.assertEqual(subthreshold_frozen.active_field_index.numel(), 0)
 
     def test_neural_prior_output_changes_the_actual_p1_analysis(self) -> None:
         coordinates = torch.arange(8, dtype=torch.float64)

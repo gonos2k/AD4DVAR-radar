@@ -22,6 +22,7 @@ from advar import (  # noqa: E402
     NeuralPriorApplication,
     NeuralPriorInferenceRunner,
     NeuralPriorProbabilityContract,
+    NeuralPriorStateContract,
     NowcastConfig,
     RadarGridTimeContract,
     SensitivityConfig,
@@ -755,6 +756,10 @@ class ForecastRunArtifactTests(unittest.TestCase):
             self._Prior().eval(),
             lambda value: value[0],
             example_frames=frames,
+            state_contract=NeuralPriorStateContract(
+                state_product_digest="a" * 64,
+                support_threshold_dbz=5.0,
+            ),
             probability_contract=NeuralPriorProbabilityContract(
                 support_threshold_dbz=5.0,
                 support_product_digest="a" * 64,
@@ -790,13 +795,14 @@ class ForecastRunArtifactTests(unittest.TestCase):
         self.assertEqual(loaded.run.prior_role, "candidate")
         self.assertEqual(loaded.forecast_run_digest, result.forecast_run_digest)
         _, frozen = prepare_analysis(frames, neural_prior=prior)
+        active_prior = (
+            prior.state_valid_mask
+            & (prior.state_support_probability >= 0.5)
+            & frozen.initial_support_mask
+        )
         torch.testing.assert_close(
-            frozen.initial_background_dbz,
-            torch.where(
-                frozen.initial_support_mask,
-                prior.initial_background_dbz,
-                torch.full_like(prior.initial_background_dbz, -10.0),
-            ),
+            frozen.initial_background_dbz.masked_select(active_prior),
+            prior.state_background_dbz.masked_select(active_prior),
         )
 
     def test_neural_prior_lineage_is_all_or_none(self) -> None:
@@ -849,6 +855,10 @@ class ForecastRunArtifactTests(unittest.TestCase):
             self._Prior().eval(),
             lambda value: value[0],
             example_frames=frames,
+            state_contract=NeuralPriorStateContract(
+                state_product_digest="a" * 64,
+                support_threshold_dbz=5.0,
+            ),
             probability_contract=NeuralPriorProbabilityContract(
                 support_threshold_dbz=5.0,
                 support_product_digest="a" * 64,
