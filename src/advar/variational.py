@@ -677,11 +677,11 @@ class NeuralPriorInferenceEvidence:
     uncertainty_contract: Literal["model_spatial", "constant_research"]
     execution_contract_digest: str
     dependency: PriorDependency
-    contract: str = "neural-prior-inference-evidence-v2"
+    contract: str = "neural-prior-inference-evidence-v3"
     evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-inference-evidence-v2":
+        if self.contract != "neural-prior-inference-evidence-v3":
             raise ValueError("unsupported neural-prior inference evidence")
         for name in (
             "neural_prior_digest",
@@ -856,7 +856,7 @@ class NeuralPriorInferenceRunner:
         self._example_dtype = example_frames.dtype
         self.execution_contract_digest = json_digest(
             {
-                "contract": "neural-prior-execution-contract-v3",
+                "contract": "neural-prior-execution-contract-v4",
                 "model_state_digest": self._model_state_digest,
                 "model_code_digest": self._model_code_digest,
                 "feature_extractor_digest": actual_feature_digest,
@@ -880,6 +880,9 @@ class NeuralPriorInferenceRunner:
             }
         )
         self.neural_prior_digest = self.execution_contract_digest
+        self._certified_derivative_defect = self._validate_derivatives(
+            canonical_frames
+        )
 
     def _validate_state(self) -> None:
         if _module_state_digest(self.model) != self._model_state_digest:
@@ -892,12 +895,16 @@ class NeuralPriorInferenceRunner:
         ):
             raise ValueError("neural-prior input shape or dtype changed")
 
-    def _forward(self, frames_dbz: Tensor) -> tuple[Tensor, Tensor]:
+    def _derivative_outputs(self, frames_dbz: Tensor) -> tuple[Tensor, Tensor]:
         self._validate_input_contract(frames_dbz)
         raw = self._exported_pipeline(frames_dbz)
-        if not isinstance(raw, tuple) or len(raw) < 2:
+        if isinstance(raw, tuple) and len(raw) == 5:
+            return cast(Tensor, raw[1]), torch.log(cast(Tensor, raw[2]))
+        if isinstance(raw, tuple) and len(raw) == 2 and self.allow_constant_uncertainty:
+            mean = cast(Tensor, raw[1])
+            return mean, torch.full_like(mean, math.log(self.prior_std_dbz))
+        else:
             raise RuntimeError("exported neural-prior pipeline output is invalid")
-        return cast(Tensor, raw[0]), cast(Tensor, raw[1])
 
     def _output(
         self, frames_dbz: Tensor
@@ -941,9 +948,10 @@ class NeuralPriorInferenceRunner:
         self._validate_state()
         return features, output, std, valid, support
 
-    def _validate_derivatives(self, frames_dbz: Tensor, output: Tensor) -> float:
+    def _validate_derivatives(self, frames_dbz: Tensor) -> float:
         if self.dependency != "radar_dependent":
             return 0.0
+        mean, log_std = self._derivative_outputs(frames_dbz)
         generator = torch.Generator(device="cpu").manual_seed(0)
         defects: list[float] = []
         step = 1.0e-3 if frames_dbz.dtype == torch.float32 else 1.0e-5
@@ -958,28 +966,51 @@ class NeuralPriorInferenceRunner:
                     dtype=torch.int8,
                 ).to(frames_dbz) * 2.0 - 1.0
             )
-            cotangent = (
+            mean_cotangent = (
                 torch.randint(
                     0,
                     2,
-                    output.shape,
+                    mean.shape,
                     generator=generator,
                     dtype=torch.int8,
-                ).to(output) * 2.0 - 1.0
+                ).to(mean) * 2.0 - 1.0
             )
-            forward = self.jvp(frames_dbz, tangent)
-            reverse = self.vjp(frames_dbz, cotangent)
-            left = torch.sum(forward * cotangent)
+            log_std_cotangent = (
+                torch.randint(
+                    0,
+                    2,
+                    log_std.shape,
+                    generator=generator,
+                    dtype=torch.int8,
+                ).to(log_std) * 2.0 - 1.0
+            )
+            mean_forward, log_std_forward = self.jvp_components(
+                frames_dbz,
+                tangent,
+            )
+            reverse = self.vjp_components(
+                frames_dbz,
+                mean_cotangent,
+                log_std_cotangent,
+            )
+            left = torch.sum(mean_forward * mean_cotangent) + torch.sum(
+                log_std_forward * log_std_cotangent
+            )
             right = torch.sum(tangent * reverse)
             dual = torch.abs(left - right) / (
                 torch.abs(left) + torch.abs(right) + epsilon
             )
-            plus = self._forward(frames_dbz + step * tangent)[1]
-            minus = self._forward(frames_dbz - step * tangent)[1]
-            finite_difference = (plus - minus) / (2.0 * step)
-            fd = torch.linalg.vector_norm(forward - finite_difference) / (
-                torch.linalg.vector_norm(forward)
-                + torch.linalg.vector_norm(finite_difference)
+            plus = self._derivative_outputs(frames_dbz + step * tangent)
+            minus = self._derivative_outputs(frames_dbz - step * tangent)
+            finite_mean = (plus[0] - minus[0]) / (2.0 * step)
+            finite_log_std = (plus[1] - minus[1]) / (2.0 * step)
+            forward_flat = torch.cat(
+                (mean_forward.flatten(), log_std_forward.flatten())
+            )
+            finite_flat = torch.cat((finite_mean.flatten(), finite_log_std.flatten()))
+            fd = torch.linalg.vector_norm(forward_flat - finite_flat) / (
+                torch.linalg.vector_norm(forward_flat)
+                + torch.linalg.vector_norm(finite_flat)
                 + epsilon
             )
             defects.extend((float(dual.detach()), float(fd.detach())))
@@ -998,10 +1029,12 @@ class NeuralPriorInferenceRunner:
         """Run the model now and bind its output to the exact input bundle."""
 
         input_run.validate_integrity()
+        if self._certified_derivative_defect > self.maximum_derivative_defect:
+            raise ValueError("neural-prior derivative defect exceeds its contract")
         if tensor_digest(frames_dbz) != input_run.input_frames_digest:
             raise ValueError("neural-prior frames disagree with the input run")
         features, output, std, valid, support = self._output(frames_dbz)
-        derivative_defect = self._validate_derivatives(frames_dbz, output)
+        derivative_defect = self._certified_derivative_defect
         evidence = NeuralPriorInferenceEvidence(
             neural_prior_digest=self.neural_prior_digest,
             input_bundle_digest=input_run.input_bundle_digest,
@@ -1083,35 +1116,59 @@ class NeuralPriorInferenceRunner:
             raise ValueError("retained neural-prior output cannot be reproduced")
 
     def jvp(self, frames_dbz: Tensor, tangent: Tensor) -> Tensor:
+        return self.jvp_components(frames_dbz, tangent)[0]
+
+    def jvp_components(
+        self,
+        frames_dbz: Tensor,
+        tangent: Tensor,
+    ) -> tuple[Tensor, Tensor]:
         if self.dependency != "radar_dependent":
-            return frames_dbz.new_zeros(frames_dbz.shape[-2:])
+            zero = frames_dbz.new_zeros(frames_dbz.shape[-2:])
+            return zero, zero.clone()
         self._validate_state()
         return cast(
-            Tensor,
+            tuple[Tensor, Tensor],
             torch.func.jvp(
-                lambda value: self._forward(value)[1],
+                self._derivative_outputs,
                 (frames_dbz,),
                 (tangent,),
             )[1],
         )
 
     def vjp(self, frames_dbz: Tensor, cotangent: Tensor) -> Tensor:
+        return self.vjp_components(
+            frames_dbz,
+            cotangent,
+            torch.zeros_like(cotangent),
+        )
+
+    def vjp_components(
+        self,
+        frames_dbz: Tensor,
+        mean_cotangent: Tensor,
+        log_std_cotangent: Tensor,
+    ) -> Tensor:
         if self.dependency != "radar_dependent":
             return torch.zeros_like(frames_dbz)
         self._validate_state()
         _, pullback = cast(
-            tuple[Tensor, Callable[[Tensor], tuple[Tensor]]],
+            tuple[
+                tuple[Tensor, Tensor],
+                Callable[[tuple[Tensor, Tensor]], tuple[Tensor]],
+            ],
             torch.func.vjp(
-                lambda value: self._forward(value)[1],
+                self._derivative_outputs,
                 frames_dbz,
             ),
         )
-        return cast(Tensor, pullback(cotangent)[0])
+        return cast(Tensor, pullback((mean_cotangent, log_std_cotangent))[0])
 
     def validate_adjoint_direction(
         self,
         frames_dbz: Tensor,
-        cotangent: Tensor,
+        mean_cotangent: Tensor,
+        log_std_cotangent: Tensor | None = None,
     ) -> None:
         """Check the exact FSO cotangent against an independent JVP."""
 
@@ -1128,9 +1185,20 @@ class NeuralPriorInferenceRunner:
                 dtype=torch.int8,
             ).to(frames_dbz) * 2.0 - 1.0
         )
-        forward = self.jvp(frames_dbz, tangent)
-        reverse = self.vjp(frames_dbz, cotangent)
-        left = torch.sum(forward * cotangent)
+        mean_forward, log_std_forward = self.jvp_components(frames_dbz, tangent)
+        retained_log_std_cotangent = (
+            torch.zeros_like(mean_cotangent)
+            if log_std_cotangent is None
+            else log_std_cotangent
+        )
+        reverse = self.vjp_components(
+            frames_dbz,
+            mean_cotangent,
+            retained_log_std_cotangent,
+        )
+        left = torch.sum(mean_forward * mean_cotangent) + torch.sum(
+            log_std_forward * retained_log_std_cotangent
+        )
         right = torch.sum(tangent * reverse)
         epsilon = torch.finfo(frames_dbz.dtype).eps
         defect = torch.abs(left - right) / (
@@ -1153,7 +1221,7 @@ class NeuralPriorApplication:
     support_policy: PriorSupportPolicy
     maximum_added_area_km2: float
     maximum_added_echo_integral: float
-    contract: str = "neural-prior-application-v2"
+    contract: str = "neural-prior-application-v3"
     application_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -1187,7 +1255,7 @@ class NeuralPriorApplication:
 
 def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
     result = object.__new__(NeuralPriorApplication)
-    object.__setattr__(result, "contract", "neural-prior-application-v2")
+    object.__setattr__(result, "contract", "neural-prior-application-v3")
     for name, value in values.items():
         object.__setattr__(result, name, value)
     background = result.initial_background_dbz.detach().clone()
@@ -2333,8 +2401,13 @@ def prepare_analysis(
             prior_background,
             initial_background_dbz,
         )
+        prior_echo = dbz_to_echo(
+            prior_background,
+            min_dbz=nowcast_config.min_dbz,
+            max_dbz=nowcast_config.max_dbz,
+        )
         prior_support = prior_valid_mask & (
-            prior_background >= analysis_config.detection_limit_dbz
+            prior_echo > analysis_config.transform_epsilon
         )
         added_support = prior_support & ~initial_support
         if neural_prior.support_policy == "causal_clip":
@@ -2358,11 +2431,7 @@ def prepare_analysis(
             )
             added_echo = float(
                 torch.sum(
-                    dbz_to_echo(
-                        prior_background,
-                        min_dbz=nowcast_config.min_dbz,
-                        max_dbz=nowcast_config.max_dbz,
-                    ).masked_select(added_support)
+                    prior_echo.masked_select(added_support)
                 ).detach()
                 * (
                     1.0
@@ -4640,6 +4709,10 @@ def variational_nowcast(
         observations.valid_mask,
         background_frames_dbz,
         background_age_minutes,
+        observation_quality_weight=(
+            observations.quality_weight * observations.valid_mask
+        ),
+        observation_std_dbz=observations.std_dbz,
         grid_time_contract=grid_time_contract,
         analysis_config_json=analysis_config_json,
         analysis_config_digest=analysis_config_digest,

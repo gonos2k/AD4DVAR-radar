@@ -1207,6 +1207,11 @@ class ForecastRunContract:
     latest_frame_digest: str
     latest_background_digest: str | None
     input_frames_digest: str
+    observation_masks_digest: str | None
+    observation_quality_weight_digest: str | None
+    observation_std_dbz_digest: str | None
+    background_frames_digest: str | None
+    fixed_input_context_digest: str | None
     input_bundle_digest: str
     background_age_minutes: float | None = None
     grid_time_contract: RadarGridTimeContract | None = None
@@ -1244,6 +1249,8 @@ class ForecastRunContract:
         background_frames_dbz: Tensor | None,
         background_age_minutes: float | None = None,
         *,
+        observation_quality_weight: Tensor | None = None,
+        observation_std_dbz: Tensor | None = None,
         grid_time_contract: RadarGridTimeContract | None = None,
         analysis_config_json: str | None = None,
         analysis_config_digest: str | None = None,
@@ -1275,6 +1282,39 @@ class ForecastRunContract:
             raise ValueError(
                 "observation_masks must be boolean with the frame shape"
             )
+        accepted_quality_weight = (
+            observation_masks.to(frames_dbz)
+            if observation_quality_weight is None
+            else observation_quality_weight
+        )
+        accepted_observation_std = (
+            torch.full_like(frames_dbz, 2.0)
+            if observation_std_dbz is None
+            else observation_std_dbz
+        )
+        for name, value in (
+            ("observation_quality_weight", accepted_quality_weight),
+            ("observation_std_dbz", accepted_observation_std),
+        ):
+            if (
+                value.shape != frames_dbz.shape
+                or value.dtype != frames_dbz.dtype
+                or not bool(torch.all(torch.isfinite(value)))
+            ):
+                raise ValueError(f"{name} must be finite and match the frames")
+        if bool(
+            torch.any(
+                (accepted_quality_weight < 0.0)
+                | (accepted_quality_weight > 1.0)
+            )
+        ) or bool(
+            torch.any(
+                accepted_quality_weight.masked_select(~observation_masks) != 0.0
+            )
+        ):
+            raise ValueError("observation quality weights are invalid")
+        if bool(torch.any(accepted_observation_std <= 0.0)):
+            raise ValueError("observation standard deviations must be positive")
         background_present = background_frames_dbz is not None
         _validate_background_age(
             config,
@@ -1352,6 +1392,36 @@ class ForecastRunContract:
             operational_calibration_approval_digest,
             operational_data_identity_digest,
         )
+        observation_masks_digest = tensor_digest(observation_masks)
+        observation_quality_weight_digest = tensor_digest(
+            accepted_quality_weight
+        )
+        observation_std_dbz_digest = tensor_digest(accepted_observation_std)
+        background_frames_digest = (
+            None
+            if background_frames_dbz is None
+            else tensor_digest(background_frames_dbz)
+        )
+        fixed_input_context_digest = _forecast_fixed_input_context_digest(
+            observation_masks_digest=observation_masks_digest,
+            observation_quality_weight_digest=(
+                observation_quality_weight_digest
+            ),
+            observation_std_dbz_digest=observation_std_dbz_digest,
+            background_frames_digest=background_frames_digest,
+            background_age_minutes=background_age_minutes,
+            grid_time_contract_digest=(
+                None if grid_time_contract is None else grid_time_contract.digest
+            ),
+            operational_calibration_manifest_digest=(
+                operational_calibration_manifest_digest
+            ),
+            operational_calibration_approval_digest=(
+                operational_calibration_approval_digest
+            ),
+            operational_data_identity_digest=operational_data_identity_digest,
+            input_plan_digest=input_plan_digest,
+        )
         resolution_digest = (
             None
             if input_plan_digest is None
@@ -1372,6 +1442,13 @@ class ForecastRunContract:
             latest_frame_digest=tensor_digest(latest_frame),
             latest_background_digest=latest_background,
             input_frames_digest=tensor_digest(frames_dbz),
+            observation_masks_digest=observation_masks_digest,
+            observation_quality_weight_digest=(
+                observation_quality_weight_digest
+            ),
+            observation_std_dbz_digest=observation_std_dbz_digest,
+            background_frames_digest=background_frames_digest,
+            fixed_input_context_digest=fixed_input_context_digest,
             input_bundle_digest=input_bundle_digest,
             background_age_minutes=background_age_minutes,
             grid_time_contract=grid_time_contract,
@@ -1463,6 +1540,41 @@ class ForecastRunContract:
             "input_bundle_digest",
             self.input_bundle_digest,
         )
+        if self.observation_masks_digest is not None:
+            _validate_sha256_digest(
+                "observation_masks_digest",
+                self.observation_masks_digest,
+            )
+        if self.observation_quality_weight_digest is not None:
+            _validate_sha256_digest(
+                "observation_quality_weight_digest",
+                self.observation_quality_weight_digest,
+            )
+        if self.observation_std_dbz_digest is not None:
+            _validate_sha256_digest(
+                "observation_std_dbz_digest",
+                self.observation_std_dbz_digest,
+            )
+        if self.background_frames_digest is not None:
+            _validate_sha256_digest(
+                "background_frames_digest",
+                self.background_frames_digest,
+            )
+        if self.fixed_input_context_digest is not None:
+            _validate_sha256_digest(
+                "fixed_input_context_digest",
+                self.fixed_input_context_digest,
+            )
+        full_context_values = (
+            self.observation_masks_digest,
+            self.observation_quality_weight_digest,
+            self.observation_std_dbz_digest,
+            self.fixed_input_context_digest,
+        )
+        if any(value is None for value in full_context_values) and not all(
+            value is None for value in full_context_values
+        ):
+            raise ValueError("full input-context digests must be recorded together")
         _validate_sha256_digest(
             "latest_frame_digest",
             self.latest_frame_digest,
@@ -1595,6 +1707,31 @@ class ForecastRunContract:
         )
         if self.input_plan_resolution_digest != expected_resolution:
             raise ValueError("input plan resolution digest mismatch")
+        if self.observation_masks_digest is not None:
+            assert self.observation_quality_weight_digest is not None
+            assert self.observation_std_dbz_digest is not None
+            expected_fixed_context = _forecast_fixed_input_context_digest(
+                observation_masks_digest=self.observation_masks_digest,
+                observation_quality_weight_digest=(
+                    self.observation_quality_weight_digest
+                ),
+                observation_std_dbz_digest=self.observation_std_dbz_digest,
+                background_frames_digest=self.background_frames_digest,
+                background_age_minutes=self.background_age_minutes,
+                grid_time_contract_digest=self.grid_time_contract_digest,
+                operational_calibration_manifest_digest=(
+                    self.operational_calibration_manifest_digest
+                ),
+                operational_calibration_approval_digest=(
+                    self.operational_calibration_approval_digest
+                ),
+                operational_data_identity_digest=(
+                    self.operational_data_identity_digest
+                ),
+                input_plan_digest=self.input_plan_digest,
+            )
+            if self.fixed_input_context_digest != expected_fixed_context:
+                raise ValueError("fixed input context digest mismatch")
 
     def validate_latest_frame(self, latest_frame_dbz: Tensor) -> None:
         if tensor_digest(latest_frame_dbz) != self.latest_frame_digest:
@@ -1626,7 +1763,14 @@ def _forecast_input_bundle_digest(
     operational_calibration_manifest_digest: str | None,
     operational_calibration_approval_digest: str | None,
     operational_data_identity_digest: str | None,
+    *,
+    grid_time_contract_digest: str | None = None,
 ) -> str:
+    resolved_grid_digest = (
+        grid_time_contract_digest
+        if grid_time_contract is None
+        else grid_time_contract.digest
+    )
     return json_digest(
         {
             "version": _FORECAST_INPUT_BUNDLE_VERSION,
@@ -1638,11 +1782,7 @@ def _forecast_input_bundle_digest(
                 else tensor_digest(background_frames_dbz)
             ),
             "background_age_minutes": background_age_minutes,
-            "grid_time_contract_digest": (
-                None
-                if grid_time_contract is None
-                else grid_time_contract.digest
-            ),
+            "grid_time_contract_digest": resolved_grid_digest,
             "operational_calibration_manifest_digest": (
                 operational_calibration_manifest_digest
             ),
@@ -1652,6 +1792,44 @@ def _forecast_input_bundle_digest(
             "operational_data_identity_digest": (
                 operational_data_identity_digest
             ),
+        }
+    )
+
+
+def _forecast_fixed_input_context_digest(
+    *,
+    observation_masks_digest: str,
+    observation_quality_weight_digest: str,
+    observation_std_dbz_digest: str,
+    background_frames_digest: str | None,
+    background_age_minutes: float | None,
+    grid_time_contract_digest: str | None,
+    operational_calibration_manifest_digest: str | None,
+    operational_calibration_approval_digest: str | None,
+    operational_data_identity_digest: str | None,
+    input_plan_digest: str | None,
+) -> str:
+    """Address every non-radar input that a dBZ action must preserve."""
+
+    return json_digest(
+        {
+            "contract": "forecast-fixed-input-context-v1",
+            "observation_masks_digest": observation_masks_digest,
+            "observation_quality_weight_digest": (
+                observation_quality_weight_digest
+            ),
+            "observation_std_dbz_digest": observation_std_dbz_digest,
+            "background_frames_digest": background_frames_digest,
+            "background_age_minutes": background_age_minutes,
+            "grid_time_contract_digest": grid_time_contract_digest,
+            "operational_calibration_manifest_digest": (
+                operational_calibration_manifest_digest
+            ),
+            "operational_calibration_approval_digest": (
+                operational_calibration_approval_digest
+            ),
+            "operational_data_identity_digest": operational_data_identity_digest,
+            "input_plan_digest": input_plan_digest,
         }
     )
 
@@ -1999,6 +2177,13 @@ def _forecast_run_identity_digest(
             "nowcast_config_digest": run.config.digest,
             "input_bundle_digest": run.input_bundle_digest,
             "input_frames_digest": run.input_frames_digest,
+            "observation_masks_digest": run.observation_masks_digest,
+            "observation_quality_weight_digest": (
+                run.observation_quality_weight_digest
+            ),
+            "observation_std_dbz_digest": run.observation_std_dbz_digest,
+            "background_frames_digest": run.background_frames_digest,
+            "fixed_input_context_digest": run.fixed_input_context_digest,
             "latest_frame_digest": run.latest_frame_digest,
             "latest_observation_mask_digest": (
                 run.latest_observation_mask_digest

@@ -163,6 +163,77 @@ class NeuralPriorInputPlan:
         return json.dumps(self.payload, sort_keys=True, separators=(",", ":"))
 
 
+PriorUncertaintyTargetKind = Literal[
+    "independent_sensor",
+    "withheld_radar",
+    "leave_one_time_out",
+    "withheld_target_mask",
+]
+
+
+@dataclass(frozen=True)
+class PriorUncertaintyTargetPlan:
+    """Pre-registered source contract for an independent uncertainty target."""
+
+    plan_id: str
+    target_kind: PriorUncertaintyTargetKind
+    source_identity_digest: str
+    qc_pipeline_digest: str
+    grid_contract_digest: str
+    feature_exclusion_contract_digest: str
+    independence_evidence_digest: str
+    target_valid_time: str
+    support_threshold_dbz: float = 5.0
+    contract: str = "prior-uncertainty-target-plan-v2"
+    plan_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.contract != "prior-uncertainty-target-plan-v2":
+            raise ValueError("unsupported uncertainty target plan")
+        if not self.plan_id or self.plan_id.strip() != self.plan_id:
+            raise ValueError("uncertainty target plan ID must be canonical")
+        if self.target_kind not in (
+            "independent_sensor",
+            "withheld_radar",
+            "leave_one_time_out",
+            "withheld_target_mask",
+        ):
+            raise ValueError("unsupported uncertainty target kind")
+        for name in (
+            "source_identity_digest",
+            "qc_pipeline_digest",
+            "grid_contract_digest",
+            "feature_exclusion_contract_digest",
+            "independence_evidence_digest",
+        ):
+            _require_digest(name, getattr(self, name))
+        if not math.isfinite(self.support_threshold_dbz):
+            raise ValueError("uncertainty support threshold must be finite")
+        object.__setattr__(
+            self,
+            "target_valid_time",
+            _canonical_time(self.target_valid_time),
+        )
+        object.__setattr__(self, "plan_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "plan_id": self.plan_id,
+            "target_kind": self.target_kind,
+            "source_identity_digest": self.source_identity_digest,
+            "qc_pipeline_digest": self.qc_pipeline_digest,
+            "grid_contract_digest": self.grid_contract_digest,
+            "feature_exclusion_contract_digest": (
+                self.feature_exclusion_contract_digest
+            ),
+            "independence_evidence_digest": self.independence_evidence_digest,
+            "target_valid_time": self.target_valid_time,
+            "support_threshold_dbz": self.support_threshold_dbz,
+        }
+
+
 @dataclass(frozen=True)
 class NeuralPriorHoldoutPlanCase:
     """One case committed before forecasts and verification are available."""
@@ -176,6 +247,7 @@ class NeuralPriorHoldoutPlanCase:
     input_plan_digest: str
     verification_plan_digest: str
     metric_contract_digest: str
+    uncertainty_target_plan_digest: str
     issue_time: str
 
     def __post_init__(self) -> None:
@@ -184,6 +256,7 @@ class NeuralPriorHoldoutPlanCase:
             "input_plan_digest",
             "verification_plan_digest",
             "metric_contract_digest",
+            "uncertainty_target_plan_digest",
         ):
             _require_digest(name, getattr(self, name))
         object.__setattr__(self, "issue_time", _canonical_time(self.issue_time))
@@ -228,13 +301,29 @@ class LegacyNeuralPriorHoldoutPlanAudit:
 
 
 @dataclass(frozen=True)
-class NeuralPriorHoldoutPlan:
-    """Root-approved holdout commitment created before any evaluated issue."""
+class LegacyNeuralPriorHoldoutPlanV2Case:
+    """Read-only v2 case retained before uncertainty targets were planned."""
+
+    case_id: str
+    storm_id: str
+    day: str
+    radar_id: str
+    regime: str
+    range_regime: str
+    input_plan_digest: str
+    verification_plan_digest: str
+    metric_contract_digest: str
+    issue_time: str
+
+
+@dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV2Audit:
+    """Read-only v2 holdout retained for audit, never for promotion."""
 
     plan_id: str
     parent_prior_digest: str
     candidate_family_digests: tuple[str, ...]
-    cases: tuple[NeuralPriorHoldoutPlanCase, ...]
+    cases: tuple[LegacyNeuralPriorHoldoutPlanV2Case, ...]
     input_plans: tuple[NeuralPriorInputPlan, ...]
     registered_at: str
     mode: Literal["prospective", "sealed_historical"] = "prospective"
@@ -244,7 +333,78 @@ class NeuralPriorHoldoutPlan:
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v2":
+        payload = {
+            "contract": self.contract,
+            "plan_id": self.plan_id,
+            "parent_prior_digest": self.parent_prior_digest,
+            "candidate_family_digests": list(self.candidate_family_digests),
+            "cases": [item.__dict__ for item in self.cases],
+            "input_plans": [item.payload for item in self.input_plans],
+            "registered_at": self.registered_at,
+            "mode": self.mode,
+            "sealed_historical_dataset_digest": (
+                self.sealed_historical_dataset_digest
+            ),
+            "candidate_training_started_at": self.candidate_training_started_at,
+        }
+        object.__setattr__(self, "plan_digest", json_digest(payload))
+
+
+@dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV3Audit:
+    """Read-only v3 holdout retained before target source attestation."""
+
+    plan_id: str
+    parent_prior_digest: str
+    candidate_family_digests: tuple[str, ...]
+    cases: tuple[NeuralPriorHoldoutPlanCase, ...]
+    input_plans: tuple[NeuralPriorInputPlan, ...]
+    uncertainty_target_plans: tuple[dict[str, object], ...]
+    registered_at: str
+    mode: Literal["prospective", "sealed_historical"] = "prospective"
+    sealed_historical_dataset_digest: str | None = None
+    candidate_training_started_at: str | None = None
+    contract: str = "neural-prior-holdout-plan-v3"
+    plan_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        payload = {
+            "contract": self.contract,
+            "plan_id": self.plan_id,
+            "parent_prior_digest": self.parent_prior_digest,
+            "candidate_family_digests": list(self.candidate_family_digests),
+            "cases": [item.__dict__ for item in self.cases],
+            "input_plans": [item.payload for item in self.input_plans],
+            "uncertainty_target_plans": list(self.uncertainty_target_plans),
+            "registered_at": self.registered_at,
+            "mode": self.mode,
+            "sealed_historical_dataset_digest": (
+                self.sealed_historical_dataset_digest
+            ),
+            "candidate_training_started_at": self.candidate_training_started_at,
+        }
+        object.__setattr__(self, "plan_digest", json_digest(payload))
+
+
+@dataclass(frozen=True)
+class NeuralPriorHoldoutPlan:
+    """Root-approved holdout commitment created before any evaluated issue."""
+
+    plan_id: str
+    parent_prior_digest: str
+    candidate_family_digests: tuple[str, ...]
+    cases: tuple[NeuralPriorHoldoutPlanCase, ...]
+    input_plans: tuple[NeuralPriorInputPlan, ...]
+    uncertainty_target_plans: tuple[PriorUncertaintyTargetPlan, ...]
+    registered_at: str
+    mode: Literal["prospective", "sealed_historical"] = "prospective"
+    sealed_historical_dataset_digest: str | None = None
+    candidate_training_started_at: str | None = None
+    contract: str = "neural-prior-holdout-plan-v4"
+    plan_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.contract != "neural-prior-holdout-plan-v4":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -266,6 +426,14 @@ class NeuralPriorHoldoutPlan:
         retained_plans = {item.plan_digest: item for item in self.input_plans}
         if set(retained_plans) != set(input_plans):
             raise ValueError("holdout input-plan payloads are incomplete")
+        target_plans = tuple(
+            item.uncertainty_target_plan_digest for item in self.cases
+        )
+        retained_targets = {
+            item.plan_digest: item for item in self.uncertainty_target_plans
+        }
+        if set(retained_targets) != set(target_plans):
+            raise ValueError("holdout uncertainty-target plans are incomplete")
         registered = _canonical_time(self.registered_at)
         if self.mode == "prospective":
             if self.sealed_historical_dataset_digest is not None or (
@@ -356,6 +524,8 @@ class NeuralPriorHoldoutCase:
     verification_plan_digest: str
     verification_bundle_digest: str
     metric_contract_digest: str
+    uncertainty_target_plan_digest: str
+    uncertainty_target_digest: str
     issue_time: str
     candidate_forecast_digest: str
     parent_forecast_digest: str
@@ -372,6 +542,8 @@ class NeuralPriorHoldoutCase:
             "verification_plan_digest",
             "verification_bundle_digest",
             "metric_contract_digest",
+            "uncertainty_target_plan_digest",
+            "uncertainty_target_digest",
             "candidate_forecast_digest",
             "parent_forecast_digest",
             "candidate_prior_application_digest",
@@ -399,6 +571,7 @@ class NeuralPriorHoldoutCase:
             input_plan_digest=self.input_plan_digest,
             verification_plan_digest=self.verification_plan_digest,
             metric_contract_digest=self.metric_contract_digest,
+            uncertainty_target_plan_digest=self.uncertainty_target_plan_digest,
             issue_time=self.issue_time,
         )
 
@@ -435,6 +608,9 @@ def _holdout_plan_payload(plan: NeuralPriorHoldoutPlan) -> dict[str, object]:
         "candidate_family_digests": list(plan.candidate_family_digests),
         "cases": [item.__dict__ for item in plan.cases],
         "input_plans": [item.payload for item in plan.input_plans],
+        "uncertainty_target_plans": [
+            item.payload for item in plan.uncertainty_target_plans
+        ],
         "registered_at": plan.registered_at,
         "mode": plan.mode,
         "sealed_historical_dataset_digest": (plan.sealed_historical_dataset_digest),
@@ -447,13 +623,16 @@ def _holdout_dataset_digest(
 ) -> str:
     return json_digest(
         {
-            "contract": "neural-prior-holdout-dataset-v1",
+            "contract": "neural-prior-holdout-dataset-v2",
             "cases": [
                 {
                     "case_id": item.case_id,
                     "input_plan_digest": item.input_plan_digest,
                     "verification_plan_digest": item.verification_plan_digest,
                     "metric_contract_digest": item.metric_contract_digest,
+                    "uncertainty_target_plan_digest": (
+                        item.uncertainty_target_plan_digest
+                    ),
                     "issue_time": item.issue_time,
                 }
                 for item in cases
@@ -700,6 +879,93 @@ def validate_neural_prior_candidate_manifest(
 
 
 @dataclass(frozen=True, init=False)
+class PriorUncertaintyTarget:
+    """Independent, withheld target used only for uncertainty calibration."""
+
+    _target_dbz: Tensor
+    _valid_mask: Tensor
+    _echo_support: Tensor
+    target_plan_digest: str
+    source_digest: str
+    independence_evidence_digest: str
+    source_input_bundle_digest: str
+    target_digest: str
+
+    def __init__(self) -> None:
+        raise TypeError("use PriorUncertaintyTarget.from_verification_bundle")
+
+    @classmethod
+    def from_verification_bundle(
+        cls,
+        *,
+        plan: PriorUncertaintyTargetPlan,
+        verification: VerificationBundle,
+    ) -> PriorUncertaintyTarget:
+        verification.validate_integrity()
+        if (
+            plan.contract != "prior-uncertainty-target-plan-v2"
+            or plan.source_identity_digest != verification.radar_product_digest
+            or plan.qc_pipeline_digest != verification.qc_pipeline_digest
+            or plan.grid_contract_digest != verification.grid_contract_digest
+        ):
+            raise ValueError("uncertainty target source disagrees with its plan")
+        matches = tuple(
+            index
+            for index, valid_time in enumerate(verification.valid_times)
+            if valid_time == plan.target_valid_time
+        )
+        if len(matches) != 1:
+            raise ValueError("uncertainty target valid time is not in its source")
+        index = matches[0]
+        target_dbz = verification.frames_dbz[index]
+        valid_mask = verification.valid_mask[index]
+        echo_support = valid_mask & (target_dbz >= plan.support_threshold_dbz)
+        target_plan_digest = plan.plan_digest
+        source_digest = verification.content_digest
+        independence_evidence_digest = plan.independence_evidence_digest
+        source_input_bundle_digest = verification.content_digest
+        if (
+            target_dbz.ndim != 2
+            or not target_dbz.is_floating_point()
+            or valid_mask.shape != target_dbz.shape
+            or valid_mask.dtype != torch.bool
+            or echo_support.shape != target_dbz.shape
+            or echo_support.dtype != torch.bool
+            or not bool(torch.any(valid_mask & torch.isfinite(target_dbz)))
+        ):
+            raise ValueError("prior uncertainty target tensors are invalid")
+        target = target_dbz.detach().clone()
+        valid = valid_mask.detach().clone()
+        support = echo_support.detach().clone()
+        target_digest = json_digest(
+            {
+                "contract": "prior-uncertainty-target-v1",
+                "target_dbz": tensor_digest(target),
+                "valid_mask": tensor_digest(valid),
+                "echo_support": tensor_digest(support),
+                "target_plan_digest": target_plan_digest,
+                "source_digest": source_digest,
+                "independence_evidence_digest": independence_evidence_digest,
+                "source_input_bundle_digest": source_input_bundle_digest,
+                "support_threshold_dbz": plan.support_threshold_dbz,
+            }
+        )
+        result = object.__new__(cls)
+        for name, value in (
+            ("_target_dbz", target),
+            ("_valid_mask", valid),
+            ("_echo_support", support),
+            ("target_plan_digest", target_plan_digest),
+            ("source_digest", source_digest),
+            ("independence_evidence_digest", independence_evidence_digest),
+            ("source_input_bundle_digest", source_input_bundle_digest),
+            ("target_digest", target_digest),
+        ):
+            object.__setattr__(result, name, value)
+        return result
+
+
+@dataclass(frozen=True, init=False)
 class PriorHoldoutEvaluation:
     """Paired prior holdout result over the full preregistered population."""
 
@@ -735,17 +1001,20 @@ class PriorHoldoutEvaluation:
     withdrawn_fraction: Tensor
     prior_standardized_residual_mean_abs: float
     prior_underdispersion_fraction: float
+    prior_gaussian_nll: float
+    prior_support_brier_score: float
+    prior_uncertainty_target_digest: str
     prior_uncertainty_sample_count: int
     issue_time: str
     verification_valid_times: tuple[str, ...]
-    contract: str = "prior-holdout-evaluation-v2"
+    contract: str = "prior-holdout-evaluation-v3"
     evaluation_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use PriorHoldoutEvaluation.from_forecasts")
 
     def __post_init__(self) -> None:
-        if self.contract != "prior-holdout-evaluation-v2":
+        if self.contract != "prior-holdout-evaluation-v3":
             raise ValueError("unsupported prior holdout evaluation")
         for name in (
             "holdout_plan_digest",
@@ -760,6 +1029,7 @@ class PriorHoldoutEvaluation:
             "parent_inference_evidence_digest",
             "verification_digest",
             "metric_contract_digest",
+            "prior_uncertainty_target_digest",
         ):
             _require_digest(name, getattr(self, name))
         expected = (len(self.lead_minutes), len(self.metric_names))
@@ -814,6 +1084,9 @@ class PriorHoldoutEvaluation:
             or self.prior_standardized_residual_mean_abs < 0.0
             or not math.isfinite(self.prior_underdispersion_fraction)
             or not 0.0 <= self.prior_underdispersion_fraction <= 1.0
+            or not math.isfinite(self.prior_gaussian_nll)
+            or not math.isfinite(self.prior_support_brier_score)
+            or not 0.0 <= self.prior_support_brier_score <= 1.0
             or type(self.prior_uncertainty_sample_count) is not int
             or self.prior_uncertainty_sample_count <= 0
         ):
@@ -853,6 +1126,7 @@ class PriorHoldoutEvaluation:
         candidate_prior_runner: NeuralPriorInferenceRunner,
         parent_prior_runner: NeuralPriorInferenceRunner,
         input_frames_dbz: Tensor,
+        uncertainty_target: PriorUncertaintyTarget,
     ) -> PriorHoldoutEvaluation:
         """Evaluate every planned prior case without intervention selection."""
 
@@ -1003,9 +1277,22 @@ class PriorHoldoutEvaluation:
             != manifest.numerical_runtime_digest
         ):
             raise ValueError("holdout inference runtime is not manifested")
-        prior_reference = input_frames_dbz[0]
+        if (
+            uncertainty_target.target_plan_digest
+            != case.uncertainty_target_plan_digest
+            or uncertainty_target.target_digest != case.uncertainty_target_digest
+            or uncertainty_target.source_input_bundle_digest
+            == case.input_bundle_digest
+            or torch.equal(
+                uncertainty_target._target_dbz.to(input_frames_dbz),
+                input_frames_dbz[0],
+            )
+        ):
+            raise ValueError("prior uncertainty target is not independent and planned")
+        prior_reference = uncertainty_target._target_dbz.to(input_frames_dbz)
         prior_valid = (
             candidate_prior_application.valid_mask
+            & uncertainty_target._valid_mask.to(input_frames_dbz.device)
             & torch.isfinite(prior_reference)
             & torch.isfinite(candidate_prior_application.initial_background_dbz)
             & torch.isfinite(candidate_prior_application.std_dbz)
@@ -1024,6 +1311,38 @@ class PriorHoldoutEvaluation:
         standardized_mean = float(torch.mean(standardized).detach())
         underdispersion_fraction = float(
             torch.mean((standardized > 2.0).to(standardized)).detach()
+        )
+        signed_standardized = (
+            (
+                candidate_prior_application.initial_background_dbz
+                - prior_reference
+            )
+            / candidate_prior_application.std_dbz
+        ).masked_select(prior_valid)
+        log_std = torch.log(
+            candidate_prior_application.std_dbz.masked_select(prior_valid)
+        )
+        gaussian_nll = float(
+            torch.mean(
+                0.5 * signed_standardized.square()
+                + log_std
+                + 0.5 * math.log(2.0 * math.pi)
+            ).detach()
+        )
+        support_target = uncertainty_target._echo_support.to(
+            candidate_prior_application.support_probability.device
+        )
+        support_brier = float(
+            torch.mean(
+                (
+                    candidate_prior_application.support_probability.masked_select(
+                        prior_valid
+                    )
+                    - support_target.to(
+                        candidate_prior_application.support_probability
+                    ).masked_select(prior_valid)
+                ).square()
+            ).detach()
         )
         for run, training_digest in (
             (candidate_forecast.run, manifest.candidate_training_manifest_digest),
@@ -1199,6 +1518,9 @@ class PriorHoldoutEvaluation:
             withdrawn_fraction=withdrawn,
             prior_standardized_residual_mean_abs=standardized_mean,
             prior_underdispersion_fraction=underdispersion_fraction,
+            prior_gaussian_nll=gaussian_nll,
+            prior_support_brier_score=support_brier,
+            prior_uncertainty_target_digest=uncertainty_target.target_digest,
             prior_uncertainty_sample_count=prior_sample_count,
             issue_time=issue_time,
             verification_valid_times=verification.valid_times,
@@ -1212,7 +1534,7 @@ def _new_prior_holdout_evaluation(**values: object) -> PriorHoldoutEvaluation:
     object.__setattr__(
         result,
         "contract",
-        "prior-holdout-evaluation-v2",
+        "prior-holdout-evaluation-v3",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -1286,6 +1608,11 @@ def _evaluation_digest(value: PriorHoldoutEvaluation) -> str:
             "prior_underdispersion_fraction": (
                 value.prior_underdispersion_fraction
             ),
+            "prior_gaussian_nll": value.prior_gaussian_nll,
+            "prior_support_brier_score": value.prior_support_brier_score,
+            "prior_uncertainty_target_digest": (
+                value.prior_uncertainty_target_digest
+            ),
             "prior_uncertainty_sample_count": value.prior_uncertainty_sample_count,
             "issue_time": value.issue_time,
             "verification_valid_times": list(value.verification_valid_times),
@@ -1322,11 +1649,13 @@ class NeuralPriorPromotionPolicy:
     maximum_withdrawn_fraction: float = 0.05
     maximum_prior_standardized_residual_mean_abs: float = 2.0
     maximum_prior_underdispersion_fraction: float = 0.1
+    maximum_prior_gaussian_nll: float = 4.0
+    maximum_prior_support_brier_score: float = 0.25
     minimum_prior_uncertainty_samples_per_case: int = 1
-    contract: str = "neural-prior-promotion-policy-v6"
+    contract: str = "neural-prior-promotion-policy-v7"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-policy-v6":
+        if self.contract != "neural-prior-promotion-policy-v7":
             raise ValueError("unsupported neural-prior promotion policy")
         if not self.metric_scales or len({x.metric_name for x in self.metric_scales}) != len(self.metric_scales):
             raise ValueError("promotion metric scales must be unique")
@@ -1367,6 +1696,7 @@ class NeuralPriorPromotionPolicy:
             self.maximum_newly_issued_fraction,
             self.maximum_withdrawn_fraction,
             self.maximum_prior_underdispersion_fraction,
+            self.maximum_prior_support_brier_score,
         )
         if any(not math.isfinite(value) or not 0 <= value <= 1 for value in probabilities):
             raise ValueError("promotion fractions must be inside [0,1]")
@@ -1383,6 +1713,7 @@ class NeuralPriorPromotionPolicy:
                 "maximum_prior_standardized_residual_mean_abs",
                 self.maximum_prior_standardized_residual_mean_abs,
             ),
+            ("maximum_prior_gaussian_nll", self.maximum_prior_gaussian_nll),
         ):
             if not math.isfinite(value) or value < 0.0:
                 raise ValueError(f"{name} must be finite and nonnegative")
@@ -1427,6 +1758,10 @@ class NeuralPriorPromotionPolicy:
             ),
             "maximum_prior_underdispersion_fraction": (
                 self.maximum_prior_underdispersion_fraction
+            ),
+            "maximum_prior_gaussian_nll": self.maximum_prior_gaussian_nll,
+            "maximum_prior_support_brier_score": (
+                self.maximum_prior_support_brier_score
             ),
             "minimum_prior_uncertainty_samples_per_case": (
                 self.minimum_prior_uncertainty_samples_per_case
@@ -1657,6 +1992,10 @@ def compute_neural_prior_promotion(
             > policy.maximum_prior_standardized_residual_mean_abs
             or evaluation.prior_underdispersion_fraction
             > policy.maximum_prior_underdispersion_fraction
+            or evaluation.prior_gaussian_nll
+            > policy.maximum_prior_gaussian_nll
+            or evaluation.prior_support_brier_score
+            > policy.maximum_prior_support_brier_score
         ):
             reasons.append("unreliable_prior_uncertainty")
         if bool(torch.any(evaluation.coverage_parent - evaluation.coverage_candidate > policy.maximum_coverage_loss)):
