@@ -284,11 +284,14 @@ legacy Tensor를 거부한다. raw Tensor 입력은 연구 호환용으로 계�
 결과와 M0 원장에 `verification_lineage_complete=False`로 기록되므로 지연 자동
 학습의 완전한 검증자료로 승격할 수 없다.
 
-`compute_variational_fso()`의 `p1-variational-fso-v16` 결과는 영향값이 아니라
+`compute_variational_fso()`의 `p1-variational-fso-v17` 결과는 영향값이 아니라
 다음 관측 parameter와 frozen 초기배경 경로에 대한 미분이다.
 
 Radar-dependent neural prior는 mean과 spatial `log(std_dbz)` JVP/VJP를 모두
-포함하며, hard support 확률 0.5 경계까지의 margin도 active-set 진단에 기록한다.
+포함한다. Export artifact의 영점 probe와 별도로 실제 radar 입력에서 finite-
+difference probe를 다시 수행하고, 실제 FSO cotangent 방향의 adjoint defect도 결과
+digest에 남긴다. Validity는 연속 확률이어야 하며 validity·support 확률의 0.5 hard
+branch margin을 모두 active-set 진단에 기록한다.
 
 ```text
 detected_dbz                 관측잔차를 통한 d(metric) / d(observed dBZ)
@@ -605,6 +608,7 @@ receipt = RealizedInterventionReceipt.from_decision(
     actual_input_before_run=input_before_run,
     actual_input_after_context=input_after_context,
     actual_input_after_run=input_after_run,
+    action_policy=action_policy,
     action_generator=action_generator,
     executor_key_id="radar-qc-executor",
     executor_trust_store_digest=executor_trust_store_digest,
@@ -616,6 +620,7 @@ receipt = RealizedInterventionReceipt.from_decision(
 ledger.append_realized_intervention_receipt(
     decision,
     receipt,
+    action_policy=action_policy,
     action_generator=action_generator,
     actual_input_before_context=input_before_context,
     actual_input_before_run=input_before_run,
@@ -635,6 +640,15 @@ root-approved action policy를 다시 실행해 decision을 재현하고, receip
 before/action/after 전이를 다시 검사한다. Executor trust store에는 Ed25519 public key만
 들어가며 private key는 executor 밖으로 나오지 않는다. 이전 v1/v2 intervention
 계약은 read-only 감사용으로 보존된다.
+
+Decision은 전체 `InterventionInputContext`, fixed-input context와 applicability mask
+digest를 직접 보존한다. Receipt 생성·재적재 시 같은 context에서 action 안전진단을
+다시 계산해 decision의 진단 digest와 비교한다. 현재 prospective 자동실행의 norm은
+명시적인 diagonal-R 표준화 거리이며, `observation_common_bias_std_dbz > 0`인 run은
+상관 관측오차용 Mahalanobis action 계약이 추가될 때까지 fail-close한다. NaN/Inf와
+invalid 관측은 `min_dbz`로 canonicalize되고 finite valid 값만 물리 clamp에 들어간다.
+이 canonicalization도 digest에 포함된다. 장기 action artifact는 파일·member·expanded
+byte 상한을 allocation 전에 검사한 뒤 서명과 before/action/after 전이를 재생한다.
 
 Prior artifact 승격은 intervention 실행 여부와 무관하게 사전등록된 holdout 전체를
 candidate/parent paired forecast로 평가한다. 서로 단위가 다른 forecast-error metric은
@@ -714,7 +728,11 @@ storm·day·time-window 분리도 다시 검사한다.
 Candidate prior의 spatial `std_dbz`는 모델 입력과 분리된 withheld target에 대한
 Gaussian NLL과 standardized residual로, `support_probability`는 Brier score로
 검증한다. 평균 skill이 좋아도 불확실성을 과소추정하거나 support 확률이 보정되지
-않은 prior는 승격하지 않는다.
+않은 prior는 승격하지 않는다. Initial-state prior의 target valid time은 prior output
+valid time과 같아야 하며, 같은 source/time을 쓰는 withheld target은 실제 feature-
+exclusion mask가 target mask를 덮었는지 계산해 확인한다. 불확실성 score는 candidate가
+스스로 선택한 valid 영역이 아니라 사전등록 target mask에서 계산하고, 최소 valid
+fraction·면적과 parent 대비 abstention 증가 및 NLL abstention penalty를 함께 적용한다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
 자동학습은 의도적으로 nominal metric weight를 고정한

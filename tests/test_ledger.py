@@ -38,6 +38,7 @@ from advar.intervention import (  # noqa: E402
     ReusableInterventionPolicyEvidence,
     RealizedInterventionReceipt,
     RealizedObservationIntervention,
+    _validate_action_safety,
     RetrospectiveCounterfactualReplay,
 )
 from advar.promotion import (  # noqa: E402
@@ -352,6 +353,10 @@ def _prospective_run_and_context(
     input_available_time: str = "2026-08-08T00:21:00Z",
     decision_deadline: str = "2099-08-08T00:30:00Z",
     publication_time: str = "2099-08-08T01:00:00Z",
+    quality_weight: torch.Tensor | None = None,
+    observation_std_dbz: torch.Tensor | None = None,
+    applicability_mask: torch.Tensor | None = None,
+    analysis_config_json: str | None = None,
 ) -> tuple[ForecastRunContract, InterventionInputContext, str, str]:
     config = NowcastConfig()
     grid = RadarGridTimeContract(
@@ -401,12 +406,26 @@ def _prospective_run_and_context(
         decision_deadline=decision_deadline,
         publication_time=publication_time,
     )
+    retained_quality = masks.to(frames) if quality_weight is None else quality_weight
+    retained_std = (
+        torch.full_like(frames, 2.0)
+        if observation_std_dbz is None
+        else observation_std_dbz
+    )
+    retained_applicability = (
+        torch.ones_like(masks)
+        if applicability_mask is None
+        else applicability_mask
+    )
     run = ForecastRunContract.from_inputs(
         config,
         frames,
         masks,
         None,
+        observation_quality_weight=retained_quality,
+        observation_std_dbz=retained_std,
         grid_time_contract=grid,
+        analysis_config_json=analysis_config_json,
         operational_calibration_manifest_json=manifest.json,
         operational_calibration_manifest_digest=manifest.digest,
         operational_calibration_approval_digest=manifest.digest,
@@ -418,11 +437,11 @@ def _prospective_run_and_context(
     context = InterventionInputContext.from_inputs(
         frames_dbz=frames,
         observation_masks=masks,
-        quality_weight=masks.to(frames),
-        observation_std_dbz=torch.full_like(frames, 2.0),
+        quality_weight=retained_quality,
+        observation_std_dbz=retained_std,
         background_frames_dbz=None,
         radar_id="radar-1",
-        applicability_mask=torch.ones_like(masks),
+        applicability_mask=retained_applicability,
         run=run,
     )
     return run, context, input_plan.plan_digest, input_plan.json
@@ -999,6 +1018,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 actual_input_before_run=before_run,
                 actual_input_after_context=after_context,
                 actual_input_after_run=after_run,
+                action_policy=action_policy,
                 action_generator=action_generator,
                 executor_key_id="executor-1",
                 executor_trust_store_digest=executor_trust.content_digest,
@@ -1007,6 +1027,68 @@ class EpisodeLedgerTests(unittest.TestCase):
                 applied_time=applied,
                 receipt_time=applied,
             )
+            changed_quality = torch.full_like(before, 0.25)
+            changed_std = torch.full_like(before, 0.5)
+            changed_before_run, changed_before_context, _, _ = (
+                _prospective_run_and_context(
+                    before,
+                    masks,
+                    quality_weight=changed_quality,
+                    observation_std_dbz=changed_std,
+                )
+            )
+            changed_after_run, changed_after_context, _, _ = (
+                _prospective_run_and_context(
+                    after,
+                    masks,
+                    quality_weight=changed_quality,
+                    observation_std_dbz=changed_std,
+                )
+            )
+            with self.assertRaisesRegex(ValueError, "before-context"):
+                RealizedInterventionReceipt.from_decision(
+                    decision,
+                    actual_input_before_context=changed_before_context,
+                    actual_input_before_run=changed_before_run,
+                    actual_input_after_context=changed_after_context,
+                    actual_input_after_run=changed_after_run,
+                    action_policy=action_policy,
+                    action_generator=action_generator,
+                    executor_key_id="executor-1",
+                    executor_trust_store_digest=executor_trust.content_digest,
+                    executor_private_key=executor_private,
+                    executor_sequence_number=2,
+                    applied_time=applied,
+                    receipt_time=applied,
+                )
+            changed_applicability = torch.ones_like(masks)
+            changed_applicability[0, 0, 0] = False
+            changed_applicability_context = InterventionInputContext.from_inputs(
+                frames_dbz=before,
+                observation_masks=masks,
+                quality_weight=masks.to(before),
+                observation_std_dbz=torch.full_like(before, 2.0),
+                background_frames_dbz=None,
+                radar_id="radar-1",
+                applicability_mask=changed_applicability,
+                run=before_run,
+            )
+            with self.assertRaisesRegex(ValueError, "before-context"):
+                RealizedInterventionReceipt.from_decision(
+                    decision,
+                    actual_input_before_context=changed_applicability_context,
+                    actual_input_before_run=before_run,
+                    actual_input_after_context=after_context,
+                    actual_input_after_run=after_run,
+                    action_policy=action_policy,
+                    action_generator=action_generator,
+                    executor_key_id="executor-1",
+                    executor_trust_store_digest=executor_trust.content_digest,
+                    executor_private_key=executor_private,
+                    executor_sequence_number=2,
+                    applied_time=applied,
+                    receipt_time=applied,
+                )
             with self.assertRaisesRegex(ValueError, "approved action result"):
                 RealizedInterventionReceipt.from_decision(
                     decision,
@@ -1014,6 +1096,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                     actual_input_before_run=before_run,
                     actual_input_after_context=before_context,
                     actual_input_after_run=before_run,
+                    action_policy=action_policy,
                     action_generator=action_generator,
                     executor_key_id="executor-1",
                     executor_trust_store_digest=executor_trust.content_digest,
@@ -1033,6 +1116,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                     actual_input_before_run=before_run,
                     actual_input_after_context=after_context,
                     actual_input_after_run=other_run,
+                    action_policy=action_policy,
                     action_generator=action_generator,
                     executor_key_id="executor-1",
                     executor_trust_store_digest=executor_trust.content_digest,
@@ -1054,6 +1138,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                     actual_input_before_run=before_run,
                     actual_input_after_context=changed_mask_context,
                     actual_input_after_run=changed_mask_run,
+                    action_policy=action_policy,
                     action_generator=action_generator,
                     executor_key_id="executor-1",
                     executor_trust_store_digest=executor_trust.content_digest,
@@ -1062,9 +1147,27 @@ class EpisodeLedgerTests(unittest.TestCase):
                     applied_time=applied,
                     receipt_time=applied,
                 )
+            with patch.object(
+                ledger_module,
+                "_MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES",
+                1,
+            ), self.assertRaisesRegex(ValueError, "expanded-byte budget"):
+                self.ledger.append_realized_intervention_receipt(
+                    decision,
+                    receipt,
+                    action_policy=action_policy,
+                    action_generator=action_generator,
+                    actual_input_before_context=before_context,
+                    actual_input_before_run=before_run,
+                    actual_input_after_context=after_context,
+                    actual_input_after_run=after_run,
+                    trust_store_path="/etc/advar/policies.json",
+                    executor_trust_store_path="/etc/advar/executors.json",
+                )
             digest = self.ledger.append_realized_intervention_receipt(
                 decision,
                 receipt,
+                action_policy=action_policy,
                 action_generator=action_generator,
                 actual_input_before_context=before_context,
                 actual_input_before_run=before_run,
@@ -1095,6 +1198,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 self.ledger.append_realized_intervention_receipt(
                     decision,
                     tampered,
+                    action_policy=action_policy,
                     action_generator=action_generator,
                     actual_input_before_context=before_context,
                     actual_input_before_run=before_run,
@@ -1144,6 +1248,23 @@ class EpisodeLedgerTests(unittest.TestCase):
                 )
             manifest_path.write_bytes(original_manifest)
             checksums_path.write_bytes(original_checksums)
+            with patch.object(
+                ledger_module,
+                "_MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES",
+                1,
+            ), self.assertRaisesRegex(ValueError, "archive is too large"):
+                self.ledger.load_prospective_intervention(
+                    digest,
+                    executor_trust_store_path="/etc/advar/executors.json",
+                )
+            unexpected = artifact_dir / "unexpected.bin"
+            unexpected.write_bytes(b"unexpected")
+            with self.assertRaisesRegex(ValueError, "artifact members"):
+                self.ledger.load_prospective_intervention(
+                    digest,
+                    executor_trust_store_path="/etc/advar/executors.json",
+                )
+            unexpected.unlink()
             artifact = self.ledger.interventions_dir / digest / "generator.pt2"
             artifact.write_bytes(artifact.read_bytes() + b"tampered")
             with self.assertRaisesRegex(ValueError, "checksum"):
@@ -1232,6 +1353,21 @@ class EpisodeLedgerTests(unittest.TestCase):
                 **{**common, "radar_id": "radar-2"},
             )
         relaxed = replace(strict_policy, maximum_changed_fraction=1.0)
+        correlated_run = replace(
+            run,
+            analysis_config_json=json.dumps(
+                {
+                    "observation_common_bias_std_dbz": 1.0,
+                }
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "diagonal observation error"):
+            _validate_action_safety(
+                dbz_generator.generate(context),
+                context,
+                correlated_run,
+                relaxed,
+            )
         with self.assertRaisesRegex(ValueError, "resolved input plan"):
             ProspectiveInterventionDecision.from_policy(
                 relaxed,
@@ -1278,9 +1414,10 @@ class EpisodeLedgerTests(unittest.TestCase):
             qc_decision,
             actual_input_before_context=context,
             actual_input_before_run=run,
-            actual_input_after_context=qc_after_context,
-            actual_input_after_run=qc_after_run,
-            action_generator=qc_generator,
+                actual_input_after_context=qc_after_context,
+                actual_input_after_run=qc_after_run,
+                action_policy=qc_policy,
+                action_generator=qc_generator,
             executor_key_id="executor-qc",
             executor_trust_store_digest="0" * 64,
             executor_private_key=Ed25519PrivateKey.generate(),
@@ -1355,6 +1492,22 @@ class EpisodeLedgerTests(unittest.TestCase):
             applicability_mask=torch.ones_like(missing_masks),
             run=missing_run,
         )
+        for nonfinite in (float("inf"), float("-inf")):
+            alternative = frames.clone()
+            alternative[0, 0, 0] = nonfinite
+            alternative_run, alternative_context, _, _ = (
+                _prospective_run_and_context(alternative, missing_masks)
+            )
+            self.assertTrue(
+                torch.equal(
+                    missing_context.generator_tensor(),
+                    alternative_context.generator_tensor(),
+                )
+            )
+            self.assertEqual(
+                missing_context.canonicalization_contract_digest,
+                alternative_context.canonicalization_contract_digest,
+            )
         with self.assertRaisesRegex(ValueError, "invalid observations"):
             ProspectiveInterventionDecision.from_policy(
                 relaxed,
@@ -1395,6 +1548,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             actual_input_before_run=missing_run,
             actual_input_after_context=missing_after_context,
             actual_input_after_run=missing_after_run,
+            action_policy=valid_only_policy,
             action_generator=valid_only_generator,
             executor_key_id="executor-nan",
             executor_trust_store_digest="0" * 64,

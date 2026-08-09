@@ -539,6 +539,7 @@ class VariationalAdjointConfig:
     minimum_remap_fraction_margin: float = 1.0e-4
     minimum_output_cap_margin_dbz: float = 1.0e-3
     minimum_publication_margin: float = 1.0e-4
+    minimum_neural_prior_valid_margin: float = 1.0e-3
     minimum_neural_prior_support_margin: float = 1.0e-3
     require_active_set_margin: bool = False
     minimum_reachability_margin: float = 1.0e-3
@@ -620,6 +621,7 @@ class VariationalAdjointConfig:
             self.minimum_remap_fraction_margin,
             self.minimum_output_cap_margin_dbz,
             self.minimum_publication_margin,
+            self.minimum_neural_prior_valid_margin,
             self.minimum_neural_prior_support_margin,
             self.minimum_reachability_margin,
             self.minimum_unresolved_amplitude_fraction_margin,
@@ -802,6 +804,7 @@ class VariationalActiveSetMargins:
     output_cap_dbz: float | None
     publication_support: float
     publication_confidence: float | None
+    neural_prior_valid_probability: float | None
     neural_prior_support_probability: float | None
     low_local_validity: bool
 
@@ -916,6 +919,7 @@ class VariationalFSO:
     whitener_operations_per_apply: int
     observed_whitener_apply_count: int
     materialized_output_bytes: int
+    neural_prior_adjoint_direction_maximum_defect: float
     active_set_margins: VariationalActiveSetMargins
     feasibility_margins: VariationalFeasibilityMargins
     gauss_newton_diagnostics: VariationalGaussNewtonDiagnostics
@@ -1180,6 +1184,26 @@ def _neural_prior_support_margin(
     selected = application.support_probability.masked_select(
         application.valid_mask
     )
+    if selected.numel() == 0:
+        return None
+    return float(torch.amin(torch.abs(selected - 0.5)).detach())
+
+
+def _neural_prior_valid_margin(
+    frozen: FrozenOuterState,
+    application: NeuralPriorApplication | None,
+) -> float | None:
+    """Distance from probabilistic validity to its retained hard branch."""
+
+    if frozen.neural_prior_dependency is None:
+        return None
+    if application is None or (
+        application.application_digest != frozen.neural_prior_application_digest
+    ):
+        return None
+    if application.inference_evidence.validity_contract == "exogenous_static":
+        return math.inf
+    selected = application.valid_probability
     if selected.numel() == 0:
         return None
     return float(torch.amin(torch.abs(selected - 0.5)).detach())
@@ -3339,6 +3363,9 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
                 fso.observed_whitener_apply_count
             ),
             "materialized_output_bytes": fso.materialized_output_bytes,
+            "neural_prior_adjoint_direction_maximum_defect": (
+                fso.neural_prior_adjoint_direction_maximum_defect
+            ),
             "active_set_margins": {
                 "detection_classification_dbz": (
                     fso.active_set_margins.detection_classification_dbz
@@ -3355,6 +3382,9 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
                 ),
                 "publication_confidence": (
                     fso.active_set_margins.publication_confidence
+                ),
+                "neural_prior_valid_probability": (
+                    fso.active_set_margins.neural_prior_valid_probability
                 ),
                 "neural_prior_support_probability": (
                     fso.active_set_margins.neural_prior_support_probability
@@ -3498,7 +3528,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 def validate_variational_fso(fso: VariationalFSO) -> None:
     """Reject any mutation of a content-addressed FSO result."""
 
-    if fso.contract != "p1-variational-fso-v16":
+    if fso.contract != "p1-variational-fso-v17":
         raise ValueError("unsupported P1 FSO contract")
     if (
         fso.sensitivity_scope
@@ -6623,6 +6653,7 @@ def _compute_variational_products(
         dtype=torch.bool,
         device=control.device,
     )
+    neural_prior_adjoint_direction_maximum_defect = 0.0
 
     clean_verification = torch.nan_to_num(
         verification_frames,
@@ -6782,6 +6813,10 @@ def _compute_variational_products(
         frozen,
         neural_prior_application,
     )
+    prior_valid_margin = _neural_prior_valid_margin(
+        frozen,
+        neural_prior_application,
+    )
     forecast_remap_margin = math.inf
     output_cap_margin: float | None = None
 
@@ -6929,10 +6964,13 @@ def _compute_variational_products(
                         frozen,
                     )
                 )
-                neural_prior_runner.validate_adjoint_direction(
-                    frozen.input_frames_dbz,
-                    prior_cotangent,
-                    prior_log_std_cotangent,
+                neural_prior_adjoint_direction_maximum_defect = max(
+                    neural_prior_adjoint_direction_maximum_defect,
+                    neural_prior_runner.validate_adjoint_direction(
+                        frozen.input_frames_dbz,
+                        prior_cotangent,
+                        prior_log_std_cotangent,
+                    ),
                 )
                 prior_input_sensitivity = neural_prior_runner.vjp_components(
                     frozen.input_frames_dbz,
@@ -7086,7 +7124,10 @@ def _compute_variational_products(
         or (
             frozen.neural_prior_dependency is not None
             and (
-                prior_support_margin is None
+                prior_valid_margin is None
+                or prior_valid_margin
+                < adjoint_config.minimum_neural_prior_valid_margin
+                or prior_support_margin is None
                 or prior_support_margin
                 < adjoint_config.minimum_neural_prior_support_margin
             )
@@ -7099,6 +7140,7 @@ def _compute_variational_products(
         output_cap_dbz=output_cap_margin,
         publication_support=publication_support_margin,
         publication_confidence=publication_confidence_margin,
+        neural_prior_valid_probability=prior_valid_margin,
         neural_prior_support_probability=prior_support_margin,
         low_local_validity=low_local_validity,
     )
@@ -7124,7 +7166,7 @@ def _compute_variational_products(
         ),
     )
     fso = VariationalFSO(
-        contract="p1-variational-fso-v16",
+        contract="p1-variational-fso-v17",
         forecast_run_digest=result.forecast_run_digest,
         analysis_input_digest=cast(str, result.run.analysis_input_digest),
         sensitivity_config_digest=sensitivity_config.digest,
@@ -7178,6 +7220,9 @@ def _compute_variational_products(
         whitener_operations_per_apply=0,
         observed_whitener_apply_count=0,
         materialized_output_bytes=materialized_output_bytes,
+        neural_prior_adjoint_direction_maximum_defect=(
+            neural_prior_adjoint_direction_maximum_defect
+        ),
         active_set_margins=active_set_margins,
         feasibility_margins=feasibility_margins,
         gauss_newton_diagnostics=gauss_newton_diagnostics,

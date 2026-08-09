@@ -888,7 +888,7 @@ class PriorUncertaintyTarget:
     target_plan_digest: str
     source_digest: str
     independence_evidence_digest: str
-    source_input_bundle_digest: str
+    source_verification_bundle_digest: str
     target_digest: str
 
     def __init__(self) -> None:
@@ -923,7 +923,7 @@ class PriorUncertaintyTarget:
         target_plan_digest = plan.plan_digest
         source_digest = verification.content_digest
         independence_evidence_digest = plan.independence_evidence_digest
-        source_input_bundle_digest = verification.content_digest
+        source_verification_bundle_digest = verification.content_digest
         if (
             target_dbz.ndim != 2
             or not target_dbz.is_floating_point()
@@ -939,14 +939,16 @@ class PriorUncertaintyTarget:
         support = echo_support.detach().clone()
         target_digest = json_digest(
             {
-                "contract": "prior-uncertainty-target-v1",
+                "contract": "prior-uncertainty-target-v2",
                 "target_dbz": tensor_digest(target),
                 "valid_mask": tensor_digest(valid),
                 "echo_support": tensor_digest(support),
                 "target_plan_digest": target_plan_digest,
                 "source_digest": source_digest,
                 "independence_evidence_digest": independence_evidence_digest,
-                "source_input_bundle_digest": source_input_bundle_digest,
+                "source_verification_bundle_digest": (
+                    source_verification_bundle_digest
+                ),
                 "support_threshold_dbz": plan.support_threshold_dbz,
             }
         )
@@ -958,7 +960,10 @@ class PriorUncertaintyTarget:
             ("target_plan_digest", target_plan_digest),
             ("source_digest", source_digest),
             ("independence_evidence_digest", independence_evidence_digest),
-            ("source_input_bundle_digest", source_input_bundle_digest),
+            (
+                "source_verification_bundle_digest",
+                source_verification_bundle_digest,
+            ),
             ("target_digest", target_digest),
         ):
             object.__setattr__(result, name, value)
@@ -1003,18 +1008,22 @@ class PriorHoldoutEvaluation:
     prior_underdispersion_fraction: float
     prior_gaussian_nll: float
     prior_support_brier_score: float
+    prior_candidate_valid_fraction: float
+    prior_parent_valid_fraction: float
+    prior_candidate_valid_area_km2: float
+    prior_abstention_increase_vs_parent: float
     prior_uncertainty_target_digest: str
     prior_uncertainty_sample_count: int
     issue_time: str
     verification_valid_times: tuple[str, ...]
-    contract: str = "prior-holdout-evaluation-v3"
+    contract: str = "prior-holdout-evaluation-v4"
     evaluation_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use PriorHoldoutEvaluation.from_forecasts")
 
     def __post_init__(self) -> None:
-        if self.contract != "prior-holdout-evaluation-v3":
+        if self.contract != "prior-holdout-evaluation-v4":
             raise ValueError("unsupported prior holdout evaluation")
         for name in (
             "holdout_plan_digest",
@@ -1089,6 +1098,12 @@ class PriorHoldoutEvaluation:
             or not 0.0 <= self.prior_support_brier_score <= 1.0
             or type(self.prior_uncertainty_sample_count) is not int
             or self.prior_uncertainty_sample_count <= 0
+            or not 0.0 <= self.prior_candidate_valid_fraction <= 1.0
+            or not 0.0 <= self.prior_parent_valid_fraction <= 1.0
+            or not math.isfinite(self.prior_candidate_valid_area_km2)
+            or self.prior_candidate_valid_area_km2 < 0.0
+            or not math.isfinite(self.prior_abstention_increase_vs_parent)
+            or not -1.0 <= self.prior_abstention_increase_vs_parent <= 1.0
         ):
             raise ValueError("prior uncertainty reliability evidence is invalid")
         issue = datetime.fromisoformat(self.issue_time.replace("Z", "+00:00"))
@@ -1281,18 +1296,75 @@ class PriorHoldoutEvaluation:
             uncertainty_target.target_plan_digest
             != case.uncertainty_target_plan_digest
             or uncertainty_target.target_digest != case.uncertainty_target_digest
-            or uncertainty_target.source_input_bundle_digest
-            == case.input_bundle_digest
-            or torch.equal(
-                uncertainty_target._target_dbz.to(input_frames_dbz),
-                input_frames_dbz[0],
-            )
         ):
             raise ValueError("prior uncertainty target is not independent and planned")
+        candidate_evidence = candidate_prior_application.inference_evidence
+        parent_evidence = parent_prior_application.inference_evidence
+        target_plan = next(
+            item for item in plan.uncertainty_target_plans
+            if item.plan_digest == case.uncertainty_target_plan_digest
+        )
+        if (
+            candidate_evidence.prior_output_valid_time
+            != target_plan.target_valid_time
+            or parent_evidence.prior_output_valid_time
+            != candidate_evidence.prior_output_valid_time
+            or parent_evidence.feature_source_valid_times
+            != candidate_evidence.feature_source_valid_times
+            or parent_evidence.feature_source_identity_digests
+            != candidate_evidence.feature_source_identity_digests
+            or candidate_evidence.feature_exclusion_contract_digest
+            != parent_evidence.feature_exclusion_contract_digest
+            or candidate_evidence.feature_exclusion_contract_digest
+            != target_plan.feature_exclusion_contract_digest
+        ):
+            raise ValueError("prior uncertainty target time or exclusion disagrees")
+        target_source_seen = target_plan.source_identity_digest in (
+            candidate_evidence.feature_source_identity_digests
+        )
+        candidate_exclusion = candidate_prior_runner.feature_exclusion_mask
+        parent_exclusion = parent_prior_runner.feature_exclusion_mask
+        if (
+            not torch.equal(candidate_exclusion, parent_exclusion)
+            or tensor_digest(candidate_exclusion)
+            != candidate_evidence.feature_exclusion_mask_digest
+            or tensor_digest(parent_exclusion)
+            != parent_evidence.feature_exclusion_mask_digest
+        ):
+            raise ValueError("holdout feature exclusion execution disagrees")
+        if target_source_seen:
+            if target_plan.target_kind not in (
+                "leave_one_time_out",
+                "withheld_target_mask",
+            ):
+                raise ValueError(
+                    "prior uncertainty target was visible to the features"
+                )
+            target_mask = uncertainty_target._valid_mask.to(
+                candidate_exclusion.device
+            )
+            matching_source_times = tuple(
+                index
+                for index, (valid_time, source_digest) in enumerate(
+                    zip(
+                        candidate_evidence.feature_source_valid_times,
+                        candidate_evidence.feature_source_identity_digests,
+                        strict=True,
+                    )
+                )
+                if valid_time == target_plan.target_valid_time
+                and source_digest == target_plan.source_identity_digest
+            )
+            if not matching_source_times or any(
+                bool(torch.any(target_mask & ~candidate_exclusion[index]))
+                for index in matching_source_times
+            ):
+                raise ValueError(
+                    "prior uncertainty target was visible to the features"
+                )
         prior_reference = uncertainty_target._target_dbz.to(input_frames_dbz)
         prior_valid = (
-            candidate_prior_application.valid_mask
-            & uncertainty_target._valid_mask.to(input_frames_dbz.device)
+            uncertainty_target._valid_mask.to(input_frames_dbz.device)
             & torch.isfinite(prior_reference)
             & torch.isfinite(candidate_prior_application.initial_background_dbz)
             & torch.isfinite(candidate_prior_application.std_dbz)
@@ -1335,15 +1407,38 @@ class PriorHoldoutEvaluation:
         support_brier = float(
             torch.mean(
                 (
-                    candidate_prior_application.support_probability.masked_select(
-                        prior_valid
-                    )
+                    candidate_prior_application.support_probability.masked_select(prior_valid)
                     - support_target.to(
                         candidate_prior_application.support_probability
                     ).masked_select(prior_valid)
                 ).square()
             ).detach()
         )
+        candidate_valid_fraction = float(
+            torch.mean(
+                candidate_prior_application.valid_mask.masked_select(prior_valid)
+                .to(candidate_prior_application.std_dbz)
+            ).detach()
+        )
+        parent_valid_fraction = float(
+            torch.mean(
+                parent_prior_application.valid_mask.masked_select(prior_valid)
+                .to(parent_prior_application.std_dbz)
+            ).detach()
+        )
+        grid = candidate_forecast.run.grid_time_contract
+        if grid is None:
+            raise ValueError("holdout prior coverage requires a physical grid")
+        candidate_valid_area_km2 = (
+            float(
+                torch.count_nonzero(
+                    candidate_prior_application.valid_mask & prior_valid
+                )
+            )
+            * grid.cell_area_m2
+            / 1.0e6
+        )
+        abstention_increase = parent_valid_fraction - candidate_valid_fraction
         for run, training_digest in (
             (candidate_forecast.run, manifest.candidate_training_manifest_digest),
             (parent_forecast.run, manifest.parent_training_manifest_digest),
@@ -1520,6 +1615,10 @@ class PriorHoldoutEvaluation:
             prior_underdispersion_fraction=underdispersion_fraction,
             prior_gaussian_nll=gaussian_nll,
             prior_support_brier_score=support_brier,
+            prior_candidate_valid_fraction=candidate_valid_fraction,
+            prior_parent_valid_fraction=parent_valid_fraction,
+            prior_candidate_valid_area_km2=candidate_valid_area_km2,
+            prior_abstention_increase_vs_parent=abstention_increase,
             prior_uncertainty_target_digest=uncertainty_target.target_digest,
             prior_uncertainty_sample_count=prior_sample_count,
             issue_time=issue_time,
@@ -1534,7 +1633,7 @@ def _new_prior_holdout_evaluation(**values: object) -> PriorHoldoutEvaluation:
     object.__setattr__(
         result,
         "contract",
-        "prior-holdout-evaluation-v3",
+        "prior-holdout-evaluation-v4",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -1610,6 +1709,16 @@ def _evaluation_digest(value: PriorHoldoutEvaluation) -> str:
             ),
             "prior_gaussian_nll": value.prior_gaussian_nll,
             "prior_support_brier_score": value.prior_support_brier_score,
+            "prior_candidate_valid_fraction": (
+                value.prior_candidate_valid_fraction
+            ),
+            "prior_parent_valid_fraction": value.prior_parent_valid_fraction,
+            "prior_candidate_valid_area_km2": (
+                value.prior_candidate_valid_area_km2
+            ),
+            "prior_abstention_increase_vs_parent": (
+                value.prior_abstention_increase_vs_parent
+            ),
             "prior_uncertainty_target_digest": (
                 value.prior_uncertainty_target_digest
             ),
@@ -1652,10 +1761,14 @@ class NeuralPriorPromotionPolicy:
     maximum_prior_gaussian_nll: float = 4.0
     maximum_prior_support_brier_score: float = 0.25
     minimum_prior_uncertainty_samples_per_case: int = 1
-    contract: str = "neural-prior-promotion-policy-v7"
+    minimum_prior_valid_fraction: float = 0.5
+    minimum_prior_valid_area_km2: float = 1.0
+    maximum_abstention_increase_vs_parent: float = 0.05
+    prior_abstention_penalty_weight: float = 1.0
+    contract: str = "neural-prior-promotion-policy-v8"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-policy-v7":
+        if self.contract != "neural-prior-promotion-policy-v8":
             raise ValueError("unsupported neural-prior promotion policy")
         if not self.metric_scales or len({x.metric_name for x in self.metric_scales}) != len(self.metric_scales):
             raise ValueError("promotion metric scales must be unique")
@@ -1697,6 +1810,8 @@ class NeuralPriorPromotionPolicy:
             self.maximum_withdrawn_fraction,
             self.maximum_prior_underdispersion_fraction,
             self.maximum_prior_support_brier_score,
+            self.minimum_prior_valid_fraction,
+            self.maximum_abstention_increase_vs_parent,
         )
         if any(not math.isfinite(value) or not 0 <= value <= 1 for value in probabilities):
             raise ValueError("promotion fractions must be inside [0,1]")
@@ -1714,6 +1829,11 @@ class NeuralPriorPromotionPolicy:
                 self.maximum_prior_standardized_residual_mean_abs,
             ),
             ("maximum_prior_gaussian_nll", self.maximum_prior_gaussian_nll),
+            ("minimum_prior_valid_area_km2", self.minimum_prior_valid_area_km2),
+            (
+                "prior_abstention_penalty_weight",
+                self.prior_abstention_penalty_weight,
+            ),
         ):
             if not math.isfinite(value) or value < 0.0:
                 raise ValueError(f"{name} must be finite and nonnegative")
@@ -1765,6 +1885,14 @@ class NeuralPriorPromotionPolicy:
             ),
             "minimum_prior_uncertainty_samples_per_case": (
                 self.minimum_prior_uncertainty_samples_per_case
+            ),
+            "minimum_prior_valid_fraction": self.minimum_prior_valid_fraction,
+            "minimum_prior_valid_area_km2": self.minimum_prior_valid_area_km2,
+            "maximum_abstention_increase_vs_parent": (
+                self.maximum_abstention_increase_vs_parent
+            ),
+            "prior_abstention_penalty_weight": (
+                self.prior_abstention_penalty_weight
             ),
         })
 
@@ -1992,10 +2120,23 @@ def compute_neural_prior_promotion(
             > policy.maximum_prior_standardized_residual_mean_abs
             or evaluation.prior_underdispersion_fraction
             > policy.maximum_prior_underdispersion_fraction
-            or evaluation.prior_gaussian_nll
+            or (
+                evaluation.prior_gaussian_nll
+                + policy.prior_abstention_penalty_weight
+                * (1.0 - evaluation.prior_candidate_valid_fraction)
+            )
             > policy.maximum_prior_gaussian_nll
             or evaluation.prior_support_brier_score
             > policy.maximum_prior_support_brier_score
+        ):
+            reasons.append("unreliable_prior_uncertainty")
+        if (
+            evaluation.prior_candidate_valid_fraction
+            < policy.minimum_prior_valid_fraction
+            or evaluation.prior_candidate_valid_area_km2
+            < policy.minimum_prior_valid_area_km2
+            or evaluation.prior_abstention_increase_vs_parent
+            > policy.maximum_abstention_increase_vs_parent
         ):
             reasons.append("unreliable_prior_uncertainty")
         if bool(torch.any(evaluation.coverage_parent - evaluation.coverage_candidate > policy.maximum_coverage_loss)):
