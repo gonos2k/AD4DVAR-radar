@@ -22,6 +22,7 @@ from advar import (
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
     NeuralPriorPromotionPolicy,
+    NeuralPriorProbabilityContract,
     PriorUncertaintyTarget,
     PriorUncertaintyTargetPlan,
     PromotionMetricScale,
@@ -38,6 +39,13 @@ from advar.sensitivity import _LearningPolicyTrustStore
 
 
 class NeuralPriorPromotionTests(unittest.TestCase):
+    def probability_contract(self) -> NeuralPriorProbabilityContract:
+        return NeuralPriorProbabilityContract(
+            support_threshold_dbz=5.0,
+            support_product_digest="6" * 64,
+            qc_pipeline_digest="9" * 64,
+        )
+
     def verification_plan(self, valid_time: str) -> str:
         return verification_plan_digest(
             valid_times=(valid_time,),
@@ -75,12 +83,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             PriorUncertaintyTargetPlan(
                 plan_id=f"uncertainty-{index}",
                 target_kind="independent_sensor",
-                source_identity_digest=("6" if index == 1 else "7") * 64,
+                source_identity_digest="6" * 64,
                 qc_pipeline_digest="9" * 64,
                 grid_contract_digest="2" * 64,
                 feature_exclusion_contract_digest="5" * 64,
                 independence_evidence_digest="8" * 64,
                 target_valid_time=valid_time,
+                prior_probability_contract_digest=(
+                    self.probability_contract().contract_digest
+                ),
             )
             for index, valid_time in enumerate(
                 ("2026-08-09T00:00:00Z", "2026-08-10T00:00:00Z"),
@@ -163,6 +174,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             parent_prior_application_digest=("5" if index == 1 else "6") * 64,
             candidate_inference_evidence_digest=("7" if index == 1 else "8") * 64,
             parent_inference_evidence_digest=("9" if index == 1 else "0") * 64,
+            prior_probability_contract_digest=(
+                self.probability_contract().contract_digest
+            ),
         )
 
     def uncertainty_target(self, index: int) -> PriorUncertaintyTarget:
@@ -279,6 +293,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         prior_clear_sky_false_echo_score: float = 0.05,
         parent_prior_clear_sky_false_echo_score: float = 0.05,
         parent_prior_underdispersion_fraction: float | None = None,
+        echo_available: bool = True,
+        clear_available: bool = True,
     ) -> promotion_module.PriorHoldoutEvaluation:
         manifest = self.manifest()
         case = manifest.holdout_cases[index - 1]
@@ -322,20 +338,40 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             coverage_common=torch.tensor([1.0], dtype=torch.float64),
             newly_issued_fraction=torch.tensor([0.0], dtype=torch.float64),
             withdrawn_fraction=torch.tensor([0.0], dtype=torch.float64),
-            prior_standardized_residual_mean_abs=prior_residual_mean_abs,
-            prior_underdispersion_fraction=prior_underdispersion_fraction,
-            prior_echo_intensity_nll=prior_echo_intensity_nll,
+            prior_standardized_residual_mean_abs=(
+                prior_residual_mean_abs if echo_available else None
+            ),
+            prior_underdispersion_fraction=(
+                prior_underdispersion_fraction if echo_available else None
+            ),
+            prior_echo_intensity_nll=(
+                prior_echo_intensity_nll if echo_available else None
+            ),
             prior_support_brier_score=prior_support_brier_score,
-            prior_clear_sky_false_echo_score=prior_clear_sky_false_echo_score,
+            prior_clear_sky_false_echo_score=(
+                prior_clear_sky_false_echo_score if clear_available else None
+            ),
             parent_prior_underdispersion_fraction=(
-                prior_underdispersion_fraction
+                None
+                if not echo_available
+                else prior_underdispersion_fraction
                 if parent_prior_underdispersion_fraction is None
                 else parent_prior_underdispersion_fraction
             ),
-            parent_prior_echo_intensity_nll=parent_prior_echo_intensity_nll,
+            parent_prior_echo_intensity_nll=(
+                parent_prior_echo_intensity_nll if echo_available else None
+            ),
             parent_prior_support_brier_score=parent_prior_support_brier_score,
             parent_prior_clear_sky_false_echo_score=(
                 parent_prior_clear_sky_false_echo_score
+                if clear_available
+                else None
+            ),
+            prior_echo_intensity_status=(
+                "available" if echo_available else "not_applicable"
+            ),
+            prior_clear_sky_status=(
+                "available" if clear_available else "not_applicable"
             ),
             prior_candidate_valid_fraction=prior_candidate_valid_fraction,
             prior_parent_valid_fraction=prior_parent_valid_fraction,
@@ -345,9 +381,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
             prior_uncertainty_target_digest=case.uncertainty_target_digest,
             prior_uncertainty_sample_count=prior_sample_count,
-            prior_echo_intensity_sample_count=prior_sample_count // 2,
+            prior_echo_intensity_sample_count=(
+                prior_sample_count
+                if echo_available and not clear_available
+                else prior_sample_count // 2
+                if echo_available
+                else 0
+            ),
             prior_clear_sky_sample_count=(
-                prior_sample_count - prior_sample_count // 2
+                prior_sample_count
+                if clear_available and not echo_available
+                else prior_sample_count - prior_sample_count // 2
+                if clear_available
+                else 0
             ),
             issue_time=case.issue_time,
             verification_valid_times=(f"2026-08-{8 + index:02d}T01:00:00Z",),
@@ -369,6 +415,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             minimum_distinct_regimes=2,
             minimum_distinct_range_regimes=2,
             minimum_material_clusters=2,
+            minimum_prior_echo_cases=2,
+            minimum_prior_clear_cases=2,
+            minimum_prior_echo_clusters=2,
+            minimum_prior_clear_clusters=2,
+            minimum_uncertainty_cases_per_regime=1,
+            minimum_echo_cases_per_regime=1,
+            minimum_clear_cases_per_regime=1,
+            minimum_uncertainty_clusters_per_regime=1,
+            minimum_echo_clusters_per_regime=1,
+            minimum_clear_clusters_per_regime=1,
             minimum_beneficial_fraction=1.0,
             maximum_harmful_fraction=0.0,
             minimum_mean_normalized_improvement=0.1,
@@ -377,6 +433,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
     def compute(self, evaluations):
         policy = self.policy()
+        return self.compute_with_policy(evaluations, policy)
+
+    def compute_with_policy(self, evaluations, policy):
         with patch.object(
             promotion_module,
             "_load_learning_policy_trust_store",
@@ -398,7 +457,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertTrue(result.eligible)
         validate_neural_prior_promotion(result)
 
-    def test_current_promotion_round_trips_durable_v5_evidence(self) -> None:
+    def test_current_promotion_round_trips_durable_v6_evidence(self) -> None:
         evaluations = (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
         evidence = self.compute(evaluations)
         manifest = self.manifest()
@@ -496,7 +555,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v5")
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v6")
 
     def test_promotion_requires_every_preregistered_case(self) -> None:
         with self.assertRaisesRegex(ValueError, "every planned case"):
@@ -592,13 +651,85 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 torch.full((1, 3), floor),
                 support,
                 mask,
+                support_threshold_dbz=5.0,
             )
             for floor in (-10.0, 0.0, 4.9)
         ]
         self.assertEqual(scores[0], scores[1])
         self.assertEqual(scores[1], scores[2])
-        self.assertEqual(scores[0][2], 0.0)
+        self.assertIsNone(scores[0][2])
         self.assertEqual(scores[0][-2:], (0, 3))
+
+    def test_pure_clear_and_pure_echo_cases_use_component_applicability(self) -> None:
+        policy = replace(
+            self.policy(),
+            minimum_prior_echo_cases=1,
+            minimum_prior_clear_cases=1,
+            minimum_prior_echo_clusters=1,
+            minimum_prior_clear_clusters=1,
+        )
+        result = self.compute_with_policy(
+            (
+                self.evaluation(
+                    1,
+                    -0.2,
+                    echo_available=False,
+                    clear_available=True,
+                ),
+                self.evaluation(
+                    2,
+                    -0.3,
+                    echo_available=True,
+                    clear_available=False,
+                ),
+            ),
+            policy,
+        )
+
+        self.assertTrue(result.eligible)
+        self.assertEqual(result.prior_echo_case_count, 1)
+        self.assertEqual(result.prior_clear_sky_case_count, 1)
+
+    def test_one_cluster_regime_cannot_support_promotion(self) -> None:
+        policy = replace(
+            self.policy(),
+            minimum_uncertainty_clusters_per_regime=2,
+        )
+        result = self.compute_with_policy(
+            (self.evaluation(1, -0.2), self.evaluation(2, -0.3)),
+            policy,
+        )
+
+        self.assertFalse(result.eligible)
+        self.assertIn(
+            "insufficient_uncertainty_clusters",
+            result.rejection_reasons,
+        )
+
+    def test_simultaneous_uncertainty_count_covers_family_components_groups(
+        self,
+    ) -> None:
+        components = ("intensity", "support", "clear", "underdispersion")
+        groups = (None,) + tuple((f"regime-{i}", "range") for i in range(6))
+        comparisons = tuple(
+            promotion_module._UncertaintyComparison(
+                component=component,
+                group=group,
+                values=(0.0, 0.0),
+                clusters=(("storm-1", "day-1", "radar-1"),
+                          ("storm-2", "day-2", "radar-1")),
+            )
+            for component in components
+            for group in groups
+        )
+
+        _, count = promotion_module._simultaneous_uncertainty_upper_bounds(
+            comparisons,
+            self.policy(),
+            candidate_family_size=10,
+        )
+
+        self.assertEqual(count, 10 * 4 * 7)
 
     def test_regime_specific_uncertainty_regression_is_not_averaged_away(self) -> None:
         result = self.compute(
@@ -692,6 +823,35 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ledger_module.LegacyPromotionEvaluationAudit,
         )
         self.assertEqual(decoded[0].evaluation_digest, evaluation.evaluation_digest)
+        self.assertFalse(decoded[0].content_digest_verified)
+        self.assertFalse(decoded[0].statistical_reuse_permitted)
+        with self.assertRaisesRegex(ValueError, "audit-only"):
+            self.compute(decoded)
+
+    def test_v6_hurdle_evaluation_remains_content_verified_audit_only(
+        self,
+    ) -> None:
+        payload = ledger_module._evaluation_audit_payload(
+            self.evaluation(1, -0.2)
+        )
+        payload["contract"] = "prior-holdout-evaluation-v6"
+        payload.pop("prior_echo_intensity_status")
+        payload.pop("prior_clear_sky_status")
+        normalized = dict(payload)
+        normalized.pop("evaluation_digest")
+        for name, value in tuple(normalized.items()):
+            if isinstance(value, dict) and value.get("kind") == "tensor":
+                normalized[name] = value["digest"]
+        payload["evaluation_digest"] = promotion_module.json_digest(normalized)
+
+        decoded = ledger_module._decode_evaluation_audit_payloads([payload])
+
+        self.assertIsInstance(
+            decoded[0],
+            ledger_module.LegacyPromotionEvaluationAudit,
+        )
+        self.assertTrue(decoded[0].content_digest_verified)
+        self.assertFalse(decoded[0].statistical_reuse_permitted)
 
     def test_direct_evaluation_construction_is_disabled(self) -> None:
         with self.assertRaisesRegex(TypeError, "from_forecasts"):
@@ -798,6 +958,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 feature_schema_digest=manifest.feature_schema_digest,
                 training_manifest_digest=(manifest.candidate_training_manifest_digest),
                 uncertainty_contract="model_spatial",
+                probability_contract_digest=(
+                    self.probability_contract().contract_digest
+                ),
+                support_event_digest=(
+                    self.probability_contract().support_event_digest
+                ),
                 prior_output_valid_time="2026-08-09T00:00:00Z",
                 feature_source_valid_times=planned_input.valid_times,
                 feature_source_identity_digests=("a" * 64,),
@@ -827,6 +993,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 feature_schema_digest=manifest.feature_schema_digest,
                 training_manifest_digest=manifest.parent_training_manifest_digest,
                 uncertainty_contract="model_spatial",
+                probability_contract_digest=(
+                    self.probability_contract().contract_digest
+                ),
+                support_event_digest=(
+                    self.probability_contract().support_event_digest
+                ),
                 prior_output_valid_time="2026-08-09T00:00:00Z",
                 feature_source_valid_times=planned_input.valid_times,
                 feature_source_identity_digests=("a" * 64,),
@@ -889,12 +1061,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             inference_algorithm_digest="8" * 64,
             numerical_runtime_digest="4" * 64,
             feature_exclusion_mask=torch.zeros((3, 2, 2), dtype=torch.bool),
+            probability_contract=self.probability_contract(),
         )
         parent_runner = SimpleNamespace(
             reproduce=Mock(),
             inference_algorithm_digest="8" * 64,
             numerical_runtime_digest="4" * 64,
             feature_exclusion_mask=torch.zeros((3, 2, 2), dtype=torch.bool),
+            probability_contract=self.probability_contract(),
         )
         candidate_weights = torch.full((1, 1, 1), 0.5)
         parent_weights = torch.ones((1, 1, 1))
@@ -954,6 +1128,36 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertAlmostEqual(evaluation.prior_abstention_increase_vs_parent, 0.75)
         candidate_runner.reproduce.assert_called_once()
         parent_runner.reproduce.assert_called_once()
+
+        candidate_runner.probability_contract = NeuralPriorProbabilityContract(
+            support_threshold_dbz=35.0,
+            support_product_digest="6" * 64,
+            qc_pipeline_digest="9" * 64,
+        )
+        with patch.object(
+            promotion_module,
+            "_forecast_result_content_digest",
+            side_effect=(
+                case.candidate_forecast_digest,
+                case.parent_forecast_digest,
+            ),
+        ), self.assertRaisesRegex(ValueError, "probability event"):
+            promotion_module.PriorHoldoutEvaluation.from_forecasts(
+                manifest,
+                plan,
+                case_id=case.case_id,
+                candidate_forecast=candidate,
+                parent_forecast=parent,
+                verification=verification,
+                metric_config=config,
+                candidate_prior_application=candidate_app,
+                parent_prior_application=parent_app,
+                candidate_prior_runner=candidate_runner,
+                parent_prior_runner=parent_runner,
+                input_frames_dbz=torch.zeros((3, 2, 2)),
+                uncertainty_target=self.uncertainty_target(1),
+            )
+        candidate_runner.probability_contract = self.probability_contract()
 
         parent_run.observation_quality_weight_digest = "0" * 64
         with patch.object(

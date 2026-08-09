@@ -43,12 +43,15 @@ from advar.intervention import (  # noqa: E402
     RetrospectiveCounterfactualReplay,
 )
 from advar.promotion import (  # noqa: E402
+    LegacyNeuralPriorCandidateManifestAuditV3,
     LegacyNeuralPriorHoldoutPlanAudit,
     LegacyNeuralPriorHoldoutPlanCase,
     LegacyNeuralPriorHoldoutPlanV2Audit,
     LegacyNeuralPriorHoldoutPlanV2Case,
     LegacyNeuralPriorHoldoutPlanV3Audit,
+    LegacyNeuralPriorHoldoutPlanV4Audit,
     LegacyNeuralPriorPromotionEvidenceAuditV3,
+    LegacyNeuralPriorPromotionEvidenceAuditV5,
     NeuralPriorPromotionEvidence,
     NeuralPriorCandidateManifest,
     NeuralPriorHoldoutCase,
@@ -570,6 +573,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             feature_exclusion_contract_digest="c" * 64,
             independence_evidence_digest="d" * 64,
             target_valid_time="2030-01-01T01:00:00Z",
+            prior_probability_contract_digest="e" * 64,
         )
         plan = NeuralPriorHoldoutPlan(
             plan_id="clock-plan",
@@ -765,7 +769,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 13)
+        self.assertEqual(version, 14)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -1352,6 +1356,56 @@ class EpisodeLedgerTests(unittest.TestCase):
                 ),
                 (decision, receipt, operator_approval),
             )
+            expired_approval = OperatorActionApproval.from_decision(
+                decision,
+                operator_key_id="operator-1",
+                operator_role="duty-meteorologist",
+                operator_trust_store_digest=operator_trust.content_digest,
+                operator_private_key=operator_private,
+                reviewed_at=decision.decided_at,
+                expires_at=receipt.applied_time,
+                operator_comment_digest="2" * 64,
+            )
+            with sqlite3.connect(self.ledger.index_path) as connection:
+                retained_triggers = tuple(
+                    connection.execute(
+                        "SELECT name, sql FROM sqlite_master "
+                        "WHERE type = 'trigger' AND "
+                        "tbl_name = 'prospective_intervention_decisions'"
+                    )
+                )
+                for name, _ in retained_triggers:
+                    connection.execute(f'DROP TRIGGER "{name}"')
+                connection.execute(
+                    "UPDATE prospective_intervention_decisions SET "
+                    "operator_approval_digest = ?, operator_approval_json = ? "
+                    "WHERE decision_digest = ?",
+                    (
+                        expired_approval.approval_digest,
+                        json.dumps(asdict(expired_approval), sort_keys=True),
+                        decision.decision_digest,
+                    ),
+                )
+            with self.assertRaisesRegex(ValueError, "time order"):
+                self.ledger.load_prospective_intervention(
+                    digest,
+                    executor_trust_store_path="/etc/advar/executors.json",
+                    operator_trust_store_path="/etc/advar/operators.json",
+                )
+            with sqlite3.connect(self.ledger.index_path) as connection:
+                connection.execute(
+                    "UPDATE prospective_intervention_decisions SET "
+                    "operator_approval_digest = ?, operator_approval_json = ? "
+                    "WHERE decision_digest = ?",
+                    (
+                        operator_approval.approval_digest,
+                        json.dumps(asdict(operator_approval), sort_keys=True),
+                        decision.decision_digest,
+                    ),
+                )
+                for _, sql in retained_triggers:
+                    assert isinstance(sql, str)
+                    connection.execute(sql)
             artifact_dir = self.ledger.interventions_dir / digest
             manifest_path = artifact_dir / "manifest.json"
             checksums_path = artifact_dir / "checksums.json"
@@ -1992,6 +2046,64 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertIsInstance(loaded_v3, LegacyNeuralPriorHoldoutPlanV3Audit)
         self.assertEqual(loaded_v3, audit_v3)
 
+        target_v2: dict[str, object] = {
+            "contract": "prior-uncertainty-target-plan-v2",
+            "plan_id": "legacy-target-v2",
+            "target_kind": "independent_sensor",
+            "source_identity_digest": "d" * 64,
+            "qc_pipeline_digest": "e" * 64,
+            "grid_contract_digest": "8" * 64,
+            "feature_exclusion_contract_digest": "f" * 64,
+            "independence_evidence_digest": "0" * 64,
+            "target_valid_time": "2026-08-08T01:00:00Z",
+            "support_threshold_dbz": 5.0,
+        }
+        target_v2_digest = json_digest(target_v2)
+        audit_v4 = LegacyNeuralPriorHoldoutPlanV4Audit(
+            plan_id="legacy-v4-plan",
+            parent_prior_digest="1" * 64,
+            candidate_family_digests=("2" * 64,),
+            cases=(
+                NeuralPriorHoldoutPlanCase(
+                    case_id="case-v4",
+                    storm_id="storm-v4",
+                    day="2026-08-08",
+                    radar_id="radar-v4",
+                    regime="clear",
+                    range_regime="far",
+                    input_plan_digest=input_plan.plan_digest,
+                    verification_plan_digest="3" * 64,
+                    metric_contract_digest="4" * 64,
+                    uncertainty_target_plan_digest=target_v2_digest,
+                    issue_time="2026-08-08T00:00:00Z",
+                ),
+            ),
+            input_plans=(input_plan,),
+            uncertainty_target_plans=(target_v2,),
+            registered_at="2026-08-07T00:00:00Z",
+        )
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute(
+                "INSERT INTO neural_prior_holdout_plans "
+                "(plan_digest, plan_id, plan_json, policy_digest, "
+                "trust_store_digest, registered_at, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    audit_v4.plan_digest,
+                    audit_v4.plan_id,
+                    json.dumps(asdict(audit_v4), sort_keys=True),
+                    "5" * 64,
+                    "6" * 64,
+                    audit_v4.registered_at,
+                    audit_v4.registered_at,
+                ),
+            )
+        loaded_v4 = self.ledger.load_neural_prior_holdout_plan(
+            audit_v4.plan_digest
+        )
+        self.assertIsInstance(loaded_v4, LegacyNeuralPriorHoldoutPlanV4Audit)
+        self.assertEqual(loaded_v4, audit_v4)
+
     def test_legacy_v2_prospective_receipt_loads_as_signed_audit(self) -> None:
         private_key = Ed25519PrivateKey.generate()
         executor_trust = SimpleNamespace(
@@ -2181,6 +2293,109 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertNotIsInstance(loaded, NeuralPriorPromotionEvidence)
         self.assertFalse(
             hasattr(loaded, "prior_echo_intensity_nll_increase_upper_bound")
+        )
+
+    def test_v5_promotion_and_pre_probability_manifest_load_audit_only(
+        self,
+    ) -> None:
+        candidate_digest = "1" * 64
+        parent_digest = "2" * 64
+        manifest_payload: dict[str, object] = {
+            "contract": "neural-prior-candidate-manifest-v3",
+            "candidate_prior_digest": candidate_digest,
+            "parent_prior_digest": parent_digest,
+            "holdout_cases": [{"case_id": "legacy-v5-case"}],
+        }
+        manifest_digest = json_digest(manifest_payload)
+        manifest_payload["manifest_digest"] = manifest_digest
+        promotion_payload: dict[str, object] = {
+            "candidate_prior_digest": candidate_digest,
+            "parent_prior_digest": parent_digest,
+            "candidate_manifest_digest": manifest_digest,
+            "policy_digest": "3" * 64,
+            "trust_store_digest": "4" * 64,
+            "evaluation_digests": (),
+            "holdout_case_count": 0,
+            "material_case_count": 0,
+            "distinct_case_count": 0,
+            "distinct_storm_count": 0,
+            "distinct_day_count": 0,
+            "distinct_radar_count": 0,
+            "distinct_regime_count": 0,
+            "distinct_range_regime_count": 0,
+            "beneficial_fraction": 0.0,
+            "beneficial_fraction_lower_bound": 0.0,
+            "harmful_fraction": 0.0,
+            "harmful_fraction_upper_bound": 0.0,
+            "mean_normalized_improvement": 0.0,
+            "mean_improvement_lower_bound": 0.0,
+            "maximum_normalized_degradation": 0.0,
+            "prior_echo_intensity_nll_increase_upper_bound": 0.0,
+            "prior_support_brier_increase_upper_bound": 0.0,
+            "prior_clear_sky_false_echo_increase_upper_bound": 0.0,
+            "prior_underdispersion_increase_upper_bound": 0.0,
+            "eligible": False,
+            "rejection_reasons": ("no_material_outcome",),
+            "contract": "neural-prior-promotion-evidence-v5",
+        }
+        evidence_digest = json_digest(promotion_payload)
+        overrides: dict[str, object] = {
+            "promotion_evidence_digest": evidence_digest,
+            "candidate_prior_digest": candidate_digest,
+            "parent_prior_digest": parent_digest,
+            "candidate_manifest_digest": manifest_digest,
+            "candidate_manifest_json": json.dumps(
+                manifest_payload,
+                sort_keys=True,
+            ),
+            "holdout_plan_digest": "5" * 64,
+            "policy_digest": promotion_payload["policy_digest"],
+            "trust_store_digest": promotion_payload["trust_store_digest"],
+            "evaluation_digests_json": "[]",
+            "evaluation_payloads_json": "[]",
+            "intervention_digests_json": "[]",
+            "rejection_reasons_json": json.dumps(["no_material_outcome"]),
+            "evidence_contract": promotion_payload["contract"],
+            "created_at": "2026-08-01T00:00:00+00:00",
+        }
+        for name in (
+            "prior_echo_intensity_nll_increase_upper_bound",
+            "prior_support_brier_increase_upper_bound",
+            "prior_clear_sky_false_echo_increase_upper_bound",
+            "prior_underdispersion_increase_upper_bound",
+        ):
+            overrides[name] = promotion_payload[name]
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            schema = connection.execute(
+                "PRAGMA table_info(neural_prior_promotions)"
+            ).fetchall()
+            columns = [str(row[1]) for row in schema]
+            values = [
+                overrides.get(
+                    str(row[1]),
+                    0 if str(row[2]).upper() == "INTEGER" else 0.0
+                    if str(row[2]).upper() == "REAL"
+                    else "",
+                )
+                for row in schema
+            ]
+            connection.execute(
+                f"INSERT INTO neural_prior_promotions "
+                f"({','.join(columns)}) VALUES "
+                f"({','.join('?' for _ in columns)})",
+                values,
+            )
+
+        loaded = self.ledger.load_neural_prior_promotion(evidence_digest)
+
+        self.assertIsInstance(loaded, LegacyNeuralPriorPromotionEvidenceAuditV5)
+        decoded_manifest = ledger_module._decode_candidate_manifest(
+            json.dumps(manifest_payload, sort_keys=True),
+            expected_digest=manifest_digest,
+        )
+        self.assertIsInstance(
+            decoded_manifest,
+            LegacyNeuralPriorCandidateManifestAuditV3,
         )
 
     def test_backdated_decision_cannot_be_recorded_after_issue(self) -> None:
@@ -3349,7 +3564,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 13)
+        self.assertEqual(version, 14)
 
 
 if __name__ == "__main__":
