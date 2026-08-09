@@ -284,8 +284,11 @@ legacy Tensor를 거부한다. raw Tensor 입력은 연구 호환용으로 계�
 결과와 M0 원장에 `verification_lineage_complete=False`로 기록되므로 지연 자동
 학습의 완전한 검증자료로 승격할 수 없다.
 
-`compute_variational_fso()`의 `p1-variational-fso-v15` 결과는 영향값이 아니라
+`compute_variational_fso()`의 `p1-variational-fso-v16` 결과는 영향값이 아니라
 다음 관측 parameter와 frozen 초기배경 경로에 대한 미분이다.
+
+Radar-dependent neural prior는 mean과 spatial `log(std_dbz)` JVP/VJP를 모두
+포함하며, hard support 확률 0.5 경계까지의 margin도 active-set 진단에 기록한다.
 
 ```text
 detected_dbz                 관측잔차를 통한 d(metric) / d(observed dBZ)
@@ -535,20 +538,35 @@ deadline 전에 결정과 실행 receipt가 각각 append-only ledger에 기록�
 ```python
 from advar import (
     InterventionActionGenerator,
+    InterventionInputContext,
     ProspectiveInterventionDecision,
     RealizedInterventionReceipt,
     ReusableInterventionPolicyEvidence,
 )
 
+input_before_context = InterventionInputContext.from_inputs(
+    frames_dbz=input_before_frames,
+    observation_masks=input_before_masks,
+    quality_weight=input_before_quality,
+    observation_std_dbz=input_observation_std,
+    background_frames_dbz=input_background_frames,
+    radar_id=radar_id,
+    applicability_mask=approved_applicability_mask,
+    run=input_before_run,
+)
 action_generator = InterventionActionGenerator.from_model(
     action_model.eval(),
-    input_before_frames,
+    input_before_context,
+    intervention_type="realized_qc_intervention",
+    action_reason="clutter",
 )
 action_policy = ReusableInterventionPolicyEvidence(
     policy_id="radar-qc-v1",
     action_generator_digest=action_generator.generator_digest,
-    context_schema_digest=context_schema_digest,
-    applicability_region_digest=applicability_region_digest,
+    context_schema_digest=input_before_context.context_schema_digest,
+    applicability_region_digest=(
+        input_before_context.applicability_region_digest
+    ),
     execution_policy_digest=execution_policy_digest,
     allowed_intervention_types=("realized_qc_intervention",),
     maximum_absolute_delta_dbz=0.5,
@@ -561,7 +579,7 @@ decision = ProspectiveInterventionDecision.from_policy(
     case_id=case_id,
     radar_id=radar_id,
     intervention_type="realized_qc_intervention",
-    actual_input_before_frames=input_before_frames,
+    actual_input_context=input_before_context,
     actual_input_before_run=input_before_run,
     input_plan_digest=input_plan_digest,
     decision_basis_digest=validated_policy_evidence_digest,
@@ -577,15 +595,15 @@ ledger.append_prospective_intervention_decision(
     decision,
     action_policy=action_policy,
     action_generator=action_generator,
-    actual_input_before_frames=input_before_frames,
+    actual_input_before_context=input_before_context,
     actual_input_before_run=input_before_run,
     trust_store_path="/etc/advar/intervention-policies.json",
 )
 receipt = RealizedInterventionReceipt.from_decision(
     decision,
-    actual_input_before_frames=input_before_frames,
+    actual_input_before_context=input_before_context,
     actual_input_before_run=input_before_run,
-    actual_input_after_frames=input_after_frames,
+    actual_input_after_context=input_after_context,
     actual_input_after_run=input_after_run,
     action_generator=action_generator,
     executor_key_id="radar-qc-executor",
@@ -599,22 +617,24 @@ ledger.append_realized_intervention_receipt(
     decision,
     receipt,
     action_generator=action_generator,
-    actual_input_before_frames=input_before_frames,
+    actual_input_before_context=input_before_context,
     actual_input_before_run=input_before_run,
-    actual_input_after_frames=input_after_frames,
+    actual_input_after_context=input_after_context,
     actual_input_after_run=input_after_run,
     trust_store_path="/etc/advar/intervention-policies.json",
     executor_trust_store_path="/etc/advar/intervention-executors.json",
 )
 ```
 
-action model은 `(delta_dbz, applicable)`을 반환한다. export된 generator가 현재 input
-context에서 applicability와 delta를 계산하므로 과거 사례의 Tensor를 새 사례에
-재사용하지 않는다. 시간계약은 observation valid, input available, decision deadline,
-publication을 분리한다. ledger는 root-approved action policy를 다시 실행해 decision을
-재현하고, receipt에서는 `after == before + generated_delta`와 input plan을 다시
-검사한다. Executor trust store에는 Ed25519 public key만 들어가며 private key는 executor
-밖으로 나오지 않는다. v1–v3 intervention 자료는 read-only 감사용으로 보존된다.
+QC action model은 `(valid_mask_after, quality_weight_after, applicable)`을 반환한다.
+Sensor correction은 additive dBZ, operator override는 명시적 replacement/mask 계약을
+각각 사용한다. `InterventionInputContext`는 radar ID, 승인 적용영역, 전체 mask·quality,
+관측오차와 background를 묶으므로 generator가 승인영역 밖을 변경할 수 없다. 시간계약은
+observation valid, input available, decision deadline, publication을 분리한다. ledger는
+root-approved action policy를 다시 실행해 decision을 재현하고, receipt에서는 typed
+before/action/after 전이를 다시 검사한다. Executor trust store에는 Ed25519 public key만
+들어가며 private key는 executor 밖으로 나오지 않는다. 이전 v1/v2 intervention
+계약은 read-only 감사용으로 보존된다.
 
 Prior artifact 승격은 intervention 실행 여부와 무관하게 사전등록된 holdout 전체를
 candidate/parent paired forecast로 평가한다. 서로 단위가 다른 forecast-error metric은
@@ -670,6 +690,11 @@ holdout plan은 candidate/parent forecast보다 먼저 원장에 등록하며 �
 content digest 대신 input valid-time/source/QC/grid/background/mask 선택규칙의
 `input_plan_digest`를 고정한다. 미래 frame 내용이 아닌 verification
 source/QC/grid/valid-time identity, metric contract와 issue time도 함께 고정한다.
+Prior uncertainty target도 `PriorUncertaintyTargetPlan`으로 source 종류(독립 sensor,
+withheld radar/time/mask), QC, feature-exclusion 및 independence evidence를
+사전등록하며 plan payload 자체가 holdout digest에 포함된다. 실제 target은 임의
+Tensor로 만들 수 없고, plan에 고정된 radar product·QC·grid·valid time과 일치하는
+content-addressed `VerificationBundle`에서만 생성한다.
 실제 input·verification content digest는 자료가 도착한 뒤 completed holdout case에
 결합한다. 이미 알려진 historical holdout은 sealed dataset을 candidate training 전에
 등록하는 별도 mode를 사용한다. 두 forecast run은 동일 input
@@ -686,9 +711,10 @@ preregistered forecast population의 `PriorHoldoutEvaluation`을 사용하며, i
 선택·실행한 사례만 모은 action-effect population과 분리된다. Material 사례의
 case/storm/day/radar/regime 다양성과 cluster bootstrap, training/holdout
 storm·day·time-window 분리도 다시 검사한다.
-Candidate prior의 spatial `std_dbz`도 holdout 입력에 대한 standardized residual과
-under-dispersion 비율로 검증한다. 평균 skill이 좋아도 불확실성을 과소추정한 prior는
-승격하지 않는다.
+Candidate prior의 spatial `std_dbz`는 모델 입력과 분리된 withheld target에 대한
+Gaussian NLL과 standardized residual로, `support_probability`는 Brier score로
+검증한다. 평균 skill이 좋아도 불확실성을 과소추정하거나 support 확률이 보정되지
+않은 prior는 승격하지 않는다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
 자동학습은 의도적으로 nominal metric weight를 고정한
@@ -1208,8 +1234,8 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v54`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v46`
+- `output_contract_version`: 현재 `nowcast-npz-v55`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v47`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age

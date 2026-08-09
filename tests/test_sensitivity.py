@@ -92,6 +92,7 @@ from advar.sensitivity import (  # noqa: E402
 from advar.variational import (  # noqa: E402
     _analysis_trajectory,
     AnalysisConfig,
+    NeuralPriorInferenceRunner,
     residual_vector,
     variational_nowcast,
 )
@@ -237,6 +238,22 @@ def result_for(
             grid_time_contract=grid_time_contract,
         ),
     )
+
+
+class _SpatialStdPrior(torch.nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.register_buffer("anchor", torch.tensor(0.0, dtype=torch.float64))
+
+    def forward(
+        self,
+        frames: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        mean = frames[0] + self.anchor
+        std = torch.exp(0.02 * frames[0])
+        valid = torch.ones_like(mean, dtype=torch.bool)
+        support = torch.ones_like(mean)
+        return mean, std, valid, support
 
 
 class SensitivityTests(unittest.TestCase):
@@ -1862,9 +1879,82 @@ class VariationalFSOTests(unittest.TestCase):
             sensitivity_config=cls.sensitivity_config,
         )
 
+    def test_physical_fsoi_includes_spatial_prior_uncertainty_path(self) -> None:
+        input_run = ForecastRunContract.from_inputs(
+            self.nowcast_config,
+            self.frames,
+            torch.isfinite(self.frames),
+            None,
+        )
+        runner = NeuralPriorInferenceRunner(
+            _SpatialStdPrior().eval(),
+            lambda value: value,
+            example_frames=self.frames,
+            model_contract_digest="4" * 64,
+            feature_schema_digest="5" * 64,
+            training_manifest_digest="6" * 64,
+            dependency="radar_dependent",
+        )
+        application = runner.infer(
+            self.frames,
+            input_run=input_run,
+            role="candidate",
+        )
+        forecast, analysis = variational_nowcast(
+            self.frames,
+            nowcast_config=self.nowcast_config,
+            analysis_config=replace(
+                self.analysis_config,
+                maximum_outer_iterations=20,
+            ),
+            neural_prior=application,
+        )
+        linearization = analysis.linearization
+        self.assertTrue(analysis.converged)
+        assert linearization is not None
+        delta = torch.zeros_like(self.frames)
+        delta[0, 3, 3] = 0.01
+        perturbation = VariationalObservationPerturbation.from_radar_dbz_delta(
+            delta,
+            linearization,
+            neural_prior_runner=runner,
+            neural_prior_application=application,
+        )
+        verification = torch.where(
+            torch.isfinite(forecast.forecast_dbz),
+            forecast.forecast_dbz - 0.5,
+            forecast.forecast_dbz,
+        )
+        fsoi = compute_variational_fsoi(
+            forecast,
+            analysis,
+            verification,
+            perturbation,
+            sensitivity_config=self.sensitivity_config,
+            adjoint_config=VariationalAdjointConfig(
+                maximum_gauss_newton_relative_curvature_defect=1.0e9,
+            ),
+            neural_prior_runner=runner,
+            neural_prior_application=application,
+        )
+        total_from_map = torch.sum(
+            fsoi.fso.observation.frozen_structure_input_dbz.maps[0, 0]
+            * delta
+        )
+        total_from_components = torch.sum(fsoi.observation.total.sum_by_time)
+        torch.testing.assert_close(total_from_components, total_from_map)
+        self.assertEqual(
+            fsoi.fso.active_set_margins.neural_prior_support_probability,
+            0.5,
+        )
+        self.assertNotEqual(
+            float(torch.sum(fsoi.observation.initial_background_dbz.sum_by_time)),
+            0.0,
+        )
+
     def test_variational_fso_covers_all_observation_times(self) -> None:
         fso = self.fso
-        self.assertEqual(fso.contract, "p1-variational-fso-v15")
+        self.assertEqual(fso.contract, "p1-variational-fso-v16")
         self.assertEqual(
             fso.sensitivity_scope,
             "residual_plus_input_dependent_initial_state_and_baseline_with_frozen_selection",
@@ -3826,7 +3916,7 @@ class VariationalFSOTests(unittest.TestCase):
 
         self.assertEqual(
             fsoi.contract,
-            "p1-linearized-observation-impact-v12",
+            "p1-linearized-observation-impact-v13",
         )
         self.assertEqual(
             fsoi.perturbation_contract,

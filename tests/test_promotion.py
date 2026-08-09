@@ -17,10 +17,13 @@ from advar import (
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
     NeuralPriorPromotionPolicy,
+    PriorUncertaintyTarget,
+    PriorUncertaintyTargetPlan,
     PromotionMetricScale,
     ProspectiveInterventionDecision,
     RealizedInterventionReceipt,
     RealizedObservationIntervention,
+    VerificationBundle,
     compute_neural_prior_promotion,
     validate_neural_prior_candidate_manifest,
     validate_neural_prior_promotion,
@@ -63,6 +66,22 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 start=1,
             )
         )
+        target_plans = tuple(
+            PriorUncertaintyTargetPlan(
+                plan_id=f"uncertainty-{index}",
+                target_kind="independent_sensor",
+                source_identity_digest=("6" if index == 1 else "7") * 64,
+                qc_pipeline_digest="9" * 64,
+                grid_contract_digest="2" * 64,
+                feature_exclusion_contract_digest="5" * 64,
+                independence_evidence_digest="8" * 64,
+                target_valid_time=valid_time,
+            )
+            for index, valid_time in enumerate(
+                ("2026-08-09T01:00:00Z", "2026-08-10T01:00:00Z"),
+                start=1,
+            )
+        )
         return NeuralPriorHoldoutPlan(
             plan_id="holdout-plan",
             parent_prior_digest="d" * 64,
@@ -78,6 +97,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     input_plans[0].plan_digest,
                     self.verification_plan("2026-08-09T01:00:00Z"),
                     "b" * 64,
+                    target_plans[0].plan_digest,
                     "2026-08-09T00:00:00Z",
                 ),
                 NeuralPriorHoldoutPlanCase(
@@ -90,15 +110,18 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     input_plans[1].plan_digest,
                     self.verification_plan("2026-08-10T01:00:00Z"),
                     "b" * 64,
+                    target_plans[1].plan_digest,
                     "2026-08-10T00:00:00Z",
                 ),
             ),
             input_plans=input_plans,
+            uncertainty_target_plans=target_plans,
             registered_at="2026-08-07T00:00:00Z",
         )
 
     def completed_case(self, index: int) -> NeuralPriorHoldoutCase:
         planned = self.plan().cases[index - 1]
+        uncertainty_target = self.uncertainty_target(index)
         return NeuralPriorHoldoutCase(
             case_id=planned.case_id,
             storm_id=planned.storm_id,
@@ -111,6 +134,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             verification_plan_digest=planned.verification_plan_digest,
             verification_bundle_digest="a" * 64,
             metric_contract_digest=planned.metric_contract_digest,
+            uncertainty_target_plan_digest=(
+                planned.uncertainty_target_plan_digest
+            ),
+            uncertainty_target_digest=uncertainty_target.target_digest,
             issue_time=planned.issue_time,
             candidate_forecast_digest=("6" if index == 1 else "8") * 64,
             parent_forecast_digest=("7" if index == 1 else "9") * 64,
@@ -119,6 +146,39 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             candidate_inference_evidence_digest=("7" if index == 1 else "8") * 64,
             parent_inference_evidence_digest=("9" if index == 1 else "0") * 64,
         )
+
+    def uncertainty_target(self, index: int) -> PriorUncertaintyTarget:
+        plan = self.plan()
+        target_plan = plan.uncertainty_target_plans[index - 1]
+        verification = VerificationBundle(
+            frames_dbz=torch.ones((1, 2, 2)),
+            valid_mask=torch.ones((1, 2, 2), dtype=torch.bool),
+            valid_times=(target_plan.target_valid_time,),
+            grid_contract_digest=target_plan.grid_contract_digest,
+            radar_product_digest=target_plan.source_identity_digest,
+            qc_pipeline_digest=target_plan.qc_pipeline_digest,
+        )
+        return PriorUncertaintyTarget.from_verification_bundle(
+            plan=target_plan,
+            verification=verification,
+        )
+
+    def test_uncertainty_target_requires_its_planned_verification_source(self) -> None:
+        target_plan = self.plan().uncertainty_target_plans[0]
+        wrong_source = VerificationBundle(
+            frames_dbz=torch.ones((1, 2, 2)),
+            valid_mask=torch.ones((1, 2, 2), dtype=torch.bool),
+            valid_times=(target_plan.target_valid_time,),
+            grid_contract_digest=target_plan.grid_contract_digest,
+            radar_product_digest="f" * 64,
+            qc_pipeline_digest=target_plan.qc_pipeline_digest,
+        )
+        with self.assertRaisesRegex(ValueError, "source disagrees"):
+            PriorUncertaintyTarget.from_verification_bundle(
+                plan=target_plan,
+                verification=wrong_source,
+            )
+        self.assertFalse(hasattr(PriorUncertaintyTarget, "from_tensors"))
 
     def test_input_plan_must_match_actual_operational_identity(self) -> None:
         plan = self.plan().input_plans[0]
@@ -236,6 +296,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             withdrawn_fraction=torch.tensor([0.0], dtype=torch.float64),
             prior_standardized_residual_mean_abs=prior_residual_mean_abs,
             prior_underdispersion_fraction=prior_underdispersion_fraction,
+            prior_gaussian_nll=0.5,
+            prior_support_brier_score=0.05,
+            prior_uncertainty_target_digest=case.uncertainty_target_digest,
             prior_uncertainty_sample_count=prior_sample_count,
             issue_time=case.issue_time,
             verification_valid_times=(f"2026-08-{8 + index:02d}T01:00:00Z",),
@@ -464,6 +527,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             initial_background_dbz=torch.zeros((2, 2)),
             std_dbz=torch.ones((2, 2)),
             valid_mask=torch.ones((2, 2), dtype=torch.bool),
+            support_probability=torch.zeros((2, 2)),
             inference_evidence=SimpleNamespace(
                 evidence_digest=case.candidate_inference_evidence_digest,
                 inference_algorithm_digest="8" * 64,
@@ -484,6 +548,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             initial_background_dbz=torch.zeros((2, 2)),
             std_dbz=torch.ones((2, 2)),
             valid_mask=torch.ones((2, 2), dtype=torch.bool),
+            support_probability=torch.zeros((2, 2)),
             inference_evidence=SimpleNamespace(
                 evidence_digest=case.parent_inference_evidence_digest,
                 inference_algorithm_digest="8" * 64,
@@ -605,6 +670,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 candidate_prior_runner=candidate_runner,
                 parent_prior_runner=parent_runner,
                 input_frames_dbz=torch.zeros((3, 2, 2)),
+                uncertainty_target=self.uncertainty_target(1),
             )
         self.assertAlmostEqual(float(evaluation.metric_change[0, 0]), -0.2)
         self.assertAlmostEqual(float(evaluation.end_to_end_metric_change[0, 0]), -0.25)

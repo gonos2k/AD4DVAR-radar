@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, fields
 from datetime import datetime, timezone
 import io
+import json
 import math
 from typing import Literal
 
@@ -676,19 +677,299 @@ def validate_retrospective_counterfactual_replay(
         raise ValueError("retrospective replay digest mismatch")
 
 
-_ACTION_APPLICATION_CONTRACT = "radar-additive-dbz-action-v1"
-_ACTION_APPLICATION_CONTRACT_DIGEST = json_digest(
-    {"contract": _ACTION_APPLICATION_CONTRACT}
+_DBZ_ACTION_CONTRACT = "radar-dbz-correction-action-v2"
+_QC_ACTION_CONTRACT = "radar-qc-mask-action-v1"
+_OVERRIDE_ACTION_CONTRACT = "radar-operator-override-action-v1"
+_ACTION_CONTRACT_BY_TYPE: dict[ObservationInterventionType, str] = {
+    "realized_sensor_correction": _DBZ_ACTION_CONTRACT,
+    "realized_qc_intervention": _QC_ACTION_CONTRACT,
+    "operator_override": _OVERRIDE_ACTION_CONTRACT,
+}
+_INTERVENTION_CONTEXT_SCHEMA_DIGEST = json_digest(
+    {
+        "contract": "intervention-generator-context-schema-v1",
+        "channels": (
+            "canonical_dbz",
+            "observation_valid",
+            "finite_input",
+            "quality_weight",
+            "observation_std_dbz",
+            "background_dbz",
+            "background_present",
+            "applicability_mask",
+        ),
+    }
 )
+
+
+def _action_contract_digest(contract: str) -> str:
+    return json_digest({"contract": contract})
+
+
+def _same_tensor_with_nan(left: Tensor, right: Tensor) -> bool:
+    """Exact equality with equal NaN locations treated as equal."""
+
+    if left.shape != right.shape or left.dtype != right.dtype:
+        return False
+    left_nan = torch.isnan(left)
+    if not torch.equal(left_nan, torch.isnan(right)):
+        return False
+    return torch.equal(left.masked_select(~left_nan), right.masked_select(~left_nan))
+
+
+@dataclass(frozen=True, init=False)
+class InterventionInputContext:
+    """Canonical live inputs visible to and bound by an action generator."""
+
+    _frames_dbz: Tensor
+    _observation_masks: Tensor
+    _quality_weight: Tensor
+    _observation_std_dbz: Tensor
+    _background_frames_dbz: Tensor | None
+    _applicability_mask: Tensor
+    radar_id: str
+    input_bundle_digest: str
+    input_plan_digest: str
+    input_plan_resolution_digest: str
+    context_schema_digest: str
+    applicability_region_digest: str
+    context_digest: str
+
+    def __init__(self) -> None:
+        raise TypeError("use InterventionInputContext.from_inputs")
+
+    @classmethod
+    def from_inputs(
+        cls,
+        *,
+        frames_dbz: Tensor,
+        observation_masks: Tensor,
+        quality_weight: Tensor,
+        observation_std_dbz: Tensor,
+        background_frames_dbz: Tensor | None,
+        radar_id: str,
+        applicability_mask: Tensor,
+        run: ForecastRunContract,
+    ) -> InterventionInputContext:
+        run.validate_integrity()
+        shape = frames_dbz.shape
+        if not radar_id or radar_id.strip() != radar_id:
+            raise ValueError("intervention radar ID must be canonical")
+        if frames_dbz.ndim != 3 or not frames_dbz.is_floating_point():
+            raise ValueError("intervention frames must be floating [T,H,W]")
+        if observation_masks.shape != shape or observation_masks.dtype != torch.bool:
+            raise ValueError("intervention observation masks must match frames")
+        for name, value in (
+            ("quality_weight", quality_weight),
+            ("observation_std_dbz", observation_std_dbz),
+        ):
+            if value.shape != shape or value.dtype != frames_dbz.dtype:
+                raise ValueError(f"{name} must match intervention frames")
+            if not bool(torch.all(torch.isfinite(value))):
+                raise ValueError(f"{name} must be finite")
+        if bool(torch.any((quality_weight < 0.0) | (quality_weight > 1.0))):
+            raise ValueError("quality_weight must be inside [0, 1]")
+        if bool(torch.any(observation_masks & ~torch.isfinite(frames_dbz))):
+            raise ValueError("non-finite radar pixels must be observation-invalid")
+        if bool(torch.any(quality_weight.masked_select(~observation_masks) != 0.0)):
+            raise ValueError("invalid observations must have zero quality weight")
+        if bool(torch.any(observation_std_dbz <= 0.0)):
+            raise ValueError("observation_std_dbz must be positive")
+        if background_frames_dbz is not None and (
+            background_frames_dbz.shape != shape
+            or background_frames_dbz.dtype != frames_dbz.dtype
+        ):
+            raise ValueError("background frames must match intervention frames")
+        if applicability_mask.shape != shape or applicability_mask.dtype != torch.bool:
+            raise ValueError("intervention applicability mask must match frames")
+        if tensor_digest(frames_dbz) != run.input_frames_digest:
+            raise ValueError("intervention frames disagree with the input run")
+        if run.observation_masks_digest is None or (
+            tensor_digest(observation_masks) != run.observation_masks_digest
+        ):
+            raise ValueError("intervention masks disagree with the input run")
+        if run.observation_quality_weight_digest is None or (
+            tensor_digest(quality_weight)
+            != run.observation_quality_weight_digest
+        ):
+            raise ValueError("intervention quality weights disagree with the input run")
+        if run.observation_std_dbz_digest is None or (
+            tensor_digest(observation_std_dbz) != run.observation_std_dbz_digest
+        ):
+            raise ValueError(
+                "intervention observation errors disagree with the input run"
+            )
+        background_digest = (
+            None
+            if background_frames_dbz is None
+            else tensor_digest(background_frames_dbz)
+        )
+        if background_digest != run.background_frames_digest:
+            raise ValueError("intervention background disagrees with the input run")
+        if run.input_plan_digest is None or run.input_plan_resolution_digest is None:
+            raise ValueError("prospective intervention requires a resolved input plan")
+        applicability_region_digest = json_digest(
+            {
+                "contract": "intervention-applicability-region-v1",
+                "radar_id": radar_id,
+                "grid_time_contract_digest": run.grid_time_contract_digest,
+                "mask_digest": tensor_digest(applicability_mask),
+            }
+        )
+        context_digest = json_digest(
+            {
+                "contract": "intervention-input-context-v2",
+                "input_bundle_digest": run.input_bundle_digest,
+                "input_plan_digest": run.input_plan_digest,
+                "input_plan_resolution_digest": run.input_plan_resolution_digest,
+                "frames_digest": tensor_digest(frames_dbz),
+                "observation_masks_digest": tensor_digest(observation_masks),
+                "quality_weight_digest": tensor_digest(quality_weight),
+                "observation_std_dbz_digest": tensor_digest(observation_std_dbz),
+                "background_frames_digest": background_digest,
+                "radar_id": radar_id,
+                "context_schema_digest": _INTERVENTION_CONTEXT_SCHEMA_DIGEST,
+                "applicability_region_digest": applicability_region_digest,
+            }
+        )
+        result = object.__new__(cls)
+        for name, value in (
+            ("_frames_dbz", frames_dbz.detach().clone()),
+            ("_observation_masks", observation_masks.detach().clone()),
+            ("_quality_weight", quality_weight.detach().clone()),
+            ("_observation_std_dbz", observation_std_dbz.detach().clone()),
+            (
+                "_background_frames_dbz",
+                None
+                if background_frames_dbz is None
+                else background_frames_dbz.detach().clone(),
+            ),
+            ("_applicability_mask", applicability_mask.detach().clone()),
+            ("radar_id", radar_id),
+            ("input_bundle_digest", run.input_bundle_digest),
+            ("input_plan_digest", run.input_plan_digest),
+            ("input_plan_resolution_digest", run.input_plan_resolution_digest),
+            ("context_schema_digest", _INTERVENTION_CONTEXT_SCHEMA_DIGEST),
+            ("applicability_region_digest", applicability_region_digest),
+            ("context_digest", context_digest),
+        ):
+            object.__setattr__(result, name, value)
+        return result
+
+    @property
+    def frames_dbz(self) -> Tensor:
+        return self._frames_dbz.clone()
+
+    @property
+    def observation_masks(self) -> Tensor:
+        return self._observation_masks.clone()
+
+    @property
+    def quality_weight(self) -> Tensor:
+        return self._quality_weight.clone()
+
+    @property
+    def observation_std_dbz(self) -> Tensor:
+        return self._observation_std_dbz.clone()
+
+    @property
+    def background_frames_dbz(self) -> Tensor | None:
+        if self._background_frames_dbz is None:
+            return None
+        return self._background_frames_dbz.clone()
+
+    @property
+    def applicability_mask(self) -> Tensor:
+        return self._applicability_mask.clone()
+
+    def generator_tensor(self) -> Tensor:
+        frames = torch.nan_to_num(self._frames_dbz)
+        finite = torch.isfinite(self._frames_dbz).to(frames)
+        background = (
+            torch.zeros_like(frames)
+            if self._background_frames_dbz is None
+            else torch.nan_to_num(self._background_frames_dbz)
+        )
+        background_present = torch.full_like(
+            frames,
+            float(self._background_frames_dbz is not None),
+        )
+        return torch.stack(
+            (
+                frames,
+                self._observation_masks.to(frames),
+                finite,
+                self._quality_weight,
+                self._observation_std_dbz,
+                background,
+                background_present,
+                self._applicability_mask.to(frames),
+            )
+        )
+
+
+@dataclass(frozen=True)
+class DbzCorrectionAction:
+    delta_dbz: Tensor
+    contract: str = _DBZ_ACTION_CONTRACT
+
+    @property
+    def payload_digest(self) -> str:
+        return json_digest(
+            {"contract": self.contract, "delta_dbz": tensor_digest(self.delta_dbz)}
+        )
+
+
+@dataclass(frozen=True)
+class QcMaskAction:
+    valid_mask_after: Tensor
+    quality_weight_after: Tensor
+    qc_reason: str
+    contract: str = _QC_ACTION_CONTRACT
+
+    @property
+    def payload_digest(self) -> str:
+        return json_digest(
+            {
+                "contract": self.contract,
+                "valid_mask_after": tensor_digest(self.valid_mask_after),
+                "quality_weight_after": tensor_digest(self.quality_weight_after),
+                "qc_reason": self.qc_reason,
+            }
+        )
+
+
+@dataclass(frozen=True)
+class OperatorOverrideAction:
+    replacement_dbz: Tensor
+    override_mask: Tensor
+    override_reason: str
+    contract: str = _OVERRIDE_ACTION_CONTRACT
+
+    @property
+    def payload_digest(self) -> str:
+        return json_digest(
+            {
+                "contract": self.contract,
+                "replacement_dbz": tensor_digest(self.replacement_dbz),
+                "override_mask": tensor_digest(self.override_mask),
+                "override_reason": self.override_reason,
+            }
+        )
+
+
+InterventionAction = DbzCorrectionAction | QcMaskAction | OperatorOverrideAction
 
 
 @dataclass(frozen=True, init=False)
 class InterventionActionGenerator:
-    """Deterministic exported graph that generates a delta for current frames."""
+    """Deterministic exported graph over a complete intervention context."""
 
     _artifact: bytes
     _shape: tuple[int, ...]
     _dtype: torch.dtype
+    intervention_type: ObservationInterventionType
+    action_reason: str | None
     generator_digest: str
 
     def __init__(self) -> None:
@@ -698,72 +979,380 @@ class InterventionActionGenerator:
     def from_model(
         cls,
         model: nn.Module,
-        example_frames: Tensor,
+        example_context: InterventionInputContext,
+        *,
+        intervention_type: ObservationInterventionType,
+        action_reason: str | None = None,
     ) -> InterventionActionGenerator:
         if not isinstance(model, nn.Module) or model.training:
             raise ValueError("action generator must be an eval-mode nn.Module")
-        if not example_frames.is_floating_point():
-            raise TypeError("action generator example must be floating Tensor data")
-        canonical_frames = torch.zeros_like(example_frames)
-        program = torch.export.export(model, (canonical_frames,))
+        example_tensor = example_context.generator_tensor()
+        canonical_context = torch.zeros_like(example_tensor)
+        program = torch.export.export(model, (canonical_context,))
         stream = io.BytesIO()
         torch.export.save(program, stream)
         result = object.__new__(cls)
         artifact = stream.getvalue()
-        shape = tuple(example_frames.shape)
-        dtype = example_frames.dtype
+        shape = tuple(example_tensor.shape)
+        dtype = example_tensor.dtype
+        if intervention_type not in _ACTION_CONTRACT_BY_TYPE:
+            raise ValueError("unsupported action-generator intervention type")
+        if intervention_type != "realized_sensor_correction" and (
+            not action_reason or action_reason.strip() != action_reason
+        ):
+            raise ValueError("QC and override generators require a canonical reason")
         object.__setattr__(result, "_artifact", artifact)
         object.__setattr__(result, "_shape", shape)
         object.__setattr__(result, "_dtype", dtype)
+        object.__setattr__(result, "intervention_type", intervention_type)
+        object.__setattr__(result, "action_reason", action_reason)
         object.__setattr__(result, "generator_digest", json_digest(
             {
-                "contract": "exported-intervention-action-generator-v1",
+                "contract": "exported-intervention-action-generator-v2",
                 "artifact": artifact.hex(),
                 "shape": list(shape),
                 "dtype": str(dtype),
+                "intervention_type": intervention_type,
+                "action_reason": action_reason,
             }
         ))
         # Construction validates the exported graph even when the canonical
         # zero input is outside the policy's live applicability region.
-        result._run(canonical_frames, require_applicable=False)
+        result._run(canonical_context, require_applicable=False)
         return result
 
-    def generate(self, frames: Tensor) -> Tensor:
-        return self._run(frames, require_applicable=True)
+    def generate(self, context: InterventionInputContext) -> InterventionAction:
+        expected_digest = json_digest(
+            {
+                "contract": "exported-intervention-action-generator-v2",
+                "artifact": self._artifact.hex(),
+                "shape": list(self._shape),
+                "dtype": str(self._dtype),
+                "intervention_type": self.intervention_type,
+                "action_reason": self.action_reason,
+            }
+        )
+        if expected_digest != self.generator_digest:
+            raise ValueError("action generator artifact digest mismatch")
+        return self._run(context.generator_tensor(), require_applicable=True)
 
-    def _run(self, frames: Tensor, *, require_applicable: bool) -> Tensor:
-        if tuple(frames.shape) != self._shape or frames.dtype != self._dtype:
+    @property
+    def artifact_bytes(self) -> bytes:
+        """Return an immutable copy for durable trusted replay."""
+
+        return bytes(self._artifact)
+
+    @classmethod
+    def from_artifact(
+        cls,
+        *,
+        artifact: bytes,
+        shape: tuple[int, ...],
+        dtype: torch.dtype,
+        intervention_type: ObservationInterventionType,
+        action_reason: str | None,
+        generator_digest: str,
+    ) -> InterventionActionGenerator:
+        """Rebuild and rehash an exported generator retained by the ledger."""
+
+        result = object.__new__(cls)
+        object.__setattr__(result, "_artifact", bytes(artifact))
+        object.__setattr__(result, "_shape", tuple(shape))
+        object.__setattr__(result, "_dtype", dtype)
+        object.__setattr__(result, "intervention_type", intervention_type)
+        object.__setattr__(result, "action_reason", action_reason)
+        object.__setattr__(result, "generator_digest", generator_digest)
+        expected = json_digest(
+            {
+                "contract": "exported-intervention-action-generator-v2",
+                "artifact": bytes(artifact).hex(),
+                "shape": list(shape),
+                "dtype": str(dtype),
+                "intervention_type": intervention_type,
+                "action_reason": action_reason,
+            }
+        )
+        if expected != generator_digest:
+            raise ValueError("durable action generator artifact changed")
+        return result
+
+    def replay(self, context_tensor: Tensor) -> InterventionAction:
+        """Run a previously retained canonical context during audit."""
+
+        expected = InterventionActionGenerator.from_artifact(
+            artifact=self._artifact,
+            shape=self._shape,
+            dtype=self._dtype,
+            intervention_type=self.intervention_type,
+            action_reason=self.action_reason,
+            generator_digest=self.generator_digest,
+        )
+        return expected._run(context_tensor, require_applicable=True)
+
+    def _run(
+        self,
+        context_tensor: Tensor,
+        *,
+        require_applicable: bool,
+    ) -> InterventionAction:
+        if tuple(context_tensor.shape) != self._shape or context_tensor.dtype != self._dtype:
             raise ValueError("action generator input contract changed")
         program = torch.export.load(io.BytesIO(self._artifact))
         module = program.module()
-        first = module(frames)
-        second = module(frames)
-        if (
-            not isinstance(first, tuple)
-            or len(first) != 2
-            or not isinstance(second, tuple)
-            or len(second) != 2
-        ):
-            raise ValueError("action generator must return delta and applicability")
-        delta, applicable = first
-        second_delta, second_applicable = second
-        if (
-            not isinstance(delta, Tensor)
-            or delta.shape != frames.shape
-            or not delta.is_floating_point()
-            or not bool(torch.all(torch.isfinite(delta)))
-            or not isinstance(applicable, Tensor)
-            or applicable.numel() != 1
-            or applicable.dtype is not torch.bool
-            or not isinstance(second_delta, Tensor)
-            or not isinstance(second_applicable, Tensor)
-            or not torch.equal(delta, second_delta)
-            or not torch.equal(applicable, second_applicable)
-        ):
+        first = module(context_tensor)
+        second = module(context_tensor)
+        if not isinstance(first, tuple) or not isinstance(second, tuple):
+            raise ValueError("action generator output must be a tuple")
+        if len(first) != len(second) or any(
+            not isinstance(value, Tensor) for value in first + second
+        ) or any(not torch.equal(a, b) for a, b in zip(first, second, strict=True)):
             raise ValueError("action generator output is invalid or nondeterministic")
+        applicable = first[-1]
+        if applicable.numel() != 1 or applicable.dtype is not torch.bool:
+            raise ValueError("action applicability must be one boolean")
         if require_applicable and not bool(applicable.item()):
             raise ValueError("current input is outside the action policy applicability")
-        return delta.detach().clone()
+        frame_shape = context_tensor.shape[1:]
+        if self.intervention_type == "realized_sensor_correction":
+            if len(first) != 2:
+                raise ValueError("dBZ generator must return delta and applicability")
+            delta = first[0]
+            if delta.shape != frame_shape or not delta.is_floating_point() or not bool(
+                torch.all(torch.isfinite(delta))
+            ):
+                raise ValueError("dBZ action delta is invalid")
+            return DbzCorrectionAction(delta.detach().clone())
+        if len(first) != 3:
+            raise ValueError("QC/override generator must return two fields and applicability")
+        primary, secondary, _ = first
+        if self.intervention_type == "realized_qc_intervention":
+            if primary.shape != frame_shape or primary.dtype is not torch.bool:
+                raise ValueError("QC action mask is invalid")
+            if secondary.shape != frame_shape or not secondary.is_floating_point() or not bool(
+                torch.all(torch.isfinite(secondary))
+            ):
+                raise ValueError("QC action quality weights are invalid")
+            return QcMaskAction(
+                primary.detach().clone(),
+                secondary.detach().clone(),
+                self.action_reason or "",
+            )
+        if primary.shape != frame_shape or not primary.is_floating_point() or not bool(
+            torch.all(torch.isfinite(primary))
+        ) or secondary.shape != frame_shape or secondary.dtype is not torch.bool:
+            raise ValueError("operator override output is invalid")
+        return OperatorOverrideAction(
+            primary.detach().clone(),
+            secondary.detach().clone(),
+            self.action_reason or "",
+        )
+
+
+@dataclass(frozen=True)
+class ActionSafetyDiagnostics:
+    changed_pixel_count: int
+    changed_fraction: float
+    changed_area_km2: float
+    global_whitened_l2: float
+    maximum_tile_whitened_l2: float
+    quality_weight_l2: float
+    minimum_input_floor_margin_dbz: float
+    minimum_input_ceiling_margin_dbz: float
+    changed_invalid_pixel_count: int
+    diagnostics_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        values = {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "diagnostics_digest"
+        }
+        payload = {"contract": "action-safety-diagnostics-v1", **values}
+        object.__setattr__(
+            self,
+            "diagnostics_digest",
+            json_digest(payload),
+        )
+
+    @property
+    def json(self) -> str:
+        values = {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "diagnostics_digest"
+        }
+        return json.dumps(
+            {"contract": "action-safety-diagnostics-v1", **values},
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+
+
+def _maximum_tile_l2(value: Tensor, tile_size: int) -> float:
+    maximum = 0.0
+    for row in range(0, value.shape[-2], tile_size):
+        for column in range(0, value.shape[-1], tile_size):
+            tile = value[..., row : row + tile_size, column : column + tile_size]
+            maximum = max(maximum, float(torch.linalg.vector_norm(tile)))
+    return maximum
+
+
+def _action_changed_mask(
+    action: InterventionAction,
+    context: InterventionInputContext,
+) -> Tensor:
+    if isinstance(action, DbzCorrectionAction):
+        return action.delta_dbz != 0.0
+    if isinstance(action, QcMaskAction):
+        return (action.valid_mask_after != context._observation_masks) | (
+            action.quality_weight_after != context._quality_weight
+        )
+    return action.override_mask
+
+
+def _validate_action_safety(
+    action: InterventionAction,
+    context: InterventionInputContext,
+    run: ForecastRunContract,
+    policy: ReusableInterventionPolicyEvidence,
+) -> ActionSafetyDiagnostics:
+    expected_contract = _ACTION_CONTRACT_BY_TYPE[action_type(action)]
+    if action.contract != expected_contract:
+        raise ValueError("intervention type and action contract disagree")
+    changed = _action_changed_mask(action, context)
+    if bool(torch.any(changed & ~context._applicability_mask)):
+        raise ValueError("generated action leaves its applicability region")
+    count = int(torch.count_nonzero(changed))
+    changed_fraction = count / changed.numel()
+    union = torch.any(changed, dim=0)
+    changed_invalid = int(
+        torch.count_nonzero(changed & ~context._observation_masks)
+    )
+    grid = run.grid_time_contract
+    if grid is None:
+        raise ValueError("prospective action safety requires a physical grid")
+    area_km2 = float(torch.count_nonzero(union)) * grid.cell_area_m2 / 1.0e6
+    delta = torch.zeros_like(context._frames_dbz)
+    quality_delta = torch.zeros_like(context._quality_weight)
+    if isinstance(action, DbzCorrectionAction):
+        delta = action.delta_dbz.to(delta)
+    elif isinstance(action, QcMaskAction):
+        if bool(torch.any(action.valid_mask_after & ~context._observation_masks)):
+            raise ValueError("QC action cannot create observations from invalid pixels")
+        if bool(torch.any((action.quality_weight_after < 0.0) | (action.quality_weight_after > 1.0))):
+            raise ValueError("QC action quality weights must be inside [0, 1]")
+        if bool(torch.any(action.quality_weight_after.masked_select(~action.valid_mask_after) != 0.0)):
+            raise ValueError("QC-rejected observations must have zero quality weight")
+        quality_delta = action.quality_weight_after.to(quality_delta) - context._quality_weight
+    else:
+        delta = torch.where(
+            action.override_mask,
+            action.replacement_dbz.to(delta) - context._frames_dbz,
+            torch.zeros_like(delta),
+        )
+    if changed_invalid and not isinstance(action, QcMaskAction):
+        raise ValueError("dBZ actions cannot change invalid observations")
+    finite = torch.isfinite(context._frames_dbz)
+    if bool(torch.any((delta != 0.0) & ~finite)):
+        raise ValueError("dBZ actions must be zero at non-finite observations")
+    changed_dbz = context._frames_dbz + delta
+    changed_values = changed_dbz.masked_select((delta != 0.0) & finite)
+    if changed_values.numel() and bool(
+        torch.any(
+            (changed_values < run.config.min_dbz)
+            | (changed_values > run.config.max_dbz)
+        )
+    ):
+        raise ValueError("action crosses the physical radar input clamp")
+    whitened = (
+        delta
+        * torch.sqrt(context._quality_weight)
+        / context._observation_std_dbz
+    )
+    global_norm = float(torch.linalg.vector_norm(whitened))
+    tile_norm = _maximum_tile_l2(whitened, policy.perturbation_tile_size)
+    quality_norm = float(torch.linalg.vector_norm(quality_delta))
+    if delta.numel():
+        maximum_delta = float(torch.amax(torch.abs(delta)))
+    else:
+        maximum_delta = 0.0
+    limits = (
+        (maximum_delta, policy.maximum_absolute_delta_dbz, "per-pixel dBZ"),
+        (count, policy.maximum_changed_pixel_count, "changed-pixel"),
+        (changed_fraction, policy.maximum_changed_fraction, "changed-fraction"),
+        (area_km2, policy.maximum_changed_area_km2, "changed-area"),
+        (global_norm, policy.maximum_global_whitened_l2, "global whitened"),
+        (tile_norm, policy.maximum_tile_whitened_l2, "tile whitened"),
+        (quality_norm, policy.maximum_quality_weight_l2, "quality-weight"),
+    )
+    for actual, maximum, name in limits:
+        if actual > maximum:
+            raise ValueError(f"generated action exceeds its {name} safety limit")
+    finite_frames = changed_dbz.masked_select(finite)
+    floor_margin = (
+        float(torch.amin(finite_frames - run.config.min_dbz))
+        if finite_frames.numel()
+        else float("inf")
+    )
+    ceiling_margin = (
+        float(torch.amin(run.config.max_dbz - finite_frames))
+        if finite_frames.numel()
+        else float("inf")
+    )
+    return ActionSafetyDiagnostics(
+        changed_pixel_count=count,
+        changed_fraction=changed_fraction,
+        changed_area_km2=area_km2,
+        global_whitened_l2=global_norm,
+        maximum_tile_whitened_l2=tile_norm,
+        quality_weight_l2=quality_norm,
+        minimum_input_floor_margin_dbz=floor_margin,
+        minimum_input_ceiling_margin_dbz=ceiling_margin,
+        changed_invalid_pixel_count=changed_invalid,
+    )
+
+
+def action_type(action: InterventionAction) -> ObservationInterventionType:
+    if isinstance(action, DbzCorrectionAction):
+        return "realized_sensor_correction"
+    if isinstance(action, QcMaskAction):
+        return "realized_qc_intervention"
+    return "operator_override"
+
+
+def validate_action_tensor_replay(
+    action: InterventionAction,
+    *,
+    before_frames: Tensor,
+    before_masks: Tensor,
+    before_quality_weight: Tensor,
+    after_frames: Tensor,
+    after_masks: Tensor,
+    after_quality_weight: Tensor,
+) -> None:
+    """Verify the typed action's exact tensor transition, including NaNs."""
+
+    expected_frames = before_frames
+    expected_masks = before_masks
+    expected_quality = before_quality_weight
+    if isinstance(action, DbzCorrectionAction):
+        expected_frames = before_frames + action.delta_dbz.to(before_frames)
+    elif isinstance(action, QcMaskAction):
+        expected_masks = action.valid_mask_after
+        expected_quality = action.quality_weight_after.to(before_quality_weight)
+    else:
+        expected_frames = torch.where(
+            action.override_mask,
+            action.replacement_dbz.to(before_frames),
+            before_frames,
+        )
+    if not _same_tensor_with_nan(expected_frames, after_frames):
+        raise ValueError("receipt after-input is not the approved action result")
+    if not torch.equal(expected_masks, after_masks) or not torch.equal(
+        expected_quality,
+        after_quality_weight,
+    ):
+        raise ValueError("receipt after-QC state is not the approved action result")
 
 
 @dataclass(frozen=True)
@@ -778,10 +1367,19 @@ class ReusableInterventionPolicyEvidence:
     allowed_intervention_types: tuple[ObservationInterventionType, ...]
     maximum_absolute_delta_dbz: float
     validation_evidence_digests: tuple[str, ...]
-    contract: str = "reusable-intervention-policy-evidence-v1"
+    maximum_changed_pixel_count: int = 4096
+    maximum_changed_fraction: float = 0.05
+    maximum_changed_area_km2: float = 256.0
+    maximum_global_whitened_l2: float = 8.0
+    maximum_tile_whitened_l2: float = 4.0
+    maximum_quality_weight_l2: float = 1.0
+    perturbation_tile_size: int = 16
+    contract: str = "reusable-intervention-policy-evidence-v2"
     policy_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
+        if self.contract != "reusable-intervention-policy-evidence-v2":
+            raise ValueError("unsupported reusable intervention policy")
         if not self.policy_id or self.policy_id.strip() != self.policy_id:
             raise ValueError("reusable intervention policy ID must be canonical")
         for name in (
@@ -795,14 +1393,32 @@ class ReusableInterventionPolicyEvidence:
             raise ValueError("reusable intervention policy requires validation")
         for digest in self.validation_evidence_digests:
             _require_digest("validation evidence digest", digest)
-        if not self.allowed_intervention_types or len(
-            set(self.allowed_intervention_types)
-        ) != len(self.allowed_intervention_types):
-            raise ValueError("reusable intervention types must be unique")
+        if len(self.allowed_intervention_types) != 1:
+            raise ValueError("one reusable policy must have exactly one action type")
+        if self.allowed_intervention_types[0] not in _ACTION_CONTRACT_BY_TYPE:
+            raise ValueError("unsupported reusable intervention type")
         if not math.isfinite(self.maximum_absolute_delta_dbz) or (
             self.maximum_absolute_delta_dbz <= 0.0
         ):
             raise ValueError("reusable intervention delta limit must be positive")
+        if type(self.maximum_changed_pixel_count) is not int or (
+            self.maximum_changed_pixel_count <= 0
+        ):
+            raise ValueError("changed-pixel limit must be positive")
+        if type(self.perturbation_tile_size) is not int or self.perturbation_tile_size <= 0:
+            raise ValueError("action tile size must be positive")
+        for name in (
+            "maximum_changed_fraction",
+            "maximum_changed_area_km2",
+            "maximum_global_whitened_l2",
+            "maximum_tile_whitened_l2",
+            "maximum_quality_weight_l2",
+        ):
+            value = getattr(self, name)
+            if not math.isfinite(value) or value <= 0.0:
+                raise ValueError(f"{name} must be finite and positive")
+        if self.maximum_changed_fraction > 1.0:
+            raise ValueError("changed-fraction limit must not exceed one")
         object.__setattr__(
             self,
             "policy_digest",
@@ -840,8 +1456,11 @@ class ProspectiveInterventionDecision:
     action_context_digest: str
     action_payload_digest: str
     action_application_contract_digest: str
+    action_safety_diagnostics_digest: str
+    action_safety_diagnostics_json: str
     action_digest: str
     input_plan_digest: str
+    input_plan_resolution_digest: str
     actual_input_before_frames_digest: str
     actual_input_before_bundle_digest: str
     decision_basis_digest: str
@@ -852,13 +1471,15 @@ class ProspectiveInterventionDecision:
     input_available_time: str
     decision_deadline: str
     publication_time: str
-    contract: str = "prospective-intervention-decision-v2"
+    contract: str = "prospective-intervention-decision-v3"
     decision_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use ProspectiveInterventionDecision.from_policy")
 
     def __post_init__(self) -> None:
+        if self.contract != "prospective-intervention-decision-v3":
+            raise ValueError("unsupported prospective intervention decision")
         for name in ("decision_id", "case_id", "radar_id"):
             value = getattr(self, name)
             if not isinstance(value, str) or not value or value.strip() != value:
@@ -875,8 +1496,10 @@ class ProspectiveInterventionDecision:
             "action_context_digest",
             "action_payload_digest",
             "action_application_contract_digest",
+            "action_safety_diagnostics_digest",
             "action_digest",
             "input_plan_digest",
+            "input_plan_resolution_digest",
             "actual_input_before_frames_digest",
             "actual_input_before_bundle_digest",
             "decision_basis_digest",
@@ -891,19 +1514,39 @@ class ProspectiveInterventionDecision:
         publication = _canonical_time(self.publication_time)
         if not valid <= available <= decided <= deadline < publication:
             raise ValueError("prospective decision time order is invalid")
-        if self.action_application_contract_digest != (
-            _ACTION_APPLICATION_CONTRACT_DIGEST
-        ):
+        expected_contract_digest = _action_contract_digest(
+            _ACTION_CONTRACT_BY_TYPE[self.intervention_type]
+        )
+        if self.action_application_contract_digest != expected_contract_digest:
             raise ValueError("unsupported action application contract")
+        try:
+            diagnostics = json.loads(self.action_safety_diagnostics_json)
+        except json.JSONDecodeError as error:
+            raise ValueError("action safety diagnostics are invalid JSON") from error
+        canonical_diagnostics = json.dumps(
+            diagnostics,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        if (
+            not isinstance(diagnostics, dict)
+            or diagnostics.get("contract") != "action-safety-diagnostics-v1"
+            or canonical_diagnostics != self.action_safety_diagnostics_json
+            or json_digest(diagnostics) != self.action_safety_diagnostics_digest
+        ):
+            raise ValueError("action safety diagnostics do not match their digest")
         expected_action = json_digest(
             {
-                "contract": "generated-radar-action-v1",
+                "contract": "generated-radar-action-v2",
                 "action_policy_digest": self.action_policy_digest,
                 "action_generator_digest": self.action_generator_digest,
                 "action_context_digest": self.action_context_digest,
                 "action_payload_digest": self.action_payload_digest,
                 "action_application_contract_digest": (
                     self.action_application_contract_digest
+                ),
+                "action_safety_diagnostics_digest": (
+                    self.action_safety_diagnostics_digest
                 ),
             }
         )
@@ -936,7 +1579,7 @@ class ProspectiveInterventionDecision:
         case_id: str,
         radar_id: str,
         intervention_type: ObservationInterventionType,
-        actual_input_before_frames: Tensor,
+        actual_input_context: InterventionInputContext,
         actual_input_before_run: ForecastRunContract,
         input_plan_digest: str,
         decision_basis_digest: str,
@@ -952,44 +1595,91 @@ class ProspectiveInterventionDecision:
 
         policy.validate_integrity()
         actual_input_before_run.validate_integrity()
-        if tensor_digest(actual_input_before_frames) != (
-            actual_input_before_run.input_frames_digest
-        ):
-            raise ValueError("decision frames disagree with the current input run")
+        if actual_input_context.input_bundle_digest != actual_input_before_run.input_bundle_digest:
+            raise ValueError("decision context disagrees with the current input run")
+        if actual_input_context.radar_id != radar_id:
+            raise ValueError("decision radar disagrees with the action context")
         if actual_input_before_run.input_plan_digest != input_plan_digest:
             raise ValueError("decision input plan disagrees with the current run")
+        if actual_input_before_run.input_plan_resolution_digest != (
+            actual_input_context.input_plan_resolution_digest
+        ):
+            raise ValueError("decision input-plan resolution disagrees with the run")
+        if actual_input_before_run.input_plan_json is None:
+            raise ValueError("prospective decision requires input-plan JSON")
+        try:
+            plan = json.loads(actual_input_before_run.input_plan_json)
+        except json.JSONDecodeError as error:
+            raise ValueError("prospective input plan is invalid JSON") from error
+        if not isinstance(plan, dict) or plan.get("contract") != "neural-prior-input-plan-v2":
+            raise ValueError("prospective decision requires a causal v2 input plan")
+        plan_times = {
+            name: _canonical_time(str(plan.get(name, "")))
+            for name in (
+                "observation_valid_time",
+                "input_available_time",
+                "decision_deadline",
+                "publication_time",
+            )
+        }
+        supplied_times = {
+            "observation_valid_time": _canonical_time(observation_valid_time),
+            "input_available_time": _canonical_time(input_available_time),
+            "decision_deadline": _canonical_time(decision_deadline),
+            "publication_time": _canonical_time(publication_time),
+        }
+        if supplied_times != plan_times:
+            raise ValueError("decision times disagree with the resolved input plan")
         if intervention_type not in policy.allowed_intervention_types:
             raise ValueError("intervention type is outside the reusable policy")
+        if policy.context_schema_digest != actual_input_context.context_schema_digest:
+            raise ValueError("action context schema is outside the reusable policy")
+        if (
+            policy.applicability_region_digest
+            != actual_input_context.applicability_region_digest
+        ):
+            raise ValueError("action context is outside the approved region")
         if action_generator.generator_digest != policy.action_generator_digest:
             raise ValueError("action generator is outside the reusable policy")
-        action_delta_dbz = action_generator.generate(actual_input_before_frames)
-        if float(torch.amax(torch.abs(action_delta_dbz)).detach()) > (
-            policy.maximum_absolute_delta_dbz
-        ):
-            raise ValueError("generated action exceeds its reusable policy")
+        if action_generator.intervention_type != intervention_type:
+            raise ValueError("action generator type disagrees with the intervention")
+        action = action_generator.generate(actual_input_context)
+        diagnostics = _validate_action_safety(
+            action,
+            actual_input_context,
+            actual_input_before_run,
+            policy,
+        )
         context_digest = json_digest(
             {
-                "contract": "intervention-action-context-v1",
+                "contract": "intervention-action-context-v2",
                 "case_id": case_id,
                 "radar_id": radar_id,
                 "input_plan_digest": input_plan_digest,
+                "input_plan_resolution_digest": (
+                    actual_input_context.input_plan_resolution_digest
+                ),
                 "input_bundle_digest": actual_input_before_run.input_bundle_digest,
-                "input_frames_digest": tensor_digest(actual_input_before_frames),
+                "intervention_input_context_digest": (
+                    actual_input_context.context_digest
+                ),
                 "context_schema_digest": policy.context_schema_digest,
                 "applicability_region_digest": policy.applicability_region_digest,
             }
         )
-        payload_digest = tensor_digest(action_delta_dbz)
+        payload_digest = action.payload_digest
+        application_digest = _action_contract_digest(action.contract)
         action_digest = json_digest(
             {
-                "contract": "generated-radar-action-v1",
+                "contract": "generated-radar-action-v2",
                 "action_policy_digest": policy.policy_digest,
                 "action_generator_digest": policy.action_generator_digest,
                 "action_context_digest": context_digest,
                 "action_payload_digest": payload_digest,
                 "action_application_contract_digest": (
-                    _ACTION_APPLICATION_CONTRACT_DIGEST
+                    application_digest
                 ),
+                "action_safety_diagnostics_digest": diagnostics.diagnostics_digest,
             }
         )
         return _new_prospective_decision(
@@ -1001,11 +1691,16 @@ class ProspectiveInterventionDecision:
             action_generator_digest=policy.action_generator_digest,
             action_context_digest=context_digest,
             action_payload_digest=payload_digest,
-            action_application_contract_digest=_ACTION_APPLICATION_CONTRACT_DIGEST,
+            action_application_contract_digest=application_digest,
+            action_safety_diagnostics_digest=diagnostics.diagnostics_digest,
+            action_safety_diagnostics_json=diagnostics.json,
             action_digest=action_digest,
             input_plan_digest=input_plan_digest,
+            input_plan_resolution_digest=(
+                actual_input_context.input_plan_resolution_digest
+            ),
             actual_input_before_frames_digest=tensor_digest(
-                actual_input_before_frames
+                actual_input_context._frames_dbz
             ),
             actual_input_before_bundle_digest=(
                 actual_input_before_run.input_bundle_digest
@@ -1014,10 +1709,10 @@ class ProspectiveInterventionDecision:
             decision_policy_digest=decision_policy_digest,
             decision_trust_store_digest=decision_trust_store_digest,
             decided_at=decided_at,
-            observation_valid_time=observation_valid_time,
-            input_available_time=input_available_time,
-            decision_deadline=decision_deadline,
-            publication_time=publication_time,
+            observation_valid_time=plan_times["observation_valid_time"],
+            input_available_time=plan_times["input_available_time"],
+            decision_deadline=plan_times["decision_deadline"],
+            publication_time=plan_times["publication_time"],
         )
 
 
@@ -1032,12 +1727,21 @@ class RealizedInterventionReceipt:
     intervention_type: ObservationInterventionType
     action_digest: str
     input_plan_digest: str
+    input_plan_resolution_digest: str
     actual_input_before_frames_digest: str
     actual_input_after_frames_digest: str
+    actual_input_before_masks_digest: str
+    actual_input_after_masks_digest: str
+    actual_quality_weight_before_digest: str
+    actual_quality_weight_after_digest: str
     actual_input_before_bundle_digest: str
     actual_input_bundle_digest: str
+    fixed_input_context_before_digest: str
+    fixed_input_context_after_digest: str
     action_payload_digest: str
     action_application_contract_digest: str
+    action_safety_diagnostics_digest: str
+    action_artifact_digest: str
     executor_key_id: str
     executor_trust_store_digest: str
     executor_signature: str
@@ -1047,13 +1751,15 @@ class RealizedInterventionReceipt:
     input_available_time: str
     publication_time: str
     executor_sequence_number: int
-    contract: str = "realized-intervention-receipt-v2"
+    contract: str = "realized-intervention-receipt-v3"
     receipt_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use RealizedInterventionReceipt.from_decision")
 
     def __post_init__(self) -> None:
+        if self.contract != "realized-intervention-receipt-v3":
+            raise ValueError("unsupported realized intervention receipt")
         for name in ("decision_id", "case_id", "radar_id"):
             value = getattr(self, name)
             if not isinstance(value, str) or not value or value.strip() != value:
@@ -1062,12 +1768,21 @@ class RealizedInterventionReceipt:
             "decision_digest",
             "action_digest",
             "input_plan_digest",
+            "input_plan_resolution_digest",
             "actual_input_before_frames_digest",
             "actual_input_after_frames_digest",
+            "actual_input_before_masks_digest",
+            "actual_input_after_masks_digest",
+            "actual_quality_weight_before_digest",
+            "actual_quality_weight_after_digest",
             "actual_input_before_bundle_digest",
             "actual_input_bundle_digest",
+            "fixed_input_context_before_digest",
+            "fixed_input_context_after_digest",
             "action_payload_digest",
             "action_application_contract_digest",
+            "action_safety_diagnostics_digest",
+            "action_artifact_digest",
             "executor_trust_store_digest",
         ):
             _require_digest(name, getattr(self, name))
@@ -1080,6 +1795,10 @@ class RealizedInterventionReceipt:
         if (
             self.actual_input_before_frames_digest
             == self.actual_input_after_frames_digest
+            and self.actual_input_before_masks_digest
+            == self.actual_input_after_masks_digest
+            and self.actual_quality_weight_before_digest
+            == self.actual_quality_weight_after_digest
         ):
             raise ValueError("realized intervention receipt must change input")
         if self.actual_input_before_bundle_digest == self.actual_input_bundle_digest:
@@ -1117,9 +1836,9 @@ class RealizedInterventionReceipt:
         cls,
         decision: ProspectiveInterventionDecision,
         *,
-        actual_input_before_frames: Tensor,
+        actual_input_before_context: InterventionInputContext,
         actual_input_before_run: ForecastRunContract,
-        actual_input_after_frames: Tensor,
+        actual_input_after_context: InterventionInputContext,
         actual_input_after_run: ForecastRunContract,
         action_generator: InterventionActionGenerator,
         executor_key_id: str,
@@ -1129,16 +1848,20 @@ class RealizedInterventionReceipt:
         applied_time: str,
         receipt_time: str,
     ) -> RealizedInterventionReceipt:
-        before_digest, frames_digest = validate_intervention_action_transition(
+        transition = validate_intervention_action_transition(
             decision,
             action_generator=action_generator,
-            actual_input_before_frames=actual_input_before_frames,
+            actual_input_before_context=actual_input_before_context,
             actual_input_before_run=actual_input_before_run,
-            actual_input_after_frames=actual_input_after_frames,
+            actual_input_after_context=actual_input_after_context,
             actual_input_after_run=actual_input_after_run,
         )
         applied = _canonical_time(applied_time)
         received = _canonical_time(receipt_time)
+        before_fixed_context = actual_input_before_run.fixed_input_context_digest
+        after_fixed_context = actual_input_after_run.fixed_input_context_digest
+        if before_fixed_context is None or after_fixed_context is None:
+            raise ValueError("prospective receipt requires complete fixed input context")
         values: dict[str, str | int] = dict(
             decision_digest=decision.decision_digest,
             decision_id=decision.decision_id,
@@ -1147,16 +1870,29 @@ class RealizedInterventionReceipt:
             intervention_type=decision.intervention_type,
             action_digest=decision.action_digest,
             input_plan_digest=decision.input_plan_digest,
-            actual_input_before_frames_digest=before_digest,
-            actual_input_after_frames_digest=frames_digest,
+            input_plan_resolution_digest=decision.input_plan_resolution_digest,
+            actual_input_before_frames_digest=transition.before_frames_digest,
+            actual_input_after_frames_digest=transition.after_frames_digest,
+            actual_input_before_masks_digest=transition.before_masks_digest,
+            actual_input_after_masks_digest=transition.after_masks_digest,
+            actual_quality_weight_before_digest=(
+                transition.before_quality_weight_digest
+            ),
+            actual_quality_weight_after_digest=transition.after_quality_weight_digest,
             actual_input_before_bundle_digest=(
                 actual_input_before_run.input_bundle_digest
             ),
             actual_input_bundle_digest=actual_input_after_run.input_bundle_digest,
+            fixed_input_context_before_digest=before_fixed_context,
+            fixed_input_context_after_digest=after_fixed_context,
             action_payload_digest=decision.action_payload_digest,
             action_application_contract_digest=(
                 decision.action_application_contract_digest
             ),
+            action_safety_diagnostics_digest=(
+                decision.action_safety_diagnostics_digest
+            ),
+            action_artifact_digest=transition.action_artifact_digest,
             executor_key_id=executor_key_id,
             executor_trust_store_digest=executor_trust_store_digest,
             executor_signature="",
@@ -1166,7 +1902,7 @@ class RealizedInterventionReceipt:
             input_available_time=decision.input_available_time,
             publication_time=decision.publication_time,
             executor_sequence_number=executor_sequence_number,
-            contract="realized-intervention-receipt-v2",
+            contract="realized-intervention-receipt-v3",
         )
         signature = executor_private_key.sign(
             json_digest(values).encode("ascii")
@@ -1179,16 +1915,29 @@ class RealizedInterventionReceipt:
             intervention_type=decision.intervention_type,
             action_digest=decision.action_digest,
             input_plan_digest=decision.input_plan_digest,
-            actual_input_before_frames_digest=before_digest,
-            actual_input_after_frames_digest=frames_digest,
+            input_plan_resolution_digest=decision.input_plan_resolution_digest,
+            actual_input_before_frames_digest=transition.before_frames_digest,
+            actual_input_after_frames_digest=transition.after_frames_digest,
+            actual_input_before_masks_digest=transition.before_masks_digest,
+            actual_input_after_masks_digest=transition.after_masks_digest,
+            actual_quality_weight_before_digest=(
+                transition.before_quality_weight_digest
+            ),
+            actual_quality_weight_after_digest=transition.after_quality_weight_digest,
             actual_input_before_bundle_digest=(
                 actual_input_before_run.input_bundle_digest
             ),
             actual_input_bundle_digest=actual_input_after_run.input_bundle_digest,
+            fixed_input_context_before_digest=before_fixed_context,
+            fixed_input_context_after_digest=after_fixed_context,
             action_payload_digest=decision.action_payload_digest,
             action_application_contract_digest=(
                 decision.action_application_contract_digest
             ),
+            action_safety_diagnostics_digest=(
+                decision.action_safety_diagnostics_digest
+            ),
+            action_artifact_digest=transition.action_artifact_digest,
             executor_key_id=executor_key_id,
             executor_trust_store_digest=executor_trust_store_digest,
             executor_signature=signature,
@@ -1204,7 +1953,7 @@ class RealizedInterventionReceipt:
 def _new_prospective_decision(
     **values: object,
 ) -> ProspectiveInterventionDecision:
-    values.setdefault("contract", "prospective-intervention-decision-v2")
+    values.setdefault("contract", "prospective-intervention-decision-v3")
     expected = {
         item.name
         for item in fields(ProspectiveInterventionDecision)
@@ -1219,15 +1968,26 @@ def _new_prospective_decision(
     return result
 
 
+@dataclass(frozen=True)
+class InterventionActionTransition:
+    before_frames_digest: str
+    after_frames_digest: str
+    before_masks_digest: str
+    after_masks_digest: str
+    before_quality_weight_digest: str
+    after_quality_weight_digest: str
+    action_artifact_digest: str
+
+
 def validate_intervention_action_transition(
     decision: ProspectiveInterventionDecision,
     *,
     action_generator: InterventionActionGenerator,
-    actual_input_before_frames: Tensor,
+    actual_input_before_context: InterventionInputContext,
     actual_input_before_run: ForecastRunContract,
-    actual_input_after_frames: Tensor,
+    actual_input_after_context: InterventionInputContext,
     actual_input_after_run: ForecastRunContract,
-) -> tuple[str, str]:
+) -> InterventionActionTransition:
     """Recompute the exact before/action/after transition without a private key."""
 
     expected_decision = json_digest(
@@ -1241,8 +2001,34 @@ def validate_intervention_action_transition(
         raise ValueError("prospective decision digest mismatch")
     actual_input_before_run.validate_integrity()
     actual_input_after_run.validate_integrity()
-    before_digest = tensor_digest(actual_input_before_frames)
-    after_digest = tensor_digest(actual_input_after_frames)
+    if (
+        actual_input_before_context.input_bundle_digest
+        != actual_input_before_run.input_bundle_digest
+        or actual_input_after_context.input_bundle_digest
+        != actual_input_after_run.input_bundle_digest
+    ):
+        raise ValueError("receipt context disagrees with its input run")
+    if (
+        actual_input_before_context.radar_id
+        != actual_input_after_context.radar_id
+        or actual_input_before_context.context_schema_digest
+        != actual_input_after_context.context_schema_digest
+        or actual_input_before_context.applicability_region_digest
+        != actual_input_after_context.applicability_region_digest
+        or not torch.equal(
+            actual_input_before_context._applicability_mask,
+            actual_input_after_context._applicability_mask,
+        )
+    ):
+        raise ValueError("receipt changed its radar applicability context")
+    before_frames = actual_input_before_context._frames_dbz
+    after_frames = actual_input_after_context._frames_dbz
+    before_masks = actual_input_before_context._observation_masks
+    after_masks = actual_input_after_context._observation_masks
+    before_quality = actual_input_before_context._quality_weight
+    after_quality = actual_input_after_context._quality_weight
+    before_digest = tensor_digest(before_frames)
+    after_digest = tensor_digest(after_frames)
     if (
         before_digest != decision.actual_input_before_frames_digest
         or before_digest != actual_input_before_run.input_frames_digest
@@ -1255,13 +2041,17 @@ def validate_intervention_action_transition(
     if (
         actual_input_before_run.input_plan_digest != decision.input_plan_digest
         or actual_input_after_run.input_plan_digest != decision.input_plan_digest
+        or actual_input_before_run.input_plan_resolution_digest
+        != decision.input_plan_resolution_digest
     ):
         raise ValueError("receipt runs disagree with the decision input plan")
     unchanged_run_fields = (
-        "latest_observation_mask_digest",
-        "latest_background_digest",
+        "observation_std_dbz_digest",
+        "background_frames_digest",
         "background_age_minutes",
         "grid_time_contract_digest",
+        "operational_calibration_manifest_digest",
+        "operational_calibration_approval_digest",
         "operational_data_identity_digest",
     )
     if (
@@ -1276,21 +2066,59 @@ def validate_intervention_action_transition(
         raise ValueError("receipt changed non-radar input state")
     if action_generator.generator_digest != decision.action_generator_digest:
         raise ValueError("receipt action generator disagrees with its decision")
-    action_delta_dbz = action_generator.generate(actual_input_before_frames)
-    if tensor_digest(action_delta_dbz) != decision.action_payload_digest:
+    action = action_generator.generate(actual_input_before_context)
+    if action.payload_digest != decision.action_payload_digest:
         raise ValueError("receipt action payload disagrees with its decision")
-    expected_after = actual_input_before_frames + action_delta_dbz.to(
-        actual_input_before_frames
+    if action_type(action) != decision.intervention_type:
+        raise ValueError("receipt action type disagrees with its decision")
+    validate_action_tensor_replay(
+        action,
+        before_frames=before_frames,
+        before_masks=before_masks,
+        before_quality_weight=before_quality,
+        after_frames=after_frames,
+        after_masks=after_masks,
+        after_quality_weight=after_quality,
     )
-    if not torch.equal(expected_after, actual_input_after_frames):
-        raise ValueError("receipt after-input is not the approved action result")
-    return before_digest, after_digest
+    if isinstance(action, QcMaskAction):
+        if actual_input_before_run.fixed_input_context_digest == (
+            actual_input_after_run.fixed_input_context_digest
+        ):
+            raise ValueError("QC receipt did not change its fixed input context")
+    elif actual_input_before_run.fixed_input_context_digest != (
+        actual_input_after_run.fixed_input_context_digest
+    ):
+        raise ValueError("receipt changed non-radar input state")
+    action_artifact_digest = json_digest(
+        {
+            "contract": "intervention-action-artifact-v1",
+            "generator_digest": action_generator.generator_digest,
+            "before_context_digest": actual_input_before_context.context_digest,
+            "after_context_digest": actual_input_after_context.context_digest,
+            "action_payload_digest": action.payload_digest,
+            "before_frames_digest": before_digest,
+            "after_frames_digest": after_digest,
+            "before_masks_digest": tensor_digest(before_masks),
+            "after_masks_digest": tensor_digest(after_masks),
+            "before_quality_weight_digest": tensor_digest(before_quality),
+            "after_quality_weight_digest": tensor_digest(after_quality),
+        }
+    )
+    return InterventionActionTransition(
+        before_frames_digest=before_digest,
+        after_frames_digest=after_digest,
+        before_masks_digest=tensor_digest(before_masks),
+        after_masks_digest=tensor_digest(after_masks),
+        before_quality_weight_digest=tensor_digest(before_quality),
+        after_quality_weight_digest=tensor_digest(after_quality),
+        action_artifact_digest=action_artifact_digest,
+    )
 
 
 def _new_realized_intervention_receipt(
     **values: object,
 ) -> RealizedInterventionReceipt:
-    values.setdefault("contract", "realized-intervention-receipt-v2")
+    values.setdefault("contract", "realized-intervention-receipt-v3")
     expected = {
         item.name
         for item in fields(RealizedInterventionReceipt)
@@ -1360,12 +2188,20 @@ def validate_prospective_intervention(
         ),
         (receipt.input_plan_digest, decision.input_plan_digest),
         (
+            receipt.input_plan_resolution_digest,
+            decision.input_plan_resolution_digest,
+        ),
+        (
             receipt.actual_input_before_frames_digest,
             decision.actual_input_before_frames_digest,
         ),
         (
             receipt.actual_input_before_bundle_digest,
             decision.actual_input_before_bundle_digest,
+        ),
+        (
+            receipt.action_safety_diagnostics_digest,
+            decision.action_safety_diagnostics_digest,
         ),
         (receipt.observation_valid_time, decision.observation_valid_time),
         (receipt.input_available_time, decision.input_available_time),

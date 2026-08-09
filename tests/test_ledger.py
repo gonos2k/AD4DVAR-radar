@@ -24,11 +24,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from advar._digest import json_digest, tensor_digest  # noqa: E402
 from advar.ledger import (  # noqa: E402
     EpisodeLedger,
+    LegacyProspectiveInterventionDecisionAudit,
+    LegacyRealizedInterventionReceiptAudit,
     ModelContract,
     SensitivityEpisode,
 )
 from advar.intervention import (  # noqa: E402
     InterventionActionGenerator,
+    InterventionInputContext,
+    OperatorOverrideAction,
+    QcMaskAction,
     ProspectiveInterventionDecision,
     ReusableInterventionPolicyEvidence,
     RealizedInterventionReceipt,
@@ -38,12 +43,16 @@ from advar.intervention import (  # noqa: E402
 from advar.promotion import (  # noqa: E402
     LegacyNeuralPriorHoldoutPlanAudit,
     LegacyNeuralPriorHoldoutPlanCase,
+    LegacyNeuralPriorHoldoutPlanV2Audit,
+    LegacyNeuralPriorHoldoutPlanV2Case,
+    LegacyNeuralPriorHoldoutPlanV3Audit,
     NeuralPriorCandidateManifest,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorInputPlan,
+    PriorUncertaintyTargetPlan,
     NeuralPriorPromotionPolicy,
     PromotionMetricScale,
     compute_neural_prior_promotion,
@@ -52,7 +61,16 @@ import advar.promotion as promotion_module  # noqa: E402
 from advar.nowcast import (  # noqa: E402
     ForecastRunContract,
     NowcastConfig,
+    RadarGridTimeContract,
     nowcast,
+    operational_runtime_profile_digest,
+)
+from advar.calibration import (  # noqa: E402
+    CalibrationMetric,
+    CalibrationRegime,
+    OperationalCalibrationManifest,
+    OperationalDataIdentity,
+    algorithm_bundle_digest,
 )
 from advar.sensitivity import (  # noqa: E402
     LearningApprovalEvidence,
@@ -276,21 +294,138 @@ class ModelContractTests(unittest.TestCase):
 
 
 class _AddOneAction(torch.nn.Module):
-    def forward(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        return torch.ones_like(frames), torch.tensor(True, device=frames.device)
+    def forward(self, context: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        return torch.ones_like(context[0]), torch.tensor(True, device=context.device)
 
 
 class _AddTwoAction(torch.nn.Module):
-    def forward(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, context: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return (
-            torch.ones_like(frames) * 2.0,
-            torch.tensor(True, device=frames.device),
+            torch.ones_like(context[0]) * 2.0,
+            torch.tensor(True, device=context.device),
         )
 
 
 class _NonpositiveOnlyAction(torch.nn.Module):
-    def forward(self, frames: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        return torch.ones_like(frames), torch.mean(frames) <= 0.0
+    def forward(self, context: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        return torch.ones_like(context[0]), torch.mean(context[0]) <= 0.0
+
+
+class _RejectAllQcAction(torch.nn.Module):
+    def forward(
+        self,
+        context: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        return (
+            torch.zeros_like(context[0], dtype=torch.bool),
+            torch.zeros_like(context[0]),
+            torch.tensor(True, device=context.device),
+        )
+
+
+class _ValidOnlyAddAction(torch.nn.Module):
+    def forward(self, context: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        return context[1], torch.tensor(True, device=context.device)
+
+
+class _SinglePixelOverrideAction(torch.nn.Module):
+    def forward(
+        self,
+        context: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        replacement = context[0].clone()
+        replacement[0, 0, 0] = 1.0
+        override = torch.zeros_like(context[0], dtype=torch.bool)
+        override[0, 0, 0] = True
+        return replacement, override, torch.tensor(True, device=context.device)
+
+
+def _prospective_run_and_context(
+    frames: torch.Tensor,
+    masks: torch.Tensor,
+    *,
+    valid_times: tuple[str, str, str] = (
+        "2026-08-08T00:00:00Z",
+        "2026-08-08T00:10:00Z",
+        "2026-08-08T00:20:00Z",
+    ),
+    input_available_time: str = "2026-08-08T00:21:00Z",
+    decision_deadline: str = "2099-08-08T00:30:00Z",
+    publication_time: str = "2099-08-08T01:00:00Z",
+) -> tuple[ForecastRunContract, InterventionInputContext, str, str]:
+    config = NowcastConfig()
+    grid = RadarGridTimeContract(
+        valid_times=valid_times,
+        dx_m=1000.0,
+        dy_m=1000.0,
+        projection="EPSG:5179",
+        grid_hash="1" * 64,
+    )
+    identity = OperationalDataIdentity(
+        radar_class="test-radar",
+        qc_pipeline_digest="2" * 64,
+        observation_error_model_digest="3" * 64,
+        background_model_digest="4" * 64,
+        radar_product_digest="5" * 64,
+        background_cycle_rule_digest="6" * 64,
+        mask_policy_digest="7" * 64,
+    )
+    manifest = OperationalCalibrationManifest(
+        calibration_id="prospective-test",
+        profile_kind="p0",
+        expected_runtime_profile_digest=operational_runtime_profile_digest(
+            config,
+            grid,
+        ),
+        expected_algorithm_bundle_digest=algorithm_bundle_digest(),
+        calibration_dataset_digest="8" * 64,
+        validation_dataset_digest="9" * 64,
+        data_identity=identity,
+        training_period=("2024-01-01T00:00:00Z", "2025-01-01T00:00:00Z"),
+        validation_period=("2025-01-01T00:00:00Z", "2026-01-01T00:00:00Z"),
+        validation_case_count=1,
+        validation_regimes=(CalibrationRegime("all", 1),),
+        validation_metrics=(
+            CalibrationMetric("skill", "a" * 64, "maximize", 0.0, 1.0),
+        ),
+    )
+    input_plan = NeuralPriorInputPlan(
+        valid_times=grid.valid_times,
+        grid_contract_digest=grid.digest,
+        radar_product_digest=identity.radar_product_digest or "",
+        qc_pipeline_digest=identity.qc_pipeline_digest,
+        background_cycle_rule_digest=identity.background_cycle_rule_digest or "",
+        mask_policy_digest=identity.mask_policy_digest or "",
+        observation_valid_time=grid.valid_times[-1],
+        input_available_time=input_available_time,
+        decision_deadline=decision_deadline,
+        publication_time=publication_time,
+    )
+    run = ForecastRunContract.from_inputs(
+        config,
+        frames,
+        masks,
+        None,
+        grid_time_contract=grid,
+        operational_calibration_manifest_json=manifest.json,
+        operational_calibration_manifest_digest=manifest.digest,
+        operational_calibration_approval_digest=manifest.digest,
+        operational_data_identity_json=identity.json,
+        operational_data_identity_digest=identity.digest,
+        input_plan_json=input_plan.json,
+        input_plan_digest=input_plan.plan_digest,
+    )
+    context = InterventionInputContext.from_inputs(
+        frames_dbz=frames,
+        observation_masks=masks,
+        quality_weight=masks.to(frames),
+        observation_std_dbz=torch.full_like(frames, 2.0),
+        background_frames_dbz=None,
+        radar_id="radar-1",
+        applicability_mask=torch.ones_like(masks),
+        run=run,
+    )
+    return run, context, input_plan.plan_digest, input_plan.json
 
 
 class EpisodeLedgerTests(unittest.TestCase):
@@ -337,6 +472,16 @@ class EpisodeLedgerTests(unittest.TestCase):
             decision_deadline="2030-01-01T00:02:00Z",
             publication_time="2030-01-01T00:05:00Z",
         )
+        target_plan = PriorUncertaintyTargetPlan(
+            plan_id="uncertainty-clock",
+            target_kind="withheld_radar",
+            source_identity_digest="b" * 64,
+            qc_pipeline_digest="3" * 64,
+            grid_contract_digest="1" * 64,
+            feature_exclusion_contract_digest="c" * 64,
+            independence_evidence_digest="d" * 64,
+            target_valid_time="2030-01-01T01:00:00Z",
+        )
         plan = NeuralPriorHoldoutPlan(
             plan_id="clock-plan",
             parent_prior_digest="6" * 64,
@@ -352,10 +497,12 @@ class EpisodeLedgerTests(unittest.TestCase):
                     input_plan.plan_digest,
                     "8" * 64,
                     "9" * 64,
+                    target_plan.plan_digest,
                     issue,
                 ),
             ),
             input_plans=(input_plan,),
+            uncertainty_target_plans=(target_plan,),
             registered_at="2029-01-01T00:00:00Z",
         )
         policy = NeuralPriorHoldoutPlanPolicy(
@@ -672,61 +819,43 @@ class EpisodeLedgerTests(unittest.TestCase):
         before = torch.zeros((3, 2, 2), dtype=torch.float64)
         delta = torch.ones_like(before)
         after = before + delta
-        plan_digest = "b" * 64
-        plan_json = json.dumps(
-            {
-                "contract": "legacy-opaque-input-plan-v1",
-                "legacy_digest": plan_digest,
-            },
-            sort_keys=True,
-            separators=(",", ":"),
-        )
-        before_run = ForecastRunContract.from_inputs(
-            NowcastConfig(),
+        masks = torch.ones_like(before, dtype=torch.bool)
+        before_run, before_context, plan_digest, _ = _prospective_run_and_context(
             before,
-            torch.ones_like(before, dtype=torch.bool),
-            None,
-            input_plan_json=plan_json,
-            input_plan_digest=plan_digest,
+            masks,
         )
-        after_run = ForecastRunContract.from_inputs(
-            NowcastConfig(),
-            after,
-            torch.ones_like(after, dtype=torch.bool),
-            None,
-            input_plan_json=plan_json,
-            input_plan_digest=plan_digest,
-        )
+        after_run, after_context, _, _ = _prospective_run_and_context(after, masks)
         action_generator = InterventionActionGenerator.from_model(
             _AddOneAction().eval(),
-            before,
+            before_context,
+            intervention_type="realized_sensor_correction",
         )
         action_policy = ReusableInterventionPolicyEvidence(
             policy_id="policy-1",
             action_generator_digest=action_generator.generator_digest,
-            context_schema_digest="2" * 64,
-            applicability_region_digest="3" * 64,
+            context_schema_digest=before_context.context_schema_digest,
+            applicability_region_digest=(
+                before_context.applicability_region_digest
+            ),
             execution_policy_digest="e" * 64,
-            allowed_intervention_types=("realized_qc_intervention",),
+            allowed_intervention_types=("realized_sensor_correction",),
             maximum_absolute_delta_dbz=2.0,
+            maximum_changed_fraction=1.0,
             validation_evidence_digests=("d" * 64,),
         )
         contextual_generator = InterventionActionGenerator.from_model(
             _NonpositiveOnlyAction().eval(),
-            before,
+            before_context,
+            intervention_type="realized_sensor_correction",
         )
         contextual_policy = replace(
             action_policy,
             action_generator_digest=contextual_generator.generator_digest,
         )
         positive = torch.ones_like(before)
-        positive_run = ForecastRunContract.from_inputs(
-            NowcastConfig(),
+        positive_run, positive_context, _, _ = _prospective_run_and_context(
             positive,
             torch.ones_like(positive, dtype=torch.bool),
-            None,
-            input_plan_json=plan_json,
-            input_plan_digest=plan_digest,
         )
         with self.assertRaisesRegex(ValueError, "outside the action policy"):
             ProspectiveInterventionDecision.from_policy(
@@ -735,16 +864,16 @@ class EpisodeLedgerTests(unittest.TestCase):
                 decision_id="inapplicable-context",
                 case_id="case-1",
                 radar_id="radar-1",
-                intervention_type="realized_qc_intervention",
-                actual_input_before_frames=positive,
+                intervention_type="realized_sensor_correction",
+                actual_input_context=positive_context,
                 actual_input_before_run=positive_run,
                 input_plan_digest=plan_digest,
                 decision_basis_digest="d" * 64,
                 decision_policy_digest="e" * 64,
                 decision_trust_store_digest="f" * 64,
-                decided_at="2026-08-08T00:02:00Z",
-                observation_valid_time="2026-08-08T00:00:00Z",
-                input_available_time="2026-08-08T00:01:00Z",
+                decided_at="2026-08-08T00:22:00Z",
+                observation_valid_time="2026-08-08T00:20:00Z",
+                input_available_time="2026-08-08T00:21:00Z",
                 decision_deadline="2099-08-08T00:30:00Z",
                 publication_time="2099-08-08T01:00:00Z",
             )
@@ -752,21 +881,23 @@ class EpisodeLedgerTests(unittest.TestCase):
             ProspectiveInterventionDecision.from_policy(
                 action_policy,
                 action_generator=InterventionActionGenerator.from_model(
-                    _AddTwoAction().eval(), before
+                    _AddTwoAction().eval(),
+                    before_context,
+                    intervention_type="realized_sensor_correction",
                 ),
                 decision_id="wrong-generator",
                 case_id="case-1",
                 radar_id="radar-1",
-                intervention_type="realized_qc_intervention",
-                actual_input_before_frames=before,
+                intervention_type="realized_sensor_correction",
+                actual_input_context=before_context,
                 actual_input_before_run=before_run,
                 input_plan_digest=plan_digest,
                 decision_basis_digest="d" * 64,
                 decision_policy_digest="e" * 64,
                 decision_trust_store_digest="f" * 64,
-                decided_at="2026-08-08T00:02:00Z",
-                observation_valid_time="2026-08-08T00:00:00Z",
-                input_available_time="2026-08-08T00:01:00Z",
+                decided_at="2026-08-08T00:22:00Z",
+                observation_valid_time="2026-08-08T00:20:00Z",
+                input_available_time="2026-08-08T00:21:00Z",
                 decision_deadline="2099-08-08T00:30:00Z",
                 publication_time="2099-08-08T01:00:00Z",
             )
@@ -776,18 +907,24 @@ class EpisodeLedgerTests(unittest.TestCase):
             decision_id="decision-1",
             case_id="case-1",
             radar_id="radar-1",
-            intervention_type="realized_qc_intervention",
-            actual_input_before_frames=before,
+            intervention_type="realized_sensor_correction",
+            actual_input_context=before_context,
             actual_input_before_run=before_run,
             input_plan_digest=plan_digest,
             decision_basis_digest="d" * 64,
             decision_policy_digest="e" * 64,
             decision_trust_store_digest="f" * 64,
-            decided_at="2026-08-08T00:02:00Z",
-            observation_valid_time="2026-08-08T00:00:00Z",
-            input_available_time="2026-08-08T00:01:00Z",
+            decided_at="2026-08-08T00:22:00Z",
+            observation_valid_time="2026-08-08T00:20:00Z",
+            input_available_time="2026-08-08T00:21:00Z",
             decision_deadline="2099-08-08T00:30:00Z",
             publication_time="2099-08-08T01:00:00Z",
+        )
+        safety = json.loads(decision.action_safety_diagnostics_json)
+        self.assertEqual(safety["changed_pixel_count"], delta.numel())
+        self.assertEqual(
+            json_digest(safety),
+            decision.action_safety_diagnostics_digest,
         )
         executor_private = Ed25519PrivateKey.generate()
         executor_public = executor_private.public_key()
@@ -813,13 +950,16 @@ class EpisodeLedgerTests(unittest.TestCase):
                 "action_digest",
                 json_digest(
                     {
-                        "contract": "generated-radar-action-v1",
+                        "contract": "generated-radar-action-v2",
                         "action_policy_digest": forged.action_policy_digest,
                         "action_generator_digest": forged.action_generator_digest,
                         "action_context_digest": forged.action_context_digest,
                         "action_payload_digest": forged.action_payload_digest,
                         "action_application_contract_digest": (
                             forged.action_application_contract_digest
+                        ),
+                        "action_safety_diagnostics_digest": (
+                            forged.action_safety_diagnostics_digest
                         ),
                     }
                 ),
@@ -840,7 +980,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                     forged,
                     action_policy=action_policy,
                     action_generator=action_generator,
-                    actual_input_before_frames=before,
+                    actual_input_before_context=before_context,
                     actual_input_before_run=before_run,
                     trust_store_path="/etc/advar/policies.json",
                 )
@@ -848,16 +988,16 @@ class EpisodeLedgerTests(unittest.TestCase):
                 decision,
                 action_policy=action_policy,
                 action_generator=action_generator,
-                actual_input_before_frames=before,
+                actual_input_before_context=before_context,
                 actual_input_before_run=before_run,
                 trust_store_path="/etc/advar/policies.json",
             )
             applied = datetime.now(timezone.utc).isoformat()
             receipt = RealizedInterventionReceipt.from_decision(
                 decision,
-                actual_input_before_frames=before,
+                actual_input_before_context=before_context,
                 actual_input_before_run=before_run,
-                actual_input_after_frames=after,
+                actual_input_after_context=after_context,
                 actual_input_after_run=after_run,
                 action_generator=action_generator,
                 executor_key_id="executor-1",
@@ -870,9 +1010,9 @@ class EpisodeLedgerTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "approved action result"):
                 RealizedInterventionReceipt.from_decision(
                     decision,
-                    actual_input_before_frames=before,
+                    actual_input_before_context=before_context,
                     actual_input_before_run=before_run,
-                    actual_input_after_frames=before,
+                    actual_input_after_context=before_context,
                     actual_input_after_run=before_run,
                     action_generator=action_generator,
                     executor_key_id="executor-1",
@@ -882,29 +1022,16 @@ class EpisodeLedgerTests(unittest.TestCase):
                     applied_time=applied,
                     receipt_time=applied,
                 )
-            other_plan = "9" * 64
-            other_plan_json = json.dumps(
-                {
-                    "contract": "legacy-opaque-input-plan-v1",
-                    "legacy_digest": other_plan,
-                },
-                sort_keys=True,
-                separators=(",", ":"),
-            )
-            other_run = ForecastRunContract.from_inputs(
-                NowcastConfig(),
-                after,
-                torch.ones_like(after, dtype=torch.bool),
-                None,
-                input_plan_json=other_plan_json,
-                input_plan_digest=other_plan,
+            other_run = replace(
+                after_run,
+                input_plan_digest="9" * 64,
             )
             with self.assertRaisesRegex(ValueError, "input plan"):
                 RealizedInterventionReceipt.from_decision(
                     decision,
-                    actual_input_before_frames=before,
+                    actual_input_before_context=before_context,
                     actual_input_before_run=before_run,
-                    actual_input_after_frames=after,
+                    actual_input_after_context=after_context,
                     actual_input_after_run=other_run,
                     action_generator=action_generator,
                     executor_key_id="executor-1",
@@ -914,20 +1041,18 @@ class EpisodeLedgerTests(unittest.TestCase):
                     applied_time=applied,
                     receipt_time=applied,
                 )
-            changed_mask_run = ForecastRunContract.from_inputs(
-                NowcastConfig(),
+            changed_mask_run, changed_mask_context, _, _ = (
+                _prospective_run_and_context(
                 after,
                 torch.zeros_like(after, dtype=torch.bool),
-                None,
-                input_plan_json=plan_json,
-                input_plan_digest=plan_digest,
+                )
             )
-            with self.assertRaisesRegex(ValueError, "non-radar input state"):
+            with self.assertRaisesRegex(ValueError, "after-QC|non-radar input"):
                 RealizedInterventionReceipt.from_decision(
                     decision,
-                    actual_input_before_frames=before,
+                    actual_input_before_context=before_context,
                     actual_input_before_run=before_run,
-                    actual_input_after_frames=after,
+                    actual_input_after_context=changed_mask_context,
                     actual_input_after_run=changed_mask_run,
                     action_generator=action_generator,
                     executor_key_id="executor-1",
@@ -941,9 +1066,9 @@ class EpisodeLedgerTests(unittest.TestCase):
                 decision,
                 receipt,
                 action_generator=action_generator,
-                actual_input_before_frames=before,
+                actual_input_before_context=before_context,
                 actual_input_before_run=before_run,
-                actual_input_after_frames=after,
+                actual_input_after_context=after_context,
                 actual_input_after_run=after_run,
                 trust_store_path="/etc/advar/policies.json",
                 executor_trust_store_path="/etc/advar/executors.json",
@@ -971,17 +1096,312 @@ class EpisodeLedgerTests(unittest.TestCase):
                     decision,
                     tampered,
                     action_generator=action_generator,
-                    actual_input_before_frames=before,
+                    actual_input_before_context=before_context,
                     actual_input_before_run=before_run,
-                    actual_input_after_frames=after,
+                    actual_input_after_context=after_context,
                     actual_input_after_run=after_run,
                     trust_store_path="/etc/advar/policies.json",
                     executor_trust_store_path="/etc/advar/executors.json",
                 )
 
+        with patch(
+            "advar.ledger._load_executor_trust_store",
+            return_value=executor_trust,
+        ):
+            self.assertEqual(
+                self.ledger.load_prospective_intervention(
+                    digest,
+                    executor_trust_store_path="/etc/advar/executors.json",
+                ),
+                (decision, receipt),
+            )
+            artifact_dir = self.ledger.interventions_dir / digest
+            manifest_path = artifact_dir / "manifest.json"
+            checksums_path = artifact_dir / "checksums.json"
+            original_manifest = manifest_path.read_bytes()
+            original_checksums = checksums_path.read_bytes()
+            manifest = json.loads(original_manifest)
+            manifest["before_data_identity_digest"] = "8" * 64
+            manifest_path.write_text(
+                json.dumps(manifest, sort_keys=True, separators=(",", ":")),
+                encoding="utf-8",
+            )
+            checksums = json.loads(original_checksums)
+            checksums["manifest.json"] = hashlib.sha256(
+                manifest_path.read_bytes()
+            ).hexdigest()
+            checksums_path.write_text(
+                json.dumps(checksums, sort_keys=True, separators=(",", ":")),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                ValueError,
+                "input bundle|fixed input context",
+            ):
+                self.ledger.load_prospective_intervention(
+                    digest,
+                    executor_trust_store_path="/etc/advar/executors.json",
+                )
+            manifest_path.write_bytes(original_manifest)
+            checksums_path.write_bytes(original_checksums)
+            artifact = self.ledger.interventions_dir / digest / "generator.pt2"
+            artifact.write_bytes(artifact.read_bytes() + b"tampered")
+            with self.assertRaisesRegex(ValueError, "checksum"):
+                self.ledger.load_prospective_intervention(
+                    digest,
+                    executor_trust_store_path="/etc/advar/executors.json",
+                )
+
+    def test_typed_actions_plan_times_and_global_radius_fail_closed(self) -> None:
+        frames = torch.zeros((3, 2, 2), dtype=torch.float64)
+        masks = torch.ones_like(frames, dtype=torch.bool)
+        run, context, plan_digest, _ = _prospective_run_and_context(frames, masks)
+        dbz_generator = InterventionActionGenerator.from_model(
+            _AddOneAction().eval(),
+            context,
+            intervention_type="realized_sensor_correction",
+        )
+        strict_policy = ReusableInterventionPolicyEvidence(
+            policy_id="strict-radius",
+            action_generator_digest=dbz_generator.generator_digest,
+            context_schema_digest=context.context_schema_digest,
+            applicability_region_digest=context.applicability_region_digest,
+            execution_policy_digest="e" * 64,
+            allowed_intervention_types=("realized_sensor_correction",),
+            maximum_absolute_delta_dbz=2.0,
+            validation_evidence_digests=("d" * 64,),
+        )
+        common = dict(
+            action_generator=dbz_generator,
+            decision_id="strict",
+            case_id="case-1",
+            radar_id="radar-1",
+            intervention_type="realized_sensor_correction",
+            actual_input_context=context,
+            actual_input_before_run=run,
+            input_plan_digest=plan_digest,
+            decision_basis_digest="d" * 64,
+            decision_policy_digest="e" * 64,
+            decision_trust_store_digest="f" * 64,
+            decided_at="2026-08-08T00:22:00Z",
+            observation_valid_time="2026-08-08T00:20:00Z",
+            input_available_time="2026-08-08T00:21:00Z",
+            decision_deadline="2099-08-08T00:30:00Z",
+            publication_time="2099-08-08T01:00:00Z",
+        )
+        with self.assertRaisesRegex(ValueError, "changed-fraction"):
+            ProspectiveInterventionDecision.from_policy(strict_policy, **common)
+        with self.assertRaisesRegex(ValueError, "observation errors"):
+            InterventionInputContext.from_inputs(
+                frames_dbz=frames,
+                observation_masks=masks,
+                quality_weight=masks.to(frames),
+                observation_std_dbz=torch.full_like(frames, 100.0),
+                background_frames_dbz=None,
+                radar_id="radar-1",
+                applicability_mask=torch.ones_like(masks),
+                run=run,
+            )
+        restricted_mask = torch.zeros_like(masks)
+        restricted_mask[0, 0, 0] = True
+        restricted_context = InterventionInputContext.from_inputs(
+            frames_dbz=frames,
+            observation_masks=masks,
+            quality_weight=masks.to(frames),
+            observation_std_dbz=torch.full_like(frames, 2.0),
+            background_frames_dbz=None,
+            radar_id="radar-1",
+            applicability_mask=restricted_mask,
+            run=run,
+        )
+        restricted_policy = replace(
+            strict_policy,
+            applicability_region_digest=(
+                restricted_context.applicability_region_digest
+            ),
+            maximum_changed_fraction=1.0,
+        )
+        with self.assertRaisesRegex(ValueError, "applicability region"):
+            ProspectiveInterventionDecision.from_policy(
+                restricted_policy,
+                **{**common, "actual_input_context": restricted_context},
+            )
+        with self.assertRaisesRegex(ValueError, "decision radar"):
+            ProspectiveInterventionDecision.from_policy(
+                replace(strict_policy, maximum_changed_fraction=1.0),
+                **{**common, "radar_id": "radar-2"},
+            )
+        relaxed = replace(strict_policy, maximum_changed_fraction=1.0)
+        with self.assertRaisesRegex(ValueError, "resolved input plan"):
+            ProspectiveInterventionDecision.from_policy(
+                relaxed,
+                **{**common, "publication_time": "2099-08-08T02:00:00Z"},
+            )
+        qc_generator = InterventionActionGenerator.from_model(
+            _RejectAllQcAction().eval(),
+            context,
+            intervention_type="realized_qc_intervention",
+            action_reason="clutter",
+        )
+        with self.assertRaisesRegex(ValueError, "generator type"):
+            ProspectiveInterventionDecision.from_policy(
+                replace(relaxed, action_generator_digest=qc_generator.generator_digest),
+                **{**common, "action_generator": qc_generator},
+            )
+        qc_policy = replace(
+            relaxed,
+            action_generator_digest=qc_generator.generator_digest,
+            allowed_intervention_types=("realized_qc_intervention",),
+            maximum_quality_weight_l2=4.0,
+        )
+        qc_action = qc_generator.generate(context)
+        self.assertIsInstance(qc_action, QcMaskAction)
+        qc_decision = ProspectiveInterventionDecision.from_policy(
+            qc_policy,
+            **{
+                **common,
+                "action_generator": qc_generator,
+                "intervention_type": "realized_qc_intervention",
+            },
+        )
+        self.assertNotEqual(
+            qc_decision.action_application_contract_digest,
+            json_digest({"contract": "radar-dbz-correction-action-v2"}),
+        )
+        rejected_masks = torch.zeros_like(masks)
+        qc_after_run, qc_after_context, _, _ = _prospective_run_and_context(
+            frames,
+            rejected_masks,
+        )
+        receipt_time = datetime.now(timezone.utc).isoformat()
+        qc_receipt = RealizedInterventionReceipt.from_decision(
+            qc_decision,
+            actual_input_before_context=context,
+            actual_input_before_run=run,
+            actual_input_after_context=qc_after_context,
+            actual_input_after_run=qc_after_run,
+            action_generator=qc_generator,
+            executor_key_id="executor-qc",
+            executor_trust_store_digest="0" * 64,
+            executor_private_key=Ed25519PrivateKey.generate(),
+            executor_sequence_number=1,
+            applied_time=receipt_time,
+            receipt_time=receipt_time,
+        )
         self.assertEqual(
-            self.ledger.load_prospective_intervention(digest),
-            (decision, receipt),
+            qc_receipt.actual_input_before_frames_digest,
+            qc_receipt.actual_input_after_frames_digest,
+        )
+        self.assertNotEqual(
+            qc_receipt.actual_input_before_masks_digest,
+            qc_receipt.actual_input_after_masks_digest,
+        )
+        override_generator = InterventionActionGenerator.from_model(
+            _SinglePixelOverrideAction().eval(),
+            context,
+            intervention_type="operator_override",
+            action_reason="operator-confirmed artifact",
+        )
+        override_action = override_generator.generate(context)
+        self.assertIsInstance(override_action, OperatorOverrideAction)
+        override_policy = replace(
+            relaxed,
+            action_generator_digest=override_generator.generator_digest,
+            allowed_intervention_types=("operator_override",),
+        )
+        override_decision = ProspectiveInterventionDecision.from_policy(
+            override_policy,
+            **{
+                **common,
+                "action_generator": override_generator,
+                "intervention_type": "operator_override",
+            },
+        )
+        self.assertNotEqual(
+            override_decision.action_application_contract_digest,
+            qc_decision.action_application_contract_digest,
+        )
+
+        maximum = torch.full_like(frames, NowcastConfig().max_dbz)
+        maximum_run, maximum_context, maximum_plan, _ = (
+            _prospective_run_and_context(maximum, masks)
+        )
+        with self.assertRaisesRegex(ValueError, "input clamp"):
+            ProspectiveInterventionDecision.from_policy(
+                relaxed,
+                **{
+                    **common,
+                    "actual_input_context": maximum_context,
+                    "actual_input_before_run": maximum_run,
+                    "input_plan_digest": maximum_plan,
+                },
+            )
+
+        missing = frames.clone()
+        missing[0, 0, 0] = float("nan")
+        missing_masks = masks.clone()
+        missing_masks[0, 0, 0] = False
+        missing_run, _, missing_plan, _ = _prospective_run_and_context(
+            missing,
+            missing_masks,
+        )
+        missing_context = InterventionInputContext.from_inputs(
+            frames_dbz=missing,
+            observation_masks=missing_masks,
+            quality_weight=missing_masks.to(missing),
+            observation_std_dbz=torch.full_like(missing, 2.0),
+            background_frames_dbz=None,
+            radar_id="radar-1",
+            applicability_mask=torch.ones_like(missing_masks),
+            run=missing_run,
+        )
+        with self.assertRaisesRegex(ValueError, "invalid observations"):
+            ProspectiveInterventionDecision.from_policy(
+                relaxed,
+                **{
+                    **common,
+                    "actual_input_context": missing_context,
+                    "actual_input_before_run": missing_run,
+                    "input_plan_digest": missing_plan,
+                },
+            )
+        valid_only_generator = InterventionActionGenerator.from_model(
+            _ValidOnlyAddAction().eval(),
+            missing_context,
+            intervention_type="realized_sensor_correction",
+        )
+        valid_only_policy = replace(
+            relaxed,
+            action_generator_digest=valid_only_generator.generator_digest,
+        )
+        valid_only_decision = ProspectiveInterventionDecision.from_policy(
+            valid_only_policy,
+            **{
+                **common,
+                "decision_id": "nan-safe",
+                "action_generator": valid_only_generator,
+                "actual_input_context": missing_context,
+                "actual_input_before_run": missing_run,
+                "input_plan_digest": missing_plan,
+            },
+        )
+        missing_after = missing + missing_masks.to(missing)
+        missing_after_run, missing_after_context, _, _ = (
+            _prospective_run_and_context(missing_after, missing_masks)
+        )
+        RealizedInterventionReceipt.from_decision(
+            valid_only_decision,
+            actual_input_before_context=missing_context,
+            actual_input_before_run=missing_run,
+            actual_input_after_context=missing_after_context,
+            actual_input_after_run=missing_after_run,
+            action_generator=valid_only_generator,
+            executor_key_id="executor-nan",
+            executor_trust_store_digest="0" * 64,
+            executor_private_key=Ed25519PrivateKey.generate(),
+            executor_sequence_number=1,
+            applied_time=datetime.now(timezone.utc).isoformat(),
+            receipt_time=datetime.now(timezone.utc).isoformat(),
         )
 
     def test_retrospective_replay_is_a_separate_audit_record(self) -> None:
@@ -1050,36 +1470,249 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertIsInstance(loaded, LegacyNeuralPriorHoldoutPlanAudit)
         self.assertEqual(loaded, audit)
 
+        input_plan = NeuralPriorInputPlan(
+            valid_times=("2026-08-08T00:00:00Z",),
+            grid_contract_digest="8" * 64,
+            radar_product_digest="9" * 64,
+            qc_pipeline_digest="a" * 64,
+            background_cycle_rule_digest="b" * 64,
+            mask_policy_digest="c" * 64,
+            observation_valid_time="2026-08-08T00:00:00Z",
+            input_available_time="2026-08-08T00:01:00Z",
+            decision_deadline="2026-08-08T00:02:00Z",
+            publication_time="2026-08-08T00:05:00Z",
+        )
+        audit_v2 = LegacyNeuralPriorHoldoutPlanV2Audit(
+            plan_id="legacy-v2-plan",
+            parent_prior_digest="d" * 64,
+            candidate_family_digests=("e" * 64,),
+            cases=(
+                LegacyNeuralPriorHoldoutPlanV2Case(
+                    case_id="case-v2",
+                    storm_id="storm-v2",
+                    day="2026-08-08",
+                    radar_id="radar-v2",
+                    regime="convective",
+                    range_regime="near",
+                    input_plan_digest=input_plan.plan_digest,
+                    verification_plan_digest="f" * 64,
+                    metric_contract_digest="0" * 64,
+                    issue_time="2026-08-08T00:00:00Z",
+                ),
+            ),
+            input_plans=(input_plan,),
+            registered_at="2026-08-07T00:00:00Z",
+        )
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute(
+                "INSERT INTO neural_prior_holdout_plans "
+                "(plan_digest, plan_id, plan_json, policy_digest, "
+                "trust_store_digest, registered_at, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    audit_v2.plan_digest,
+                    audit_v2.plan_id,
+                    json.dumps(asdict(audit_v2), sort_keys=True),
+                    "1" * 64,
+                    "2" * 64,
+                    audit_v2.registered_at,
+                    audit_v2.registered_at,
+                ),
+            )
+        loaded_v2 = self.ledger.load_neural_prior_holdout_plan(
+            audit_v2.plan_digest
+        )
+        self.assertIsInstance(loaded_v2, LegacyNeuralPriorHoldoutPlanV2Audit)
+        self.assertEqual(loaded_v2, audit_v2)
+
+        target_v1: dict[str, object] = {
+            "contract": "prior-uncertainty-target-plan-v1",
+            "plan_id": "legacy-target-v1",
+            "target_kind": "independent_sensor",
+            "source_identity_digest": "3" * 64,
+            "qc_pipeline_digest": "4" * 64,
+            "feature_exclusion_contract_digest": "5" * 64,
+            "independence_evidence_digest": "6" * 64,
+            "target_valid_time": "2026-08-08T01:00:00Z",
+        }
+        audit_v3 = LegacyNeuralPriorHoldoutPlanV3Audit(
+            plan_id="legacy-v3-plan",
+            parent_prior_digest="7" * 64,
+            candidate_family_digests=("8" * 64,),
+            cases=(
+                NeuralPriorHoldoutPlanCase(
+                    case_id="case-v3",
+                    storm_id="storm-v3",
+                    day="2026-08-08",
+                    radar_id="radar-v3",
+                    regime="convective",
+                    range_regime="near",
+                    input_plan_digest=input_plan.plan_digest,
+                    verification_plan_digest="9" * 64,
+                    metric_contract_digest="a" * 64,
+                    uncertainty_target_plan_digest=json_digest(target_v1),
+                    issue_time="2026-08-08T00:00:00Z",
+                ),
+            ),
+            input_plans=(input_plan,),
+            uncertainty_target_plans=(target_v1,),
+            registered_at="2026-08-07T00:00:00Z",
+        )
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute(
+                "INSERT INTO neural_prior_holdout_plans "
+                "(plan_digest, plan_id, plan_json, policy_digest, "
+                "trust_store_digest, registered_at, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    audit_v3.plan_digest,
+                    audit_v3.plan_id,
+                    json.dumps(asdict(audit_v3), sort_keys=True),
+                    "b" * 64,
+                    "c" * 64,
+                    audit_v3.registered_at,
+                    audit_v3.registered_at,
+                ),
+            )
+        loaded_v3 = self.ledger.load_neural_prior_holdout_plan(
+            audit_v3.plan_digest
+        )
+        self.assertIsInstance(loaded_v3, LegacyNeuralPriorHoldoutPlanV3Audit)
+        self.assertEqual(loaded_v3, audit_v3)
+
+    def test_legacy_v2_prospective_receipt_loads_as_signed_audit(self) -> None:
+        private_key = Ed25519PrivateKey.generate()
+        executor_trust = SimpleNamespace(
+            keys={"executor-v2": private_key.public_key()},
+            content_digest="0" * 64,
+        )
+        decision_values: dict[str, object] = {
+            "decision_id": "legacy-decision",
+            "case_id": "legacy-case",
+            "radar_id": "legacy-radar",
+            "intervention_type": "realized_sensor_correction",
+            "action_policy_digest": "1" * 64,
+            "action_generator_digest": "2" * 64,
+            "action_context_digest": "3" * 64,
+            "action_payload_digest": "4" * 64,
+            "action_application_contract_digest": "5" * 64,
+            "action_digest": "6" * 64,
+            "input_plan_digest": "7" * 64,
+            "actual_input_before_frames_digest": "8" * 64,
+            "actual_input_before_bundle_digest": "9" * 64,
+            "decision_basis_digest": "a" * 64,
+            "decision_policy_digest": "b" * 64,
+            "decision_trust_store_digest": "c" * 64,
+            "decided_at": "2026-08-08T00:02:00Z",
+            "observation_valid_time": "2026-08-08T00:00:00Z",
+            "input_available_time": "2026-08-08T00:01:00Z",
+            "decision_deadline": "2026-08-08T00:03:00Z",
+            "publication_time": "2026-08-08T00:05:00Z",
+            "contract": "prospective-intervention-decision-v2",
+        }
+        decision_digest = json_digest(decision_values)
+        decision_values["decision_digest"] = decision_digest
+        receipt_values: dict[str, object] = {
+            "decision_digest": decision_digest,
+            "decision_id": "legacy-decision",
+            "case_id": "legacy-case",
+            "radar_id": "legacy-radar",
+            "intervention_type": "realized_sensor_correction",
+            "action_digest": "6" * 64,
+            "input_plan_digest": "7" * 64,
+            "actual_input_before_frames_digest": "8" * 64,
+            "actual_input_after_frames_digest": "d" * 64,
+            "actual_input_before_bundle_digest": "9" * 64,
+            "actual_input_bundle_digest": "e" * 64,
+            "action_payload_digest": "4" * 64,
+            "action_application_contract_digest": "5" * 64,
+            "executor_key_id": "executor-v2",
+            "executor_trust_store_digest": executor_trust.content_digest,
+            "executor_signature": "",
+            "applied_time": "2026-08-08T00:03:00Z",
+            "receipt_time": "2026-08-08T00:03:30Z",
+            "observation_valid_time": "2026-08-08T00:00:00Z",
+            "input_available_time": "2026-08-08T00:01:00Z",
+            "publication_time": "2026-08-08T00:05:00Z",
+            "executor_sequence_number": 1,
+            "contract": "realized-intervention-receipt-v2",
+        }
+        receipt_values["executor_signature"] = private_key.sign(
+            json_digest(receipt_values).encode("ascii")
+        ).hex()
+        receipt_digest = json_digest(receipt_values)
+        receipt_values["receipt_digest"] = receipt_digest
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            connection.execute(
+                "INSERT INTO prospective_intervention_decisions "
+                "(decision_digest, decision_id, decision_json, created_at) "
+                "VALUES (?, ?, ?, ?)",
+                (
+                    decision_digest,
+                    "legacy-decision",
+                    json.dumps(decision_values, sort_keys=True),
+                    "2026-08-08T00:02:00+00:00",
+                ),
+            )
+            connection.execute(
+                "INSERT INTO realized_intervention_receipts "
+                "(receipt_digest, decision_digest, executor_key_id, "
+                "executor_sequence_number, receipt_json, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    receipt_digest,
+                    decision_digest,
+                    "executor-v2",
+                    1,
+                    json.dumps(receipt_values, sort_keys=True),
+                    "2026-08-08T00:03:30+00:00",
+                ),
+            )
+        with patch(
+            "advar.ledger._load_executor_trust_store",
+            return_value=executor_trust,
+        ):
+            loaded = self.ledger.load_prospective_intervention(
+                receipt_digest,
+                executor_trust_store_path="/etc/advar/executors.json",
+            )
+        self.assertIsInstance(
+            loaded[0],
+            LegacyProspectiveInterventionDecisionAudit,
+        )
+        self.assertIsInstance(
+            loaded[1],
+            LegacyRealizedInterventionReceiptAudit,
+        )
+
     def test_backdated_decision_cannot_be_recorded_after_issue(self) -> None:
         frames = torch.zeros((3, 2, 2), dtype=torch.float64)
-        plan_digest = "b" * 64
-        plan_json = json.dumps(
-            {
-                "contract": "legacy-opaque-input-plan-v1",
-                "legacy_digest": plan_digest,
-            },
-            sort_keys=True,
-            separators=(",", ":"),
-        )
-        run = ForecastRunContract.from_inputs(
-            NowcastConfig(),
+        run, context, plan_digest, _ = _prospective_run_and_context(
             frames,
             torch.ones_like(frames, dtype=torch.bool),
-            None,
-            input_plan_json=plan_json,
-            input_plan_digest=plan_digest,
+            valid_times=(
+                "2020-08-07T23:50:00Z",
+                "2020-08-08T00:00:00Z",
+                "2020-08-08T00:10:00Z",
+            ),
+            input_available_time="2020-08-08T00:10:00Z",
+            decision_deadline="2020-08-08T00:30:00Z",
+            publication_time="2020-08-08T01:00:00Z",
         )
         generator = InterventionActionGenerator.from_model(
-            _AddOneAction().eval(), frames
+            _AddOneAction().eval(),
+            context,
+            intervention_type="realized_sensor_correction",
         )
         action_policy = ReusableInterventionPolicyEvidence(
             policy_id="backdated-policy",
             action_generator_digest=generator.generator_digest,
-            context_schema_digest="2" * 64,
-            applicability_region_digest="3" * 64,
+            context_schema_digest=context.context_schema_digest,
+            applicability_region_digest=context.applicability_region_digest,
             execution_policy_digest="e" * 64,
-            allowed_intervention_types=("operator_override",),
+            allowed_intervention_types=("realized_sensor_correction",),
             maximum_absolute_delta_dbz=1.0,
+            maximum_changed_fraction=1.0,
             validation_evidence_digests=("d" * 64,),
         )
         decision = ProspectiveInterventionDecision.from_policy(
@@ -1088,16 +1721,16 @@ class EpisodeLedgerTests(unittest.TestCase):
             decision_id="backdated",
             case_id="case-1",
             radar_id="radar-1",
-            intervention_type="operator_override",
-            actual_input_before_frames=frames,
+            intervention_type="realized_sensor_correction",
+            actual_input_context=context,
             actual_input_before_run=run,
             input_plan_digest=plan_digest,
             decision_basis_digest="d" * 64,
             decision_policy_digest="e" * 64,
             decision_trust_store_digest="f" * 64,
-            decided_at="2020-08-08T00:00:00Z",
-            observation_valid_time="2020-08-08T00:00:00Z",
-            input_available_time="2020-08-08T00:00:00Z",
+            decided_at="2020-08-08T00:11:00Z",
+            observation_valid_time="2020-08-08T00:10:00Z",
+            input_available_time="2020-08-08T00:10:00Z",
             decision_deadline="2020-08-08T00:30:00Z",
             publication_time="2020-08-08T01:00:00Z",
         )
@@ -1118,7 +1751,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 decision,
                 action_policy=action_policy,
                 action_generator=generator,
-                actual_input_before_frames=frames,
+                actual_input_before_context=context,
                 actual_input_before_run=run,
                 trust_store_path="/etc/advar/policies.json",
             )

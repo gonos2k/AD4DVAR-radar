@@ -539,6 +539,7 @@ class VariationalAdjointConfig:
     minimum_remap_fraction_margin: float = 1.0e-4
     minimum_output_cap_margin_dbz: float = 1.0e-3
     minimum_publication_margin: float = 1.0e-4
+    minimum_neural_prior_support_margin: float = 1.0e-3
     require_active_set_margin: bool = False
     minimum_reachability_margin: float = 1.0e-3
     minimum_unresolved_amplitude_fraction_margin: float = 1.0e-4
@@ -619,6 +620,7 @@ class VariationalAdjointConfig:
             self.minimum_remap_fraction_margin,
             self.minimum_output_cap_margin_dbz,
             self.minimum_publication_margin,
+            self.minimum_neural_prior_support_margin,
             self.minimum_reachability_margin,
             self.minimum_unresolved_amplitude_fraction_margin,
             self.minimum_amplitude_confidence_margin,
@@ -800,6 +802,7 @@ class VariationalActiveSetMargins:
     output_cap_dbz: float | None
     publication_support: float
     publication_confidence: float | None
+    neural_prior_support_probability: float | None
     low_local_validity: bool
 
 
@@ -1160,6 +1163,26 @@ def _neural_prior_derivative_mask(
     return valid & (raw > frozen.nowcast_config.min_dbz) & (
         raw < frozen.nowcast_config.max_dbz
     )
+
+
+def _neural_prior_support_margin(
+    frozen: FrozenOuterState,
+    application: NeuralPriorApplication | None,
+) -> float | None:
+    """Distance from retained soft support to its hard 0.5 branch."""
+
+    if frozen.neural_prior_dependency is None:
+        return None
+    if application is None or (
+        application.application_digest != frozen.neural_prior_application_digest
+    ):
+        return None
+    selected = application.support_probability.masked_select(
+        application.valid_mask
+    )
+    if selected.numel() == 0:
+        return None
+    return float(torch.amin(torch.abs(selected - 0.5)).detach())
 
 
 def _physical_radar_input_margins(
@@ -3333,6 +3356,9 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
                 "publication_confidence": (
                     fso.active_set_margins.publication_confidence
                 ),
+                "neural_prior_support_probability": (
+                    fso.active_set_margins.neural_prior_support_probability
+                ),
                 "low_local_validity": (
                     fso.active_set_margins.low_local_validity
                 ),
@@ -3472,7 +3498,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 def validate_variational_fso(fso: VariationalFSO) -> None:
     """Reject any mutation of a content-addressed FSO result."""
 
-    if fso.contract != "p1-variational-fso-v15":
+    if fso.contract != "p1-variational-fso-v16":
         raise ValueError("unsupported P1 FSO contract")
     if (
         fso.sensitivity_scope
@@ -3513,7 +3539,7 @@ def validate_variational_fso(fso: VariationalFSO) -> None:
 def validate_variational_fsoi(fsoi: VariationalFSOI) -> None:
     """Reject any mutation or cross-binding in a P1 impact result."""
 
-    if fsoi.contract != "p1-linearized-observation-impact-v12":
+    if fsoi.contract != "p1-linearized-observation-impact-v13":
         raise ValueError("unsupported P1 FSOI contract")
     validate_variational_fso(fsoi.fso)
     if fsoi.perturbation.digest != fsoi.perturbation_digest:
@@ -4336,7 +4362,7 @@ def compute_variational_fsoi(
     if perturbation_diagnostics is None:
         raise RuntimeError("variational perturbation was not validated")
     fsoi = VariationalFSOI(
-        contract="p1-linearized-observation-impact-v12",
+        contract="p1-linearized-observation-impact-v13",
         fso=fso,
         perturbation=observation_perturbation,
         perturbation_contract=observation_perturbation.contract,
@@ -5554,7 +5580,7 @@ def _variational_fsoi_from_precomputed_fso(
         baseline_branch_trusted_total=total if trusted else None,
     )
     fsoi = VariationalFSOI(
-        contract="p1-linearized-observation-impact-v12",
+        contract="p1-linearized-observation-impact-v13",
         fso=fso,
         perturbation=perturbation,
         perturbation_contract=perturbation.contract,
@@ -5836,6 +5862,10 @@ def _resolve_learning_step(
             observations.valid_mask,
             frozen.background_frames_dbz,
             frozen.background_age_minutes,
+            observation_quality_weight=(
+                observations.quality_weight * observations.valid_mask
+            ),
+            observation_std_dbz=observations.std_dbz,
             grid_time_contract=frozen.grid_time_contract,
             analysis_config_json=result.run.analysis_config_json,
             analysis_config_digest=result.run.analysis_config_digest,
@@ -5967,6 +5997,17 @@ def _resolve_learning_step(
             and resolved_linearization.frozen.analysis_remap_cells
             == frozen.analysis_remap_cells
         )
+        if frozen.neural_prior_dependency is not None:
+            resolved_prior_valid = (
+                resolved_linearization.frozen.neural_prior_valid_mask
+            )
+            retained_prior_valid = frozen.neural_prior_valid_mask
+            branch_valid = (
+                branch_valid
+                and resolved_prior_valid is not None
+                and retained_prior_valid is not None
+                and torch.equal(resolved_prior_valid, retained_prior_valid)
+            )
     if not converged:
         return _ResolvedLearningStep(
             metric_change=metric_change,
@@ -6010,6 +6051,11 @@ def _resolve_learning_step(
             changed_observations.valid_mask,
             frozen.background_frames_dbz,
             frozen.background_age_minutes,
+            observation_quality_weight=(
+                changed_observations.quality_weight
+                * changed_observations.valid_mask
+            ),
+            observation_std_dbz=changed_observations.std_dbz,
             grid_time_contract=frozen.grid_time_contract,
             analysis_config_json=resolved_analysis_config_json,
             analysis_config_digest=resolved_analysis_config_digest,
@@ -6732,6 +6778,10 @@ def _compute_variational_products(
     publication_support_margin, publication_confidence_margin = (
         _publication_margins(result, forecast_indices)
     )
+    prior_support_margin = _neural_prior_support_margin(
+        frozen,
+        neural_prior_application,
+    )
     forecast_remap_margin = math.inf
     output_cap_margin: float | None = None
 
@@ -6871,13 +6921,23 @@ def _compute_variational_products(
                     background_sensitivity[0],
                     torch.zeros_like(background_sensitivity[0]),
                 )
+                prior_log_std_cotangent = (
+                    _frozen_neural_prior_log_std_sensitivity(
+                        adjoint_solve.solution,
+                        control,
+                        observations,
+                        frozen,
+                    )
+                )
                 neural_prior_runner.validate_adjoint_direction(
                     frozen.input_frames_dbz,
                     prior_cotangent,
+                    prior_log_std_cotangent,
                 )
-                prior_input_sensitivity = neural_prior_runner.vjp(
+                prior_input_sensitivity = neural_prior_runner.vjp_components(
                     frozen.input_frames_dbz,
                     prior_cotangent,
+                    prior_log_std_cotangent,
                 )
             dynamics_sensitivity = (
                 _frozen_baseline_dynamics_observation_sensitivity(
@@ -6958,6 +7018,19 @@ def _compute_variational_products(
                 observation_perturbation is not None
                 and impact_accumulators is not None
             ):
+                background_impact = (
+                    prior_input_sensitivity
+                    * observation_perturbation.physical_radar_dbz_delta
+                    if observation_perturbation.perturbation_semantics
+                    == "physical_radar_value"
+                    and observation_perturbation.physical_radar_dbz_delta
+                    is not None
+                    else background_sensitivity
+                    * _initial_background_perturbation(
+                        observation_perturbation,
+                        observations,
+                    )
+                )
                 component_impacts = (
                     observation_sensitivity.detected_dbz
                     * observation_perturbation.detected_dbz,
@@ -6965,11 +7038,7 @@ def _compute_variational_products(
                     * observation_perturbation.censor_threshold_dbz,
                     observation_sensitivity.observation_weight
                     * observation_perturbation.observation_weight,
-                    background_sensitivity
-                    * _initial_background_perturbation(
-                        observation_perturbation,
-                        observations,
-                    ),
+                    background_impact,
                     dynamics_sensitivity
                     * _baseline_dynamics_perturbation(
                         observation_perturbation,
@@ -7014,6 +7083,14 @@ def _compute_variational_products(
             and publication_confidence_margin
             < adjoint_config.minimum_publication_margin
         )
+        or (
+            frozen.neural_prior_dependency is not None
+            and (
+                prior_support_margin is None
+                or prior_support_margin
+                < adjoint_config.minimum_neural_prior_support_margin
+            )
+        )
     )
     active_set_margins = VariationalActiveSetMargins(
         detection_classification_dbz=detection_margin,
@@ -7022,6 +7099,7 @@ def _compute_variational_products(
         output_cap_dbz=output_cap_margin,
         publication_support=publication_support_margin,
         publication_confidence=publication_confidence_margin,
+        neural_prior_support_probability=prior_support_margin,
         low_local_validity=low_local_validity,
     )
     if adjoint_config.require_active_set_margin and low_local_validity:
@@ -7046,7 +7124,7 @@ def _compute_variational_products(
         ),
     )
     fso = VariationalFSO(
-        contract="p1-variational-fso-v15",
+        contract="p1-variational-fso-v16",
         forecast_run_digest=result.forecast_run_digest,
         analysis_input_digest=cast(str, result.run.analysis_input_digest),
         sensitivity_config_digest=sensitivity_config.digest,
@@ -7385,6 +7463,48 @@ def _frozen_initial_background_observation_sensitivity(
             torch.zeros_like(observations.dbz[1:]),
         ),
         dim=0,
+    ).detach()
+
+
+def _frozen_neural_prior_log_std_sensitivity(
+    adjoint_solution: Tensor,
+    control: Tensor,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+) -> Tensor:
+    """Differentiate P1 stationarity through the spatial prior precision."""
+
+    prior_std = frozen.neural_prior_std_dbz
+    prior_valid = frozen.neural_prior_valid_mask
+    if prior_std is None or prior_valid is None:
+        raise ValueError("neural-prior uncertainty state is missing")
+    log_std = torch.log(prior_std.detach())
+
+    def stationarity(candidate_log_std: Tensor) -> Tensor:
+        candidate_frozen = replace(
+            frozen,
+            neural_prior_std_dbz=torch.exp(candidate_log_std),
+        )
+
+        def objective(candidate_control: Tensor) -> Tensor:
+            residual = residual_vector(
+                candidate_control,
+                observations,
+                candidate_frozen,
+            )
+            return 0.5 * torch.dot(residual, residual)
+
+        return cast(Tensor, torch.func.grad(objective)(control))
+
+    pullback = cast(
+        Callable[[Tensor], tuple[Tensor]],
+        torch.func.vjp(stationarity, log_std)[1],
+    )
+    sensitivity = -pullback(adjoint_solution)[0]
+    return torch.where(
+        prior_valid,
+        sensitivity,
+        torch.zeros_like(sensitivity),
     ).detach()
 
 

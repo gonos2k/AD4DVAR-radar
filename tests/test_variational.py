@@ -151,6 +151,22 @@ class _SpatialUncertaintyPrior(nn.Module):
         return mean, std, valid, support
 
 
+class _UncertaintyOnlyPrior(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.register_buffer("anchor", torch.tensor(0.0, dtype=torch.float64))
+
+    def forward(
+        self,
+        value: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        mean = torch.zeros_like(value) + self.anchor
+        std = torch.exp(0.1 * value)
+        valid = torch.ones_like(value, dtype=torch.bool)
+        support = torch.sigmoid(value)
+        return mean, std, valid, support
+
+
 class _StochasticPrior(nn.Module):
     def __init__(self) -> None:
         super().__init__()
@@ -371,8 +387,8 @@ class VariationalAnalysisTests(unittest.TestCase):
         runner = _prior_runner(1.0, "candidate", example_frames=frames)
         with patch.object(
             runner,
-            "jvp",
-            return_value=torch.zeros((4, 4), dtype=torch.float64),
+            "_certified_derivative_defect",
+            runner.maximum_derivative_defect + 1.0,
         ):
             with self.assertRaisesRegex(ValueError, "derivative defect"):
                 runner.infer(frames, input_run=run, role="candidate")
@@ -380,7 +396,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         cotangent = torch.arange(16, dtype=torch.float64).reshape(4, 4)
         with patch.object(
             runner,
-            "vjp",
+            "vjp_components",
             return_value=torch.zeros_like(frames),
         ):
             with self.assertRaisesRegex(ValueError, "adjoint-direction defect"):
@@ -396,6 +412,35 @@ class VariationalAnalysisTests(unittest.TestCase):
         expected = torch.zeros_like(frames)
         expected[0] = cotangent
         torch.testing.assert_close(runner.vjp(frames, cotangent), expected)
+
+    def test_radar_prior_total_derivative_includes_log_std(self) -> None:
+        frames = torch.ones((3, 4, 4), dtype=torch.float64)
+        runner = NeuralPriorInferenceRunner(
+            _UncertaintyOnlyPrior().eval(),
+            lambda value: value[0],
+            example_frames=frames,
+            model_contract_digest="4" * 64,
+            feature_schema_digest="5" * 64,
+            training_manifest_digest="6" * 64,
+            dependency="radar_dependent",
+        )
+        mean_jvp, log_std_jvp = runner.jvp_components(
+            frames,
+            torch.ones_like(frames),
+        )
+        torch.testing.assert_close(mean_jvp, torch.zeros_like(mean_jvp))
+        torch.testing.assert_close(
+            log_std_jvp,
+            torch.full_like(log_std_jvp, 0.1),
+        )
+        reverse = runner.vjp_components(
+            frames,
+            torch.zeros((4, 4), dtype=torch.float64),
+            torch.ones((4, 4), dtype=torch.float64),
+        )
+        expected = torch.zeros_like(frames)
+        expected[0] = 0.1
+        torch.testing.assert_close(reverse, expected)
 
     def test_prior_execution_digest_binds_the_actual_forward_code(self) -> None:
         common = dict(
@@ -693,6 +738,19 @@ class VariationalAnalysisTests(unittest.TestCase):
                     "candidate",
                     support_policy="expand_control",
                     maximum_added_area_km2=15.0,
+                    maximum_added_echo_integral=1.0e9,
+                ),
+            )
+        with self.assertRaisesRegex(ValueError, "added area"):
+            prepare_analysis(
+                frames,
+                grid_time_contract=contract,
+                neural_prior=_prior(
+                    frames,
+                    14.9,
+                    "candidate",
+                    support_policy="expand_control",
+                    maximum_added_area_km2=0.0,
                     maximum_added_echo_integral=1.0e9,
                 ),
             )

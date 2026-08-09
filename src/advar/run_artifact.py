@@ -35,12 +35,13 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v46"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v47"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v42",
     "forecast-run-v43",
     "forecast-run-v44",
     "forecast-run-v45",
+    "forecast-run-v46",
 }
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 224
@@ -57,6 +58,11 @@ _CORE_ARRAY_NAMES = frozenset(
         "nowcast_config_digest",
         "input_bundle_digest",
         "input_frames_digest",
+        "observation_masks_digest",
+        "observation_quality_weight_digest",
+        "observation_std_dbz_digest",
+        "background_frames_digest",
+        "fixed_input_context_digest",
         "run_background_age_minutes",
         "grid_time_contract_present",
         "grid_time_contract_json",
@@ -291,6 +297,16 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
     """
 
     result.validate_issuance()
+    if any(
+        value is None
+        for value in (
+            result.run.observation_masks_digest,
+            result.run.observation_quality_weight_digest,
+            result.run.observation_std_dbz_digest,
+            result.run.fixed_input_context_digest,
+        )
+    ):
+        raise ValueError("current run artifacts require complete input context")
     config = result.run.config
     config_json = json.dumps(
         asdict(config),
@@ -319,6 +335,23 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "nowcast_config_digest": np.asarray(config.digest),
         "input_bundle_digest": np.asarray(result.run.input_bundle_digest),
         "input_frames_digest": np.asarray(result.run.input_frames_digest),
+        "observation_masks_digest": np.asarray(
+            result.run.observation_masks_digest
+        ),
+        "observation_quality_weight_digest": np.asarray(
+            result.run.observation_quality_weight_digest
+        ),
+        "observation_std_dbz_digest": np.asarray(
+            result.run.observation_std_dbz_digest
+        ),
+        "background_frames_digest": np.asarray(
+            ""
+            if result.run.background_frames_digest is None
+            else result.run.background_frames_digest
+        ),
+        "fixed_input_context_digest": np.asarray(
+            result.run.fixed_input_context_digest
+        ),
         "neural_prior_digest": np.asarray(
             "" if result.run.neural_prior_digest is None else result.run.neural_prior_digest
         ),
@@ -1304,6 +1337,37 @@ def load_forecast_run(
                 _digest_scalar(loaded_arrays, "input_frames_digest")
                 if "input_frames_digest" in loaded_arrays
                 else _digest_scalar(loaded_arrays, "latest_frame_digest")
+            ),
+            observation_masks_digest=(
+                _digest_scalar(loaded_arrays, "observation_masks_digest")
+                if "observation_masks_digest" in loaded_arrays
+                else None
+            ),
+            observation_quality_weight_digest=(
+                _digest_scalar(
+                    loaded_arrays,
+                    "observation_quality_weight_digest",
+                )
+                if "observation_quality_weight_digest" in loaded_arrays
+                else None
+            ),
+            observation_std_dbz_digest=(
+                _digest_scalar(loaded_arrays, "observation_std_dbz_digest")
+                if "observation_std_dbz_digest" in loaded_arrays
+                else None
+            ),
+            background_frames_digest=(
+                _optional_digest_scalar(
+                    loaded_arrays,
+                    "background_frames_digest",
+                )
+                if "background_frames_digest" in loaded_arrays
+                else None
+            ),
+            fixed_input_context_digest=(
+                _digest_scalar(loaded_arrays, "fixed_input_context_digest")
+                if "fixed_input_context_digest" in loaded_arrays
+                else None
             ),
             input_bundle_digest=_digest_scalar(
                 loaded_arrays,

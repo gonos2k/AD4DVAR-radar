@@ -20,10 +20,11 @@ import numpy as np
 from numpy.typing import NDArray
 import torch
 from torch import Tensor
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from ._digest import tensor_digest
-from .nowcast import ForecastRunContract
+from .nowcast import ForecastRunContract, _forecast_input_bundle_digest
 
 from .sensitivity import (
     CONTEXT_FEATURE_NAMES,
@@ -35,6 +36,7 @@ from .sensitivity import (
     validate_variational_learning_impact,
 )
 from .intervention import (
+    InterventionInputContext,
     InterventionActionGenerator,
     ProspectiveInterventionDecision,
     ReusableInterventionPolicyEvidence,
@@ -43,6 +45,7 @@ from .intervention import (
     RetrospectiveCounterfactualReplay,
     validate_prospective_intervention,
     validate_intervention_action_transition,
+    validate_action_tensor_replay,
     validate_retrospective_counterfactual_replay,
     verify_intervention_receipt_signature,
     _new_prospective_decision,
@@ -52,10 +55,14 @@ from .promotion import (
     NeuralPriorCandidateManifest,
     LegacyNeuralPriorHoldoutPlanAudit,
     LegacyNeuralPriorHoldoutPlanCase,
+    LegacyNeuralPriorHoldoutPlanV2Audit,
+    LegacyNeuralPriorHoldoutPlanV2Case,
+    LegacyNeuralPriorHoldoutPlanV3Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
     NeuralPriorInputPlan,
+    PriorUncertaintyTargetPlan,
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionEvidence,
     NeuralPriorPromotionPolicy,
@@ -115,6 +122,70 @@ class LegacyPromotionEvaluationAudit:
         )
 
 
+@dataclass(frozen=True)
+class LegacyProspectiveInterventionDecisionAudit:
+    """Digest-verified PR #89 decision retained without execution reuse."""
+
+    decision_digest: str
+    payload_json: str
+    audit_digest: str = ""
+
+    def __post_init__(self) -> None:
+        payload = json.loads(self.payload_json)
+        if not isinstance(payload, dict) or (
+            payload.get("contract") != "prospective-intervention-decision-v2"
+            or payload.get("decision_digest") != self.decision_digest
+        ):
+            raise ValueError("invalid legacy prospective decision")
+        retained = dict(payload)
+        retained.pop("decision_digest")
+        if _json_digest(retained) != self.decision_digest:
+            raise ValueError("legacy prospective decision digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _json_digest(
+                {
+                    "contract": "legacy-prospective-decision-audit-v1",
+                    "payload": payload,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
+class LegacyRealizedInterventionReceiptAudit:
+    """Signed PR #89 receipt retained without durable transition replay."""
+
+    receipt_digest: str
+    decision_digest: str
+    payload_json: str
+    audit_digest: str = ""
+
+    def __post_init__(self) -> None:
+        payload = json.loads(self.payload_json)
+        if not isinstance(payload, dict) or (
+            payload.get("contract") != "realized-intervention-receipt-v2"
+            or payload.get("receipt_digest") != self.receipt_digest
+            or payload.get("decision_digest") != self.decision_digest
+        ):
+            raise ValueError("invalid legacy realized receipt")
+        retained = dict(payload)
+        retained.pop("receipt_digest")
+        if _json_digest(retained) != self.receipt_digest:
+            raise ValueError("legacy realized receipt digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _json_digest(
+                {
+                    "contract": "legacy-realized-receipt-audit-v1",
+                    "payload": payload,
+                }
+            ),
+        )
+
+
 def _load_executor_trust_store(path: str | Path) -> _ExecutorTrustStore:
     source = Path(path)
     if not source.is_absolute():
@@ -158,6 +229,50 @@ def _load_executor_trust_store(path: str | Path) -> _ExecutorTrustStore:
             raise ValueError("executor public keys must contain 32 bytes")
         keys[key_id] = key
     return _ExecutorTrustStore(keys=keys, content_digest=_json_digest(document))
+
+
+def _torch_dtype(value: str) -> torch.dtype:
+    mapping = {
+        "torch.float32": torch.float32,
+        "torch.float64": torch.float64,
+    }
+    try:
+        return mapping[value]
+    except KeyError as error:
+        raise ValueError("unsupported durable action dtype") from error
+
+
+def _intervention_context_tensor(
+    frames: Tensor,
+    masks: Tensor,
+    quality: Tensor,
+    std: Tensor,
+    background: Tensor | None,
+    applicability: Tensor,
+) -> Tensor:
+    canonical_frames = torch.nan_to_num(frames)
+    finite = torch.isfinite(frames).to(canonical_frames)
+    canonical_background = (
+        torch.zeros_like(canonical_frames)
+        if background is None
+        else torch.nan_to_num(background)
+    )
+    background_present = torch.full_like(
+        canonical_frames,
+        float(background is not None),
+    )
+    return torch.stack(
+        (
+            canonical_frames,
+            masks.to(canonical_frames),
+            finite,
+            quality,
+            std,
+            canonical_background,
+            background_present,
+            applicability.to(canonical_frames),
+        )
+    )
 _TRUST_COMPONENTS_V13 = {
     "linearity",
     "verification",
@@ -412,8 +527,10 @@ class EpisodeLedger:
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root).expanduser().resolve()
         self.episodes_dir = self.root / "episodes"
+        self.interventions_dir = self.root / "interventions"
         self.index_path = self.root / "index.sqlite"
         self.episodes_dir.mkdir(parents=True, exist_ok=True)
+        self.interventions_dir.mkdir(parents=True, exist_ok=True)
         self._initialize_index()
 
     def append(self, episode: SensitivityEpisode) -> Path:
@@ -813,13 +930,390 @@ class EpisodeLedger:
         validate_retrospective_counterfactual_replay(replay)
         return replay
 
+    def _write_intervention_action_artifact(
+        self,
+        receipt: RealizedInterventionReceipt,
+        generator: InterventionActionGenerator,
+        before: InterventionInputContext,
+        before_run: ForecastRunContract,
+        after: InterventionInputContext,
+        after_run: ForecastRunContract,
+    ) -> None:
+        target = self.interventions_dir / receipt.receipt_digest
+        if target.exists():
+            self._replay_intervention_action_artifact(receipt)
+            return
+        temporary = Path(
+            tempfile.mkdtemp(
+                prefix=f".{receipt.receipt_digest}.",
+                dir=self.interventions_dir,
+            )
+        )
+        try:
+            before_background = before.background_frames_dbz
+            after_background = after.background_frames_dbz
+            np.savez_compressed(
+                temporary / "transition.npz",
+                before_frames=before.frames_dbz.detach().cpu().numpy(),
+                before_masks=before.observation_masks.detach().cpu().numpy(),
+                before_quality=before.quality_weight.detach().cpu().numpy(),
+                before_std=before.observation_std_dbz.detach().cpu().numpy(),
+                before_background=(
+                    np.empty((0,), dtype=np.float32)
+                    if before_background is None
+                    else before_background.detach().cpu().numpy()
+                ),
+                before_applicability=before.applicability_mask.detach().cpu().numpy(),
+                after_frames=after.frames_dbz.detach().cpu().numpy(),
+                after_masks=after.observation_masks.detach().cpu().numpy(),
+                after_quality=after.quality_weight.detach().cpu().numpy(),
+                after_std=after.observation_std_dbz.detach().cpu().numpy(),
+                after_background=(
+                    np.empty((0,), dtype=np.float32)
+                    if after_background is None
+                    else after_background.detach().cpu().numpy()
+                ),
+                after_applicability=after.applicability_mask.detach().cpu().numpy(),
+            )
+            (temporary / "generator.pt2").write_bytes(generator.artifact_bytes)
+            manifest: dict[str, object] = {
+                "contract": "durable-intervention-action-artifact-v1",
+                "receipt_digest": receipt.receipt_digest,
+                "action_artifact_digest": receipt.action_artifact_digest,
+                "action_payload_digest": receipt.action_payload_digest,
+                "generator_digest": generator.generator_digest,
+                "generator_shape": list(generator._shape),
+                "generator_dtype": str(generator._dtype),
+                "intervention_type": generator.intervention_type,
+                "action_reason": generator.action_reason,
+                "before_context_digest": before.context_digest,
+                "after_context_digest": after.context_digest,
+                "before_radar_id": before.radar_id,
+                "after_radar_id": after.radar_id,
+                "before_context_schema_digest": before.context_schema_digest,
+                "after_context_schema_digest": after.context_schema_digest,
+                "before_applicability_region_digest": (
+                    before.applicability_region_digest
+                ),
+                "after_applicability_region_digest": (
+                    after.applicability_region_digest
+                ),
+                "before_applicability_mask_digest": tensor_digest(
+                    before.applicability_mask
+                ),
+                "after_applicability_mask_digest": tensor_digest(
+                    after.applicability_mask
+                ),
+                "before_input_bundle_digest": before.input_bundle_digest,
+                "after_input_bundle_digest": after.input_bundle_digest,
+                "before_fixed_input_context_digest": (
+                    before_run.fixed_input_context_digest
+                ),
+                "after_fixed_input_context_digest": (
+                    after_run.fixed_input_context_digest
+                ),
+                "input_plan_digest": before.input_plan_digest,
+                "before_input_plan_resolution_digest": (
+                    before.input_plan_resolution_digest
+                ),
+                "after_input_plan_resolution_digest": (
+                    after.input_plan_resolution_digest
+                ),
+                "before_background_present": before_background is not None,
+                "after_background_present": after_background is not None,
+            }
+            for prefix, run in (("before", before_run), ("after", after_run)):
+                manifest[f"{prefix}_background_age_minutes"] = (
+                    run.background_age_minutes
+                )
+                manifest[f"{prefix}_grid_time_contract_digest"] = (
+                    run.grid_time_contract_digest
+                )
+                manifest[f"{prefix}_calibration_manifest_digest"] = (
+                    run.operational_calibration_manifest_digest
+                )
+                manifest[f"{prefix}_calibration_approval_digest"] = (
+                    run.operational_calibration_approval_digest
+                )
+                manifest[f"{prefix}_data_identity_digest"] = (
+                    run.operational_data_identity_digest
+                )
+            (temporary / "manifest.json").write_text(
+                _json_text(manifest),
+                encoding="utf-8",
+            )
+            checksums = {
+                name: _file_digest(temporary / name)
+                for name in ("manifest.json", "generator.pt2", "transition.npz")
+            }
+            (temporary / "checksums.json").write_text(
+                _json_text(checksums),
+                encoding="utf-8",
+            )
+            for name in (*checksums, "checksums.json"):
+                _fsync_file(temporary / name)
+            _fsync_directory(temporary)
+            os.rename(temporary, target)
+            _fsync_directory(self.interventions_dir)
+        finally:
+            if temporary.exists():
+                shutil.rmtree(temporary)
+
+    def _replay_intervention_action_artifact(
+        self,
+        receipt: RealizedInterventionReceipt,
+    ) -> None:
+        source = self.interventions_dir / receipt.receipt_digest
+        if not source.is_dir() or source.is_symlink():
+            raise ValueError("durable intervention artifact is missing")
+        checksum_path = source / "checksums.json"
+        if not checksum_path.is_file() or checksum_path.is_symlink():
+            raise ValueError("durable intervention checksums are invalid")
+        checksums = json.loads(checksum_path.read_text("utf-8"))
+        expected_members = {"manifest.json", "generator.pt2", "transition.npz"}
+        if not isinstance(checksums, dict) or set(checksums) != expected_members:
+            raise ValueError("durable intervention artifact members are invalid")
+        if any(
+            not (source / name).is_file()
+            or (source / name).is_symlink()
+            or _file_digest(source / name) != digest
+            for name, digest in checksums.items()
+        ):
+            raise ValueError("durable intervention artifact checksum mismatch")
+        manifest = json.loads((source / "manifest.json").read_text("utf-8"))
+        if not isinstance(manifest, dict) or (
+            manifest.get("receipt_digest") != receipt.receipt_digest
+            or manifest.get("action_artifact_digest")
+            != receipt.action_artifact_digest
+            or manifest.get("before_input_bundle_digest")
+            != receipt.actual_input_before_bundle_digest
+            or manifest.get("after_input_bundle_digest")
+            != receipt.actual_input_bundle_digest
+        ):
+            raise ValueError("durable intervention artifact manifest mismatch")
+        with np.load(source / "transition.npz", allow_pickle=False) as arrays:
+            expected_arrays = {
+                "before_frames",
+                "before_masks",
+                "before_quality",
+                "before_std",
+                "before_background",
+                "before_applicability",
+                "after_frames",
+                "after_masks",
+                "after_quality",
+                "after_std",
+                "after_background",
+                "after_applicability",
+            }
+            if set(arrays.files) != expected_arrays:
+                raise ValueError("durable intervention tensor members are invalid")
+            tensors = {
+                name: torch.from_numpy(arrays[name].copy())
+                for name in arrays.files
+            }
+        before_background = (
+            tensors["before_background"]
+            if bool(manifest["before_background_present"])
+            else None
+        )
+        after_background = (
+            tensors["after_background"]
+            if bool(manifest["after_background_present"])
+            else None
+        )
+        before_applicability_digest = tensor_digest(
+            tensors["before_applicability"]
+        )
+        after_applicability_digest = tensor_digest(
+            tensors["after_applicability"]
+        )
+        if (
+            before_applicability_digest
+            != manifest.get("before_applicability_mask_digest")
+            or after_applicability_digest
+            != manifest.get("after_applicability_mask_digest")
+            or before_applicability_digest != after_applicability_digest
+        ):
+            raise ValueError("durable intervention applicability changed")
+        for prefix, background in (
+            ("before", before_background),
+            ("after", after_background),
+        ):
+            mask_digest = tensor_digest(tensors[f"{prefix}_masks"])
+            quality_digest = tensor_digest(tensors[f"{prefix}_quality"])
+            std_digest = tensor_digest(tensors[f"{prefix}_std"])
+            background_digest = (
+                None if background is None else tensor_digest(background)
+            )
+            expected_bundle = _forecast_input_bundle_digest(
+                tensors[f"{prefix}_frames"],
+                tensors[f"{prefix}_masks"],
+                background,
+                cast(float | None, manifest[f"{prefix}_background_age_minutes"]),
+                None,
+                cast(
+                    str | None,
+                    manifest[f"{prefix}_calibration_manifest_digest"],
+                ),
+                cast(
+                    str | None,
+                    manifest[f"{prefix}_calibration_approval_digest"],
+                ),
+                cast(str | None, manifest[f"{prefix}_data_identity_digest"]),
+                grid_time_contract_digest=cast(
+                    str | None,
+                    manifest[f"{prefix}_grid_time_contract_digest"],
+                ),
+            )
+            expected_resolution = _json_digest(
+                {
+                    "contract": "forecast-input-plan-resolution-v1",
+                    "input_plan_digest": manifest["input_plan_digest"],
+                    "input_bundle_digest": expected_bundle,
+                }
+            )
+            if (
+                expected_bundle != manifest[f"{prefix}_input_bundle_digest"]
+                or expected_resolution
+                != manifest[f"{prefix}_input_plan_resolution_digest"]
+            ):
+                raise ValueError("durable intervention input bundle changed")
+            expected_context = _json_digest(
+                {
+                    "contract": "intervention-input-context-v2",
+                    "input_bundle_digest": manifest[
+                        f"{prefix}_input_bundle_digest"
+                    ],
+                    "input_plan_digest": manifest["input_plan_digest"],
+                    "input_plan_resolution_digest": manifest[
+                        f"{prefix}_input_plan_resolution_digest"
+                    ],
+                    "frames_digest": tensor_digest(tensors[f"{prefix}_frames"]),
+                    "observation_masks_digest": mask_digest,
+                    "quality_weight_digest": quality_digest,
+                    "observation_std_dbz_digest": std_digest,
+                    "background_frames_digest": background_digest,
+                    "radar_id": manifest[f"{prefix}_radar_id"],
+                    "context_schema_digest": manifest[
+                        f"{prefix}_context_schema_digest"
+                    ],
+                    "applicability_region_digest": manifest[
+                        f"{prefix}_applicability_region_digest"
+                    ],
+                }
+            )
+            if expected_context != manifest[f"{prefix}_context_digest"]:
+                raise ValueError("durable intervention context digest mismatch")
+            expected_fixed = _json_digest(
+                {
+                    "contract": "forecast-fixed-input-context-v1",
+                    "observation_masks_digest": mask_digest,
+                    "observation_quality_weight_digest": quality_digest,
+                    "observation_std_dbz_digest": std_digest,
+                    "background_frames_digest": background_digest,
+                    "background_age_minutes": manifest[
+                        f"{prefix}_background_age_minutes"
+                    ],
+                    "grid_time_contract_digest": manifest[
+                        f"{prefix}_grid_time_contract_digest"
+                    ],
+                    "operational_calibration_manifest_digest": manifest[
+                        f"{prefix}_calibration_manifest_digest"
+                    ],
+                    "operational_calibration_approval_digest": manifest[
+                        f"{prefix}_calibration_approval_digest"
+                    ],
+                    "operational_data_identity_digest": manifest[
+                        f"{prefix}_data_identity_digest"
+                    ],
+                    "input_plan_digest": manifest["input_plan_digest"],
+                }
+            )
+            retained_fixed = getattr(
+                receipt,
+                f"fixed_input_context_{prefix}_digest",
+            )
+            if (
+                expected_fixed != manifest[f"{prefix}_fixed_input_context_digest"]
+                or expected_fixed != retained_fixed
+            ):
+                raise ValueError("durable fixed input context changed")
+        context_tensor = _intervention_context_tensor(
+            tensors["before_frames"],
+            tensors["before_masks"],
+            tensors["before_quality"],
+            tensors["before_std"],
+            before_background,
+            tensors["before_applicability"],
+        )
+        generator = InterventionActionGenerator.from_artifact(
+            artifact=(source / "generator.pt2").read_bytes(),
+            shape=tuple(int(value) for value in manifest["generator_shape"]),
+            dtype=_torch_dtype(str(manifest["generator_dtype"])),
+            intervention_type=cast(Any, manifest["intervention_type"]),
+            action_reason=cast(str | None, manifest["action_reason"]),
+            generator_digest=str(manifest["generator_digest"]),
+        )
+        action = generator.replay(context_tensor)
+        if generator.intervention_type != receipt.intervention_type:
+            raise ValueError("durable action type disagrees with its receipt")
+        if action.payload_digest != receipt.action_payload_digest:
+            raise ValueError("durable action payload changed")
+        validate_action_tensor_replay(
+            action,
+            before_frames=tensors["before_frames"],
+            before_masks=tensors["before_masks"],
+            before_quality_weight=tensors["before_quality"],
+            after_frames=tensors["after_frames"],
+            after_masks=tensors["after_masks"],
+            after_quality_weight=tensors["after_quality"],
+        )
+        retained_tensor_digests = (
+            (tensor_digest(tensors["before_frames"]), receipt.actual_input_before_frames_digest),
+            (tensor_digest(tensors["after_frames"]), receipt.actual_input_after_frames_digest),
+            (tensor_digest(tensors["before_masks"]), receipt.actual_input_before_masks_digest),
+            (tensor_digest(tensors["after_masks"]), receipt.actual_input_after_masks_digest),
+            (
+                tensor_digest(tensors["before_quality"]),
+                receipt.actual_quality_weight_before_digest,
+            ),
+            (
+                tensor_digest(tensors["after_quality"]),
+                receipt.actual_quality_weight_after_digest,
+            ),
+        )
+        if any(actual != expected for actual, expected in retained_tensor_digests):
+            raise ValueError("durable intervention tensors disagree with receipt")
+        replay_digest = _json_digest(
+            {
+                "contract": "intervention-action-artifact-v1",
+                "generator_digest": generator.generator_digest,
+                "before_context_digest": manifest["before_context_digest"],
+                "after_context_digest": manifest["after_context_digest"],
+                "action_payload_digest": action.payload_digest,
+                "before_frames_digest": tensor_digest(tensors["before_frames"]),
+                "after_frames_digest": tensor_digest(tensors["after_frames"]),
+                "before_masks_digest": tensor_digest(tensors["before_masks"]),
+                "after_masks_digest": tensor_digest(tensors["after_masks"]),
+                "before_quality_weight_digest": tensor_digest(
+                    tensors["before_quality"]
+                ),
+                "after_quality_weight_digest": tensor_digest(
+                    tensors["after_quality"]
+                ),
+            }
+        )
+        if replay_digest != receipt.action_artifact_digest:
+            raise ValueError("durable action transition digest mismatch")
+
     def append_prospective_intervention_decision(
         self,
         decision: ProspectiveInterventionDecision,
         *,
         action_policy: ReusableInterventionPolicyEvidence,
         action_generator: InterventionActionGenerator,
-        actual_input_before_frames: Tensor,
+        actual_input_before_context: InterventionInputContext,
         actual_input_before_run: ForecastRunContract,
         trust_store_path: str | Path,
     ) -> str:
@@ -833,7 +1327,7 @@ class EpisodeLedger:
             case_id=decision.case_id,
             radar_id=decision.radar_id,
             intervention_type=decision.intervention_type,
-            actual_input_before_frames=actual_input_before_frames,
+            actual_input_context=actual_input_before_context,
             actual_input_before_run=actual_input_before_run,
             input_plan_digest=decision.input_plan_digest,
             decision_basis_digest=decision.decision_basis_digest,
@@ -920,9 +1414,9 @@ class EpisodeLedger:
         receipt: RealizedInterventionReceipt,
         *,
         action_generator: InterventionActionGenerator,
-        actual_input_before_frames: Tensor,
+        actual_input_before_context: InterventionInputContext,
         actual_input_before_run: ForecastRunContract,
-        actual_input_after_frames: Tensor,
+        actual_input_after_context: InterventionInputContext,
         actual_input_after_run: ForecastRunContract,
         trust_store_path: str | Path,
         executor_trust_store_path: str | Path,
@@ -930,17 +1424,19 @@ class EpisodeLedger:
         """Record the executor receipt while the issue is still prospective."""
 
         validate_prospective_intervention(decision, receipt)
-        before_digest, after_digest = validate_intervention_action_transition(
+        transition = validate_intervention_action_transition(
             decision,
             action_generator=action_generator,
-            actual_input_before_frames=actual_input_before_frames,
+            actual_input_before_context=actual_input_before_context,
             actual_input_before_run=actual_input_before_run,
-            actual_input_after_frames=actual_input_after_frames,
+            actual_input_after_context=actual_input_after_context,
             actual_input_after_run=actual_input_after_run,
         )
         if (
-            receipt.actual_input_before_frames_digest != before_digest
-            or receipt.actual_input_after_frames_digest != after_digest
+            receipt.actual_input_before_frames_digest
+            != transition.before_frames_digest
+            or receipt.actual_input_after_frames_digest
+            != transition.after_frames_digest
             or receipt.actual_input_before_bundle_digest
             != actual_input_before_run.input_bundle_digest
             or receipt.actual_input_bundle_digest
@@ -989,6 +1485,14 @@ class EpisodeLedger:
                 receipt.executor_sequence_number <= previous_sequence
             ):
                 raise ValueError("executor receipt sequence must increase")
+            self._write_intervention_action_artifact(
+                receipt,
+                action_generator,
+                actual_input_before_context,
+                actual_input_before_run,
+                actual_input_after_context,
+                actual_input_after_run,
+            )
             connection.execute(
                 "INSERT INTO realized_intervention_receipts "
                 "(receipt_digest, decision_digest, executor_key_id, "
@@ -1010,7 +1514,15 @@ class EpisodeLedger:
     def load_prospective_intervention(
         self,
         receipt_digest: str,
-    ) -> tuple[ProspectiveInterventionDecision, RealizedInterventionReceipt]:
+        *,
+        executor_trust_store_path: str | Path,
+    ) -> (
+        tuple[ProspectiveInterventionDecision, RealizedInterventionReceipt]
+        | tuple[
+            LegacyProspectiveInterventionDecisionAudit,
+            LegacyRealizedInterventionReceiptAudit,
+        ]
+    ):
         """Load and verify one causally ordered action and receipt."""
 
         with self._connect() as connection:
@@ -1027,6 +1539,69 @@ class EpisodeLedger:
             raise KeyError(f"unknown realized receipt: {receipt_digest}")
         decision_values = json.loads(row["decision_json"])
         receipt_values = json.loads(row["receipt_json"])
+        if (
+            decision_values.get("contract")
+            == "prospective-intervention-decision-v2"
+            and receipt_values.get("contract")
+            == "realized-intervention-receipt-v2"
+        ):
+            decision_digest = decision_values.get("decision_digest")
+            retained_receipt_digest = receipt_values.get("receipt_digest")
+            if not isinstance(decision_digest, str) or (
+                retained_receipt_digest != receipt_digest
+                or receipt_values.get("decision_digest") != decision_digest
+            ):
+                raise ValueError("legacy prospective storage linkage is invalid")
+            decision_audit = LegacyProspectiveInterventionDecisionAudit(
+                decision_digest=decision_digest,
+                payload_json=json.dumps(
+                    decision_values,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+            )
+            receipt_audit = LegacyRealizedInterventionReceiptAudit(
+                receipt_digest=receipt_digest,
+                decision_digest=decision_digest,
+                payload_json=json.dumps(
+                    receipt_values,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+            )
+            executor_trust = _load_executor_trust_store(
+                executor_trust_store_path
+            )
+            if receipt_values.get("executor_trust_store_digest") != (
+                executor_trust.content_digest
+            ):
+                raise ValueError("legacy receipt executor trust-store mismatch")
+            key_id = receipt_values.get("executor_key_id")
+            public_key = executor_trust.keys.get(str(key_id))
+            signature = receipt_values.get("executor_signature")
+            if public_key is None or not isinstance(signature, str):
+                raise ValueError("legacy receipt executor is not approved")
+            signed_values = dict(receipt_values)
+            signed_values.pop("receipt_digest")
+            signed_values["executor_signature"] = ""
+            try:
+                public_key.verify(
+                    bytes.fromhex(signature),
+                    _json_digest(signed_values).encode("ascii"),
+                )
+            except (InvalidSignature, ValueError) as error:
+                raise ValueError("legacy receipt executor signature mismatch") from error
+            with self._connect() as connection:
+                sequences = connection.execute(
+                    "SELECT executor_sequence_number FROM "
+                    "realized_intervention_receipts WHERE executor_key_id = ? "
+                    "ORDER BY created_at, receipt_digest",
+                    (key_id,),
+                ).fetchall()
+            sequence_values = [int(item[0]) for item in sequences]
+            if sequence_values != sorted(set(sequence_values)):
+                raise ValueError("legacy executor receipt sequence is invalid")
+            return decision_audit, receipt_audit
         retained_decision_digest = decision_values.pop("decision_digest", None)
         retained_receipt_digest = receipt_values.pop("receipt_digest", None)
         decision = _new_prospective_decision(**decision_values)
@@ -1037,6 +1612,24 @@ class EpisodeLedger:
         ):
             raise ValueError("prospective intervention storage digest mismatch")
         validate_prospective_intervention(decision, receipt)
+        executor_trust = _load_executor_trust_store(executor_trust_store_path)
+        if receipt.executor_trust_store_digest != executor_trust.content_digest:
+            raise ValueError("realized receipt executor trust-store mismatch")
+        public_key = executor_trust.keys.get(receipt.executor_key_id)
+        if public_key is None:
+            raise ValueError("realized receipt executor is not approved")
+        verify_intervention_receipt_signature(receipt, public_key)
+        with self._connect() as connection:
+            sequences = connection.execute(
+                "SELECT executor_sequence_number FROM "
+                "realized_intervention_receipts WHERE executor_key_id = ? "
+                "ORDER BY created_at, receipt_digest",
+                (receipt.executor_key_id,),
+            ).fetchall()
+        values = [int(row[0]) for row in sequences]
+        if values != sorted(set(values)):
+            raise ValueError("executor receipt sequence ledger is invalid")
+        self._replay_intervention_action_artifact(receipt)
         return decision, receipt
 
     def load_realized_observation_intervention(
@@ -1163,7 +1756,12 @@ class EpisodeLedger:
     def load_neural_prior_holdout_plan(
         self,
         plan_digest: str,
-    ) -> NeuralPriorHoldoutPlan | LegacyNeuralPriorHoldoutPlanAudit:
+    ) -> (
+        NeuralPriorHoldoutPlan
+        | LegacyNeuralPriorHoldoutPlanAudit
+        | LegacyNeuralPriorHoldoutPlanV2Audit
+        | LegacyNeuralPriorHoldoutPlanV3Audit
+    ):
         """Load and verify one immutable pre-registered holdout plan."""
 
         with self._connect() as connection:
@@ -1187,6 +1785,51 @@ class EpisodeLedger:
             if plan.plan_digest != plan_digest:
                 raise ValueError("legacy neural-prior holdout digest mismatch")
             return plan
+        if value.get("contract") == "neural-prior-holdout-plan-v2":
+            value["cases"] = tuple(
+                LegacyNeuralPriorHoldoutPlanV2Case(**item)
+                for item in value["cases"]
+            )
+            value["input_plans"] = tuple(
+                NeuralPriorInputPlan(
+                    **{
+                        key: entry
+                        for key, entry in item.items()
+                        if key != "plan_digest"
+                    }
+                )
+                for item in value["input_plans"]
+            )
+            plan_v2 = LegacyNeuralPriorHoldoutPlanV2Audit(**value)
+            if plan_v2.plan_digest != plan_digest:
+                raise ValueError("legacy v2 neural-prior holdout digest mismatch")
+            return plan_v2
+        if value.get("contract") == "neural-prior-holdout-plan-v3":
+            value["cases"] = tuple(
+                NeuralPriorHoldoutPlanCase(**item) for item in value["cases"]
+            )
+            value["input_plans"] = tuple(
+                NeuralPriorInputPlan(
+                    **{
+                        key: entry
+                        for key, entry in item.items()
+                        if key != "plan_digest"
+                    }
+                )
+                for item in value["input_plans"]
+            )
+            value["uncertainty_target_plans"] = tuple(
+                {
+                    key: entry
+                    for key, entry in item.items()
+                    if key != "plan_digest"
+                }
+                for item in value["uncertainty_target_plans"]
+            )
+            plan_v3 = LegacyNeuralPriorHoldoutPlanV3Audit(**value)
+            if plan_v3.plan_digest != plan_digest:
+                raise ValueError("legacy v3 neural-prior holdout digest mismatch")
+            return plan_v3
         value["cases"] = tuple(
             NeuralPriorHoldoutPlanCase(**item) for item in value["cases"]
         )
@@ -1195,6 +1838,16 @@ class EpisodeLedger:
                 **{key: entry for key, entry in item.items() if key != "plan_digest"}
             )
             for item in value["input_plans"]
+        )
+        value["uncertainty_target_plans"] = tuple(
+            PriorUncertaintyTargetPlan(
+                **{
+                    key: entry
+                    for key, entry in item.items()
+                    if key != "plan_digest"
+                }
+            )
+            for item in value["uncertainty_target_plans"]
         )
         plan = NeuralPriorHoldoutPlan(**value)
         if plan.plan_digest != plan_digest:
@@ -2028,7 +2681,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v2"
+        or value[0].get("contract") != "prior-holdout-evaluation-v3"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:
