@@ -707,6 +707,7 @@ from advar import (
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionPolicy,
     PromotionMetricScale,
+    RangeMetricRequirement,
     compute_neural_prior_promotion,
 )
 
@@ -730,6 +731,16 @@ promotion_policy = NeuralPriorPromotionPolicy(
     ),
     minimum_holdout_cases=20,
     minimum_material_cases=20,
+    required_range_metrics=(
+        RangeMetricRequirement(
+            weather_regime="convective",
+            range_regime="near_range",
+            metric_name="soft_fss_error_35",
+            lead_minutes=60,
+            minimum_cases=5,
+            minimum_valid_area_km2=100.0,
+        ),
+    ),
     maximum_prior_conditional_pit_residual_mean_abs=2.0,
     maximum_prior_conditional_underdispersion_fraction=0.1,
     maximum_prior_echo_support_miss_score=0.25,
@@ -785,8 +796,10 @@ manifest와 evaluation에 정확히 한 번씩 존재해야 한다. 결측·fore
 subset 선택으로 제거할 수 없고 promotion이 fail-close한다. Prior promotion은 전체
 preregistered forecast population의 `PriorHoldoutEvaluation`을 사용하며, intervention을
 선택·실행한 사례만 모은 action-effect population과 분리된다. Material 사례의
-case/storm/day/radar/regime 다양성과 cluster bootstrap, training/holdout
-storm·day·time-window 분리도 다시 검사한다.
+case/day/radar/regime 다양성뿐 아니라 signed physical-event catalog의 event
+membership을 검사한다. 같은 event의 radar·day·cycle은 반복측정으로 유지하고 outer
+cluster는 event digest 하나만 사용한다. Candidate와 classifier training event가 holdout
+event와 겹치면 exact input digest가 달라도 거부한다.
 Neural prior는 P1이 소비하는 deterministic Gaussian state head와 holdout calibration용
 hurdle-probability head를 별도 계약으로 출력한다. State product와 support threshold는
 분석 radar product와 detection limit에 정확히 일치해야 하며, probability head의
@@ -805,7 +818,7 @@ clear false-echo score로 각각 검증한다.
 Clear-sky에서는 support probability의 false-echo score를 별도로 계산하므로 동일한
 no-echo를 -10/0/4.9 dBZ 중 어떤 floor로 저장해도 intensity score가 달라지지 않는다.
 Candidate와 parent를 동일한 사전등록 target mask에서 paired 평가하고,
-physical-event outer cluster bootstrap으로 구한 intensity-NLL·support-Brier·echo-miss·
+physical-event outer cluster inference로 구한 intensity-NLL·support-Brier·echo-miss·
 clear-sky·conditional-underdispersion 증가의 전역 및 regime별 최악 상한도 정책 한계를
 넘어서는 안 된다.
 순수 clear case의 intensity component와 순수 echo case의 clear component는 실패가
@@ -825,13 +838,17 @@ state/probability score를 다시 계산한다. Geometry mask 면적과 별도�
 probability-valid, state-valid 면적과 echo/clear pixel·connected-object 수를 보존하며,
 component별 최소 유효 표본을 통과해야 한다. Range mask는 서로 겹치지 않을 뿐 아니라
 전체 분석격자를 정확히 한 번 덮어야 하므로 미인증 영역을 숨긴 채 candidate를 전역 선택할
-수 없다. Band-local skill의 평균·beneficial bound는 physical event 단위로 계산하고,
-harmful fraction은 event 안의 cycle 빈도를 보존한다. Candidate의 절대 band score와
+수 없다. Band-local skill의 평균·beneficial bound는 signed physical event 단위로 계산하고,
+harmful fraction은 event 안의 cycle 빈도를 보존한다. Binary/rate gate는 5/5 성공을
+확률 1로 오해하는 naive bootstrap 대신 family-adjusted Wilson finite-sample bound를
+사용한다. Candidate의 절대 band score와
 parent 대비 비열화 상한을 함께 검사하므로 두 prior가 모두 나쁜 band도 인증되지 않는다.
 Band별 family-adjusted tail replicate 수와 Monte Carlo 오차는 promotion evidence에 보존되고,
 해상도가 부족하면 fail-close한다. Reference active set에 대한 set precision·recall,
 exact-set accuracy와 false-active-band rate까지 통과한 band만 인증하므로 모든 range
-logit을 높여 near/mid/far를 동시에 활성화하는 classifier는 인증을 얻지 못한다.
+logit을 높여 near/mid/far를 동시에 활성화하는 classifier는 인증을 얻지 못한다. 각
+weather×range group은 정책이 요구한 metric×lead별 최소 case와 실제 valid 면적을 모두
+충족해야 하며, unavailable metric을 다른 metric 개선으로 대체할 수 없다.
 실제 배포에서는 caller가 regime 문자열이나 operational role을 넘기지 않는다. Exported
 `NeuralPriorRegimeClassifier`가 현재 `full_analysis_input_digest`에 결합된
 `RegimeClassificationEvidence`를 만들고, 모든 holdout case에서도 동일 classifier를
@@ -846,17 +863,21 @@ physical-event cluster 신뢰하한·상한도 통과해야 한다. Prospective 
 정답 대신 `pending`과 `RegimeReferencePlan`의 labeler/source/adjudication rule만 기록한다.
 검증시각 뒤의 observed label은 exact input·verification·storm에 묶인 Ed25519
 `RegimeReferenceEvidence`로 완료된다. Classifier
-runtime·dtype·device도 evidence에 결합되고 weather top-two, range-presence와 deployment
-confidence hard branch margin이 부족하면 `ambiguous_classifier_branch`로 parent에
-fallback한다. Range logits는 domain에
-존재하는 band 집합으로 해석하며 활성 band가 모두 인증돼야 candidate를 선택한다.
+runtime·dtype·device도 evidence에 결합되고 weather top-two와 deployment confidence hard
+branch margin이 부족하면 `ambiguous_classifier_branch`로 parent에 fallback한다. Range
+logits는 holdout의 shadow classifier 진단에만 남는다. Operational range applicability는
+radar-site identity, grid coordinates, radial distance edges와 resolver algorithm을 묶은
+root-approved `RangeGeometryContract`에서 결정한다. 현재 격자의 완전분할에서 비어 있지
+않은 모든 band와 exact geometry contract가 인증돼야 candidate를 전 격자에 선택하며,
+하나라도 미인증이면 전체 parent로 fallback한다.
 `infer_deployed_neural_prior()`는 root-owned trust store가 승인한
 `DeployedNeuralPriorPolicy`의 confidence rule까지 확인한 뒤 candidate 또는 parent를
 선택한다. 연구용 `NeuralPriorInferenceRunner.infer()`는 operational input을 항상 거부한다.
 선택 digest뿐 아니라 classifier probability, 활성 band, policy, certified group과
 trust-store snapshot을 포함한 canonical deployment-decision payload도 forecast run identity
-및 v52 artifact에 남는다. 적재 시 selector를 다시 실행해 저장된 candidate/parent 선택과
-exact 비교한다. v51 run은 durable decision 이전 계약을 audit-only로 읽고, v50 run은 policy 승인
+및 v53 artifact에 남는다. 적재 시 physical partition을 포함한 selector를 다시 실행해 저장된
+candidate/parent 선택과 exact 비교한다. v52 run은 physical range deployment 이전 계약을
+`neural-prior-deployment-lineage-v3-audit`로만 읽는다. v51 run은 durable decision 이전 계약을 audit-only로 읽고, v50 run은 policy 승인
 이전 계약을 `neural-prior-deployment-lineage-v1-audit`로, v49 이하는
 `neural-prior-deployment-lineage-v0-audit`로만 읽는다.
 따라서 clear-sky 개선으로 echo intensity 악화를 상쇄하거나 절대 calibration 상한만
@@ -867,8 +888,8 @@ exclusion mask가 target mask를 덮었는지 계산해 확인한다. 불확실�
 fraction·면적과 parent 대비 abstention 증가 및 NLL abstention penalty를 함께 적용한다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
-현재 promotion evidence는 v12, candidate manifest는 v7, holdout plan은 v9,
-holdout evaluation은 v13, promotion policy는 v17이다. 이전 promotion evidence·candidate manifest·holdout plan·
+현재 promotion evidence는 v13, candidate manifest는 v8, holdout plan은 v10,
+holdout evaluation은 v14, promotion policy는 v18이다. 이전 promotion evidence·candidate manifest·holdout plan·
 evaluation은 원래 payload와 digest를 그대로 검증하는
 read-only audit 타입으로만 적재된다. Migration 때 추가된 UCB 컬럼의 기본값 0을 과거
 증거의 계산값으로 해석하거나 과거 row를 현재 승격판정에 재사용하지 않는다.
@@ -1390,8 +1411,8 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v58`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v52`
+- `output_contract_version`: 현재 `nowcast-npz-v59`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v53`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age

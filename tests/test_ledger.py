@@ -601,6 +601,18 @@ class EpisodeLedgerTests(unittest.TestCase):
             state_contract_digest="0" * 64,
             support_threshold_dbz=5.0,
         )
+        range_grid = torch.zeros((2, 2), dtype=torch.float64)
+        range_geometry = promotion_module.RangeGeometryContract(
+            radar_site_digest="7" * 64,
+            grid_contract_digest="1" * 64,
+            radar_x_m=0.0,
+            radar_y_m=0.0,
+            range_regime_labels=("near_range",),
+            radial_distance_edges_m=(0.0, 100_000.0),
+            beam_height_rule_digest="8" * 64,
+            grid_x_m_digest=tensor_digest(range_grid),
+            grid_y_m_digest=tensor_digest(range_grid),
+        )
         range_contract = promotion_module.RangeBandContract(
             case_id="case-clock",
             range_regime_labels=("near_range",),
@@ -609,6 +621,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             ),
             reference_active_range_regimes=("near_range",),
             grid_contract_digest="1" * 64,
+            range_geometry_contract_digest=range_geometry.contract_digest,
         )
         classifier_manifest = promotion_module.RegimeClassifierManifest(
             classifier_digest="b" * 64,
@@ -616,6 +629,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             training_case_ids=("classifier-training-case",),
             training_input_bundle_digests=("1" * 64,),
             training_full_analysis_input_digests=("2" * 64,),
+            training_physical_event_digests=("9" * 64,),
             training_storm_ids=("classifier-training-storm",),
             training_days=("2029-01-01",),
             training_radar_ids=("classifier-radar",),
@@ -673,6 +687,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             uncertainty_target_plans=(target_plan,),
             state_calibration_target_plans=(state_target_plan,),
             range_band_contracts=(range_contract,),
+            range_geometry_contracts=(range_geometry,),
             regime_reference_plans=(reference_plan,),
             regime_classifier_manifests=(classifier_manifest,),
             reference_label_contract_digest="e" * 64,
