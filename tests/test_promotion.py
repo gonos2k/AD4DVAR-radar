@@ -93,12 +93,154 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             quantization_origin_dbz=-10.0,
         )
 
+    def test_physical_applicability_contract_versions_are_new_generations(
+        self,
+    ) -> None:
+        plan = self.plan()
+        manifest = self.manifest()
+        evaluation = self.evaluation(1, -1.0)
+        policy = self.policy()
+
+        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v10")
+        self.assertTrue(
+            all(
+                item.contract == "neural-prior-range-band-contract-v2"
+                for item in plan.range_band_contracts
+            )
+        )
+        self.assertEqual(
+            manifest.contract,
+            "neural-prior-candidate-manifest-v8",
+        )
+        self.assertEqual(
+            evaluation.contract,
+            "prior-holdout-evaluation-v14",
+        )
+        self.assertTrue(
+            all(
+                band.contract == "neural-prior-range-band-evaluation-v4"
+                for band in evaluation.range_band_evaluations
+            )
+        )
+        self.assertEqual(policy.contract, "neural-prior-promotion-policy-v18")
+
+    def test_previous_physical_contracts_load_as_audit_only(self) -> None:
+        plan_payload = promotion_module._holdout_plan_payload(self.plan())
+        plan_payload["contract"] = "neural-prior-holdout-plan-v9"
+        plan_payload.pop("range_geometry_contracts")
+        for range_contract in plan_payload["range_band_contracts"]:
+            range_contract["contract"] = "neural-prior-range-band-contract-v1"
+            range_contract.pop("range_geometry_contract_digest")
+        for classifier in plan_payload["regime_classifier_manifests"]:
+            classifier["contract"] = "neural-prior-regime-classifier-manifest-v2"
+            classifier.pop("training_physical_event_digests")
+        plan_digest = promotion_module.json_digest(plan_payload)
+        stored_plan = plan_payload | {"plan_digest": plan_digest}
+
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            with sqlite3.connect(ledger.index_path) as connection:
+                connection.execute(
+                    "INSERT INTO neural_prior_holdout_plans "
+                    "(plan_digest, plan_id, plan_json, policy_digest, "
+                    "trust_store_digest, registered_at, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        plan_digest,
+                        "holdout-plan",
+                        json.dumps(
+                            stored_plan,
+                            sort_keys=True,
+                            separators=(",", ":"),
+                        ),
+                        "6" * 64,
+                        "7" * 64,
+                        "2026-08-07T00:00:00Z",
+                        "2026-08-07T00:00:00Z",
+                    ),
+                )
+            loaded_plan = ledger.load_neural_prior_holdout_plan(plan_digest)
+
+        self.assertIsInstance(
+            loaded_plan,
+            promotion_module.LegacyNeuralPriorHoldoutPlanV9Audit,
+        )
+
+        manifest_payload = promotion_module._candidate_manifest_payload(
+            self.manifest()
+        )
+        manifest_payload["contract"] = "neural-prior-candidate-manifest-v7"
+        manifest_payload.pop("physical_event_catalog_evidences")
+        for case in manifest_payload["holdout_cases"]:
+            case.pop("physical_event_digest")
+        manifest_digest = promotion_module.json_digest(manifest_payload)
+        stored_manifest = manifest_payload | {
+            "manifest_digest": manifest_digest
+        }
+        loaded_manifest = ledger_module._decode_candidate_manifest(
+            json.dumps(stored_manifest, sort_keys=True, separators=(",", ":")),
+            expected_digest=manifest_digest,
+        )
+        self.assertIsInstance(
+            loaded_manifest,
+            promotion_module.LegacyNeuralPriorCandidateManifestAuditV7,
+        )
+
+    def deployment_range_geometry(
+        self,
+        *,
+        labels: tuple[str, str],
+        include_second_band: bool,
+    ):
+        grid_x_m = torch.tensor(
+            [[0.0, 20_000.0], [40_000.0, 80_000.0]]
+            if include_second_band
+            else [[0.0, 20_000.0], [10_000.0, 25_000.0]]
+        )
+        grid_y_m = torch.zeros_like(grid_x_m)
+        geometry = promotion_module.RangeGeometryContract(
+            radar_site_digest="a" * 64,
+            grid_contract_digest="2" * 64,
+            radar_x_m=0.0,
+            radar_y_m=0.0,
+            range_regime_labels=labels,
+            radial_distance_edges_m=(0.0, 30_000.0, 100_000.0),
+            beam_height_rule_digest="b" * 64,
+            grid_x_m_digest=promotion_module.tensor_digest(grid_x_m),
+            grid_y_m_digest=promotion_module.tensor_digest(grid_y_m),
+        )
+        return geometry, promotion_module.resolve_range_geometry(
+            geometry,
+            grid_x_m=grid_x_m,
+            grid_y_m=grid_y_m,
+        )
+
     def verification_plan(self, valid_time: str) -> str:
         return verification_plan_digest(
             valid_times=(valid_time,),
             grid_contract_digest="2" * 64,
             radar_product_digest="a" * 64,
             qc_pipeline_digest="9" * 64,
+        )
+
+    def holdout_range_geometry(self, index: int):
+        grid_x_m = torch.zeros((2, 2))
+        grid_y_m = torch.zeros_like(grid_x_m)
+        geometry = promotion_module.RangeGeometryContract(
+            radar_site_digest=("a" if index == 1 else "b") * 64,
+            grid_contract_digest="2" * 64,
+            radar_x_m=0.0 if index == 1 else 50_000.0,
+            radar_y_m=0.0,
+            range_regime_labels=("near_range", "far_range"),
+            radial_distance_edges_m=(0.0, 30_000.0, 100_000.0),
+            beam_height_rule_digest="c" * 64,
+            grid_x_m_digest=promotion_module.tensor_digest(grid_x_m),
+            grid_y_m_digest=promotion_module.tensor_digest(grid_y_m),
+        )
+        return geometry, promotion_module.resolve_range_geometry(
+            geometry,
+            grid_x_m=grid_x_m,
+            grid_y_m=grid_y_m,
         )
 
     def plan(self) -> NeuralPriorHoldoutPlan:
@@ -170,26 +312,24 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
         )
         range_labels = ("near_range", "far_range")
-        range_masks = (
-            torch.ones((2, 2), dtype=torch.bool),
-            torch.zeros((2, 2), dtype=torch.bool),
+        range_geometries = tuple(
+            self.holdout_range_geometry(index)[0] for index in (1, 2)
+        )
+        range_partitions = tuple(
+            self.holdout_range_geometry(index)[1] for index in (1, 2)
         )
         range_contracts = tuple(
             promotion_module.RangeBandContract(
                 case_id=f"case-{index}",
                 range_regime_labels=range_labels,
-                range_band_mask_digests=tuple(
-                    promotion_module.tensor_digest(mask)
-                    for mask in (
-                        range_masks
-                        if index == 1
-                        else tuple(reversed(range_masks))
-                    )
-                ),
+                range_band_mask_digests=range_partitions[index - 1].range_band_mask_digests,
                 reference_active_range_regimes=(
                     "near_range" if index == 1 else "far_range",
                 ),
                 grid_contract_digest="2" * 64,
+                range_geometry_contract_digest=(
+                    range_geometries[index - 1].contract_digest
+                ),
             )
             for index in (1, 2)
         )
@@ -199,6 +339,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             training_case_ids=("classifier-training-case",),
             training_input_bundle_digests=("9" * 64,),
             training_full_analysis_input_digests=("8" * 64,),
+            training_physical_event_digests=("4" * 64,),
             training_storm_ids=("classifier-training-storm",),
             training_days=("2026-06-01",),
             training_radar_ids=("classifier-radar",),
@@ -284,6 +425,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             uncertainty_target_plans=target_plans,
             state_calibration_target_plans=state_target_plans,
             range_band_contracts=range_contracts,
+            range_geometry_contracts=range_geometries,
             regime_reference_plans=reference_plans,
             regime_classifier_manifests=(classifier_manifest,),
             reference_label_contract_digest="7" * 64,
@@ -299,6 +441,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             case_id=planned.case_id,
             planned_storm_id=planned.storm_id,
             storm_id=f"storm-{index}",
+            physical_event_digest=self.event_catalog(index).event_digest,
             day=planned.day,
             radar_id=planned.radar_id,
             planned_regime=planned.regime,
@@ -348,6 +491,25 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             reference_active_range_regimes=(
                 planned.reference_active_range_regimes
             ),
+        )
+
+    def event_catalog(self, index: int):
+        issue = "2026-08-09T00:00:00Z" if index == 1 else "2026-08-10T00:00:00Z"
+        end = "2026-08-09T02:00:00Z" if index == 1 else "2026-08-10T02:00:00Z"
+        return promotion_module.PhysicalEventCatalogEvidence.from_members(
+            event_id=f"physical-event-{index}",
+            member_case_ids=(f"case-{index}",),
+            member_full_analysis_input_digests=(
+                ("1" if index == 1 else "2") * 64,
+            ),
+            start_time=issue,
+            end_time=end,
+            spatial_envelope_xy_m=(0.0, 0.0, 100_000.0, 100_000.0),
+            participating_radar_ids=("radar-1",),
+            association_algorithm_digest="3" * 64,
+            adjudication_policy_digest="6" * 64,
+            adjudicator_id="independent-weather-labeler",
+            adjudicator_private_key=self.regime_labeler_key(),
         )
 
     def reference_evidence(self, index: int):
@@ -510,6 +672,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 self.reference_evidence(1),
                 self.reference_evidence(2),
             ),
+            physical_event_catalog_evidences=(
+                self.event_catalog(1),
+                self.event_catalog(2),
+            ),
             holdout_cases=(self.completed_case(1), self.completed_case(2)),
         )
 
@@ -559,6 +725,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         range_object_count: int = 1,
         range_candidate_support_brier_score: float | None = None,
         range_parent_support_brier_score: float | None = None,
+        physical_event_digest: str | None = None,
     ) -> promotion_module.PriorHoldoutEvaluation:
         manifest = self.manifest()
         case = manifest.holdout_cases[index - 1]
@@ -707,6 +874,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_module.RangeBandEvaluation(
                 range_regime=range_regime,
                 range_band_mask_digest=range_contract.mask_digest(range_regime),
+                range_geometry_contract_digest=(
+                    range_contract.range_geometry_contract_digest
+                ),
                 metric_change=torch.tensor([[band_change]], dtype=torch.float64),
                 end_to_end_metric_change=torch.tensor(
                     [[band_change if end_to_end is None else end_to_end]],
@@ -721,6 +891,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 uncertainty_component_sample_counts=range_component_counts,
                 evaluated_area_km2=1000.0,
                 metric_valid_area_km2_by_lead=(range_valid_area_km2,),
+                metric_valid_area_km2=torch.tensor(
+                    [[range_valid_area_km2]], dtype=torch.float64
+                ),
                 probability_valid_area_km2=range_valid_area_km2,
                 state_valid_area_km2=range_valid_area_km2,
                 echo_pixel_count=(
@@ -745,6 +918,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             parent_prior_digest=manifest.parent_prior_digest,
             case_id=case.case_id,
             storm_id=case.storm_id,
+            physical_event_digest=(
+                case.physical_event_digest
+                if physical_event_digest is None
+                else physical_event_digest
+            ),
             day=case.day,
             radar_id=case.radar_id,
             regime=case.regime,
@@ -915,6 +1093,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             deployment_regime_classifier_manifest_digest=(
                 self.plan().regime_classifier_manifests[0].manifest_digest
             ),
+            required_range_metrics=(
+                promotion_module.RangeMetricRequirement(
+                    "convective", "near_range", "log_echo_mse", 60, 1, 0.0
+                ),
+                promotion_module.RangeMetricRequirement(
+                    "stratiform", "far_range", "log_echo_mse", 60, 1, 0.0
+                ),
+            ),
             minimum_holdout_cases=2,
             minimum_material_cases=2,
             minimum_material_case_fraction=1.0,
@@ -964,8 +1150,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             minimum_range_state_echo_objects=1,
             minimum_weather_top1_top2_gap=0.0,
             minimum_range_presence_margin=0.0,
-            minimum_beneficial_fraction=1.0,
-            maximum_harmful_fraction=0.0,
+            minimum_beneficial_fraction=0.0,
+            maximum_harmful_fraction=1.0,
             minimum_mean_normalized_improvement=0.1,
             bootstrap_samples=128,
         )
@@ -1041,7 +1227,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertTrue(result.eligible)
         validate_neural_prior_promotion(result)
 
-    def test_current_promotion_round_trips_durable_v12_evidence(self) -> None:
+    def test_current_promotion_round_trips_durable_v13_evidence(self) -> None:
         evaluations = (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
         evidence = self.compute(evaluations)
         manifest = self.manifest()
@@ -1139,7 +1325,43 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v12")
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v13")
+
+            legacy_payload = evidence._payload()
+            legacy_payload["contract"] = "neural-prior-promotion-evidence-v12"
+            legacy_payload.pop("certified_range_geometry_contract_digests")
+            legacy_digest = promotion_module.json_digest(legacy_payload)
+            with sqlite3.connect(ledger.index_path) as connection:
+                connection.row_factory = sqlite3.Row
+                current_row = connection.execute(
+                    "SELECT * FROM neural_prior_promotions "
+                    "WHERE promotion_evidence_digest = ?",
+                    (stored,),
+                ).fetchone()
+                assert current_row is not None
+                legacy_row = dict(current_row)
+                legacy_row["promotion_evidence_digest"] = legacy_digest
+                legacy_row["evidence_contract"] = (
+                    "neural-prior-promotion-evidence-v12"
+                )
+                legacy_row["evidence_payload_json"] = json.dumps(
+                    legacy_payload,
+                    sort_keys=True,
+                )
+            legacy_ledger = EpisodeLedger(Path(directory) / "legacy")
+            columns = tuple(legacy_row)
+            with sqlite3.connect(legacy_ledger.index_path) as connection:
+                connection.execute(
+                    "INSERT INTO neural_prior_promotions "
+                    f"({','.join(columns)}) VALUES "
+                    f"({','.join('?' for _ in columns)})",
+                    tuple(legacy_row[name] for name in columns),
+                )
+            legacy = legacy_ledger.load_neural_prior_promotion(legacy_digest)
+            self.assertIsInstance(
+                legacy,
+                promotion_module.LegacyNeuralPriorPromotionEvidenceAuditV12,
+            )
 
     def test_promotion_requires_every_preregistered_case(self) -> None:
         with self.assertRaisesRegex(ValueError, "every planned case"):
@@ -1538,6 +1760,48 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "complete partition"):
             promotion_module._validate_complete_range_partition(incomplete)
 
+    def test_range_geometry_resolves_a_complete_physical_partition(self) -> None:
+        grid_x_m = torch.tensor([[0.0, 20_000.0], [40_000.0, 80_000.0]])
+        grid_y_m = torch.zeros_like(grid_x_m)
+        geometry = promotion_module.RangeGeometryContract(
+            radar_site_digest="a" * 64,
+            grid_contract_digest="2" * 64,
+            radar_x_m=0.0,
+            radar_y_m=0.0,
+            range_regime_labels=("near_range", "far_range"),
+            radial_distance_edges_m=(0.0, 30_000.0, 100_000.0),
+            beam_height_rule_digest="b" * 64,
+            grid_x_m_digest=promotion_module.tensor_digest(grid_x_m),
+            grid_y_m_digest=promotion_module.tensor_digest(grid_y_m),
+        )
+
+        partition = promotion_module.resolve_range_geometry(
+            geometry,
+            grid_x_m=grid_x_m,
+            grid_y_m=grid_y_m,
+        )
+
+        self.assertEqual(partition.active_range_regimes, ("near_range", "far_range"))
+        self.assertTrue(
+            torch.equal(
+                partition.masks[0],
+                torch.tensor([[True, True], [False, False]]),
+            )
+        )
+        self.assertTrue(
+            torch.equal(
+                partition.masks[1],
+                torch.tensor([[False, False], [True, True]]),
+            )
+        )
+        object.__setattr__(
+            partition,
+            "active_range_regimes",
+            ("near_range",),
+        )
+        with self.assertRaisesRegex(ValueError, "range partition evidence"):
+            partition.validate_integrity()
+
     def test_cluster_mean_cannot_hide_case_level_harm_frequency(self) -> None:
         scores = ([-0.1] * 9 + [1.0]) * 2
         event_ids = ["event-1"] * 10 + ["event-2"] * 10
@@ -1555,11 +1819,13 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def test_same_physical_storm_across_days_and_radars_is_one_cluster(self) -> None:
         first = SimpleNamespace(
             storm_id="mcs-2026-08-10-01",
+            physical_event_digest="7" * 64,
             day="2026-08-10",
             radar_id="radar-a",
         )
         second = SimpleNamespace(
             storm_id="mcs-2026-08-10-01",
+            physical_event_digest="7" * 64,
             day="2026-08-11",
             radar_id="radar-c",
         )
@@ -1582,6 +1848,163 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 family_size=10,
             )
 
+    def test_five_perfect_events_do_not_produce_certain_rate_bounds(self) -> None:
+        policy = self.policy()
+        event_ids = [f"event-{index}" for index in range(5)]
+
+        perfect_lower, _ = promotion_module._cluster_rate_interval(
+            [1.0] * 5,
+            event_ids,
+            policy,
+            family_size=1,
+        )
+        _, zero_failure_upper = promotion_module._cluster_rate_interval(
+            [0.0] * 5,
+            event_ids,
+            policy,
+            family_size=1,
+        )
+
+        self.assertLess(perfect_lower, 0.9)
+        self.assertGreater(zero_failure_upper, 0.0)
+
+    def test_skill_rate_bounds_retain_finite_event_uncertainty(self) -> None:
+        policy = self.policy()
+        event_ids = [f"event-{index}" for index in range(5)]
+
+        beneficial_lower, harmful_upper, _ = promotion_module._cluster_bounds(
+            [1.0] * 5,
+            event_ids,
+            policy,
+            candidate_family_size=1,
+        )
+
+        self.assertLess(beneficial_lower, 0.9)
+        self.assertGreater(harmful_upper, 0.0)
+
+    def test_physical_event_digest_controls_outer_cluster(self) -> None:
+        shared_event = "7" * 64
+        first = self.evaluation(1, -0.2, physical_event_digest=shared_event)
+        second = self.evaluation(2, -0.3, physical_event_digest=shared_event)
+
+        self.assertNotEqual(first.storm_id, second.storm_id)
+        self.assertEqual(
+            promotion_module._physical_event_cluster(first),
+            promotion_module._physical_event_cluster(second),
+        )
+
+    def test_physical_event_catalog_signature_binds_case_membership(self) -> None:
+        catalog = promotion_module.PhysicalEventCatalogEvidence.from_members(
+            event_id="mcs-2026-08-09",
+            member_case_ids=("case-1", "case-2"),
+            member_full_analysis_input_digests=("1" * 64, "2" * 64),
+            start_time="2026-08-09T00:00:00Z",
+            end_time="2026-08-10T00:00:00Z",
+            spatial_envelope_xy_m=(-10_000.0, -20_000.0, 80_000.0, 90_000.0),
+            participating_radar_ids=("radar-1", "radar-2"),
+            association_algorithm_digest="3" * 64,
+            adjudication_policy_digest="4" * 64,
+            adjudicator_id="independent-event-adjudicator",
+            adjudicator_private_key=self.regime_labeler_key(),
+        )
+        changed = object.__new__(promotion_module.PhysicalEventCatalogEvidence)
+        for name, value in catalog.__dict__.items():
+            object.__setattr__(
+                changed,
+                name,
+                ("case-1",) if name == "member_case_ids" else value,
+            )
+
+        promotion_module.validate_physical_event_catalog(catalog)
+        with self.assertRaisesRegex(ValueError, "event-catalog"):
+            promotion_module.validate_physical_event_catalog(changed)
+
+    def test_physical_event_catalog_must_enclose_member_issue_times(self) -> None:
+        manifest = self.manifest()
+        first_case = manifest.holdout_cases[0]
+        catalog = promotion_module.PhysicalEventCatalogEvidence.from_members(
+            event_id="late-event",
+            member_case_ids=(first_case.case_id,),
+            member_full_analysis_input_digests=(
+                first_case.full_analysis_input_digest,
+            ),
+            start_time="2026-08-09T03:00:00Z",
+            end_time="2026-08-09T04:00:00Z",
+            spatial_envelope_xy_m=(0.0, 0.0, 100_000.0, 100_000.0),
+            participating_radar_ids=(first_case.radar_id,),
+            association_algorithm_digest="5" * 64,
+            adjudication_policy_digest="6" * 64,
+            adjudicator_id="independent-weather-labeler",
+            adjudicator_private_key=self.regime_labeler_key(),
+        )
+        replaced_case = replace(
+            first_case,
+            physical_event_digest=catalog.event_digest,
+        )
+
+        with self.assertRaisesRegex(ValueError, "outside physical event envelope"):
+            replace(
+                manifest,
+                holdout_cases=(replaced_case, manifest.holdout_cases[1]),
+                physical_event_catalog_evidences=(
+                    catalog,
+                    manifest.physical_event_catalog_evidences[1],
+                ),
+            )
+
+    def test_event_catalog_adjudicator_must_be_preregistered(self) -> None:
+        other_key = Ed25519PrivateKey.from_private_bytes(b"\x02" * 32)
+        original = self.manifest()
+        first_case = original.holdout_cases[0]
+        untrusted = promotion_module.PhysicalEventCatalogEvidence.from_members(
+            event_id="untrusted-event",
+            member_case_ids=(first_case.case_id,),
+            member_full_analysis_input_digests=(
+                first_case.full_analysis_input_digest,
+            ),
+            start_time="2026-08-09T00:00:00Z",
+            end_time="2026-08-09T02:00:00Z",
+            spatial_envelope_xy_m=(0.0, 0.0, 100_000.0, 100_000.0),
+            participating_radar_ids=(first_case.radar_id,),
+            association_algorithm_digest="3" * 64,
+            adjudication_policy_digest="6" * 64,
+            adjudicator_id="untrusted-adjudicator",
+            adjudicator_private_key=other_key,
+        )
+        changed_case = replace(
+            first_case,
+            physical_event_digest=untrusted.event_digest,
+        )
+        changed_manifest = replace(
+            original,
+            physical_event_catalog_evidences=(
+                untrusted,
+                original.physical_event_catalog_evidences[1],
+            ),
+            holdout_cases=(changed_case, original.holdout_cases[1]),
+        )
+        policy = replace(
+            self.policy(),
+            approved_candidate_manifest_digests=(changed_manifest.manifest_digest,),
+        )
+        trust = _LearningPolicyTrustStore(
+            approved_policy_digests=frozenset((policy.digest,)),
+            content_digest="b" * 64,
+        )
+
+        with patch.object(
+            promotion_module,
+            "_load_learning_policy_trust_store",
+            return_value=trust,
+        ), self.assertRaisesRegex(ValueError, "event-catalog adjudicator"):
+            compute_neural_prior_promotion(
+                changed_manifest,
+                self.plan(),
+                (self.evaluation(1, -0.2), self.evaluation(2, -0.3)),
+                policy=policy,
+                policy_trust_store_path="/etc/advar/learning-policies.json",
+            )
+
     def test_band_skill_evidence_preserves_tail_and_event_diagnostics(self) -> None:
         result = self.compute(
             (
@@ -1598,6 +2021,34 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             self.assertGreaterEqual(diagnostic[5], 1.0)
             self.assertEqual(diagnostic[8], 1)
             self.assertEqual(diagnostic[9], 1)
+
+    def test_missing_required_band_metric_prevents_certification(self) -> None:
+        requirement = promotion_module.RangeMetricRequirement(
+            weather_regime="convective",
+            range_regime="near_range",
+            metric_name="soft_fss_error_35",
+            lead_minutes=60,
+            minimum_cases=1,
+            minimum_valid_area_km2=1.0,
+        )
+        policy = replace(
+            self.policy(),
+            metric_scales=(
+                PromotionMetricScale("log_echo_mse", 1.0, 0.01),
+                PromotionMetricScale("soft_fss_error_35", 1.0, 0.01),
+            ),
+            required_range_metrics=(requirement,),
+        )
+
+        result = self.compute_with_policy(
+            (self.evaluation(1, -0.2), self.evaluation(2, -0.3)),
+            policy,
+        )
+
+        self.assertNotIn(
+            ("convective", "near_range"),
+            result.certified_applicability_regime_groups,
+        )
 
     def test_range_object_component_uses_object_count_not_pixel_count(
         self,
@@ -1847,6 +2298,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         candidate = SimpleNamespace(neural_prior_digest="c" * 64)
         parent = SimpleNamespace(neural_prior_digest="d" * 64)
+        geometry, partition = self.holdout_range_geometry(1)
         deployment_policy = DeployedNeuralPriorPolicy(
             candidate_prior_digest=candidate.neural_prior_digest,
             parent_prior_digest=parent.neural_prior_digest,
@@ -1855,6 +2307,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             regime_classifier_manifest_digest=(
                 evidence.deployment_regime_classifier_manifest_digest
             ),
+            range_geometry_contract_digest=geometry.contract_digest,
         )
 
         classified = classifier.classify(frames, input_run=run)
@@ -1877,6 +2330,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 parent,
                 evidence,
                 classified,
+                partition,
                 deployment_policy,
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
             )
@@ -1946,6 +2400,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         candidate = SimpleNamespace(neural_prior_digest="c" * 64)
         parent = SimpleNamespace(neural_prior_digest="d" * 64)
+        geometry, partition = self.holdout_range_geometry(1)
         deployment_policy = DeployedNeuralPriorPolicy(
             candidate_prior_digest=candidate.neural_prior_digest,
             parent_prior_digest=parent.neural_prior_digest,
@@ -1954,6 +2409,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             regime_classifier_manifest_digest=(
                 evidence.deployment_regime_classifier_manifest_digest
             ),
+            range_geometry_contract_digest=geometry.contract_digest,
         )
 
         classified = classifier.classify(frames, input_run=run)
@@ -1976,6 +2432,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 parent,
                 evidence,
                 classified,
+                partition,
                 deployment_policy,
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
             )
@@ -1995,6 +2452,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 parent,
                 evidence,
                 classified,
+                partition,
                 unapproved,
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
             )
@@ -2017,6 +2475,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 parent,
                 evidence,
                 classified,
+                partition,
                 unapproved,
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
             )
@@ -2044,9 +2503,51 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 parent,
                 evidence,
                 classified,
+                partition,
                 tampered,
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
             )
+
+        external_geometry, external_partition = self.deployment_range_geometry(
+            labels=classifier.range_regime_labels,
+            include_second_band=False,
+        )
+        external_policy = replace(
+            deployment_policy,
+            range_geometry_contract_digest=external_geometry.contract_digest,
+        )
+        external_trust = _LearningPolicyTrustStore(
+            approved_policy_digests=frozenset((external_policy.policy_digest,)),
+            content_digest=promotion_module.json_digest(
+                {
+                    "contract": "advar-learning-policy-trust-store-v1",
+                    "approved_policy_digests": [external_policy.policy_digest],
+                }
+            ),
+        )
+        with patch.object(
+            promotion_module,
+            "_load_learning_policy_trust_store",
+            return_value=external_trust,
+        ):
+            external_selected, external_selection = (
+                promotion_module._select_deployed_prior(
+                    candidate,
+                    parent,
+                    evidence,
+                    classified,
+                    external_partition,
+                    external_policy,
+                    policy_trust_store_path=(
+                        "/etc/advar/deployment-policies.json"
+                    ),
+                )
+            )
+        self.assertIs(external_selected, parent)
+        self.assertEqual(
+            external_selection.fallback_reason,
+            "uncertified_range_geometry",
+        )
 
     def test_all_active_range_bands_must_be_certified(self) -> None:
         frames = torch.zeros((3, 2, 2))
@@ -2084,6 +2585,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         candidate = SimpleNamespace(neural_prior_digest="c" * 64)
         parent = SimpleNamespace(neural_prior_digest="d" * 64)
+        geometry, partition = self.deployment_range_geometry(
+            labels=classifier.range_regime_labels,
+            include_second_band=True,
+        )
         deployment_policy = DeployedNeuralPriorPolicy(
             candidate_prior_digest=candidate.neural_prior_digest,
             parent_prior_digest=parent.neural_prior_digest,
@@ -2092,6 +2597,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             regime_classifier_manifest_digest=(
                 evidence.deployment_regime_classifier_manifest_digest
             ),
+            range_geometry_contract_digest=geometry.contract_digest,
         )
         trust = _LearningPolicyTrustStore(
             approved_policy_digests=frozenset((deployment_policy.policy_digest,)),
@@ -2112,11 +2618,108 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 parent,
                 evidence,
                 classifier.classify(frames, input_run=run),
+                partition,
                 deployment_policy,
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
             )
         self.assertIs(selected, parent)
-        self.assertEqual(selection.fallback_reason, "uncertified_range_band")
+        self.assertEqual(selection.fallback_reason, "uncertified_range_geometry")
+
+    def test_current_physical_range_partition_controls_deployment(self) -> None:
+        frames = torch.zeros((3, 2, 2))
+        run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        classifier = NeuralPriorRegimeClassifier(
+            _FixedRegimeClassifier((12.0, 0.0, -12.0), (12.0, 0.0)).eval(),
+            example_frames=frames,
+            regime_labels=("convective", "unseen", "unknown"),
+            range_regime_labels=("near_range", "far_range"),
+            classifier_algorithm_digest="1" * 64,
+        )
+        promotion_policy = replace(
+            self.policy(),
+            deployment_regime_classifier_digest=classifier.classifier_digest,
+        )
+        evidence = self.compute_with_policy(
+            (
+                self.evaluation(
+                    1,
+                    -0.2,
+                    regime_classifier_digest=classifier.classifier_digest,
+                ),
+                self.evaluation(
+                    2,
+                    -0.3,
+                    regime_classifier_digest=classifier.classifier_digest,
+                ),
+            ),
+            promotion_policy,
+        )
+        grid_x_m = torch.tensor([[0.0, 20_000.0], [40_000.0, 80_000.0]])
+        grid_y_m = torch.zeros_like(grid_x_m)
+        geometry = promotion_module.RangeGeometryContract(
+            radar_site_digest="a" * 64,
+            grid_contract_digest="2" * 64,
+            radar_x_m=0.0,
+            radar_y_m=0.0,
+            range_regime_labels=("near_range", "far_range"),
+            radial_distance_edges_m=(0.0, 30_000.0, 100_000.0),
+            beam_height_rule_digest="b" * 64,
+            grid_x_m_digest=promotion_module.tensor_digest(grid_x_m),
+            grid_y_m_digest=promotion_module.tensor_digest(grid_y_m),
+        )
+        partition = promotion_module.resolve_range_geometry(
+            geometry,
+            grid_x_m=grid_x_m,
+            grid_y_m=grid_y_m,
+        )
+        candidate = SimpleNamespace(neural_prior_digest="c" * 64)
+        parent = SimpleNamespace(neural_prior_digest="d" * 64)
+        deployment_policy = DeployedNeuralPriorPolicy(
+            candidate_prior_digest=candidate.neural_prior_digest,
+            parent_prior_digest=parent.neural_prior_digest,
+            promotion_evidence_digest=evidence.promotion_evidence_digest,
+            regime_classifier_digest=classifier.classifier_digest,
+            regime_classifier_manifest_digest=(
+                evidence.deployment_regime_classifier_manifest_digest
+            ),
+            range_geometry_contract_digest=geometry.contract_digest,
+        )
+        trust = _LearningPolicyTrustStore(
+            approved_policy_digests=frozenset((deployment_policy.policy_digest,)),
+            content_digest=promotion_module.json_digest(
+                {
+                    "contract": "advar-learning-policy-trust-store-v1",
+                    "approved_policy_digests": [deployment_policy.policy_digest],
+                }
+            ),
+        )
+
+        with patch.object(
+            promotion_module,
+            "_load_learning_policy_trust_store",
+            return_value=trust,
+        ):
+            selected, selection = promotion_module._select_deployed_prior(
+                candidate,
+                parent,
+                evidence,
+                classifier.classify(frames, input_run=run),
+                partition,
+                deployment_policy,
+                policy_trust_store_path="/etc/advar/deployment-policies.json",
+            )
+
+        self.assertIs(selected, parent)
+        self.assertEqual(selection.fallback_reason, "uncertified_range_geometry")
+        self.assertEqual(
+            selection.range_partition_evidence_digest,
+            partition.evidence_digest,
+        )
 
     def test_regime_classifier_evidence_is_bound_to_current_input(self) -> None:
         frames = torch.zeros((3, 2, 2))
@@ -2312,6 +2915,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 (completed,),
             )
 
+    def test_classifier_training_event_cannot_overlap_holdout_cycle(self) -> None:
+        completed = self.completed_case(1)
+        classifier = replace(
+            self.plan().regime_classifier_manifests[0],
+            training_physical_event_digests=(completed.physical_event_digest,),
+        )
+
+        with self.assertRaisesRegex(ValueError, "physical events overlap"):
+            promotion_module._validate_classifier_holdout_independence(
+                classifier,
+                (completed,),
+            )
+
     def test_prospective_plan_cannot_store_future_weather_truth(self) -> None:
         plan = self.plan()
         cases = (
@@ -2397,7 +3013,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 policy_trust_store_path="/etc/advar/learning-policies.json",
             )
 
-    def test_ambiguous_current_range_branch_falls_back_to_parent(self) -> None:
+    def test_ambiguous_current_weather_branch_falls_back_to_parent(self) -> None:
         frames = torch.zeros((3, 2, 2))
         run = ForecastRunContract.from_inputs(
             NowcastConfig(),
@@ -2406,7 +3022,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             None,
         )
         classifier = NeuralPriorRegimeClassifier(
-            _FixedRegimeClassifier((12.0, 0.0), (1.4500102,)).eval(),
+            _FixedRegimeClassifier((0.01, 0.0), (12.0,)).eval(),
             example_frames=frames,
             regime_labels=("convective", "unknown"),
             range_regime_labels=("near_range",),
@@ -2433,6 +3049,24 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         candidate = SimpleNamespace(neural_prior_digest="c" * 64)
         parent = SimpleNamespace(neural_prior_digest="d" * 64)
+        grid_x_m = torch.zeros((2, 2))
+        grid_y_m = torch.zeros_like(grid_x_m)
+        geometry = promotion_module.RangeGeometryContract(
+            radar_site_digest="a" * 64,
+            grid_contract_digest="2" * 64,
+            radar_x_m=0.0,
+            radar_y_m=0.0,
+            range_regime_labels=("near_range",),
+            radial_distance_edges_m=(0.0, 100_000.0),
+            beam_height_rule_digest="b" * 64,
+            grid_x_m_digest=promotion_module.tensor_digest(grid_x_m),
+            grid_y_m_digest=promotion_module.tensor_digest(grid_y_m),
+        )
+        partition = promotion_module.resolve_range_geometry(
+            geometry,
+            grid_x_m=grid_x_m,
+            grid_y_m=grid_y_m,
+        )
         deployment_policy = DeployedNeuralPriorPolicy(
             candidate_prior_digest=candidate.neural_prior_digest,
             parent_prior_digest=parent.neural_prior_digest,
@@ -2441,7 +3075,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             regime_classifier_manifest_digest=(
                 evidence.deployment_regime_classifier_manifest_digest
             ),
-            minimum_range_presence_margin=0.05,
+            range_geometry_contract_digest=geometry.contract_digest,
         )
         trust = _LearningPolicyTrustStore(
             approved_policy_digests=frozenset((deployment_policy.policy_digest,)),
@@ -2463,6 +3097,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 parent,
                 evidence,
                 classifier.classify(frames, input_run=run),
+                partition,
                 deployment_policy,
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
             )
@@ -3000,10 +3635,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 regime_classifier_manifest=(
                     plan.regime_classifier_manifests[0]
                 ),
-                range_band_masks={
-                    "near_range": torch.ones((2, 2), dtype=torch.bool),
-                    "far_range": torch.zeros((2, 2), dtype=torch.bool),
-                },
+                range_grid_x_m=torch.zeros((2, 2)),
+                range_grid_y_m=torch.zeros((2, 2)),
             )
         self.assertAlmostEqual(float(evaluation.metric_change[0, 0]), -0.2)
         self.assertAlmostEqual(float(evaluation.end_to_end_metric_change[0, 0]), -0.25)
@@ -3048,10 +3681,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 regime_classifier_manifest=(
                     plan.regime_classifier_manifests[0]
                 ),
-                range_band_masks={
-                    "near_range": torch.ones((2, 2), dtype=torch.bool),
-                    "far_range": torch.zeros((2, 2), dtype=torch.bool),
-                },
+                range_grid_x_m=torch.zeros((2, 2)),
+                range_grid_y_m=torch.zeros((2, 2)),
             )
         candidate_runner.probability_contract = self.probability_contract()
 
@@ -3081,10 +3712,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 state_calibration_target=self.state_target(1),
                 regime_classifier=regime_classifier,
                 regime_classifier_manifest=plan.regime_classifier_manifests[0],
-                range_band_masks={
-                    "near_range": torch.ones((2, 2), dtype=torch.bool),
-                    "far_range": torch.zeros((2, 2), dtype=torch.bool),
-                },
+                range_grid_x_m=torch.zeros((2, 2)),
+                range_grid_y_m=torch.zeros((2, 2)),
             )
         parent_run.observation_quality_weight_digest = (
             case.observation_quality_weight_digest
@@ -3115,10 +3744,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 state_calibration_target=self.state_target(1),
                 regime_classifier=regime_classifier,
                 regime_classifier_manifest=plan.regime_classifier_manifests[0],
-                range_band_masks={
-                    "near_range": torch.ones((2, 2), dtype=torch.bool),
-                    "far_range": torch.zeros((2, 2), dtype=torch.bool),
-                },
+                range_grid_x_m=torch.zeros((2, 2)),
+                range_grid_y_m=torch.zeros((2, 2)),
             )
         parent_run.observation_std_dbz_digest = case.observation_std_dbz_digest
 
@@ -3153,10 +3780,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     regime_classifier_manifest=(
                         plan.regime_classifier_manifests[0]
                     ),
-                    range_band_masks={
-                        "near_range": torch.ones((2, 2), dtype=torch.bool),
-                        "far_range": torch.zeros((2, 2), dtype=torch.bool),
-                    },
+                    range_grid_x_m=torch.zeros((2, 2)),
+                    range_grid_y_m=torch.zeros((2, 2)),
                 )
 
         candidate_app.inference_evidence.prior_output_valid_time = (
@@ -3196,10 +3821,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     regime_classifier_manifest=(
                         plan.regime_classifier_manifests[0]
                     ),
-                    range_band_masks={
-                        "near_range": torch.ones((2, 2), dtype=torch.bool),
-                        "far_range": torch.zeros((2, 2), dtype=torch.bool),
-                    },
+                    range_grid_x_m=torch.zeros((2, 2)),
+                    range_grid_y_m=torch.zeros((2, 2)),
                 )
 
 

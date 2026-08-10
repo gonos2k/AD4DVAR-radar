@@ -922,6 +922,8 @@ class NeuralPriorDeploymentSelection:
     regime_classification_evidence_digest: str
     deployment_policy_digest: str
     deployment_policy_trust_store_digest: str
+    range_geometry_contract_digest: str
+    range_partition_evidence_digest: str
     classifier_numerical_runtime_digest: str
     classifier_input_dtype: str
     classifier_input_device: str
@@ -934,20 +936,21 @@ class NeuralPriorDeploymentSelection:
         "certified_candidate",
         "uncertified_regime",
         "uncertified_range_band",
+        "uncertified_range_geometry",
         "low_regime_confidence",
         "ood_or_abstained",
         "promotion_ineligible",
         "no_certified_regime",
         "ambiguous_classifier_branch",
     ]
-    contract: str = "neural-prior-deployment-selection-v3"
+    contract: str = "neural-prior-deployment-selection-v4"
     selection_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use the certified neural-prior deployment selector")
 
     def validate_integrity(self) -> None:
-        if self.contract != "neural-prior-deployment-selection-v3":
+        if self.contract != "neural-prior-deployment-selection-v4":
             raise ValueError("unsupported neural-prior deployment selection")
         for name in (
             "selected_prior_digest",
@@ -956,6 +959,8 @@ class NeuralPriorDeploymentSelection:
             "regime_classification_evidence_digest",
             "deployment_policy_digest",
             "deployment_policy_trust_store_digest",
+            "range_geometry_contract_digest",
+            "range_partition_evidence_digest",
             "classifier_numerical_runtime_digest",
             "deployment_decision_artifact_digest",
         ):
@@ -1000,7 +1005,7 @@ def _new_neural_prior_deployment_selection(
     object.__setattr__(
         result,
         "contract",
-        "neural-prior-deployment-selection-v3",
+        "neural-prior-deployment-selection-v4",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)

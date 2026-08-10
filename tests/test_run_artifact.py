@@ -94,6 +94,18 @@ class ForecastRunArtifactTests(unittest.TestCase):
         promotion_digest = "5" * 64
         classifier_digest = "6" * 64
         classifier_manifest_digest = "a" * 64
+        range_geometry_digest = "b" * 64
+        range_partition = {
+            "contract": "radar-range-partition-evidence-v1",
+            "range_geometry_contract_digest": range_geometry_digest,
+            "grid_contract_digest": "d" * 64,
+            "range_regime_labels": ["near_range"],
+            "range_band_mask_digests": [
+                tensor_digest(torch.ones(frames.shape[1:], dtype=torch.bool))
+            ],
+            "active_range_regimes": ["near_range"],
+        }
+        range_partition_digest = json_digest(range_partition)
         regime = {
             "contract": "neural-prior-regime-classification-evidence-v3",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
@@ -124,18 +136,21 @@ class ForecastRunArtifactTests(unittest.TestCase):
             promotion_evidence_digest=promotion_digest,
             regime_classifier_digest=classifier_digest,
             regime_classifier_manifest_digest=classifier_manifest_digest,
+            range_geometry_contract_digest=range_geometry_digest,
         )
         trust = {
             "contract": "advar-learning-policy-trust-store-v1",
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact = {
-            "contract": "neural-prior-deployment-decision-artifact-v1",
+            "contract": "neural-prior-deployment-decision-artifact-v2",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "regime_classification_evidence": regime
             | {"evidence_digest": regime_digest},
             "deployment_policy": policy.payload
             | {"policy_digest": policy.policy_digest},
+            "range_partition_evidence": range_partition
+            | {"evidence_digest": range_partition_digest},
             "promotion_selection_evidence": {
                 "promotion_evidence_digest": promotion_digest,
                 "candidate_prior_digest": runner.neural_prior_digest,
@@ -147,6 +162,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 ),
                 "certified_applicability_regime_groups": [
                     ["convective", "near_range"]
+                ],
+                "certified_range_geometry_contract_digests": [
+                    range_geometry_digest
                 ],
             },
             "policy_trust_store": trust
@@ -169,6 +187,8 @@ class ForecastRunArtifactTests(unittest.TestCase):
             regime_classification_evidence_digest=regime_digest,
             deployment_policy_digest=policy.policy_digest,
             deployment_policy_trust_store_digest=json_digest(trust),
+            range_geometry_contract_digest=range_geometry_digest,
+            range_partition_evidence_digest=range_partition_digest,
             classifier_numerical_runtime_digest="9" * 64,
             classifier_input_dtype=str(frames.dtype),
             classifier_input_device=str(frames.device),
@@ -952,6 +972,18 @@ class ForecastRunArtifactTests(unittest.TestCase):
         promotion_evidence_digest = "5" * 64
         classifier_digest = "6" * 64
         classifier_manifest_digest = "a" * 64
+        range_geometry_digest = "b" * 64
+        range_partition = {
+            "contract": "radar-range-partition-evidence-v1",
+            "range_geometry_contract_digest": range_geometry_digest,
+            "grid_contract_digest": "d" * 64,
+            "range_regime_labels": ["near_range"],
+            "range_band_mask_digests": [
+                tensor_digest(torch.ones(frames.shape[1:], dtype=torch.bool))
+            ],
+            "active_range_regimes": ["near_range"],
+        }
+        range_partition_digest = json_digest(range_partition)
         regime_payload = {
             "contract": "neural-prior-regime-classification-evidence-v3",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
@@ -982,18 +1014,21 @@ class ForecastRunArtifactTests(unittest.TestCase):
             promotion_evidence_digest=promotion_evidence_digest,
             regime_classifier_digest=classifier_digest,
             regime_classifier_manifest_digest=classifier_manifest_digest,
+            range_geometry_contract_digest=range_geometry_digest,
         )
         trust_payload = {
             "contract": "advar-learning-policy-trust-store-v1",
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v1",
+            "contract": "neural-prior-deployment-decision-artifact-v2",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "regime_classification_evidence": regime_payload
             | {"evidence_digest": regime_evidence_digest},
             "deployment_policy": policy.payload
             | {"policy_digest": policy.policy_digest},
+            "range_partition_evidence": range_partition
+            | {"evidence_digest": range_partition_digest},
             "promotion_selection_evidence": {
                 "promotion_evidence_digest": promotion_evidence_digest,
                 "candidate_prior_digest": runner.neural_prior_digest,
@@ -1005,6 +1040,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 ),
                 "certified_applicability_regime_groups": [
                     ["convective", "near_range"]
+                ],
+                "certified_range_geometry_contract_digests": [
+                    range_geometry_digest
                 ],
             },
             "policy_trust_store": trust_payload
@@ -1027,6 +1065,8 @@ class ForecastRunArtifactTests(unittest.TestCase):
             regime_classification_evidence_digest=regime_evidence_digest,
             deployment_policy_digest=policy.policy_digest,
             deployment_policy_trust_store_digest=json_digest(trust_payload),
+            range_geometry_contract_digest=range_geometry_digest,
+            range_partition_evidence_digest=range_partition_digest,
             classifier_numerical_runtime_digest="9" * 64,
             classifier_input_dtype=str(frames.dtype),
             classifier_input_device=str(frames.device),
@@ -1296,7 +1336,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             loaded.run.prior_deployment_decision_artifact_digest
         )
 
-    def test_v52_cannot_omit_deployment_lineage_contract(self) -> None:
+    def test_v53_cannot_omit_deployment_lineage_contract(self) -> None:
         result = nowcast(self.frames())
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "run.npz"
@@ -1314,6 +1354,54 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 "lacks deployment lineage contract",
             ):
                 load_forecast_run(path)
+
+    def test_v52_deployment_geometry_loads_as_audit_only(self) -> None:
+        frames = self.frames()
+        input_run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        runner = NeuralPriorInferenceRunner(
+            self._Prior().eval(),
+            lambda value: value[0],
+            example_frames=frames,
+            state_contract=self._state_contract(),
+            probability_contract=self._probability_contract(),
+            model_contract_digest="2" * 64,
+            feature_schema_digest="3" * 64,
+            training_manifest_digest="4" * 64,
+            allow_constant_uncertainty=True,
+            dependency="radar_dependent",
+        )
+        selection = self._deployment_selection(runner, input_run, frames)
+        prior = runner.infer(
+            frames,
+            input_run=input_run,
+            role="candidate",
+            deployment_selection=selection,
+        )
+        result, _ = variational_nowcast(frames, neural_prior=prior)
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "legacy-v52.npz"
+            save_forecast_run(result, path)
+            with np.load(path, allow_pickle=False) as archive:
+                arrays = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                }
+            arrays["forecast_run_artifact_version"] = np.asarray(
+                "forecast-run-v52"
+            )
+            self._save_arrays(path, arrays)
+
+            loaded = load_forecast_run(path)
+
+        self.assertEqual(
+            loaded.run.prior_deployment_lineage_contract,
+            "neural-prior-deployment-lineage-v3-audit",
+        )
 
     def test_neural_prior_lineage_is_all_or_none(self) -> None:
         with self.assertRaisesRegex(ValueError, "neural-prior run lineage"):

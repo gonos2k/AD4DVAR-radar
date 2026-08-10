@@ -1297,7 +1297,7 @@ class ForecastRunContract:
     prior_deployment_decision_artifact_digest: str | None = None
     prior_deployment_fallback_reason: str | None = None
     prior_deployment_lineage_contract: str = (
-        "neural-prior-deployment-lineage-v3"
+        "neural-prior-deployment-lineage-v4"
     )
     prior_lineage_contract: str = "neural-prior-run-lineage-v2"
     input_plan_json: str | None = None
@@ -1456,7 +1456,7 @@ class ForecastRunContract:
                 prior_deployment_decision_artifact_digest
             ),
             fallback_reason=prior_deployment_fallback_reason,
-            contract="neural-prior-deployment-lineage-v3",
+            contract="neural-prior-deployment-lineage-v4",
         )
         _validate_input_plan_lineage(input_plan_json, input_plan_digest)
         _validate_input_plan_resolution(
@@ -2278,7 +2278,8 @@ def _validate_prior_deployment_lineage(
         "neural-prior-deployment-lineage-v0-audit",
         "neural-prior-deployment-lineage-v1-audit",
         "neural-prior-deployment-lineage-v2-audit",
-        "neural-prior-deployment-lineage-v3",
+        "neural-prior-deployment-lineage-v3-audit",
+        "neural-prior-deployment-lineage-v4",
     }:
         raise ValueError("unsupported neural-prior deployment lineage")
     values = (
@@ -2346,6 +2347,38 @@ def _validate_prior_deployment_lineage(
             assert digest is not None
             _validate_sha256_digest(name, digest)
         return
+    if contract == "neural-prior-deployment-lineage-v3-audit":
+        if all(value is None for value in values):
+            return
+        if any(value is None for value in values) or prior_role is None:
+            raise ValueError("legacy deployment lineage is incomplete")
+        assert deployment_decision_artifact_json is not None
+        assert deployment_decision_artifact_digest is not None
+        for name, digest in (
+            ("prior_promotion_evidence_digest", promotion_evidence_digest),
+            (
+                "prior_regime_classification_evidence_digest",
+                regime_classification_evidence_digest,
+            ),
+            ("prior_deployment_policy_digest", deployment_policy_digest),
+            (
+                "prior_deployment_policy_trust_store_digest",
+                deployment_policy_trust_store_digest,
+            ),
+            ("prior_deployment_selection_digest", deployment_selection_digest),
+            (
+                "prior_deployment_decision_artifact_digest",
+                deployment_decision_artifact_digest,
+            ),
+        ):
+            assert digest is not None
+            _validate_sha256_digest(name, digest)
+        if (
+            json_digest(json.loads(deployment_decision_artifact_json))
+            != deployment_decision_artifact_digest
+        ):
+            raise ValueError("legacy deployment decision digest mismatch")
+        return
     if all(value is None for value in values):
         if analysis_config_json is not None and prior_role is not None:
             analysis = json.loads(analysis_config_json)
@@ -2357,7 +2390,7 @@ def _validate_prior_deployment_lineage(
                     "operational neural prior requires deployment lineage"
                 )
         return
-    if contract != "neural-prior-deployment-lineage-v3":
+    if contract != "neural-prior-deployment-lineage-v4":
         raise ValueError("legacy deployment lineage is audit-only")
     if any(value is None for value in values) or prior_role is None:
         raise ValueError("neural-prior deployment lineage must be complete")
