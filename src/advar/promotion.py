@@ -93,12 +93,14 @@ PromotionRejectionReason = Literal[
 
 _UncertaintyComponent = Literal[
     "intensity",
+    "pit_residual",
     "support",
     "echo_miss",
     "object_miss",
     "clear",
     "underdispersion",
     "state_nll",
+    "state_pit_residual",
     "state_underdispersion",
     "state_support",
     "state_echo_miss",
@@ -109,12 +111,14 @@ _UncertaintyComponent = Literal[
 
 _UNCERTAINTY_COMPONENT_NAMES: tuple[str, ...] = (
     "intensity",
+    "pit_residual",
     "support",
     "echo_miss",
     "object_miss",
     "clear",
     "underdispersion",
     "state_nll",
+    "state_pit_residual",
     "state_underdispersion",
     "state_support",
     "state_echo_miss",
@@ -502,6 +506,28 @@ class RangeBandContract:
         except ValueError as error:
             raise ValueError("range regime is outside the physical contract") from error
         return self.range_band_mask_digests[index]
+
+
+def _validate_complete_range_partition(
+    range_band_masks: dict[str, Tensor],
+) -> None:
+    """Require each operational grid cell to belong to exactly one band."""
+
+    masks = tuple(range_band_masks.values())
+    if (
+        not masks
+        or any(mask.dtype is not torch.bool or mask.ndim != 2 for mask in masks)
+        or any(
+            mask.shape != masks[0].shape or mask.device != masks[0].device
+            for mask in masks[1:]
+        )
+    ):
+        raise ValueError("range-band masks are not a complete partition")
+    membership = torch.stack(tuple(mask.to(torch.int8) for mask in masks)).sum(
+        dim=0
+    )
+    if bool(torch.any(membership != 1)):
+        raise ValueError("range-band masks are not a complete partition")
 
 
 @dataclass(frozen=True)
@@ -2335,6 +2361,8 @@ class RangeBandEvaluation:
     metric_change: Tensor
     end_to_end_metric_change: Tensor
     metric_available: Tensor
+    candidate_uncertainty_component_scores: tuple[tuple[str, float], ...]
+    parent_uncertainty_component_scores: tuple[tuple[str, float], ...]
     uncertainty_component_differences: tuple[tuple[str, float], ...]
     uncertainty_component_sample_counts: tuple[tuple[str, int], ...]
     evaluated_area_km2: float
@@ -2347,12 +2375,12 @@ class RangeBandEvaluation:
     state_echo_pixel_count: int
     state_clear_pixel_count: int
     state_echo_object_count: int
-    contract: str = "neural-prior-range-band-evaluation-v2"
+    contract: str = "neural-prior-range-band-evaluation-v3"
     evaluation_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
         if (
-            self.contract != "neural-prior-range-band-evaluation-v2"
+            self.contract != "neural-prior-range-band-evaluation-v3"
             or not self.range_regime
             or self.range_regime.strip() != self.range_regime
         ):
@@ -2372,6 +2400,12 @@ class RangeBandEvaluation:
             or not bool(torch.all(torch.isfinite(end_to_end[available])))
         ):
             raise ValueError("range-band metric evidence is invalid")
+        candidate_components = tuple(
+            name for name, _ in self.candidate_uncertainty_component_scores
+        )
+        parent_components = tuple(
+            name for name, _ in self.parent_uncertainty_component_scores
+        )
         components = tuple(name for name, _ in self.uncertainty_component_differences)
         sample_components = tuple(
             name for name, _ in self.uncertainty_component_sample_counts
@@ -2392,8 +2426,12 @@ class RangeBandEvaluation:
             self.state_echo_object_count,
         )
         component_counts = dict(self.uncertainty_component_sample_counts)
+        candidate_scores = dict(self.candidate_uncertainty_component_scores)
+        parent_scores = dict(self.parent_uncertainty_component_scores)
+        differences = dict(self.uncertainty_component_differences)
         expected_component_counts = {
             "intensity": self.echo_pixel_count,
+            "pit_residual": self.echo_pixel_count,
             "support": self.echo_pixel_count + self.clear_pixel_count,
             "echo_miss": self.echo_pixel_count,
             "object_miss": self.echo_object_count,
@@ -2401,6 +2439,9 @@ class RangeBandEvaluation:
             "underdispersion": self.echo_pixel_count,
             "state_echo_miss": self.state_echo_pixel_count,
             "state_nll": self.state_echo_pixel_count + self.state_clear_pixel_count,
+            "state_pit_residual": (
+                self.state_echo_pixel_count + self.state_clear_pixel_count
+            ),
             "state_underdispersion": (
                 self.state_echo_pixel_count + self.state_clear_pixel_count
             ),
@@ -2414,11 +2455,29 @@ class RangeBandEvaluation:
         if (
             not components
             or len(set(components)) != len(components)
+            or candidate_components != components
+            or parent_components != components
             or set(components) != set(sample_components)
+            or any(
+                not math.isfinite(value)
+                for _, value in (
+                    self.candidate_uncertainty_component_scores
+                    + self.parent_uncertainty_component_scores
+                )
+            )
             or any(
                 name not in _UNCERTAINTY_COMPONENT_NAMES
                 or not math.isfinite(value)
                 for name, value in self.uncertainty_component_differences
+            )
+            or any(
+                not math.isclose(
+                    candidate_scores[name] - parent_scores[name],
+                    differences[name],
+                    rel_tol=1.0e-12,
+                    abs_tol=1.0e-12,
+                )
+                for name in components
             )
             or any(
                 type(count) is not int or count <= 0
@@ -2452,6 +2511,14 @@ class RangeBandEvaluation:
                 self.end_to_end_metric_change
             ),
             "metric_available": tensor_digest(self.metric_available),
+            "candidate_uncertainty_component_scores": [
+                [name, value]
+                for name, value in self.candidate_uncertainty_component_scores
+            ],
+            "parent_uncertainty_component_scores": [
+                [name, value]
+                for name, value in self.parent_uncertainty_component_scores
+            ],
             "uncertainty_component_differences": [
                 [name, value]
                 for name, value in self.uncertainty_component_differences
@@ -2476,6 +2543,12 @@ class RangeBandEvaluation:
 
     def component_difference(self, component: str) -> float | None:
         return dict(self.uncertainty_component_differences).get(component)
+
+    def candidate_component_score(self, component: str) -> float | None:
+        return dict(self.candidate_uncertainty_component_scores).get(component)
+
+    def parent_component_score(self, component: str) -> float | None:
+        return dict(self.parent_uncertainty_component_scores).get(component)
 
 
 @dataclass(frozen=True, init=False)
@@ -2543,6 +2616,7 @@ class PriorHoldoutEvaluation:
     prior_echo_support_miss_score: float | None
     prior_echo_object_miss_score: float | None
     prior_clear_sky_false_echo_score: float | None
+    parent_prior_conditional_pit_residual_mean_abs: float | None
     parent_prior_conditional_underdispersion_fraction: float | None
     parent_prior_echo_intensity_nll: float | None
     parent_prior_support_brier_score: float
@@ -2585,14 +2659,14 @@ class PriorHoldoutEvaluation:
     state_calibration_echo_object_count: int
     issue_time: str
     verification_valid_times: tuple[str, ...]
-    contract: str = "prior-holdout-evaluation-v12"
+    contract: str = "prior-holdout-evaluation-v13"
     evaluation_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use PriorHoldoutEvaluation.from_forecasts")
 
     def __post_init__(self) -> None:
-        if self.contract != "prior-holdout-evaluation-v12":
+        if self.contract != "prior-holdout-evaluation-v13":
             raise ValueError("unsupported prior holdout evaluation")
         for name in (
             "holdout_plan_digest",
@@ -2711,6 +2785,7 @@ class PriorHoldoutEvaluation:
             self.prior_echo_intensity_nll,
             self.prior_echo_support_miss_score,
             self.prior_echo_object_miss_score,
+            self.parent_prior_conditional_pit_residual_mean_abs,
             self.parent_prior_conditional_underdispersion_fraction,
             self.parent_prior_echo_intensity_nll,
             self.parent_prior_echo_support_miss_score,
@@ -2776,9 +2851,10 @@ class PriorHoldoutEvaluation:
                 or not 0.0 <= echo_floats[1] <= 1.0
                 or not 0.0 <= echo_floats[3] <= 1.0
                 or not 0.0 <= echo_floats[4] <= 1.0
-                or not 0.0 <= echo_floats[5] <= 1.0
-                or not 0.0 <= echo_floats[7] <= 1.0
+                or echo_floats[5] < 0.0
+                or not 0.0 <= echo_floats[6] <= 1.0
                 or not 0.0 <= echo_floats[8] <= 1.0
+                or not 0.0 <= echo_floats[9] <= 1.0
             ):
                 raise ValueError("prior echo-intensity evidence is invalid")
         if clear_available:
@@ -2962,14 +3038,7 @@ class PriorHoldoutEvaluation:
             != range_contract.reference_active_range_regimes
         ):
             raise ValueError("holdout range-band masks disagree with their plan")
-        range_membership = torch.stack(
-            tuple(
-                range_band_masks[label].to(torch.int8)
-                for label in range_contract.range_regime_labels
-            )
-        ).sum(dim=0)
-        if bool(torch.any(range_membership > 1)):
-            raise ValueError("holdout range-band masks must not overlap")
+        _validate_complete_range_partition(range_band_masks)
         if (
             regime_classification_evidence.full_analysis_input_digest
             != candidate_forecast.run.full_analysis_input_digest
@@ -3725,7 +3794,12 @@ class PriorHoldoutEvaluation:
                 band_state_valid,
                 state_support_target,
             )
-            component_differences, component_counts = (
+            (
+                candidate_component_scores,
+                parent_component_scores,
+                component_differences,
+                component_counts,
+            ) = (
                 _range_uncertainty_components(
                     band_candidate_prior,
                     band_parent_prior,
@@ -3757,6 +3831,12 @@ class PriorHoldoutEvaluation:
                         band_candidate_native - band_parent_native
                     ),
                     metric_available=band_candidate_available,
+                    candidate_uncertainty_component_scores=(
+                        candidate_component_scores
+                    ),
+                    parent_uncertainty_component_scores=(
+                        parent_component_scores
+                    ),
                     uncertainty_component_differences=component_differences,
                     uncertainty_component_sample_counts=component_counts,
                     evaluated_area_km2=(
@@ -3922,6 +4002,9 @@ class PriorHoldoutEvaluation:
             prior_echo_object_miss_score=candidate_object_miss,
             prior_clear_sky_false_echo_score=(
                 candidate_scores.clear_sky_false_echo_score
+            ),
+            parent_prior_conditional_pit_residual_mean_abs=(
+                parent_scores.conditional_pit_residual_mean_abs
             ),
             parent_prior_conditional_underdispersion_fraction=(
                 parent_scores.conditional_underdispersion_fraction
@@ -4414,27 +4497,48 @@ def _range_uncertainty_components(
     candidate_state_object_miss: float | None,
     parent_state_object_miss: float | None,
     state_object_count: int,
-) -> tuple[tuple[tuple[str, float], ...], tuple[tuple[str, int], ...]]:
-    """Return paired component deltas and their physical-domain sample sizes."""
+) -> tuple[
+    tuple[tuple[str, float], ...],
+    tuple[tuple[str, float], ...],
+    tuple[tuple[str, float], ...],
+    tuple[tuple[str, int], ...],
+]:
+    """Return absolute paired scores, deltas, and physical sample sizes."""
 
-    values: list[tuple[str, float]] = []
+    candidate_values: list[tuple[str, float]] = []
+    parent_values: list[tuple[str, float]] = []
+    differences: list[tuple[str, float]] = []
     counts: list[tuple[str, int]] = []
 
     def add(name: str, candidate: float | None, parent: float | None, count: int) -> None:
         if candidate is None or parent is None or count <= 0:
             return
-        values.append((name, candidate - parent))
+        candidate_values.append((name, candidate))
+        parent_values.append((name, parent))
+        differences.append((name, candidate - parent))
         counts.append((name, count))
 
     total_prior = candidate_prior.echo_sample_count + candidate_prior.clear_sample_count
     total_state = candidate_state.sample_count
     add("intensity", candidate_prior.echo_intensity_nll, parent_prior.echo_intensity_nll, candidate_prior.echo_sample_count)
+    add(
+        "pit_residual",
+        candidate_prior.conditional_pit_residual_mean_abs,
+        parent_prior.conditional_pit_residual_mean_abs,
+        candidate_prior.echo_sample_count,
+    )
     add("support", candidate_prior.support_brier_score, parent_prior.support_brier_score, total_prior)
     add("echo_miss", candidate_prior.echo_support_miss_score, parent_prior.echo_support_miss_score, candidate_prior.echo_sample_count)
     add("object_miss", candidate_object_miss, parent_object_miss, object_count)
     add("clear", candidate_prior.clear_sky_false_echo_score, parent_prior.clear_sky_false_echo_score, candidate_prior.clear_sample_count)
     add("underdispersion", candidate_prior.conditional_underdispersion_fraction, parent_prior.conditional_underdispersion_fraction, candidate_prior.echo_sample_count)
     add("state_nll", candidate_state.gaussian_nll, parent_state.gaussian_nll, total_state)
+    add(
+        "state_pit_residual",
+        candidate_state.pit_residual_mean_abs,
+        parent_state.pit_residual_mean_abs,
+        total_state,
+    )
     add("state_underdispersion", candidate_state.underdispersion_fraction, parent_state.underdispersion_fraction, total_state)
     add("state_support", candidate_state.support_brier_score, parent_state.support_brier_score, total_state)
     add("state_echo_miss", candidate_state.echo_support_miss_score, parent_state.echo_support_miss_score, candidate_state.echo_sample_count)
@@ -4446,7 +4550,12 @@ def _range_uncertainty_components(
     )
     add("state_false_support", candidate_state.false_support_score, parent_state.false_support_score, candidate_state.clear_sample_count)
     add("state_valid", candidate_state.valid_brier_score, parent_state.valid_brier_score, total_state)
-    return tuple(values), tuple(counts)
+    return (
+        tuple(candidate_values),
+        tuple(parent_values),
+        tuple(differences),
+        tuple(counts),
+    )
 
 
 def _new_prior_holdout_evaluation(**values: object) -> PriorHoldoutEvaluation:
@@ -4456,7 +4565,7 @@ def _new_prior_holdout_evaluation(**values: object) -> PriorHoldoutEvaluation:
     object.__setattr__(
         result,
         "contract",
-        "prior-holdout-evaluation-v12",
+        "prior-holdout-evaluation-v13",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -4592,6 +4701,9 @@ def _evaluation_digest(value: PriorHoldoutEvaluation) -> str:
             ),
             "parent_prior_conditional_underdispersion_fraction": (
                 value.parent_prior_conditional_underdispersion_fraction
+            ),
+            "parent_prior_conditional_pit_residual_mean_abs": (
+                value.parent_prior_conditional_pit_residual_mean_abs
             ),
             "parent_prior_echo_intensity_nll": (
                 value.parent_prior_echo_intensity_nll
@@ -4755,6 +4867,7 @@ class NeuralPriorPromotionPolicy:
     maximum_prior_echo_support_miss_increase: float = 0.0
     maximum_prior_echo_object_miss_increase: float = 0.0
     maximum_prior_clear_sky_false_echo_increase: float = 0.0
+    maximum_prior_conditional_pit_residual_increase: float = 0.0
     maximum_prior_conditional_underdispersion_increase: float = 0.0
     maximum_state_pit_residual_mean_abs: float = 2.0
     maximum_state_underdispersion_fraction: float = 0.1
@@ -4768,6 +4881,7 @@ class NeuralPriorPromotionPolicy:
     minimum_state_calibration_cases_per_regime: int = 5
     minimum_state_calibration_clusters_per_regime: int = 5
     maximum_state_gaussian_nll_increase: float = 0.0
+    maximum_state_pit_residual_increase: float = 0.0
     maximum_state_underdispersion_increase: float = 0.0
     maximum_state_support_brier_increase: float = 0.0
     maximum_state_echo_support_miss_increase: float = 0.0
@@ -4794,7 +4908,7 @@ class NeuralPriorPromotionPolicy:
     minimum_weather_top1_top2_gap: float = 0.05
     minimum_range_presence_margin: float = 0.05
     minimum_range_band_cases: int = 2
-    minimum_range_band_clusters: int = 2
+    minimum_range_band_clusters: int = 5
     minimum_range_band_area_km2: float = 1.0
     minimum_range_metric_valid_area_km2: float = 1.0
     minimum_range_probability_valid_area_km2: float = 1.0
@@ -4807,10 +4921,10 @@ class NeuralPriorPromotionPolicy:
     require_all_registered_regimes_certified: bool = False
     minimum_bootstrap_tail_replicates: int = 20
     maximum_exact_sign_clusters: int = 16
-    contract: str = "neural-prior-promotion-policy-v16"
+    contract: str = "neural-prior-promotion-policy-v17"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-policy-v16":
+        if self.contract != "neural-prior-promotion-policy-v17":
             raise ValueError("unsupported neural-prior promotion policy")
         if not self.metric_scales or len({x.metric_name for x in self.metric_scales}) != len(self.metric_scales):
             raise ValueError("promotion metric scales must be unique")
@@ -4978,9 +5092,17 @@ class NeuralPriorPromotionPolicy:
                 "maximum_prior_conditional_underdispersion_increase",
                 self.maximum_prior_conditional_underdispersion_increase,
             ),
+            (
+                "maximum_prior_conditional_pit_residual_increase",
+                self.maximum_prior_conditional_pit_residual_increase,
+            ),
             ("maximum_state_pit_residual_mean_abs", self.maximum_state_pit_residual_mean_abs),
             ("maximum_state_gaussian_nll", self.maximum_state_gaussian_nll),
             ("maximum_state_gaussian_nll_increase", self.maximum_state_gaussian_nll_increase),
+            (
+                "maximum_state_pit_residual_increase",
+                self.maximum_state_pit_residual_increase,
+            ),
             ("maximum_state_underdispersion_increase", self.maximum_state_underdispersion_increase),
             ("maximum_state_support_brier_increase", self.maximum_state_support_brier_increase),
             ("maximum_state_echo_support_miss_increase", self.maximum_state_echo_support_miss_increase),
@@ -5130,6 +5252,9 @@ class NeuralPriorPromotionPolicy:
             "maximum_prior_conditional_underdispersion_increase": (
                 self.maximum_prior_conditional_underdispersion_increase
             ),
+            "maximum_prior_conditional_pit_residual_increase": (
+                self.maximum_prior_conditional_pit_residual_increase
+            ),
             "maximum_state_pit_residual_mean_abs": self.maximum_state_pit_residual_mean_abs,
             "maximum_state_underdispersion_fraction": self.maximum_state_underdispersion_fraction,
             "maximum_state_gaussian_nll": self.maximum_state_gaussian_nll,
@@ -5142,6 +5267,9 @@ class NeuralPriorPromotionPolicy:
             "minimum_state_calibration_cases_per_regime": self.minimum_state_calibration_cases_per_regime,
             "minimum_state_calibration_clusters_per_regime": self.minimum_state_calibration_clusters_per_regime,
             "maximum_state_gaussian_nll_increase": self.maximum_state_gaussian_nll_increase,
+            "maximum_state_pit_residual_increase": (
+                self.maximum_state_pit_residual_increase
+            ),
             "maximum_state_underdispersion_increase": self.maximum_state_underdispersion_increase,
             "maximum_state_support_brier_increase": self.maximum_state_support_brier_increase,
             "maximum_state_echo_support_miss_increase": self.maximum_state_echo_support_miss_increase,
@@ -5415,6 +5543,28 @@ class LegacyNeuralPriorPromotionEvidenceAuditV10:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV11:
+    """Original v11 decision retained before event-level band inference."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v11"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v11",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
@@ -5494,17 +5644,20 @@ class NeuralPriorPromotionEvidence:
     range_band_skill_bounds: tuple[
         tuple[str, str, float, float, float], ...
     ]
+    range_band_skill_inference_diagnostics: tuple[
+        tuple[str, str, str, int, int, float, float, float, int, int], ...
+    ]
     certified_applicability_regime_groups: tuple[tuple[str, str], ...]
     requires_parent_fallback_outside_certified_applicability: bool
     state_calibration_eligible: bool
     deployment_eligible: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v11"
+    contract: str = "neural-prior-promotion-evidence-v12"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v11":
+        if self.contract != "neural-prior-promotion-evidence-v12":
             raise ValueError("unsupported neural-prior promotion evidence")
         for name in ("candidate_prior_digest", "parent_prior_digest", "candidate_manifest_digest", "policy_digest", "trust_store_digest", "deployment_regime_classifier_digest", "deployment_regime_classifier_manifest_digest"):
             _require_digest(name, getattr(self, name))
@@ -5621,12 +5774,37 @@ class NeuralPriorPromotionEvidence:
             != len(self.certified_applicability_regime_groups)
             or len({item[:2] for item in self.range_band_skill_bounds})
             != len(self.range_band_skill_bounds)
+            or len(self.range_band_skill_inference_diagnostics)
+            != len(self.range_band_skill_bounds)
+            or {
+                item[:2] for item in self.range_band_skill_inference_diagnostics
+            }
+            != {item[:2] for item in self.range_band_skill_bounds}
             or any(
                 len(item) != 5
                 or not item[0]
                 or not item[1]
                 or not all(math.isfinite(value) for value in item[2:])
                 for item in self.range_band_skill_bounds
+            )
+            or any(
+                len(item) != 10
+                or not item[0]
+                or not item[1]
+                or item[2] != "cluster_bootstrap"
+                or type(item[3]) is not int
+                or item[3] <= 0
+                or type(item[4]) is not int
+                or item[4] <= 0
+                or any(
+                    not math.isfinite(value) or value < 0.0
+                    for value in item[5:8]
+                )
+                or type(item[8]) is not int
+                or item[8] < 0
+                or type(item[9]) is not int
+                or item[9] < 0
+                for item in self.range_band_skill_inference_diagnostics
             )
             or any(
                 not regime or not range_regime
@@ -5744,17 +5922,21 @@ def _holdout_score(
 
 def _cluster_bounds(
     scores: list[float],
-    clusters: list[tuple[str, str, str]],
+    clusters: list[str],
     policy: NeuralPriorPromotionPolicy,
     *,
     candidate_family_size: int,
 ) -> tuple[float, float, float]:
-    grouped: dict[tuple[str, str, str], list[float]] = {}
+    grouped: dict[str, list[float]] = {}
     for score, cluster in zip(scores, clusters, strict=True):
         grouped.setdefault(cluster, []).append(score)
     keys = sorted(grouped)
     cluster_scores = {
         key: sum(values) / len(values) for key, values in grouped.items()
+    }
+    cluster_harm = {
+        key: (sum(value < 0 for value in values), len(values))
+        for key, values in grouped.items()
     }
     generator = random.Random(0)
     beneficial: list[float] = []
@@ -5764,7 +5946,9 @@ def _cluster_bounds(
         sample = [generator.choice(keys) for _ in keys]
         values = [cluster_scores[key] for key in sample]
         beneficial.append(sum(value > 0 for value in values) / len(values))
-        harmful.append(sum(value < 0 for value in values) / len(values))
+        harmful_count = sum(cluster_harm[key][0] for key in sample)
+        case_count = sum(cluster_harm[key][1] for key in sample)
+        harmful.append(harmful_count / case_count)
         means.append(sum(values) / len(values))
     alpha = (1.0 - policy.confidence_level) / (
         2.0 * candidate_family_size
@@ -5775,9 +5959,47 @@ def _cluster_bounds(
     return quantile(beneficial, alpha), quantile(harmful, 1.0 - alpha), quantile(means, alpha)
 
 
+def _bootstrap_tail_diagnostics(
+    policy: NeuralPriorPromotionPolicy,
+    *,
+    family_size: int,
+    enforce: bool = True,
+) -> tuple[int, float, float, float]:
+    """Validate finite-sample resolution for one bootstrap test family."""
+
+    if family_size <= 0:
+        raise ValueError("bootstrap family size must be positive")
+    alpha = (1.0 - policy.confidence_level) / (2.0 * family_size)
+    effective_replicates = policy.bootstrap_samples
+    tail_replicates = effective_replicates * alpha
+    critical_quantile = 1.0 - alpha
+    monte_carlo_standard_error = math.sqrt(
+        alpha * (1.0 - alpha) / effective_replicates
+    )
+    if (
+        enforce
+        and tail_replicates < policy.minimum_bootstrap_tail_replicates
+    ):
+        raise ValueError("insufficient bootstrap tail resolution")
+    return (
+        effective_replicates,
+        tail_replicates,
+        critical_quantile,
+        monte_carlo_standard_error,
+    )
+
+
+def _physical_event_cluster(evaluation: PriorHoldoutEvaluation) -> str:
+    """Return the signed meteorological event identity for outer resampling."""
+
+    if not evaluation.storm_id or evaluation.storm_id.strip() != evaluation.storm_id:
+        raise ValueError("physical event identity is invalid")
+    return evaluation.storm_id
+
+
 def _cluster_rate_interval(
     values: list[float],
-    clusters: list[tuple[str, str, str]],
+    clusters: list[str],
     policy: NeuralPriorPromotionPolicy,
     *,
     family_size: int,
@@ -5791,7 +6013,7 @@ def _cluster_rate_interval(
         or any(not math.isfinite(value) or not 0.0 <= value <= 1.0 for value in values)
     ):
         raise ValueError("cluster rate evidence is invalid")
-    grouped: dict[tuple[str, str, str], list[float]] = {}
+    grouped: dict[str, list[float]] = {}
     for value, cluster in zip(values, clusters, strict=True):
         grouped.setdefault(cluster, []).append(value)
     cluster_rates = tuple(
@@ -5820,13 +6042,13 @@ class _UncertaintyComparison:
     component: _UncertaintyComponent
     group: tuple[str, str] | None
     values: tuple[float, ...]
-    clusters: tuple[tuple[str, str, str], ...]
+    clusters: tuple[str, ...]
 
 
 def _cluster_means(
     comparison: _UncertaintyComparison,
-) -> dict[tuple[str, str, str], float]:
-    grouped: dict[tuple[str, str, str], list[float]] = {}
+) -> dict[str, float]:
+    grouped: dict[str, list[float]] = {}
     for value, cluster in zip(
         comparison.values,
         comparison.clusters,
@@ -6030,20 +6252,22 @@ def compute_neural_prior_promotion(
     if len(evaluations) < policy.minimum_holdout_cases:
         reasons.append("insufficient_holdout_cases")
     scores: list[float] = []
-    clusters: list[tuple[str, str, str]] = []
+    clusters: list[str] = []
     material_evaluations: list[PriorHoldoutEvaluation] = []
     maximum_degradation = 0.0
     uncertainty_records: dict[
         _UncertaintyComponent,
-        list[tuple[PriorHoldoutEvaluation, float, tuple[str, str, str]]],
+        list[tuple[PriorHoldoutEvaluation, float, str]],
     ] = {
         "intensity": [],
+        "pit_residual": [],
         "support": [],
         "echo_miss": [],
         "object_miss": [],
         "clear": [],
         "underdispersion": [],
         "state_nll": [],
+        "state_pit_residual": [],
         "state_underdispersion": [],
         "state_support": [],
         "state_echo_miss": [],
@@ -6071,11 +6295,7 @@ def compute_neural_prior_promotion(
         ):
             raise ValueError("holdout used a different deployment classifier")
         manifest.holdout_case(evaluation.case_id)
-        uncertainty_cluster = (
-            evaluation.storm_id,
-            evaluation.day,
-            evaluation.radar_id,
-        )
+        uncertainty_cluster = _physical_event_cluster(evaluation)
         uncertainty_records["support"].append(
             (
                 evaluation,
@@ -6089,6 +6309,14 @@ def compute_neural_prior_promotion(
                 evaluation,
                 evaluation.state_candidate_gaussian_nll
                 - evaluation.state_parent_gaussian_nll,
+                uncertainty_cluster,
+            )
+        )
+        uncertainty_records["state_pit_residual"].append(
+            (
+                evaluation,
+                evaluation.state_candidate_pit_residual_mean_abs
+                - evaluation.state_parent_pit_residual_mean_abs,
                 uncertainty_cluster,
             )
         )
@@ -6147,6 +6375,19 @@ def compute_neural_prior_promotion(
                 )
             )
         if evaluation.prior_echo_intensity_status == "available":
+            assert evaluation.prior_conditional_pit_residual_mean_abs is not None
+            assert (
+                evaluation.parent_prior_conditional_pit_residual_mean_abs
+                is not None
+            )
+            uncertainty_records["pit_residual"].append(
+                (
+                    evaluation,
+                    evaluation.prior_conditional_pit_residual_mean_abs
+                    - evaluation.parent_prior_conditional_pit_residual_mean_abs,
+                    uncertainty_cluster,
+                )
+            )
             assert evaluation.prior_echo_intensity_nll is not None
             assert evaluation.parent_prior_echo_intensity_nll is not None
             assert evaluation.prior_echo_support_miss_score is not None
@@ -6336,7 +6577,7 @@ def compute_neural_prior_promotion(
         maximum_degradation = max(maximum_degradation, degradation)
         if score is not None:
             scores.append(score)
-            clusters.append((evaluation.storm_id, evaluation.day, evaluation.radar_id))
+            clusters.append(_physical_event_cluster(evaluation))
             material_evaluations.append(evaluation)
     material_count = len(scores)
     if material_count == 0:
@@ -6551,7 +6792,7 @@ def compute_neural_prior_promotion(
         default=0.0,
     )
     classifier_clusters = [
-        (item.storm_id, item.day, item.radar_id) for item in evaluations
+        _physical_event_cluster(item) for item in evaluations
     ]
     known_clusters = [classifier_clusters[index] for index in known_indices]
     (
@@ -6571,7 +6812,7 @@ def compute_neural_prior_promotion(
                 if item.regime == regime
             ],
             [
-                (item.storm_id, item.day, item.radar_id)
+                _physical_event_cluster(item)
                 for item in evaluations
                 if item.regime == regime
             ],
@@ -6596,7 +6837,7 @@ def compute_neural_prior_promotion(
     range_precision_lower_bound, _ = _cluster_rate_interval(
         [item.classifier_range_set_precision for item in range_known_items],
         [
-            (item.storm_id, item.day, item.radar_id)
+            _physical_event_cluster(item)
             for item in range_known_items
         ],
         policy,
@@ -6605,7 +6846,7 @@ def compute_neural_prior_promotion(
     range_recall_lower_bound, _ = _cluster_rate_interval(
         [item.classifier_range_set_recall for item in range_known_items],
         [
-            (item.storm_id, item.day, item.radar_id)
+            _physical_event_cluster(item)
             for item in range_known_items
         ],
         policy,
@@ -6617,7 +6858,7 @@ def compute_neural_prior_promotion(
             for item in range_known_items
         ],
         [
-            (item.storm_id, item.day, item.radar_id)
+            _physical_event_cluster(item)
             for item in range_known_items
         ],
         policy,
@@ -6677,7 +6918,7 @@ def compute_neural_prior_promotion(
         (
             item,
             band,
-            (item.storm_id, item.day, item.radar_id),
+            _physical_event_cluster(item),
         )
         for item in evaluations
         if not item.classifier_is_ood
@@ -6692,9 +6933,42 @@ def compute_neural_prior_promotion(
         }
     )
     band_skill_family_size = family_size * max(1, len(groups))
+    band_bootstrap_diagnostics = _bootstrap_tail_diagnostics(
+        policy,
+        family_size=band_skill_family_size,
+        enforce=False,
+    )
+    band_bootstrap_tail_ok = (
+        band_bootstrap_diagnostics[1]
+        >= policy.minimum_bootstrap_tail_replicates
+    )
+    absolute_component_limits = {
+        "intensity": policy.maximum_prior_echo_intensity_nll,
+        "pit_residual": (
+            policy.maximum_prior_conditional_pit_residual_mean_abs
+        ),
+        "support": policy.maximum_prior_support_brier_score,
+        "echo_miss": policy.maximum_prior_echo_support_miss_score,
+        "object_miss": policy.maximum_prior_echo_object_miss_score,
+        "clear": policy.maximum_prior_clear_sky_false_echo_score,
+        "underdispersion": (
+            policy.maximum_prior_conditional_underdispersion_fraction
+        ),
+        "state_nll": policy.maximum_state_gaussian_nll,
+        "state_pit_residual": policy.maximum_state_pit_residual_mean_abs,
+        "state_underdispersion": policy.maximum_state_underdispersion_fraction,
+        "state_support": policy.maximum_state_support_brier_score,
+        "state_echo_miss": policy.maximum_state_echo_support_miss_score,
+        "state_object_miss": policy.maximum_state_echo_object_miss_score,
+        "state_false_support": policy.maximum_state_false_support_score,
+        "state_valid": policy.maximum_state_valid_brier_score,
+    }
     certified_groups: list[tuple[str, str]] = []
     range_band_skill_bounds: list[
         tuple[str, str, float, float, float]
+    ] = []
+    range_band_skill_inference_diagnostics: list[
+        tuple[str, str, str, int, int, float, float, float, int, int]
     ] = []
     for group in groups:
         band_group = tuple(
@@ -6744,8 +7018,23 @@ def compute_neural_prior_promotion(
                 band_mean_lower_bound,
             )
         )
+        range_band_skill_inference_diagnostics.append(
+            (
+                group[0],
+                group[1],
+                "cluster_bootstrap",
+                band_skill_family_size,
+                band_bootstrap_diagnostics[0],
+                band_bootstrap_diagnostics[1],
+                band_bootstrap_diagnostics[2],
+                band_bootstrap_diagnostics[3],
+                len(set(band_clusters)),
+                len(retained_band_scores),
+            )
+        )
         band_skill_ok = (
-            len(band_group) >= policy.minimum_range_band_cases
+            band_bootstrap_tail_ok
+            and len(band_group) >= policy.minimum_range_band_cases
             and len({cluster for _, _, cluster in band_group})
             >= policy.minimum_range_band_clusters
             and all(
@@ -6773,8 +7062,8 @@ def compute_neural_prior_promotion(
         )
         def band_component_records(
             component: str,
-        ) -> tuple[tuple[float, int, tuple[str, str, str]], ...]:
-            values: list[tuple[float, int, tuple[str, str, str]]] = []
+        ) -> tuple[tuple[float, int, str], ...]:
+            values: list[tuple[float, int, str]] = []
             for _, band, cluster in band_group:
                 difference = band.component_difference(component)
                 count = dict(band.uncertainty_component_sample_counts).get(
@@ -6795,6 +7084,15 @@ def compute_neural_prior_promotion(
                     else policy.minimum_range_component_samples
                 )
                 for component, count in band.uncertainty_component_sample_counts
+            )
+            for _, band, _ in band_group
+        )
+        band_absolute_calibration_ok = all(
+            all(
+                score <= absolute_component_limits[component]
+                for component, score in (
+                    band.candidate_uncertainty_component_scores
+                )
             )
             for _, band, _ in band_group
         )
@@ -6855,6 +7153,7 @@ def compute_neural_prior_promotion(
             band_skill_ok
             and
             band_component_samples_ok
+            and band_absolute_calibration_ok
             and
             state_cases_ok
             and state_clusters_ok
@@ -6880,7 +7179,7 @@ def compute_neural_prior_promotion(
             )
         )
         for group in groups:
-            selected_values: list[tuple[float, tuple[str, str, str]]] = []
+            selected_values: list[tuple[float, str]] = []
             for item, band, cluster in range_band_records:
                 if (item.classified_regime, band.range_regime) != group:
                     continue
@@ -6925,12 +7224,16 @@ def compute_neural_prior_promotion(
     state_valid_upper = comparison_bounds[("state_valid", None)]
     component_limits = {
         "intensity": policy.maximum_prior_echo_intensity_nll_increase,
+        "pit_residual": (
+            policy.maximum_prior_conditional_pit_residual_increase
+        ),
         "support": policy.maximum_prior_support_brier_increase,
         "echo_miss": policy.maximum_prior_echo_support_miss_increase,
         "object_miss": policy.maximum_prior_echo_object_miss_increase,
         "clear": policy.maximum_prior_clear_sky_false_echo_increase,
         "underdispersion": policy.maximum_prior_conditional_underdispersion_increase,
         "state_nll": policy.maximum_state_gaussian_nll_increase,
+        "state_pit_residual": policy.maximum_state_pit_residual_increase,
         "state_underdispersion": policy.maximum_state_underdispersion_increase,
         "state_support": policy.maximum_state_support_brier_increase,
         "state_echo_miss": policy.maximum_state_echo_support_miss_increase,
@@ -7079,6 +7382,9 @@ def compute_neural_prior_promotion(
         simultaneous_inference_tail_replicates=simultaneous.tail_replicates,
         cluster_bootstrap_tail_replicates=cluster_bootstrap_tail_replicates,
         range_band_skill_bounds=tuple(range_band_skill_bounds),
+        range_band_skill_inference_diagnostics=tuple(
+            range_band_skill_inference_diagnostics
+        ),
         certified_applicability_regime_groups=tuple(certified_groups),
         requires_parent_fallback_outside_certified_applicability=True,
         state_calibration_eligible=not any(
