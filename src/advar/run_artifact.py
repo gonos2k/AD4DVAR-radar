@@ -35,7 +35,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v53"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v54"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v42",
     "forecast-run-v43",
@@ -48,6 +48,7 @@ _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v50",
     "forecast-run-v51",
     "forecast-run-v52",
+    "forecast-run-v53",
 }
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 256
@@ -1393,6 +1394,10 @@ def load_forecast_run(
                 prior_deployment_lineage_contract = (
                     "neural-prior-deployment-lineage-v3-audit"
                 )
+            elif version == "forecast-run-v53":
+                prior_deployment_lineage_contract = (
+                    "neural-prior-deployment-lineage-v4-audit"
+                )
         elif version in _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS:
             prior_deployment_lineage_contract = (
                 "neural-prior-deployment-lineage-v0-audit"
@@ -1657,7 +1662,14 @@ def load_forecast_run(
 
             if (
                 validate_neural_prior_deployment_decision_artifact(
-                    run.prior_deployment_decision_artifact_json
+                    run.prior_deployment_decision_artifact_json,
+                    expected_operational_grid_contract_digest=(
+                        run.grid_time_contract_digest
+                    ),
+                    expected_operational_frame_shape=(
+                        int(run.latest_frame_dbz.shape[-2]),
+                        int(run.latest_frame_dbz.shape[-1]),
+                    ),
                 )
                 != run.prior_deployment_decision_artifact_digest
             ):

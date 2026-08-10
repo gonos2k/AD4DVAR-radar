@@ -73,6 +73,7 @@ from .promotion import (
     LegacyNeuralPriorCandidateManifestAuditV5,
     LegacyNeuralPriorCandidateManifestAuditV6,
     LegacyNeuralPriorCandidateManifestAuditV7,
+    LegacyNeuralPriorCandidateManifestAuditV8,
     NeuralPriorCandidateManifest,
     LegacyNeuralPriorHoldoutPlanAudit,
     LegacyNeuralPriorHoldoutPlanCase,
@@ -86,6 +87,7 @@ from .promotion import (
     LegacyNeuralPriorHoldoutPlanV7Audit,
     LegacyNeuralPriorHoldoutPlanV8Audit,
     LegacyNeuralPriorHoldoutPlanV9Audit,
+    LegacyNeuralPriorHoldoutPlanV10Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
@@ -98,7 +100,10 @@ from .promotion import (
     RegimeClassifierManifest,
     RegimeReferencePlan,
     RegimeReferenceEvidence,
+    PhysicalEventCaseSpatialEvidence,
     PhysicalEventCatalogEvidence,
+    PhysicalEventCatalogPlan,
+    PhysicalEventCatalogResult,
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionEvidence,
     LegacyNeuralPriorPromotionEvidenceAuditV3,
@@ -111,15 +116,18 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV10,
     LegacyNeuralPriorPromotionEvidenceAuditV11,
     LegacyNeuralPriorPromotionEvidenceAuditV12,
+    LegacyNeuralPriorPromotionEvidenceAuditV13,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     compute_neural_prior_promotion,
     validate_neural_prior_promotion,
     validate_neural_prior_candidate_manifest,
     validate_neural_prior_holdout_plan,
+    validate_physical_event_catalog_result,
     _new_prior_holdout_evaluation,
     _new_regime_reference_evidence,
     _new_physical_event_catalog_evidence,
+    _new_physical_event_catalog_result,
 )
 
 
@@ -127,7 +135,7 @@ _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 15
+_INDEX_SCHEMA_VERSION = 16
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
@@ -2391,6 +2399,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanV7Audit
         | LegacyNeuralPriorHoldoutPlanV8Audit
         | LegacyNeuralPriorHoldoutPlanV9Audit
+        | LegacyNeuralPriorHoldoutPlanV10Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -2433,6 +2442,13 @@ class EpisodeLedger:
             )
         if value.get("contract") == "neural-prior-holdout-plan-v9":
             return LegacyNeuralPriorHoldoutPlanV9Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v10":
+            return LegacyNeuralPriorHoldoutPlanV10Audit(
                 plan_digest=plan_digest,
                 payload_json=json.dumps(
                     value, sort_keys=True, separators=(",", ":")
@@ -2592,10 +2608,76 @@ class EpisodeLedger:
             )
             for item in value["regime_classifier_manifests"]
         )
+        event_plan_values = {
+            key: entry
+            for key, entry in value["physical_event_catalog_plan"].items()
+            if key != "plan_digest"
+        }
+        event_plan_values["holdout_case_ids"] = tuple(
+            event_plan_values["holdout_case_ids"]
+        )
+        value["physical_event_catalog_plan"] = PhysicalEventCatalogPlan(
+            **cast(Any, event_plan_values)
+        )
         plan = NeuralPriorHoldoutPlan(**value)
         if plan.plan_digest != plan_digest:
             raise ValueError("neural-prior holdout plan digest mismatch")
         return plan
+
+    def append_physical_event_catalog_result(
+        self,
+        plan: NeuralPriorHoldoutPlan,
+        result: PhysicalEventCatalogResult,
+        *,
+        candidate_scoring_started_at: str,
+    ) -> str:
+        """Append the sole candidate-neutral event catalog for one plan."""
+
+        validate_neural_prior_holdout_plan(plan)
+        validate_physical_event_catalog_result(
+            result,
+            plan.physical_event_catalog_plan,
+            candidate_scoring_started_at=candidate_scoring_started_at,
+        )
+        result_json = json.dumps(
+            result.payload | {"result_digest": result.result_digest},
+            sort_keys=True,
+        )
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            plan_row = connection.execute(
+                "SELECT plan_json FROM neural_prior_holdout_plans "
+                "WHERE plan_digest = ?",
+                (plan.plan_digest,),
+            ).fetchone()
+            if plan_row is None or plan_row[0] != json.dumps(
+                asdict(plan), sort_keys=True
+            ):
+                raise ValueError("event catalog holdout plan is not registered")
+            now = datetime.now(timezone.utc)
+            scoring_started = datetime.fromisoformat(
+                candidate_scoring_started_at.replace("Z", "+00:00")
+            )
+            if now >= scoring_started:
+                raise ValueError("event catalog must be registered before scoring")
+            try:
+                connection.execute(
+                    "INSERT INTO neural_prior_event_catalog_results "
+                    "(plan_digest, result_digest, result_json, cataloged_at, "
+                    "created_at) VALUES (?, ?, ?, ?, ?)",
+                    (
+                        plan.plan_digest,
+                        result.result_digest,
+                        result_json,
+                        result.cataloged_at,
+                        now.isoformat(),
+                    ),
+                )
+            except sqlite3.IntegrityError as error:
+                raise FileExistsError(
+                    "physical event catalog is already registered"
+                ) from error
+        return result.result_digest
 
     def append_neural_prior_promotion(
         self,
@@ -2634,6 +2716,28 @@ class EpisodeLedger:
                 asdict(plan), sort_keys=True
             ):
                 raise ValueError("promotion holdout plan is not pre-registered")
+            catalog_row = connection.execute(
+                "SELECT result_digest, result_json "
+                "FROM neural_prior_event_catalog_results "
+                "WHERE plan_digest = ?",
+                (plan.plan_digest,),
+            ).fetchone()
+            expected_catalog_json = json.dumps(
+                manifest.physical_event_catalog_result.payload
+                | {
+                    "result_digest": (
+                        manifest.physical_event_catalog_result.result_digest
+                    )
+                },
+                sort_keys=True,
+            )
+            if catalog_row is None or tuple(catalog_row) != (
+                manifest.physical_event_catalog_result.result_digest,
+                expected_catalog_json,
+            ):
+                raise ValueError(
+                    "promotion physical event catalog result is not registered"
+                )
             plan_created = datetime.fromisoformat(plan_row[1])
             if plan.mode == "prospective" and any(
                 plan_created
@@ -2786,6 +2890,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV10
         | LegacyNeuralPriorPromotionEvidenceAuditV11
         | LegacyNeuralPriorPromotionEvidenceAuditV12
+        | LegacyNeuralPriorPromotionEvidenceAuditV13
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -2850,6 +2955,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV10
                 | LegacyNeuralPriorPromotionEvidenceAuditV11
                 | LegacyNeuralPriorPromotionEvidenceAuditV12
+                | LegacyNeuralPriorPromotionEvidenceAuditV13
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -2946,6 +3052,7 @@ class EpisodeLedger:
                         "neural-prior-promotion-evidence-v11",
                         "neural-prior-promotion-evidence-v12",
                         "neural-prior-promotion-evidence-v13",
+                        "neural-prior-promotion-evidence-v14",
                     ):
                         raw_payload = json.loads(row["evidence_payload_json"])
                         if not isinstance(raw_payload, dict):
@@ -2964,6 +3071,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v11",
                             "neural-prior-promotion-evidence-v12",
                             "neural-prior-promotion-evidence-v13",
+                            "neural-prior-promotion-evidence-v14",
                         ):
                             raw_payload["regime_classifier_evidence_digests"] = tuple(
                                 raw_payload["regime_classifier_evidence_digests"]
@@ -2980,6 +3088,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v11",
                             "neural-prior-promotion-evidence-v12",
                             "neural-prior-promotion-evidence-v13",
+                            "neural-prior-promotion-evidence-v14",
                         ):
                             raw_payload["range_band_skill_bounds"] = tuple(
                                 tuple(item)
@@ -2990,6 +3099,7 @@ class EpisodeLedger:
                         if contract in (
                             "neural-prior-promotion-evidence-v12",
                             "neural-prior-promotion-evidence-v13",
+                            "neural-prior-promotion-evidence-v14",
                         ):
                             raw_payload[
                                 "range_band_skill_inference_diagnostics"
@@ -2999,7 +3109,10 @@ class EpisodeLedger:
                                     "range_band_skill_inference_diagnostics"
                                 ]
                             )
-                        if contract == "neural-prior-promotion-evidence-v13":
+                        if contract in (
+                            "neural-prior-promotion-evidence-v13",
+                            "neural-prior-promotion-evidence-v14",
+                        ):
                             raw_payload[
                                 "certified_range_geometry_contract_digests"
                             ] = tuple(
@@ -3118,7 +3231,20 @@ class EpisodeLedger:
                                     separators=(",", ":"),
                                 ),
                             )
+                        elif contract == "neural-prior-promotion-evidence-v13":
+                            evidence = LegacyNeuralPriorPromotionEvidenceAuditV13(
+                                promotion_evidence_digest=promotion_evidence_digest,
+                                payload_json=json.dumps(
+                                    raw_payload,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                ),
+                            )
                         else:
+                            raw_payload["range_metric_cell_bounds"] = tuple(
+                                tuple(item)
+                                for item in raw_payload["range_metric_cell_bounds"]
+                            )
                             evidence = NeuralPriorPromotionEvidence(
                                 **cast(Any, raw_payload)
                             )
@@ -3317,6 +3443,19 @@ class EpisodeLedger:
             )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS neural_prior_event_catalog_results (
+                    plan_digest TEXT PRIMARY KEY,
+                    result_digest TEXT NOT NULL UNIQUE,
+                    result_json TEXT NOT NULL,
+                    cataloged_at TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (plan_digest)
+                        REFERENCES neural_prior_holdout_plans(plan_digest)
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS neural_prior_promotions (
                     promotion_evidence_digest TEXT PRIMARY KEY,
                     candidate_prior_digest TEXT NOT NULL UNIQUE,
@@ -3391,6 +3530,7 @@ class EpisodeLedger:
                 "prospective_intervention_decisions",
                 "realized_intervention_receipts",
                 "neural_prior_holdout_plans",
+                "neural_prior_event_catalog_results",
                 "neural_prior_promotions",
             ):
                 connection.execute(
@@ -3971,6 +4111,7 @@ def _decode_candidate_manifest(
     | LegacyNeuralPriorCandidateManifestAuditV5
     | LegacyNeuralPriorCandidateManifestAuditV6
     | LegacyNeuralPriorCandidateManifestAuditV7
+    | LegacyNeuralPriorCandidateManifestAuditV8
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -4049,6 +4190,18 @@ def _decode_candidate_manifest(
         if audit_v7.manifest_digest != expected_digest:
             raise ValueError("candidate manifest ledger digest mismatch")
         return audit_v7
+    if values.get("contract") == "neural-prior-candidate-manifest-v8":
+        audit_v8 = LegacyNeuralPriorCandidateManifestAuditV8(
+            manifest_digest=str(stored_digest),
+            payload_json=json.dumps(
+                value,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+        )
+        if audit_v8.manifest_digest != expected_digest:
+            raise ValueError("candidate manifest ledger digest mismatch")
+        return audit_v8
     values["holdout_cases"] = tuple(
         NeuralPriorHoldoutCase(**item) for item in values["holdout_cases"]
     )
@@ -4077,11 +4230,73 @@ def _decode_candidate_manifest(
             raise ValueError("physical event-catalog digest mismatch")
         event_catalogs.append(catalog)
     values["physical_event_catalog_evidences"] = tuple(event_catalogs)
+    result_values = dict(values["physical_event_catalog_result"])
+    stored_result_digest = result_values.pop("result_digest", None)
+    result_event_digests = tuple(
+        str(item["event_digest"])
+        for item in result_values.pop("event_evidences")
+    )
+    if result_event_digests != tuple(item.event_digest for item in event_catalogs):
+        raise ValueError("physical event-catalog result members disagree")
+    result_values["event_evidences"] = tuple(event_catalogs)
+    result_values["case_spatial_membership_evidences"] = (
+        _decode_physical_event_case_spatial_evidences(
+            result_values["case_spatial_membership_evidences"]
+        )
+    )
+    catalog_result = _new_physical_event_catalog_result(**result_values)
+    if catalog_result.result_digest != stored_result_digest:
+        raise ValueError("physical event-catalog result digest mismatch")
+    values["physical_event_catalog_result"] = catalog_result
+    training_plan_values = dict(values["training_physical_event_catalog_plan"])
+    stored_training_plan_digest = training_plan_values.pop("plan_digest", None)
+    training_plan_values["holdout_case_ids"] = tuple(
+        training_plan_values["holdout_case_ids"]
+    )
+    training_catalog_plan = PhysicalEventCatalogPlan(**training_plan_values)
+    if training_catalog_plan.plan_digest != stored_training_plan_digest:
+        raise ValueError("training physical event-catalog plan digest mismatch")
+    values["training_physical_event_catalog_plan"] = training_catalog_plan
+    training_result_values = dict(
+        values["training_physical_event_catalog_result"]
+    )
+    stored_training_result_digest = training_result_values.pop(
+        "result_digest", None
+    )
+    training_events: list[PhysicalEventCatalogEvidence] = []
+    for item in training_result_values.pop("event_evidences"):
+        event_values = dict(item)
+        stored_event_digest = event_values.pop("event_digest", None)
+        for name in (
+            "member_case_ids",
+            "member_full_analysis_input_digests",
+            "spatial_envelope_xy_m",
+            "participating_radar_ids",
+        ):
+            event_values[name] = tuple(event_values[name])
+        event = _new_physical_event_catalog_evidence(**event_values)
+        if event.event_digest != stored_event_digest:
+            raise ValueError("training physical event-catalog digest mismatch")
+        training_events.append(event)
+    training_result_values["event_evidences"] = tuple(training_events)
+    training_result_values["case_spatial_membership_evidences"] = (
+        _decode_physical_event_case_spatial_evidences(
+            training_result_values["case_spatial_membership_evidences"]
+        )
+    )
+    training_result = _new_physical_event_catalog_result(
+        **training_result_values
+    )
+    if training_result.result_digest != stored_training_result_digest:
+        raise ValueError("training physical event-catalog result digest mismatch")
+    values["training_physical_event_catalog_result"] = training_result
     for name in (
         "training_learning_approval_digests",
         "training_intervention_digests",
         "training_case_ids",
         "training_input_bundle_digests",
+        "training_full_analysis_input_digests",
+        "training_physical_event_digests",
         "training_storm_ids",
         "training_days",
         "training_radars",
@@ -4097,6 +4312,30 @@ def _decode_candidate_manifest(
     if manifest.manifest_digest != expected_digest:
         raise ValueError("candidate manifest ledger digest mismatch")
     return manifest
+
+
+def _decode_physical_event_case_spatial_evidences(
+    values: object,
+) -> tuple[PhysicalEventCaseSpatialEvidence, ...]:
+    result: list[PhysicalEventCaseSpatialEvidence] = []
+    for item in cast(list[object], values):
+        evidence_values = dict(cast(dict[str, object], item))
+        stored_digest = evidence_values.pop("evidence_digest", None)
+        evidence_values["observed_spatial_envelope_xy_m"] = tuple(
+            cast(list[float], evidence_values["observed_spatial_envelope_xy_m"])
+        )
+        evidence_values["event_spatial_envelope_xy_m"] = tuple(
+            cast(list[float], evidence_values["event_spatial_envelope_xy_m"])
+        )
+        evidence = PhysicalEventCaseSpatialEvidence(
+            **cast(Any, evidence_values)
+        )
+        if evidence.evidence_digest != stored_digest:
+            raise ValueError(
+                "physical event case spatial-evidence digest mismatch"
+            )
+        result.append(evidence)
+    return tuple(result)
 
 
 def _create_episode_impacts_table(connection: sqlite3.Connection) -> None:

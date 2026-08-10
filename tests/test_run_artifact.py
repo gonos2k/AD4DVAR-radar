@@ -84,6 +84,24 @@ class ForecastRunArtifactTests(unittest.TestCase):
             quantization_origin_dbz=-10.0,
         )
 
+    def _range_geometry_artifact(
+        self, frames: torch.Tensor
+    ) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "radar_site_digest": "e" * 64,
+            "grid_contract_digest": "d" * 64,
+            "radar_x_m": 0.0,
+            "radar_y_m": 0.0,
+            "range_regime_labels": ["near_range"],
+            "radial_distance_edges_m": [0.0, 100_000.0],
+            "horizontal_range_rule_digest": "4" * 64,
+            "grid_x_m_digest": tensor_digest(torch.zeros(frames.shape[1:])),
+            "grid_y_m_digest": tensor_digest(torch.zeros(frames.shape[1:])),
+            "resolver_algorithm": "projected-horizontal-euclidean-range-v2",
+            "contract": "radar-horizontal-range-geometry-contract-v2",
+        }
+        return payload | {"contract_digest": json_digest(payload)}
+
     def _deployment_selection(
         self,
         runner: NeuralPriorInferenceRunner,
@@ -94,9 +112,10 @@ class ForecastRunArtifactTests(unittest.TestCase):
         promotion_digest = "5" * 64
         classifier_digest = "6" * 64
         classifier_manifest_digest = "a" * 64
-        range_geometry_digest = "b" * 64
+        range_geometry = self._range_geometry_artifact(frames)
+        range_geometry_digest = str(range_geometry["contract_digest"])
         range_partition = {
-            "contract": "radar-range-partition-evidence-v1",
+            "contract": "radar-range-partition-evidence-v2",
             "range_geometry_contract_digest": range_geometry_digest,
             "grid_contract_digest": "d" * 64,
             "range_regime_labels": ["near_range"],
@@ -104,6 +123,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 tensor_digest(torch.ones(frames.shape[1:], dtype=torch.bool))
             ],
             "active_range_regimes": ["near_range"],
+            "grid_shape": list(frames.shape[1:]),
         }
         range_partition_digest = json_digest(range_partition)
         regime = {
@@ -143,14 +163,17 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact = {
-            "contract": "neural-prior-deployment-decision-artifact-v2",
+            "contract": "neural-prior-deployment-decision-artifact-v3",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
+            "operational_grid_contract_digest": "d" * 64,
+            "operational_frame_shape": list(frames.shape[1:]),
             "regime_classification_evidence": regime
             | {"evidence_digest": regime_digest},
             "deployment_policy": policy.payload
             | {"policy_digest": policy.policy_digest},
             "range_partition_evidence": range_partition
             | {"evidence_digest": range_partition_digest},
+            "range_geometry_contract": range_geometry,
             "promotion_selection_evidence": {
                 "promotion_evidence_digest": promotion_digest,
                 "candidate_prior_digest": runner.neural_prior_digest,
@@ -972,9 +995,10 @@ class ForecastRunArtifactTests(unittest.TestCase):
         promotion_evidence_digest = "5" * 64
         classifier_digest = "6" * 64
         classifier_manifest_digest = "a" * 64
-        range_geometry_digest = "b" * 64
+        range_geometry = self._range_geometry_artifact(frames)
+        range_geometry_digest = str(range_geometry["contract_digest"])
         range_partition = {
-            "contract": "radar-range-partition-evidence-v1",
+            "contract": "radar-range-partition-evidence-v2",
             "range_geometry_contract_digest": range_geometry_digest,
             "grid_contract_digest": "d" * 64,
             "range_regime_labels": ["near_range"],
@@ -982,6 +1006,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 tensor_digest(torch.ones(frames.shape[1:], dtype=torch.bool))
             ],
             "active_range_regimes": ["near_range"],
+            "grid_shape": list(frames.shape[1:]),
         }
         range_partition_digest = json_digest(range_partition)
         regime_payload = {
@@ -1021,14 +1046,17 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v2",
+            "contract": "neural-prior-deployment-decision-artifact-v3",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
+            "operational_grid_contract_digest": "d" * 64,
+            "operational_frame_shape": list(frames.shape[1:]),
             "regime_classification_evidence": regime_payload
             | {"evidence_digest": regime_evidence_digest},
             "deployment_policy": policy.payload
             | {"policy_digest": policy.policy_digest},
             "range_partition_evidence": range_partition
             | {"evidence_digest": range_partition_digest},
+            "range_geometry_contract": range_geometry,
             "promotion_selection_evidence": {
                 "promotion_evidence_digest": promotion_evidence_digest,
                 "candidate_prior_digest": runner.neural_prior_digest,
