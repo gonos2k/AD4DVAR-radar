@@ -1293,9 +1293,11 @@ class ForecastRunContract:
     prior_deployment_policy_digest: str | None = None
     prior_deployment_policy_trust_store_digest: str | None = None
     prior_deployment_selection_digest: str | None = None
+    prior_deployment_decision_artifact_json: str | None = None
+    prior_deployment_decision_artifact_digest: str | None = None
     prior_deployment_fallback_reason: str | None = None
     prior_deployment_lineage_contract: str = (
-        "neural-prior-deployment-lineage-v2"
+        "neural-prior-deployment-lineage-v3"
     )
     prior_lineage_contract: str = "neural-prior-run-lineage-v2"
     input_plan_json: str | None = None
@@ -1338,6 +1340,8 @@ class ForecastRunContract:
         prior_deployment_policy_digest: str | None = None,
         prior_deployment_policy_trust_store_digest: str | None = None,
         prior_deployment_selection_digest: str | None = None,
+        prior_deployment_decision_artifact_json: str | None = None,
+        prior_deployment_decision_artifact_digest: str | None = None,
         prior_deployment_fallback_reason: str | None = None,
         input_plan_json: str | None = None,
         input_plan_digest: str | None = None,
@@ -1445,8 +1449,14 @@ class ForecastRunContract:
                 prior_deployment_policy_trust_store_digest
             ),
             deployment_selection_digest=prior_deployment_selection_digest,
+            deployment_decision_artifact_json=(
+                prior_deployment_decision_artifact_json
+            ),
+            deployment_decision_artifact_digest=(
+                prior_deployment_decision_artifact_digest
+            ),
             fallback_reason=prior_deployment_fallback_reason,
-            contract="neural-prior-deployment-lineage-v2",
+            contract="neural-prior-deployment-lineage-v3",
         )
         _validate_input_plan_lineage(input_plan_json, input_plan_digest)
         _validate_input_plan_resolution(
@@ -1576,6 +1586,12 @@ class ForecastRunContract:
                 prior_deployment_policy_trust_store_digest
             ),
             prior_deployment_selection_digest=prior_deployment_selection_digest,
+            prior_deployment_decision_artifact_json=(
+                prior_deployment_decision_artifact_json
+            ),
+            prior_deployment_decision_artifact_digest=(
+                prior_deployment_decision_artifact_digest
+            ),
             prior_deployment_fallback_reason=prior_deployment_fallback_reason,
             input_plan_json=input_plan_json,
             input_plan_digest=input_plan_digest,
@@ -1822,6 +1838,12 @@ class ForecastRunContract:
                 self.prior_deployment_policy_trust_store_digest
             ),
             deployment_selection_digest=self.prior_deployment_selection_digest,
+            deployment_decision_artifact_json=(
+                self.prior_deployment_decision_artifact_json
+            ),
+            deployment_decision_artifact_digest=(
+                self.prior_deployment_decision_artifact_digest
+            ),
             fallback_reason=self.prior_deployment_fallback_reason,
             contract=self.prior_deployment_lineage_contract,
         )
@@ -2247,13 +2269,16 @@ def _validate_prior_deployment_lineage(
     deployment_policy_digest: str | None,
     deployment_policy_trust_store_digest: str | None,
     deployment_selection_digest: str | None,
+    deployment_decision_artifact_json: str | None,
+    deployment_decision_artifact_digest: str | None,
     fallback_reason: str | None,
     contract: str,
 ) -> None:
     if contract not in {
         "neural-prior-deployment-lineage-v0-audit",
         "neural-prior-deployment-lineage-v1-audit",
-        "neural-prior-deployment-lineage-v2",
+        "neural-prior-deployment-lineage-v2-audit",
+        "neural-prior-deployment-lineage-v3",
     }:
         raise ValueError("unsupported neural-prior deployment lineage")
     values = (
@@ -2262,6 +2287,8 @@ def _validate_prior_deployment_lineage(
         deployment_policy_digest,
         deployment_policy_trust_store_digest,
         deployment_selection_digest,
+        deployment_decision_artifact_json,
+        deployment_decision_artifact_digest,
         fallback_reason,
     )
     if contract == "neural-prior-deployment-lineage-v0-audit":
@@ -2290,6 +2317,35 @@ def _validate_prior_deployment_lineage(
             assert digest is not None
             _validate_sha256_digest(name, digest)
         return
+    if contract == "neural-prior-deployment-lineage-v2-audit":
+        legacy_values = (
+            promotion_evidence_digest,
+            regime_classification_evidence_digest,
+            deployment_policy_digest,
+            deployment_policy_trust_store_digest,
+            deployment_selection_digest,
+            fallback_reason,
+        )
+        if all(value is None for value in legacy_values):
+            return
+        if any(value is None for value in legacy_values) or prior_role is None:
+            raise ValueError("legacy deployment lineage is incomplete")
+        for name, digest in (
+            ("prior_promotion_evidence_digest", promotion_evidence_digest),
+            (
+                "prior_regime_classification_evidence_digest",
+                regime_classification_evidence_digest,
+            ),
+            ("prior_deployment_policy_digest", deployment_policy_digest),
+            (
+                "prior_deployment_policy_trust_store_digest",
+                deployment_policy_trust_store_digest,
+            ),
+            ("prior_deployment_selection_digest", deployment_selection_digest),
+        ):
+            assert digest is not None
+            _validate_sha256_digest(name, digest)
+        return
     if all(value is None for value in values):
         if analysis_config_json is not None and prior_role is not None:
             analysis = json.loads(analysis_config_json)
@@ -2301,7 +2357,7 @@ def _validate_prior_deployment_lineage(
                     "operational neural prior requires deployment lineage"
                 )
         return
-    if contract != "neural-prior-deployment-lineage-v2":
+    if contract != "neural-prior-deployment-lineage-v3":
         raise ValueError("legacy deployment lineage is audit-only")
     if any(value is None for value in values) or prior_role is None:
         raise ValueError("neural-prior deployment lineage must be complete")
@@ -2310,6 +2366,8 @@ def _validate_prior_deployment_lineage(
     assert deployment_policy_digest is not None
     assert deployment_policy_trust_store_digest is not None
     assert deployment_selection_digest is not None
+    assert deployment_decision_artifact_json is not None
+    assert deployment_decision_artifact_digest is not None
     assert fallback_reason is not None
     for name, digest in (
         ("prior_promotion_evidence_digest", promotion_evidence_digest),
@@ -2323,8 +2381,17 @@ def _validate_prior_deployment_lineage(
             deployment_policy_trust_store_digest,
         ),
         ("prior_deployment_selection_digest", deployment_selection_digest),
+        (
+            "prior_deployment_decision_artifact_digest",
+            deployment_decision_artifact_digest,
+        ),
     ):
         _validate_sha256_digest(name, digest)
+    if (
+        json_digest(json.loads(deployment_decision_artifact_json))
+        != deployment_decision_artifact_digest
+    ):
+        raise ValueError("neural-prior deployment decision artifact mismatch")
     if fallback_reason not in {
         "certified_candidate",
         "uncertified_regime",
@@ -2333,6 +2400,7 @@ def _validate_prior_deployment_lineage(
         "ood_or_abstained",
         "promotion_ineligible",
         "no_certified_regime",
+        "ambiguous_classifier_branch",
     } or (
         (prior_role == "candidate")
         != (fallback_reason == "certified_candidate")
@@ -2547,6 +2615,9 @@ def _forecast_run_identity_digest(
             ),
             "prior_deployment_selection_digest": (
                 run.prior_deployment_selection_digest
+            ),
+            "prior_deployment_decision_artifact_digest": (
+                run.prior_deployment_decision_artifact_digest
             ),
             "prior_deployment_fallback_reason": (
                 run.prior_deployment_fallback_reason

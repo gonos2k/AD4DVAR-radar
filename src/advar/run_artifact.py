@@ -35,7 +35,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v51"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v52"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v42",
     "forecast-run-v43",
@@ -46,6 +46,7 @@ _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v48",
     "forecast-run-v49",
     "forecast-run-v50",
+    "forecast-run-v51",
 }
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 256
@@ -193,6 +194,8 @@ _CORE_ARRAY_NAMES = frozenset(
         "prior_deployment_policy_digest",
         "prior_deployment_policy_trust_store_digest",
         "prior_deployment_selection_digest",
+        "prior_deployment_decision_artifact_json",
+        "prior_deployment_decision_artifact_digest",
         "prior_deployment_fallback_reason",
         "prior_deployment_lineage_contract",
         "input_plan_json",
@@ -400,6 +403,16 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             ""
             if result.run.prior_deployment_selection_digest is None
             else result.run.prior_deployment_selection_digest
+        ),
+        "prior_deployment_decision_artifact_json": np.asarray(
+            ""
+            if result.run.prior_deployment_decision_artifact_json is None
+            else result.run.prior_deployment_decision_artifact_json
+        ),
+        "prior_deployment_decision_artifact_digest": np.asarray(
+            ""
+            if result.run.prior_deployment_decision_artifact_digest is None
+            else result.run.prior_deployment_decision_artifact_digest
         ),
         "prior_deployment_fallback_reason": np.asarray(
             ""
@@ -1371,6 +1384,10 @@ def load_forecast_run(
                 prior_deployment_lineage_contract = (
                     "neural-prior-deployment-lineage-v1-audit"
                 )
+            elif version == "forecast-run-v51":
+                prior_deployment_lineage_contract = (
+                    "neural-prior-deployment-lineage-v2-audit"
+                )
         elif version in _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS:
             prior_deployment_lineage_contract = (
                 "neural-prior-deployment-lineage-v0-audit"
@@ -1538,6 +1555,22 @@ def load_forecast_run(
                 if "prior_deployment_selection_digest" in loaded_arrays
                 else None
             ),
+            prior_deployment_decision_artifact_json=(
+                (_string_scalar(
+                    loaded_arrays,
+                    "prior_deployment_decision_artifact_json",
+                ) or None)
+                if "prior_deployment_decision_artifact_json" in loaded_arrays
+                else None
+            ),
+            prior_deployment_decision_artifact_digest=(
+                _optional_digest_scalar(
+                    loaded_arrays,
+                    "prior_deployment_decision_artifact_digest",
+                )
+                if "prior_deployment_decision_artifact_digest" in loaded_arrays
+                else None
+            ),
             prior_deployment_fallback_reason=(
                 (
                     _string_scalar(
@@ -1610,6 +1643,20 @@ def load_forecast_run(
                 "forecast_integrator_version",
             ),
         )
+        if version == FORECAST_RUN_ARTIFACT_VERSION and (
+            run.prior_deployment_decision_artifact_json is not None
+        ):
+            from .promotion import (
+                validate_neural_prior_deployment_decision_artifact,
+            )
+
+            if (
+                validate_neural_prior_deployment_decision_artifact(
+                    run.prior_deployment_decision_artifact_json
+                )
+                != run.prior_deployment_decision_artifact_digest
+            ):
+                raise ValueError("deployment decision artifact replay failed")
         stored_runtime_profile_digest = _string_scalar(
             loaded_arrays,
             "operational_runtime_profile_digest",

@@ -921,6 +921,14 @@ class NeuralPriorDeploymentSelection:
     regime_classification_evidence_digest: str
     deployment_policy_digest: str
     deployment_policy_trust_store_digest: str
+    classifier_numerical_runtime_digest: str
+    classifier_input_dtype: str
+    classifier_input_device: str
+    weather_top1_top2_gap: float
+    minimum_range_presence_margin: float
+    deployment_confidence_margin: float
+    deployment_decision_artifact_json: str
+    deployment_decision_artifact_digest: str
     fallback_reason: Literal[
         "certified_candidate",
         "uncertified_regime",
@@ -929,15 +937,16 @@ class NeuralPriorDeploymentSelection:
         "ood_or_abstained",
         "promotion_ineligible",
         "no_certified_regime",
+        "ambiguous_classifier_branch",
     ]
-    contract: str = "neural-prior-deployment-selection-v2"
+    contract: str = "neural-prior-deployment-selection-v3"
     selection_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use the certified neural-prior deployment selector")
 
     def validate_integrity(self) -> None:
-        if self.contract != "neural-prior-deployment-selection-v2":
+        if self.contract != "neural-prior-deployment-selection-v3":
             raise ValueError("unsupported neural-prior deployment selection")
         for name in (
             "selected_prior_digest",
@@ -946,10 +955,27 @@ class NeuralPriorDeploymentSelection:
             "regime_classification_evidence_digest",
             "deployment_policy_digest",
             "deployment_policy_trust_store_digest",
+            "classifier_numerical_runtime_digest",
+            "deployment_decision_artifact_digest",
         ):
             _require_prior_digest(name, getattr(self, name))
         if self.selected_role not in ("candidate", "parent"):
             raise ValueError("unsupported deployed neural-prior role")
+        if (
+            not self.classifier_input_dtype
+            or not self.classifier_input_device
+            or any(
+                not math.isfinite(value)
+                for value in (
+                    self.weather_top1_top2_gap,
+                    self.minimum_range_presence_margin,
+                    self.deployment_confidence_margin,
+                )
+            )
+            or json_digest(json.loads(self.deployment_decision_artifact_json))
+            != self.deployment_decision_artifact_digest
+        ):
+            raise ValueError("deployment decision artifact is invalid")
         if (self.selected_role == "candidate") != (
             self.fallback_reason == "certified_candidate"
         ):
@@ -973,7 +999,7 @@ def _new_neural_prior_deployment_selection(
     object.__setattr__(
         result,
         "contract",
-        "neural-prior-deployment-selection-v2",
+        "neural-prior-deployment-selection-v3",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -5834,6 +5860,16 @@ def variational_nowcast(
             None
             if neural_prior is None or neural_prior.deployment_selection is None
             else neural_prior.deployment_selection.selection_digest
+        ),
+        prior_deployment_decision_artifact_json=(
+            None
+            if neural_prior is None or neural_prior.deployment_selection is None
+            else neural_prior.deployment_selection.deployment_decision_artifact_json
+        ),
+        prior_deployment_decision_artifact_digest=(
+            None
+            if neural_prior is None or neural_prior.deployment_selection is None
+            else neural_prior.deployment_selection.deployment_decision_artifact_digest
         ),
         prior_deployment_fallback_reason=(
             None

@@ -14,7 +14,7 @@ from torch import nn
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from advar._digest import tensor_digest  # noqa: E402
+from advar._digest import json_digest, tensor_digest  # noqa: E402
 from advar.calibration import OperationalDataIdentity  # noqa: E402
 from advar.matrix_free import (  # noqa: E402
     PCGResult,
@@ -453,6 +453,14 @@ class VariationalAnalysisTests(unittest.TestCase):
             regime_classification_evidence_digest="2" * 64,
             deployment_policy_digest="3" * 64,
             deployment_policy_trust_store_digest="4" * 64,
+            classifier_numerical_runtime_digest="5" * 64,
+            classifier_input_dtype=str(frames.dtype),
+            classifier_input_device=str(frames.device),
+            weather_top1_top2_gap=1.0,
+            minimum_range_presence_margin=1.0,
+            deployment_confidence_margin=0.1,
+            deployment_decision_artifact_json="{}",
+            deployment_decision_artifact_digest=json_digest({}),
             fallback_reason="certified_candidate",
         )
         with self.assertRaisesRegex(ValueError, "deployed inference API"):
@@ -470,6 +478,14 @@ class VariationalAnalysisTests(unittest.TestCase):
             regime_classification_evidence_digest="2" * 64,
             deployment_policy_digest="3" * 64,
             deployment_policy_trust_store_digest="4" * 64,
+            classifier_numerical_runtime_digest="5" * 64,
+            classifier_input_dtype=str(frames.dtype),
+            classifier_input_device=str(frames.device),
+            weather_top1_top2_gap=1.0,
+            minimum_range_presence_margin=1.0,
+            deployment_confidence_margin=0.1,
+            deployment_decision_artifact_json="{}",
+            deployment_decision_artifact_digest=json_digest({}),
             fallback_reason="promotion_ineligible",
         )
         with self.assertRaisesRegex(ValueError, "deployed inference API"):

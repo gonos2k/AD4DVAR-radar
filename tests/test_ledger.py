@@ -577,6 +577,9 @@ class EpisodeLedgerTests(unittest.TestCase):
             target_kind="withheld_radar",
             source_identity_digest="b" * 64,
             qc_pipeline_digest="3" * 64,
+            mask_policy_digest="5" * 64,
+            censor_policy_digest="f" * 64,
+            floor_representation_contract_digest="a" * 64,
             grid_contract_digest="1" * 64,
             feature_exclusion_contract_digest="c" * 64,
             independence_evidence_digest="d" * 64,
@@ -598,6 +601,31 @@ class EpisodeLedgerTests(unittest.TestCase):
             state_contract_digest="0" * 64,
             support_threshold_dbz=5.0,
         )
+        range_contract = promotion_module.RangeBandContract(
+            case_id="case-clock",
+            range_regime_labels=("near_range",),
+            range_band_mask_digests=(
+                tensor_digest(torch.ones((2, 2), dtype=torch.bool)),
+            ),
+            reference_active_range_regimes=("near_range",),
+            grid_contract_digest="1" * 64,
+        )
+        classifier_manifest = promotion_module.RegimeClassifierManifest(
+            classifier_digest="b" * 64,
+            training_dataset_digest="c" * 64,
+            training_case_ids=("classifier-training-case",),
+            training_storm_ids=("classifier-training-storm",),
+            training_days=("2029-01-01",),
+            training_time_windows=((
+                "2029-01-01T00:00:00Z",
+                "2029-01-01T01:00:00Z",
+            ),),
+            training_algorithm_digest="d" * 64,
+            numerical_runtime_digest=(
+                promotion_module.numerical_runtime_identity_digest("cpu")
+            ),
+            reference_label_contract_digest="e" * 64,
+        )
         plan = NeuralPriorHoldoutPlan(
             plan_id="clock-plan",
             parent_prior_digest="6" * 64,
@@ -617,12 +645,17 @@ class EpisodeLedgerTests(unittest.TestCase):
                     state_calibration_target_plan_digest=(
                         state_target_plan.plan_digest
                     ),
+                    range_band_contract_digest=range_contract.contract_digest,
+                    reference_active_range_regimes=("near_range",),
                     issue_time=issue,
                 ),
             ),
             input_plans=(input_plan,),
             uncertainty_target_plans=(target_plan,),
             state_calibration_target_plans=(state_target_plan,),
+            range_band_contracts=(range_contract,),
+            regime_classifier_manifests=(classifier_manifest,),
+            reference_label_contract_digest="e" * 64,
             registered_at="2029-01-01T00:00:00Z",
         )
         policy = NeuralPriorHoldoutPlanPolicy(
@@ -2136,6 +2169,9 @@ class EpisodeLedgerTests(unittest.TestCase):
             target_kind="independent_sensor",
             source_identity_digest="7" * 64,
             qc_pipeline_digest="a" * 64,
+            mask_policy_digest="b" * 64,
+            censor_policy_digest="c" * 64,
+            floor_representation_contract_digest="d" * 64,
             grid_contract_digest="8" * 64,
             feature_exclusion_contract_digest="9" * 64,
             independence_evidence_digest="0" * 64,
