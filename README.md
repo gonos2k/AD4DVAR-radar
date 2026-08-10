@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.65
+# ADVAR 3-frame radar nowcast v0.66
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -805,7 +805,7 @@ clear false-echo score로 각각 검증한다.
 Clear-sky에서는 support probability의 false-echo score를 별도로 계산하므로 동일한
 no-echo를 -10/0/4.9 dBZ 중 어떤 floor로 저장해도 intensity score가 달라지지 않는다.
 Candidate와 parent를 동일한 사전등록 target mask에서 paired 평가하고,
-storm/day/radar cluster bootstrap으로 구한 intensity-NLL·support-Brier·echo-miss·
+physical-event outer cluster bootstrap으로 구한 intensity-NLL·support-Brier·echo-miss·
 clear-sky·conditional-underdispersion 증가의 전역 및 regime별 최악 상한도 정책 한계를
 넘어서는 안 된다.
 순수 clear case의 intensity component와 순수 echo case의 clear component는 실패가
@@ -823,9 +823,13 @@ Range applicability는 classifier label에 whole-domain score를 복제하지 �
 plan에 사전등록된 `RangeBandContract`의 물리 mask 안에서 forecast metric과
 state/probability score를 다시 계산한다. Geometry mask 면적과 별도로 lead별 metric-valid,
 probability-valid, state-valid 면적과 echo/clear pixel·connected-object 수를 보존하며,
-component별 최소 유효 표본을 통과해야 한다. Band-local skill도 storm/day/radar cluster
-bootstrap의 family-adjusted 개선 하한·harm 상한을 통과해야 하므로 작은 악화가 매 사례에
-반복되는 band는 인증되지 않는다. Reference active set에 대한 set precision·recall,
+component별 최소 유효 표본을 통과해야 한다. Range mask는 서로 겹치지 않을 뿐 아니라
+전체 분석격자를 정확히 한 번 덮어야 하므로 미인증 영역을 숨긴 채 candidate를 전역 선택할
+수 없다. Band-local skill의 평균·beneficial bound는 physical event 단위로 계산하고,
+harmful fraction은 event 안의 cycle 빈도를 보존한다. Candidate의 절대 band score와
+parent 대비 비열화 상한을 함께 검사하므로 두 prior가 모두 나쁜 band도 인증되지 않는다.
+Band별 family-adjusted tail replicate 수와 Monte Carlo 오차는 promotion evidence에 보존되고,
+해상도가 부족하면 fail-close한다. Reference active set에 대한 set precision·recall,
 exact-set accuracy와 false-active-band rate까지 통과한 band만 인증하므로 모든 range
 logit을 높여 near/mid/far를 동시에 활성화하는 classifier는 인증을 얻지 못한다.
 실제 배포에서는 caller가 regime 문자열이나 operational role을 넘기지 않는다. Exported
@@ -838,7 +842,7 @@ input-bundle/full-analysis-input/radar/grid와 signed member-manifest lineage는
 forecast issue 전에 holdout plan에 사전등록되고 holdout과 겹치면 거부된다. 여러 prior와
 classifier를 비교할 때 family multiplicity는 두 family 크기의 곱으로 계산한다. Classifier
 accuracy·recall·range-set precision과 false-routing은 point estimate뿐 아니라
-storm/day/radar cluster 신뢰하한·상한도 통과해야 한다. Prospective plan에는 미래 weather
+physical-event cluster 신뢰하한·상한도 통과해야 한다. Prospective plan에는 미래 weather
 정답 대신 `pending`과 `RegimeReferencePlan`의 labeler/source/adjudication rule만 기록한다.
 검증시각 뒤의 observed label은 exact input·verification·storm에 묶인 Ed25519
 `RegimeReferenceEvidence`로 완료된다. Classifier
@@ -863,8 +867,8 @@ exclusion mask가 target mask를 덮었는지 계산해 확인한다. 불확실�
 fraction·면적과 parent 대비 abstention 증가 및 NLL abstention penalty를 함께 적용한다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
-현재 promotion evidence는 v11, candidate manifest는 v7, holdout plan은 v9,
-holdout evaluation은 v12이다. 이전 promotion evidence·candidate manifest·holdout plan·
+현재 promotion evidence는 v12, candidate manifest는 v7, holdout plan은 v9,
+holdout evaluation은 v13, promotion policy는 v17이다. 이전 promotion evidence·candidate manifest·holdout plan·
 evaluation은 원래 payload와 digest를 그대로 검증하는
 read-only audit 타입으로만 적재된다. Migration 때 추가된 UCB 컬럼의 기본값 0을 과거
 증거의 계산값으로 해석하거나 과거 row를 현재 승격판정에 재사용하지 않는다.

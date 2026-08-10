@@ -105,6 +105,7 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV8,
     LegacyNeuralPriorPromotionEvidenceAuditV9,
     LegacyNeuralPriorPromotionEvidenceAuditV10,
+    LegacyNeuralPriorPromotionEvidenceAuditV11,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     compute_neural_prior_promotion,
@@ -2759,6 +2760,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV8
         | LegacyNeuralPriorPromotionEvidenceAuditV9
         | LegacyNeuralPriorPromotionEvidenceAuditV10
+        | LegacyNeuralPriorPromotionEvidenceAuditV11
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -2821,6 +2823,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV8
                 | LegacyNeuralPriorPromotionEvidenceAuditV9
                 | LegacyNeuralPriorPromotionEvidenceAuditV10
+                | LegacyNeuralPriorPromotionEvidenceAuditV11
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -2915,6 +2918,7 @@ class EpisodeLedger:
                         "neural-prior-promotion-evidence-v9",
                         "neural-prior-promotion-evidence-v10",
                         "neural-prior-promotion-evidence-v11",
+                        "neural-prior-promotion-evidence-v12",
                     ):
                         raw_payload = json.loads(row["evidence_payload_json"])
                         if not isinstance(raw_payload, dict):
@@ -2931,6 +2935,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v9",
                             "neural-prior-promotion-evidence-v10",
                             "neural-prior-promotion-evidence-v11",
+                            "neural-prior-promotion-evidence-v12",
                         ):
                             raw_payload["regime_classifier_evidence_digests"] = tuple(
                                 raw_payload["regime_classifier_evidence_digests"]
@@ -2943,11 +2948,23 @@ class EpisodeLedger:
                                 "certified_applicability_regime_groups"
                             ]
                         )
-                        if contract == "neural-prior-promotion-evidence-v11":
+                        if contract in (
+                            "neural-prior-promotion-evidence-v11",
+                            "neural-prior-promotion-evidence-v12",
+                        ):
                             raw_payload["range_band_skill_bounds"] = tuple(
                                 tuple(item)
                                 for item in raw_payload[
                                     "range_band_skill_bounds"
+                                ]
+                            )
+                        if contract == "neural-prior-promotion-evidence-v12":
+                            raw_payload[
+                                "range_band_skill_inference_diagnostics"
+                            ] = tuple(
+                                tuple(item)
+                                for item in raw_payload[
+                                    "range_band_skill_inference_diagnostics"
                                 ]
                             )
                         indexed_v7 = {
@@ -3036,6 +3053,15 @@ class EpisodeLedger:
                             )
                         elif contract == "neural-prior-promotion-evidence-v10":
                             evidence = LegacyNeuralPriorPromotionEvidenceAuditV10(
+                                promotion_evidence_digest=promotion_evidence_digest,
+                                payload_json=json.dumps(
+                                    raw_payload,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                ),
+                            )
+                        elif contract == "neural-prior-promotion-evidence-v11":
+                            evidence = LegacyNeuralPriorPromotionEvidenceAuditV11(
                                 promotion_evidence_digest=promotion_evidence_digest,
                                 payload_json=json.dumps(
                                     raw_payload,
@@ -3780,7 +3806,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v12"
+        or value[0].get("contract") != "prior-holdout-evaluation-v13"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:
@@ -3847,6 +3873,18 @@ def _decode_evaluation_audit_payloads(
             band_values["uncertainty_component_differences"] = tuple(
                 tuple(item)
                 for item in band_values["uncertainty_component_differences"]
+            )
+            band_values["candidate_uncertainty_component_scores"] = tuple(
+                tuple(item)
+                for item in band_values[
+                    "candidate_uncertainty_component_scores"
+                ]
+            )
+            band_values["parent_uncertainty_component_scores"] = tuple(
+                tuple(item)
+                for item in band_values[
+                    "parent_uncertainty_component_scores"
+                ]
             )
             band_values["uncertainty_component_sample_counts"] = tuple(
                 tuple(item)

@@ -557,6 +557,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         range_component_sample_count: int = 8,
         range_valid_area_km2: float = 1.0,
         range_object_count: int = 1,
+        range_candidate_support_brier_score: float | None = None,
+        range_parent_support_brier_score: float | None = None,
     ) -> promotion_module.PriorHoldoutEvaluation:
         manifest = self.manifest()
         case = manifest.holdout_cases[index - 1]
@@ -609,6 +611,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 echo_available
                 or name not in (
                     "intensity",
+                    "pit_residual",
                     "echo_miss",
                     "object_miss",
                     "underdispersion",
@@ -616,7 +619,68 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
             and (clear_available or name != "clear")
         )
-        range_components = tuple((name, 0.0) for name in range_component_names)
+        candidate_component_values = {
+            "intensity": prior_echo_intensity_nll,
+            "pit_residual": prior_residual_mean_abs,
+            "support": prior_support_brier_score,
+            "echo_miss": prior_echo_support_miss_score,
+            "object_miss": prior_echo_object_miss_score,
+            "clear": prior_clear_sky_false_echo_score,
+            "underdispersion": prior_underdispersion_fraction,
+            "state_nll": state_candidate_gaussian_nll,
+            "state_pit_residual": 0.5,
+            "state_underdispersion": 0.0,
+            "state_support": state_candidate_support_brier_score,
+            "state_echo_miss": 0.05,
+            "state_object_miss": 0.05,
+            "state_false_support": state_candidate_false_support_score,
+            "state_valid": 0.05,
+        }
+        parent_component_values = {
+            "intensity": parent_prior_echo_intensity_nll,
+            "pit_residual": prior_residual_mean_abs,
+            "support": parent_prior_support_brier_score,
+            "echo_miss": parent_prior_echo_support_miss_score,
+            "object_miss": parent_prior_echo_object_miss_score,
+            "clear": parent_prior_clear_sky_false_echo_score,
+            "underdispersion": (
+                prior_underdispersion_fraction
+                if parent_prior_underdispersion_fraction is None
+                else parent_prior_underdispersion_fraction
+            ),
+            "state_nll": state_parent_gaussian_nll,
+            "state_pit_residual": 0.5,
+            "state_underdispersion": 0.0,
+            "state_support": state_parent_support_brier_score,
+            "state_echo_miss": 0.05,
+            "state_object_miss": 0.05,
+            "state_false_support": state_parent_false_support_score,
+            "state_valid": 0.05,
+        }
+        if range_candidate_support_brier_score is not None:
+            candidate_component_values["support"] = (
+                range_candidate_support_brier_score
+            )
+        if range_parent_support_brier_score is not None:
+            parent_component_values["support"] = (
+                range_parent_support_brier_score
+            )
+        range_candidate_components = tuple(
+            (name, candidate_component_values[name])
+            for name in range_component_names
+        )
+        range_parent_components = tuple(
+            (name, parent_component_values[name])
+            for name in range_component_names
+        )
+        range_components = tuple(
+            (
+                name,
+                candidate_component_values[name]
+                - parent_component_values[name],
+            )
+            for name in range_component_names
+        )
         range_component_counts = tuple(
             (
                 name,
@@ -629,6 +693,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 if name
                 in (
                     "state_nll",
+                    "state_pit_residual",
                     "state_underdispersion",
                     "state_support",
                     "state_valid",
@@ -648,6 +713,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     dtype=torch.float64,
                 ),
                 metric_available=torch.tensor([[True]]),
+                candidate_uncertainty_component_scores=(
+                    range_candidate_components
+                ),
+                parent_uncertainty_component_scores=range_parent_components,
                 uncertainty_component_differences=range_components,
                 uncertainty_component_sample_counts=range_component_counts,
                 evaluated_area_km2=1000.0,
@@ -762,6 +831,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
             prior_clear_sky_false_echo_score=(
                 prior_clear_sky_false_echo_score if clear_available else None
+            ),
+            parent_prior_conditional_pit_residual_mean_abs=(
+                prior_residual_mean_abs if echo_available else None
             ),
             parent_prior_conditional_underdispersion_fraction=(
                 None
@@ -895,7 +967,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             minimum_beneficial_fraction=1.0,
             maximum_harmful_fraction=0.0,
             minimum_mean_normalized_improvement=0.1,
-            bootstrap_samples=64,
+            bootstrap_samples=128,
         )
 
     def compute(self, evaluations):
@@ -969,7 +1041,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertTrue(result.eligible)
         validate_neural_prior_promotion(result)
 
-    def test_current_promotion_round_trips_durable_v11_evidence(self) -> None:
+    def test_current_promotion_round_trips_durable_v12_evidence(self) -> None:
         evaluations = (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
         evidence = self.compute(evaluations)
         manifest = self.manifest()
@@ -1067,7 +1139,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v11")
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v12")
 
     def test_promotion_requires_every_preregistered_case(self) -> None:
         with self.assertRaisesRegex(ValueError, "every planned case"):
@@ -1455,10 +1527,83 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertTrue(torch.all(torch.isfinite(nll)))
         self.assertTrue(torch.all(torch.isfinite(pit)))
 
+    def test_range_masks_must_cover_the_complete_operational_grid(self) -> None:
+        incomplete = {
+            "near_range": torch.tensor(
+                [[True, False], [False, False]], dtype=torch.bool
+            ),
+            "far_range": torch.zeros((2, 2), dtype=torch.bool),
+        }
+
+        with self.assertRaisesRegex(ValueError, "complete partition"):
+            promotion_module._validate_complete_range_partition(incomplete)
+
+    def test_cluster_mean_cannot_hide_case_level_harm_frequency(self) -> None:
+        scores = ([-0.1] * 9 + [1.0]) * 2
+        event_ids = ["event-1"] * 10 + ["event-2"] * 10
+
+        _, harmful_upper, mean_lower = promotion_module._cluster_bounds(
+            scores,
+            event_ids,
+            self.policy(),
+            candidate_family_size=1,
+        )
+
+        self.assertGreater(mean_lower, 0.0)
+        self.assertGreaterEqual(harmful_upper, 0.9)
+
+    def test_same_physical_storm_across_days_and_radars_is_one_cluster(self) -> None:
+        first = SimpleNamespace(
+            storm_id="mcs-2026-08-10-01",
+            day="2026-08-10",
+            radar_id="radar-a",
+        )
+        second = SimpleNamespace(
+            storm_id="mcs-2026-08-10-01",
+            day="2026-08-11",
+            radar_id="radar-c",
+        )
+
+        self.assertEqual(
+            promotion_module._physical_event_cluster(first),
+            promotion_module._physical_event_cluster(second),
+        )
+
+    def test_band_family_requires_its_own_bootstrap_tail_resolution(self) -> None:
+        policy = replace(
+            self.policy(),
+            bootstrap_samples=1_000,
+            minimum_bootstrap_tail_replicates=20,
+        )
+
+        with self.assertRaisesRegex(ValueError, "tail resolution"):
+            promotion_module._bootstrap_tail_diagnostics(
+                policy,
+                family_size=10,
+            )
+
+    def test_band_skill_evidence_preserves_tail_and_event_diagnostics(self) -> None:
+        result = self.compute(
+            (
+                self.evaluation(1, -0.2),
+                self.evaluation(2, -0.3),
+            )
+        )
+
+        self.assertEqual(len(result.range_band_skill_inference_diagnostics), 2)
+        for diagnostic in result.range_band_skill_inference_diagnostics:
+            self.assertEqual(diagnostic[2], "cluster_bootstrap")
+            self.assertEqual(diagnostic[3], 2)
+            self.assertEqual(diagnostic[4], 128)
+            self.assertGreaterEqual(diagnostic[5], 1.0)
+            self.assertEqual(diagnostic[8], 1)
+            self.assertEqual(diagnostic[9], 1)
+
     def test_range_object_component_uses_object_count_not_pixel_count(
         self,
     ) -> None:
         prior = SimpleNamespace(
+            conditional_pit_residual_mean_abs=0.5,
             echo_intensity_nll=0.5,
             support_brier_score=0.1,
             echo_support_miss_score=0.1,
@@ -1469,6 +1614,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         state = SimpleNamespace(
             gaussian_nll=0.5,
+            pit_residual_mean_abs=0.5,
             underdispersion_fraction=0.0,
             support_brier_score=0.1,
             echo_support_miss_score=0.1,
@@ -1479,7 +1625,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             clear_sample_count=50,
         )
 
-        _, counts = promotion_module._range_uncertainty_components(
+        _, _, _, counts = promotion_module._range_uncertainty_components(
             prior,
             prior,
             state,
@@ -2073,6 +2219,53 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             result.certified_applicability_regime_groups,
         )
 
+    def test_range_band_preserves_absolute_candidate_and_parent_scores(self) -> None:
+        band = self.evaluation(
+            1,
+            -0.2,
+            prior_support_brier_score=0.9,
+            parent_prior_support_brier_score=0.8,
+        ).range_band_evaluations[0]
+
+        self.assertEqual(
+            dict(band.candidate_uncertainty_component_scores)["support"],
+            0.9,
+        )
+        self.assertEqual(
+            dict(band.parent_uncertainty_component_scores)["support"],
+            0.8,
+        )
+        self.assertEqual(
+            dict(band.candidate_uncertainty_component_scores)["pit_residual"],
+            0.5,
+        )
+        self.assertEqual(
+            dict(band.candidate_uncertainty_component_scores)[
+                "state_pit_residual"
+            ],
+            0.5,
+        )
+        self.assertAlmostEqual(band.component_difference("support"), 0.1)
+
+    def test_absolute_bad_band_is_not_certified_when_parent_is_equally_bad(self) -> None:
+        result = self.compute(
+            (
+                self.evaluation(1, -0.2),
+                self.evaluation(
+                    2,
+                    -0.3,
+                    range_candidate_support_brier_score=0.9,
+                    range_parent_support_brier_score=0.9,
+                ),
+            )
+        )
+
+        self.assertTrue(result.eligible)
+        self.assertNotIn(
+            ("stratiform", "far_range"),
+            result.certified_applicability_regime_groups,
+        )
+
     def test_large_mask_cannot_hide_tiny_valid_band_sample(self) -> None:
         policy = replace(
             self.policy(),
@@ -2428,6 +2621,27 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         digest = promotion_module.json_digest(payload)
 
         audit = promotion_module.LegacyNeuralPriorPromotionEvidenceAuditV10(
+            promotion_evidence_digest=digest,
+            payload_json=json.dumps(
+                payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+        )
+
+        self.assertEqual(audit.promotion_evidence_digest, digest)
+        self.assertFalse(hasattr(audit, "eligible"))
+
+    def test_v11_promotion_evidence_remains_audit_only(self) -> None:
+        current = self.compute(
+            (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
+        )
+        payload = current._payload()
+        payload.pop("range_band_skill_inference_diagnostics")
+        payload["contract"] = "neural-prior-promotion-evidence-v11"
+        digest = promotion_module.json_digest(payload)
+
+        audit = promotion_module.LegacyNeuralPriorPromotionEvidenceAuditV11(
             promotion_evidence_digest=digest,
             payload_json=json.dumps(
                 payload,
