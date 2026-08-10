@@ -609,7 +609,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             radar_y_m=0.0,
             range_regime_labels=("near_range",),
             radial_distance_edges_m=(0.0, 100_000.0),
-            beam_height_rule_digest="8" * 64,
+            horizontal_range_rule_digest="8" * 64,
             grid_x_m_digest=tensor_digest(range_grid),
             grid_y_m_digest=tensor_digest(range_grid),
         )
@@ -658,6 +658,17 @@ class EpisodeLedgerTests(unittest.TestCase):
             labeling_valid_time="2030-01-01T01:00:00Z",
             adjudication_policy_digest="6" * 64,
         )
+        event_catalog_plan = promotion_module.PhysicalEventCatalogPlan(
+            holdout_case_ids=("case-clock",),
+            association_algorithm_digest="a" * 64,
+            spatial_membership_rule_digest="b" * 64,
+            adjudication_policy_digest="6" * 64,
+            adjudicator_id="clock-labeler",
+            adjudicator_public_key_hex=(
+                promotion_module.regime_reference_public_key_hex(labeler_key)
+            ),
+            catalog_completion_deadline="2030-01-01T02:00:00Z",
+        )
         plan = NeuralPriorHoldoutPlan(
             plan_id="clock-plan",
             parent_prior_digest="6" * 64,
@@ -689,6 +700,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             range_band_contracts=(range_contract,),
             range_geometry_contracts=(range_geometry,),
             regime_reference_plans=(reference_plan,),
+            physical_event_catalog_plan=event_catalog_plan,
             regime_classifier_manifests=(classifier_manifest,),
             reference_label_contract_digest="e" * 64,
             registered_at="2029-01-01T00:00:00Z",
@@ -864,7 +876,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 15)
+        self.assertEqual(version, 16)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4097,7 +4109,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 15)
+        self.assertEqual(version, 16)
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ def _require_digest(name: str, value: str) -> None:
 
 @dataclass(frozen=True)
 class RangeGeometryContract:
-    """Physical radial bands fixed by one radar site and projected grid."""
+    """Horizontal radial bands fixed by one radar site and projected grid."""
 
     radar_site_digest: str
     grid_contract_digest: str
@@ -28,26 +28,27 @@ class RangeGeometryContract:
     radar_y_m: float
     range_regime_labels: tuple[str, ...]
     radial_distance_edges_m: tuple[float, ...]
-    beam_height_rule_digest: str
+    horizontal_range_rule_digest: str
     grid_x_m_digest: str
     grid_y_m_digest: str
-    resolver_algorithm: str = "projected-euclidean-range-v1"
-    contract: str = "radar-range-geometry-contract-v1"
+    resolver_algorithm: str = "projected-horizontal-euclidean-range-v2"
+    contract: str = "radar-horizontal-range-geometry-contract-v2"
     contract_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
         for name in (
             "radar_site_digest",
             "grid_contract_digest",
-            "beam_height_rule_digest",
+            "horizontal_range_rule_digest",
             "grid_x_m_digest",
             "grid_y_m_digest",
         ):
             _require_digest(name, getattr(self, name))
         edges = self.radial_distance_edges_m
         if (
-            self.contract != "radar-range-geometry-contract-v1"
-            or self.resolver_algorithm != "projected-euclidean-range-v1"
+            self.contract != "radar-horizontal-range-geometry-contract-v2"
+            or self.resolver_algorithm
+            != "projected-horizontal-euclidean-range-v2"
             or not math.isfinite(self.radar_x_m)
             or not math.isfinite(self.radar_y_m)
             or not self.range_regime_labels
@@ -72,6 +73,10 @@ class RangeGeometryContract:
             if key != "contract_digest"
         }
 
+    def validate_integrity(self) -> None:
+        if self.contract_digest != json_digest(self.payload):
+            raise ValueError("range geometry contract digest mismatch")
+
 
 @dataclass(frozen=True)
 class RangePartitionEvidence:
@@ -83,14 +88,14 @@ class RangePartitionEvidence:
     masks: tuple[Tensor, ...]
     range_band_mask_digests: tuple[str, ...]
     active_range_regimes: tuple[str, ...]
-    contract: str = "radar-range-partition-evidence-v1"
+    contract: str = "radar-range-partition-evidence-v2"
     evidence_digest: str = field(init=False)
 
     def _validate_content(self, masks: tuple[Tensor, ...]) -> None:
         _require_digest("range geometry contract", self.range_geometry_contract_digest)
         _require_digest("range partition grid", self.grid_contract_digest)
         if (
-            self.contract != "radar-range-partition-evidence-v1"
+            self.contract != "radar-range-partition-evidence-v2"
             or not masks
             or len(masks) != len(self.range_regime_labels)
             or len(self.range_band_mask_digests) != len(masks)
@@ -138,6 +143,7 @@ class RangePartitionEvidence:
             "range_regime_labels": list(self.range_regime_labels),
             "range_band_mask_digests": list(self.range_band_mask_digests),
             "active_range_regimes": list(self.active_range_regimes),
+            "grid_shape": list(self.masks[0].shape),
         }
 
     def mask(self, range_regime: str) -> Tensor:
