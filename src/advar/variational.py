@@ -802,8 +802,8 @@ class NeuralPriorProbabilityContract:
     qc_pipeline_digest: str
     reflectivity_resolution_dbz: float
     quantization_origin_dbz: float
-    threshold_bin_convention: Literal["threshold_edge_centered_bins"] = (
-        "threshold_edge_centered_bins"
+    threshold_bin_convention: Literal["nearest_rounding_threshold_censor"] = (
+        "nearest_rounding_threshold_censor"
     )
     support_variable: Literal["radar_reflectivity_dbz"] = (
         "radar_reflectivity_dbz"
@@ -821,12 +821,12 @@ class NeuralPriorProbabilityContract:
     intensity_parameterization: Literal["pre_truncation_location_scale"] = (
         "pre_truncation_location_scale"
     )
-    contract: str = "neural-prior-probability-contract-v2"
+    contract: str = "neural-prior-probability-contract-v3"
     support_event_digest: str = field(init=False)
     contract_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-probability-contract-v2":
+        if self.contract != "neural-prior-probability-contract-v3":
             raise ValueError("unsupported neural-prior probability contract")
         if (
             not math.isfinite(self.support_threshold_dbz)
@@ -848,12 +848,13 @@ class NeuralPriorProbabilityContract:
             or self.intensity_distribution != "truncated_gaussian_dbz"
             or self.intensity_parameterization
             != "pre_truncation_location_scale"
-            or self.threshold_bin_convention != "threshold_edge_centered_bins"
+            or self.threshold_bin_convention
+            != "nearest_rounding_threshold_censor"
         ):
             raise ValueError("unsupported neural-prior probability semantics")
         support_event = json_digest(
             {
-                "contract": "radar-support-event-v1",
+                "contract": "radar-support-event-v2",
                 "variable": self.support_variable,
                 "operator": self.support_operator,
                 "threshold_dbz": self.support_threshold_dbz,

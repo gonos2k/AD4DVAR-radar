@@ -71,6 +71,7 @@ from .promotion import (
     LegacyNeuralPriorCandidateManifestAuditV3,
     LegacyNeuralPriorCandidateManifestAuditV4,
     LegacyNeuralPriorCandidateManifestAuditV5,
+    LegacyNeuralPriorCandidateManifestAuditV6,
     NeuralPriorCandidateManifest,
     LegacyNeuralPriorHoldoutPlanAudit,
     LegacyNeuralPriorHoldoutPlanCase,
@@ -82,6 +83,7 @@ from .promotion import (
     LegacyNeuralPriorHoldoutPlanV5Audit,
     LegacyNeuralPriorHoldoutPlanV6Audit,
     LegacyNeuralPriorHoldoutPlanV7Audit,
+    LegacyNeuralPriorHoldoutPlanV8Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
@@ -91,6 +93,8 @@ from .promotion import (
     RangeBandContract,
     RangeBandEvaluation,
     RegimeClassifierManifest,
+    RegimeReferencePlan,
+    RegimeReferenceEvidence,
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionEvidence,
     LegacyNeuralPriorPromotionEvidenceAuditV3,
@@ -100,6 +104,7 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV7,
     LegacyNeuralPriorPromotionEvidenceAuditV8,
     LegacyNeuralPriorPromotionEvidenceAuditV9,
+    LegacyNeuralPriorPromotionEvidenceAuditV10,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     compute_neural_prior_promotion,
@@ -107,6 +112,7 @@ from .promotion import (
     validate_neural_prior_candidate_manifest,
     validate_neural_prior_holdout_plan,
     _new_prior_holdout_evaluation,
+    _new_regime_reference_evidence,
 )
 
 
@@ -2376,6 +2382,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanV5Audit
         | LegacyNeuralPriorHoldoutPlanV6Audit
         | LegacyNeuralPriorHoldoutPlanV7Audit
+        | LegacyNeuralPriorHoldoutPlanV8Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -2404,6 +2411,13 @@ class EpisodeLedger:
             )
         if value.get("contract") == "neural-prior-holdout-plan-v7":
             return LegacyNeuralPriorHoldoutPlanV7Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v8":
+            return LegacyNeuralPriorHoldoutPlanV8Audit(
                 plan_digest=plan_digest,
                 payload_json=json.dumps(
                     value, sort_keys=True, separators=(",", ":")
@@ -2532,6 +2546,16 @@ class EpisodeLedger:
                 }
             )
             for item in value["range_band_contracts"]
+        )
+        value["regime_reference_plans"] = tuple(
+            RegimeReferencePlan(
+                **{
+                    key: entry
+                    for key, entry in item.items()
+                    if key != "plan_digest"
+                }
+            )
+            for item in value["regime_reference_plans"]
         )
         value["regime_classifier_manifests"] = tuple(
             RegimeClassifierManifest(
@@ -2734,6 +2758,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV7
         | LegacyNeuralPriorPromotionEvidenceAuditV8
         | LegacyNeuralPriorPromotionEvidenceAuditV9
+        | LegacyNeuralPriorPromotionEvidenceAuditV10
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -2795,6 +2820,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV7
                 | LegacyNeuralPriorPromotionEvidenceAuditV8
                 | LegacyNeuralPriorPromotionEvidenceAuditV9
+                | LegacyNeuralPriorPromotionEvidenceAuditV10
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -2888,6 +2914,7 @@ class EpisodeLedger:
                         "neural-prior-promotion-evidence-v8",
                         "neural-prior-promotion-evidence-v9",
                         "neural-prior-promotion-evidence-v10",
+                        "neural-prior-promotion-evidence-v11",
                     ):
                         raw_payload = json.loads(row["evidence_payload_json"])
                         if not isinstance(raw_payload, dict):
@@ -2903,6 +2930,7 @@ class EpisodeLedger:
                         if contract in (
                             "neural-prior-promotion-evidence-v9",
                             "neural-prior-promotion-evidence-v10",
+                            "neural-prior-promotion-evidence-v11",
                         ):
                             raw_payload["regime_classifier_evidence_digests"] = tuple(
                                 raw_payload["regime_classifier_evidence_digests"]
@@ -2915,6 +2943,13 @@ class EpisodeLedger:
                                 "certified_applicability_regime_groups"
                             ]
                         )
+                        if contract == "neural-prior-promotion-evidence-v11":
+                            raw_payload["range_band_skill_bounds"] = tuple(
+                                tuple(item)
+                                for item in raw_payload[
+                                    "range_band_skill_bounds"
+                                ]
+                            )
                         indexed_v7 = {
                             **common_payload,
                             "prior_echo_intensity_nll_increase_upper_bound": (
@@ -2992,6 +3027,15 @@ class EpisodeLedger:
                             )
                         elif contract == "neural-prior-promotion-evidence-v9":
                             evidence = LegacyNeuralPriorPromotionEvidenceAuditV9(
+                                promotion_evidence_digest=promotion_evidence_digest,
+                                payload_json=json.dumps(
+                                    raw_payload,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                ),
+                            )
+                        elif contract == "neural-prior-promotion-evidence-v10":
+                            evidence = LegacyNeuralPriorPromotionEvidenceAuditV10(
                                 promotion_evidence_digest=promotion_evidence_digest,
                                 payload_json=json.dumps(
                                     raw_payload,
@@ -3702,7 +3746,10 @@ def _range_band_evaluation_audit_payload(
                 "values": owned.tolist(),
             }
         elif isinstance(value, tuple):
-            result[name] = [list(item) for item in value]
+            result[name] = [
+                list(item) if isinstance(item, tuple) else item
+                for item in value
+            ]
         else:
             result[name] = value
     return result
@@ -3733,7 +3780,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v11"
+        or value[0].get("contract") != "prior-holdout-evaluation-v12"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:
@@ -3807,6 +3854,9 @@ def _decode_evaluation_audit_payloads(
                     "uncertainty_component_sample_counts"
                 ]
             )
+            band_values["metric_valid_area_km2_by_lead"] = tuple(
+                band_values["metric_valid_area_km2_by_lead"]
+            )
             band_values.pop("contract", None)
             band = RangeBandEvaluation(**band_values)
             if band.evaluation_digest != band_digest:
@@ -3831,6 +3881,7 @@ def _decode_candidate_manifest(
     | LegacyNeuralPriorCandidateManifestAuditV3
     | LegacyNeuralPriorCandidateManifestAuditV4
     | LegacyNeuralPriorCandidateManifestAuditV5
+    | LegacyNeuralPriorCandidateManifestAuditV6
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -3885,9 +3936,30 @@ def _decode_candidate_manifest(
         if audit_v5.manifest_digest != expected_digest:
             raise ValueError("candidate manifest ledger digest mismatch")
         return audit_v5
+    if values.get("contract") == "neural-prior-candidate-manifest-v6":
+        audit_v6 = LegacyNeuralPriorCandidateManifestAuditV6(
+            manifest_digest=str(stored_digest),
+            payload_json=json.dumps(
+                value,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+        )
+        if audit_v6.manifest_digest != expected_digest:
+            raise ValueError("candidate manifest ledger digest mismatch")
+        return audit_v6
     values["holdout_cases"] = tuple(
         NeuralPriorHoldoutCase(**item) for item in values["holdout_cases"]
     )
+    reference_evidences: list[RegimeReferenceEvidence] = []
+    for item in values["regime_reference_evidences"]:
+        evidence_values = dict(item)
+        stored_evidence_digest = evidence_values.pop("evidence_digest", None)
+        evidence = _new_regime_reference_evidence(**evidence_values)
+        if evidence.evidence_digest != stored_evidence_digest:
+            raise ValueError("regime-reference evidence digest mismatch")
+        reference_evidences.append(evidence)
+    values["regime_reference_evidences"] = tuple(reference_evidences)
     for name in (
         "training_learning_approval_digests",
         "training_intervention_digests",
