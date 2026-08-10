@@ -220,6 +220,7 @@ class VerificationBundle:
         if self.contract not in {
             "radar-verification-bundle-v1",
             "radar-verification-bundle-v2",
+            "radar-verification-bundle-v3",
         }:
             raise ValueError("unsupported verification bundle contract")
         if self.frames_dbz.ndim != 3 or not self.frames_dbz.is_floating_point():
@@ -291,7 +292,11 @@ class VerificationBundle:
                 or self.quantization_origin_dbz is None
                 or not math.isfinite(self.quantization_origin_dbz)
                 or self.threshold_bin_convention
-                != "threshold_edge_centered_bins"
+                != (
+                    "threshold_edge_centered_bins"
+                    if self.contract == "radar-verification-bundle-v2"
+                    else "nearest_rounding_threshold_censor"
+                )
             ):
                 raise ValueError("v2 verification quantization contract is invalid")
         frames = self.frames_dbz.detach().clone()
@@ -3178,10 +3183,17 @@ def _verification_content_digest(
         "radar_product_digest": radar_product_digest,
         "qc_pipeline_digest": qc_pipeline_digest,
     }
-    if contract == "radar-verification-bundle-v2":
+    if contract in {
+        "radar-verification-bundle-v2",
+        "radar-verification-bundle-v3",
+    }:
         payload.update(
             {
-                "version": "verification-bundle-content-v3",
+                "version": (
+                    "verification-bundle-content-v3"
+                    if contract == "radar-verification-bundle-v2"
+                    else "verification-bundle-content-v4"
+                ),
                 "mask_policy_digest": mask_policy_digest,
                 "censor_policy_digest": censor_policy_digest,
                 "reflectivity_resolution_dbz": reflectivity_resolution_dbz,

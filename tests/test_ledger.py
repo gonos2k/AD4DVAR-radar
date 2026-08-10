@@ -614,8 +614,12 @@ class EpisodeLedgerTests(unittest.TestCase):
             classifier_digest="b" * 64,
             training_dataset_digest="c" * 64,
             training_case_ids=("classifier-training-case",),
+            training_input_bundle_digests=("1" * 64,),
+            training_full_analysis_input_digests=("2" * 64,),
             training_storm_ids=("classifier-training-storm",),
             training_days=("2029-01-01",),
+            training_radar_ids=("classifier-radar",),
+            training_grid_contract_digests=("3" * 64,),
             training_time_windows=((
                 "2029-01-01T00:00:00Z",
                 "2029-01-01T01:00:00Z",
@@ -625,6 +629,20 @@ class EpisodeLedgerTests(unittest.TestCase):
                 promotion_module.numerical_runtime_identity_digest("cpu")
             ),
             reference_label_contract_digest="e" * 64,
+            signed_training_member_manifest_digest="4" * 64,
+        )
+        labeler_key = promotion_module.Ed25519PrivateKey.from_private_bytes(
+            b"\x02" * 32
+        )
+        reference_plan = promotion_module.RegimeReferencePlan(
+            case_id="case-clock",
+            labeler_id="clock-labeler",
+            labeler_public_key_hex=(
+                promotion_module.regime_reference_public_key_hex(labeler_key)
+            ),
+            source_contract_digest="e" * 64,
+            labeling_valid_time="2030-01-01T01:00:00Z",
+            adjudication_policy_digest="6" * 64,
         )
         plan = NeuralPriorHoldoutPlan(
             plan_id="clock-plan",
@@ -633,10 +651,10 @@ class EpisodeLedgerTests(unittest.TestCase):
             cases=(
                 NeuralPriorHoldoutPlanCase(
                     case_id="case-clock",
-                    storm_id="storm-clock",
+                    storm_id="pending",
                     day="2029-12-31",
                     radar_id="radar-clock",
-                    regime="convective",
+                    regime="pending",
                     range_regime="near_range",
                     input_plan_digest=input_plan.plan_digest,
                     verification_plan_digest="8" * 64,
@@ -647,6 +665,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                     ),
                     range_band_contract_digest=range_contract.contract_digest,
                     reference_active_range_regimes=("near_range",),
+                    regime_reference_plan_digest=reference_plan.plan_digest,
                     issue_time=issue,
                 ),
             ),
@@ -654,6 +673,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             uncertainty_target_plans=(target_plan,),
             state_calibration_target_plans=(state_target_plan,),
             range_band_contracts=(range_contract,),
+            regime_reference_plans=(reference_plan,),
             regime_classifier_manifests=(classifier_manifest,),
             reference_label_contract_digest="e" * 64,
             registered_at="2029-01-01T00:00:00Z",

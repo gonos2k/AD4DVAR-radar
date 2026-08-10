@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.64
+# ADVAR 3-frame radar nowcast v0.65
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -761,11 +761,11 @@ withheld radar/time/mask), QC·mask·censor·floor measurement contract,
 feature-exclusion 및 independence evidence를
 사전등록하며 plan payload 자체가 holdout digest에 포함된다. 실제 target은 임의
 Tensor로 만들 수 없고, plan에 고정된 radar product·QC·grid·valid time과 일치하는
-content-addressed `radar-verification-bundle-v2`에서만 생성한다.
+content-addressed `radar-verification-bundle-v3`에서만 생성한다.
 P1 state head에는 별도의 `NeuralPriorStateCalibrationPlan`을 사전등록한다. State target은
 state product·QC·mask·censor·floor policy, dBZ resolution·quantization origin과 prior output
 valid time에 결합되고 feature에서 withhold됐음을 검증한다. Target은 이 측정계보를 실제
-자료와 함께 attestation한 `radar-verification-bundle-v2`에서만 생성된다. Candidate와
+자료와 함께 attestation한 `radar-verification-bundle-v3`에서만 생성된다. Candidate와
 parent의 state interval-Gaussian NLL·PIT,
 support Brier·pixel/object miss·false-support 및 validity Brier를 같은 target에서 paired
 평가한다. 절대 calibration과 cluster max-statistic 비열화 상한을 모두 통과하지 못하면
@@ -793,7 +793,9 @@ hurdle-probability head를 별도 계약으로 출력한다. State product와 su
 truncated location/scale은 P1 초기장으로 재사용되지 않는다. Probability head는 모델
 입력과 분리된 withheld target의 positive-echo 화소에서 float64 `log_ndtr` 기반 conditional
 truncated-Gaussian intensity NLL로 검증한다. Radar dBZ의 해상도·quantization origin·첫
-threshold bin 규칙을 계약에 포함한다. 관측값은 origin 기반 dBZ lattice에 있어야 하며,
+threshold bin 규칙을 계약에 포함한다. Nearest-rounding+censor 계약에서 첫 echo bin은
+`[L,L+Δ/2)`, 다음 bin은 `[L+Δ/2,L+3Δ/2)`이므로 인접 code가 확률질량을 중복하지 않는다.
+관측값은 origin 기반 dBZ lattice에 있어야 하며,
 off-lattice 값은 다른 측정계약으로 간주해 거부한다. 점 likelihood 대신 관측 bin의
 interval mass를 사용하고, 양·음 tail은 각각 survival/CDF log-mass로 계산해 극단값도
 유한한 score로 유지한다. Conditional PIT도 interval midpoint를 사용하므로 threshold와 정확히 같은
@@ -819,7 +821,11 @@ fail-close한다. 한 group의 표본이 부족하면 그 group만 인증에서 
 `require_all_registered_regimes_certified`를 명시한 경우에만 candidate 전체를 거부한다.
 Range applicability는 classifier label에 whole-domain score를 복제하지 않는다. Holdout
 plan에 사전등록된 `RangeBandContract`의 물리 mask 안에서 forecast metric과
-state/probability score를 다시 계산한다. Reference active set에 대한 set precision·recall,
+state/probability score를 다시 계산한다. Geometry mask 면적과 별도로 lead별 metric-valid,
+probability-valid, state-valid 면적과 echo/clear pixel·connected-object 수를 보존하며,
+component별 최소 유효 표본을 통과해야 한다. Band-local skill도 storm/day/radar cluster
+bootstrap의 family-adjusted 개선 하한·harm 상한을 통과해야 하므로 작은 악화가 매 사례에
+반복되는 band는 인증되지 않는다. Reference active set에 대한 set precision·recall,
 exact-set accuracy와 false-active-band rate까지 통과한 band만 인증하므로 모든 range
 logit을 높여 near/mid/far를 동시에 활성화하는 classifier는 인증을 얻지 못한다.
 실제 배포에서는 caller가 regime 문자열이나 operational role을 넘기지 않는다. Exported
@@ -827,9 +833,15 @@ logit을 높여 near/mid/far를 동시에 활성화하는 classifier는 인증�
 `RegimeClassificationEvidence`를 만들고, 모든 holdout case에서도 동일 classifier를
 실행한다. Reference-label accuracy·regime recall·confidence calibration·false routing과
 unknown/OOD abstention을 통과해야 deployment evidence가 유효하다. Classifier family와
-각 `RegimeClassifierManifest`의 training dataset/case/storm/day/time-window lineage는
+각 `RegimeClassifierManifest`의 training dataset/case/storm/day/time-window뿐 아니라
+input-bundle/full-analysis-input/radar/grid와 signed member-manifest lineage는
 forecast issue 전에 holdout plan에 사전등록되고 holdout과 겹치면 거부된다. 여러 prior와
 classifier를 비교할 때 family multiplicity는 두 family 크기의 곱으로 계산한다. Classifier
+accuracy·recall·range-set precision과 false-routing은 point estimate뿐 아니라
+storm/day/radar cluster 신뢰하한·상한도 통과해야 한다. Prospective plan에는 미래 weather
+정답 대신 `pending`과 `RegimeReferencePlan`의 labeler/source/adjudication rule만 기록한다.
+검증시각 뒤의 observed label은 exact input·verification·storm에 묶인 Ed25519
+`RegimeReferenceEvidence`로 완료된다. Classifier
 runtime·dtype·device도 evidence에 결합되고 weather top-two, range-presence와 deployment
 confidence hard branch margin이 부족하면 `ambiguous_classifier_branch`로 parent에
 fallback한다. Range logits는 domain에
@@ -851,8 +863,8 @@ exclusion mask가 target mask를 덮었는지 계산해 확인한다. 불확실�
 fraction·면적과 parent 대비 abstention 증가 및 NLL abstention penalty를 함께 적용한다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
-현재 promotion evidence는 v10, candidate manifest는 v6, holdout plan은 v8,
-holdout evaluation은 v11이다. 이전 promotion evidence·candidate manifest·holdout plan·
+현재 promotion evidence는 v11, candidate manifest는 v7, holdout plan은 v9,
+holdout evaluation은 v12이다. 이전 promotion evidence·candidate manifest·holdout plan·
 evaluation은 원래 payload와 digest를 그대로 검증하는
 read-only audit 타입으로만 적재된다. Migration 때 추가된 UCB 컬럼의 기본값 0을 과거
 증거의 계산값으로 해석하거나 과거 row를 현재 승격판정에 재사용하지 않는다.
