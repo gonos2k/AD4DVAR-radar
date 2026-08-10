@@ -15,6 +15,7 @@ import torch
 from torch import Tensor, nn
 
 from ._digest import json_digest, tensor_digest
+from ._runtime import numerical_runtime_identity_digest
 from .calibration import OperationalDataIdentity
 from .nowcast import (
     ForecastResult,
@@ -80,6 +81,8 @@ PromotionRejectionReason = Literal[
     "inferior_state_head",
     "insufficient_state_calibration",
     "unreliable_regime_classifier",
+    "unreliable_range_classifier",
+    "ambiguous_regime_classifier_branch",
 ]
 
 _UncertaintyComponent = Literal[
@@ -97,6 +100,22 @@ _UncertaintyComponent = Literal[
     "state_false_support",
     "state_valid",
 ]
+
+_UNCERTAINTY_COMPONENT_NAMES: tuple[str, ...] = (
+    "intensity",
+    "support",
+    "echo_miss",
+    "object_miss",
+    "clear",
+    "underdispersion",
+    "state_nll",
+    "state_underdispersion",
+    "state_support",
+    "state_echo_miss",
+    "state_object_miss",
+    "state_false_support",
+    "state_valid",
+)
 PriorComponentStatus = Literal["available", "not_applicable"]
 
 
@@ -237,6 +256,9 @@ class PriorUncertaintyTargetPlan:
     target_kind: PriorUncertaintyTargetKind
     source_identity_digest: str
     qc_pipeline_digest: str
+    mask_policy_digest: str
+    censor_policy_digest: str
+    floor_representation_contract_digest: str
     grid_contract_digest: str
     feature_exclusion_contract_digest: str
     independence_evidence_digest: str
@@ -248,12 +270,12 @@ class PriorUncertaintyTargetPlan:
     threshold_bin_convention: Literal["threshold_edge_centered_bins"] = (
         "threshold_edge_centered_bins"
     )
-    contract: str = "prior-uncertainty-target-plan-v4"
+    contract: str = "prior-uncertainty-target-plan-v5"
     support_event_digest: str = field(init=False)
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "prior-uncertainty-target-plan-v4":
+        if self.contract != "prior-uncertainty-target-plan-v5":
             raise ValueError("unsupported uncertainty target plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("uncertainty target plan ID must be canonical")
@@ -267,6 +289,9 @@ class PriorUncertaintyTargetPlan:
         for name in (
             "source_identity_digest",
             "qc_pipeline_digest",
+            "mask_policy_digest",
+            "censor_policy_digest",
+            "floor_representation_contract_digest",
             "grid_contract_digest",
             "feature_exclusion_contract_digest",
             "independence_evidence_digest",
@@ -318,6 +343,11 @@ class PriorUncertaintyTargetPlan:
             "target_kind": self.target_kind,
             "source_identity_digest": self.source_identity_digest,
             "qc_pipeline_digest": self.qc_pipeline_digest,
+            "mask_policy_digest": self.mask_policy_digest,
+            "censor_policy_digest": self.censor_policy_digest,
+            "floor_representation_contract_digest": (
+                self.floor_representation_contract_digest
+            ),
             "grid_contract_digest": self.grid_contract_digest,
             "feature_exclusion_contract_digest": (
                 self.feature_exclusion_contract_digest
@@ -414,6 +444,124 @@ class NeuralPriorStateCalibrationPlan:
 
 
 @dataclass(frozen=True)
+class RangeBandContract:
+    """Pre-registered physical range zones for one holdout grid."""
+
+    case_id: str
+    range_regime_labels: tuple[str, ...]
+    range_band_mask_digests: tuple[str, ...]
+    reference_active_range_regimes: tuple[str, ...]
+    grid_contract_digest: str
+    contract: str = "neural-prior-range-band-contract-v1"
+    contract_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-range-band-contract-v1"
+            or not self.case_id
+            or self.case_id.strip() != self.case_id
+            or not self.range_regime_labels
+            or len(set(self.range_regime_labels)) != len(self.range_regime_labels)
+            or any(not value or value.strip() != value for value in self.range_regime_labels)
+            or len(self.range_band_mask_digests) != len(self.range_regime_labels)
+            or len(set(self.reference_active_range_regimes))
+            != len(self.reference_active_range_regimes)
+            or any(
+                value not in self.range_regime_labels
+                for value in self.reference_active_range_regimes
+            )
+        ):
+            raise ValueError("range-band contract is invalid")
+        _require_digest("range-band grid contract", self.grid_contract_digest)
+        for digest in self.range_band_mask_digests:
+            _require_digest("range-band mask digest", digest)
+        object.__setattr__(self, "contract_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "case_id": self.case_id,
+            "range_regime_labels": list(self.range_regime_labels),
+            "range_band_mask_digests": list(self.range_band_mask_digests),
+            "reference_active_range_regimes": list(
+                self.reference_active_range_regimes
+            ),
+            "grid_contract_digest": self.grid_contract_digest,
+        }
+
+    def mask_digest(self, range_regime: str) -> str:
+        try:
+            index = self.range_regime_labels.index(range_regime)
+        except ValueError as error:
+            raise ValueError("range regime is outside the physical contract") from error
+        return self.range_band_mask_digests[index]
+
+
+@dataclass(frozen=True)
+class RegimeClassifierManifest:
+    """Training lineage for one preregistered deployment classifier."""
+
+    classifier_digest: str
+    training_dataset_digest: str
+    training_case_ids: tuple[str, ...]
+    training_storm_ids: tuple[str, ...]
+    training_days: tuple[str, ...]
+    training_time_windows: tuple[tuple[str, str], ...]
+    training_algorithm_digest: str
+    numerical_runtime_digest: str
+    reference_label_contract_digest: str
+    contract: str = "neural-prior-regime-classifier-manifest-v1"
+    manifest_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.contract != "neural-prior-regime-classifier-manifest-v1":
+            raise ValueError("unsupported regime-classifier manifest")
+        for name in (
+            "classifier_digest",
+            "training_dataset_digest",
+            "training_algorithm_digest",
+            "numerical_runtime_digest",
+            "reference_label_contract_digest",
+        ):
+            _require_digest(name, getattr(self, name))
+        for name, values in (
+            ("training case", self.training_case_ids),
+            ("training storm", self.training_storm_ids),
+            ("training day", self.training_days),
+        ):
+            if (
+                not values
+                or len(set(values)) != len(values)
+                or any(not value or value.strip() != value for value in values)
+            ):
+                raise ValueError(f"classifier {name} identities are invalid")
+        windows = tuple(
+            (_canonical_time(start), _canonical_time(end))
+            for start, end in self.training_time_windows
+        )
+        if not windows or any(start >= end for start, end in windows):
+            raise ValueError("classifier training windows are invalid")
+        object.__setattr__(self, "training_time_windows", windows)
+        object.__setattr__(self, "manifest_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "classifier_digest": self.classifier_digest,
+            "training_dataset_digest": self.training_dataset_digest,
+            "training_case_ids": list(self.training_case_ids),
+            "training_storm_ids": list(self.training_storm_ids),
+            "training_days": list(self.training_days),
+            "training_time_windows": [list(value) for value in self.training_time_windows],
+            "training_algorithm_digest": self.training_algorithm_digest,
+            "numerical_runtime_digest": self.numerical_runtime_digest,
+            "reference_label_contract_digest": self.reference_label_contract_digest,
+        }
+
+
+@dataclass(frozen=True)
 class NeuralPriorHoldoutPlanCase:
     """One case committed before forecasts and verification are available."""
 
@@ -428,6 +576,8 @@ class NeuralPriorHoldoutPlanCase:
     metric_contract_digest: str
     uncertainty_target_plan_digest: str
     state_calibration_target_plan_digest: str
+    range_band_contract_digest: str
+    reference_active_range_regimes: tuple[str, ...]
     issue_time: str
 
     def __post_init__(self) -> None:
@@ -438,8 +588,15 @@ class NeuralPriorHoldoutPlanCase:
             "metric_contract_digest",
             "uncertainty_target_plan_digest",
             "state_calibration_target_plan_digest",
+            "range_band_contract_digest",
         ):
             _require_digest(name, getattr(self, name))
+        if (
+            len(set(self.reference_active_range_regimes))
+            != len(self.reference_active_range_regimes)
+            or any(not value for value in self.reference_active_range_regimes)
+        ):
+            raise ValueError("reference active range regimes are invalid")
         object.__setattr__(self, "issue_time", _canonical_time(self.issue_time))
 
 
@@ -721,6 +878,55 @@ class LegacyNeuralPriorHoldoutPlanV6Audit:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV7Audit:
+    """Raw v7 plan retained before range/classifier preregistration."""
+
+    plan_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-plan-audit-v7"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _require_digest("legacy holdout plan digest", self.plan_digest)
+        payload = json.loads(self.payload_json)
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != "neural-prior-holdout-plan-v7"
+            or payload.get("plan_digest") != self.plan_digest
+            or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            != self.payload_json
+        ):
+            raise ValueError("invalid legacy v7 holdout plan")
+        original = dict(payload)
+        original.pop("plan_digest")
+        for collection in (
+            "input_plans",
+            "uncertainty_target_plans",
+            "state_calibration_target_plans",
+        ):
+            entries = original.get(collection)
+            if not isinstance(entries, list):
+                raise ValueError("legacy v7 holdout payload is incomplete")
+            original[collection] = [
+                {key: value for key, value in entry.items() if key != "plan_digest"}
+                for entry in entries
+            ]
+        if json_digest(original) != self.plan_digest:
+            raise ValueError("legacy v7 holdout plan digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "plan_digest": self.plan_digest,
+                    "payload": payload,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorHoldoutPlan:
     """Root-approved holdout commitment created before any evaluated issue."""
 
@@ -733,15 +939,18 @@ class NeuralPriorHoldoutPlan:
     state_calibration_target_plans: tuple[
         NeuralPriorStateCalibrationPlan, ...
     ]
+    range_band_contracts: tuple[RangeBandContract, ...]
+    regime_classifier_manifests: tuple[RegimeClassifierManifest, ...]
+    reference_label_contract_digest: str
     registered_at: str
     mode: Literal["prospective", "sealed_historical"] = "prospective"
     sealed_historical_dataset_digest: str | None = None
     candidate_training_started_at: str | None = None
-    contract: str = "neural-prior-holdout-plan-v7"
+    contract: str = "neural-prior-holdout-plan-v8"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v7":
+        if self.contract != "neural-prior-holdout-plan-v8":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -779,6 +988,69 @@ class NeuralPriorHoldoutPlan:
         }
         if set(retained_state_targets) != set(state_target_plans):
             raise ValueError("holdout state-calibration plans are incomplete")
+        retained_range_contracts = {
+            item.contract_digest: item for item in self.range_band_contracts
+        }
+        expected_range_contracts = {
+            item.range_band_contract_digest for item in self.cases
+        }
+        if (
+            len(retained_range_contracts) != len(self.range_band_contracts)
+            or set(retained_range_contracts) != expected_range_contracts
+        ):
+            raise ValueError("holdout range-band contracts are incomplete")
+        for case in self.cases:
+            range_contract = retained_range_contracts[
+                case.range_band_contract_digest
+            ]
+            if (
+                range_contract.case_id != case.case_id
+                or range_contract.reference_active_range_regimes
+                != case.reference_active_range_regimes
+                or range_contract.grid_contract_digest
+                != next(
+                    item.grid_contract_digest
+                    for item in self.input_plans
+                    if item.plan_digest == case.input_plan_digest
+                )
+            ):
+                raise ValueError("holdout range-band contract disagrees with its case")
+        _require_digest(
+            "reference label contract", self.reference_label_contract_digest
+        )
+        if (
+            not self.regime_classifier_manifests
+            or len(
+                {item.manifest_digest for item in self.regime_classifier_manifests}
+            )
+            != len(self.regime_classifier_manifests)
+            or len(
+                {item.classifier_digest for item in self.regime_classifier_manifests}
+            )
+            != len(self.regime_classifier_manifests)
+            or any(
+                item.reference_label_contract_digest
+                != self.reference_label_contract_digest
+                for item in self.regime_classifier_manifests
+            )
+        ):
+            raise ValueError("holdout classifier family is invalid")
+        holdout_case_ids = {item.case_id for item in self.cases}
+        holdout_storm_ids = {item.storm_id for item in self.cases}
+        holdout_days = {item.day for item in self.cases}
+        holdout_issues = tuple(item.issue_time for item in self.cases)
+        for classifier in self.regime_classifier_manifests:
+            if (
+                set(classifier.training_case_ids) & holdout_case_ids
+                or set(classifier.training_storm_ids) & holdout_storm_ids
+                or set(classifier.training_days) & holdout_days
+                or any(
+                    start <= issue <= end
+                    for start, end in classifier.training_time_windows
+                    for issue in holdout_issues
+                )
+            ):
+                raise ValueError("classifier training overlaps the holdout")
         registered = _canonical_time(self.registered_at)
         if self.mode == "prospective":
             if self.sealed_historical_dataset_digest is not None or (
@@ -864,6 +1136,8 @@ class NeuralPriorHoldoutCase:
     radar_id: str
     regime: str
     range_regime: str
+    reference_active_range_regimes: tuple[str, ...]
+    range_band_contract_digest: str
     input_plan_digest: str
     input_plan_resolution_digest: str
     input_bundle_digest: str
@@ -907,6 +1181,7 @@ class NeuralPriorHoldoutCase:
             "state_calibration_target_plan_digest",
             "state_calibration_target_digest",
             "prior_state_contract_digest",
+            "range_band_contract_digest",
             "candidate_forecast_digest",
             "parent_forecast_digest",
             "candidate_prior_application_digest",
@@ -915,6 +1190,12 @@ class NeuralPriorHoldoutCase:
             "parent_inference_evidence_digest",
         ):
             _require_digest(name, getattr(self, name))
+        if (
+            len(set(self.reference_active_range_regimes))
+            != len(self.reference_active_range_regimes)
+            or any(not value for value in self.reference_active_range_regimes)
+        ):
+            raise ValueError("completed reference range set is invalid")
         object.__setattr__(self, "issue_time", _canonical_time(self.issue_time))
         if self.candidate_forecast_digest == self.parent_forecast_digest:
             raise ValueError("candidate and parent holdout forecasts must differ")
@@ -931,6 +1212,8 @@ class NeuralPriorHoldoutCase:
             radar_id=self.radar_id,
             regime=self.regime,
             range_regime=self.range_regime,
+            reference_active_range_regimes=self.reference_active_range_regimes,
+            range_band_contract_digest=self.range_band_contract_digest,
             input_plan_digest=self.input_plan_digest,
             verification_plan_digest=self.verification_plan_digest,
             metric_contract_digest=self.metric_contract_digest,
@@ -1082,6 +1365,46 @@ class LegacyNeuralPriorCandidateManifestAuditV4:
         )
 
 
+@dataclass(frozen=True)
+class LegacyNeuralPriorCandidateManifestAuditV5:
+    """Digest-verified v5 manifest retained before range-band lineage."""
+
+    manifest_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-candidate-manifest-audit-v5"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _require_digest("legacy candidate manifest digest", self.manifest_digest)
+        try:
+            payload = json.loads(self.payload_json)
+        except json.JSONDecodeError as error:
+            raise ValueError("invalid legacy candidate manifest payload") from error
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != "neural-prior-candidate-manifest-v5"
+            or payload.get("manifest_digest") != self.manifest_digest
+            or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            != self.payload_json
+        ):
+            raise ValueError("invalid legacy v5 candidate manifest")
+        original = dict(payload)
+        original.pop("manifest_digest")
+        if json_digest(original) != self.manifest_digest:
+            raise ValueError("legacy v5 candidate manifest digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "manifest_digest": self.manifest_digest,
+                    "payload": payload,
+                }
+            ),
+        )
+
+
 def _validate_holdout_case_identity(value: object) -> None:
     for name in ("case_id", "storm_id", "day", "radar_id", "regime", "range_regime"):
         item = getattr(value, name)
@@ -1120,6 +1443,15 @@ def _holdout_plan_payload(plan: NeuralPriorHoldoutPlan) -> dict[str, object]:
         "state_calibration_target_plans": [
             item.payload for item in plan.state_calibration_target_plans
         ],
+        "range_band_contracts": [
+            item.payload for item in plan.range_band_contracts
+        ],
+        "regime_classifier_manifests": [
+            item.payload for item in plan.regime_classifier_manifests
+        ],
+        "reference_label_contract_digest": (
+            plan.reference_label_contract_digest
+        ),
         "registered_at": plan.registered_at,
         "mode": plan.mode,
         "sealed_historical_dataset_digest": (plan.sealed_historical_dataset_digest),
@@ -1132,7 +1464,7 @@ def _holdout_dataset_digest(
 ) -> str:
     return json_digest(
         {
-            "contract": "neural-prior-holdout-dataset-v2",
+            "contract": "neural-prior-holdout-dataset-v3",
             "cases": [
                 {
                     "case_id": item.case_id,
@@ -1144,6 +1476,10 @@ def _holdout_dataset_digest(
                     ),
                     "state_calibration_target_plan_digest": (
                         item.state_calibration_target_plan_digest
+                    ),
+                    "range_band_contract_digest": item.range_band_contract_digest,
+                    "reference_active_range_regimes": list(
+                        item.reference_active_range_regimes
                     ),
                     "issue_time": item.issue_time,
                 }
@@ -1236,11 +1572,11 @@ class NeuralPriorCandidateManifest:
     training_regimes: tuple[str, ...]
     training_time_windows: tuple[tuple[str, str], ...]
     holdout_cases: tuple[NeuralPriorHoldoutCase, ...]
-    contract: str = "neural-prior-candidate-manifest-v5"
+    contract: str = "neural-prior-candidate-manifest-v6"
     manifest_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-candidate-manifest-v5":
+        if self.contract != "neural-prior-candidate-manifest-v6":
             raise ValueError("unsupported neural-prior candidate manifest")
         for name in (
             "candidate_prior_digest",
@@ -1416,7 +1752,18 @@ class PriorUncertaintyTarget:
     ) -> PriorUncertaintyTarget:
         verification.validate_integrity()
         if (
-            plan.contract != "prior-uncertainty-target-plan-v4"
+            plan.contract != "prior-uncertainty-target-plan-v5"
+            or verification.contract != "radar-verification-bundle-v2"
+            or verification.mask_policy_digest != plan.mask_policy_digest
+            or verification.censor_policy_digest != plan.censor_policy_digest
+            or verification.floor_representation_contract_digest
+            != plan.floor_representation_contract_digest
+            or verification.reflectivity_resolution_dbz
+            != plan.reflectivity_resolution_dbz
+            or verification.quantization_origin_dbz
+            != plan.quantization_origin_dbz
+            or verification.threshold_bin_convention
+            != plan.threshold_bin_convention
             or plan.source_identity_digest != verification.radar_product_digest
             or plan.qc_pipeline_digest != verification.qc_pipeline_digest
             or plan.grid_contract_digest != verification.grid_contract_digest
@@ -1452,7 +1799,7 @@ class PriorUncertaintyTarget:
         support = echo_support.detach().clone()
         target_digest = json_digest(
             {
-                "contract": "prior-uncertainty-target-v2",
+                "contract": "prior-uncertainty-target-v3",
                 "target_dbz": tensor_digest(target),
                 "valid_mask": tensor_digest(valid),
                 "echo_support": tensor_digest(support),
@@ -1571,6 +1918,95 @@ class NeuralPriorStateCalibrationTarget:
         return result
 
 
+@dataclass(frozen=True)
+class RangeBandEvaluation:
+    """Paired skill and uncertainty restricted to one physical range mask."""
+
+    range_regime: str
+    range_band_mask_digest: str
+    metric_change: Tensor
+    end_to_end_metric_change: Tensor
+    metric_available: Tensor
+    uncertainty_component_differences: tuple[tuple[str, float], ...]
+    uncertainty_component_sample_counts: tuple[tuple[str, int], ...]
+    evaluated_area_km2: float
+    contract: str = "neural-prior-range-band-evaluation-v1"
+    evaluation_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-range-band-evaluation-v1"
+            or not self.range_regime
+            or self.range_regime.strip() != self.range_regime
+        ):
+            raise ValueError("range-band evaluation identity is invalid")
+        _require_digest("range-band evaluation mask", self.range_band_mask_digest)
+        change = self.metric_change.detach().clone()
+        end_to_end = self.end_to_end_metric_change.detach().clone()
+        available = self.metric_available.detach().clone()
+        if (
+            change.shape != end_to_end.shape
+            or change.shape != available.shape
+            or available.dtype is not torch.bool
+            or not change.is_floating_point()
+            or not end_to_end.is_floating_point()
+            or not bool(torch.any(available))
+            or not bool(torch.all(torch.isfinite(change[available])))
+            or not bool(torch.all(torch.isfinite(end_to_end[available])))
+        ):
+            raise ValueError("range-band metric evidence is invalid")
+        components = tuple(name for name, _ in self.uncertainty_component_differences)
+        sample_components = tuple(
+            name for name, _ in self.uncertainty_component_sample_counts
+        )
+        if (
+            not components
+            or len(set(components)) != len(components)
+            or set(components) != set(sample_components)
+            or any(
+                name not in _UNCERTAINTY_COMPONENT_NAMES
+                or not math.isfinite(value)
+                for name, value in self.uncertainty_component_differences
+            )
+            or any(
+                type(count) is not int or count <= 0
+                for _, count in self.uncertainty_component_sample_counts
+            )
+            or not math.isfinite(self.evaluated_area_km2)
+            or self.evaluated_area_km2 <= 0.0
+        ):
+            raise ValueError("range-band uncertainty evidence is invalid")
+        object.__setattr__(self, "metric_change", change)
+        object.__setattr__(self, "end_to_end_metric_change", end_to_end)
+        object.__setattr__(self, "metric_available", available)
+        object.__setattr__(self, "evaluation_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "range_regime": self.range_regime,
+            "range_band_mask_digest": self.range_band_mask_digest,
+            "metric_change": tensor_digest(self.metric_change),
+            "end_to_end_metric_change": tensor_digest(
+                self.end_to_end_metric_change
+            ),
+            "metric_available": tensor_digest(self.metric_available),
+            "uncertainty_component_differences": [
+                [name, value]
+                for name, value in self.uncertainty_component_differences
+            ],
+            "uncertainty_component_sample_counts": [
+                [name, count]
+                for name, count in self.uncertainty_component_sample_counts
+            ],
+            "evaluated_area_km2": self.evaluated_area_km2,
+        }
+
+    def component_difference(self, component: str) -> float | None:
+        return dict(self.uncertainty_component_differences).get(component)
+
+
 @dataclass(frozen=True, init=False)
 class PriorHoldoutEvaluation:
     """Paired prior holdout result over the full preregistered population."""
@@ -1585,7 +2021,11 @@ class PriorHoldoutEvaluation:
     radar_id: str
     regime: str
     range_regime: str
+    reference_active_range_regimes: tuple[str, ...]
+    range_band_contract_digest: str
+    range_band_evaluations: tuple[RangeBandEvaluation, ...]
     regime_classifier_digest: str
+    regime_classifier_manifest_digest: str
     regime_classification_evidence_digest: str
     classified_regime: str
     classified_range_regimes: tuple[str, ...]
@@ -1594,6 +2034,17 @@ class PriorHoldoutEvaluation:
     classifier_regime_entropy: float
     classifier_is_ood: bool
     classifier_reference_agreement: bool
+    classifier_weather_reference_agreement: bool
+    classifier_range_set_precision: float
+    classifier_range_set_recall: float
+    classifier_range_exact_set_match: bool
+    classifier_false_active_band_fraction: float
+    classifier_reference_range_is_ood: bool
+    classifier_numerical_runtime_digest: str
+    classifier_input_dtype: str
+    classifier_input_device: str
+    classifier_weather_top1_top2_gap: float
+    classifier_minimum_range_presence_margin: float
     candidate_forecast_digest: str
     parent_forecast_digest: str
     candidate_prior_application_digest: str
@@ -1663,14 +2114,14 @@ class PriorHoldoutEvaluation:
     state_calibration_echo_object_count: int
     issue_time: str
     verification_valid_times: tuple[str, ...]
-    contract: str = "prior-holdout-evaluation-v10"
+    contract: str = "prior-holdout-evaluation-v11"
     evaluation_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use PriorHoldoutEvaluation.from_forecasts")
 
     def __post_init__(self) -> None:
-        if self.contract != "prior-holdout-evaluation-v10":
+        if self.contract != "prior-holdout-evaluation-v11":
             raise ValueError("unsupported prior holdout evaluation")
         for name in (
             "holdout_plan_digest",
@@ -1688,12 +2139,15 @@ class PriorHoldoutEvaluation:
             "prior_uncertainty_target_digest",
             "state_calibration_target_digest",
             "regime_classifier_digest",
+            "regime_classifier_manifest_digest",
             "regime_classification_evidence_digest",
+            "range_band_contract_digest",
+            "classifier_numerical_runtime_digest",
         ):
             _require_digest(name, getattr(self, name))
         if (
             not self.classified_regime
-            or not self.classified_range_regimes
+            or (not self.classified_range_regimes and not self.classifier_is_ood)
             or len(set(self.classified_range_regimes))
             != len(self.classified_range_regimes)
             or any(not value for value in self.classified_range_regimes)
@@ -1701,6 +2155,26 @@ class PriorHoldoutEvaluation:
             or not 0.0 <= self.classifier_range_confidence <= 1.0
             or not math.isfinite(self.classifier_regime_entropy)
             or self.classifier_regime_entropy < 0.0
+            or len(set(self.reference_active_range_regimes))
+            != len(self.reference_active_range_regimes)
+            or any(not value for value in self.reference_active_range_regimes)
+            or len(self.range_band_evaluations)
+            != len(self.reference_active_range_regimes)
+            or tuple(item.range_regime for item in self.range_band_evaluations)
+            != self.reference_active_range_regimes
+            or any(
+                item.evaluation_digest != json_digest(item.payload)
+                for item in self.range_band_evaluations
+            )
+            or not 0.0 <= self.classifier_range_set_precision <= 1.0
+            or not 0.0 <= self.classifier_range_set_recall <= 1.0
+            or not 0.0 <= self.classifier_false_active_band_fraction <= 1.0
+            or not self.classifier_input_dtype
+            or not self.classifier_input_device
+            or not math.isfinite(self.classifier_weather_top1_top2_gap)
+            or self.classifier_weather_top1_top2_gap < 0.0
+            or not math.isfinite(self.classifier_minimum_range_presence_margin)
+            or self.classifier_minimum_range_presence_margin < 0.0
         ):
             raise ValueError("holdout regime-classifier evidence is invalid")
         expected = (len(self.lead_minutes), len(self.metric_names))
@@ -1942,6 +2416,8 @@ class PriorHoldoutEvaluation:
         uncertainty_target: PriorUncertaintyTarget,
         state_calibration_target: NeuralPriorStateCalibrationTarget,
         regime_classifier: NeuralPriorRegimeClassifier,
+        regime_classifier_manifest: RegimeClassifierManifest,
+        range_band_masks: dict[str, Tensor],
     ) -> PriorHoldoutEvaluation:
         """Evaluate every planned prior case without intervention selection."""
 
@@ -1955,6 +2431,11 @@ class PriorHoldoutEvaluation:
         if (
             regime_classification_evidence.classifier_digest
             != regime_classifier.classifier_digest
+            or regime_classifier_manifest.classifier_digest
+            != regime_classifier.classifier_digest
+            or regime_classifier_manifest.numerical_runtime_digest
+            != regime_classifier.numerical_runtime_digest
+            or regime_classifier_manifest not in plan.regime_classifier_manifests
         ):
             raise ValueError("holdout regime-classifier evidence is untrusted")
         candidate_forecast.validate_issuance()
@@ -1967,6 +2448,37 @@ class PriorHoldoutEvaluation:
             raise ValueError("candidate priors are outside the holdout plan")
         case = manifest.holdout_case(case_id)
         planned_case = plan.case(case_id)
+        range_contract = next(
+            item
+            for item in plan.range_band_contracts
+            if item.contract_digest == planned_case.range_band_contract_digest
+        )
+        if (
+            set(range_band_masks) != set(range_contract.range_regime_labels)
+            or any(
+                mask.dtype is not torch.bool
+                or mask.ndim != 2
+                or mask.shape != input_frames_dbz.shape[-2:]
+                or mask.device != input_frames_dbz.device
+                or tensor_digest(mask) != range_contract.mask_digest(label)
+                for label, mask in range_band_masks.items()
+            )
+            or tuple(
+                label
+                for label in range_contract.range_regime_labels
+                if bool(torch.any(range_band_masks[label]))
+            )
+            != range_contract.reference_active_range_regimes
+        ):
+            raise ValueError("holdout range-band masks disagree with their plan")
+        range_membership = torch.stack(
+            tuple(
+                range_band_masks[label].to(torch.int8)
+                for label in range_contract.range_regime_labels
+            )
+        ).sum(dim=0)
+        if bool(torch.any(range_membership > 1)):
+            raise ValueError("holdout range-band masks must not overlap")
         if (
             regime_classification_evidence.full_analysis_input_digest
             != candidate_forecast.run.full_analysis_input_digest
@@ -2577,12 +3089,204 @@ class PriorHoldoutEvaluation:
         withdrawn = torch.count_nonzero(
             parent_support & ~candidate_support, dim=(-2, -1)
         ).to(common_weights) / denominators
+        range_band_evaluations: list[RangeBandEvaluation] = []
+        for range_regime in range_contract.reference_active_range_regimes:
+            range_mask = range_band_masks[range_regime]
+            lead_mask = range_mask.unsqueeze(0).expand_as(common_weights)
+            band_common_weights = common_weights * lead_mask.to(common_weights)
+            band_candidate_common, band_candidate_available = (
+                _resolved_forecast_scores(
+                    candidate_forecast,
+                    candidate_forecast.state,
+                    resolved_candidate,
+                    leads,
+                    metric_config,
+                    domain_weights=band_common_weights,
+                )
+            )
+            band_parent_common, band_parent_available = _resolved_forecast_scores(
+                parent_forecast,
+                parent_forecast.state,
+                resolved_parent,
+                leads,
+                metric_config,
+                domain_weights=band_common_weights,
+            )
+            band_candidate_native, band_candidate_native_available = (
+                _resolved_forecast_scores(
+                    candidate_forecast,
+                    candidate_forecast.state,
+                    resolved_candidate,
+                    leads,
+                    metric_config,
+                    domain_weights=candidate_weights
+                    * lead_mask.to(candidate_weights),
+                )
+            )
+            band_parent_native, band_parent_native_available = (
+                _resolved_forecast_scores(
+                    parent_forecast,
+                    parent_forecast.state,
+                    resolved_parent,
+                    leads,
+                    metric_config,
+                    domain_weights=parent_weights * lead_mask.to(parent_weights),
+                )
+            )
+            if not (
+                torch.equal(band_candidate_available, band_parent_available)
+                and torch.equal(
+                    band_candidate_available, band_candidate_native_available
+                )
+                and torch.equal(
+                    band_candidate_available, band_parent_native_available
+                )
+                and bool(torch.any(band_candidate_available))
+            ):
+                raise ValueError("range-band paired metric domain is unavailable")
+            band_prior_valid = prior_valid & range_mask.to(prior_valid.device)
+            band_state_valid = state_valid & range_mask.to(state_valid.device)
+            if not bool(torch.any(band_prior_valid)) or not bool(
+                torch.any(band_state_valid)
+            ):
+                raise ValueError("range-band calibration domain is empty")
+            band_candidate_prior = _prior_uncertainty_scores(
+                candidate_prior_application,
+                prior_reference,
+                support_target,
+                band_prior_valid,
+                support_threshold_dbz=target_plan.support_threshold_dbz,
+                reflectivity_resolution_dbz=target_plan.reflectivity_resolution_dbz,
+                quantization_origin_dbz=target_plan.quantization_origin_dbz,
+                threshold_bin_convention=target_plan.threshold_bin_convention,
+            )
+            band_parent_prior = _prior_uncertainty_scores(
+                parent_prior_application,
+                prior_reference,
+                support_target,
+                band_prior_valid,
+                support_threshold_dbz=target_plan.support_threshold_dbz,
+                reflectivity_resolution_dbz=target_plan.reflectivity_resolution_dbz,
+                quantization_origin_dbz=target_plan.quantization_origin_dbz,
+                threshold_bin_convention=target_plan.threshold_bin_convention,
+            )
+            band_candidate_state = _state_calibration_scores(
+                candidate_prior_application,
+                state_reference,
+                state_support_target,
+                band_state_valid,
+                plan=state_target_plan,
+            )
+            band_parent_state = _state_calibration_scores(
+                parent_prior_application,
+                state_reference,
+                state_support_target,
+                band_state_valid,
+                plan=state_target_plan,
+            )
+
+            def masked_object_miss(
+                probability: Tensor,
+                mask: Tensor,
+                target: Tensor,
+            ) -> float | None:
+                objects = _connected_component_flat_indices(mask & target.to(mask))
+                if not objects:
+                    return None
+                flat = probability.flatten()
+                return float(
+                    torch.mean(
+                        torch.stack(
+                            tuple(
+                                (1.0 - torch.mean(flat[index])).square()
+                                for index in objects
+                            )
+                        )
+                    ).detach()
+                )
+
+            candidate_band_object_miss = masked_object_miss(
+                candidate_prior_application.event_probability,
+                band_prior_valid,
+                support_target,
+            )
+            parent_band_object_miss = masked_object_miss(
+                parent_prior_application.event_probability,
+                band_prior_valid,
+                support_target,
+            )
+            candidate_band_state_object_miss = masked_object_miss(
+                candidate_prior_application.state_support_probability,
+                band_state_valid,
+                state_support_target,
+            )
+            parent_band_state_object_miss = masked_object_miss(
+                parent_prior_application.state_support_probability,
+                band_state_valid,
+                state_support_target,
+            )
+            component_differences, component_counts = (
+                _range_uncertainty_components(
+                    band_candidate_prior,
+                    band_parent_prior,
+                    band_candidate_state,
+                    band_parent_state,
+                    candidate_object_miss=candidate_band_object_miss,
+                    parent_object_miss=parent_band_object_miss,
+                    candidate_state_object_miss=(
+                        candidate_band_state_object_miss
+                    ),
+                    parent_state_object_miss=parent_band_state_object_miss,
+                )
+            )
+            range_band_evaluations.append(
+                RangeBandEvaluation(
+                    range_regime=range_regime,
+                    range_band_mask_digest=range_contract.mask_digest(range_regime),
+                    metric_change=band_candidate_common - band_parent_common,
+                    end_to_end_metric_change=(
+                        band_candidate_native - band_parent_native
+                    ),
+                    metric_available=band_candidate_available,
+                    uncertainty_component_differences=component_differences,
+                    uncertainty_component_sample_counts=component_counts,
+                    evaluated_area_km2=(
+                        float(torch.count_nonzero(range_mask))
+                        * grid.cell_area_m2
+                        / 1.0e6
+                    ),
+                )
+            )
         issue_time = candidate_forecast.run.grid_time_contract.valid_times[-1]
         parent_issue = parent_forecast.run.grid_time_contract
         if parent_issue is None or parent_issue.valid_times[-1] != issue_time:
             raise ValueError("candidate and parent issue times disagree")
         if issue_time != case.issue_time:
             raise ValueError("holdout issue time is not pre-registered")
+        reference_ranges = set(range_contract.reference_active_range_regimes)
+        classified_ranges = set(
+            regime_classification_evidence.active_range_regimes
+        )
+        range_intersection = reference_ranges & classified_ranges
+        range_precision = (
+            len(range_intersection) / len(classified_ranges)
+            if classified_ranges
+            else (1.0 if not reference_ranges else 0.0)
+        )
+        range_recall = (
+            len(range_intersection) / len(reference_ranges)
+            if reference_ranges
+            else (1.0 if not classified_ranges else 0.0)
+        )
+        false_active_fraction = (
+            len(classified_ranges - reference_ranges) / len(classified_ranges)
+            if classified_ranges
+            else 0.0
+        )
+        exact_range_set = classified_ranges == reference_ranges
+        weather_agreement = (
+            regime_classification_evidence.regime == case.regime
+        )
         return _new_prior_holdout_evaluation(
             holdout_plan_digest=plan.plan_digest,
             candidate_manifest_digest=manifest.manifest_digest,
@@ -2594,8 +3298,16 @@ class PriorHoldoutEvaluation:
             radar_id=case.radar_id,
             regime=case.regime,
             range_regime=case.range_regime,
+            reference_active_range_regimes=(
+                range_contract.reference_active_range_regimes
+            ),
+            range_band_contract_digest=range_contract.contract_digest,
+            range_band_evaluations=tuple(range_band_evaluations),
             regime_classifier_digest=(
                 regime_classification_evidence.classifier_digest
+            ),
+            regime_classifier_manifest_digest=(
+                regime_classifier_manifest.manifest_digest
             ),
             regime_classification_evidence_digest=(
                 regime_classification_evidence.evidence_digest
@@ -2616,9 +3328,25 @@ class PriorHoldoutEvaluation:
             classifier_is_ood=regime_classification_evidence.is_ood,
             classifier_reference_agreement=(
                 not regime_classification_evidence.is_ood
-                and regime_classification_evidence.regime == case.regime
-                and case.range_regime
-                in regime_classification_evidence.active_range_regimes
+                and weather_agreement
+                and exact_range_set
+            ),
+            classifier_weather_reference_agreement=weather_agreement,
+            classifier_range_set_precision=range_precision,
+            classifier_range_set_recall=range_recall,
+            classifier_range_exact_set_match=exact_range_set,
+            classifier_false_active_band_fraction=false_active_fraction,
+            classifier_reference_range_is_ood=not reference_ranges,
+            classifier_numerical_runtime_digest=(
+                regime_classification_evidence.numerical_runtime_digest
+            ),
+            classifier_input_dtype=regime_classification_evidence.input_dtype,
+            classifier_input_device=regime_classification_evidence.input_device,
+            classifier_weather_top1_top2_gap=(
+                regime_classification_evidence.weather_top1_top2_gap
+            ),
+            classifier_minimum_range_presence_margin=(
+                regime_classification_evidence.minimum_range_presence_margin
             ),
             candidate_forecast_digest=candidate_digest,
             parent_forecast_digest=parent_digest,
@@ -3151,6 +3879,46 @@ def _prior_uncertainty_scores(
     )
 
 
+def _range_uncertainty_components(
+    candidate_prior: _PriorUncertaintyScores,
+    parent_prior: _PriorUncertaintyScores,
+    candidate_state: _StateCalibrationScores,
+    parent_state: _StateCalibrationScores,
+    *,
+    candidate_object_miss: float | None,
+    parent_object_miss: float | None,
+    candidate_state_object_miss: float | None,
+    parent_state_object_miss: float | None,
+) -> tuple[tuple[tuple[str, float], ...], tuple[tuple[str, int], ...]]:
+    """Return paired component deltas and their physical-domain sample sizes."""
+
+    values: list[tuple[str, float]] = []
+    counts: list[tuple[str, int]] = []
+
+    def add(name: str, candidate: float | None, parent: float | None, count: int) -> None:
+        if candidate is None or parent is None or count <= 0:
+            return
+        values.append((name, candidate - parent))
+        counts.append((name, count))
+
+    total_prior = candidate_prior.echo_sample_count + candidate_prior.clear_sample_count
+    total_state = candidate_state.sample_count
+    add("intensity", candidate_prior.echo_intensity_nll, parent_prior.echo_intensity_nll, candidate_prior.echo_sample_count)
+    add("support", candidate_prior.support_brier_score, parent_prior.support_brier_score, total_prior)
+    add("echo_miss", candidate_prior.echo_support_miss_score, parent_prior.echo_support_miss_score, candidate_prior.echo_sample_count)
+    add("object_miss", candidate_object_miss, parent_object_miss, candidate_prior.echo_sample_count)
+    add("clear", candidate_prior.clear_sky_false_echo_score, parent_prior.clear_sky_false_echo_score, candidate_prior.clear_sample_count)
+    add("underdispersion", candidate_prior.conditional_underdispersion_fraction, parent_prior.conditional_underdispersion_fraction, candidate_prior.echo_sample_count)
+    add("state_nll", candidate_state.gaussian_nll, parent_state.gaussian_nll, total_state)
+    add("state_underdispersion", candidate_state.underdispersion_fraction, parent_state.underdispersion_fraction, total_state)
+    add("state_support", candidate_state.support_brier_score, parent_state.support_brier_score, total_state)
+    add("state_echo_miss", candidate_state.echo_support_miss_score, parent_state.echo_support_miss_score, candidate_state.echo_sample_count)
+    add("state_object_miss", candidate_state_object_miss, parent_state_object_miss, candidate_state.echo_sample_count)
+    add("state_false_support", candidate_state.false_support_score, parent_state.false_support_score, candidate_state.clear_sample_count)
+    add("state_valid", candidate_state.valid_brier_score, parent_state.valid_brier_score, total_state)
+    return tuple(values), tuple(counts)
+
+
 def _new_prior_holdout_evaluation(**values: object) -> PriorHoldoutEvaluation:
     """Internal constructor used only after forecast-derived values exist."""
 
@@ -3158,7 +3926,7 @@ def _new_prior_holdout_evaluation(**values: object) -> PriorHoldoutEvaluation:
     object.__setattr__(
         result,
         "contract",
-        "prior-holdout-evaluation-v10",
+        "prior-holdout-evaluation-v11",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -3196,7 +3964,18 @@ def _evaluation_digest(value: PriorHoldoutEvaluation) -> str:
             "radar_id": value.radar_id,
             "regime": value.regime,
             "range_regime": value.range_regime,
+            "reference_active_range_regimes": list(
+                value.reference_active_range_regimes
+            ),
+            "range_band_contract_digest": value.range_band_contract_digest,
+            "range_band_evaluations": [
+                item.payload | {"evaluation_digest": item.evaluation_digest}
+                for item in value.range_band_evaluations
+            ],
             "regime_classifier_digest": value.regime_classifier_digest,
+            "regime_classifier_manifest_digest": (
+                value.regime_classifier_manifest_digest
+            ),
             "regime_classification_evidence_digest": (
                 value.regime_classification_evidence_digest
             ),
@@ -3208,6 +3987,31 @@ def _evaluation_digest(value: PriorHoldoutEvaluation) -> str:
             "classifier_is_ood": value.classifier_is_ood,
             "classifier_reference_agreement": (
                 value.classifier_reference_agreement
+            ),
+            "classifier_weather_reference_agreement": (
+                value.classifier_weather_reference_agreement
+            ),
+            "classifier_range_set_precision": value.classifier_range_set_precision,
+            "classifier_range_set_recall": value.classifier_range_set_recall,
+            "classifier_range_exact_set_match": (
+                value.classifier_range_exact_set_match
+            ),
+            "classifier_false_active_band_fraction": (
+                value.classifier_false_active_band_fraction
+            ),
+            "classifier_reference_range_is_ood": (
+                value.classifier_reference_range_is_ood
+            ),
+            "classifier_numerical_runtime_digest": (
+                value.classifier_numerical_runtime_digest
+            ),
+            "classifier_input_dtype": value.classifier_input_dtype,
+            "classifier_input_device": value.classifier_input_device,
+            "classifier_weather_top1_top2_gap": (
+                value.classifier_weather_top1_top2_gap
+            ),
+            "classifier_minimum_range_presence_margin": (
+                value.classifier_minimum_range_presence_margin
             ),
             "candidate_forecast_digest": value.candidate_forecast_digest,
             "parent_forecast_digest": value.parent_forecast_digest,
@@ -3369,6 +4173,7 @@ class NeuralPriorPromotionPolicy:
     approved_holdout_plan_digests: tuple[str, ...]
     approved_metric_contract_digests: tuple[str, ...]
     deployment_regime_classifier_digest: str
+    deployment_regime_classifier_manifest_digest: str
     minimum_holdout_cases: int = 20
     minimum_material_cases: int = 20
     minimum_material_case_fraction: float = 0.8
@@ -3445,13 +4250,24 @@ class NeuralPriorPromotionPolicy:
     maximum_regime_classifier_false_routing_fraction: float = 0.05
     minimum_regime_classifier_ood_cases: int = 1
     minimum_regime_classifier_ood_abstention_fraction: float = 0.9
+    minimum_range_set_precision: float = 0.95
+    minimum_range_set_recall: float = 0.95
+    minimum_range_exact_set_accuracy: float = 0.9
+    maximum_false_active_band_fraction: float = 0.05
+    minimum_weather_top1_top2_gap: float = 0.05
+    minimum_range_presence_margin: float = 0.05
+    minimum_range_band_cases: int = 2
+    minimum_range_band_clusters: int = 2
+    minimum_range_band_area_km2: float = 1.0
+    minimum_range_classifier_ood_cases: int = 1
+    minimum_range_classifier_ood_abstention_fraction: float = 0.9
     require_all_registered_regimes_certified: bool = False
     minimum_bootstrap_tail_replicates: int = 20
     maximum_exact_sign_clusters: int = 16
-    contract: str = "neural-prior-promotion-policy-v14"
+    contract: str = "neural-prior-promotion-policy-v15"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-policy-v14":
+        if self.contract != "neural-prior-promotion-policy-v15":
             raise ValueError("unsupported neural-prior promotion policy")
         if not self.metric_scales or len({x.metric_name for x in self.metric_scales}) != len(self.metric_scales):
             raise ValueError("promotion metric scales must be unique")
@@ -3471,6 +4287,10 @@ class NeuralPriorPromotionPolicy:
         _require_digest(
             "deployment regime classifier digest",
             self.deployment_regime_classifier_digest,
+        )
+        _require_digest(
+            "deployment regime classifier manifest digest",
+            self.deployment_regime_classifier_manifest_digest,
         )
         integer_limits = (
             self.minimum_holdout_cases,
@@ -3502,6 +4322,8 @@ class NeuralPriorPromotionPolicy:
             self.minimum_state_calibration_samples_per_case,
             self.minimum_state_calibration_cases_per_regime,
             self.minimum_state_calibration_clusters_per_regime,
+            self.minimum_range_band_cases,
+            self.minimum_range_band_clusters,
         )
         if any(type(value) is not int or value <= 0 for value in integer_limits):
             raise ValueError("promotion count limits must be positive integers")
@@ -3531,6 +4353,11 @@ class NeuralPriorPromotionPolicy:
             self.maximum_regime_classifier_calibration_error,
             self.maximum_regime_classifier_false_routing_fraction,
             self.minimum_regime_classifier_ood_abstention_fraction,
+            self.minimum_range_set_precision,
+            self.minimum_range_set_recall,
+            self.minimum_range_exact_set_accuracy,
+            self.maximum_false_active_band_fraction,
+            self.minimum_range_classifier_ood_abstention_fraction,
         )
         if any(not math.isfinite(value) or not 0 <= value <= 1 for value in probabilities):
             raise ValueError("promotion fractions must be inside [0,1]")
@@ -3539,6 +4366,8 @@ class NeuralPriorPromotionPolicy:
         if (
             type(self.minimum_regime_classifier_ood_cases) is not int
             or self.minimum_regime_classifier_ood_cases < 0
+            or type(self.minimum_range_classifier_ood_cases) is not int
+            or self.minimum_range_classifier_ood_cases < 0
             or type(self.require_all_registered_regimes_certified) is not bool
         ):
             raise ValueError("regime-classifier policy limits are invalid")
@@ -3605,6 +4434,9 @@ class NeuralPriorPromotionPolicy:
             ("maximum_state_echo_object_miss_increase", self.maximum_state_echo_object_miss_increase),
             ("maximum_state_false_support_increase", self.maximum_state_false_support_increase),
             ("maximum_state_valid_brier_increase", self.maximum_state_valid_brier_increase),
+            ("minimum_weather_top1_top2_gap", self.minimum_weather_top1_top2_gap),
+            ("minimum_range_presence_margin", self.minimum_range_presence_margin),
+            ("minimum_range_band_area_km2", self.minimum_range_band_area_km2),
         ):
             if not math.isfinite(value) or value < 0.0:
                 raise ValueError(f"{name} must be finite and nonnegative")
@@ -3625,6 +4457,9 @@ class NeuralPriorPromotionPolicy:
             ),
             "deployment_regime_classifier_digest": (
                 self.deployment_regime_classifier_digest
+            ),
+            "deployment_regime_classifier_manifest_digest": (
+                self.deployment_regime_classifier_manifest_digest
             ),
             "minimum_holdout_cases": self.minimum_holdout_cases,
             "minimum_material_cases": self.minimum_material_cases,
@@ -3754,6 +4589,17 @@ class NeuralPriorPromotionPolicy:
             "maximum_regime_classifier_false_routing_fraction": self.maximum_regime_classifier_false_routing_fraction,
             "minimum_regime_classifier_ood_cases": self.minimum_regime_classifier_ood_cases,
             "minimum_regime_classifier_ood_abstention_fraction": self.minimum_regime_classifier_ood_abstention_fraction,
+            "minimum_range_set_precision": self.minimum_range_set_precision,
+            "minimum_range_set_recall": self.minimum_range_set_recall,
+            "minimum_range_exact_set_accuracy": self.minimum_range_exact_set_accuracy,
+            "maximum_false_active_band_fraction": self.maximum_false_active_band_fraction,
+            "minimum_weather_top1_top2_gap": self.minimum_weather_top1_top2_gap,
+            "minimum_range_presence_margin": self.minimum_range_presence_margin,
+            "minimum_range_band_cases": self.minimum_range_band_cases,
+            "minimum_range_band_clusters": self.minimum_range_band_clusters,
+            "minimum_range_band_area_km2": self.minimum_range_band_area_km2,
+            "minimum_range_classifier_ood_cases": self.minimum_range_classifier_ood_cases,
+            "minimum_range_classifier_ood_abstention_fraction": self.minimum_range_classifier_ood_abstention_fraction,
             "require_all_registered_regimes_certified": self.require_all_registered_regimes_certified,
             "minimum_bootstrap_tail_replicates": (
                 self.minimum_bootstrap_tail_replicates
@@ -3923,6 +4769,28 @@ class LegacyNeuralPriorPromotionEvidenceAuditV8:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV9:
+    """Original v9 decision retained before range-set certification."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v9"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v9",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
@@ -3959,6 +4827,8 @@ class NeuralPriorPromotionEvidence:
     state_false_support_increase_upper_bound: float
     state_valid_brier_increase_upper_bound: float
     deployment_regime_classifier_digest: str
+    deployment_regime_classifier_manifest_digest: str
+    classifier_family_size: int
     regime_classifier_evidence_digests: tuple[str, ...]
     regime_classifier_accuracy: float
     minimum_regime_classifier_recall: float
@@ -3967,6 +4837,14 @@ class NeuralPriorPromotionEvidence:
     regime_classifier_ood_case_count: int
     regime_classifier_ood_abstention_fraction: float
     regime_classifier_validated: bool
+    range_set_precision: float
+    range_set_recall: float
+    range_exact_set_accuracy: float
+    range_false_active_band_fraction: float
+    range_classifier_ood_case_count: int
+    range_classifier_ood_abstention_fraction: float
+    minimum_classifier_weather_margin: float
+    minimum_classifier_range_margin: float
     prior_echo_component_status: PriorComponentStatus
     prior_clear_sky_component_status: PriorComponentStatus
     prior_echo_case_count: int
@@ -3988,13 +4866,13 @@ class NeuralPriorPromotionEvidence:
     deployment_eligible: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v9"
+    contract: str = "neural-prior-promotion-evidence-v10"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v9":
+        if self.contract != "neural-prior-promotion-evidence-v10":
             raise ValueError("unsupported neural-prior promotion evidence")
-        for name in ("candidate_prior_digest", "parent_prior_digest", "candidate_manifest_digest", "policy_digest", "trust_store_digest", "deployment_regime_classifier_digest"):
+        for name in ("candidate_prior_digest", "parent_prior_digest", "candidate_manifest_digest", "policy_digest", "trust_store_digest", "deployment_regime_classifier_digest", "deployment_regime_classifier_manifest_digest"):
             _require_digest(name, getattr(self, name))
         for digest in self.evaluation_digests:
             _require_digest("promotion member digest", digest)
@@ -4044,6 +4922,11 @@ class NeuralPriorPromotionEvidence:
             self.regime_classifier_calibration_error,
             self.regime_classifier_false_routing_fraction,
             self.regime_classifier_ood_abstention_fraction,
+            self.range_set_precision,
+            self.range_set_recall,
+            self.range_exact_set_accuracy,
+            self.range_false_active_band_fraction,
+            self.range_classifier_ood_abstention_fraction,
         )
         if any(not math.isfinite(value) or not 0.0 <= value <= 1.0 for value in fractions):
             raise ValueError("promotion evidence fractions are invalid")
@@ -4120,7 +5003,15 @@ class NeuralPriorPromotionEvidence:
         if (
             type(self.regime_classifier_ood_case_count) is not int
             or self.regime_classifier_ood_case_count < 0
+            or type(self.range_classifier_ood_case_count) is not int
+            or self.range_classifier_ood_case_count < 0
+            or type(self.classifier_family_size) is not int
+            or self.classifier_family_size <= 0
             or type(self.regime_classifier_validated) is not bool
+            or not math.isfinite(self.minimum_classifier_weather_margin)
+            or self.minimum_classifier_weather_margin < 0.0
+            or not math.isfinite(self.minimum_classifier_range_margin)
+            or self.minimum_classifier_range_margin < 0.0
         ):
             raise ValueError("regime classifier promotion evidence is invalid")
         object.__setattr__(self, "promotion_evidence_digest", json_digest(self._payload()))
@@ -4133,8 +5024,11 @@ class NeuralPriorPromotionEvidence:
         }
 
 
-def _holdout_score(
-    evaluation: PriorHoldoutEvaluation,
+def _paired_metric_score(
+    metric_names: tuple[str, ...],
+    metric_change: Tensor,
+    end_to_end_metric_change: Tensor,
+    metric_available: Tensor,
     policy: NeuralPriorPromotionPolicy,
 ) -> tuple[float | None, float, bool, bool]:
     scales = {item.metric_name: item for item in policy.metric_scales}
@@ -4143,24 +5037,24 @@ def _holdout_score(
     maximum_degradation = 0.0
     metric_limit_exceeded = False
     end_to_end_limit_exceeded = False
-    for index, name in enumerate(evaluation.metric_names):
+    for index, name in enumerate(metric_names):
         if name not in scales:
             raise ValueError("promotion policy lacks an evaluation metric scale")
         item = scales[name]
         end_to_end = (
-            evaluation.end_to_end_metric_change[:, index].masked_select(
-                evaluation.metric_available[:, index]
+            end_to_end_metric_change[:, index].masked_select(
+                metric_available[:, index]
             )
             / item.scale
         )
         if bool(torch.any(end_to_end > item.maximum_end_to_end_normalized_degradation)):
             end_to_end_limit_exceeded = True
-        selected = evaluation.metric_available[:, index] & (
-            torch.abs(evaluation.metric_change[:, index]) >= item.material_change
+        selected = metric_available[:, index] & (
+            torch.abs(metric_change[:, index]) >= item.material_change
         )
         if not bool(torch.any(selected)):
             continue
-        normalized = evaluation.metric_change[:, index].masked_select(selected) / item.scale
+        normalized = metric_change[:, index].masked_select(selected) / item.scale
         metric_degradation = float(torch.amax(torch.clamp(normalized, min=0)))
         maximum_degradation = max(maximum_degradation, metric_degradation)
         if metric_degradation > item.maximum_normalized_degradation:
@@ -4181,6 +5075,19 @@ def _holdout_score(
         maximum_degradation,
         metric_limit_exceeded,
         end_to_end_limit_exceeded,
+    )
+
+
+def _holdout_score(
+    evaluation: PriorHoldoutEvaluation,
+    policy: NeuralPriorPromotionPolicy,
+) -> tuple[float | None, float, bool, bool]:
+    return _paired_metric_score(
+        evaluation.metric_names,
+        evaluation.metric_change,
+        evaluation.end_to_end_metric_change,
+        evaluation.metric_available,
+        policy,
     )
 
 
@@ -4244,6 +5151,7 @@ def _cluster_means(
 @dataclass(frozen=True)
 class _SimultaneousInferenceResult:
     bounds: dict[str, float]
+    comparison_bounds: dict[tuple[str, tuple[str, str] | None], float]
     test_count: int
     method: Literal["exact_sign_enumeration", "studentized_multiplier"]
     effective_replicates: int
@@ -4320,15 +5228,20 @@ def _simultaneous_uncertainty_upper_bounds(
     )
     critical = ordered[index]
     bounds: dict[str, float] = {}
+    comparison_bounds: dict[
+        tuple[str, tuple[str, str] | None], float
+    ] = {}
     for (comparison, _), mean, standard_error in zip(
         retained,
         observed,
         standard_errors,
         strict=True,
     ):
+        bound = mean + critical * standard_error
+        comparison_bounds[(comparison.component, comparison.group)] = bound
         bounds[comparison.component] = max(
             bounds.get(comparison.component, -math.inf),
-            mean + critical * standard_error,
+            bound,
         )
     tail_replicates = effective_replicates * alpha
     monte_carlo_error = (
@@ -4338,6 +5251,7 @@ def _simultaneous_uncertainty_upper_bounds(
     )
     return _SimultaneousInferenceResult(
         bounds=bounds,
+        comparison_bounds=comparison_bounds,
         test_count=candidate_family_size * len(comparisons),
         method=method,
         effective_replicates=effective_replicates,
@@ -4365,13 +5279,28 @@ def compute_neural_prior_promotion(
     validate_neural_prior_candidate_manifest(manifest)
     trust = _load_learning_policy_trust_store(policy_trust_store_path)
     reasons: list[PromotionRejectionReason] = []
+    classifier_manifests = {
+        item.manifest_digest: item for item in plan.regime_classifier_manifests
+    }
+    selected_classifier_manifest = classifier_manifests.get(
+        policy.deployment_regime_classifier_manifest_digest
+    )
+    if (
+        selected_classifier_manifest is None
+        or selected_classifier_manifest.classifier_digest
+        != policy.deployment_regime_classifier_digest
+    ):
+        raise ValueError("deployment classifier was not preregistered")
+    family_size = len(plan.candidate_family_digests) * len(
+        plan.regime_classifier_manifests
+    )
 
     def classified_groups(
         evaluation: PriorHoldoutEvaluation,
     ) -> tuple[tuple[str, str], ...]:
         return tuple(
-            (evaluation.classified_regime, range_regime)
-            for range_regime in evaluation.classified_range_regimes
+            (evaluation.classified_regime, item.range_regime)
+            for item in evaluation.range_band_evaluations
         )
     if policy.digest not in trust.approved_policy_digests:
         reasons.append("unapproved_promotion_policy")
@@ -4425,6 +5354,10 @@ def compute_neural_prior_promotion(
         if (
             evaluation.regime_classifier_digest
             != policy.deployment_regime_classifier_digest
+            or evaluation.regime_classifier_manifest_digest
+            != policy.deployment_regime_classifier_manifest_digest
+            or evaluation.classifier_numerical_runtime_digest
+            != selected_classifier_manifest.numerical_runtime_digest
         ):
             raise ValueError("holdout used a different deployment classifier")
         manifest.holdout_case(evaluation.case_id)
@@ -4735,11 +5668,10 @@ def compute_neural_prior_promotion(
             scores,
             clusters,
             policy,
-            candidate_family_size=len(plan.candidate_family_digests),
+            candidate_family_size=family_size,
         )
     else:
         beneficial = harmful = mean = lower_beneficial = upper_harmful = lower_mean = 0.0
-    family_size = len(plan.candidate_family_digests)
     cluster_bootstrap_tail_replicates = policy.bootstrap_samples * (
         (1.0 - policy.confidence_level) / (2.0 * family_size)
     )
@@ -4775,9 +5707,7 @@ def compute_neural_prior_promotion(
             {item[2] for item in records}
         ) < policy.minimum_state_calibration_clusters_per_regime:
             reasons.append("insufficient_state_calibration")
-    classifier_correct = tuple(
-        item.classifier_reference_agreement for item in evaluations
-    )
+    classifier_correct = tuple(item.classifier_reference_agreement for item in evaluations)
     known_indices = tuple(
         index
         for index, item in enumerate(evaluations)
@@ -4851,6 +5781,65 @@ def compute_neural_prior_promotion(
         if not ood_items
         else sum(item.classifier_is_ood for item in ood_items) / len(ood_items)
     )
+    range_known_items = tuple(
+        item for item in evaluations if not item.classifier_reference_range_is_ood
+    )
+    total_range_reference = sum(
+        len(item.reference_active_range_regimes) for item in range_known_items
+    )
+    total_range_predicted = sum(
+        len(item.classified_range_regimes) for item in range_known_items
+    )
+    total_range_intersection = sum(
+        len(
+            set(item.reference_active_range_regimes)
+            & set(item.classified_range_regimes)
+        )
+        for item in range_known_items
+    )
+    range_set_precision = (
+        total_range_intersection / total_range_predicted
+        if total_range_predicted
+        else 0.0
+    )
+    range_set_recall = (
+        total_range_intersection / total_range_reference
+        if total_range_reference
+        else 0.0
+    )
+    range_exact_set_accuracy = (
+        sum(item.classifier_range_exact_set_match for item in range_known_items)
+        / len(range_known_items)
+        if range_known_items
+        else 0.0
+    )
+    range_false_active_band_fraction = (
+        sum(
+            len(
+                set(item.classified_range_regimes)
+                - set(item.reference_active_range_regimes)
+            )
+            for item in range_known_items
+        )
+        / max(1, total_range_predicted)
+    )
+    range_ood_items = tuple(
+        item for item in evaluations if item.classifier_reference_range_is_ood
+    )
+    range_ood_abstention_fraction = (
+        1.0
+        if not range_ood_items
+        else sum(item.classifier_is_ood for item in range_ood_items)
+        / len(range_ood_items)
+    )
+    minimum_weather_margin = min(
+        (item.classifier_weather_top1_top2_gap for item in evaluations),
+        default=0.0,
+    )
+    minimum_range_margin = min(
+        (item.classifier_minimum_range_presence_margin for item in evaluations),
+        default=0.0,
+    )
     classifier_validated = (
         classifier_accuracy >= policy.minimum_regime_classifier_accuracy
         and minimum_classifier_recall >= policy.minimum_regime_classifier_recall
@@ -4861,43 +5850,102 @@ def compute_neural_prior_promotion(
         and len(ood_items) >= policy.minimum_regime_classifier_ood_cases
         and ood_abstention_fraction
         >= policy.minimum_regime_classifier_ood_abstention_fraction
+        and range_set_precision >= policy.minimum_range_set_precision
+        and range_set_recall >= policy.minimum_range_set_recall
+        and range_exact_set_accuracy >= policy.minimum_range_exact_set_accuracy
+        and range_false_active_band_fraction
+        <= policy.maximum_false_active_band_fraction
+        and len(range_ood_items) >= policy.minimum_range_classifier_ood_cases
+        and range_ood_abstention_fraction
+        >= policy.minimum_range_classifier_ood_abstention_fraction
+        and minimum_weather_margin >= policy.minimum_weather_top1_top2_gap
+        and minimum_range_margin >= policy.minimum_range_presence_margin
     )
     if not classifier_validated:
         reasons.append("unreliable_regime_classifier")
+    if (
+        range_set_precision < policy.minimum_range_set_precision
+        or range_set_recall < policy.minimum_range_set_recall
+        or range_exact_set_accuracy < policy.minimum_range_exact_set_accuracy
+        or range_false_active_band_fraction
+        > policy.maximum_false_active_band_fraction
+    ):
+        reasons.append("unreliable_range_classifier")
+    if (
+        minimum_weather_margin < policy.minimum_weather_top1_top2_gap
+        or minimum_range_margin < policy.minimum_range_presence_margin
+    ):
+        reasons.append("ambiguous_regime_classifier_branch")
+    range_band_records = tuple(
+        (
+            item,
+            band,
+            (item.storm_id, item.day, item.radar_id),
+        )
+        for item in evaluations
+        if not item.classifier_is_ood
+        and item.classifier_weather_reference_agreement
+        and item.classifier_range_exact_set_match
+        for band in item.range_band_evaluations
+    )
     groups = sorted(
         {
-            group
-            for item in evaluations
-            if not item.classifier_is_ood
-            for group in classified_groups(item)
+            (item.classified_regime, band.range_regime)
+            for item, band, _ in range_band_records
         }
     )
     certified_groups: list[tuple[str, str]] = []
     for group in groups:
-        state_group = [
-            item
-            for item in uncertainty_records["state_nll"]
-            if group in classified_groups(item[0])
-        ]
-        state_cases_ok = len(state_group) >= (
-            policy.minimum_state_calibration_cases_per_regime
+        band_group = tuple(
+            (item, band, cluster)
+            for item, band, cluster in range_band_records
+            if (item.classified_regime, band.range_regime) == group
         )
-        state_clusters_ok = len({item[2] for item in state_group}) >= (
-            policy.minimum_state_calibration_clusters_per_regime
+        band_scores = tuple(
+            _paired_metric_score(
+                item.metric_names,
+                band.metric_change,
+                band.end_to_end_metric_change,
+                band.metric_available,
+                policy,
+            )
+            for item, band, _ in band_group
         )
+        retained_band_scores = tuple(
+            score[0] for score in band_scores if score[0] is not None
+        )
+        band_skill_ok = (
+            len(band_group) >= policy.minimum_range_band_cases
+            and len({cluster for _, _, cluster in band_group})
+            >= policy.minimum_range_band_clusters
+            and all(
+                band.evaluated_area_km2 >= policy.minimum_range_band_area_km2
+                for _, band, _ in band_group
+            )
+            and len(retained_band_scores) >= policy.minimum_range_band_cases
+            and all(not metric_harm and not end_to_end_harm for _, _, metric_harm, end_to_end_harm in band_scores)
+        )
+        def band_component_records(
+            component: str,
+        ) -> tuple[tuple[float, int, tuple[str, str, str]], ...]:
+            values: list[tuple[float, int, tuple[str, str, str]]] = []
+            for _, band, cluster in band_group:
+                difference = band.component_difference(component)
+                count = dict(band.uncertainty_component_sample_counts).get(
+                    component
+                )
+                if difference is not None and count is not None:
+                    values.append((difference, count, cluster))
+            return tuple(values)
+
+        state_group = band_component_records("state_nll")
+        state_cases_ok = len(state_group) >= policy.minimum_state_calibration_cases_per_regime
+        state_clusters_ok = len({item[2] for item in state_group}) >= policy.minimum_state_calibration_clusters_per_regime
         if not state_cases_ok or not state_clusters_ok:
             if policy.require_all_registered_regimes_certified:
                 reasons.append("insufficient_state_calibration")
-        state_echo_group = [
-            item
-            for item in state_echo_records
-            if group in classified_groups(item[0])
-        ]
-        state_clear_group = [
-            item
-            for item in state_clear_records
-            if group in classified_groups(item[0])
-        ]
+        state_echo_group = band_component_records("state_echo_miss")
+        state_clear_group = band_component_records("state_false_support")
         state_components_ok = all(
             len(component) >= policy.minimum_state_calibration_cases_per_regime
             and len({item[2] for item in component})
@@ -4907,11 +5955,7 @@ def compute_neural_prior_promotion(
         if not state_components_ok:
             if policy.require_all_registered_regimes_certified:
                 reasons.append("insufficient_state_calibration")
-        support_group = [
-            item
-            for item in uncertainty_records["support"]
-            if group in classified_groups(item[0])
-        ]
+        support_group = band_component_records("support")
         support_cases_ok = (
             len(support_group) >= policy.minimum_uncertainty_cases_per_regime
         )
@@ -4924,11 +5968,7 @@ def compute_neural_prior_promotion(
         if not support_clusters_ok:
             if policy.require_all_registered_regimes_certified:
                 reasons.append("insufficient_uncertainty_clusters")
-        echo_group = [
-            item
-            for item in echo_records
-            if group in classified_groups(item[0])
-        ]
+        echo_group = band_component_records("intensity")
         echo_cases_ok = len(echo_group) >= policy.minimum_echo_cases_per_regime
         echo_clusters_ok = len({item[2] for item in echo_group}) >= (
             policy.minimum_echo_clusters_per_regime
@@ -4939,11 +5979,7 @@ def compute_neural_prior_promotion(
         if echo_group and not echo_clusters_ok:
             if policy.require_all_registered_regimes_certified:
                 reasons.append("insufficient_echo_clusters")
-        clear_group = [
-            item
-            for item in clear_records
-            if group in classified_groups(item[0])
-        ]
+        clear_group = band_component_records("clear")
         clear_cases_ok = len(clear_group) >= policy.minimum_clear_cases_per_regime
         clear_clusters_ok = len({item[2] for item in clear_group}) >= (
             policy.minimum_clear_clusters_per_regime
@@ -4955,6 +5991,8 @@ def compute_neural_prior_promotion(
             if policy.require_all_registered_regimes_certified:
                 reasons.append("insufficient_clear_clusters")
         if (
+            band_skill_ok
+            and
             state_cases_ok
             and state_clusters_ok
             and state_components_ok
@@ -4978,26 +6016,23 @@ def compute_neural_prior_promotion(
                 clusters=tuple(item[2] for item in records),
             )
         )
-        component_groups = sorted(
-            {
-                group
-                for item in records
-                if not item[0].classifier_is_ood
-                for group in classified_groups(item[0])
-            }
-        )
-        for group in component_groups:
-            selected = tuple(
-                item
-                for item in records
-                if group in classified_groups(item[0])
-            )
+        for group in groups:
+            selected_values: list[tuple[float, tuple[str, str, str]]] = []
+            for item, band, cluster in range_band_records:
+                if (item.classified_regime, band.range_regime) != group:
+                    continue
+                difference = band.component_difference(component)
+                if difference is not None:
+                    selected_values.append((difference, cluster))
+            selected = tuple(selected_values)
+            if not selected:
+                continue
             comparisons.append(
                 _UncertaintyComparison(
                     component=component,
                     group=group,
-                    values=tuple(item[1] for item in selected),
-                    clusters=tuple(item[2] for item in selected),
+                    values=tuple(item[0] for item in selected),
+                    clusters=tuple(item[1] for item in selected),
                 )
             )
     simultaneous = _simultaneous_uncertainty_upper_bounds(
@@ -5011,22 +6046,44 @@ def compute_neural_prior_promotion(
         < policy.minimum_bootstrap_tail_replicates
     ):
         reasons.append("insufficient_bootstrap_tail_resolution")
-    simultaneous_bounds = simultaneous.bounds
-    intensity_nll_upper = simultaneous_bounds.get("intensity", 0.0)
-    brier_upper = simultaneous_bounds["support"]
-    echo_miss_upper = simultaneous_bounds.get("echo_miss", 0.0)
-    object_miss_upper = simultaneous_bounds.get("object_miss", 0.0)
-    clear_sky_upper = simultaneous_bounds.get("clear", 0.0)
-    underdispersion_upper = simultaneous_bounds.get("underdispersion", 0.0)
-    state_nll_upper = simultaneous_bounds["state_nll"]
-    state_underdispersion_upper = simultaneous_bounds["state_underdispersion"]
-    state_support_upper = simultaneous_bounds["state_support"]
-    state_echo_miss_upper = simultaneous_bounds.get("state_echo_miss", 0.0)
-    state_object_miss_upper = simultaneous_bounds.get("state_object_miss", 0.0)
-    state_false_support_upper = simultaneous_bounds.get(
-        "state_false_support", 0.0
-    )
-    state_valid_upper = simultaneous_bounds["state_valid"]
+    comparison_bounds = simultaneous.comparison_bounds
+    intensity_nll_upper = comparison_bounds.get(("intensity", None), 0.0)
+    brier_upper = comparison_bounds[("support", None)]
+    echo_miss_upper = comparison_bounds.get(("echo_miss", None), 0.0)
+    object_miss_upper = comparison_bounds.get(("object_miss", None), 0.0)
+    clear_sky_upper = comparison_bounds.get(("clear", None), 0.0)
+    underdispersion_upper = comparison_bounds.get(("underdispersion", None), 0.0)
+    state_nll_upper = comparison_bounds[("state_nll", None)]
+    state_underdispersion_upper = comparison_bounds[("state_underdispersion", None)]
+    state_support_upper = comparison_bounds[("state_support", None)]
+    state_echo_miss_upper = comparison_bounds.get(("state_echo_miss", None), 0.0)
+    state_object_miss_upper = comparison_bounds.get(("state_object_miss", None), 0.0)
+    state_false_support_upper = comparison_bounds.get(("state_false_support", None), 0.0)
+    state_valid_upper = comparison_bounds[("state_valid", None)]
+    component_limits = {
+        "intensity": policy.maximum_prior_echo_intensity_nll_increase,
+        "support": policy.maximum_prior_support_brier_increase,
+        "echo_miss": policy.maximum_prior_echo_support_miss_increase,
+        "object_miss": policy.maximum_prior_echo_object_miss_increase,
+        "clear": policy.maximum_prior_clear_sky_false_echo_increase,
+        "underdispersion": policy.maximum_prior_conditional_underdispersion_increase,
+        "state_nll": policy.maximum_state_gaussian_nll_increase,
+        "state_underdispersion": policy.maximum_state_underdispersion_increase,
+        "state_support": policy.maximum_state_support_brier_increase,
+        "state_echo_miss": policy.maximum_state_echo_support_miss_increase,
+        "state_object_miss": policy.maximum_state_echo_object_miss_increase,
+        "state_false_support": policy.maximum_state_false_support_increase,
+        "state_valid": policy.maximum_state_valid_brier_increase,
+    }
+    certified_groups = [
+        group
+        for group in certified_groups
+        if all(
+            comparison_bounds.get((component, group), -math.inf) <= limit
+            for component, limit in component_limits.items()
+            if (component, group) in comparison_bounds
+        )
+    ]
     if (
         intensity_nll_upper
         > policy.maximum_prior_echo_intensity_nll_increase
@@ -5096,6 +6153,10 @@ def compute_neural_prior_promotion(
         deployment_regime_classifier_digest=(
             policy.deployment_regime_classifier_digest
         ),
+        deployment_regime_classifier_manifest_digest=(
+            policy.deployment_regime_classifier_manifest_digest
+        ),
+        classifier_family_size=len(plan.regime_classifier_manifests),
         regime_classifier_evidence_digests=tuple(
             item.regime_classification_evidence_digest for item in evaluations
         ),
@@ -5108,6 +6169,16 @@ def compute_neural_prior_promotion(
         regime_classifier_ood_case_count=len(ood_items),
         regime_classifier_ood_abstention_fraction=ood_abstention_fraction,
         regime_classifier_validated=classifier_validated,
+        range_set_precision=range_set_precision,
+        range_set_recall=range_set_recall,
+        range_exact_set_accuracy=range_exact_set_accuracy,
+        range_false_active_band_fraction=range_false_active_band_fraction,
+        range_classifier_ood_case_count=len(range_ood_items),
+        range_classifier_ood_abstention_fraction=(
+            range_ood_abstention_fraction
+        ),
+        minimum_classifier_weather_margin=minimum_weather_margin,
+        minimum_classifier_range_margin=minimum_range_margin,
         prior_echo_component_status=(
             "available" if echo_records else "not_applicable"
         ),
@@ -5193,7 +6264,12 @@ class RegimeClassificationEvidence:
     range_regime_probabilities: tuple[float, ...]
     regime_entropy: float
     is_ood: bool
-    contract: str = "neural-prior-regime-classification-evidence-v2"
+    numerical_runtime_digest: str
+    input_dtype: str
+    input_device: str
+    weather_top1_top2_gap: float
+    minimum_range_presence_margin: float
+    contract: str = "neural-prior-regime-classification-evidence-v3"
     evidence_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -5209,7 +6285,7 @@ class RegimeClassificationEvidence:
 
     def validate_integrity(self) -> None:
         if (
-            self.contract != "neural-prior-regime-classification-evidence-v2"
+            self.contract != "neural-prior-regime-classification-evidence-v3"
             or not self.regime
             or not self.range_regime
             or len(self.regime_labels) != len(self.regime_probabilities)
@@ -5240,6 +6316,12 @@ class RegimeClassificationEvidence:
             or self.is_ood != (
                 self.regime == "unknown" or not self.active_range_regimes
             )
+            or not self.input_dtype
+            or not self.input_device
+            or not math.isfinite(self.weather_top1_top2_gap)
+            or self.weather_top1_top2_gap < 0.0
+            or not math.isfinite(self.minimum_range_presence_margin)
+            or self.minimum_range_presence_margin < 0.0
         ):
             raise ValueError("regime-classification evidence is invalid")
         regime_index = max(
@@ -5268,6 +6350,14 @@ class RegimeClassificationEvidence:
             if expected_active_ranges
             else max(self.range_regime_probabilities)
         )
+        ordered_weather = sorted(self.regime_probabilities, reverse=True)
+        expected_weather_gap = ordered_weather[0] - (
+            ordered_weather[1] if len(ordered_weather) > 1 else 0.0
+        )
+        expected_range_margin = min(
+            abs(value - self.range_presence_probability_threshold)
+            for value in self.range_regime_probabilities
+        )
         if (
             not math.isclose(sum(self.regime_probabilities), 1.0, abs_tol=1e-12)
             or self.regime_labels[regime_index] != self.regime
@@ -5283,12 +6373,23 @@ class RegimeClassificationEvidence:
                 expected_range_confidence,
                 abs_tol=1e-12,
             )
+            or not math.isclose(
+                self.weather_top1_top2_gap,
+                expected_weather_gap,
+                abs_tol=1e-12,
+            )
+            or not math.isclose(
+                self.minimum_range_presence_margin,
+                expected_range_margin,
+                abs_tol=1e-12,
+            )
         ):
             raise ValueError("regime-classification evidence is inconsistent")
         for name in (
             "full_analysis_input_digest",
             "input_frames_digest",
             "classifier_digest",
+            "numerical_runtime_digest",
         ):
             _require_digest(name, getattr(self, name))
         if self.evidence_digest != json_digest(self.payload):
@@ -5353,12 +6454,17 @@ class NeuralPriorRegimeClassifier:
         self.range_presence_probability_threshold = (
             range_presence_probability_threshold
         )
+        self.numerical_runtime_digest = numerical_runtime_identity_digest(
+            example_frames.device
+        )
+        self.input_dtype = str(example_frames.dtype)
+        self.input_device = str(example_frames.device)
         self.classifier_digest = self._current_classifier_digest()
 
     def _current_classifier_digest(self) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-regime-classifier-v2",
+                "contract": "neural-prior-regime-classifier-v3",
                 "graph_digest": self._graph_digest,
                 "model_state_digest": _module_state_digest(self._model),
                 "classifier_algorithm_digest": self.classifier_algorithm_digest,
@@ -5367,6 +6473,9 @@ class NeuralPriorRegimeClassifier:
                 "range_presence_probability_threshold": (
                     self.range_presence_probability_threshold
                 ),
+                "numerical_runtime_digest": self.numerical_runtime_digest,
+                "input_dtype": self.input_dtype,
+                "input_device": self.input_device,
             }
         )
 
@@ -5382,6 +6491,10 @@ class NeuralPriorRegimeClassifier:
             or tensor_digest(frames_dbz) != input_run.input_frames_digest
             or _module_state_digest(self._model) != self._model_state_digest
             or self._current_classifier_digest() != self.classifier_digest
+            or numerical_runtime_identity_digest(frames_dbz.device)
+            != self.numerical_runtime_digest
+            or str(frames_dbz.dtype) != self.input_dtype
+            or str(frames_dbz.device) != self.input_device
         ):
             raise ValueError("regime classifier input or artifact changed")
         output = self._exported(frames_dbz)
@@ -5420,9 +6533,23 @@ class NeuralPriorRegimeClassifier:
             torch.sum(-positive_regime * torch.log(positive_regime)).detach()
         )
         regime = self.regime_labels[regime_index]
+        ordered_weather = torch.sort(regime_probability, descending=True).values
+        weather_gap = float(
+            (
+                ordered_weather[0]
+                - (ordered_weather[1] if len(ordered_weather) > 1 else 0.0)
+            ).detach()
+        )
+        range_margin = float(
+            torch.amin(
+                torch.abs(
+                    range_probability - self.range_presence_probability_threshold
+                )
+            ).detach()
+        )
         result = object.__new__(RegimeClassificationEvidence)
         values: dict[str, object] = {
-            "contract": "neural-prior-regime-classification-evidence-v2",
+            "contract": "neural-prior-regime-classification-evidence-v3",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "input_frames_digest": tensor_digest(frames_dbz),
             "classifier_digest": self.classifier_digest,
@@ -5448,6 +6575,11 @@ class NeuralPriorRegimeClassifier:
             ),
             "regime_entropy": entropy,
             "is_ood": regime == "unknown" or not active_ranges,
+            "numerical_runtime_digest": self.numerical_runtime_digest,
+            "input_dtype": self.input_dtype,
+            "input_device": self.input_device,
+            "weather_top1_top2_gap": weather_gap,
+            "minimum_range_presence_margin": range_margin,
         }
         for name, value in values.items():
             object.__setattr__(result, name, value)
@@ -5464,8 +6596,12 @@ class DeployedNeuralPriorPolicy:
     parent_prior_digest: str
     promotion_evidence_digest: str
     regime_classifier_digest: str
+    regime_classifier_manifest_digest: str
     minimum_regime_confidence: float = 0.8
-    contract: str = "deployed-neural-prior-policy-v2"
+    minimum_weather_top1_top2_gap: float = 0.05
+    minimum_range_presence_margin: float = 0.05
+    minimum_deployment_confidence_margin: float = 0.05
+    contract: str = "deployed-neural-prior-policy-v3"
     policy_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -5474,13 +6610,22 @@ class DeployedNeuralPriorPolicy:
             "parent_prior_digest",
             "promotion_evidence_digest",
             "regime_classifier_digest",
+            "regime_classifier_manifest_digest",
         ):
             _require_digest(name, getattr(self, name))
         if (
-            self.contract != "deployed-neural-prior-policy-v2"
+            self.contract != "deployed-neural-prior-policy-v3"
             or self.candidate_prior_digest == self.parent_prior_digest
             or not math.isfinite(self.minimum_regime_confidence)
             or not 0.0 < self.minimum_regime_confidence <= 1.0
+            or any(
+                not math.isfinite(value) or value < 0.0 or value > 1.0
+                for value in (
+                    self.minimum_weather_top1_top2_gap,
+                    self.minimum_range_presence_margin,
+                    self.minimum_deployment_confidence_margin,
+                )
+            )
         ):
             raise ValueError("deployed neural-prior policy is invalid")
         object.__setattr__(
@@ -5502,7 +6647,7 @@ class DeployedNeuralPriorPolicy:
             raise ValueError("neural-prior deployment policy digest mismatch")
 
 
-def select_deployed_prior(
+def _select_deployed_prior(
     candidate_runner: NeuralPriorInferenceRunner,
     parent_runner: NeuralPriorInferenceRunner,
     promotion_evidence: NeuralPriorPromotionEvidence,
@@ -5530,6 +6675,8 @@ def select_deployed_prior(
         or policy.regime_classifier_digest != regime_evidence.classifier_digest
         or policy.regime_classifier_digest
         != promotion_evidence.deployment_regime_classifier_digest
+        or policy.regime_classifier_manifest_digest
+        != promotion_evidence.deployment_regime_classifier_manifest_digest
         or promotion_evidence.candidate_prior_digest
         != candidate_runner.neural_prior_digest
         or promotion_evidence.parent_prior_digest
@@ -5540,6 +6687,18 @@ def select_deployed_prior(
         regime_evidence.regime_confidence,
         regime_evidence.range_regime_confidence,
     ) >= policy.minimum_regime_confidence
+    deployment_confidence_margin = min(
+        regime_evidence.regime_confidence,
+        regime_evidence.range_regime_confidence,
+    ) - policy.minimum_regime_confidence
+    branch_stable = (
+        regime_evidence.weather_top1_top2_gap
+        >= policy.minimum_weather_top1_top2_gap
+        and regime_evidence.minimum_range_presence_margin
+        >= policy.minimum_range_presence_margin
+        and deployment_confidence_margin
+        >= policy.minimum_deployment_confidence_margin
+    )
     active_groups = tuple(
         (regime_evidence.regime, range_regime)
         for range_regime in regime_evidence.active_range_regimes
@@ -5557,6 +6716,10 @@ def select_deployed_prior(
         selected = parent_runner
         role = "parent"
         reason = "ood_or_abstained"
+    elif not branch_stable:
+        selected = parent_runner
+        role = "parent"
+        reason = "ambiguous_classifier_branch"
     elif not confidence_ok:
         selected = parent_runner
         role = "parent"
@@ -5573,6 +6736,51 @@ def select_deployed_prior(
         selected = candidate_runner
         role = "candidate"
         reason = "certified_candidate"
+    deployment_decision_payload = {
+        "contract": "neural-prior-deployment-decision-artifact-v1",
+        "full_analysis_input_digest": regime_evidence.full_analysis_input_digest,
+        "regime_classification_evidence": (
+            regime_evidence.payload
+            | {"evidence_digest": regime_evidence.evidence_digest}
+        ),
+        "deployment_policy": policy.payload | {"policy_digest": policy.policy_digest},
+        "promotion_selection_evidence": {
+            "promotion_evidence_digest": (
+                promotion_evidence.promotion_evidence_digest
+            ),
+            "candidate_prior_digest": promotion_evidence.candidate_prior_digest,
+            "parent_prior_digest": promotion_evidence.parent_prior_digest,
+            "deployment_eligible": promotion_evidence.deployment_eligible,
+            "deployment_regime_classifier_digest": (
+                promotion_evidence.deployment_regime_classifier_digest
+            ),
+            "deployment_regime_classifier_manifest_digest": (
+                promotion_evidence.deployment_regime_classifier_manifest_digest
+            ),
+            "certified_applicability_regime_groups": [
+                list(value)
+                for value in (
+                    promotion_evidence.certified_applicability_regime_groups
+                )
+            ],
+        },
+        "policy_trust_store": {
+            "contract": "advar-learning-policy-trust-store-v1",
+            "approved_policy_digests": sorted(trust.approved_policy_digests),
+            "content_digest": trust.content_digest,
+        },
+        "selection": {
+            "selected_prior_digest": selected.neural_prior_digest,
+            "selected_role": role,
+            "fallback_reason": reason,
+            "deployment_confidence_margin": deployment_confidence_margin,
+        },
+    }
+    deployment_decision_json = json.dumps(
+        deployment_decision_payload,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
     selection = _new_neural_prior_deployment_selection(
         selected_prior_digest=selected.neural_prior_digest,
         selected_role=role,
@@ -5581,9 +6789,153 @@ def select_deployed_prior(
         regime_classification_evidence_digest=regime_evidence.evidence_digest,
         deployment_policy_digest=policy.policy_digest,
         deployment_policy_trust_store_digest=trust.content_digest,
+        classifier_numerical_runtime_digest=(
+            regime_evidence.numerical_runtime_digest
+        ),
+        classifier_input_dtype=regime_evidence.input_dtype,
+        classifier_input_device=regime_evidence.input_device,
+        weather_top1_top2_gap=regime_evidence.weather_top1_top2_gap,
+        minimum_range_presence_margin=(
+            regime_evidence.minimum_range_presence_margin
+        ),
+        deployment_confidence_margin=deployment_confidence_margin,
+        deployment_decision_artifact_json=deployment_decision_json,
+        deployment_decision_artifact_digest=json_digest(
+            deployment_decision_payload
+        ),
         fallback_reason=reason,
     )
+    if (
+        validate_neural_prior_deployment_decision_artifact(
+            selection.deployment_decision_artifact_json
+        )
+        != selection.deployment_decision_artifact_digest
+    ):
+        raise ValueError("neural-prior deployment artifact digest mismatch")
     return selected, selection
+
+
+def validate_neural_prior_deployment_decision_artifact(
+    artifact_json: str,
+) -> str:
+    """Replay a durable classifier/policy/certification deployment choice."""
+
+    try:
+        payload = json.loads(artifact_json)
+    except json.JSONDecodeError as error:
+        raise ValueError("invalid neural-prior deployment artifact") from error
+    if (
+        not isinstance(payload, dict)
+        or payload.get("contract")
+        != "neural-prior-deployment-decision-artifact-v1"
+        or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        != artifact_json
+    ):
+        raise ValueError("neural-prior deployment artifact is not canonical")
+    regime = payload.get("regime_classification_evidence")
+    policy = payload.get("deployment_policy")
+    promotion = payload.get("promotion_selection_evidence")
+    trust = payload.get("policy_trust_store")
+    selection = payload.get("selection")
+    if not all(
+        isinstance(value, dict)
+        for value in (regime, policy, promotion, trust, selection)
+    ):
+        raise ValueError("neural-prior deployment artifact is incomplete")
+    assert isinstance(regime, dict)
+    assert isinstance(policy, dict)
+    assert isinstance(promotion, dict)
+    assert isinstance(trust, dict)
+    assert isinstance(selection, dict)
+    regime_payload = dict(regime)
+    regime_digest = regime_payload.pop("evidence_digest", None)
+    policy_payload = dict(policy)
+    policy_digest = policy_payload.pop("policy_digest", None)
+    approved = trust.get("approved_policy_digests")
+    if (
+        not isinstance(regime_digest, str)
+        or json_digest(regime_payload) != regime_digest
+        or not isinstance(policy_digest, str)
+        or json_digest(policy_payload) != policy_digest
+        or not isinstance(approved, list)
+        or policy_digest not in approved
+        or json_digest(
+            {
+                "contract": trust.get("contract"),
+                "approved_policy_digests": sorted(approved),
+            }
+        )
+        != trust.get("content_digest")
+        or policy.get("promotion_evidence_digest")
+        != promotion.get("promotion_evidence_digest")
+        or policy.get("regime_classifier_digest")
+        != regime.get("classifier_digest")
+        or promotion.get("deployment_regime_classifier_digest")
+        != regime.get("classifier_digest")
+        or policy.get("regime_classifier_manifest_digest")
+        != promotion.get("deployment_regime_classifier_manifest_digest")
+        or payload.get("full_analysis_input_digest")
+        != regime.get("full_analysis_input_digest")
+    ):
+        raise ValueError("neural-prior deployment artifact lineage disagrees")
+    active_groups = tuple(
+        (regime.get("regime"), range_regime)
+        for range_regime in regime.get("active_range_regimes", [])
+    )
+    certified = {
+        tuple(value)
+        for value in promotion.get("certified_applicability_regime_groups", [])
+        if isinstance(value, list) and len(value) == 2
+    }
+    confidence = min(
+        float(regime.get("regime_confidence", -math.inf)),
+        float(regime.get("range_regime_confidence", -math.inf)),
+    )
+    deployment_margin = confidence - float(
+        policy.get("minimum_regime_confidence", math.inf)
+    )
+    branch_stable = (
+        float(regime.get("weather_top1_top2_gap", -math.inf))
+        >= float(policy.get("minimum_weather_top1_top2_gap", math.inf))
+        and float(regime.get("minimum_range_presence_margin", -math.inf))
+        >= float(policy.get("minimum_range_presence_margin", math.inf))
+        and deployment_margin
+        >= float(policy.get("minimum_deployment_confidence_margin", math.inf))
+    )
+    if not promotion.get("deployment_eligible"):
+        reason = "promotion_ineligible"
+    elif not certified:
+        reason = "no_certified_regime"
+    elif regime.get("is_ood"):
+        reason = "ood_or_abstained"
+    elif not branch_stable:
+        reason = "ambiguous_classifier_branch"
+    elif confidence < float(policy.get("minimum_regime_confidence", math.inf)):
+        reason = "low_regime_confidence"
+    elif not any(group[0] == regime.get("regime") for group in certified):
+        reason = "uncertified_regime"
+    elif not active_groups or any(group not in certified for group in active_groups):
+        reason = "uncertified_range_band"
+    else:
+        reason = "certified_candidate"
+    expected_role = "candidate" if reason == "certified_candidate" else "parent"
+    expected_prior = (
+        policy.get("candidate_prior_digest")
+        if expected_role == "candidate"
+        else policy.get("parent_prior_digest")
+    )
+    if (
+        selection.get("fallback_reason") != reason
+        or selection.get("selected_role") != expected_role
+        or selection.get("selected_prior_digest") != expected_prior
+        or not math.isclose(
+            float(selection.get("deployment_confidence_margin", math.nan)),
+            deployment_margin,
+            abs_tol=1e-12,
+        )
+    ):
+        raise ValueError("neural-prior deployment selection replay failed")
+    return json_digest(payload)
 
 
 def infer_deployed_neural_prior(
@@ -5600,7 +6952,7 @@ def infer_deployed_neural_prior(
     """Classify, select, and infer without accepting caller-provided labels."""
 
     regime_evidence = regime_classifier.classify(frames_dbz, input_run=input_run)
-    runner, selection = select_deployed_prior(
+    runner, selection = _select_deployed_prior(
         candidate_runner,
         parent_runner,
         promotion_evidence,
