@@ -787,6 +787,13 @@ forecast skill이 좋아도 `state_calibration_eligible=False`이며 posterior/c
 등록하는 별도 mode를 사용한다. 두 forecast run은 동일 input
 bundle을 사용하고 candidate/parent prior·model/schema/training manifest identity를
 각자 직접 포함해야 하며 retained output은 같은 model/runtime에서 재추론되어야 한다.
+정확한 candidate/parent forecast, prior application, inference evidence, verification,
+metric contract와 operational issuance-domain digest의 ordered set은
+`HoldoutScoringInputArtifact`로 scoring start receipt보다 먼저 append-only ledger에
+기록한다. 현재 자동승격 경로는 candidate family를 정확히 하나로 제한하므로 하나의
+start/completion receipt와 하나의 canonical scoring output 사이에 cardinality 모호성이
+없다. Forecast realization 하나라도 바뀌면 scoring-input digest가 달라져 기존 start
+receipt와 output artifact를 재사용할 수 없다.
 평가는 parent의 고정 domain에서 paired skill을 계산하고 candidate native domain과의
 차이를 issuance effect로 분리한다. end-to-end candidate-minus-parent metric도 모든
 lead·metric의 non-inferiority guard로 사용하므로 작은 신규발행 면적의 큰 error도
@@ -800,6 +807,11 @@ case/day/radar/regime 다양성뿐 아니라 signed physical-event catalog의 ev
 membership을 검사한다. 같은 event의 radar·day·cycle은 반복측정으로 유지하고 outer
 cluster는 event digest 하나만 사용한다. Candidate와 classifier training event가 holdout
 event와 겹치면 exact input digest가 달라도 거부한다.
+Event association은 공통 CRS의 timestamped object track을 보존하며 case source-object
+evidence를 정확한 track sample·mask에 결합한다. 각 piecewise-linear segment의 속도와
+가속도를 fail-close하고, 서로 겹치는 두 track은 knot만 비교하지 않고 각 segment pair의
+analytic closest approach를 계산한다. Knot 사이에서 교차하거나 radar source가 handoff된
+동일 storm을 별도 independent event로 세는 경로를 차단한다.
 Neural prior는 P1이 소비하는 deterministic Gaussian state head와 holdout calibration용
 hurdle-probability head를 별도 계약으로 출력한다. State product와 support threshold는
 분석 radar product와 detection limit에 정확히 일치해야 하며, probability head의
@@ -855,6 +867,13 @@ metric cell은 최소 5개 physical event를 요구한다. 따라서 required FS
 발행영역 악화를 다른 metric 개선으로 상쇄할 수 없다. `promotion_sample_size_preflight()`는
 family-adjusted finite-sample radius의 best-case event 요구량을 score 계산 전에 산출하며,
 holdout event가 그 수보다 적으면 결과와 무관하게 infeasible로 표시한다.
+Band issuance는 verification mask나 metric availability를 사용하지 않는다. Holdout
+plan이 publication eligibility, source coverage, permanent exclusion mask digest를
+사전고정하고, `OperationalIssuanceDomainArtifact`가 그 교집합을 lead별 분모로 보존한다.
+따라서 영구차폐·no-source cell로 신규발행이나 철회 비율을 희석할 수 없다. Continuous
+metric mean bound의 support도 정책 숫자가 아니라 `MetricSupportContract`가 FSS의
+unit interval, bounded dBZ log-echo MSE, grid-diagonal centroid error에서 해석적으로
+도출한 범위만 사용한다.
 실제 배포에서는 caller가 regime 문자열이나 operational role을 넘기지 않는다. Exported
 `NeuralPriorRegimeClassifier`가 현재 `full_analysis_input_digest`에 결합된
 `RegimeClassificationEvidence`를 만들고, 모든 holdout case에서도 동일 classifier를

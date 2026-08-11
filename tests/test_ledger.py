@@ -624,6 +624,24 @@ class EpisodeLedgerTests(unittest.TestCase):
             grid_contract_digest="1" * 64,
             range_geometry_contract_digest=range_geometry.contract_digest,
         )
+        issuance_domain_plan = promotion_module.OperationalIssuanceDomainPlan(
+            case_id="case-clock",
+            grid_contract_digest="1" * 64,
+            radar_source_contract_digest="2" * 64,
+            lead_minutes=(60,),
+            publication_policy_digest="3" * 64,
+            source_coverage_policy_digest="4" * 64,
+            permanent_exclusion_policy_digest="5" * 64,
+            publication_eligible_mask_digest=tensor_digest(
+                torch.ones((1, 2, 2), dtype=torch.bool)
+            ),
+            source_coverage_mask_digest=tensor_digest(
+                torch.ones((1, 2, 2), dtype=torch.bool)
+            ),
+            permanent_exclusion_mask_digest=tensor_digest(
+                torch.zeros((1, 2, 2), dtype=torch.bool)
+            ),
+        )
         classifier_manifest = promotion_module.RegimeClassifierManifest(
             classifier_digest="b" * 64,
             training_dataset_digest="c" * 64,
@@ -702,6 +720,9 @@ class EpisodeLedgerTests(unittest.TestCase):
                     range_band_contract_digest=range_contract.contract_digest,
                     reference_active_range_regimes=("near_range",),
                     regime_reference_plan_digest=reference_plan.plan_digest,
+                    operational_issuance_domain_plan_digest=(
+                        issuance_domain_plan.plan_digest
+                    ),
                     issue_time=issue,
                 ),
             ),
@@ -710,6 +731,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             state_calibration_target_plans=(state_target_plan,),
             range_band_contracts=(range_contract,),
             range_geometry_contracts=(range_geometry,),
+            operational_issuance_domain_plans=(issuance_domain_plan,),
             regime_reference_plans=(reference_plan,),
             physical_event_catalog_plan=event_catalog_plan,
             regime_classifier_manifests=(classifier_manifest,),
@@ -899,7 +921,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 19)
+        self.assertEqual(version, 20)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4132,7 +4154,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 19)
+        self.assertEqual(version, 20)
 
 
 if __name__ == "__main__":

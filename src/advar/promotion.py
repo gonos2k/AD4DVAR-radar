@@ -545,6 +545,194 @@ def _validate_complete_range_partition(
 
 
 @dataclass(frozen=True)
+class OperationalIssuanceDomainPlan:
+    """Candidate-independent definition of cells that may be published."""
+
+    case_id: str
+    grid_contract_digest: str
+    radar_source_contract_digest: str
+    lead_minutes: tuple[int, ...]
+    publication_policy_digest: str
+    source_coverage_policy_digest: str
+    permanent_exclusion_policy_digest: str
+    publication_eligible_mask_digest: str
+    source_coverage_mask_digest: str
+    permanent_exclusion_mask_digest: str
+    contract: str = "operational-issuance-domain-plan-v1"
+    plan_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "operational-issuance-domain-plan-v1"
+            or not self.case_id
+            or self.case_id.strip() != self.case_id
+            or not self.lead_minutes
+            or len(set(self.lead_minutes)) != len(self.lead_minutes)
+            or any(type(value) is not int or value <= 0 for value in self.lead_minutes)
+        ):
+            raise ValueError("operational issuance-domain plan is invalid")
+        for name in (
+            "grid_contract_digest",
+            "radar_source_contract_digest",
+            "publication_policy_digest",
+            "source_coverage_policy_digest",
+            "permanent_exclusion_policy_digest",
+            "publication_eligible_mask_digest",
+            "source_coverage_mask_digest",
+            "permanent_exclusion_mask_digest",
+        ):
+            _require_digest(name, getattr(self, name))
+        object.__setattr__(self, "plan_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: (list(value) if key == "lead_minutes" else value)
+            for key, value in self.__dict__.items()
+            if key != "plan_digest"
+        }
+
+
+@dataclass(frozen=True, init=False)
+class OperationalIssuanceDomainArtifact:
+    """Resolved publication/source/exclusion masks fixed before scoring."""
+
+    _eligible_mask: Tensor
+    plan_digest: str
+    grid_contract_digest: str
+    radar_source_contract_digest: str
+    lead_minutes: tuple[int, ...]
+    publication_eligible_mask_digest: str
+    source_coverage_mask_digest: str
+    permanent_exclusion_mask_digest: str
+    eligible_mask_digest: str
+    eligible_cell_counts: tuple[int, ...]
+    contract: str = "operational-issuance-domain-artifact-v1"
+    artifact_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("use OperationalIssuanceDomainArtifact.from_masks")
+
+    @classmethod
+    def from_masks(
+        cls,
+        plan: OperationalIssuanceDomainPlan,
+        *,
+        publication_eligible_mask: Tensor,
+        source_coverage_mask: Tensor,
+        permanent_exclusion_mask: Tensor,
+    ) -> OperationalIssuanceDomainArtifact:
+        masks = (
+            publication_eligible_mask,
+            source_coverage_mask,
+            permanent_exclusion_mask,
+        )
+        if (
+            any(mask.dtype is not torch.bool or mask.ndim != 3 for mask in masks)
+            or any(
+                mask.shape != masks[0].shape or mask.device != masks[0].device
+                for mask in masks[1:]
+            )
+            or masks[0].shape[0] != len(plan.lead_minutes)
+        ):
+            raise ValueError("operational issuance-domain masks are invalid")
+        mask_digests = tuple(tensor_digest(mask) for mask in masks)
+        if mask_digests != (
+            plan.publication_eligible_mask_digest,
+            plan.source_coverage_mask_digest,
+            plan.permanent_exclusion_mask_digest,
+        ):
+            raise ValueError(
+                "operational issuance-domain masks were not preregistered"
+            )
+        eligible = masks[0] & masks[1] & ~masks[2]
+        counts = tuple(
+            int(value)
+            for value in torch.count_nonzero(eligible, dim=(-2, -1)).tolist()
+        )
+        if any(value <= 0 for value in counts):
+            raise ValueError("operational issuance domain is empty")
+        values: dict[str, object] = {
+            "_eligible_mask": eligible.detach().clone(),
+            "plan_digest": plan.plan_digest,
+            "grid_contract_digest": plan.grid_contract_digest,
+            "radar_source_contract_digest": plan.radar_source_contract_digest,
+            "lead_minutes": plan.lead_minutes,
+            "publication_eligible_mask_digest": mask_digests[0],
+            "source_coverage_mask_digest": mask_digests[1],
+            "permanent_exclusion_mask_digest": mask_digests[2],
+            "eligible_mask_digest": tensor_digest(eligible),
+            "eligible_cell_counts": counts,
+            "contract": "operational-issuance-domain-artifact-v1",
+        }
+        result = object.__new__(cls)
+        for name, value in values.items():
+            object.__setattr__(result, name, value)
+        object.__setattr__(result, "artifact_digest", json_digest(result.payload))
+        validate_operational_issuance_domain_artifact(result)
+        return result
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "plan_digest": self.plan_digest,
+            "grid_contract_digest": self.grid_contract_digest,
+            "radar_source_contract_digest": self.radar_source_contract_digest,
+            "lead_minutes": list(self.lead_minutes),
+            "publication_eligible_mask_digest": (
+                self.publication_eligible_mask_digest
+            ),
+            "source_coverage_mask_digest": self.source_coverage_mask_digest,
+            "permanent_exclusion_mask_digest": (
+                self.permanent_exclusion_mask_digest
+            ),
+            "eligible_mask_digest": self.eligible_mask_digest,
+            "eligible_cell_counts": list(self.eligible_cell_counts),
+        }
+
+    @property
+    def eligible_mask(self) -> Tensor:
+        return self._eligible_mask.detach().clone()
+
+
+def validate_operational_issuance_domain_artifact(
+    artifact: OperationalIssuanceDomainArtifact,
+) -> None:
+    """Rehash the retained operational mask and its typed metadata."""
+
+    try:
+        mask = artifact._eligible_mask
+        counts = tuple(
+            int(value)
+            for value in torch.count_nonzero(mask, dim=(-2, -1)).tolist()
+        )
+        if (
+            artifact.contract != "operational-issuance-domain-artifact-v1"
+            or mask.dtype is not torch.bool
+            or mask.ndim != 3
+            or mask.shape[0] != len(artifact.lead_minutes)
+            or tensor_digest(mask) != artifact.eligible_mask_digest
+            or counts != artifact.eligible_cell_counts
+            or any(value <= 0 for value in counts)
+            or artifact.artifact_digest != json_digest(artifact.payload)
+        ):
+            raise ValueError("operational issuance-domain artifact is invalid")
+        for name in (
+            "plan_digest",
+            "grid_contract_digest",
+            "radar_source_contract_digest",
+            "publication_eligible_mask_digest",
+            "source_coverage_mask_digest",
+            "permanent_exclusion_mask_digest",
+            "eligible_mask_digest",
+        ):
+            _require_digest(name, getattr(artifact, name))
+    except (AttributeError, RuntimeError, ValueError) as error:
+        raise ValueError("operational issuance-domain artifact is invalid") from error
+
+
+@dataclass(frozen=True)
 class RegimeClassifierManifest:
     """Training lineage for one preregistered deployment classifier."""
 
@@ -1270,6 +1458,30 @@ class PhysicalEventTrackArtifact:
             or any(not value or value.strip() != value for value in self.source_radar_ids)
         ):
             raise ValueError("physical event track artifact is invalid")
+        segment_velocities = _track_segment_velocities(
+            timestamps,
+            self.centroid_xy_m,
+        )
+        if any(math.hypot(*velocity) > 40.0 for velocity in segment_velocities):
+            raise ValueError("physical event track segment speed exceeds 40 m/s")
+        if any(
+            math.hypot(
+                second[0] - first[0],
+                second[1] - first[1],
+            )
+            / max(
+                1.0,
+                (
+                    parsed[index + 2] - parsed[index]
+                ).total_seconds()
+                / 2.0,
+            )
+            > 0.25
+            for index, (first, second) in enumerate(
+                zip(segment_velocities, segment_velocities[1:])
+            )
+        ):
+            raise ValueError("physical event track acceleration exceeds 0.25 m/s^2")
         _require_digest("track spatial reference", self.spatial_reference_digest)
         for value in self.object_mask_digests:
             _require_digest("track object mask", value)
@@ -1338,6 +1550,24 @@ def validate_physical_event_track_artifact(
             _require_digest("track object mask", value)
         for value in artifact.association_edge_digests:
             _require_digest("track association edge", value)
+        segment_velocities = _track_segment_velocities(
+            timestamps,
+            artifact.centroid_xy_m,
+        )
+        if any(math.hypot(*velocity) > 40.0 for velocity in segment_velocities):
+            raise ValueError("physical event track segment speed exceeds 40 m/s")
+        if any(
+            math.hypot(second[0] - first[0], second[1] - first[1])
+            / max(
+                1.0,
+                (parsed[index + 2] - parsed[index]).total_seconds() / 2.0,
+            )
+            > 0.25
+            for index, (first, second) in enumerate(
+                zip(segment_velocities, segment_velocities[1:])
+            )
+        ):
+            raise ValueError("physical event track acceleration exceeds 0.25 m/s^2")
     except (AttributeError, ValueError) as error:
         raise ValueError("physical event track artifact is invalid") from error
 
@@ -1599,6 +1829,10 @@ class PhysicalEventCaseSpatialEvidence:
     event_spatial_envelope_xy_m: tuple[float, float, float, float]
     spatial_membership_rule_digest: str
     source_object_evidence_digest: str
+    track_artifact_digest: str
+    track_sample_index: int
+    track_sample_time: str
+    track_object_mask_digest: str
     input_available_time: str
     spatial_reference_digest: str
     contract: str = "physical-event-case-spatial-evidence-v2"
@@ -1610,6 +1844,8 @@ class PhysicalEventCaseSpatialEvidence:
             ("physical event identity", self.physical_event_identity_digest),
             ("spatial membership rule", self.spatial_membership_rule_digest),
             ("source object evidence", self.source_object_evidence_digest),
+            ("track artifact", self.track_artifact_digest),
+            ("track object mask", self.track_object_mask_digest),
             ("spatial reference", self.spatial_reference_digest),
         ):
             _require_digest(name, value)
@@ -1628,6 +1864,10 @@ class PhysicalEventCaseSpatialEvidence:
             or observed[1] < event[1]
             or observed[2] > event[2]
             or observed[3] > event[3]
+            or type(self.track_sample_index) is not int
+            or self.track_sample_index < 0
+            or self.source_object_evidence_digest
+            != self.track_object_mask_digest
         ):
             raise ValueError(
                 "physical event case spatial envelope is invalid or outside its event"
@@ -1636,6 +1876,11 @@ class PhysicalEventCaseSpatialEvidence:
             self,
             "input_available_time",
             _canonical_time(self.input_available_time),
+        )
+        object.__setattr__(
+            self,
+            "track_sample_time",
+            _canonical_time(self.track_sample_time),
         )
         object.__setattr__(self, "evidence_digest", json_digest(self.payload))
 
@@ -1657,6 +1902,10 @@ class PhysicalEventCaseSpatialEvidence:
                 self.spatial_membership_rule_digest
             ),
             "source_object_evidence_digest": self.source_object_evidence_digest,
+            "track_artifact_digest": self.track_artifact_digest,
+            "track_sample_index": self.track_sample_index,
+            "track_sample_time": self.track_sample_time,
+            "track_object_mask_digest": self.track_object_mask_digest,
             "input_available_time": self.input_available_time,
             "spatial_reference_digest": self.spatial_reference_digest,
             "contract": self.contract,
@@ -1862,6 +2111,31 @@ def _track_centroid_at(
     raise ValueError("event track does not bracket the requested time")
 
 
+def _track_segment_velocities(
+    timestamps: tuple[str, ...],
+    centroids: tuple[tuple[float, float], ...],
+) -> tuple[tuple[float, float], ...]:
+    parsed = tuple(
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        for value in timestamps
+    )
+    return tuple(
+        (
+            (second_point[0] - first_point[0])
+            / (second_time - first_time).total_seconds(),
+            (second_point[1] - first_point[1])
+            / (second_time - first_time).total_seconds(),
+        )
+        for first_time, second_time, first_point, second_point in zip(
+            parsed[:-1],
+            parsed[1:],
+            centroids[:-1],
+            centroids[1:],
+            strict=True,
+        )
+    )
+
+
 def _overlap_track_distance(
     first: PhysicalEventTrackArtifact,
     second: PhysicalEventTrackArtifact,
@@ -1878,7 +2152,7 @@ def _overlap_track_distance(
     overlap_end = min(first_times[-1], second_times[-1])
     if overlap_start > overlap_end:
         return None
-    sample_times = tuple(
+    boundary_times = tuple(
         sorted(
             {
                 overlap_start,
@@ -1888,13 +2162,52 @@ def _overlap_track_distance(
             }
         )
     )
-    return min(
-        math.dist(
-            _track_centroid_at(first, value),
-            _track_centroid_at(second, value),
+    if len(boundary_times) == 1:
+        return math.dist(
+            _track_centroid_at(first, boundary_times[0]),
+            _track_centroid_at(second, boundary_times[0]),
         )
-        for value in sample_times
-    )
+    minimum = math.inf
+    for start, end in zip(
+        boundary_times[:-1], boundary_times[1:], strict=True
+    ):
+        seconds = (end - start).total_seconds()
+        first_start = _track_centroid_at(first, start)
+        first_end = _track_centroid_at(first, end)
+        second_start = _track_centroid_at(second, start)
+        second_end = _track_centroid_at(second, end)
+        relative_start = (
+            first_start[0] - second_start[0],
+            first_start[1] - second_start[1],
+        )
+        relative_velocity = (
+            ((first_end[0] - second_end[0]) - relative_start[0]) / seconds,
+            ((first_end[1] - second_end[1]) - relative_start[1]) / seconds,
+        )
+        speed_squared = (
+            relative_velocity[0] ** 2 + relative_velocity[1] ** 2
+        )
+        closest_seconds = (
+            0.0
+            if speed_squared == 0.0
+            else max(
+                0.0,
+                min(
+                    seconds,
+                    -(
+                        relative_start[0] * relative_velocity[0]
+                        + relative_start[1] * relative_velocity[1]
+                    )
+                    / speed_squared,
+                ),
+            )
+        )
+        distance = math.hypot(
+            relative_start[0] + relative_velocity[0] * closest_seconds,
+            relative_start[1] + relative_velocity[1] * closest_seconds,
+        )
+        minimum = min(minimum, distance)
+    return minimum
 
 
 def _events_associate(
@@ -1999,6 +2312,14 @@ def validate_physical_event_catalog_result(
                 or event.adjudicator_public_key_hex != plan.adjudicator_public_key_hex
                 or math.hypot(*event.mean_velocity_xy_mps)
                 > plan.maximum_association_centroid_speed_mps
+                or any(
+                    math.hypot(*velocity)
+                    > plan.maximum_association_centroid_speed_mps
+                    for velocity in _track_segment_velocities(
+                        event.object_track_artifact.timestamps,
+                        event.object_track_artifact.centroid_xy_m,
+                    )
+                )
             ):
                 raise ValueError("physical event-catalog result disagrees with its plan")
             member_cases.extend(event.member_case_ids)
@@ -2030,6 +2351,7 @@ def validate_physical_event_catalog_result(
             raise ValueError("physical event spatial-membership evidence is incomplete")
         for item in spatial:
             event = event_by_case[item.case_id]
+            track = event.object_track_artifact
             if (
                 item.evidence_digest != json_digest(item.payload)
                 or item.full_analysis_input_digest != input_by_case[item.case_id]
@@ -2040,6 +2362,14 @@ def validate_physical_event_catalog_result(
                 or item.spatial_membership_rule_digest
                 != plan.spatial_membership_rule_digest
                 or item.spatial_reference_digest != plan.spatial_reference_digest
+                or item.track_artifact_digest != track.artifact_digest
+                or item.track_sample_index >= len(track.timestamps)
+                or item.track_sample_time
+                != track.timestamps[item.track_sample_index]
+                or item.track_object_mask_digest
+                != track.object_mask_digests[item.track_sample_index]
+                or item.source_object_evidence_digest
+                != track.object_mask_digests[item.track_sample_index]
             ):
                 raise ValueError(
                     "physical event spatial-membership evidence disagrees with catalog"
@@ -2084,6 +2414,7 @@ class NeuralPriorHoldoutPlanCase:
     range_band_contract_digest: str
     reference_active_range_regimes: tuple[str, ...]
     regime_reference_plan_digest: str
+    operational_issuance_domain_plan_digest: str
     issue_time: str
 
     def __post_init__(self) -> None:
@@ -2096,6 +2427,7 @@ class NeuralPriorHoldoutPlanCase:
             "state_calibration_target_plan_digest",
             "range_band_contract_digest",
             "regime_reference_plan_digest",
+            "operational_issuance_domain_plan_digest",
         ):
             _require_digest(name, getattr(self, name))
         if (
@@ -2640,6 +2972,43 @@ class LegacyNeuralPriorHoldoutPlanV12Audit:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV13Audit:
+    """Raw v13 plan retained before operational-domain precommitment."""
+
+    plan_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-plan-audit-v13"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _require_digest("legacy holdout plan digest", self.plan_digest)
+        payload = json.loads(self.payload_json)
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != "neural-prior-holdout-plan-v13"
+            or payload.get("plan_digest") != self.plan_digest
+            or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            != self.payload_json
+        ):
+            raise ValueError("invalid legacy v13 holdout plan")
+        original = dict(payload)
+        original.pop("plan_digest")
+        if json_digest(original) != self.plan_digest:
+            raise ValueError("legacy v13 holdout plan digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "plan_digest": self.plan_digest,
+                    "payload": payload,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorHoldoutPlan:
     """Root-approved holdout commitment created before any evaluated issue."""
 
@@ -2654,6 +3023,9 @@ class NeuralPriorHoldoutPlan:
     ]
     range_band_contracts: tuple[RangeBandContract, ...]
     range_geometry_contracts: tuple[RangeGeometryContract, ...]
+    operational_issuance_domain_plans: tuple[
+        OperationalIssuanceDomainPlan, ...
+    ]
     regime_reference_plans: tuple[RegimeReferencePlan, ...]
     regime_classifier_manifests: tuple[RegimeClassifierManifest, ...]
     reference_label_contract_digest: str
@@ -2666,19 +3038,17 @@ class NeuralPriorHoldoutPlan:
     mode: Literal["prospective", "sealed_historical"] = "prospective"
     sealed_historical_dataset_digest: str | None = None
     candidate_training_started_at: str | None = None
-    contract: str = "neural-prior-holdout-plan-v13"
+    contract: str = "neural-prior-holdout-plan-v14"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v13":
+        if self.contract != "neural-prior-holdout-plan-v14":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
         _require_digest("parent_prior_digest", self.parent_prior_digest)
-        if not self.candidate_family_digests or len(
-            set(self.candidate_family_digests)
-        ) != len(self.candidate_family_digests):
-            raise ValueError("candidate family must be nonempty and unique")
+        if len(self.candidate_family_digests) != 1:
+            raise ValueError("current scoring contract requires exactly one candidate")
         for digest in self.candidate_family_digests:
             _require_digest("candidate family digest", digest)
         if self.parent_prior_digest in self.candidate_family_digests:
@@ -2755,6 +3125,26 @@ class NeuralPriorHoldoutPlan:
             )
         ):
             raise ValueError("holdout range geometry contracts are incomplete")
+        issuance_plans = {
+            item.plan_digest: item
+            for item in self.operational_issuance_domain_plans
+        }
+        if (
+            len(issuance_plans) != len(self.operational_issuance_domain_plans)
+            or set(issuance_plans)
+            != {
+                item.operational_issuance_domain_plan_digest
+                for item in self.cases
+            }
+            or any(
+                issuance_plans[
+                    item.operational_issuance_domain_plan_digest
+                ].case_id
+                != item.case_id
+                for item in self.cases
+            )
+        ):
+            raise ValueError("operational issuance-domain plans are incomplete")
         reference_plans = {
             item.plan_digest: item for item in self.regime_reference_plans
         }
@@ -2921,9 +3311,9 @@ class NeuralPriorHoldoutPlanPolicy:
             _require_digest("holdout policy digest", digest)
         if (
             type(self.maximum_candidate_family_size) is not int
-            or self.maximum_candidate_family_size <= 0
+            or self.maximum_candidate_family_size != 1
         ):
-            raise ValueError("candidate family limit must be positive")
+            raise ValueError("current scoring contract requires family size one")
 
     @property
     def digest(self) -> str:
@@ -2958,6 +3348,8 @@ class NeuralPriorHoldoutCase:
     range_band_contract_digest: str
     regime_reference_plan_digest: str
     regime_reference_evidence_digest: str
+    operational_issuance_domain_plan_digest: str
+    operational_issuance_domain_artifact_digest: str
     input_plan_digest: str
     input_plan_resolution_digest: str
     input_bundle_digest: str
@@ -3004,6 +3396,8 @@ class NeuralPriorHoldoutCase:
             "range_band_contract_digest",
             "regime_reference_plan_digest",
             "regime_reference_evidence_digest",
+            "operational_issuance_domain_plan_digest",
+            "operational_issuance_domain_artifact_digest",
             "physical_event_digest",
             "candidate_forecast_digest",
             "parent_forecast_digest",
@@ -3045,6 +3439,9 @@ class NeuralPriorHoldoutCase:
             reference_active_range_regimes=self.reference_active_range_regimes,
             range_band_contract_digest=self.range_band_contract_digest,
             regime_reference_plan_digest=self.regime_reference_plan_digest,
+            operational_issuance_domain_plan_digest=(
+                self.operational_issuance_domain_plan_digest
+            ),
             input_plan_digest=self.input_plan_digest,
             verification_plan_digest=self.verification_plan_digest,
             metric_contract_digest=self.metric_contract_digest,
@@ -3546,6 +3943,10 @@ def _holdout_plan_payload(plan: NeuralPriorHoldoutPlan) -> dict[str, object]:
         "range_geometry_contracts": [
             item.payload for item in plan.range_geometry_contracts
         ],
+        "operational_issuance_domain_plans": [
+            item.payload | {"plan_digest": item.plan_digest}
+            for item in plan.operational_issuance_domain_plans
+        ],
         "regime_reference_plans": [
             item.payload | {"plan_digest": item.plan_digest}
             for item in plan.regime_reference_plans
@@ -3589,6 +3990,9 @@ def _holdout_dataset_digest(
                     "range_band_contract_digest": item.range_band_contract_digest,
                     "regime_reference_plan_digest": (
                         item.regime_reference_plan_digest
+                    ),
+                    "operational_issuance_domain_plan_digest": (
+                        item.operational_issuance_domain_plan_digest
                     ),
                     "reference_active_range_regimes": list(
                         item.reference_active_range_regimes
@@ -4210,9 +4614,7 @@ def _validate_physical_event_catalogs_against_plan(
         catalog_result=manifest.physical_event_catalog_result,
     )
     if (
-        set(manifest.candidate_scoring_start_receipt.subject_digests)
-        != set(plan.candidate_family_digests)
-        or manifest.candidate_scoring_start_receipt.process_algorithm_digest
+        manifest.candidate_scoring_start_receipt.process_algorithm_digest
         != plan.scoring_algorithm_digest
         or manifest.candidate_scoring_start_receipt.process_runtime_digest
         != plan.scoring_runtime_digest
@@ -5210,6 +5612,7 @@ class PriorHoldoutEvaluation:
         regime_classifier_manifest: RegimeClassifierManifest,
         range_grid_x_m: Tensor,
         range_grid_y_m: Tensor,
+        operational_issuance_domain: OperationalIssuanceDomainArtifact,
     ) -> PriorHoldoutEvaluation:
         """Evaluate every planned prior case without intervention selection."""
 
@@ -5240,6 +5643,35 @@ class PriorHoldoutEvaluation:
             raise ValueError("candidate priors are outside the holdout plan")
         case = manifest.holdout_case(case_id)
         planned_case = plan.case(case_id)
+        issuance_plan = next(
+            item
+            for item in plan.operational_issuance_domain_plans
+            if item.plan_digest
+            == planned_case.operational_issuance_domain_plan_digest
+        )
+        validate_operational_issuance_domain_artifact(
+            operational_issuance_domain
+        )
+        if (
+            operational_issuance_domain.artifact_digest
+            != json_digest(operational_issuance_domain.payload)
+            or operational_issuance_domain.plan_digest != issuance_plan.plan_digest
+            or operational_issuance_domain.grid_contract_digest
+            != issuance_plan.grid_contract_digest
+            or operational_issuance_domain.radar_source_contract_digest
+            != issuance_plan.radar_source_contract_digest
+            or operational_issuance_domain.publication_eligible_mask_digest
+            != issuance_plan.publication_eligible_mask_digest
+            or operational_issuance_domain.source_coverage_mask_digest
+            != issuance_plan.source_coverage_mask_digest
+            or operational_issuance_domain.permanent_exclusion_mask_digest
+            != issuance_plan.permanent_exclusion_mask_digest
+            or operational_issuance_domain.artifact_digest
+            != case.operational_issuance_domain_artifact_digest
+            or operational_issuance_domain.plan_digest
+            != case.operational_issuance_domain_plan_digest
+        ):
+            raise ValueError("operational issuance domain disagrees with its plan")
         reference_plan = next(
             item
             for item in plan.regime_reference_plans
@@ -5833,6 +6265,21 @@ class PriorHoldoutEvaluation:
         if metric_config.digest != case.metric_contract_digest:
             raise ValueError("metric contract is not registered by the holdout plan")
         leads = metric_config.full_map_lead_minutes
+        if operational_issuance_domain.lead_minutes != leads:
+            raise ValueError("operational issuance domain has the wrong leads")
+        issuance_mask = operational_issuance_domain.eligible_mask
+        if issuance_mask.shape != (len(leads), *input_frames_dbz.shape[-2:]):
+            raise ValueError("operational issuance domain has the wrong shape")
+        for run in (candidate_forecast.run, parent_forecast.run):
+            if (
+                run.grid_time_contract_digest != issuance_plan.grid_contract_digest
+                or run.operational_data_identity_json is None
+                or OperationalDataIdentity.from_json(
+                    run.operational_data_identity_json
+                ).radar_source_contract_digest
+                != issuance_plan.radar_source_contract_digest
+            ):
+                raise ValueError("operational issuance domain has the wrong source")
         candidate_weights = _resolved_forecast_domain_weights(
             candidate_forecast, resolved_candidate, leads, metric_config
         )
@@ -6090,7 +6537,10 @@ class PriorHoldoutEvaluation:
                 minutes // candidate_forecast.run.config.interval_minutes - 1
                 for minutes in leads
             )
-            operational_domain = lead_mask.to(candidate_forecast.valid_mask.device)
+            operational_domain = (
+                lead_mask.to(candidate_forecast.valid_mask.device)
+                & issuance_mask.to(candidate_forecast.valid_mask.device)
+            )
             band_domain_counts = torch.count_nonzero(
                 operational_domain,
                 dim=(-2, -1),
@@ -6099,15 +6549,19 @@ class PriorHoldoutEvaluation:
             band_parent_issued = torch.stack(
                 tuple(
                     parent_forecast.valid_mask[index]
-                    & range_mask.to(parent_forecast.valid_mask.device)
-                    for index in forecast_indices
+                    & operational_domain[lead_index].to(
+                        parent_forecast.valid_mask.device
+                    )
+                    for lead_index, index in enumerate(forecast_indices)
                 )
             )
             band_candidate_issued = torch.stack(
                 tuple(
                     candidate_forecast.valid_mask[index]
-                    & range_mask.to(candidate_forecast.valid_mask.device)
-                    for index in forecast_indices
+                    & operational_domain[lead_index].to(
+                        candidate_forecast.valid_mask.device
+                    )
+                    for lead_index, index in enumerate(forecast_indices)
                 )
             )
             band_parent_issued_counts = torch.count_nonzero(
@@ -6135,15 +6589,19 @@ class PriorHoldoutEvaluation:
             candidate_fallback_mask = torch.stack(
                 tuple(
                     candidate_forecast.background_fallback_mask[index]
-                    & range_mask.to(candidate_forecast.valid_mask.device)
-                    for index in forecast_indices
+                    & operational_domain[lead_index].to(
+                        candidate_forecast.valid_mask.device
+                    )
+                    for lead_index, index in enumerate(forecast_indices)
                 )
             )
             parent_fallback_mask = torch.stack(
                 tuple(
                     parent_forecast.background_fallback_mask[index]
-                    & range_mask.to(parent_forecast.valid_mask.device)
-                    for index in forecast_indices
+                    & operational_domain[lead_index].to(
+                        parent_forecast.valid_mask.device
+                    )
+                    for lead_index, index in enumerate(forecast_indices)
                 )
             )
             candidate_band_fallback_counts = torch.count_nonzero(
@@ -7282,11 +7740,191 @@ def validate_process_log_artifact(artifact: ProcessLogArtifact) -> None:
 
 
 @dataclass(frozen=True, init=False)
+class HoldoutScoringInputArtifact:
+    """Exact forecast/verification realization sealed before scoring starts."""
+
+    holdout_plan_digest: str
+    candidate_prior_digest: str
+    parent_prior_digest: str
+    candidate_training_manifest_digest: str
+    parent_training_manifest_digest: str
+    ordered_case_ids: tuple[str, ...]
+    candidate_forecast_digests: tuple[str, ...]
+    parent_forecast_digests: tuple[str, ...]
+    candidate_prior_application_digests: tuple[str, ...]
+    parent_prior_application_digests: tuple[str, ...]
+    candidate_inference_evidence_digests: tuple[str, ...]
+    parent_inference_evidence_digests: tuple[str, ...]
+    verification_digests: tuple[str, ...]
+    metric_contract_digests: tuple[str, ...]
+    operational_issuance_domain_artifact_digests: tuple[str, ...]
+    contract: str = "neural-prior-holdout-scoring-input-artifact-v1"
+    artifact_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("use HoldoutScoringInputArtifact.from_cases")
+
+    @classmethod
+    def from_cases(
+        cls,
+        plan: NeuralPriorHoldoutPlan,
+        *,
+        candidate_prior_digest: str,
+        parent_prior_digest: str,
+        candidate_training_manifest_digest: str,
+        parent_training_manifest_digest: str,
+        holdout_cases: tuple[NeuralPriorHoldoutCase, ...],
+    ) -> HoldoutScoringInputArtifact:
+        ordered = tuple(sorted(holdout_cases, key=lambda item: item.case_id))
+        values: dict[str, object] = {
+            "holdout_plan_digest": plan.plan_digest,
+            "candidate_prior_digest": candidate_prior_digest,
+            "parent_prior_digest": parent_prior_digest,
+            "candidate_training_manifest_digest": (
+                candidate_training_manifest_digest
+            ),
+            "parent_training_manifest_digest": parent_training_manifest_digest,
+            "ordered_case_ids": tuple(item.case_id for item in ordered),
+            "candidate_forecast_digests": tuple(
+                item.candidate_forecast_digest for item in ordered
+            ),
+            "parent_forecast_digests": tuple(
+                item.parent_forecast_digest for item in ordered
+            ),
+            "candidate_prior_application_digests": tuple(
+                item.candidate_prior_application_digest for item in ordered
+            ),
+            "parent_prior_application_digests": tuple(
+                item.parent_prior_application_digest for item in ordered
+            ),
+            "candidate_inference_evidence_digests": tuple(
+                item.candidate_inference_evidence_digest for item in ordered
+            ),
+            "parent_inference_evidence_digests": tuple(
+                item.parent_inference_evidence_digest for item in ordered
+            ),
+            "verification_digests": tuple(
+                item.verification_bundle_digest for item in ordered
+            ),
+            "metric_contract_digests": tuple(
+                item.metric_contract_digest for item in ordered
+            ),
+            "operational_issuance_domain_artifact_digests": tuple(
+                item.operational_issuance_domain_artifact_digest
+                for item in ordered
+            ),
+            "contract": "neural-prior-holdout-scoring-input-artifact-v1",
+        }
+        artifact = object.__new__(cls)
+        for name, value in values.items():
+            object.__setattr__(artifact, name, value)
+        object.__setattr__(artifact, "artifact_digest", json_digest(artifact.payload))
+        validate_holdout_scoring_input_artifact(
+            artifact,
+            plan,
+            candidate_prior_digest=candidate_prior_digest,
+            parent_prior_digest=parent_prior_digest,
+            candidate_training_manifest_digest=candidate_training_manifest_digest,
+            parent_training_manifest_digest=parent_training_manifest_digest,
+            holdout_cases=holdout_cases,
+        )
+        return artifact
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: (list(value) if isinstance(value, tuple) else value)
+            for key, value in self.__dict__.items()
+            if key != "artifact_digest"
+        }
+
+
+def validate_holdout_scoring_input_artifact(
+    artifact: HoldoutScoringInputArtifact,
+    plan: NeuralPriorHoldoutPlan,
+    *,
+    candidate_prior_digest: str,
+    parent_prior_digest: str,
+    candidate_training_manifest_digest: str,
+    parent_training_manifest_digest: str,
+    holdout_cases: tuple[NeuralPriorHoldoutCase, ...],
+) -> None:
+    for name in (
+        "holdout_plan_digest",
+        "candidate_prior_digest",
+        "parent_prior_digest",
+        "candidate_training_manifest_digest",
+        "parent_training_manifest_digest",
+    ):
+        _require_digest(f"scoring input {name}", getattr(artifact, name))
+    for name in (
+        "candidate_forecast_digests",
+        "parent_forecast_digests",
+        "candidate_prior_application_digests",
+        "parent_prior_application_digests",
+        "candidate_inference_evidence_digests",
+        "parent_inference_evidence_digests",
+        "verification_digests",
+        "metric_contract_digests",
+        "operational_issuance_domain_artifact_digests",
+    ):
+        for digest in getattr(artifact, name):
+            _require_digest(f"scoring input {name}", digest)
+    ordered = tuple(sorted(holdout_cases, key=lambda item: item.case_id))
+    checks = {
+        "ordered_case_ids": tuple(item.case_id for item in ordered),
+        "candidate_forecast_digests": tuple(
+            item.candidate_forecast_digest for item in ordered
+        ),
+        "parent_forecast_digests": tuple(
+            item.parent_forecast_digest for item in ordered
+        ),
+        "candidate_prior_application_digests": tuple(
+            item.candidate_prior_application_digest for item in ordered
+        ),
+        "parent_prior_application_digests": tuple(
+            item.parent_prior_application_digest for item in ordered
+        ),
+        "candidate_inference_evidence_digests": tuple(
+            item.candidate_inference_evidence_digest for item in ordered
+        ),
+        "parent_inference_evidence_digests": tuple(
+            item.parent_inference_evidence_digest for item in ordered
+        ),
+        "verification_digests": tuple(
+            item.verification_bundle_digest for item in ordered
+        ),
+        "metric_contract_digests": tuple(
+            item.metric_contract_digest for item in ordered
+        ),
+        "operational_issuance_domain_artifact_digests": tuple(
+            item.operational_issuance_domain_artifact_digest for item in ordered
+        ),
+    }
+    if (
+        artifact.contract
+        != "neural-prior-holdout-scoring-input-artifact-v1"
+        or artifact.artifact_digest != json_digest(artifact.payload)
+        or artifact.holdout_plan_digest != plan.plan_digest
+        or artifact.candidate_prior_digest != candidate_prior_digest
+        or artifact.parent_prior_digest != parent_prior_digest
+        or artifact.candidate_training_manifest_digest
+        != candidate_training_manifest_digest
+        or artifact.parent_training_manifest_digest
+        != parent_training_manifest_digest
+        or any(getattr(artifact, name) != value for name, value in checks.items())
+        or set(artifact.ordered_case_ids) != {item.case_id for item in plan.cases}
+    ):
+        raise ValueError("holdout scoring input artifact disagrees with its forecast set")
+
+
+@dataclass(frozen=True, init=False)
 class HoldoutScoringArtifact:
     """Canonical ordered output of one preregistered holdout scoring job."""
 
     holdout_plan_digest: str
     candidate_manifest_digest: str
+    scoring_input_artifact_digest: str
     scoring_start_receipt_digest: str
     scoring_algorithm_digest: str
     scoring_runtime_digest: str
@@ -7309,6 +7947,7 @@ class HoldoutScoringArtifact:
             "contract": self.contract,
             "holdout_plan_digest": self.holdout_plan_digest,
             "candidate_manifest_digest": self.candidate_manifest_digest,
+            "scoring_input_artifact_digest": self.scoring_input_artifact_digest,
             "scoring_start_receipt_digest": self.scoring_start_receipt_digest,
             "scoring_algorithm_digest": self.scoring_algorithm_digest,
             "scoring_runtime_digest": self.scoring_runtime_digest,
@@ -7332,12 +7971,16 @@ class HoldoutScoringArtifact:
         cls,
         manifest: NeuralPriorCandidateManifest,
         plan: NeuralPriorHoldoutPlan,
+        scoring_input_artifact: HoldoutScoringInputArtifact,
         evaluations: tuple[PriorHoldoutEvaluation, ...],
     ) -> HoldoutScoringArtifact:
         ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
         values: dict[str, object] = {
             "holdout_plan_digest": plan.plan_digest,
             "candidate_manifest_digest": manifest.manifest_digest,
+            "scoring_input_artifact_digest": (
+                scoring_input_artifact.artifact_digest
+            ),
             "scoring_start_receipt_digest": (
                 manifest.candidate_scoring_start_receipt.receipt_digest
             ),
@@ -7365,7 +8008,13 @@ class HoldoutScoringArtifact:
             "contract": "neural-prior-holdout-scoring-artifact-v1",
         }
         artifact = _new_holdout_scoring_artifact(**values)
-        validate_holdout_scoring_artifact(artifact, manifest, plan, evaluations)
+        validate_holdout_scoring_artifact(
+            artifact,
+            manifest,
+            plan,
+            scoring_input_artifact,
+            evaluations,
+        )
         return artifact
 
 
@@ -7381,8 +8030,20 @@ def validate_holdout_scoring_artifact(
     artifact: HoldoutScoringArtifact,
     manifest: NeuralPriorCandidateManifest,
     plan: NeuralPriorHoldoutPlan,
+    scoring_input_artifact: HoldoutScoringInputArtifact,
     evaluations: tuple[PriorHoldoutEvaluation, ...],
 ) -> None:
+    validate_holdout_scoring_input_artifact(
+        scoring_input_artifact,
+        plan,
+        candidate_prior_digest=manifest.candidate_prior_digest,
+        parent_prior_digest=manifest.parent_prior_digest,
+        candidate_training_manifest_digest=(
+            manifest.candidate_training_manifest_digest
+        ),
+        parent_training_manifest_digest=manifest.parent_training_manifest_digest,
+        holdout_cases=manifest.holdout_cases,
+    )
     ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
     start = manifest.candidate_scoring_start_receipt
     if (
@@ -7390,6 +8051,8 @@ def validate_holdout_scoring_artifact(
         or artifact.artifact_digest != json_digest(artifact.payload)
         or artifact.holdout_plan_digest != plan.plan_digest
         or artifact.candidate_manifest_digest != manifest.manifest_digest
+        or artifact.scoring_input_artifact_digest
+        != scoring_input_artifact.artifact_digest
         or artifact.scoring_start_receipt_digest
         != manifest.candidate_scoring_start_receipt.receipt_digest
         or artifact.scoring_algorithm_digest != plan.scoring_algorithm_digest
@@ -7397,7 +8060,7 @@ def validate_holdout_scoring_artifact(
         or artifact.scoring_execution_contract_digest
         != plan.scoring_execution_contract_digest
         or start.process_kind != "candidate_scoring"
-        or set(start.subject_digests) != set(plan.candidate_family_digests)
+        or start.subject_digests != (scoring_input_artifact.artifact_digest,)
         or start.process_algorithm_digest != artifact.scoring_algorithm_digest
         or start.process_runtime_digest != artifact.scoring_runtime_digest
         or start.execution_contract_digest
@@ -7424,12 +8087,102 @@ def validate_holdout_scoring_artifact(
     for name in (
         "holdout_plan_digest",
         "candidate_manifest_digest",
+        "scoring_input_artifact_digest",
         "scoring_start_receipt_digest",
         "scoring_algorithm_digest",
         "scoring_runtime_digest",
         "scoring_execution_contract_digest",
     ):
         _require_digest(f"scoring artifact {name}", getattr(artifact, name))
+
+
+@dataclass(frozen=True, init=False)
+class MetricSupportContract:
+    """Analytic finite support of one metric, derived from its definition."""
+
+    metric_name: str
+    lower_bound: float
+    upper_bound: float
+    derivation_contract_digest: str
+    contract: str = "metric-support-contract-v1"
+    contract_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("use a MetricSupportContract factory")
+
+    @classmethod
+    def for_metric(
+        cls,
+        metric_name: str,
+        *,
+        minimum_dbz: float | None = None,
+        maximum_dbz: float | None = None,
+        grid_diagonal_m: float | None = None,
+    ) -> MetricSupportContract:
+        if metric_name == "soft_fss_error_35":
+            lower, upper = 0.0, 1.0
+            derivation = {"identity": "soft-fss-error-unit-interval-v1"}
+        elif metric_name == "log_echo_mse":
+            if (
+                minimum_dbz is None
+                or maximum_dbz is None
+                or not math.isfinite(minimum_dbz)
+                or not math.isfinite(maximum_dbz)
+                or minimum_dbz >= maximum_dbz
+            ):
+                raise ValueError("log-echo MSE support requires finite dBZ bounds")
+            # ``forecast_metric`` applies log(linear_echo + floor).  The
+            # issued linear echo is bounded by ``10**(max_dbz/10) - floor``,
+            # so the exact endpoint ratio is 10**((max-min)/10).
+            maximum_log_difference = (
+                (maximum_dbz - minimum_dbz) * math.log(10.0) / 10.0
+            )
+            lower, upper = 0.0, maximum_log_difference**2
+            derivation = {
+                "identity": "bounded-log-echo-mse-v1",
+                "minimum_dbz": minimum_dbz,
+                "maximum_dbz": maximum_dbz,
+            }
+        elif metric_name == "centroid_error_m2":
+            if (
+                grid_diagonal_m is None
+                or not math.isfinite(grid_diagonal_m)
+                or grid_diagonal_m <= 0.0
+            ):
+                raise ValueError("centroid MSE support requires a grid diagonal")
+            lower, upper = 0.0, grid_diagonal_m**2
+            derivation = {
+                "identity": "projected-centroid-domain-diagonal-v1",
+                "grid_diagonal_m": grid_diagonal_m,
+            }
+        else:
+            raise ValueError("metric has no approved analytic support contract")
+        values: dict[str, object] = {
+            "metric_name": metric_name,
+            "lower_bound": lower,
+            "upper_bound": upper,
+            "derivation_contract_digest": json_digest(derivation),
+            "contract": "metric-support-contract-v1",
+        }
+        result = object.__new__(cls)
+        for name, value in values.items():
+            object.__setattr__(result, name, value)
+        object.__setattr__(result, "contract_digest", json_digest(result.payload))
+        return result
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "metric_name": self.metric_name,
+            "lower_bound": self.lower_bound,
+            "upper_bound": self.upper_bound,
+            "derivation_contract_digest": self.derivation_contract_digest,
+        }
+
+    @property
+    def maximum_absolute_change(self) -> float:
+        return self.upper_bound - self.lower_bound
 
 
 @dataclass(frozen=True)
@@ -7445,14 +8198,14 @@ class RangeMetricRequirement:
     minimum_valid_area_km2: float
     maximum_mean_normalized_degradation: float
     maximum_harmful_fraction_upper_bound: float
-    maximum_absolute_normalized_change: float = 2.0
+    metric_support_contract_digest: str
     maximum_end_to_end_mean_normalized_degradation: float = 0.0
     maximum_end_to_end_harmful_fraction_upper_bound: float = 1.0
-    contract: str = "range-metric-requirement-v5"
+    contract: str = "range-metric-requirement-v6"
 
     def __post_init__(self) -> None:
         if (
-            self.contract != "range-metric-requirement-v5"
+            self.contract != "range-metric-requirement-v6"
             or any(
                 not value or value.strip() != value
                 for value in (
@@ -7473,8 +8226,6 @@ class RangeMetricRequirement:
             or self.maximum_mean_normalized_degradation < 0.0
             or not math.isfinite(self.maximum_harmful_fraction_upper_bound)
             or not 0.0 <= self.maximum_harmful_fraction_upper_bound <= 1.0
-            or not math.isfinite(self.maximum_absolute_normalized_change)
-            or self.maximum_absolute_normalized_change <= 0.0
             or not math.isfinite(
                 self.maximum_end_to_end_mean_normalized_degradation
             )
@@ -7487,6 +8238,10 @@ class RangeMetricRequirement:
             <= 1.0
         ):
             raise ValueError("range metric requirement is invalid")
+        _require_digest(
+            "range metric support contract",
+            self.metric_support_contract_digest,
+        )
 
     @property
     def payload(self) -> dict[str, object]:
@@ -7546,6 +8301,7 @@ class NeuralPriorPromotionPolicy:
     """Root-approved cluster-aware limits for promoting one prior."""
 
     metric_scales: tuple[PromotionMetricScale, ...]
+    metric_support_contracts: tuple[MetricSupportContract, ...]
     approved_candidate_manifest_digests: tuple[str, ...]
     approved_holdout_plan_digests: tuple[str, ...]
     approved_metric_contract_digests: tuple[str, ...]
@@ -7661,13 +8417,23 @@ class NeuralPriorPromotionPolicy:
     maximum_exact_sign_clusters: int = 16
     minimum_deployment_metric_cell_events: int = 5
     minimum_continuous_metric_cell_events: int = 10
-    contract: str = "neural-prior-promotion-policy-v22"
+    contract: str = "neural-prior-promotion-policy-v23"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-policy-v22":
+        if self.contract != "neural-prior-promotion-policy-v23":
             raise ValueError("unsupported neural-prior promotion policy")
         if not self.metric_scales or len({x.metric_name for x in self.metric_scales}) != len(self.metric_scales):
             raise ValueError("promotion metric scales must be unique")
+        support_by_name = {
+            item.metric_name: item for item in self.metric_support_contracts
+        }
+        if (
+            not support_by_name
+            or len(support_by_name) != len(self.metric_support_contracts)
+            or not {item.metric_name for item in self.required_range_metrics}
+            <= set(support_by_name)
+        ):
+            raise ValueError("promotion metric support contracts are incomplete")
         requirement_keys = tuple(
             (
                 item.weather_regime,
@@ -7682,6 +8448,8 @@ class NeuralPriorPromotionPolicy:
             or len(set(requirement_keys)) != len(requirement_keys)
             or any(
                 item.metric_name not in {scale.metric_name for scale in self.metric_scales}
+                or item.metric_support_contract_digest
+                != support_by_name[item.metric_name].contract_digest
                 for item in self.required_range_metrics
             )
         ):
@@ -7906,6 +8674,10 @@ class NeuralPriorPromotionPolicy:
         return json_digest({
             "contract": self.contract,
             "metric_scales": [item.__dict__ for item in self.metric_scales],
+            "metric_support_contracts": [
+                item.payload | {"contract_digest": item.contract_digest}
+                for item in self.metric_support_contracts
+            ],
             "approved_candidate_manifest_digests": sorted(
                 self.approved_candidate_manifest_digests
             ),
@@ -8561,12 +9333,35 @@ class LegacyNeuralPriorPromotionEvidenceAuditV16:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV17:
+    """Original v17 decision retained before sealed scoring inputs."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v17"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v17",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
     candidate_manifest_digest: str
     policy_digest: str
     trust_store_digest: str
+    scoring_input_artifact_digest: str
     scoring_artifact_digest: str
     scoring_process_log_digest: str
     scoring_completion_receipt_digest: str
@@ -8691,11 +9486,11 @@ class NeuralPriorPromotionEvidence:
     deployment_eligible: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v17"
+    contract: str = "neural-prior-promotion-evidence-v18"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v17":
+        if self.contract != "neural-prior-promotion-evidence-v18":
             raise ValueError("unsupported neural-prior promotion evidence")
         for name in (
             "candidate_prior_digest",
@@ -8703,6 +9498,7 @@ class NeuralPriorPromotionEvidence:
             "candidate_manifest_digest",
             "policy_digest",
             "trust_store_digest",
+            "scoring_input_artifact_digest",
             "scoring_artifact_digest",
             "scoring_process_log_digest",
             "scoring_completion_receipt_digest",
@@ -9538,6 +10334,7 @@ def compute_neural_prior_promotion(
     *,
     policy: NeuralPriorPromotionPolicy,
     policy_trust_store_path: str | Path,
+    scoring_input_artifact: HoldoutScoringInputArtifact | None = None,
     scoring_artifact: HoldoutScoringArtifact | None = None,
     scoring_process_log: ProcessLogArtifact | None = None,
     scoring_completion_receipt: TrustedProcessCompletionReceipt | None = None,
@@ -9549,7 +10346,8 @@ def compute_neural_prior_promotion(
             "legacy promotion evaluations are audit-only and cannot be reused"
         )
     if (
-        scoring_artifact is None
+        scoring_input_artifact is None
+        or scoring_artifact is None
         or scoring_process_log is None
         or scoring_completion_receipt is None
     ):
@@ -9560,6 +10358,7 @@ def compute_neural_prior_promotion(
         scoring_artifact,
         manifest,
         plan,
+        scoring_input_artifact,
         evaluations,
     )
     validate_trusted_process_completion_receipt(
@@ -9606,6 +10405,9 @@ def compute_neural_prior_promotion(
     family_size = len(plan.candidate_family_digests) * len(
         plan.regime_classifier_manifests
     )
+    metric_supports = {
+        item.contract_digest: item for item in policy.metric_support_contracts
+    }
 
     def classified_groups(
         evaluation: PriorHoldoutEvaluation,
@@ -10745,7 +11547,12 @@ def compute_neural_prior_promotion(
                 cell_clusters,
                 policy,
                 family_size=metric_cell_family_size,
-                absolute_bound=requirement.maximum_absolute_normalized_change,
+                absolute_bound=(
+                    metric_supports[
+                        requirement.metric_support_contract_digest
+                    ].maximum_absolute_change
+                    / scale
+                ),
             )
             _, harmful_upper = _event_fractional_rate_interval(
                 [float(value > 0.0) for value in cell_values],
@@ -10758,7 +11565,12 @@ def compute_neural_prior_promotion(
                 cell_clusters,
                 policy,
                 family_size=metric_cell_family_size,
-                absolute_bound=requirement.maximum_absolute_normalized_change,
+                absolute_bound=(
+                    metric_supports[
+                        requirement.metric_support_contract_digest
+                    ].maximum_absolute_change
+                    / scale
+                ),
             )
             _, end_to_end_harmful_upper = _event_fractional_rate_interval(
                 [float(value > 0.0) for value in end_to_end_cell_values],
@@ -11076,6 +11888,7 @@ def compute_neural_prior_promotion(
         candidate_manifest_digest=manifest.manifest_digest,
         policy_digest=policy.digest,
         trust_store_digest=trust.content_digest,
+        scoring_input_artifact_digest=scoring_input_artifact.artifact_digest,
         scoring_artifact_digest=scoring_artifact.artifact_digest,
         scoring_process_log_digest=scoring_process_log.artifact_digest,
         scoring_completion_receipt_digest=(
