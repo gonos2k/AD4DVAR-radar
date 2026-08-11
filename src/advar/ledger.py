@@ -118,6 +118,7 @@ from .promotion import (
     ProcessLogArtifact,
     HoldoutScoringInputArtifact,
     HoldoutScoringArtifact,
+    PromotionDecisionRule,
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionEvidence,
     LegacyNeuralPriorPromotionEvidenceAuditV3,
@@ -153,6 +154,7 @@ from .promotion import (
     _new_trusted_process_completion_receipt,
     _new_holdout_scoring_artifact,
     validate_holdout_scoring_artifact,
+    validate_promotion_decision_rule,
 )
 
 
@@ -161,7 +163,7 @@ _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _SCHEDULER_TRUST_STORE_CONTRACT = "advar-trusted-scheduler-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 20
+_INDEX_SCHEMA_VERSION = 21
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
@@ -2867,10 +2869,15 @@ class EpisodeLedger:
         plan: NeuralPriorHoldoutPlan,
         result: PhysicalEventCatalogResult,
         artifact: HoldoutScoringInputArtifact,
+        *,
+        promotion_decision_rule: PromotionDecisionRule,
+        policy_trust_store_path: str | Path,
     ) -> str:
         """Append the exact forecast/verification set before scoring launches."""
 
         validate_neural_prior_holdout_plan(plan)
+        validate_promotion_decision_rule(promotion_decision_rule)
+        trust = _load_learning_policy_trust_store(policy_trust_store_path)
         validate_physical_event_catalog_result(
             result,
             plan.physical_event_catalog_plan,
@@ -2878,6 +2885,8 @@ class EpisodeLedger:
         if (
             artifact.artifact_digest != _json_digest(artifact.payload)
             or artifact.holdout_plan_digest != plan.plan_digest
+            or artifact.promotion_decision_rule_digest
+            != promotion_decision_rule.rule_digest
             or artifact.candidate_prior_digest != plan.candidate_family_digests[0]
             or artifact.parent_prior_digest != plan.parent_prior_digest
             or set(artifact.ordered_case_ids) != {item.case_id for item in plan.cases}
@@ -2892,7 +2901,26 @@ class EpisodeLedger:
             ).fetchone()
             if catalog_row is None or catalog_row[0] != result.result_digest:
                 raise ValueError("scoring input requires its registered event catalog")
+            if promotion_decision_rule.rule_digest not in trust.approved_policy_digests:
+                raise ValueError("promotion decision rule is not root-approved")
             try:
+                now = datetime.now(timezone.utc).isoformat()
+                connection.execute(
+                    "INSERT INTO neural_prior_promotion_decision_rules "
+                    "(rule_digest, holdout_plan_digest, payload_json, "
+                    "trust_store_digest, created_at) VALUES (?, ?, ?, ?, ?)",
+                    (
+                        promotion_decision_rule.rule_digest,
+                        plan.plan_digest,
+                        json.dumps(
+                            promotion_decision_rule.payload
+                            | {"rule_digest": promotion_decision_rule.rule_digest},
+                            sort_keys=True,
+                        ),
+                        trust.content_digest,
+                        now,
+                    ),
+                )
                 connection.execute(
                     "INSERT INTO neural_prior_holdout_scoring_input_artifacts "
                     "(artifact_digest, holdout_plan_digest, payload_json, created_at) "
@@ -2905,7 +2933,7 @@ class EpisodeLedger:
                             | {"artifact_digest": artifact.artifact_digest},
                             sort_keys=True,
                         ),
-                        datetime.now(timezone.utc).isoformat(),
+                        now,
                     ),
                 )
             except sqlite3.IntegrityError as error:
@@ -2976,10 +3004,11 @@ class EpisodeLedger:
             ).fetchone()
             if catalog_row is None or catalog_row[0] != result.result_digest:
                 raise ValueError("process start requires a registered event catalog")
+            input_append_time: datetime | None = None
             if isinstance(plan, NeuralPriorHoldoutPlan):
                 assert scoring_input_artifact is not None
                 input_row = connection.execute(
-                    "SELECT payload_json FROM "
+                    "SELECT payload_json, created_at FROM "
                     "neural_prior_holdout_scoring_input_artifacts "
                     "WHERE artifact_digest = ? AND holdout_plan_digest = ?",
                     (scoring_input_artifact.artifact_digest, plan.plan_digest),
@@ -2991,6 +3020,18 @@ class EpisodeLedger:
                 )
                 if input_row is None or input_row[0] != expected_input_json:
                     raise ValueError("scoring start requires its ledger input artifact")
+                input_append_time = datetime.fromisoformat(input_row[1])
+                rule_row = connection.execute(
+                    "SELECT rule_digest FROM neural_prior_promotion_decision_rules "
+                    "WHERE holdout_plan_digest = ?",
+                    (plan.plan_digest,),
+                ).fetchone()
+                if (
+                    rule_row is None
+                    or rule_row[0]
+                    != scoring_input_artifact.promotion_decision_rule_digest
+                ):
+                    raise ValueError("scoring start requires its preregistered decision rule")
             now = datetime.now(timezone.utc)
             started_at = datetime.fromisoformat(
                 receipt.started_at.replace("Z", "+00:00")
@@ -3000,6 +3041,12 @@ class EpisodeLedger:
                 raise ValueError("scoring start receipt cannot claim a future start")
             if started_at <= catalog_append_time:
                 raise ValueError("process must start after catalog ledger append")
+            if isinstance(plan, NeuralPriorHoldoutPlan):
+                assert input_append_time is not None
+                if started_at < input_append_time:
+                    raise ValueError(
+                        "process cannot start before scoring input ledger append"
+                    )
             predecessor = connection.execute(
                 "SELECT receipt_digest, scheduler_sequence_number "
                 "FROM trusted_process_start_receipts_v2 "
@@ -3238,6 +3285,18 @@ class EpisodeLedger:
             )
             if input_row is None or input_row[0] != expected_input_json:
                 raise ValueError("promotion scoring input artifact is not registered")
+            rule_row = connection.execute(
+                "SELECT rule_digest FROM neural_prior_promotion_decision_rules "
+                "WHERE holdout_plan_digest = ?",
+                (plan.plan_digest,),
+            ).fetchone()
+            if (
+                rule_row is None
+                or rule_row[0]
+                != scoring_input_artifact.promotion_decision_rule_digest
+                or rule_row[0] != policy.decision_rule_digest
+            ):
+                raise ValueError("promotion decision rule is not preregistered")
             plan_row = connection.execute(
                 "SELECT plan_json, created_at FROM neural_prior_holdout_plans "
                 "WHERE plan_digest = ?",
@@ -4273,6 +4332,17 @@ class EpisodeLedger:
             )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS neural_prior_promotion_decision_rules (
+                    rule_digest TEXT PRIMARY KEY,
+                    holdout_plan_digest TEXT NOT NULL UNIQUE,
+                    payload_json TEXT NOT NULL,
+                    trust_store_digest TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS neural_prior_holdout_scoring_input_artifacts (
                     artifact_digest TEXT PRIMARY KEY,
                     holdout_plan_digest TEXT NOT NULL UNIQUE,
@@ -4423,6 +4493,7 @@ class EpisodeLedger:
                 "neural_prior_event_catalog_results",
                 "neural_prior_process_start_receipts",
                 "neural_prior_training_event_catalog_results",
+                "neural_prior_promotion_decision_rules",
                 "neural_prior_holdout_scoring_input_artifacts",
                 "trusted_process_start_receipts_v2",
                 "trusted_process_log_artifacts",
@@ -4892,7 +4963,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v16"
+        or value[0].get("contract") != "prior-holdout-evaluation-v17"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:
@@ -4927,6 +4998,7 @@ def _decode_evaluation_audit_payloads(
     tuple_names = {
         "lead_minutes",
         "metric_names",
+        "metric_support_contract_digests",
         "verification_valid_times",
         "classified_range_regimes",
         "reference_active_range_regimes",
