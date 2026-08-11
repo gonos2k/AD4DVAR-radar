@@ -77,6 +77,7 @@ from .promotion import (
     LegacyNeuralPriorCandidateManifestAuditV8,
     LegacyNeuralPriorCandidateManifestAuditV9,
     LegacyNeuralPriorCandidateManifestAuditV10,
+    LegacyNeuralPriorCandidateManifestAuditV11,
     NeuralPriorCandidateManifest,
     LegacyNeuralPriorHoldoutPlanAudit,
     LegacyNeuralPriorHoldoutPlanCase,
@@ -107,10 +108,13 @@ from .promotion import (
     RegimeReferenceEvidence,
     PhysicalEventCaseSpatialEvidence,
     PhysicalEventCatalogEvidence,
+    PhysicalEventTrackArtifact,
     PhysicalEventCatalogPlan,
     PhysicalEventCatalogResult,
     TrustedProcessStartReceipt,
     TrustedProcessCompletionReceipt,
+    ProcessLogArtifact,
+    HoldoutScoringArtifact,
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionEvidence,
     LegacyNeuralPriorPromotionEvidenceAuditV3,
@@ -126,6 +130,7 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV13,
     LegacyNeuralPriorPromotionEvidenceAuditV14,
     LegacyNeuralPriorPromotionEvidenceAuditV15,
+    LegacyNeuralPriorPromotionEvidenceAuditV16,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     compute_neural_prior_promotion,
@@ -135,12 +140,15 @@ from .promotion import (
     validate_physical_event_catalog_result,
     validate_trusted_process_start_receipt,
     validate_trusted_process_completion_receipt,
+    validate_process_log_artifact,
     _new_prior_holdout_evaluation,
     _new_regime_reference_evidence,
     _new_physical_event_catalog_evidence,
     _new_physical_event_catalog_result,
     _new_trusted_process_start_receipt,
     _new_trusted_process_completion_receipt,
+    _new_holdout_scoring_artifact,
+    validate_holdout_scoring_artifact,
 )
 
 
@@ -149,7 +157,7 @@ _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _SCHEDULER_TRUST_STORE_CONTRACT = "advar-trusted-scheduler-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 18
+_INDEX_SCHEMA_VERSION = 19
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
@@ -2947,11 +2955,38 @@ class EpisodeLedger:
         start: TrustedProcessStartReceipt,
         completion: TrustedProcessCompletionReceipt,
         *,
+        process_log_artifact: ProcessLogArtifact,
+        scoring_artifact: HoldoutScoringArtifact | None = None,
         scheduler_trust_store_path: str | Path,
     ) -> str:
         """Append the immutable output and log produced by one trusted launch."""
 
         validate_trusted_process_completion_receipt(completion, start)
+        validate_process_log_artifact(process_log_artifact)
+        if (
+            process_log_artifact.artifact_digest
+            != _json_digest(process_log_artifact.payload)
+            or process_log_artifact.start_receipt_digest != start.receipt_digest
+            or process_log_artifact.process_kind != start.process_kind
+            or completion.process_log_digest
+            != process_log_artifact.artifact_digest
+        ):
+            raise ValueError("process completion does not seal its process log")
+        if start.process_kind == "candidate_scoring":
+            if (
+                scoring_artifact is None
+                or scoring_artifact.artifact_digest
+                != _json_digest(scoring_artifact.payload)
+                or scoring_artifact.scoring_start_receipt_digest
+                != start.receipt_digest
+                or completion.output_artifact_digest
+                != scoring_artifact.artifact_digest
+            ):
+                raise ValueError(
+                    "scoring completion requires its canonical scoring artifact"
+                )
+        elif scoring_artifact is not None:
+            raise ValueError("training completion cannot seal a scoring artifact")
         scheduler_trust = _load_scheduler_trust_store(
             scheduler_trust_store_path
         )
@@ -2990,6 +3025,49 @@ class EpisodeLedger:
                 raise ValueError("process completion predates start ledger append")
             try:
                 connection.execute(
+                    "INSERT INTO trusted_process_log_artifacts "
+                    "(artifact_digest, start_receipt_digest, process_kind, "
+                    "payload_json, created_at) VALUES (?, ?, ?, ?, ?)",
+                    (
+                        process_log_artifact.artifact_digest,
+                        start.receipt_digest,
+                        start.process_kind,
+                        json.dumps(
+                            process_log_artifact.payload
+                            | {
+                                "artifact_digest": (
+                                    process_log_artifact.artifact_digest
+                                )
+                            },
+                            sort_keys=True,
+                        ),
+                        now.isoformat(),
+                    ),
+                )
+                if scoring_artifact is not None:
+                    connection.execute(
+                        "INSERT INTO neural_prior_holdout_scoring_artifacts "
+                        "(artifact_digest, holdout_plan_digest, "
+                        "candidate_manifest_digest, scoring_start_receipt_digest, "
+                        "payload_json, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                        (
+                            scoring_artifact.artifact_digest,
+                            scoring_artifact.holdout_plan_digest,
+                            scoring_artifact.candidate_manifest_digest,
+                            scoring_artifact.scoring_start_receipt_digest,
+                            json.dumps(
+                                scoring_artifact.payload
+                                | {
+                                    "artifact_digest": (
+                                        scoring_artifact.artifact_digest
+                                    )
+                                },
+                                sort_keys=True,
+                            ),
+                            now.isoformat(),
+                        ),
+                    )
+                connection.execute(
                     "INSERT INTO trusted_process_completion_receipts "
                     "(receipt_digest, start_receipt_digest, process_kind, "
                     "output_artifact_digest, process_log_digest, receipt_json, "
@@ -3022,6 +3100,9 @@ class EpisodeLedger:
         plan: NeuralPriorHoldoutPlan,
         evaluations: tuple[PriorHoldoutEvaluation, ...],
         *,
+        scoring_artifact: HoldoutScoringArtifact,
+        scoring_process_log: ProcessLogArtifact,
+        scoring_completion_receipt: TrustedProcessCompletionReceipt,
         policy: NeuralPriorPromotionPolicy,
         policy_trust_store_path: str | Path,
     ) -> str:
@@ -3031,6 +3112,9 @@ class EpisodeLedger:
             manifest,
             plan,
             evaluations,
+            scoring_artifact=scoring_artifact,
+            scoring_process_log=scoring_process_log,
+            scoring_completion_receipt=scoring_completion_receipt,
             policy=policy,
             policy_trust_store_path=policy_trust_store_path,
         )
@@ -3113,7 +3197,7 @@ class EpisodeLedger:
                 ),
                 (
                     manifest.candidate_scoring_start_receipt,
-                    manifest.candidate_scoring_completion_receipt,
+                    scoring_completion_receipt,
                 ),
             ):
                 start_row = connection.execute(
@@ -3144,6 +3228,42 @@ class EpisodeLedger:
                     raise ValueError(
                         "promotion trusted process receipt chain is not registered"
                     )
+            scoring_artifact_row = connection.execute(
+                "SELECT payload_json FROM "
+                "neural_prior_holdout_scoring_artifacts "
+                "WHERE artifact_digest = ? AND scoring_start_receipt_digest = ?",
+                (
+                    scoring_artifact.artifact_digest,
+                    manifest.candidate_scoring_start_receipt.receipt_digest,
+                ),
+            ).fetchone()
+            scoring_log_row = connection.execute(
+                "SELECT payload_json FROM trusted_process_log_artifacts "
+                "WHERE artifact_digest = ? AND start_receipt_digest = ?",
+                (
+                    scoring_process_log.artifact_digest,
+                    manifest.candidate_scoring_start_receipt.receipt_digest,
+                ),
+            ).fetchone()
+            expected_scoring_artifact_json = json.dumps(
+                scoring_artifact.payload
+                | {"artifact_digest": scoring_artifact.artifact_digest},
+                sort_keys=True,
+            )
+            expected_scoring_log_json = json.dumps(
+                scoring_process_log.payload
+                | {"artifact_digest": scoring_process_log.artifact_digest},
+                sort_keys=True,
+            )
+            if (
+                scoring_artifact_row is None
+                or scoring_artifact_row[0] != expected_scoring_artifact_json
+                or scoring_log_row is None
+                or scoring_log_row[0] != expected_scoring_log_json
+            ):
+                raise ValueError(
+                    "promotion scoring artifacts are not registered"
+                )
             plan_created = datetime.fromisoformat(plan_row[1])
             if plan.mode == "prospective" and any(
                 plan_created
@@ -3299,6 +3419,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV13
         | LegacyNeuralPriorPromotionEvidenceAuditV14
         | LegacyNeuralPriorPromotionEvidenceAuditV15
+        | LegacyNeuralPriorPromotionEvidenceAuditV16
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -3366,6 +3487,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV13
                 | LegacyNeuralPriorPromotionEvidenceAuditV14
                 | LegacyNeuralPriorPromotionEvidenceAuditV15
+                | LegacyNeuralPriorPromotionEvidenceAuditV16
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -3465,6 +3587,7 @@ class EpisodeLedger:
                         "neural-prior-promotion-evidence-v14",
                         "neural-prior-promotion-evidence-v15",
                         "neural-prior-promotion-evidence-v16",
+                        "neural-prior-promotion-evidence-v17",
                     ):
                         raw_payload = json.loads(row["evidence_payload_json"])
                         if not isinstance(raw_payload, dict):
@@ -3486,6 +3609,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v14",
                             "neural-prior-promotion-evidence-v15",
                             "neural-prior-promotion-evidence-v16",
+                            "neural-prior-promotion-evidence-v17",
                         ):
                             raw_payload["regime_classifier_evidence_digests"] = tuple(
                                 raw_payload["regime_classifier_evidence_digests"]
@@ -3505,6 +3629,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v14",
                             "neural-prior-promotion-evidence-v15",
                             "neural-prior-promotion-evidence-v16",
+                            "neural-prior-promotion-evidence-v17",
                         ):
                             raw_payload["range_band_skill_bounds"] = tuple(
                                 tuple(item)
@@ -3518,6 +3643,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v14",
                             "neural-prior-promotion-evidence-v15",
                             "neural-prior-promotion-evidence-v16",
+                            "neural-prior-promotion-evidence-v17",
                         ):
                             raw_payload[
                                 "range_band_skill_inference_diagnostics"
@@ -3678,6 +3804,15 @@ class EpisodeLedger:
                                     separators=(",", ":"),
                                 ),
                             )
+                        elif contract == "neural-prior-promotion-evidence-v16":
+                            evidence = LegacyNeuralPriorPromotionEvidenceAuditV16(
+                                promotion_evidence_digest=promotion_evidence_digest,
+                                payload_json=json.dumps(
+                                    raw_payload,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                ),
+                            )
                         else:
                             raw_payload["range_metric_cell_bounds"] = tuple(
                                 tuple(item)
@@ -3689,6 +3824,12 @@ class EpisodeLedger:
                                 tuple(item)
                                 for item in raw_payload[
                                     "range_metric_end_to_end_cell_bounds"
+                                ]
+                            )
+                            raw_payload["range_issuance_cell_bounds"] = tuple(
+                                tuple(item)
+                                for item in raw_payload[
+                                    "range_issuance_cell_bounds"
                                 ]
                             )
                             evidence = NeuralPriorPromotionEvidence(
@@ -3706,10 +3847,68 @@ class EpisodeLedger:
             tuple(cast(tuple[str, ...], common_payload["evaluation_digests"]))
         ):
             raise ValueError("neural-prior promotion evaluation audit mismatch")
-        _decode_candidate_manifest(
+        manifest = _decode_candidate_manifest(
             row["candidate_manifest_json"],
             expected_digest=row["candidate_manifest_digest"],
         )
+        if isinstance(evidence, NeuralPriorPromotionEvidence):
+            if not isinstance(manifest, NeuralPriorCandidateManifest) or any(
+                not isinstance(item, PriorHoldoutEvaluation)
+                for item in evaluations
+            ):
+                raise ValueError("current promotion requires current typed inputs")
+            with self._connect() as connection:
+                scoring_row = connection.execute(
+                    "SELECT payload_json FROM "
+                    "neural_prior_holdout_scoring_artifacts "
+                    "WHERE artifact_digest = ?",
+                    (evidence.scoring_artifact_digest,),
+                ).fetchone()
+                log_row = connection.execute(
+                    "SELECT payload_json FROM trusted_process_log_artifacts "
+                    "WHERE artifact_digest = ?",
+                    (evidence.scoring_process_log_digest,),
+                ).fetchone()
+                completion_row = connection.execute(
+                    "SELECT receipt_json FROM trusted_process_completion_receipts "
+                    "WHERE receipt_digest = ?",
+                    (evidence.scoring_completion_receipt_digest,),
+                ).fetchone()
+            if scoring_row is None or log_row is None or completion_row is None:
+                raise ValueError("promotion scoring artifacts are unavailable")
+            scoring_artifact = _decode_holdout_scoring_artifact(
+                scoring_row[0], evidence.scoring_artifact_digest
+            )
+            process_log = _decode_process_log_artifact(
+                log_row[0], evidence.scoring_process_log_digest
+            )
+            completion = _decode_completion_receipt(
+                completion_row[0], evidence.scoring_completion_receipt_digest
+            )
+            scoring_plan = self.load_neural_prior_holdout_plan(
+                scoring_artifact.holdout_plan_digest
+            )
+            if not isinstance(scoring_plan, NeuralPriorHoldoutPlan):
+                raise ValueError("current scoring artifact requires current plan")
+            validate_holdout_scoring_artifact(
+                scoring_artifact,
+                manifest,
+                scoring_plan,
+                cast(tuple[PriorHoldoutEvaluation, ...], evaluations),
+            )
+            validate_trusted_process_completion_receipt(
+                completion,
+                manifest.candidate_scoring_start_receipt,
+            )
+            if (
+                process_log.start_receipt_digest
+                != manifest.candidate_scoring_start_receipt.receipt_digest
+                or process_log.process_kind != "candidate_scoring"
+                or completion.output_artifact_digest
+                != scoring_artifact.artifact_digest
+                or completion.process_log_digest != process_log.artifact_digest
+            ):
+                raise ValueError("promotion scoring artifact replay failed")
         return evidence
 
     def load_neural_prior_promotion_evaluations(
@@ -3952,6 +4151,33 @@ class EpisodeLedger:
             )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS trusted_process_log_artifacts (
+                    artifact_digest TEXT PRIMARY KEY,
+                    start_receipt_digest TEXT NOT NULL UNIQUE,
+                    process_kind TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (start_receipt_digest)
+                        REFERENCES trusted_process_start_receipts_v2(receipt_digest)
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS neural_prior_holdout_scoring_artifacts (
+                    artifact_digest TEXT PRIMARY KEY,
+                    holdout_plan_digest TEXT NOT NULL,
+                    candidate_manifest_digest TEXT NOT NULL,
+                    scoring_start_receipt_digest TEXT NOT NULL UNIQUE,
+                    payload_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (scoring_start_receipt_digest)
+                        REFERENCES trusted_process_start_receipts_v2(receipt_digest)
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS trusted_process_completion_receipts (
                     receipt_digest TEXT PRIMARY KEY,
                     start_receipt_digest TEXT NOT NULL UNIQUE,
@@ -4046,6 +4272,8 @@ class EpisodeLedger:
                 "neural_prior_process_start_receipts",
                 "neural_prior_training_event_catalog_results",
                 "trusted_process_start_receipts_v2",
+                "trusted_process_log_artifacts",
+                "neural_prior_holdout_scoring_artifacts",
                 "trusted_process_completion_receipts",
                 "neural_prior_promotions",
             ):
@@ -4511,7 +4739,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v15"
+        or value[0].get("contract") != "prior-holdout-evaluation-v16"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:
@@ -4605,6 +4833,19 @@ def _decode_evaluation_audit_payloads(
             band_values["metric_valid_area_km2_by_lead"] = tuple(
                 band_values["metric_valid_area_km2_by_lead"]
             )
+            for name in (
+                "issuance_domain_cell_count_by_lead",
+                "issuance_domain_area_km2_by_lead",
+                "parent_issued_count_by_lead",
+                "candidate_issued_count_by_lead",
+                "withdrawn_count_by_lead",
+                "newly_issued_count_by_lead",
+                "parent_fallback_count_by_lead",
+                "candidate_fallback_count_by_lead",
+                "parent_confidence_weighted_issued_area_by_lead",
+                "candidate_confidence_weighted_issued_area_by_lead",
+            ):
+                band_values[name] = tuple(band_values[name])
             band_values.pop("contract", None)
             band = RangeBandEvaluation(**band_values)
             if band.evaluation_digest != band_digest:
@@ -4617,6 +4858,62 @@ def _decode_evaluation_audit_payloads(
             raise ValueError("promotion evaluation digest mismatch")
         evaluations.append(evaluation)
     return tuple(evaluations)
+
+
+def _decode_process_log_artifact(
+    text: str,
+    expected_digest: str,
+) -> ProcessLogArtifact:
+    value = json.loads(text)
+    if not isinstance(value, dict):
+        raise ValueError("invalid process-log artifact payload")
+    values = dict(value)
+    stored_digest = values.pop("artifact_digest", None)
+    values["entries"] = tuple(values["entries"])
+    artifact = ProcessLogArtifact(**cast(Any, values))
+    if stored_digest != expected_digest or artifact.artifact_digest != expected_digest:
+        raise ValueError("process-log artifact digest mismatch")
+    return artifact
+
+
+def _decode_holdout_scoring_artifact(
+    text: str,
+    expected_digest: str,
+) -> HoldoutScoringArtifact:
+    value = json.loads(text)
+    if not isinstance(value, dict):
+        raise ValueError("invalid holdout scoring artifact payload")
+    values = dict(value)
+    stored_digest = values.pop("artifact_digest", None)
+    for name in (
+        "ordered_case_ids",
+        "ordered_evaluation_digests",
+        "candidate_forecast_digests",
+        "parent_forecast_digests",
+        "verification_digests",
+        "metric_contract_digests",
+    ):
+        values[name] = tuple(values[name])
+    artifact = _new_holdout_scoring_artifact(**values)
+    if stored_digest != expected_digest or artifact.artifact_digest != expected_digest:
+        raise ValueError("holdout scoring artifact digest mismatch")
+    return artifact
+
+
+def _decode_completion_receipt(
+    text: str,
+    expected_digest: str,
+) -> TrustedProcessCompletionReceipt:
+    value = json.loads(text)
+    if not isinstance(value, dict):
+        raise ValueError("invalid process-completion receipt payload")
+    values = dict(value)
+    stored_digest = values.pop("receipt_digest", None)
+    values["subject_digests"] = tuple(values["subject_digests"])
+    receipt = _new_trusted_process_completion_receipt(**values)
+    if stored_digest != expected_digest or receipt.receipt_digest != expected_digest:
+        raise ValueError("process-completion receipt digest mismatch")
+    return receipt
 
 
 def _decode_candidate_manifest(
@@ -4634,6 +4931,7 @@ def _decode_candidate_manifest(
     | LegacyNeuralPriorCandidateManifestAuditV8
     | LegacyNeuralPriorCandidateManifestAuditV9
     | LegacyNeuralPriorCandidateManifestAuditV10
+    | LegacyNeuralPriorCandidateManifestAuditV11
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -4748,6 +5046,18 @@ def _decode_candidate_manifest(
         if audit_v10.manifest_digest != expected_digest:
             raise ValueError("candidate manifest ledger digest mismatch")
         return audit_v10
+    if values.get("contract") == "neural-prior-candidate-manifest-v11":
+        audit_v11 = LegacyNeuralPriorCandidateManifestAuditV11(
+            manifest_digest=str(stored_digest),
+            payload_json=json.dumps(
+                value,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+        )
+        if audit_v11.manifest_digest != expected_digest:
+            raise ValueError("candidate manifest ledger digest mismatch")
+        return audit_v11
     values["holdout_cases"] = tuple(
         NeuralPriorHoldoutCase(**item) for item in values["holdout_cases"]
     )
@@ -4764,6 +5074,11 @@ def _decode_candidate_manifest(
     for item in values["physical_event_catalog_evidences"]:
         catalog_values = dict(item)
         stored_event_digest = catalog_values.pop("event_digest", None)
+        catalog_values["object_track_artifact"] = (
+            _decode_physical_event_track_artifact(
+                catalog_values["object_track_artifact"]
+            )
+        )
         for name in (
             "member_case_ids",
             "member_full_analysis_input_digests",
@@ -4816,6 +5131,11 @@ def _decode_candidate_manifest(
     for item in training_result_values.pop("event_evidences"):
         event_values = dict(item)
         stored_event_digest = event_values.pop("event_digest", None)
+        event_values["object_track_artifact"] = (
+            _decode_physical_event_track_artifact(
+                event_values["object_track_artifact"]
+            )
+        )
         for name in (
             "member_case_ids",
             "member_full_analysis_input_digests",
@@ -4860,10 +5180,6 @@ def _decode_candidate_manifest(
             "candidate_training_completion_receipt",
             "candidate_training_start_receipt",
         ),
-        (
-            "candidate_scoring_completion_receipt",
-            "candidate_scoring_start_receipt",
-        ),
     ):
         receipt_values = dict(values[name])
         stored_receipt_digest = receipt_values.pop("receipt_digest", None)
@@ -4900,6 +5216,28 @@ def _decode_candidate_manifest(
     if manifest.manifest_digest != expected_digest:
         raise ValueError("candidate manifest ledger digest mismatch")
     return manifest
+
+
+def _decode_physical_event_track_artifact(
+    value: object,
+) -> PhysicalEventTrackArtifact:
+    if not isinstance(value, dict):
+        raise ValueError("physical-event track artifact payload is missing")
+    values = dict(value)
+    stored_digest = values.pop("artifact_digest", None)
+    values["timestamps"] = tuple(values["timestamps"])
+    values["centroid_xy_m"] = tuple(
+        tuple(item) for item in values["centroid_xy_m"]
+    )
+    values["object_mask_digests"] = tuple(values["object_mask_digests"])
+    values["source_radar_ids"] = tuple(values["source_radar_ids"])
+    values["association_edge_digests"] = tuple(
+        values["association_edge_digests"]
+    )
+    artifact = PhysicalEventTrackArtifact(**cast(Any, values))
+    if artifact.artifact_digest != stored_digest:
+        raise ValueError("physical-event track artifact digest mismatch")
+    return artifact
 
 
 def _decode_physical_event_case_spatial_evidences(
