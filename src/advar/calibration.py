@@ -113,6 +113,13 @@ class OperationalDataIdentity:
     radar_product_digest: str | None = None
     background_cycle_rule_digest: str | None = None
     mask_policy_digest: str | None = None
+    radar_source_kind: str | None = None
+    radar_site_digest: str | None = None
+    radar_site_location_digest: str | None = None
+    radar_source_contract_digest: str | None = None
+    source_radar_index_map_digest: str | None = None
+    effective_horizontal_range_map_digest: str | None = None
+    source_selection_policy_digest: str | None = None
 
     def __post_init__(self) -> None:
         _canonical_string("radar_class", self.radar_class)
@@ -143,6 +150,65 @@ class OperationalDataIdentity:
             ):
                 assert value is not None
                 _sha256(name, value)
+        source_values = (
+            self.radar_source_kind,
+            self.radar_site_digest,
+            self.radar_site_location_digest,
+            self.radar_source_contract_digest,
+            self.source_radar_index_map_digest,
+            self.effective_horizontal_range_map_digest,
+            self.source_selection_policy_digest,
+        )
+        if any(value is not None for value in source_values):
+            if self.radar_source_kind is None:
+                inferred_kind = (
+                    "single_site"
+                    if self.radar_site_digest is not None
+                    or self.radar_site_location_digest is not None
+                    else "mosaic"
+                )
+                object.__setattr__(self, "radar_source_kind", inferred_kind)
+            if self.radar_source_kind == "single_site":
+                required = (
+                    self.radar_site_digest,
+                    self.radar_site_location_digest,
+                    self.radar_source_contract_digest,
+                )
+                forbidden = (
+                    self.source_radar_index_map_digest,
+                    self.effective_horizontal_range_map_digest,
+                    self.source_selection_policy_digest,
+                )
+            elif self.radar_source_kind == "mosaic":
+                required = (
+                    self.radar_source_contract_digest,
+                    self.source_radar_index_map_digest,
+                    self.effective_horizontal_range_map_digest,
+                    self.source_selection_policy_digest,
+                )
+                forbidden = (
+                    self.radar_site_digest,
+                    self.radar_site_location_digest,
+                )
+            else:
+                raise ValueError("radar source kind must be single_site or mosaic")
+            if any(value is None for value in required) or any(
+                value is not None for value in forbidden
+            ):
+                raise ValueError("radar source identity must be complete")
+            for name, value in (
+                ("radar_site_digest", self.radar_site_digest),
+                ("radar_site_location_digest", self.radar_site_location_digest),
+                ("radar_source_contract_digest", self.radar_source_contract_digest),
+                ("source_radar_index_map_digest", self.source_radar_index_map_digest),
+                (
+                    "effective_horizontal_range_map_digest",
+                    self.effective_horizontal_range_map_digest,
+                ),
+                ("source_selection_policy_digest", self.source_selection_policy_digest),
+            ):
+                if value is not None:
+                    _sha256(name, value)
 
     @property
     def value(self) -> dict[str, str]:
@@ -166,6 +232,40 @@ class OperationalDataIdentity:
                     "mask_policy_digest": self.mask_policy_digest,
                 }
             )
+        if self.radar_source_kind is not None:
+            result["radar_source_kind"] = self.radar_source_kind
+            assert self.radar_source_contract_digest is not None
+            result["radar_source_contract_digest"] = (
+                self.radar_source_contract_digest
+            )
+            if self.radar_source_kind == "single_site":
+                assert self.radar_site_digest is not None
+                assert self.radar_site_location_digest is not None
+                result.update(
+                    {
+                        "radar_site_digest": self.radar_site_digest,
+                        "radar_site_location_digest": (
+                            self.radar_site_location_digest
+                        ),
+                    }
+                )
+            else:
+                assert self.source_radar_index_map_digest is not None
+                assert self.effective_horizontal_range_map_digest is not None
+                assert self.source_selection_policy_digest is not None
+                result.update(
+                    {
+                        "source_radar_index_map_digest": (
+                            self.source_radar_index_map_digest
+                        ),
+                        "effective_horizontal_range_map_digest": (
+                            self.effective_horizontal_range_map_digest
+                        ),
+                        "source_selection_policy_digest": (
+                            self.source_selection_policy_digest
+                        ),
+                    }
+                )
         return result
 
     @property
@@ -197,10 +297,28 @@ class OperationalDataIdentity:
             "background_cycle_rule_digest",
             "mask_policy_digest",
         }
-        if not isinstance(value, dict) or set(value) not in (
-            base_fields,
-            base_fields | plan_fields,
-        ):
+        single_source_fields = {
+            "radar_source_kind",
+            "radar_site_digest",
+            "radar_site_location_digest",
+            "radar_source_contract_digest",
+        }
+        mosaic_source_fields = {
+            "radar_source_kind",
+            "radar_source_contract_digest",
+            "source_radar_index_map_digest",
+            "effective_horizontal_range_map_digest",
+            "source_selection_policy_digest",
+        }
+        allowed = {
+            frozenset(base_fields),
+            frozenset(base_fields | plan_fields),
+            frozenset(base_fields | single_source_fields),
+            frozenset(base_fields | mosaic_source_fields),
+            frozenset(base_fields | plan_fields | single_source_fields),
+            frozenset(base_fields | plan_fields | mosaic_source_fields),
+        }
+        if not isinstance(value, dict) or frozenset(value) not in allowed:
             raise ValueError("invalid operational data identity fields")
         identity = cls(
             radar_class=_required_string("radar_class", value["radar_class"]),
@@ -232,6 +350,56 @@ class OperationalDataIdentity:
             mask_policy_digest=(
                 _required_string("mask_policy_digest", value["mask_policy_digest"])
                 if "mask_policy_digest" in value
+                else None
+            ),
+            radar_source_kind=(
+                _required_string("radar_source_kind", value["radar_source_kind"])
+                if "radar_source_kind" in value
+                else None
+            ),
+            radar_site_digest=(
+                _required_string("radar_site_digest", value["radar_site_digest"])
+                if "radar_site_digest" in value
+                else None
+            ),
+            radar_site_location_digest=(
+                _required_string(
+                    "radar_site_location_digest",
+                    value["radar_site_location_digest"],
+                )
+                if "radar_site_location_digest" in value
+                else None
+            ),
+            radar_source_contract_digest=(
+                _required_string(
+                    "radar_source_contract_digest",
+                    value["radar_source_contract_digest"],
+                )
+                if "radar_source_contract_digest" in value
+                else None
+            ),
+            source_radar_index_map_digest=(
+                _required_string(
+                    "source_radar_index_map_digest",
+                    value["source_radar_index_map_digest"],
+                )
+                if "source_radar_index_map_digest" in value
+                else None
+            ),
+            effective_horizontal_range_map_digest=(
+                _required_string(
+                    "effective_horizontal_range_map_digest",
+                    value["effective_horizontal_range_map_digest"],
+                )
+                if "effective_horizontal_range_map_digest" in value
+                else None
+            ),
+            source_selection_policy_digest=(
+                _required_string(
+                    "source_selection_policy_digest",
+                    value["source_selection_policy_digest"],
+                )
+                if "source_selection_policy_digest" in value
                 else None
             ),
         )

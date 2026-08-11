@@ -106,6 +106,48 @@ class OperationalCalibrationManifestTests(unittest.TestCase):
         self.assertRegex(manifest.metric_contract_digest, r"^[0-9a-f]{64}$")
         self.assertEqual(json.loads(manifest.json), manifest.value)
 
+    def test_operational_radar_source_identity_round_trips(self) -> None:
+        identities = (
+            OperationalDataIdentity(
+                radar_class="single-site",
+                qc_pipeline_digest="1" * 64,
+                observation_error_model_digest="2" * 64,
+                background_model_digest="3" * 64,
+                radar_source_kind="single_site",
+                radar_site_digest="4" * 64,
+                radar_site_location_digest="5" * 64,
+                radar_source_contract_digest="6" * 64,
+            ),
+            OperationalDataIdentity(
+                radar_class="mosaic",
+                qc_pipeline_digest="1" * 64,
+                observation_error_model_digest="2" * 64,
+                background_model_digest="3" * 64,
+                radar_source_kind="mosaic",
+                radar_source_contract_digest="6" * 64,
+                source_radar_index_map_digest="7" * 64,
+                effective_horizontal_range_map_digest="8" * 64,
+                source_selection_policy_digest="9" * 64,
+            ),
+        )
+
+        for identity in identities:
+            with self.subTest(kind=identity.radar_source_kind):
+                self.assertEqual(
+                    OperationalDataIdentity.from_json(identity.json),
+                    identity,
+                )
+
+        with self.assertRaisesRegex(ValueError, "source identity"):
+            OperationalDataIdentity(
+                radar_class="single-site",
+                qc_pipeline_digest="1" * 64,
+                observation_error_model_digest="2" * 64,
+                background_model_digest="3" * 64,
+                radar_source_kind="single_site",
+                radar_site_digest="4" * 64,
+            )
+
     def test_algorithm_bundle_digest_tracks_source_content(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

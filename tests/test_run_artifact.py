@@ -34,6 +34,7 @@ from advar import (  # noqa: E402
     load_forecast_run,
     nowcast,
     save_forecast_run,
+    validate_neural_prior_deployment_decision_artifact,
     variational_nowcast,
 )
 from advar.variational import (  # noqa: E402
@@ -89,6 +90,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
     ) -> dict[str, object]:
         payload: dict[str, object] = {
             "radar_site_digest": "e" * 64,
+            "radar_site_location_digest": "f" * 64,
             "grid_contract_digest": "d" * 64,
             "radar_x_m": 0.0,
             "radar_y_m": 0.0,
@@ -97,8 +99,8 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "horizontal_range_rule_digest": "4" * 64,
             "grid_x_m_digest": tensor_digest(torch.zeros(frames.shape[1:])),
             "grid_y_m_digest": tensor_digest(torch.zeros(frames.shape[1:])),
-            "resolver_algorithm": "projected-horizontal-euclidean-range-v2",
-            "contract": "radar-horizontal-range-geometry-contract-v2",
+            "resolver_algorithm": "projected-horizontal-euclidean-range-v3",
+            "contract": "radar-horizontal-range-geometry-contract-v3",
         }
         return payload | {"contract_digest": json_digest(payload)}
 
@@ -163,10 +165,13 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact = {
-            "contract": "neural-prior-deployment-decision-artifact-v3",
+            "contract": "neural-prior-deployment-decision-artifact-v4",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "operational_grid_contract_digest": "d" * 64,
             "operational_frame_shape": list(frames.shape[1:]),
+            "operational_radar_source_kind": None,
+            "operational_radar_site_digest": None,
+            "operational_radar_site_location_digest": None,
             "regime_classification_evidence": regime
             | {"evidence_digest": regime_digest},
             "deployment_policy": policy.payload
@@ -222,6 +227,36 @@ class ForecastRunArtifactTests(unittest.TestCase):
             deployment_decision_artifact_digest=json_digest(artifact),
             fallback_reason="certified_candidate",
         )
+
+    def test_deployment_replay_binds_the_operational_radar_site(self) -> None:
+        frames = self.frames()
+        input_run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        runner = NeuralPriorInferenceRunner(
+            self._Prior().eval(),
+            lambda value: value[0],
+            example_frames=frames,
+            state_contract=self._state_contract(),
+            probability_contract=self._probability_contract(),
+            model_contract_digest="2" * 64,
+            feature_schema_digest="3" * 64,
+            training_manifest_digest="4" * 64,
+            allow_constant_uncertainty=True,
+            dependency="radar_dependent",
+        )
+        selection = self._deployment_selection(runner, input_run, frames)
+
+        with self.assertRaisesRegex(ValueError, "current forecast run"):
+            validate_neural_prior_deployment_decision_artifact(
+                selection.deployment_decision_artifact_json,
+                expected_operational_radar_source_kind="single_site",
+                expected_operational_radar_site_digest="e" * 64,
+                expected_operational_radar_site_location_digest="f" * 64,
+            )
 
     def _save_arrays(self, path: Path, arrays: dict[str, Any]) -> None:
         np.savez_compressed(path, **seal_forecast_run_arrays(arrays))
@@ -1046,10 +1081,13 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v3",
+            "contract": "neural-prior-deployment-decision-artifact-v4",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "operational_grid_contract_digest": "d" * 64,
             "operational_frame_shape": list(frames.shape[1:]),
+            "operational_radar_source_kind": None,
+            "operational_radar_site_digest": None,
+            "operational_radar_site_location_digest": None,
             "regime_classification_evidence": regime_payload
             | {"evidence_digest": regime_evidence_digest},
             "deployment_policy": policy.payload

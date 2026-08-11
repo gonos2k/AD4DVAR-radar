@@ -604,6 +604,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         range_grid = torch.zeros((2, 2), dtype=torch.float64)
         range_geometry = promotion_module.RangeGeometryContract(
             radar_site_digest="7" * 64,
+            radar_site_location_digest="7" * 64,
             grid_contract_digest="1" * 64,
             radar_x_m=0.0,
             radar_y_m=0.0,
@@ -668,6 +669,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 promotion_module.regime_reference_public_key_hex(labeler_key)
             ),
             catalog_completion_deadline="2030-01-01T02:00:00Z",
+            spatial_reference_digest="c" * 64,
         )
         plan = NeuralPriorHoldoutPlan(
             plan_id="clock-plan",
@@ -876,7 +878,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 16)
+        self.assertEqual(version, 17)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4109,7 +4111,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 16)
+        self.assertEqual(version, 17)
 
 
 if __name__ == "__main__":

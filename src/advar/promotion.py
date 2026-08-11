@@ -827,11 +827,16 @@ class PhysicalEventCatalogPlan:
     adjudicator_id: str
     adjudicator_public_key_hex: str
     catalog_completion_deadline: str
-    contract: str = "physical-event-catalog-plan-v1"
+    spatial_reference_digest: str
+    maximum_association_time_gap_minutes: float = 30.0
+    minimum_association_spatial_iou: float = 0.1
+    scheduler_id: str = ""
+    scheduler_public_key_hex: str = ""
+    contract: str = "physical-event-catalog-plan-v2"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "physical-event-catalog-plan-v1":
+        if self.contract != "physical-event-catalog-plan-v2":
             raise ValueError("unsupported physical event-catalog plan")
         if (
             not self.holdout_case_ids
@@ -843,8 +848,16 @@ class PhysicalEventCatalogPlan:
             "association_algorithm_digest",
             "spatial_membership_rule_digest",
             "adjudication_policy_digest",
+            "spatial_reference_digest",
         ):
             _require_digest(name, getattr(self, name))
+        if (
+            not math.isfinite(self.maximum_association_time_gap_minutes)
+            or self.maximum_association_time_gap_minutes < 0.0
+            or not math.isfinite(self.minimum_association_spatial_iou)
+            or not 0.0 <= self.minimum_association_spatial_iou <= 1.0
+        ):
+            raise ValueError("event association thresholds are invalid")
         if not self.adjudicator_id or self.adjudicator_id.strip() != self.adjudicator_id:
             raise ValueError("event-catalog adjudicator ID must be canonical")
         if len(self.adjudicator_public_key_hex) != 64:
@@ -853,6 +866,23 @@ class PhysicalEventCatalogPlan:
             bytes.fromhex(self.adjudicator_public_key_hex)
         except ValueError as error:
             raise ValueError("event-catalog adjudicator public key is invalid") from error
+        if not self.scheduler_id:
+            object.__setattr__(self, "scheduler_id", self.adjudicator_id)
+        if not self.scheduler_public_key_hex:
+            object.__setattr__(
+                self,
+                "scheduler_public_key_hex",
+                self.adjudicator_public_key_hex,
+            )
+        if (
+            self.scheduler_id.strip() != self.scheduler_id
+            or len(self.scheduler_public_key_hex) != 64
+        ):
+            raise ValueError("event-catalog scheduler authority is invalid")
+        try:
+            bytes.fromhex(self.scheduler_public_key_hex)
+        except ValueError as error:
+            raise ValueError("event-catalog scheduler authority is invalid") from error
         object.__setattr__(
             self,
             "catalog_completion_deadline",
@@ -867,6 +897,147 @@ class PhysicalEventCatalogPlan:
             for key, value in self.__dict__.items()
             if key != "plan_digest"
         }
+
+
+@dataclass(frozen=True, init=False)
+class TrustedProcessStartReceipt:
+    """Scheduler-signed proof that a catalog existed before a trusted job start."""
+
+    catalog_plan_digest: str
+    catalog_result_digest: str
+    process_kind: Literal["candidate_training", "candidate_scoring"]
+    subject_digests: tuple[str, ...]
+    process_algorithm_digest: str
+    job_id: str
+    started_at: str
+    scheduler_id: str
+    scheduler_public_key_hex: str
+    scheduler_signature: str
+    contract: str = "trusted-process-start-receipt-v1"
+    receipt_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("use TrustedProcessStartReceipt.from_plan")
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: (list(value) if key == "subject_digests" else value)
+            for key, value in self.__dict__.items()
+            if key != "receipt_digest"
+        }
+
+    @classmethod
+    def from_plan(
+        cls,
+        plan: PhysicalEventCatalogPlan,
+        *,
+        catalog_result_digest: str,
+        process_kind: Literal["candidate_training", "candidate_scoring"],
+        subject_digests: tuple[str, ...],
+        process_algorithm_digest: str,
+        job_id: str,
+        started_at: str,
+        scheduler_private_key: Ed25519PrivateKey,
+    ) -> TrustedProcessStartReceipt:
+        values: dict[str, object] = {
+            "catalog_plan_digest": plan.plan_digest,
+            "catalog_result_digest": catalog_result_digest,
+            "process_kind": process_kind,
+            "subject_digests": subject_digests,
+            "process_algorithm_digest": process_algorithm_digest,
+            "job_id": job_id,
+            "started_at": _canonical_time(started_at),
+            "scheduler_id": plan.scheduler_id,
+            "scheduler_public_key_hex": regime_reference_public_key_hex(
+                scheduler_private_key
+            ),
+            "scheduler_signature": "",
+            "contract": "trusted-process-start-receipt-v1",
+        }
+        unsigned = _trusted_process_start_payload(values)
+        values["scheduler_signature"] = scheduler_private_key.sign(
+            json_digest(unsigned).encode("ascii")
+        ).hex()
+        receipt = _new_trusted_process_start_receipt(**values)
+        validate_trusted_process_start_receipt(receipt, plan)
+        return receipt
+
+
+def _trusted_process_start_payload(values: dict[str, object]) -> dict[str, object]:
+    subjects = values.get("subject_digests")
+    if not isinstance(subjects, tuple) or not all(
+        isinstance(value, str) for value in subjects
+    ):
+        raise ValueError("trusted process subjects are invalid")
+    payload = {
+        key: value for key, value in values.items() if key != "receipt_digest"
+    }
+    payload["subject_digests"] = list(subjects)
+    return payload
+
+
+def _new_trusted_process_start_receipt(
+    **values: object,
+) -> TrustedProcessStartReceipt:
+    receipt = object.__new__(TrustedProcessStartReceipt)
+    for name, value in values.items():
+        object.__setattr__(receipt, name, value)
+    object.__setattr__(receipt, "receipt_digest", json_digest(receipt.payload))
+    return receipt
+
+
+def validate_trusted_process_start_receipt(
+    receipt: TrustedProcessStartReceipt,
+    plan: PhysicalEventCatalogPlan,
+    *,
+    catalog_result: PhysicalEventCatalogResult | None = None,
+) -> None:
+    _validate_trusted_process_start_receipt_integrity(receipt)
+    if (
+        receipt.catalog_plan_digest != plan.plan_digest
+        or receipt.scheduler_id != plan.scheduler_id
+        or receipt.scheduler_public_key_hex != plan.scheduler_public_key_hex
+    ):
+        raise ValueError("trusted process-start receipt authority is invalid")
+    if catalog_result is not None and (
+        receipt.catalog_result_digest != catalog_result.result_digest
+        or _canonical_time(catalog_result.cataloged_at)
+        >= _canonical_time(receipt.started_at)
+    ):
+        raise ValueError("trusted process start does not follow its event catalog")
+
+
+def _validate_trusted_process_start_receipt_integrity(
+    receipt: TrustedProcessStartReceipt,
+) -> None:
+    try:
+        if (
+            receipt.contract != "trusted-process-start-receipt-v1"
+            or receipt.process_kind not in ("candidate_training", "candidate_scoring")
+            or not receipt.subject_digests
+            or len(set(receipt.subject_digests)) != len(receipt.subject_digests)
+            or not receipt.job_id
+            or receipt.job_id.strip() != receipt.job_id
+            or receipt.receipt_digest != json_digest(receipt.payload)
+            or len(receipt.scheduler_signature) != 128
+        ):
+            raise ValueError("trusted process-start receipt is invalid")
+        _canonical_time(receipt.started_at)
+        _require_digest("start receipt catalog result", receipt.catalog_result_digest)
+        _require_digest("start receipt algorithm", receipt.process_algorithm_digest)
+        for digest in receipt.subject_digests:
+            _require_digest("start receipt subject", digest)
+        unsigned = dict(receipt.payload)
+        unsigned["scheduler_signature"] = ""
+        Ed25519PublicKey.from_public_bytes(
+            bytes.fromhex(receipt.scheduler_public_key_hex)
+        ).verify(
+            bytes.fromhex(receipt.scheduler_signature),
+            json_digest(unsigned).encode("ascii"),
+        )
+    except (InvalidSignature, ValueError) as error:
+        raise ValueError("trusted process-start receipt is invalid") from error
 
 
 @dataclass(frozen=True, init=False)
@@ -1045,7 +1216,9 @@ class PhysicalEventCaseSpatialEvidence:
     event_spatial_envelope_xy_m: tuple[float, float, float, float]
     spatial_membership_rule_digest: str
     source_object_evidence_digest: str
-    contract: str = "physical-event-case-spatial-evidence-v1"
+    input_available_time: str
+    spatial_reference_digest: str
+    contract: str = "physical-event-case-spatial-evidence-v2"
     evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -1054,12 +1227,13 @@ class PhysicalEventCaseSpatialEvidence:
             ("physical event identity", self.physical_event_identity_digest),
             ("spatial membership rule", self.spatial_membership_rule_digest),
             ("source object evidence", self.source_object_evidence_digest),
+            ("spatial reference", self.spatial_reference_digest),
         ):
             _require_digest(name, value)
         observed = self.observed_spatial_envelope_xy_m
         event = self.event_spatial_envelope_xy_m
         if (
-            self.contract != "physical-event-case-spatial-evidence-v1"
+            self.contract != "physical-event-case-spatial-evidence-v2"
             or not self.case_id
             or self.case_id.strip() != self.case_id
             or any(not math.isfinite(value) for value in (*observed, *event))
@@ -1075,6 +1249,11 @@ class PhysicalEventCaseSpatialEvidence:
             raise ValueError(
                 "physical event case spatial envelope is invalid or outside its event"
             )
+        object.__setattr__(
+            self,
+            "input_available_time",
+            _canonical_time(self.input_available_time),
+        )
         object.__setattr__(self, "evidence_digest", json_digest(self.payload))
 
     @property
@@ -1095,6 +1274,8 @@ class PhysicalEventCaseSpatialEvidence:
                 self.spatial_membership_rule_digest
             ),
             "source_object_evidence_digest": self.source_object_evidence_digest,
+            "input_available_time": self.input_available_time,
+            "spatial_reference_digest": self.spatial_reference_digest,
             "contract": self.contract,
         }
 
@@ -1112,7 +1293,8 @@ class PhysicalEventCatalogResult:
     adjudicator_id: str
     adjudicator_public_key_hex: str
     adjudicator_signature: str
-    contract: str = "physical-event-catalog-result-v2"
+    association_graph_digest: str
+    contract: str = "physical-event-catalog-result-v3"
     result_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -1134,6 +1316,7 @@ class PhysicalEventCatalogResult:
             "adjudicator_id": self.adjudicator_id,
             "adjudicator_public_key_hex": self.adjudicator_public_key_hex,
             "adjudicator_signature": self.adjudicator_signature,
+            "association_graph_digest": self.association_graph_digest,
             "contract": self.contract,
         }
 
@@ -1159,8 +1342,13 @@ class PhysicalEventCatalogResult:
                 adjudicator_private_key
             ),
             "adjudicator_signature": "",
-            "contract": "physical-event-catalog-result-v2",
+            "association_graph_digest": "",
+            "contract": "physical-event-catalog-result-v3",
         }
+        values["association_graph_digest"] = _event_association_graph_digest(
+            plan.plan_digest,
+            event_evidences,
+        )
         unsigned = _physical_event_catalog_result_payload(values)
         signature = adjudicator_private_key.sign(
             json_digest(unsigned).encode("ascii")
@@ -1193,6 +1381,7 @@ def _physical_event_catalog_result_payload(
         "adjudicator_id": values["adjudicator_id"],
         "adjudicator_public_key_hex": values["adjudicator_public_key_hex"],
         "adjudicator_signature": values["adjudicator_signature"],
+        "association_graph_digest": values["association_graph_digest"],
         "contract": values["contract"],
     }
 
@@ -1208,7 +1397,7 @@ def _new_physical_event_catalog_result(
     unsigned["adjudicator_signature"] = ""
     try:
         if (
-            result.contract != "physical-event-catalog-result-v2"
+            result.contract != "physical-event-catalog-result-v3"
             or len(result.adjudicator_public_key_hex) != 64
             or len(result.adjudicator_signature) != 128
         ):
@@ -1224,6 +1413,73 @@ def _new_physical_event_catalog_result(
     return result
 
 
+def _event_association_graph_digest(
+    plan_digest: str,
+    events: tuple[PhysicalEventCatalogEvidence, ...],
+) -> str:
+    """Address the candidate-neutral event components used for inference."""
+
+    return json_digest(
+        {
+            "contract": "physical-event-association-graph-v1",
+            "catalog_plan_digest": plan_digest,
+            "components": [
+                {
+                    "physical_event_identity_digest": (
+                        event.physical_event_identity_digest
+                    ),
+                    "member_case_ids": sorted(event.member_case_ids),
+                    "member_full_analysis_input_digests": sorted(
+                        event.member_full_analysis_input_digests
+                    ),
+                }
+                for event in sorted(
+                    events,
+                    key=lambda item: item.physical_event_identity_digest,
+                )
+            ],
+        }
+    )
+
+
+def _event_spatial_iou(
+    first: tuple[float, float, float, float],
+    second: tuple[float, float, float, float],
+) -> float:
+    intersection_x = max(0.0, min(first[2], second[2]) - max(first[0], second[0]))
+    intersection_y = max(0.0, min(first[3], second[3]) - max(first[1], second[1]))
+    intersection = intersection_x * intersection_y
+    first_area = (first[2] - first[0]) * (first[3] - first[1])
+    second_area = (second[2] - second[0]) * (second[3] - second[1])
+    union = first_area + second_area - intersection
+    return 0.0 if union <= 0.0 else intersection / union
+
+
+def _events_associate(
+    first: PhysicalEventCatalogEvidence,
+    second: PhysicalEventCatalogEvidence,
+    plan: PhysicalEventCatalogPlan,
+) -> bool:
+    first_start = datetime.fromisoformat(first.start_time.replace("Z", "+00:00"))
+    first_end = datetime.fromisoformat(first.end_time.replace("Z", "+00:00"))
+    second_start = datetime.fromisoformat(second.start_time.replace("Z", "+00:00"))
+    second_end = datetime.fromisoformat(second.end_time.replace("Z", "+00:00"))
+    gap_seconds = max(
+        0.0,
+        (second_start - first_end).total_seconds(),
+        (first_start - second_end).total_seconds(),
+    )
+    return (
+        bool(set(first.participating_radar_ids) & set(second.participating_radar_ids))
+        and gap_seconds <= plan.maximum_association_time_gap_minutes * 60.0
+        and _event_spatial_iou(
+            first.spatial_envelope_xy_m,
+            second.spatial_envelope_xy_m,
+        )
+        >= plan.minimum_association_spatial_iou
+    )
+
+
 def validate_physical_event_catalog_result(
     result: PhysicalEventCatalogResult,
     plan: PhysicalEventCatalogPlan,
@@ -1233,11 +1489,13 @@ def validate_physical_event_catalog_result(
     try:
         cataloged_at = _canonical_time(result.cataloged_at)
         if (
-            result.contract != "physical-event-catalog-result-v2"
+            result.contract != "physical-event-catalog-result-v3"
             or result.catalog_plan_digest != plan.plan_digest
             or result.adjudicator_id != plan.adjudicator_id
             or result.adjudicator_public_key_hex != plan.adjudicator_public_key_hex
             or result.result_digest != json_digest(result.payload)
+            or result.association_graph_digest
+            != _event_association_graph_digest(plan.plan_digest, result.event_evidences)
             or cataloged_at > plan.catalog_completion_deadline
             or len(result.adjudicator_signature) != 128
         ):
@@ -1245,6 +1503,14 @@ def validate_physical_event_catalog_result(
         events = result.event_evidences
         if not events or len({item.event_digest for item in events}) != len(events):
             raise ValueError("physical event-catalog result is incomplete")
+        if any(
+            _events_associate(first, second, plan)
+            for index, first in enumerate(events)
+            for second in events[index + 1 :]
+        ):
+            raise ValueError(
+                "physical event association graph has split connected components"
+            )
         member_cases: list[str] = []
         for event in events:
             validate_physical_event_catalog(event)
@@ -1295,10 +1561,15 @@ def validate_physical_event_catalog_result(
                 != event.spatial_envelope_xy_m
                 or item.spatial_membership_rule_digest
                 != plan.spatial_membership_rule_digest
+                or item.spatial_reference_digest != plan.spatial_reference_digest
             ):
                 raise ValueError(
                     "physical event spatial-membership evidence disagrees with catalog"
                 )
+        if max(_canonical_time(item.input_available_time) for item in spatial) > cataloged_at:
+            raise ValueError(
+                "physical event catalog predates member input availability"
+            )
         if candidate_scoring_started_at is not None and (
             cataloged_at >= _canonical_time(candidate_scoring_started_at)
         ):
@@ -1817,6 +2088,43 @@ class LegacyNeuralPriorHoldoutPlanV10Audit:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV11Audit:
+    """Raw v11 plan retained before trusted chronology and event graphs."""
+
+    plan_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-plan-audit-v11"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _require_digest("legacy holdout plan digest", self.plan_digest)
+        payload = json.loads(self.payload_json)
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != "neural-prior-holdout-plan-v11"
+            or payload.get("plan_digest") != self.plan_digest
+            or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            != self.payload_json
+        ):
+            raise ValueError("invalid legacy v11 holdout plan")
+        original = dict(payload)
+        original.pop("plan_digest")
+        if json_digest(original) != self.plan_digest:
+            raise ValueError("legacy v11 holdout plan digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "plan_digest": self.plan_digest,
+                    "payload": payload,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorHoldoutPlan:
     """Root-approved holdout commitment created before any evaluated issue."""
 
@@ -1839,11 +2147,11 @@ class NeuralPriorHoldoutPlan:
     mode: Literal["prospective", "sealed_historical"] = "prospective"
     sealed_historical_dataset_digest: str | None = None
     candidate_training_started_at: str | None = None
-    contract: str = "neural-prior-holdout-plan-v11"
+    contract: str = "neural-prior-holdout-plan-v12"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v11":
+        if self.contract != "neural-prior-holdout-plan-v12":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -2508,6 +2816,43 @@ class LegacyNeuralPriorCandidateManifestAuditV8:
         )
 
 
+@dataclass(frozen=True)
+class LegacyNeuralPriorCandidateManifestAuditV9:
+    """Digest-verified v9 manifest retained before trusted start receipts."""
+
+    manifest_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-candidate-manifest-audit-v9"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _require_digest("legacy candidate manifest digest", self.manifest_digest)
+        payload = json.loads(self.payload_json)
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != "neural-prior-candidate-manifest-v9"
+            or payload.get("manifest_digest") != self.manifest_digest
+            or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            != self.payload_json
+        ):
+            raise ValueError("invalid legacy v9 candidate manifest")
+        original = dict(payload)
+        original.pop("manifest_digest")
+        if json_digest(original) != self.manifest_digest:
+            raise ValueError("legacy v9 candidate manifest digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "manifest_digest": self.manifest_digest,
+                    "payload": payload,
+                }
+            ),
+        )
+
+
 def _validate_holdout_case_identity(value: object) -> None:
     for name in ("case_id", "storm_id", "day", "radar_id", "regime", "range_regime"):
         item = getattr(value, name)
@@ -2695,11 +3040,13 @@ class NeuralPriorCandidateManifest:
     physical_event_catalog_result: PhysicalEventCatalogResult
     candidate_scoring_started_at: str
     holdout_cases: tuple[NeuralPriorHoldoutCase, ...]
-    contract: str = "neural-prior-candidate-manifest-v9"
+    candidate_training_start_receipt: TrustedProcessStartReceipt | None = None
+    candidate_scoring_start_receipt: TrustedProcessStartReceipt | None = None
+    contract: str = "neural-prior-candidate-manifest-v10"
     manifest_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-candidate-manifest-v9":
+        if self.contract != "neural-prior-candidate-manifest-v10":
             raise ValueError("unsupported neural-prior candidate manifest")
         for name in (
             "candidate_prior_digest",
@@ -2717,6 +3064,41 @@ class NeuralPriorCandidateManifest:
             _require_digest(name, getattr(self, name))
         if self.candidate_prior_digest == self.parent_prior_digest:
             raise ValueError("candidate and parent prior digests must differ")
+        if (
+            self.candidate_training_start_receipt is None
+            or self.candidate_scoring_start_receipt is None
+        ):
+            raise ValueError("candidate manifest requires trusted process-start receipts")
+        validate_trusted_process_start_receipt(
+            self.candidate_training_start_receipt,
+            self.training_physical_event_catalog_plan,
+            catalog_result=self.training_physical_event_catalog_result,
+        )
+        _validate_trusted_process_start_receipt_integrity(
+            self.candidate_scoring_start_receipt
+        )
+        if (
+            self.candidate_training_start_receipt.process_kind
+            != "candidate_training"
+            or self.candidate_scoring_start_receipt.process_kind
+            != "candidate_scoring"
+            or self.candidate_training_start_receipt.started_at
+            != _canonical_time(self.candidate_training_started_at)
+            or self.candidate_scoring_start_receipt.started_at
+            != _canonical_time(self.candidate_scoring_started_at)
+            or self.candidate_scoring_start_receipt.catalog_plan_digest
+            != self.physical_event_catalog_result.catalog_plan_digest
+            or self.candidate_scoring_start_receipt.catalog_result_digest
+            != self.physical_event_catalog_result.result_digest
+            or set(self.candidate_training_start_receipt.subject_digests)
+            != {
+                self.training_dataset_digest,
+                self.candidate_training_manifest_digest,
+            }
+            or self.candidate_training_start_receipt.process_algorithm_digest
+            != self.algorithm_bundle_digest
+        ):
+            raise ValueError("candidate process-start receipt lineage disagrees")
         for digest in (
             self.training_learning_approval_digests
             + self.training_intervention_digests
@@ -2882,6 +3264,41 @@ class NeuralPriorCandidateManifest:
             != set(self.training_full_analysis_input_digests)
         ):
             raise ValueError("candidate training physical-event lineage disagrees")
+        training_plan = self.training_physical_event_catalog_plan
+        if (
+            any(
+                event.association_algorithm_digest
+                != training_plan.association_algorithm_digest
+                for event in self.physical_event_catalog_result.event_evidences
+            )
+            or any(
+                membership.spatial_membership_rule_digest
+                != training_plan.spatial_membership_rule_digest
+                or membership.spatial_reference_digest
+                != training_plan.spatial_reference_digest
+                for membership in (
+                    self.physical_event_catalog_result
+                    .case_spatial_membership_evidences
+                )
+            )
+        ):
+            raise ValueError(
+                "training and holdout event association algorithm contracts differ"
+            )
+        if any(
+            _events_associate(
+                training_event,
+                holdout_event,
+                training_plan,
+            )
+            for training_event in (
+                self.training_physical_event_catalog_result.event_evidences
+            )
+            for holdout_event in self.physical_event_catalog_result.event_evidences
+        ):
+            raise ValueError(
+                "candidate training overlaps a holdout association component"
+            )
         object.__setattr__(
             self,
             "candidate_training_started_at",
@@ -2952,6 +3369,16 @@ def _candidate_manifest_payload(
             }
         ),
         "candidate_training_started_at": manifest.candidate_training_started_at,
+        "candidate_training_start_receipt": (
+            manifest.candidate_training_start_receipt.payload
+            | {
+                "receipt_digest": (
+                    manifest.candidate_training_start_receipt.receipt_digest
+                )
+            }
+            if manifest.candidate_training_start_receipt is not None
+            else None
+        ),
         "training_dataset_digest": manifest.training_dataset_digest,
         "candidate_training_manifest_digest": (
             manifest.candidate_training_manifest_digest
@@ -2986,6 +3413,16 @@ def _candidate_manifest_payload(
             | {"result_digest": manifest.physical_event_catalog_result.result_digest}
         ),
         "candidate_scoring_started_at": manifest.candidate_scoring_started_at,
+        "candidate_scoring_start_receipt": (
+            manifest.candidate_scoring_start_receipt.payload
+            | {
+                "receipt_digest": (
+                    manifest.candidate_scoring_start_receipt.receipt_digest
+                )
+            }
+            if manifest.candidate_scoring_start_receipt is not None
+            else None
+        ),
         "holdout_cases": [item.__dict__ for item in manifest.holdout_cases],
     }
 
@@ -3009,6 +3446,7 @@ def _validate_physical_event_catalogs_against_plan(
     """Bind signed event membership to preregistered adjudicator authority."""
 
     cases = {item.case_id: item for item in manifest.holdout_cases}
+    input_plans = {item.plan_digest: item for item in plan.input_plans}
     reference_plans = {
         item.plan_digest: item for item in plan.regime_reference_plans
     }
@@ -3040,8 +3478,56 @@ def _validate_physical_event_catalogs_against_plan(
     validate_physical_event_catalog_result(
         manifest.physical_event_catalog_result,
         plan.physical_event_catalog_plan,
-        candidate_scoring_started_at=manifest.candidate_scoring_started_at,
     )
+    for membership in (
+        manifest.physical_event_catalog_result.case_spatial_membership_evidences
+    ):
+        case = cases[membership.case_id]
+        input_plan = input_plans.get(case.input_plan_digest)
+        if (
+            input_plan is None
+            or membership.input_available_time != input_plan.input_available_time
+        ):
+            raise ValueError(
+                "physical event member input availability disagrees with its plan"
+            )
+    training_plan = manifest.training_physical_event_catalog_plan
+    holdout_plan = plan.physical_event_catalog_plan
+    if (
+        training_plan.association_algorithm_digest
+        != holdout_plan.association_algorithm_digest
+        or training_plan.spatial_membership_rule_digest
+        != holdout_plan.spatial_membership_rule_digest
+        or training_plan.spatial_reference_digest
+        != holdout_plan.spatial_reference_digest
+        or training_plan.maximum_association_time_gap_minutes
+        != holdout_plan.maximum_association_time_gap_minutes
+        or training_plan.minimum_association_spatial_iou
+        != holdout_plan.minimum_association_spatial_iou
+    ):
+        raise ValueError(
+            "training and holdout event association contracts differ"
+        )
+    if any(
+        _events_associate(training_event, holdout_event, holdout_plan)
+        for training_event in (
+            manifest.training_physical_event_catalog_result.event_evidences
+        )
+        for holdout_event in manifest.physical_event_catalog_result.event_evidences
+    ):
+        raise ValueError(
+            "candidate training overlaps a holdout association component"
+        )
+    assert manifest.candidate_scoring_start_receipt is not None
+    validate_trusted_process_start_receipt(
+        manifest.candidate_scoring_start_receipt,
+        plan.physical_event_catalog_plan,
+        catalog_result=manifest.physical_event_catalog_result,
+    )
+    if set(manifest.candidate_scoring_start_receipt.subject_digests) != set(
+        plan.candidate_family_digests
+    ):
+        raise ValueError("candidate scoring receipt family disagrees with holdout plan")
 
 
 @dataclass(frozen=True, init=False)
@@ -5754,11 +6240,15 @@ class RangeMetricRequirement:
     minimum_valid_area_km2: float
     maximum_mean_normalized_degradation: float
     maximum_harmful_fraction_upper_bound: float
-    contract: str = "range-metric-requirement-v2"
+    maximum_end_to_end_mean_normalized_degradation: float = 0.0
+    maximum_end_to_end_harmful_fraction_upper_bound: float = 1.0
+    maximum_withdrawn_fraction: float = 1.0
+    maximum_newly_issued_fraction: float = 1.0
+    contract: str = "range-metric-requirement-v3"
 
     def __post_init__(self) -> None:
         if (
-            self.contract != "range-metric-requirement-v2"
+            self.contract != "range-metric-requirement-v3"
             or any(
                 not value or value.strip() != value
                 for value in (
@@ -5779,6 +6269,18 @@ class RangeMetricRequirement:
             or self.maximum_mean_normalized_degradation < 0.0
             or not math.isfinite(self.maximum_harmful_fraction_upper_bound)
             or not 0.0 <= self.maximum_harmful_fraction_upper_bound <= 1.0
+            or not math.isfinite(
+                self.maximum_end_to_end_mean_normalized_degradation
+            )
+            or self.maximum_end_to_end_mean_normalized_degradation < 0.0
+            or not math.isfinite(
+                self.maximum_end_to_end_harmful_fraction_upper_bound
+            )
+            or not 0.0
+            <= self.maximum_end_to_end_harmful_fraction_upper_bound
+            <= 1.0
+            or not 0.0 <= self.maximum_withdrawn_fraction <= 1.0
+            or not 0.0 <= self.maximum_newly_issued_fraction <= 1.0
         ):
             raise ValueError("range metric requirement is invalid")
 
@@ -5904,10 +6406,11 @@ class NeuralPriorPromotionPolicy:
     require_all_registered_regimes_certified: bool = False
     minimum_bootstrap_tail_replicates: int = 20
     maximum_exact_sign_clusters: int = 16
-    contract: str = "neural-prior-promotion-policy-v19"
+    minimum_deployment_metric_cell_events: int = 5
+    contract: str = "neural-prior-promotion-policy-v20"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-policy-v19":
+        if self.contract != "neural-prior-promotion-policy-v20":
             raise ValueError("unsupported neural-prior promotion policy")
         if not self.metric_scales or len({x.metric_name for x in self.metric_scales}) != len(self.metric_scales):
             raise ValueError("promotion metric scales must be unique")
@@ -5990,6 +6493,7 @@ class NeuralPriorPromotionPolicy:
             self.minimum_range_echo_objects,
             self.minimum_range_state_echo_objects,
             self.minimum_regime_classifier_clusters,
+            self.minimum_deployment_metric_cell_events,
         )
         if any(type(value) is not int or value <= 0 for value in integer_limits):
             raise ValueError("promotion count limits must be positive integers")
@@ -6346,7 +6850,63 @@ class NeuralPriorPromotionPolicy:
                 self.minimum_bootstrap_tail_replicates
             ),
             "maximum_exact_sign_clusters": self.maximum_exact_sign_clusters,
+            "minimum_deployment_metric_cell_events": (
+                self.minimum_deployment_metric_cell_events
+            ),
         })
+
+
+@dataclass(frozen=True)
+class PromotionSampleSizePreflight:
+    """Best-case independent-event requirement before holdout scoring starts."""
+
+    family_size: int
+    available_physical_events: int
+    minimum_structural_events: int
+    minimum_perfect_success_events: int
+    minimum_zero_failure_events: int
+    required_physical_events: int
+    feasible: bool
+    contract: str = "neural-prior-promotion-sample-size-preflight-v1"
+    preflight_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        values = (
+            self.family_size,
+            self.available_physical_events,
+            self.minimum_structural_events,
+            self.minimum_perfect_success_events,
+            self.minimum_zero_failure_events,
+            self.required_physical_events,
+        )
+        if (
+            self.contract
+            != "neural-prior-promotion-sample-size-preflight-v1"
+            or any(type(value) is not int or value < 0 for value in values)
+            or self.family_size == 0
+            or self.required_physical_events
+            != max(
+                self.minimum_structural_events,
+                self.minimum_perfect_success_events,
+                self.minimum_zero_failure_events,
+            )
+            or self.feasible
+            != (self.available_physical_events >= self.required_physical_events)
+        ):
+            raise ValueError("promotion sample-size preflight is invalid")
+        object.__setattr__(
+            self,
+            "preflight_digest",
+            json_digest(self.payload),
+        )
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "preflight_digest"
+        }
 
 
 def _legacy_promotion_audit_digest(
@@ -6620,6 +7180,28 @@ class LegacyNeuralPriorPromotionEvidenceAuditV13:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV14:
+    """Original v14 decision retained before end-to-end metric-cell inference."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v14"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v14",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
@@ -6708,6 +7290,9 @@ class NeuralPriorPromotionEvidence:
     range_metric_cell_bounds: tuple[
         tuple[str, str, str, int, float, float, int, int], ...
     ]
+    range_metric_end_to_end_cell_bounds: tuple[
+        tuple[str, str, str, int, float, float, float, float, int, int], ...
+    ]
     certified_applicability_regime_groups: tuple[tuple[str, str], ...]
     certified_range_geometry_contract_digests: tuple[str, ...]
     requires_parent_fallback_outside_certified_applicability: bool
@@ -6715,11 +7300,11 @@ class NeuralPriorPromotionEvidence:
     deployment_eligible: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v14"
+    contract: str = "neural-prior-promotion-evidence-v15"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v14":
+        if self.contract != "neural-prior-promotion-evidence-v15":
             raise ValueError("unsupported neural-prior promotion evidence")
         for name in (
             "candidate_prior_digest",
@@ -6852,6 +7437,12 @@ class NeuralPriorPromotionEvidence:
             != len(self.range_band_skill_bounds)
             or len({item[:4] for item in self.range_metric_cell_bounds})
             != len(self.range_metric_cell_bounds)
+            or len(
+                {item[:4] for item in self.range_metric_end_to_end_cell_bounds}
+            )
+            != len(self.range_metric_end_to_end_cell_bounds)
+            or {item[:4] for item in self.range_metric_end_to_end_cell_bounds}
+            != {item[:4] for item in self.range_metric_cell_bounds}
             or len(self.range_band_skill_inference_diagnostics)
             != len(self.range_band_skill_bounds)
             or {
@@ -6897,6 +7488,21 @@ class NeuralPriorPromotionEvidence:
                 or type(item[7]) is not int
                 or item[7] <= 0
                 for item in self.range_metric_cell_bounds
+            )
+            or any(
+                len(item) != 10
+                or not all(item[index] for index in range(3))
+                or type(item[3]) is not int
+                or item[3] <= 0
+                or any(not math.isfinite(value) for value in item[4:8])
+                or not 0.0 <= item[5] <= 1.0
+                or not 0.0 <= item[6] <= 1.0
+                or not 0.0 <= item[7] <= 1.0
+                or type(item[8]) is not int
+                or item[8] <= 0
+                or type(item[9]) is not int
+                or item[9] <= 0
+                for item in self.range_metric_end_to_end_cell_bounds
             )
             or any(
                 not regime or not range_regime
@@ -7167,6 +7773,82 @@ def _event_fractional_rate_interval(
             2.0 * variance * log_term / event_count
         ) + 7.0 * log_term / (3.0 * (event_count - 1))
     return max(0.0, rate - radius), min(1.0, rate + radius)
+
+
+def promotion_sample_size_preflight(
+    plan: NeuralPriorHoldoutPlan,
+    policy: NeuralPriorPromotionPolicy,
+    *,
+    available_physical_events: int,
+) -> PromotionSampleSizePreflight:
+    """Reject holdouts that cannot pass rate gates even with perfect outcomes."""
+
+    validate_neural_prior_holdout_plan(plan)
+    if type(available_physical_events) is not int or available_physical_events < 0:
+        raise ValueError("available physical-event count must be nonnegative")
+    base_family_size = len(plan.candidate_family_digests) * len(
+        plan.regime_classifier_manifests
+    )
+    family_size = base_family_size * max(
+        1,
+        2 * len(policy.required_range_metrics),
+    )
+    alpha = (1.0 - policy.confidence_level) / (2.0 * family_size)
+    finite_sample_constant = 7.0 * math.log(2.0 / alpha) / 3.0
+
+    success_threshold = max(
+        policy.minimum_regime_classifier_accuracy_lower_bound,
+        policy.minimum_regime_classifier_recall_lower_bound,
+        policy.minimum_range_set_precision_lower_bound,
+        policy.minimum_range_set_recall_lower_bound,
+    )
+    failure_thresholds = (
+        policy.maximum_regime_classifier_false_routing_upper_bound,
+        policy.maximum_false_active_band_upper_bound,
+        policy.maximum_harmful_fraction,
+        *(item.maximum_harmful_fraction_upper_bound for item in policy.required_range_metrics),
+        *(
+            item.maximum_end_to_end_harmful_fraction_upper_bound
+            for item in policy.required_range_metrics
+        ),
+    )
+    if any(value <= 0.0 for value in failure_thresholds):
+        raise ValueError(
+            "finite-sample rate policy requires an unattainable exact bound"
+        )
+    success_margin = 1.0 - success_threshold
+    failure_margin = min(failure_thresholds)
+
+    def required_events(margin: float) -> int:
+        if margin <= 0.0:
+            raise ValueError(
+                "finite-sample rate policy requires an unattainable exact bound"
+            )
+        return max(2, math.ceil(finite_sample_constant / margin) + 1)
+
+    minimum_perfect_success_events = required_events(success_margin)
+    minimum_zero_failure_events = required_events(failure_margin)
+    minimum_structural_events = max(
+        policy.minimum_material_clusters,
+        policy.minimum_regime_classifier_clusters,
+        policy.minimum_range_band_clusters,
+        policy.minimum_deployment_metric_cell_events,
+        *(item.minimum_physical_events for item in policy.required_range_metrics),
+    )
+    required_physical_events = max(
+        minimum_structural_events,
+        minimum_perfect_success_events,
+        minimum_zero_failure_events,
+    )
+    return PromotionSampleSizePreflight(
+        family_size=family_size,
+        available_physical_events=available_physical_events,
+        minimum_structural_events=minimum_structural_events,
+        minimum_perfect_success_events=minimum_perfect_success_events,
+        minimum_zero_failure_events=minimum_zero_failure_events,
+        required_physical_events=required_physical_events,
+        feasible=available_physical_events >= required_physical_events,
+    )
 
 
 def _cluster_mean_upper_bound(
@@ -8176,13 +8858,16 @@ def compute_neural_prior_promotion(
     range_metric_cell_bounds: list[
         tuple[str, str, str, int, float, float, int, int]
     ] = []
+    range_metric_end_to_end_cell_bounds: list[
+        tuple[str, str, str, int, float, float, float, float, int, int]
+    ] = []
     metric_cell_family_size = family_size * max(
         1, len(policy.required_range_metrics)
     )
     metric_cell_tail_ok = (
         _bootstrap_tail_diagnostics(
             policy,
-            family_size=metric_cell_family_size,
+            family_size=metric_cell_family_size * 2,
             enforce=False,
         )[1]
         >= policy.minimum_bootstrap_tail_replicates
@@ -8289,6 +8974,9 @@ def compute_neural_prior_promotion(
         for requirement in group_metric_requirements:
             qualifying = 0
             cell_values: list[float] = []
+            end_to_end_cell_values: list[float] = []
+            withdrawn_values: list[float] = []
+            newly_issued_values: list[float] = []
             cell_clusters: list[str] = []
             scale = next(
                 item.scale
@@ -8316,10 +9004,29 @@ def compute_neural_prior_promotion(
                     cell_values.append(
                         float(band.metric_change[lead_index, metric_index]) / scale
                     )
+                    end_to_end_cell_values.append(
+                        float(
+                            band.end_to_end_metric_change[
+                                lead_index,
+                                metric_index,
+                            ]
+                        )
+                        / scale
+                    )
+                    withdrawn_values.append(
+                        float(evaluation.withdrawn_fraction[lead_index])
+                    )
+                    newly_issued_values.append(
+                        float(evaluation.newly_issued_fraction[lead_index])
+                    )
                     cell_clusters.append(cluster)
             if (
                 qualifying < requirement.minimum_cases
-                or len(set(cell_clusters)) < requirement.minimum_physical_events
+                or len(set(cell_clusters))
+                < max(
+                    requirement.minimum_physical_events,
+                    policy.minimum_deployment_metric_cell_events,
+                )
                 or not metric_cell_tail_ok
             ):
                 band_metric_completeness_ok = False
@@ -8336,6 +9043,20 @@ def compute_neural_prior_promotion(
                 policy,
                 family_size=metric_cell_family_size,
             )
+            end_to_end_mean_upper = _cluster_mean_upper_bound(
+                end_to_end_cell_values,
+                cell_clusters,
+                policy,
+                family_size=metric_cell_family_size * 2,
+            )
+            _, end_to_end_harmful_upper = _event_fractional_rate_interval(
+                [float(value > 0.0) for value in end_to_end_cell_values],
+                cell_clusters,
+                policy,
+                family_size=metric_cell_family_size * 2,
+            )
+            maximum_withdrawn = max(withdrawn_values)
+            maximum_newly_issued = max(newly_issued_values)
             range_metric_cell_bounds.append(
                 (
                     requirement.weather_regime,
@@ -8348,10 +9069,31 @@ def compute_neural_prior_promotion(
                     len(set(cell_clusters)),
                 )
             )
+            range_metric_end_to_end_cell_bounds.append(
+                (
+                    requirement.weather_regime,
+                    requirement.range_regime,
+                    requirement.metric_name,
+                    requirement.lead_minutes,
+                    end_to_end_mean_upper,
+                    end_to_end_harmful_upper,
+                    maximum_withdrawn,
+                    maximum_newly_issued,
+                    qualifying,
+                    len(set(cell_clusters)),
+                )
+            )
             if (
                 mean_upper > requirement.maximum_mean_normalized_degradation
                 or harmful_upper
                 > requirement.maximum_harmful_fraction_upper_bound
+                or end_to_end_mean_upper
+                > requirement.maximum_end_to_end_mean_normalized_degradation
+                or end_to_end_harmful_upper
+                > requirement.maximum_end_to_end_harmful_fraction_upper_bound
+                or maximum_withdrawn > requirement.maximum_withdrawn_fraction
+                or maximum_newly_issued
+                > requirement.maximum_newly_issued_fraction
             ):
                 band_metric_completeness_ok = False
         def band_component_records(
@@ -8700,6 +9442,9 @@ def compute_neural_prior_promotion(
             range_band_skill_inference_diagnostics
         ),
         range_metric_cell_bounds=tuple(range_metric_cell_bounds),
+        range_metric_end_to_end_cell_bounds=tuple(
+            range_metric_end_to_end_cell_bounds
+        ),
         certified_applicability_regime_groups=tuple(certified_groups),
         certified_range_geometry_contract_digests=(
             certified_range_geometries
@@ -9162,6 +9907,9 @@ def _select_deployed_prior(
     range_geometry_contract: RangeGeometryContract,
     operational_grid_contract_digest: str,
     operational_frame_shape: tuple[int, int],
+    operational_radar_source_kind: str | None = None,
+    operational_radar_site_digest: str | None = None,
+    operational_radar_site_location_digest: str | None = None,
     policy_trust_store_path: str | Path,
 ) -> tuple[NeuralPriorInferenceRunner, NeuralPriorDeploymentSelection]:
     """Select the candidate only for classifier-attested certified regimes."""
@@ -9263,10 +10011,15 @@ def _select_deployed_prior(
         role = "candidate"
         reason = "certified_candidate"
     deployment_decision_payload = {
-        "contract": "neural-prior-deployment-decision-artifact-v3",
+        "contract": "neural-prior-deployment-decision-artifact-v4",
         "full_analysis_input_digest": regime_evidence.full_analysis_input_digest,
         "operational_grid_contract_digest": operational_grid_contract_digest,
         "operational_frame_shape": list(operational_frame_shape),
+        "operational_radar_source_kind": operational_radar_source_kind,
+        "operational_radar_site_digest": operational_radar_site_digest,
+        "operational_radar_site_location_digest": (
+            operational_radar_site_location_digest
+        ),
         "regime_classification_evidence": (
             regime_evidence.payload
             | {"evidence_digest": regime_evidence.evidence_digest}
@@ -9361,6 +10114,9 @@ def validate_neural_prior_deployment_decision_artifact(
     *,
     expected_operational_grid_contract_digest: str | None = None,
     expected_operational_frame_shape: tuple[int, int] | None = None,
+    expected_operational_radar_source_kind: str | None = None,
+    expected_operational_radar_site_digest: str | None = None,
+    expected_operational_radar_site_location_digest: str | None = None,
 ) -> str:
     """Replay a durable classifier/policy/certification deployment choice."""
 
@@ -9371,7 +10127,7 @@ def validate_neural_prior_deployment_decision_artifact(
     if (
         not isinstance(payload, dict)
         or payload.get("contract")
-        != "neural-prior-deployment-decision-artifact-v3"
+        != "neural-prior-deployment-decision-artifact-v4"
         or json.dumps(payload, sort_keys=True, separators=(",", ":"))
         != artifact_json
     ):
@@ -9466,6 +10222,10 @@ def validate_neural_prior_deployment_decision_artifact(
     ):
         raise ValueError("neural-prior deployment artifact lineage disagrees")
     if (
+        "operational_radar_source_kind" not in payload
+        or "operational_radar_site_digest" not in payload
+        or "operational_radar_site_location_digest" not in payload
+        or
         payload.get("operational_grid_contract_digest")
         != range_partition.get("grid_contract_digest")
         or payload.get("operational_frame_shape")
@@ -9482,6 +10242,18 @@ def validate_neural_prior_deployment_decision_artifact(
         expected_operational_frame_shape is not None
         and payload.get("operational_frame_shape")
         != list(expected_operational_frame_shape)
+    ) or (
+        expected_operational_radar_source_kind is not None
+        and payload.get("operational_radar_source_kind")
+        != expected_operational_radar_source_kind
+    ) or (
+        expected_operational_radar_site_digest is not None
+        and payload.get("operational_radar_site_digest")
+        != expected_operational_radar_site_digest
+    ) or (
+        expected_operational_radar_site_location_digest is not None
+        and payload.get("operational_radar_site_location_digest")
+        != expected_operational_radar_site_location_digest
     ):
         raise ValueError(
             "neural-prior deployment artifact disagrees with current forecast run"
@@ -9572,6 +10344,21 @@ def infer_deployed_neural_prior(
         or grid_y_m.shape != frames_dbz.shape[-2:]
     ):
         raise ValueError("range coordinates disagree with radar frames")
+    if input_run.operational_data_identity_json is None:
+        raise ValueError("operational neural prior requires radar source identity")
+    source_identity = OperationalDataIdentity.from_json(
+        input_run.operational_data_identity_json
+    )
+    if source_identity.radar_source_kind != "single_site":
+        raise ValueError(
+            "single-radar range geometry cannot be used with a mosaic source"
+        )
+    if (
+        source_identity.radar_site_digest != range_geometry_contract.radar_site_digest
+        or source_identity.radar_site_location_digest
+        != range_geometry_contract.radar_site_location_digest
+    ):
+        raise ValueError("range geometry disagrees with operational radar site")
     regime_evidence = regime_classifier.classify(frames_dbz, input_run=input_run)
     range_partition_evidence = resolve_range_geometry(
         range_geometry_contract,
@@ -9590,6 +10377,11 @@ def infer_deployed_neural_prior(
         operational_frame_shape=(
             int(frames_dbz.shape[-2]),
             int(frames_dbz.shape[-1]),
+        ),
+        operational_radar_source_kind=source_identity.radar_source_kind,
+        operational_radar_site_digest=source_identity.radar_site_digest,
+        operational_radar_site_location_digest=(
+            source_identity.radar_site_location_digest
         ),
         policy_trust_store_path=policy_trust_store_path,
     )
