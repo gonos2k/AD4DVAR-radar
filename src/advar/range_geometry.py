@@ -31,13 +31,15 @@ class RangeGeometryContract:
     horizontal_range_rule_digest: str
     grid_x_m_digest: str
     grid_y_m_digest: str
-    resolver_algorithm: str = "projected-horizontal-euclidean-range-v2"
-    contract: str = "radar-horizontal-range-geometry-contract-v2"
+    radar_site_location_digest: str
+    resolver_algorithm: str = "projected-horizontal-euclidean-range-v3"
+    contract: str = "radar-horizontal-range-geometry-contract-v3"
     contract_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
         for name in (
             "radar_site_digest",
+            "radar_site_location_digest",
             "grid_contract_digest",
             "horizontal_range_rule_digest",
             "grid_x_m_digest",
@@ -46,9 +48,9 @@ class RangeGeometryContract:
             _require_digest(name, getattr(self, name))
         edges = self.radial_distance_edges_m
         if (
-            self.contract != "radar-horizontal-range-geometry-contract-v2"
+            self.contract != "radar-horizontal-range-geometry-contract-v3"
             or self.resolver_algorithm
-            != "projected-horizontal-euclidean-range-v2"
+            != "projected-horizontal-euclidean-range-v3"
             or not math.isfinite(self.radar_x_m)
             or not math.isfinite(self.radar_y_m)
             or not self.range_regime_labels

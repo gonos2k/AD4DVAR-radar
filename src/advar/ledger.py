@@ -74,6 +74,7 @@ from .promotion import (
     LegacyNeuralPriorCandidateManifestAuditV6,
     LegacyNeuralPriorCandidateManifestAuditV7,
     LegacyNeuralPriorCandidateManifestAuditV8,
+    LegacyNeuralPriorCandidateManifestAuditV9,
     NeuralPriorCandidateManifest,
     LegacyNeuralPriorHoldoutPlanAudit,
     LegacyNeuralPriorHoldoutPlanCase,
@@ -88,6 +89,7 @@ from .promotion import (
     LegacyNeuralPriorHoldoutPlanV8Audit,
     LegacyNeuralPriorHoldoutPlanV9Audit,
     LegacyNeuralPriorHoldoutPlanV10Audit,
+    LegacyNeuralPriorHoldoutPlanV11Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
@@ -104,6 +106,7 @@ from .promotion import (
     PhysicalEventCatalogEvidence,
     PhysicalEventCatalogPlan,
     PhysicalEventCatalogResult,
+    TrustedProcessStartReceipt,
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionEvidence,
     LegacyNeuralPriorPromotionEvidenceAuditV3,
@@ -117,6 +120,7 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV11,
     LegacyNeuralPriorPromotionEvidenceAuditV12,
     LegacyNeuralPriorPromotionEvidenceAuditV13,
+    LegacyNeuralPriorPromotionEvidenceAuditV14,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     compute_neural_prior_promotion,
@@ -124,10 +128,12 @@ from .promotion import (
     validate_neural_prior_candidate_manifest,
     validate_neural_prior_holdout_plan,
     validate_physical_event_catalog_result,
+    validate_trusted_process_start_receipt,
     _new_prior_holdout_evaluation,
     _new_regime_reference_evidence,
     _new_physical_event_catalog_evidence,
     _new_physical_event_catalog_result,
+    _new_trusted_process_start_receipt,
 )
 
 
@@ -135,7 +141,7 @@ _SAFE_ID = re.compile(r"^[A-Za-z0-9._-]+$")
 _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 16
+_INDEX_SCHEMA_VERSION = 17
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
@@ -2400,6 +2406,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanV8Audit
         | LegacyNeuralPriorHoldoutPlanV9Audit
         | LegacyNeuralPriorHoldoutPlanV10Audit
+        | LegacyNeuralPriorHoldoutPlanV11Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -2452,6 +2459,15 @@ class EpisodeLedger:
                 plan_digest=plan_digest,
                 payload_json=json.dumps(
                     value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v11":
+            return LegacyNeuralPriorHoldoutPlanV11Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value,
+                    sort_keys=True,
+                    separators=(",", ":"),
                 ),
             )
         value.pop("plan_digest", None)
@@ -2628,8 +2644,6 @@ class EpisodeLedger:
         self,
         plan: NeuralPriorHoldoutPlan,
         result: PhysicalEventCatalogResult,
-        *,
-        candidate_scoring_started_at: str,
     ) -> str:
         """Append the sole candidate-neutral event catalog for one plan."""
 
@@ -2637,7 +2651,6 @@ class EpisodeLedger:
         validate_physical_event_catalog_result(
             result,
             plan.physical_event_catalog_plan,
-            candidate_scoring_started_at=candidate_scoring_started_at,
         )
         result_json = json.dumps(
             result.payload | {"result_digest": result.result_digest},
@@ -2655,11 +2668,21 @@ class EpisodeLedger:
             ):
                 raise ValueError("event catalog holdout plan is not registered")
             now = datetime.now(timezone.utc)
-            scoring_started = datetime.fromisoformat(
-                candidate_scoring_started_at.replace("Z", "+00:00")
+            cataloged_at = datetime.fromisoformat(
+                result.cataloged_at.replace("Z", "+00:00")
             )
-            if now >= scoring_started:
-                raise ValueError("event catalog must be registered before scoring")
+            latest_input_available = max(
+                datetime.fromisoformat(
+                    item.input_available_time.replace("Z", "+00:00")
+                )
+                for item in plan.input_plans
+            )
+            if cataloged_at > now:
+                raise ValueError(
+                    "event catalog time is after trusted ledger time"
+                )
+            if cataloged_at < latest_input_available:
+                raise ValueError("event catalog predates holdout input availability")
             try:
                 connection.execute(
                     "INSERT INTO neural_prior_event_catalog_results "
@@ -2678,6 +2701,67 @@ class EpisodeLedger:
                     "physical event catalog is already registered"
                 ) from error
         return result.result_digest
+
+    def append_trusted_process_start_receipt(
+        self,
+        plan: NeuralPriorHoldoutPlan,
+        result: PhysicalEventCatalogResult,
+        receipt: TrustedProcessStartReceipt,
+    ) -> str:
+        """Append a scheduler-signed scoring start after its catalog row."""
+
+        validate_trusted_process_start_receipt(
+            receipt,
+            plan.physical_event_catalog_plan,
+            catalog_result=result,
+        )
+        if receipt.process_kind != "candidate_scoring" or set(
+            receipt.subject_digests
+        ) != set(plan.candidate_family_digests):
+            raise ValueError("scoring start receipt disagrees with holdout plan")
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            catalog_row = connection.execute(
+                "SELECT result_digest, created_at "
+                "FROM neural_prior_event_catalog_results WHERE plan_digest = ?",
+                (plan.plan_digest,),
+            ).fetchone()
+            if catalog_row is None or catalog_row[0] != result.result_digest:
+                raise ValueError("scoring start requires a registered event catalog")
+            now = datetime.now(timezone.utc)
+            started_at = datetime.fromisoformat(
+                receipt.started_at.replace("Z", "+00:00")
+            )
+            catalog_append_time = datetime.fromisoformat(catalog_row[1])
+            if started_at > now:
+                raise ValueError("scoring start receipt cannot claim a future start")
+            if started_at <= catalog_append_time:
+                raise ValueError("scoring must start after catalog ledger append")
+            try:
+                connection.execute(
+                    "INSERT INTO neural_prior_process_start_receipts "
+                    "(receipt_digest, plan_digest, result_digest, process_kind, "
+                    "receipt_json, started_at, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        receipt.receipt_digest,
+                        plan.plan_digest,
+                        result.result_digest,
+                        receipt.process_kind,
+                        json.dumps(
+                            receipt.payload
+                            | {"receipt_digest": receipt.receipt_digest},
+                            sort_keys=True,
+                        ),
+                        receipt.started_at,
+                        now.isoformat(),
+                    ),
+                )
+            except sqlite3.IntegrityError as error:
+                raise FileExistsError(
+                    "trusted process-start receipt is already registered"
+                ) from error
+        return receipt.receipt_digest
 
     def append_neural_prior_promotion(
         self,
@@ -2737,6 +2821,30 @@ class EpisodeLedger:
             ):
                 raise ValueError(
                     "promotion physical event catalog result is not registered"
+                )
+            assert manifest.candidate_scoring_start_receipt is not None
+            scoring_receipt_row = connection.execute(
+                "SELECT receipt_json FROM neural_prior_process_start_receipts "
+                "WHERE receipt_digest = ? AND plan_digest = ?",
+                (
+                    manifest.candidate_scoring_start_receipt.receipt_digest,
+                    plan.plan_digest,
+                ),
+            ).fetchone()
+            expected_scoring_receipt_json = json.dumps(
+                manifest.candidate_scoring_start_receipt.payload
+                | {
+                    "receipt_digest": (
+                        manifest.candidate_scoring_start_receipt.receipt_digest
+                    )
+                },
+                sort_keys=True,
+            )
+            if scoring_receipt_row is None or scoring_receipt_row[0] != (
+                expected_scoring_receipt_json
+            ):
+                raise ValueError(
+                    "promotion candidate scoring start receipt is not registered"
                 )
             plan_created = datetime.fromisoformat(plan_row[1])
             if plan.mode == "prospective" and any(
@@ -2891,6 +2999,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV11
         | LegacyNeuralPriorPromotionEvidenceAuditV12
         | LegacyNeuralPriorPromotionEvidenceAuditV13
+        | LegacyNeuralPriorPromotionEvidenceAuditV14
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -2956,6 +3065,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV11
                 | LegacyNeuralPriorPromotionEvidenceAuditV12
                 | LegacyNeuralPriorPromotionEvidenceAuditV13
+                | LegacyNeuralPriorPromotionEvidenceAuditV14
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -3053,6 +3163,7 @@ class EpisodeLedger:
                         "neural-prior-promotion-evidence-v12",
                         "neural-prior-promotion-evidence-v13",
                         "neural-prior-promotion-evidence-v14",
+                        "neural-prior-promotion-evidence-v15",
                     ):
                         raw_payload = json.loads(row["evidence_payload_json"])
                         if not isinstance(raw_payload, dict):
@@ -3072,6 +3183,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v12",
                             "neural-prior-promotion-evidence-v13",
                             "neural-prior-promotion-evidence-v14",
+                            "neural-prior-promotion-evidence-v15",
                         ):
                             raw_payload["regime_classifier_evidence_digests"] = tuple(
                                 raw_payload["regime_classifier_evidence_digests"]
@@ -3089,6 +3201,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v12",
                             "neural-prior-promotion-evidence-v13",
                             "neural-prior-promotion-evidence-v14",
+                            "neural-prior-promotion-evidence-v15",
                         ):
                             raw_payload["range_band_skill_bounds"] = tuple(
                                 tuple(item)
@@ -3100,6 +3213,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v12",
                             "neural-prior-promotion-evidence-v13",
                             "neural-prior-promotion-evidence-v14",
+                            "neural-prior-promotion-evidence-v15",
                         ):
                             raw_payload[
                                 "range_band_skill_inference_diagnostics"
@@ -3112,6 +3226,7 @@ class EpisodeLedger:
                         if contract in (
                             "neural-prior-promotion-evidence-v13",
                             "neural-prior-promotion-evidence-v14",
+                            "neural-prior-promotion-evidence-v15",
                         ):
                             raw_payload[
                                 "certified_range_geometry_contract_digests"
@@ -3240,10 +3355,27 @@ class EpisodeLedger:
                                     separators=(",", ":"),
                                 ),
                             )
+                        elif contract == "neural-prior-promotion-evidence-v14":
+                            evidence = LegacyNeuralPriorPromotionEvidenceAuditV14(
+                                promotion_evidence_digest=promotion_evidence_digest,
+                                payload_json=json.dumps(
+                                    raw_payload,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                ),
+                            )
                         else:
                             raw_payload["range_metric_cell_bounds"] = tuple(
                                 tuple(item)
                                 for item in raw_payload["range_metric_cell_bounds"]
+                            )
+                            raw_payload[
+                                "range_metric_end_to_end_cell_bounds"
+                            ] = tuple(
+                                tuple(item)
+                                for item in raw_payload[
+                                    "range_metric_end_to_end_cell_bounds"
+                                ]
                             )
                             evidence = NeuralPriorPromotionEvidence(
                                 **cast(Any, raw_payload)
@@ -3456,6 +3588,24 @@ class EpisodeLedger:
             )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS neural_prior_process_start_receipts (
+                    receipt_digest TEXT PRIMARY KEY,
+                    plan_digest TEXT NOT NULL,
+                    result_digest TEXT NOT NULL,
+                    process_kind TEXT NOT NULL,
+                    receipt_json TEXT NOT NULL,
+                    started_at TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    UNIQUE (plan_digest, process_kind),
+                    FOREIGN KEY (plan_digest)
+                        REFERENCES neural_prior_holdout_plans(plan_digest),
+                    FOREIGN KEY (result_digest)
+                        REFERENCES neural_prior_event_catalog_results(result_digest)
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS neural_prior_promotions (
                     promotion_evidence_digest TEXT PRIMARY KEY,
                     candidate_prior_digest TEXT NOT NULL UNIQUE,
@@ -3531,6 +3681,7 @@ class EpisodeLedger:
                 "realized_intervention_receipts",
                 "neural_prior_holdout_plans",
                 "neural_prior_event_catalog_results",
+                "neural_prior_process_start_receipts",
                 "neural_prior_promotions",
             ):
                 connection.execute(
@@ -4112,6 +4263,7 @@ def _decode_candidate_manifest(
     | LegacyNeuralPriorCandidateManifestAuditV6
     | LegacyNeuralPriorCandidateManifestAuditV7
     | LegacyNeuralPriorCandidateManifestAuditV8
+    | LegacyNeuralPriorCandidateManifestAuditV9
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -4202,6 +4354,18 @@ def _decode_candidate_manifest(
         if audit_v8.manifest_digest != expected_digest:
             raise ValueError("candidate manifest ledger digest mismatch")
         return audit_v8
+    if values.get("contract") == "neural-prior-candidate-manifest-v9":
+        audit_v9 = LegacyNeuralPriorCandidateManifestAuditV9(
+            manifest_digest=str(stored_digest),
+            payload_json=json.dumps(
+                value,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+        )
+        if audit_v9.manifest_digest != expected_digest:
+            raise ValueError("candidate manifest ledger digest mismatch")
+        return audit_v9
     values["holdout_cases"] = tuple(
         NeuralPriorHoldoutCase(**item) for item in values["holdout_cases"]
     )
@@ -4290,6 +4454,19 @@ def _decode_candidate_manifest(
     if training_result.result_digest != stored_training_result_digest:
         raise ValueError("training physical event-catalog result digest mismatch")
     values["training_physical_event_catalog_result"] = training_result
+    for name in (
+        "candidate_training_start_receipt",
+        "candidate_scoring_start_receipt",
+    ):
+        receipt_values = dict(values[name])
+        stored_receipt_digest = receipt_values.pop("receipt_digest", None)
+        receipt_values["subject_digests"] = tuple(
+            receipt_values["subject_digests"]
+        )
+        receipt = _new_trusted_process_start_receipt(**receipt_values)
+        if receipt.receipt_digest != stored_receipt_digest:
+            raise ValueError("trusted process-start receipt digest mismatch")
+        values[name] = receipt
     for name in (
         "training_learning_approval_digests",
         "training_intervention_digests",

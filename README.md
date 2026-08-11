@@ -849,8 +849,12 @@ Band별 family-adjusted tail replicate 수와 Monte Carlo 오차는 promotion ev
 exact-set accuracy와 false-active-band rate까지 통과한 band만 인증하므로 모든 range
 logit을 높여 near/mid/far를 동시에 활성화하는 classifier는 인증을 얻지 못한다. 각
 weather×range group은 정책이 요구한 metric×lead별 최소 case와 실제 valid 면적뿐 아니라
-그 cell 자체의 mean-degradation UCB와 harmful-fraction UCB도 통과해야 한다. 따라서
-required FSS의 일관된 악화를 다른 metric 개선으로 상쇄할 수 없다.
+그 cell 자체의 common-domain 및 end-to-end mean-degradation UCB와
+harmful-fraction UCB, issuance withdrawal/new-issuance 한계도 통과해야 한다. 자동배포용
+metric cell은 최소 5개 physical event를 요구한다. 따라서 required FSS의 일관된 악화나
+발행영역 악화를 다른 metric 개선으로 상쇄할 수 없다. `promotion_sample_size_preflight()`는
+family-adjusted finite-sample radius의 best-case event 요구량을 score 계산 전에 산출하며,
+holdout event가 그 수보다 적으면 결과와 무관하게 infeasible로 표시한다.
 실제 배포에서는 caller가 regime 문자열이나 operational role을 넘기지 않는다. Exported
 `NeuralPriorRegimeClassifier`가 현재 `full_analysis_input_digest`에 결합된
 `RegimeClassificationEvidence`를 만들고, 모든 holdout case에서도 동일 classifier를
@@ -873,15 +877,19 @@ root-approved `RangeGeometryContract`에서 결정한다. 현재 격자의 완�
 않은 모든 band와 exact geometry contract가 인증돼야 candidate를 전 격자에 선택하며,
 하나라도 미인증이면 전체 parent로 fallback한다. 현재 구현은 beam-height나 mosaic source
 selection을 암시하지 않는 projected horizontal single-radar geometry로 명시하며, geometry
-grid digest와 coordinate shape를 operational run의 grid와 직접 비교한다.
+grid digest와 coordinate shape를 operational run의 grid와 직접 비교한다. Operational
+data identity는 single-site와 mosaic source 계약을 구분하고, single-radar geometry는
+현재 input의 radar-site 및 site-location digest와 같아야 한다. Mosaic source는 source-radar
+index/effective-range map 계약 없이는 single-radar geometry 경로에 들어갈 수 없다.
 `infer_deployed_neural_prior()`는 root-owned trust store가 승인한
 `DeployedNeuralPriorPolicy`의 confidence rule까지 확인한 뒤 candidate 또는 parent를
 선택한다. 연구용 `NeuralPriorInferenceRunner.infer()`는 operational input을 항상 거부한다.
 선택 digest뿐 아니라 classifier probability, 활성 band, policy, certified group,
-horizontal range-geometry payload와 trust-store snapshot을 포함한 canonical
-deployment-decision payload도 forecast run identity 및 v54 artifact에 남는다. 적재 시
-physical partition과 current-run grid/shape를 포함한 selector를 다시 실행해 저장된
-candidate/parent 선택과 exact 비교한다. v53 run은 current-grid binding과 durable geometry
+horizontal range-geometry payload, operational radar source와 trust-store snapshot을 포함한
+canonical deployment-decision payload도 forecast run identity 및 v55 artifact에 남는다.
+적재 시 physical partition과 current-run grid/shape/site를 포함한 selector를 다시 실행해
+저장된 candidate/parent 선택과 exact 비교한다. v54 run은 source-aware selection 이전
+계약을 `neural-prior-deployment-lineage-v5-audit`로만 읽고, v53 run은 current-grid binding과 durable geometry
 payload 이전 계약을 `neural-prior-deployment-lineage-v4-audit`로만 읽고, v52 run은 physical range deployment 이전 계약을
 `neural-prior-deployment-lineage-v3-audit`로만 읽는다. v51 run은 durable decision 이전 계약을 audit-only로 읽고, v50 run은 policy 승인
 이전 계약을 `neural-prior-deployment-lineage-v1-audit`로, v49 이하는
@@ -894,12 +902,15 @@ exclusion mask가 target mask를 덮었는지 계산해 확인한다. 불확실�
 fraction·면적과 parent 대비 abstention 증가 및 NLL abstention penalty를 함께 적용한다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
-현재 promotion evidence는 v14, candidate manifest는 v9, holdout plan은 v11,
-holdout evaluation은 v14, promotion policy는 v19이다. Candidate-neutral
-`PhysicalEventCatalogPlan`은 association·spatial-membership rule과 완료시한을 사전등록하고,
-append-only result 하나만 허용한다. 각 case의 observed envelope가 event envelope 안에
-있음을 typed evidence로 검증하며, candidate와 classifier training도 동일한 signed
-physical-event identity에서 holdout과 분리한다. 이전 promotion evidence·candidate manifest·holdout plan·
+현재 promotion evidence는 v15, candidate manifest는 v10, holdout plan은 v12,
+holdout evaluation은 v14, promotion policy는 v20이다. Candidate-neutral
+`PhysicalEventCatalogPlan`은 association·spatial-membership rule, spatial reference,
+event merge threshold와 완료시한을 사전등록하고, append-only result 하나만 허용한다.
+각 case의 observed envelope와 trusted input-availability가 event evidence와 맞는지 검증하고,
+서로 연관되는 event component를 분할하면 거부한다. Catalog ledger append 뒤에만
+scheduler-signed training/scoring start receipt를 기록할 수 있으며 evaluation은 그 receipt를
+참조한다. Candidate와 classifier training도 같은 association contract에서 signed physical-
+event identity와 holdout association component 모두에 대해 분리한다. 이전 promotion evidence·candidate manifest·holdout plan·
 evaluation은 원래 payload와 digest를 그대로 검증하는
 read-only audit 타입으로만 적재된다. Migration 때 추가된 UCB 컬럼의 기본값 0을 과거
 증거의 계산값으로 해석하거나 과거 row를 현재 승격판정에 재사용하지 않는다.
@@ -1421,8 +1432,8 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v60`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v54`
+- `output_contract_version`: 현재 `nowcast-npz-v61`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v55`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age

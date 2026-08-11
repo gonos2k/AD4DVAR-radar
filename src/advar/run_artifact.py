@@ -18,6 +18,7 @@ import torch
 from torch import Tensor
 
 from ._digest import json_digest
+from .calibration import OperationalDataIdentity
 from .nowcast import (
     DataStatus,
     DynamicsSource,
@@ -35,7 +36,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v54"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v55"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v42",
     "forecast-run-v43",
@@ -49,6 +50,7 @@ _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v51",
     "forecast-run-v52",
     "forecast-run-v53",
+    "forecast-run-v54",
 }
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 256
@@ -1398,6 +1400,10 @@ def load_forecast_run(
                 prior_deployment_lineage_contract = (
                     "neural-prior-deployment-lineage-v4-audit"
                 )
+            elif version == "forecast-run-v54":
+                prior_deployment_lineage_contract = (
+                    "neural-prior-deployment-lineage-v5-audit"
+                )
         elif version in _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS:
             prior_deployment_lineage_contract = (
                 "neural-prior-deployment-lineage-v0-audit"
@@ -1660,6 +1666,13 @@ def load_forecast_run(
                 validate_neural_prior_deployment_decision_artifact,
             )
 
+            source_identity = (
+                None
+                if run.operational_data_identity_json is None
+                else OperationalDataIdentity.from_json(
+                    run.operational_data_identity_json
+                )
+            )
             if (
                 validate_neural_prior_deployment_decision_artifact(
                     run.prior_deployment_decision_artifact_json,
@@ -1669,6 +1682,21 @@ def load_forecast_run(
                     expected_operational_frame_shape=(
                         int(run.latest_frame_dbz.shape[-2]),
                         int(run.latest_frame_dbz.shape[-1]),
+                    ),
+                    expected_operational_radar_source_kind=(
+                        None
+                        if source_identity is None
+                        else source_identity.radar_source_kind
+                    ),
+                    expected_operational_radar_site_digest=(
+                        None
+                        if source_identity is None
+                        else source_identity.radar_site_digest
+                    ),
+                    expected_operational_radar_site_location_digest=(
+                        None
+                        if source_identity is None
+                        else source_identity.radar_site_location_digest
                     ),
                 )
                 != run.prior_deployment_decision_artifact_digest
