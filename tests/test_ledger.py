@@ -649,6 +649,9 @@ class EpisodeLedgerTests(unittest.TestCase):
         labeler_key = promotion_module.Ed25519PrivateKey.from_private_bytes(
             b"\x02" * 32
         )
+        scheduler_key = promotion_module.Ed25519PrivateKey.from_private_bytes(
+            b"\x03" * 32
+        )
         reference_plan = promotion_module.RegimeReferencePlan(
             case_id="case-clock",
             labeler_id="clock-labeler",
@@ -670,6 +673,12 @@ class EpisodeLedgerTests(unittest.TestCase):
             ),
             catalog_completion_deadline="2030-01-01T02:00:00Z",
             spatial_reference_digest="c" * 64,
+            motion_association_rule_digest="d" * 64,
+            scheduler_id="clock-scheduler",
+            scheduler_public_key_hex=(
+                promotion_module.regime_reference_public_key_hex(scheduler_key)
+            ),
+            scheduler_trust_store_digest="f" * 64,
         )
         plan = NeuralPriorHoldoutPlan(
             plan_id="clock-plan",
@@ -705,6 +714,10 @@ class EpisodeLedgerTests(unittest.TestCase):
             physical_event_catalog_plan=event_catalog_plan,
             regime_classifier_manifests=(classifier_manifest,),
             reference_label_contract_digest="e" * 64,
+            scoring_algorithm_digest="1" * 64,
+            scoring_runtime_digest="2" * 64,
+            metric_engine_digest="3" * 64,
+            verification_resolver_digest="4" * 64,
             registered_at="2029-01-01T00:00:00Z",
         )
         policy = NeuralPriorHoldoutPlanPolicy(
@@ -715,6 +728,10 @@ class EpisodeLedgerTests(unittest.TestCase):
         trust = SimpleNamespace(
             approved_policy_digests=frozenset((policy.digest,)),
             content_digest="a" * 64,
+        )
+        scheduler_trust = SimpleNamespace(
+            keys={"clock-scheduler": scheduler_key.public_key()},
+            content_digest="f" * 64,
         )
 
         class _CrossingClock(datetime):
@@ -733,12 +750,16 @@ class EpisodeLedgerTests(unittest.TestCase):
         with patch(
             "advar.ledger._load_learning_policy_trust_store",
             return_value=trust,
+        ), patch(
+            "advar.ledger._load_scheduler_trust_store",
+            return_value=scheduler_trust,
         ), patch("advar.ledger.datetime", _CrossingClock):
             with self.assertRaisesRegex(ValueError, "crossed its forecast issue"):
                 self.ledger.append_neural_prior_holdout_plan(
                     plan,
                     policy=policy,
                     policy_trust_store_path="/etc/advar/policies.json",
+                    scheduler_trust_store_path="/etc/advar/schedulers.json",
                 )
 
     def tearDown(self) -> None:
@@ -878,7 +899,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 17)
+        self.assertEqual(version, 18)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4111,7 +4132,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 17)
+        self.assertEqual(version, 18)
 
 
 if __name__ == "__main__":
