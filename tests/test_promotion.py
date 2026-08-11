@@ -124,19 +124,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             manifest.contract,
-            "neural-prior-candidate-manifest-v11",
+            "neural-prior-candidate-manifest-v12",
         )
         self.assertEqual(
             evaluation.contract,
-            "prior-holdout-evaluation-v15",
+            "prior-holdout-evaluation-v16",
         )
         self.assertTrue(
             all(
-                band.contract == "neural-prior-range-band-evaluation-v5"
+                band.contract == "neural-prior-range-band-evaluation-v6"
                 for band in evaluation.range_band_evaluations
             )
         )
-        self.assertEqual(policy.contract, "neural-prior-promotion-policy-v21")
+        self.assertEqual(policy.contract, "neural-prior-promotion-policy-v22")
 
     def test_v15_promotion_remains_audit_only(self) -> None:
         current = self.compute(
@@ -727,10 +727,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             start_time=issue,
             end_time=end,
             spatial_envelope_xy_m=(0.0, 0.0, 100_000.0, 100_000.0),
-            start_centroid_xy_m=(50_000.0, 50_000.0),
-            end_centroid_xy_m=(50_000.0, 50_000.0),
-            mean_velocity_xy_mps=(0.0, 0.0),
-            object_track_artifact_digest=("d" if index == 1 else "e") * 64,
+            object_track_artifact=self.event_track(index),
             participating_radar_ids=("radar-1",),
             association_algorithm_digest="3" * 64,
             adjudication_policy_digest="6" * 64,
@@ -780,15 +777,58 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             start_time="2026-07-01T00:00:00Z",
             end_time="2026-07-01T02:00:00Z",
             spatial_envelope_xy_m=(0.0, 0.0, 100_000.0, 100_000.0),
-            start_centroid_xy_m=(50_000.0, 50_000.0),
-            end_centroid_xy_m=(50_000.0, 50_000.0),
-            mean_velocity_xy_mps=(0.0, 0.0),
-            object_track_artifact_digest="f" * 64,
+            object_track_artifact=self.training_event_track(),
             participating_radar_ids=("radar-1",),
             association_algorithm_digest="3" * 64,
             adjudication_policy_digest="6" * 64,
             adjudicator_id="independent-weather-labeler",
             adjudicator_private_key=self.regime_labeler_key(),
+        )
+
+    def event_track(self, index: int):
+        day = 8 + index
+        return promotion_module.PhysicalEventTrackArtifact(
+            timestamps=(
+                f"2026-08-{day:02d}T00:00:00Z",
+                f"2026-08-{day:02d}T02:00:00Z",
+            ),
+            centroid_xy_m=((50_000.0, 50_000.0), (50_000.0, 50_000.0)),
+            object_mask_digests=(("d" if index == 1 else "e") * 64,) * 2,
+            source_radar_ids=("radar-1", "radar-1"),
+            association_edge_digests=(("1" if index == 1 else "2") * 64,),
+            spatial_reference_digest="7" * 64,
+        )
+
+    def training_event_track(self):
+        return promotion_module.PhysicalEventTrackArtifact(
+            timestamps=(
+                "2026-07-01T00:00:00Z",
+                "2026-07-01T02:00:00Z",
+            ),
+            centroid_xy_m=((50_000.0, 50_000.0), (50_000.0, 50_000.0)),
+            object_mask_digests=("f" * 64, "e" * 64),
+            source_radar_ids=("radar-1", "radar-1"),
+            association_edge_digests=("d" * 64,),
+            spatial_reference_digest="7" * 64,
+        )
+
+    def track_artifact(
+        self,
+        *,
+        start_time,
+        end_time,
+        start_centroid,
+        end_centroid,
+        artifact_seed,
+        radar_ids,
+    ):
+        return promotion_module.PhysicalEventTrackArtifact(
+            timestamps=(start_time, end_time),
+            centroid_xy_m=(start_centroid, end_centroid),
+            object_mask_digests=(artifact_seed * 64,) * 2,
+            source_radar_ids=(radar_ids[0], radar_ids[-1]),
+            association_edge_digests=(artifact_seed * 64,),
+            spatial_reference_digest="7" * 64,
         )
 
     def training_event_catalog_plan(self):
@@ -946,22 +986,74 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
 
     def training_completion_receipt(self):
+        process_log = self.training_process_log()
         return promotion_module.TrustedProcessCompletionReceipt.from_start(
             self.training_start_receipt(),
             completed_at="2026-07-03T00:00:00Z",
             output_artifact_digest="c" * 64,
-            process_log_digest="d" * 64,
+            process_log_digest=process_log.artifact_digest,
             scheduler_private_key=self.scheduler_key(),
         )
 
-    def scoring_completion_receipt(self):
+    def training_process_log(self):
+        return promotion_module.ProcessLogArtifact(
+            process_kind="candidate_training",
+            start_receipt_digest=self.training_start_receipt().receipt_digest,
+            entries=("candidate training completed",),
+        )
+
+    def scoring_process_log(self, manifest=None):
+        retained = self.manifest() if manifest is None else manifest
+        return promotion_module.ProcessLogArtifact(
+            process_kind="candidate_scoring",
+            start_receipt_digest=(
+                retained.candidate_scoring_start_receipt.receipt_digest
+            ),
+            entries=("holdout scoring completed",),
+        )
+
+    def scoring_artifact(self, evaluations, *, manifest=None, plan=None):
+        retained_manifest = self.manifest() if manifest is None else manifest
+        retained_plan = self.plan() if plan is None else plan
+        return promotion_module.HoldoutScoringArtifact.from_evaluations(
+            retained_manifest,
+            retained_plan,
+            tuple(evaluations),
+        )
+
+    def scoring_completion_receipt(self, evaluations, *, manifest=None, plan=None):
+        retained = self.manifest() if manifest is None else manifest
+        artifact = self.scoring_artifact(
+            evaluations,
+            manifest=retained,
+            plan=plan,
+        )
+        process_log = self.scoring_process_log(retained)
         return promotion_module.TrustedProcessCompletionReceipt.from_start(
-            self.scoring_start_receipt(),
+            retained.candidate_scoring_start_receipt,
             completed_at="2026-08-12T02:00:00Z",
-            output_artifact_digest="b" * 64,
-            process_log_digest="e" * 64,
+            output_artifact_digest=artifact.artifact_digest,
+            process_log_digest=process_log.artifact_digest,
             scheduler_private_key=self.scheduler_key(),
         )
+
+    def sealed_scoring(self, evaluations, *, manifest=None, plan=None):
+        retained_manifest = self.manifest() if manifest is None else manifest
+        retained_plan = self.plan() if plan is None else plan
+        artifact = self.scoring_artifact(
+            evaluations,
+            manifest=retained_manifest,
+            plan=retained_plan,
+        )
+        process_log = self.scoring_process_log(retained_manifest)
+        completion = promotion_module.TrustedProcessCompletionReceipt.from_start(
+            retained_manifest.candidate_scoring_start_receipt,
+            completed_at="2026-08-12T02:00:00Z",
+            output_artifact_digest=artifact.artifact_digest,
+            process_log_digest=process_log.artifact_digest,
+            scheduler_private_key=self.scheduler_key(),
+        )
+        return artifact, process_log, completion
 
     def reference_evidence(self, index: int):
         plan = self.plan()
@@ -1140,16 +1232,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
             physical_event_catalog_result=self.event_catalog_result(),
             candidate_scoring_started_at="2026-08-12T01:00:00Z",
-            scoring_output_artifact_digest="b" * 64,
             holdout_cases=(self.completed_case(1), self.completed_case(2)),
             candidate_training_start_receipt=self.training_start_receipt(),
             candidate_training_completion_receipt=(
                 self.training_completion_receipt()
             ),
             candidate_scoring_start_receipt=self.scoring_start_receipt(),
-            candidate_scoring_completion_receipt=(
-                self.scoring_completion_receipt()
-            ),
         )
 
     def evaluation(
@@ -1204,6 +1292,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         band_newly_issued_fraction: float = 0.0,
         band_fallback_increase: float = 0.0,
         band_confidence_change: float = 0.0,
+        band_metric_available: tuple[bool, ...] | None = None,
         physical_event_digest: str | None = None,
     ) -> promotion_module.PriorHoldoutEvaluation:
         manifest = self.manifest()
@@ -1368,6 +1457,41 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 range_end_to_end_change,
             )
         )
+        band_available = torch.tensor(
+            [
+                [True] * len(metric_names)
+                if band_metric_available is None
+                else list(band_metric_available)
+            ],
+            dtype=torch.bool,
+        )
+        if band_available.shape != band_metric_change.shape:
+            raise ValueError("band metric-availability fixture shape mismatch")
+        issuance_domain_cells = 10_000
+        issuance_domain_area = 1000.0
+        parent_issued = 5_000
+        withdrawn_count = round(band_withdrawn_fraction * parent_issued)
+        newly_issued_count = round(
+            band_newly_issued_fraction * issuance_domain_cells
+        )
+        parent_fallback = 5_000
+        candidate_fallback = parent_fallback + round(
+            band_fallback_increase * issuance_domain_cells
+        )
+        parent_confidence_area = 500.0
+        candidate_confidence_area = parent_confidence_area + (
+            band_confidence_change * issuance_domain_area
+        )
+        realized_withdrawn_fraction = withdrawn_count / parent_issued
+        realized_newly_issued_fraction = (
+            newly_issued_count / issuance_domain_cells
+        )
+        realized_fallback_increase = (
+            candidate_fallback - parent_fallback
+        ) / issuance_domain_cells
+        realized_confidence_change = (
+            candidate_confidence_area - parent_confidence_area
+        ) / issuance_domain_area
         range_evaluations = tuple(
             promotion_module.RangeBandEvaluation(
                 range_regime=range_regime,
@@ -1377,9 +1501,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ),
                 metric_change=band_metric_change,
                 end_to_end_metric_change=band_end_to_end_metric_change,
-                metric_available=torch.ones_like(
-                    band_metric_change, dtype=torch.bool
-                ),
+                metric_available=band_available,
                 candidate_uncertainty_component_scores=(
                     range_candidate_components
                 ),
@@ -1390,18 +1512,37 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 metric_valid_area_km2_by_lead=(range_valid_area_km2,),
                 metric_valid_area_km2=torch.full_like(
                     band_metric_change, range_valid_area_km2
+                ).masked_fill(~band_available, 0.0),
+                issuance_domain_digest=(
+                    ("9" if range_regime == "near_range" else "8") * 64
+                ),
+                issuance_domain_cell_count_by_lead=(issuance_domain_cells,),
+                issuance_domain_area_km2_by_lead=(issuance_domain_area,),
+                parent_issued_count_by_lead=(parent_issued,),
+                candidate_issued_count_by_lead=(
+                    parent_issued - withdrawn_count + newly_issued_count,
+                ),
+                withdrawn_count_by_lead=(withdrawn_count,),
+                newly_issued_count_by_lead=(newly_issued_count,),
+                parent_fallback_count_by_lead=(parent_fallback,),
+                candidate_fallback_count_by_lead=(candidate_fallback,),
+                parent_confidence_weighted_issued_area_by_lead=(
+                    parent_confidence_area,
+                ),
+                candidate_confidence_weighted_issued_area_by_lead=(
+                    candidate_confidence_area,
                 ),
                 withdrawn_fraction_by_lead=torch.tensor(
-                    [band_withdrawn_fraction], dtype=torch.float64
+                    [realized_withdrawn_fraction], dtype=torch.float64
                 ),
                 newly_issued_fraction_by_lead=torch.tensor(
-                    [band_newly_issued_fraction], dtype=torch.float64
+                    [realized_newly_issued_fraction], dtype=torch.float64
                 ),
                 background_fallback_increase_by_lead=torch.tensor(
-                    [band_fallback_increase], dtype=torch.float64
+                    [realized_fallback_increase], dtype=torch.float64
                 ),
                 confidence_weighted_coverage_change_by_lead=torch.tensor(
-                    [band_confidence_change], dtype=torch.float64
+                    [realized_confidence_change], dtype=torch.float64
                 ),
                 probability_valid_area_km2=range_valid_area_km2,
                 state_valid_area_km2=range_valid_area_km2,
@@ -1423,7 +1564,6 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         return promotion_module._new_prior_holdout_evaluation(
             holdout_plan_digest=manifest.holdout_plan_digest,
             candidate_manifest_digest=manifest.manifest_digest,
-            scoring_output_artifact_digest=manifest.scoring_output_artifact_digest,
             candidate_prior_digest=manifest.candidate_prior_digest,
             parent_prior_digest=manifest.parent_prior_digest,
             case_id=case.case_id,
@@ -1622,8 +1762,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     minimum_cases=1,
                     minimum_physical_events=1,
                     minimum_valid_area_km2=0.0,
-                    maximum_mean_normalized_degradation=0.0,
+                    maximum_mean_normalized_degradation=2.0,
                     maximum_harmful_fraction_upper_bound=1.0,
+                    maximum_end_to_end_mean_normalized_degradation=2.0,
                 ),
                 promotion_module.RangeMetricRequirement(
                     weather_regime="stratiform",
@@ -1633,8 +1774,35 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     minimum_cases=1,
                     minimum_physical_events=1,
                     minimum_valid_area_km2=0.0,
-                    maximum_mean_normalized_degradation=0.0,
+                    maximum_mean_normalized_degradation=2.0,
                     maximum_harmful_fraction_upper_bound=1.0,
+                    maximum_end_to_end_mean_normalized_degradation=2.0,
+                ),
+            ),
+            required_range_issuance=(
+                promotion_module.RangeIssuanceRequirement(
+                    weather_regime="convective",
+                    range_regime="near_range",
+                    lead_minutes=60,
+                    minimum_cases=1,
+                    minimum_physical_events=1,
+                    minimum_operational_area_km2=0.1,
+                    maximum_withdrawn_fraction=1.0,
+                    maximum_newly_issued_fraction=1.0,
+                    maximum_background_fallback_increase=1.0,
+                    maximum_confidence_weighted_coverage_loss=1.0,
+                ),
+                promotion_module.RangeIssuanceRequirement(
+                    weather_regime="stratiform",
+                    range_regime="far_range",
+                    lead_minutes=60,
+                    minimum_cases=1,
+                    minimum_physical_events=1,
+                    minimum_operational_area_km2=0.1,
+                    maximum_withdrawn_fraction=1.0,
+                    maximum_newly_issued_fraction=1.0,
+                    maximum_background_fallback_increase=1.0,
+                    maximum_confidence_weighted_coverage_loss=1.0,
                 ),
             ),
             minimum_holdout_cases=2,
@@ -1691,6 +1859,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             minimum_mean_normalized_improvement=0.1,
             bootstrap_samples=1024,
             minimum_deployment_metric_cell_events=1,
+            minimum_continuous_metric_cell_events=1,
         )
 
     def compute(self, evaluations):
@@ -1707,6 +1876,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             sample_size_required_physical_events=(
                 evidence.sample_size_available_physical_events
             ),
+            sample_size_cell_feasible=True,
             sample_size_preflight_feasible=True,
             deployment_eligible=(
                 evidence.eligible
@@ -1719,6 +1889,17 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def compute_with_policy(self, evaluations, policy):
         plan = self.plan()
         manifest = self.manifest()
+        if any(
+            not isinstance(item, promotion_module.PriorHoldoutEvaluation)
+            for item in evaluations
+        ):
+            return compute_neural_prior_promotion(
+                manifest,
+                plan,
+                evaluations,
+                policy=policy,
+                policy_trust_store_path="/etc/advar/learning-policies.json",
+            )
         default_classifier = plan.regime_classifier_manifests[0]
         if (
             policy.deployment_regime_classifier_digest
@@ -1749,21 +1930,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 started_at="2026-08-12T01:00:00Z",
                 scheduler_private_key=self.scheduler_key(),
             )
-            scoring_completion = (
-                promotion_module.TrustedProcessCompletionReceipt.from_start(
-                    scoring_start,
-                    completed_at="2026-08-12T02:00:00Z",
-                    output_artifact_digest="b" * 64,
-                    process_log_digest="e" * 64,
-                    scheduler_private_key=self.scheduler_key(),
-                )
-            )
             manifest = replace(
                 manifest,
                 holdout_plan_digest=plan.plan_digest,
                 holdout_dataset_digest=plan.holdout_dataset_digest,
                 candidate_scoring_start_receipt=scoring_start,
-                candidate_scoring_completion_receipt=scoring_completion,
             )
             policy = replace(
                 policy,
@@ -1790,6 +1961,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
                 for evaluation in evaluations
             )
+        scoring_artifact = self.scoring_artifact(
+            evaluations,
+            manifest=manifest,
+            plan=plan,
+        )
+        scoring_process_log = self.scoring_process_log(manifest)
+        scoring_completion = promotion_module.TrustedProcessCompletionReceipt.from_start(
+            manifest.candidate_scoring_start_receipt,
+            completed_at="2026-08-12T02:00:00Z",
+            output_artifact_digest=scoring_artifact.artifact_digest,
+            process_log_digest=scoring_process_log.artifact_digest,
+            scheduler_private_key=self.scheduler_key(),
+        )
         with patch.object(
             promotion_module,
             "_load_learning_policy_trust_store",
@@ -1802,6 +1986,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 manifest,
                 plan,
                 evaluations,
+                scoring_artifact=scoring_artifact,
+                scoring_process_log=scoring_process_log,
+                scoring_completion_receipt=scoring_completion,
                 policy=policy,
                 policy_trust_store_path="/etc/advar/learning-policies.json",
             )
@@ -1817,6 +2004,17 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         manifest = self.manifest()
         plan = self.plan()
         policy = self.policy()
+        scoring_artifact = self.scoring_artifact(
+            evaluations,
+            manifest=manifest,
+            plan=plan,
+        )
+        scoring_process_log = self.scoring_process_log(manifest)
+        scoring_completion = self.scoring_completion_receipt(
+            evaluations,
+            manifest=manifest,
+            plan=plan,
+        )
         with tempfile.TemporaryDirectory() as directory:
             ledger = EpisodeLedger(Path(directory))
             with sqlite3.connect(ledger.index_path) as connection:
@@ -1927,6 +2125,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ledger.append_trusted_process_completion_receipt(
                     manifest.candidate_training_start_receipt,
                     manifest.candidate_training_completion_receipt,
+                    process_log_artifact=self.training_process_log(),
                     scheduler_trust_store_path="/etc/advar/schedulers.json",
                 )
                 trusted_datetime.now.return_value = datetime.fromisoformat(
@@ -1950,7 +2149,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
                 ledger.append_trusted_process_completion_receipt(
                     manifest.candidate_scoring_start_receipt,
-                    manifest.candidate_scoring_completion_receipt,
+                    scoring_completion,
+                    process_log_artifact=scoring_process_log,
+                    scoring_artifact=scoring_artifact,
                     scheduler_trust_store_path="/etc/advar/schedulers.json",
                 )
             trust = _LearningPolicyTrustStore(
@@ -1967,12 +2168,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     manifest,
                     plan,
                     evaluations,
+                    scoring_artifact=scoring_artifact,
+                    scoring_process_log=scoring_process_log,
+                    scoring_completion_receipt=scoring_completion,
                     policy=policy,
                     policy_trust_store_path="/etc/advar/learning-policies.json",
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v16")
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v17")
 
             legacy_payload = evidence._payload()
             legacy_payload["contract"] = "neural-prior-promotion-evidence-v12"
@@ -2011,7 +2215,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
 
     def test_promotion_requires_every_preregistered_case(self) -> None:
-        with self.assertRaisesRegex(ValueError, "every planned case"):
+        with self.assertRaisesRegex(ValueError, "scoring artifact"):
             self.compute((self.evaluation(1, -0.2),))
 
     def test_prior_holdout_evidence_has_no_intervention_selection_fields(self) -> None:
@@ -2650,11 +2854,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             member_full_analysis_input_digests=("1" * 64,),
             start_time="2026-08-10T00:00:00Z",
             end_time="2026-08-10T00:10:00Z",
-            spatial_envelope_xy_m=(0.0, 0.0, 10_000.0, 10_000.0),
-            start_centroid_xy_m=(5_000.0, 5_000.0),
-            end_centroid_xy_m=(5_000.0, 5_000.0),
-            mean_velocity_xy_mps=(12.5, 0.0),
-            object_track_artifact_digest="a" * 64,
+            spatial_envelope_xy_m=(0.0, 0.0, 15_000.0, 10_000.0),
+            object_track_artifact=self.track_artifact(
+                start_time="2026-08-10T00:00:00Z",
+                end_time="2026-08-10T00:10:00Z",
+                start_centroid=(2_500.0, 5_000.0),
+                end_centroid=(10_000.0, 5_000.0),
+                artifact_seed="a",
+                radar_ids=("radar-a",),
+            ),
             participating_radar_ids=("radar-a",),
             association_algorithm_digest=plan.association_algorithm_digest,
             adjudication_policy_digest=plan.adjudication_policy_digest,
@@ -2667,11 +2875,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             member_full_analysis_input_digests=("2" * 64,),
             start_time="2026-08-10T00:30:00Z",
             end_time="2026-08-10T00:40:00Z",
-            spatial_envelope_xy_m=(15_000.0, 0.0, 25_000.0, 10_000.0),
-            start_centroid_xy_m=(20_000.0, 5_000.0),
-            end_centroid_xy_m=(20_000.0, 5_000.0),
-            mean_velocity_xy_mps=(12.5, 0.0),
-            object_track_artifact_digest="b" * 64,
+            spatial_envelope_xy_m=(20_000.0, 0.0, 35_000.0, 10_000.0),
+            object_track_artifact=self.track_artifact(
+                start_time="2026-08-10T00:30:00Z",
+                end_time="2026-08-10T00:40:00Z",
+                start_centroid=(25_000.0, 5_000.0),
+                end_centroid=(32_500.0, 5_000.0),
+                artifact_seed="b",
+                radar_ids=("radar-b",),
+            ),
             participating_radar_ids=("radar-b",),
             association_algorithm_digest=plan.association_algorithm_digest,
             adjudication_policy_digest=plan.adjudication_policy_digest,
@@ -2711,9 +2923,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                             second.physical_event_identity_digest
                         ),
                         observed_spatial_envelope_xy_m=(
-                            16_000.0,
+                            21_000.0,
                             1_000.0,
-                            24_000.0,
+                            34_000.0,
                             9_000.0,
                         ),
                         event_spatial_envelope_xy_m=second.spatial_envelope_xy_m,
@@ -2814,10 +3026,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             start_time="2026-08-09T00:00:00Z",
             end_time="2026-08-10T00:00:00Z",
             spatial_envelope_xy_m=(-10_000.0, -20_000.0, 80_000.0, 90_000.0),
-            start_centroid_xy_m=(20_000.0, 20_000.0),
-            end_centroid_xy_m=(30_000.0, 30_000.0),
-            mean_velocity_xy_mps=(0.1157407407, 0.1157407407),
-            object_track_artifact_digest="5" * 64,
+            object_track_artifact=self.track_artifact(
+                start_time="2026-08-09T00:00:00Z",
+                end_time="2026-08-10T00:00:00Z",
+                start_centroid=(20_000.0, 20_000.0),
+                end_centroid=(30_000.0, 30_000.0),
+                artifact_seed="5",
+                radar_ids=("radar-1", "radar-2"),
+            ),
             participating_radar_ids=("radar-1", "radar-2"),
             association_algorithm_digest="3" * 64,
             adjudication_policy_digest="4" * 64,
@@ -2848,10 +3064,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             start_time="2026-08-09T03:00:00Z",
             end_time="2026-08-09T04:00:00Z",
             spatial_envelope_xy_m=(0.0, 0.0, 100_000.0, 100_000.0),
-            start_centroid_xy_m=(50_000.0, 50_000.0),
-            end_centroid_xy_m=(50_000.0, 50_000.0),
-            mean_velocity_xy_mps=(0.0, 0.0),
-            object_track_artifact_digest="5" * 64,
+            object_track_artifact=self.track_artifact(
+                start_time="2026-08-09T03:00:00Z",
+                end_time="2026-08-09T04:00:00Z",
+                start_centroid=(50_000.0, 50_000.0),
+                end_centroid=(50_000.0, 50_000.0),
+                artifact_seed="5",
+                radar_ids=(first_case.radar_id,),
+            ),
             participating_radar_ids=(first_case.radar_id,),
             association_algorithm_digest="5" * 64,
             adjudication_policy_digest="6" * 64,
@@ -2886,10 +3106,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             start_time="2026-08-09T00:00:00Z",
             end_time="2026-08-09T02:00:00Z",
             spatial_envelope_xy_m=(0.0, 0.0, 100_000.0, 100_000.0),
-            start_centroid_xy_m=(50_000.0, 50_000.0),
-            end_centroid_xy_m=(50_000.0, 50_000.0),
-            mean_velocity_xy_mps=(0.0, 0.0),
-            object_track_artifact_digest="5" * 64,
+            object_track_artifact=self.event_track(1),
             participating_radar_ids=(first_case.radar_id,),
             association_algorithm_digest="3" * 64,
             adjudication_policy_digest="6" * 64,
@@ -2910,10 +3127,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             start_time="2026-08-10T00:00:00Z",
             end_time="2026-08-10T02:00:00Z",
             spatial_envelope_xy_m=(0.0, 0.0, 100_000.0, 100_000.0),
-            start_centroid_xy_m=(50_000.0, 50_000.0),
-            end_centroid_xy_m=(50_000.0, 50_000.0),
-            mean_velocity_xy_mps=(0.0, 0.0),
-            object_track_artifact_digest="5" * 64,
+            object_track_artifact=self.event_track(2),
             participating_radar_ids=(second_case.radar_id,),
             association_algorithm_digest="3" * 64,
             adjudication_policy_digest="6" * 64,
@@ -2965,36 +3179,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             physical_event_catalog_result=untrusted_result,
             holdout_cases=(changed_case, changed_second_case),
             candidate_scoring_start_receipt=changed_scoring_start,
-            candidate_scoring_completion_receipt=(
-                promotion_module.TrustedProcessCompletionReceipt.from_start(
-                    changed_scoring_start,
-                    completed_at="2026-08-12T02:00:00Z",
-                    output_artifact_digest="b" * 64,
-                    process_log_digest="e" * 64,
-                    scheduler_private_key=self.scheduler_key(),
-                )
-            ),
         )
-        policy = replace(
-            self.policy(),
-            approved_candidate_manifest_digests=(changed_manifest.manifest_digest,),
-        )
-        trust = _LearningPolicyTrustStore(
-            approved_policy_digests=frozenset((policy.digest,)),
-            content_digest="b" * 64,
-        )
-
-        with patch.object(
-            promotion_module,
-            "_load_learning_policy_trust_store",
-            return_value=trust,
-        ), self.assertRaisesRegex(ValueError, "event-catalog adjudicator"):
-            compute_neural_prior_promotion(
+        with self.assertRaisesRegex(ValueError, "event-catalog adjudicator"):
+            promotion_module._validate_physical_event_catalogs_against_plan(
                 changed_manifest,
                 self.plan(),
-                (self.evaluation(1, -0.2), self.evaluation(2, -0.3)),
-                policy=policy,
-                policy_trust_store_path="/etc/advar/learning-policies.json",
             )
 
     def test_event_association_algorithm_must_be_preregistered(self) -> None:
@@ -3009,10 +3198,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             start_time="2026-08-09T00:00:00Z",
             end_time="2026-08-09T02:00:00Z",
             spatial_envelope_xy_m=(0.0, 0.0, 100_000.0, 100_000.0),
-            start_centroid_xy_m=(50_000.0, 50_000.0),
-            end_centroid_xy_m=(50_000.0, 50_000.0),
-            mean_velocity_xy_mps=(0.0, 0.0),
-            object_track_artifact_digest="5" * 64,
+            object_track_artifact=self.event_track(1),
             participating_radar_ids=(first_case.radar_id,),
             association_algorithm_digest="9" * 64,
             adjudication_policy_digest="6" * 64,
@@ -3038,10 +3224,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 start_time="2026-08-10T00:00:00Z",
                 end_time="2026-08-10T02:00:00Z",
                 spatial_envelope_xy_m=(0.0, 0.0, 100_000.0, 100_000.0),
-                start_centroid_xy_m=(50_000.0, 50_000.0),
-                end_centroid_xy_m=(50_000.0, 50_000.0),
-                mean_velocity_xy_mps=(0.0, 0.0),
-                object_track_artifact_digest="5" * 64,
+                object_track_artifact=self.event_track(2),
                 participating_radar_ids=(second_case.radar_id,),
                 association_algorithm_digest="9" * 64,
                 adjudication_policy_digest="6" * 64,
@@ -3082,15 +3265,6 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             changed_catalog_plan,
             changed_result,
         )
-        changed_scoring_completion = (
-            promotion_module.TrustedProcessCompletionReceipt.from_start(
-                changed_scoring_start,
-                completed_at="2026-08-12T02:00:00Z",
-                output_artifact_digest="b" * 64,
-                process_log_digest="e" * 64,
-                scheduler_private_key=self.scheduler_key(),
-            )
-        )
         with self.assertRaisesRegex(ValueError, "association algorithm"):
             replace(
                 original,
@@ -3101,7 +3275,6 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ),
                 physical_event_catalog_result=changed_result,
                 candidate_scoring_start_receipt=changed_scoring_start,
-                candidate_scoring_completion_receipt=changed_scoring_completion,
             )
 
     def test_physical_event_catalog_result_is_fixed_before_candidate_scoring(
@@ -3189,6 +3362,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             approved_policy_digests=frozenset((policy.digest,)),
             content_digest="b" * 64,
         )
+        evaluations = (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
+        scoring_artifact, scoring_log, scoring_completion = self.sealed_scoring(
+            evaluations
+        )
 
         with patch.object(
             promotion_module,
@@ -3198,7 +3375,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             compute_neural_prior_promotion(
                 self.manifest(),
                 self.plan(),
-                (self.evaluation(1, -0.2), self.evaluation(2, -0.3)),
+                evaluations,
+                scoring_artifact=scoring_artifact,
+                scoring_process_log=scoring_log,
+                scoring_completion_receipt=scoring_completion,
                 policy=policy,
                 policy_trust_store_path="/etc/advar/learning-policies.json",
             )
@@ -3267,10 +3447,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             start_time="2026-08-09T00:05:00Z",
             end_time="2026-08-09T02:05:00Z",
             spatial_envelope_xy_m=(-1_000.0, 0.0, 101_000.0, 100_000.0),
-            start_centroid_xy_m=(50_000.0, 50_000.0),
-            end_centroid_xy_m=(50_000.0, 50_000.0),
-            mean_velocity_xy_mps=(0.0, 0.0),
-            object_track_artifact_digest="5" * 64,
+            object_track_artifact=self.track_artifact(
+                start_time="2026-08-09T00:05:00Z",
+                end_time="2026-08-09T02:05:00Z",
+                start_centroid=(50_000.0, 50_000.0),
+                end_centroid=(50_000.0, 50_000.0),
+                artifact_seed="5",
+                radar_ids=holdout_event.participating_radar_ids,
+            ),
             participating_radar_ids=holdout_event.participating_radar_ids,
             association_algorithm_digest=training_plan.association_algorithm_digest,
             adjudication_policy_digest=training_plan.adjudication_policy_digest,
@@ -3360,10 +3544,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             start_time=original.start_time,
             end_time=original.end_time,
             spatial_envelope_xy_m=original.spatial_envelope_xy_m,
-            start_centroid_xy_m=original.start_centroid_xy_m,
-            end_centroid_xy_m=original.end_centroid_xy_m,
-            mean_velocity_xy_mps=original.mean_velocity_xy_mps,
-            object_track_artifact_digest=original.object_track_artifact_digest,
+            object_track_artifact=original.object_track_artifact,
             participating_radar_ids=original.participating_radar_ids,
             association_algorithm_digest=original.association_algorithm_digest,
             adjudication_policy_digest=original.adjudication_policy_digest,
@@ -3534,7 +3715,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             policy,
         )
 
-        expected_tests = 8 * len(policy.required_range_metrics)
+        expected_tests = (
+            4 * len(policy.required_range_metrics)
+            + 4 * len(policy.required_range_issuance)
+        )
         self.assertEqual(result.metric_cell_test_count, expected_tests)
         self.assertAlmostEqual(
             result.metric_cell_tail_replicates,
@@ -3545,14 +3729,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
     def test_band_local_withdrawal_blocks_only_the_affected_group(self) -> None:
         near_requirement = replace(
-            self.policy().required_range_metrics[0],
+            self.policy().required_range_issuance[0],
             maximum_withdrawn_fraction=0.1,
         )
         policy = replace(
             self.policy(),
-            required_range_metrics=(
+            required_range_issuance=(
                 near_requirement,
-                self.policy().required_range_metrics[1],
+                self.policy().required_range_issuance[1],
             ),
         )
         result = self.compute_with_policy(
@@ -3573,10 +3757,182 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         near_bounds = next(
             item
-            for item in result.range_metric_end_to_end_cell_bounds
-            if item[:4] == ("convective", "near_range", "log_echo_mse", 60)
+            for item in result.range_issuance_cell_bounds
+            if item[:3] == ("convective", "near_range", 60)
         )
-        self.assertGreater(near_bounds[6], 0.1)
+        self.assertGreater(near_bounds[3], 0.1)
+
+    def test_issuance_gate_includes_cases_with_unavailable_required_metric(
+        self,
+    ) -> None:
+        near_requirement = replace(
+            self.policy().required_range_issuance[0],
+            maximum_withdrawn_fraction=0.1,
+        )
+        policy = replace(
+            self.policy(),
+            metric_scales=(
+                PromotionMetricScale("log_echo_mse", 1.0, 0.01),
+                PromotionMetricScale("soft_fss_error_35", 1.0, 0.01),
+            ),
+            required_range_issuance=(
+                near_requirement,
+                self.policy().required_range_issuance[1],
+            ),
+        )
+        result = self.compute_with_policy(
+            (
+                self.evaluation(
+                    1,
+                    -0.2,
+                    secondary_range_change=-0.1,
+                    band_metric_available=(False, True),
+                    band_withdrawn_fraction=1.0,
+                ),
+                self.evaluation(2, -0.3),
+            ),
+            policy,
+        )
+
+        near_issuance = next(
+            item
+            for item in result.range_issuance_cell_bounds
+            if item[:3] == ("convective", "near_range", 60)
+        )
+        self.assertGreater(near_issuance[3], 0.1)
+        self.assertNotIn(
+            ("convective", "near_range"),
+            result.certified_applicability_regime_groups,
+        )
+
+    def test_scoring_completion_rejects_an_unbacked_output_digest(self) -> None:
+        evaluations = (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
+        manifest = self.manifest()
+        artifact = self.scoring_artifact(evaluations, manifest=manifest)
+        process_log = self.scoring_process_log(manifest)
+        bad_completion = promotion_module.TrustedProcessCompletionReceipt.from_start(
+            manifest.candidate_scoring_start_receipt,
+            completed_at="2026-08-12T02:00:00Z",
+            output_artifact_digest="b" * 64,
+            process_log_digest=process_log.artifact_digest,
+            scheduler_private_key=self.scheduler_key(),
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            with self.assertRaisesRegex(ValueError, "canonical scoring artifact"):
+                ledger.append_trusted_process_completion_receipt(
+                    manifest.candidate_scoring_start_receipt,
+                    bad_completion,
+                    process_log_artifact=process_log,
+                    scoring_artifact=artifact,
+                    scheduler_trust_store_path="/etc/advar/schedulers.json",
+                )
+
+    def test_scoring_artifact_detects_a_changed_evaluation(self) -> None:
+        evaluations = (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
+        manifest = self.manifest()
+        artifact = self.scoring_artifact(evaluations, manifest=manifest)
+        changed_values = {
+            name: value
+            for name, value in evaluations[0].__dict__.items()
+            if name not in {"contract", "evaluation_digest"}
+        }
+        changed_values["metric_change"] = torch.tensor(
+            [[0.75]], dtype=torch.float64
+        )
+        changed = promotion_module._new_prior_holdout_evaluation(
+            **changed_values
+        )
+
+        with self.assertRaisesRegex(ValueError, "typed evaluations"):
+            promotion_module.validate_holdout_scoring_artifact(
+                artifact,
+                manifest,
+                self.plan(),
+                (changed, evaluations[1]),
+            )
+
+    def test_track_payload_tampering_is_detected_by_rehash(self) -> None:
+        event = self.event_catalog(1)
+        object.__setattr__(
+            event.object_track_artifact,
+            "centroid_xy_m",
+            ((50_000.0, 50_000.0), (60_000.0, 50_000.0)),
+        )
+
+        with self.assertRaisesRegex(ValueError, "event-catalog"):
+            promotion_module.validate_physical_event_catalog(event)
+
+    def test_event_envelope_must_contain_the_entire_replayable_track(self) -> None:
+        track = promotion_module.PhysicalEventTrackArtifact(
+            timestamps=(
+                "2026-08-09T00:00:00Z",
+                "2026-08-09T01:00:00Z",
+                "2026-08-09T02:00:00Z",
+            ),
+            centroid_xy_m=(
+                (50_000.0, 50_000.0),
+                (150_000.0, 50_000.0),
+                (50_000.0, 50_000.0),
+            ),
+            object_mask_digests=("d" * 64,) * 3,
+            source_radar_ids=("radar-1",) * 3,
+            association_edge_digests=("1" * 64, "2" * 64),
+            spatial_reference_digest="7" * 64,
+        )
+
+        with self.assertRaisesRegex(ValueError, "event-catalog"):
+            promotion_module.PhysicalEventCatalogEvidence.from_members(
+                event_id="escaped-track",
+                member_case_ids=("case-1",),
+                member_full_analysis_input_digests=("1" * 64,),
+                start_time="2026-08-09T00:00:00Z",
+                end_time="2026-08-09T02:00:00Z",
+                spatial_envelope_xy_m=(0.0, 0.0, 100_000.0, 100_000.0),
+                object_track_artifact=track,
+                participating_radar_ids=("radar-1",),
+                association_algorithm_digest="3" * 64,
+                adjudication_policy_digest="6" * 64,
+                adjudicator_id="independent-weather-labeler",
+                adjudicator_private_key=self.regime_labeler_key(),
+            )
+
+    def test_process_log_payload_tampering_is_detected_by_rehash(self) -> None:
+        process_log = self.scoring_process_log()
+        object.__setattr__(process_log, "entries", ("rewritten after sealing",))
+
+        with self.assertRaisesRegex(ValueError, "process-log artifact"):
+            promotion_module.validate_process_log_artifact(process_log)
+
+    def test_identical_small_metric_sample_retains_population_uncertainty(
+        self,
+    ) -> None:
+        bound = promotion_module._bounded_event_mean_upper_bound(
+            [-0.01] * 5,
+            [f"event-{index}" for index in range(5)],
+            self.policy(),
+            family_size=1,
+            absolute_bound=2.0,
+        )
+
+        self.assertGreater(bound, -0.01)
+
+    def test_sample_preflight_fails_a_sparse_metric_cell(self) -> None:
+        preflight = promotion_module.promotion_sample_size_preflight(
+            self.plan(),
+            self.policy(),
+            available_physical_events=200,
+            metric_cell_event_counts=(
+                ("convective", "near_range", "log_echo_mse", 60, 5, 10),
+            ),
+            issuance_cell_event_counts=(
+                ("convective", "near_range", 60, 200, 1),
+            ),
+        )
+
+        self.assertFalse(preflight.cell_feasible)
+        self.assertFalse(preflight.feasible)
 
     def test_metric_cell_event_minimum_is_bound_into_policy_digest(self) -> None:
         policy = self.policy()
@@ -3793,20 +4149,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             subject_digests=plan.candidate_family_digests,
             execution_contract_digest=plan.scoring_execution_contract_digest,
         )
-        family_scoring_completion = (
-            promotion_module.TrustedProcessCompletionReceipt.from_start(
-                family_scoring_start,
-                completed_at="2026-08-12T02:00:00Z",
-                output_artifact_digest="b" * 64,
-                process_log_digest="e" * 64,
-                scheduler_private_key=self.scheduler_key(),
-            )
-        )
         manifest = replace(
             self.manifest(),
             holdout_plan_digest=plan.plan_digest,
             candidate_scoring_start_receipt=family_scoring_start,
-            candidate_scoring_completion_receipt=family_scoring_completion,
         )
         rebound: list[promotion_module.PriorHoldoutEvaluation] = []
         for evaluation in (
@@ -3834,6 +4180,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             approved_policy_digests=frozenset((policy.digest,)),
             content_digest="b" * 64,
         )
+        scoring_artifact, scoring_log, scoring_completion = self.sealed_scoring(
+            tuple(rebound),
+            manifest=manifest,
+            plan=plan,
+        )
         with patch.object(
             promotion_module,
             "_load_learning_policy_trust_store",
@@ -3843,6 +4194,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 manifest,
                 plan,
                 tuple(rebound),
+                scoring_artifact=scoring_artifact,
+                scoring_process_log=scoring_log,
+                scoring_completion_receipt=scoring_completion,
                 policy=policy,
                 policy_trust_store_path="/etc/advar/learning-policies.json",
             )
@@ -4696,6 +5050,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             approved_policy_digests=frozenset((policy.digest,)),
             content_digest="b" * 64,
         )
+        evaluations = (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
+        scoring_artifact, scoring_log, scoring_completion = self.sealed_scoring(
+            evaluations,
+            manifest=manifest,
+            plan=plan,
+        )
 
         with patch.object(
             promotion_module,
@@ -4705,7 +5065,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             compute_neural_prior_promotion(
                 manifest,
                 plan,
-                (self.evaluation(1, -0.2), self.evaluation(2, -0.3)),
+                evaluations,
+                scoring_artifact=scoring_artifact,
+                scoring_process_log=scoring_log,
+                scoring_completion_receipt=scoring_completion,
                 policy=policy,
                 policy_trust_store_path="/etc/advar/learning-policies.json",
             )
@@ -5214,21 +5577,24 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             run=candidate_run,
             state=object(),
             validate_issuance=Mock(),
-            valid_mask=torch.ones((1, 2, 2), dtype=torch.bool),
+            valid_mask=torch.ones((6, 2, 2), dtype=torch.bool),
             background_fallback_mask=torch.zeros(
-                (1, 2, 2), dtype=torch.bool
+                (6, 2, 2), dtype=torch.bool
             ),
-            forecast_confidence=torch.ones((1, 2, 2)),
+            forecast_confidence=torch.ones((6, 2, 2)),
         )
         parent = SimpleNamespace(
             run=parent_run,
             state=object(),
             validate_issuance=Mock(),
-            valid_mask=torch.ones((1, 2, 2), dtype=torch.bool),
-            background_fallback_mask=torch.zeros(
-                (1, 2, 2), dtype=torch.bool
+            valid_mask=torch.tensor(
+                [[[True, False], [False, False]]] * 6,
+                dtype=torch.bool,
             ),
-            forecast_confidence=torch.ones((1, 2, 2)),
+            background_fallback_mask=torch.zeros(
+                (6, 2, 2), dtype=torch.bool
+            ),
+            forecast_confidence=torch.ones((6, 2, 2)),
         )
         resolved = SimpleNamespace(
             content_digest=case.verification_bundle_digest,
@@ -5236,7 +5602,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             grid_contract_digest="2" * 64,
             radar_product_digest="a" * 64,
             qc_pipeline_digest="9" * 64,
-            valid_mask=torch.ones((6, 2, 2), dtype=torch.bool),
+            valid_mask=torch.tensor(
+                [[[True, False], [False, False]]] * 6,
+                dtype=torch.bool,
+            ),
             frames_dbz=torch.zeros((6, 2, 2)),
         )
         verification = SimpleNamespace(valid_times=resolved.valid_times)
@@ -5289,8 +5658,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             numerical_runtime_digest=regime_evidence.numerical_runtime_digest,
             classify=Mock(return_value=regime_evidence),
         )
-        candidate_weights = torch.full((1, 2, 2), 0.5)
-        parent_weights = torch.ones((1, 2, 2))
+        candidate_weights = torch.tensor(
+            [[[1.0, 0.0], [0.0, 0.0]]]
+        )
+        parent_weights = candidate_weights.clone()
         with (
             patch.object(
                 promotion_module,
@@ -5356,6 +5727,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertAlmostEqual(evaluation.prior_candidate_valid_fraction, 0.25)
         self.assertAlmostEqual(evaluation.prior_candidate_valid_area_km2, 1.0)
         self.assertAlmostEqual(evaluation.prior_abstention_increase_vs_parent, 0.75)
+        band = evaluation.range_band_evaluations[0]
+        self.assertEqual(band.issuance_domain_cell_count_by_lead, (4,))
+        self.assertEqual(band.newly_issued_count_by_lead, (3,))
+        self.assertAlmostEqual(float(band.newly_issued_fraction_by_lead[0]), 0.75)
         candidate_runner.reproduce.assert_called_once()
         parent_runner.reproduce.assert_called_once()
 
@@ -5673,20 +6048,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             plan.physical_event_catalog_plan,
             changed_result,
         )
-        changed_scoring_completion = (
-            promotion_module.TrustedProcessCompletionReceipt.from_start(
-                changed_scoring_start,
-                completed_at="2026-08-12T02:00:00Z",
-                output_artifact_digest="b" * 64,
-                process_log_digest="e" * 64,
-                scheduler_private_key=self.scheduler_key(),
-            )
-        )
         changed_manifest = replace(
             self.manifest(),
             physical_event_catalog_result=changed_result,
             candidate_scoring_start_receipt=changed_scoring_start,
-            candidate_scoring_completion_receipt=changed_scoring_completion,
         )
 
         with self.assertRaisesRegex(ValueError, "input availability"):
@@ -5704,10 +6069,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             start_time="2026-08-09T01:00:00Z",
             end_time="2026-08-09T03:00:00Z",
             spatial_envelope_xy_m=(1_000.0, 1_000.0, 99_000.0, 99_000.0),
-            start_centroid_xy_m=(50_000.0, 50_000.0),
-            end_centroid_xy_m=(50_000.0, 50_000.0),
-            mean_velocity_xy_mps=(0.0, 0.0),
-            object_track_artifact_digest="5" * 64,
+            object_track_artifact=self.track_artifact(
+                start_time="2026-08-09T01:00:00Z",
+                end_time="2026-08-09T03:00:00Z",
+                start_centroid=(50_000.0, 50_000.0),
+                end_centroid=(50_000.0, 50_000.0),
+                artifact_seed="5",
+                radar_ids=("radar-1",),
+            ),
             participating_radar_ids=("radar-1",),
             association_algorithm_digest="3" * 64,
             adjudication_policy_digest="6" * 64,
@@ -5879,6 +6248,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ledger.append_trusted_process_completion_receipt(
                     start,
                     completion,
+                    process_log_artifact=self.training_process_log(),
                     scheduler_trust_store_path="/etc/advar/schedulers.json",
                 )
 
@@ -5900,40 +6270,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             started_at="2026-08-12T01:00:00Z",
             scheduler_private_key=self.scheduler_key(),
         )
-        bad_completion = (
-            promotion_module.TrustedProcessCompletionReceipt.from_start(
-                bad_start,
-                completed_at="2026-08-12T02:00:00Z",
-                output_artifact_digest="b" * 64,
-                process_log_digest="e" * 64,
-                scheduler_private_key=self.scheduler_key(),
-            )
-        )
         bad_manifest = replace(
             self.manifest(),
             candidate_scoring_start_receipt=bad_start,
-            candidate_scoring_completion_receipt=bad_completion,
         )
-        policy = replace(
-            self.policy(),
-            approved_candidate_manifest_digests=(bad_manifest.manifest_digest,),
-        )
-        trust = _LearningPolicyTrustStore(
-            approved_policy_digests=frozenset((policy.digest,)),
-            content_digest="b" * 64,
-        )
-
-        with patch.object(
-            promotion_module,
-            "_load_learning_policy_trust_store",
-            return_value=trust,
-        ), self.assertRaisesRegex(ValueError, "scoring receipt family"):
-            compute_neural_prior_promotion(
-                bad_manifest,
-                plan,
+        with self.assertRaisesRegex(ValueError, "scoring artifact disagrees"):
+            self.scoring_artifact(
                 (self.evaluation(1, -0.2), self.evaluation(2, -0.3)),
-                policy=policy,
-                policy_trust_store_path="/etc/advar/learning-policies.json",
+                manifest=bad_manifest,
+                plan=plan,
             )
 
     def test_trusted_process_start_receipt_rejects_signature_tampering(self) -> None:
