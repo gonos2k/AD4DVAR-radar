@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, fields, replace
+from collections.abc import Callable, Mapping
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
@@ -25,6 +26,8 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from ._digest import tensor_digest
+from ._runtime import NumericalRuntimeManifest
+from .calibration import algorithm_bundle_digest
 from .action_artifacts import (
     expanded_tensor_bytes,
     preflight_npz_archive,
@@ -142,6 +145,7 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV17,
     LegacyNeuralPriorPromotionEvidenceAuditV18,
     LegacyNeuralPriorPromotionEvidenceAuditV19,
+    LegacyNeuralPriorPromotionEvidenceAuditV20,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     compute_neural_prior_promotion,
@@ -169,7 +173,7 @@ _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _SCHEDULER_TRUST_STORE_CONTRACT = "advar-trusted-scheduler-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 23
+_INDEX_SCHEMA_VERSION = 24
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
@@ -860,6 +864,136 @@ class LoadedEpisode:
     arrays: dict[str, NDArray[Any]]
 
 
+SCORING_REPLAY_REQUIRED_TENSOR_ROLES = frozenset(
+    {
+        "input_radar_frames",
+        "input_qc_valid_mask",
+        "input_quality_weight",
+        "background_echo_linear",
+        "source_radar_index_map",
+        "outage_mask",
+        "candidate_prior_mean",
+        "candidate_prior_scale",
+        "parent_prior_mean",
+        "parent_prior_scale",
+        "candidate_forecast_dbz",
+        "candidate_publication_mask",
+        "parent_forecast_dbz",
+        "parent_publication_mask",
+        "verification_frames_dbz",
+        "verification_valid_mask",
+        "operational_issuance_mask",
+        "range_band_index",
+        "event_object_labels",
+    }
+)
+
+
+@dataclass(frozen=True)
+class ScoringReplayTensorRecord:
+    case_id: str
+    role: str
+    archive_member: str
+    dtype: str
+    shape: tuple[int, ...]
+    tensor_digest: str
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "case_id": self.case_id,
+            "role": self.role,
+            "archive_member": self.archive_member,
+            "dtype": self.dtype,
+            "shape": list(self.shape),
+            "tensor_digest": self.tensor_digest,
+        }
+
+
+@dataclass(frozen=True)
+class ScoringReplayBundleManifest:
+    scoring_input_artifact_digest: str
+    ordered_case_ids: tuple[str, ...]
+    ordered_evaluation_digests: tuple[str, ...]
+    algorithm_source_manifest_digest: str
+    runtime_compatibility_digest: str
+    runtime_exact_digest: str
+    tensor_records: tuple[ScoringReplayTensorRecord, ...]
+    tensor_archive_sha256: str
+    evaluation_payload_sha256: str
+    replay_method: str = "typed-evaluation-reconstruction-v1"
+    contract: str = "neural-prior-scoring-replay-bundle-v1"
+    bundle_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-scoring-replay-bundle-v1"
+            or self.replay_method != "typed-evaluation-reconstruction-v1"
+            or not self.ordered_case_ids
+            or len(set(self.ordered_case_ids)) != len(self.ordered_case_ids)
+            or len(self.ordered_case_ids)
+            != len(self.ordered_evaluation_digests)
+        ):
+            raise ValueError("scoring replay bundle manifest is invalid")
+        for value in (
+            self.scoring_input_artifact_digest,
+            *self.ordered_evaluation_digests,
+            self.algorithm_source_manifest_digest,
+            self.runtime_compatibility_digest,
+            self.runtime_exact_digest,
+            self.tensor_archive_sha256,
+            self.evaluation_payload_sha256,
+        ):
+            if re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError("scoring replay bundle digest is invalid")
+        expected = {
+            (case_id, role)
+            for case_id in self.ordered_case_ids
+            for role in SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+        }
+        actual = {(item.case_id, item.role) for item in self.tensor_records}
+        if actual != expected or len(actual) != len(self.tensor_records):
+            raise ValueError("scoring replay bundle tensor set is incomplete")
+        for record in self.tensor_records:
+            if (
+                not _SAFE_ID.fullmatch(record.case_id)
+                or record.role not in SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                or not _SAFE_ID.fullmatch(record.archive_member)
+                or not record.shape
+                or any(type(value) is not int or value <= 0 for value in record.shape)
+                or re.fullmatch(r"[0-9a-f]{64}", record.tensor_digest) is None
+            ):
+                raise ValueError("scoring replay tensor record is invalid")
+        object.__setattr__(self, "bundle_digest", _json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "scoring_input_artifact_digest": self.scoring_input_artifact_digest,
+            "ordered_case_ids": list(self.ordered_case_ids),
+            "ordered_evaluation_digests": list(
+                self.ordered_evaluation_digests
+            ),
+            "algorithm_source_manifest_digest": (
+                self.algorithm_source_manifest_digest
+            ),
+            "runtime_compatibility_digest": self.runtime_compatibility_digest,
+            "runtime_exact_digest": self.runtime_exact_digest,
+            "tensor_records": [item.payload for item in self.tensor_records],
+            "tensor_archive_sha256": self.tensor_archive_sha256,
+            "evaluation_payload_sha256": self.evaluation_payload_sha256,
+            "replay_method": self.replay_method,
+        }
+
+
+@dataclass(frozen=True)
+class LoadedScoringReplayBundle:
+    manifest: ScoringReplayBundleManifest
+    evaluations: tuple[PriorHoldoutEvaluation, ...]
+    tensors: dict[tuple[str, str], Tensor]
+
+
 class EpisodeLedger:
     """Immutable M0 storage backed by SQLite, JSON, and NPZ."""
 
@@ -867,9 +1001,11 @@ class EpisodeLedger:
         self.root = Path(root).expanduser().resolve()
         self.episodes_dir = self.root / "episodes"
         self.interventions_dir = self.root / "interventions"
+        self.scoring_replays_dir = self.root / "scoring_replays"
         self.index_path = self.root / "index.sqlite"
         self.episodes_dir.mkdir(parents=True, exist_ok=True)
         self.interventions_dir.mkdir(parents=True, exist_ok=True)
+        self.scoring_replays_dir.mkdir(parents=True, exist_ok=True)
         self._initialize_index()
 
     def append(self, episode: SensitivityEpisode) -> Path:
@@ -3134,6 +3270,270 @@ class EpisodeLedger:
                 ) from error
         return artifact.artifact_digest
 
+    def append_neural_prior_scoring_replay_bundle(
+        self,
+        scoring_input_artifact: HoldoutScoringInputArtifact,
+        evaluations: tuple[PriorHoldoutEvaluation, ...],
+        tensors: Mapping[tuple[str, str], Tensor],
+        *,
+        algorithm_source_manifest_digest: str,
+        runtime_manifest: NumericalRuntimeManifest,
+    ) -> ScoringReplayBundleManifest:
+        """Durably retain the arrays needed for delayed scoring reconstruction."""
+
+        ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
+        case_ids = tuple(item.case_id for item in ordered)
+        if (
+            scoring_input_artifact.artifact_digest
+            != _json_digest(scoring_input_artifact.payload)
+            or case_ids != scoring_input_artifact.ordered_case_ids
+            or set(tensors)
+            != {
+                (case_id, role)
+                for case_id in case_ids
+                for role in SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+            }
+            or re.fullmatch(
+                r"[0-9a-f]{64}", algorithm_source_manifest_digest
+            )
+            is None
+        ):
+            raise ValueError("scoring replay inputs are incomplete")
+        temporary = Path(
+            tempfile.mkdtemp(prefix=".scoring-replay.", dir=self.scoring_replays_dir)
+        )
+        published = False
+        target: Path | None = None
+        try:
+            arrays: dict[str, NDArray[Any]] = {}
+            records: list[ScoringReplayTensorRecord] = []
+            for case_index, case_id in enumerate(case_ids):
+                for role in sorted(SCORING_REPLAY_REQUIRED_TENSOR_ROLES):
+                    tensor = tensors[(case_id, role)].detach().cpu().contiguous()
+                    if tensor.layout is not torch.strided or tensor.numel() == 0:
+                        raise ValueError("scoring replay tensor is invalid")
+                    try:
+                        array = tensor.numpy().copy()
+                    except TypeError as error:
+                        raise ValueError(
+                            "scoring replay tensor dtype is unsupported"
+                        ) from error
+                    member = f"case_{case_index:06d}__{role}"
+                    arrays[member] = array
+                    records.append(
+                        ScoringReplayTensorRecord(
+                            case_id=case_id,
+                            role=role,
+                            archive_member=member,
+                            dtype=str(tensor.dtype).removeprefix("torch."),
+                            shape=tuple(int(value) for value in tensor.shape),
+                            tensor_digest=tensor_digest(tensor),
+                        )
+                    )
+            archive_path = temporary / "replay_arrays.npz"
+            np.savez_compressed(
+                archive_path,
+                **cast(dict[str, Any], arrays),
+            )
+            evaluation_path = temporary / "evaluations.json"
+            evaluation_path.write_text(
+                json.dumps(
+                    [_evaluation_audit_payload(item) for item in ordered],
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+                encoding="utf-8",
+            )
+            manifest = ScoringReplayBundleManifest(
+                scoring_input_artifact_digest=(
+                    scoring_input_artifact.artifact_digest
+                ),
+                ordered_case_ids=case_ids,
+                ordered_evaluation_digests=tuple(
+                    item.evaluation_digest for item in ordered
+                ),
+                algorithm_source_manifest_digest=(
+                    algorithm_source_manifest_digest
+                ),
+                runtime_compatibility_digest=(
+                    runtime_manifest.compatibility_digest
+                ),
+                runtime_exact_digest=runtime_manifest.exact_digest,
+                tensor_records=tuple(records),
+                tensor_archive_sha256=_file_digest(archive_path),
+                evaluation_payload_sha256=_file_digest(evaluation_path),
+            )
+            manifest_path = temporary / "manifest.json"
+            manifest_path.write_text(
+                json.dumps(
+                    manifest.payload | {"bundle_digest": manifest.bundle_digest},
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+                encoding="utf-8",
+            )
+            target = self.scoring_replays_dir / manifest.bundle_digest
+            if target.exists():
+                raise FileExistsError("scoring replay bundle already exists")
+            with self._connect() as connection:
+                connection.execute("BEGIN IMMEDIATE")
+                input_row = connection.execute(
+                    "SELECT payload_json FROM "
+                    "neural_prior_holdout_scoring_input_artifacts "
+                    "WHERE artifact_digest = ?",
+                    (scoring_input_artifact.artifact_digest,),
+                ).fetchone()
+                expected_input_json = json.dumps(
+                    scoring_input_artifact.payload
+                    | {"artifact_digest": scoring_input_artifact.artifact_digest},
+                    sort_keys=True,
+                )
+                if input_row is None or input_row[0] != expected_input_json:
+                    raise ValueError(
+                        "scoring replay requires its registered scoring input"
+                    )
+                start_rows = connection.execute(
+                    "SELECT receipt_json FROM trusted_process_start_receipts_v2 "
+                    "WHERE process_kind = 'candidate_scoring'"
+                ).fetchall()
+                if not any(
+                    json.loads(row[0]).get("subject_digests")
+                    == [scoring_input_artifact.artifact_digest]
+                    for row in start_rows
+                ):
+                    raise ValueError(
+                        "scoring replay requires its ledger scoring start"
+                    )
+                temporary.rename(target)
+                published = True
+                connection.execute(
+                    "INSERT INTO neural_prior_scoring_replay_bundles "
+                    "(bundle_digest, scoring_input_artifact_digest, "
+                    "manifest_json, path, created_at) VALUES (?, ?, ?, ?, ?)",
+                    (
+                        manifest.bundle_digest,
+                        manifest.scoring_input_artifact_digest,
+                        json.dumps(
+                            manifest.payload
+                            | {"bundle_digest": manifest.bundle_digest},
+                            sort_keys=True,
+                            separators=(",", ":"),
+                        ),
+                        str(target.relative_to(self.root)),
+                        datetime.now(timezone.utc).isoformat(),
+                    ),
+                )
+            return manifest
+        except Exception:
+            if published and target is not None and target.exists():
+                shutil.rmtree(target)
+            raise
+        finally:
+            if temporary.exists():
+                shutil.rmtree(temporary)
+
+    def load_neural_prior_scoring_replay_bundle(
+        self,
+        bundle_digest: str,
+        *,
+        recompute_case: Callable[
+            [str, Mapping[str, Tensor]], PriorHoldoutEvaluation
+        ]
+        | None = None,
+    ) -> LoadedScoringReplayBundle:
+        """Rehash raw members and reconstruct every typed evaluation digest."""
+
+        if re.fullmatch(r"[0-9a-f]{64}", bundle_digest) is None:
+            raise ValueError("scoring replay bundle digest is invalid")
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT manifest_json, path FROM "
+                "neural_prior_scoring_replay_bundles WHERE bundle_digest = ?",
+                (bundle_digest,),
+            ).fetchone()
+        if row is None:
+            raise ValueError("scoring replay bundle is not registered")
+        target = (self.root / row[1]).resolve()
+        if target.parent != self.scoring_replays_dir:
+            raise ValueError("scoring replay bundle path is invalid")
+        validate_artifact_directory(
+            target,
+            expected_members=frozenset(
+                {"manifest.json", "evaluations.json", "replay_arrays.npz"}
+            ),
+            maximum_members=3,
+            maximum_file_bytes=_MAXIMUM_ACTION_ARTIFACT_FILE_BYTES,
+        )
+        manifest = _decode_scoring_replay_bundle_manifest(
+            (target / "manifest.json").read_text("utf-8"),
+            expected_digest=bundle_digest,
+        )
+        if row[0] != json.dumps(
+            manifest.payload | {"bundle_digest": manifest.bundle_digest},
+            sort_keys=True,
+            separators=(",", ":"),
+        ):
+            raise ValueError("scoring replay manifest disagrees with the ledger")
+        archive_path = target / "replay_arrays.npz"
+        evaluation_path = target / "evaluations.json"
+        if (
+            _file_digest(archive_path) != manifest.tensor_archive_sha256
+            or _file_digest(evaluation_path)
+            != manifest.evaluation_payload_sha256
+        ):
+            raise ValueError("scoring replay bundle member checksum mismatch")
+        expected_members = frozenset(
+            record.archive_member for record in manifest.tensor_records
+        )
+        preflight_npz_archive(
+            archive_path,
+            expected_members=expected_members,
+            maximum_members=len(expected_members),
+            maximum_expanded_bytes=_MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES,
+        )
+        tensors: dict[tuple[str, str], Tensor] = {}
+        with np.load(archive_path, allow_pickle=False) as archive:
+            for record in manifest.tensor_records:
+                array = archive[record.archive_member].copy()
+                tensor = torch.from_numpy(array)
+                if (
+                    str(tensor.dtype).removeprefix("torch.") != record.dtype
+                    or tuple(tensor.shape) != record.shape
+                    or tensor_digest(tensor) != record.tensor_digest
+                ):
+                    raise ValueError("scoring replay tensor digest mismatch")
+                tensors[(record.case_id, record.role)] = tensor
+        raw_evaluations = json.loads(evaluation_path.read_text("utf-8"))
+        evaluations = _decode_evaluation_audit_payloads(raw_evaluations)
+        if any(
+            not isinstance(item, PriorHoldoutEvaluation) for item in evaluations
+        ):
+            raise ValueError("scoring replay contains audit-only evaluations")
+        retained = tuple(
+            cast(PriorHoldoutEvaluation, item) for item in evaluations
+        )
+        if (
+            tuple(item.case_id for item in retained)
+            != manifest.ordered_case_ids
+            or tuple(item.evaluation_digest for item in retained)
+            != manifest.ordered_evaluation_digests
+        ):
+            raise ValueError("scoring replay evaluation digest mismatch")
+        if recompute_case is not None:
+            for expected in retained:
+                case_tensors = {
+                    role: tensors[(expected.case_id, role)]
+                    for role in SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                }
+                reproduced = recompute_case(expected.case_id, case_tensors)
+                if reproduced.evaluation_digest != expected.evaluation_digest:
+                    raise ValueError("scoring replay recomputation mismatch")
+        return LoadedScoringReplayBundle(
+            manifest=manifest,
+            evaluations=retained,
+            tensors=tensors,
+        )
+
     def append_trusted_process_start_receipt(
         self,
         plan: NeuralPriorHoldoutPlan | PhysicalEventCatalogPlan,
@@ -3320,6 +3720,24 @@ class EpisodeLedger:
                 raise ValueError(
                     "scoring completion requires its canonical scoring artifact"
                 )
+            replay = self.load_neural_prior_scoring_replay_bundle(
+                scoring_artifact.scoring_replay_bundle_digest
+            )
+            if (
+                replay.manifest.scoring_input_artifact_digest
+                != scoring_artifact.scoring_input_artifact_digest
+                or replay.manifest.ordered_case_ids
+                != scoring_artifact.ordered_case_ids
+                or replay.manifest.ordered_evaluation_digests
+                != scoring_artifact.ordered_evaluation_digests
+                or replay.manifest.runtime_exact_digest
+                != scoring_artifact.scoring_runtime_digest
+                or replay.manifest.algorithm_source_manifest_digest
+                != algorithm_bundle_digest()
+            ):
+                raise ValueError(
+                    "scoring completion replay bundle disagrees with its output"
+                )
         elif scoring_artifact is not None:
             raise ValueError("training completion cannot seal a scoring artifact")
         scheduler_trust = _load_scheduler_trust_store(
@@ -3444,6 +3862,19 @@ class EpisodeLedger:
     ) -> str:
         """Append one promotion over every preregistered holdout case."""
 
+        replay = self.load_neural_prior_scoring_replay_bundle(
+            scoring_artifact.scoring_replay_bundle_digest
+        )
+        if (
+            replay.manifest.scoring_input_artifact_digest
+            != scoring_input_artifact.artifact_digest
+            or replay.manifest.ordered_evaluation_digests
+            != tuple(
+                item.evaluation_digest
+                for item in sorted(evaluations, key=lambda item: item.case_id)
+            )
+        ):
+            raise ValueError("promotion scoring replay bundle is inconsistent")
         recomputed = compute_neural_prior_promotion(
             manifest,
             plan,
@@ -3813,6 +4244,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV17
         | LegacyNeuralPriorPromotionEvidenceAuditV18
         | LegacyNeuralPriorPromotionEvidenceAuditV19
+        | LegacyNeuralPriorPromotionEvidenceAuditV20
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -3884,6 +4316,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV17
                 | LegacyNeuralPriorPromotionEvidenceAuditV18
                 | LegacyNeuralPriorPromotionEvidenceAuditV19
+                | LegacyNeuralPriorPromotionEvidenceAuditV20
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -3987,6 +4420,7 @@ class EpisodeLedger:
                         "neural-prior-promotion-evidence-v18",
                         "neural-prior-promotion-evidence-v19",
                         "neural-prior-promotion-evidence-v20",
+                        "neural-prior-promotion-evidence-v21",
                     ):
                         raw_payload = json.loads(row["evidence_payload_json"])
                         if not isinstance(raw_payload, dict):
@@ -4012,6 +4446,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v18",
                             "neural-prior-promotion-evidence-v19",
                             "neural-prior-promotion-evidence-v20",
+                            "neural-prior-promotion-evidence-v21",
                         ):
                             raw_payload["regime_classifier_evidence_digests"] = tuple(
                                 raw_payload["regime_classifier_evidence_digests"]
@@ -4035,6 +4470,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v18",
                             "neural-prior-promotion-evidence-v19",
                             "neural-prior-promotion-evidence-v20",
+                            "neural-prior-promotion-evidence-v21",
                         ):
                             raw_payload["range_band_skill_bounds"] = tuple(
                                 tuple(item)
@@ -4052,6 +4488,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v18",
                             "neural-prior-promotion-evidence-v19",
                             "neural-prior-promotion-evidence-v20",
+                            "neural-prior-promotion-evidence-v21",
                         ):
                             raw_payload[
                                 "range_band_skill_inference_diagnostics"
@@ -4070,6 +4507,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v18",
                             "neural-prior-promotion-evidence-v19",
                             "neural-prior-promotion-evidence-v20",
+                            "neural-prior-promotion-evidence-v21",
                         ):
                             raw_payload[
                                 "certified_range_geometry_contract_digests"
@@ -4245,6 +4683,15 @@ class EpisodeLedger:
                             )
                         elif contract == "neural-prior-promotion-evidence-v19":
                             evidence = LegacyNeuralPriorPromotionEvidenceAuditV19(
+                                promotion_evidence_digest=promotion_evidence_digest,
+                                payload_json=json.dumps(
+                                    raw_payload,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                ),
+                            )
+                        elif contract == "neural-prior-promotion-evidence-v20":
+                            evidence = LegacyNeuralPriorPromotionEvidenceAuditV20(
                                 promotion_evidence_digest=promotion_evidence_digest,
                                 payload_json=json.dumps(
                                     raw_payload,
@@ -4716,6 +5163,21 @@ class EpisodeLedger:
             )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS neural_prior_scoring_replay_bundles (
+                    bundle_digest TEXT PRIMARY KEY,
+                    scoring_input_artifact_digest TEXT NOT NULL UNIQUE,
+                    manifest_json TEXT NOT NULL,
+                    path TEXT NOT NULL UNIQUE,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (scoring_input_artifact_digest)
+                        REFERENCES neural_prior_holdout_scoring_input_artifacts(
+                            artifact_digest
+                        )
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS trusted_process_completion_receipts (
                     receipt_digest TEXT PRIMARY KEY,
                     start_receipt_digest TEXT NOT NULL UNIQUE,
@@ -4819,6 +5281,7 @@ class EpisodeLedger:
                 "trusted_process_start_receipts_v2",
                 "trusted_process_log_artifacts",
                 "neural_prior_holdout_scoring_artifacts",
+                "neural_prior_scoring_replay_bundles",
                 "trusted_process_completion_receipts",
                 "neural_prior_promotions",
             ):
@@ -5476,6 +5939,46 @@ def _decode_holdout_scoring_artifact(
     if stored_digest != expected_digest or artifact.artifact_digest != expected_digest:
         raise ValueError("holdout scoring artifact digest mismatch")
     return artifact
+
+
+def _decode_scoring_replay_bundle_manifest(
+    text: str,
+    *,
+    expected_digest: str,
+) -> ScoringReplayBundleManifest:
+    value = json.loads(text)
+    if not isinstance(value, dict):
+        raise ValueError("invalid scoring replay bundle manifest")
+    values = dict(value)
+    stored_digest = values.pop("bundle_digest", None)
+    raw_records = values.pop("tensor_records", None)
+    if not isinstance(raw_records, list) or any(
+        not isinstance(item, dict) for item in raw_records
+    ):
+        raise ValueError("invalid scoring replay tensor records")
+    records = tuple(
+        ScoringReplayTensorRecord(
+            case_id=str(item["case_id"]),
+            role=str(item["role"]),
+            archive_member=str(item["archive_member"]),
+            dtype=str(item["dtype"]),
+            shape=tuple(int(entry) for entry in item["shape"]),
+            tensor_digest=str(item["tensor_digest"]),
+        )
+        for item in raw_records
+    )
+    values["ordered_case_ids"] = tuple(values["ordered_case_ids"])
+    values["ordered_evaluation_digests"] = tuple(
+        values["ordered_evaluation_digests"]
+    )
+    values["tensor_records"] = records
+    manifest = ScoringReplayBundleManifest(**cast(Any, values))
+    if (
+        stored_digest != expected_digest
+        or manifest.bundle_digest != expected_digest
+    ):
+        raise ValueError("scoring replay bundle manifest digest mismatch")
+    return manifest
 
 
 def _decode_completion_receipt(

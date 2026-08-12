@@ -1,0 +1,25 @@
+name: MPS numerical certification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify-mps:
+    runs-on: [self-hosted, macOS, ARM64, advar-mps]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+      - name: Install source
+        run: python -m pip install -e . pytest==9.1.1
+      - name: Run MPS numerical oracles
+        run: >-
+          python -m pytest -q
+          tests/test_pcg.py::PCGTests::test_mps_solve_does_not_require_float64
+          tests/test_pcg.py::PCGTests::test_mps_extreme_scale_matches_cpu_oracle
+          tests/test_runtime.py::NumericalRuntimeManifestTest::test_cpu_mps_decision_is_invariant_outside_numerical_margin

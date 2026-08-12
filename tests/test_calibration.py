@@ -159,6 +159,20 @@ class OperationalCalibrationManifestTests(unittest.TestCase):
 
         self.assertNotEqual(initial, changed)
 
+    def test_recursive_algorithm_manifest_covers_subpackages(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "algorithm.py").write_text("VALUE = 1\n", encoding="utf-8")
+            nested = root / "promotion"
+            nested.mkdir()
+            helper = nested / "inference.py"
+            helper.write_text("BOUND = 1\n", encoding="utf-8")
+            initial = algorithm_bundle_digest(root)
+            helper.write_text("BOUND = 2\n", encoding="utf-8")
+            changed = algorithm_bundle_digest(root)
+
+        self.assertNotEqual(initial, changed)
+
     def test_load_rejects_noncanonical_json(self) -> None:
         manifest = self._manifest()
         with tempfile.TemporaryDirectory() as temporary:

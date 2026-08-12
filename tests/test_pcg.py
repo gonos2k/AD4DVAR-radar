@@ -148,6 +148,34 @@ class PCGTests(unittest.TestCase):
         self.assertEqual(result.relative_residual, 0.0)
         torch.testing.assert_close(result.solution, rhs)
 
+    @unittest.skipUnless(
+        torch.backends.mps.is_available(),
+        "MPS is not available",
+    )
+    def test_mps_extreme_scale_matches_cpu_oracle(self) -> None:
+        diagonal_cpu = torch.logspace(-12, 12, 64, dtype=torch.float32)
+        rhs_cpu = torch.linspace(0.5, 1.5, 64, dtype=torch.float32)
+
+        def solve(diagonal: torch.Tensor, rhs: torch.Tensor):
+            return pcg(
+                lambda value: diagonal * value,
+                rhs,
+                preconditioner=lambda value: value / diagonal,
+                rtol=1.0e-5,
+            )
+
+        cpu = solve(diagonal_cpu, rhs_cpu)
+        mps = solve(diagonal_cpu.to("mps"), rhs_cpu.to("mps"))
+
+        self.assertEqual(cpu.converged, mps.converged)
+        self.assertEqual(cpu.iterations, mps.iterations)
+        torch.testing.assert_close(
+            mps.solution.cpu(),
+            cpu.solution,
+            atol=1.0e-5,
+            rtol=1.0e-5,
+        )
+
     def test_rejects_invalid_operator_shape_and_configuration(self) -> None:
         rhs = torch.ones(3, dtype=torch.float64)
 
