@@ -618,12 +618,20 @@ class OperationalIssuanceDomainPlan:
     publication_eligible_mask_digest: str
     source_coverage_mask_digest: str
     permanent_exclusion_mask_digest: str
-    contract: str = "operational-issuance-domain-plan-v1"
+    radar_source_kind: Literal["single_site", "mosaic"] = "single_site"
+    source_radar_registry_digest: str | None = None
+    source_radar_count: int | None = None
+    data_ingestor_id: str | None = None
+    data_ingestor_public_key_hex: str | None = None
+    contract: str = "operational-issuance-domain-plan-v2"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
         if (
-            self.contract != "operational-issuance-domain-plan-v1"
+            self.contract not in {
+                "operational-issuance-domain-plan-v1",
+                "operational-issuance-domain-plan-v2",
+            }
             or not self.case_id
             or self.case_id.strip() != self.case_id
             or not self.lead_minutes
@@ -642,6 +650,39 @@ class OperationalIssuanceDomainPlan:
             "permanent_exclusion_mask_digest",
         ):
             _require_digest(name, getattr(self, name))
+        dynamic_values = (
+            self.source_radar_registry_digest,
+            self.source_radar_count,
+            self.data_ingestor_id,
+            self.data_ingestor_public_key_hex,
+        )
+        if self.contract == "operational-issuance-domain-plan-v1":
+            if self.radar_source_kind != "single_site" or any(
+                value is not None for value in dynamic_values
+            ):
+                raise ValueError("legacy issuance-domain plans are static")
+        elif self.radar_source_kind == "mosaic":
+            if (
+                self.source_radar_registry_digest is None
+                or self.source_radar_count is None
+                or type(self.source_radar_count) is not int
+                or self.source_radar_count <= 0
+                or self.data_ingestor_id is None
+                or not self.data_ingestor_id
+                or self.data_ingestor_public_key_hex is None
+            ):
+                raise ValueError("mosaic issuance-domain trust is incomplete")
+            _require_digest(
+                "source radar registry", self.source_radar_registry_digest
+            )
+            try:
+                Ed25519PublicKey.from_public_bytes(
+                    bytes.fromhex(self.data_ingestor_public_key_hex)
+                )
+            except (ValueError, TypeError) as error:
+                raise ValueError("data ingestor public key is invalid") from error
+        elif any(value is not None for value in dynamic_values):
+            raise ValueError("single-site issuance-domain plan is not dynamic")
         object.__setattr__(self, "plan_digest", json_digest(self.payload))
 
     @property
@@ -653,11 +694,49 @@ class OperationalIssuanceDomainPlan:
         }
 
 
+@dataclass(frozen=True)
+class SourceRadarRegistry:
+    """Canonical mapping from mosaic integer indices to physical radar sites."""
+
+    radar_site_digests: tuple[str, ...]
+    source_selection_policy_digest: str
+    contract: str = "source-radar-registry-v1"
+    registry_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "source-radar-registry-v1"
+            or not self.radar_site_digests
+            or len(set(self.radar_site_digests)) != len(self.radar_site_digests)
+        ):
+            raise ValueError("source radar registry is invalid")
+        for value in self.radar_site_digests:
+            _require_digest("source radar site", value)
+        _require_digest(
+            "source selection policy", self.source_selection_policy_digest
+        )
+        object.__setattr__(self, "registry_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "radar_site_digests": list(self.radar_site_digests),
+            "source_selection_policy_digest": (
+                self.source_selection_policy_digest
+            ),
+        }
+
+
 @dataclass(frozen=True, init=False)
 class ResolvedSourceCoverageArtifact:
     """Input-time mosaic/outage/QC resolution of nominal source coverage."""
 
     _resolved_mask: Tensor
+    _source_radar_index_map: Tensor
+    _outage_mask: Tensor
+    _dynamic_qc_valid_mask: Tensor
+    _nominal_source_coverage_mask: Tensor
     issuance_domain_plan_digest: str
     case_id: str
     grid_contract_digest: str
@@ -667,13 +746,22 @@ class ResolvedSourceCoverageArtifact:
     full_analysis_input_digest: str
     input_available_at: str
     resolved_at: str
+    decision_deadline: str
+    publication_time: str
+    source_radar_registry_digest: str
+    source_radar_site_digests: tuple[str, ...]
+    source_radar_count: int
+    source_selection_policy_digest: str
+    data_ingestor_id: str
+    data_ingestor_public_key_hex: str
     source_radar_index_map_digest: str
     outage_mask_digest: str
     dynamic_qc_valid_mask_digest: str
     nominal_source_coverage_mask_digest: str
     resolved_source_coverage_mask_digest: str
     resolved_cell_counts: tuple[int, ...]
-    contract: str = "resolved-source-coverage-artifact-v1"
+    data_ingestor_signature_hex: str
+    contract: str = "resolved-source-coverage-artifact-v2"
     artifact_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -683,6 +771,8 @@ class ResolvedSourceCoverageArtifact:
     def from_observations(
         cls,
         plan: OperationalIssuanceDomainPlan,
+        input_plan: NeuralPriorInputPlan,
+        source_registry: SourceRadarRegistry,
         *,
         nominal_source_coverage_mask: Tensor,
         source_radar_index_map: Tensor,
@@ -690,55 +780,92 @@ class ResolvedSourceCoverageArtifact:
         dynamic_qc_valid_mask: Tensor,
         input_bundle_digest: str,
         full_analysis_input_digest: str,
-        input_available_at: str,
         resolved_at: str,
+        data_ingestor_id: str,
+        data_ingestor_private_key: Ed25519PrivateKey,
     ) -> ResolvedSourceCoverageArtifact:
-        masks = (
-            nominal_source_coverage_mask,
-            outage_mask,
-            dynamic_qc_valid_mask,
-        )
+        masks = (outage_mask, dynamic_qc_valid_mask)
         if (
-            any(mask.dtype is not torch.bool or mask.ndim != 3 for mask in masks)
+            nominal_source_coverage_mask.dtype is not torch.bool
+            or nominal_source_coverage_mask.ndim != 3
+            or any(mask.dtype is not torch.bool or mask.ndim != 2 for mask in masks)
             or not source_radar_index_map.dtype in (
                 torch.int8,
                 torch.int16,
                 torch.int32,
                 torch.int64,
             )
-            or source_radar_index_map.ndim != 3
-            or any(mask.shape != masks[0].shape for mask in masks[1:])
-            or source_radar_index_map.shape != masks[0].shape
-            or any(mask.device != masks[0].device for mask in masks[1:])
-            or source_radar_index_map.device != masks[0].device
-            or masks[0].shape[0] != len(plan.lead_minutes)
-            or tensor_digest(masks[0]) != plan.source_coverage_mask_digest
+            or source_radar_index_map.ndim != 2
+            or any(mask.shape != source_radar_index_map.shape for mask in masks)
+            or nominal_source_coverage_mask.shape[1:]
+            != source_radar_index_map.shape
+            or any(mask.device != source_radar_index_map.device for mask in masks)
+            or nominal_source_coverage_mask.device
+            != source_radar_index_map.device
+            or nominal_source_coverage_mask.shape[0] != len(plan.lead_minutes)
+            or tensor_digest(nominal_source_coverage_mask)
+            != plan.source_coverage_mask_digest
+            or plan.radar_source_kind != "mosaic"
+            or plan.source_radar_registry_digest
+            != source_registry.registry_digest
+            or plan.source_radar_count != len(source_registry.radar_site_digests)
+            or plan.source_coverage_policy_digest
+            != source_registry.source_selection_policy_digest
+            or plan.data_ingestor_id != data_ingestor_id
+            or plan.data_ingestor_public_key_hex
+            != data_ingestor_private_key.public_key()
+            .public_bytes(
+                encoding=serialization.Encoding.Raw,
+                format=serialization.PublicFormat.Raw,
+            )
+            .hex()
+            or input_plan.plan_digest == ""
+            or input_plan.grid_contract_digest != plan.grid_contract_digest
+            or input_plan.input_available_time == ""
         ):
             raise ValueError("resolved source-coverage inputs are invalid")
+        if not bool(
+            torch.all(
+                (source_radar_index_map == -1)
+                | (
+                    (source_radar_index_map >= 0)
+                    & (source_radar_index_map < len(source_registry.radar_site_digests))
+                )
+            )
+        ):
+            raise ValueError("source index is outside the registered radar set")
         _require_digest("input bundle", input_bundle_digest)
         _require_digest("full analysis input", full_analysis_input_digest)
         input_time = datetime.fromisoformat(
-            _canonical_time(input_available_at).replace("Z", "+00:00")
+            input_plan.input_available_time.replace("Z", "+00:00")
         )
         resolution_time = datetime.fromisoformat(
             _canonical_time(resolved_at).replace("Z", "+00:00")
         )
-        if resolution_time < input_time:
-            raise ValueError("source coverage was resolved before input availability")
-        resolved = (
-            masks[0]
-            & (source_radar_index_map >= 0)
-            & ~masks[1]
-            & masks[2]
+        deadline = datetime.fromisoformat(
+            input_plan.decision_deadline.replace("Z", "+00:00")
         )
+        if not input_time <= resolution_time <= deadline:
+            raise ValueError("source coverage resolution is outside its issue window")
+        input_source = (
+            (source_radar_index_map >= 0) & ~masks[0] & masks[1]
+        )
+        resolved = nominal_source_coverage_mask & input_source.unsqueeze(0)
         counts = tuple(
             int(value)
             for value in torch.count_nonzero(resolved, dim=(-2, -1)).tolist()
         )
         if any(value <= 0 for value in counts):
             raise ValueError("resolved source coverage is empty")
-        values: dict[str, object] = {
+        canonical_resolved_at = _canonical_time(resolved_at)
+        unsigned: dict[str, object] = {
             "_resolved_mask": resolved.detach().clone(),
+            "_source_radar_index_map": source_radar_index_map.detach().clone(),
+            "_outage_mask": masks[0].detach().clone(),
+            "_dynamic_qc_valid_mask": masks[1].detach().clone(),
+            "_nominal_source_coverage_mask": (
+                nominal_source_coverage_mask.detach().clone()
+            ),
             "issuance_domain_plan_digest": plan.plan_digest,
             "case_id": plan.case_id,
             "grid_contract_digest": plan.grid_contract_digest,
@@ -746,8 +873,25 @@ class ResolvedSourceCoverageArtifact:
             "source_coverage_policy_digest": plan.source_coverage_policy_digest,
             "input_bundle_digest": input_bundle_digest,
             "full_analysis_input_digest": full_analysis_input_digest,
-            "input_available_at": input_available_at,
-            "resolved_at": resolved_at,
+            "input_available_at": input_plan.input_available_time,
+            "resolved_at": canonical_resolved_at,
+            "decision_deadline": input_plan.decision_deadline,
+            "publication_time": input_plan.publication_time,
+            "source_radar_registry_digest": source_registry.registry_digest,
+            "source_radar_site_digests": source_registry.radar_site_digests,
+            "source_radar_count": len(source_registry.radar_site_digests),
+            "source_selection_policy_digest": (
+                source_registry.source_selection_policy_digest
+            ),
+            "data_ingestor_id": data_ingestor_id,
+            "data_ingestor_public_key_hex": (
+                data_ingestor_private_key.public_key()
+                .public_bytes(
+                    encoding=serialization.Encoding.Raw,
+                    format=serialization.PublicFormat.Raw,
+                )
+                .hex()
+            ),
             "source_radar_index_map_digest": tensor_digest(
                 source_radar_index_map
             ),
@@ -755,13 +899,29 @@ class ResolvedSourceCoverageArtifact:
             "dynamic_qc_valid_mask_digest": tensor_digest(
                 dynamic_qc_valid_mask
             ),
-            "nominal_source_coverage_mask_digest": tensor_digest(masks[0]),
+            "nominal_source_coverage_mask_digest": tensor_digest(
+                nominal_source_coverage_mask
+            ),
             "resolved_source_coverage_mask_digest": tensor_digest(resolved),
             "resolved_cell_counts": counts,
-            "contract": "resolved-source-coverage-artifact-v1",
+            "contract": "resolved-source-coverage-artifact-v2",
         }
+        signature_payload = {
+            key: value
+            for key, value in unsigned.items()
+            if not key.startswith("_")
+        }
+        unsigned["data_ingestor_signature_hex"] = (
+            data_ingestor_private_key.sign(
+                json.dumps(
+                    signature_payload,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            ).hex()
+        )
         result = object.__new__(cls)
-        for name, value in values.items():
+        for name, value in unsigned.items():
             object.__setattr__(result, name, value)
         object.__setattr__(result, "artifact_digest", json_digest(result.payload))
         validate_resolved_source_coverage_artifact(result)
@@ -772,18 +932,38 @@ class ResolvedSourceCoverageArtifact:
         return {
             key: (list(value) if isinstance(value, tuple) else value)
             for key, value in self.__dict__.items()
-            if key not in {"_resolved_mask", "artifact_digest"}
+            if not key.startswith("_") and key != "artifact_digest"
         }
 
     @property
     def resolved_mask(self) -> Tensor:
         return self._resolved_mask.detach().clone()
 
+    @property
+    def source_radar_index_map(self) -> Tensor:
+        return self._source_radar_index_map.detach().clone()
+
+    @property
+    def outage_mask(self) -> Tensor:
+        return self._outage_mask.detach().clone()
+
+    @property
+    def dynamic_qc_valid_mask(self) -> Tensor:
+        return self._dynamic_qc_valid_mask.detach().clone()
+
 
 def validate_resolved_source_coverage_artifact(
     artifact: ResolvedSourceCoverageArtifact,
 ) -> None:
     try:
+        expected_resolved = (
+            artifact._nominal_source_coverage_mask
+            & (
+                (artifact._source_radar_index_map >= 0)
+                & ~artifact._outage_mask
+                & artifact._dynamic_qc_valid_mask
+            ).unsqueeze(0)
+        )
         counts = tuple(
             int(value)
             for value in torch.count_nonzero(
@@ -792,21 +972,73 @@ def validate_resolved_source_coverage_artifact(
             ).tolist()
         )
         if (
-            artifact.contract != "resolved-source-coverage-artifact-v1"
+            artifact.contract != "resolved-source-coverage-artifact-v2"
             or artifact._resolved_mask.dtype is not torch.bool
             or artifact._resolved_mask.ndim != 3
+            or artifact._source_radar_index_map.ndim != 2
+            or artifact._source_radar_index_map.dtype not in (
+                torch.int8,
+                torch.int16,
+                torch.int32,
+                torch.int64,
+            )
+            or artifact._outage_mask.dtype is not torch.bool
+            or artifact._dynamic_qc_valid_mask.dtype is not torch.bool
+            or artifact._nominal_source_coverage_mask.dtype is not torch.bool
+            or artifact._outage_mask.shape
+            != artifact._source_radar_index_map.shape
+            or artifact._dynamic_qc_valid_mask.shape
+            != artifact._source_radar_index_map.shape
+            or artifact._nominal_source_coverage_mask.shape
+            != artifact._resolved_mask.shape
+            or artifact._resolved_mask.shape[1:]
+            != artifact._source_radar_index_map.shape
+            or not torch.equal(expected_resolved, artifact._resolved_mask)
+            or not bool(
+                torch.all(
+                    (artifact._source_radar_index_map == -1)
+                    | (
+                        (artifact._source_radar_index_map >= 0)
+                        & (
+                            artifact._source_radar_index_map
+                            < artifact.source_radar_count
+                        )
+                    )
+                )
+            )
+            or tensor_digest(artifact._source_radar_index_map)
+            != artifact.source_radar_index_map_digest
+            or tensor_digest(artifact._outage_mask) != artifact.outage_mask_digest
+            or tensor_digest(artifact._dynamic_qc_valid_mask)
+            != artifact.dynamic_qc_valid_mask_digest
+            or tensor_digest(artifact._nominal_source_coverage_mask)
+            != artifact.nominal_source_coverage_mask_digest
             or tensor_digest(artifact._resolved_mask)
             != artifact.resolved_source_coverage_mask_digest
             or counts != artifact.resolved_cell_counts
             or any(value <= 0 for value in counts)
-            or datetime.fromisoformat(
+            or not datetime.fromisoformat(
+                _canonical_time(artifact.input_available_at).replace("Z", "+00:00")
+            )
+            <= datetime.fromisoformat(
                 _canonical_time(artifact.resolved_at).replace("Z", "+00:00")
             )
-            < datetime.fromisoformat(
-                _canonical_time(artifact.input_available_at).replace(
-                    "Z", "+00:00"
-                )
+            <= datetime.fromisoformat(
+                _canonical_time(artifact.decision_deadline).replace("Z", "+00:00")
             )
+            < datetime.fromisoformat(
+                _canonical_time(artifact.publication_time).replace("Z", "+00:00")
+            )
+            or artifact.source_radar_count <= 0
+            or artifact.source_radar_count
+            != len(artifact.source_radar_site_digests)
+            or SourceRadarRegistry(
+                radar_site_digests=artifact.source_radar_site_digests,
+                source_selection_policy_digest=(
+                    artifact.source_selection_policy_digest
+                ),
+            ).registry_digest
+            != artifact.source_radar_registry_digest
             or artifact.artifact_digest != json_digest(artifact.payload)
         ):
             raise ValueError("resolved source-coverage artifact is invalid")
@@ -822,9 +1054,26 @@ def validate_resolved_source_coverage_artifact(
             "dynamic_qc_valid_mask_digest",
             "nominal_source_coverage_mask_digest",
             "resolved_source_coverage_mask_digest",
+            "source_radar_registry_digest",
+            "source_selection_policy_digest",
         ):
             _require_digest(name, getattr(artifact, name))
-    except (AttributeError, RuntimeError, ValueError) as error:
+        signature_payload = {
+            key: value
+            for key, value in artifact.payload.items()
+            if key != "data_ingestor_signature_hex"
+        }
+        Ed25519PublicKey.from_public_bytes(
+            bytes.fromhex(artifact.data_ingestor_public_key_hex)
+        ).verify(
+            bytes.fromhex(artifact.data_ingestor_signature_hex),
+            json.dumps(
+                signature_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8"),
+        )
+    except (AttributeError, InvalidSignature, RuntimeError, ValueError) as error:
         raise ValueError("resolved source-coverage artifact is invalid") from error
 
 
@@ -844,6 +1093,9 @@ class OperationalIssuanceDomainArtifact:
     resolved_source_coverage_artifact_digest: str | None
     resolved_input_bundle_digest: str | None
     resolved_full_analysis_input_digest: str | None
+    resolved_source_radar_index_map_digest: str | None
+    resolved_source_radar_registry_digest: str | None
+    resolved_source_selection_policy_digest: str | None
     eligible_mask_digest: str
     eligible_cell_counts: tuple[int, ...]
     contract: str = "operational-issuance-domain-artifact-v2"
@@ -876,6 +1128,8 @@ class OperationalIssuanceDomainArtifact:
             or masks[0].shape[0] != len(plan.lead_minutes)
         ):
             raise ValueError("operational issuance-domain masks are invalid")
+        if plan.radar_source_kind == "mosaic" and resolved_source_coverage is None:
+            raise ValueError("mosaic issuance requires resolved source coverage")
         mask_digests = tuple(tensor_digest(mask) for mask in masks)
         if mask_digests != (
             plan.publication_eligible_mask_digest,
@@ -898,6 +1152,14 @@ class OperationalIssuanceDomainArtifact:
                 != plan.radar_source_contract_digest
                 or resolved_source_coverage.source_coverage_policy_digest
                 != plan.source_coverage_policy_digest
+                or resolved_source_coverage.source_radar_registry_digest
+                != plan.source_radar_registry_digest
+                or resolved_source_coverage.source_radar_count
+                != plan.source_radar_count
+                or resolved_source_coverage.data_ingestor_id
+                != plan.data_ingestor_id
+                or resolved_source_coverage.data_ingestor_public_key_hex
+                != plan.data_ingestor_public_key_hex
                 or resolved_source_coverage.nominal_source_coverage_mask_digest
                 != mask_digests[1]
                 or resolved_source_coverage._resolved_mask.shape
@@ -941,6 +1203,21 @@ class OperationalIssuanceDomainArtifact:
                 if resolved_source_coverage is None
                 else resolved_source_coverage.full_analysis_input_digest
             ),
+            "resolved_source_radar_index_map_digest": (
+                None
+                if resolved_source_coverage is None
+                else resolved_source_coverage.source_radar_index_map_digest
+            ),
+            "resolved_source_radar_registry_digest": (
+                None
+                if resolved_source_coverage is None
+                else resolved_source_coverage.source_radar_registry_digest
+            ),
+            "resolved_source_selection_policy_digest": (
+                None
+                if resolved_source_coverage is None
+                else resolved_source_coverage.source_selection_policy_digest
+            ),
             "eligible_mask_digest": tensor_digest(eligible),
             "eligible_cell_counts": counts,
             "contract": "operational-issuance-domain-artifact-v2",
@@ -973,6 +1250,15 @@ class OperationalIssuanceDomainArtifact:
             "resolved_input_bundle_digest": self.resolved_input_bundle_digest,
             "resolved_full_analysis_input_digest": (
                 self.resolved_full_analysis_input_digest
+            ),
+            "resolved_source_radar_index_map_digest": (
+                self.resolved_source_radar_index_map_digest
+            ),
+            "resolved_source_radar_registry_digest": (
+                self.resolved_source_radar_registry_digest
+            ),
+            "resolved_source_selection_policy_digest": (
+                self.resolved_source_selection_policy_digest
             ),
             "permanent_exclusion_mask_digest": (
                 self.permanent_exclusion_mask_digest
@@ -1024,6 +1310,9 @@ def validate_operational_issuance_domain_artifact(
                 "resolved_source_coverage_artifact_digest",
                 "resolved_input_bundle_digest",
                 "resolved_full_analysis_input_digest",
+                "resolved_source_radar_index_map_digest",
+                "resolved_source_radar_registry_digest",
+                "resolved_source_selection_policy_digest",
             ):
                 value = getattr(artifact, name)
                 if value is None:
@@ -1034,6 +1323,9 @@ def validate_operational_issuance_domain_artifact(
         elif (
             artifact.resolved_input_bundle_digest is not None
             or artifact.resolved_full_analysis_input_digest is not None
+            or artifact.resolved_source_radar_index_map_digest is not None
+            or artifact.resolved_source_radar_registry_digest is not None
+            or artifact.resolved_source_selection_policy_digest is not None
         ):
             raise ValueError("static operational issuance lineage is invalid")
     except (AttributeError, RuntimeError, ValueError) as error:
@@ -6360,6 +6652,18 @@ class PriorHoldoutEvaluation:
                 or identity.mask_policy_digest != input_plan.mask_policy_digest
             ):
                 raise ValueError("holdout input identity disagrees with its plan")
+            if identity.radar_source_kind == "mosaic" and (
+                issuance_plan.radar_source_kind != "mosaic"
+                or operational_issuance_domain.resolved_source_coverage_artifact_digest
+                is None
+                or identity.source_radar_index_map_digest
+                != operational_issuance_domain.resolved_source_radar_index_map_digest
+                or identity.source_selection_policy_digest
+                != operational_issuance_domain.resolved_source_selection_policy_digest
+            ):
+                raise ValueError(
+                    "mosaic holdout input lacks its resolved source coverage"
+                )
         if (
             candidate_forecast.run.neural_prior_digest
             != manifest.candidate_prior_digest
@@ -7538,6 +7842,262 @@ class PriorHoldoutEvaluation:
             issue_time=issue_time,
             verification_valid_times=verification.valid_times,
         )
+
+
+@dataclass(frozen=True)
+class ScoringReplayCaseArtifact:
+    """Typed scoring inputs whose semantics are fixed by product code.
+
+    This is deliberately not a callback protocol.  Completion and promotion
+    call :meth:`recompute_evaluation`, which always dispatches to the shipped
+    ``PriorHoldoutEvaluation.from_forecasts`` implementation.
+    """
+
+    manifest: NeuralPriorCandidateManifest
+    plan: NeuralPriorHoldoutPlan
+    case_id: str
+    candidate_forecast: ForecastResult
+    parent_forecast: ForecastResult
+    verification: VerificationBundle
+    metric_config: SensitivityConfig
+    candidate_prior_application: NeuralPriorApplication
+    parent_prior_application: NeuralPriorApplication
+    candidate_prior_runner: NeuralPriorInferenceRunner
+    parent_prior_runner: NeuralPriorInferenceRunner
+    input_frames_dbz: Tensor
+    input_qc_valid_mask: Tensor
+    input_quality_weight: Tensor
+    background_frames_dbz: Tensor | None
+    uncertainty_target: PriorUncertaintyTarget
+    state_calibration_target: NeuralPriorStateCalibrationTarget
+    regime_classifier: NeuralPriorRegimeClassifier
+    regime_classifier_manifest: RegimeClassifierManifest
+    range_grid_x_m: Tensor
+    range_grid_y_m: Tensor
+    operational_issuance_domain: OperationalIssuanceDomainArtifact
+    resolved_source_coverage: ResolvedSourceCoverageArtifact | None = None
+
+    def __post_init__(self) -> None:
+        if (
+            not self.case_id
+            or self.manifest.holdout_plan_digest != self.plan.plan_digest
+            or self.manifest.holdout_case(self.case_id).case_id != self.case_id
+            or self.input_frames_dbz.ndim != 3
+            or not self.input_frames_dbz.is_floating_point()
+            or self.input_qc_valid_mask.dtype is not torch.bool
+            or self.input_qc_valid_mask.shape != self.input_frames_dbz.shape
+            or not self.input_quality_weight.is_floating_point()
+            or self.input_quality_weight.shape != self.input_frames_dbz.shape[-2:]
+            or (
+                self.background_frames_dbz is not None
+                and (
+                    not self.background_frames_dbz.is_floating_point()
+                    or self.background_frames_dbz.ndim != 3
+                    or self.background_frames_dbz.shape[-2:]
+                    != self.input_frames_dbz.shape[-2:]
+                )
+            )
+            or self.range_grid_x_m.shape != self.input_frames_dbz.shape[-2:]
+            or self.range_grid_y_m.shape != self.input_frames_dbz.shape[-2:]
+        ):
+            raise ValueError("semantic scoring replay case is invalid")
+        input_frames_digest = tensor_digest(self.input_frames_dbz)
+        observation_masks_digest = tensor_digest(self.input_qc_valid_mask)
+        quality_digest = tensor_digest(self.input_quality_weight)
+        background_digest = (
+            None
+            if self.background_frames_dbz is None
+            else tensor_digest(self.background_frames_dbz)
+        )
+        for run in (self.candidate_forecast.run, self.parent_forecast.run):
+            if (
+                run.input_frames_digest != input_frames_digest
+                or run.observation_masks_digest != observation_masks_digest
+                or run.observation_quality_weight_digest != quality_digest
+                or run.background_frames_digest != background_digest
+            ):
+                raise ValueError(
+                    "semantic replay raw inputs disagree with forecast run"
+                )
+        if self.resolved_source_coverage is not None:
+            validate_resolved_source_coverage_artifact(
+                self.resolved_source_coverage
+            )
+            if (
+                self.operational_issuance_domain.resolved_source_coverage_artifact_digest
+                != self.resolved_source_coverage.artifact_digest
+            ):
+                raise ValueError("semantic replay source coverage disagrees")
+
+    def recompute_evaluation(self) -> PriorHoldoutEvaluation:
+        """Re-run every metric, uncertainty, classifier, and issuance score."""
+
+        return PriorHoldoutEvaluation.from_forecasts(
+            self.manifest,
+            self.plan,
+            case_id=self.case_id,
+            candidate_forecast=self.candidate_forecast,
+            parent_forecast=self.parent_forecast,
+            verification=self.verification,
+            metric_config=self.metric_config,
+            candidate_prior_application=self.candidate_prior_application,
+            parent_prior_application=self.parent_prior_application,
+            candidate_prior_runner=self.candidate_prior_runner,
+            parent_prior_runner=self.parent_prior_runner,
+            input_frames_dbz=self.input_frames_dbz,
+            uncertainty_target=self.uncertainty_target,
+            state_calibration_target=self.state_calibration_target,
+            regime_classifier=self.regime_classifier,
+            regime_classifier_manifest=self.regime_classifier_manifest,
+            range_grid_x_m=self.range_grid_x_m,
+            range_grid_y_m=self.range_grid_y_m,
+            operational_issuance_domain=self.operational_issuance_domain,
+        )
+
+    def replay_tensors(self) -> dict[str, Tensor]:
+        """Extract exact numerical realizations from the typed product objects."""
+
+        regime_logits, range_logits = (
+            self.regime_classifier.classification_logits(
+                self.input_frames_dbz,
+                input_run=self.candidate_forecast.run,
+            )
+        )
+        candidate = self.candidate_prior_application
+        parent = self.parent_prior_application
+        result = {
+            "input_radar_frames": self.input_frames_dbz,
+            "input_qc_valid_mask": self.input_qc_valid_mask,
+            "input_quality_weight": self.input_quality_weight,
+            "candidate_forecast_dbz": self.candidate_forecast.forecast_dbz,
+            "candidate_publication_mask": self.candidate_forecast.valid_mask,
+            "candidate_background_fallback_mask": (
+                self.candidate_forecast.background_fallback_mask
+            ),
+            "candidate_forecast_confidence": (
+                self.candidate_forecast.forecast_confidence
+            ),
+            "candidate_state_echo_linear": (
+                self.candidate_forecast.state.echo_linear
+            ),
+            "candidate_state_displacement_yx": (
+                self.candidate_forecast.state.displacement_yx
+            ),
+            "candidate_state_log_growth": (
+                self.candidate_forecast.state.log_growth_per_step
+            ),
+            "parent_forecast_dbz": self.parent_forecast.forecast_dbz,
+            "parent_publication_mask": self.parent_forecast.valid_mask,
+            "parent_background_fallback_mask": (
+                self.parent_forecast.background_fallback_mask
+            ),
+            "parent_forecast_confidence": self.parent_forecast.forecast_confidence,
+            "parent_state_echo_linear": self.parent_forecast.state.echo_linear,
+            "parent_state_displacement_yx": (
+                self.parent_forecast.state.displacement_yx
+            ),
+            "parent_state_log_growth": (
+                self.parent_forecast.state.log_growth_per_step
+            ),
+            "verification_frames_dbz": self.verification.frames_dbz,
+            "verification_valid_mask": self.verification.valid_mask,
+            "candidate_state_background_dbz": candidate.state_background_dbz,
+            "candidate_state_std_dbz": candidate.state_std_dbz,
+            "candidate_state_valid_mask": candidate.state_valid_mask,
+            "candidate_state_valid_probability": candidate.state_valid_probability,
+            "candidate_state_support_probability": (
+                candidate.state_support_probability
+            ),
+            "candidate_event_probability": candidate.event_probability,
+            "candidate_truncated_location_dbz": (
+                candidate.truncated_location_dbz
+            ),
+            "candidate_truncated_scale_dbz": candidate.truncated_scale_dbz,
+            "parent_state_background_dbz": parent.state_background_dbz,
+            "parent_state_std_dbz": parent.state_std_dbz,
+            "parent_state_valid_mask": parent.state_valid_mask,
+            "parent_state_valid_probability": parent.state_valid_probability,
+            "parent_state_support_probability": parent.state_support_probability,
+            "parent_event_probability": parent.event_probability,
+            "parent_truncated_location_dbz": parent.truncated_location_dbz,
+            "parent_truncated_scale_dbz": parent.truncated_scale_dbz,
+            "uncertainty_target_dbz": self.uncertainty_target._target_dbz,
+            "uncertainty_target_valid_mask": self.uncertainty_target._valid_mask,
+            "uncertainty_target_echo_support": (
+                self.uncertainty_target._echo_support
+            ),
+            "state_target_dbz": self.state_calibration_target._target_dbz,
+            "state_target_valid_mask": self.state_calibration_target._valid_mask,
+            "state_target_echo_support": (
+                self.state_calibration_target._echo_support
+            ),
+            "classifier_regime_logits": regime_logits,
+            "classifier_range_logits": range_logits,
+            "range_grid_x_m": self.range_grid_x_m,
+            "range_grid_y_m": self.range_grid_y_m,
+            "operational_issuance_mask": (
+                self.operational_issuance_domain.eligible_mask
+            ),
+        }
+        if self.background_frames_dbz is not None:
+            result["background_frames_dbz"] = self.background_frames_dbz
+        if self.resolved_source_coverage is not None:
+            result.update(
+                {
+                    "source_radar_index_map": (
+                        self.resolved_source_coverage.source_radar_index_map
+                    ),
+                    "outage_mask": self.resolved_source_coverage.outage_mask,
+                    "dynamic_qc_valid_mask": (
+                        self.resolved_source_coverage.dynamic_qc_valid_mask
+                    ),
+                }
+            )
+        return {name: value.detach().clone() for name, value in result.items()}
+
+    @property
+    def semantic_input_digest(self) -> str:
+        tensors = self.replay_tensors()
+        return json_digest(
+            {
+                "contract": "neural-prior-semantic-scoring-case-v1",
+                "case_id": self.case_id,
+                "holdout_plan_digest": self.plan.plan_digest,
+                "candidate_manifest_digest": self.manifest.manifest_digest,
+                "candidate_forecast_digest": _forecast_result_content_digest(
+                    self.candidate_forecast
+                ),
+                "parent_forecast_digest": _forecast_result_content_digest(
+                    self.parent_forecast
+                ),
+                "candidate_prior_application_digest": (
+                    self.candidate_prior_application.application_digest
+                ),
+                "parent_prior_application_digest": (
+                    self.parent_prior_application.application_digest
+                ),
+                "verification_digest": self.verification.content_digest,
+                "metric_contract_digest": self.metric_config.digest,
+                "classifier_digest": self.regime_classifier.classifier_digest,
+                "operational_issuance_domain_artifact_digest": (
+                    self.operational_issuance_domain.artifact_digest
+                ),
+                "tensor_digests": {
+                    name: tensor_digest(value)
+                    for name, value in sorted(tensors.items())
+                },
+            }
+        )
+
+
+def recompute_prior_holdout_evaluation_from_bundle(
+    case: ScoringReplayCaseArtifact,
+) -> PriorHoldoutEvaluation:
+    """Product-owned semantic scoring entrypoint; callers cannot replace it."""
+
+    if type(case) is not ScoringReplayCaseArtifact:
+        raise TypeError("semantic replay requires the product case artifact")
+    return case.recompute_evaluation()
 
 
 @dataclass(frozen=True)
@@ -10213,6 +10773,28 @@ class LegacyNeuralPriorPromotionEvidenceAuditV20:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV21:
+    """Original v21 decision retained before mandatory semantic replay."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v21"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v21",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
@@ -10351,11 +10933,11 @@ class NeuralPriorPromotionEvidence:
     deployment_eligible: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v21"
+    contract: str = "neural-prior-promotion-evidence-v22"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v21":
+        if self.contract != "neural-prior-promotion-evidence-v22":
             raise ValueError("unsupported neural-prior promotion evidence")
         for name in (
             "candidate_prior_digest",
@@ -13340,7 +13922,11 @@ class NeuralPriorRegimeClassifier:
             or str(frames_dbz.device) != self.input_device
         ):
             raise ValueError("regime classifier input or artifact changed")
-        output = self._exported(frames_dbz)
+        regime_logits, range_logits = self.classification_logits(
+            frames_dbz,
+            input_run=input_run,
+        )
+        output = (regime_logits, range_logits)
         if not isinstance(output, tuple) or len(output) != 2:
             raise ValueError("regime classifier output is invalid")
         regime_logits, range_logits = output
@@ -13429,6 +14015,41 @@ class NeuralPriorRegimeClassifier:
         object.__setattr__(result, "evidence_digest", json_digest(result.payload))
         result.validate_integrity()
         return result
+
+    def classification_logits(
+        self,
+        frames_dbz: Tensor,
+        *,
+        input_run: ForecastRunContract,
+    ) -> tuple[Tensor, Tensor]:
+        """Return attested raw logits used by scoring and semantic replay."""
+
+        input_run.validate_integrity()
+        if (
+            input_run.full_analysis_input_digest is None
+            or tensor_digest(frames_dbz) != input_run.input_frames_digest
+            or _module_state_digest(self._model) != self._model_state_digest
+            or self._current_classifier_digest() != self.classifier_digest
+            or numerical_runtime_identity_digest(frames_dbz.device)
+            != self.numerical_runtime_digest
+            or str(frames_dbz.dtype) != self.input_dtype
+            or str(frames_dbz.device) != self.input_device
+        ):
+            raise ValueError("regime classifier input or artifact changed")
+        output = self._exported(frames_dbz)
+        if (
+            not isinstance(output, tuple)
+            or len(output) != 2
+            or any(not isinstance(item, Tensor) for item in output)
+        ):
+            raise ValueError("regime classifier output is invalid")
+        regime_logits, range_logits = output
+        if (
+            not bool(torch.all(torch.isfinite(regime_logits)))
+            or not bool(torch.all(torch.isfinite(range_logits)))
+        ):
+            raise ValueError("regime classifier logits must be finite")
+        return regime_logits.detach().clone(), range_logits.detach().clone()
 
 
 @dataclass(frozen=True)
