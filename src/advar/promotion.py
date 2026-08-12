@@ -3018,6 +3018,43 @@ class LegacyNeuralPriorHoldoutPlanV13Audit:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV14Audit:
+    """Raw v14 plan retained before pre-outcome decision-rule binding."""
+
+    plan_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-plan-audit-v14"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _require_digest("legacy holdout plan digest", self.plan_digest)
+        payload = json.loads(self.payload_json)
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != "neural-prior-holdout-plan-v14"
+            or payload.get("plan_digest") != self.plan_digest
+            or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            != self.payload_json
+        ):
+            raise ValueError("invalid legacy v14 holdout plan")
+        original = dict(payload)
+        original.pop("plan_digest")
+        if json_digest(original) != self.plan_digest:
+            raise ValueError("legacy v14 holdout plan digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "plan_digest": self.plan_digest,
+                    "payload": payload,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorHoldoutPlan:
     """Root-approved holdout commitment created before any evaluated issue."""
 
@@ -3037,6 +3074,7 @@ class NeuralPriorHoldoutPlan:
     ]
     regime_reference_plans: tuple[RegimeReferencePlan, ...]
     regime_classifier_manifests: tuple[RegimeClassifierManifest, ...]
+    promotion_decision_rule_digest: str
     reference_label_contract_digest: str
     physical_event_catalog_plan: PhysicalEventCatalogPlan
     scoring_algorithm_digest: str
@@ -3047,11 +3085,11 @@ class NeuralPriorHoldoutPlan:
     mode: Literal["prospective", "sealed_historical"] = "prospective"
     sealed_historical_dataset_digest: str | None = None
     candidate_training_started_at: str | None = None
-    contract: str = "neural-prior-holdout-plan-v14"
+    contract: str = "neural-prior-holdout-plan-v15"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v14":
+        if self.contract != "neural-prior-holdout-plan-v15":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -3177,6 +3215,9 @@ class NeuralPriorHoldoutPlan:
         _require_digest(
             "reference label contract", self.reference_label_contract_digest
         )
+        _require_digest(
+            "promotion decision rule", self.promotion_decision_rule_digest
+        )
         for name in (
             "scoring_algorithm_digest",
             "scoring_runtime_digest",
@@ -3297,6 +3338,9 @@ class NeuralPriorHoldoutPlan:
                 "metric_engine_digest": self.metric_engine_digest,
                 "verification_resolver_digest": (
                     self.verification_resolver_digest
+                ),
+                "promotion_decision_rule_digest": (
+                    self.promotion_decision_rule_digest
                 ),
             }
         )
@@ -3459,6 +3503,17 @@ class NeuralPriorHoldoutCase:
                 self.state_calibration_target_plan_digest
             ),
             issue_time=self.issue_time,
+        )
+
+    @property
+    def completed_case_digest(self) -> str:
+        """Digest every completed truth and lineage input used by scoring."""
+
+        return json_digest(
+            {
+                "contract": "neural-prior-completed-holdout-case-v1",
+                "case": asdict(self),
+            }
         )
 
 
@@ -3963,6 +4018,9 @@ def _holdout_plan_payload(plan: NeuralPriorHoldoutPlan) -> dict[str, object]:
         "regime_classifier_manifests": [
             item.payload for item in plan.regime_classifier_manifests
         ],
+        "promotion_decision_rule_digest": (
+            plan.promotion_decision_rule_digest
+        ),
         "reference_label_contract_digest": (
             plan.reference_label_contract_digest
         ),
@@ -5259,6 +5317,7 @@ class PriorHoldoutEvaluation:
     metric_support_contract_digests: tuple[str, ...]
     nowcast_config_digest: str
     grid_contract_digest: str
+    metric_engine_digest: str
     verification_digest: str
     metric_contract_digest: str
     coverage_candidate: Tensor
@@ -5316,14 +5375,14 @@ class PriorHoldoutEvaluation:
     state_calibration_echo_object_count: int
     issue_time: str
     verification_valid_times: tuple[str, ...]
-    contract: str = "prior-holdout-evaluation-v17"
+    contract: str = "prior-holdout-evaluation-v18"
     evaluation_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use PriorHoldoutEvaluation.from_forecasts")
 
     def __post_init__(self) -> None:
-        if self.contract != "prior-holdout-evaluation-v17":
+        if self.contract != "prior-holdout-evaluation-v18":
             raise ValueError("unsupported prior holdout evaluation")
         for name in (
             "holdout_plan_digest",
@@ -5348,6 +5407,7 @@ class PriorHoldoutEvaluation:
             "physical_event_digest",
             "nowcast_config_digest",
             "grid_contract_digest",
+            "metric_engine_digest",
         ):
             _require_digest(name, getattr(self, name))
         if (
@@ -6803,6 +6863,7 @@ class PriorHoldoutEvaluation:
             MetricSupportContract.from_run(
                 name,
                 candidate_forecast.run,
+                metric_engine_digest=plan.metric_engine_digest,
                 grid_shape=(
                     int(input_frames_dbz.shape[-2]),
                     int(input_frames_dbz.shape[-1]),
@@ -6898,6 +6959,7 @@ class PriorHoldoutEvaluation:
             ),
             nowcast_config_digest=candidate_forecast.run.config.digest,
             grid_contract_digest=grid.digest,
+            metric_engine_digest=plan.metric_engine_digest,
             verification_digest=resolved_candidate.content_digest,
             metric_contract_digest=metric_config.digest,
             coverage_candidate=candidate_coverage,
@@ -7482,7 +7544,7 @@ def _new_prior_holdout_evaluation(**values: object) -> PriorHoldoutEvaluation:
     object.__setattr__(
         result,
         "contract",
-        "prior-holdout-evaluation-v17",
+        "prior-holdout-evaluation-v18",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -7598,6 +7660,7 @@ def _evaluation_digest(value: PriorHoldoutEvaluation) -> str:
             ),
             "nowcast_config_digest": value.nowcast_config_digest,
             "grid_contract_digest": value.grid_contract_digest,
+            "metric_engine_digest": value.metric_engine_digest,
             "verification_digest": value.verification_digest,
             "metric_contract_digest": value.metric_contract_digest,
             "coverage_candidate": tensor_digest(value.coverage_candidate),
@@ -7789,6 +7852,7 @@ class HoldoutScoringInputArtifact:
     candidate_training_manifest_digest: str
     parent_training_manifest_digest: str
     ordered_case_ids: tuple[str, ...]
+    completed_holdout_case_digests: tuple[str, ...]
     candidate_forecast_digests: tuple[str, ...]
     parent_forecast_digests: tuple[str, ...]
     candidate_prior_application_digests: tuple[str, ...]
@@ -7798,7 +7862,7 @@ class HoldoutScoringInputArtifact:
     verification_digests: tuple[str, ...]
     metric_contract_digests: tuple[str, ...]
     operational_issuance_domain_artifact_digests: tuple[str, ...]
-    contract: str = "neural-prior-holdout-scoring-input-artifact-v2"
+    contract: str = "neural-prior-holdout-scoring-input-artifact-v3"
     artifact_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -7809,20 +7873,16 @@ class HoldoutScoringInputArtifact:
         cls,
         plan: NeuralPriorHoldoutPlan,
         *,
-        promotion_decision_rule: PromotionDecisionRule,
         candidate_prior_digest: str,
         parent_prior_digest: str,
         candidate_training_manifest_digest: str,
         parent_training_manifest_digest: str,
         holdout_cases: tuple[NeuralPriorHoldoutCase, ...],
     ) -> HoldoutScoringInputArtifact:
-        validate_promotion_decision_rule(promotion_decision_rule)
         ordered = tuple(sorted(holdout_cases, key=lambda item: item.case_id))
         values: dict[str, object] = {
             "holdout_plan_digest": plan.plan_digest,
-            "promotion_decision_rule_digest": (
-                promotion_decision_rule.rule_digest
-            ),
+            "promotion_decision_rule_digest": plan.promotion_decision_rule_digest,
             "candidate_prior_digest": candidate_prior_digest,
             "parent_prior_digest": parent_prior_digest,
             "candidate_training_manifest_digest": (
@@ -7830,6 +7890,9 @@ class HoldoutScoringInputArtifact:
             ),
             "parent_training_manifest_digest": parent_training_manifest_digest,
             "ordered_case_ids": tuple(item.case_id for item in ordered),
+            "completed_holdout_case_digests": tuple(
+                item.completed_case_digest for item in ordered
+            ),
             "candidate_forecast_digests": tuple(
                 item.candidate_forecast_digest for item in ordered
             ),
@@ -7858,7 +7921,7 @@ class HoldoutScoringInputArtifact:
                 item.operational_issuance_domain_artifact_digest
                 for item in ordered
             ),
-            "contract": "neural-prior-holdout-scoring-input-artifact-v2",
+            "contract": "neural-prior-holdout-scoring-input-artifact-v3",
         }
         artifact = object.__new__(cls)
         for name, value in values.items():
@@ -7913,12 +7976,16 @@ def validate_holdout_scoring_input_artifact(
         "verification_digests",
         "metric_contract_digests",
         "operational_issuance_domain_artifact_digests",
+        "completed_holdout_case_digests",
     ):
         for digest in getattr(artifact, name):
             _require_digest(f"scoring input {name}", digest)
     ordered = tuple(sorted(holdout_cases, key=lambda item: item.case_id))
     checks = {
         "ordered_case_ids": tuple(item.case_id for item in ordered),
+        "completed_holdout_case_digests": tuple(
+            item.completed_case_digest for item in ordered
+        ),
         "candidate_forecast_digests": tuple(
             item.candidate_forecast_digest for item in ordered
         ),
@@ -7949,9 +8016,11 @@ def validate_holdout_scoring_input_artifact(
     }
     if (
         artifact.contract
-        != "neural-prior-holdout-scoring-input-artifact-v2"
+        != "neural-prior-holdout-scoring-input-artifact-v3"
         or artifact.artifact_digest != json_digest(artifact.payload)
         or artifact.holdout_plan_digest != plan.plan_digest
+        or artifact.promotion_decision_rule_digest
+        != plan.promotion_decision_rule_digest
         or artifact.candidate_prior_digest != candidate_prior_digest
         or artifact.parent_prior_digest != parent_prior_digest
         or artifact.candidate_training_manifest_digest
@@ -8152,6 +8221,7 @@ class MetricSupportContract:
     derivation_contract_digest: str
     nowcast_config_digest: str
     grid_contract_digest: str
+    metric_engine_digest: str
     metric_implementation_digest: str
     derivation_parameters_json: str
     contract: str = "metric-support-contract-v2"
@@ -8170,9 +8240,11 @@ class MetricSupportContract:
         grid_diagonal_m: float | None = None,
         nowcast_config_digest: str,
         grid_contract_digest: str,
+        metric_engine_digest: str,
     ) -> MetricSupportContract:
         _require_digest("metric support nowcast config", nowcast_config_digest)
         _require_digest("metric support grid contract", grid_contract_digest)
+        _require_digest("metric support engine", metric_engine_digest)
         if metric_name == "soft_fss_error_35":
             lower, upper = 0.0, 1.0
             derivation = {"identity": "soft-fss-error-unit-interval-v1"}
@@ -8215,6 +8287,7 @@ class MetricSupportContract:
             {
                 "contract": "promotion-metric-implementation-v1",
                 "metric_name": metric_name,
+                "metric_engine_digest": metric_engine_digest,
             }
         )
         derivation_parameters_json = json.dumps(
@@ -8227,6 +8300,7 @@ class MetricSupportContract:
             "derivation_contract_digest": json_digest(derivation),
             "nowcast_config_digest": nowcast_config_digest,
             "grid_contract_digest": grid_contract_digest,
+            "metric_engine_digest": metric_engine_digest,
             "metric_implementation_digest": implementation_digest,
             "derivation_parameters_json": derivation_parameters_json,
             "contract": "metric-support-contract-v2",
@@ -8243,6 +8317,7 @@ class MetricSupportContract:
         metric_name: str,
         run: ForecastRunContract,
         *,
+        metric_engine_digest: str,
         grid_shape: tuple[int, int],
     ) -> MetricSupportContract:
         """Derive analytic support from the exact forecast config and grid."""
@@ -8256,16 +8331,22 @@ class MetricSupportContract:
         ):
             raise ValueError("metric support requires the exact forecast grid")
         height, width = grid_shape
-        diagonal = float(
-            torch.linalg.vector_norm(
-                grid.projected_displacement_xy(
-                    torch.tensor(
-                        (height - 1, width - 1),
-                        dtype=torch.float64,
-                    )
-                )
+        corner_indices = torch.tensor(
+            (
+                (0.0, 0.0),
+                (0.0, float(width - 1)),
+                (float(height - 1), 0.0),
+                (float(height - 1), float(width - 1)),
+            ),
+            dtype=torch.float64,
+        )
+        projected_corners = torch.stack(
+            tuple(
+                grid.projected_displacement_xy(corner)
+                for corner in corner_indices
             )
         )
+        diagonal = float(torch.max(torch.cdist(projected_corners, projected_corners)))
         return cls.for_metric(
             metric_name,
             minimum_dbz=run.config.min_dbz,
@@ -8273,6 +8354,7 @@ class MetricSupportContract:
             grid_diagonal_m=diagonal,
             nowcast_config_digest=run.config.digest,
             grid_contract_digest=grid.digest,
+            metric_engine_digest=metric_engine_digest,
         )
 
     @property
@@ -8285,6 +8367,7 @@ class MetricSupportContract:
             "derivation_contract_digest": self.derivation_contract_digest,
             "nowcast_config_digest": self.nowcast_config_digest,
             "grid_contract_digest": self.grid_contract_digest,
+            "metric_engine_digest": self.metric_engine_digest,
             "metric_implementation_digest": self.metric_implementation_digest,
             "derivation_parameters_json": self.derivation_parameters_json,
         }
@@ -8526,11 +8609,14 @@ class NeuralPriorPromotionPolicy:
     maximum_exact_sign_clusters: int = 16
     minimum_deployment_metric_cell_events: int = 5
     minimum_continuous_metric_cell_events: int = 10
-    contract: str = "neural-prior-promotion-policy-v23"
+    allow_shadow_small_sample_bootstrap: bool = False
+    contract: str = "neural-prior-promotion-policy-v24"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-policy-v23":
+        if self.contract != "neural-prior-promotion-policy-v24":
             raise ValueError("unsupported neural-prior promotion policy")
+        if type(self.allow_shadow_small_sample_bootstrap) is not bool:
+            raise ValueError("shadow bootstrap flag must be boolean")
         if not self.metric_scales or len({x.metric_name for x in self.metric_scales}) != len(self.metric_scales):
             raise ValueError("promotion metric scales must be unique")
         support_by_name = {
@@ -9006,6 +9092,9 @@ class NeuralPriorPromotionPolicy:
             "required_range_issuance": [
                 item.payload for item in self.required_range_issuance
             ],
+            "allow_shadow_small_sample_bootstrap": (
+                self.allow_shadow_small_sample_bootstrap
+            ),
         })
 
     @property
@@ -9103,9 +9192,10 @@ class PromotionSampleSizePreflight:
     issuance_cell_event_counts: tuple[
         tuple[str, str, int, int, int], ...
     ]
+    automatic_inference: bool
     cell_feasible: bool
     feasible: bool
-    contract: str = "neural-prior-promotion-sample-size-preflight-v2"
+    contract: str = "neural-prior-promotion-sample-size-preflight-v3"
     preflight_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -9119,7 +9209,8 @@ class PromotionSampleSizePreflight:
         )
         if (
             self.contract
-            != "neural-prior-promotion-sample-size-preflight-v2"
+            != "neural-prior-promotion-sample-size-preflight-v3"
+            or type(self.automatic_inference) is not bool
             or any(type(value) is not int or value < 0 for value in values)
             or self.family_size == 0
             or self.required_physical_events
@@ -9167,6 +9258,7 @@ class PromotionSampleSizePreflight:
             != (
                 self.available_physical_events >= self.required_physical_events
                 and self.cell_feasible
+                and self.automatic_inference
             )
         ):
             raise ValueError("promotion sample-size preflight is invalid")
@@ -9544,6 +9636,28 @@ class LegacyNeuralPriorPromotionEvidenceAuditV17:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV18:
+    """Original v18 decision retained before bounded uncertainty inference."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v18"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v18",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
@@ -9617,7 +9731,9 @@ class NeuralPriorPromotionEvidence:
     prior_clear_sky_cluster_count: int
     simultaneous_inference_test_count: int
     simultaneous_inference_method: Literal[
-        "exact_sign_enumeration", "studentized_multiplier"
+        "exact_sign_enumeration",
+        "studentized_multiplier",
+        "support_bounded_hybrid",
     ]
     simultaneous_inference_effective_replicates: int
     simultaneous_inference_critical_quantile: float
@@ -9667,6 +9783,7 @@ class NeuralPriorPromotionEvidence:
     sample_size_available_physical_events: int
     sample_size_required_physical_events: int
     sample_size_cell_feasible: bool
+    sample_size_automatic_inference: bool
     sample_size_preflight_feasible: bool
     certified_applicability_regime_groups: tuple[tuple[str, str], ...]
     certified_range_geometry_contract_digests: tuple[str, ...]
@@ -9675,11 +9792,11 @@ class NeuralPriorPromotionEvidence:
     deployment_eligible: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v18"
+    contract: str = "neural-prior-promotion-evidence-v19"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v18":
+        if self.contract != "neural-prior-promotion-evidence-v19":
             raise ValueError("unsupported neural-prior promotion evidence")
         for name in (
             "candidate_prior_digest",
@@ -9793,7 +9910,11 @@ class NeuralPriorPromotionEvidence:
             raise ValueError("promotion uncertainty bounds are invalid")
         if (
             self.simultaneous_inference_method
-            not in ("exact_sign_enumeration", "studentized_multiplier")
+            not in (
+                "exact_sign_enumeration",
+                "studentized_multiplier",
+                "support_bounded_hybrid",
+            )
             or type(self.simultaneous_inference_effective_replicates) is not int
             or self.simultaneous_inference_effective_replicates <= 0
             or not math.isfinite(self.simultaneous_inference_critical_quantile)
@@ -9926,11 +10047,13 @@ class NeuralPriorPromotionEvidence:
             or self.sample_size_available_physical_events < 0
             or type(self.sample_size_required_physical_events) is not int
             or self.sample_size_required_physical_events < 0
+            or type(self.sample_size_automatic_inference) is not bool
             or self.sample_size_preflight_feasible
             != (
                 self.sample_size_available_physical_events
                 >= self.sample_size_required_physical_events
                 and self.sample_size_cell_feasible
+                and self.sample_size_automatic_inference
             )
         ):
             raise ValueError("promotion metric-cell or preflight evidence is invalid")
@@ -10052,17 +10175,10 @@ def _cluster_bounds(
     candidate_family_size: int,
     absolute_bound: float | None = None,
 ) -> tuple[float, float, float]:
-    """Bound rates and use bounded inference once deployment-sized."""
+    """Use bounded event inference for every automatic promotion sample."""
 
     if absolute_bound is None:
         absolute_bound = _aggregate_score_absolute_bound(policy)
-    grouped: dict[str, list[float]] = {}
-    for score, cluster in zip(scores, clusters, strict=True):
-        grouped.setdefault(cluster, []).append(score)
-    keys = sorted(grouped)
-    cluster_scores = {
-        key: sum(values) / len(values) for key, values in grouped.items()
-    }
     lower_beneficial, _ = _event_fractional_rate_interval(
         [float(value > 0.0) for value in scores],
         clusters,
@@ -10075,28 +10191,35 @@ def _cluster_bounds(
         policy,
         family_size=candidate_family_size,
     )
-    if len(keys) >= 10:
-        lower_mean = -_bounded_event_mean_upper_bound(
-            [-value for value in scores],
-            clusters,
-            policy,
-            family_size=candidate_family_size,
-            absolute_bound=absolute_bound,
+    if policy.allow_shadow_small_sample_bootstrap and len(set(clusters)) < 10:
+        grouped: dict[str, list[float]] = {}
+        for score, cluster in zip(scores, clusters, strict=True):
+            grouped.setdefault(cluster, []).append(score)
+        keys = sorted(grouped)
+        cluster_scores = {
+            key: sum(values) / len(values) for key, values in grouped.items()
+        }
+        generator = random.Random(0)
+        means = [
+            sum(cluster_scores[generator.choice(keys)] for _ in keys) / len(keys)
+            for _ in range(policy.bootstrap_samples)
+        ]
+        alpha = (1.0 - policy.confidence_level) / (
+            2.0 * candidate_family_size
         )
+        ordered = sorted(means)
+        lower_mean = ordered[
+            min(len(ordered) - 1, max(0, int(alpha * len(ordered))))
+        ]
         return lower_beneficial, upper_harmful, lower_mean
-    generator = random.Random(0)
-    means: list[float] = []
-    for _ in range(policy.bootstrap_samples):
-        sample = [generator.choice(keys) for _ in keys]
-        values = [cluster_scores[key] for key in sample]
-        means.append(sum(values) / len(values))
-    alpha = (1.0 - policy.confidence_level) / (
-        2.0 * candidate_family_size
+    lower_mean = -_bounded_event_mean_upper_bound(
+        [-value for value in scores],
+        clusters,
+        policy,
+        family_size=candidate_family_size,
+        absolute_bound=absolute_bound,
     )
-    def quantile(values: list[float], probability: float) -> float:
-        ordered = sorted(values)
-        return ordered[min(len(ordered) - 1, max(0, int(probability * len(ordered))))]
-    return lower_beneficial, upper_harmful, quantile(means, alpha)
+    return lower_beneficial, upper_harmful, lower_mean
 
 
 def _aggregate_score_absolute_bound(policy: NeuralPriorPromotionPolicy) -> float:
@@ -10358,10 +10481,12 @@ def promotion_sample_size_preflight(
         required_physical_events=required_physical_events,
         metric_cell_event_counts=metric_cell_event_counts,
         issuance_cell_event_counts=issuance_cell_event_counts,
+        automatic_inference=not policy.allow_shadow_small_sample_bootstrap,
         cell_feasible=cell_feasible,
         feasible=(
             available_physical_events >= required_physical_events
             and cell_feasible
+            and not policy.allow_shadow_small_sample_bootstrap
         ),
     )
 
@@ -10436,11 +10561,34 @@ class _SimultaneousInferenceResult:
     bounds: dict[str, float]
     comparison_bounds: dict[tuple[str, tuple[str, str] | None], float]
     test_count: int
-    method: Literal["exact_sign_enumeration", "studentized_multiplier"]
+    method: Literal[
+        "exact_sign_enumeration",
+        "studentized_multiplier",
+        "support_bounded_hybrid",
+    ]
     effective_replicates: int
     critical_quantile: float
     monte_carlo_standard_error: float
     tail_replicates: float
+    unresolved_unbounded_zero_variance: bool
+    randomized_multiplier: bool
+
+
+_BOUNDED_UNCERTAINTY_DIFFERENCE_COMPONENTS = frozenset(
+    {
+        "support",
+        "echo_miss",
+        "object_miss",
+        "clear",
+        "underdispersion",
+        "state_underdispersion",
+        "state_support",
+        "state_echo_miss",
+        "state_object_miss",
+        "state_false_support",
+        "state_valid",
+    }
+)
 
 
 def _simultaneous_uncertainty_upper_bounds(
@@ -10514,13 +10662,28 @@ def _simultaneous_uncertainty_upper_bounds(
     comparison_bounds: dict[
         tuple[str, tuple[str, str] | None], float
     ] = {}
+    unresolved_unbounded_zero_variance = False
+    automatic = not policy.allow_shadow_small_sample_bootstrap
     for (comparison, _), mean, standard_error in zip(
         retained,
         observed,
         standard_errors,
         strict=True,
     ):
-        bound = mean + critical * standard_error
+        if automatic and (
+            comparison.component in _BOUNDED_UNCERTAINTY_DIFFERENCE_COMPONENTS
+        ):
+            bound = _bounded_event_mean_upper_bound(
+                list(comparison.values),
+                list(comparison.clusters),
+                policy,
+                family_size=candidate_family_size * len(comparisons),
+                absolute_bound=1.0,
+            )
+        else:
+            bound = mean + critical * standard_error
+            if automatic and standard_error == 0.0:
+                unresolved_unbounded_zero_variance = True
         comparison_bounds[(comparison.component, comparison.group)] = bound
         bounds[comparison.component] = max(
             bounds.get(comparison.component, -math.inf),
@@ -10536,11 +10699,15 @@ def _simultaneous_uncertainty_upper_bounds(
         bounds=bounds,
         comparison_bounds=comparison_bounds,
         test_count=candidate_family_size * len(comparisons),
-        method=method,
+        method="support_bounded_hybrid" if automatic else method,
         effective_replicates=effective_replicates,
         critical_quantile=1.0 - alpha,
         monte_carlo_standard_error=monte_carlo_error,
         tail_replicates=tail_replicates,
+        unresolved_unbounded_zero_variance=(
+            unresolved_unbounded_zero_variance
+        ),
+        randomized_multiplier=method == "studentized_multiplier",
     )
 
 
@@ -10607,8 +10774,11 @@ def compute_neural_prior_promotion(
     if (
         scoring_input_artifact.promotion_decision_rule_digest
         != decision_rule.rule_digest
+        or plan.promotion_decision_rule_digest != decision_rule.rule_digest
     ):
-        raise ValueError("promotion policy changed after scoring input was sealed")
+        raise ValueError(
+            "promotion policy differs from the pre-outcome holdout rule"
+        )
     classifier_manifests = {
         item.manifest_digest: item for item in plan.regime_classifier_manifests
     }
@@ -10644,11 +10814,15 @@ def compute_neural_prior_promotion(
         if any(
             support.nowcast_config_digest != evaluation.nowcast_config_digest
             or support.grid_contract_digest != evaluation.grid_contract_digest
+            or support.metric_engine_digest != evaluation.metric_engine_digest
+            or support.metric_engine_digest != plan.metric_engine_digest
             for support in (
                 metric_supports_by_name[name] for name in evaluation.metric_names
             )
         ):
-            raise ValueError("metric support disagrees with forecast run or grid")
+            raise ValueError(
+                "metric support disagrees with forecast run, grid, or engine"
+            )
     aggregate_score_absolute_bound = _aggregate_score_absolute_bound(policy)
 
     def classified_groups(
@@ -11093,7 +11267,8 @@ def compute_neural_prior_promotion(
         (1.0 - policy.confidence_level) / (2.0 * family_size)
     )
     if (
-        len(material_clusters) < 10
+        policy.allow_shadow_small_sample_bootstrap
+        and len(material_clusters) < 10
         and cluster_bootstrap_tail_replicates
         < policy.minimum_bootstrap_tail_replicates
     ):
@@ -11526,7 +11701,10 @@ def compute_neural_prior_promotion(
             score for score, _ in retained_band_pairs
         )
         band_clusters = tuple(cluster for _, cluster in retained_band_pairs)
-        band_uses_bounded_mean = len(set(band_clusters)) >= 10
+        band_uses_bounded_mean = (
+            not policy.allow_shadow_small_sample_bootstrap
+            or len(set(band_clusters)) >= 10
+        )
         (
             band_beneficial_lower_bound,
             band_harmful_upper_bound,
@@ -12025,8 +12203,10 @@ def compute_neural_prior_promotion(
         policy,
         candidate_family_size=family_size,
     )
+    if simultaneous.unresolved_unbounded_zero_variance:
+        reasons.append("insufficient_uncertainty_clusters")
     if (
-        simultaneous.method == "studentized_multiplier"
+        simultaneous.randomized_multiplier
         and simultaneous.tail_replicates
         < policy.minimum_bootstrap_tail_replicates
     ):
@@ -12272,6 +12452,9 @@ def compute_neural_prior_promotion(
             sample_size_preflight.required_physical_events
         ),
         sample_size_cell_feasible=sample_size_preflight.cell_feasible,
+        sample_size_automatic_inference=(
+            sample_size_preflight.automatic_inference
+        ),
         sample_size_preflight_feasible=sample_size_preflight.feasible,
         certified_applicability_regime_groups=tuple(certified_groups),
         certified_range_geometry_contract_digests=(

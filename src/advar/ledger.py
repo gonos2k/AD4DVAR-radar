@@ -95,6 +95,7 @@ from .promotion import (
     LegacyNeuralPriorHoldoutPlanV11Audit,
     LegacyNeuralPriorHoldoutPlanV12Audit,
     LegacyNeuralPriorHoldoutPlanV13Audit,
+    LegacyNeuralPriorHoldoutPlanV14Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
@@ -136,6 +137,7 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV15,
     LegacyNeuralPriorPromotionEvidenceAuditV16,
     LegacyNeuralPriorPromotionEvidenceAuditV17,
+    LegacyNeuralPriorPromotionEvidenceAuditV18,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     compute_neural_prior_promotion,
@@ -163,7 +165,7 @@ _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _SCHEDULER_TRUST_STORE_CONTRACT = "advar-trusted-scheduler-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 21
+_INDEX_SCHEMA_VERSION = 22
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
@@ -2422,6 +2424,7 @@ class EpisodeLedger:
         self,
         plan: NeuralPriorHoldoutPlan,
         *,
+        promotion_decision_rule: PromotionDecisionRule,
         policy: NeuralPriorHoldoutPlanPolicy,
         policy_trust_store_path: str | Path,
         scheduler_trust_store_path: str | Path,
@@ -2433,12 +2436,20 @@ class EpisodeLedger:
             scheduler_trust_store_path
         )
         validate_neural_prior_holdout_plan(plan)
+        validate_promotion_decision_rule(promotion_decision_rule)
         _validate_scheduler_authority(
             plan.physical_event_catalog_plan,
             scheduler_trust,
         )
         if policy.digest not in trust.approved_policy_digests:
             raise ValueError("holdout plan policy is not approved")
+        if promotion_decision_rule.rule_digest not in trust.approved_policy_digests:
+            raise ValueError("promotion decision rule is not root-approved")
+        if (
+            plan.promotion_decision_rule_digest
+            != promotion_decision_rule.rule_digest
+        ):
+            raise ValueError("holdout plan decision rule is inconsistent")
         if plan.plan_digest not in policy.approved_plan_digests:
             raise ValueError("holdout plan is not approved")
         if len(plan.candidate_family_digests) > policy.maximum_candidate_family_size:
@@ -2487,6 +2498,38 @@ class EpisodeLedger:
                     now.isoformat(),
                 ),
             )
+            rule_json = json.dumps(
+                promotion_decision_rule.payload
+                | {"rule_digest": promotion_decision_rule.rule_digest},
+                sort_keys=True,
+            )
+            connection.execute(
+                "INSERT OR IGNORE INTO neural_prior_promotion_rule_definitions "
+                "(rule_digest, payload_json, trust_store_digest, created_at) "
+                "VALUES (?, ?, ?, ?)",
+                (
+                    promotion_decision_rule.rule_digest,
+                    rule_json,
+                    trust.content_digest,
+                    now.isoformat(),
+                ),
+            )
+            retained_rule = connection.execute(
+                "SELECT payload_json FROM neural_prior_promotion_rule_definitions "
+                "WHERE rule_digest = ?",
+                (promotion_decision_rule.rule_digest,),
+            ).fetchone()
+            if retained_rule is None or retained_rule[0] != rule_json:
+                raise ValueError("registered promotion decision rule is inconsistent")
+            connection.execute(
+                "INSERT INTO neural_prior_holdout_plan_rule_bindings "
+                "(holdout_plan_digest, rule_digest, bound_at) VALUES (?, ?, ?)",
+                (
+                    plan.plan_digest,
+                    promotion_decision_rule.rule_digest,
+                    now.isoformat(),
+                ),
+            )
             final = datetime.now(timezone.utc)
             if plan.mode == "prospective" and any(
                 final >= issue for issue in issue_times
@@ -2514,6 +2557,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanV11Audit
         | LegacyNeuralPriorHoldoutPlanV12Audit
         | LegacyNeuralPriorHoldoutPlanV13Audit
+        | LegacyNeuralPriorHoldoutPlanV14Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -2593,6 +2637,13 @@ class EpisodeLedger:
                     value,
                     sort_keys=True,
                     separators=(",", ":"),
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v14":
+            return LegacyNeuralPriorHoldoutPlanV14Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
                 ),
             )
         value.pop("plan_digest", None)
@@ -2869,15 +2920,10 @@ class EpisodeLedger:
         plan: NeuralPriorHoldoutPlan,
         result: PhysicalEventCatalogResult,
         artifact: HoldoutScoringInputArtifact,
-        *,
-        promotion_decision_rule: PromotionDecisionRule,
-        policy_trust_store_path: str | Path,
     ) -> str:
         """Append the exact forecast/verification set before scoring launches."""
 
         validate_neural_prior_holdout_plan(plan)
-        validate_promotion_decision_rule(promotion_decision_rule)
-        trust = _load_learning_policy_trust_store(policy_trust_store_path)
         validate_physical_event_catalog_result(
             result,
             plan.physical_event_catalog_plan,
@@ -2886,7 +2932,7 @@ class EpisodeLedger:
             artifact.artifact_digest != _json_digest(artifact.payload)
             or artifact.holdout_plan_digest != plan.plan_digest
             or artifact.promotion_decision_rule_digest
-            != promotion_decision_rule.rule_digest
+            != plan.promotion_decision_rule_digest
             or artifact.candidate_prior_digest != plan.candidate_family_digests[0]
             or artifact.parent_prior_digest != plan.parent_prior_digest
             or set(artifact.ordered_case_ids) != {item.case_id for item in plan.cases}
@@ -2901,26 +2947,18 @@ class EpisodeLedger:
             ).fetchone()
             if catalog_row is None or catalog_row[0] != result.result_digest:
                 raise ValueError("scoring input requires its registered event catalog")
-            if promotion_decision_rule.rule_digest not in trust.approved_policy_digests:
-                raise ValueError("promotion decision rule is not root-approved")
+            rule_row = connection.execute(
+                "SELECT rule_digest FROM neural_prior_holdout_plan_rule_bindings "
+                "WHERE holdout_plan_digest = ?",
+                (plan.plan_digest,),
+            ).fetchone()
+            if (
+                rule_row is None
+                or rule_row[0] != plan.promotion_decision_rule_digest
+            ):
+                raise ValueError("scoring input requires its pre-outcome rule binding")
             try:
                 now = datetime.now(timezone.utc).isoformat()
-                connection.execute(
-                    "INSERT INTO neural_prior_promotion_decision_rules "
-                    "(rule_digest, holdout_plan_digest, payload_json, "
-                    "trust_store_digest, created_at) VALUES (?, ?, ?, ?, ?)",
-                    (
-                        promotion_decision_rule.rule_digest,
-                        plan.plan_digest,
-                        json.dumps(
-                            promotion_decision_rule.payload
-                            | {"rule_digest": promotion_decision_rule.rule_digest},
-                            sort_keys=True,
-                        ),
-                        trust.content_digest,
-                        now,
-                    ),
-                )
                 connection.execute(
                     "INSERT INTO neural_prior_holdout_scoring_input_artifacts "
                     "(artifact_digest, holdout_plan_digest, payload_json, created_at) "
@@ -3022,7 +3060,7 @@ class EpisodeLedger:
                     raise ValueError("scoring start requires its ledger input artifact")
                 input_append_time = datetime.fromisoformat(input_row[1])
                 rule_row = connection.execute(
-                    "SELECT rule_digest FROM neural_prior_promotion_decision_rules "
+                    "SELECT rule_digest FROM neural_prior_holdout_plan_rule_bindings "
                     "WHERE holdout_plan_digest = ?",
                     (plan.plan_digest,),
                 ).fetchone()
@@ -3286,7 +3324,7 @@ class EpisodeLedger:
             if input_row is None or input_row[0] != expected_input_json:
                 raise ValueError("promotion scoring input artifact is not registered")
             rule_row = connection.execute(
-                "SELECT rule_digest FROM neural_prior_promotion_decision_rules "
+                "SELECT rule_digest FROM neural_prior_holdout_plan_rule_bindings "
                 "WHERE holdout_plan_digest = ?",
                 (plan.plan_digest,),
             ).fetchone()
@@ -3591,6 +3629,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV15
         | LegacyNeuralPriorPromotionEvidenceAuditV16
         | LegacyNeuralPriorPromotionEvidenceAuditV17
+        | LegacyNeuralPriorPromotionEvidenceAuditV18
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -3660,6 +3699,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV15
                 | LegacyNeuralPriorPromotionEvidenceAuditV16
                 | LegacyNeuralPriorPromotionEvidenceAuditV17
+                | LegacyNeuralPriorPromotionEvidenceAuditV18
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -3761,6 +3801,7 @@ class EpisodeLedger:
                         "neural-prior-promotion-evidence-v16",
                         "neural-prior-promotion-evidence-v17",
                         "neural-prior-promotion-evidence-v18",
+                        "neural-prior-promotion-evidence-v19",
                     ):
                         raw_payload = json.loads(row["evidence_payload_json"])
                         if not isinstance(raw_payload, dict):
@@ -3784,6 +3825,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v16",
                             "neural-prior-promotion-evidence-v17",
                             "neural-prior-promotion-evidence-v18",
+                            "neural-prior-promotion-evidence-v19",
                         ):
                             raw_payload["regime_classifier_evidence_digests"] = tuple(
                                 raw_payload["regime_classifier_evidence_digests"]
@@ -3805,6 +3847,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v16",
                             "neural-prior-promotion-evidence-v17",
                             "neural-prior-promotion-evidence-v18",
+                            "neural-prior-promotion-evidence-v19",
                         ):
                             raw_payload["range_band_skill_bounds"] = tuple(
                                 tuple(item)
@@ -3820,6 +3863,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v16",
                             "neural-prior-promotion-evidence-v17",
                             "neural-prior-promotion-evidence-v18",
+                            "neural-prior-promotion-evidence-v19",
                         ):
                             raw_payload[
                                 "range_band_skill_inference_diagnostics"
@@ -3836,6 +3880,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v16",
                             "neural-prior-promotion-evidence-v17",
                             "neural-prior-promotion-evidence-v18",
+                            "neural-prior-promotion-evidence-v19",
                         ):
                             raw_payload[
                                 "certified_range_geometry_contract_digests"
@@ -3993,6 +4038,15 @@ class EpisodeLedger:
                             )
                         elif contract == "neural-prior-promotion-evidence-v17":
                             evidence = LegacyNeuralPriorPromotionEvidenceAuditV17(
+                                promotion_evidence_digest=promotion_evidence_digest,
+                                payload_json=json.dumps(
+                                    raw_payload,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                ),
+                            )
+                        elif contract == "neural-prior-promotion-evidence-v18":
+                            evidence = LegacyNeuralPriorPromotionEvidenceAuditV18(
                                 promotion_evidence_digest=promotion_evidence_digest,
                                 payload_json=json.dumps(
                                     raw_payload,
@@ -4343,6 +4397,29 @@ class EpisodeLedger:
             )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS neural_prior_promotion_rule_definitions (
+                    rule_digest TEXT PRIMARY KEY,
+                    payload_json TEXT NOT NULL,
+                    trust_store_digest TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS neural_prior_holdout_plan_rule_bindings (
+                    holdout_plan_digest TEXT PRIMARY KEY,
+                    rule_digest TEXT NOT NULL,
+                    bound_at TEXT NOT NULL,
+                    FOREIGN KEY (holdout_plan_digest)
+                        REFERENCES neural_prior_holdout_plans(plan_digest),
+                    FOREIGN KEY (rule_digest)
+                        REFERENCES neural_prior_promotion_rule_definitions(rule_digest)
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS neural_prior_holdout_scoring_input_artifacts (
                     artifact_digest TEXT PRIMARY KEY,
                     holdout_plan_digest TEXT NOT NULL UNIQUE,
@@ -4494,6 +4571,8 @@ class EpisodeLedger:
                 "neural_prior_process_start_receipts",
                 "neural_prior_training_event_catalog_results",
                 "neural_prior_promotion_decision_rules",
+                "neural_prior_promotion_rule_definitions",
+                "neural_prior_holdout_plan_rule_bindings",
                 "neural_prior_holdout_scoring_input_artifacts",
                 "trusted_process_start_receipts_v2",
                 "trusted_process_log_artifacts",
@@ -4963,7 +5042,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v17"
+        or value[0].get("contract") != "prior-holdout-evaluation-v18"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:
@@ -5112,6 +5191,7 @@ def _decode_holdout_scoring_input_artifact(
     stored_digest = values.pop("artifact_digest", None)
     for name in (
         "ordered_case_ids",
+        "completed_holdout_case_digests",
         "candidate_forecast_digests",
         "parent_forecast_digests",
         "candidate_prior_application_digests",
