@@ -885,16 +885,21 @@ plan이 publication eligibility, source coverage, permanent exclusion mask diges
 따라서 영구차폐·no-source cell로 신규발행이나 철회 비율을 희석할 수 없다. Continuous
 metric mean bound의 support도 정책 숫자가 아니라 `MetricSupportContract`가 FSS의
 unit interval, bounded dBZ log-echo MSE, grid-diagonal centroid error에서 해석적으로
-도출한 범위만 사용한다. Support contract는 실제 nowcast-config와 grid-contract
-digest, scoring metric-engine identity 및 derivation parameter를 함께 보존하고,
-evaluation의 run/grid/engine lineage와 exact 일치해야 한다. Affine grid의 centroid
+도출한 범위만 사용한다. Support contract는 실제 nowcast-config와 time-independent
+spatial-grid digest, 설치된 ADVAR source bundle에서 계산한 scoring metric-engine
+identity 및 derivation parameter를 함께 보존하고, evaluation의
+config/spatial-grid/engine lineage와 exact 일치해야 한다. 같은 공간격자의 서로 다른
+valid time 사례는 동일 support를 공유하고, 여러 공간격자는
+config×spatial-grid×engine별 support로 분리된다. Affine grid의 centroid
 support는 한 대각선만 쓰지 않고 projected 네 corner의 모든 pairwise 거리 중 최댓값으로
 계산한다. 자동승격의 global·band aggregate mean은 physical-event 수와 무관하게 같은
 support-derived empirical-Bernstein inference를 사용하므로 동일한 5--9개 소표본의
 percentile bootstrap이 불확실성 0으로 퇴화하지 않는다. 작은 표본 bootstrap은 명시적인
 shadow 진단에서만 허용되고 sample-size preflight가 자동배포를 fail-close한다. 유한
-support가 증명된 uncertainty component도 bounded event UCB를 사용하며, NLL/PIT처럼
-support가 없는 component의 zero-variance 표본은 자동경로에서 fail-close한다.
+support가 증명된 uncertainty component도 bounded event UCB를 사용한다. NLL과 PIT는
+고정 `UncertaintyScoreSupportContract`에 따라 화소별 score를 event 집계 전에 clip하고,
+그 finite support로 같은 bounded UCB를 계산한다. 따라서 zero 또는 near-zero
+표본분산을 모집단 불확실성 0으로 해석하지 않는다.
 실제 배포에서는 caller가 regime 문자열이나 operational role을 넘기지 않는다. Exported
 `NeuralPriorRegimeClassifier`가 현재 `full_analysis_input_digest`에 결합된
 `RegimeClassificationEvidence`를 만들고, 모든 holdout case에서도 동일 classifier를
@@ -902,8 +907,12 @@ support가 없는 component의 zero-variance 표본은 자동경로에서 fail-c
 unknown/OOD abstention을 통과해야 deployment evidence가 유효하다. Classifier family와
 각 `RegimeClassifierManifest`의 training dataset/case/storm/day/time-window뿐 아니라
 input-bundle/full-analysis-input/radar/grid와 signed member-manifest lineage는
-forecast issue 전에 holdout plan에 사전등록되고 holdout과 겹치면 거부된다. 여러 prior와
-classifier를 비교할 때 family multiplicity는 두 family 크기의 곱으로 계산한다. Classifier
+forecast issue 전에 holdout plan에 사전등록되고 holdout과 겹치면 거부된다. 서로 겹치는
+plan·candidate·rule·classifier trial은 하나의 root-approved
+`PromotionExperimentFamily`에 사전등록되며 전체 trial multiplicity가 모든 skill,
+uncertainty, classifier, metric-cell bound와 sample-size preflight에 적용된다. 동일한
+input/verification cohort는 ledger에서 다른 family로 다시 등록하거나 promotion 후 재사용할
+수 없다. Classifier
 accuracy·recall·range-set precision과 false-routing은 point estimate뿐 아니라
 physical-event cluster 신뢰하한·상한도 통과해야 한다. Prospective plan에는 미래 weather
 정답 대신 `pending`과 `RegimeReferencePlan`의 labeler/source/adjudication rule만 기록한다.
@@ -942,8 +951,10 @@ exclusion mask가 target mask를 덮었는지 계산해 확인한다. 불확실�
 fraction·면적과 parent 대비 abstention 증가 및 NLL abstention penalty를 함께 적용한다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
-현재 promotion evidence는 v19, candidate manifest는 v12, holdout plan은 v15,
-holdout evaluation은 v18, promotion policy는 v24이다. Candidate-neutral
+현재 promotion evidence는 v20, candidate manifest는 v12, holdout plan은 v16,
+holdout evaluation은 v20, promotion policy는 v25, metric support는 v3이다.
+`sealed_historical` plan은 결과 비공개 escrow를 증명하지 않으므로 연구·shadow audit에만
+사용되고 deployment eligibility는 prospective plan에만 부여된다. Candidate-neutral
 `PhysicalEventCatalogPlan`은 association·spatial-membership rule, spatial reference,
 event merge threshold와 완료시한을 사전등록하고, append-only result 하나만 허용한다.
 각 case의 observed envelope와 trusted input-availability가 event evidence와 맞는지 검증하고,

@@ -24,7 +24,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 
 from ._digest import json_digest, tensor_digest
 from ._runtime import numerical_runtime_identity_digest
-from .calibration import OperationalDataIdentity
+from .calibration import algorithm_bundle_digest, OperationalDataIdentity
 from .nowcast import (
     ForecastResult,
     ForecastRunContract,
@@ -134,6 +134,62 @@ _UNCERTAINTY_COMPONENT_NAMES: tuple[str, ...] = (
     "state_valid",
 )
 PriorComponentStatus = Literal["available", "not_applicable"]
+
+
+@dataclass(frozen=True)
+class UncertaintyScoreSupportContract:
+    """Finite scoring support enforced before uncertainty aggregation."""
+
+    maximum_nll_score: float = 1_000.0
+    maximum_pit_residual_abs: float = 8.0
+    contract: str = "uncertainty-score-support-contract-v1"
+    contract_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "uncertainty-score-support-contract-v1"
+            or self.maximum_nll_score != 1_000.0
+            or self.maximum_pit_residual_abs != 8.0
+        ):
+            raise ValueError("unsupported uncertainty score support")
+        object.__setattr__(self, "contract_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "maximum_nll_score": self.maximum_nll_score,
+            "maximum_pit_residual_abs": self.maximum_pit_residual_abs,
+            "score_clipping": "per-sample-before-aggregation",
+        }
+
+    def difference_bound(self, component: str) -> float:
+        if component in ("intensity", "state_nll"):
+            return self.maximum_nll_score
+        if component in ("pit_residual", "state_pit_residual"):
+            return self.maximum_pit_residual_abs
+        if component in _UNCERTAINTY_COMPONENT_NAMES:
+            return 1.0
+        raise ValueError("unknown uncertainty component")
+
+
+_UNCERTAINTY_SCORE_SUPPORT = UncertaintyScoreSupportContract()
+
+
+def scoring_metric_engine_identity_digest() -> str:
+    """Content-address the installed scoring implementation used by promotion."""
+
+    return json_digest(
+        {
+            "contract": "advar-promotion-metric-engine-identity-v1",
+            "algorithm_bundle_digest": algorithm_bundle_digest(),
+            "metric_entrypoints": (
+                "_resolved_forecast_scores",
+                "_paired_metric_score",
+                "_range_metric_changes",
+            ),
+        }
+    )
 
 
 def _require_digest(name: str, value: str) -> None:
@@ -3055,6 +3111,126 @@ class LegacyNeuralPriorHoldoutPlanV14Audit:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV15Audit:
+    """Raw v15 plan retained before experiment-family preregistration."""
+
+    plan_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-plan-audit-v15"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _require_digest("legacy holdout plan digest", self.plan_digest)
+        payload = json.loads(self.payload_json)
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != "neural-prior-holdout-plan-v15"
+            or payload.get("plan_digest") != self.plan_digest
+            or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            != self.payload_json
+        ):
+            raise ValueError("invalid legacy v15 holdout plan")
+        original = dict(payload)
+        original.pop("plan_digest")
+        if json_digest(original) != self.plan_digest:
+            raise ValueError("legacy v15 holdout plan digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "plan_digest": self.plan_digest,
+                    "payload": payload,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
+class PromotionExperimentTrial:
+    """One preregistered candidate/rule/classifier trial in a cohort."""
+
+    candidate_prior_digest: str
+    promotion_decision_rule_digest: str
+    classifier_manifest_digests: tuple[str, ...]
+    contract: str = "neural-prior-promotion-experiment-trial-v1"
+    trial_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-promotion-experiment-trial-v1"
+            or not self.classifier_manifest_digests
+            or len(set(self.classifier_manifest_digests))
+            != len(self.classifier_manifest_digests)
+        ):
+            raise ValueError("promotion experiment trial is invalid")
+        _require_digest("experiment candidate", self.candidate_prior_digest)
+        _require_digest(
+            "experiment decision rule", self.promotion_decision_rule_digest
+        )
+        for digest in self.classifier_manifest_digests:
+            _require_digest("experiment classifier manifest", digest)
+        object.__setattr__(self, "trial_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "candidate_prior_digest": self.candidate_prior_digest,
+            "promotion_decision_rule_digest": (
+                self.promotion_decision_rule_digest
+            ),
+            "classifier_manifest_digests": list(
+                self.classifier_manifest_digests
+            ),
+        }
+
+
+@dataclass(frozen=True)
+class PromotionExperimentFamily:
+    """Outcome-blind multiplicity contract shared by overlapping plans."""
+
+    holdout_cohort_digest: str
+    parent_prior_digest: str
+    trials: tuple[PromotionExperimentTrial, ...]
+    winner_selection_rule_digest: str
+    contract: str = "neural-prior-promotion-experiment-family-v1"
+    family_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-promotion-experiment-family-v1"
+            or not self.trials
+            or len({item.trial_digest for item in self.trials})
+            != len(self.trials)
+        ):
+            raise ValueError("promotion experiment family is invalid")
+        for name in (
+            "holdout_cohort_digest",
+            "parent_prior_digest",
+            "winner_selection_rule_digest",
+        ):
+            _require_digest(name, getattr(self, name))
+        object.__setattr__(self, "family_digest", json_digest(self.payload))
+
+    @property
+    def total_family_size(self) -> int:
+        return sum(len(item.classifier_manifest_digests) for item in self.trials)
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "holdout_cohort_digest": self.holdout_cohort_digest,
+            "parent_prior_digest": self.parent_prior_digest,
+            "trials": [item.payload for item in self.trials],
+            "winner_selection_rule_digest": self.winner_selection_rule_digest,
+            "total_family_size": self.total_family_size,
+        }
+
+
+@dataclass(frozen=True)
 class NeuralPriorHoldoutPlan:
     """Root-approved holdout commitment created before any evaluated issue."""
 
@@ -3074,6 +3250,7 @@ class NeuralPriorHoldoutPlan:
     ]
     regime_reference_plans: tuple[RegimeReferencePlan, ...]
     regime_classifier_manifests: tuple[RegimeClassifierManifest, ...]
+    promotion_experiment_family: PromotionExperimentFamily
     promotion_decision_rule_digest: str
     reference_label_contract_digest: str
     physical_event_catalog_plan: PhysicalEventCatalogPlan
@@ -3085,11 +3262,11 @@ class NeuralPriorHoldoutPlan:
     mode: Literal["prospective", "sealed_historical"] = "prospective"
     sealed_historical_dataset_digest: str | None = None
     candidate_training_started_at: str | None = None
-    contract: str = "neural-prior-holdout-plan-v15"
+    contract: str = "neural-prior-holdout-plan-v16"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v15":
+        if self.contract != "neural-prior-holdout-plan-v16":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -3225,6 +3402,10 @@ class NeuralPriorHoldoutPlan:
             "verification_resolver_digest",
         ):
             _require_digest(name, getattr(self, name))
+        if self.metric_engine_digest != scoring_metric_engine_identity_digest():
+            raise ValueError(
+                "holdout metric engine is not the installed implementation"
+            )
         if set(self.physical_event_catalog_plan.holdout_case_ids) != set(case_ids):
             raise ValueError("physical event-catalog plan cases are incomplete")
         if any(
@@ -3274,6 +3455,26 @@ class NeuralPriorHoldoutPlan:
                 )
             ):
                 raise ValueError("classifier training overlaps the holdout")
+        matching_trials = tuple(
+            item
+            for item in self.promotion_experiment_family.trials
+            if item.candidate_prior_digest == self.candidate_family_digests[0]
+            and item.promotion_decision_rule_digest
+            == self.promotion_decision_rule_digest
+            and item.classifier_manifest_digests
+            == tuple(
+                manifest.manifest_digest
+                for manifest in self.regime_classifier_manifests
+            )
+        )
+        if (
+            self.promotion_experiment_family.holdout_cohort_digest
+            != _holdout_dataset_digest(self.cases)
+            or self.promotion_experiment_family.parent_prior_digest
+            != self.parent_prior_digest
+            or len(matching_trials) != 1
+        ):
+            raise ValueError("holdout plan disagrees with its experiment family")
         registered = _canonical_time(self.registered_at)
         if self.mode == "prospective":
             if self.sealed_historical_dataset_digest is not None or (
@@ -4018,6 +4219,9 @@ def _holdout_plan_payload(plan: NeuralPriorHoldoutPlan) -> dict[str, object]:
         "regime_classifier_manifests": [
             item.payload for item in plan.regime_classifier_manifests
         ],
+        "promotion_experiment_family": (
+            plan.promotion_experiment_family.payload
+        ),
         "promotion_decision_rule_digest": (
             plan.promotion_decision_rule_digest
         ),
@@ -4039,35 +4243,28 @@ def _holdout_plan_payload(plan: NeuralPriorHoldoutPlan) -> dict[str, object]:
 def _holdout_dataset_digest(
     cases: tuple[NeuralPriorHoldoutPlanCase, ...],
 ) -> str:
+    """Identify the data cohort independently of labels and decision rules."""
+
     return json_digest(
         {
-            "contract": "neural-prior-holdout-dataset-v4",
-            "cases": [
-                {
-                    "case_id": item.case_id,
-                    "input_plan_digest": item.input_plan_digest,
-                    "verification_plan_digest": item.verification_plan_digest,
-                    "metric_contract_digest": item.metric_contract_digest,
-                    "uncertainty_target_plan_digest": (
-                        item.uncertainty_target_plan_digest
-                    ),
-                    "state_calibration_target_plan_digest": (
-                        item.state_calibration_target_plan_digest
-                    ),
-                    "range_band_contract_digest": item.range_band_contract_digest,
-                    "regime_reference_plan_digest": (
-                        item.regime_reference_plan_digest
-                    ),
-                    "operational_issuance_domain_plan_digest": (
-                        item.operational_issuance_domain_plan_digest
-                    ),
-                    "reference_active_range_regimes": list(
-                        item.reference_active_range_regimes
-                    ),
-                    "issue_time": item.issue_time,
-                }
-                for item in cases
-            ],
+            "contract": "neural-prior-holdout-cohort-v5",
+            "case_realizations": sorted(
+                [
+                    {
+                        "input_plan_digest": item.input_plan_digest,
+                        "verification_plan_digest": (
+                            item.verification_plan_digest
+                        ),
+                        "issue_time": item.issue_time,
+                    }
+                    for item in cases
+                ],
+                key=lambda item: (
+                    item["input_plan_digest"],
+                    item["verification_plan_digest"],
+                    item["issue_time"],
+                ),
+            ),
         }
     )
 
@@ -5317,6 +5514,7 @@ class PriorHoldoutEvaluation:
     metric_support_contract_digests: tuple[str, ...]
     nowcast_config_digest: str
     grid_contract_digest: str
+    spatial_grid_digest: str
     metric_engine_digest: str
     verification_digest: str
     metric_contract_digest: str
@@ -5375,14 +5573,14 @@ class PriorHoldoutEvaluation:
     state_calibration_echo_object_count: int
     issue_time: str
     verification_valid_times: tuple[str, ...]
-    contract: str = "prior-holdout-evaluation-v18"
+    contract: str = "prior-holdout-evaluation-v20"
     evaluation_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use PriorHoldoutEvaluation.from_forecasts")
 
     def __post_init__(self) -> None:
-        if self.contract != "prior-holdout-evaluation-v18":
+        if self.contract != "prior-holdout-evaluation-v20":
             raise ValueError("unsupported prior holdout evaluation")
         for name in (
             "holdout_plan_digest",
@@ -5407,6 +5605,7 @@ class PriorHoldoutEvaluation:
             "physical_event_digest",
             "nowcast_config_digest",
             "grid_contract_digest",
+            "spatial_grid_digest",
             "metric_engine_digest",
         ):
             _require_digest(name, getattr(self, name))
@@ -6959,6 +7158,7 @@ class PriorHoldoutEvaluation:
             ),
             nowcast_config_digest=candidate_forecast.run.config.digest,
             grid_contract_digest=grid.digest,
+            spatial_grid_digest=grid.spatial_grid_digest,
             metric_engine_digest=plan.metric_engine_digest,
             verification_digest=resolved_candidate.content_digest,
             metric_contract_digest=metric_config.digest,
@@ -7265,7 +7465,10 @@ def _state_calibration_scores(
         support_threshold_dbz=plan.support_threshold_dbz,
         threshold_bin_convention=plan.threshold_bin_convention,
     )
-    absolute = torch.abs(pit)
+    nll = nll.clamp(max=_UNCERTAINTY_SCORE_SUPPORT.maximum_nll_score)
+    absolute = torch.abs(pit).clamp(
+        max=_UNCERTAINTY_SCORE_SUPPORT.maximum_pit_residual_abs
+    )
     target = support_target.to(application.state_support_probability)
     support = application.state_support_probability.masked_select(evaluation_mask)
     target_values = target.masked_select(evaluation_mask)
@@ -7431,7 +7634,10 @@ def _prior_uncertainty_scores(
             quantization_origin_dbz=quantization_origin_dbz,
             threshold_bin_convention=threshold_bin_convention,
         )
-        absolute = torch.abs(pit_residual)
+        nll = nll.clamp(max=_UNCERTAINTY_SCORE_SUPPORT.maximum_nll_score)
+        absolute = torch.abs(pit_residual).clamp(
+            max=_UNCERTAINTY_SCORE_SUPPORT.maximum_pit_residual_abs
+        )
         mean_absolute = float(torch.mean(absolute).detach())
         underdispersion = float(
             torch.mean((absolute > 2.0).to(absolute)).detach()
@@ -7544,7 +7750,7 @@ def _new_prior_holdout_evaluation(**values: object) -> PriorHoldoutEvaluation:
     object.__setattr__(
         result,
         "contract",
-        "prior-holdout-evaluation-v18",
+        "prior-holdout-evaluation-v20",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -7660,6 +7866,7 @@ def _evaluation_digest(value: PriorHoldoutEvaluation) -> str:
             ),
             "nowcast_config_digest": value.nowcast_config_digest,
             "grid_contract_digest": value.grid_contract_digest,
+            "spatial_grid_digest": value.spatial_grid_digest,
             "metric_engine_digest": value.metric_engine_digest,
             "verification_digest": value.verification_digest,
             "metric_contract_digest": value.metric_contract_digest,
@@ -8220,11 +8427,11 @@ class MetricSupportContract:
     upper_bound: float
     derivation_contract_digest: str
     nowcast_config_digest: str
-    grid_contract_digest: str
+    spatial_grid_digest: str
     metric_engine_digest: str
     metric_implementation_digest: str
     derivation_parameters_json: str
-    contract: str = "metric-support-contract-v2"
+    contract: str = "metric-support-contract-v3"
     contract_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -8239,12 +8446,14 @@ class MetricSupportContract:
         maximum_dbz: float | None = None,
         grid_diagonal_m: float | None = None,
         nowcast_config_digest: str,
-        grid_contract_digest: str,
+        spatial_grid_digest: str,
         metric_engine_digest: str,
     ) -> MetricSupportContract:
         _require_digest("metric support nowcast config", nowcast_config_digest)
-        _require_digest("metric support grid contract", grid_contract_digest)
+        _require_digest("metric support spatial grid", spatial_grid_digest)
         _require_digest("metric support engine", metric_engine_digest)
+        if metric_engine_digest != scoring_metric_engine_identity_digest():
+            raise ValueError("metric support engine is not the installed implementation")
         if metric_name == "soft_fss_error_35":
             lower, upper = 0.0, 1.0
             derivation = {"identity": "soft-fss-error-unit-interval-v1"}
@@ -8299,11 +8508,11 @@ class MetricSupportContract:
             "upper_bound": upper,
             "derivation_contract_digest": json_digest(derivation),
             "nowcast_config_digest": nowcast_config_digest,
-            "grid_contract_digest": grid_contract_digest,
+            "spatial_grid_digest": spatial_grid_digest,
             "metric_engine_digest": metric_engine_digest,
             "metric_implementation_digest": implementation_digest,
             "derivation_parameters_json": derivation_parameters_json,
-            "contract": "metric-support-contract-v2",
+            "contract": "metric-support-contract-v3",
         }
         result = object.__new__(cls)
         for name, value in values.items():
@@ -8353,7 +8562,7 @@ class MetricSupportContract:
             maximum_dbz=run.config.max_dbz,
             grid_diagonal_m=diagonal,
             nowcast_config_digest=run.config.digest,
-            grid_contract_digest=grid.digest,
+            spatial_grid_digest=grid.spatial_grid_digest,
             metric_engine_digest=metric_engine_digest,
         )
 
@@ -8366,7 +8575,7 @@ class MetricSupportContract:
             "upper_bound": self.upper_bound,
             "derivation_contract_digest": self.derivation_contract_digest,
             "nowcast_config_digest": self.nowcast_config_digest,
-            "grid_contract_digest": self.grid_contract_digest,
+            "spatial_grid_digest": self.spatial_grid_digest,
             "metric_engine_digest": self.metric_engine_digest,
             "metric_implementation_digest": self.metric_implementation_digest,
             "derivation_parameters_json": self.derivation_parameters_json,
@@ -8390,14 +8599,14 @@ class RangeMetricRequirement:
     minimum_valid_area_km2: float
     maximum_mean_normalized_degradation: float
     maximum_harmful_fraction_upper_bound: float
-    metric_support_contract_digest: str
+    metric_support_contract_digests: tuple[str, ...]
     maximum_end_to_end_mean_normalized_degradation: float = 0.0
     maximum_end_to_end_harmful_fraction_upper_bound: float = 1.0
-    contract: str = "range-metric-requirement-v6"
+    contract: str = "range-metric-requirement-v7"
 
     def __post_init__(self) -> None:
         if (
-            self.contract != "range-metric-requirement-v6"
+            self.contract != "range-metric-requirement-v7"
             or any(
                 not value or value.strip() != value
                 for value in (
@@ -8430,10 +8639,14 @@ class RangeMetricRequirement:
             <= 1.0
         ):
             raise ValueError("range metric requirement is invalid")
-        _require_digest(
-            "range metric support contract",
-            self.metric_support_contract_digest,
-        )
+        if (
+            not self.metric_support_contract_digests
+            or len(set(self.metric_support_contract_digests))
+            != len(self.metric_support_contract_digests)
+        ):
+            raise ValueError("range metric support contracts are invalid")
+        for digest in self.metric_support_contract_digests:
+            _require_digest("range metric support contract", digest)
 
     @property
     def payload(self) -> dict[str, object]:
@@ -8610,25 +8823,35 @@ class NeuralPriorPromotionPolicy:
     minimum_deployment_metric_cell_events: int = 5
     minimum_continuous_metric_cell_events: int = 10
     allow_shadow_small_sample_bootstrap: bool = False
-    contract: str = "neural-prior-promotion-policy-v24"
+    contract: str = "neural-prior-promotion-policy-v25"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-policy-v24":
+        if self.contract != "neural-prior-promotion-policy-v25":
             raise ValueError("unsupported neural-prior promotion policy")
         if type(self.allow_shadow_small_sample_bootstrap) is not bool:
             raise ValueError("shadow bootstrap flag must be boolean")
         if not self.metric_scales or len({x.metric_name for x in self.metric_scales}) != len(self.metric_scales):
             raise ValueError("promotion metric scales must be unique")
-        support_by_name = {
-            item.metric_name: item for item in self.metric_support_contracts
+        support_by_key = {
+            (
+                item.metric_name,
+                item.nowcast_config_digest,
+                item.spatial_grid_digest,
+                item.metric_engine_digest,
+            ): item
+            for item in self.metric_support_contracts
+        }
+        support_names = {item.metric_name for item in self.metric_support_contracts}
+        support_digests = {
+            item.contract_digest: item for item in self.metric_support_contracts
         }
         if (
-            not support_by_name
-            or len(support_by_name) != len(self.metric_support_contracts)
+            not support_by_key
+            or len(support_by_key) != len(self.metric_support_contracts)
             or {item.metric_name for item in self.metric_scales}
-            != set(support_by_name)
+            != support_names
             or not {item.metric_name for item in self.required_range_metrics}
-            <= set(support_by_name)
+            <= support_names
         ):
             raise ValueError("promotion metric support contracts are incomplete")
         requirement_keys = tuple(
@@ -8645,8 +8868,11 @@ class NeuralPriorPromotionPolicy:
             or len(set(requirement_keys)) != len(requirement_keys)
             or any(
                 item.metric_name not in {scale.metric_name for scale in self.metric_scales}
-                or item.metric_support_contract_digest
-                != support_by_name[item.metric_name].contract_digest
+                or any(
+                    digest not in support_digests
+                    or support_digests[digest].metric_name != item.metric_name
+                    for digest in item.metric_support_contract_digests
+                )
                 for item in self.required_range_metrics
             )
         ):
@@ -8865,6 +9091,19 @@ class NeuralPriorPromotionPolicy:
         ):
             if not math.isfinite(value) or value < 0.0:
                 raise ValueError(f"{name} must be finite and nonnegative")
+        if (
+            max(
+                self.maximum_prior_echo_intensity_nll,
+                self.maximum_state_gaussian_nll,
+            )
+            > _UNCERTAINTY_SCORE_SUPPORT.maximum_nll_score
+            or max(
+                self.maximum_prior_conditional_pit_residual_mean_abs,
+                self.maximum_state_pit_residual_mean_abs,
+            )
+            > _UNCERTAINTY_SCORE_SUPPORT.maximum_pit_residual_abs
+        ):
+            raise ValueError("uncertainty threshold exceeds its scoring support")
 
     @property
     def digest(self) -> str:
@@ -9658,10 +9897,35 @@ class LegacyNeuralPriorPromotionEvidenceAuditV18:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV19:
+    """Original v19 decision retained before experiment-family inference."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v19"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v19",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
     candidate_manifest_digest: str
+    promotion_experiment_family_digest: str
+    promotion_experiment_family_size: int
+    holdout_mode: Literal["prospective", "sealed_historical"]
     policy_digest: str
     trust_store_digest: str
     scoring_input_artifact_digest: str
@@ -9792,16 +10056,17 @@ class NeuralPriorPromotionEvidence:
     deployment_eligible: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v19"
+    contract: str = "neural-prior-promotion-evidence-v20"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v19":
+        if self.contract != "neural-prior-promotion-evidence-v20":
             raise ValueError("unsupported neural-prior promotion evidence")
         for name in (
             "candidate_prior_digest",
             "parent_prior_digest",
             "candidate_manifest_digest",
+            "promotion_experiment_family_digest",
             "policy_digest",
             "trust_store_digest",
             "scoring_input_artifact_digest",
@@ -10057,6 +10322,12 @@ class NeuralPriorPromotionEvidence:
             )
         ):
             raise ValueError("promotion metric-cell or preflight evidence is invalid")
+        if (
+            type(self.promotion_experiment_family_size) is not int
+            or self.promotion_experiment_family_size <= 0
+            or self.holdout_mode not in ("prospective", "sealed_historical")
+        ):
+            raise ValueError("promotion experiment-family evidence is invalid")
         if self.eligible != (not self.rejection_reasons):
             raise ValueError("promotion eligibility and reasons disagree")
         state_reasons = {
@@ -10072,6 +10343,7 @@ class NeuralPriorPromotionEvidence:
             and bool(self.certified_applicability_regime_groups)
             and bool(self.certified_range_geometry_contract_digests)
             and self.sample_size_preflight_feasible
+            and self.holdout_mode == "prospective"
         ):
             raise ValueError("state or deployment eligibility is inconsistent")
         if (
@@ -10225,10 +10497,12 @@ def _cluster_bounds(
 def _aggregate_score_absolute_bound(policy: NeuralPriorPromotionPolicy) -> float:
     """Derive the paired aggregate support from metric definitions."""
 
-    supports = {
-        item.metric_name: item.maximum_absolute_change
-        for item in policy.metric_support_contracts
-    }
+    supports: dict[str, float] = {}
+    for item in policy.metric_support_contracts:
+        supports[item.metric_name] = max(
+            supports.get(item.metric_name, 0.0),
+            item.maximum_absolute_change,
+        )
     bounds = tuple(
         supports[item.metric_name] / item.scale for item in policy.metric_scales
     )
@@ -10367,9 +10641,7 @@ def promotion_sample_size_preflight(
     validate_neural_prior_holdout_plan(plan)
     if type(available_physical_events) is not int or available_physical_events < 0:
         raise ValueError("available physical-event count must be nonnegative")
-    base_family_size = len(plan.candidate_family_digests) * len(
-        plan.regime_classifier_manifests
-    )
+    base_family_size = plan.promotion_experiment_family.total_family_size
     family_size = base_family_size * max(
         1,
         4 * len(policy.required_range_metrics)
@@ -10574,23 +10846,6 @@ class _SimultaneousInferenceResult:
     randomized_multiplier: bool
 
 
-_BOUNDED_UNCERTAINTY_DIFFERENCE_COMPONENTS = frozenset(
-    {
-        "support",
-        "echo_miss",
-        "object_miss",
-        "clear",
-        "underdispersion",
-        "state_underdispersion",
-        "state_support",
-        "state_echo_miss",
-        "state_object_miss",
-        "state_false_support",
-        "state_valid",
-    }
-)
-
-
 def _simultaneous_uncertainty_upper_bounds(
     comparisons: tuple[_UncertaintyComparison, ...],
     policy: NeuralPriorPromotionPolicy,
@@ -10670,20 +10925,18 @@ def _simultaneous_uncertainty_upper_bounds(
         standard_errors,
         strict=True,
     ):
-        if automatic and (
-            comparison.component in _BOUNDED_UNCERTAINTY_DIFFERENCE_COMPONENTS
-        ):
+        if automatic:
             bound = _bounded_event_mean_upper_bound(
                 list(comparison.values),
                 list(comparison.clusters),
                 policy,
                 family_size=candidate_family_size * len(comparisons),
-                absolute_bound=1.0,
+                absolute_bound=_UNCERTAINTY_SCORE_SUPPORT.difference_bound(
+                    comparison.component
+                ),
             )
         else:
             bound = mean + critical * standard_error
-            if automatic and standard_error == 0.0:
-                unresolved_unbounded_zero_variance = True
         comparison_bounds[(comparison.component, comparison.group)] = bound
         bounds[comparison.component] = max(
             bounds.get(comparison.component, -math.inf),
@@ -10795,30 +11048,45 @@ def compute_neural_prior_promotion(
         selected_classifier_manifest,
         manifest.holdout_cases,
     )
-    family_size = len(plan.candidate_family_digests) * len(
-        plan.regime_classifier_manifests
-    )
+    family_size = plan.promotion_experiment_family.total_family_size
     metric_supports = {
         item.contract_digest: item for item in policy.metric_support_contracts
     }
-    metric_supports_by_name = {
-        item.metric_name: item for item in policy.metric_support_contracts
+    metric_supports_by_key = {
+        (
+            item.metric_name,
+            item.nowcast_config_digest,
+            item.spatial_grid_digest,
+            item.metric_engine_digest,
+        ): item
+        for item in policy.metric_support_contracts
     }
     for evaluation in evaluations:
+        support_key_suffix = (
+            evaluation.nowcast_config_digest,
+            evaluation.spatial_grid_digest,
+            evaluation.metric_engine_digest,
+        )
+        try:
+            selected_supports = tuple(
+                metric_supports_by_key[(name, *support_key_suffix)]
+                for name in evaluation.metric_names
+            )
+        except KeyError as error:
+            raise ValueError(
+                "metric support disagrees with forecast run, grid, or engine"
+            ) from error
         expected_supports = tuple(
-            metric_supports_by_name[name].contract_digest
-            for name in evaluation.metric_names
+            item.contract_digest for item in selected_supports
         )
         if evaluation.metric_support_contract_digests != expected_supports:
             raise ValueError("evaluation metric support was not derived from policy")
         if any(
             support.nowcast_config_digest != evaluation.nowcast_config_digest
-            or support.grid_contract_digest != evaluation.grid_contract_digest
+            or support.spatial_grid_digest != evaluation.spatial_grid_digest
             or support.metric_engine_digest != evaluation.metric_engine_digest
             or support.metric_engine_digest != plan.metric_engine_digest
-            for support in (
-                metric_supports_by_name[name] for name in evaluation.metric_names
-            )
+            for support in selected_supports
         ):
             raise ValueError(
                 "metric support disagrees with forecast run, grid, or engine"
@@ -11923,6 +12191,13 @@ def compute_neural_prior_promotion(
                 except ValueError:
                     continue
                 if (
+                    evaluation.metric_support_contract_digests[metric_index]
+                    not in requirement.metric_support_contract_digests
+                ):
+                    raise ValueError(
+                        "range metric requirement lacks evaluation grid support"
+                    )
+                if (
                     bool(band.metric_available[lead_index, metric_index])
                     and float(
                         band.metric_valid_area_km2[lead_index, metric_index]
@@ -11976,9 +12251,10 @@ def compute_neural_prior_promotion(
                 policy,
                 family_size=metric_cell_family_size,
                 absolute_bound=(
-                    metric_supports[
-                        requirement.metric_support_contract_digest
-                    ].maximum_absolute_change
+                    max(
+                        metric_supports[digest].maximum_absolute_change
+                        for digest in requirement.metric_support_contract_digests
+                    )
                     / scale
                 ),
             )
@@ -11994,9 +12270,10 @@ def compute_neural_prior_promotion(
                 policy,
                 family_size=metric_cell_family_size,
                 absolute_bound=(
-                    metric_supports[
-                        requirement.metric_support_contract_digest
-                    ].maximum_absolute_change
+                    max(
+                        metric_supports[digest].maximum_absolute_change
+                        for digest in requirement.metric_support_contract_digests
+                    )
                     / scale
                 ),
             )
@@ -12316,6 +12593,11 @@ def compute_neural_prior_promotion(
         candidate_prior_digest=manifest.candidate_prior_digest,
         parent_prior_digest=manifest.parent_prior_digest,
         candidate_manifest_digest=manifest.manifest_digest,
+        promotion_experiment_family_digest=(
+            plan.promotion_experiment_family.family_digest
+        ),
+        promotion_experiment_family_size=family_size,
+        holdout_mode=plan.mode,
         policy_digest=policy.digest,
         trust_store_digest=trust.content_digest,
         scoring_input_artifact_digest=scoring_input_artifact.artifact_digest,
@@ -12476,6 +12758,7 @@ def compute_neural_prior_promotion(
             and bool(certified_groups)
             and bool(certified_range_geometries)
             and sample_size_preflight.feasible
+            and plan.mode == "prospective"
         ),
         eligible=not unique,
         rejection_reasons=unique,

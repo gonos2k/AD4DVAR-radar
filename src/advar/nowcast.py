@@ -377,6 +377,81 @@ def _canonical_time_tuple(
 
 
 @dataclass(frozen=True)
+class RadarSpatialGridIdentity:
+    """Time-independent identity of one affine radar analysis grid."""
+
+    dx_m: float
+    dy_m: float
+    projection: str
+    grid_hash: str
+    pixel_to_projected_matrix_m: tuple[
+        tuple[float, float], tuple[float, float]
+    ]
+    contract: str = "radar-spatial-grid-identity-v1"
+
+    def __post_init__(self) -> None:
+        if self.contract != "radar-spatial-grid-identity-v1":
+            raise ValueError("unsupported radar spatial-grid identity")
+        if (
+            not isinstance(self.dx_m, (int, float))
+            or isinstance(self.dx_m, bool)
+            or not math.isfinite(self.dx_m)
+            or self.dx_m <= 0.0
+            or not isinstance(self.dy_m, (int, float))
+            or isinstance(self.dy_m, bool)
+            or not math.isfinite(self.dy_m)
+            or self.dy_m <= 0.0
+            or not isinstance(self.projection, str)
+            or not self.projection
+            or self.projection.strip() != self.projection
+        ):
+            raise ValueError("radar spatial-grid identity is invalid")
+        _validate_sha256_digest("grid_hash", self.grid_hash)
+        matrix = self.pixel_to_projected_matrix_m
+        if (
+            not isinstance(matrix, tuple)
+            or len(matrix) != 2
+            or any(not isinstance(row, tuple) or len(row) != 2 for row in matrix)
+            or any(
+                not math.isfinite(value)
+                for row in matrix
+                for value in row
+            )
+        ):
+            raise ValueError("radar spatial-grid affine matrix is invalid")
+        canonical = (
+            (float(matrix[0][0]), float(matrix[0][1])),
+            (float(matrix[1][0]), float(matrix[1][1])),
+        )
+        determinant = canonical[0][0] * canonical[1][1] - (
+            canonical[0][1] * canonical[1][0]
+        )
+        column_spacing = math.hypot(canonical[0][0], canonical[1][0])
+        row_spacing = math.hypot(canonical[0][1], canonical[1][1])
+        if (
+            determinant == 0.0
+            or not math.isclose(
+                column_spacing,
+                float(self.dx_m),
+                rel_tol=1.0e-9,
+                abs_tol=1.0e-9,
+            )
+            or not math.isclose(
+                row_spacing,
+                float(self.dy_m),
+                rel_tol=1.0e-9,
+                abs_tol=1.0e-9,
+            )
+        ):
+            raise ValueError("radar spatial-grid affine matrix disagrees")
+        object.__setattr__(self, "pixel_to_projected_matrix_m", canonical)
+
+    @property
+    def digest(self) -> str:
+        return dataclass_digest(self)
+
+
+@dataclass(frozen=True)
 class RadarGridTimeContract:
     valid_times: tuple[str, str, str]
     dx_m: float
@@ -504,6 +579,21 @@ class RadarGridTimeContract:
     @property
     def digest(self) -> str:
         return dataclass_digest(self)
+
+    @property
+    def spatial_grid_identity(self) -> RadarSpatialGridIdentity:
+        assert self.pixel_to_projected_matrix_m is not None
+        return RadarSpatialGridIdentity(
+            dx_m=float(self.dx_m),
+            dy_m=float(self.dy_m),
+            projection=self.projection,
+            grid_hash=self.grid_hash,
+            pixel_to_projected_matrix_m=self.pixel_to_projected_matrix_m,
+        )
+
+    @property
+    def spatial_grid_digest(self) -> str:
+        return self.spatial_grid_identity.digest
 
     @property
     def cell_area_m2(self) -> float:
