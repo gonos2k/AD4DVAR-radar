@@ -23,7 +23,11 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 )
 
 from ._digest import json_digest, tensor_digest
-from ._runtime import numerical_runtime_identity_digest
+from ._runtime import (
+    MPSBackendCertificationEvidence,
+    numerical_runtime_identity_digest,
+    validate_mps_backend_certification,
+)
 from .calibration import algorithm_bundle_digest, OperationalDataIdentity
 from .nowcast import (
     ForecastResult,
@@ -650,6 +654,181 @@ class OperationalIssuanceDomainPlan:
 
 
 @dataclass(frozen=True, init=False)
+class ResolvedSourceCoverageArtifact:
+    """Input-time mosaic/outage/QC resolution of nominal source coverage."""
+
+    _resolved_mask: Tensor
+    issuance_domain_plan_digest: str
+    case_id: str
+    grid_contract_digest: str
+    radar_source_contract_digest: str
+    source_coverage_policy_digest: str
+    input_bundle_digest: str
+    full_analysis_input_digest: str
+    input_available_at: str
+    resolved_at: str
+    source_radar_index_map_digest: str
+    outage_mask_digest: str
+    dynamic_qc_valid_mask_digest: str
+    nominal_source_coverage_mask_digest: str
+    resolved_source_coverage_mask_digest: str
+    resolved_cell_counts: tuple[int, ...]
+    contract: str = "resolved-source-coverage-artifact-v1"
+    artifact_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("use ResolvedSourceCoverageArtifact.from_observations")
+
+    @classmethod
+    def from_observations(
+        cls,
+        plan: OperationalIssuanceDomainPlan,
+        *,
+        nominal_source_coverage_mask: Tensor,
+        source_radar_index_map: Tensor,
+        outage_mask: Tensor,
+        dynamic_qc_valid_mask: Tensor,
+        input_bundle_digest: str,
+        full_analysis_input_digest: str,
+        input_available_at: str,
+        resolved_at: str,
+    ) -> ResolvedSourceCoverageArtifact:
+        masks = (
+            nominal_source_coverage_mask,
+            outage_mask,
+            dynamic_qc_valid_mask,
+        )
+        if (
+            any(mask.dtype is not torch.bool or mask.ndim != 3 for mask in masks)
+            or not source_radar_index_map.dtype in (
+                torch.int8,
+                torch.int16,
+                torch.int32,
+                torch.int64,
+            )
+            or source_radar_index_map.ndim != 3
+            or any(mask.shape != masks[0].shape for mask in masks[1:])
+            or source_radar_index_map.shape != masks[0].shape
+            or any(mask.device != masks[0].device for mask in masks[1:])
+            or source_radar_index_map.device != masks[0].device
+            or masks[0].shape[0] != len(plan.lead_minutes)
+            or tensor_digest(masks[0]) != plan.source_coverage_mask_digest
+        ):
+            raise ValueError("resolved source-coverage inputs are invalid")
+        _require_digest("input bundle", input_bundle_digest)
+        _require_digest("full analysis input", full_analysis_input_digest)
+        input_time = datetime.fromisoformat(
+            _canonical_time(input_available_at).replace("Z", "+00:00")
+        )
+        resolution_time = datetime.fromisoformat(
+            _canonical_time(resolved_at).replace("Z", "+00:00")
+        )
+        if resolution_time < input_time:
+            raise ValueError("source coverage was resolved before input availability")
+        resolved = (
+            masks[0]
+            & (source_radar_index_map >= 0)
+            & ~masks[1]
+            & masks[2]
+        )
+        counts = tuple(
+            int(value)
+            for value in torch.count_nonzero(resolved, dim=(-2, -1)).tolist()
+        )
+        if any(value <= 0 for value in counts):
+            raise ValueError("resolved source coverage is empty")
+        values: dict[str, object] = {
+            "_resolved_mask": resolved.detach().clone(),
+            "issuance_domain_plan_digest": plan.plan_digest,
+            "case_id": plan.case_id,
+            "grid_contract_digest": plan.grid_contract_digest,
+            "radar_source_contract_digest": plan.radar_source_contract_digest,
+            "source_coverage_policy_digest": plan.source_coverage_policy_digest,
+            "input_bundle_digest": input_bundle_digest,
+            "full_analysis_input_digest": full_analysis_input_digest,
+            "input_available_at": input_available_at,
+            "resolved_at": resolved_at,
+            "source_radar_index_map_digest": tensor_digest(
+                source_radar_index_map
+            ),
+            "outage_mask_digest": tensor_digest(outage_mask),
+            "dynamic_qc_valid_mask_digest": tensor_digest(
+                dynamic_qc_valid_mask
+            ),
+            "nominal_source_coverage_mask_digest": tensor_digest(masks[0]),
+            "resolved_source_coverage_mask_digest": tensor_digest(resolved),
+            "resolved_cell_counts": counts,
+            "contract": "resolved-source-coverage-artifact-v1",
+        }
+        result = object.__new__(cls)
+        for name, value in values.items():
+            object.__setattr__(result, name, value)
+        object.__setattr__(result, "artifact_digest", json_digest(result.payload))
+        validate_resolved_source_coverage_artifact(result)
+        return result
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: (list(value) if isinstance(value, tuple) else value)
+            for key, value in self.__dict__.items()
+            if key not in {"_resolved_mask", "artifact_digest"}
+        }
+
+    @property
+    def resolved_mask(self) -> Tensor:
+        return self._resolved_mask.detach().clone()
+
+
+def validate_resolved_source_coverage_artifact(
+    artifact: ResolvedSourceCoverageArtifact,
+) -> None:
+    try:
+        counts = tuple(
+            int(value)
+            for value in torch.count_nonzero(
+                artifact._resolved_mask,
+                dim=(-2, -1),
+            ).tolist()
+        )
+        if (
+            artifact.contract != "resolved-source-coverage-artifact-v1"
+            or artifact._resolved_mask.dtype is not torch.bool
+            or artifact._resolved_mask.ndim != 3
+            or tensor_digest(artifact._resolved_mask)
+            != artifact.resolved_source_coverage_mask_digest
+            or counts != artifact.resolved_cell_counts
+            or any(value <= 0 for value in counts)
+            or datetime.fromisoformat(
+                _canonical_time(artifact.resolved_at).replace("Z", "+00:00")
+            )
+            < datetime.fromisoformat(
+                _canonical_time(artifact.input_available_at).replace(
+                    "Z", "+00:00"
+                )
+            )
+            or artifact.artifact_digest != json_digest(artifact.payload)
+        ):
+            raise ValueError("resolved source-coverage artifact is invalid")
+        for name in (
+            "issuance_domain_plan_digest",
+            "grid_contract_digest",
+            "radar_source_contract_digest",
+            "source_coverage_policy_digest",
+            "input_bundle_digest",
+            "full_analysis_input_digest",
+            "source_radar_index_map_digest",
+            "outage_mask_digest",
+            "dynamic_qc_valid_mask_digest",
+            "nominal_source_coverage_mask_digest",
+            "resolved_source_coverage_mask_digest",
+        ):
+            _require_digest(name, getattr(artifact, name))
+    except (AttributeError, RuntimeError, ValueError) as error:
+        raise ValueError("resolved source-coverage artifact is invalid") from error
+
+
+@dataclass(frozen=True, init=False)
 class OperationalIssuanceDomainArtifact:
     """Resolved publication/source/exclusion masks fixed before scoring."""
 
@@ -661,9 +840,13 @@ class OperationalIssuanceDomainArtifact:
     publication_eligible_mask_digest: str
     source_coverage_mask_digest: str
     permanent_exclusion_mask_digest: str
+    nominal_source_coverage_mask_digest: str
+    resolved_source_coverage_artifact_digest: str | None
+    resolved_input_bundle_digest: str | None
+    resolved_full_analysis_input_digest: str | None
     eligible_mask_digest: str
     eligible_cell_counts: tuple[int, ...]
-    contract: str = "operational-issuance-domain-artifact-v1"
+    contract: str = "operational-issuance-domain-artifact-v2"
     artifact_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -677,6 +860,7 @@ class OperationalIssuanceDomainArtifact:
         publication_eligible_mask: Tensor,
         source_coverage_mask: Tensor,
         permanent_exclusion_mask: Tensor,
+        resolved_source_coverage: ResolvedSourceCoverageArtifact | None = None,
     ) -> OperationalIssuanceDomainArtifact:
         masks = (
             publication_eligible_mask,
@@ -701,7 +885,31 @@ class OperationalIssuanceDomainArtifact:
             raise ValueError(
                 "operational issuance-domain masks were not preregistered"
             )
-        eligible = masks[0] & masks[1] & ~masks[2]
+        resolved_source_mask = masks[1]
+        if resolved_source_coverage is not None:
+            validate_resolved_source_coverage_artifact(resolved_source_coverage)
+            if (
+                resolved_source_coverage.issuance_domain_plan_digest
+                != plan.plan_digest
+                or resolved_source_coverage.case_id != plan.case_id
+                or resolved_source_coverage.grid_contract_digest
+                != plan.grid_contract_digest
+                or resolved_source_coverage.radar_source_contract_digest
+                != plan.radar_source_contract_digest
+                or resolved_source_coverage.source_coverage_policy_digest
+                != plan.source_coverage_policy_digest
+                or resolved_source_coverage.nominal_source_coverage_mask_digest
+                != mask_digests[1]
+                or resolved_source_coverage._resolved_mask.shape
+                != masks[1].shape
+                or resolved_source_coverage._resolved_mask.device
+                != masks[1].device
+            ):
+                raise ValueError(
+                    "resolved source coverage disagrees with its plan"
+                )
+            resolved_source_mask = resolved_source_coverage._resolved_mask
+        eligible = masks[0] & resolved_source_mask & ~masks[2]
         counts = tuple(
             int(value)
             for value in torch.count_nonzero(eligible, dim=(-2, -1)).tolist()
@@ -715,11 +923,27 @@ class OperationalIssuanceDomainArtifact:
             "radar_source_contract_digest": plan.radar_source_contract_digest,
             "lead_minutes": plan.lead_minutes,
             "publication_eligible_mask_digest": mask_digests[0],
-            "source_coverage_mask_digest": mask_digests[1],
+            "source_coverage_mask_digest": tensor_digest(resolved_source_mask),
             "permanent_exclusion_mask_digest": mask_digests[2],
+            "nominal_source_coverage_mask_digest": mask_digests[1],
+            "resolved_source_coverage_artifact_digest": (
+                None
+                if resolved_source_coverage is None
+                else resolved_source_coverage.artifact_digest
+            ),
+            "resolved_input_bundle_digest": (
+                None
+                if resolved_source_coverage is None
+                else resolved_source_coverage.input_bundle_digest
+            ),
+            "resolved_full_analysis_input_digest": (
+                None
+                if resolved_source_coverage is None
+                else resolved_source_coverage.full_analysis_input_digest
+            ),
             "eligible_mask_digest": tensor_digest(eligible),
             "eligible_cell_counts": counts,
-            "contract": "operational-issuance-domain-artifact-v1",
+            "contract": "operational-issuance-domain-artifact-v2",
         }
         result = object.__new__(cls)
         for name, value in values.items():
@@ -740,6 +964,16 @@ class OperationalIssuanceDomainArtifact:
                 self.publication_eligible_mask_digest
             ),
             "source_coverage_mask_digest": self.source_coverage_mask_digest,
+            "nominal_source_coverage_mask_digest": (
+                self.nominal_source_coverage_mask_digest
+            ),
+            "resolved_source_coverage_artifact_digest": (
+                self.resolved_source_coverage_artifact_digest
+            ),
+            "resolved_input_bundle_digest": self.resolved_input_bundle_digest,
+            "resolved_full_analysis_input_digest": (
+                self.resolved_full_analysis_input_digest
+            ),
             "permanent_exclusion_mask_digest": (
                 self.permanent_exclusion_mask_digest
             ),
@@ -764,7 +998,7 @@ def validate_operational_issuance_domain_artifact(
             for value in torch.count_nonzero(mask, dim=(-2, -1)).tolist()
         )
         if (
-            artifact.contract != "operational-issuance-domain-artifact-v1"
+            artifact.contract != "operational-issuance-domain-artifact-v2"
             or mask.dtype is not torch.bool
             or mask.ndim != 3
             or mask.shape[0] != len(artifact.lead_minutes)
@@ -780,10 +1014,28 @@ def validate_operational_issuance_domain_artifact(
             "radar_source_contract_digest",
             "publication_eligible_mask_digest",
             "source_coverage_mask_digest",
+            "nominal_source_coverage_mask_digest",
             "permanent_exclusion_mask_digest",
             "eligible_mask_digest",
         ):
             _require_digest(name, getattr(artifact, name))
+        if artifact.resolved_source_coverage_artifact_digest is not None:
+            for name in (
+                "resolved_source_coverage_artifact_digest",
+                "resolved_input_bundle_digest",
+                "resolved_full_analysis_input_digest",
+            ):
+                value = getattr(artifact, name)
+                if value is None:
+                    raise ValueError(
+                        "resolved operational issuance lineage is incomplete"
+                    )
+                _require_digest(name, value)
+        elif (
+            artifact.resolved_input_bundle_digest is not None
+            or artifact.resolved_full_analysis_input_digest is not None
+        ):
+            raise ValueError("static operational issuance lineage is invalid")
     except (AttributeError, RuntimeError, ValueError) as error:
         raise ValueError("operational issuance-domain artifact is invalid") from error
 
@@ -5939,7 +6191,7 @@ class PriorHoldoutEvaluation:
             != issuance_plan.radar_source_contract_digest
             or operational_issuance_domain.publication_eligible_mask_digest
             != issuance_plan.publication_eligible_mask_digest
-            or operational_issuance_domain.source_coverage_mask_digest
+            or operational_issuance_domain.nominal_source_coverage_mask_digest
             != issuance_plan.source_coverage_mask_digest
             or operational_issuance_domain.permanent_exclusion_mask_digest
             != issuance_plan.permanent_exclusion_mask_digest
@@ -5947,6 +6199,16 @@ class PriorHoldoutEvaluation:
             != case.operational_issuance_domain_artifact_digest
             or operational_issuance_domain.plan_digest
             != case.operational_issuance_domain_plan_digest
+            or (
+                operational_issuance_domain.resolved_source_coverage_artifact_digest
+                is not None
+                and (
+                    operational_issuance_domain.resolved_input_bundle_digest
+                    != case.input_bundle_digest
+                    or operational_issuance_domain.resolved_full_analysis_input_digest
+                    != case.full_analysis_input_digest
+                )
+            )
         ):
             raise ValueError("operational issuance domain disagrees with its plan")
         reference_plan = next(
@@ -8251,13 +8513,14 @@ class HoldoutScoringArtifact:
     scoring_algorithm_digest: str
     scoring_runtime_digest: str
     scoring_execution_contract_digest: str
+    scoring_replay_bundle_digest: str
     ordered_case_ids: tuple[str, ...]
     ordered_evaluation_digests: tuple[str, ...]
     candidate_forecast_digests: tuple[str, ...]
     parent_forecast_digests: tuple[str, ...]
     verification_digests: tuple[str, ...]
     metric_contract_digests: tuple[str, ...]
-    contract: str = "neural-prior-holdout-scoring-artifact-v1"
+    contract: str = "neural-prior-holdout-scoring-artifact-v2"
     artifact_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -8276,6 +8539,7 @@ class HoldoutScoringArtifact:
             "scoring_execution_contract_digest": (
                 self.scoring_execution_contract_digest
             ),
+            "scoring_replay_bundle_digest": self.scoring_replay_bundle_digest,
             "ordered_case_ids": list(self.ordered_case_ids),
             "ordered_evaluation_digests": list(
                 self.ordered_evaluation_digests
@@ -8295,7 +8559,10 @@ class HoldoutScoringArtifact:
         plan: NeuralPriorHoldoutPlan,
         scoring_input_artifact: HoldoutScoringInputArtifact,
         evaluations: tuple[PriorHoldoutEvaluation, ...],
+        *,
+        scoring_replay_bundle_digest: str,
     ) -> HoldoutScoringArtifact:
+        _require_digest("scoring replay bundle", scoring_replay_bundle_digest)
         ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
         values: dict[str, object] = {
             "holdout_plan_digest": plan.plan_digest,
@@ -8311,6 +8578,7 @@ class HoldoutScoringArtifact:
             "scoring_execution_contract_digest": (
                 plan.scoring_execution_contract_digest
             ),
+            "scoring_replay_bundle_digest": scoring_replay_bundle_digest,
             "ordered_case_ids": tuple(item.case_id for item in ordered),
             "ordered_evaluation_digests": tuple(
                 item.evaluation_digest for item in ordered
@@ -8327,7 +8595,7 @@ class HoldoutScoringArtifact:
             "metric_contract_digests": tuple(
                 item.metric_contract_digest for item in ordered
             ),
-            "contract": "neural-prior-holdout-scoring-artifact-v1",
+            "contract": "neural-prior-holdout-scoring-artifact-v2",
         }
         artifact = _new_holdout_scoring_artifact(**values)
         validate_holdout_scoring_artifact(
@@ -8355,6 +8623,10 @@ def validate_holdout_scoring_artifact(
     scoring_input_artifact: HoldoutScoringInputArtifact,
     evaluations: tuple[PriorHoldoutEvaluation, ...],
 ) -> None:
+    _require_digest(
+        "scoring replay bundle",
+        artifact.scoring_replay_bundle_digest,
+    )
     validate_holdout_scoring_input_artifact(
         scoring_input_artifact,
         plan,
@@ -8369,7 +8641,7 @@ def validate_holdout_scoring_artifact(
     ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
     start = manifest.candidate_scoring_start_receipt
     if (
-        artifact.contract != "neural-prior-holdout-scoring-artifact-v1"
+        artifact.contract != "neural-prior-holdout-scoring-artifact-v2"
         or artifact.artifact_digest != json_digest(artifact.payload)
         or artifact.holdout_plan_digest != plan.plan_digest
         or artifact.candidate_manifest_digest != manifest.manifest_digest
@@ -9919,6 +10191,28 @@ class LegacyNeuralPriorPromotionEvidenceAuditV19:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV20:
+    """Original v20 decision retained before durable scoring replay."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v20"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v20",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
@@ -9930,6 +10224,7 @@ class NeuralPriorPromotionEvidence:
     trust_store_digest: str
     scoring_input_artifact_digest: str
     scoring_artifact_digest: str
+    scoring_replay_bundle_digest: str
     scoring_process_log_digest: str
     scoring_completion_receipt_digest: str
     evaluation_digests: tuple[str, ...]
@@ -10056,11 +10351,11 @@ class NeuralPriorPromotionEvidence:
     deployment_eligible: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v20"
+    contract: str = "neural-prior-promotion-evidence-v21"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v20":
+        if self.contract != "neural-prior-promotion-evidence-v21":
             raise ValueError("unsupported neural-prior promotion evidence")
         for name in (
             "candidate_prior_digest",
@@ -10071,6 +10366,7 @@ class NeuralPriorPromotionEvidence:
             "trust_store_digest",
             "scoring_input_artifact_digest",
             "scoring_artifact_digest",
+            "scoring_replay_bundle_digest",
             "scoring_process_log_digest",
             "scoring_completion_receipt_digest",
             "deployment_regime_classifier_digest",
@@ -12602,6 +12898,9 @@ def compute_neural_prior_promotion(
         trust_store_digest=trust.content_digest,
         scoring_input_artifact_digest=scoring_input_artifact.artifact_digest,
         scoring_artifact_digest=scoring_artifact.artifact_digest,
+        scoring_replay_bundle_digest=(
+            scoring_artifact.scoring_replay_bundle_digest
+        ),
         scoring_process_log_digest=scoring_process_log.artifact_digest,
         scoring_completion_receipt_digest=(
             scoring_completion_receipt.receipt_digest
@@ -13142,10 +13441,11 @@ class DeployedNeuralPriorPolicy:
     regime_classifier_digest: str
     regime_classifier_manifest_digest: str
     range_geometry_contract_digest: str
+    mps_backend_certification_digest: str | None = None
     minimum_regime_confidence: float = 0.8
     minimum_weather_top1_top2_gap: float = 0.05
     minimum_deployment_confidence_margin: float = 0.05
-    contract: str = "deployed-neural-prior-policy-v4"
+    contract: str = "deployed-neural-prior-policy-v5"
     policy_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -13159,7 +13459,7 @@ class DeployedNeuralPriorPolicy:
         ):
             _require_digest(name, getattr(self, name))
         if (
-            self.contract != "deployed-neural-prior-policy-v4"
+            self.contract != "deployed-neural-prior-policy-v5"
             or self.candidate_prior_digest == self.parent_prior_digest
             or not math.isfinite(self.minimum_regime_confidence)
             or not 0.0 < self.minimum_regime_confidence <= 1.0
@@ -13172,6 +13472,11 @@ class DeployedNeuralPriorPolicy:
             )
         ):
             raise ValueError("deployed neural-prior policy is invalid")
+        if self.mps_backend_certification_digest is not None:
+            _require_digest(
+                "MPS backend certification",
+                self.mps_backend_certification_digest,
+            )
         object.__setattr__(
             self,
             "policy_digest",
@@ -13625,9 +13930,21 @@ def infer_deployed_neural_prior(
     grid_y_m: Tensor,
     policy: DeployedNeuralPriorPolicy,
     policy_trust_store_path: str | Path,
+    mps_backend_certification: MPSBackendCertificationEvidence | None = None,
 ) -> NeuralPriorApplication:
     """Classify, select, and infer without accepting caller-provided labels."""
 
+    if frames_dbz.device.type == "mps":
+        if (
+            mps_backend_certification is None
+            or policy.mps_backend_certification_digest
+            != mps_backend_certification.evidence_digest
+        ):
+            raise ValueError("MPS deployment requires approved certification")
+        validate_mps_backend_certification(
+            mps_backend_certification,
+            execution_device=frames_dbz.device,
+        )
     if (
         input_run.grid_time_contract_digest is None
         or range_geometry_contract.grid_contract_digest

@@ -40,12 +40,14 @@ from advar import (
     RealizedObservationIntervention,
     RadarGridTimeContract,
     VerificationBundle,
+    algorithm_bundle_digest,
     compute_neural_prior_promotion,
     validate_neural_prior_candidate_manifest,
     validate_neural_prior_promotion,
     validate_neural_prior_promotion_applicability,
     verification_plan_digest,
     neural_prior_state_censor_policy_digest,
+    numerical_runtime_manifest,
 )
 from advar.sensitivity import _LearningPolicyTrustStore
 
@@ -810,7 +812,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             reference_label_contract_digest="7" * 64,
             physical_event_catalog_plan=self.event_catalog_plan(),
             scoring_algorithm_digest="9" * 64,
-            scoring_runtime_digest="8" * 64,
+            scoring_runtime_digest=(
+                promotion_module.numerical_runtime_identity_digest("cpu")
+            ),
             metric_engine_digest=promotion_module.scoring_metric_engine_identity_digest(),
             verification_resolver_digest="6" * 64,
             registered_at="2026-08-07T00:00:00Z",
@@ -1165,7 +1169,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             process_kind="candidate_scoring",
             subject_digests=subject_digests,
             process_algorithm_digest="9" * 64,
-            process_runtime_digest="8" * 64,
+            process_runtime_digest=self.plan().scoring_runtime_digest,
             execution_contract_digest=(
                 self.plan().scoring_execution_contract_digest
                 if execution_contract_digest is None
@@ -1231,7 +1235,41 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             holdout_cases=retained_cases,
         )
 
-    def scoring_artifact(self, evaluations, *, manifest=None, plan=None, policy=None):
+    def scoring_replay_tensors(self, evaluations):
+        result = {}
+        integer_roles = {
+            "source_radar_index_map",
+            "range_band_index",
+            "event_object_labels",
+        }
+        boolean_roles = {
+            "input_qc_valid_mask",
+            "outage_mask",
+            "candidate_publication_mask",
+            "parent_publication_mask",
+            "verification_valid_mask",
+            "operational_issuance_mask",
+        }
+        for evaluation in evaluations:
+            for role in ledger_module.SCORING_REPLAY_REQUIRED_TENSOR_ROLES:
+                if role in integer_roles:
+                    value = torch.zeros((1, 2, 2), dtype=torch.int64)
+                elif role in boolean_roles:
+                    value = torch.ones((1, 2, 2), dtype=torch.bool)
+                else:
+                    value = torch.ones((1, 2, 2), dtype=torch.float32)
+                result[(evaluation.case_id, role)] = value
+        return result
+
+    def scoring_artifact(
+        self,
+        evaluations,
+        *,
+        manifest=None,
+        plan=None,
+        policy=None,
+        replay_bundle_digest=None,
+    ):
         retained_manifest = self.manifest() if manifest is None else manifest
         retained_plan = self.plan() if plan is None else plan
         return promotion_module.HoldoutScoringArtifact.from_evaluations(
@@ -1243,6 +1281,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 policy=policy,
             ),
             tuple(evaluations),
+            scoring_replay_bundle_digest=(
+                "b" * 64
+                if replay_bundle_digest is None
+                else replay_bundle_digest
+            ),
         )
 
     def scoring_completion_receipt(self, evaluations, *, manifest=None, plan=None):
@@ -2324,23 +2367,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertTrue(result.eligible)
         validate_neural_prior_promotion(result)
 
-    def test_current_promotion_round_trips_durable_v15_evidence(self) -> None:
+    def test_scoring_replay_reproduces_evaluation_digest(self) -> None:
         evaluations = (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
-        evidence = self.compute(evaluations)
         manifest = self.manifest()
         plan = self.plan()
         policy = self.policy()
-        scoring_artifact = self.scoring_artifact(
-            evaluations,
-            manifest=manifest,
-            plan=plan,
-        )
         scoring_process_log = self.scoring_process_log(manifest)
-        scoring_completion = self.scoring_completion_receipt(
-            evaluations,
-            manifest=manifest,
-            plan=plan,
-        )
         with tempfile.TemporaryDirectory() as directory:
             ledger = EpisodeLedger(Path(directory))
             with sqlite3.connect(ledger.index_path) as connection:
@@ -2546,6 +2578,80 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     scoring_input_artifact=scoring_input,
                     scheduler_trust_store_path="/etc/advar/schedulers.json",
                 )
+                replay_manifest = (
+                    ledger.append_neural_prior_scoring_replay_bundle(
+                        scoring_input,
+                        evaluations,
+                        self.scoring_replay_tensors(evaluations),
+                        algorithm_source_manifest_digest=(
+                            algorithm_bundle_digest()
+                        ),
+                        runtime_manifest=numerical_runtime_manifest("cpu"),
+                    )
+                )
+                replayed = ledger.load_neural_prior_scoring_replay_bundle(
+                    replay_manifest.bundle_digest
+                )
+                self.assertEqual(
+                    tuple(
+                        item.evaluation_digest for item in replayed.evaluations
+                    ),
+                    tuple(item.evaluation_digest for item in evaluations),
+                )
+                replay_archive = (
+                    ledger.scoring_replays_dir
+                    / replay_manifest.bundle_digest
+                    / "replay_arrays.npz"
+                )
+                original_archive = replay_archive.read_bytes()
+                replay_archive.write_bytes(
+                    original_archive[:-1]
+                    + bytes((original_archive[-1] ^ 0x01,))
+                )
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "scoring replay bundle member checksum mismatch",
+                ):
+                    ledger.load_neural_prior_scoring_replay_bundle(
+                        replay_manifest.bundle_digest
+                    )
+                replay_archive.write_bytes(original_archive)
+                scoring_artifact = self.scoring_artifact(
+                    evaluations,
+                    manifest=manifest,
+                    plan=plan,
+                    replay_bundle_digest=replay_manifest.bundle_digest,
+                )
+                scoring_completion = (
+                    promotion_module.TrustedProcessCompletionReceipt.from_start(
+                        manifest.candidate_scoring_start_receipt,
+                        completed_at="2026-08-12T02:00:00Z",
+                        output_artifact_digest=scoring_artifact.artifact_digest,
+                        process_log_digest=scoring_process_log.artifact_digest,
+                        scheduler_private_key=self.scheduler_key(),
+                    )
+                )
+                with patch.object(
+                    promotion_module,
+                    "_load_learning_policy_trust_store",
+                    return_value=_LearningPolicyTrustStore(
+                        approved_policy_digests=frozenset((policy.digest,)),
+                        content_digest="b" * 64,
+                    ),
+                ):
+                    evidence = compute_neural_prior_promotion(
+                        manifest,
+                        plan,
+                        evaluations,
+                        scoring_input_artifact=scoring_input,
+                        scoring_artifact=scoring_artifact,
+                        scoring_process_log=scoring_process_log,
+                        scoring_completion_receipt=scoring_completion,
+                        policy=policy,
+                        policy_trust_store_path=(
+                            "/etc/advar/learning-policies.json"
+                        ),
+                    )
                 trusted_datetime.now.return_value = datetime.fromisoformat(
                     "2026-08-12T03:00:00+00:00"
                 )
@@ -2579,7 +2685,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v20")
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v21")
 
             legacy_payload = evidence._payload()
             legacy_payload["contract"] = "neural-prior-promotion-evidence-v12"
@@ -4853,6 +4959,55 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 publication_eligible_mask=publication,
                 source_coverage_mask=torch.ones_like(publication),
                 permanent_exclusion_mask=torch.zeros_like(publication),
+            )
+
+    def test_dynamic_source_coverage_resolves_after_input_availability(self) -> None:
+        plan = self.plan().operational_issuance_domain_plans[0]
+        nominal = torch.ones((1, 2, 2), dtype=torch.bool)
+        source_index = torch.tensor([[[0, 1], [-1, 1]]], dtype=torch.int64)
+        outage = torch.tensor([[[False, True], [False, False]]])
+        qc_valid = torch.ones_like(nominal)
+        resolved = promotion_module.ResolvedSourceCoverageArtifact.from_observations(
+            plan,
+            nominal_source_coverage_mask=nominal,
+            source_radar_index_map=source_index,
+            outage_mask=outage,
+            dynamic_qc_valid_mask=qc_valid,
+            input_bundle_digest="e" * 64,
+            full_analysis_input_digest="1" * 64,
+            input_available_at="2026-08-09T00:00:00Z",
+            resolved_at="2026-08-09T00:01:00Z",
+        )
+        domain = promotion_module.OperationalIssuanceDomainArtifact.from_masks(
+            plan,
+            publication_eligible_mask=nominal,
+            source_coverage_mask=nominal,
+            permanent_exclusion_mask=torch.zeros_like(nominal),
+            resolved_source_coverage=resolved,
+        )
+
+        self.assertEqual(resolved.resolved_cell_counts, (2,))
+        self.assertEqual(domain.eligible_cell_counts, (2,))
+        self.assertEqual(
+            domain.resolved_source_coverage_artifact_digest,
+            resolved.artifact_digest,
+        )
+        self.assertEqual(domain.resolved_input_bundle_digest, "e" * 64)
+
+    def test_dynamic_source_coverage_cannot_predate_input(self) -> None:
+        plan = self.plan().operational_issuance_domain_plans[0]
+        mask = torch.ones((1, 2, 2), dtype=torch.bool)
+        with self.assertRaisesRegex(ValueError, "before input availability"):
+            promotion_module.ResolvedSourceCoverageArtifact.from_observations(
+                plan,
+                nominal_source_coverage_mask=mask,
+                source_radar_index_map=torch.zeros_like(mask, dtype=torch.int64),
+                outage_mask=torch.zeros_like(mask),
+                dynamic_qc_valid_mask=mask,
+                input_bundle_digest="e" * 64,
+                full_analysis_input_digest="1" * 64,
+                input_available_at="2026-08-09T00:01:00Z",
+                resolved_at="2026-08-09T00:00:00Z",
             )
 
     def test_track_payload_tampering_is_detected_by_rehash(self) -> None:

@@ -17,7 +17,7 @@ from ._digest import json_digest
 OPERATIONAL_CALIBRATION_MANIFEST_VERSION = (
     "operational-calibration-manifest-v2"
 )
-ALGORITHM_BUNDLE_VERSION = "advar-algorithm-bundle-v1"
+ALGORITHM_BUNDLE_VERSION = "advar-algorithm-bundle-v2"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _MAXIMUM_MANIFEST_BYTES = 1024 * 1024
 _PROFILE_KINDS = frozenset(("p0", "p1"))
@@ -28,7 +28,11 @@ def algorithm_bundle_digest(package_root: Path | None = None) -> str:
     """Content-address every Python module shipped in the advar package."""
 
     root = Path(__file__).resolve().parent if package_root is None else package_root
-    files = tuple(sorted(root.glob("*.py")))
+    files = tuple(
+        path
+        for path in sorted(root.rglob("*.py"))
+        if "__pycache__" not in path.parts
+    )
     if not files or not all(path.is_file() for path in files):
         raise ValueError("algorithm bundle must contain Python modules")
     return json_digest(
@@ -36,7 +40,7 @@ def algorithm_bundle_digest(package_root: Path | None = None) -> str:
             "version": ALGORITHM_BUNDLE_VERSION,
             "files": [
                 {
-                    "name": path.name,
+                    "relative_path": path.relative_to(root).as_posix(),
                     "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                 }
                 for path in files

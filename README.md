@@ -933,6 +933,15 @@ index/effective-range map 계약 없이는 single-radar geometry 경로에 들�
 `infer_deployed_neural_prior()`는 root-owned trust store가 승인한
 `DeployedNeuralPriorPolicy`의 confidence rule까지 확인한 뒤 candidate 또는 parent를
 선택한다. 연구용 `NeuralPriorInferenceRunner.infer()`는 operational input을 항상 거부한다.
+
+Holdout scoring 완료 전에는 case별 radar/QC/quality/background, dynamic source-radar
+index와 outage, candidate/parent prior·forecast·publication mask, verification,
+operational/range/event mask를 `ScoringReplayBundleManifest` 아래 NPZ로 보존한다. Ledger는
+scoring start가 선행했는지 확인하고 archive/file/Tensor/evaluation digest를 append,
+completion, promotion load 시마다 다시 계산한다. 동적 mosaic/outage coverage는 nominal
+source domain을 미래에 고정하는 대신 input availability 이후의
+`ResolvedSourceCoverageArtifact`로 해석하며, source-index·outage·dynamic QC와 현재
+input/full-analysis digest에 직접 결합된다.
 선택 digest뿐 아니라 classifier probability, 활성 band, policy, certified group,
 horizontal range-geometry payload, operational radar source와 trust-store snapshot을 포함한
 canonical deployment-decision payload도 forecast run identity 및 v55 artifact에 남는다.
@@ -1147,6 +1156,16 @@ NumPy, PyTorch, backend capability, deterministic-policy로 구성된 numerical
 runtime identity가 달라져도 fail-close한다. 따라서 이 artifact는 임의 환경
 사이의 이식 포맷이 아니라 동일 수치계약에서 3시간 지연 FSO를 재개하는 감사
 포맷이다.
+
+`NumericalRuntimeManifest-v2`는 운용상 함께 취급할 수 있는 compatibility digest와
+정확한 replay를 위한 exact digest를 분리한다. Exact identity에는 실제 device
+model/index, CUDA driver·compute capability, cuDNN/TF32/matmul 설정, thread 수,
+PyTorch·NumPy build configuration, OS release 및 설치 distribution/source manifest가
+들어간다. Algorithm source manifest도 package 최상위만이 아니라 모든 하위 Python
+module의 canonical relative path와 bytes를 재귀적으로 주소화한다. MPS 후보 배포는
+root-approved deployment policy에 exact-runtime CPU/MPS oracle evidence가 명시돼야 하며,
+PCG·stationarity·analysis·score 오차와 decision margin, nonfinite fallback 및
+deterministic policy 중 하나라도 실패하면 fail-close한다.
 
 실제 격자에서는 `AnalysisConfig(causal_support_uncertainty_m=...,
 amplitude_displacement_tolerance_m=...)`로 causal envelope와 진폭 위치허용을
