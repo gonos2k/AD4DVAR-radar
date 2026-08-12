@@ -115,7 +115,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         evaluation = self.evaluation(1, -1.0)
         policy = self.policy()
 
-        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v15")
+        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v16")
         self.assertTrue(
             all(
                 item.contract == "neural-prior-range-band-contract-v2"
@@ -128,7 +128,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             evaluation.contract,
-            "prior-holdout-evaluation-v18",
+            "prior-holdout-evaluation-v20",
         )
         self.assertTrue(
             all(
@@ -136,7 +136,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 for band in evaluation.range_band_evaluations
             )
         )
-        self.assertEqual(policy.contract, "neural-prior-promotion-policy-v24")
+        self.assertEqual(policy.contract, "neural-prior-promotion-policy-v25")
 
     def test_v15_promotion_remains_audit_only(self) -> None:
         current = self.compute(
@@ -194,6 +194,48 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
         self.assertRegex(audit.audit_digest, r"^[0-9a-f]{64}$")
         self.assertFalse(hasattr(audit, "deployment_eligible"))
+
+    def test_pr108_contracts_remain_audit_only(self) -> None:
+        plan_payload = promotion_module._holdout_plan_payload(self.plan())
+        plan_payload["contract"] = "neural-prior-holdout-plan-v15"
+        plan_payload.pop("promotion_experiment_family")
+        plan_digest = promotion_module.json_digest(plan_payload)
+        plan_payload["plan_digest"] = plan_digest
+        plan_audit = promotion_module.LegacyNeuralPriorHoldoutPlanV15Audit(
+            plan_digest=plan_digest,
+            payload_json=json.dumps(
+                plan_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+        )
+
+        current = self.compute(
+            (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
+        )
+        evidence_payload = current._payload()
+        evidence_payload["contract"] = "neural-prior-promotion-evidence-v19"
+        for name in (
+            "promotion_experiment_family_digest",
+            "promotion_experiment_family_size",
+            "holdout_mode",
+        ):
+            evidence_payload.pop(name)
+        evidence_digest = promotion_module.json_digest(evidence_payload)
+        evidence_audit = (
+            promotion_module.LegacyNeuralPriorPromotionEvidenceAuditV19(
+                promotion_evidence_digest=evidence_digest,
+                payload_json=json.dumps(
+                    evidence_payload,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+            )
+        )
+
+        self.assertRegex(plan_audit.audit_digest, r"^[0-9a-f]{64}$")
+        self.assertRegex(evidence_audit.audit_digest, r"^[0-9a-f]{64}$")
+        self.assertFalse(hasattr(evidence_audit, "deployment_eligible"))
 
     def test_pr105_contracts_remain_audit_only(self) -> None:
         plan_payload = promotion_module._holdout_plan_payload(self.plan())
@@ -685,11 +727,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 start=1,
             )
         )
-        return NeuralPriorHoldoutPlan(
-            plan_id="holdout-plan",
-            parent_prior_digest="d" * 64,
-            candidate_family_digests=("c" * 64,),
-            cases=(
+        cases = (
                 NeuralPriorHoldoutPlanCase(
                     case_id="case-1",
                     storm_id="pending",
@@ -738,7 +776,27 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     ),
                     issue_time="2026-08-10T00:00:00Z",
                 ),
+            )
+        decision_rule_digest = self.decision_rule().rule_digest
+        experiment_family = promotion_module.PromotionExperimentFamily(
+            holdout_cohort_digest=promotion_module._holdout_dataset_digest(cases),
+            parent_prior_digest="d" * 64,
+            trials=(
+                promotion_module.PromotionExperimentTrial(
+                    candidate_prior_digest="c" * 64,
+                    promotion_decision_rule_digest=decision_rule_digest,
+                    classifier_manifest_digests=(
+                        classifier_manifest.manifest_digest,
+                    ),
+                ),
             ),
+            winner_selection_rule_digest="f" * 64,
+        )
+        return NeuralPriorHoldoutPlan(
+            plan_id="holdout-plan",
+            parent_prior_digest="d" * 64,
+            candidate_family_digests=("c" * 64,),
+            cases=cases,
             input_plans=input_plans,
             uncertainty_target_plans=target_plans,
             state_calibration_target_plans=state_target_plans,
@@ -747,12 +805,13 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             operational_issuance_domain_plans=issuance_plans,
             regime_reference_plans=reference_plans,
             regime_classifier_manifests=(classifier_manifest,),
-            promotion_decision_rule_digest=self.decision_rule().rule_digest,
+            promotion_experiment_family=experiment_family,
+            promotion_decision_rule_digest=decision_rule_digest,
             reference_label_contract_digest="7" * 64,
             physical_event_catalog_plan=self.event_catalog_plan(),
             scoring_algorithm_digest="9" * 64,
             scoring_runtime_digest="8" * 64,
-            metric_engine_digest="7" * 64,
+            metric_engine_digest=promotion_module.scoring_metric_engine_identity_digest(),
             verification_resolver_digest="6" * 64,
             registered_at="2026-08-07T00:00:00Z",
         )
@@ -1732,8 +1791,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 promotion_module.MetricSupportContract.for_metric(
                     "soft_fss_error_35",
                     nowcast_config_digest="a" * 64,
-                    grid_contract_digest="2" * 64,
-                    metric_engine_digest="7" * 64,
+                    spatial_grid_digest="2" * 64,
+                    metric_engine_digest=promotion_module.scoring_metric_engine_identity_digest(),
                 )
             ),
         }
@@ -1822,7 +1881,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
             nowcast_config_digest="a" * 64,
             grid_contract_digest="2" * 64,
-            metric_engine_digest="7" * 64,
+            spatial_grid_digest="2" * 64,
+            metric_engine_digest=promotion_module.scoring_metric_engine_identity_digest(),
             verification_digest="a" * 64,
             metric_contract_digest="b" * 64,
             coverage_candidate=torch.tensor([1.0], dtype=torch.float64),
@@ -1928,8 +1988,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             minimum_dbz=0.0,
             maximum_dbz=6.0,
             nowcast_config_digest="a" * 64,
-            grid_contract_digest="2" * 64,
-            metric_engine_digest="7" * 64,
+            spatial_grid_digest="2" * 64,
+            metric_engine_digest=promotion_module.scoring_metric_engine_identity_digest(),
         )
 
     def policy(self, *, for_decision_rule: bool = False) -> NeuralPriorPromotionPolicy:
@@ -1968,7 +2028,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     minimum_valid_area_km2=0.0,
                     maximum_mean_normalized_degradation=2.0,
                     maximum_harmful_fraction_upper_bound=1.0,
-                    metric_support_contract_digest=metric_support.contract_digest,
+                    metric_support_contract_digests=(metric_support.contract_digest,),
                     maximum_end_to_end_mean_normalized_degradation=2.0,
                 ),
                 promotion_module.RangeMetricRequirement(
@@ -1981,7 +2041,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     minimum_valid_area_km2=0.0,
                     maximum_mean_normalized_degradation=2.0,
                     maximum_harmful_fraction_upper_bound=1.0,
-                    metric_support_contract_digest=metric_support.contract_digest,
+                    metric_support_contract_digests=(metric_support.contract_digest,),
                     maximum_end_to_end_mean_normalized_degradation=2.0,
                 ),
             ),
@@ -2161,9 +2221,18 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
         )
         decision_rule = promotion_module.PromotionDecisionRule.from_policy(policy)
+        experiment_trial = promotion_module.PromotionExperimentTrial(
+            candidate_prior_digest=plan.candidate_family_digests[0],
+            promotion_decision_rule_digest=decision_rule.rule_digest,
+            classifier_manifest_digests=(classifier_manifest.manifest_digest,),
+        )
         plan = replace(
             plan,
             regime_classifier_manifests=(classifier_manifest,),
+            promotion_experiment_family=replace(
+                plan.promotion_experiment_family,
+                trials=(experiment_trial,),
+            ),
             promotion_decision_rule_digest=decision_rule.rule_digest,
         )
         manifest = replace(
@@ -2316,6 +2385,42 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         "2026-08-07T00:00:00+00:00",
                     ),
                 )
+                experiment_family = plan.promotion_experiment_family
+                matching_trial = next(
+                    item
+                    for item in experiment_family.trials
+                    if item.candidate_prior_digest
+                    == plan.candidate_family_digests[0]
+                    and item.promotion_decision_rule_digest
+                    == plan.promotion_decision_rule_digest
+                )
+                connection.execute(
+                    "INSERT INTO neural_prior_promotion_experiment_families "
+                    "(family_digest, holdout_cohort_digest, payload_json, "
+                    "trust_store_digest, created_at) VALUES (?, ?, ?, ?, ?)",
+                    (
+                        experiment_family.family_digest,
+                        experiment_family.holdout_cohort_digest,
+                        json.dumps(
+                            experiment_family.payload
+                            | {"family_digest": experiment_family.family_digest},
+                            sort_keys=True,
+                        ),
+                        "7" * 64,
+                        "2026-08-07T00:00:00+00:00",
+                    ),
+                )
+                connection.execute(
+                    "INSERT INTO neural_prior_holdout_plan_experiment_bindings "
+                    "(holdout_plan_digest, family_digest, trial_digest, bound_at) "
+                    "VALUES (?, ?, ?, ?)",
+                    (
+                        plan.plan_digest,
+                        experiment_family.family_digest,
+                        matching_trial.trial_digest,
+                        "2026-08-07T00:00:00+00:00",
+                    ),
+                )
                 approval_schema = connection.execute(
                     "PRAGMA table_info(variational_learning_approvals)"
                 ).fetchall()
@@ -2371,6 +2476,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         "2026-07-01T00:00:00+00:00",
                     ),
                 )
+            self.assertEqual(
+                ledger.load_neural_prior_holdout_plan(plan.plan_digest),
+                plan,
+            )
             scheduler_trust = self.scheduler_trust_store(
                 manifest.training_physical_event_catalog_plan
             )
@@ -2470,7 +2579,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v19")
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v20")
 
             legacy_payload = evidence._payload()
             legacy_payload["contract"] = "neural-prior-promotion-evidence-v12"
@@ -3965,16 +4074,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         fss = promotion_module.MetricSupportContract.for_metric(
             "soft_fss_error_35",
             nowcast_config_digest="a" * 64,
-            grid_contract_digest="2" * 64,
-            metric_engine_digest="7" * 64,
+            spatial_grid_digest="2" * 64,
+            metric_engine_digest=promotion_module.scoring_metric_engine_identity_digest(),
         )
         echo = promotion_module.MetricSupportContract.for_metric(
             "log_echo_mse",
             minimum_dbz=-10.0,
             maximum_dbz=70.0,
             nowcast_config_digest="a" * 64,
-            grid_contract_digest="2" * 64,
-            metric_engine_digest="7" * 64,
+            spatial_grid_digest="2" * 64,
+            metric_engine_digest=promotion_module.scoring_metric_engine_identity_digest(),
         )
 
         self.assertEqual((fss.lower_bound, fss.upper_bound), (0.0, 1.0))
@@ -4013,7 +4122,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         support = promotion_module.MetricSupportContract.from_run(
             "centroid_error_m2",
             run,
-            metric_engine_digest="7" * 64,
+            metric_engine_digest=promotion_module.scoring_metric_engine_identity_digest(),
             grid_shape=(101, 101),
         )
 
@@ -4023,25 +4132,80 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             places=3,
         )
 
-    def test_metric_support_identity_includes_the_metric_engine(self) -> None:
+    def test_metric_support_reuses_spatial_identity_across_valid_times(self) -> None:
+        first_grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-09T00:00:00Z",
+                "2026-08-09T00:10:00Z",
+                "2026-08-09T00:20:00Z",
+            ),
+            dx_m=1_000.0,
+            dy_m=1_000.0,
+            projection="EPSG:3857",
+            grid_hash="1" * 64,
+        )
+        second_grid = replace(
+            first_grid,
+            valid_times=(
+                "2026-08-09T01:00:00Z",
+                "2026-08-09T01:10:00Z",
+                "2026-08-09T01:20:00Z",
+            ),
+        )
+        frames = torch.zeros((3, 4, 5), dtype=torch.float64)
+        first_run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+            grid_time_contract=first_grid,
+        )
+        second_run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+            grid_time_contract=second_grid,
+        )
+        engine = promotion_module.scoring_metric_engine_identity_digest()
+        first_support = promotion_module.MetricSupportContract.from_run(
+            "centroid_error_m2",
+            first_run,
+            metric_engine_digest=engine,
+            grid_shape=(4, 5),
+        )
+        second_support = promotion_module.MetricSupportContract.from_run(
+            "centroid_error_m2",
+            second_run,
+            metric_engine_digest=engine,
+            grid_shape=(4, 5),
+        )
+
+        self.assertNotEqual(first_grid.digest, second_grid.digest)
+        self.assertEqual(
+            first_grid.spatial_grid_digest,
+            second_grid.spatial_grid_digest,
+        )
+        self.assertEqual(first_support.contract_digest, second_support.contract_digest)
+
+    def test_metric_support_rejects_an_uninstalled_metric_engine(self) -> None:
         first = promotion_module.MetricSupportContract.for_metric(
             "soft_fss_error_35",
             nowcast_config_digest="a" * 64,
-            grid_contract_digest="2" * 64,
-            metric_engine_digest="7" * 64,
+            spatial_grid_digest="2" * 64,
+            metric_engine_digest=promotion_module.scoring_metric_engine_identity_digest(),
         )
-        second = promotion_module.MetricSupportContract.for_metric(
-            "soft_fss_error_35",
-            nowcast_config_digest="a" * 64,
-            grid_contract_digest="2" * 64,
-            metric_engine_digest="8" * 64,
+        self.assertEqual(
+            first.metric_engine_digest,
+            promotion_module.scoring_metric_engine_identity_digest(),
         )
-
-        self.assertNotEqual(
-            first.metric_implementation_digest,
-            second.metric_implementation_digest,
-        )
-        self.assertNotEqual(first.contract_digest, second.contract_digest)
+        with self.assertRaisesRegex(ValueError, "installed implementation"):
+            promotion_module.MetricSupportContract.for_metric(
+                "soft_fss_error_35",
+                nowcast_config_digest="a" * 64,
+                spatial_grid_digest="2" * 64,
+                metric_engine_digest="8" * 64,
+            )
 
     def test_metric_support_must_match_the_forecast_run_and_grid(self) -> None:
         original = self.evaluation(1, -0.2)
@@ -4153,14 +4317,139 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
         self.assertEqual(result.method, "support_bounded_hybrid")
         self.assertGreater(result.comparison_bounds[("support", None)], -0.01)
-        self.assertTrue(result.unresolved_unbounded_zero_variance)
+        self.assertGreater(result.comparison_bounds[("state_nll", None)], -0.01)
+        self.assertFalse(result.unresolved_unbounded_zero_variance)
+
+    def test_experiment_family_counts_trials_across_separate_plans(self) -> None:
+        plan = self.plan()
+        original_trial = plan.promotion_experiment_family.trials[0]
+        additional = tuple(
+            promotion_module.PromotionExperimentTrial(
+                candidate_prior_digest=f"{index:064x}",
+                promotion_decision_rule_digest=f"{index + 100:064x}",
+                classifier_manifest_digests=(f"{index + 200:064x}",),
+            )
+            for index in range(1, 20)
+        )
+        family = replace(
+            plan.promotion_experiment_family,
+            trials=(original_trial, *additional),
+        )
+        expanded_plan = replace(plan, promotion_experiment_family=family)
+        policy = replace(
+            self.policy(),
+            allow_shadow_small_sample_bootstrap=False,
+        )
+        clusters = [f"event-{index}" for index in range(1_000)]
+        _, _, single_lower = promotion_module._cluster_bounds(
+            [0.2] * len(clusters),
+            clusters,
+            policy,
+            candidate_family_size=1,
+            absolute_bound=1.0,
+        )
+        _, _, family_lower = promotion_module._cluster_bounds(
+            [0.2] * len(clusters),
+            clusters,
+            policy,
+            candidate_family_size=family.total_family_size,
+            absolute_bound=1.0,
+        )
+
+        self.assertEqual(expanded_plan.promotion_experiment_family.total_family_size, 20)
+        self.assertLess(family_lower, single_lower)
+
+    def test_ledger_rejects_a_second_family_for_the_same_holdout_cohort(
+        self,
+    ) -> None:
+        plan = self.plan()
+        second_family = replace(
+            plan.promotion_experiment_family,
+            winner_selection_rule_digest="e" * 64,
+        )
+        second_plan = replace(
+            plan,
+            plan_id="holdout-plan-second-family",
+            promotion_experiment_family=second_family,
+        )
+        first_policy = promotion_module.NeuralPriorHoldoutPlanPolicy(
+            approved_plan_digests=(plan.plan_digest,),
+            approved_metric_contract_digests=tuple(
+                sorted({item.metric_contract_digest for item in plan.cases})
+            ),
+            maximum_candidate_family_size=1,
+        )
+        second_policy = replace(
+            first_policy,
+            approved_plan_digests=(second_plan.plan_digest,),
+        )
+        decision_rule = self.decision_rule()
+        trust = _LearningPolicyTrustStore(
+            approved_policy_digests=frozenset(
+                (
+                    first_policy.digest,
+                    second_policy.digest,
+                    decision_rule.rule_digest,
+                    plan.promotion_experiment_family.family_digest,
+                    second_family.family_digest,
+                )
+            ),
+            content_digest="b" * 64,
+        )
+        scheduler_trust = self.scheduler_trust_store(
+            plan.physical_event_catalog_plan
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            with (
+                patch.object(
+                    ledger_module,
+                    "_load_learning_policy_trust_store",
+                    return_value=trust,
+                ),
+                patch.object(
+                    ledger_module,
+                    "_load_scheduler_trust_store",
+                    return_value=scheduler_trust,
+                ),
+                patch.object(ledger_module, "datetime", wraps=datetime) as clock,
+            ):
+                clock.now.return_value = datetime.fromisoformat(
+                    "2026-08-08T00:00:00+00:00"
+                )
+                ledger.append_neural_prior_holdout_plan(
+                    plan,
+                    promotion_decision_rule=decision_rule,
+                    policy=first_policy,
+                    policy_trust_store_path="/etc/advar/learning-policies.json",
+                    scheduler_trust_store_path="/etc/advar/schedulers.json",
+                )
+                with self.assertRaisesRegex(ValueError, "holdout cohort"):
+                    ledger.append_neural_prior_holdout_plan(
+                        second_plan,
+                        promotion_decision_rule=decision_rule,
+                        policy=second_policy,
+                        policy_trust_store_path=(
+                            "/etc/advar/learning-policies.json"
+                        ),
+                        scheduler_trust_store_path="/etc/advar/schedulers.json",
+                    )
+
+    def test_historical_evidence_cannot_be_marked_deployment_eligible(self) -> None:
+        evidence = self.deployment_ready(
+            self.compute((self.evaluation(1, -0.2), self.evaluation(2, -0.3)))
+        )
+        self.assertTrue(evidence.deployment_eligible)
+
+        with self.assertRaisesRegex(ValueError, "deployment eligibility"):
+            replace(evidence, holdout_mode="sealed_historical")
 
     def test_required_metric_cell_must_be_non_inferior(self) -> None:
         support = promotion_module.MetricSupportContract.for_metric(
             "soft_fss_error_35",
             nowcast_config_digest="a" * 64,
-            grid_contract_digest="2" * 64,
-            metric_engine_digest="7" * 64,
+            spatial_grid_digest="2" * 64,
+            metric_engine_digest=promotion_module.scoring_metric_engine_identity_digest(),
         )
         requirement = promotion_module.RangeMetricRequirement(
             weather_regime="convective",
@@ -4172,7 +4461,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             minimum_valid_area_km2=0.0,
             maximum_mean_normalized_degradation=0.0,
             maximum_harmful_fraction_upper_bound=0.5,
-            metric_support_contract_digest=support.contract_digest,
+            metric_support_contract_digests=(support.contract_digest,),
         )
         policy = replace(
             self.policy(),
@@ -4219,8 +4508,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             minimum_valid_area_km2=0.0,
             maximum_mean_normalized_degradation=1.0,
             maximum_harmful_fraction_upper_bound=1.0,
-            metric_support_contract_digest=(
-                self.policy().metric_support_contracts[0].contract_digest
+            metric_support_contract_digests=(
+                self.policy().metric_support_contracts[0].contract_digest,
             ),
         )
         policy = replace(
@@ -4352,8 +4641,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 promotion_module.MetricSupportContract.for_metric(
                     "soft_fss_error_35",
                     nowcast_config_digest="a" * 64,
-                    grid_contract_digest="2" * 64,
-                    metric_engine_digest="7" * 64,
+                    spatial_grid_digest="2" * 64,
+                    metric_engine_digest=promotion_module.scoring_metric_engine_identity_digest(),
                 ),
             ),
             required_range_issuance=(
@@ -4681,8 +4970,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         support = promotion_module.MetricSupportContract.for_metric(
             "soft_fss_error_35",
             nowcast_config_digest="a" * 64,
-            grid_contract_digest="2" * 64,
-            metric_engine_digest="7" * 64,
+            spatial_grid_digest="2" * 64,
+            metric_engine_digest=promotion_module.scoring_metric_engine_identity_digest(),
         )
         requirement = promotion_module.RangeMetricRequirement(
             weather_regime="convective",
@@ -4694,7 +4983,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             minimum_valid_area_km2=1.0,
             maximum_mean_normalized_degradation=0.0,
             maximum_harmful_fraction_upper_bound=1.0,
-            metric_support_contract_digest=support.contract_digest,
+            metric_support_contract_digests=(support.contract_digest,),
         )
         policy = replace(
             self.policy(),
@@ -4774,6 +5063,27 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertTrue(torch.all(torch.isfinite(nll)))
         self.assertTrue(torch.all(torch.isfinite(pit)))
         self.assertGreater(float(nll[0]), 1_000.0)
+
+    def test_uncertainty_scoring_clips_before_event_aggregation(self) -> None:
+        application = SimpleNamespace(
+            truncated_location_dbz=torch.tensor([-10.0]),
+            truncated_scale_dbz=torch.tensor([0.05]),
+            event_probability=torch.tensor([1.0]),
+        )
+        scores = promotion_module._prior_uncertainty_scores(
+            application,
+            torch.tensor([5.5]),
+            torch.tensor([True]),
+            torch.tensor([True]),
+            support_threshold_dbz=5.0,
+            reflectivity_resolution_dbz=0.5,
+            quantization_origin_dbz=-10.0,
+        )
+
+        self.assertEqual(
+            scores.echo_intensity_nll,
+            promotion_module.UncertaintyScoreSupportContract().maximum_nll_score,
+        )
 
     def test_state_target_requires_v2_measurement_attestation(self) -> None:
         target_plan = self.plan().state_calibration_target_plans[0]
@@ -6010,6 +6320,26 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "audit-only"):
             self.compute(decoded)
 
+    def test_v19_evaluation_loads_as_audit_only(self) -> None:
+        payload = ledger_module._evaluation_audit_payload(
+            self.evaluation(1, -0.2)
+        )
+        payload["contract"] = "prior-holdout-evaluation-v19"
+        normalized = dict(payload)
+        normalized.pop("evaluation_digest")
+        for name, value in tuple(normalized.items()):
+            if isinstance(value, dict) and value.get("kind") == "tensor":
+                normalized[name] = value["digest"]
+        payload["evaluation_digest"] = ledger_module._json_digest(normalized)
+
+        decoded = ledger_module._decode_evaluation_audit_payloads([payload])
+
+        self.assertIsInstance(
+            decoded[0],
+            ledger_module.LegacyPromotionEvaluationAudit,
+        )
+        self.assertFalse(decoded[0].statistical_reuse_permitted)
+
     def test_v10_promotion_evidence_remains_audit_only(self) -> None:
         current = self.compute(
             (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
@@ -6135,6 +6465,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             valid_times=planned_input.valid_times,
             cell_area_m2=1_000_000.0,
             digest="2" * 64,
+            spatial_grid_digest="2" * 64,
             projected_displacement_xy=lambda value: value * 1000.0,
         )
         data_identity = promotion_module.OperationalDataIdentity(
@@ -6868,8 +7199,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             minimum_valid_area_km2=0.0,
             maximum_mean_normalized_degradation=1.0,
             maximum_harmful_fraction_upper_bound=1.0,
-            metric_support_contract_digest=(
-                self.policy().metric_support_contracts[0].contract_digest
+            metric_support_contract_digests=(
+                self.policy().metric_support_contracts[0].contract_digest,
             ),
             maximum_end_to_end_mean_normalized_degradation=0.0,
             maximum_end_to_end_harmful_fraction_upper_bound=0.5,

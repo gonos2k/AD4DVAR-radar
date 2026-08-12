@@ -96,6 +96,7 @@ from .promotion import (
     LegacyNeuralPriorHoldoutPlanV12Audit,
     LegacyNeuralPriorHoldoutPlanV13Audit,
     LegacyNeuralPriorHoldoutPlanV14Audit,
+    LegacyNeuralPriorHoldoutPlanV15Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
@@ -120,6 +121,8 @@ from .promotion import (
     HoldoutScoringInputArtifact,
     HoldoutScoringArtifact,
     PromotionDecisionRule,
+    PromotionExperimentTrial,
+    PromotionExperimentFamily,
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionEvidence,
     LegacyNeuralPriorPromotionEvidenceAuditV3,
@@ -138,6 +141,7 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV16,
     LegacyNeuralPriorPromotionEvidenceAuditV17,
     LegacyNeuralPriorPromotionEvidenceAuditV18,
+    LegacyNeuralPriorPromotionEvidenceAuditV19,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     compute_neural_prior_promotion,
@@ -165,7 +169,7 @@ _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _SCHEDULER_TRUST_STORE_CONTRACT = "advar-trusted-scheduler-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 22
+_INDEX_SCHEMA_VERSION = 23
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
@@ -2446,6 +2450,11 @@ class EpisodeLedger:
         if promotion_decision_rule.rule_digest not in trust.approved_policy_digests:
             raise ValueError("promotion decision rule is not root-approved")
         if (
+            plan.promotion_experiment_family.family_digest
+            not in trust.approved_policy_digests
+        ):
+            raise ValueError("promotion experiment family is not root-approved")
+        if (
             plan.promotion_decision_rule_digest
             != promotion_decision_rule.rule_digest
         ):
@@ -2530,6 +2539,59 @@ class EpisodeLedger:
                     now.isoformat(),
                 ),
             )
+            family = plan.promotion_experiment_family
+            family_json = json.dumps(
+                family.payload | {"family_digest": family.family_digest},
+                sort_keys=True,
+            )
+            connection.execute(
+                "INSERT OR IGNORE INTO neural_prior_promotion_experiment_families "
+                "(family_digest, holdout_cohort_digest, payload_json, "
+                "trust_store_digest, created_at) VALUES (?, ?, ?, ?, ?)",
+                (
+                    family.family_digest,
+                    family.holdout_cohort_digest,
+                    family_json,
+                    trust.content_digest,
+                    now.isoformat(),
+                ),
+            )
+            retained_family = connection.execute(
+                "SELECT family_digest, payload_json FROM "
+                "neural_prior_promotion_experiment_families "
+                "WHERE holdout_cohort_digest = ?",
+                (family.holdout_cohort_digest,),
+            ).fetchone()
+            if retained_family is None or tuple(retained_family) != (
+                family.family_digest,
+                family_json,
+            ):
+                raise ValueError(
+                    "holdout cohort is already bound to another experiment family"
+                )
+            matching_trial = next(
+                item
+                for item in family.trials
+                if item.candidate_prior_digest == plan.candidate_family_digests[0]
+                and item.promotion_decision_rule_digest
+                == plan.promotion_decision_rule_digest
+                and item.classifier_manifest_digests
+                == tuple(
+                    manifest.manifest_digest
+                    for manifest in plan.regime_classifier_manifests
+                )
+            )
+            connection.execute(
+                "INSERT INTO neural_prior_holdout_plan_experiment_bindings "
+                "(holdout_plan_digest, family_digest, trial_digest, bound_at) "
+                "VALUES (?, ?, ?, ?)",
+                (
+                    plan.plan_digest,
+                    family.family_digest,
+                    matching_trial.trial_digest,
+                    now.isoformat(),
+                ),
+            )
             final = datetime.now(timezone.utc)
             if plan.mode == "prospective" and any(
                 final >= issue for issue in issue_times
@@ -2558,6 +2620,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanV12Audit
         | LegacyNeuralPriorHoldoutPlanV13Audit
         | LegacyNeuralPriorHoldoutPlanV14Audit
+        | LegacyNeuralPriorHoldoutPlanV15Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -2641,6 +2704,13 @@ class EpisodeLedger:
             )
         if value.get("contract") == "neural-prior-holdout-plan-v14":
             return LegacyNeuralPriorHoldoutPlanV14Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v15":
+            return LegacyNeuralPriorHoldoutPlanV15Audit(
                 plan_digest=plan_digest,
                 payload_json=json.dumps(
                     value, sort_keys=True, separators=(",", ":")
@@ -2732,11 +2802,29 @@ class EpisodeLedger:
                 raise ValueError("legacy v4 neural-prior holdout digest mismatch")
             return plan_v4
         value["cases"] = tuple(
-            NeuralPriorHoldoutPlanCase(**item) for item in value["cases"]
+            NeuralPriorHoldoutPlanCase(
+                **cast(
+                    Any,
+                    {
+                        **item,
+                        "reference_active_range_regimes": tuple(
+                            item["reference_active_range_regimes"]
+                        ),
+                    },
+                )
+            )
+            for item in value["cases"]
         )
         value["input_plans"] = tuple(
             NeuralPriorInputPlan(
-                **{key: entry for key, entry in item.items() if key != "plan_digest"}
+                **cast(
+                    Any,
+                    {
+                        key: tuple(entry) if key == "valid_times" else entry
+                        for key, entry in item.items()
+                        if key != "plan_digest"
+                    },
+                )
             )
             for item in value["input_plans"]
         )
@@ -2762,31 +2850,54 @@ class EpisodeLedger:
         )
         value["range_band_contracts"] = tuple(
             RangeBandContract(
-                **{
-                    key: entry
-                    for key, entry in item.items()
-                    if key != "contract_digest"
-                }
+                **cast(
+                    Any,
+                    {
+                        key: (
+                            tuple(entry)
+                            if key
+                            in {
+                                "range_regime_labels",
+                                "range_band_mask_digests",
+                                "reference_active_range_regimes",
+                            }
+                            else entry
+                        )
+                        for key, entry in item.items()
+                        if key != "contract_digest"
+                    },
+                )
             )
             for item in value["range_band_contracts"]
         )
         value["range_geometry_contracts"] = tuple(
             RangeGeometryContract(
-                **{
-                    key: entry
-                    for key, entry in item.items()
-                    if key != "contract_digest"
-                }
+                **cast(
+                    Any,
+                    {
+                        key: (
+                            tuple(entry)
+                            if key
+                            in {"range_regime_labels", "radial_distance_edges_m"}
+                            else entry
+                        )
+                        for key, entry in item.items()
+                        if key != "contract_digest"
+                    },
+                )
             )
             for item in value["range_geometry_contracts"]
         )
         value["operational_issuance_domain_plans"] = tuple(
             OperationalIssuanceDomainPlan(
-                **{
-                    key: entry
-                    for key, entry in item.items()
-                    if key != "plan_digest"
-                }
+                **cast(
+                    Any,
+                    {
+                        key: tuple(entry) if key == "lead_minutes" else entry
+                        for key, entry in item.items()
+                        if key != "plan_digest"
+                    },
+                )
             )
             for item in value["operational_issuance_domain_plans"]
         )
@@ -2802,13 +2913,56 @@ class EpisodeLedger:
         )
         value["regime_classifier_manifests"] = tuple(
             RegimeClassifierManifest(
-                **{
-                    key: entry
-                    for key, entry in item.items()
-                    if key != "manifest_digest"
-                }
+                **cast(
+                    Any,
+                    {
+                        key: (
+                            tuple(tuple(value) for value in entry)
+                            if key == "training_time_windows"
+                            else tuple(entry)
+                            if key
+                            in {
+                                "training_case_ids",
+                                "training_input_bundle_digests",
+                                "training_full_analysis_input_digests",
+                                "training_physical_event_digests",
+                                "training_storm_ids",
+                                "training_days",
+                                "training_radar_ids",
+                                "training_grid_contract_digests",
+                            }
+                            else entry
+                        )
+                        for key, entry in item.items()
+                        if key != "manifest_digest"
+                    },
+                )
             )
             for item in value["regime_classifier_manifests"]
+        )
+        family_values = dict(value["promotion_experiment_family"])
+        family_values.pop("family_digest", None)
+        family_values.pop("total_family_size", None)
+        family_values["trials"] = tuple(
+            PromotionExperimentTrial(
+                **cast(
+                    Any,
+                    {
+                        key: entry
+                        for key, entry in item.items()
+                        if key != "trial_digest"
+                    }
+                    | {
+                        "classifier_manifest_digests": tuple(
+                            item["classifier_manifest_digests"]
+                        )
+                    },
+                )
+            )
+            for item in family_values["trials"]
+        )
+        value["promotion_experiment_family"] = PromotionExperimentFamily(
+            **cast(Any, family_values)
         )
         event_plan_values = {
             key: entry
@@ -3335,6 +3489,19 @@ class EpisodeLedger:
                 or rule_row[0] != policy.decision_rule_digest
             ):
                 raise ValueError("promotion decision rule is not preregistered")
+            family_row = connection.execute(
+                "SELECT family_digest FROM "
+                "neural_prior_holdout_plan_experiment_bindings "
+                "WHERE holdout_plan_digest = ?",
+                (plan.plan_digest,),
+            ).fetchone()
+            if (
+                family_row is None
+                or family_row[0]
+                != plan.promotion_experiment_family.family_digest
+                or family_row[0] != evidence.promotion_experiment_family_digest
+            ):
+                raise ValueError("promotion experiment family is not preregistered")
             plan_row = connection.execute(
                 "SELECT plan_json, created_at FROM neural_prior_holdout_plans "
                 "WHERE plan_digest = ?",
@@ -3601,6 +3768,21 @@ class EpisodeLedger:
                 "created_at": datetime.now(timezone.utc).isoformat(),
             }
             columns = tuple(promotion_row)
+            try:
+                connection.execute(
+                    "INSERT INTO neural_prior_experiment_family_consumptions "
+                    "(family_digest, promotion_evidence_digest, consumed_at) "
+                    "VALUES (?, ?, ?)",
+                    (
+                        evidence.promotion_experiment_family_digest,
+                        evidence.promotion_evidence_digest,
+                        datetime.now(timezone.utc).isoformat(),
+                    ),
+                )
+            except sqlite3.IntegrityError as error:
+                raise FileExistsError(
+                    "promotion experiment family is already consumed"
+                ) from error
             connection.execute(
                 "INSERT INTO neural_prior_promotions "
                 f"({','.join(columns)}) VALUES "
@@ -3630,6 +3812,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV16
         | LegacyNeuralPriorPromotionEvidenceAuditV17
         | LegacyNeuralPriorPromotionEvidenceAuditV18
+        | LegacyNeuralPriorPromotionEvidenceAuditV19
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -3700,6 +3883,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV16
                 | LegacyNeuralPriorPromotionEvidenceAuditV17
                 | LegacyNeuralPriorPromotionEvidenceAuditV18
+                | LegacyNeuralPriorPromotionEvidenceAuditV19
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -3802,6 +3986,7 @@ class EpisodeLedger:
                         "neural-prior-promotion-evidence-v17",
                         "neural-prior-promotion-evidence-v18",
                         "neural-prior-promotion-evidence-v19",
+                        "neural-prior-promotion-evidence-v20",
                     ):
                         raw_payload = json.loads(row["evidence_payload_json"])
                         if not isinstance(raw_payload, dict):
@@ -3826,6 +4011,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v17",
                             "neural-prior-promotion-evidence-v18",
                             "neural-prior-promotion-evidence-v19",
+                            "neural-prior-promotion-evidence-v20",
                         ):
                             raw_payload["regime_classifier_evidence_digests"] = tuple(
                                 raw_payload["regime_classifier_evidence_digests"]
@@ -3848,6 +4034,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v17",
                             "neural-prior-promotion-evidence-v18",
                             "neural-prior-promotion-evidence-v19",
+                            "neural-prior-promotion-evidence-v20",
                         ):
                             raw_payload["range_band_skill_bounds"] = tuple(
                                 tuple(item)
@@ -3864,6 +4051,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v17",
                             "neural-prior-promotion-evidence-v18",
                             "neural-prior-promotion-evidence-v19",
+                            "neural-prior-promotion-evidence-v20",
                         ):
                             raw_payload[
                                 "range_band_skill_inference_diagnostics"
@@ -3881,6 +4069,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v17",
                             "neural-prior-promotion-evidence-v18",
                             "neural-prior-promotion-evidence-v19",
+                            "neural-prior-promotion-evidence-v20",
                         ):
                             raw_payload[
                                 "certified_range_geometry_contract_digests"
@@ -4047,6 +4236,15 @@ class EpisodeLedger:
                             )
                         elif contract == "neural-prior-promotion-evidence-v18":
                             evidence = LegacyNeuralPriorPromotionEvidenceAuditV18(
+                                promotion_evidence_digest=promotion_evidence_digest,
+                                payload_json=json.dumps(
+                                    raw_payload,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                ),
+                            )
+                        elif contract == "neural-prior-promotion-evidence-v19":
+                            evidence = LegacyNeuralPriorPromotionEvidenceAuditV19(
                                 promotion_evidence_digest=promotion_evidence_digest,
                                 payload_json=json.dumps(
                                     raw_payload,
@@ -4420,6 +4618,47 @@ class EpisodeLedger:
             )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS neural_prior_promotion_experiment_families (
+                    family_digest TEXT PRIMARY KEY,
+                    holdout_cohort_digest TEXT NOT NULL UNIQUE,
+                    payload_json TEXT NOT NULL,
+                    trust_store_digest TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS neural_prior_holdout_plan_experiment_bindings (
+                    holdout_plan_digest TEXT PRIMARY KEY,
+                    family_digest TEXT NOT NULL,
+                    trial_digest TEXT NOT NULL,
+                    bound_at TEXT NOT NULL,
+                    UNIQUE (family_digest, trial_digest),
+                    FOREIGN KEY (holdout_plan_digest)
+                        REFERENCES neural_prior_holdout_plans(plan_digest),
+                    FOREIGN KEY (family_digest)
+                        REFERENCES neural_prior_promotion_experiment_families(
+                            family_digest
+                        )
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS neural_prior_experiment_family_consumptions (
+                    family_digest TEXT PRIMARY KEY,
+                    promotion_evidence_digest TEXT NOT NULL UNIQUE,
+                    consumed_at TEXT NOT NULL,
+                    FOREIGN KEY (family_digest)
+                        REFERENCES neural_prior_promotion_experiment_families(
+                            family_digest
+                        )
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS neural_prior_holdout_scoring_input_artifacts (
                     artifact_digest TEXT PRIMARY KEY,
                     holdout_plan_digest TEXT NOT NULL UNIQUE,
@@ -4573,6 +4812,9 @@ class EpisodeLedger:
                 "neural_prior_promotion_decision_rules",
                 "neural_prior_promotion_rule_definitions",
                 "neural_prior_holdout_plan_rule_bindings",
+                "neural_prior_promotion_experiment_families",
+                "neural_prior_holdout_plan_experiment_bindings",
+                "neural_prior_experiment_family_consumptions",
                 "neural_prior_holdout_scoring_input_artifacts",
                 "trusted_process_start_receipts_v2",
                 "trusted_process_log_artifacts",
@@ -5042,7 +5284,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v18"
+        or value[0].get("contract") != "prior-holdout-evaluation-v20"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:

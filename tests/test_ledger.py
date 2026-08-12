@@ -710,11 +710,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             "rule_digest",
             json_digest(decision_rule.payload),
         )
-        plan = NeuralPriorHoldoutPlan(
-            plan_id="clock-plan",
-            parent_prior_digest="6" * 64,
-            candidate_family_digests=("7" * 64,),
-            cases=(
+        cases = (
                 NeuralPriorHoldoutPlanCase(
                     case_id="case-clock",
                     storm_id="pending",
@@ -737,7 +733,26 @@ class EpisodeLedgerTests(unittest.TestCase):
                     ),
                     issue_time=issue,
                 ),
+            )
+        experiment_family = promotion_module.PromotionExperimentFamily(
+            holdout_cohort_digest=promotion_module._holdout_dataset_digest(cases),
+            parent_prior_digest="6" * 64,
+            trials=(
+                promotion_module.PromotionExperimentTrial(
+                    candidate_prior_digest="7" * 64,
+                    promotion_decision_rule_digest=decision_rule.rule_digest,
+                    classifier_manifest_digests=(
+                        classifier_manifest.manifest_digest,
+                    ),
+                ),
             ),
+            winner_selection_rule_digest="5" * 64,
+        )
+        plan = NeuralPriorHoldoutPlan(
+            plan_id="clock-plan",
+            parent_prior_digest="6" * 64,
+            candidate_family_digests=("7" * 64,),
+            cases=cases,
             input_plans=(input_plan,),
             uncertainty_target_plans=(target_plan,),
             state_calibration_target_plans=(state_target_plan,),
@@ -747,11 +762,12 @@ class EpisodeLedgerTests(unittest.TestCase):
             regime_reference_plans=(reference_plan,),
             physical_event_catalog_plan=event_catalog_plan,
             regime_classifier_manifests=(classifier_manifest,),
+            promotion_experiment_family=experiment_family,
             promotion_decision_rule_digest=decision_rule.rule_digest,
             reference_label_contract_digest="e" * 64,
             scoring_algorithm_digest="1" * 64,
             scoring_runtime_digest="2" * 64,
-            metric_engine_digest="3" * 64,
+            metric_engine_digest=promotion_module.scoring_metric_engine_identity_digest(),
             verification_resolver_digest="4" * 64,
             registered_at="2029-01-01T00:00:00Z",
         )
@@ -762,7 +778,11 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         trust = SimpleNamespace(
             approved_policy_digests=frozenset(
-                (policy.digest, decision_rule.rule_digest)
+                (
+                    policy.digest,
+                    decision_rule.rule_digest,
+                    experiment_family.family_digest,
+                )
             ),
             content_digest="a" * 64,
         )
@@ -937,7 +957,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 22)
+        self.assertEqual(version, 23)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4170,7 +4190,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 22)
+        self.assertEqual(version, 23)
 
 
 if __name__ == "__main__":
