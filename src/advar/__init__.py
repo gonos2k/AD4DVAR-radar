@@ -23,12 +23,15 @@ from .ledger import (
     LegacyRealizedInterventionReceiptAudit,
     LegacyPromotionEvaluationAudit,
     LoadedEpisode,
+    LegacyScoringReplayBundleManifestAuditV1,
     ModelContract,
     SensitivityEpisode,
     LoadedScoringReplayBundle,
     ScoringReplayBundleManifest,
     ScoringReplayTensorRecord,
     SCORING_REPLAY_REQUIRED_TENSOR_ROLES,
+    SCORING_REPLAY_BACKGROUND_TENSOR_ROLES,
+    SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES,
 )
 from .ensemble_sensitivity import (
     EnsembleFSO,
@@ -109,6 +112,7 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV18,
     LegacyNeuralPriorPromotionEvidenceAuditV19,
     LegacyNeuralPriorPromotionEvidenceAuditV20,
+    LegacyNeuralPriorPromotionEvidenceAuditV21,
     HoldoutScoringInputArtifact,
     HoldoutScoringArtifact,
     NeuralPriorCandidateManifest,
@@ -137,8 +141,10 @@ from .promotion import (
     OperationalIssuanceDomainPlan,
     OperationalIssuanceDomainArtifact,
     ResolvedSourceCoverageArtifact,
+    SourceRadarRegistry,
     ProcessLogArtifact,
     PriorHoldoutEvaluation,
+    ScoringReplayCaseArtifact,
     RangeBandContract,
     RangeBandEvaluation,
     RangeIssuanceRequirement,
@@ -176,6 +182,7 @@ from .promotion import (
     validate_physical_event_track_artifact,
     validate_process_log_artifact,
     regime_reference_public_key_hex,
+    recompute_prior_holdout_evaluation_from_bundle,
 )
 from .range_geometry import (
     RangeGeometryContract,

@@ -848,8 +848,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             full_analysis_input_digest=full_digest,
             fixed_input_context_digest=("a" if index == 1 else "b") * 64,
             observation_quality_weight_digest=(
-                "c" if index == 1 else "d"
-            ) * 64,
+                promotion_module.tensor_digest(torch.ones((2, 2)))
+            ),
             observation_std_dbz_digest=("4" if index == 1 else "5") * 64,
             verification_plan_digest=planned.verification_plan_digest,
             verification_bundle_digest="a" * 64,
@@ -1235,31 +1235,135 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             holdout_cases=retained_cases,
         )
 
-    def scoring_replay_tensors(self, evaluations):
-        result = {}
-        integer_roles = {
-            "source_radar_index_map",
-            "range_band_index",
-            "event_object_labels",
-        }
-        boolean_roles = {
-            "input_qc_valid_mask",
-            "outage_mask",
-            "candidate_publication_mask",
-            "parent_publication_mask",
-            "verification_valid_mask",
-            "operational_issuance_mask",
-        }
-        for evaluation in evaluations:
-            for role in ledger_module.SCORING_REPLAY_REQUIRED_TENSOR_ROLES:
-                if role in integer_roles:
-                    value = torch.zeros((1, 2, 2), dtype=torch.int64)
-                elif role in boolean_roles:
-                    value = torch.ones((1, 2, 2), dtype=torch.bool)
-                else:
-                    value = torch.ones((1, 2, 2), dtype=torch.float32)
-                result[(evaluation.case_id, role)] = value
-        return result
+    def mosaic_issuance_context(self):
+        holdout_plan = self.plan()
+        input_plan = holdout_plan.input_plans[0]
+        registry = promotion_module.SourceRadarRegistry(
+            radar_site_digests=("a" * 64, "b" * 64),
+            source_selection_policy_digest="2" * 64,
+        )
+        issuance_plan = replace(
+            holdout_plan.operational_issuance_domain_plans[0],
+            radar_source_kind="mosaic",
+            source_radar_registry_digest=registry.registry_digest,
+            source_radar_count=2,
+            data_ingestor_id="trusted-radar-ingestor",
+            data_ingestor_public_key_hex=(
+                promotion_module.regime_reference_public_key_hex(
+                    self.scheduler_key()
+                )
+            ),
+        )
+        return issuance_plan, input_plan, registry
+
+    def scoring_replay_cases(self, evaluations, *, manifest=None, plan=None):
+        retained_manifest = self.manifest() if manifest is None else manifest
+        retained_plan = self.plan() if plan is None else plan
+        cases = []
+        for index, evaluation in enumerate(evaluations, start=1):
+            spatial = torch.full((2, 2), float(index))
+            forecast = spatial.unsqueeze(0)
+            valid = torch.ones_like(forecast, dtype=torch.bool)
+            state = SimpleNamespace(
+                echo_linear=spatial,
+                displacement_yx=torch.tensor((0.0, 0.0)),
+                log_growth_per_step=torch.tensor(0.0),
+            )
+
+            def forecast_result(prefix: str, offset: float):
+                return SimpleNamespace(
+                    forecast_dbz=forecast + offset,
+                    valid_mask=valid,
+                    background_fallback_mask=torch.zeros_like(valid),
+                    forecast_confidence=torch.ones_like(forecast),
+                    state=state,
+                    run=SimpleNamespace(
+                        input_frames_digest=promotion_module.tensor_digest(
+                            forecast
+                        ),
+                        observation_masks_digest=promotion_module.tensor_digest(
+                            valid
+                        ),
+                        observation_quality_weight_digest=(
+                            promotion_module.tensor_digest(
+                                torch.ones((2, 2))
+                            )
+                        ),
+                        background_frames_digest=None,
+                    ),
+                    forecast_run_digest=(prefix * 64),
+                    forecast_dbz_digest=(("4" if prefix == "a" else "5") * 64),
+                    valid_mask_digest="6" * 64,
+                    state_metadata_digest="7" * 64,
+                )
+
+            def prior_application(prefix: str, offset: float):
+                return SimpleNamespace(
+                    state_background_dbz=spatial + offset,
+                    state_std_dbz=torch.ones_like(spatial),
+                    state_valid_mask=torch.ones_like(spatial, dtype=torch.bool),
+                    state_valid_probability=torch.full_like(spatial, 0.9),
+                    state_support_probability=torch.full_like(spatial, 0.8),
+                    event_probability=torch.full_like(spatial, 0.7),
+                    truncated_location_dbz=spatial + offset,
+                    truncated_scale_dbz=torch.ones_like(spatial),
+                    application_digest=prefix * 64,
+                )
+
+            uncertainty_target = SimpleNamespace(
+                _target_dbz=spatial,
+                _valid_mask=torch.ones_like(spatial, dtype=torch.bool),
+                _echo_support=torch.ones_like(spatial, dtype=torch.bool),
+            )
+            state_target = SimpleNamespace(
+                _target_dbz=spatial,
+                _valid_mask=torch.ones_like(spatial, dtype=torch.bool),
+                _echo_support=torch.ones_like(spatial, dtype=torch.bool),
+            )
+            classifier = SimpleNamespace(
+                classifier_digest="e" * 64,
+                classification_logits=Mock(
+                    return_value=(
+                        torch.tensor((2.0, 0.0, -1.0)),
+                        torch.tensor((1.0, -1.0)),
+                    )
+                ),
+            )
+            cases.append(
+                promotion_module.ScoringReplayCaseArtifact(
+                    manifest=retained_manifest,
+                    plan=retained_plan,
+                    case_id=evaluation.case_id,
+                    candidate_forecast=forecast_result("a", 0.1),
+                    parent_forecast=forecast_result("b", 0.0),
+                    verification=SimpleNamespace(
+                        frames_dbz=forecast,
+                        valid_mask=valid,
+                        content_digest="8" * 64,
+                    ),
+                    metric_config=SimpleNamespace(digest="9" * 64),
+                    candidate_prior_application=prior_application("c", 0.1),
+                    parent_prior_application=prior_application("d", 0.0),
+                    candidate_prior_runner=SimpleNamespace(),
+                    parent_prior_runner=SimpleNamespace(),
+                    input_frames_dbz=forecast,
+                    input_qc_valid_mask=valid,
+                    input_quality_weight=torch.ones((2, 2)),
+                    background_frames_dbz=None,
+                    uncertainty_target=uncertainty_target,
+                    state_calibration_target=state_target,
+                    regime_classifier=classifier,
+                    regime_classifier_manifest=self.classifier_manifest(),
+                    range_grid_x_m=torch.tensor(
+                        [[0.0, 1_000.0], [0.0, 1_000.0]]
+                    ),
+                    range_grid_y_m=torch.tensor(
+                        [[0.0, 0.0], [1_000.0, 1_000.0]]
+                    ),
+                    operational_issuance_domain=self.issuance_domain(index),
+                )
+            )
+        return tuple(cases)
 
     def scoring_artifact(
         self,
@@ -1286,6 +1390,68 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 if replay_bundle_digest is None
                 else replay_bundle_digest
             ),
+        )
+
+    def test_semantic_replay_role_schema_rejects_wrong_dtype(self) -> None:
+        evaluation = self.evaluation(1, -0.2)
+        tensors = self.scoring_replay_cases((evaluation,))[0].replay_tensors()
+        tensors["verification_valid_mask"] = tensors[
+            "verification_valid_mask"
+        ].to(torch.float32)
+        with self.assertRaisesRegex(ValueError, "must be boolean"):
+            ledger_module._validate_scoring_replay_case_tensors(
+                tensors,
+                dynamic_source=False,
+                background_present=False,
+            )
+
+    def test_semantic_replay_raw_input_must_match_forecast_run(self) -> None:
+        case = self.scoring_replay_cases((self.evaluation(1, -0.2),))[0]
+        case.candidate_forecast.run.input_frames_digest = "0" * 64
+        with self.assertRaisesRegex(
+            ValueError, "raw inputs disagree with forecast run"
+        ):
+            replace(case)
+
+    def test_pr110_snapshot_bundle_remains_audit_loadable(self) -> None:
+        case_ids = ("case-1", "case-2")
+        tensor = torch.ones((1, 2, 2))
+        records = tuple(
+            ledger_module.ScoringReplayTensorRecord(
+                case_id=case_id,
+                role=role,
+                archive_member=f"{case_id}__{role}",
+                dtype="float32",
+                shape=(1, 2, 2),
+                tensor_digest=promotion_module.tensor_digest(tensor),
+            )
+            for case_id in case_ids
+            for role in sorted(
+                ledger_module.LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V1
+            )
+        )
+        legacy = ledger_module.LegacyScoringReplayBundleManifestAuditV1(
+            scoring_input_artifact_digest="1" * 64,
+            ordered_case_ids=case_ids,
+            ordered_evaluation_digests=("2" * 64, "3" * 64),
+            algorithm_source_manifest_digest="4" * 64,
+            runtime_compatibility_digest="5" * 64,
+            runtime_exact_digest="6" * 64,
+            tensor_records=records,
+            tensor_archive_sha256="7" * 64,
+            evaluation_payload_sha256="8" * 64,
+        )
+        decoded = ledger_module._decode_scoring_replay_bundle_manifest(
+            json.dumps(
+                legacy.payload | {"bundle_digest": legacy.bundle_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            expected_digest=legacy.bundle_digest,
+        )
+        self.assertIsInstance(
+            decoded,
+            ledger_module.LegacyScoringReplayBundleManifestAuditV1,
         )
 
     def scoring_completion_receipt(self, evaluations, *, manifest=None, plan=None):
@@ -2371,6 +2537,21 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         evaluations = (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
         manifest = self.manifest()
         plan = self.plan()
+        evaluation_by_case = {item.case_id: item for item in evaluations}
+        recompute_patch = patch.object(
+            promotion_module.PriorHoldoutEvaluation,
+            "from_forecasts",
+            side_effect=lambda *args, **kwargs: evaluation_by_case[
+                kwargs["case_id"]
+            ],
+        )
+        recompute_patch.start()
+        self.addCleanup(recompute_patch.stop)
+        replay_cases = self.scoring_replay_cases(
+            evaluations,
+            manifest=manifest,
+            plan=plan,
+        )
         policy = self.policy()
         scoring_process_log = self.scoring_process_log(manifest)
         with tempfile.TemporaryDirectory() as directory:
@@ -2581,22 +2762,36 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 replay_manifest = (
                     ledger.append_neural_prior_scoring_replay_bundle(
                         scoring_input,
-                        evaluations,
-                        self.scoring_replay_tensors(evaluations),
+                        replay_cases,
                         algorithm_source_manifest_digest=(
                             algorithm_bundle_digest()
                         ),
-                        runtime_manifest=numerical_runtime_manifest("cpu"),
                     )
                 )
                 replayed = ledger.load_neural_prior_scoring_replay_bundle(
-                    replay_manifest.bundle_digest
+                    replay_manifest.bundle_digest,
+                    cases=replay_cases,
                 )
+                self.assertTrue(replayed.semantic_replay_verified)
                 self.assertEqual(
                     tuple(
                         item.evaluation_digest for item in replayed.evaluations
                     ),
                     tuple(item.evaluation_digest for item in evaluations),
+                )
+                original_candidate_forecast = (
+                    replay_cases[0].candidate_forecast.forecast_dbz.clone()
+                )
+                replay_cases[0].candidate_forecast.forecast_dbz[0, 0, 0] += 1.0
+                with self.assertRaisesRegex(
+                    ValueError, "semantic scoring replay input disagrees"
+                ):
+                    ledger.load_neural_prior_scoring_replay_bundle(
+                        replay_manifest.bundle_digest,
+                        cases=replay_cases,
+                    )
+                replay_cases[0].candidate_forecast.forecast_dbz.copy_(
+                    original_candidate_forecast
                 )
                 replay_archive = (
                     ledger.scoring_replays_dir
@@ -2660,6 +2855,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     scoring_completion,
                     process_log_artifact=scoring_process_log,
                     scoring_artifact=scoring_artifact,
+                    scoring_replay_cases=replay_cases,
                     scheduler_trust_store_path="/etc/advar/schedulers.json",
                 )
             trust = _LearningPolicyTrustStore(
@@ -2680,12 +2876,13 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     scoring_artifact=scoring_artifact,
                     scoring_process_log=scoring_process_log,
                     scoring_completion_receipt=scoring_completion,
+                    scoring_replay_cases=replay_cases,
                     policy=policy,
                     policy_trust_store_path="/etc/advar/learning-policies.json",
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v21")
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v22")
 
             legacy_payload = evidence._payload()
             legacy_payload["contract"] = "neural-prior-promotion-evidence-v12"
@@ -4962,21 +5159,24 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
 
     def test_dynamic_source_coverage_resolves_after_input_availability(self) -> None:
-        plan = self.plan().operational_issuance_domain_plans[0]
+        plan, input_plan, registry = self.mosaic_issuance_context()
         nominal = torch.ones((1, 2, 2), dtype=torch.bool)
-        source_index = torch.tensor([[[0, 1], [-1, 1]]], dtype=torch.int64)
-        outage = torch.tensor([[[False, True], [False, False]]])
-        qc_valid = torch.ones_like(nominal)
+        source_index = torch.tensor([[0, 1], [-1, 1]], dtype=torch.int64)
+        outage = torch.tensor([[False, True], [False, False]])
+        qc_valid = torch.ones((2, 2), dtype=torch.bool)
         resolved = promotion_module.ResolvedSourceCoverageArtifact.from_observations(
             plan,
+            input_plan,
+            registry,
             nominal_source_coverage_mask=nominal,
             source_radar_index_map=source_index,
             outage_mask=outage,
             dynamic_qc_valid_mask=qc_valid,
             input_bundle_digest="e" * 64,
             full_analysis_input_digest="1" * 64,
-            input_available_at="2026-08-09T00:00:00Z",
             resolved_at="2026-08-09T00:01:00Z",
+            data_ingestor_id="trusted-radar-ingestor",
+            data_ingestor_private_key=self.scheduler_key(),
         )
         domain = promotion_module.OperationalIssuanceDomainArtifact.from_masks(
             plan,
@@ -4995,20 +5195,109 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertEqual(domain.resolved_input_bundle_digest, "e" * 64)
 
     def test_dynamic_source_coverage_cannot_predate_input(self) -> None:
-        plan = self.plan().operational_issuance_domain_plans[0]
+        plan, input_plan, registry = self.mosaic_issuance_context()
         mask = torch.ones((1, 2, 2), dtype=torch.bool)
-        with self.assertRaisesRegex(ValueError, "before input availability"):
+        with self.assertRaisesRegex(ValueError, "outside its issue window"):
             promotion_module.ResolvedSourceCoverageArtifact.from_observations(
                 plan,
+                input_plan,
+                registry,
                 nominal_source_coverage_mask=mask,
-                source_radar_index_map=torch.zeros_like(mask, dtype=torch.int64),
-                outage_mask=torch.zeros_like(mask),
-                dynamic_qc_valid_mask=mask,
+                source_radar_index_map=torch.zeros((2, 2), dtype=torch.int64),
+                outage_mask=torch.zeros((2, 2), dtype=torch.bool),
+                dynamic_qc_valid_mask=torch.ones((2, 2), dtype=torch.bool),
                 input_bundle_digest="e" * 64,
                 full_analysis_input_digest="1" * 64,
-                input_available_at="2026-08-09T00:01:00Z",
-                resolved_at="2026-08-09T00:00:00Z",
+                resolved_at="2026-08-08T23:59:00Z",
+                data_ingestor_id="trusted-radar-ingestor",
+                data_ingestor_private_key=self.scheduler_key(),
             )
+
+    def test_dynamic_source_coverage_rejects_unregistered_radar_index(self) -> None:
+        plan, input_plan, registry = self.mosaic_issuance_context()
+        with self.assertRaisesRegex(ValueError, "registered radar set"):
+            promotion_module.ResolvedSourceCoverageArtifact.from_observations(
+                plan,
+                input_plan,
+                registry,
+                nominal_source_coverage_mask=torch.ones(
+                    (1, 2, 2), dtype=torch.bool
+                ),
+                source_radar_index_map=torch.tensor(
+                    [[0, 999], [1, -1]], dtype=torch.int64
+                ),
+                outage_mask=torch.zeros((2, 2), dtype=torch.bool),
+                dynamic_qc_valid_mask=torch.ones((2, 2), dtype=torch.bool),
+                input_bundle_digest="e" * 64,
+                full_analysis_input_digest="1" * 64,
+                resolved_at="2026-08-09T00:01:00Z",
+                data_ingestor_id="trusted-radar-ingestor",
+                data_ingestor_private_key=self.scheduler_key(),
+            )
+
+    def test_mosaic_issuance_domain_requires_dynamic_resolution(self) -> None:
+        plan, _, _ = self.mosaic_issuance_context()
+        mask = torch.ones((1, 2, 2), dtype=torch.bool)
+        with self.assertRaisesRegex(ValueError, "resolved source coverage"):
+            promotion_module.OperationalIssuanceDomainArtifact.from_masks(
+                plan,
+                publication_eligible_mask=mask,
+                source_coverage_mask=mask,
+                permanent_exclusion_mask=torch.zeros_like(mask),
+            )
+
+    def test_dynamic_source_coverage_must_be_ledgered_before_deadline(self) -> None:
+        plan, input_plan, registry = self.mosaic_issuance_context()
+        nominal = torch.ones((1, 2, 2), dtype=torch.bool)
+        resolved = promotion_module.ResolvedSourceCoverageArtifact.from_observations(
+            plan,
+            input_plan,
+            registry,
+            nominal_source_coverage_mask=nominal,
+            source_radar_index_map=torch.tensor(
+                [[0, 1], [0, 1]], dtype=torch.int64
+            ),
+            outage_mask=torch.zeros((2, 2), dtype=torch.bool),
+            dynamic_qc_valid_mask=torch.ones((2, 2), dtype=torch.bool),
+            input_bundle_digest="e" * 64,
+            full_analysis_input_digest="1" * 64,
+            resolved_at="2026-08-09T00:01:00Z",
+            data_ingestor_id="trusted-radar-ingestor",
+            data_ingestor_private_key=self.scheduler_key(),
+        )
+        domain = promotion_module.OperationalIssuanceDomainArtifact.from_masks(
+            plan,
+            publication_eligible_mask=nominal,
+            source_coverage_mask=nominal,
+            permanent_exclusion_mask=torch.zeros_like(nominal),
+            resolved_source_coverage=resolved,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            with patch.object(
+                ledger_module, "datetime", wraps=datetime
+            ) as trusted_datetime:
+                trusted_datetime.now.return_value = datetime.fromisoformat(
+                    "2026-08-09T00:01:30+00:00"
+                )
+                self.assertEqual(
+                    ledger.append_resolved_source_coverage_artifact(
+                        plan, input_plan, resolved, domain
+                    ),
+                    resolved.artifact_digest,
+                )
+        with tempfile.TemporaryDirectory() as directory:
+            late_ledger = EpisodeLedger(Path(directory))
+            with patch.object(
+                ledger_module, "datetime", wraps=datetime
+            ) as trusted_datetime:
+                trusted_datetime.now.return_value = datetime.fromisoformat(
+                    "2026-08-09T00:03:00+00:00"
+                )
+                with self.assertRaisesRegex(ValueError, "pre-issue"):
+                    late_ledger.append_resolved_source_coverage_artifact(
+                        plan, input_plan, resolved, domain
+                    )
 
     def test_track_payload_tampering_is_detected_by_rehash(self) -> None:
         event = self.event_catalog(1)
@@ -6642,6 +6931,13 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             grid_time_contract_digest="2" * 64,
             grid_time_contract=grid,
             input_bundle_digest=case.input_bundle_digest,
+            input_frames_digest=promotion_module.tensor_digest(
+                torch.zeros((3, 2, 2))
+            ),
+            observation_masks_digest=promotion_module.tensor_digest(
+                torch.ones((3, 2, 2), dtype=torch.bool)
+            ),
+            background_frames_digest=None,
             full_analysis_input_digest=case.full_analysis_input_digest,
             fixed_input_context_digest=case.fixed_input_context_digest,
             observation_quality_weight_digest=(
@@ -6674,6 +6970,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             std_dbz=torch.ones((2, 2)),
             state_std_dbz=torch.ones((2, 2)),
             valid_mask=torch.tensor(
+                [[True, False], [False, False]], dtype=torch.bool
+            ),
+            state_valid_mask=torch.tensor(
                 [[True, False], [False, False]], dtype=torch.bool
             ),
             support_probability=torch.zeros((2, 2)),
@@ -6721,6 +7020,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             std_dbz=torch.ones((2, 2)),
             state_std_dbz=torch.ones((2, 2)),
             valid_mask=torch.ones((2, 2), dtype=torch.bool),
+            state_valid_mask=torch.ones((2, 2), dtype=torch.bool),
             support_probability=torch.zeros((2, 2)),
             state_support_probability=torch.zeros((2, 2)),
             state_valid_probability=torch.ones((2, 2)),
@@ -6781,8 +7081,17 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         candidate = SimpleNamespace(
             run=candidate_run,
-            state=object(),
+            state=SimpleNamespace(
+                echo_linear=torch.ones((2, 2)),
+                displacement_yx=torch.zeros(2),
+                log_growth_per_step=torch.tensor(0.0),
+            ),
             validate_issuance=Mock(),
+            forecast_dbz=torch.zeros((6, 2, 2)),
+            forecast_run_digest="a" * 64,
+            forecast_dbz_digest="b" * 64,
+            valid_mask_digest="c" * 64,
+            state_metadata_digest="d" * 64,
             valid_mask=torch.ones((6, 2, 2), dtype=torch.bool),
             background_fallback_mask=torch.zeros(
                 (6, 2, 2), dtype=torch.bool
@@ -6791,8 +7100,17 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         parent = SimpleNamespace(
             run=parent_run,
-            state=object(),
+            state=SimpleNamespace(
+                echo_linear=torch.ones((2, 2)),
+                displacement_yx=torch.zeros(2),
+                log_growth_per_step=torch.tensor(0.0),
+            ),
             validate_issuance=Mock(),
+            forecast_dbz=torch.zeros((6, 2, 2)),
+            forecast_run_digest="e" * 64,
+            forecast_dbz_digest="f" * 64,
+            valid_mask_digest="1" * 64,
+            state_metadata_digest="2" * 64,
             valid_mask=torch.tensor(
                 [[[True, False], [False, False]]] * 6,
                 dtype=torch.bool,
@@ -6814,7 +7132,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
             frames_dbz=torch.zeros((6, 2, 2)),
         )
-        verification = SimpleNamespace(valid_times=resolved.valid_times)
+        verification = SimpleNamespace(
+            valid_times=resolved.valid_times,
+            frames_dbz=resolved.frames_dbz,
+            valid_mask=resolved.valid_mask,
+            content_digest=resolved.content_digest,
+        )
         config = SimpleNamespace(
             digest=case.metric_contract_digest,
             full_map_lead_minutes=(60,),
@@ -6863,6 +7186,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             classifier_digest=regime_evidence.classifier_digest,
             numerical_runtime_digest=regime_evidence.numerical_runtime_digest,
             classify=Mock(return_value=regime_evidence),
+            classification_logits=Mock(
+                return_value=(
+                    torch.tensor((2.0, 0.0, -1.0)),
+                    torch.tensor((1.0, -1.0)),
+                )
+            ),
         )
         candidate_weights = torch.tensor(
             [[[1.0, 0.0], [0.0, 0.0]]]
@@ -6905,9 +7234,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 side_effect=(torch.tensor([0.9]), torch.tensor([1.0])),
             ),
         ):
-            evaluation = promotion_module.PriorHoldoutEvaluation.from_forecasts(
-                manifest,
-                plan,
+            semantic_case = promotion_module.ScoringReplayCaseArtifact(
+                manifest=manifest,
+                plan=plan,
                 case_id=case.case_id,
                 candidate_forecast=candidate,
                 parent_forecast=parent,
@@ -6918,6 +7247,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 candidate_prior_runner=candidate_runner,
                 parent_prior_runner=parent_runner,
                 input_frames_dbz=torch.zeros((3, 2, 2)),
+                input_qc_valid_mask=torch.ones(
+                    (3, 2, 2), dtype=torch.bool
+                ),
+                input_quality_weight=torch.ones((2, 2)),
+                background_frames_dbz=None,
                 uncertainty_target=self.uncertainty_target(1),
                 state_calibration_target=self.state_target(1),
                 regime_classifier=regime_classifier,
@@ -6927,6 +7261,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 range_grid_x_m=torch.zeros((2, 2)),
                 range_grid_y_m=torch.zeros((2, 2)),
                 operational_issuance_domain=self.issuance_domain(1),
+            )
+            evaluation = (
+                promotion_module.recompute_prior_holdout_evaluation_from_bundle(
+                    semantic_case
+                )
             )
         self.assertAlmostEqual(float(evaluation.metric_change[0, 0]), -0.2)
         self.assertAlmostEqual(float(evaluation.end_to_end_metric_change[0, 0]), -0.25)
