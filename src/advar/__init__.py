@@ -30,6 +30,8 @@ from .ledger import (
     ScoringReplayBundleManifest,
     ScoringReplayTensorRecord,
     SCORING_REPLAY_REQUIRED_TENSOR_ROLES,
+    SCORING_REPLAY_BACKGROUND_TENSOR_ROLES,
+    SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES,
 )
 from .ensemble_sensitivity import (
     EnsembleFSO,
