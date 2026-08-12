@@ -698,6 +698,18 @@ class EpisodeLedgerTests(unittest.TestCase):
             ),
             scheduler_trust_store_digest="f" * 64,
         )
+        decision_rule = object.__new__(promotion_module.PromotionDecisionRule)
+        object.__setattr__(decision_rule, "decision_payload_json", "{}")
+        object.__setattr__(
+            decision_rule,
+            "contract",
+            "neural-prior-promotion-decision-rule-v1",
+        )
+        object.__setattr__(
+            decision_rule,
+            "rule_digest",
+            json_digest(decision_rule.payload),
+        )
         plan = NeuralPriorHoldoutPlan(
             plan_id="clock-plan",
             parent_prior_digest="6" * 64,
@@ -735,6 +747,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             regime_reference_plans=(reference_plan,),
             physical_event_catalog_plan=event_catalog_plan,
             regime_classifier_manifests=(classifier_manifest,),
+            promotion_decision_rule_digest=decision_rule.rule_digest,
             reference_label_contract_digest="e" * 64,
             scoring_algorithm_digest="1" * 64,
             scoring_runtime_digest="2" * 64,
@@ -748,7 +761,9 @@ class EpisodeLedgerTests(unittest.TestCase):
             maximum_candidate_family_size=1,
         )
         trust = SimpleNamespace(
-            approved_policy_digests=frozenset((policy.digest,)),
+            approved_policy_digests=frozenset(
+                (policy.digest, decision_rule.rule_digest)
+            ),
             content_digest="a" * 64,
         )
         scheduler_trust = SimpleNamespace(
@@ -779,6 +794,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "crossed its forecast issue"):
                 self.ledger.append_neural_prior_holdout_plan(
                     plan,
+                    promotion_decision_rule=decision_rule,
                     policy=policy,
                     policy_trust_store_path="/etc/advar/policies.json",
                     scheduler_trust_store_path="/etc/advar/schedulers.json",
@@ -921,7 +937,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 21)
+        self.assertEqual(version, 22)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4154,7 +4170,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 21)
+        self.assertEqual(version, 22)
 
 
 if __name__ == "__main__":

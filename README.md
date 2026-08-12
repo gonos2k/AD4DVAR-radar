@@ -793,13 +793,18 @@ metric contract와 operational issuance-domain digest의 ordered set은
 기록한다. 현재 자동승격 경로는 candidate family를 정확히 하나로 제한하므로 하나의
 start/completion receipt와 하나의 canonical scoring output 사이에 cardinality 모호성이
 없다. Forecast realization 하나라도 바뀌면 scoring-input digest가 달라져 기존 start
-receipt와 output artifact를 재사용할 수 없다.
+receipt와 output artifact를 재사용할 수 없다. Scoring에 사용되는 사후 weather-regime
+reference, physical-event identity, uncertainty/state target과 range 계약도 ordered
+completed-holdout-case digest로 함께 봉인되므로 수치 forecast를 유지한 채 truth grouping만
+바꿀 수 없다.
 통계 판정 임계값·metric scale/support·필수 metric/issuance cell·confidence와
 finite-sample 설정은 candidate authorization과 분리된 `PromotionDecisionRule`로
-정규화한다. Root-approved rule은 scoring-input과 같은 원장 transaction에서 먼저
-봉인되며, start receipt는 그 rule digest를 포함하는 scoring-input digest만 대상으로
-삼는다. 따라서 결과를 본 뒤 threshold나 classifier 선택을 바꾼 policy는 root가
-사후 승인하더라도 canonical scoring artifact와 결합할 수 없다. Ledger는 scoring-input
+정규화한다. Exact root-approved rule digest는 prospective issue와 forecast·verification
+생성 전에 holdout plan에 결합되고, ledger는 plan과 재사용 가능한 canonical rule 정의의
+binding을 같은 transaction에 기록한다. Scoring input과 최종 authorization은 이
+plan-bound digest를 그대로 참조해야 한다. 따라서 결과를 본 뒤 rule family에서 유리한
+threshold나 classifier 선택을 고르거나 policy를 사후 승인해도 canonical scoring
+artifact와 결합할 수 없다. Ledger는 scoring-input
 row의 trusted `created_at`이 receipt의 시작시각보다 늦으면 backdated start를 거부한다.
 평가는 parent의 고정 domain에서 paired skill을 계산하고 candidate native domain과의
 차이를 issuance effect로 분리한다. end-to-end candidate-minus-parent metric도 모든
@@ -881,11 +886,15 @@ plan이 publication eligibility, source coverage, permanent exclusion mask diges
 metric mean bound의 support도 정책 숫자가 아니라 `MetricSupportContract`가 FSS의
 unit interval, bounded dBZ log-echo MSE, grid-diagonal centroid error에서 해석적으로
 도출한 범위만 사용한다. Support contract는 실제 nowcast-config와 grid-contract
-digest 및 derivation parameter를 함께 보존하고, evaluation의 run/grid lineage와 exact
-일치해야 한다. Deployment 규모(최소 10개 physical event)의 global·band aggregate
-mean도 같은 support-derived empirical-Bernstein inference를 사용하므로 동일한 소표본의
-percentile bootstrap이 불확실성 0으로 퇴화하지 않는다. 더 작은 event set은 shadow
-진단으로는 유지되지만 sample-size preflight가 자동배포를 fail-close한다.
+digest, scoring metric-engine identity 및 derivation parameter를 함께 보존하고,
+evaluation의 run/grid/engine lineage와 exact 일치해야 한다. Affine grid의 centroid
+support는 한 대각선만 쓰지 않고 projected 네 corner의 모든 pairwise 거리 중 최댓값으로
+계산한다. 자동승격의 global·band aggregate mean은 physical-event 수와 무관하게 같은
+support-derived empirical-Bernstein inference를 사용하므로 동일한 5--9개 소표본의
+percentile bootstrap이 불확실성 0으로 퇴화하지 않는다. 작은 표본 bootstrap은 명시적인
+shadow 진단에서만 허용되고 sample-size preflight가 자동배포를 fail-close한다. 유한
+support가 증명된 uncertainty component도 bounded event UCB를 사용하며, NLL/PIT처럼
+support가 없는 component의 zero-variance 표본은 자동경로에서 fail-close한다.
 실제 배포에서는 caller가 regime 문자열이나 operational role을 넘기지 않는다. Exported
 `NeuralPriorRegimeClassifier`가 현재 `full_analysis_input_digest`에 결합된
 `RegimeClassificationEvidence`를 만들고, 모든 holdout case에서도 동일 classifier를
@@ -933,8 +942,8 @@ exclusion mask가 target mask를 덮었는지 계산해 확인한다. 불확실�
 fraction·면적과 parent 대비 abstention 증가 및 NLL abstention penalty를 함께 적용한다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
-현재 promotion evidence는 v18, candidate manifest는 v12, holdout plan은 v14,
-holdout evaluation은 v17, promotion policy는 v23이다. Candidate-neutral
+현재 promotion evidence는 v19, candidate manifest는 v12, holdout plan은 v15,
+holdout evaluation은 v18, promotion policy는 v24이다. Candidate-neutral
 `PhysicalEventCatalogPlan`은 association·spatial-membership rule, spatial reference,
 event merge threshold와 완료시한을 사전등록하고, append-only result 하나만 허용한다.
 각 case의 observed envelope와 trusted input-availability가 event evidence와 맞는지 검증하고,
