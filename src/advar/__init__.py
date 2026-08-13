@@ -2,12 +2,14 @@
 
 from ._runtime import (
     MPSBackendCertificationEvidence,
+    MPSBackendCertificationPolicy,
     NumericalRuntimeManifest,
     numerical_runtime_compatibility_digest,
     numerical_runtime_identity,
     numerical_runtime_identity_digest,
     numerical_runtime_manifest,
     validate_mps_backend_certification,
+    validate_mps_backend_certification_evidence,
 )
 
 from .calibration import (
@@ -545,7 +547,9 @@ __all__ = [
     "numerical_runtime_manifest",
     "NumericalRuntimeManifest",
     "MPSBackendCertificationEvidence",
+    "MPSBackendCertificationPolicy",
     "validate_mps_backend_certification",
+    "validate_mps_backend_certification_evidence",
     "save_forecast_run",
     "save_p1_linearization",
     "variational_nowcast",
