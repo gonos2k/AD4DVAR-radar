@@ -71,6 +71,7 @@ from .intervention import (
 from .promotion import (
     DeployedNeuralPriorPolicy,
     LedgeredPromotionDeploymentCertificate,
+    OperationalDeploymentDecisionCertificate,
     LegacyNeuralPriorCandidateManifestAuditV2,
     LegacyNeuralPriorCandidateManifestAuditV3,
     LegacyNeuralPriorCandidateManifestAuditV4,
@@ -401,6 +402,7 @@ __all__ = [
     "NeuralPriorPromotionEvidence",
     "DeployedNeuralPriorPolicy",
     "LedgeredPromotionDeploymentCertificate",
+    "OperationalDeploymentDecisionCertificate",
     "RegimeClassificationEvidence",
     "RegimeClassifierManifest",
     "RegimeReferenceEvidence",

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import json
 import sqlite3
@@ -209,7 +210,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             "neural-prior-holdout-scoring-artifact-v4",
         )
         self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v24")
-        self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v9")
+        self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v10")
         self.assertEqual(
             evidence.semantic_replay_generation_digest,
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST,
@@ -232,6 +233,55 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             authority_trust_store=trust,
             promotion_evidence=evidence,
         )
+        minimal_evidence = {
+            "contract": "neural-prior-promotion-evidence-v24",
+            "deployment_eligible": True,
+        }
+        forged_values = dict(certificate.payload)
+        forged_values.pop("authority_signature_hex")
+        forged_values["promotion_evidence_payload_json"] = json.dumps(
+            minimal_evidence,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        forged_values["promotion_evidence_digest"] = promotion_module.json_digest(
+            minimal_evidence
+        )
+        forged_values["ledger_chain_head_digest"] = (
+            promotion_module._deployment_certificate_chain_head(
+                ledger_instance_digest=certificate.ledger_instance_digest,
+                sequence_number=certificate.sequence_number,
+                promotion_evidence_digest=forged_values[
+                    "promotion_evidence_digest"
+                ],
+                scoring_replay_bundle_digest=(
+                    certificate.scoring_replay_bundle_digest
+                ),
+                scoring_artifact_digest=certificate.scoring_artifact_digest,
+                scoring_completion_receipt_digest=(
+                    certificate.scoring_completion_receipt_digest
+                ),
+                previous_certificate_digest=(
+                    certificate.previous_certificate_digest
+                ),
+            )
+        )
+        authority_key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+        forged_values["authority_signature_hex"] = authority_key.sign(
+            json.dumps(
+                forged_values,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode()
+        ).hex()
+        forged = promotion_module._ledgered_promotion_deployment_certificate_from_payload(
+            forged_values
+        )
+        with self.assertRaisesRegex(ValueError, "complete current evidence"):
+            promotion_module._validate_ledgered_promotion_deployment_certificate(
+                forged,
+                authority_trust_store=trust,
+            )
         object.__setattr__(certificate, "promotion_evidence_payload_json", "{}")
         with self.assertRaisesRegex(ValueError, "certificate integrity"):
             promotion_module._validate_ledgered_promotion_deployment_certificate(
@@ -3656,10 +3706,40 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 authority_id="test-ledger",
                 authority_private_key=key,
                 authority_trust_store=trust,
-                previous_certificate_digest=None,
+                ledger_instance_digest="6" * 64,
+                sequence_number=1,
+                previous_certificate_digest="0" * 64,
             )
         )
         return certificate, trust
+
+    @staticmethod
+    def validate_deployment_artifact(
+        artifact_json,
+        *,
+        certificate_trust,
+        policy_trust,
+        **kwargs,
+    ):
+        with patch.object(
+            promotion_module,
+            "_load_promotion_deployment_authority_trust_store",
+            return_value=certificate_trust,
+        ), patch.object(
+            promotion_module,
+            "_load_learning_policy_trust_store",
+            return_value=policy_trust,
+        ):
+            return promotion_module.validate_neural_prior_deployment_decision_artifact(
+                artifact_json,
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
+                deployment_policy_trust_store_path=(
+                    "/etc/advar/deployment-policies.json"
+                ),
+                **kwargs,
+            )
 
     def compute_with_policy(self, evaluations, policy):
         plan = self.plan()
@@ -4145,6 +4225,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                             "/etc/advar/learning-policies.json"
                         ),
                     )
+                evidence = self.deployment_ready(evidence)
                 trusted_datetime.now.return_value = datetime.fromisoformat(
                     "2026-08-12T03:00:00+00:00"
                 )
@@ -4164,6 +4245,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 promotion_module,
                 "_load_learning_policy_trust_store",
                 return_value=trust,
+            ), patch.object(
+                ledger_module,
+                "compute_neural_prior_promotion",
+                return_value=evidence,
             ):
                 stored = ledger.append_neural_prior_promotion(
                     evidence,
@@ -4181,18 +4266,68 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
             self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v24")
-            self.assertFalse(loaded.deployment_eligible)
-            with self.assertRaisesRegex(ValueError, "ineligible promotion"):
-                ledger.issue_neural_prior_promotion_deployment_certificate(
-                    stored,
-                    authority_id="test-ledger",
-                    authority_private_key=Ed25519PrivateKey.from_private_bytes(
-                        b"\x03" * 32
-                    ),
-                    authority_trust_store_path=(
-                        "/etc/advar/deployment-authorities.json"
-                    ),
+            self.assertTrue(loaded.deployment_eligible)
+            authority_key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+            authority_trust = (
+                promotion_module._PromotionDeploymentAuthorityTrustStore(
+                    keys={"test-ledger": authority_key.public_key()},
+                    content_digest="7" * 64,
                 )
+            )
+            with patch.object(
+                ledger_module,
+                "_load_promotion_deployment_authority_trust_store",
+                return_value=authority_trust,
+            ):
+                def issue_certificate():
+                    try:
+                        return ledger.issue_neural_prior_promotion_deployment_certificate(
+                            stored,
+                            authority_id="test-ledger",
+                            authority_private_key=authority_key,
+                            authority_trust_store_path=(
+                                "/etc/advar/deployment-authorities.json"
+                            ),
+                        )
+                    except FileExistsError as error:
+                        return error
+
+                with ThreadPoolExecutor(max_workers=2) as executor:
+                    issuance_results = tuple(
+                        executor.map(lambda _: issue_certificate(), range(2))
+                    )
+                issued = tuple(
+                    item
+                    for item in issuance_results
+                    if isinstance(
+                        item,
+                        promotion_module.LedgeredPromotionDeploymentCertificate,
+                    )
+                )
+                self.assertEqual(len(issued), 1)
+                self.assertEqual(
+                    sum(isinstance(item, FileExistsError) for item in issuance_results),
+                    1,
+                )
+                certificate = issued[0]
+                reloaded_certificate = (
+                    ledger.load_neural_prior_promotion_deployment_certificate(
+                        certificate.certificate_digest,
+                        authority_trust_store_path=(
+                            "/etc/advar/deployment-authorities.json"
+                        ),
+                    )
+                )
+            self.assertEqual(certificate.contract, "ledgered-promotion-deployment-certificate-v2")
+            self.assertEqual(certificate.sequence_number, 1)
+            self.assertEqual(
+                certificate.previous_certificate_digest,
+                ledger_module._PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST,
+            )
+            self.assertEqual(
+                reloaded_certificate.certificate_digest,
+                certificate.certificate_digest,
+            )
 
             legacy_payload = evidence._payload()
             legacy_payload["contract"] = "neural-prior-promotion-evidence-v12"
@@ -7053,6 +7188,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
+                operational_decision_authority_id="test-ledger",
+                operational_decision_authority_private_key=(
+                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+                ),
             )
 
         self.assertIs(selected, parent)
@@ -7176,6 +7315,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
+                operational_decision_authority_id="test-ledger",
+                operational_decision_authority_private_key=(
+                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+                ),
             )
 
         self.assertIs(selected, candidate)
@@ -7204,16 +7347,20 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         incomplete_artifact = dict(deployment_artifact)
         incomplete_artifact.pop("range_geometry_contract")
         with self.assertRaisesRegex(ValueError, "incomplete"):
-            promotion_module.validate_neural_prior_deployment_decision_artifact(
+            self.validate_deployment_artifact(
                 json.dumps(
                     incomplete_artifact,
                     sort_keys=True,
                     separators=(",", ":"),
-                )
+                ),
+                certificate_trust=deployment_certificate_trust,
+                policy_trust=trust,
             )
         with self.assertRaisesRegex(ValueError, "current forecast run"):
-            promotion_module.validate_neural_prior_deployment_decision_artifact(
+            self.validate_deployment_artifact(
                 selection.deployment_decision_artifact_json,
+                certificate_trust=deployment_certificate_trust,
+                policy_trust=trust,
                 expected_operational_grid_contract_digest="3" * 64,
                 expected_operational_frame_shape=tuple(partition.masks[0].shape),
             )
@@ -7223,21 +7370,25 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             sort_keys=True,
             separators=(",", ":"),
         )
-        with self.assertRaisesRegex(ValueError, "operational grid"):
-            promotion_module.validate_neural_prior_deployment_decision_artifact(
-                changed_artifact_json
+        with self.assertRaisesRegex(ValueError, "decision certificate"):
+            self.validate_deployment_artifact(
+                changed_artifact_json,
+                certificate_trust=deployment_certificate_trust,
+                policy_trust=trust,
             )
         changed_shape_artifact = json.loads(
             selection.deployment_decision_artifact_json
         )
         changed_shape_artifact["operational_frame_shape"] = [4, 4]
-        with self.assertRaisesRegex(ValueError, "operational grid"):
-            promotion_module.validate_neural_prior_deployment_decision_artifact(
+        with self.assertRaisesRegex(ValueError, "decision certificate"):
+            self.validate_deployment_artifact(
                 json.dumps(
                     changed_shape_artifact,
                     sort_keys=True,
                     separators=(",", ":"),
-                )
+                ),
+                certificate_trust=deployment_certificate_trust,
+                policy_trust=trust,
             )
 
         unapproved = replace(deployment_policy, minimum_regime_confidence=0.01)
@@ -7264,6 +7415,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
+                ),
+                operational_decision_authority_id="test-ledger",
+                operational_decision_authority_private_key=(
+                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
                 ),
             )
         changed_trust = _LearningPolicyTrustStore(
@@ -7298,6 +7453,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
+                ),
+                operational_decision_authority_id="test-ledger",
+                operational_decision_authority_private_key=(
+                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
                 ),
             )
         self.assertNotEqual(
@@ -7337,6 +7496,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
+                ),
+                operational_decision_authority_id="test-ledger",
+                operational_decision_authority_private_key=(
+                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
                 ),
             )
 
@@ -7387,6 +7550,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     ),
                     deployment_certificate_trust_store_path=(
                         "/etc/advar/deployment-authorities.json"
+                    ),
+                    operational_decision_authority_id="test-ledger",
+                    operational_decision_authority_private_key=(
+                        Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
                     ),
                 )
             )
@@ -7488,6 +7655,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
+                ),
+                operational_decision_authority_id="test-ledger",
+                operational_decision_authority_private_key=(
+                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
                 ),
             )
         self.assertIs(selected, parent)
@@ -7722,6 +7893,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
+                operational_decision_authority_id="test-ledger",
+                operational_decision_authority_private_key=(
+                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+                ),
             )
         assert application.deployment_selection is not None
         self.assertEqual(application.role, "parent")
@@ -7746,11 +7921,18 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 promotion_module,
                 "_load_promotion_deployment_authority_trust_store",
                 return_value=deployment_certificate_trust,
+            ), patch.object(
+                promotion_module,
+                "_load_learning_policy_trust_store",
+                return_value=trust,
             ):
                 loaded = load_forecast_run(
                     path,
                     deployment_certificate_trust_store_path=(
                         "/etc/advar/deployment-authorities.json"
+                    ),
+                    deployment_policy_trust_store_path=(
+                        "/etc/advar/deployment-policies.json"
                     ),
                 )
         self.assertEqual(loaded.run.prior_role, "parent")
@@ -7760,7 +7942,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             loaded.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v8",
+            "neural-prior-deployment-lineage-v9",
         )
 
     def test_current_physical_range_partition_controls_deployment(self) -> None:
@@ -7871,6 +8053,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
+                ),
+                operational_decision_authority_id="test-ledger",
+                operational_decision_authority_private_key=(
+                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
                 ),
             )
 
@@ -8336,6 +8522,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
+                ),
+                operational_decision_authority_id="test-ledger",
+                operational_decision_authority_private_key=(
+                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
                 ),
             )
 
