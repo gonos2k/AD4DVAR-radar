@@ -25,10 +25,12 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 from ._digest import json_digest, tensor_digest
 from ._runtime import (
     MPSBackendCertificationEvidence,
+    MPSBackendCertificationPolicy,
     numerical_runtime_identity_digest,
     validate_mps_backend_certification,
 )
 from .calibration import algorithm_bundle_digest, OperationalDataIdentity
+from .mps_certification import mps_certification_runner_digest
 from .nowcast import (
     ForecastResult,
     ForecastRunContract,
@@ -14063,10 +14065,11 @@ class DeployedNeuralPriorPolicy:
     regime_classifier_manifest_digest: str
     range_geometry_contract_digest: str
     mps_backend_certification_digest: str | None = None
+    mps_backend_certification_policy_digest: str | None = None
     minimum_regime_confidence: float = 0.8
     minimum_weather_top1_top2_gap: float = 0.05
     minimum_deployment_confidence_margin: float = 0.05
-    contract: str = "deployed-neural-prior-policy-v5"
+    contract: str = "deployed-neural-prior-policy-v6"
     policy_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -14080,7 +14083,7 @@ class DeployedNeuralPriorPolicy:
         ):
             _require_digest(name, getattr(self, name))
         if (
-            self.contract != "deployed-neural-prior-policy-v5"
+            self.contract != "deployed-neural-prior-policy-v6"
             or self.candidate_prior_digest == self.parent_prior_digest
             or not math.isfinite(self.minimum_regime_confidence)
             or not 0.0 < self.minimum_regime_confidence <= 1.0
@@ -14097,6 +14100,17 @@ class DeployedNeuralPriorPolicy:
             _require_digest(
                 "MPS backend certification",
                 self.mps_backend_certification_digest,
+            )
+        if self.mps_backend_certification_policy_digest is not None:
+            _require_digest(
+                "MPS backend certification policy",
+                self.mps_backend_certification_policy_digest,
+            )
+        if (self.mps_backend_certification_digest is None) != (
+            self.mps_backend_certification_policy_digest is None
+        ):
+            raise ValueError(
+                "MPS certification evidence and policy must be approved together"
             )
         object.__setattr__(
             self,
@@ -14552,19 +14566,30 @@ def infer_deployed_neural_prior(
     policy: DeployedNeuralPriorPolicy,
     policy_trust_store_path: str | Path,
     mps_backend_certification: MPSBackendCertificationEvidence | None = None,
+    mps_backend_certification_policy: (
+        MPSBackendCertificationPolicy | None
+    ) = None,
 ) -> NeuralPriorApplication:
     """Classify, select, and infer without accepting caller-provided labels."""
 
     if frames_dbz.device.type == "mps":
         if (
             mps_backend_certification is None
+            or mps_backend_certification_policy is None
             or policy.mps_backend_certification_digest
             != mps_backend_certification.evidence_digest
+            or policy.mps_backend_certification_policy_digest
+            != mps_backend_certification_policy.policy_digest
         ):
             raise ValueError("MPS deployment requires approved certification")
         validate_mps_backend_certification(
             mps_backend_certification,
+            mps_backend_certification_policy,
             execution_device=frames_dbz.device,
+            active_algorithm_source_manifest_digest=algorithm_bundle_digest(),
+            active_certification_runner_digest=(
+                mps_certification_runner_digest()
+            ),
         )
     if (
         input_run.grid_time_contract_digest is None

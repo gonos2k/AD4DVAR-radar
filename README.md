@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.76
+# ADVAR 3-frame radar nowcast v0.77
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -1176,9 +1176,22 @@ model/index, CUDA driver·compute capability, cuDNN/TF32/matmul 설정, thread �
 PyTorch·NumPy build configuration, OS release 및 설치 distribution/source manifest가
 들어간다. Algorithm source manifest도 package 최상위만이 아니라 모든 하위 Python
 module의 canonical relative path와 bytes를 재귀적으로 주소화한다. MPS 후보 배포는
-root-approved deployment policy에 exact-runtime CPU/MPS oracle evidence가 명시돼야 하며,
-PCG·stationarity·analysis·score 오차와 decision margin, nonfinite fallback 및
-deterministic policy 중 하나라도 실패하면 fail-close한다.
+root-approved deployment policy에 certification policy와 signed evidence digest가
+함께 명시돼야 한다. Policy는 PCG, frozen/robust stationarity, analysis/forecast dBZ,
+metric score와 decision statistic처럼 단위가 다른 허용오차를 분리한다. Evidence는
+허용오차나 caller Boolean을 보존하지 않고 CPU/MPS raw-result digest와 측정값만
+보존하며, active source·runner·exact MPS runtime 및 Ed25519 runner signature가 모두
+일치해야 한다.
+
+`.github/workflows/mps-certification.yml`은 `PYTORCH_ENABLE_MPS_FALLBACK=0`인 self-hosted
+Apple Silicon runner에서 비대각 SPD PCG, P1 analysis/stationarity/forecast, score와
+decision statistic, nonfinite fallback, deterministic repeat를 실제 CPU/MPS로
+실행한다. 성공한 실행은 policy, signed evidence, raw scalar JSON, tensor NPZ와 파일
+checksum manifest를 GitHub artifact로 업로드한다. Workflow artifact가 생성됐다는
+사실만으로 배포가 승인되지는 않으며, 운영 `DeployedNeuralPriorPolicy`가 검토한 두
+digest를 명시해야 MPS 진입점이 열린다. Self-hosted runner에는 raw Ed25519 private
+key를 담은 `ADVAR_MPS_CERTIFICATION_PRIVATE_KEY_HEX` secret이 필요하며, MPS fallback은
+비활성화된다.
 
 실제 격자에서는 `AnalysisConfig(causal_support_uncertainty_m=...,
 amplitude_displacement_tolerance_m=...)`로 causal envelope와 진폭 위치허용을

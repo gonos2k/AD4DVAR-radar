@@ -2,6 +2,7 @@
 
 from ._runtime import (
     MPSBackendCertificationEvidence,
+    MPSBackendCertificationPolicy,
     NumericalRuntimeManifest,
     numerical_runtime_compatibility_digest,
     numerical_runtime_identity,
@@ -545,6 +546,7 @@ __all__ = [
     "numerical_runtime_manifest",
     "NumericalRuntimeManifest",
     "MPSBackendCertificationEvidence",
+    "MPSBackendCertificationPolicy",
     "validate_mps_backend_certification",
     "save_forecast_run",
     "save_p1_linearization",

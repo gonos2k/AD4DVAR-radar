@@ -152,28 +152,50 @@ class PCGTests(unittest.TestCase):
         torch.backends.mps.is_available(),
         "MPS is not available",
     )
-    def test_mps_extreme_scale_matches_cpu_oracle(self) -> None:
-        diagonal_cpu = torch.logspace(-12, 12, 64, dtype=torch.float32)
-        rhs_cpu = torch.linspace(0.5, 1.5, 64, dtype=torch.float32)
+    def test_mps_nontrivial_spd_matches_cpu_float64_oracle(self) -> None:
+        size = 96
+        diagonal_cpu = torch.linspace(2.1, 4.0, size, dtype=torch.float32)
+        rhs_cpu = torch.sin(torch.linspace(0.2, 7.0, size)) + 0.1
 
         def solve(diagonal: torch.Tensor, rhs: torch.Tensor):
+            zero = torch.zeros((1,), dtype=rhs.dtype, device=rhs.device)
+
+            def operator(value: torch.Tensor) -> torch.Tensor:
+                left = torch.cat((zero, value[:-1]))
+                right = torch.cat((value[1:], zero))
+                return diagonal * value - left - right
+
             return pcg(
-                lambda value: diagonal * value,
+                operator,
                 rhs,
                 preconditioner=lambda value: value / diagonal,
                 rtol=1.0e-5,
+                max_iterations=4 * size,
             )
 
+        oracle_matrix = torch.diag(diagonal_cpu.to(torch.float64))
+        off_diagonal = torch.full((size - 1,), -1.0, dtype=torch.float64)
+        oracle_matrix += torch.diag(off_diagonal, 1)
+        oracle_matrix += torch.diag(off_diagonal, -1)
+        oracle = torch.linalg.solve(oracle_matrix, rhs_cpu.to(torch.float64))
         cpu = solve(diagonal_cpu, rhs_cpu)
         mps = solve(diagonal_cpu.to("mps"), rhs_cpu.to("mps"))
 
-        self.assertEqual(cpu.converged, mps.converged)
-        self.assertEqual(cpu.iterations, mps.iterations)
+        self.assertTrue(cpu.converged)
+        self.assertTrue(mps.converged)
+        self.assertGreaterEqual(cpu.iterations, 10)
+        self.assertGreaterEqual(mps.iterations, 10)
+        torch.testing.assert_close(
+            cpu.solution.to(torch.float64),
+            oracle,
+            atol=2.0e-4,
+            rtol=5.0e-4,
+        )
         torch.testing.assert_close(
             mps.solution.cpu(),
             cpu.solution,
-            atol=1.0e-5,
-            rtol=1.0e-5,
+            atol=2.0e-4,
+            rtol=5.0e-4,
         )
 
     def test_rejects_invalid_operator_shape_and_configuration(self) -> None:
