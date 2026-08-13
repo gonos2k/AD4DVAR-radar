@@ -149,9 +149,13 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV19,
     LegacyNeuralPriorPromotionEvidenceAuditV20,
     LegacyNeuralPriorPromotionEvidenceAuditV21,
+    LegacyNeuralPriorPromotionEvidenceAuditV22,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     ScoringReplayCaseArtifact,
+    SEMANTIC_SCORING_REPLAY_CONTRACT,
+    SEMANTIC_SCORING_REPLAY_METHOD,
+    SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST,
     recompute_prior_holdout_evaluation_from_bundle,
     compute_neural_prior_promotion,
     validate_neural_prior_promotion,
@@ -986,14 +990,14 @@ class ScoringReplayBundleManifest:
     tensor_records: tuple[ScoringReplayTensorRecord, ...]
     tensor_archive_sha256: str
     evaluation_payload_sha256: str
-    replay_method: str = "builtin-semantic-scoring-recomputation-v3"
-    contract: str = "neural-prior-scoring-replay-bundle-v3"
+    replay_method: str = SEMANTIC_SCORING_REPLAY_METHOD
+    contract: str = SEMANTIC_SCORING_REPLAY_CONTRACT
     bundle_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
         if (
-            self.contract != "neural-prior-scoring-replay-bundle-v3"
-            or self.replay_method != "builtin-semantic-scoring-recomputation-v3"
+            self.contract != SEMANTIC_SCORING_REPLAY_CONTRACT
+            or self.replay_method != SEMANTIC_SCORING_REPLAY_METHOD
             or not self.ordered_case_ids
             or len(set(self.ordered_case_ids)) != len(self.ordered_case_ids)
             or len(self.ordered_case_ids)
@@ -4324,7 +4328,6 @@ class EpisodeLedger:
         scheduler_trust_store_path: str | Path,
         scoring_artifact: HoldoutScoringArtifact | None = None,
         scoring_replay_cases: tuple[ScoringReplayCaseArtifact, ...] | None = None,
-        execution_device: str | torch.device = "cpu",
     ) -> str:
         """Append the immutable output and log produced by one trusted launch."""
 
@@ -4357,7 +4360,16 @@ class EpisodeLedger:
                 cases=scoring_replay_cases,
             )
             if (
-                not replay.semantic_replay_verified
+                not scoring_replay_cases
+                or not replay.semantic_replay_verified
+                or replay.manifest.contract != SEMANTIC_SCORING_REPLAY_CONTRACT
+                or replay.manifest.replay_method != SEMANTIC_SCORING_REPLAY_METHOD
+                or scoring_artifact.scoring_replay_contract
+                != replay.manifest.contract
+                or scoring_artifact.scoring_replay_method
+                != replay.manifest.replay_method
+                or scoring_artifact.semantic_replay_generation_digest
+                != SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
                 or replay.manifest.scoring_input_artifact_digest
                 != scoring_artifact.scoring_input_artifact_digest
                 or replay.manifest.ordered_case_ids
@@ -4367,7 +4379,9 @@ class EpisodeLedger:
                 or replay.manifest.runtime_exact_digest
                 != scoring_artifact.scoring_runtime_digest
                 or replay.manifest.runtime_exact_digest
-                != numerical_runtime_manifest(execution_device).exact_digest
+                != numerical_runtime_manifest(
+                    scoring_replay_cases[0].input_frames_dbz.device
+                ).exact_digest
                 or replay.manifest.algorithm_source_manifest_digest
                 != algorithm_bundle_digest()
             ):
@@ -4885,6 +4899,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV19
         | LegacyNeuralPriorPromotionEvidenceAuditV20
         | LegacyNeuralPriorPromotionEvidenceAuditV21
+        | LegacyNeuralPriorPromotionEvidenceAuditV22
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -4958,6 +4973,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV19
                 | LegacyNeuralPriorPromotionEvidenceAuditV20
                 | LegacyNeuralPriorPromotionEvidenceAuditV21
+                | LegacyNeuralPriorPromotionEvidenceAuditV22
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -5063,6 +5079,7 @@ class EpisodeLedger:
                         "neural-prior-promotion-evidence-v20",
                         "neural-prior-promotion-evidence-v21",
                         "neural-prior-promotion-evidence-v22",
+                        "neural-prior-promotion-evidence-v23",
                     ):
                         raw_payload = json.loads(row["evidence_payload_json"])
                         if not isinstance(raw_payload, dict):
@@ -5090,6 +5107,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v20",
                             "neural-prior-promotion-evidence-v21",
                             "neural-prior-promotion-evidence-v22",
+                            "neural-prior-promotion-evidence-v23",
                         ):
                             raw_payload["regime_classifier_evidence_digests"] = tuple(
                                 raw_payload["regime_classifier_evidence_digests"]
@@ -5115,6 +5133,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v20",
                             "neural-prior-promotion-evidence-v21",
                             "neural-prior-promotion-evidence-v22",
+                            "neural-prior-promotion-evidence-v23",
                         ):
                             raw_payload["range_band_skill_bounds"] = tuple(
                                 tuple(item)
@@ -5134,6 +5153,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v20",
                             "neural-prior-promotion-evidence-v21",
                             "neural-prior-promotion-evidence-v22",
+                            "neural-prior-promotion-evidence-v23",
                         ):
                             raw_payload[
                                 "range_band_skill_inference_diagnostics"
@@ -5154,6 +5174,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v20",
                             "neural-prior-promotion-evidence-v21",
                             "neural-prior-promotion-evidence-v22",
+                            "neural-prior-promotion-evidence-v23",
                         ):
                             raw_payload[
                                 "certified_range_geometry_contract_digests"
@@ -5354,6 +5375,15 @@ class EpisodeLedger:
                                     separators=(",", ":"),
                                 ),
                             )
+                        elif contract == "neural-prior-promotion-evidence-v22":
+                            evidence = LegacyNeuralPriorPromotionEvidenceAuditV22(
+                                promotion_evidence_digest=promotion_evidence_digest,
+                                payload_json=json.dumps(
+                                    raw_payload,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                ),
+                            )
                         else:
                             raw_payload["range_metric_cell_bounds"] = tuple(
                                 tuple(item)
@@ -5392,7 +5422,7 @@ class EpisodeLedger:
             row["candidate_manifest_json"],
             expected_digest=row["candidate_manifest_digest"],
         )
-        if isinstance(evidence, NeuralPriorPromotionEvidence):
+        if type(evidence) is NeuralPriorPromotionEvidence:
             if not isinstance(manifest, NeuralPriorCandidateManifest) or any(
                 not isinstance(item, PriorHoldoutEvaluation)
                 for item in evaluations
@@ -6597,6 +6627,8 @@ def _decode_holdout_scoring_artifact(
         raise ValueError("invalid holdout scoring artifact payload")
     values = dict(value)
     stored_digest = values.pop("artifact_digest", None)
+    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v3":
+        raise ValueError("legacy holdout scoring artifacts are audit-only")
     for name in (
         "ordered_case_ids",
         "ordered_evaluation_digests",

@@ -165,7 +165,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact = {
-            "contract": "neural-prior-deployment-decision-artifact-v4",
+            "contract": "neural-prior-deployment-decision-artifact-v5",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "operational_grid_contract_digest": "d" * 64,
             "operational_frame_shape": list(frames.shape[1:]),
@@ -180,7 +180,19 @@ class ForecastRunArtifactTests(unittest.TestCase):
             | {"evidence_digest": range_partition_digest},
             "range_geometry_contract": range_geometry,
             "promotion_selection_evidence": {
+                "promotion_evidence_contract": (
+                    "neural-prior-promotion-evidence-v23"
+                ),
                 "promotion_evidence_digest": promotion_digest,
+                "scoring_replay_contract": (
+                    "neural-prior-scoring-replay-bundle-v3"
+                ),
+                "scoring_replay_method": (
+                    "builtin-semantic-scoring-recomputation-v3"
+                ),
+                "semantic_replay_generation_digest": (
+                    policy.semantic_replay_generation_digest
+                ),
                 "candidate_prior_digest": runner.neural_prior_digest,
                 "parent_prior_digest": "f" * 64,
                 "deployment_eligible": True,
@@ -1081,7 +1093,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v4",
+            "contract": "neural-prior-deployment-decision-artifact-v5",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "operational_grid_contract_digest": "d" * 64,
             "operational_frame_shape": list(frames.shape[1:]),
@@ -1096,7 +1108,19 @@ class ForecastRunArtifactTests(unittest.TestCase):
             | {"evidence_digest": range_partition_digest},
             "range_geometry_contract": range_geometry,
             "promotion_selection_evidence": {
+                "promotion_evidence_contract": (
+                    "neural-prior-promotion-evidence-v23"
+                ),
                 "promotion_evidence_digest": promotion_evidence_digest,
+                "scoring_replay_contract": (
+                    "neural-prior-scoring-replay-bundle-v3"
+                ),
+                "scoring_replay_method": (
+                    "builtin-semantic-scoring-recomputation-v3"
+                ),
+                "semantic_replay_generation_digest": (
+                    policy.semantic_replay_generation_digest
+                ),
                 "candidate_prior_digest": runner.neural_prior_digest,
                 "parent_prior_digest": "f" * 64,
                 "deployment_eligible": True,
