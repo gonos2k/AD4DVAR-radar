@@ -7884,19 +7884,28 @@ class ScoringReplayCaseArtifact:
             not self.case_id
             or self.manifest.holdout_plan_digest != self.plan.plan_digest
             or self.manifest.holdout_case(self.case_id).case_id != self.case_id
+            or not isinstance(self.candidate_forecast.run, ForecastRunContract)
+            or not isinstance(self.parent_forecast.run, ForecastRunContract)
             or self.input_frames_dbz.ndim != 3
             or not self.input_frames_dbz.is_floating_point()
             or self.input_qc_valid_mask.dtype is not torch.bool
             or self.input_qc_valid_mask.shape != self.input_frames_dbz.shape
+            or self.input_qc_valid_mask.device != self.input_frames_dbz.device
             or not self.input_quality_weight.is_floating_point()
-            or self.input_quality_weight.shape != self.input_frames_dbz.shape[-2:]
+            or self.input_quality_weight.shape != self.input_frames_dbz.shape
+            or self.input_quality_weight.dtype != self.input_frames_dbz.dtype
+            or self.input_quality_weight.device != self.input_frames_dbz.device
+            or not bool(torch.all(torch.isfinite(self.input_quality_weight)))
             or (
                 self.background_frames_dbz is not None
                 and (
                     not self.background_frames_dbz.is_floating_point()
-                    or self.background_frames_dbz.ndim != 3
-                    or self.background_frames_dbz.shape[-2:]
-                    != self.input_frames_dbz.shape[-2:]
+                    or self.background_frames_dbz.shape
+                    != self.input_frames_dbz.shape
+                    or self.background_frames_dbz.dtype
+                    != self.input_frames_dbz.dtype
+                    or self.background_frames_dbz.device
+                    != self.input_frames_dbz.device
                 )
             )
             or self.range_grid_x_m.shape != self.input_frames_dbz.shape[-2:]

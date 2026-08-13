@@ -848,7 +848,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             full_analysis_input_digest=full_digest,
             fixed_input_context_digest=("a" if index == 1 else "b") * 64,
             observation_quality_weight_digest=(
-                promotion_module.tensor_digest(torch.ones((2, 2)))
+                promotion_module.tensor_digest(torch.ones((3, 2, 2)))
             ),
             observation_std_dbz_digest=("4" if index == 1 else "5") * 64,
             verification_plan_digest=planned.verification_plan_digest,
@@ -1262,6 +1262,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         cases = []
         for index, evaluation in enumerate(evaluations, start=1):
             spatial = torch.full((2, 2), float(index))
+            input_frames = torch.stack(
+                (spatial - 1.0, spatial - 0.5, spatial)
+            )
+            input_valid = torch.ones_like(input_frames, dtype=torch.bool)
+            input_quality = torch.ones_like(input_frames)
             forecast = spatial.unsqueeze(0)
             valid = torch.ones_like(forecast, dtype=torch.bool)
             state = SimpleNamespace(
@@ -1270,27 +1275,43 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 log_growth_per_step=torch.tensor(0.0),
             )
 
-            def forecast_result(prefix: str, offset: float):
+            def forecast_result(
+                prefix: str,
+                offset: float,
+                *,
+                role: str,
+                prior_digest: str,
+                application_digest: str,
+                training_manifest_digest: str,
+            ):
+                run = ForecastRunContract.from_inputs(
+                    NowcastConfig(),
+                    input_frames,
+                    input_valid,
+                    None,
+                    observation_quality_weight=input_quality,
+                    neural_prior_digest=prior_digest,
+                    prior_application_digest=application_digest,
+                    prior_model_contract_digest=(
+                        retained_manifest.model_contract_digest
+                    ),
+                    prior_feature_schema_digest=(
+                        retained_manifest.feature_schema_digest
+                    ),
+                    prior_training_manifest_digest=training_manifest_digest,
+                    prior_inference_evidence_digest=prefix * 64,
+                    prior_inference_algorithm_digest="8" * 64,
+                    prior_numerical_runtime_digest="4" * 64,
+                    prior_dependency="radar_dependent",
+                    prior_role=role,
+                )
                 return SimpleNamespace(
                     forecast_dbz=forecast + offset,
                     valid_mask=valid,
                     background_fallback_mask=torch.zeros_like(valid),
                     forecast_confidence=torch.ones_like(forecast),
                     state=state,
-                    run=SimpleNamespace(
-                        input_frames_digest=promotion_module.tensor_digest(
-                            forecast
-                        ),
-                        observation_masks_digest=promotion_module.tensor_digest(
-                            valid
-                        ),
-                        observation_quality_weight_digest=(
-                            promotion_module.tensor_digest(
-                                torch.ones((2, 2))
-                            )
-                        ),
-                        background_frames_digest=None,
-                    ),
+                    run=run,
                     forecast_run_digest=(prefix * 64),
                     forecast_dbz_digest=(("4" if prefix == "a" else "5") * 64),
                     valid_mask_digest="6" * 64,
@@ -1334,8 +1355,26 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     manifest=retained_manifest,
                     plan=retained_plan,
                     case_id=evaluation.case_id,
-                    candidate_forecast=forecast_result("a", 0.1),
-                    parent_forecast=forecast_result("b", 0.0),
+                    candidate_forecast=forecast_result(
+                        "a",
+                        0.1,
+                        role="candidate",
+                        prior_digest=retained_manifest.candidate_prior_digest,
+                        application_digest="c" * 64,
+                        training_manifest_digest=(
+                            retained_manifest.candidate_training_manifest_digest
+                        ),
+                    ),
+                    parent_forecast=forecast_result(
+                        "b",
+                        0.0,
+                        role="parent",
+                        prior_digest=retained_manifest.parent_prior_digest,
+                        application_digest="d" * 64,
+                        training_manifest_digest=(
+                            retained_manifest.parent_training_manifest_digest
+                        ),
+                    ),
                     verification=SimpleNamespace(
                         frames_dbz=forecast,
                         valid_mask=valid,
@@ -1346,9 +1385,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     parent_prior_application=prior_application("d", 0.0),
                     candidate_prior_runner=SimpleNamespace(),
                     parent_prior_runner=SimpleNamespace(),
-                    input_frames_dbz=forecast,
-                    input_qc_valid_mask=valid,
-                    input_quality_weight=torch.ones((2, 2)),
+                    input_frames_dbz=input_frames,
+                    input_qc_valid_mask=input_valid,
+                    input_quality_weight=input_quality,
                     background_frames_dbz=None,
                     uncertainty_target=uncertainty_target,
                     state_calibration_target=state_target,
@@ -1405,9 +1444,67 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 background_present=False,
             )
 
+    def test_semantic_replay_requires_time_resolved_quality_weight(self) -> None:
+        case = self.scoring_replay_cases((self.evaluation(1, -0.2),))[0]
+
+        self.assertIsInstance(
+            case.candidate_forecast.run,
+            ForecastRunContract,
+        )
+        self.assertEqual(
+            case.input_quality_weight.shape,
+            case.input_frames_dbz.shape,
+        )
+        self.assertEqual(
+            promotion_module.tensor_digest(case.input_quality_weight),
+            case.candidate_forecast.run.observation_quality_weight_digest,
+        )
+        with self.assertRaisesRegex(
+            ValueError, "semantic scoring replay case is invalid"
+        ):
+            replace(
+                case,
+                input_quality_weight=case.input_quality_weight[-1],
+            )
+
+        tensors = case.replay_tensors()
+        tensors["input_quality_weight"] = tensors[
+            "input_quality_weight"
+        ][-1]
+        with self.assertRaisesRegex(ValueError, "input tensor shape"):
+            ledger_module._validate_scoring_replay_case_tensors(
+                tensors,
+                dynamic_source=False,
+                background_present=False,
+            )
+
+    def test_semantic_replay_requires_exact_background_time_shape(self) -> None:
+        case = self.scoring_replay_cases((self.evaluation(1, -0.2),))[0]
+
+        with self.assertRaisesRegex(
+            ValueError, "semantic scoring replay case is invalid"
+        ):
+            replace(
+                case,
+                background_frames_dbz=torch.ones((2, 2, 2)),
+            )
+
+        tensors = case.replay_tensors()
+        tensors["background_frames_dbz"] = torch.ones((2, 2, 2))
+        with self.assertRaisesRegex(ValueError, "background tensor shape"):
+            ledger_module._validate_scoring_replay_case_tensors(
+                tensors,
+                dynamic_source=False,
+                background_present=True,
+            )
+
     def test_semantic_replay_raw_input_must_match_forecast_run(self) -> None:
         case = self.scoring_replay_cases((self.evaluation(1, -0.2),))[0]
-        case.candidate_forecast.run.input_frames_digest = "0" * 64
+        object.__setattr__(
+            case.candidate_forecast.run,
+            "input_frames_digest",
+            "0" * 64,
+        )
         with self.assertRaisesRegex(
             ValueError, "raw inputs disagree with forecast run"
         ):
@@ -1452,6 +1549,48 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertIsInstance(
             decoded,
             ledger_module.LegacyScoringReplayBundleManifestAuditV1,
+        )
+
+    def test_pr111_semantic_bundle_remains_audit_loadable(self) -> None:
+        case_id = "case-1"
+        records = tuple(
+            ledger_module.ScoringReplayTensorRecord(
+                case_id=case_id,
+                role=role,
+                archive_member=f"case_000000__{role}",
+                dtype="float32",
+                shape=(1, 2, 2),
+                tensor_digest="1" * 64,
+            )
+            for role in sorted(ledger_module.SCORING_REPLAY_REQUIRED_TENSOR_ROLES)
+        )
+        legacy = ledger_module.LegacyScoringReplayBundleManifestAuditV2(
+            scoring_input_artifact_digest="2" * 64,
+            ordered_case_ids=(case_id,),
+            ordered_evaluation_digests=("3" * 64,),
+            semantic_case_digests=("4" * 64,),
+            dynamic_source_case_ids=(),
+            background_case_ids=(),
+            algorithm_source_manifest_digest="5" * 64,
+            runtime_compatibility_digest="6" * 64,
+            runtime_exact_digest="7" * 64,
+            tensor_records=records,
+            tensor_archive_sha256="8" * 64,
+            evaluation_payload_sha256="9" * 64,
+        )
+
+        decoded = ledger_module._decode_scoring_replay_bundle_manifest(
+            json.dumps(
+                legacy.payload | {"bundle_digest": legacy.bundle_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            expected_digest=legacy.bundle_digest,
+        )
+
+        self.assertIsInstance(
+            decoded,
+            ledger_module.LegacyScoringReplayBundleManifestAuditV2,
         )
 
     def scoring_completion_receipt(self, evaluations, *, manifest=None, plan=None):
@@ -7057,27 +7196,54 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ),
             ),
         )
-        candidate_run = SimpleNamespace(
-            **common,
-            neural_prior_digest=manifest.candidate_prior_digest,
-            prior_application_digest=candidate_app.application_digest,
-            prior_inference_evidence_digest=(
-                candidate_app.inference_evidence.evidence_digest
-            ),
-            prior_role="candidate",
-            prior_training_manifest_digest=(
+        def typed_run(
+            *,
+            role: str,
+            prior_digest: str,
+            application_digest: str,
+            evidence_digest: str,
+            training_manifest_digest: str,
+        ) -> ForecastRunContract:
+            frames = torch.zeros((3, 2, 2))
+            masks = torch.ones_like(frames, dtype=torch.bool)
+            run = ForecastRunContract.from_inputs(
+                NowcastConfig(),
+                frames,
+                masks,
+                None,
+                observation_quality_weight=torch.ones_like(frames),
+                neural_prior_digest=prior_digest,
+                prior_application_digest=application_digest,
+                prior_model_contract_digest=manifest.model_contract_digest,
+                prior_feature_schema_digest=manifest.feature_schema_digest,
+                prior_training_manifest_digest=training_manifest_digest,
+                prior_inference_evidence_digest=evidence_digest,
+                prior_inference_algorithm_digest="8" * 64,
+                prior_numerical_runtime_digest="4" * 64,
+                prior_dependency="radar_dependent",
+                prior_role=role,
+            )
+            # The surrounding test exercises preregistered holdout lineage.
+            # Retain its canonical fixture digests on a real product run object.
+            for name, value in common.items():
+                object.__setattr__(run, name, value)
+            return run
+
+        candidate_run = typed_run(
+            role="candidate",
+            prior_digest=manifest.candidate_prior_digest,
+            application_digest=candidate_app.application_digest,
+            evidence_digest=candidate_app.inference_evidence.evidence_digest,
+            training_manifest_digest=(
                 manifest.candidate_training_manifest_digest
             ),
         )
-        parent_run = SimpleNamespace(
-            **common,
-            neural_prior_digest=manifest.parent_prior_digest,
-            prior_application_digest=parent_app.application_digest,
-            prior_inference_evidence_digest=(
-                parent_app.inference_evidence.evidence_digest
-            ),
-            prior_role="parent",
-            prior_training_manifest_digest=manifest.parent_training_manifest_digest,
+        parent_run = typed_run(
+            role="parent",
+            prior_digest=manifest.parent_prior_digest,
+            application_digest=parent_app.application_digest,
+            evidence_digest=parent_app.inference_evidence.evidence_digest,
+            training_manifest_digest=manifest.parent_training_manifest_digest,
         )
         candidate = SimpleNamespace(
             run=candidate_run,
@@ -7250,7 +7416,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 input_qc_valid_mask=torch.ones(
                     (3, 2, 2), dtype=torch.bool
                 ),
-                input_quality_weight=torch.ones((2, 2)),
+                input_quality_weight=torch.ones((3, 2, 2)),
                 background_frames_dbz=None,
                 uncertainty_target=self.uncertainty_target(1),
                 state_calibration_target=self.state_target(1),
@@ -7320,40 +7486,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
         candidate_runner.probability_contract = self.probability_contract()
 
-        parent_run.observation_quality_weight_digest = "0" * 64
-        with patch.object(
-            promotion_module,
-            "_forecast_result_content_digest",
-            side_effect=(
-                case.candidate_forecast_digest,
-                case.parent_forecast_digest,
-            ),
-        ), self.assertRaisesRegex(ValueError, "holdout inputs disagree"):
-            promotion_module.PriorHoldoutEvaluation.from_forecasts(
-                manifest,
-                plan,
-                case_id=case.case_id,
-                candidate_forecast=candidate,
-                parent_forecast=parent,
-                verification=verification,
-                metric_config=config,
-                candidate_prior_application=candidate_app,
-                parent_prior_application=parent_app,
-                candidate_prior_runner=candidate_runner,
-                parent_prior_runner=parent_runner,
-                input_frames_dbz=torch.zeros((3, 2, 2)),
-                uncertainty_target=self.uncertainty_target(1),
-                state_calibration_target=self.state_target(1),
-                regime_classifier=regime_classifier,
-                regime_classifier_manifest=plan.regime_classifier_manifests[0],
-                range_grid_x_m=torch.zeros((2, 2)),
-                range_grid_y_m=torch.zeros((2, 2)),
-                operational_issuance_domain=self.issuance_domain(1),
-            )
-        parent_run.observation_quality_weight_digest = (
-            case.observation_quality_weight_digest
+        object.__setattr__(
+            parent_run,
+            "observation_quality_weight_digest",
+            "0" * 64,
         )
-        parent_run.observation_std_dbz_digest = "0" * 64
         with patch.object(
             promotion_module,
             "_forecast_result_content_digest",
@@ -7383,7 +7520,50 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 range_grid_y_m=torch.zeros((2, 2)),
                 operational_issuance_domain=self.issuance_domain(1),
             )
-        parent_run.observation_std_dbz_digest = case.observation_std_dbz_digest
+        object.__setattr__(
+            parent_run,
+            "observation_quality_weight_digest",
+            case.observation_quality_weight_digest,
+        )
+        object.__setattr__(
+            parent_run,
+            "observation_std_dbz_digest",
+            "0" * 64,
+        )
+        with patch.object(
+            promotion_module,
+            "_forecast_result_content_digest",
+            side_effect=(
+                case.candidate_forecast_digest,
+                case.parent_forecast_digest,
+            ),
+        ), self.assertRaisesRegex(ValueError, "holdout inputs disagree"):
+            promotion_module.PriorHoldoutEvaluation.from_forecasts(
+                manifest,
+                plan,
+                case_id=case.case_id,
+                candidate_forecast=candidate,
+                parent_forecast=parent,
+                verification=verification,
+                metric_config=config,
+                candidate_prior_application=candidate_app,
+                parent_prior_application=parent_app,
+                candidate_prior_runner=candidate_runner,
+                parent_prior_runner=parent_runner,
+                input_frames_dbz=torch.zeros((3, 2, 2)),
+                uncertainty_target=self.uncertainty_target(1),
+                state_calibration_target=self.state_target(1),
+                regime_classifier=regime_classifier,
+                regime_classifier_manifest=plan.regime_classifier_manifests[0],
+                range_grid_x_m=torch.zeros((2, 2)),
+                range_grid_y_m=torch.zeros((2, 2)),
+                operational_issuance_domain=self.issuance_domain(1),
+            )
+        object.__setattr__(
+            parent_run,
+            "observation_std_dbz_digest",
+            case.observation_std_dbz_digest,
+        )
 
         candidate_app.inference_evidence.prior_output_valid_time = (
             "2026-08-09T01:00:00Z"
