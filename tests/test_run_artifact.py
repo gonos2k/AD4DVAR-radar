@@ -165,7 +165,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact = {
-            "contract": "neural-prior-deployment-decision-artifact-v5",
+            "contract": "neural-prior-deployment-decision-artifact-v6",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "operational_grid_contract_digest": "d" * 64,
             "operational_frame_shape": list(frames.shape[1:]),
@@ -181,18 +181,20 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "range_geometry_contract": range_geometry,
             "promotion_selection_evidence": {
                 "promotion_evidence_contract": (
-                    "neural-prior-promotion-evidence-v23"
+                    "neural-prior-promotion-evidence-v24"
                 ),
                 "promotion_evidence_digest": promotion_digest,
                 "scoring_replay_contract": (
-                    "neural-prior-scoring-replay-bundle-v3"
+                    "neural-prior-scoring-replay-bundle-v4"
                 ),
                 "scoring_replay_method": (
-                    "builtin-semantic-scoring-recomputation-v3"
+                    "builtin-semantic-scoring-recomputation-v4"
                 ),
                 "semantic_replay_generation_digest": (
                     policy.semantic_replay_generation_digest
                 ),
+                "scoring_backend_certification_policy_digest": None,
+                "scoring_backend_certification_evidence_digest": None,
                 "candidate_prior_digest": runner.neural_prior_digest,
                 "parent_prior_digest": "f" * 64,
                 "deployment_eligible": True,
@@ -1093,7 +1095,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v5",
+            "contract": "neural-prior-deployment-decision-artifact-v6",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "operational_grid_contract_digest": "d" * 64,
             "operational_frame_shape": list(frames.shape[1:]),
@@ -1109,18 +1111,20 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "range_geometry_contract": range_geometry,
             "promotion_selection_evidence": {
                 "promotion_evidence_contract": (
-                    "neural-prior-promotion-evidence-v23"
+                    "neural-prior-promotion-evidence-v24"
                 ),
                 "promotion_evidence_digest": promotion_evidence_digest,
                 "scoring_replay_contract": (
-                    "neural-prior-scoring-replay-bundle-v3"
+                    "neural-prior-scoring-replay-bundle-v4"
                 ),
                 "scoring_replay_method": (
-                    "builtin-semantic-scoring-recomputation-v3"
+                    "builtin-semantic-scoring-recomputation-v4"
                 ),
                 "semantic_replay_generation_digest": (
                     policy.semantic_replay_generation_digest
                 ),
+                "scoring_backend_certification_policy_digest": None,
+                "scoring_backend_certification_evidence_digest": None,
                 "candidate_prior_digest": runner.neural_prior_digest,
                 "parent_prior_digest": "f" * 64,
                 "deployment_eligible": True,
@@ -1178,6 +1182,18 @@ class ForecastRunArtifactTests(unittest.TestCase):
             path = Path(temporary) / "run.npz"
             save_forecast_run(result, path)
             loaded = load_forecast_run(path)
+            with np.load(path, allow_pickle=False) as archive:
+                legacy_arrays = {
+                    name: np.array(archive[name], copy=True)
+                    for name in archive.files
+                    if name != "forecast_run_artifact_digest"
+                }
+            legacy_arrays["forecast_run_artifact_version"] = np.asarray(
+                "forecast-run-v55"
+            )
+            legacy_path = Path(temporary) / "legacy-v55.npz"
+            self._save_arrays(legacy_path, legacy_arrays)
+            legacy = load_forecast_run(legacy_path)
 
         self.assertEqual(
             loaded.run.prior_promotion_evidence_digest,
@@ -1197,6 +1213,14 @@ class ForecastRunArtifactTests(unittest.TestCase):
         )
         self.assertEqual(
             loaded.run.prior_deployment_fallback_reason,
+            "certified_candidate",
+        )
+        self.assertEqual(
+            legacy.run.prior_deployment_lineage_contract,
+            "neural-prior-deployment-lineage-v6-audit",
+        )
+        self.assertEqual(
+            legacy.run.prior_deployment_fallback_reason,
             "certified_candidate",
         )
 

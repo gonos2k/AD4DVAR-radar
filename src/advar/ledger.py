@@ -26,8 +26,14 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from ._digest import tensor_digest
-from ._runtime import numerical_runtime_manifest
+from ._runtime import (
+    MPSBackendCertificationEvidence,
+    MPSBackendCertificationPolicy,
+    numerical_runtime_manifest,
+    validate_mps_backend_certification,
+)
 from .calibration import algorithm_bundle_digest
+from .mps_certification import mps_certification_runner_digest
 from .action_artifacts import (
     expanded_tensor_bytes,
     preflight_npz_archive,
@@ -150,6 +156,7 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV20,
     LegacyNeuralPriorPromotionEvidenceAuditV21,
     LegacyNeuralPriorPromotionEvidenceAuditV22,
+    LegacyNeuralPriorPromotionEvidenceAuditV23,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     ScoringReplayCaseArtifact,
@@ -190,6 +197,59 @@ _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
 _MAXIMUM_ACTION_ARTIFACT_FILE_BYTES = 2 * 1024**3
 _MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES = 8 * 1024**3
 _MAXIMUM_ACTION_GENERATOR_BYTES = 512 * 1024**2
+
+
+def _semantic_replay_execution_device(
+    cases: tuple[ScoringReplayCaseArtifact, ...],
+    case_tensors: Mapping[str, Mapping[str, Tensor]],
+) -> torch.device:
+    """Require one exact numerical runtime across every replay component."""
+
+    devices = {
+        str(tensor.device)
+        for tensors in case_tensors.values()
+        for tensor in tensors.values()
+    }
+    if len(devices) != 1:
+        raise ValueError("semantic scoring used multiple tensor devices")
+    device = torch.device(next(iter(devices)))
+    active_runtime = numerical_runtime_manifest(device)
+    for case in cases:
+        runtime_digests = (
+            case.candidate_prior_runner.numerical_runtime_digest,
+            case.parent_prior_runner.numerical_runtime_digest,
+            case.candidate_prior_application.inference_evidence.numerical_runtime_digest,
+            case.parent_prior_application.inference_evidence.numerical_runtime_digest,
+            case.regime_classifier.numerical_runtime_digest,
+            case.candidate_forecast.run.prior_numerical_runtime_digest,
+            case.parent_forecast.run.prior_numerical_runtime_digest,
+        )
+        if any(value != active_runtime.exact_digest for value in runtime_digests):
+            raise ValueError("semantic scoring runtime lineage is inconsistent")
+    return device
+
+
+def _validate_scoring_backend_certification(
+    execution_device: torch.device,
+    policy: MPSBackendCertificationPolicy | None,
+    evidence: MPSBackendCertificationEvidence | None,
+) -> tuple[str | None, str | None]:
+    """Fail closed when promotion scoring uses the MPS backend."""
+
+    if execution_device.type != "mps":
+        if policy is not None or evidence is not None:
+            raise ValueError("CPU scoring cannot claim MPS certification")
+        return None, None
+    if policy is None or evidence is None:
+        raise ValueError("MPS scoring requires approved certification")
+    validate_mps_backend_certification(
+        evidence,
+        policy,
+        execution_device=execution_device,
+        active_algorithm_source_manifest_digest=algorithm_bundle_digest(),
+        active_certification_runner_digest=mps_certification_runner_digest(),
+    )
+    return policy.policy_digest, evidence.evidence_digest
 
 
 @dataclass(frozen=True)
@@ -987,6 +1047,8 @@ class ScoringReplayBundleManifest:
     algorithm_source_manifest_digest: str
     runtime_compatibility_digest: str
     runtime_exact_digest: str
+    scoring_backend_certification_policy_digest: str | None
+    scoring_backend_certification_evidence_digest: str | None
     tensor_records: tuple[ScoringReplayTensorRecord, ...]
     tensor_archive_sha256: str
     evaluation_payload_sha256: str
@@ -1029,6 +1091,17 @@ class ScoringReplayBundleManifest:
         ):
             if re.fullmatch(r"[0-9a-f]{64}", value) is None:
                 raise ValueError("scoring replay bundle digest is invalid")
+        certification_digests = (
+            self.scoring_backend_certification_policy_digest,
+            self.scoring_backend_certification_evidence_digest,
+        )
+        if (certification_digests[0] is None) != (
+            certification_digests[1] is None
+        ):
+            raise ValueError("scoring replay backend certification is incomplete")
+        for value in certification_digests:
+            if value is not None and re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError("scoring replay certification digest is invalid")
         expected = {
             (case_id, role)
             for case_id in self.ordered_case_ids
@@ -1086,6 +1159,12 @@ class ScoringReplayBundleManifest:
             ),
             "runtime_compatibility_digest": self.runtime_compatibility_digest,
             "runtime_exact_digest": self.runtime_exact_digest,
+            "scoring_backend_certification_policy_digest": (
+                self.scoring_backend_certification_policy_digest
+            ),
+            "scoring_backend_certification_evidence_digest": (
+                self.scoring_backend_certification_evidence_digest
+            ),
             "tensor_records": [item.payload for item in self.tensor_records],
             "tensor_archive_sha256": self.tensor_archive_sha256,
             "evaluation_payload_sha256": self.evaluation_payload_sha256,
@@ -1299,11 +1378,75 @@ class LegacyScoringReplayBundleManifestAuditV2:
 
 
 @dataclass(frozen=True)
+class LegacyScoringReplayBundleManifestAuditV3(
+    LegacyScoringReplayBundleManifestAuditV2
+):
+    """PR #114 semantic replay retained for audit, never promotion."""
+
+    replay_method: str = "builtin-semantic-scoring-recomputation-v3"
+    contract: str = "neural-prior-scoring-replay-bundle-v3"
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-scoring-replay-bundle-v3"
+            or self.replay_method
+            != "builtin-semantic-scoring-recomputation-v3"
+            or not self.ordered_case_ids
+            or len(set(self.ordered_case_ids)) != len(self.ordered_case_ids)
+            or len(self.ordered_case_ids)
+            != len(self.ordered_evaluation_digests)
+            or len(self.semantic_case_digests) != len(self.ordered_case_ids)
+            or any(
+                case_id not in self.ordered_case_ids
+                for case_id in (
+                    *self.dynamic_source_case_ids,
+                    *self.background_case_ids,
+                )
+            )
+        ):
+            raise ValueError("legacy v3 semantic replay manifest is invalid")
+        for value in (
+            self.scoring_input_artifact_digest,
+            *self.ordered_evaluation_digests,
+            *self.semantic_case_digests,
+            self.algorithm_source_manifest_digest,
+            self.runtime_compatibility_digest,
+            self.runtime_exact_digest,
+            self.tensor_archive_sha256,
+            self.evaluation_payload_sha256,
+        ):
+            if re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError("legacy v3 semantic replay digest is invalid")
+        expected = {
+            (case_id, role)
+            for case_id in self.ordered_case_ids
+            for role in (
+                SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                | (
+                    SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
+                    if case_id in self.dynamic_source_case_ids
+                    else frozenset()
+                )
+                | (
+                    SCORING_REPLAY_BACKGROUND_TENSOR_ROLES
+                    if case_id in self.background_case_ids
+                    else frozenset()
+                )
+            )
+        }
+        actual = {(item.case_id, item.role) for item in self.tensor_records}
+        if actual != expected or len(actual) != len(self.tensor_records):
+            raise ValueError("legacy v3 semantic replay tensor set is incomplete")
+        object.__setattr__(self, "bundle_digest", _json_digest(self.payload))
+
+
+@dataclass(frozen=True)
 class LoadedScoringReplayBundle:
     manifest: (
         ScoringReplayBundleManifest
         | LegacyScoringReplayBundleManifestAuditV1
         | LegacyScoringReplayBundleManifestAuditV2
+        | LegacyScoringReplayBundleManifestAuditV3
     )
     evaluations: tuple[PriorHoldoutEvaluation, ...]
     tensors: dict[tuple[str, str], Tensor]
@@ -3824,18 +3967,33 @@ class EpisodeLedger:
         cases: tuple[ScoringReplayCaseArtifact, ...],
         *,
         algorithm_source_manifest_digest: str,
+        mps_backend_certification_policy: (
+            MPSBackendCertificationPolicy | None
+        ) = None,
+        mps_backend_certification: (
+            MPSBackendCertificationEvidence | None
+        ) = None,
     ) -> ScoringReplayBundleManifest:
         """Recompute scores in product code, then durably retain exact inputs."""
 
         if not cases or any(type(item) is not ScoringReplayCaseArtifact for item in cases):
             raise TypeError("scoring replay requires typed product case artifacts")
         ordered_cases = tuple(sorted(cases, key=lambda item: item.case_id))
-        execution_device = ordered_cases[0].input_frames_dbz.device
-        if any(
-            item.input_frames_dbz.device != execution_device
-            for item in ordered_cases
-        ):
-            raise ValueError("scoring replay cases use different devices")
+        case_tensors = {
+            item.case_id: item.replay_tensors() for item in ordered_cases
+        }
+        execution_device = _semantic_replay_execution_device(
+            ordered_cases,
+            case_tensors,
+        )
+        (
+            scoring_certification_policy_digest,
+            scoring_certification_evidence_digest,
+        ) = _validate_scoring_backend_certification(
+            execution_device,
+            mps_backend_certification_policy,
+            mps_backend_certification,
+        )
         semantic_case_digests = tuple(
             item.semantic_input_digest for item in ordered_cases
         )
@@ -3844,9 +4002,6 @@ class EpisodeLedger:
             for item in ordered_cases
         )
         case_ids = tuple(item.case_id for item in ordered)
-        case_tensors = {
-            item.case_id: item.replay_tensors() for item in ordered_cases
-        }
         dynamic_source_case_ids = tuple(
             item.case_id
             for item in ordered_cases
@@ -3945,6 +4100,12 @@ class EpisodeLedger:
                     active_runtime.compatibility_digest
                 ),
                 runtime_exact_digest=active_runtime.exact_digest,
+                scoring_backend_certification_policy_digest=(
+                    scoring_certification_policy_digest
+                ),
+                scoring_backend_certification_evidence_digest=(
+                    scoring_certification_evidence_digest
+                ),
                 tensor_records=tuple(records),
                 tensor_archive_sha256=_file_digest(archive_path),
                 evaluation_payload_sha256=_file_digest(evaluation_path),
@@ -4124,6 +4285,7 @@ class EpisodeLedger:
                 (
                     LegacyScoringReplayBundleManifestAuditV1,
                     LegacyScoringReplayBundleManifestAuditV2,
+                    LegacyScoringReplayBundleManifestAuditV3,
                 ),
             ):
                 raise ValueError(
@@ -4328,6 +4490,12 @@ class EpisodeLedger:
         scheduler_trust_store_path: str | Path,
         scoring_artifact: HoldoutScoringArtifact | None = None,
         scoring_replay_cases: tuple[ScoringReplayCaseArtifact, ...] | None = None,
+        mps_backend_certification_policy: (
+            MPSBackendCertificationPolicy | None
+        ) = None,
+        mps_backend_certification: (
+            MPSBackendCertificationEvidence | None
+        ) = None,
     ) -> str:
         """Append the immutable output and log produced by one trusted launch."""
 
@@ -4359,9 +4527,33 @@ class EpisodeLedger:
                 scoring_artifact.scoring_replay_bundle_digest,
                 cases=scoring_replay_cases,
             )
+            if not scoring_replay_cases:
+                raise ValueError("scoring completion requires semantic replay cases")
+            ordered_replay_cases = tuple(
+                sorted(scoring_replay_cases, key=lambda item: item.case_id)
+            )
+            replay_case_tensors = {
+                item.case_id: item.replay_tensors()
+                for item in ordered_replay_cases
+            }
+            execution_device = _semantic_replay_execution_device(
+                ordered_replay_cases,
+                replay_case_tensors,
+            )
+            (
+                scoring_certification_policy_digest,
+                scoring_certification_evidence_digest,
+            ) = _validate_scoring_backend_certification(
+                execution_device,
+                mps_backend_certification_policy,
+                mps_backend_certification,
+            )
             if (
-                not scoring_replay_cases
-                or not replay.semantic_replay_verified
+                not replay.semantic_replay_verified
+                or not isinstance(
+                    replay.manifest,
+                    ScoringReplayBundleManifest,
+                )
                 or replay.manifest.contract != SEMANTIC_SCORING_REPLAY_CONTRACT
                 or replay.manifest.replay_method != SEMANTIC_SCORING_REPLAY_METHOD
                 or scoring_artifact.scoring_replay_contract
@@ -4379,17 +4571,27 @@ class EpisodeLedger:
                 or replay.manifest.runtime_exact_digest
                 != scoring_artifact.scoring_runtime_digest
                 or replay.manifest.runtime_exact_digest
-                != numerical_runtime_manifest(
-                    scoring_replay_cases[0].input_frames_dbz.device
-                ).exact_digest
+                != numerical_runtime_manifest(execution_device).exact_digest
+                or replay.manifest.scoring_backend_certification_policy_digest
+                != scoring_certification_policy_digest
+                or replay.manifest.scoring_backend_certification_evidence_digest
+                != scoring_certification_evidence_digest
+                or scoring_artifact.scoring_backend_certification_policy_digest
+                != scoring_certification_policy_digest
+                or scoring_artifact.scoring_backend_certification_evidence_digest
+                != scoring_certification_evidence_digest
                 or replay.manifest.algorithm_source_manifest_digest
                 != algorithm_bundle_digest()
             ):
                 raise ValueError(
                     "scoring completion replay bundle disagrees with its output"
                 )
-        elif scoring_artifact is not None:
-            raise ValueError("training completion cannot seal a scoring artifact")
+        elif (
+            scoring_artifact is not None
+            or mps_backend_certification_policy is not None
+            or mps_backend_certification is not None
+        ):
+            raise ValueError("training completion cannot seal scoring evidence")
         scheduler_trust = _load_scheduler_trust_store(
             scheduler_trust_store_path
         )
@@ -4519,6 +4721,10 @@ class EpisodeLedger:
         )
         if (
             not replay.semantic_replay_verified
+            or not isinstance(
+                replay.manifest,
+                ScoringReplayBundleManifest,
+            )
             or replay.manifest.scoring_input_artifact_digest
             != scoring_input_artifact.artifact_digest
             or replay.manifest.ordered_evaluation_digests
@@ -4526,6 +4732,14 @@ class EpisodeLedger:
                 item.evaluation_digest
                 for item in sorted(evaluations, key=lambda item: item.case_id)
             )
+            or replay.manifest.scoring_backend_certification_policy_digest
+            != scoring_artifact.scoring_backend_certification_policy_digest
+            or replay.manifest.scoring_backend_certification_evidence_digest
+            != scoring_artifact.scoring_backend_certification_evidence_digest
+            or evidence.scoring_backend_certification_policy_digest
+            != scoring_artifact.scoring_backend_certification_policy_digest
+            or evidence.scoring_backend_certification_evidence_digest
+            != scoring_artifact.scoring_backend_certification_evidence_digest
         ):
             raise ValueError("promotion scoring replay bundle is inconsistent")
         recomputed = compute_neural_prior_promotion(
@@ -4900,6 +5114,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV20
         | LegacyNeuralPriorPromotionEvidenceAuditV21
         | LegacyNeuralPriorPromotionEvidenceAuditV22
+        | LegacyNeuralPriorPromotionEvidenceAuditV23
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -4974,6 +5189,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV20
                 | LegacyNeuralPriorPromotionEvidenceAuditV21
                 | LegacyNeuralPriorPromotionEvidenceAuditV22
+                | LegacyNeuralPriorPromotionEvidenceAuditV23
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -5080,6 +5296,7 @@ class EpisodeLedger:
                         "neural-prior-promotion-evidence-v21",
                         "neural-prior-promotion-evidence-v22",
                         "neural-prior-promotion-evidence-v23",
+                        "neural-prior-promotion-evidence-v24",
                     ):
                         raw_payload = json.loads(row["evidence_payload_json"])
                         if not isinstance(raw_payload, dict):
@@ -5108,6 +5325,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v21",
                             "neural-prior-promotion-evidence-v22",
                             "neural-prior-promotion-evidence-v23",
+                            "neural-prior-promotion-evidence-v24",
                         ):
                             raw_payload["regime_classifier_evidence_digests"] = tuple(
                                 raw_payload["regime_classifier_evidence_digests"]
@@ -5134,6 +5352,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v21",
                             "neural-prior-promotion-evidence-v22",
                             "neural-prior-promotion-evidence-v23",
+                            "neural-prior-promotion-evidence-v24",
                         ):
                             raw_payload["range_band_skill_bounds"] = tuple(
                                 tuple(item)
@@ -5154,6 +5373,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v21",
                             "neural-prior-promotion-evidence-v22",
                             "neural-prior-promotion-evidence-v23",
+                            "neural-prior-promotion-evidence-v24",
                         ):
                             raw_payload[
                                 "range_band_skill_inference_diagnostics"
@@ -5175,6 +5395,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v21",
                             "neural-prior-promotion-evidence-v22",
                             "neural-prior-promotion-evidence-v23",
+                            "neural-prior-promotion-evidence-v24",
                         ):
                             raw_payload[
                                 "certified_range_geometry_contract_digests"
@@ -5377,6 +5598,15 @@ class EpisodeLedger:
                             )
                         elif contract == "neural-prior-promotion-evidence-v22":
                             evidence = LegacyNeuralPriorPromotionEvidenceAuditV22(
+                                promotion_evidence_digest=promotion_evidence_digest,
+                                payload_json=json.dumps(
+                                    raw_payload,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                ),
+                            )
+                        elif contract == "neural-prior-promotion-evidence-v23":
+                            evidence = LegacyNeuralPriorPromotionEvidenceAuditV23(
                                 promotion_evidence_digest=promotion_evidence_digest,
                                 payload_json=json.dumps(
                                     raw_payload,
@@ -6627,7 +6857,7 @@ def _decode_holdout_scoring_artifact(
         raise ValueError("invalid holdout scoring artifact payload")
     values = dict(value)
     stored_digest = values.pop("artifact_digest", None)
-    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v3":
+    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v4":
         raise ValueError("legacy holdout scoring artifacts are audit-only")
     for name in (
         "ordered_case_ids",
@@ -6652,6 +6882,7 @@ def _decode_scoring_replay_bundle_manifest(
     ScoringReplayBundleManifest
     | LegacyScoringReplayBundleManifestAuditV1
     | LegacyScoringReplayBundleManifestAuditV2
+    | LegacyScoringReplayBundleManifestAuditV3
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -6684,6 +6915,7 @@ def _decode_scoring_replay_bundle_manifest(
             ScoringReplayBundleManifest
             | LegacyScoringReplayBundleManifestAuditV1
             | LegacyScoringReplayBundleManifestAuditV2
+            | LegacyScoringReplayBundleManifestAuditV3
         ) = LegacyScoringReplayBundleManifestAuditV1(
             **cast(Any, values)
         )
@@ -6699,6 +6931,10 @@ def _decode_scoring_replay_bundle_manifest(
         )
         if values.get("contract") == "neural-prior-scoring-replay-bundle-v2":
             manifest = LegacyScoringReplayBundleManifestAuditV2(
+                **cast(Any, values)
+            )
+        elif values.get("contract") == "neural-prior-scoring-replay-bundle-v3":
+            manifest = LegacyScoringReplayBundleManifestAuditV3(
                 **cast(Any, values)
             )
         else:

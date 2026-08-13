@@ -1542,11 +1542,21 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v61`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v55`
+- `output_contract_version`: 현재 `nowcast-npz-v62`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v56`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
+
+`forecast-run-v56`은 deployment-decision artifact v6와
+`neural-prior-deployment-lineage-v7`을 current 의미로 결합한다. 이전
+`forecast-run-v55`는 v4 decision artifact를 보존하는 audit lineage로만
+적재되며 current operational deployment replay에는 사용할 수 없다.
+
+Semantic holdout scoring은 모든 case와 tensor role이 하나의 execution
+device/runtime을 사용해야 한다. CPU scoring에는 MPS 인증을 붙일 수 없고,
+MPS scoring은 승인된 backend policy와 signed evidence를 replay append와
+completion 양쪽에서 검증해야 promotion evidence에 들어갈 수 있다.
 - `displacement_yx`: `(row, column)` pixel/step
 - `grid_velocity_mps_yx`, `displacement_mps_yx`: 호환용 grid-axis
   `(row, column)` m/s
