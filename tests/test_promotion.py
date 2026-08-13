@@ -27,10 +27,14 @@ from advar.nowcast import (
 )
 from advar.physics import dbz_to_echo
 from advar import (
+    AnalysisConfig,
+    CalibrationMetric,
+    CalibrationRegime,
     EpisodeLedger,
     DeployedNeuralPriorPolicy,
     ForecastRunContract,
     NowcastConfig,
+    OperationalCalibrationManifest,
     NeuralPriorCandidateManifest,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
@@ -57,6 +61,10 @@ from advar import (
     verification_plan_digest,
     neural_prior_state_censor_policy_digest,
     numerical_runtime_manifest,
+    operational_runtime_profile_digest,
+    load_forecast_run,
+    save_forecast_run,
+    variational_nowcast,
 )
 from advar.sensitivity import _LearningPolicyTrustStore
 
@@ -196,10 +204,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
         self.assertEqual(
             scoring.contract,
-            "neural-prior-holdout-scoring-artifact-v3",
+            "neural-prior-holdout-scoring-artifact-v4",
         )
-        self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v23")
-        self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v7")
+        self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v24")
+        self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v8")
         self.assertEqual(
             evidence.semantic_replay_generation_digest,
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST,
@@ -1583,6 +1591,893 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 dynamic_source=False,
                 background_present=False,
             )
+
+    def test_semantic_replay_requires_one_device_across_every_role(self) -> None:
+        case = self.scoring_replay_cases((self.evaluation(1, -0.2),))[0]
+        tensors = case.replay_tensors()
+        tensors["verification_valid_mask"] = torch.empty(
+            tensors["verification_valid_mask"].shape,
+            dtype=torch.bool,
+            device="meta",
+        )
+
+        with self.assertRaisesRegex(ValueError, "multiple tensor devices"):
+            ledger_module._semantic_replay_execution_device(
+                (case,),
+                {case.case_id: tensors},
+            )
+
+    def test_scoring_backend_certification_is_device_specific(self) -> None:
+        with self.assertRaisesRegex(
+            ValueError,
+            "CPU scoring cannot claim MPS certification",
+        ):
+            ledger_module._validate_scoring_backend_certification(
+                torch.device("cpu"),
+                Mock(),
+                Mock(),
+            )
+        with self.assertRaisesRegex(
+            ValueError,
+            "MPS scoring requires approved certification",
+        ):
+            ledger_module._validate_scoring_backend_certification(
+                torch.device("mps"),
+                None,
+                None,
+            )
+
+    def test_full_product_semantic_replay_reaches_promotion_without_scorer_patch(
+        self,
+    ) -> None:
+        """Exercise the product scorer, not a prepared evaluation callback."""
+
+        case_id = "semantic-product-case"
+        issue_time = "2026-08-09T00:20:00Z"
+        verification_time = "2026-08-09T01:20:00Z"
+        forecast_valid_times = tuple(
+            f"2026-08-09T{hour:02d}:{minute:02d}:00Z"
+            for hour, minute in (
+                (0, 30),
+                (0, 40),
+                (0, 50),
+                (1, 0),
+                (1, 10),
+                (1, 20),
+            )
+        )
+        input_frames = torch.tensor(
+            [
+                [[8.0, 1.0], [8.0, 1.0]],
+                [[9.0, 1.0], [9.0, 1.0]],
+                [[10.0, 1.0], [10.0, 1.0]],
+            ]
+        )
+        input_valid = torch.ones_like(input_frames, dtype=torch.bool)
+        input_quality = torch.ones_like(input_frames)
+        observation_std = torch.full_like(input_frames, 2.0)
+        config = NowcastConfig(horizon_minutes=60)
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-09T00:00:00Z",
+                "2026-08-09T00:10:00Z",
+                issue_time,
+            ),
+            dx_m=1_000.0,
+            dy_m=1_000.0,
+            projection="EPSG:3857",
+            grid_hash="4" * 64,
+        )
+        input_plan = promotion_module.NeuralPriorInputPlan(
+            valid_times=grid.valid_times,
+            grid_contract_digest=grid.digest,
+            radar_product_digest="a" * 64,
+            qc_pipeline_digest="9" * 64,
+            background_cycle_rule_digest="1" * 64,
+            mask_policy_digest="3" * 64,
+            observation_valid_time=issue_time,
+            input_available_time=issue_time,
+            decision_deadline="2026-08-09T00:22:00Z",
+            publication_time="2026-08-09T00:25:00Z",
+        )
+        data_identity = promotion_module.OperationalDataIdentity(
+            radar_class="single-site",
+            qc_pipeline_digest="9" * 64,
+            observation_error_model_digest="2" * 64,
+            background_model_digest="3" * 64,
+            radar_product_digest="a" * 64,
+            background_cycle_rule_digest="1" * 64,
+            mask_policy_digest="3" * 64,
+            radar_source_kind="single_site",
+            radar_site_digest="a" * 64,
+            radar_site_location_digest="b" * 64,
+            radar_source_contract_digest="d" * 64,
+        )
+        calibration = OperationalCalibrationManifest(
+            calibration_id="semantic-replay-p0",
+            profile_kind="p0",
+            expected_runtime_profile_digest=operational_runtime_profile_digest(
+                config,
+                grid,
+            ),
+            expected_algorithm_bundle_digest=algorithm_bundle_digest(),
+            calibration_dataset_digest="5" * 64,
+            validation_dataset_digest="6" * 64,
+            data_identity=data_identity,
+            training_period=(
+                "2025-01-01T00:00:00Z",
+                "2025-07-01T00:00:00Z",
+            ),
+            validation_period=(
+                "2025-07-01T00:00:00Z",
+                "2026-01-01T00:00:00Z",
+            ),
+            validation_case_count=20,
+            validation_regimes=(CalibrationRegime("convective", 20),),
+            validation_metrics=(
+                CalibrationMetric(
+                    name="csi_35",
+                    definition_digest="7" * 64,
+                    direction="maximize",
+                    acceptance_threshold=0.4,
+                    value=0.5,
+                ),
+            ),
+        )
+        run_kwargs = {
+            "observation_quality_weight": input_quality,
+            "observation_std_dbz": observation_std,
+            "grid_time_contract": grid,
+            "operational_calibration_manifest_json": calibration.json,
+            "operational_calibration_manifest_digest": calibration.digest,
+            "operational_calibration_approval_digest": calibration.digest,
+            "operational_data_identity_json": data_identity.json,
+            "operational_data_identity_digest": data_identity.digest,
+            "input_plan_json": input_plan.json,
+            "input_plan_digest": input_plan.plan_digest,
+        }
+        base_run = ForecastRunContract.from_inputs(
+            config,
+            input_frames,
+            input_valid,
+            None,
+            **run_kwargs,
+        )
+
+        def prior_runner(offset: float, training_digest: str):
+            return promotion_module.NeuralPriorInferenceRunner(
+                _ReplayPrior(offset).eval(),
+                lambda value: value[-1],
+                example_frames=input_frames,
+                model_contract_digest="2" * 64,
+                feature_schema_digest="4" * 64,
+                training_manifest_digest=training_digest,
+                state_contract=self.state_contract(),
+                probability_contract=self.probability_contract(),
+                dependency="radar_dependent",
+                allow_constant_uncertainty=False,
+                feature_exclusion_mask=torch.ones_like(
+                    input_frames, dtype=torch.bool
+                ),
+            )
+
+        candidate_runner = prior_runner(0.1, "2" * 64)
+        parent_runner = prior_runner(0.0, "3" * 64)
+        candidate_application = candidate_runner.infer(
+            input_frames,
+            input_run=base_run,
+            role="candidate",
+        )
+        parent_application = parent_runner.infer(
+            input_frames,
+            input_run=base_run,
+            role="parent",
+        )
+
+        def product_forecast(runner, application, role):
+            evidence = application.inference_evidence
+            run = ForecastRunContract.from_inputs(
+                config,
+                input_frames,
+                input_valid,
+                None,
+                **run_kwargs,
+                neural_prior_digest=runner.neural_prior_digest,
+                prior_application_digest=application.application_digest,
+                prior_model_contract_digest=evidence.model_contract_digest,
+                prior_feature_schema_digest=evidence.feature_schema_digest,
+                prior_training_manifest_digest=evidence.training_manifest_digest,
+                prior_inference_evidence_digest=evidence.evidence_digest,
+                prior_inference_algorithm_digest=(
+                    evidence.inference_algorithm_digest
+                ),
+                prior_numerical_runtime_digest=evidence.numerical_runtime_digest,
+                prior_dependency=evidence.dependency,
+                prior_role=role,
+            )
+            state = RadarState(
+                echo_linear=dbz_to_echo(
+                    input_frames[-1],
+                    min_dbz=config.min_dbz,
+                    max_dbz=config.max_dbz,
+                ),
+                displacement_yx=torch.zeros(2),
+                log_growth_per_step=torch.zeros(()),
+            )
+            metadata = ForecastMetadata(
+                data_status=DataStatus.OBSERVED,
+                coverage_by_frame=torch.ones(3),
+                background_used=False,
+                background_contribution_fraction=0.0,
+                background_age_minutes=None,
+                source_support=torch.ones((2, 2)),
+                observation_source_support=torch.ones((2, 2)),
+                background_source_support=torch.zeros((2, 2)),
+                path_verified_source_support=torch.ones((2, 2)),
+                verified_source_support=torch.ones((2, 2)),
+                local_motion_verified_support=torch.ones((2, 2)),
+                local_growth_verified_support=torch.ones((2, 2)),
+                local_dynamics_verified_support=torch.ones((2, 2)),
+                observation_verified_source_support=torch.ones((2, 2)),
+                background_verified_source_support=torch.zeros((2, 2)),
+                motion_disagreement_px=torch.zeros(()),
+                motion_disagreement_mps=torch.full((), torch.nan),
+                growth_disagreement=torch.zeros(()),
+                maximum_growth_saturation_excess=torch.zeros(()),
+                posterior_velocity_uncertainty_mps=torch.full((), torch.nan),
+                posterior_log_growth_uncertainty_per_step=torch.full(
+                    (), torch.nan
+                ),
+                p1_velocity_saturation_uncertainty_mps=torch.full(
+                    (), torch.nan
+                ),
+                p1_log_growth_saturation_uncertainty_per_step=torch.full(
+                    (), torch.nan
+                ),
+                minimum_phase_correlation_psr=torch.tensor(10.0),
+                tendency_pair_count=2,
+                tendency_source=TendencySource.OBSERVATION,
+                state_path_source=TendencySource.OBSERVATION,
+                state_path_age_minutes=0.0,
+                observation_path=StatePathProvenance(age_minutes=0.0),
+                minimum_growth_overlap_support=4.0,
+                minimum_growth_overlap_area_km2=4.0,
+            )
+            return forecast_result_from_state(state, metadata, config, run=run)
+
+        candidate_forecast = product_forecast(
+            candidate_runner,
+            candidate_application,
+            "candidate",
+        )
+        parent_forecast = product_forecast(
+            parent_runner,
+            parent_application,
+            "parent",
+        )
+        metric_config = promotion_module.SensitivityConfig(
+            metric_names=("log_echo_mse",),
+            full_map_lead_minutes=(60,),
+        )
+        metric_support = promotion_module.MetricSupportContract.from_run(
+            "log_echo_mse",
+            candidate_forecast.run,
+            metric_engine_digest=(
+                promotion_module.scoring_metric_engine_identity_digest()
+            ),
+            grid_shape=(2, 2),
+        )
+        classifier = NeuralPriorRegimeClassifier(
+            _FixedRegimeClassifier(
+                (12.0, 0.0, -12.0),
+                (12.0, -12.0),
+            ).eval(),
+            example_frames=input_frames,
+            regime_labels=("convective", "stratiform", "unknown"),
+            range_regime_labels=("near_range", "far_range"),
+            classifier_algorithm_digest="5" * 64,
+        )
+        classifier_manifest = promotion_module.RegimeClassifierManifest(
+            classifier_digest=classifier.classifier_digest,
+            training_dataset_digest="4" * 64,
+            training_case_ids=("classifier-training-case",),
+            training_input_bundle_digests=("9" * 64,),
+            training_full_analysis_input_digests=("8" * 64,),
+            training_physical_event_digests=("4" * 64,),
+            training_storm_ids=("classifier-training-storm",),
+            training_days=("2026-06-01",),
+            training_radar_ids=("classifier-radar",),
+            training_grid_contract_digests=("6" * 64,),
+            training_time_windows=((
+                "2026-06-01T00:00:00Z",
+                "2026-06-01T01:00:00Z",
+            ),),
+            training_algorithm_digest="5" * 64,
+            numerical_runtime_digest=classifier.numerical_runtime_digest,
+            reference_label_contract_digest="7" * 64,
+            signed_training_member_manifest_digest="5" * 64,
+        )
+        target_time = grid.valid_times[0]
+        target_plan = PriorUncertaintyTargetPlan(
+            plan_id="semantic-uncertainty",
+            target_kind="independent_sensor",
+            source_identity_digest="6" * 64,
+            qc_pipeline_digest="9" * 64,
+            mask_policy_digest="3" * 64,
+            censor_policy_digest=self.state_contract().state_censor_policy_digest,
+            floor_representation_contract_digest="e" * 64,
+            grid_contract_digest=grid.digest,
+            feature_exclusion_contract_digest=(
+                candidate_runner.feature_exclusion_contract_digest
+            ),
+            independence_evidence_digest="8" * 64,
+            target_valid_time=target_time,
+            prior_probability_contract_digest=(
+                self.probability_contract().contract_digest
+            ),
+        )
+        state_target_plan = NeuralPriorStateCalibrationPlan(
+            plan_id="semantic-state",
+            target_kind="withheld_target_mask",
+            source_identity_digest="a" * 64,
+            qc_pipeline_digest="9" * 64,
+            mask_policy_digest="3" * 64,
+            censor_policy_digest=self.state_contract().state_censor_policy_digest,
+            floor_representation_contract_digest="e" * 64,
+            grid_contract_digest=grid.digest,
+            feature_exclusion_contract_digest=(
+                candidate_runner.feature_exclusion_contract_digest
+            ),
+            independence_evidence_digest="8" * 64,
+            target_valid_time=target_time,
+            state_contract_digest=self.state_contract().contract_digest,
+            support_threshold_dbz=5.0,
+        )
+        target_verification = VerificationBundle(
+            frames_dbz=torch.tensor([[[10.0, 1.0], [10.0, 1.0]]]),
+            valid_mask=torch.ones((1, 2, 2), dtype=torch.bool),
+            valid_times=(target_time,),
+            grid_contract_digest=grid.digest,
+            radar_product_digest="6" * 64,
+            qc_pipeline_digest="9" * 64,
+            mask_policy_digest="3" * 64,
+            censor_policy_digest=self.state_contract().state_censor_policy_digest,
+            reflectivity_resolution_dbz=0.5,
+            quantization_origin_dbz=-10.0,
+            threshold_bin_convention="nearest_rounding_threshold_censor",
+            floor_representation_contract_digest="e" * 64,
+            contract="radar-verification-bundle-v3",
+        )
+        state_verification = replace(
+            target_verification,
+            radar_product_digest="a" * 64,
+        )
+        uncertainty_target = PriorUncertaintyTarget.from_verification_bundle(
+            plan=target_plan,
+            verification=target_verification,
+        )
+        state_target = NeuralPriorStateCalibrationTarget.from_verification_bundle(
+            plan=state_target_plan,
+            verification=state_verification,
+        )
+        verification = VerificationBundle(
+            frames_dbz=input_frames[-1].repeat((6, 1, 1)),
+            valid_mask=torch.ones((6, 2, 2), dtype=torch.bool),
+            valid_times=forecast_valid_times,
+            grid_contract_digest=grid.digest,
+            radar_product_digest="a" * 64,
+            qc_pipeline_digest="9" * 64,
+            mask_policy_digest="3" * 64,
+            censor_policy_digest=self.state_contract().state_censor_policy_digest,
+            reflectivity_resolution_dbz=0.5,
+            quantization_origin_dbz=-10.0,
+            threshold_bin_convention="nearest_rounding_threshold_censor",
+            floor_representation_contract_digest="e" * 64,
+            contract="radar-verification-bundle-v3",
+        )
+        grid_x = torch.tensor([[0.0, 1_000.0], [0.0, 1_000.0]])
+        grid_y = torch.tensor([[0.0, 0.0], [1_000.0, 1_000.0]])
+        range_geometry = promotion_module.RangeGeometryContract(
+            radar_site_digest="a" * 64,
+            radar_site_location_digest="b" * 64,
+            grid_contract_digest=grid.digest,
+            radar_x_m=0.0,
+            radar_y_m=0.0,
+            range_regime_labels=("near_range", "far_range"),
+            radial_distance_edges_m=(0.0, 30_000.0, 100_000.0),
+            horizontal_range_rule_digest="c" * 64,
+            grid_x_m_digest=promotion_module.tensor_digest(grid_x),
+            grid_y_m_digest=promotion_module.tensor_digest(grid_y),
+        )
+        range_partition = promotion_module.resolve_range_geometry(
+            range_geometry,
+            grid_x_m=grid_x,
+            grid_y_m=grid_y,
+        )
+        range_contract = promotion_module.RangeBandContract(
+            case_id=case_id,
+            range_regime_labels=("near_range", "far_range"),
+            range_band_mask_digests=range_partition.range_band_mask_digests,
+            reference_active_range_regimes=("near_range",),
+            grid_contract_digest=grid.digest,
+            range_geometry_contract_digest=range_geometry.contract_digest,
+        )
+        publication = torch.ones((1, 2, 2), dtype=torch.bool)
+        issuance_plan = promotion_module.OperationalIssuanceDomainPlan(
+            case_id=case_id,
+            grid_contract_digest=grid.digest,
+            radar_source_contract_digest="d" * 64,
+            lead_minutes=(60,),
+            publication_policy_digest="1" * 64,
+            source_coverage_policy_digest="2" * 64,
+            permanent_exclusion_policy_digest="3" * 64,
+            publication_eligible_mask_digest=(
+                promotion_module.tensor_digest(publication)
+            ),
+            source_coverage_mask_digest=(
+                promotion_module.tensor_digest(publication)
+            ),
+            permanent_exclusion_mask_digest=(
+                promotion_module.tensor_digest(torch.zeros_like(publication))
+            ),
+        )
+        issuance_domain = (
+            promotion_module.OperationalIssuanceDomainArtifact.from_masks(
+                issuance_plan,
+                publication_eligible_mask=publication,
+                source_coverage_mask=publication,
+                permanent_exclusion_mask=torch.zeros_like(publication),
+            )
+        )
+        reference_plan = promotion_module.RegimeReferencePlan(
+            case_id=case_id,
+            labeler_id="independent-weather-labeler",
+            labeler_public_key_hex=(
+                promotion_module.regime_reference_public_key_hex(
+                    self.regime_labeler_key()
+                )
+            ),
+            source_contract_digest="7" * 64,
+            labeling_valid_time=verification_time,
+            adjudication_policy_digest="6" * 64,
+        )
+        catalog_plan = promotion_module.PhysicalEventCatalogPlan(
+            holdout_case_ids=(case_id,),
+            association_algorithm_digest="3" * 64,
+            spatial_membership_rule_digest="4" * 64,
+            adjudication_policy_digest="6" * 64,
+            adjudicator_id="independent-weather-labeler",
+            adjudicator_public_key_hex=(
+                promotion_module.regime_reference_public_key_hex(
+                    self.regime_labeler_key()
+                )
+            ),
+            catalog_completion_deadline="2026-08-09T03:00:00Z",
+            spatial_reference_digest="7" * 64,
+            motion_association_rule_digest="8" * 64,
+            scheduler_id="trusted-scheduler",
+            scheduler_public_key_hex=(
+                promotion_module.regime_reference_public_key_hex(
+                    self.scheduler_key()
+                )
+            ),
+            scheduler_trust_store_digest="8" * 64,
+        )
+        required_metric = promotion_module.RangeMetricRequirement(
+            weather_regime="convective",
+            range_regime="near_range",
+            metric_name="log_echo_mse",
+            lead_minutes=60,
+            minimum_cases=1,
+            minimum_physical_events=1,
+            minimum_valid_area_km2=1.0,
+            maximum_mean_normalized_degradation=1.0,
+            maximum_harmful_fraction_upper_bound=1.0,
+            metric_support_contract_digests=(metric_support.contract_digest,),
+            maximum_end_to_end_mean_normalized_degradation=1.0,
+        )
+        required_issuance = promotion_module.RangeIssuanceRequirement(
+            weather_regime="convective",
+            range_regime="near_range",
+            lead_minutes=60,
+            minimum_cases=1,
+            minimum_physical_events=1,
+            minimum_operational_area_km2=1.0,
+            maximum_withdrawn_fraction=1.0,
+            maximum_newly_issued_fraction=1.0,
+            maximum_background_fallback_increase=1.0,
+            maximum_confidence_weighted_coverage_loss=1.0,
+        )
+        preregistered_policy = replace(
+            self.policy(for_decision_rule=True),
+            metric_scales=(
+                PromotionMetricScale(
+                    metric_name="log_echo_mse",
+                    scale=1.0,
+                    material_change=0.01,
+                ),
+            ),
+            metric_support_contracts=(metric_support,),
+            approved_metric_contract_digests=(metric_config.digest,),
+            deployment_regime_classifier_digest=classifier.classifier_digest,
+            deployment_regime_classifier_manifest_digest=(
+                classifier_manifest.manifest_digest
+            ),
+            required_range_metrics=(required_metric,),
+            required_range_issuance=(required_issuance,),
+        )
+        decision_rule = promotion_module.PromotionDecisionRule.from_policy(
+            preregistered_policy
+        )
+        plan_case = NeuralPriorHoldoutPlanCase(
+            case_id=case_id,
+            storm_id="pending",
+            day="2026-08-09",
+            radar_id="radar-1",
+            regime="pending",
+            range_regime="near_range",
+            input_plan_digest=input_plan.plan_digest,
+            verification_plan_digest=verification_plan_digest(
+                valid_times=forecast_valid_times,
+                grid_contract_digest=grid.digest,
+                radar_product_digest="a" * 64,
+                qc_pipeline_digest="9" * 64,
+            ),
+            metric_contract_digest=metric_config.digest,
+            uncertainty_target_plan_digest=target_plan.plan_digest,
+            state_calibration_target_plan_digest=state_target_plan.plan_digest,
+            range_band_contract_digest=range_contract.contract_digest,
+            reference_active_range_regimes=("near_range",),
+            regime_reference_plan_digest=reference_plan.plan_digest,
+            operational_issuance_domain_plan_digest=issuance_plan.plan_digest,
+            issue_time=issue_time,
+        )
+        experiment_family = promotion_module.PromotionExperimentFamily(
+            holdout_cohort_digest=promotion_module._holdout_dataset_digest(
+                (plan_case,)
+            ),
+            parent_prior_digest=parent_runner.neural_prior_digest,
+            trials=(
+                promotion_module.PromotionExperimentTrial(
+                    candidate_prior_digest=candidate_runner.neural_prior_digest,
+                    promotion_decision_rule_digest=decision_rule.rule_digest,
+                    classifier_manifest_digests=(
+                        classifier_manifest.manifest_digest,
+                    ),
+                ),
+            ),
+            winner_selection_rule_digest="f" * 64,
+        )
+        plan = NeuralPriorHoldoutPlan(
+            plan_id="semantic-product-plan",
+            parent_prior_digest=parent_runner.neural_prior_digest,
+            candidate_family_digests=(candidate_runner.neural_prior_digest,),
+            cases=(plan_case,),
+            input_plans=(input_plan,),
+            uncertainty_target_plans=(target_plan,),
+            state_calibration_target_plans=(state_target_plan,),
+            range_band_contracts=(range_contract,),
+            range_geometry_contracts=(range_geometry,),
+            operational_issuance_domain_plans=(issuance_plan,),
+            regime_reference_plans=(reference_plan,),
+            regime_classifier_manifests=(classifier_manifest,),
+            promotion_experiment_family=experiment_family,
+            promotion_decision_rule_digest=decision_rule.rule_digest,
+            reference_label_contract_digest="7" * 64,
+            physical_event_catalog_plan=catalog_plan,
+            scoring_algorithm_digest="9" * 64,
+            scoring_runtime_digest=candidate_runner.numerical_runtime_digest,
+            metric_engine_digest=(
+                promotion_module.scoring_metric_engine_identity_digest()
+            ),
+            verification_resolver_digest="a" * 64,
+            registered_at="2026-07-01T00:00:00Z",
+        )
+        reference_evidence = promotion_module.RegimeReferenceEvidence.from_plan(
+            reference_plan,
+            full_analysis_input_digest=base_run.full_analysis_input_digest,
+            verification_bundle_digest=verification.content_digest,
+            observed_regime="convective",
+            observed_storm_id="semantic-storm",
+            labeled_at=verification_time,
+            labeler_private_key=self.regime_labeler_key(),
+        )
+        track = promotion_module.PhysicalEventTrackArtifact(
+            timestamps=(issue_time, "2026-08-09T00:30:00Z"),
+            centroid_xy_m=((500.0, 500.0), (600.0, 500.0)),
+            object_mask_digests=("a" * 64, "b" * 64),
+            source_radar_ids=("radar-1", "radar-1"),
+            association_edge_digests=("c" * 64,),
+            spatial_reference_digest="7" * 64,
+        )
+        event = promotion_module.PhysicalEventCatalogEvidence.from_members(
+            event_id="semantic-event",
+            member_case_ids=(case_id,),
+            member_full_analysis_input_digests=(
+                base_run.full_analysis_input_digest,
+            ),
+            start_time=issue_time,
+            end_time="2026-08-09T00:30:00Z",
+            spatial_envelope_xy_m=(0.0, 0.0, 1_000.0, 1_000.0),
+            object_track_artifact=track,
+            participating_radar_ids=("radar-1",),
+            association_algorithm_digest="3" * 64,
+            adjudication_policy_digest="6" * 64,
+            adjudicator_id="independent-weather-labeler",
+            adjudicator_private_key=self.regime_labeler_key(),
+        )
+        spatial_evidence = promotion_module.PhysicalEventCaseSpatialEvidence(
+            case_id=case_id,
+            full_analysis_input_digest=base_run.full_analysis_input_digest,
+            physical_event_identity_digest=event.physical_event_identity_digest,
+            observed_spatial_envelope_xy_m=(0.0, 0.0, 1_000.0, 1_000.0),
+            event_spatial_envelope_xy_m=(0.0, 0.0, 1_000.0, 1_000.0),
+            spatial_membership_rule_digest="4" * 64,
+            source_object_evidence_digest="a" * 64,
+            track_artifact_digest=track.artifact_digest,
+            track_sample_index=0,
+            track_sample_time=issue_time,
+            track_object_mask_digest="a" * 64,
+            input_available_time=issue_time,
+            spatial_reference_digest="7" * 64,
+        )
+        catalog_result = promotion_module.PhysicalEventCatalogResult.from_plan(
+            catalog_plan,
+            event_evidences=(event,),
+            case_spatial_membership_evidences=(spatial_evidence,),
+            cataloged_at="2026-08-09T02:00:00Z",
+            adjudicator_private_key=self.regime_labeler_key(),
+        )
+        completed_case = NeuralPriorHoldoutCase(
+            case_id=case_id,
+            planned_storm_id="pending",
+            storm_id="semantic-storm",
+            physical_event_digest=event.physical_event_identity_digest,
+            day="2026-08-09",
+            radar_id="radar-1",
+            planned_regime="pending",
+            regime="convective",
+            range_regime="near_range",
+            reference_active_range_regimes=("near_range",),
+            range_band_contract_digest=range_contract.contract_digest,
+            regime_reference_plan_digest=reference_plan.plan_digest,
+            regime_reference_evidence_digest=reference_evidence.evidence_digest,
+            operational_issuance_domain_plan_digest=issuance_plan.plan_digest,
+            operational_issuance_domain_artifact_digest=(
+                issuance_domain.artifact_digest
+            ),
+            input_plan_digest=input_plan.plan_digest,
+            input_plan_resolution_digest=(
+                candidate_forecast.run.input_plan_resolution_digest
+            ),
+            input_bundle_digest=base_run.input_bundle_digest,
+            full_analysis_input_digest=base_run.full_analysis_input_digest,
+            fixed_input_context_digest=base_run.fixed_input_context_digest,
+            observation_quality_weight_digest=(
+                base_run.observation_quality_weight_digest
+            ),
+            observation_std_dbz_digest=base_run.observation_std_dbz_digest,
+            verification_plan_digest=plan_case.verification_plan_digest,
+            verification_bundle_digest=verification.content_digest,
+            metric_contract_digest=metric_config.digest,
+            uncertainty_target_plan_digest=target_plan.plan_digest,
+            uncertainty_target_digest=uncertainty_target.target_digest,
+            prior_probability_contract_digest=(
+                self.probability_contract().contract_digest
+            ),
+            state_calibration_target_plan_digest=state_target_plan.plan_digest,
+            state_calibration_target_digest=state_target.target_digest,
+            prior_state_contract_digest=self.state_contract().contract_digest,
+            issue_time=issue_time,
+            candidate_forecast_digest=(
+                promotion_module._forecast_result_content_digest(
+                    candidate_forecast
+                )
+            ),
+            parent_forecast_digest=(
+                promotion_module._forecast_result_content_digest(parent_forecast)
+            ),
+            candidate_prior_application_digest=(
+                candidate_application.application_digest
+            ),
+            parent_prior_application_digest=parent_application.application_digest,
+            candidate_inference_evidence_digest=(
+                candidate_application.inference_evidence.evidence_digest
+            ),
+            parent_inference_evidence_digest=(
+                parent_application.inference_evidence.evidence_digest
+            ),
+        )
+        scoring_input = promotion_module.HoldoutScoringInputArtifact.from_cases(
+            plan,
+            candidate_prior_digest=candidate_runner.neural_prior_digest,
+            parent_prior_digest=parent_runner.neural_prior_digest,
+            candidate_training_manifest_digest="2" * 64,
+            parent_training_manifest_digest="3" * 64,
+            holdout_cases=(completed_case,),
+        )
+        training_plan = self.training_event_catalog_plan()
+        training_result = self.training_event_catalog_result()
+        training_execution = (
+            promotion_module._candidate_training_execution_contract_digest(
+                training_dataset_digest="1" * 64,
+                candidate_training_manifest_digest="2" * 64,
+                model_contract_digest="2" * 64,
+                feature_schema_digest="4" * 64,
+                algorithm_bundle_digest="3" * 64,
+                numerical_runtime_digest=candidate_runner.numerical_runtime_digest,
+            )
+        )
+        training_start = promotion_module.TrustedProcessStartReceipt.from_plan(
+            training_plan,
+            catalog_result_digest=training_result.result_digest,
+            process_kind="candidate_training",
+            subject_digests=("1" * 64, "2" * 64),
+            process_algorithm_digest="3" * 64,
+            process_runtime_digest=candidate_runner.numerical_runtime_digest,
+            execution_contract_digest=training_execution,
+            job_id="semantic-training-job",
+            launch_nonce="a" * 64,
+            scheduler_sequence_number=1,
+            previous_receipt_digest=None,
+            started_at="2026-07-02T00:00:00Z",
+            scheduler_private_key=self.scheduler_key(),
+        )
+        training_log = promotion_module.ProcessLogArtifact(
+            process_kind="candidate_training",
+            start_receipt_digest=training_start.receipt_digest,
+            entries=("semantic candidate training completed",),
+        )
+        training_completion = (
+            promotion_module.TrustedProcessCompletionReceipt.from_start(
+                training_start,
+                completed_at="2026-07-03T00:00:00Z",
+                output_artifact_digest=candidate_runner.neural_prior_digest,
+                process_log_digest=training_log.artifact_digest,
+                scheduler_private_key=self.scheduler_key(),
+            )
+        )
+        scoring_start = promotion_module.TrustedProcessStartReceipt.from_plan(
+            catalog_plan,
+            catalog_result_digest=catalog_result.result_digest,
+            process_kind="candidate_scoring",
+            subject_digests=(scoring_input.artifact_digest,),
+            process_algorithm_digest=plan.scoring_algorithm_digest,
+            process_runtime_digest=plan.scoring_runtime_digest,
+            execution_contract_digest=plan.scoring_execution_contract_digest,
+            job_id="semantic-scoring-job",
+            launch_nonce="b" * 64,
+            scheduler_sequence_number=2,
+            previous_receipt_digest=training_start.receipt_digest,
+            started_at="2026-08-09T02:30:00Z",
+            scheduler_private_key=self.scheduler_key(),
+        )
+        manifest = NeuralPriorCandidateManifest(
+            candidate_prior_digest=candidate_runner.neural_prior_digest,
+            parent_prior_digest=parent_runner.neural_prior_digest,
+            training_learning_approval_digests=("a" * 64,),
+            training_intervention_digests=("f" * 64,),
+            training_dataset_digest="1" * 64,
+            candidate_training_manifest_digest="2" * 64,
+            parent_training_manifest_digest="3" * 64,
+            model_contract_digest="2" * 64,
+            feature_schema_digest="4" * 64,
+            algorithm_bundle_digest="3" * 64,
+            numerical_runtime_digest=candidate_runner.numerical_runtime_digest,
+            holdout_dataset_digest=plan.holdout_dataset_digest,
+            holdout_plan_digest=plan.plan_digest,
+            training_case_ids=("training-case",),
+            training_input_bundle_digests=("0" * 64,),
+            training_full_analysis_input_digests=("8" * 64,),
+            training_physical_event_digests=(
+                self.training_event_catalog().physical_event_identity_digest,
+            ),
+            training_physical_event_catalog_plan=training_plan,
+            training_physical_event_catalog_result=training_result,
+            candidate_training_started_at="2026-07-02T00:00:00Z",
+            training_storm_ids=("training-storm",),
+            training_days=("2026-07-01",),
+            training_radars=("radar-1",),
+            training_regimes=("convective",),
+            training_time_windows=((
+                "2026-07-01T00:00:00Z",
+                "2026-07-01T01:00:00Z",
+            ),),
+            regime_reference_evidences=(reference_evidence,),
+            physical_event_catalog_evidences=(event,),
+            physical_event_catalog_result=catalog_result,
+            candidate_scoring_started_at="2026-08-09T02:30:00Z",
+            holdout_cases=(completed_case,),
+            candidate_training_start_receipt=training_start,
+            candidate_training_completion_receipt=training_completion,
+            candidate_scoring_start_receipt=scoring_start,
+        )
+        replay_case = promotion_module.ScoringReplayCaseArtifact.from_products(
+            manifest=manifest,
+            plan=plan,
+            case_id=case_id,
+            candidate_forecast=candidate_forecast,
+            parent_forecast=parent_forecast,
+            verification=verification,
+            metric_config=metric_config,
+            candidate_prior_application=candidate_application,
+            parent_prior_application=parent_application,
+            candidate_prior_runner=candidate_runner,
+            parent_prior_runner=parent_runner,
+            input_frames_dbz=input_frames,
+            input_qc_valid_mask=input_valid,
+            input_quality_weight=input_quality,
+            background_frames_dbz=None,
+            uncertainty_target=uncertainty_target,
+            state_calibration_target=state_target,
+            regime_classifier=classifier,
+            regime_classifier_manifest=classifier_manifest,
+            range_grid_x_m=grid_x,
+            range_grid_y_m=grid_y,
+            operational_issuance_domain=issuance_domain,
+        )
+        evaluation = replay_case.recompute_evaluation()
+        self.assertEqual(evaluation.case_id, case_id)
+        scoring_artifact = promotion_module.HoldoutScoringArtifact.from_evaluations(
+            manifest,
+            plan,
+            scoring_input,
+            (evaluation,),
+            scoring_replay_bundle_digest="b" * 64,
+        )
+        scoring_log = promotion_module.ProcessLogArtifact(
+            process_kind="candidate_scoring",
+            start_receipt_digest=scoring_start.receipt_digest,
+            entries=("semantic holdout scoring completed",),
+        )
+        scoring_completion = (
+            promotion_module.TrustedProcessCompletionReceipt.from_start(
+                scoring_start,
+                completed_at="2026-08-09T02:40:00Z",
+                output_artifact_digest=scoring_artifact.artifact_digest,
+                process_log_digest=scoring_log.artifact_digest,
+                scheduler_private_key=self.scheduler_key(),
+            )
+        )
+        policy = replace(
+            preregistered_policy,
+            approved_candidate_manifest_digests=(manifest.manifest_digest,),
+            approved_holdout_plan_digests=(plan.plan_digest,),
+            approved_physical_event_catalog_result_digest=(
+                catalog_result.result_digest
+            ),
+        )
+        self.assertEqual(
+            promotion_module.PromotionDecisionRule.from_policy(policy).rule_digest,
+            decision_rule.rule_digest,
+        )
+        with patch.object(
+            promotion_module,
+            "_load_learning_policy_trust_store",
+            return_value=_LearningPolicyTrustStore(
+                approved_policy_digests=frozenset((policy.digest,)),
+                content_digest="b" * 64,
+            ),
+        ):
+            evidence = compute_neural_prior_promotion(
+                manifest,
+                plan,
+                (evaluation,),
+                scoring_input_artifact=scoring_input,
+                scoring_artifact=scoring_artifact,
+                scoring_process_log=scoring_log,
+                scoring_completion_receipt=scoring_completion,
+                policy=policy,
+                policy_trust_store_path="/etc/advar/learning-policies.json",
+            )
+        self.assertEqual(
+            evidence.scoring_artifact_digest,
+            scoring_artifact.artifact_digest,
+        )
+        self.assertEqual(
+            evidence.semantic_replay_generation_digest,
+            promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST,
+        )
 
     @staticmethod
     def replay_case_product_kwargs(case):
@@ -3243,7 +4138,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v23")
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v24")
 
             legacy_payload = evidence._payload()
             legacy_payload["contract"] = "neural-prior-promotion-evidence-v12"
@@ -6448,6 +7343,249 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
         self.assertIs(selected, parent)
         self.assertEqual(selection.fallback_reason, "uncertified_range_geometry")
+
+    def test_uncertified_geometry_parent_fallback_round_trips_forecast(
+        self,
+    ) -> None:
+        replay_case = self.scoring_replay_cases((self.evaluation(1, -0.2),))[0]
+        frames = replay_case.input_frames_dbz
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-09T00:00:00Z",
+                "2026-08-09T00:10:00Z",
+                "2026-08-09T00:20:00Z",
+            ),
+            dx_m=1_000.0,
+            dy_m=1_000.0,
+            projection="EPSG:3857",
+            grid_hash="4" * 64,
+        )
+        state_contract = replay_case.parent_prior_runner.state_contract
+        identity = promotion_module.OperationalDataIdentity(
+            radar_class="single-site",
+            qc_pipeline_digest=state_contract.state_qc_pipeline_digest,
+            observation_error_model_digest="2" * 64,
+            background_model_digest="3" * 64,
+            radar_product_digest=state_contract.state_product_digest,
+            background_cycle_rule_digest="8" * 64,
+            mask_policy_digest=state_contract.state_mask_policy_digest,
+            radar_site_digest="a" * 64,
+            radar_site_location_digest="b" * 64,
+            radar_source_contract_digest="c" * 64,
+        )
+        nowcast_config = NowcastConfig(
+            minimum_publish_verified_support=0.01,
+            minimum_publish_confidence=0.01,
+            minimum_publish_observation_verified_support=0.01,
+            maximum_publish_background_fraction=1.0,
+            maximum_motion_speed_mps=100.0,
+            minimum_phase_correlation_psr=0.0,
+            pair_echo_dilation_m=1_000.0,
+            phase_correlation_sidelobe_radius_m=1_000.0,
+            maximum_pair_velocity_disagreement_mps=10.0,
+            maximum_pair_growth_disagreement=0.0953,
+            maximum_local_growth_log_error_per_step=0.4055,
+            p1_motion_saturation_safe_margin_mps=2.0,
+            p1_growth_saturation_safe_margin_per_step=0.04879,
+            p1_posterior_saturation_sigma_multiplier=2.0,
+            p1_saturation_uncertainty_multiplier=4.0,
+            minimum_pair_psr_advantage=3.0,
+            minimum_pair_confidence_ratio=1.5,
+            long_pair_confidence_penalty=0.5,
+            minimum_growth_overlap_support=1.0,
+            minimum_growth_overlap_area_km2=1.0,
+        )
+        calibration_id = "range-fallback-calibration-v1"
+        analysis_config = AnalysisConfig(
+            execution_mode="operational",
+            operational_calibration_id=calibration_id,
+            motion_increment_scale_mps=2.0,
+            causal_support_uncertainty_m=1_000.0,
+            amplitude_displacement_tolerance_m=1_000.0,
+            maximum_latest_detected_error_std=10.0,
+            minimum_local_verification_precision=0.01,
+            maximum_local_analysis_verification_error_dbz=70.0,
+            maximum_unresolved_amplitude_fraction=1.0,
+            minimum_amplitude_total_quality_weight=0.001,
+            minimum_amplitude_effective_pixel_count=1.0,
+            amplitude_information_policy="operational_fallback",
+            minimum_integrated_echo_ratio_for_confidence=0.01,
+            maximum_integrated_echo_ratio_for_confidence=100.0,
+            minimum_soft_echo_area_ratio_for_confidence=0.01,
+            maximum_soft_echo_area_ratio_for_confidence=100.0,
+            maximum_established_excess_growth_fraction_for_confidence=1.0,
+            minimum_object_count_ratio_for_confidence=0.01,
+            amplitude_confidence_policy="operational_fallback",
+            observation_common_bias_std_dbz=0.0,
+            observation_common_bias_scope="per_frame",
+            observation_common_bias_tile_size_px=0,
+        )
+        calibration = OperationalCalibrationManifest(
+            calibration_id=calibration_id,
+            profile_kind="p1",
+            expected_runtime_profile_digest=operational_runtime_profile_digest(
+                nowcast_config,
+                grid,
+                analysis_config=asdict(analysis_config),
+            ),
+            expected_algorithm_bundle_digest=algorithm_bundle_digest(),
+            calibration_dataset_digest="5" * 64,
+            validation_dataset_digest="6" * 64,
+            data_identity=identity,
+            training_period=(
+                "2025-01-01T00:00:00Z",
+                "2025-07-01T00:00:00Z",
+            ),
+            validation_period=(
+                "2025-07-01T00:00:00Z",
+                "2026-01-01T00:00:00Z",
+            ),
+            validation_case_count=20,
+            validation_regimes=(
+                CalibrationRegime("convective", 10),
+                CalibrationRegime("stratiform", 10),
+            ),
+            validation_metrics=(
+                CalibrationMetric(
+                    name="csi_35",
+                    definition_digest="7" * 64,
+                    direction="maximize",
+                    acceptance_threshold=0.4,
+                    value=0.5,
+                ),
+            ),
+        )
+        baseline, _ = variational_nowcast(
+            frames,
+            nowcast_config=nowcast_config,
+            analysis_config=analysis_config,
+            grid_time_contract=grid,
+            operational_calibration_manifest=calibration,
+            operational_calibration_approval_digest=calibration.digest,
+            operational_data_identity=identity,
+        )
+        input_run = baseline.run
+        classifier = NeuralPriorRegimeClassifier(
+            _FixedRegimeClassifier(
+                (12.0, 0.0, -12.0),
+                (12.0, 0.0),
+            ).eval(),
+            example_frames=frames,
+            regime_labels=("convective", "stratiform", "unknown"),
+            range_regime_labels=("near_range", "far_range"),
+            classifier_algorithm_digest="5" * 64,
+        )
+        promotion_policy = replace(
+            self.policy(),
+            deployment_regime_classifier_digest=classifier.classifier_digest,
+        )
+        evidence = self.deployment_ready(
+            self.compute_with_policy(
+                (
+                    self.evaluation(
+                        1,
+                        -0.2,
+                        regime_classifier_digest=classifier.classifier_digest,
+                    ),
+                    self.evaluation(
+                        2,
+                        -0.3,
+                        regime_classifier_digest=classifier.classifier_digest,
+                    ),
+                ),
+                promotion_policy,
+            )
+        )
+        evidence = replace(
+            evidence,
+            candidate_prior_digest=(
+                replay_case.candidate_prior_runner.neural_prior_digest
+            ),
+            parent_prior_digest=(
+                replay_case.parent_prior_runner.neural_prior_digest
+            ),
+            deployment_regime_classifier_digest=classifier.classifier_digest,
+        )
+        grid_x_m = torch.tensor([[0.0, 1_000.0], [0.0, 1_000.0]])
+        grid_y_m = torch.tensor([[0.0, 0.0], [1_000.0, 1_000.0]])
+        uncertified_geometry = promotion_module.RangeGeometryContract(
+            radar_site_digest=identity.radar_site_digest or "",
+            radar_site_location_digest=identity.radar_site_location_digest or "",
+            grid_contract_digest=grid.digest,
+            radar_x_m=0.0,
+            radar_y_m=0.0,
+            range_regime_labels=("near_range", "far_range"),
+            radial_distance_edges_m=(0.0, 30_000.0, 100_000.0),
+            horizontal_range_rule_digest="d" * 64,
+            grid_x_m_digest=promotion_module.tensor_digest(grid_x_m),
+            grid_y_m_digest=promotion_module.tensor_digest(grid_y_m),
+        )
+        deployment_policy = DeployedNeuralPriorPolicy(
+            candidate_prior_digest=evidence.candidate_prior_digest,
+            parent_prior_digest=evidence.parent_prior_digest,
+            promotion_evidence_digest=evidence.promotion_evidence_digest,
+            regime_classifier_digest=classifier.classifier_digest,
+            regime_classifier_manifest_digest=(
+                evidence.deployment_regime_classifier_manifest_digest
+            ),
+            range_geometry_contract_digest=uncertified_geometry.contract_digest,
+        )
+        trust = _LearningPolicyTrustStore(
+            approved_policy_digests=frozenset((deployment_policy.policy_digest,)),
+            content_digest=promotion_module.json_digest(
+                {
+                    "contract": "advar-learning-policy-trust-store-v1",
+                    "approved_policy_digests": [deployment_policy.policy_digest],
+                }
+            ),
+        )
+        with patch.object(
+            promotion_module,
+            "_load_learning_policy_trust_store",
+            return_value=trust,
+        ):
+            application = promotion_module.infer_deployed_neural_prior(
+                frames,
+                input_run=input_run,
+                candidate_runner=replay_case.candidate_prior_runner,
+                parent_runner=replay_case.parent_prior_runner,
+                promotion_evidence=evidence,
+                regime_classifier=classifier,
+                range_geometry_contract=uncertified_geometry,
+                grid_x_m=grid_x_m,
+                grid_y_m=grid_y_m,
+                policy=deployment_policy,
+                policy_trust_store_path="/etc/advar/deployment-policies.json",
+            )
+        assert application.deployment_selection is not None
+        self.assertEqual(application.role, "parent")
+        self.assertEqual(
+            application.deployment_selection.fallback_reason,
+            "uncertified_range_geometry",
+        )
+        forecast, _ = variational_nowcast(
+            frames,
+            nowcast_config=nowcast_config,
+            analysis_config=analysis_config,
+            grid_time_contract=grid,
+            operational_calibration_manifest=calibration,
+            operational_calibration_approval_digest=calibration.digest,
+            operational_data_identity=identity,
+            neural_prior=application,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "parent-fallback.npz"
+            save_forecast_run(forecast, path)
+            loaded = load_forecast_run(path)
+        self.assertEqual(loaded.run.prior_role, "parent")
+        self.assertEqual(
+            loaded.run.prior_deployment_fallback_reason,
+            "uncertified_range_geometry",
+        )
+        self.assertEqual(
+            loaded.run.prior_deployment_lineage_contract,
+            "neural-prior-deployment-lineage-v7",
+        )
 
     def test_current_physical_range_partition_controls_deployment(self) -> None:
         frames = torch.zeros((3, 2, 2))

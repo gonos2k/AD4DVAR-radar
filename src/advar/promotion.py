@@ -183,22 +183,23 @@ _UNCERTAINTY_SCORE_SUPPORT = UncertaintyScoreSupportContract()
 
 
 SEMANTIC_SCORING_REPLAY_CONTRACT = (
-    "neural-prior-scoring-replay-bundle-v3"
+    "neural-prior-scoring-replay-bundle-v4"
 )
 SEMANTIC_SCORING_REPLAY_METHOD = (
-    "builtin-semantic-scoring-recomputation-v3"
+    "builtin-semantic-scoring-recomputation-v4"
 )
 SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST = json_digest(
     {
-        "contract": "neural-prior-semantic-scoring-generation-v1",
+        "contract": "neural-prior-semantic-scoring-generation-v2",
         "replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
         "replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
-        "case_contract": "neural-prior-semantic-scoring-case-v2",
+        "case_contract": "neural-prior-semantic-scoring-case-v3",
         "product_type_policy": "exact-shipped-product-types-v1",
         "forecast_integrity": "forecast-result-raw-content-validation-v1",
         "prior_integrity": "runner-reproduced-prior-application-v1",
         "classifier_integrity": "exported-classifier-reexecution-v1",
         "snapshot_policy": "single-frozen-tensor-snapshot-v1",
+        "backend_policy": "single-device-certified-mps-scoring-v1",
     }
 )
 
@@ -8334,7 +8335,7 @@ class ScoringReplayCaseArtifact:
     ) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-semantic-scoring-case-v2",
+                "contract": "neural-prior-semantic-scoring-case-v3",
                 "semantic_replay_generation_digest": (
                     SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
                 ),
@@ -9380,13 +9381,15 @@ class HoldoutScoringArtifact:
     scoring_replay_contract: str
     scoring_replay_method: str
     semantic_replay_generation_digest: str
+    scoring_backend_certification_policy_digest: str | None
+    scoring_backend_certification_evidence_digest: str | None
     ordered_case_ids: tuple[str, ...]
     ordered_evaluation_digests: tuple[str, ...]
     candidate_forecast_digests: tuple[str, ...]
     parent_forecast_digests: tuple[str, ...]
     verification_digests: tuple[str, ...]
     metric_contract_digests: tuple[str, ...]
-    contract: str = "neural-prior-holdout-scoring-artifact-v3"
+    contract: str = "neural-prior-holdout-scoring-artifact-v4"
     artifact_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -9411,6 +9414,12 @@ class HoldoutScoringArtifact:
             "semantic_replay_generation_digest": (
                 self.semantic_replay_generation_digest
             ),
+            "scoring_backend_certification_policy_digest": (
+                self.scoring_backend_certification_policy_digest
+            ),
+            "scoring_backend_certification_evidence_digest": (
+                self.scoring_backend_certification_evidence_digest
+            ),
             "ordered_case_ids": list(self.ordered_case_ids),
             "ordered_evaluation_digests": list(
                 self.ordered_evaluation_digests
@@ -9432,6 +9441,8 @@ class HoldoutScoringArtifact:
         evaluations: tuple[PriorHoldoutEvaluation, ...],
         *,
         scoring_replay_bundle_digest: str,
+        scoring_backend_certification_policy_digest: str | None = None,
+        scoring_backend_certification_evidence_digest: str | None = None,
     ) -> HoldoutScoringArtifact:
         _require_digest("scoring replay bundle", scoring_replay_bundle_digest)
         ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
@@ -9455,6 +9466,12 @@ class HoldoutScoringArtifact:
             "semantic_replay_generation_digest": (
                 SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
             ),
+            "scoring_backend_certification_policy_digest": (
+                scoring_backend_certification_policy_digest
+            ),
+            "scoring_backend_certification_evidence_digest": (
+                scoring_backend_certification_evidence_digest
+            ),
             "ordered_case_ids": tuple(item.case_id for item in ordered),
             "ordered_evaluation_digests": tuple(
                 item.evaluation_digest for item in ordered
@@ -9471,7 +9488,7 @@ class HoldoutScoringArtifact:
             "metric_contract_digests": tuple(
                 item.metric_contract_digest for item in ordered
             ),
-            "contract": "neural-prior-holdout-scoring-artifact-v3",
+            "contract": "neural-prior-holdout-scoring-artifact-v4",
         }
         artifact = _new_holdout_scoring_artifact(**values)
         validate_holdout_scoring_artifact(
@@ -9517,7 +9534,7 @@ def validate_holdout_scoring_artifact(
     ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
     start = manifest.candidate_scoring_start_receipt
     if (
-        artifact.contract != "neural-prior-holdout-scoring-artifact-v3"
+        artifact.contract != "neural-prior-holdout-scoring-artifact-v4"
         or artifact.artifact_digest != json_digest(artifact.payload)
         or artifact.holdout_plan_digest != plan.plan_digest
         or artifact.candidate_manifest_digest != manifest.manifest_digest
@@ -9559,6 +9576,15 @@ def validate_holdout_scoring_artifact(
         or set(artifact.ordered_case_ids) != {item.case_id for item in plan.cases}
     ):
         raise ValueError("holdout scoring artifact disagrees with typed evaluations")
+    certification_digests = (
+        artifact.scoring_backend_certification_policy_digest,
+        artifact.scoring_backend_certification_evidence_digest,
+    )
+    if (certification_digests[0] is None) != (certification_digests[1] is None):
+        raise ValueError("scoring backend certification lineage is incomplete")
+    for digest in certification_digests:
+        if digest is not None:
+            _require_digest("scoring backend certification", digest)
     for name in (
         "holdout_plan_digest",
         "candidate_manifest_digest",
@@ -11138,6 +11164,28 @@ class LegacyNeuralPriorPromotionEvidenceAuditV22:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV23:
+    """Replay-v3 promotion retained for audit after backend attestation."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v23"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v23",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
@@ -11153,6 +11201,8 @@ class NeuralPriorPromotionEvidence:
     scoring_replay_contract: str
     scoring_replay_method: str
     semantic_replay_generation_digest: str
+    scoring_backend_certification_policy_digest: str | None
+    scoring_backend_certification_evidence_digest: str | None
     scoring_process_log_digest: str
     scoring_completion_receipt_digest: str
     evaluation_digests: tuple[str, ...]
@@ -11279,11 +11329,11 @@ class NeuralPriorPromotionEvidence:
     deployment_eligible: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v23"
+    contract: str = "neural-prior-promotion-evidence-v24"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v23":
+        if self.contract != "neural-prior-promotion-evidence-v24":
             raise ValueError("unsupported neural-prior promotion evidence")
         for name in (
             "candidate_prior_digest",
@@ -11310,6 +11360,17 @@ class NeuralPriorPromotionEvidence:
             != SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
         ):
             raise ValueError("promotion evidence replay generation is unsupported")
+        certification_digests = (
+            self.scoring_backend_certification_policy_digest,
+            self.scoring_backend_certification_evidence_digest,
+        )
+        if (certification_digests[0] is None) != (
+            certification_digests[1] is None
+        ):
+            raise ValueError("promotion scoring certification is incomplete")
+        for digest in certification_digests:
+            if digest is not None:
+                _require_digest("promotion scoring certification", digest)
         for digest in self.evaluation_digests:
             _require_digest("promotion member digest", digest)
         for digest in self.regime_classifier_evidence_digests:
@@ -13842,6 +13903,12 @@ def compute_neural_prior_promotion(
         semantic_replay_generation_digest=(
             scoring_artifact.semantic_replay_generation_digest
         ),
+        scoring_backend_certification_policy_digest=(
+            scoring_artifact.scoring_backend_certification_policy_digest
+        ),
+        scoring_backend_certification_evidence_digest=(
+            scoring_artifact.scoring_backend_certification_evidence_digest
+        ),
         scoring_process_log_digest=scoring_process_log.artifact_digest,
         scoring_completion_receipt_digest=(
             scoring_completion_receipt.receipt_digest
@@ -14431,7 +14498,7 @@ class DeployedNeuralPriorPolicy:
     minimum_regime_confidence: float = 0.8
     minimum_weather_top1_top2_gap: float = 0.05
     minimum_deployment_confidence_margin: float = 0.05
-    contract: str = "deployed-neural-prior-policy-v7"
+    contract: str = "deployed-neural-prior-policy-v8"
     policy_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -14446,7 +14513,7 @@ class DeployedNeuralPriorPolicy:
         ):
             _require_digest(name, getattr(self, name))
         if (
-            self.contract != "deployed-neural-prior-policy-v7"
+            self.contract != "deployed-neural-prior-policy-v8"
             or self.candidate_prior_digest == self.parent_prior_digest
             or self.semantic_replay_generation_digest
             != SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
@@ -14534,9 +14601,9 @@ def _select_deployed_prior(
     if (
         type(promotion_evidence) is not NeuralPriorPromotionEvidence
         or promotion_evidence.contract
-        != "neural-prior-promotion-evidence-v23"
+        != "neural-prior-promotion-evidence-v24"
         or type(policy) is not DeployedNeuralPriorPolicy
-        or policy.contract != "deployed-neural-prior-policy-v7"
+        or policy.contract != "deployed-neural-prior-policy-v8"
     ):
         raise TypeError("current replay-generation deployment evidence is required")
     policy.validate_integrity()
@@ -14623,7 +14690,7 @@ def _select_deployed_prior(
         role = "candidate"
         reason = "certified_candidate"
     deployment_decision_payload = {
-        "contract": "neural-prior-deployment-decision-artifact-v5",
+        "contract": "neural-prior-deployment-decision-artifact-v6",
         "full_analysis_input_digest": regime_evidence.full_analysis_input_digest,
         "operational_grid_contract_digest": operational_grid_contract_digest,
         "operational_frame_shape": list(operational_frame_shape),
@@ -14656,6 +14723,12 @@ def _select_deployed_prior(
             "scoring_replay_method": promotion_evidence.scoring_replay_method,
             "semantic_replay_generation_digest": (
                 promotion_evidence.semantic_replay_generation_digest
+            ),
+            "scoring_backend_certification_policy_digest": (
+                promotion_evidence.scoring_backend_certification_policy_digest
+            ),
+            "scoring_backend_certification_evidence_digest": (
+                promotion_evidence.scoring_backend_certification_evidence_digest
             ),
             "candidate_prior_digest": promotion_evidence.candidate_prior_digest,
             "parent_prior_digest": promotion_evidence.parent_prior_digest,
@@ -14747,7 +14820,7 @@ def validate_neural_prior_deployment_decision_artifact(
     if (
         not isinstance(payload, dict)
         or payload.get("contract")
-        != "neural-prior-deployment-decision-artifact-v5"
+        != "neural-prior-deployment-decision-artifact-v6"
         or json.dumps(payload, sort_keys=True, separators=(",", ":"))
         != artifact_json
     ):
@@ -14779,6 +14852,18 @@ def validate_neural_prior_deployment_decision_artifact(
     assert isinstance(range_geometry, dict)
     assert isinstance(trust, dict)
     assert isinstance(selection, dict)
+    scoring_certification = (
+        promotion.get("scoring_backend_certification_policy_digest"),
+        promotion.get("scoring_backend_certification_evidence_digest"),
+    )
+    if (scoring_certification[0] is None) != (
+        scoring_certification[1] is None
+    ) or any(
+        value is not None
+        and (not isinstance(value, str) or len(value) != 64)
+        for value in scoring_certification
+    ):
+        raise ValueError("neural-prior scoring certification is incomplete")
     regime_payload = dict(regime)
     regime_digest = regime_payload.pop("evidence_digest", None)
     policy_payload = dict(policy)
@@ -14818,9 +14903,9 @@ def validate_neural_prior_deployment_decision_artifact(
         != trust.get("content_digest")
         or policy.get("promotion_evidence_digest")
         != promotion.get("promotion_evidence_digest")
-        or policy.get("contract") != "deployed-neural-prior-policy-v7"
+        or policy.get("contract") != "deployed-neural-prior-policy-v8"
         or promotion.get("promotion_evidence_contract")
-        != "neural-prior-promotion-evidence-v23"
+        != "neural-prior-promotion-evidence-v24"
         or policy.get("semantic_replay_generation_digest")
         != promotion.get("semantic_replay_generation_digest")
         or promotion.get("scoring_replay_contract")
