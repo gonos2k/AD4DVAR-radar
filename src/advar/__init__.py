@@ -70,6 +70,7 @@ from .intervention import (
 )
 from .promotion import (
     DeployedNeuralPriorPolicy,
+    LedgeredPromotionDeploymentCertificate,
     LegacyNeuralPriorCandidateManifestAuditV2,
     LegacyNeuralPriorCandidateManifestAuditV3,
     LegacyNeuralPriorCandidateManifestAuditV4,
@@ -399,6 +400,7 @@ __all__ = [
     "MetricTaylorThreshold",
     "NeuralPriorPromotionEvidence",
     "DeployedNeuralPriorPolicy",
+    "LedgeredPromotionDeploymentCertificate",
     "RegimeClassificationEvidence",
     "RegimeClassifierManifest",
     "RegimeReferenceEvidence",

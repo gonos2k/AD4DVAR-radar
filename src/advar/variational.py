@@ -919,6 +919,7 @@ class NeuralPriorDeploymentSelection:
     selected_role: Literal["candidate", "parent"]
     full_analysis_input_digest: str
     promotion_evidence_digest: str
+    promotion_deployment_certificate_digest: str
     regime_classification_evidence_digest: str
     deployment_policy_digest: str
     deployment_policy_trust_store_digest: str
@@ -943,19 +944,20 @@ class NeuralPriorDeploymentSelection:
         "no_certified_regime",
         "ambiguous_classifier_branch",
     ]
-    contract: str = "neural-prior-deployment-selection-v5"
+    contract: str = "neural-prior-deployment-selection-v6"
     selection_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use the certified neural-prior deployment selector")
 
     def validate_integrity(self) -> None:
-        if self.contract != "neural-prior-deployment-selection-v5":
+        if self.contract != "neural-prior-deployment-selection-v6":
             raise ValueError("unsupported neural-prior deployment selection")
         for name in (
             "selected_prior_digest",
             "full_analysis_input_digest",
             "promotion_evidence_digest",
+            "promotion_deployment_certificate_digest",
             "regime_classification_evidence_digest",
             "deployment_policy_digest",
             "deployment_policy_trust_store_digest",
@@ -1005,7 +1007,7 @@ def _new_neural_prior_deployment_selection(
     object.__setattr__(
         result,
         "contract",
-        "neural-prior-deployment-selection-v5",
+        "neural-prior-deployment-selection-v6",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
