@@ -191,6 +191,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             candidate_prior_digest=evidence.candidate_prior_digest,
             parent_prior_digest=evidence.parent_prior_digest,
             promotion_evidence_digest=evidence.promotion_evidence_digest,
+            promotion_deployment_certificate_digest="8" * 64,
+            promotion_deployment_authority_trust_store_digest="7" * 64,
             regime_classifier_digest=(
                 evidence.deployment_regime_classifier_digest
             ),
@@ -207,7 +209,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             "neural-prior-holdout-scoring-artifact-v4",
         )
         self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v24")
-        self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v8")
+        self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v9")
         self.assertEqual(
             evidence.semantic_replay_generation_digest,
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST,
@@ -216,6 +218,27 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             deployment.semantic_replay_generation_digest,
             evidence.semantic_replay_generation_digest,
         )
+
+    def test_deployment_certificate_binds_the_full_promotion_preimage(
+        self,
+    ) -> None:
+        evidence = self.deployment_ready(
+            self.compute((self.evaluation(1, -0.2), self.evaluation(2, -0.3)))
+        )
+        certificate, trust = self.deployment_certificate(evidence)
+
+        promotion_module._validate_ledgered_promotion_deployment_certificate(
+            certificate,
+            authority_trust_store=trust,
+            promotion_evidence=evidence,
+        )
+        object.__setattr__(certificate, "promotion_evidence_payload_json", "{}")
+        with self.assertRaisesRegex(ValueError, "certificate integrity"):
+            promotion_module._validate_ledgered_promotion_deployment_certificate(
+                certificate,
+                authority_trust_store=trust,
+                promotion_evidence=evidence,
+            )
 
         payload = evidence._payload()
         payload["contract"] = "neural-prior-promotion-evidence-v22"
@@ -1619,7 +1642,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
         with self.assertRaisesRegex(
             ValueError,
-            "MPS scoring requires approved certification",
+            "automatic promotion scoring requires the certified CPU backend",
         ):
             ledger_module._validate_scoring_backend_certification(
                 torch.device("mps"),
@@ -3619,6 +3642,25 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
         )
 
+    @staticmethod
+    def deployment_certificate(evidence):
+        key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+        trust = promotion_module._PromotionDeploymentAuthorityTrustStore(
+            keys={"test-ledger": key.public_key()},
+            content_digest="7" * 64,
+        )
+        certificate = (
+            promotion_module._issue_ledgered_promotion_deployment_certificate(
+                evidence,
+                issued_at="2026-08-13T00:00:00Z",
+                authority_id="test-ledger",
+                authority_private_key=key,
+                authority_trust_store=trust,
+                previous_certificate_digest=None,
+            )
+        )
+        return certificate, trust
+
     def compute_with_policy(self, evaluations, policy):
         plan = self.plan()
         manifest = self.manifest()
@@ -4139,6 +4181,18 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
             self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v24")
+            self.assertFalse(loaded.deployment_eligible)
+            with self.assertRaisesRegex(ValueError, "ineligible promotion"):
+                ledger.issue_neural_prior_promotion_deployment_certificate(
+                    stored,
+                    authority_id="test-ledger",
+                    authority_private_key=Ed25519PrivateKey.from_private_bytes(
+                        b"\x03" * 32
+                    ),
+                    authority_trust_store_path=(
+                        "/etc/advar/deployment-authorities.json"
+                    ),
+                )
 
             legacy_payload = evidence._payload()
             legacy_payload["contract"] = "neural-prior-promotion-evidence-v12"
@@ -4688,12 +4742,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 candidate_runner=Mock(),
                 parent_runner=Mock(),
                 promotion_evidence=Mock(),
+                promotion_deployment_certificate=Mock(),
                 regime_classifier=Mock(classify=Mock(return_value=Mock())),
                 range_geometry_contract=geometry,
                 grid_x_m=x,
                 grid_y_m=y,
                 policy=Mock(),
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
             )
 
     def test_operational_range_coordinates_must_match_frame_shape(self) -> None:
@@ -4744,12 +4802,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 candidate_runner=Mock(),
                 parent_runner=Mock(),
                 promotion_evidence=Mock(),
+                promotion_deployment_certificate=Mock(),
                 regime_classifier=Mock(classify=Mock(return_value=Mock())),
                 range_geometry_contract=geometry,
                 grid_x_m=x,
                 grid_y_m=y,
                 policy=Mock(),
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
             )
 
     def test_selector_rechecks_operational_partition_grid(self) -> None:
@@ -4764,12 +4826,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 Mock(),
                 Mock(),
                 Mock(),
+                Mock(),
                 partition,
                 Mock(),
                 range_geometry_contract=Mock(),
                 operational_grid_contract_digest="1" * 64,
                 operational_frame_shape=(2, 2),
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
             )
 
     def test_cluster_mean_cannot_hide_case_level_harm_frequency(self) -> None:
@@ -6933,10 +6999,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         candidate = SimpleNamespace(neural_prior_digest="c" * 64)
         parent = SimpleNamespace(neural_prior_digest="d" * 64)
         geometry, partition = self.holdout_range_geometry(1)
+        deployment_certificate, deployment_certificate_trust = (
+            self.deployment_certificate(evidence)
+        )
         deployment_policy = DeployedNeuralPriorPolicy(
             candidate_prior_digest=candidate.neural_prior_digest,
             parent_prior_digest=parent.neural_prior_digest,
             promotion_evidence_digest=evidence.promotion_evidence_digest,
+            promotion_deployment_certificate_digest=(
+                deployment_certificate.certificate_digest
+            ),
+            promotion_deployment_authority_trust_store_digest=(
+                deployment_certificate_trust.content_digest
+            ),
             regime_classifier_digest=classifier.classifier_digest,
             regime_classifier_manifest_digest=(
                 evidence.deployment_regime_classifier_manifest_digest
@@ -6958,11 +7033,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_module,
             "_load_learning_policy_trust_store",
             return_value=trust,
+        ), patch.object(
+            promotion_module,
+            "_load_promotion_deployment_authority_trust_store",
+            return_value=deployment_certificate_trust,
         ):
             selected, selection = promotion_module._select_deployed_prior(
                 candidate,
                 parent,
                 evidence,
+                deployment_certificate,
                 classified,
                 partition,
                 deployment_policy,
@@ -6970,6 +7050,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 operational_grid_contract_digest=partition.grid_contract_digest,
                 operational_frame_shape=tuple(partition.masks[0].shape),
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
             )
 
         self.assertIs(selected, parent)
@@ -7039,10 +7122,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         candidate = SimpleNamespace(neural_prior_digest="c" * 64)
         parent = SimpleNamespace(neural_prior_digest="d" * 64)
         geometry, partition = self.holdout_range_geometry(1)
+        deployment_certificate, deployment_certificate_trust = (
+            self.deployment_certificate(evidence)
+        )
         deployment_policy = DeployedNeuralPriorPolicy(
             candidate_prior_digest=candidate.neural_prior_digest,
             parent_prior_digest=parent.neural_prior_digest,
             promotion_evidence_digest=evidence.promotion_evidence_digest,
+            promotion_deployment_certificate_digest=(
+                deployment_certificate.certificate_digest
+            ),
+            promotion_deployment_authority_trust_store_digest=(
+                deployment_certificate_trust.content_digest
+            ),
             regime_classifier_digest=classifier.classifier_digest,
             regime_classifier_manifest_digest=(
                 evidence.deployment_regime_classifier_manifest_digest
@@ -7064,11 +7156,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_module,
             "_load_learning_policy_trust_store",
             return_value=trust,
+        ), patch.object(
+            promotion_module,
+            "_load_promotion_deployment_authority_trust_store",
+            return_value=deployment_certificate_trust,
         ):
             selected, selection = promotion_module._select_deployed_prior(
                 candidate,
                 parent,
                 evidence,
+                deployment_certificate,
                 classified,
                 partition,
                 deployment_policy,
@@ -7076,6 +7173,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 operational_grid_contract_digest=partition.grid_contract_digest,
                 operational_frame_shape=tuple(partition.masks[0].shape),
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
             )
 
         self.assertIs(selected, candidate)
@@ -7145,11 +7245,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_module,
             "_load_learning_policy_trust_store",
             return_value=trust,
+        ), patch.object(
+            promotion_module,
+            "_load_promotion_deployment_authority_trust_store",
+            return_value=deployment_certificate_trust,
         ), self.assertRaisesRegex(ValueError, "unapproved"):
             promotion_module._select_deployed_prior(
                 candidate,
                 parent,
                 evidence,
+                deployment_certificate,
                 classified,
                 partition,
                 unapproved,
@@ -7157,6 +7262,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 operational_grid_contract_digest=partition.grid_contract_digest,
                 operational_frame_shape=tuple(partition.masks[0].shape),
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
             )
         changed_trust = _LearningPolicyTrustStore(
             approved_policy_digests=frozenset((unapproved.policy_digest,)),
@@ -7171,11 +7279,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_module,
             "_load_learning_policy_trust_store",
             return_value=changed_trust,
+        ), patch.object(
+            promotion_module,
+            "_load_promotion_deployment_authority_trust_store",
+            return_value=deployment_certificate_trust,
         ):
             _, changed_selection = promotion_module._select_deployed_prior(
                 candidate,
                 parent,
                 evidence,
+                deployment_certificate,
                 classified,
                 partition,
                 unapproved,
@@ -7183,6 +7296,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 operational_grid_contract_digest=partition.grid_contract_digest,
                 operational_frame_shape=tuple(partition.masks[0].shape),
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
             )
         self.assertNotEqual(
             changed_selection.selection_digest,
@@ -7202,11 +7318,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_module,
             "_load_learning_policy_trust_store",
             return_value=trust,
+        ), patch.object(
+            promotion_module,
+            "_load_promotion_deployment_authority_trust_store",
+            return_value=deployment_certificate_trust,
         ), self.assertRaisesRegex(ValueError, "policy digest mismatch"):
             promotion_module._select_deployed_prior(
                 candidate,
                 parent,
                 evidence,
+                deployment_certificate,
                 classified,
                 partition,
                 tampered,
@@ -7214,6 +7335,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 operational_grid_contract_digest=partition.grid_contract_digest,
                 operational_frame_shape=tuple(partition.masks[0].shape),
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
             )
 
         external_geometry, external_partition = self.deployment_range_geometry(
@@ -7237,12 +7361,17 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_module,
             "_load_learning_policy_trust_store",
             return_value=external_trust,
+        ), patch.object(
+            promotion_module,
+            "_load_promotion_deployment_authority_trust_store",
+            return_value=deployment_certificate_trust,
         ):
             external_selected, external_selection = (
                 promotion_module._select_deployed_prior(
                     candidate,
                     parent,
                     evidence,
+                    deployment_certificate,
                     classified,
                     external_partition,
                     external_policy,
@@ -7255,6 +7384,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     ),
                     policy_trust_store_path=(
                         "/etc/advar/deployment-policies.json"
+                    ),
+                    deployment_certificate_trust_store_path=(
+                        "/etc/advar/deployment-authorities.json"
                     ),
                 )
             )
@@ -7305,10 +7437,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             labels=classifier.range_regime_labels,
             include_second_band=True,
         )
+        deployment_certificate, deployment_certificate_trust = (
+            self.deployment_certificate(evidence)
+        )
         deployment_policy = DeployedNeuralPriorPolicy(
             candidate_prior_digest=candidate.neural_prior_digest,
             parent_prior_digest=parent.neural_prior_digest,
             promotion_evidence_digest=evidence.promotion_evidence_digest,
+            promotion_deployment_certificate_digest=(
+                deployment_certificate.certificate_digest
+            ),
+            promotion_deployment_authority_trust_store_digest=(
+                deployment_certificate_trust.content_digest
+            ),
             regime_classifier_digest=classifier.classifier_digest,
             regime_classifier_manifest_digest=(
                 evidence.deployment_regime_classifier_manifest_digest
@@ -7328,11 +7469,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_module,
             "_load_learning_policy_trust_store",
             return_value=trust,
+        ), patch.object(
+            promotion_module,
+            "_load_promotion_deployment_authority_trust_store",
+            return_value=deployment_certificate_trust,
         ):
             selected, selection = promotion_module._select_deployed_prior(
                 candidate,
                 parent,
                 evidence,
+                deployment_certificate,
                 classifier.classify(frames, input_run=run),
                 partition,
                 deployment_policy,
@@ -7340,6 +7486,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 operational_grid_contract_digest=partition.grid_contract_digest,
                 operational_frame_shape=tuple(partition.masks[0].shape),
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
             )
         self.assertIs(selected, parent)
         self.assertEqual(selection.fallback_reason, "uncertified_range_geometry")
@@ -7520,10 +7669,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             grid_x_m_digest=promotion_module.tensor_digest(grid_x_m),
             grid_y_m_digest=promotion_module.tensor_digest(grid_y_m),
         )
+        deployment_certificate, deployment_certificate_trust = (
+            self.deployment_certificate(evidence)
+        )
         deployment_policy = DeployedNeuralPriorPolicy(
             candidate_prior_digest=evidence.candidate_prior_digest,
             parent_prior_digest=evidence.parent_prior_digest,
             promotion_evidence_digest=evidence.promotion_evidence_digest,
+            promotion_deployment_certificate_digest=(
+                deployment_certificate.certificate_digest
+            ),
+            promotion_deployment_authority_trust_store_digest=(
+                deployment_certificate_trust.content_digest
+            ),
             regime_classifier_digest=classifier.classifier_digest,
             regime_classifier_manifest_digest=(
                 evidence.deployment_regime_classifier_manifest_digest
@@ -7543,6 +7701,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_module,
             "_load_learning_policy_trust_store",
             return_value=trust,
+        ), patch.object(
+            promotion_module,
+            "_load_promotion_deployment_authority_trust_store",
+            return_value=deployment_certificate_trust,
         ):
             application = promotion_module.infer_deployed_neural_prior(
                 frames,
@@ -7550,12 +7712,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 candidate_runner=replay_case.candidate_prior_runner,
                 parent_runner=replay_case.parent_prior_runner,
                 promotion_evidence=evidence,
+                promotion_deployment_certificate=deployment_certificate,
                 regime_classifier=classifier,
                 range_geometry_contract=uncertified_geometry,
                 grid_x_m=grid_x_m,
                 grid_y_m=grid_y_m,
                 policy=deployment_policy,
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
             )
         assert application.deployment_selection is not None
         self.assertEqual(application.role, "parent")
@@ -7576,7 +7742,17 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "parent-fallback.npz"
             save_forecast_run(forecast, path)
-            loaded = load_forecast_run(path)
+            with patch.object(
+                promotion_module,
+                "_load_promotion_deployment_authority_trust_store",
+                return_value=deployment_certificate_trust,
+            ):
+                loaded = load_forecast_run(
+                    path,
+                    deployment_certificate_trust_store_path=(
+                        "/etc/advar/deployment-authorities.json"
+                    ),
+                )
         self.assertEqual(loaded.run.prior_role, "parent")
         self.assertEqual(
             loaded.run.prior_deployment_fallback_reason,
@@ -7584,7 +7760,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             loaded.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v7",
+            "neural-prior-deployment-lineage-v8",
         )
 
     def test_current_physical_range_partition_controls_deployment(self) -> None:
@@ -7643,10 +7819,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         candidate = SimpleNamespace(neural_prior_digest="c" * 64)
         parent = SimpleNamespace(neural_prior_digest="d" * 64)
+        deployment_certificate, deployment_certificate_trust = (
+            self.deployment_certificate(evidence)
+        )
         deployment_policy = DeployedNeuralPriorPolicy(
             candidate_prior_digest=candidate.neural_prior_digest,
             parent_prior_digest=parent.neural_prior_digest,
             promotion_evidence_digest=evidence.promotion_evidence_digest,
+            promotion_deployment_certificate_digest=(
+                deployment_certificate.certificate_digest
+            ),
+            promotion_deployment_authority_trust_store_digest=(
+                deployment_certificate_trust.content_digest
+            ),
             regime_classifier_digest=classifier.classifier_digest,
             regime_classifier_manifest_digest=(
                 evidence.deployment_regime_classifier_manifest_digest
@@ -7667,11 +7852,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_module,
             "_load_learning_policy_trust_store",
             return_value=trust,
+        ), patch.object(
+            promotion_module,
+            "_load_promotion_deployment_authority_trust_store",
+            return_value=deployment_certificate_trust,
         ):
             selected, selection = promotion_module._select_deployed_prior(
                 candidate,
                 parent,
                 evidence,
+                deployment_certificate,
                 classifier.classify(frames, input_run=run),
                 partition,
                 deployment_policy,
@@ -7679,6 +7869,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 operational_grid_contract_digest=partition.grid_contract_digest,
                 operational_frame_shape=tuple(partition.masks[0].shape),
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
             )
 
         self.assertIs(selected, parent)
@@ -8091,10 +8284,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             grid_x_m=grid_x_m,
             grid_y_m=grid_y_m,
         )
+        deployment_certificate, deployment_certificate_trust = (
+            self.deployment_certificate(evidence)
+        )
         deployment_policy = DeployedNeuralPriorPolicy(
             candidate_prior_digest=candidate.neural_prior_digest,
             parent_prior_digest=parent.neural_prior_digest,
             promotion_evidence_digest=evidence.promotion_evidence_digest,
+            promotion_deployment_certificate_digest=(
+                deployment_certificate.certificate_digest
+            ),
+            promotion_deployment_authority_trust_store_digest=(
+                deployment_certificate_trust.content_digest
+            ),
             regime_classifier_digest=classifier.classifier_digest,
             regime_classifier_manifest_digest=(
                 evidence.deployment_regime_classifier_manifest_digest
@@ -8115,11 +8317,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_module,
             "_load_learning_policy_trust_store",
             return_value=trust,
+        ), patch.object(
+            promotion_module,
+            "_load_promotion_deployment_authority_trust_store",
+            return_value=deployment_certificate_trust,
         ):
             selected, selection = promotion_module._select_deployed_prior(
                 candidate,
                 parent,
                 evidence,
+                deployment_certificate,
                 classifier.classify(frames, input_run=run),
                 partition,
                 deployment_policy,
@@ -8127,6 +8334,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 operational_grid_contract_digest=partition.grid_contract_digest,
                 operational_frame_shape=tuple(partition.masks[0].shape),
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
             )
 
         self.assertIs(selected, parent)
@@ -9046,12 +9256,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 candidate_runner=Mock(),
                 parent_runner=Mock(),
                 promotion_evidence=Mock(),
+                promotion_deployment_certificate=Mock(),
                 regime_classifier=Mock(),
                 range_geometry_contract=geometry,
                 grid_x_m=coordinates,
                 grid_y_m=coordinates,
                 policy=Mock(),
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
             )
 
     def test_event_catalog_append_rejects_future_catalog_time(self) -> None:

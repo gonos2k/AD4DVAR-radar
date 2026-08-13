@@ -8,8 +8,10 @@ from datetime import date, datetime, timezone
 from itertools import product
 import json
 import math
+import os
 from pathlib import Path
 import random
+import stat
 from statistics import NormalDist
 from typing import Any, cast, Literal
 
@@ -27,10 +29,8 @@ from ._runtime import (
     MPSBackendCertificationEvidence,
     MPSBackendCertificationPolicy,
     numerical_runtime_identity_digest,
-    validate_mps_backend_certification,
 )
 from .calibration import algorithm_bundle_digest, OperationalDataIdentity
-from .mps_certification import mps_certification_runner_digest
 from .nowcast import (
     ForecastResult,
     ForecastRunContract,
@@ -61,6 +61,12 @@ from .variational import (
     NeuralPriorDeploymentSelection,
     NeuralPriorInferenceRunner,
 )
+
+
+PROMOTION_DEPLOYMENT_AUTHORITY_TRUST_STORE_CONTRACT = (
+    "advar-promotion-deployment-authority-trust-store-v1"
+)
+_MAXIMUM_PROMOTION_DEPLOYMENT_TRUST_STORE_BYTES = 1024 * 1024
 
 
 PromotionRejectionReason = Literal[
@@ -14481,12 +14487,345 @@ class NeuralPriorRegimeClassifier:
 
 
 @dataclass(frozen=True)
+class _PromotionDeploymentAuthorityTrustStore:
+    keys: dict[str, Ed25519PublicKey]
+    content_digest: str
+
+
+def _load_promotion_deployment_authority_trust_store(
+    path: str | Path,
+) -> _PromotionDeploymentAuthorityTrustStore:
+    """Load root-owned keys permitted to issue deployment certificates."""
+
+    source = Path(path)
+    if not source.is_absolute():
+        raise ValueError("deployment authority trust store path must be absolute")
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(source, flags)
+    try:
+        metadata = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_uid != 0
+            or metadata.st_mode & 0o022
+            or metadata.st_size
+            > _MAXIMUM_PROMOTION_DEPLOYMENT_TRUST_STORE_BYTES
+        ):
+            raise ValueError(
+                "deployment authority trust store must be root-owned, "
+                "immutable, and bounded"
+            )
+        with os.fdopen(descriptor, encoding="utf-8") as stream:
+            descriptor = -1
+            document = json.load(stream)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+    if not isinstance(document, dict) or set(document) != {
+        "contract",
+        "authorities",
+    }:
+        raise ValueError("invalid deployment authority trust store")
+    if (
+        document["contract"]
+        != PROMOTION_DEPLOYMENT_AUTHORITY_TRUST_STORE_CONTRACT
+        or not isinstance(document["authorities"], dict)
+        or not document["authorities"]
+    ):
+        raise ValueError("unsupported deployment authority trust store")
+    keys: dict[str, Ed25519PublicKey] = {}
+    for authority_id, public_hex in document["authorities"].items():
+        if (
+            not isinstance(authority_id, str)
+            or not authority_id
+            or authority_id.strip() != authority_id
+            or not isinstance(public_hex, str)
+        ):
+            raise ValueError("invalid deployment authority entry")
+        try:
+            public = bytes.fromhex(public_hex)
+            key = Ed25519PublicKey.from_public_bytes(public)
+        except ValueError as error:
+            raise ValueError("invalid deployment authority public key") from error
+        if len(public) != 32:
+            raise ValueError("deployment authority keys must contain 32 bytes")
+        keys[authority_id] = key
+    canonical = {
+        "contract": PROMOTION_DEPLOYMENT_AUTHORITY_TRUST_STORE_CONTRACT,
+        "authorities": dict(sorted(document["authorities"].items())),
+    }
+    return _PromotionDeploymentAuthorityTrustStore(
+        keys=keys,
+        content_digest=json_digest(canonical),
+    )
+
+
+@dataclass(frozen=True, init=False)
+class LedgeredPromotionDeploymentCertificate:
+    """Signed ledger preimage required before a promotion may deploy."""
+
+    promotion_evidence_digest: str
+    promotion_evidence_payload_json: str
+    scoring_replay_bundle_digest: str
+    scoring_artifact_digest: str
+    scoring_completion_receipt_digest: str
+    scoring_backend_certification_policy_digest: str | None
+    scoring_backend_certification_evidence_digest: str | None
+    previous_certificate_digest: str | None
+    ledger_chain_head_digest: str
+    issued_at: str
+    authority_id: str
+    authority_public_key_hex: str
+    authority_trust_store_digest: str
+    authority_signature_hex: str
+    contract: str = "ledgered-promotion-deployment-certificate-v1"
+    certificate_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("deployment certificates are issued by EpisodeLedger")
+
+    @property
+    def unsigned_payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key not in {"authority_signature_hex", "certificate_digest"}
+        }
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "certificate_digest"
+        }
+
+
+def _deployment_certificate_chain_head(
+    *,
+    promotion_evidence_digest: str,
+    scoring_replay_bundle_digest: str,
+    scoring_artifact_digest: str,
+    scoring_completion_receipt_digest: str,
+    previous_certificate_digest: str | None,
+) -> str:
+    return json_digest(
+        {
+            "contract": "promotion-deployment-ledger-chain-v1",
+            "promotion_evidence_digest": promotion_evidence_digest,
+            "scoring_replay_bundle_digest": scoring_replay_bundle_digest,
+            "scoring_artifact_digest": scoring_artifact_digest,
+            "scoring_completion_receipt_digest": (
+                scoring_completion_receipt_digest
+            ),
+            "previous_certificate_digest": previous_certificate_digest,
+        }
+    )
+
+
+def _issue_ledgered_promotion_deployment_certificate(
+    evidence: NeuralPriorPromotionEvidence,
+    *,
+    issued_at: str,
+    authority_id: str,
+    authority_private_key: Ed25519PrivateKey,
+    authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+    previous_certificate_digest: str | None,
+) -> LedgeredPromotionDeploymentCertificate:
+    """Private constructor used only after EpisodeLedger row verification."""
+
+    if type(evidence) is not NeuralPriorPromotionEvidence:
+        raise TypeError("current promotion evidence is required")
+    public_key = authority_private_key.public_key()
+    approved_key = authority_trust_store.keys.get(authority_id)
+    public_hex = public_key.public_bytes(
+        serialization.Encoding.Raw,
+        serialization.PublicFormat.Raw,
+    ).hex()
+    if (
+        approved_key is None
+        or approved_key.public_bytes(
+            serialization.Encoding.Raw,
+            serialization.PublicFormat.Raw,
+        ).hex()
+        != public_hex
+    ):
+        raise ValueError("deployment certificate authority is not root-approved")
+    if previous_certificate_digest is not None:
+        _require_digest("previous deployment certificate", previous_certificate_digest)
+    evidence_payload_json = json.dumps(
+        evidence._payload(),
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    values: dict[str, object] = {
+        "promotion_evidence_digest": evidence.promotion_evidence_digest,
+        "promotion_evidence_payload_json": evidence_payload_json,
+        "scoring_replay_bundle_digest": evidence.scoring_replay_bundle_digest,
+        "scoring_artifact_digest": evidence.scoring_artifact_digest,
+        "scoring_completion_receipt_digest": (
+            evidence.scoring_completion_receipt_digest
+        ),
+        "scoring_backend_certification_policy_digest": (
+            evidence.scoring_backend_certification_policy_digest
+        ),
+        "scoring_backend_certification_evidence_digest": (
+            evidence.scoring_backend_certification_evidence_digest
+        ),
+        "previous_certificate_digest": previous_certificate_digest,
+        "ledger_chain_head_digest": _deployment_certificate_chain_head(
+            promotion_evidence_digest=evidence.promotion_evidence_digest,
+            scoring_replay_bundle_digest=evidence.scoring_replay_bundle_digest,
+            scoring_artifact_digest=evidence.scoring_artifact_digest,
+            scoring_completion_receipt_digest=(
+                evidence.scoring_completion_receipt_digest
+            ),
+            previous_certificate_digest=previous_certificate_digest,
+        ),
+        "issued_at": _canonical_time(issued_at),
+        "authority_id": authority_id,
+        "authority_public_key_hex": public_hex,
+        "authority_trust_store_digest": authority_trust_store.content_digest,
+        "contract": "ledgered-promotion-deployment-certificate-v1",
+    }
+    signature = authority_private_key.sign(
+        json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
+    ).hex()
+    result = object.__new__(LedgeredPromotionDeploymentCertificate)
+    for name, value in values.items():
+        object.__setattr__(result, name, value)
+    object.__setattr__(result, "authority_signature_hex", signature)
+    object.__setattr__(result, "certificate_digest", json_digest(result.payload))
+    _validate_ledgered_promotion_deployment_certificate(
+        result,
+        authority_trust_store=authority_trust_store,
+        promotion_evidence=evidence,
+    )
+    return result
+
+
+def _ledgered_promotion_deployment_certificate_from_payload(
+    payload: dict[str, object],
+) -> LedgeredPromotionDeploymentCertificate:
+    expected = {
+        field_.name
+        for field_ in LedgeredPromotionDeploymentCertificate.__dataclass_fields__.values()
+        if field_.name != "certificate_digest"
+    }
+    if set(payload) != expected:
+        raise ValueError("deployment certificate payload is incomplete")
+    result = object.__new__(LedgeredPromotionDeploymentCertificate)
+    for name, value in payload.items():
+        object.__setattr__(result, name, value)
+    object.__setattr__(result, "certificate_digest", json_digest(result.payload))
+    return result
+
+
+def _validate_ledgered_promotion_deployment_certificate(
+    certificate: LedgeredPromotionDeploymentCertificate,
+    *,
+    authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+    promotion_evidence: NeuralPriorPromotionEvidence | None = None,
+) -> None:
+    if (
+        type(certificate) is not LedgeredPromotionDeploymentCertificate
+        or certificate.contract
+        != "ledgered-promotion-deployment-certificate-v1"
+        or certificate.certificate_digest != json_digest(certificate.payload)
+        or certificate.issued_at != _canonical_time(certificate.issued_at)
+        or certificate.authority_trust_store_digest
+        != authority_trust_store.content_digest
+    ):
+        raise ValueError("deployment certificate integrity is invalid")
+    for name in (
+        "promotion_evidence_digest",
+        "scoring_replay_bundle_digest",
+        "scoring_artifact_digest",
+        "scoring_completion_receipt_digest",
+        "ledger_chain_head_digest",
+        "authority_trust_store_digest",
+    ):
+        _require_digest(name, getattr(certificate, name))
+    certification = (
+        certificate.scoring_backend_certification_policy_digest,
+        certificate.scoring_backend_certification_evidence_digest,
+    )
+    if (certification[0] is None) != (certification[1] is None):
+        raise ValueError("deployment certificate scoring attestation is incomplete")
+    if any(value is not None for value in certification):
+        raise ValueError("automatic promotion deployment is CPU-scoring only")
+    if certificate.previous_certificate_digest is not None:
+        _require_digest(
+            "previous deployment certificate",
+            certificate.previous_certificate_digest,
+        )
+    if certificate.ledger_chain_head_digest != _deployment_certificate_chain_head(
+        promotion_evidence_digest=certificate.promotion_evidence_digest,
+        scoring_replay_bundle_digest=certificate.scoring_replay_bundle_digest,
+        scoring_artifact_digest=certificate.scoring_artifact_digest,
+        scoring_completion_receipt_digest=(
+            certificate.scoring_completion_receipt_digest
+        ),
+        previous_certificate_digest=certificate.previous_certificate_digest,
+    ):
+        raise ValueError("deployment certificate ledger chain is invalid")
+    try:
+        evidence_payload = json.loads(certificate.promotion_evidence_payload_json)
+    except json.JSONDecodeError as error:
+        raise ValueError("deployment certificate evidence payload is invalid") from error
+    if (
+        not isinstance(evidence_payload, dict)
+        or json.dumps(evidence_payload, sort_keys=True, separators=(",", ":"))
+        != certificate.promotion_evidence_payload_json
+        or json_digest(evidence_payload) != certificate.promotion_evidence_digest
+    ):
+        raise ValueError("deployment certificate evidence preimage is invalid")
+    if promotion_evidence is not None and (
+        certificate.promotion_evidence_digest
+        != promotion_evidence.promotion_evidence_digest
+        or certificate.promotion_evidence_payload_json
+        != json.dumps(
+            promotion_evidence._payload(),
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        or certificate.scoring_replay_bundle_digest
+        != promotion_evidence.scoring_replay_bundle_digest
+        or certificate.scoring_artifact_digest
+        != promotion_evidence.scoring_artifact_digest
+        or certificate.scoring_completion_receipt_digest
+        != promotion_evidence.scoring_completion_receipt_digest
+    ):
+        raise ValueError("deployment certificate disagrees with promotion evidence")
+    key = authority_trust_store.keys.get(certificate.authority_id)
+    if key is None or key.public_bytes(
+        serialization.Encoding.Raw,
+        serialization.PublicFormat.Raw,
+    ).hex() != certificate.authority_public_key_hex:
+        raise ValueError("deployment certificate authority is not trusted")
+    try:
+        key.verify(
+            bytes.fromhex(certificate.authority_signature_hex),
+            json.dumps(
+                certificate.unsigned_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode(),
+        )
+    except (InvalidSignature, ValueError) as error:
+        raise ValueError("deployment certificate signature is invalid") from error
+
+
+@dataclass(frozen=True)
 class DeployedNeuralPriorPolicy:
     """Root-approved deployment selector for one promoted candidate family."""
 
     candidate_prior_digest: str
     parent_prior_digest: str
     promotion_evidence_digest: str
+    promotion_deployment_certificate_digest: str
+    promotion_deployment_authority_trust_store_digest: str
     regime_classifier_digest: str
     regime_classifier_manifest_digest: str
     range_geometry_contract_digest: str
@@ -14498,7 +14837,7 @@ class DeployedNeuralPriorPolicy:
     minimum_regime_confidence: float = 0.8
     minimum_weather_top1_top2_gap: float = 0.05
     minimum_deployment_confidence_margin: float = 0.05
-    contract: str = "deployed-neural-prior-policy-v8"
+    contract: str = "deployed-neural-prior-policy-v9"
     policy_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -14506,6 +14845,8 @@ class DeployedNeuralPriorPolicy:
             "candidate_prior_digest",
             "parent_prior_digest",
             "promotion_evidence_digest",
+            "promotion_deployment_certificate_digest",
+            "promotion_deployment_authority_trust_store_digest",
             "regime_classifier_digest",
             "regime_classifier_manifest_digest",
             "range_geometry_contract_digest",
@@ -14513,7 +14854,7 @@ class DeployedNeuralPriorPolicy:
         ):
             _require_digest(name, getattr(self, name))
         if (
-            self.contract != "deployed-neural-prior-policy-v8"
+            self.contract != "deployed-neural-prior-policy-v9"
             or self.candidate_prior_digest == self.parent_prior_digest
             or self.semantic_replay_generation_digest
             != SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
@@ -14567,6 +14908,7 @@ def _select_deployed_prior(
     candidate_runner: NeuralPriorInferenceRunner,
     parent_runner: NeuralPriorInferenceRunner,
     promotion_evidence: NeuralPriorPromotionEvidence,
+    promotion_deployment_certificate: LedgeredPromotionDeploymentCertificate,
     regime_evidence: RegimeClassificationEvidence,
     range_partition_evidence: RangePartitionEvidence,
     policy: DeployedNeuralPriorPolicy,
@@ -14578,6 +14920,7 @@ def _select_deployed_prior(
     operational_radar_site_digest: str | None = None,
     operational_radar_site_location_digest: str | None = None,
     policy_trust_store_path: str | Path,
+    deployment_certificate_trust_store_path: str | Path,
 ) -> tuple[NeuralPriorInferenceRunner, NeuralPriorDeploymentSelection]:
     """Select the candidate only for classifier-attested certified regimes."""
 
@@ -14603,7 +14946,7 @@ def _select_deployed_prior(
         or promotion_evidence.contract
         != "neural-prior-promotion-evidence-v24"
         or type(policy) is not DeployedNeuralPriorPolicy
-        or policy.contract != "deployed-neural-prior-policy-v8"
+        or policy.contract != "deployed-neural-prior-policy-v9"
     ):
         raise TypeError("current replay-generation deployment evidence is required")
     policy.validate_integrity()
@@ -14614,11 +14957,25 @@ def _select_deployed_prior(
         promotion_evidence._payload()
     ):
         raise ValueError("neural-prior promotion evidence digest mismatch")
+    deployment_authority_trust = (
+        _load_promotion_deployment_authority_trust_store(
+            deployment_certificate_trust_store_path
+        )
+    )
+    _validate_ledgered_promotion_deployment_certificate(
+        promotion_deployment_certificate,
+        authority_trust_store=deployment_authority_trust,
+        promotion_evidence=promotion_evidence,
+    )
     if (
         policy.candidate_prior_digest != candidate_runner.neural_prior_digest
         or policy.parent_prior_digest != parent_runner.neural_prior_digest
         or policy.promotion_evidence_digest
         != promotion_evidence.promotion_evidence_digest
+        or policy.promotion_deployment_certificate_digest
+        != promotion_deployment_certificate.certificate_digest
+        or policy.promotion_deployment_authority_trust_store_digest
+        != deployment_authority_trust.content_digest
         or policy.regime_classifier_digest != regime_evidence.classifier_digest
         or policy.regime_classifier_digest
         != promotion_evidence.deployment_regime_classifier_digest
@@ -14690,7 +15047,7 @@ def _select_deployed_prior(
         role = "candidate"
         reason = "certified_candidate"
     deployment_decision_payload = {
-        "contract": "neural-prior-deployment-decision-artifact-v6",
+        "contract": "neural-prior-deployment-decision-artifact-v7",
         "full_analysis_input_digest": regime_evidence.full_analysis_input_digest,
         "operational_grid_contract_digest": operational_grid_contract_digest,
         "operational_frame_shape": list(operational_frame_shape),
@@ -14716,6 +15073,13 @@ def _select_deployed_prior(
             "promotion_evidence_contract": promotion_evidence.contract,
             "promotion_evidence_digest": (
                 promotion_evidence.promotion_evidence_digest
+            ),
+            "scoring_replay_bundle_digest": (
+                promotion_evidence.scoring_replay_bundle_digest
+            ),
+            "scoring_artifact_digest": promotion_evidence.scoring_artifact_digest,
+            "scoring_completion_receipt_digest": (
+                promotion_evidence.scoring_completion_receipt_digest
             ),
             "scoring_replay_contract": (
                 promotion_evidence.scoring_replay_contract
@@ -14749,6 +15113,14 @@ def _select_deployed_prior(
                 promotion_evidence.certified_range_geometry_contract_digests
             ),
         },
+        "promotion_deployment_certificate": (
+            promotion_deployment_certificate.payload
+            | {
+                "certificate_digest": (
+                    promotion_deployment_certificate.certificate_digest
+                )
+            }
+        ),
         "policy_trust_store": {
             "contract": "advar-learning-policy-trust-store-v1",
             "approved_policy_digests": sorted(trust.approved_policy_digests),
@@ -14771,6 +15143,9 @@ def _select_deployed_prior(
         selected_role=role,
         full_analysis_input_digest=regime_evidence.full_analysis_input_digest,
         promotion_evidence_digest=promotion_evidence.promotion_evidence_digest,
+        promotion_deployment_certificate_digest=(
+            promotion_deployment_certificate.certificate_digest
+        ),
         regime_classification_evidence_digest=regime_evidence.evidence_digest,
         deployment_policy_digest=policy.policy_digest,
         deployment_policy_trust_store_digest=trust.content_digest,
@@ -14810,6 +15185,7 @@ def validate_neural_prior_deployment_decision_artifact(
     expected_operational_radar_source_kind: str | None = None,
     expected_operational_radar_site_digest: str | None = None,
     expected_operational_radar_site_location_digest: str | None = None,
+    deployment_certificate_trust_store_path: str | Path | None = None,
 ) -> str:
     """Replay a durable classifier/policy/certification deployment choice."""
 
@@ -14820,7 +15196,7 @@ def validate_neural_prior_deployment_decision_artifact(
     if (
         not isinstance(payload, dict)
         or payload.get("contract")
-        != "neural-prior-deployment-decision-artifact-v6"
+        != "neural-prior-deployment-decision-artifact-v7"
         or json.dumps(payload, sort_keys=True, separators=(",", ":"))
         != artifact_json
     ):
@@ -14828,6 +15204,7 @@ def validate_neural_prior_deployment_decision_artifact(
     regime = payload.get("regime_classification_evidence")
     policy = payload.get("deployment_policy")
     promotion = payload.get("promotion_selection_evidence")
+    certificate_payload = payload.get("promotion_deployment_certificate")
     range_partition = payload.get("range_partition_evidence")
     range_geometry = payload.get("range_geometry_contract")
     trust = payload.get("policy_trust_store")
@@ -14838,6 +15215,7 @@ def validate_neural_prior_deployment_decision_artifact(
             regime,
             policy,
             promotion,
+            certificate_payload,
             range_partition,
             range_geometry,
             trust,
@@ -14848,10 +15226,55 @@ def validate_neural_prior_deployment_decision_artifact(
     assert isinstance(regime, dict)
     assert isinstance(policy, dict)
     assert isinstance(promotion, dict)
+    assert isinstance(certificate_payload, dict)
     assert isinstance(range_partition, dict)
     assert isinstance(range_geometry, dict)
     assert isinstance(trust, dict)
     assert isinstance(selection, dict)
+    certificate_values = dict(certificate_payload)
+    certificate_digest = certificate_values.pop("certificate_digest", None)
+    try:
+        certificate = _ledgered_promotion_deployment_certificate_from_payload(
+            certificate_values
+        )
+        embedded_public_key = Ed25519PublicKey.from_public_bytes(
+            bytes.fromhex(certificate.authority_public_key_hex)
+        )
+        embedded_public_key.verify(
+            bytes.fromhex(certificate.authority_signature_hex),
+            json.dumps(
+                certificate.unsigned_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode(),
+        )
+    except (InvalidSignature, TypeError, ValueError) as error:
+        raise ValueError(
+            "neural-prior deployment certificate is invalid"
+        ) from error
+    if certificate_digest != certificate.certificate_digest:
+        raise ValueError("neural-prior deployment certificate digest mismatch")
+    try:
+        certificate_evidence = json.loads(
+            certificate.promotion_evidence_payload_json
+        )
+    except json.JSONDecodeError as error:
+        raise ValueError(
+            "neural-prior deployment certificate evidence is invalid"
+        ) from error
+    if not isinstance(certificate_evidence, dict):
+        raise ValueError(
+            "neural-prior deployment certificate evidence is invalid"
+        )
+    if deployment_certificate_trust_store_path is not None:
+        _validate_ledgered_promotion_deployment_certificate(
+            certificate,
+            authority_trust_store=(
+                _load_promotion_deployment_authority_trust_store(
+                    deployment_certificate_trust_store_path
+                )
+            ),
+        )
     scoring_certification = (
         promotion.get("scoring_backend_certification_policy_digest"),
         promotion.get("scoring_backend_certification_evidence_digest"),
@@ -14903,7 +15326,27 @@ def validate_neural_prior_deployment_decision_artifact(
         != trust.get("content_digest")
         or policy.get("promotion_evidence_digest")
         != promotion.get("promotion_evidence_digest")
-        or policy.get("contract") != "deployed-neural-prior-policy-v8"
+        or policy.get("promotion_deployment_certificate_digest")
+        != certificate.certificate_digest
+        or policy.get("promotion_deployment_authority_trust_store_digest")
+        != certificate.authority_trust_store_digest
+        or certificate.promotion_evidence_digest
+        != promotion.get("promotion_evidence_digest")
+        or certificate.scoring_replay_bundle_digest
+        != promotion.get("scoring_replay_bundle_digest")
+        or certificate.scoring_artifact_digest
+        != promotion.get("scoring_artifact_digest")
+        or certificate.scoring_completion_receipt_digest
+        != promotion.get("scoring_completion_receipt_digest")
+        or certificate_evidence.get("deployment_eligible")
+        != promotion.get("deployment_eligible")
+        or certificate_evidence.get("certified_applicability_regime_groups")
+        != promotion.get("certified_applicability_regime_groups")
+        or certificate_evidence.get(
+            "certified_range_geometry_contract_digests"
+        )
+        != promotion.get("certified_range_geometry_contract_digests")
+        or policy.get("contract") != "deployed-neural-prior-policy-v9"
         or promotion.get("promotion_evidence_contract")
         != "neural-prior-promotion-evidence-v24"
         or policy.get("semantic_replay_generation_digest")
@@ -15040,12 +15483,14 @@ def infer_deployed_neural_prior(
     candidate_runner: NeuralPriorInferenceRunner,
     parent_runner: NeuralPriorInferenceRunner,
     promotion_evidence: NeuralPriorPromotionEvidence,
+    promotion_deployment_certificate: LedgeredPromotionDeploymentCertificate,
     regime_classifier: NeuralPriorRegimeClassifier,
     range_geometry_contract: RangeGeometryContract,
     grid_x_m: Tensor,
     grid_y_m: Tensor,
     policy: DeployedNeuralPriorPolicy,
     policy_trust_store_path: str | Path,
+    deployment_certificate_trust_store_path: str | Path,
     mps_backend_certification: MPSBackendCertificationEvidence | None = None,
     mps_backend_certification_policy: (
         MPSBackendCertificationPolicy | None
@@ -15054,23 +15499,8 @@ def infer_deployed_neural_prior(
     """Classify, select, and infer without accepting caller-provided labels."""
 
     if frames_dbz.device.type == "mps":
-        if (
-            mps_backend_certification is None
-            or mps_backend_certification_policy is None
-            or policy.mps_backend_certification_digest
-            != mps_backend_certification.evidence_digest
-            or policy.mps_backend_certification_policy_digest
-            != mps_backend_certification_policy.policy_digest
-        ):
-            raise ValueError("MPS deployment requires approved certification")
-        validate_mps_backend_certification(
-            mps_backend_certification,
-            mps_backend_certification_policy,
-            execution_device=frames_dbz.device,
-            active_algorithm_source_manifest_digest=algorithm_bundle_digest(),
-            active_certification_runner_digest=(
-                mps_certification_runner_digest()
-            ),
+        raise ValueError(
+            "operational MPS deployment requires a model-scoring certificate"
         )
     if (
         input_run.grid_time_contract_digest is None
@@ -15108,6 +15538,7 @@ def infer_deployed_neural_prior(
         candidate_runner,
         parent_runner,
         promotion_evidence,
+        promotion_deployment_certificate,
         regime_evidence,
         range_partition_evidence,
         policy,
@@ -15123,6 +15554,9 @@ def infer_deployed_neural_prior(
             source_identity.radar_site_location_digest
         ),
         policy_trust_store_path=policy_trust_store_path,
+        deployment_certificate_trust_store_path=(
+            deployment_certificate_trust_store_path
+        ),
     )
     return runner._infer_deployed(
         frames_dbz,

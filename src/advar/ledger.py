@@ -23,17 +23,18 @@ import torch
 from torch import Tensor
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+    Ed25519PrivateKey,
+    Ed25519PublicKey,
+)
 
 from ._digest import tensor_digest
 from ._runtime import (
     MPSBackendCertificationEvidence,
     MPSBackendCertificationPolicy,
     numerical_runtime_manifest,
-    validate_mps_backend_certification,
 )
 from .calibration import algorithm_bundle_digest
-from .mps_certification import mps_certification_runner_digest
 from .action_artifacts import (
     expanded_tensor_bytes,
     preflight_npz_archive,
@@ -136,6 +137,12 @@ from .promotion import (
     PromotionExperimentFamily,
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionEvidence,
+    LedgeredPromotionDeploymentCertificate,
+    _PromotionDeploymentAuthorityTrustStore,
+    _issue_ledgered_promotion_deployment_certificate,
+    _ledgered_promotion_deployment_certificate_from_payload,
+    _load_promotion_deployment_authority_trust_store,
+    _validate_ledgered_promotion_deployment_certificate,
     LegacyNeuralPriorPromotionEvidenceAuditV3,
     LegacyNeuralPriorPromotionEvidenceAuditV4,
     LegacyNeuralPriorPromotionEvidenceAuditV5,
@@ -190,7 +197,7 @@ _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _SCHEDULER_TRUST_STORE_CONTRACT = "advar-trusted-scheduler-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 25
+_INDEX_SCHEMA_VERSION = 26
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
@@ -234,22 +241,23 @@ def _validate_scoring_backend_certification(
     policy: MPSBackendCertificationPolicy | None,
     evidence: MPSBackendCertificationEvidence | None,
 ) -> tuple[str | None, str | None]:
-    """Fail closed when promotion scoring uses the MPS backend."""
+    """Keep automatic promotion scoring on the certified CPU path.
 
-    if execution_device.type != "mps":
-        if policy is not None or evidence is not None:
-            raise ValueError("CPU scoring cannot claim MPS certification")
-        return None, None
-    if policy is None or evidence is None:
-        raise ValueError("MPS scoring requires approved certification")
-    validate_mps_backend_certification(
-        evidence,
-        policy,
-        execution_device=execution_device,
-        active_algorithm_source_manifest_digest=algorithm_bundle_digest(),
-        active_certification_runner_digest=mps_certification_runner_digest(),
-    )
-    return policy.policy_digest, evidence.evidence_digest
+    The generic MPS certificate covers the numerical backend, but it does not
+    yet cover the exported prior/classifier graphs and the complete holdout
+    metric engine.  Accepting it here would therefore overstate the scope of
+    the certificate.  The policy/evidence parameters remain in the API so a
+    future model-scoring certificate can be introduced without silently
+    changing the archive format.
+    """
+
+    if execution_device.type != "cpu":
+        raise ValueError(
+            "automatic promotion scoring requires the certified CPU backend"
+        )
+    if policy is not None or evidence is not None:
+        raise ValueError("CPU scoring cannot claim MPS certification")
+    return None, None
 
 
 @dataclass(frozen=True)
@@ -5089,6 +5097,166 @@ class EpisodeLedger:
             )
         return evidence.promotion_evidence_digest
 
+    def issue_neural_prior_promotion_deployment_certificate(
+        self,
+        promotion_evidence_digest: str,
+        *,
+        authority_id: str,
+        authority_private_key: Ed25519PrivateKey,
+        authority_trust_store_path: str | Path,
+    ) -> LedgeredPromotionDeploymentCertificate:
+        """Issue the sole deployment-capable view of a ledgered promotion."""
+
+        evidence = self.load_neural_prior_promotion(promotion_evidence_digest)
+        if type(evidence) is not NeuralPriorPromotionEvidence:
+            raise ValueError("legacy promotion evidence is audit-only")
+        assert isinstance(evidence, NeuralPriorPromotionEvidence)
+        if not evidence.deployment_eligible:
+            raise ValueError("ineligible promotion cannot receive a certificate")
+        if any(
+            value is not None
+            for value in (
+                evidence.scoring_backend_certification_policy_digest,
+                evidence.scoring_backend_certification_evidence_digest,
+            )
+        ):
+            raise ValueError("automatic deployment requires CPU-scored evidence")
+        authority_trust = _load_promotion_deployment_authority_trust_store(
+            authority_trust_store_path
+        )
+        with self._connect() as connection:
+            connection.row_factory = sqlite3.Row
+            promotion_row = connection.execute(
+                "SELECT evidence_payload_json FROM neural_prior_promotions "
+                "WHERE promotion_evidence_digest = ?",
+                (promotion_evidence_digest,),
+            ).fetchone()
+            replay_row = connection.execute(
+                "SELECT bundle_digest FROM neural_prior_scoring_replay_bundles "
+                "WHERE bundle_digest = ?",
+                (evidence.scoring_replay_bundle_digest,),
+            ).fetchone()
+            scoring_row = connection.execute(
+                "SELECT artifact_digest FROM "
+                "neural_prior_holdout_scoring_artifacts "
+                "WHERE artifact_digest = ?",
+                (evidence.scoring_artifact_digest,),
+            ).fetchone()
+            completion_row = connection.execute(
+                "SELECT receipt_digest FROM "
+                "trusted_process_completion_receipts "
+                "WHERE receipt_digest = ?",
+                (evidence.scoring_completion_receipt_digest,),
+            ).fetchone()
+            previous_row = connection.execute(
+                "SELECT certificate_digest FROM "
+                "neural_prior_promotion_deployment_certificates "
+                "ORDER BY created_at DESC, certificate_digest DESC LIMIT 1"
+            ).fetchone()
+            if (
+                promotion_row is None
+                or replay_row is None
+                or scoring_row is None
+                or completion_row is None
+                or promotion_row["evidence_payload_json"]
+                != json.dumps(evidence._payload(), sort_keys=True)
+            ):
+                raise ValueError(
+                    "deployment certificate requires complete ledger preimages"
+                )
+            issued_at = datetime.now(timezone.utc).isoformat()
+            certificate = _issue_ledgered_promotion_deployment_certificate(
+                evidence,
+                issued_at=issued_at,
+                authority_id=authority_id,
+                authority_private_key=authority_private_key,
+                authority_trust_store=authority_trust,
+                previous_certificate_digest=(
+                    None
+                    if previous_row is None
+                    else previous_row["certificate_digest"]
+                ),
+            )
+            payload_json = json.dumps(
+                certificate.payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            try:
+                connection.execute(
+                    "INSERT INTO neural_prior_promotion_deployment_certificates "
+                    "(certificate_digest,promotion_evidence_digest,"
+                    "previous_certificate_digest,ledger_chain_head_digest,"
+                    "payload_json,issued_at,created_at) VALUES (?,?,?,?,?,?,?)",
+                    (
+                        certificate.certificate_digest,
+                        certificate.promotion_evidence_digest,
+                        certificate.previous_certificate_digest,
+                        certificate.ledger_chain_head_digest,
+                        payload_json,
+                        certificate.issued_at,
+                        issued_at,
+                    ),
+                )
+            except sqlite3.IntegrityError as error:
+                raise FileExistsError(
+                    "promotion deployment certificate already exists"
+                ) from error
+        return certificate
+
+    def load_neural_prior_promotion_deployment_certificate(
+        self,
+        certificate_digest: str,
+        *,
+        authority_trust_store_path: str | Path,
+    ) -> LedgeredPromotionDeploymentCertificate:
+        """Load a certificate and revalidate its evidence preimage and root."""
+
+        with self._connect() as connection:
+            connection.row_factory = sqlite3.Row
+            row = connection.execute(
+                "SELECT * FROM neural_prior_promotion_deployment_certificates "
+                "WHERE certificate_digest = ?",
+                (certificate_digest,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(f"unknown deployment certificate: {certificate_digest}")
+        try:
+            payload = json.loads(row["payload_json"])
+        except json.JSONDecodeError as error:
+            raise ValueError("invalid stored deployment certificate") from error
+        if not isinstance(payload, dict):
+            raise ValueError("invalid stored deployment certificate")
+        certificate = _ledgered_promotion_deployment_certificate_from_payload(
+            payload
+        )
+        evidence = self.load_neural_prior_promotion(
+            certificate.promotion_evidence_digest
+        )
+        if type(evidence) is not NeuralPriorPromotionEvidence:
+            raise ValueError("certificate references legacy promotion evidence")
+        assert isinstance(evidence, NeuralPriorPromotionEvidence)
+        _validate_ledgered_promotion_deployment_certificate(
+            certificate,
+            authority_trust_store=(
+                _load_promotion_deployment_authority_trust_store(
+                    authority_trust_store_path
+                )
+            ),
+            promotion_evidence=evidence,
+        )
+        if (
+            certificate.certificate_digest != certificate_digest
+            or row["promotion_evidence_digest"]
+            != certificate.promotion_evidence_digest
+            or row["ledger_chain_head_digest"]
+            != certificate.ledger_chain_head_digest
+            or row["previous_certificate_digest"]
+            != certificate.previous_certificate_digest
+        ):
+            raise ValueError("stored deployment certificate lineage disagrees")
+        return certificate
+
     def load_neural_prior_promotion(
         self,
         promotion_evidence_digest: str,
@@ -6171,6 +6339,27 @@ class EpisodeLedger:
                     evidence_contract TEXT NOT NULL,
                     evidence_payload_json TEXT NOT NULL,
                     created_at TEXT NOT NULL
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS neural_prior_promotion_deployment_certificates (
+                    certificate_digest TEXT PRIMARY KEY,
+                    promotion_evidence_digest TEXT NOT NULL UNIQUE,
+                    previous_certificate_digest TEXT UNIQUE,
+                    ledger_chain_head_digest TEXT NOT NULL UNIQUE,
+                    payload_json TEXT NOT NULL,
+                    issued_at TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (promotion_evidence_digest)
+                        REFERENCES neural_prior_promotions(
+                            promotion_evidence_digest
+                        ),
+                    FOREIGN KEY (previous_certificate_digest)
+                        REFERENCES neural_prior_promotion_deployment_certificates(
+                            certificate_digest
+                        )
                 )
                 """
             )
