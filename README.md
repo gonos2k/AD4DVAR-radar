@@ -934,7 +934,8 @@ index/effective-range map 계약 없이는 single-radar geometry 경로에 들�
 `DeployedNeuralPriorPolicy`의 confidence rule까지 확인한 뒤 candidate 또는 parent를
 선택한다. 연구용 `NeuralPriorInferenceRunner.infer()`는 operational input을 항상 거부한다.
 
-Holdout scoring 완료 전에는 `ScoringReplayCaseArtifact`가 case별
+Holdout scoring 완료 전에는 direct constructor가 닫힌
+`ScoringReplayCaseArtifact.from_products()`가 exact shipped product type만 받아 case별
 radar/QC/quality/background, candidate/parent의 7개 prior channel·최종 state·forecast·
 publication/fallback/confidence mask, verification·calibration target, classifier logits,
 range 좌표와 operational-domain mask를 typed product object에서 직접 추출해 NPZ로
@@ -942,6 +943,14 @@ range 좌표와 operational-domain mask를 typed product object에서 직접 추
 `PriorHoldoutEvaluation.from_forecasts()`를 반드시 다시 실행한다. 재계산된 모든
 evaluation digest와 archive tensor digest가 봉인된 manifest와 같아야 하므로, 기존
 evaluation JSON에 무관한 임의 tensor를 붙인 snapshot은 자동승격 증거가 될 수 없다.
+Forecast, prior application, inference runner, verification, metric config, calibration
+target, classifier와 operational-domain artifact는 각각 제품 validator와 runner
+reproduction을 통과해야 하며, factory가 한 번 동결한 tensor snapshot과 completion 시점의
+live product bytes가 다르면 거부된다. Replay v3 contract/method/generation digest는
+`HoldoutScoringArtifact-v3`, promotion evidence v23,
+`DeployedNeuralPriorPolicy-v7`과 deployment-decision artifact v5까지 직접 전파된다.
+따라서 replay 세대를 식별하지 못하는 v22 promotion evidence는 audit-only이며 배포 selector가
+소비할 수 없다.
 Audit load는 저장된 typed evaluation을 볼 수 있지만, 자동 completion과 promotion은
 동일한 typed replay case를 다시 제공해 semantic replay까지 통과해야 한다. Ledger는
 scoring start가 선행했는지 확인하고 archive/file/Tensor/evaluation digest를 append,
@@ -978,7 +987,7 @@ exclusion mask가 target mask를 덮었는지 계산해 확인한다. 불확실�
 fraction·면적과 parent 대비 abstention 증가 및 NLL abstention penalty를 함께 적용한다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
-현재 promotion evidence는 v22, candidate manifest는 v12, holdout plan은 v16,
+현재 promotion evidence는 v23, candidate manifest는 v12, holdout plan은 v16,
 holdout evaluation은 v20, promotion policy는 v25, metric support는 v3이다.
 `sealed_historical` plan은 결과 비공개 escrow를 증명하지 않으므로 연구·shadow audit에만
 사용되고 deployment eligibility는 prospective plan에만 부여된다. Candidate-neutral

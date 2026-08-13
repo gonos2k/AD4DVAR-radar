@@ -182,6 +182,27 @@ class UncertaintyScoreSupportContract:
 _UNCERTAINTY_SCORE_SUPPORT = UncertaintyScoreSupportContract()
 
 
+SEMANTIC_SCORING_REPLAY_CONTRACT = (
+    "neural-prior-scoring-replay-bundle-v3"
+)
+SEMANTIC_SCORING_REPLAY_METHOD = (
+    "builtin-semantic-scoring-recomputation-v3"
+)
+SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST = json_digest(
+    {
+        "contract": "neural-prior-semantic-scoring-generation-v1",
+        "replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
+        "replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
+        "case_contract": "neural-prior-semantic-scoring-case-v2",
+        "product_type_policy": "exact-shipped-product-types-v1",
+        "forecast_integrity": "forecast-result-raw-content-validation-v1",
+        "prior_integrity": "runner-reproduced-prior-application-v1",
+        "classifier_integrity": "exported-classifier-reexecution-v1",
+        "snapshot_policy": "single-frozen-tensor-snapshot-v1",
+    }
+)
+
+
 def scoring_metric_engine_identity_digest() -> str:
     """Content-address the installed scoring implementation used by promotion."""
 
@@ -7846,7 +7867,7 @@ class PriorHoldoutEvaluation:
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class ScoringReplayCaseArtifact:
     """Typed scoring inputs whose semantics are fixed by product code.
 
@@ -7878,14 +7899,157 @@ class ScoringReplayCaseArtifact:
     range_grid_y_m: Tensor
     operational_issuance_domain: OperationalIssuanceDomainArtifact
     resolved_source_coverage: ResolvedSourceCoverageArtifact | None = None
+    _frozen_replay_tensors: tuple[tuple[str, Tensor], ...] = field(
+        repr=False,
+        compare=False,
+    )
+    _semantic_input_digest: str = field(repr=False)
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
+        raise TypeError("use ScoringReplayCaseArtifact.from_products")
+
+    @classmethod
+    def from_products(
+        cls,
+        *,
+        manifest: NeuralPriorCandidateManifest,
+        plan: NeuralPriorHoldoutPlan,
+        case_id: str,
+        candidate_forecast: ForecastResult,
+        parent_forecast: ForecastResult,
+        verification: VerificationBundle,
+        metric_config: SensitivityConfig,
+        candidate_prior_application: NeuralPriorApplication,
+        parent_prior_application: NeuralPriorApplication,
+        candidate_prior_runner: NeuralPriorInferenceRunner,
+        parent_prior_runner: NeuralPriorInferenceRunner,
+        input_frames_dbz: Tensor,
+        input_qc_valid_mask: Tensor,
+        input_quality_weight: Tensor,
+        background_frames_dbz: Tensor | None,
+        uncertainty_target: PriorUncertaintyTarget,
+        state_calibration_target: NeuralPriorStateCalibrationTarget,
+        regime_classifier: NeuralPriorRegimeClassifier,
+        regime_classifier_manifest: RegimeClassifierManifest,
+        range_grid_x_m: Tensor,
+        range_grid_y_m: Tensor,
+        operational_issuance_domain: OperationalIssuanceDomainArtifact,
+        resolved_source_coverage: ResolvedSourceCoverageArtifact | None = None,
+    ) -> ScoringReplayCaseArtifact:
+        """Freeze one replay case from exact, integrity-checked products."""
+
+        exact_types = (
+            ("manifest", manifest, NeuralPriorCandidateManifest),
+            ("plan", plan, NeuralPriorHoldoutPlan),
+            ("candidate forecast", candidate_forecast, ForecastResult),
+            ("parent forecast", parent_forecast, ForecastResult),
+            ("verification", verification, VerificationBundle),
+            ("metric config", metric_config, SensitivityConfig),
+            (
+                "candidate prior application",
+                candidate_prior_application,
+                NeuralPriorApplication,
+            ),
+            (
+                "parent prior application",
+                parent_prior_application,
+                NeuralPriorApplication,
+            ),
+            (
+                "candidate prior runner",
+                candidate_prior_runner,
+                NeuralPriorInferenceRunner,
+            ),
+            (
+                "parent prior runner",
+                parent_prior_runner,
+                NeuralPriorInferenceRunner,
+            ),
+            ("uncertainty target", uncertainty_target, PriorUncertaintyTarget),
+            (
+                "state calibration target",
+                state_calibration_target,
+                NeuralPriorStateCalibrationTarget,
+            ),
+            (
+                "regime classifier",
+                regime_classifier,
+                NeuralPriorRegimeClassifier,
+            ),
+            (
+                "regime classifier manifest",
+                regime_classifier_manifest,
+                RegimeClassifierManifest,
+            ),
+            (
+                "operational issuance domain",
+                operational_issuance_domain,
+                OperationalIssuanceDomainArtifact,
+            ),
+        )
+        for name, value, expected_type in exact_types:
+            if type(value) is not expected_type:
+                raise TypeError(
+                    f"semantic replay {name} must be the exact product type"
+                )
+        if resolved_source_coverage is not None and type(
+            resolved_source_coverage
+        ) is not ResolvedSourceCoverageArtifact:
+            raise TypeError(
+                "semantic replay source coverage must be the exact product type"
+            )
+        result = object.__new__(cls)
+        values: dict[str, object] = {
+            "manifest": manifest,
+            "plan": plan,
+            "case_id": case_id,
+            "candidate_forecast": candidate_forecast,
+            "parent_forecast": parent_forecast,
+            "verification": verification,
+            "metric_config": metric_config,
+            "candidate_prior_application": candidate_prior_application,
+            "parent_prior_application": parent_prior_application,
+            "candidate_prior_runner": candidate_prior_runner,
+            "parent_prior_runner": parent_prior_runner,
+            "input_frames_dbz": input_frames_dbz.detach().clone(),
+            "input_qc_valid_mask": input_qc_valid_mask.detach().clone(),
+            "input_quality_weight": input_quality_weight.detach().clone(),
+            "background_frames_dbz": (
+                None
+                if background_frames_dbz is None
+                else background_frames_dbz.detach().clone()
+            ),
+            "uncertainty_target": uncertainty_target,
+            "state_calibration_target": state_calibration_target,
+            "regime_classifier": regime_classifier,
+            "regime_classifier_manifest": regime_classifier_manifest,
+            "range_grid_x_m": range_grid_x_m.detach().clone(),
+            "range_grid_y_m": range_grid_y_m.detach().clone(),
+            "operational_issuance_domain": operational_issuance_domain,
+            "resolved_source_coverage": resolved_source_coverage,
+        }
+        for name, value in values.items():
+            object.__setattr__(result, name, value)
+        result._validate_product_integrity()
+        frozen = tuple(
+            sorted(result._live_replay_tensors().items())
+        )
+        object.__setattr__(result, "_frozen_replay_tensors", frozen)
+        object.__setattr__(
+            result,
+            "_semantic_input_digest",
+            result._computed_semantic_input_digest(frozen),
+        )
+        result.validate_integrity()
+        return result
+
+    def _validate_product_integrity(self) -> None:
         if (
             not self.case_id
             or self.manifest.holdout_plan_digest != self.plan.plan_digest
             or self.manifest.holdout_case(self.case_id).case_id != self.case_id
-            or not isinstance(self.candidate_forecast.run, ForecastRunContract)
-            or not isinstance(self.parent_forecast.run, ForecastRunContract)
+            or type(self.candidate_forecast.run) is not ForecastRunContract
+            or type(self.parent_forecast.run) is not ForecastRunContract
             or self.input_frames_dbz.ndim != 3
             or not self.input_frames_dbz.is_floating_point()
             or self.input_qc_valid_mask.dtype is not torch.bool
@@ -7912,6 +8076,95 @@ class ScoringReplayCaseArtifact:
             or self.range_grid_y_m.shape != self.input_frames_dbz.shape[-2:]
         ):
             raise ValueError("semantic scoring replay case is invalid")
+        ForecastResult.validate_issuance(self.candidate_forecast)
+        ForecastResult.validate_issuance(self.parent_forecast)
+        VerificationBundle.validate_integrity(self.verification)
+        NeuralPriorApplication.validate_integrity(
+            self.candidate_prior_application
+        )
+        NeuralPriorApplication.validate_integrity(self.parent_prior_application)
+        NeuralPriorInferenceRunner.reproduce(
+            self.candidate_prior_runner,
+            self.candidate_prior_application,
+            self.input_frames_dbz,
+        )
+        NeuralPriorInferenceRunner.reproduce(
+            self.parent_prior_runner,
+            self.parent_prior_application,
+            self.input_frames_dbz,
+        )
+        regime_evidence = NeuralPriorRegimeClassifier.classify(
+            self.regime_classifier,
+            self.input_frames_dbz,
+            input_run=self.candidate_forecast.run,
+        )
+        RegimeClassificationEvidence.validate_integrity(regime_evidence)
+        if (
+            self.regime_classifier_manifest.manifest_digest
+            != json_digest(self.regime_classifier_manifest.payload)
+        ):
+            raise ValueError("semantic replay classifier lineage is invalid")
+        uncertainty_plan = next(
+            item
+            for item in self.plan.uncertainty_target_plans
+            if item.plan_digest == self.uncertainty_target.target_plan_digest
+        )
+        expected_uncertainty_digest = json_digest(
+            {
+                "contract": "prior-uncertainty-target-v4",
+                "target_dbz": tensor_digest(self.uncertainty_target._target_dbz),
+                "valid_mask": tensor_digest(self.uncertainty_target._valid_mask),
+                "echo_support": tensor_digest(
+                    self.uncertainty_target._echo_support
+                ),
+                "target_plan_digest": self.uncertainty_target.target_plan_digest,
+                "source_digest": self.uncertainty_target.source_digest,
+                "independence_evidence_digest": (
+                    self.uncertainty_target.independence_evidence_digest
+                ),
+                "source_verification_bundle_digest": (
+                    self.uncertainty_target.source_verification_bundle_digest
+                ),
+                "support_threshold_dbz": uncertainty_plan.support_threshold_dbz,
+                "support_event_digest": uncertainty_plan.support_event_digest,
+                "prior_probability_contract_digest": (
+                    uncertainty_plan.prior_probability_contract_digest
+                ),
+            }
+        )
+        state_plan = next(
+            item
+            for item in self.plan.state_calibration_target_plans
+            if item.plan_digest
+            == self.state_calibration_target.target_plan_digest
+        )
+        expected_state_digest = json_digest(
+            {
+                "contract": "neural-prior-state-calibration-target-v2",
+                "target_dbz": tensor_digest(
+                    self.state_calibration_target._target_dbz
+                ),
+                "valid_mask": tensor_digest(
+                    self.state_calibration_target._valid_mask
+                ),
+                "echo_support": tensor_digest(
+                    self.state_calibration_target._echo_support
+                ),
+                "target_plan_digest": state_plan.plan_digest,
+                "source_verification_bundle_digest": (
+                    self.state_calibration_target.source_verification_bundle_digest
+                ),
+            }
+        )
+        if (
+            expected_uncertainty_digest != self.uncertainty_target.target_digest
+            or expected_state_digest
+            != self.state_calibration_target.target_digest
+        ):
+            raise ValueError("semantic replay target or metric lineage is invalid")
+        validate_operational_issuance_domain_artifact(
+            self.operational_issuance_domain
+        )
         input_frames_digest = tensor_digest(self.input_frames_dbz)
         observation_masks_digest = tensor_digest(self.input_qc_valid_mask)
         quality_digest = tensor_digest(self.input_quality_weight)
@@ -7943,6 +8196,7 @@ class ScoringReplayCaseArtifact:
     def recompute_evaluation(self) -> PriorHoldoutEvaluation:
         """Re-run every metric, uncertainty, classifier, and issuance score."""
 
+        self.validate_integrity()
         return PriorHoldoutEvaluation.from_forecasts(
             self.manifest,
             self.plan,
@@ -7965,8 +8219,8 @@ class ScoringReplayCaseArtifact:
             operational_issuance_domain=self.operational_issuance_domain,
         )
 
-    def replay_tensors(self) -> dict[str, Tensor]:
-        """Extract exact numerical realizations from the typed product objects."""
+    def _live_replay_tensors(self) -> dict[str, Tensor]:
+        """Extract current numerical realizations from product objects."""
 
         regime_logits, range_logits = (
             self.regime_classifier.classification_logits(
@@ -8066,12 +8320,24 @@ class ScoringReplayCaseArtifact:
             )
         return {name: value.detach().clone() for name, value in result.items()}
 
-    @property
-    def semantic_input_digest(self) -> str:
-        tensors = self.replay_tensors()
+    def replay_tensors(self) -> dict[str, Tensor]:
+        """Return clones of the single product-owned frozen snapshot."""
+
+        return {
+            name: value.detach().clone()
+            for name, value in self._frozen_replay_tensors
+        }
+
+    def _computed_semantic_input_digest(
+        self,
+        tensors: tuple[tuple[str, Tensor], ...],
+    ) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-semantic-scoring-case-v1",
+                "contract": "neural-prior-semantic-scoring-case-v2",
+                "semantic_replay_generation_digest": (
+                    SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
+                ),
                 "case_id": self.case_id,
                 "holdout_plan_digest": self.plan.plan_digest,
                 "candidate_manifest_digest": self.manifest.manifest_digest,
@@ -8094,11 +8360,37 @@ class ScoringReplayCaseArtifact:
                     self.operational_issuance_domain.artifact_digest
                 ),
                 "tensor_digests": {
-                    name: tensor_digest(value)
-                    for name, value in sorted(tensors.items())
+                    name: tensor_digest(value) for name, value in tensors
                 },
             }
         )
+
+    def validate_integrity(self) -> None:
+        """Revalidate live products against the one frozen replay snapshot."""
+
+        self._validate_product_integrity()
+        live = tuple(sorted(self._live_replay_tensors().items()))
+        if (
+            tuple(name for name, _ in live)
+            != tuple(name for name, _ in self._frozen_replay_tensors)
+            or any(
+                tensor_digest(current) != tensor_digest(frozen)
+                for (_, current), (_, frozen) in zip(
+                    live,
+                    self._frozen_replay_tensors,
+                    strict=True,
+                )
+            )
+            or self._semantic_input_digest
+            != self._computed_semantic_input_digest(
+                self._frozen_replay_tensors
+            )
+        ):
+            raise ValueError("semantic scoring replay product snapshot changed")
+
+    @property
+    def semantic_input_digest(self) -> str:
+        return self._semantic_input_digest
 
 
 def recompute_prior_holdout_evaluation_from_bundle(
@@ -9085,13 +9377,16 @@ class HoldoutScoringArtifact:
     scoring_runtime_digest: str
     scoring_execution_contract_digest: str
     scoring_replay_bundle_digest: str
+    scoring_replay_contract: str
+    scoring_replay_method: str
+    semantic_replay_generation_digest: str
     ordered_case_ids: tuple[str, ...]
     ordered_evaluation_digests: tuple[str, ...]
     candidate_forecast_digests: tuple[str, ...]
     parent_forecast_digests: tuple[str, ...]
     verification_digests: tuple[str, ...]
     metric_contract_digests: tuple[str, ...]
-    contract: str = "neural-prior-holdout-scoring-artifact-v2"
+    contract: str = "neural-prior-holdout-scoring-artifact-v3"
     artifact_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -9111,6 +9406,11 @@ class HoldoutScoringArtifact:
                 self.scoring_execution_contract_digest
             ),
             "scoring_replay_bundle_digest": self.scoring_replay_bundle_digest,
+            "scoring_replay_contract": self.scoring_replay_contract,
+            "scoring_replay_method": self.scoring_replay_method,
+            "semantic_replay_generation_digest": (
+                self.semantic_replay_generation_digest
+            ),
             "ordered_case_ids": list(self.ordered_case_ids),
             "ordered_evaluation_digests": list(
                 self.ordered_evaluation_digests
@@ -9150,6 +9450,11 @@ class HoldoutScoringArtifact:
                 plan.scoring_execution_contract_digest
             ),
             "scoring_replay_bundle_digest": scoring_replay_bundle_digest,
+            "scoring_replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
+            "scoring_replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
+            "semantic_replay_generation_digest": (
+                SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
+            ),
             "ordered_case_ids": tuple(item.case_id for item in ordered),
             "ordered_evaluation_digests": tuple(
                 item.evaluation_digest for item in ordered
@@ -9166,7 +9471,7 @@ class HoldoutScoringArtifact:
             "metric_contract_digests": tuple(
                 item.metric_contract_digest for item in ordered
             ),
-            "contract": "neural-prior-holdout-scoring-artifact-v2",
+            "contract": "neural-prior-holdout-scoring-artifact-v3",
         }
         artifact = _new_holdout_scoring_artifact(**values)
         validate_holdout_scoring_artifact(
@@ -9212,7 +9517,7 @@ def validate_holdout_scoring_artifact(
     ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
     start = manifest.candidate_scoring_start_receipt
     if (
-        artifact.contract != "neural-prior-holdout-scoring-artifact-v2"
+        artifact.contract != "neural-prior-holdout-scoring-artifact-v3"
         or artifact.artifact_digest != json_digest(artifact.payload)
         or artifact.holdout_plan_digest != plan.plan_digest
         or artifact.candidate_manifest_digest != manifest.manifest_digest
@@ -9224,6 +9529,11 @@ def validate_holdout_scoring_artifact(
         or artifact.scoring_runtime_digest != plan.scoring_runtime_digest
         or artifact.scoring_execution_contract_digest
         != plan.scoring_execution_contract_digest
+        or artifact.scoring_replay_contract
+        != SEMANTIC_SCORING_REPLAY_CONTRACT
+        or artifact.scoring_replay_method != SEMANTIC_SCORING_REPLAY_METHOD
+        or artifact.semantic_replay_generation_digest
+        != SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
         or start.process_kind != "candidate_scoring"
         or start.subject_digests != (scoring_input_artifact.artifact_digest,)
         or start.process_algorithm_digest != artifact.scoring_algorithm_digest
@@ -10806,6 +11116,28 @@ class LegacyNeuralPriorPromotionEvidenceAuditV21:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV22:
+    """Original v22 decision retained before replay-generation closure."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v22"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v22",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
@@ -10818,6 +11150,9 @@ class NeuralPriorPromotionEvidence:
     scoring_input_artifact_digest: str
     scoring_artifact_digest: str
     scoring_replay_bundle_digest: str
+    scoring_replay_contract: str
+    scoring_replay_method: str
+    semantic_replay_generation_digest: str
     scoring_process_log_digest: str
     scoring_completion_receipt_digest: str
     evaluation_digests: tuple[str, ...]
@@ -10944,11 +11279,11 @@ class NeuralPriorPromotionEvidence:
     deployment_eligible: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v22"
+    contract: str = "neural-prior-promotion-evidence-v23"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v22":
+        if self.contract != "neural-prior-promotion-evidence-v23":
             raise ValueError("unsupported neural-prior promotion evidence")
         for name in (
             "candidate_prior_digest",
@@ -10960,6 +11295,7 @@ class NeuralPriorPromotionEvidence:
             "scoring_input_artifact_digest",
             "scoring_artifact_digest",
             "scoring_replay_bundle_digest",
+            "semantic_replay_generation_digest",
             "scoring_process_log_digest",
             "scoring_completion_receipt_digest",
             "deployment_regime_classifier_digest",
@@ -10967,6 +11303,13 @@ class NeuralPriorPromotionEvidence:
             "sample_size_preflight_digest",
         ):
             _require_digest(name, getattr(self, name))
+        if (
+            self.scoring_replay_contract != SEMANTIC_SCORING_REPLAY_CONTRACT
+            or self.scoring_replay_method != SEMANTIC_SCORING_REPLAY_METHOD
+            or self.semantic_replay_generation_digest
+            != SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
+        ):
+            raise ValueError("promotion evidence replay generation is unsupported")
         for digest in self.evaluation_digests:
             _require_digest("promotion member digest", digest)
         for digest in self.regime_classifier_evidence_digests:
@@ -13494,6 +13837,11 @@ def compute_neural_prior_promotion(
         scoring_replay_bundle_digest=(
             scoring_artifact.scoring_replay_bundle_digest
         ),
+        scoring_replay_contract=scoring_artifact.scoring_replay_contract,
+        scoring_replay_method=scoring_artifact.scoring_replay_method,
+        semantic_replay_generation_digest=(
+            scoring_artifact.semantic_replay_generation_digest
+        ),
         scoring_process_log_digest=scoring_process_log.artifact_digest,
         scoring_completion_receipt_digest=(
             scoring_completion_receipt.receipt_digest
@@ -13658,6 +14006,8 @@ def compute_neural_prior_promotion(
 
 
 def validate_neural_prior_promotion(evidence: NeuralPriorPromotionEvidence) -> None:
+    if type(evidence) is not NeuralPriorPromotionEvidence:
+        raise TypeError("current neural-prior promotion evidence is required")
     if evidence.promotion_evidence_digest != json_digest(evidence._payload()):
         raise ValueError("neural-prior promotion evidence digest mismatch")
     if not evidence.eligible:
@@ -14073,12 +14423,15 @@ class DeployedNeuralPriorPolicy:
     regime_classifier_digest: str
     regime_classifier_manifest_digest: str
     range_geometry_contract_digest: str
+    semantic_replay_generation_digest: str = (
+        SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
+    )
     mps_backend_certification_digest: str | None = None
     mps_backend_certification_policy_digest: str | None = None
     minimum_regime_confidence: float = 0.8
     minimum_weather_top1_top2_gap: float = 0.05
     minimum_deployment_confidence_margin: float = 0.05
-    contract: str = "deployed-neural-prior-policy-v6"
+    contract: str = "deployed-neural-prior-policy-v7"
     policy_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -14089,11 +14442,14 @@ class DeployedNeuralPriorPolicy:
             "regime_classifier_digest",
             "regime_classifier_manifest_digest",
             "range_geometry_contract_digest",
+            "semantic_replay_generation_digest",
         ):
             _require_digest(name, getattr(self, name))
         if (
-            self.contract != "deployed-neural-prior-policy-v6"
+            self.contract != "deployed-neural-prior-policy-v7"
             or self.candidate_prior_digest == self.parent_prior_digest
+            or self.semantic_replay_generation_digest
+            != SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
             or not math.isfinite(self.minimum_regime_confidence)
             or not 0.0 < self.minimum_regime_confidence <= 1.0
             or any(
@@ -14175,6 +14531,14 @@ def _select_deployed_prior(
         != range_partition_evidence.range_regime_labels
     ):
         raise ValueError("range partition disagrees with operational grid")
+    if (
+        type(promotion_evidence) is not NeuralPriorPromotionEvidence
+        or promotion_evidence.contract
+        != "neural-prior-promotion-evidence-v23"
+        or type(policy) is not DeployedNeuralPriorPolicy
+        or policy.contract != "deployed-neural-prior-policy-v7"
+    ):
+        raise TypeError("current replay-generation deployment evidence is required")
     policy.validate_integrity()
     trust = _load_learning_policy_trust_store(policy_trust_store_path)
     if policy.policy_digest not in trust.approved_policy_digests:
@@ -14199,6 +14563,10 @@ def _select_deployed_prior(
         != parent_runner.neural_prior_digest
         or policy.range_geometry_contract_digest
         != range_partition_evidence.range_geometry_contract_digest
+        or policy.semantic_replay_generation_digest
+        != promotion_evidence.semantic_replay_generation_digest
+        or promotion_evidence.semantic_replay_generation_digest
+        != SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
     ):
         raise ValueError("deployment policy lineage disagrees")
     confidence_ok = regime_evidence.regime_confidence >= policy.minimum_regime_confidence
@@ -14255,7 +14623,7 @@ def _select_deployed_prior(
         role = "candidate"
         reason = "certified_candidate"
     deployment_decision_payload = {
-        "contract": "neural-prior-deployment-decision-artifact-v4",
+        "contract": "neural-prior-deployment-decision-artifact-v5",
         "full_analysis_input_digest": regime_evidence.full_analysis_input_digest,
         "operational_grid_contract_digest": operational_grid_contract_digest,
         "operational_frame_shape": list(operational_frame_shape),
@@ -14278,8 +14646,16 @@ def _select_deployed_prior(
             | {"contract_digest": range_geometry_contract.contract_digest}
         ),
         "promotion_selection_evidence": {
+            "promotion_evidence_contract": promotion_evidence.contract,
             "promotion_evidence_digest": (
                 promotion_evidence.promotion_evidence_digest
+            ),
+            "scoring_replay_contract": (
+                promotion_evidence.scoring_replay_contract
+            ),
+            "scoring_replay_method": promotion_evidence.scoring_replay_method,
+            "semantic_replay_generation_digest": (
+                promotion_evidence.semantic_replay_generation_digest
             ),
             "candidate_prior_digest": promotion_evidence.candidate_prior_digest,
             "parent_prior_digest": promotion_evidence.parent_prior_digest,
@@ -14371,7 +14747,7 @@ def validate_neural_prior_deployment_decision_artifact(
     if (
         not isinstance(payload, dict)
         or payload.get("contract")
-        != "neural-prior-deployment-decision-artifact-v4"
+        != "neural-prior-deployment-decision-artifact-v5"
         or json.dumps(payload, sort_keys=True, separators=(",", ":"))
         != artifact_json
     ):
@@ -14442,6 +14818,17 @@ def validate_neural_prior_deployment_decision_artifact(
         != trust.get("content_digest")
         or policy.get("promotion_evidence_digest")
         != promotion.get("promotion_evidence_digest")
+        or policy.get("contract") != "deployed-neural-prior-policy-v7"
+        or promotion.get("promotion_evidence_contract")
+        != "neural-prior-promotion-evidence-v23"
+        or policy.get("semantic_replay_generation_digest")
+        != promotion.get("semantic_replay_generation_digest")
+        or promotion.get("scoring_replay_contract")
+        != SEMANTIC_SCORING_REPLAY_CONTRACT
+        or promotion.get("scoring_replay_method")
+        != SEMANTIC_SCORING_REPLAY_METHOD
+        or promotion.get("semantic_replay_generation_digest")
+        != SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
         or policy.get("regime_classifier_digest")
         != regime.get("classifier_digest")
         or promotion.get("deployment_regime_classifier_digest")
