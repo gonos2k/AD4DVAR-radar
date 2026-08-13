@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.77
+# ADVAR 3-frame radar nowcast v0.78
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -946,6 +946,11 @@ Audit load는 저장된 typed evaluation을 볼 수 있지만, 자동 completion
 동일한 typed replay case를 다시 제공해 semantic replay까지 통과해야 한다. Ledger는
 scoring start가 선행했는지 확인하고 archive/file/Tensor/evaluation digest를 append,
 completion, promotion load 시마다 다시 계산한다.
+입력 QC mask와 quality weight, optional background는 모두 실제
+`ForecastRunContract`와 동일한 `[T,H,W]` shape·dtype·device 및 Tensor digest를 가져야
+한다. Replay bundle의 numerical runtime도 caller 문자열이 아니라 typed case의 실제
+input Tensor device에서 계산한다. 따라서 시간별 quality를 2차원 mask로 축약하거나
+background의 시간축 일부만 보존한 archive는 semantic replay 전에 거부된다.
 
 동적 mosaic/outage coverage는 nominal source domain을 미래에 고정하는 대신 input
 availability 이후 decision deadline 이전에 data-ingestor가 서명한

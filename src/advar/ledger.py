@@ -986,14 +986,14 @@ class ScoringReplayBundleManifest:
     tensor_records: tuple[ScoringReplayTensorRecord, ...]
     tensor_archive_sha256: str
     evaluation_payload_sha256: str
-    replay_method: str = "builtin-semantic-scoring-recomputation-v2"
-    contract: str = "neural-prior-scoring-replay-bundle-v2"
+    replay_method: str = "builtin-semantic-scoring-recomputation-v3"
+    contract: str = "neural-prior-scoring-replay-bundle-v3"
     bundle_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
         if (
-            self.contract != "neural-prior-scoring-replay-bundle-v2"
-            or self.replay_method != "builtin-semantic-scoring-recomputation-v2"
+            self.contract != "neural-prior-scoring-replay-bundle-v3"
+            or self.replay_method != "builtin-semantic-scoring-recomputation-v3"
             or not self.ordered_case_ids
             or len(set(self.ordered_case_ids)) != len(self.ordered_case_ids)
             or len(self.ordered_case_ids)
@@ -1173,10 +1173,133 @@ class LegacyScoringReplayBundleManifestAuditV1:
 
 
 @dataclass(frozen=True)
+class LegacyScoringReplayBundleManifestAuditV2:
+    """PR #111 semantic bundle retained for byte audit, never promotion."""
+
+    scoring_input_artifact_digest: str
+    ordered_case_ids: tuple[str, ...]
+    ordered_evaluation_digests: tuple[str, ...]
+    semantic_case_digests: tuple[str, ...]
+    dynamic_source_case_ids: tuple[str, ...]
+    background_case_ids: tuple[str, ...]
+    algorithm_source_manifest_digest: str
+    runtime_compatibility_digest: str
+    runtime_exact_digest: str
+    tensor_records: tuple[ScoringReplayTensorRecord, ...]
+    tensor_archive_sha256: str
+    evaluation_payload_sha256: str
+    replay_method: str = "builtin-semantic-scoring-recomputation-v2"
+    contract: str = "neural-prior-scoring-replay-bundle-v2"
+    bundle_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-scoring-replay-bundle-v2"
+            or self.replay_method
+            != "builtin-semantic-scoring-recomputation-v2"
+            or not self.ordered_case_ids
+            or len(set(self.ordered_case_ids)) != len(self.ordered_case_ids)
+            or len(self.ordered_case_ids)
+            != len(self.ordered_evaluation_digests)
+            or len(self.semantic_case_digests) != len(self.ordered_case_ids)
+            or any(
+                case_id not in self.ordered_case_ids
+                for case_id in (
+                    *self.dynamic_source_case_ids,
+                    *self.background_case_ids,
+                )
+            )
+            or len(set(self.dynamic_source_case_ids))
+            != len(self.dynamic_source_case_ids)
+            or len(set(self.background_case_ids))
+            != len(self.background_case_ids)
+        ):
+            raise ValueError("legacy semantic replay manifest is invalid")
+        for value in (
+            self.scoring_input_artifact_digest,
+            *self.ordered_evaluation_digests,
+            *self.semantic_case_digests,
+            self.algorithm_source_manifest_digest,
+            self.runtime_compatibility_digest,
+            self.runtime_exact_digest,
+            self.tensor_archive_sha256,
+            self.evaluation_payload_sha256,
+        ):
+            if re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError("legacy semantic replay digest is invalid")
+        expected = {
+            (case_id, role)
+            for case_id in self.ordered_case_ids
+            for role in (
+                SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                | (
+                    SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
+                    if case_id in self.dynamic_source_case_ids
+                    else frozenset()
+                )
+                | (
+                    SCORING_REPLAY_BACKGROUND_TENSOR_ROLES
+                    if case_id in self.background_case_ids
+                    else frozenset()
+                )
+            )
+        }
+        actual = {(item.case_id, item.role) for item in self.tensor_records}
+        if actual != expected or len(actual) != len(self.tensor_records):
+            raise ValueError("legacy semantic replay tensor set is incomplete")
+        allowed_roles = (
+            SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+            | SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
+            | SCORING_REPLAY_BACKGROUND_TENSOR_ROLES
+        )
+        for record in self.tensor_records:
+            if (
+                not _SAFE_ID.fullmatch(record.case_id)
+                or record.role not in allowed_roles
+                or not _SAFE_ID.fullmatch(record.archive_member)
+                or (
+                    not record.shape
+                    and record.role not in _REPLAY_SCALAR_ROLES
+                )
+                or any(
+                    type(value) is not int or value <= 0
+                    for value in record.shape
+                )
+                or re.fullmatch(r"[0-9a-f]{64}", record.tensor_digest) is None
+            ):
+                raise ValueError("legacy semantic replay tensor record is invalid")
+        object.__setattr__(self, "bundle_digest", _json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "scoring_input_artifact_digest": self.scoring_input_artifact_digest,
+            "ordered_case_ids": list(self.ordered_case_ids),
+            "ordered_evaluation_digests": list(
+                self.ordered_evaluation_digests
+            ),
+            "semantic_case_digests": list(self.semantic_case_digests),
+            "dynamic_source_case_ids": list(self.dynamic_source_case_ids),
+            "background_case_ids": list(self.background_case_ids),
+            "algorithm_source_manifest_digest": (
+                self.algorithm_source_manifest_digest
+            ),
+            "runtime_compatibility_digest": self.runtime_compatibility_digest,
+            "runtime_exact_digest": self.runtime_exact_digest,
+            "tensor_records": [item.payload for item in self.tensor_records],
+            "tensor_archive_sha256": self.tensor_archive_sha256,
+            "evaluation_payload_sha256": self.evaluation_payload_sha256,
+            "replay_method": self.replay_method,
+        }
+
+
+@dataclass(frozen=True)
 class LoadedScoringReplayBundle:
     manifest: (
         ScoringReplayBundleManifest
         | LegacyScoringReplayBundleManifestAuditV1
+        | LegacyScoringReplayBundleManifestAuditV2
     )
     evaluations: tuple[PriorHoldoutEvaluation, ...]
     tensors: dict[tuple[str, str], Tensor]
@@ -1281,6 +1404,7 @@ def _validate_scoring_replay_case_tensors(
             "input_radar_frames",
             "input_qc_valid_mask",
             "input_quality_weight",
+            "background_frames_dbz",
             "candidate_forecast_dbz",
             "candidate_publication_mask",
             "candidate_background_fallback_mask",
@@ -1296,16 +1420,11 @@ def _validate_scoring_replay_case_tensors(
     }
     if any(tensors[role].shape != spatial_shape for role in two_dimensional):
         raise ValueError("scoring replay spatial tensor shape is invalid")
-    for role in (
-        "input_qc_valid_mask",
-    ):
+    for role in ("input_qc_valid_mask", "input_quality_weight"):
         if tensors[role].shape != input_frames.shape:
             raise ValueError("scoring replay input tensor shape is invalid")
-    if tensors["input_quality_weight"].shape != spatial_shape:
-        raise ValueError("scoring replay quality tensor shape is invalid")
     if background_present and (
-        tensors["background_frames_dbz"].ndim != 3
-        or tensors["background_frames_dbz"].shape[-2:] != spatial_shape
+        tensors["background_frames_dbz"].shape != input_frames.shape
     ):
         raise ValueError("scoring replay background tensor shape is invalid")
     for prefix in ("candidate", "parent"):
@@ -3701,13 +3820,18 @@ class EpisodeLedger:
         cases: tuple[ScoringReplayCaseArtifact, ...],
         *,
         algorithm_source_manifest_digest: str,
-        execution_device: str | torch.device = "cpu",
     ) -> ScoringReplayBundleManifest:
         """Recompute scores in product code, then durably retain exact inputs."""
 
         if not cases or any(type(item) is not ScoringReplayCaseArtifact for item in cases):
             raise TypeError("scoring replay requires typed product case artifacts")
         ordered_cases = tuple(sorted(cases, key=lambda item: item.case_id))
+        execution_device = ordered_cases[0].input_frames_dbz.device
+        if any(
+            item.input_frames_dbz.device != execution_device
+            for item in ordered_cases
+        ):
+            raise ValueError("scoring replay cases use different devices")
         semantic_case_digests = tuple(
             item.semantic_input_digest for item in ordered_cases
         )
@@ -3992,7 +4116,11 @@ class EpisodeLedger:
         semantic_replay_verified = False
         if cases is not None:
             if isinstance(
-                manifest, LegacyScoringReplayBundleManifestAuditV1
+                manifest,
+                (
+                    LegacyScoringReplayBundleManifestAuditV1,
+                    LegacyScoringReplayBundleManifestAuditV2,
+                ),
             ):
                 raise ValueError(
                     "legacy scoring replay bundle is audit-only"
@@ -6491,6 +6619,7 @@ def _decode_scoring_replay_bundle_manifest(
 ) -> (
     ScoringReplayBundleManifest
     | LegacyScoringReplayBundleManifestAuditV1
+    | LegacyScoringReplayBundleManifestAuditV2
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -6522,6 +6651,7 @@ def _decode_scoring_replay_bundle_manifest(
         manifest: (
             ScoringReplayBundleManifest
             | LegacyScoringReplayBundleManifestAuditV1
+            | LegacyScoringReplayBundleManifestAuditV2
         ) = LegacyScoringReplayBundleManifestAuditV1(
             **cast(Any, values)
         )
@@ -6535,7 +6665,12 @@ def _decode_scoring_replay_bundle_manifest(
         values["background_case_ids"] = tuple(
             values["background_case_ids"]
         )
-        manifest = ScoringReplayBundleManifest(**cast(Any, values))
+        if values.get("contract") == "neural-prior-scoring-replay-bundle-v2":
+            manifest = LegacyScoringReplayBundleManifestAuditV2(
+                **cast(Any, values)
+            )
+        else:
+            manifest = ScoringReplayBundleManifest(**cast(Any, values))
     if (
         stored_digest != expected_digest
         or manifest.bundle_digest != expected_digest
