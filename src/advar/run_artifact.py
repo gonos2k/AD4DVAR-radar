@@ -36,7 +36,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v57"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v58"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v42",
     "forecast-run-v43",
@@ -53,6 +53,7 @@ _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v54",
     "forecast-run-v55",
     "forecast-run-v56",
+    "forecast-run-v57",
 }
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 256
@@ -949,6 +950,7 @@ def load_forecast_run(
     path: str | Path,
     *,
     deployment_certificate_trust_store_path: str | Path | None = None,
+    deployment_policy_trust_store_path: str | Path | None = None,
     maximum_member_count: int = DEFAULT_MAXIMUM_MEMBER_COUNT,
     maximum_member_bytes: int = DEFAULT_MAXIMUM_MEMBER_BYTES,
     maximum_total_expanded_bytes: int = (
@@ -1415,6 +1417,10 @@ def load_forecast_run(
                 prior_deployment_lineage_contract = (
                     "neural-prior-deployment-lineage-v7-audit"
                 )
+            elif version == "forecast-run-v57":
+                prior_deployment_lineage_contract = (
+                    "neural-prior-deployment-lineage-v8-audit"
+                )
         elif version in _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS:
             prior_deployment_lineage_contract = (
                 "neural-prior-deployment-lineage-v0-audit"
@@ -1689,6 +1695,11 @@ def load_forecast_run(
                     "current deployed forecast requires an external "
                     "deployment authority trust store"
                 )
+            if deployment_policy_trust_store_path is None:
+                raise ValueError(
+                    "current deployed forecast requires an external "
+                    "deployment policy trust store"
+                )
             if (
                 validate_neural_prior_deployment_decision_artifact(
                     run.prior_deployment_decision_artifact_json,
@@ -1716,6 +1727,9 @@ def load_forecast_run(
                     ),
                     deployment_certificate_trust_store_path=(
                         deployment_certificate_trust_store_path
+                    ),
+                    deployment_policy_trust_store_path=(
+                        deployment_policy_trust_store_path
                     ),
                 )
                 != run.prior_deployment_decision_artifact_digest

@@ -197,9 +197,12 @@ _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _SCHEDULER_TRUST_STORE_CONTRACT = "advar-trusted-scheduler-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 26
+_INDEX_SCHEMA_VERSION = 27
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
+_PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST = hashlib.sha256(
+    b"advar-promotion-deployment-certificate-genesis-v2"
+).hexdigest()
 _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
 _MAXIMUM_ACTION_ARTIFACT_FILE_BYTES = 2 * 1024**3
 _MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES = 8 * 1024**3
@@ -5124,7 +5127,19 @@ class EpisodeLedger:
         authority_trust = _load_promotion_deployment_authority_trust_store(
             authority_trust_store_path
         )
+        replay = self.load_neural_prior_scoring_replay_bundle(
+            evidence.scoring_replay_bundle_digest
+        )
+        if (
+            replay.manifest.bundle_digest != evidence.scoring_replay_bundle_digest
+            or tuple(item.evaluation_digest for item in replay.evaluations)
+            != evidence.evaluation_digests
+        ):
+            raise ValueError(
+                "deployment certificate requires intact scoring replay preimages"
+            )
         with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
             connection.row_factory = sqlite3.Row
             promotion_row = connection.execute(
                 "SELECT evidence_payload_json FROM neural_prior_promotions "
@@ -5148,16 +5163,17 @@ class EpisodeLedger:
                 "WHERE receipt_digest = ?",
                 (evidence.scoring_completion_receipt_digest,),
             ).fetchone()
-            previous_row = connection.execute(
-                "SELECT certificate_digest FROM "
-                "neural_prior_promotion_deployment_certificates "
-                "ORDER BY created_at DESC, certificate_digest DESC LIMIT 1"
+            head_row = connection.execute(
+                "SELECT ledger_instance_digest,sequence_number,"
+                "certificate_digest,ledger_chain_head_digest FROM "
+                "deployment_certificate_chain_head WHERE singleton = 1"
             ).fetchone()
             if (
                 promotion_row is None
                 or replay_row is None
                 or scoring_row is None
                 or completion_row is None
+                or head_row is None
                 or promotion_row["evidence_payload_json"]
                 != json.dumps(evidence._payload(), sort_keys=True)
             ):
@@ -5165,17 +5181,16 @@ class EpisodeLedger:
                     "deployment certificate requires complete ledger preimages"
                 )
             issued_at = datetime.now(timezone.utc).isoformat()
+            sequence_number = int(head_row["sequence_number"]) + 1
             certificate = _issue_ledgered_promotion_deployment_certificate(
                 evidence,
                 issued_at=issued_at,
                 authority_id=authority_id,
                 authority_private_key=authority_private_key,
                 authority_trust_store=authority_trust,
-                previous_certificate_digest=(
-                    None
-                    if previous_row is None
-                    else previous_row["certificate_digest"]
-                ),
+                ledger_instance_digest=head_row["ledger_instance_digest"],
+                sequence_number=sequence_number,
+                previous_certificate_digest=head_row["certificate_digest"],
             )
             payload_json = json.dumps(
                 certificate.payload,
@@ -5184,12 +5199,15 @@ class EpisodeLedger:
             )
             try:
                 connection.execute(
-                    "INSERT INTO neural_prior_promotion_deployment_certificates "
-                    "(certificate_digest,promotion_evidence_digest,"
+                    "INSERT INTO neural_prior_promotion_deployment_certificates_v2 "
+                    "(certificate_digest,ledger_instance_digest,sequence_number,"
+                    "promotion_evidence_digest,"
                     "previous_certificate_digest,ledger_chain_head_digest,"
-                    "payload_json,issued_at,created_at) VALUES (?,?,?,?,?,?,?)",
+                    "payload_json,issued_at,created_at) VALUES (?,?,?,?,?,?,?,?,?)",
                     (
                         certificate.certificate_digest,
+                        certificate.ledger_instance_digest,
+                        certificate.sequence_number,
                         certificate.promotion_evidence_digest,
                         certificate.previous_certificate_digest,
                         certificate.ledger_chain_head_digest,
@@ -5198,6 +5216,25 @@ class EpisodeLedger:
                         issued_at,
                     ),
                 )
+                updated = connection.execute(
+                    "UPDATE deployment_certificate_chain_head SET "
+                    "sequence_number = ?, certificate_digest = ?, "
+                    "ledger_chain_head_digest = ?, updated_at = ? "
+                    "WHERE singleton = 1 AND sequence_number = ? AND "
+                    "certificate_digest = ?",
+                    (
+                        certificate.sequence_number,
+                        certificate.certificate_digest,
+                        certificate.ledger_chain_head_digest,
+                        issued_at,
+                        int(head_row["sequence_number"]),
+                        head_row["certificate_digest"],
+                    ),
+                )
+                if updated.rowcount != 1:
+                    raise sqlite3.IntegrityError(
+                        "deployment certificate chain head changed"
+                    )
             except sqlite3.IntegrityError as error:
                 raise FileExistsError(
                     "promotion deployment certificate already exists"
@@ -5215,7 +5252,7 @@ class EpisodeLedger:
         with self._connect() as connection:
             connection.row_factory = sqlite3.Row
             row = connection.execute(
-                "SELECT * FROM neural_prior_promotion_deployment_certificates "
+                "SELECT * FROM neural_prior_promotion_deployment_certificates_v2 "
                 "WHERE certificate_digest = ?",
                 (certificate_digest,),
             ).fetchone()
@@ -5253,8 +5290,30 @@ class EpisodeLedger:
             != certificate.ledger_chain_head_digest
             or row["previous_certificate_digest"]
             != certificate.previous_certificate_digest
+            or row["ledger_instance_digest"]
+            != certificate.ledger_instance_digest
+            or row["sequence_number"] != certificate.sequence_number
         ):
             raise ValueError("stored deployment certificate lineage disagrees")
+        with self._connect() as connection:
+            predecessor = connection.execute(
+                "SELECT ledger_instance_digest,sequence_number FROM "
+                "neural_prior_promotion_deployment_certificates_v2 "
+                "WHERE certificate_digest = ?",
+                (certificate.previous_certificate_digest,),
+            ).fetchone()
+        if certificate.sequence_number == 1:
+            predecessor_ok = (
+                certificate.previous_certificate_digest
+                == _PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST
+            )
+        else:
+            predecessor_ok = predecessor is not None and (
+                predecessor[0] == certificate.ledger_instance_digest
+                and int(predecessor[1]) == certificate.sequence_number - 1
+            )
+        if not predecessor_ok:
+            raise ValueError("stored deployment certificate chain is forked")
         return certificate
 
     def load_neural_prior_promotion(
@@ -6363,6 +6422,61 @@ class EpisodeLedger:
                 )
                 """
             )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS neural_prior_promotion_deployment_certificates_v2 (
+                    certificate_digest TEXT PRIMARY KEY,
+                    ledger_instance_digest TEXT NOT NULL,
+                    sequence_number INTEGER NOT NULL UNIQUE CHECK(sequence_number > 0),
+                    promotion_evidence_digest TEXT NOT NULL UNIQUE,
+                    previous_certificate_digest TEXT NOT NULL UNIQUE,
+                    ledger_chain_head_digest TEXT NOT NULL UNIQUE,
+                    payload_json TEXT NOT NULL,
+                    issued_at TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (promotion_evidence_digest)
+                        REFERENCES neural_prior_promotions(
+                            promotion_evidence_digest
+                        )
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS deployment_certificate_chain_head (
+                    singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
+                    ledger_instance_digest TEXT NOT NULL,
+                    sequence_number INTEGER NOT NULL CHECK(sequence_number >= 0),
+                    certificate_digest TEXT NOT NULL,
+                    ledger_chain_head_digest TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+            if connection.execute(
+                "SELECT 1 FROM deployment_certificate_chain_head WHERE singleton = 1"
+            ).fetchone() is None:
+                now = datetime.now(timezone.utc).isoformat()
+                ledger_instance_digest = _json_digest(
+                    {
+                        "contract": "advar-deployment-certificate-ledger-instance-v1",
+                        "nonce": os.urandom(32).hex(),
+                        "created_at": now,
+                    }
+                )
+                connection.execute(
+                    "INSERT INTO deployment_certificate_chain_head "
+                    "(singleton,ledger_instance_digest,sequence_number,"
+                    "certificate_digest,ledger_chain_head_digest,updated_at) "
+                    "VALUES (1,?,?,?,?,?)",
+                    (
+                        ledger_instance_digest,
+                        0,
+                        _PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST,
+                        _PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST,
+                        now,
+                    ),
+                )
             _ensure_variational_learning_approval_schema(connection)
             _ensure_realized_intervention_schema(connection)
             _ensure_prospective_receipt_schema(connection)
@@ -6404,6 +6518,7 @@ class EpisodeLedger:
                 "neural_prior_scoring_replay_bundles",
                 "trusted_process_completion_receipts",
                 "neural_prior_promotions",
+                "neural_prior_promotion_deployment_certificates_v2",
             ):
                 connection.execute(
                     f"""

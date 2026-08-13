@@ -8,13 +8,12 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
-from typing import Any
+from typing import Any, cast
 import zipfile
 
 import numpy as np
 import torch
 from torch import nn
-from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -45,13 +44,16 @@ from advar.variational import (  # noqa: E402
     prepare_analysis,
 )
 from advar._digest import json_digest, tensor_digest  # noqa: E402
+from advar.sensitivity import _LearningPolicyTrustStore  # noqa: E402
 from advar.physics import FORECAST_INTEGRATOR_VERSION  # noqa: E402
 import advar.run_artifact as run_artifact  # noqa: E402
 import advar.promotion as promotion_module  # noqa: E402
 from advar.run_artifact import seal_forecast_run_arrays  # noqa: E402
+import test_promotion as promotion_test_module  # noqa: E402
 
 
 class ForecastRunArtifactTests(unittest.TestCase):
+    _base_promotion_evidence: Any = None
     class _Prior(nn.Module):
         def __init__(self) -> None:
             super().__init__()
@@ -63,50 +65,56 @@ class ForecastRunArtifactTests(unittest.TestCase):
     @staticmethod
     def _deployment_certificate_artifact(
         *,
-        promotion_payload: dict[str, object],
-        scoring_replay_bundle_digest: str,
-        scoring_artifact_digest: str,
-        scoring_completion_receipt_digest: str,
+        promotion_evidence: Any,
     ) -> dict[str, object]:
         key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
-        promotion_digest = json_digest(promotion_payload)
-        values: dict[str, object] = {
-            "promotion_evidence_digest": promotion_digest,
-            "promotion_evidence_payload_json": json.dumps(
-                promotion_payload, sort_keys=True, separators=(",", ":")
-            ),
-            "scoring_replay_bundle_digest": scoring_replay_bundle_digest,
-            "scoring_artifact_digest": scoring_artifact_digest,
-            "scoring_completion_receipt_digest": (
-                scoring_completion_receipt_digest
-            ),
-            "scoring_backend_certification_policy_digest": None,
-            "scoring_backend_certification_evidence_digest": None,
-            "previous_certificate_digest": None,
-            "ledger_chain_head_digest": (
-                promotion_module._deployment_certificate_chain_head(
-                    promotion_evidence_digest=promotion_digest,
-                    scoring_replay_bundle_digest=scoring_replay_bundle_digest,
-                    scoring_artifact_digest=scoring_artifact_digest,
-                    scoring_completion_receipt_digest=(
-                        scoring_completion_receipt_digest
-                    ),
-                    previous_certificate_digest=None,
-                )
-            ),
-            "issued_at": "2026-08-13T00:00:00Z",
-            "authority_id": "test-ledger",
-            "authority_public_key_hex": key.public_key().public_bytes(
-                serialization.Encoding.Raw,
-                serialization.PublicFormat.Raw,
-            ).hex(),
-            "authority_trust_store_digest": "7" * 64,
-            "contract": "ledgered-promotion-deployment-certificate-v1",
+        trust = promotion_module._PromotionDeploymentAuthorityTrustStore(
+            keys={"test-ledger": key.public_key()},
+            content_digest="7" * 64,
+        )
+        certificate = promotion_module._issue_ledgered_promotion_deployment_certificate(
+            promotion_evidence,
+            issued_at="2026-08-13T00:00:00Z",
+            authority_id="test-ledger",
+            authority_private_key=key,
+            authority_trust_store=trust,
+            ledger_instance_digest="6" * 64,
+            sequence_number=1,
+            previous_certificate_digest="0" * 64,
+        )
+        return certificate.payload | {
+            "certificate_digest": certificate.certificate_digest
         }
-        values["authority_signature_hex"] = key.sign(
-            json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
-        ).hex()
-        return values | {"certificate_digest": json_digest(values)}
+
+    @classmethod
+    def _promotion_evidence(
+        cls,
+        *,
+        candidate_prior_digest: str,
+        parent_prior_digest: str,
+        classifier_digest: str,
+        classifier_manifest_digest: str,
+        range_geometry_digest: str,
+    ) -> Any:
+        if cls._base_promotion_evidence is None:
+            fixture = promotion_test_module.NeuralPriorPromotionTests()
+            cls._base_promotion_evidence = fixture.deployment_ready(
+                fixture.compute(
+                    (fixture.evaluation(1, -0.2), fixture.evaluation(2, -0.3))
+                )
+            )
+        return replace(
+            cls._base_promotion_evidence,
+            candidate_prior_digest=candidate_prior_digest,
+            parent_prior_digest=parent_prior_digest,
+            deployment_regime_classifier_digest=classifier_digest,
+            deployment_regime_classifier_manifest_digest=(
+                classifier_manifest_digest
+            ),
+            certified_applicability_regime_groups=(("convective", "near_range"),),
+            certified_range_geometry_contract_digests=(range_geometry_digest,),
+            deployment_eligible=True,
+        )
 
     @staticmethod
     def _deployment_certificate_trust():
@@ -115,6 +123,58 @@ class ForecastRunArtifactTests(unittest.TestCase):
             keys={"test-ledger": key.public_key()},
             content_digest="7" * 64,
         )
+
+    @staticmethod
+    def _deployment_policy_trust(artifact_json: str):
+        payload = json.loads(artifact_json)
+        trust = payload["policy_trust_store"]
+        return _LearningPolicyTrustStore(
+            approved_policy_digests=frozenset(
+                trust["approved_policy_digests"]
+            ),
+            content_digest=trust["content_digest"],
+        )
+
+    @classmethod
+    def _authorize_operational_decision(
+        cls,
+        artifact: dict[str, object],
+        *,
+        promotion_evidence: Any,
+        policy: DeployedNeuralPriorPolicy,
+        promotion_certificate_payload: dict[str, object],
+    ) -> dict[str, object]:
+        certificate_values = dict(promotion_certificate_payload)
+        certificate_values.pop("certificate_digest")
+        promotion_certificate = (
+            promotion_module._ledgered_promotion_deployment_certificate_from_payload(
+                certificate_values
+            )
+        )
+        key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+        decision_certificate = (
+            promotion_module._issue_operational_deployment_decision_certificate(
+                artifact,
+                promotion_deployment_certificate=promotion_certificate,
+                promotion_evidence=promotion_evidence,
+                policy=policy,
+                policy_trust_store_digest=str(
+                    cast(dict[str, object], artifact["policy_trust_store"])[
+                        "content_digest"
+                    ]
+                ),
+                issued_at="2026-08-14T00:00:00Z",
+                authority_id="test-ledger",
+                authority_private_key=key,
+                authority_trust_store=cls._deployment_certificate_trust(),
+            )
+        )
+        return artifact | {
+            "operational_decision_certificate": (
+                decision_certificate.payload
+                | {"certificate_digest": decision_certificate.certificate_digest}
+            )
+        }
 
     def _state_contract(self) -> NeuralPriorStateContract:
         return NeuralPriorStateContract(
@@ -210,24 +270,15 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "minimum_range_presence_margin": 0.2,
         }
         regime_digest = json_digest(regime)
-        scoring_replay_digest = "b" * 64
-        scoring_artifact_digest = "c" * 64
-        completion_digest = "8" * 64
-        promotion_payload: dict[str, object] = {
-            "scoring_artifact_digest": scoring_artifact_digest,
-            "deployment_eligible": True,
-            "certified_applicability_regime_groups": [
-                ["convective", "near_range"]
-            ],
-            "certified_range_geometry_contract_digests": [
-                range_geometry_digest
-            ],
-        }
+        promotion_evidence = self._promotion_evidence(
+            candidate_prior_digest=runner.neural_prior_digest,
+            parent_prior_digest="f" * 64,
+            classifier_digest=classifier_digest,
+            classifier_manifest_digest=classifier_manifest_digest,
+            range_geometry_digest=range_geometry_digest,
+        )
         certificate = self._deployment_certificate_artifact(
-            promotion_payload=promotion_payload,
-            scoring_replay_bundle_digest=scoring_replay_digest,
-            scoring_artifact_digest=scoring_artifact_digest,
-            scoring_completion_receipt_digest=completion_digest,
+            promotion_evidence=promotion_evidence,
         )
         promotion_digest = str(certificate["promotion_evidence_digest"])
         policy = DeployedNeuralPriorPolicy(
@@ -249,7 +300,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact = {
-            "contract": "neural-prior-deployment-decision-artifact-v7",
+            "contract": "neural-prior-deployment-decision-artifact-v8",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "operational_grid_contract_digest": "d" * 64,
             "operational_frame_shape": list(frames.shape[1:]),
@@ -263,39 +314,6 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "range_partition_evidence": range_partition
             | {"evidence_digest": range_partition_digest},
             "range_geometry_contract": range_geometry,
-            "promotion_selection_evidence": {
-                "promotion_evidence_contract": (
-                    "neural-prior-promotion-evidence-v24"
-                ),
-                "promotion_evidence_digest": promotion_digest,
-                "scoring_replay_bundle_digest": scoring_replay_digest,
-                "scoring_artifact_digest": scoring_artifact_digest,
-                "scoring_completion_receipt_digest": completion_digest,
-                "scoring_replay_contract": (
-                    "neural-prior-scoring-replay-bundle-v4"
-                ),
-                "scoring_replay_method": (
-                    "builtin-semantic-scoring-recomputation-v4"
-                ),
-                "semantic_replay_generation_digest": (
-                    policy.semantic_replay_generation_digest
-                ),
-                "scoring_backend_certification_policy_digest": None,
-                "scoring_backend_certification_evidence_digest": None,
-                "candidate_prior_digest": runner.neural_prior_digest,
-                "parent_prior_digest": "f" * 64,
-                "deployment_eligible": True,
-                "deployment_regime_classifier_digest": classifier_digest,
-                "deployment_regime_classifier_manifest_digest": (
-                    classifier_manifest_digest
-                ),
-                "certified_applicability_regime_groups": [
-                    ["convective", "near_range"]
-                ],
-                "certified_range_geometry_contract_digests": [
-                    range_geometry_digest
-                ],
-            },
             "promotion_deployment_certificate": certificate,
             "policy_trust_store": trust
             | {"content_digest": json_digest(trust)},
@@ -306,6 +324,12 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 "deployment_confidence_margin": 0.2,
             },
         }
+        artifact = self._authorize_operational_decision(
+            artifact,
+            promotion_evidence=promotion_evidence,
+            policy=policy,
+            promotion_certificate_payload=certificate,
+        )
         artifact_json = json.dumps(
             artifact, sort_keys=True, separators=(",", ":")
         )
@@ -355,12 +379,136 @@ class ForecastRunArtifactTests(unittest.TestCase):
         )
         selection = self._deployment_selection(runner, input_run, frames)
 
-        with self.assertRaisesRegex(ValueError, "current forecast run"):
+        with patch.object(
+            promotion_module,
+            "_load_promotion_deployment_authority_trust_store",
+            return_value=self._deployment_certificate_trust(),
+        ), patch.object(
+            promotion_module,
+            "_load_learning_policy_trust_store",
+            return_value=self._deployment_policy_trust(
+                selection.deployment_decision_artifact_json
+            ),
+        ), self.assertRaisesRegex(ValueError, "current forecast run"):
             validate_neural_prior_deployment_decision_artifact(
                 selection.deployment_decision_artifact_json,
                 expected_operational_radar_source_kind="single_site",
                 expected_operational_radar_site_digest="e" * 64,
                 expected_operational_radar_site_location_digest="f" * 64,
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
+                deployment_policy_trust_store_path=(
+                    "/etc/advar/deployment-policies.json"
+                ),
+            )
+
+    def test_signed_promotion_and_external_policy_anchor_durable_decision(self) -> None:
+        frames = self.frames()
+        input_run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        runner = NeuralPriorInferenceRunner(
+            self._Prior().eval(),
+            lambda value: value[0],
+            example_frames=frames,
+            state_contract=self._state_contract(),
+            probability_contract=self._probability_contract(),
+            model_contract_digest="2" * 64,
+            feature_schema_digest="3" * 64,
+            training_manifest_digest="4" * 64,
+            allow_constant_uncertainty=True,
+            dependency="radar_dependent",
+        )
+        selection = self._deployment_selection(runner, input_run, frames)
+        original = json.loads(selection.deployment_decision_artifact_json)
+        original_policy_trust = self._deployment_policy_trust(
+            selection.deployment_decision_artifact_json
+        )
+
+        for field, value in (
+            ("candidate_prior_digest", "1" * 64),
+            ("parent_prior_digest", "2" * 64),
+            ("regime_classifier_digest", "3" * 64),
+        ):
+            with self.subTest(field=field):
+                changed = json.loads(json.dumps(original))
+                policy_payload = changed["deployment_policy"]
+                policy_payload[field] = value
+                unsigned_policy = dict(policy_payload)
+                unsigned_policy.pop("policy_digest")
+                policy_digest = json_digest(unsigned_policy)
+                policy_payload["policy_digest"] = policy_digest
+                changed["policy_trust_store"]["approved_policy_digests"] = [
+                    policy_digest
+                ]
+                changed["policy_trust_store"]["content_digest"] = json_digest(
+                    {
+                        "contract": "advar-learning-policy-trust-store-v1",
+                        "approved_policy_digests": [policy_digest],
+                    }
+                )
+                changed_json = json.dumps(
+                    changed,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                changed_trust = self._deployment_policy_trust(changed_json)
+                with patch.object(
+                    promotion_module,
+                    "_load_promotion_deployment_authority_trust_store",
+                    return_value=self._deployment_certificate_trust(),
+                ), patch.object(
+                    promotion_module,
+                    "_load_learning_policy_trust_store",
+                    return_value=changed_trust,
+                ), self.assertRaisesRegex(ValueError, "certificate|lineage"):
+                    validate_neural_prior_deployment_decision_artifact(
+                        changed_json,
+                        deployment_certificate_trust_store_path=(
+                            "/etc/advar/deployment-authorities.json"
+                        ),
+                        deployment_policy_trust_store_path=(
+                            "/etc/advar/deployment-policies.json"
+                        ),
+                    )
+
+        relaxed = json.loads(json.dumps(original))
+        relaxed_policy = relaxed["deployment_policy"]
+        relaxed_policy["minimum_regime_confidence"] = 0.01
+        unsigned_relaxed_policy = dict(relaxed_policy)
+        unsigned_relaxed_policy.pop("policy_digest")
+        relaxed_digest = json_digest(unsigned_relaxed_policy)
+        relaxed_policy["policy_digest"] = relaxed_digest
+        relaxed["policy_trust_store"]["approved_policy_digests"] = [
+            relaxed_digest
+        ]
+        relaxed["policy_trust_store"]["content_digest"] = json_digest(
+            {
+                "contract": "advar-learning-policy-trust-store-v1",
+                "approved_policy_digests": [relaxed_digest],
+            }
+        )
+        with patch.object(
+            promotion_module,
+            "_load_promotion_deployment_authority_trust_store",
+            return_value=self._deployment_certificate_trust(),
+        ), patch.object(
+            promotion_module,
+            "_load_learning_policy_trust_store",
+            return_value=original_policy_trust,
+        ), self.assertRaisesRegex(ValueError, "certificate|lineage"):
+            validate_neural_prior_deployment_decision_artifact(
+                json.dumps(relaxed, sort_keys=True, separators=(",", ":")),
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
+                deployment_policy_trust_store_path=(
+                    "/etc/advar/deployment-policies.json"
+                ),
             )
 
     def _save_arrays(self, path: Path, arrays: dict[str, Any]) -> None:
@@ -1172,24 +1320,15 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "minimum_range_presence_margin": 0.2,
         }
         regime_evidence_digest = json_digest(regime_payload)
-        scoring_replay_digest = "b" * 64
-        scoring_artifact_digest = "c" * 64
-        completion_digest = "8" * 64
-        promotion_payload: dict[str, object] = {
-            "scoring_artifact_digest": scoring_artifact_digest,
-            "deployment_eligible": True,
-            "certified_applicability_regime_groups": [
-                ["convective", "near_range"]
-            ],
-            "certified_range_geometry_contract_digests": [
-                range_geometry_digest
-            ],
-        }
+        promotion_evidence = self._promotion_evidence(
+            candidate_prior_digest=runner.neural_prior_digest,
+            parent_prior_digest="f" * 64,
+            classifier_digest=classifier_digest,
+            classifier_manifest_digest=classifier_manifest_digest,
+            range_geometry_digest=range_geometry_digest,
+        )
         certificate = self._deployment_certificate_artifact(
-            promotion_payload=promotion_payload,
-            scoring_replay_bundle_digest=scoring_replay_digest,
-            scoring_artifact_digest=scoring_artifact_digest,
-            scoring_completion_receipt_digest=completion_digest,
+            promotion_evidence=promotion_evidence,
         )
         promotion_evidence_digest = str(
             certificate["promotion_evidence_digest"]
@@ -1213,7 +1352,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v7",
+            "contract": "neural-prior-deployment-decision-artifact-v8",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "operational_grid_contract_digest": "d" * 64,
             "operational_frame_shape": list(frames.shape[1:]),
@@ -1227,39 +1366,6 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "range_partition_evidence": range_partition
             | {"evidence_digest": range_partition_digest},
             "range_geometry_contract": range_geometry,
-            "promotion_selection_evidence": {
-                "promotion_evidence_contract": (
-                    "neural-prior-promotion-evidence-v24"
-                ),
-                "promotion_evidence_digest": promotion_evidence_digest,
-                "scoring_replay_bundle_digest": scoring_replay_digest,
-                "scoring_artifact_digest": scoring_artifact_digest,
-                "scoring_completion_receipt_digest": completion_digest,
-                "scoring_replay_contract": (
-                    "neural-prior-scoring-replay-bundle-v4"
-                ),
-                "scoring_replay_method": (
-                    "builtin-semantic-scoring-recomputation-v4"
-                ),
-                "semantic_replay_generation_digest": (
-                    policy.semantic_replay_generation_digest
-                ),
-                "scoring_backend_certification_policy_digest": None,
-                "scoring_backend_certification_evidence_digest": None,
-                "candidate_prior_digest": runner.neural_prior_digest,
-                "parent_prior_digest": "f" * 64,
-                "deployment_eligible": True,
-                "deployment_regime_classifier_digest": classifier_digest,
-                "deployment_regime_classifier_manifest_digest": (
-                    classifier_manifest_digest
-                ),
-                "certified_applicability_regime_groups": [
-                    ["convective", "near_range"]
-                ],
-                "certified_range_geometry_contract_digests": [
-                    range_geometry_digest
-                ],
-            },
             "promotion_deployment_certificate": certificate,
             "policy_trust_store": trust_payload
             | {"content_digest": json_digest(trust_payload)},
@@ -1270,6 +1376,12 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 "deployment_confidence_margin": 0.2,
             },
         }
+        artifact_payload = self._authorize_operational_decision(
+            artifact_payload,
+            promotion_evidence=promotion_evidence,
+            policy=policy,
+            promotion_certificate_payload=certificate,
+        )
         artifact_json = json.dumps(
             artifact_payload, sort_keys=True, separators=(",", ":")
         )
@@ -1312,11 +1424,20 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 promotion_module,
                 "_load_promotion_deployment_authority_trust_store",
                 return_value=self._deployment_certificate_trust(),
+            ), patch.object(
+                promotion_module,
+                "_load_learning_policy_trust_store",
+                return_value=self._deployment_policy_trust(
+                    selection.deployment_decision_artifact_json
+                ),
             ):
                 loaded = load_forecast_run(
                     path,
                     deployment_certificate_trust_store_path=(
                         "/etc/advar/deployment-authorities.json"
+                    ),
+                    deployment_policy_trust_store_path=(
+                        "/etc/advar/deployment-policies.json"
                     ),
                 )
             with np.load(path, allow_pickle=False) as archive:
@@ -1420,11 +1541,20 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 promotion_module,
                 "_load_promotion_deployment_authority_trust_store",
                 return_value=self._deployment_certificate_trust(),
-            ), self.assertRaisesRegex(ValueError, "selection replay"):
+            ), patch.object(
+                promotion_module,
+                "_load_learning_policy_trust_store",
+                return_value=self._deployment_policy_trust(
+                    selection.deployment_decision_artifact_json
+                ),
+            ), self.assertRaisesRegex(ValueError, "decision certificate"):
                 load_forecast_run(
                     path,
                     deployment_certificate_trust_store_path=(
                         "/etc/advar/deployment-authorities.json"
+                    ),
+                    deployment_policy_trust_store_path=(
+                        "/etc/advar/deployment-policies.json"
                     ),
                 )
 
