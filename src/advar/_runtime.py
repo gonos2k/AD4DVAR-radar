@@ -502,25 +502,14 @@ class MPSBackendCertificationEvidence:
             raise ValueError("MPS certification evidence digest mismatch")
 
 
-def validate_mps_backend_certification(
+def validate_mps_backend_certification_evidence(
     evidence: MPSBackendCertificationEvidence,
     policy: MPSBackendCertificationPolicy,
-    *,
-    execution_device: str | torch.device,
-    active_algorithm_source_manifest_digest: str,
-    active_certification_runner_digest: str,
 ) -> None:
-    """Validate signed measurements against policy and the active MPS code."""
+    """Validate signed CPU/MPS measurements against their approved policy."""
 
     evidence.validate_integrity()
     policy.validate_integrity()
-    device = torch.device(execution_device)
-    active_runtime = numerical_runtime_manifest(device)
-    for name, value in (
-        ("active algorithm source", active_algorithm_source_manifest_digest),
-        ("active certification runner", active_certification_runner_digest),
-    ):
-        _require_digest(name, value)
     try:
         Ed25519PublicKey.from_public_bytes(
             bytes.fromhex(policy.approved_runner_public_key_hex)
@@ -549,21 +538,13 @@ def validate_mps_backend_certification(
             - policy.promotion_decision_threshold
         ),
     )
-    mps_backend = getattr(torch.backends, "mps", None)
     if (
-        device.type != "mps"
-        or mps_backend is None
-        or not bool(mps_backend.is_available())
-        or evidence.policy_digest != policy.policy_digest
+        evidence.policy_digest != policy.policy_digest
         or evidence.fixture_set_digest != policy.fixture_set_digest
         or evidence.algorithm_source_manifest_digest
         != policy.algorithm_source_manifest_digest
-        or evidence.algorithm_source_manifest_digest
-        != active_algorithm_source_manifest_digest
         or evidence.certification_runner_digest
         != policy.approved_certification_runner_digest
-        or evidence.certification_runner_digest
-        != active_certification_runner_digest
         or evidence.runner_id != policy.approved_runner_id
         or evidence.runner_public_key_hex
         != policy.approved_runner_public_key_hex
@@ -571,9 +552,6 @@ def validate_mps_backend_certification(
         != policy.cpu_runtime_compatibility_digest
         or evidence.mps_runtime_compatibility_digest
         != policy.mps_runtime_compatibility_digest
-        or evidence.mps_runtime_compatibility_digest
-        != active_runtime.compatibility_digest
-        or evidence.mps_runtime_exact_digest != active_runtime.exact_digest
         or evidence.cpu_pcg_iterations < policy.minimum_pcg_iterations
         or evidence.mps_pcg_iterations < policy.minimum_pcg_iterations
         or evidence.cpu_pcg_solution_relative_error
@@ -613,6 +591,40 @@ def validate_mps_backend_certification(
         > policy.deterministic_forecast_dbz_tolerance
         or evidence.mps_repeat_decision_statistic_max_abs_difference
         > policy.deterministic_decision_statistic_tolerance
+    ):
+        raise ValueError("MPS backend is not deployment-certified")
+
+
+def validate_mps_backend_certification(
+    evidence: MPSBackendCertificationEvidence,
+    policy: MPSBackendCertificationPolicy,
+    *,
+    execution_device: str | torch.device,
+    active_algorithm_source_manifest_digest: str,
+    active_certification_runner_digest: str,
+) -> None:
+    """Validate evidence plus the active MPS device, runtime, and code."""
+
+    validate_mps_backend_certification_evidence(evidence, policy)
+    device = torch.device(execution_device)
+    active_runtime = numerical_runtime_manifest(device)
+    for name, value in (
+        ("active algorithm source", active_algorithm_source_manifest_digest),
+        ("active certification runner", active_certification_runner_digest),
+    ):
+        _require_digest(name, value)
+    mps_backend = getattr(torch.backends, "mps", None)
+    if (
+        device.type != "mps"
+        or mps_backend is None
+        or not bool(mps_backend.is_available())
+        or evidence.algorithm_source_manifest_digest
+        != active_algorithm_source_manifest_digest
+        or evidence.certification_runner_digest
+        != active_certification_runner_digest
+        or evidence.mps_runtime_compatibility_digest
+        != active_runtime.compatibility_digest
+        or evidence.mps_runtime_exact_digest != active_runtime.exact_digest
     ):
         raise ValueError("MPS backend is not deployment-certified")
 

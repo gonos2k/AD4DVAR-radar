@@ -14,6 +14,7 @@ from advar._runtime import (
     MPSBackendCertificationPolicy,
     numerical_runtime_manifest,
     validate_mps_backend_certification,
+    validate_mps_backend_certification_evidence,
 )
 from advar.mps_certification import (
     _run_pcg_fixture,
@@ -128,21 +129,12 @@ class NumericalRuntimeManifestTest(unittest.TestCase):
     def test_policy_not_evidence_controls_cpu_mps_acceptance(self) -> None:
         policy, evidence = self.certification()
 
-        self.assertFalse(
-            any("tolerance" in key for key in evidence.payload)
-        )
+        self.assertFalse(any("tolerance" in key for key in evidence.payload))
         self.assertFalse(
             any(isinstance(value, bool) for value in evidence.payload.values())
         )
 
-        with patch("advar._runtime.torch.backends.mps.is_available", return_value=True):
-            validate_mps_backend_certification(
-                evidence,
-                policy,
-                execution_device="mps",
-                active_algorithm_source_manifest_digest="2" * 64,
-                active_certification_runner_digest="3" * 64,
-            )
+        validate_mps_backend_certification_evidence(evidence, policy)
 
         stricter = replace(
             policy,
@@ -157,16 +149,25 @@ class NumericalRuntimeManifestTest(unittest.TestCase):
             ),
             runner_private_key=private_key,
         )
+        with self.assertRaisesRegex(ValueError, "not deployment-certified"):
+            validate_mps_backend_certification_evidence(
+                stricter_evidence,
+                stricter,
+            )
+
+    def test_active_certification_fails_closed_without_mps(self) -> None:
+        policy, evidence = self.certification()
+
         with (
             patch(
                 "advar._runtime.torch.backends.mps.is_available",
-                return_value=True,
+                return_value=False,
             ),
             self.assertRaisesRegex(ValueError, "not deployment-certified"),
         ):
             validate_mps_backend_certification(
-                stricter_evidence,
-                stricter,
+                evidence,
+                policy,
                 execution_device="mps",
                 active_algorithm_source_manifest_digest="2" * 64,
                 active_certification_runner_digest="3" * 64,
