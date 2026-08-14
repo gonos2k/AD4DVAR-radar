@@ -731,11 +731,22 @@ class EpisodeLedgerTests(unittest.TestCase):
                     operational_issuance_domain_plan_digest=(
                         issuance_domain_plan.plan_digest
                     ),
+                    meteorological_sampling_unit_digest=(
+                        promotion_module.meteorological_sampling_unit_digest(
+                            radar_id="radar-clock",
+                            issue_time=issue,
+                            observation_valid_time=input_plan.observation_valid_time,
+                            spatial_footprint_digest=input_plan.grid_contract_digest,
+                        )
+                    ),
                     issue_time=issue,
                 ),
             )
         experiment_family = promotion_module.PromotionExperimentFamily(
             holdout_cohort_digest=promotion_module._holdout_dataset_digest(cases),
+            meteorological_sampling_unit_digests=tuple(
+                item.meteorological_sampling_unit_digest for item in cases
+            ),
             parent_prior_digest="6" * 64,
             trials=(
                 promotion_module.PromotionExperimentTrial(
@@ -957,7 +968,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 27)
+        self.assertEqual(version, 29)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4137,6 +4148,86 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(len(self.ledger.list_episodes()), 1)
         self.ledger.verify(episode.episode_id)
 
+    def test_distinct_certificate_requests_form_one_linear_chain(self) -> None:
+        """Exercise the chain-head lock without a same-promotion UNIQUE shortcut."""
+
+        def append_distinct(marker: str) -> tuple[int, str, str]:
+            promotion_digest = ledger_module._json_digest(
+                {"contract": "concurrent-promotion-fixture-v1", "marker": marker}
+            )
+            with sqlite3.connect(self.ledger.index_path, timeout=10.0) as connection:
+                connection.execute("BEGIN IMMEDIATE")
+                head = connection.execute(
+                    "SELECT ledger_instance_digest,sequence_number,"
+                    "certificate_digest FROM deployment_certificate_chain_head "
+                    "WHERE singleton = 1"
+                ).fetchone()
+                assert head is not None
+                sequence = int(head[1]) + 1
+                previous = str(head[2])
+                certificate_digest = ledger_module._json_digest(
+                    {
+                        "contract": "concurrent-certificate-fixture-v1",
+                        "ledger_instance_digest": head[0],
+                        "sequence_number": sequence,
+                        "previous_certificate_digest": previous,
+                        "promotion_evidence_digest": promotion_digest,
+                    }
+                )
+                chain_digest = ledger_module._json_digest(
+                    {
+                        "contract": "concurrent-chain-fixture-v1",
+                        "certificate_digest": certificate_digest,
+                        "previous_certificate_digest": previous,
+                    }
+                )
+                connection.execute(
+                    "INSERT INTO neural_prior_promotion_deployment_certificates_v3 "
+                    "(certificate_digest,ledger_instance_digest,sequence_number,"
+                    "promotion_evidence_digest,previous_certificate_digest,"
+                    "ledger_chain_head_digest,payload_json,issued_at,created_at) "
+                    "VALUES (?,?,?,?,?,?,?,?,?)",
+                    (
+                        certificate_digest,
+                        head[0],
+                        sequence,
+                        promotion_digest,
+                        previous,
+                        chain_digest,
+                        "{}",
+                        "2026-08-14T00:00:00Z",
+                        "2026-08-14T00:00:00Z",
+                    ),
+                )
+                updated = connection.execute(
+                    "UPDATE deployment_certificate_chain_head SET "
+                    "sequence_number=?,certificate_digest=?,"
+                    "ledger_chain_head_digest=?,updated_at=? "
+                    "WHERE singleton=1 AND sequence_number=? AND "
+                    "certificate_digest=?",
+                    (
+                        sequence,
+                        certificate_digest,
+                        chain_digest,
+                        "2026-08-14T00:00:00Z",
+                        head[1],
+                        previous,
+                    ),
+                )
+                if updated.rowcount != 1:
+                    raise AssertionError("certificate chain forked")
+            return sequence, certificate_digest, previous
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = tuple(executor.map(append_distinct, ("A", "B")))
+        ordered = tuple(sorted(results))
+        self.assertEqual(tuple(item[0] for item in ordered), (1, 2))
+        self.assertEqual(
+            ordered[0][2],
+            ledger_module._PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST,
+        )
+        self.assertEqual(ordered[1][2], ordered[0][1])
+
     def test_previous_scalar_schema_is_migrated(self) -> None:
         root = self.root / "upgrade"
         EpisodeLedger(root)
@@ -4190,7 +4281,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 27)
+        self.assertEqual(version, 29)
 
 
 if __name__ == "__main__":

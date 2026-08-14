@@ -36,7 +36,7 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v58"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v59"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v42",
     "forecast-run-v43",
@@ -54,6 +54,7 @@ _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
     "forecast-run-v55",
     "forecast-run-v56",
     "forecast-run-v57",
+    "forecast-run-v58",
 }
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 DEFAULT_MAXIMUM_MEMBER_COUNT = 256
@@ -1421,6 +1422,10 @@ def load_forecast_run(
                 prior_deployment_lineage_contract = (
                     "neural-prior-deployment-lineage-v8-audit"
                 )
+            elif version == "forecast-run-v58":
+                prior_deployment_lineage_contract = (
+                    "neural-prior-deployment-lineage-v9-audit"
+                )
         elif version in _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS:
             prior_deployment_lineage_contract = (
                 "neural-prior-deployment-lineage-v0-audit"
@@ -1725,6 +1730,7 @@ def load_forecast_run(
                         if source_identity is None
                         else source_identity.radar_site_location_digest
                     ),
+                    expected_input_plan_digest=run.input_plan_digest,
                     deployment_certificate_trust_store_path=(
                         deployment_certificate_trust_store_path
                     ),
