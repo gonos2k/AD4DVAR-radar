@@ -67,20 +67,46 @@ class ForecastRunArtifactTests(unittest.TestCase):
         *,
         promotion_evidence: Any,
     ) -> dict[str, object]:
-        key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
-        trust = promotion_module._PromotionDeploymentAuthorityTrustStore(
-            keys={"test-ledger": key.public_key()},
-            content_digest="7" * 64,
+        ledger_key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+        promotion_key = Ed25519PrivateKey.from_private_bytes(b"\x04" * 32)
+        trust = ForecastRunArtifactTests._deployment_certificate_trust()
+        ledger_signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+            "test-ledger",
+            ledger_key,
+            fixed_signing_time="2026-08-09T00:00:30Z",
+        )
+        promotion_signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+            "test-promotion",
+            promotion_key,
+            fixed_signing_time="2026-08-09T00:00:40Z",
+        )
+        receipt = promotion_module._issue_ledger_issuance_receipt(
+            ledger_instance_digest="6" * 64,
+            sequence_number=1,
+            previous_certificate_digest=(
+                promotion_module.PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST
+            ),
+            promotion_evidence_digest=promotion_evidence.promotion_evidence_digest,
+            scoring_replay_bundle_digest=(
+                promotion_evidence.scoring_replay_bundle_digest
+            ),
+            scoring_replay_archive_sha256="a" * 64,
+            scoring_evaluation_payload_sha256="b" * 64,
+            scoring_artifact_digest=promotion_evidence.scoring_artifact_digest,
+            scoring_completion_receipt_digest=(
+                promotion_evidence.scoring_completion_receipt_digest
+            ),
+            scoring_completion_completed_at="2026-08-09T00:00:00Z",
+            issued_at=ledger_signer.signing_time(),
+            signer=ledger_signer,
+            authority_trust_store=trust,
         )
         certificate = promotion_module._issue_ledgered_promotion_deployment_certificate(
             promotion_evidence,
-            issued_at="2026-08-13T00:00:00Z",
-            authority_id="test-ledger",
-            authority_private_key=key,
+            issued_at=promotion_signer.signing_time(),
+            ledger_issuance_receipt=receipt,
+            signer=promotion_signer,
             authority_trust_store=trust,
-            ledger_instance_digest="6" * 64,
-            sequence_number=1,
-            previous_certificate_digest="0" * 64,
         )
         return certificate.payload | {
             "certificate_digest": certificate.certificate_digest
@@ -118,10 +144,38 @@ class ForecastRunArtifactTests(unittest.TestCase):
 
     @staticmethod
     def _deployment_certificate_trust():
-        key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+        ledger_key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+        promotion_key = Ed25519PrivateKey.from_private_bytes(b"\x04" * 32)
+        operational_key = Ed25519PrivateKey.from_private_bytes(b"\x05" * 32)
         return promotion_module._PromotionDeploymentAuthorityTrustStore(
-            keys={"test-ledger": key.public_key()},
+            keys={
+                "test-ledger": ledger_key.public_key(),
+                "test-promotion": promotion_key.public_key(),
+                "test-operational": operational_key.public_key(),
+            },
             content_digest="7" * 64,
+            roles={
+                "test-ledger": frozenset({"ledger_issuance"}),
+                "test-promotion": frozenset({"promotion_certificate"}),
+                "test-operational": frozenset({"operational_decision"}),
+            },
+            not_before={
+                name: "2026-01-01T00:00:00+00:00"
+                for name in ("test-ledger", "test-promotion", "test-operational")
+            },
+            not_after={
+                name: "2027-01-01T00:00:00+00:00"
+                for name in ("test-ledger", "test-promotion", "test-operational")
+            },
+            revoked_at={
+                name: None
+                for name in ("test-ledger", "test-promotion", "test-operational")
+            },
+            ledger_instance_digests={
+                "test-ledger": frozenset({"6" * 64}),
+                "test-promotion": frozenset(),
+                "test-operational": frozenset(),
+            },
         )
 
     @staticmethod
@@ -144,6 +198,22 @@ class ForecastRunArtifactTests(unittest.TestCase):
         policy: DeployedNeuralPriorPolicy,
         promotion_certificate_payload: dict[str, object],
     ) -> dict[str, object]:
+        artifact = artifact | {
+            "input_plan_digest": "1" * 64,
+            "observation_valid_time": "2026-08-09T00:00:00+00:00",
+            "input_available_time": "2026-08-09T00:00:00+00:00",
+            "decision_deadline": "2026-08-09T00:02:00+00:00",
+            "publication_time": "2026-08-09T00:05:00+00:00",
+            "operational_cycle_id": json_digest(
+                {
+                    "contract": "advar-operational-cycle-v1",
+                    "input_plan_digest": "1" * 64,
+                    "full_analysis_input_digest": artifact[
+                        "full_analysis_input_digest"
+                    ],
+                }
+            ),
+        }
         certificate_values = dict(promotion_certificate_payload)
         certificate_values.pop("certificate_digest")
         promotion_certificate = (
@@ -151,7 +221,12 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 certificate_values
             )
         )
-        key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+        key = Ed25519PrivateKey.from_private_bytes(b"\x05" * 32)
+        signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+            "test-operational",
+            key,
+            fixed_signing_time="2026-08-09T00:01:00Z",
+        )
         decision_certificate = (
             promotion_module._issue_operational_deployment_decision_certificate(
                 artifact,
@@ -163,9 +238,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
                         "content_digest"
                     ]
                 ),
-                issued_at="2026-08-14T00:00:00Z",
-                authority_id="test-ledger",
-                authority_private_key=key,
+                signer=signer,
                 authority_trust_store=cls._deployment_certificate_trust(),
             )
         )
@@ -300,7 +373,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact = {
-            "contract": "neural-prior-deployment-decision-artifact-v8",
+            "contract": "neural-prior-deployment-decision-artifact-v9",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "operational_grid_contract_digest": "d" * 64,
             "operational_frame_shape": list(frames.shape[1:]),
@@ -1352,7 +1425,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v8",
+            "contract": "neural-prior-deployment-decision-artifact-v9",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "operational_grid_contract_digest": "d" * 64,
             "operational_frame_shape": list(frames.shape[1:]),

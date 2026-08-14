@@ -11,9 +11,10 @@ import math
 import os
 from pathlib import Path
 import random
+import re
 import stat
 from statistics import NormalDist
-from typing import Any, cast, Literal
+from typing import Any, cast, Literal, Protocol
 
 import torch
 from torch import Tensor, nn
@@ -37,8 +38,10 @@ from .nowcast import (
     _forecast_input_plan_resolution_digest,
 )
 from .range_geometry import (
+    MosaicRangeGeometryContract,
     RangeGeometryContract,
     RangePartitionEvidence,
+    resolve_mosaic_range_geometry,
     resolve_range_geometry,
 )
 from .sensitivity import (
@@ -64,7 +67,10 @@ from .variational import (
 
 
 PROMOTION_DEPLOYMENT_AUTHORITY_TRUST_STORE_CONTRACT = (
-    "advar-promotion-deployment-authority-trust-store-v1"
+    "advar-promotion-deployment-authority-trust-store-v2"
+)
+PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST = json_digest(
+    {"contract": "advar-promotion-deployment-certificate-genesis-v3"}
 )
 _MAXIMUM_PROMOTION_DEPLOYMENT_TRUST_STORE_BYTES = 1024 * 1024
 
@@ -189,24 +195,25 @@ _UNCERTAINTY_SCORE_SUPPORT = UncertaintyScoreSupportContract()
 
 
 SEMANTIC_SCORING_REPLAY_CONTRACT = (
-    "neural-prior-scoring-replay-bundle-v4"
+    "neural-prior-scoring-replay-bundle-v5"
 )
 SEMANTIC_SCORING_REPLAY_METHOD = (
-    "builtin-semantic-scoring-recomputation-v4"
+    "builtin-semantic-scoring-recomputation-v5"
 )
+SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD: dict[str, str] = {
+    "contract": "neural-prior-semantic-scoring-generation-v3",
+    "replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
+    "replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
+    "case_contract": "neural-prior-semantic-scoring-case-v4",
+    "product_type_policy": "exact-shipped-product-types-v1",
+    "forecast_integrity": "forecast-result-raw-content-validation-v1",
+    "prior_integrity": "runner-reproduced-prior-application-v1",
+    "classifier_integrity": "exported-classifier-reexecution-v1",
+    "snapshot_policy": "single-frozen-tensor-snapshot-v1",
+    "backend_policy": "single-device-cpu-only-scoring-v1",
+}
 SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST = json_digest(
-    {
-        "contract": "neural-prior-semantic-scoring-generation-v2",
-        "replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
-        "replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
-        "case_contract": "neural-prior-semantic-scoring-case-v3",
-        "product_type_policy": "exact-shipped-product-types-v1",
-        "forecast_integrity": "forecast-result-raw-content-validation-v1",
-        "prior_integrity": "runner-reproduced-prior-application-v1",
-        "classifier_integrity": "exported-classifier-reexecution-v1",
-        "snapshot_policy": "single-frozen-tensor-snapshot-v1",
-        "backend_policy": "single-device-certified-mps-scoring-v1",
-    }
+    SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD
 )
 
 
@@ -345,6 +352,34 @@ class NeuralPriorInputPlan:
     @property
     def json(self) -> str:
         return json.dumps(self.payload, sort_keys=True, separators=(",", ":"))
+
+
+def meteorological_sampling_unit_digest(
+    *,
+    radar_id: str,
+    issue_time: str,
+    observation_valid_time: str,
+    spatial_footprint_digest: str,
+) -> str:
+    """Identify weather sampling independently of QC and verification policy.
+
+    Product, QC, mask, background, and verification-plan identities are
+    deliberately excluded.  Repackaging one radar volume under a different
+    processing contract therefore cannot create a fresh statistical sample.
+    """
+
+    if not radar_id or radar_id.strip() != radar_id:
+        raise ValueError("meteorological sampling radar ID must be canonical")
+    _require_digest("meteorological spatial footprint", spatial_footprint_digest)
+    return json_digest(
+        {
+            "contract": "meteorological-sampling-unit-v1",
+            "radar_id": radar_id,
+            "issue_time": _canonical_time(issue_time),
+            "observation_valid_time": _canonical_time(observation_valid_time),
+            "spatial_footprint_digest": spatial_footprint_digest,
+        }
+    )
 
 
 PriorUncertaintyTargetKind = Literal[
@@ -3054,6 +3089,7 @@ class NeuralPriorHoldoutPlanCase:
     reference_active_range_regimes: tuple[str, ...]
     regime_reference_plan_digest: str
     operational_issuance_domain_plan_digest: str
+    meteorological_sampling_unit_digest: str
     issue_time: str
 
     def __post_init__(self) -> None:
@@ -3067,6 +3103,7 @@ class NeuralPriorHoldoutPlanCase:
             "range_band_contract_digest",
             "regime_reference_plan_digest",
             "operational_issuance_domain_plan_digest",
+            "meteorological_sampling_unit_digest",
         ):
             _require_digest(name, getattr(self, name))
         if (
@@ -3722,6 +3759,43 @@ class LegacyNeuralPriorHoldoutPlanV15Audit:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV16Audit:
+    """Raw v16 plan retained before sampling-unit preregistration."""
+
+    plan_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-plan-audit-v16"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _require_digest("legacy holdout plan digest", self.plan_digest)
+        payload = json.loads(self.payload_json)
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != "neural-prior-holdout-plan-v16"
+            or payload.get("plan_digest") != self.plan_digest
+            or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            != self.payload_json
+        ):
+            raise ValueError("invalid legacy v16 holdout plan")
+        original = dict(payload)
+        original.pop("plan_digest")
+        if json_digest(original) != self.plan_digest:
+            raise ValueError("legacy v16 holdout plan digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "plan_digest": self.plan_digest,
+                    "payload": payload,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class PromotionExperimentTrial:
     """One preregistered candidate/rule/classifier trial in a cohort."""
 
@@ -3766,16 +3840,20 @@ class PromotionExperimentFamily:
     """Outcome-blind multiplicity contract shared by overlapping plans."""
 
     holdout_cohort_digest: str
+    meteorological_sampling_unit_digests: tuple[str, ...]
     parent_prior_digest: str
     trials: tuple[PromotionExperimentTrial, ...]
     winner_selection_rule_digest: str
-    contract: str = "neural-prior-promotion-experiment-family-v1"
+    contract: str = "neural-prior-promotion-experiment-family-v2"
     family_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
         if (
-            self.contract != "neural-prior-promotion-experiment-family-v1"
+            self.contract != "neural-prior-promotion-experiment-family-v2"
             or not self.trials
+            or not self.meteorological_sampling_unit_digests
+            or len(set(self.meteorological_sampling_unit_digests))
+            != len(self.meteorological_sampling_unit_digests)
             or len({item.trial_digest for item in self.trials})
             != len(self.trials)
         ):
@@ -3786,6 +3864,8 @@ class PromotionExperimentFamily:
             "winner_selection_rule_digest",
         ):
             _require_digest(name, getattr(self, name))
+        for digest in self.meteorological_sampling_unit_digests:
+            _require_digest("meteorological sampling unit", digest)
         object.__setattr__(self, "family_digest", json_digest(self.payload))
 
     @property
@@ -3797,6 +3877,9 @@ class PromotionExperimentFamily:
         return {
             "contract": self.contract,
             "holdout_cohort_digest": self.holdout_cohort_digest,
+            "meteorological_sampling_unit_digests": list(
+                self.meteorological_sampling_unit_digests
+            ),
             "parent_prior_digest": self.parent_prior_digest,
             "trials": [item.payload for item in self.trials],
             "winner_selection_rule_digest": self.winner_selection_rule_digest,
@@ -3818,7 +3901,9 @@ class NeuralPriorHoldoutPlan:
         NeuralPriorStateCalibrationPlan, ...
     ]
     range_band_contracts: tuple[RangeBandContract, ...]
-    range_geometry_contracts: tuple[RangeGeometryContract, ...]
+    range_geometry_contracts: tuple[
+        RangeGeometryContract | MosaicRangeGeometryContract, ...
+    ]
     operational_issuance_domain_plans: tuple[
         OperationalIssuanceDomainPlan, ...
     ]
@@ -3836,11 +3921,11 @@ class NeuralPriorHoldoutPlan:
     mode: Literal["prospective", "sealed_historical"] = "prospective"
     sealed_historical_dataset_digest: str | None = None
     candidate_training_started_at: str | None = None
-    contract: str = "neural-prior-holdout-plan-v16"
+    contract: str = "neural-prior-holdout-plan-v17"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v16":
+        if self.contract != "neural-prior-holdout-plan-v17":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -3854,12 +3939,28 @@ class NeuralPriorHoldoutPlan:
         case_ids = tuple(item.case_id for item in self.cases)
         if not case_ids or len(set(case_ids)) != len(case_ids):
             raise ValueError("holdout plan cases must be nonempty and unique")
+        if set(self.promotion_experiment_family.meteorological_sampling_unit_digests) != {
+            item.meteorological_sampling_unit_digest for item in self.cases
+        }:
+            raise ValueError("experiment family sampling units disagree with holdout cases")
         input_plans = tuple(item.input_plan_digest for item in self.cases)
         if len(set(input_plans)) != len(input_plans):
             raise ValueError("holdout cases must use distinct input plans")
         retained_plans = {item.plan_digest: item for item in self.input_plans}
         if set(retained_plans) != set(input_plans):
             raise ValueError("holdout input-plan payloads are incomplete")
+        for case in self.cases:
+            input_plan = retained_plans[case.input_plan_digest]
+            expected_sampling_unit = meteorological_sampling_unit_digest(
+                radar_id=case.radar_id,
+                issue_time=case.issue_time,
+                observation_valid_time=input_plan.observation_valid_time,
+                spatial_footprint_digest=input_plan.grid_contract_digest,
+            )
+            if case.meteorological_sampling_unit_digest != expected_sampling_unit:
+                raise ValueError(
+                    "holdout sampling unit is not derived from raw weather identity"
+                )
         target_plans = tuple(
             item.uncertainty_target_plan_digest for item in self.cases
         )
@@ -4167,6 +4268,7 @@ class NeuralPriorHoldoutCase:
     planned_storm_id: str
     storm_id: str
     physical_event_digest: str
+    meteorological_sampling_unit_digest: str
     day: str
     radar_id: str
     planned_regime: str
@@ -4227,6 +4329,7 @@ class NeuralPriorHoldoutCase:
             "operational_issuance_domain_plan_digest",
             "operational_issuance_domain_artifact_digest",
             "physical_event_digest",
+            "meteorological_sampling_unit_digest",
             "candidate_forecast_digest",
             "parent_forecast_digest",
             "candidate_prior_application_digest",
@@ -4278,6 +4381,9 @@ class NeuralPriorHoldoutCase:
                 self.state_calibration_target_plan_digest
             ),
             issue_time=self.issue_time,
+            meteorological_sampling_unit_digest=(
+                self.meteorological_sampling_unit_digest
+            ),
         )
 
     @property
@@ -6464,6 +6570,7 @@ class PriorHoldoutEvaluation:
         range_grid_x_m: Tensor,
         range_grid_y_m: Tensor,
         operational_issuance_domain: OperationalIssuanceDomainArtifact,
+        resolved_source_coverage: ResolvedSourceCoverageArtifact | None = None,
     ) -> PriorHoldoutEvaluation:
         """Evaluate every planned prior case without intervention selection."""
 
@@ -6564,11 +6671,30 @@ class PriorHoldoutEvaluation:
             if item.contract_digest
             == range_contract.range_geometry_contract_digest
         )
-        range_partition = resolve_range_geometry(
-            range_geometry,
-            grid_x_m=range_grid_x_m,
-            grid_y_m=range_grid_y_m,
-        )
+        if type(range_geometry) is RangeGeometryContract:
+            range_partition = resolve_range_geometry(
+                range_geometry,
+                grid_x_m=range_grid_x_m,
+                grid_y_m=range_grid_y_m,
+            )
+        elif type(range_geometry) is MosaicRangeGeometryContract:
+            if resolved_source_coverage is None:
+                raise ValueError("mosaic scoring requires resolved source coverage")
+            source_maps = resolved_source_coverage.source_radar_index_map
+            if source_maps.ndim != 3 or not all(
+                torch.equal(source_maps[0], item) for item in source_maps[1:]
+            ):
+                raise ValueError(
+                    "mosaic scoring requires one pre-issue input source map"
+                )
+            range_partition, _ = resolve_mosaic_range_geometry(
+                range_geometry,
+                grid_x_m=range_grid_x_m,
+                grid_y_m=range_grid_y_m,
+                source_radar_index_map=source_maps,
+            )
+        else:
+            raise TypeError("unsupported range geometry contract")
         range_band_masks = {
             label: range_partition.mask(label)
             for label in range_partition.range_regime_labels
@@ -8224,6 +8350,7 @@ class ScoringReplayCaseArtifact:
             range_grid_x_m=self.range_grid_x_m,
             range_grid_y_m=self.range_grid_y_m,
             operational_issuance_domain=self.operational_issuance_domain,
+            resolved_source_coverage=self.resolved_source_coverage,
         )
 
     def _live_replay_tensors(self) -> dict[str, Tensor]:
@@ -8341,7 +8468,7 @@ class ScoringReplayCaseArtifact:
     ) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-semantic-scoring-case-v3",
+                "contract": "neural-prior-semantic-scoring-case-v4",
                 "semantic_replay_generation_digest": (
                     SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
                 ),
@@ -9395,7 +9522,7 @@ class HoldoutScoringArtifact:
     parent_forecast_digests: tuple[str, ...]
     verification_digests: tuple[str, ...]
     metric_contract_digests: tuple[str, ...]
-    contract: str = "neural-prior-holdout-scoring-artifact-v4"
+    contract: str = "neural-prior-holdout-scoring-artifact-v5"
     artifact_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -9494,7 +9621,7 @@ class HoldoutScoringArtifact:
             "metric_contract_digests": tuple(
                 item.metric_contract_digest for item in ordered
             ),
-            "contract": "neural-prior-holdout-scoring-artifact-v4",
+            "contract": "neural-prior-holdout-scoring-artifact-v5",
         }
         artifact = _new_holdout_scoring_artifact(**values)
         validate_holdout_scoring_artifact(
@@ -9540,7 +9667,7 @@ def validate_holdout_scoring_artifact(
     ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
     start = manifest.candidate_scoring_start_receipt
     if (
-        artifact.contract != "neural-prior-holdout-scoring-artifact-v4"
+        artifact.contract != "neural-prior-holdout-scoring-artifact-v5"
         or artifact.artifact_digest != json_digest(artifact.payload)
         or artifact.holdout_plan_digest != plan.plan_digest
         or artifact.candidate_manifest_digest != manifest.manifest_digest
@@ -9588,9 +9715,8 @@ def validate_holdout_scoring_artifact(
     )
     if (certification_digests[0] is None) != (certification_digests[1] is None):
         raise ValueError("scoring backend certification lineage is incomplete")
-    for digest in certification_digests:
-        if digest is not None:
-            _require_digest("scoring backend certification", digest)
+    if any(digest is not None for digest in certification_digests):
+        raise ValueError("current automatic scoring is CPU-only")
     for name in (
         "holdout_plan_digest",
         "candidate_manifest_digest",
@@ -9977,16 +10103,19 @@ class NeuralPriorPromotionPolicy:
     minimum_regime_classifier_accuracy_lower_bound: float = 0.9
     minimum_regime_classifier_recall_lower_bound: float = 0.8
     maximum_regime_classifier_calibration_error: float = 0.1
+    maximum_regime_classifier_brier_score_upper_bound: float = 0.1
     maximum_regime_classifier_false_routing_fraction: float = 0.05
     maximum_regime_classifier_false_routing_upper_bound: float = 0.05
     minimum_regime_classifier_clusters: int = 5
     minimum_regime_classifier_ood_cases: int = 1
     minimum_regime_classifier_ood_abstention_fraction: float = 0.9
+    minimum_regime_classifier_ood_abstention_lower_bound: float = 0.9
     minimum_range_set_precision: float = 0.95
     minimum_range_set_recall: float = 0.95
     minimum_range_set_precision_lower_bound: float = 0.95
     minimum_range_set_recall_lower_bound: float = 0.95
     minimum_range_exact_set_accuracy: float = 0.9
+    minimum_range_exact_set_accuracy_lower_bound: float = 0.9
     maximum_false_active_band_fraction: float = 0.05
     maximum_false_active_band_upper_bound: float = 0.05
     minimum_weather_top1_top2_gap: float = 0.05
@@ -10002,16 +10131,17 @@ class NeuralPriorPromotionPolicy:
     minimum_range_state_echo_objects: int = 1
     minimum_range_classifier_ood_cases: int = 1
     minimum_range_classifier_ood_abstention_fraction: float = 0.9
+    minimum_range_classifier_ood_abstention_lower_bound: float = 0.9
     require_all_registered_regimes_certified: bool = False
     minimum_bootstrap_tail_replicates: int = 20
     maximum_exact_sign_clusters: int = 16
     minimum_deployment_metric_cell_events: int = 5
     minimum_continuous_metric_cell_events: int = 10
     allow_shadow_small_sample_bootstrap: bool = False
-    contract: str = "neural-prior-promotion-policy-v25"
+    contract: str = "neural-prior-promotion-policy-v26"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-policy-v25":
+        if self.contract != "neural-prior-promotion-policy-v26":
             raise ValueError("unsupported neural-prior promotion policy")
         if type(self.allow_shadow_small_sample_bootstrap) is not bool:
             raise ValueError("shadow bootstrap flag must be boolean")
@@ -10163,17 +10293,21 @@ class NeuralPriorPromotionPolicy:
             self.minimum_regime_classifier_accuracy_lower_bound,
             self.minimum_regime_classifier_recall_lower_bound,
             self.maximum_regime_classifier_calibration_error,
+            self.maximum_regime_classifier_brier_score_upper_bound,
             self.maximum_regime_classifier_false_routing_fraction,
             self.maximum_regime_classifier_false_routing_upper_bound,
             self.minimum_regime_classifier_ood_abstention_fraction,
+            self.minimum_regime_classifier_ood_abstention_lower_bound,
             self.minimum_range_set_precision,
             self.minimum_range_set_recall,
             self.minimum_range_set_precision_lower_bound,
             self.minimum_range_set_recall_lower_bound,
             self.minimum_range_exact_set_accuracy,
+            self.minimum_range_exact_set_accuracy_lower_bound,
             self.maximum_false_active_band_fraction,
             self.maximum_false_active_band_upper_bound,
             self.minimum_range_classifier_ood_abstention_fraction,
+            self.minimum_range_classifier_ood_abstention_lower_bound,
         )
         if any(not math.isfinite(value) or not 0 <= value <= 1 for value in probabilities):
             raise ValueError("promotion fractions must be inside [0,1]")
@@ -10457,6 +10591,9 @@ class NeuralPriorPromotionPolicy:
                 self.minimum_regime_classifier_recall_lower_bound
             ),
             "maximum_regime_classifier_calibration_error": self.maximum_regime_classifier_calibration_error,
+            "maximum_regime_classifier_brier_score_upper_bound": (
+                self.maximum_regime_classifier_brier_score_upper_bound
+            ),
             "maximum_regime_classifier_false_routing_fraction": self.maximum_regime_classifier_false_routing_fraction,
             "maximum_regime_classifier_false_routing_upper_bound": (
                 self.maximum_regime_classifier_false_routing_upper_bound
@@ -10466,6 +10603,7 @@ class NeuralPriorPromotionPolicy:
             ),
             "minimum_regime_classifier_ood_cases": self.minimum_regime_classifier_ood_cases,
             "minimum_regime_classifier_ood_abstention_fraction": self.minimum_regime_classifier_ood_abstention_fraction,
+            "minimum_regime_classifier_ood_abstention_lower_bound": self.minimum_regime_classifier_ood_abstention_lower_bound,
             "minimum_range_set_precision": self.minimum_range_set_precision,
             "minimum_range_set_recall": self.minimum_range_set_recall,
             "minimum_range_set_precision_lower_bound": (
@@ -10475,6 +10613,7 @@ class NeuralPriorPromotionPolicy:
                 self.minimum_range_set_recall_lower_bound
             ),
             "minimum_range_exact_set_accuracy": self.minimum_range_exact_set_accuracy,
+            "minimum_range_exact_set_accuracy_lower_bound": self.minimum_range_exact_set_accuracy_lower_bound,
             "maximum_false_active_band_fraction": self.maximum_false_active_band_fraction,
             "maximum_false_active_band_upper_bound": (
                 self.maximum_false_active_band_upper_bound
@@ -10502,6 +10641,7 @@ class NeuralPriorPromotionPolicy:
             ),
             "minimum_range_classifier_ood_cases": self.minimum_range_classifier_ood_cases,
             "minimum_range_classifier_ood_abstention_fraction": self.minimum_range_classifier_ood_abstention_fraction,
+            "minimum_range_classifier_ood_abstention_lower_bound": self.minimum_range_classifier_ood_abstention_lower_bound,
             "require_all_registered_regimes_certified": self.require_all_registered_regimes_certified,
             "minimum_bootstrap_tail_replicates": (
                 self.minimum_bootstrap_tail_replicates
@@ -11192,6 +11332,28 @@ class LegacyNeuralPriorPromotionEvidenceAuditV23:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV24:
+    """Certified-MPS-capable v24 evidence retained for audit only."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v24"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v24",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
@@ -11220,6 +11382,10 @@ class NeuralPriorPromotionEvidence:
     distinct_radar_count: int
     distinct_regime_count: int
     distinct_range_regime_count: int
+    primary_estimand_contract: Literal["equal_weight_physical_event_v1"]
+    case_weighted_beneficial_fraction: float
+    case_weighted_harmful_fraction: float
+    case_weighted_mean_normalized_improvement: float
     beneficial_fraction: float
     beneficial_fraction_lower_bound: float
     harmful_fraction: float
@@ -11249,21 +11415,26 @@ class NeuralPriorPromotionEvidence:
     minimum_regime_classifier_recall: float
     minimum_regime_classifier_recall_lower_bound: float
     regime_classifier_calibration_error: float
+    regime_classifier_brier_score: float
+    regime_classifier_brier_score_upper_bound: float
     regime_classifier_false_routing_fraction: float
     regime_classifier_false_routing_upper_bound: float
     regime_classifier_cluster_count: int
     regime_classifier_ood_case_count: int
     regime_classifier_ood_abstention_fraction: float
+    regime_classifier_ood_abstention_fraction_lower_bound: float
     regime_classifier_validated: bool
     range_set_precision: float
     range_set_precision_lower_bound: float
     range_set_recall: float
     range_set_recall_lower_bound: float
     range_exact_set_accuracy: float
+    range_exact_set_accuracy_lower_bound: float
     range_false_active_band_fraction: float
     range_false_active_band_upper_bound: float
     range_classifier_ood_case_count: int
     range_classifier_ood_abstention_fraction: float
+    range_classifier_ood_abstention_fraction_lower_bound: float
     minimum_classifier_weather_margin: float
     minimum_classifier_range_margin: float
     prior_echo_component_status: PriorComponentStatus
@@ -11335,12 +11506,14 @@ class NeuralPriorPromotionEvidence:
     deployment_eligible: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v24"
+    contract: str = "neural-prior-promotion-evidence-v25"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v24":
+        if self.contract != "neural-prior-promotion-evidence-v25":
             raise ValueError("unsupported neural-prior promotion evidence")
+        if self.primary_estimand_contract != "equal_weight_physical_event_v1":
+            raise ValueError("unsupported promotion estimand")
         for name in (
             "candidate_prior_digest",
             "parent_prior_digest",
@@ -11374,9 +11547,8 @@ class NeuralPriorPromotionEvidence:
             certification_digests[1] is None
         ):
             raise ValueError("promotion scoring certification is incomplete")
-        for digest in certification_digests:
-            if digest is not None:
-                _require_digest("promotion scoring certification", digest)
+        if any(digest is not None for digest in certification_digests):
+            raise ValueError("current promotion evidence is CPU-scoring only")
         for digest in self.evaluation_digests:
             _require_digest("promotion member digest", digest)
         for digest in self.regime_classifier_evidence_digests:
@@ -11418,6 +11590,8 @@ class NeuralPriorPromotionEvidence:
         ):
             raise ValueError("promotion component evidence is invalid")
         fractions = (
+            self.case_weighted_beneficial_fraction,
+            self.case_weighted_harmful_fraction,
             self.beneficial_fraction,
             self.beneficial_fraction_lower_bound,
             self.harmful_fraction,
@@ -11427,17 +11601,22 @@ class NeuralPriorPromotionEvidence:
             self.minimum_regime_classifier_recall,
             self.minimum_regime_classifier_recall_lower_bound,
             self.regime_classifier_calibration_error,
+            self.regime_classifier_brier_score,
+            self.regime_classifier_brier_score_upper_bound,
             self.regime_classifier_false_routing_fraction,
             self.regime_classifier_false_routing_upper_bound,
             self.regime_classifier_ood_abstention_fraction,
+            self.regime_classifier_ood_abstention_fraction_lower_bound,
             self.range_set_precision,
             self.range_set_precision_lower_bound,
             self.range_set_recall,
             self.range_set_recall_lower_bound,
             self.range_exact_set_accuracy,
+            self.range_exact_set_accuracy_lower_bound,
             self.range_false_active_band_fraction,
             self.range_false_active_band_upper_bound,
             self.range_classifier_ood_abstention_fraction,
+            self.range_classifier_ood_abstention_fraction_lower_bound,
         )
         if any(not math.isfinite(value) or not 0.0 <= value <= 1.0 for value in fractions):
             raise ValueError("promotion evidence fractions are invalid")
@@ -11446,6 +11625,7 @@ class NeuralPriorPromotionEvidence:
             for value in (
                 self.mean_normalized_improvement,
                 self.mean_improvement_lower_bound,
+                self.case_weighted_mean_normalized_improvement,
             )
         ):
             raise ValueError("promotion mean summaries are invalid")
@@ -11791,6 +11971,26 @@ def _cluster_bounds(
         absolute_bound=absolute_bound,
     )
     return lower_beneficial, upper_harmful, lower_mean
+
+
+def _event_weighted_mean(
+    values: Sequence[float],
+    clusters: Sequence[str],
+) -> float:
+    """Estimate the equal-weight physical-event mean used by every bound."""
+
+    if len(values) != len(clusters) or not values:
+        raise ValueError("event-weighted values and clusters must be nonempty")
+    grouped: dict[str, list[float]] = {}
+    for value, cluster in zip(values, clusters, strict=True):
+        if not math.isfinite(value):
+            raise ValueError("event-weighted observations must be finite")
+        _require_digest("physical event cluster", cluster)
+        grouped.setdefault(cluster, []).append(value)
+    event_means = tuple(
+        sum(grouped[key]) / len(grouped[key]) for key in sorted(grouped)
+    )
+    return sum(event_means) / len(event_means)
 
 
 def _aggregate_score_absolute_bound(policy: NeuralPriorPromotionPolicy) -> float:
@@ -12818,9 +13018,16 @@ def compute_neural_prior_promotion(
     if len(material_clusters) < policy.minimum_material_clusters:
         reasons.append("insufficient_material_clusters")
     if scores:
-        beneficial = sum(value > 0 for value in scores) / len(scores)
-        harmful = sum(value < 0 for value in scores) / len(scores)
-        mean = sum(scores) / len(scores)
+        case_weighted_beneficial = sum(value > 0 for value in scores) / len(scores)
+        case_weighted_harmful = sum(value < 0 for value in scores) / len(scores)
+        case_weighted_mean = sum(scores) / len(scores)
+        beneficial = _event_weighted_mean(
+            [float(value > 0) for value in scores], clusters
+        )
+        harmful = _event_weighted_mean(
+            [float(value < 0) for value in scores], clusters
+        )
+        mean = _event_weighted_mean(scores, clusters)
         lower_beneficial, upper_harmful, lower_mean = _cluster_bounds(
             scores,
             clusters,
@@ -12829,6 +13036,7 @@ def compute_neural_prior_promotion(
             absolute_bound=aggregate_score_absolute_bound,
         )
     else:
+        case_weighted_beneficial = case_weighted_harmful = case_weighted_mean = 0.0
         beneficial = harmful = mean = lower_beneficial = upper_harmful = lower_mean = 0.0
     cluster_bootstrap_tail_replicates = policy.bootstrap_samples * (
         (1.0 - policy.confidence_level) / (2.0 * family_size)
@@ -12868,14 +13076,19 @@ def compute_neural_prior_promotion(
         ) < policy.minimum_state_calibration_clusters_per_regime:
             reasons.append("insufficient_state_calibration")
     classifier_correct = tuple(item.classifier_reference_agreement for item in evaluations)
+    classifier_clusters = [
+        _physical_event_cluster(item) for item in evaluations
+    ]
     known_indices = tuple(
         index
         for index, item in enumerate(evaluations)
         if item.regime != "unknown"
     )
     classifier_accuracy = (
-        sum(classifier_correct[index] for index in known_indices)
-        / len(known_indices)
+        _event_weighted_mean(
+            [float(classifier_correct[index]) for index in known_indices],
+            [classifier_clusters[index] for index in known_indices],
+        )
         if known_indices
         else 0.0
     )
@@ -12883,12 +13096,18 @@ def compute_neural_prior_promotion(
         {item.regime for item in evaluations if item.regime != "unknown"}
     )
     recalls = tuple(
-        sum(
-            item.classifier_reference_agreement
-            for item in evaluations
-            if item.regime == regime
+        _event_weighted_mean(
+            [
+                float(item.classifier_reference_agreement)
+                for item in evaluations
+                if item.regime == regime
+            ],
+            [
+                _physical_event_cluster(item)
+                for item in evaluations
+                if item.regime == regime
+            ],
         )
-        / max(1, sum(item.regime == regime for item in evaluations))
         for regime in reference_regimes
     )
     minimum_classifier_recall = min(recalls, default=0.0)
@@ -12931,57 +13150,59 @@ def compute_neural_prior_promotion(
                 )
             )
     classifier_calibration_error = sum(calibration_terms)
-    classifier_false_routing_fraction = sum(
-        not correct and not item.classifier_is_ood
-        for correct, item in zip(classifier_correct, evaluations, strict=True)
-    ) / len(evaluations)
+    classifier_false_routing_fraction = _event_weighted_mean(
+        [
+            float(not correct and not item.classifier_is_ood)
+            for correct, item in zip(classifier_correct, evaluations, strict=True)
+        ],
+        classifier_clusters,
+    )
     ood_items = tuple(item for item in evaluations if item.regime == "unknown")
     ood_abstention_fraction = (
         1.0
         if not ood_items
-        else sum(item.classifier_is_ood for item in ood_items) / len(ood_items)
+        else _event_weighted_mean(
+            [float(item.classifier_is_ood) for item in ood_items],
+            [_physical_event_cluster(item) for item in ood_items],
+        )
     )
     range_known_items = tuple(
         item for item in evaluations if not item.classifier_reference_range_is_ood
     )
-    total_range_reference = sum(
-        len(item.reference_active_range_regimes) for item in range_known_items
-    )
-    total_range_predicted = sum(
-        len(item.classified_range_regimes) for item in range_known_items
-    )
-    total_range_intersection = sum(
-        len(
-            set(item.reference_active_range_regimes)
-            & set(item.classified_range_regimes)
-        )
-        for item in range_known_items
-    )
     range_set_precision = (
-        total_range_intersection / total_range_predicted
-        if total_range_predicted
+        _event_weighted_mean(
+            [item.classifier_range_set_precision for item in range_known_items],
+            [_physical_event_cluster(item) for item in range_known_items],
+        )
+        if range_known_items
         else 0.0
     )
     range_set_recall = (
-        total_range_intersection / total_range_reference
-        if total_range_reference
+        _event_weighted_mean(
+            [item.classifier_range_set_recall for item in range_known_items],
+            [_physical_event_cluster(item) for item in range_known_items],
+        )
+        if range_known_items
         else 0.0
     )
     range_exact_set_accuracy = (
-        sum(item.classifier_range_exact_set_match for item in range_known_items)
-        / len(range_known_items)
+        _event_weighted_mean(
+            [float(item.classifier_range_exact_set_match) for item in range_known_items],
+            [_physical_event_cluster(item) for item in range_known_items],
+        )
         if range_known_items
         else 0.0
     )
     range_false_active_band_fraction = (
-        sum(
-            len(
-                set(item.classified_range_regimes)
-                - set(item.reference_active_range_regimes)
-            )
-            for item in range_known_items
+        _event_weighted_mean(
+            [
+                item.classifier_false_active_band_fraction
+                for item in range_known_items
+            ],
+            [_physical_event_cluster(item) for item in range_known_items],
         )
-        / max(1, total_range_predicted)
+        if range_known_items
+        else 0.0
     )
     range_ood_items = tuple(
         item for item in evaluations if item.classifier_reference_range_is_ood
@@ -12989,8 +13210,10 @@ def compute_neural_prior_promotion(
     range_ood_abstention_fraction = (
         1.0
         if not range_ood_items
-        else sum(item.classifier_is_ood for item in range_ood_items)
-        / len(range_ood_items)
+        else _event_weighted_mean(
+            [float(item.classifier_is_ood) for item in range_ood_items],
+            [_physical_event_cluster(item) for item in range_ood_items],
+        )
     )
     minimum_weather_margin = min(
         (item.classifier_weather_top1_top2_gap for item in evaluations),
@@ -13000,9 +13223,6 @@ def compute_neural_prior_promotion(
         (item.classifier_minimum_range_presence_margin for item in evaluations),
         default=0.0,
     )
-    classifier_clusters = [
-        _physical_event_cluster(item) for item in evaluations
-    ]
     known_clusters = [classifier_clusters[index] for index in known_indices]
     (
         classifier_accuracy_lower_bound,
@@ -13073,6 +13293,57 @@ def compute_neural_prior_promotion(
         policy,
         family_size=family_size,
     ) if range_known_items else (0.0, 1.0)
+    range_exact_set_accuracy_lower_bound, _ = _event_fractional_rate_interval(
+        [float(item.classifier_range_exact_set_match) for item in range_known_items],
+        [_physical_event_cluster(item) for item in range_known_items],
+        policy,
+        family_size=family_size,
+    ) if range_known_items else (0.0, 1.0)
+    weather_ood_abstention_lower_bound, _ = _event_fractional_rate_interval(
+        [float(item.classifier_is_ood) for item in ood_items],
+        [_physical_event_cluster(item) for item in ood_items],
+        policy,
+        family_size=family_size,
+    ) if ood_items else (0.0, 1.0)
+    range_ood_abstention_lower_bound, _ = _event_fractional_rate_interval(
+        [float(item.classifier_is_ood) for item in range_ood_items],
+        [_physical_event_cluster(item) for item in range_ood_items],
+        policy,
+        family_size=family_size,
+    ) if range_ood_items else (0.0, 1.0)
+    classifier_brier_values = [
+        (
+            min(
+                item.classifier_regime_confidence,
+                item.classifier_range_confidence,
+            )
+            - float(item.classifier_reference_agreement)
+        )
+        ** 2
+        for item in evaluations
+        if item.regime != "unknown"
+    ]
+    classifier_brier_clusters = [
+        _physical_event_cluster(item)
+        for item in evaluations
+        if item.regime != "unknown"
+    ]
+    classifier_brier_score = (
+        _event_weighted_mean(classifier_brier_values, classifier_brier_clusters)
+        if classifier_brier_values
+        else 1.0
+    )
+    classifier_brier_score_upper_bound = (
+        _bounded_event_mean_upper_bound(
+            classifier_brier_values,
+            classifier_brier_clusters,
+            policy,
+            family_size=family_size,
+            absolute_bound=1.0,
+        )
+        if classifier_brier_values
+        else 1.0
+    )
     classifier_validated = (
         classifier_accuracy >= policy.minimum_regime_classifier_accuracy
         and minimum_classifier_recall >= policy.minimum_regime_classifier_recall
@@ -13080,8 +13351,8 @@ def compute_neural_prior_promotion(
         >= policy.minimum_regime_classifier_accuracy_lower_bound
         and minimum_classifier_recall_lower_bound
         >= policy.minimum_regime_classifier_recall_lower_bound
-        and classifier_calibration_error
-        <= policy.maximum_regime_classifier_calibration_error
+        and classifier_brier_score_upper_bound
+        <= policy.maximum_regime_classifier_brier_score_upper_bound
         and classifier_false_routing_fraction
         <= policy.maximum_regime_classifier_false_routing_fraction
         and classifier_false_routing_upper_bound
@@ -13091,6 +13362,8 @@ def compute_neural_prior_promotion(
         and len(ood_items) >= policy.minimum_regime_classifier_ood_cases
         and ood_abstention_fraction
         >= policy.minimum_regime_classifier_ood_abstention_fraction
+        and weather_ood_abstention_lower_bound
+        >= policy.minimum_regime_classifier_ood_abstention_lower_bound
         and range_set_precision >= policy.minimum_range_set_precision
         and range_set_recall >= policy.minimum_range_set_recall
         and range_precision_lower_bound
@@ -13098,6 +13371,8 @@ def compute_neural_prior_promotion(
         and range_recall_lower_bound
         >= policy.minimum_range_set_recall_lower_bound
         and range_exact_set_accuracy >= policy.minimum_range_exact_set_accuracy
+        and range_exact_set_accuracy_lower_bound
+        >= policy.minimum_range_exact_set_accuracy_lower_bound
         and range_false_active_band_fraction
         <= policy.maximum_false_active_band_fraction
         and false_active_band_upper_bound
@@ -13105,6 +13380,8 @@ def compute_neural_prior_promotion(
         and len(range_ood_items) >= policy.minimum_range_classifier_ood_cases
         and range_ood_abstention_fraction
         >= policy.minimum_range_classifier_ood_abstention_fraction
+        and range_ood_abstention_lower_bound
+        >= policy.minimum_range_classifier_ood_abstention_lower_bound
         and minimum_weather_margin >= policy.minimum_weather_top1_top2_gap
         and minimum_range_margin >= policy.minimum_range_presence_margin
     )
@@ -13928,6 +14205,10 @@ def compute_neural_prior_promotion(
         distinct_radar_count=len(radars),
         distinct_regime_count=len(regimes),
         distinct_range_regime_count=len(range_regimes),
+        primary_estimand_contract="equal_weight_physical_event_v1",
+        case_weighted_beneficial_fraction=case_weighted_beneficial,
+        case_weighted_harmful_fraction=case_weighted_harmful,
+        case_weighted_mean_normalized_improvement=case_weighted_mean,
         beneficial_fraction=beneficial,
         beneficial_fraction_lower_bound=lower_beneficial,
         harmful_fraction=harmful,
@@ -13971,6 +14252,10 @@ def compute_neural_prior_promotion(
             minimum_classifier_recall_lower_bound
         ),
         regime_classifier_calibration_error=classifier_calibration_error,
+        regime_classifier_brier_score=classifier_brier_score,
+        regime_classifier_brier_score_upper_bound=(
+            classifier_brier_score_upper_bound
+        ),
         regime_classifier_false_routing_fraction=(
             classifier_false_routing_fraction
         ),
@@ -13980,17 +14265,26 @@ def compute_neural_prior_promotion(
         regime_classifier_cluster_count=len(set(classifier_clusters)),
         regime_classifier_ood_case_count=len(ood_items),
         regime_classifier_ood_abstention_fraction=ood_abstention_fraction,
+        regime_classifier_ood_abstention_fraction_lower_bound=(
+            weather_ood_abstention_lower_bound
+        ),
         regime_classifier_validated=classifier_validated,
         range_set_precision=range_set_precision,
         range_set_precision_lower_bound=range_precision_lower_bound,
         range_set_recall=range_set_recall,
         range_set_recall_lower_bound=range_recall_lower_bound,
         range_exact_set_accuracy=range_exact_set_accuracy,
+        range_exact_set_accuracy_lower_bound=(
+            range_exact_set_accuracy_lower_bound
+        ),
         range_false_active_band_fraction=range_false_active_band_fraction,
         range_false_active_band_upper_bound=false_active_band_upper_bound,
         range_classifier_ood_case_count=len(range_ood_items),
         range_classifier_ood_abstention_fraction=(
             range_ood_abstention_fraction
+        ),
+        range_classifier_ood_abstention_fraction_lower_bound=(
+            range_ood_abstention_lower_bound
         ),
         minimum_classifier_weather_margin=minimum_weather_margin,
         minimum_classifier_range_margin=minimum_range_margin,
@@ -14486,10 +14780,66 @@ class NeuralPriorRegimeClassifier:
         return regime_logits.detach().clone(), range_logits.detach().clone()
 
 
+AuthorityRole = Literal[
+    "ledger_issuance",
+    "promotion_certificate",
+    "operational_decision",
+]
+
+
+class DeploymentAuthoritySigner(Protocol):
+    """Narrow signing interface suitable for HSM or signer-daemon adapters."""
+
+    @property
+    def authority_id(self) -> str: ...
+
+    @property
+    def public_key_hex(self) -> str: ...
+
+    def sign(self, canonical_payload: bytes) -> bytes: ...
+
+    def signing_time(self) -> str: ...
+
+
+@dataclass(frozen=True)
+class Ed25519DeploymentAuthoritySigner:
+    """In-process adapter intended for tests and isolated signing services."""
+
+    authority_id: str
+    private_key: Ed25519PrivateKey = field(repr=False)
+    fixed_signing_time: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.authority_id or self.authority_id.strip() != self.authority_id:
+            raise ValueError("deployment signer authority ID must be canonical")
+
+    @property
+    def public_key_hex(self) -> str:
+        return self.private_key.public_key().public_bytes(
+            serialization.Encoding.Raw,
+            serialization.PublicFormat.Raw,
+        ).hex()
+
+    def sign(self, canonical_payload: bytes) -> bytes:
+        return self.private_key.sign(canonical_payload)
+
+    def signing_time(self) -> str:
+        return _canonical_time(
+            self.fixed_signing_time
+            if self.fixed_signing_time is not None
+            else datetime.now(timezone.utc).isoformat()
+        )
+
+
 @dataclass(frozen=True)
 class _PromotionDeploymentAuthorityTrustStore:
     keys: dict[str, Ed25519PublicKey]
     content_digest: str
+    roles: dict[str, frozenset[AuthorityRole]]
+    not_before: dict[str, str]
+    not_after: dict[str, str]
+    revoked_at: dict[str, str | None]
+    ledger_instance_digests: dict[str, frozenset[str]]
 
 
 def _load_promotion_deployment_authority_trust_store(
@@ -14535,14 +14885,55 @@ def _load_promotion_deployment_authority_trust_store(
     ):
         raise ValueError("unsupported deployment authority trust store")
     keys: dict[str, Ed25519PublicKey] = {}
-    for authority_id, public_hex in document["authorities"].items():
+    roles: dict[str, frozenset[AuthorityRole]] = {}
+    not_before: dict[str, str] = {}
+    not_after: dict[str, str] = {}
+    revoked_at: dict[str, str | None] = {}
+    ledger_instance_digests: dict[str, frozenset[str]] = {}
+    canonical_authorities: dict[str, object] = {}
+    allowed_roles = {
+        "ledger_issuance",
+        "promotion_certificate",
+        "operational_decision",
+    }
+    for authority_id, entry in document["authorities"].items():
         if (
             not isinstance(authority_id, str)
             or not authority_id
             or authority_id.strip() != authority_id
-            or not isinstance(public_hex, str)
+            or not isinstance(entry, dict)
+            or set(entry) != {
+                "public_key_hex",
+                "roles",
+                "not_before",
+                "not_after",
+                "revoked_at",
+                "ledger_instance_digests",
+            }
+            or not isinstance(entry["public_key_hex"], str)
+            or not isinstance(entry["roles"], list)
+            or not entry["roles"]
+            or len(set(entry["roles"])) != len(entry["roles"])
+            or any(role not in allowed_roles for role in entry["roles"])
+            or not isinstance(entry["ledger_instance_digests"], list)
+            or len(set(entry["ledger_instance_digests"]))
+            != len(entry["ledger_instance_digests"])
+            or any(
+                not isinstance(value, str)
+                or re.fullmatch(r"[0-9a-f]{64}", value) is None
+                for value in entry["ledger_instance_digests"]
+            )
+            or (
+                ("ledger_issuance" in entry["roles"])
+                != bool(entry["ledger_instance_digests"])
+            )
+            or (
+                entry["revoked_at"] is not None
+                and not isinstance(entry["revoked_at"], str)
+            )
         ):
             raise ValueError("invalid deployment authority entry")
+        public_hex = entry["public_key_hex"]
         try:
             public = bytes.fromhex(public_hex)
             key = Ed25519PublicKey.from_public_bytes(public)
@@ -14550,15 +14941,353 @@ def _load_promotion_deployment_authority_trust_store(
             raise ValueError("invalid deployment authority public key") from error
         if len(public) != 32:
             raise ValueError("deployment authority keys must contain 32 bytes")
+        start = _canonical_time(entry["not_before"])
+        end = _canonical_time(entry["not_after"])
+        revoked = (
+            None
+            if entry["revoked_at"] is None
+            else _canonical_time(entry["revoked_at"])
+        )
+        if start >= end or (revoked is not None and revoked < start):
+            raise ValueError("deployment authority validity window is invalid")
         keys[authority_id] = key
+        roles[authority_id] = frozenset(cast(list[AuthorityRole], entry["roles"]))
+        not_before[authority_id] = start
+        not_after[authority_id] = end
+        revoked_at[authority_id] = revoked
+        ledger_instance_digests[authority_id] = frozenset(
+            entry["ledger_instance_digests"]
+        )
+        canonical_authorities[authority_id] = {
+            "public_key_hex": public_hex,
+            "roles": sorted(entry["roles"]),
+            "not_before": start,
+            "not_after": end,
+            "revoked_at": revoked,
+            "ledger_instance_digests": sorted(
+                entry["ledger_instance_digests"]
+            ),
+        }
     canonical = {
         "contract": PROMOTION_DEPLOYMENT_AUTHORITY_TRUST_STORE_CONTRACT,
-        "authorities": dict(sorted(document["authorities"].items())),
+        "authorities": dict(sorted(canonical_authorities.items())),
     }
     return _PromotionDeploymentAuthorityTrustStore(
         keys=keys,
         content_digest=json_digest(canonical),
+        roles=roles,
+        not_before=not_before,
+        not_after=not_after,
+        revoked_at=revoked_at,
+        ledger_instance_digests=ledger_instance_digests,
     )
+
+
+def _trusted_authority_key(
+    trust_store: _PromotionDeploymentAuthorityTrustStore,
+    *,
+    authority_id: str,
+    public_key_hex: str,
+    role: AuthorityRole,
+    issued_at: str,
+) -> Ed25519PublicKey:
+    key = trust_store.keys.get(authority_id)
+    canonical_time = _canonical_time(issued_at)
+    if (
+        key is None
+        or role not in trust_store.roles.get(authority_id, frozenset())
+        or not trust_store.not_before.get(authority_id, "")
+        <= canonical_time
+        <= trust_store.not_after.get(authority_id, "")
+        or (
+            trust_store.revoked_at.get(authority_id) is not None
+            and canonical_time >= cast(str, trust_store.revoked_at[authority_id])
+        )
+        or key.public_bytes(
+            serialization.Encoding.Raw,
+            serialization.PublicFormat.Raw,
+        ).hex()
+        != public_key_hex
+    ):
+        raise ValueError(f"{role} authority is not root-approved")
+    return key
+
+
+def _validate_signer(
+    signer: DeploymentAuthoritySigner,
+    *,
+    trust_store: _PromotionDeploymentAuthorityTrustStore,
+    role: AuthorityRole,
+    issued_at: str,
+) -> None:
+    _trusted_authority_key(
+        trust_store,
+        authority_id=signer.authority_id,
+        public_key_hex=signer.public_key_hex,
+        role=role,
+        issued_at=issued_at,
+    )
+
+
+@dataclass(frozen=True, init=False)
+class LedgerIssuanceReceipt:
+    """Dedicated ledger-signer proof over durable promotion preimages."""
+
+    ledger_instance_digest: str
+    sequence_number: int
+    previous_certificate_digest: str
+    promotion_evidence_digest: str
+    scoring_replay_bundle_digest: str
+    scoring_replay_archive_sha256: str
+    scoring_evaluation_payload_sha256: str
+    scoring_artifact_digest: str
+    scoring_completion_receipt_digest: str
+    scoring_completion_completed_at: str
+    checkpoint_digest: str
+    issued_at: str
+    signer_id: str
+    signer_public_key_hex: str
+    signer_trust_store_digest: str
+    signer_signature_hex: str
+    contract: str = "ledger-issuance-receipt-v1"
+    receipt_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("ledger issuance receipts are created transactionally")
+
+    @property
+    def unsigned_payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key not in {"signer_signature_hex", "receipt_digest"}
+        }
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "receipt_digest"
+        }
+
+
+def _ledger_checkpoint_digest(
+    *,
+    ledger_instance_digest: str,
+    sequence_number: int,
+    previous_certificate_digest: str,
+    promotion_evidence_digest: str,
+    scoring_replay_bundle_digest: str,
+    scoring_replay_archive_sha256: str,
+    scoring_evaluation_payload_sha256: str,
+    scoring_artifact_digest: str,
+    scoring_completion_receipt_digest: str,
+    scoring_completion_completed_at: str,
+) -> str:
+    return json_digest(
+        {
+            "contract": "advar-ledger-issuance-checkpoint-v1",
+            "ledger_instance_digest": ledger_instance_digest,
+            "sequence_number": sequence_number,
+            "previous_certificate_digest": previous_certificate_digest,
+            "promotion_evidence_digest": promotion_evidence_digest,
+            "scoring_replay_bundle_digest": scoring_replay_bundle_digest,
+            "scoring_replay_archive_sha256": scoring_replay_archive_sha256,
+            "scoring_evaluation_payload_sha256": (
+                scoring_evaluation_payload_sha256
+            ),
+            "scoring_artifact_digest": scoring_artifact_digest,
+            "scoring_completion_receipt_digest": (
+                scoring_completion_receipt_digest
+            ),
+            "scoring_completion_completed_at": (
+                scoring_completion_completed_at
+            ),
+        }
+    )
+
+
+def _issue_ledger_issuance_receipt(
+    *,
+    ledger_instance_digest: str,
+    sequence_number: int,
+    previous_certificate_digest: str,
+    promotion_evidence_digest: str,
+    scoring_replay_bundle_digest: str,
+    scoring_replay_archive_sha256: str,
+    scoring_evaluation_payload_sha256: str,
+    scoring_artifact_digest: str,
+    scoring_completion_receipt_digest: str,
+    scoring_completion_completed_at: str,
+    issued_at: str,
+    signer: DeploymentAuthoritySigner,
+    authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+) -> LedgerIssuanceReceipt:
+    canonical_issued_at = _canonical_time(issued_at)
+    canonical_completed_at = _canonical_time(scoring_completion_completed_at)
+    if (
+        datetime.fromisoformat(canonical_completed_at.replace("Z", "+00:00"))
+        > datetime.fromisoformat(canonical_issued_at.replace("Z", "+00:00"))
+        or datetime.fromisoformat(canonical_issued_at.replace("Z", "+00:00"))
+        > datetime.now(timezone.utc)
+    ):
+        raise ValueError("ledger issuance receipt chronology is invalid")
+    _validate_signer(
+        signer,
+        trust_store=authority_trust_store,
+        role="ledger_issuance",
+        issued_at=canonical_issued_at,
+    )
+    if ledger_instance_digest not in authority_trust_store.ledger_instance_digests.get(
+        signer.authority_id, frozenset()
+    ):
+        raise ValueError("ledger instance is not root-approved for its signer")
+    checkpoint = _ledger_checkpoint_digest(
+        ledger_instance_digest=ledger_instance_digest,
+        sequence_number=sequence_number,
+        previous_certificate_digest=previous_certificate_digest,
+        promotion_evidence_digest=promotion_evidence_digest,
+        scoring_replay_bundle_digest=scoring_replay_bundle_digest,
+        scoring_replay_archive_sha256=scoring_replay_archive_sha256,
+        scoring_evaluation_payload_sha256=scoring_evaluation_payload_sha256,
+        scoring_artifact_digest=scoring_artifact_digest,
+        scoring_completion_receipt_digest=scoring_completion_receipt_digest,
+        scoring_completion_completed_at=canonical_completed_at,
+    )
+    values: dict[str, object] = {
+        "ledger_instance_digest": ledger_instance_digest,
+        "sequence_number": sequence_number,
+        "previous_certificate_digest": previous_certificate_digest,
+        "promotion_evidence_digest": promotion_evidence_digest,
+        "scoring_replay_bundle_digest": scoring_replay_bundle_digest,
+        "scoring_replay_archive_sha256": scoring_replay_archive_sha256,
+        "scoring_evaluation_payload_sha256": scoring_evaluation_payload_sha256,
+        "scoring_artifact_digest": scoring_artifact_digest,
+        "scoring_completion_receipt_digest": scoring_completion_receipt_digest,
+        "scoring_completion_completed_at": canonical_completed_at,
+        "checkpoint_digest": checkpoint,
+        "issued_at": canonical_issued_at,
+        "signer_id": signer.authority_id,
+        "signer_public_key_hex": signer.public_key_hex,
+        "signer_trust_store_digest": authority_trust_store.content_digest,
+        "contract": "ledger-issuance-receipt-v1",
+    }
+    signature = signer.sign(
+        json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
+    ).hex()
+    result = object.__new__(LedgerIssuanceReceipt)
+    for name, value in values.items():
+        object.__setattr__(result, name, value)
+    object.__setattr__(result, "signer_signature_hex", signature)
+    object.__setattr__(result, "receipt_digest", json_digest(result.payload))
+    _validate_ledger_issuance_receipt(
+        result,
+        authority_trust_store=authority_trust_store,
+    )
+    return result
+
+
+def _ledger_issuance_receipt_from_payload(
+    payload: dict[str, object],
+) -> LedgerIssuanceReceipt:
+    expected = {
+        item.name
+        for item in LedgerIssuanceReceipt.__dataclass_fields__.values()
+        if item.name != "receipt_digest"
+    }
+    if set(payload) != expected:
+        raise ValueError("ledger issuance receipt payload is incomplete")
+    result = object.__new__(LedgerIssuanceReceipt)
+    for name, value in payload.items():
+        object.__setattr__(result, name, value)
+    object.__setattr__(result, "receipt_digest", json_digest(result.payload))
+    return result
+
+
+def _validate_ledger_issuance_receipt(
+    receipt: LedgerIssuanceReceipt,
+    *,
+    authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+) -> None:
+    for name in (
+        "ledger_instance_digest",
+        "previous_certificate_digest",
+        "promotion_evidence_digest",
+        "scoring_replay_bundle_digest",
+        "scoring_replay_archive_sha256",
+        "scoring_evaluation_payload_sha256",
+        "scoring_artifact_digest",
+        "scoring_completion_receipt_digest",
+        "checkpoint_digest",
+        "signer_trust_store_digest",
+    ):
+        _require_digest(name, getattr(receipt, name))
+    if (
+        type(receipt) is not LedgerIssuanceReceipt
+        or receipt.contract != "ledger-issuance-receipt-v1"
+        or receipt.receipt_digest != json_digest(receipt.payload)
+        or type(receipt.sequence_number) is not int
+        or receipt.sequence_number <= 0
+        or receipt.issued_at != _canonical_time(receipt.issued_at)
+        or receipt.scoring_completion_completed_at
+        != _canonical_time(receipt.scoring_completion_completed_at)
+        or datetime.fromisoformat(
+            receipt.scoring_completion_completed_at.replace("Z", "+00:00")
+        )
+        > datetime.fromisoformat(receipt.issued_at.replace("Z", "+00:00"))
+        or datetime.fromisoformat(receipt.issued_at.replace("Z", "+00:00"))
+        > datetime.now(timezone.utc)
+        or (
+            receipt.sequence_number == 1
+            and receipt.previous_certificate_digest
+            != PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST
+        )
+        or receipt.checkpoint_digest
+        != _ledger_checkpoint_digest(
+            ledger_instance_digest=receipt.ledger_instance_digest,
+            sequence_number=receipt.sequence_number,
+            previous_certificate_digest=receipt.previous_certificate_digest,
+            promotion_evidence_digest=receipt.promotion_evidence_digest,
+            scoring_replay_bundle_digest=receipt.scoring_replay_bundle_digest,
+            scoring_replay_archive_sha256=receipt.scoring_replay_archive_sha256,
+            scoring_evaluation_payload_sha256=(
+                receipt.scoring_evaluation_payload_sha256
+            ),
+            scoring_artifact_digest=receipt.scoring_artifact_digest,
+            scoring_completion_receipt_digest=(
+                receipt.scoring_completion_receipt_digest
+            ),
+            scoring_completion_completed_at=(
+                receipt.scoring_completion_completed_at
+            ),
+        )
+    ):
+        raise ValueError("ledger issuance receipt integrity is invalid")
+    key = _trusted_authority_key(
+        authority_trust_store,
+        authority_id=receipt.signer_id,
+        public_key_hex=receipt.signer_public_key_hex,
+        role="ledger_issuance",
+        issued_at=receipt.issued_at,
+    )
+    if receipt.ledger_instance_digest not in (
+        authority_trust_store.ledger_instance_digests.get(
+            receipt.signer_id, frozenset()
+        )
+    ):
+        raise ValueError("ledger issuance receipt belongs to an unapproved ledger")
+    try:
+        key.verify(
+            bytes.fromhex(receipt.signer_signature_hex),
+            json.dumps(
+                receipt.unsigned_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode(),
+        )
+    except (InvalidSignature, ValueError) as error:
+        raise ValueError("ledger issuance receipt signature is invalid") from error
 
 
 @dataclass(frozen=True, init=False)
@@ -14572,6 +15301,8 @@ class LedgeredPromotionDeploymentCertificate:
     scoring_completion_receipt_digest: str
     scoring_backend_certification_policy_digest: str | None
     scoring_backend_certification_evidence_digest: str | None
+    ledger_issuance_receipt_payload_json: str
+    ledger_issuance_receipt_digest: str
     ledger_instance_digest: str
     sequence_number: int
     previous_certificate_digest: str
@@ -14581,7 +15312,7 @@ class LedgeredPromotionDeploymentCertificate:
     authority_public_key_hex: str
     authority_trust_store_digest: str
     authority_signature_hex: str
-    contract: str = "ledgered-promotion-deployment-certificate-v2"
+    contract: str = "ledgered-promotion-deployment-certificate-v3"
     certificate_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -14621,7 +15352,7 @@ def _decode_current_neural_prior_promotion_evidence(
     if (
         not isinstance(raw, dict)
         or set(raw) != expected
-        or raw.get("contract") != "neural-prior-promotion-evidence-v24"
+        or raw.get("contract") != "neural-prior-promotion-evidence-v25"
         or json.dumps(raw, sort_keys=True, separators=(",", ":"))
         != payload_json
     ):
@@ -14692,36 +15423,52 @@ def _issue_ledgered_promotion_deployment_certificate(
     evidence: NeuralPriorPromotionEvidence,
     *,
     issued_at: str,
-    authority_id: str,
-    authority_private_key: Ed25519PrivateKey,
+    ledger_issuance_receipt: LedgerIssuanceReceipt,
+    signer: DeploymentAuthoritySigner,
     authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
-    ledger_instance_digest: str,
-    sequence_number: int,
-    previous_certificate_digest: str,
 ) -> LedgeredPromotionDeploymentCertificate:
     """Private constructor used only after EpisodeLedger row verification."""
 
     if type(evidence) is not NeuralPriorPromotionEvidence:
         raise TypeError("current promotion evidence is required")
-    public_key = authority_private_key.public_key()
-    approved_key = authority_trust_store.keys.get(authority_id)
-    public_hex = public_key.public_bytes(
-        serialization.Encoding.Raw,
-        serialization.PublicFormat.Raw,
-    ).hex()
+    canonical_issued_at = _canonical_time(issued_at)
+    _validate_ledger_issuance_receipt(
+        ledger_issuance_receipt,
+        authority_trust_store=authority_trust_store,
+    )
+    _validate_signer(
+        signer,
+        trust_store=authority_trust_store,
+        role="promotion_certificate",
+        issued_at=canonical_issued_at,
+    )
     if (
-        approved_key is None
-        or approved_key.public_bytes(
-            serialization.Encoding.Raw,
-            serialization.PublicFormat.Raw,
-        ).hex()
-        != public_hex
+        signer.authority_id == ledger_issuance_receipt.signer_id
+        or signer.public_key_hex == ledger_issuance_receipt.signer_public_key_hex
     ):
-        raise ValueError("deployment certificate authority is not root-approved")
-    _require_digest("deployment ledger instance", ledger_instance_digest)
-    _require_digest("previous deployment certificate", previous_certificate_digest)
-    if type(sequence_number) is not int or sequence_number <= 0:
-        raise ValueError("deployment certificate sequence is invalid")
+        raise ValueError(
+            "ledger issuance and promotion certification require separate authorities"
+        )
+    if (
+        datetime.fromisoformat(canonical_issued_at.replace("Z", "+00:00"))
+        < datetime.fromisoformat(
+            ledger_issuance_receipt.issued_at.replace("Z", "+00:00")
+        )
+        or datetime.fromisoformat(canonical_issued_at.replace("Z", "+00:00"))
+        > datetime.now(timezone.utc)
+    ):
+        raise ValueError("deployment certificate chronology is invalid")
+    if (
+        ledger_issuance_receipt.promotion_evidence_digest
+        != evidence.promotion_evidence_digest
+        or ledger_issuance_receipt.scoring_replay_bundle_digest
+        != evidence.scoring_replay_bundle_digest
+        or ledger_issuance_receipt.scoring_artifact_digest
+        != evidence.scoring_artifact_digest
+        or ledger_issuance_receipt.scoring_completion_receipt_digest
+        != evidence.scoring_completion_receipt_digest
+    ):
+        raise ValueError("ledger receipt disagrees with promotion evidence")
     evidence_payload_json = json.dumps(
         evidence._payload(),
         sort_keys=True,
@@ -14741,27 +15488,37 @@ def _issue_ledgered_promotion_deployment_certificate(
         "scoring_backend_certification_evidence_digest": (
             evidence.scoring_backend_certification_evidence_digest
         ),
-        "ledger_instance_digest": ledger_instance_digest,
-        "sequence_number": sequence_number,
-        "previous_certificate_digest": previous_certificate_digest,
+        "ledger_issuance_receipt_payload_json": json.dumps(
+            ledger_issuance_receipt.payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ),
+        "ledger_issuance_receipt_digest": ledger_issuance_receipt.receipt_digest,
+        "ledger_instance_digest": ledger_issuance_receipt.ledger_instance_digest,
+        "sequence_number": ledger_issuance_receipt.sequence_number,
+        "previous_certificate_digest": (
+            ledger_issuance_receipt.previous_certificate_digest
+        ),
         "ledger_chain_head_digest": _deployment_certificate_chain_head(
-            ledger_instance_digest=ledger_instance_digest,
-            sequence_number=sequence_number,
+            ledger_instance_digest=ledger_issuance_receipt.ledger_instance_digest,
+            sequence_number=ledger_issuance_receipt.sequence_number,
             promotion_evidence_digest=evidence.promotion_evidence_digest,
             scoring_replay_bundle_digest=evidence.scoring_replay_bundle_digest,
             scoring_artifact_digest=evidence.scoring_artifact_digest,
             scoring_completion_receipt_digest=(
                 evidence.scoring_completion_receipt_digest
             ),
-            previous_certificate_digest=previous_certificate_digest,
+            previous_certificate_digest=(
+                ledger_issuance_receipt.previous_certificate_digest
+            ),
         ),
-        "issued_at": _canonical_time(issued_at),
-        "authority_id": authority_id,
-        "authority_public_key_hex": public_hex,
+        "issued_at": canonical_issued_at,
+        "authority_id": signer.authority_id,
+        "authority_public_key_hex": signer.public_key_hex,
         "authority_trust_store_digest": authority_trust_store.content_digest,
-        "contract": "ledgered-promotion-deployment-certificate-v2",
+        "contract": "ledgered-promotion-deployment-certificate-v3",
     }
-    signature = authority_private_key.sign(
+    signature = signer.sign(
         json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
     ).hex()
     result = object.__new__(LedgeredPromotionDeploymentCertificate)
@@ -14803,11 +15560,9 @@ def _validate_ledgered_promotion_deployment_certificate(
     if (
         type(certificate) is not LedgeredPromotionDeploymentCertificate
         or certificate.contract
-        != "ledgered-promotion-deployment-certificate-v2"
+        != "ledgered-promotion-deployment-certificate-v3"
         or certificate.certificate_digest != json_digest(certificate.payload)
         or certificate.issued_at != _canonical_time(certificate.issued_at)
-        or certificate.authority_trust_store_digest
-        != authority_trust_store.content_digest
     ):
         raise ValueError("deployment certificate integrity is invalid")
     for name in (
@@ -14817,6 +15572,7 @@ def _validate_ledgered_promotion_deployment_certificate(
         "scoring_completion_receipt_digest",
         "ledger_chain_head_digest",
         "ledger_instance_digest",
+        "ledger_issuance_receipt_digest",
         "authority_trust_store_digest",
     ):
         _require_digest(name, getattr(certificate, name))
@@ -14846,6 +15602,40 @@ def _validate_ledgered_promotion_deployment_certificate(
         previous_certificate_digest=certificate.previous_certificate_digest,
     ):
         raise ValueError("deployment certificate ledger chain is invalid")
+    try:
+        receipt_payload = json.loads(certificate.ledger_issuance_receipt_payload_json)
+    except json.JSONDecodeError as error:
+        raise ValueError("deployment certificate ledger receipt is invalid") from error
+    if not isinstance(receipt_payload, dict):
+        raise ValueError("deployment certificate ledger receipt is invalid")
+    receipt = _ledger_issuance_receipt_from_payload(receipt_payload)
+    _validate_ledger_issuance_receipt(
+        receipt,
+        authority_trust_store=authority_trust_store,
+    )
+    if (
+        certificate.ledger_issuance_receipt_payload_json
+        != json.dumps(receipt.payload, sort_keys=True, separators=(",", ":"))
+        or certificate.ledger_issuance_receipt_digest != receipt.receipt_digest
+        or certificate.ledger_instance_digest != receipt.ledger_instance_digest
+        or certificate.sequence_number != receipt.sequence_number
+        or certificate.previous_certificate_digest
+        != receipt.previous_certificate_digest
+        or certificate.promotion_evidence_digest
+        != receipt.promotion_evidence_digest
+        or certificate.scoring_replay_bundle_digest
+        != receipt.scoring_replay_bundle_digest
+        or certificate.scoring_artifact_digest != receipt.scoring_artifact_digest
+        or certificate.scoring_completion_receipt_digest
+        != receipt.scoring_completion_receipt_digest
+        or certificate.authority_id == receipt.signer_id
+        or certificate.authority_public_key_hex == receipt.signer_public_key_hex
+        or datetime.fromisoformat(certificate.issued_at.replace("Z", "+00:00"))
+        < datetime.fromisoformat(receipt.issued_at.replace("Z", "+00:00"))
+        or datetime.fromisoformat(certificate.issued_at.replace("Z", "+00:00"))
+        > datetime.now(timezone.utc)
+    ):
+        raise ValueError("deployment certificate ledger receipt disagrees")
     decoded_evidence = _decode_current_neural_prior_promotion_evidence(
         certificate.promotion_evidence_payload_json
     )
@@ -14881,12 +15671,13 @@ def _validate_ledgered_promotion_deployment_certificate(
         != promotion_evidence.scoring_completion_receipt_digest
     ):
         raise ValueError("deployment certificate disagrees with promotion evidence")
-    key = authority_trust_store.keys.get(certificate.authority_id)
-    if key is None or key.public_bytes(
-        serialization.Encoding.Raw,
-        serialization.PublicFormat.Raw,
-    ).hex() != certificate.authority_public_key_hex:
-        raise ValueError("deployment certificate authority is not trusted")
+    key = _trusted_authority_key(
+        authority_trust_store,
+        authority_id=certificate.authority_id,
+        public_key_hex=certificate.authority_public_key_hex,
+        role="promotion_certificate",
+        issued_at=certificate.issued_at,
+    )
     try:
         key.verify(
             bytes.fromhex(certificate.authority_signature_hex),
@@ -14920,7 +15711,7 @@ class DeployedNeuralPriorPolicy:
     minimum_regime_confidence: float = 0.8
     minimum_weather_top1_top2_gap: float = 0.05
     minimum_deployment_confidence_margin: float = 0.05
-    contract: str = "deployed-neural-prior-policy-v10"
+    contract: str = "deployed-neural-prior-policy-v11"
     policy_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -14937,7 +15728,7 @@ class DeployedNeuralPriorPolicy:
         ):
             _require_digest(name, getattr(self, name))
         if (
-            self.contract != "deployed-neural-prior-policy-v10"
+            self.contract != "deployed-neural-prior-policy-v11"
             or self.candidate_prior_digest == self.parent_prior_digest
             or self.semantic_replay_generation_digest
             != SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
@@ -14952,22 +15743,11 @@ class DeployedNeuralPriorPolicy:
             )
         ):
             raise ValueError("deployed neural-prior policy is invalid")
-        if self.mps_backend_certification_digest is not None:
-            _require_digest(
-                "MPS backend certification",
-                self.mps_backend_certification_digest,
-            )
-        if self.mps_backend_certification_policy_digest is not None:
-            _require_digest(
-                "MPS backend certification policy",
-                self.mps_backend_certification_policy_digest,
-            )
-        if (self.mps_backend_certification_digest is None) != (
-            self.mps_backend_certification_policy_digest is None
+        if (
+            self.mps_backend_certification_digest is not None
+            or self.mps_backend_certification_policy_digest is not None
         ):
-            raise ValueError(
-                "MPS certification evidence and policy must be approved together"
-            )
+            raise ValueError("current deployed neural-prior policy is CPU-only")
         object.__setattr__(
             self,
             "policy_digest",
@@ -14997,6 +15777,12 @@ class OperationalDeploymentDecisionCertificate:
     deployment_policy_digest: str
     deployment_policy_trust_store_digest: str
     full_analysis_input_digest: str
+    input_plan_digest: str
+    observation_valid_time: str
+    input_available_time: str
+    decision_deadline: str
+    publication_time: str
+    operational_cycle_id: str
     selected_prior_digest: str
     selected_role: Literal["candidate", "parent"]
     fallback_reason: str
@@ -15005,7 +15791,7 @@ class OperationalDeploymentDecisionCertificate:
     authority_public_key_hex: str
     authority_trust_store_digest: str
     authority_signature_hex: str
-    contract: str = "operational-deployment-decision-certificate-v1"
+    contract: str = "operational-deployment-decision-certificate-v2"
     certificate_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -15035,25 +15821,43 @@ def _issue_operational_deployment_decision_certificate(
     promotion_evidence: NeuralPriorPromotionEvidence,
     policy: DeployedNeuralPriorPolicy,
     policy_trust_store_digest: str,
-    issued_at: str,
-    authority_id: str,
-    authority_private_key: Ed25519PrivateKey,
+    signer: DeploymentAuthoritySigner,
     authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
 ) -> OperationalDeploymentDecisionCertificate:
     selection = decision_payload.get("selection")
     if not isinstance(selection, dict):
         raise ValueError("operational deployment selection is incomplete")
-    public_key = authority_private_key.public_key()
-    approved_key = authority_trust_store.keys.get(authority_id)
-    public_hex = public_key.public_bytes(
-        serialization.Encoding.Raw,
-        serialization.PublicFormat.Raw,
-    ).hex()
-    if approved_key is None or approved_key.public_bytes(
-        serialization.Encoding.Raw,
-        serialization.PublicFormat.Raw,
-    ).hex() != public_hex:
-        raise ValueError("operational decision authority is not root-approved")
+    issued_at = _canonical_time(signer.signing_time())
+    _validate_signer(
+        signer,
+        trust_store=authority_trust_store,
+        role="operational_decision",
+        issued_at=issued_at,
+    )
+    if (
+        signer.authority_id == promotion_deployment_certificate.authority_id
+        or signer.public_key_hex
+        == promotion_deployment_certificate.authority_public_key_hex
+    ):
+        raise ValueError(
+            "promotion certification and operational signing require separate authorities"
+        )
+    observation = _canonical_time(
+        cast(str, decision_payload.get("observation_valid_time"))
+    )
+    available = _canonical_time(cast(str, decision_payload.get("input_available_time")))
+    deadline = _canonical_time(cast(str, decision_payload.get("decision_deadline")))
+    publication = _canonical_time(cast(str, decision_payload.get("publication_time")))
+    if (
+        not observation <= available <= issued_at <= deadline < publication
+        or datetime.fromisoformat(issued_at.replace("Z", "+00:00"))
+        < datetime.fromisoformat(
+            promotion_deployment_certificate.issued_at.replace("Z", "+00:00")
+        )
+        or datetime.fromisoformat(issued_at.replace("Z", "+00:00"))
+        > datetime.now(timezone.utc)
+    ):
+        raise ValueError("operational decision is outside its prepublication window")
     values: dict[str, object] = {
         "decision_payload_digest": json_digest(decision_payload),
         "promotion_deployment_certificate_digest": (
@@ -15065,16 +15869,24 @@ def _issue_operational_deployment_decision_certificate(
         "full_analysis_input_digest": decision_payload.get(
             "full_analysis_input_digest"
         ),
+        "input_plan_digest": decision_payload.get("input_plan_digest"),
+        "observation_valid_time": decision_payload.get(
+            "observation_valid_time"
+        ),
+        "input_available_time": decision_payload.get("input_available_time"),
+        "decision_deadline": decision_payload.get("decision_deadline"),
+        "publication_time": decision_payload.get("publication_time"),
+        "operational_cycle_id": decision_payload.get("operational_cycle_id"),
         "selected_prior_digest": selection.get("selected_prior_digest"),
         "selected_role": selection.get("selected_role"),
         "fallback_reason": selection.get("fallback_reason"),
-        "issued_at": _canonical_time(issued_at),
-        "authority_id": authority_id,
-        "authority_public_key_hex": public_hex,
+        "issued_at": issued_at,
+        "authority_id": signer.authority_id,
+        "authority_public_key_hex": signer.public_key_hex,
         "authority_trust_store_digest": authority_trust_store.content_digest,
-        "contract": "operational-deployment-decision-certificate-v1",
+        "contract": "operational-deployment-decision-certificate-v2",
     }
-    signature = authority_private_key.sign(
+    signature = signer.sign(
         json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
     ).hex()
     result = object.__new__(OperationalDeploymentDecisionCertificate)
@@ -15118,6 +15930,8 @@ def _validate_operational_deployment_decision_certificate(
         "deployment_policy_digest",
         "deployment_policy_trust_store_digest",
         "full_analysis_input_digest",
+        "input_plan_digest",
+        "operational_cycle_id",
         "selected_prior_digest",
         "authority_trust_store_digest",
     ):
@@ -15125,7 +15939,7 @@ def _validate_operational_deployment_decision_certificate(
     if (
         type(certificate) is not OperationalDeploymentDecisionCertificate
         or certificate.contract
-        != "operational-deployment-decision-certificate-v1"
+        != "operational-deployment-decision-certificate-v2"
         or certificate.certificate_digest != json_digest(certificate.payload)
         or certificate.decision_payload_digest != json_digest(decision_payload)
         or certificate.promotion_deployment_certificate_digest
@@ -15146,21 +15960,60 @@ def _validate_operational_deployment_decision_certificate(
         )
         or certificate.full_analysis_input_digest
         != decision_payload.get("full_analysis_input_digest")
+        or certificate.input_plan_digest != decision_payload.get("input_plan_digest")
+        or certificate.observation_valid_time
+        != decision_payload.get("observation_valid_time")
+        or certificate.input_available_time
+        != decision_payload.get("input_available_time")
+        or certificate.decision_deadline
+        != decision_payload.get("decision_deadline")
+        or certificate.publication_time != decision_payload.get("publication_time")
+        or certificate.operational_cycle_id
+        != decision_payload.get("operational_cycle_id")
         or certificate.selected_prior_digest
         != selection.get("selected_prior_digest")
         or certificate.selected_role != selection.get("selected_role")
         or certificate.fallback_reason != selection.get("fallback_reason")
         or certificate.issued_at != _canonical_time(certificate.issued_at)
-        or certificate.authority_trust_store_digest
-        != authority_trust_store.content_digest
     ):
         raise ValueError("operational decision certificate integrity is invalid")
-    key = authority_trust_store.keys.get(certificate.authority_id)
-    if key is None or key.public_bytes(
-        serialization.Encoding.Raw,
-        serialization.PublicFormat.Raw,
-    ).hex() != certificate.authority_public_key_hex:
-        raise ValueError("operational decision certificate authority is not trusted")
+    observation = _canonical_time(certificate.observation_valid_time)
+    available = _canonical_time(certificate.input_available_time)
+    decision = _canonical_time(certificate.issued_at)
+    deadline = _canonical_time(certificate.decision_deadline)
+    publication = _canonical_time(certificate.publication_time)
+    if (
+        not observation <= available <= decision <= deadline < publication
+        or datetime.fromisoformat(decision.replace("Z", "+00:00"))
+        < datetime.fromisoformat(
+            cast(
+                str,
+                cast(
+                    dict[str, object],
+                    decision_payload["promotion_deployment_certificate"],
+                )["issued_at"],
+            ).replace("Z", "+00:00")
+        )
+        or datetime.fromisoformat(decision.replace("Z", "+00:00"))
+        > datetime.now(timezone.utc)
+    ):
+        raise ValueError("operational decision chronology is invalid")
+    promotion_payload = cast(
+        dict[str, object], decision_payload["promotion_deployment_certificate"]
+    )
+    if (
+        certificate.authority_id == promotion_payload.get("authority_id")
+        or certificate.authority_public_key_hex
+        == promotion_payload.get("authority_public_key_hex")
+    ):
+        raise ValueError("operational decision authority is not role-separated")
+    key = _trusted_authority_key(
+        authority_trust_store,
+        authority_id=certificate.authority_id,
+        public_key_hex=certificate.authority_public_key_hex,
+        role="operational_decision",
+        issued_at=certificate.issued_at,
+    )
     try:
         key.verify(
             bytes.fromhex(certificate.authority_signature_hex),
@@ -15185,16 +16038,16 @@ def _select_deployed_prior(
     range_partition_evidence: RangePartitionEvidence,
     policy: DeployedNeuralPriorPolicy,
     *,
-    range_geometry_contract: RangeGeometryContract,
+    range_geometry_contract: RangeGeometryContract | MosaicRangeGeometryContract,
     operational_grid_contract_digest: str,
     operational_frame_shape: tuple[int, int],
     operational_radar_source_kind: str | None = None,
     operational_radar_site_digest: str | None = None,
     operational_radar_site_location_digest: str | None = None,
+    operational_input_plan: NeuralPriorInputPlan,
     policy_trust_store_path: str | Path,
     deployment_certificate_trust_store_path: str | Path,
-    operational_decision_authority_id: str | None = None,
-    operational_decision_authority_private_key: Ed25519PrivateKey | None = None,
+    operational_decision_signer: DeploymentAuthoritySigner,
 ) -> tuple[NeuralPriorInferenceRunner, NeuralPriorDeploymentSelection]:
     """Select the candidate only for classifier-attested certified regimes."""
 
@@ -15218,9 +16071,9 @@ def _select_deployed_prior(
     if (
         type(promotion_evidence) is not NeuralPriorPromotionEvidence
         or promotion_evidence.contract
-        != "neural-prior-promotion-evidence-v24"
+        != "neural-prior-promotion-evidence-v25"
         or type(policy) is not DeployedNeuralPriorPolicy
-        or policy.contract != "deployed-neural-prior-policy-v10"
+        or policy.contract != "deployed-neural-prior-policy-v11"
     ):
         raise TypeError("current replay-generation deployment evidence is required")
     policy.validate_integrity()
@@ -15249,7 +16102,7 @@ def _select_deployed_prior(
         or policy.promotion_deployment_certificate_digest
         != promotion_deployment_certificate.certificate_digest
         or policy.promotion_deployment_authority_trust_store_digest
-        != deployment_authority_trust.content_digest
+        != promotion_deployment_certificate.authority_trust_store_digest
         or policy.regime_classifier_digest != regime_evidence.classifier_digest
         or policy.regime_classifier_digest
         != promotion_evidence.deployment_regime_classifier_digest
@@ -15321,8 +16174,22 @@ def _select_deployed_prior(
         role = "candidate"
         reason = "certified_candidate"
     deployment_decision_core: dict[str, object] = {
-        "contract": "neural-prior-deployment-decision-artifact-v8",
+        "contract": "neural-prior-deployment-decision-artifact-v9",
         "full_analysis_input_digest": regime_evidence.full_analysis_input_digest,
+        "input_plan_digest": operational_input_plan.plan_digest,
+        "observation_valid_time": operational_input_plan.observation_valid_time,
+        "input_available_time": operational_input_plan.input_available_time,
+        "decision_deadline": operational_input_plan.decision_deadline,
+        "publication_time": operational_input_plan.publication_time,
+        "operational_cycle_id": json_digest(
+            {
+                "contract": "advar-operational-cycle-v1",
+                "input_plan_digest": operational_input_plan.plan_digest,
+                "full_analysis_input_digest": (
+                    regime_evidence.full_analysis_input_digest
+                ),
+            }
+        ),
         "operational_grid_contract_digest": operational_grid_contract_digest,
         "operational_frame_shape": list(operational_frame_shape),
         "operational_radar_source_kind": operational_radar_source_kind,
@@ -15363,13 +16230,6 @@ def _select_deployed_prior(
             "deployment_confidence_margin": deployment_confidence_margin,
         },
     }
-    if (
-        operational_decision_authority_id is None
-        or operational_decision_authority_private_key is None
-    ):
-        raise ValueError(
-            "operational deployment requires an authority-signed decision"
-        )
     operational_decision_certificate = (
         _issue_operational_deployment_decision_certificate(
             deployment_decision_core,
@@ -15377,9 +16237,7 @@ def _select_deployed_prior(
             promotion_evidence=promotion_evidence,
             policy=policy,
             policy_trust_store_digest=trust.content_digest,
-            issued_at=datetime.now(timezone.utc).isoformat(),
-            authority_id=operational_decision_authority_id,
-            authority_private_key=operational_decision_authority_private_key,
+            signer=operational_decision_signer,
             authority_trust_store=deployment_authority_trust,
         )
     )
@@ -15449,6 +16307,7 @@ def validate_neural_prior_deployment_decision_artifact(
     expected_operational_radar_source_kind: str | None = None,
     expected_operational_radar_site_digest: str | None = None,
     expected_operational_radar_site_location_digest: str | None = None,
+    expected_input_plan_digest: str | None = None,
     deployment_certificate_trust_store_path: str | Path,
     deployment_policy_trust_store_path: str | Path,
 ) -> str:
@@ -15461,7 +16320,7 @@ def validate_neural_prior_deployment_decision_artifact(
     if (
         not isinstance(payload, dict)
         or payload.get("contract")
-        != "neural-prior-deployment-decision-artifact-v8"
+        != "neural-prior-deployment-decision-artifact-v9"
         or json.dumps(payload, sort_keys=True, separators=(",", ":"))
         != artifact_json
     ):
@@ -15581,9 +16440,22 @@ def validate_neural_prior_deployment_decision_artifact(
         if not isinstance(value, list):
             raise ValueError("neural-prior deployment artifact is incomplete")
         geometry_values[name] = tuple(value)
+    for name in ("radar_site_digests", "radar_site_location_digests"):
+        value = geometry_values.get(name)
+        if value is not None:
+            if not isinstance(value, list):
+                raise ValueError("neural-prior deployment artifact is incomplete")
+            geometry_values[name] = tuple(value)
+    if "radar_projected_xy_m" in geometry_values:
+        geometry_values["radar_projected_xy_m"] = tuple(
+            tuple(point) for point in geometry_values["radar_projected_xy_m"]
+        )
     try:
-        reconstructed_geometry = RangeGeometryContract(
-            **cast(Any, geometry_values)
+        reconstructed_geometry = (
+            MosaicRangeGeometryContract(**cast(Any, geometry_values))
+            if geometry_values.get("contract")
+            == "mosaic-horizontal-range-geometry-contract-v1"
+            else RangeGeometryContract(**cast(Any, geometry_values))
         )
     except (TypeError, ValueError) as error:
         raise ValueError(
@@ -15595,9 +16467,7 @@ def validate_neural_prior_deployment_decision_artifact(
         or not isinstance(policy_digest, str)
         or reconstructed_policy.policy_digest != policy_digest
         or not isinstance(approved, list)
-        or sorted(approved) != sorted(external_policy_trust.approved_policy_digests)
         or policy_digest not in external_policy_trust.approved_policy_digests
-        or trust.get("content_digest") != external_policy_trust.content_digest
         or json_digest(
             {
                 "contract": trust.get("contract"),
@@ -15615,7 +16485,7 @@ def validate_neural_prior_deployment_decision_artifact(
         != promotion_evidence.candidate_prior_digest
         or policy.get("parent_prior_digest")
         != promotion_evidence.parent_prior_digest
-        or policy.get("contract") != "deployed-neural-prior-policy-v10"
+        or policy.get("contract") != "deployed-neural-prior-policy-v11"
         or policy.get("semantic_replay_generation_digest")
         != promotion_evidence.semantic_replay_generation_digest
         or promotion_evidence.scoring_replay_contract
@@ -15645,6 +16515,16 @@ def validate_neural_prior_deployment_decision_artifact(
         != range_partition.get("range_regime_labels")
         or payload.get("full_analysis_input_digest")
         != regime.get("full_analysis_input_digest")
+        or payload.get("operational_cycle_id")
+        != json_digest(
+            {
+                "contract": "advar-operational-cycle-v1",
+                "input_plan_digest": payload.get("input_plan_digest"),
+                "full_analysis_input_digest": payload.get(
+                    "full_analysis_input_digest"
+                ),
+            }
+        )
     ):
         raise ValueError("neural-prior deployment artifact lineage disagrees")
     if (
@@ -15676,6 +16556,9 @@ def validate_neural_prior_deployment_decision_artifact(
         expected_operational_radar_site_digest is not None
         and payload.get("operational_radar_site_digest")
         != expected_operational_radar_site_digest
+    ) or (
+        expected_input_plan_digest is not None
+        and payload.get("input_plan_digest") != expected_input_plan_digest
     ) or (
         expected_operational_radar_site_location_digest is not None
         and payload.get("operational_radar_site_location_digest")
@@ -15751,14 +16634,14 @@ def infer_deployed_neural_prior(
     promotion_evidence: NeuralPriorPromotionEvidence,
     promotion_deployment_certificate: LedgeredPromotionDeploymentCertificate,
     regime_classifier: NeuralPriorRegimeClassifier,
-    range_geometry_contract: RangeGeometryContract,
+    range_geometry_contract: RangeGeometryContract | MosaicRangeGeometryContract,
     grid_x_m: Tensor,
     grid_y_m: Tensor,
+    source_radar_index_map: Tensor | None = None,
     policy: DeployedNeuralPriorPolicy,
     policy_trust_store_path: str | Path,
     deployment_certificate_trust_store_path: str | Path,
-    operational_decision_authority_id: str | None = None,
-    operational_decision_authority_private_key: Ed25519PrivateKey | None = None,
+    operational_decision_signer: DeploymentAuthoritySigner,
     mps_backend_certification: MPSBackendCertificationEvidence | None = None,
     mps_backend_certification_policy: (
         MPSBackendCertificationPolicy | None
@@ -15786,22 +16669,62 @@ def infer_deployed_neural_prior(
     source_identity = OperationalDataIdentity.from_json(
         input_run.operational_data_identity_json
     )
-    if source_identity.radar_source_kind != "single_site":
-        raise ValueError(
-            "single-radar range geometry cannot be used with a mosaic source"
-        )
-    if (
-        source_identity.radar_site_digest != range_geometry_contract.radar_site_digest
-        or source_identity.radar_site_location_digest
-        != range_geometry_contract.radar_site_location_digest
-    ):
-        raise ValueError("range geometry disagrees with operational radar site")
+    if input_run.input_plan_json is None or input_run.input_plan_digest is None:
+        raise ValueError("operational neural prior requires a bound input plan")
+    try:
+        input_plan_values = json.loads(input_run.input_plan_json)
+        if not isinstance(input_plan_values, dict):
+            raise TypeError
+        input_plan_values = dict(input_plan_values)
+        valid_times = input_plan_values.get("valid_times")
+        if not isinstance(valid_times, list):
+            raise TypeError
+        input_plan_values["valid_times"] = tuple(valid_times)
+        operational_input_plan = NeuralPriorInputPlan(**cast(Any, input_plan_values))
+    except (TypeError, ValueError, json.JSONDecodeError) as error:
+        raise ValueError("operational input plan cannot be reconstructed") from error
+    if operational_input_plan.plan_digest != input_run.input_plan_digest:
+        raise ValueError("operational input-plan digest disagrees")
     regime_evidence = regime_classifier.classify(frames_dbz, input_run=input_run)
-    range_partition_evidence = resolve_range_geometry(
-        range_geometry_contract,
-        grid_x_m=grid_x_m,
-        grid_y_m=grid_y_m,
-    )
+    if type(range_geometry_contract) is RangeGeometryContract:
+        if source_identity.radar_source_kind != "single_site":
+            raise ValueError(
+                "single-radar range geometry cannot be used with a mosaic source"
+            )
+        if (
+            source_identity.radar_site_digest
+            != range_geometry_contract.radar_site_digest
+            or source_identity.radar_site_location_digest
+            != range_geometry_contract.radar_site_location_digest
+        ):
+            raise ValueError("range geometry disagrees with operational radar site")
+        range_partition_evidence = resolve_range_geometry(
+            range_geometry_contract,
+            grid_x_m=grid_x_m,
+            grid_y_m=grid_y_m,
+        )
+    elif type(range_geometry_contract) is MosaicRangeGeometryContract:
+        if (
+            source_identity.radar_source_kind != "mosaic"
+            or source_radar_index_map is None
+            or source_identity.radar_source_contract_digest
+            != range_geometry_contract.source_radar_registry_digest
+            or source_identity.source_selection_policy_digest
+            != range_geometry_contract.source_selection_policy_digest
+            or source_identity.source_radar_index_map_digest
+            != range_geometry_contract.source_radar_index_map_digest
+            or source_identity.effective_horizontal_range_map_digest
+            != range_geometry_contract.effective_horizontal_range_m_digest
+        ):
+            raise ValueError("mosaic range geometry disagrees with source identity")
+        range_partition_evidence, _ = resolve_mosaic_range_geometry(
+            range_geometry_contract,
+            grid_x_m=grid_x_m,
+            grid_y_m=grid_y_m,
+            source_radar_index_map=source_radar_index_map,
+        )
+    else:
+        raise TypeError("unsupported operational range geometry")
     runner, selection = _select_deployed_prior(
         candidate_runner,
         parent_runner,
@@ -15821,14 +16744,12 @@ def infer_deployed_neural_prior(
         operational_radar_site_location_digest=(
             source_identity.radar_site_location_digest
         ),
+        operational_input_plan=operational_input_plan,
         policy_trust_store_path=policy_trust_store_path,
         deployment_certificate_trust_store_path=(
             deployment_certificate_trust_store_path
         ),
-        operational_decision_authority_id=operational_decision_authority_id,
-        operational_decision_authority_private_key=(
-            operational_decision_authority_private_key
-        ),
+        operational_decision_signer=operational_decision_signer,
     )
     return runner._infer_deployed(
         frames_dbz,

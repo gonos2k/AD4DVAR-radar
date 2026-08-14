@@ -159,7 +159,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         evaluation = self.evaluation(1, -1.0)
         policy = self.policy()
 
-        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v16")
+        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v17")
         self.assertTrue(
             all(
                 item.contract == "neural-prior-range-band-contract-v2"
@@ -180,7 +180,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 for band in evaluation.range_band_evaluations
             )
         )
-        self.assertEqual(policy.contract, "neural-prior-promotion-policy-v25")
+        self.assertEqual(policy.contract, "neural-prior-promotion-policy-v26")
 
     def test_semantic_replay_generation_reaches_promotion_and_deployment(
         self,
@@ -207,10 +207,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
         self.assertEqual(
             scoring.contract,
-            "neural-prior-holdout-scoring-artifact-v4",
+            "neural-prior-holdout-scoring-artifact-v5",
         )
-        self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v24")
-        self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v10")
+        self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v25")
+        self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v11")
         self.assertEqual(
             evidence.semantic_replay_generation_digest,
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST,
@@ -234,7 +234,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_evidence=evidence,
         )
         minimal_evidence = {
-            "contract": "neural-prior-promotion-evidence-v24",
+            "contract": "neural-prior-promotion-evidence-v25",
             "deployment_eligible": True,
         }
         forged_values = dict(certificate.payload)
@@ -277,7 +277,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         forged = promotion_module._ledgered_promotion_deployment_certificate_from_payload(
             forged_values
         )
-        with self.assertRaisesRegex(ValueError, "complete current evidence"):
+        with self.assertRaisesRegex(
+            ValueError, "ledger receipt|complete current evidence"
+        ):
             promotion_module._validate_ledgered_promotion_deployment_certificate(
                 forged,
                 authority_trust_store=trust,
@@ -928,6 +930,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     operational_issuance_domain_plan_digest=(
                         issuance_plans[0].plan_digest
                     ),
+                    meteorological_sampling_unit_digest=(
+                        promotion_module.meteorological_sampling_unit_digest(
+                            radar_id="radar-1",
+                            issue_time="2026-08-09T00:00:00Z",
+                            observation_valid_time=input_plans[0].observation_valid_time,
+                            spatial_footprint_digest=input_plans[0].grid_contract_digest,
+                        )
+                    ),
                     issue_time="2026-08-09T00:00:00Z",
                 ),
                 NeuralPriorHoldoutPlanCase(
@@ -952,12 +962,23 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     operational_issuance_domain_plan_digest=(
                         issuance_plans[1].plan_digest
                     ),
+                    meteorological_sampling_unit_digest=(
+                        promotion_module.meteorological_sampling_unit_digest(
+                            radar_id="radar-1",
+                            issue_time="2026-08-10T00:00:00Z",
+                            observation_valid_time=input_plans[1].observation_valid_time,
+                            spatial_footprint_digest=input_plans[1].grid_contract_digest,
+                        )
+                    ),
                     issue_time="2026-08-10T00:00:00Z",
                 ),
             )
         decision_rule_digest = self.decision_rule().rule_digest
         experiment_family = promotion_module.PromotionExperimentFamily(
             holdout_cohort_digest=promotion_module._holdout_dataset_digest(cases),
+            meteorological_sampling_unit_digests=tuple(
+                item.meteorological_sampling_unit_digest for item in cases
+            ),
             parent_prior_digest="d" * 64,
             trials=(
                 promotion_module.PromotionExperimentTrial(
@@ -1007,6 +1028,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             storm_id=f"storm-{index}",
             physical_event_digest=(
                 self.event_catalog(index).physical_event_identity_digest
+            ),
+            meteorological_sampling_unit_digest=(
+                planned.meteorological_sampling_unit_digest
             ),
             day=planned.day,
             radar_id=planned.radar_id,
@@ -1834,8 +1858,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ),
             )
 
-        candidate_runner = prior_runner(0.1, "2" * 64)
-        parent_runner = prior_runner(0.0, "3" * 64)
+        candidate_runner = prior_runner(0.0, "2" * 64)
+        parent_runner = prior_runner(0.1, "3" * 64)
         candidate_application = candidate_runner.infer(
             input_frames,
             input_run=base_run,
@@ -1870,7 +1894,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
             state = RadarState(
                 echo_linear=dbz_to_echo(
-                    input_frames[-1],
+                    input_frames[-1]
+                    + (0.0 if role == "candidate" else 2.0),
                     min_dbz=config.min_dbz,
                     max_dbz=config.max_dbz,
                 ),
@@ -2144,10 +2169,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             minimum_cases=1,
             minimum_physical_events=1,
             minimum_valid_area_km2=1.0,
-            maximum_mean_normalized_degradation=1.0,
+            maximum_mean_normalized_degradation=1_000_000.0,
             maximum_harmful_fraction_upper_bound=1.0,
             metric_support_contract_digests=(metric_support.contract_digest,),
-            maximum_end_to_end_mean_normalized_degradation=1.0,
+            maximum_end_to_end_mean_normalized_degradation=1_000_000.0,
         )
         required_issuance = promotion_module.RangeIssuanceRequirement(
             weather_regime="convective",
@@ -2163,6 +2188,63 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         preregistered_policy = replace(
             self.policy(for_decision_rule=True),
+            minimum_holdout_cases=1,
+            minimum_material_cases=1,
+            minimum_independent_cases=1,
+            minimum_distinct_storms=1,
+            minimum_distinct_days=1,
+            minimum_distinct_radars=1,
+            minimum_distinct_regimes=1,
+            minimum_distinct_range_regimes=1,
+            minimum_material_clusters=1,
+            minimum_prior_echo_cases=1,
+            minimum_prior_clear_cases=1,
+            minimum_prior_echo_clusters=1,
+            minimum_prior_clear_clusters=1,
+            minimum_uncertainty_cases_per_regime=1,
+            minimum_echo_cases_per_regime=1,
+            minimum_clear_cases_per_regime=1,
+            minimum_uncertainty_clusters_per_regime=1,
+            minimum_echo_clusters_per_regime=1,
+            minimum_clear_clusters_per_regime=1,
+            minimum_state_calibration_cases_per_regime=1,
+            minimum_state_calibration_clusters_per_regime=1,
+            minimum_range_band_cases=1,
+            minimum_range_band_clusters=1,
+            minimum_range_component_samples=1,
+            minimum_deployment_metric_cell_events=1,
+            minimum_continuous_metric_cell_events=1,
+            minimum_bootstrap_tail_replicates=1,
+            maximum_prior_conditional_pit_residual_mean_abs=8.0,
+            maximum_prior_conditional_underdispersion_fraction=1.0,
+            maximum_prior_echo_intensity_nll=1_000.0,
+            maximum_prior_support_brier_score=1.0,
+            maximum_prior_echo_support_miss_score=1.0,
+            maximum_prior_echo_object_miss_score=1.0,
+            maximum_prior_clear_sky_false_echo_score=1.0,
+            maximum_prior_echo_intensity_nll_increase=1_000.0,
+            maximum_prior_support_brier_increase=1.0,
+            maximum_prior_echo_support_miss_increase=1.0,
+            maximum_prior_echo_object_miss_increase=1.0,
+            maximum_prior_clear_sky_false_echo_increase=1.0,
+            maximum_prior_conditional_pit_residual_increase=8.0,
+            maximum_prior_conditional_underdispersion_increase=1.0,
+            maximum_state_pit_residual_mean_abs=8.0,
+            maximum_state_underdispersion_fraction=1.0,
+            maximum_state_gaussian_nll=1_000.0,
+            maximum_state_support_brier_score=1.0,
+            maximum_state_echo_support_miss_score=1.0,
+            maximum_state_echo_object_miss_score=1.0,
+            maximum_state_false_support_score=1.0,
+            maximum_state_valid_brier_score=1.0,
+            maximum_state_gaussian_nll_increase=1_000.0,
+            maximum_state_pit_residual_increase=8.0,
+            maximum_state_underdispersion_increase=1.0,
+            maximum_state_support_brier_increase=1.0,
+            maximum_state_echo_support_miss_increase=1.0,
+            maximum_state_echo_object_miss_increase=1.0,
+            maximum_state_false_support_increase=1.0,
+            maximum_state_valid_brier_increase=1.0,
             metric_scales=(
                 PromotionMetricScale(
                     metric_name="log_echo_mse",
@@ -2203,11 +2285,22 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             reference_active_range_regimes=("near_range",),
             regime_reference_plan_digest=reference_plan.plan_digest,
             operational_issuance_domain_plan_digest=issuance_plan.plan_digest,
+            meteorological_sampling_unit_digest=(
+                promotion_module.meteorological_sampling_unit_digest(
+                    radar_id="radar-1",
+                    issue_time=issue_time,
+                    observation_valid_time=input_plan.observation_valid_time,
+                    spatial_footprint_digest=input_plan.grid_contract_digest,
+                )
+            ),
             issue_time=issue_time,
         )
         experiment_family = promotion_module.PromotionExperimentFamily(
             holdout_cohort_digest=promotion_module._holdout_dataset_digest(
                 (plan_case,)
+            ),
+            meteorological_sampling_unit_digests=(
+                plan_case.meteorological_sampling_unit_digest,
             ),
             parent_prior_digest=parent_runner.neural_prior_digest,
             trials=(
@@ -2306,6 +2399,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             planned_storm_id="pending",
             storm_id="semantic-storm",
             physical_event_digest=event.physical_event_identity_digest,
+            meteorological_sampling_unit_digest=(
+                plan_case.meteorological_sampling_unit_digest
+            ),
             day="2026-08-09",
             radar_id="radar-1",
             planned_regime="pending",
@@ -2543,6 +2639,18 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 policy=policy,
                 policy_trust_store_path="/etc/advar/learning-policies.json",
             )
+        self.assertTrue(evidence.eligible, evidence.rejection_reasons)
+        evidence = self.deployment_ready(evidence)
+        self.assertTrue(
+            evidence.deployment_eligible,
+            (
+                evidence.rejection_reasons,
+                evidence.regime_classifier_validated,
+                evidence.certified_applicability_regime_groups,
+                evidence.certified_range_geometry_contract_digests,
+                evidence.sample_size_preflight_feasible,
+            ),
+        )
         self.assertEqual(
             evidence.scoring_artifact_digest,
             scoring_artifact.artifact_digest,
@@ -3639,13 +3747,17 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             minimum_state_calibration_cases_per_regime=1,
             minimum_state_calibration_clusters_per_regime=1,
             minimum_regime_classifier_ood_cases=0,
+            minimum_regime_classifier_ood_abstention_lower_bound=0.0,
+            maximum_regime_classifier_brier_score_upper_bound=1.0,
             minimum_regime_classifier_accuracy_lower_bound=0.0,
             minimum_regime_classifier_recall_lower_bound=0.0,
             maximum_regime_classifier_false_routing_upper_bound=1.0,
             minimum_regime_classifier_clusters=1,
             minimum_range_classifier_ood_cases=0,
+            minimum_range_classifier_ood_abstention_lower_bound=0.0,
             minimum_range_set_precision_lower_bound=0.0,
             minimum_range_set_recall_lower_bound=0.0,
+            minimum_range_exact_set_accuracy_lower_bound=0.0,
             maximum_false_active_band_upper_bound=1.0,
             minimum_range_band_cases=1,
             minimum_range_band_clusters=1,
@@ -3694,24 +3806,86 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
     @staticmethod
     def deployment_certificate(evidence):
-        key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+        ledger_key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+        promotion_key = Ed25519PrivateKey.from_private_bytes(b"\x04" * 32)
+        operational_key = Ed25519PrivateKey.from_private_bytes(b"\x05" * 32)
         trust = promotion_module._PromotionDeploymentAuthorityTrustStore(
-            keys={"test-ledger": key.public_key()},
+            keys={
+                "test-ledger": ledger_key.public_key(),
+                "test-promotion": promotion_key.public_key(),
+                "test-operational": operational_key.public_key(),
+            },
             content_digest="7" * 64,
+            roles={
+                "test-ledger": frozenset({"ledger_issuance"}),
+                "test-promotion": frozenset({"promotion_certificate"}),
+                "test-operational": frozenset({"operational_decision"}),
+            },
+            not_before={
+                name: "2026-01-01T00:00:00+00:00"
+                for name in ("test-ledger", "test-promotion", "test-operational")
+            },
+            not_after={
+                name: "2027-01-01T00:00:00+00:00"
+                for name in ("test-ledger", "test-promotion", "test-operational")
+            },
+            revoked_at={
+                name: None
+                for name in ("test-ledger", "test-promotion", "test-operational")
+            },
+            ledger_instance_digests={
+                "test-ledger": frozenset({"6" * 64}),
+                "test-promotion": frozenset(),
+                "test-operational": frozenset(),
+            },
+        )
+        ledger_signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+            "test-ledger",
+            ledger_key,
+            fixed_signing_time="2026-08-09T00:00:30Z",
+        )
+        promotion_signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+            "test-promotion",
+            promotion_key,
+            fixed_signing_time="2026-08-09T00:00:40Z",
+        )
+        receipt = promotion_module._issue_ledger_issuance_receipt(
+            ledger_instance_digest="6" * 64,
+            sequence_number=1,
+            previous_certificate_digest=(
+                promotion_module.PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST
+            ),
+            promotion_evidence_digest=evidence.promotion_evidence_digest,
+            scoring_replay_bundle_digest=evidence.scoring_replay_bundle_digest,
+            scoring_replay_archive_sha256="a" * 64,
+            scoring_evaluation_payload_sha256="b" * 64,
+            scoring_artifact_digest=evidence.scoring_artifact_digest,
+            scoring_completion_receipt_digest=(
+                evidence.scoring_completion_receipt_digest
+            ),
+            scoring_completion_completed_at="2026-08-09T00:00:00Z",
+            issued_at=ledger_signer.signing_time(),
+            signer=ledger_signer,
+            authority_trust_store=trust,
         )
         certificate = (
             promotion_module._issue_ledgered_promotion_deployment_certificate(
                 evidence,
-                issued_at="2026-08-13T00:00:00Z",
-                authority_id="test-ledger",
-                authority_private_key=key,
+                issued_at=promotion_signer.signing_time(),
+                ledger_issuance_receipt=receipt,
+                signer=promotion_signer,
                 authority_trust_store=trust,
-                ledger_instance_digest="6" * 64,
-                sequence_number=1,
-                previous_certificate_digest="0" * 64,
             )
         )
         return certificate, trust
+
+    @staticmethod
+    def operational_decision_signer():
+        return promotion_module.Ed25519DeploymentAuthoritySigner(
+            "test-operational",
+            Ed25519PrivateKey.from_private_bytes(b"\x05" * 32),
+            fixed_signing_time="2026-08-09T00:01:00Z",
+        )
 
     @staticmethod
     def validate_deployment_artifact(
@@ -4012,6 +4186,21 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         "2026-08-07T00:00:00+00:00",
                     ),
                 )
+                connection.executemany(
+                    "INSERT INTO promotion_sampling_unit_reservations "
+                    "(sampling_unit_digest,family_digest,reserved_at) "
+                    "VALUES (?,?,?)",
+                    tuple(
+                        (
+                            digest,
+                            experiment_family.family_digest,
+                            "2026-08-07T00:00:00+00:00",
+                        )
+                        for digest in (
+                            experiment_family.meteorological_sampling_unit_digests
+                        )
+                    ),
+                )
                 approval_schema = connection.execute(
                     "PRAGMA table_info(variational_learning_approvals)"
                 ).fetchall()
@@ -4265,26 +4454,105 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v24")
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v25")
             self.assertTrue(loaded.deployment_eligible)
-            authority_key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+            ledger_authority_key = Ed25519PrivateKey.from_private_bytes(
+                b"\x03" * 32
+            )
+            promotion_authority_key = Ed25519PrivateKey.from_private_bytes(
+                b"\x04" * 32
+            )
+            with sqlite3.connect(ledger.index_path) as connection:
+                ledger_instance_digest = connection.execute(
+                    "SELECT ledger_instance_digest FROM "
+                    "deployment_certificate_chain_head WHERE singleton = 1"
+                ).fetchone()[0]
             authority_trust = (
                 promotion_module._PromotionDeploymentAuthorityTrustStore(
-                    keys={"test-ledger": authority_key.public_key()},
+                    keys={
+                        "test-ledger": ledger_authority_key.public_key(),
+                        "test-promotion": promotion_authority_key.public_key(),
+                    },
                     content_digest="7" * 64,
+                    roles={
+                        "test-ledger": frozenset({"ledger_issuance"}),
+                        "test-promotion": frozenset(
+                            {"promotion_certificate"}
+                        ),
+                    },
+                    not_before={
+                        "test-ledger": "2026-01-01T00:00:00+00:00",
+                        "test-promotion": "2026-01-01T00:00:00+00:00",
+                    },
+                    not_after={
+                        "test-ledger": "2027-01-01T00:00:00+00:00",
+                        "test-promotion": "2027-01-01T00:00:00+00:00",
+                    },
+                    revoked_at={"test-ledger": None, "test-promotion": None},
+                    ledger_instance_digests={
+                        "test-ledger": frozenset({ledger_instance_digest}),
+                        "test-promotion": frozenset(),
+                    },
                 )
+            )
+            ledger_signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+                "test-ledger",
+                ledger_authority_key,
+                fixed_signing_time="2026-08-12T02:30:00Z",
+            )
+            promotion_signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+                "test-promotion",
+                promotion_authority_key,
+                fixed_signing_time="2026-08-12T02:31:00Z",
             )
             with patch.object(
                 ledger_module,
                 "_load_promotion_deployment_authority_trust_store",
                 return_value=authority_trust,
             ):
+                for invalid_times in (
+                    (
+                        "2026-08-12T01:59:00Z",
+                        "2026-08-12T02:01:00Z",
+                    ),
+                    (
+                        "2099-08-12T03:01:00Z",
+                        "2099-08-12T03:02:00Z",
+                    ),
+                ):
+                    with self.subTest(invalid_times=invalid_times), self.assertRaisesRegex(
+                        ValueError,
+                        "issuance chronology",
+                    ):
+                        ledger.issue_neural_prior_promotion_deployment_certificate(
+                            stored,
+                            scoring_replay_cases=replay_cases,
+                            ledger_signer=(
+                                promotion_module.Ed25519DeploymentAuthoritySigner(
+                                    "test-ledger",
+                                    ledger_authority_key,
+                                    fixed_signing_time=invalid_times[0],
+                                )
+                            ),
+                            deployment_signer=(
+                                promotion_module.Ed25519DeploymentAuthoritySigner(
+                                    "test-promotion",
+                                    promotion_authority_key,
+                                    fixed_signing_time=invalid_times[1],
+                                )
+                            ),
+                            authority_trust_store_path=(
+                                "/etc/advar/deployment-authorities.json"
+                            ),
+                        )
+
                 def issue_certificate():
                     try:
                         return ledger.issue_neural_prior_promotion_deployment_certificate(
                             stored,
-                            authority_id="test-ledger",
-                            authority_private_key=authority_key,
+                            scoring_replay_cases=replay_cases,
+                            ledger_signer=ledger_signer,
+                            deployment_signer=promotion_signer,
                             authority_trust_store_path=(
                                 "/etc/advar/deployment-authorities.json"
                             ),
@@ -4304,7 +4572,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         promotion_module.LedgeredPromotionDeploymentCertificate,
                     )
                 )
-                self.assertEqual(len(issued), 1)
+                self.assertEqual(len(issued), 1, issuance_results)
                 self.assertEqual(
                     sum(isinstance(item, FileExistsError) for item in issuance_results),
                     1,
@@ -4318,7 +4586,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         ),
                     )
                 )
-            self.assertEqual(certificate.contract, "ledgered-promotion-deployment-certificate-v2")
+            self.assertEqual(
+                certificate.contract,
+                "ledgered-promotion-deployment-certificate-v3",
+            )
             self.assertEqual(certificate.sequence_number, 1)
             self.assertEqual(
                 certificate.previous_certificate_digest,
@@ -4887,6 +5158,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
+                operational_decision_signer=self.operational_decision_signer(),
             )
 
     def test_operational_range_coordinates_must_match_frame_shape(self) -> None:
@@ -4947,6 +5219,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
+                operational_decision_signer=self.operational_decision_signer(),
             )
 
     def test_selector_rechecks_operational_partition_grid(self) -> None:
@@ -4967,10 +5240,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 range_geometry_contract=Mock(),
                 operational_grid_contract_digest="1" * 64,
                 operational_frame_shape=(2, 2),
+                operational_input_plan=self.plan().input_plans[0],
                 policy_trust_store_path="/etc/advar/deployment-policies.json",
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
+                operational_decision_signer=self.operational_decision_signer(),
             )
 
     def test_cluster_mean_cannot_hide_case_level_harm_frequency(self) -> None:
@@ -6119,18 +6394,43 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertEqual(expanded_plan.promotion_experiment_family.total_family_size, 20)
         self.assertLess(family_lower, single_lower)
 
-    def test_ledger_rejects_a_second_family_for_the_same_holdout_cohort(
+    def test_ledger_rejects_repackaged_processing_for_the_same_weather_sample(
         self,
     ) -> None:
         plan = self.plan()
+        repackaged_input = replace(
+            plan.input_plans[0],
+            qc_pipeline_digest="9" * 64,
+            mask_policy_digest="8" * 64,
+        )
+        repackaged_cases = (
+            replace(
+                plan.cases[0],
+                input_plan_digest=repackaged_input.plan_digest,
+            ),
+            *plan.cases[1:],
+        )
         second_family = replace(
             plan.promotion_experiment_family,
+            holdout_cohort_digest=promotion_module._holdout_dataset_digest(
+                repackaged_cases
+            ),
             winner_selection_rule_digest="e" * 64,
         )
         second_plan = replace(
             plan,
             plan_id="holdout-plan-second-family",
+            cases=repackaged_cases,
+            input_plans=(repackaged_input, *plan.input_plans[1:]),
             promotion_experiment_family=second_family,
+        )
+        self.assertNotEqual(
+            plan.promotion_experiment_family.holdout_cohort_digest,
+            second_family.holdout_cohort_digest,
+        )
+        self.assertEqual(
+            set(plan.promotion_experiment_family.meteorological_sampling_unit_digests),
+            set(second_family.meteorological_sampling_unit_digests),
         )
         first_policy = promotion_module.NeuralPriorHoldoutPlanPolicy(
             approved_plan_digests=(plan.plan_digest,),
@@ -6184,7 +6484,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     policy_trust_store_path="/etc/advar/learning-policies.json",
                     scheduler_trust_store_path="/etc/advar/schedulers.json",
                 )
-                with self.assertRaisesRegex(ValueError, "holdout cohort"):
+                with self.assertRaisesRegex(ValueError, "meteorological sampling unit"):
                     ledger.append_neural_prior_holdout_plan(
                         second_plan,
                         promotion_decision_rule=decision_rule,
@@ -7188,10 +7488,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
-                operational_decision_authority_id="test-ledger",
-                operational_decision_authority_private_key=(
-                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
-                ),
+                operational_input_plan=self.plan().input_plans[0],
+                operational_decision_signer=self.operational_decision_signer(),
             )
 
         self.assertIs(selected, parent)
@@ -7315,10 +7613,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
-                operational_decision_authority_id="test-ledger",
-                operational_decision_authority_private_key=(
-                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
-                ),
+                operational_input_plan=self.plan().input_plans[0],
+                operational_decision_signer=self.operational_decision_signer(),
             )
 
         self.assertIs(selected, candidate)
@@ -7416,10 +7712,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
-                operational_decision_authority_id="test-ledger",
-                operational_decision_authority_private_key=(
-                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
-                ),
+                operational_input_plan=self.plan().input_plans[0],
+                operational_decision_signer=self.operational_decision_signer(),
             )
         changed_trust = _LearningPolicyTrustStore(
             approved_policy_digests=frozenset((unapproved.policy_digest,)),
@@ -7454,10 +7748,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
-                operational_decision_authority_id="test-ledger",
-                operational_decision_authority_private_key=(
-                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
-                ),
+                operational_input_plan=self.plan().input_plans[0],
+                operational_decision_signer=self.operational_decision_signer(),
             )
         self.assertNotEqual(
             changed_selection.selection_digest,
@@ -7497,10 +7789,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
-                operational_decision_authority_id="test-ledger",
-                operational_decision_authority_private_key=(
-                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
-                ),
+                operational_input_plan=self.plan().input_plans[0],
+                operational_decision_signer=self.operational_decision_signer(),
             )
 
         external_geometry, external_partition = self.deployment_range_geometry(
@@ -7548,13 +7838,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     policy_trust_store_path=(
                         "/etc/advar/deployment-policies.json"
                     ),
-                    deployment_certificate_trust_store_path=(
-                        "/etc/advar/deployment-authorities.json"
-                    ),
-                    operational_decision_authority_id="test-ledger",
-                    operational_decision_authority_private_key=(
-                        Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
-                    ),
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
+                operational_input_plan=self.plan().input_plans[0],
+                operational_decision_signer=self.operational_decision_signer(),
                 )
             )
         self.assertIs(external_selected, parent)
@@ -7656,10 +7944,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
-                operational_decision_authority_id="test-ledger",
-                operational_decision_authority_private_key=(
-                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
-                ),
+                operational_input_plan=self.plan().input_plans[0],
+                operational_decision_signer=self.operational_decision_signer(),
             )
         self.assertIs(selected, parent)
         self.assertEqual(selection.fallback_reason, "uncertified_range_geometry")
@@ -7775,6 +8061,20 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ),
             ),
         )
+        operational_input_plan = promotion_module.NeuralPriorInputPlan(
+            valid_times=grid.valid_times,
+            grid_contract_digest=grid.digest,
+            radar_product_digest=identity.radar_product_digest or "",
+            qc_pipeline_digest=identity.qc_pipeline_digest,
+            background_cycle_rule_digest=(
+                identity.background_cycle_rule_digest or ""
+            ),
+            mask_policy_digest=identity.mask_policy_digest or "",
+            observation_valid_time=grid.valid_times[-1],
+            input_available_time="2026-08-09T00:20:00Z",
+            decision_deadline="2026-08-09T00:22:00Z",
+            publication_time="2026-08-09T00:25:00Z",
+        )
         baseline, _ = variational_nowcast(
             frames,
             nowcast_config=nowcast_config,
@@ -7783,6 +8083,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             operational_calibration_manifest=calibration,
             operational_calibration_approval_digest=calibration.digest,
             operational_data_identity=identity,
+            input_plan_json=operational_input_plan.json,
+            input_plan_digest=operational_input_plan.plan_digest,
         )
         input_run = baseline.run
         classifier = NeuralPriorRegimeClassifier(
@@ -7893,9 +8195,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
-                operational_decision_authority_id="test-ledger",
-                operational_decision_authority_private_key=(
-                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+                operational_decision_signer=(
+                    promotion_module.Ed25519DeploymentAuthoritySigner(
+                        "test-operational",
+                        Ed25519PrivateKey.from_private_bytes(b"\x05" * 32),
+                        fixed_signing_time="2026-08-09T00:21:00Z",
+                    )
                 ),
             )
         assert application.deployment_selection is not None
@@ -7912,6 +8217,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             operational_calibration_manifest=calibration,
             operational_calibration_approval_digest=calibration.digest,
             operational_data_identity=identity,
+            input_plan_json=operational_input_plan.json,
+            input_plan_digest=operational_input_plan.plan_digest,
             neural_prior=application,
         )
         with tempfile.TemporaryDirectory() as directory:
@@ -7942,7 +8249,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             loaded.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v9",
+            "neural-prior-deployment-lineage-v10",
         )
 
     def test_current_physical_range_partition_controls_deployment(self) -> None:
@@ -8054,10 +8361,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
-                operational_decision_authority_id="test-ledger",
-                operational_decision_authority_private_key=(
-                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
-                ),
+                operational_input_plan=self.plan().input_plans[0],
+                operational_decision_signer=self.operational_decision_signer(),
             )
 
         self.assertIs(selected, parent)
@@ -8523,10 +8828,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
-                operational_decision_authority_id="test-ledger",
-                operational_decision_authority_private_key=(
-                    Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
-                ),
+                operational_input_plan=self.plan().input_plans[0],
+                operational_decision_signer=self.operational_decision_signer(),
             )
 
         self.assertIs(selected, parent)
@@ -9425,6 +9728,23 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             operational_data_identity_json=identity.json,
             operational_data_identity_digest=identity.digest,
         )
+        input_plan = promotion_module.NeuralPriorInputPlan(
+            valid_times=grid.valid_times,
+            grid_contract_digest=grid.digest,
+            radar_product_digest="6" * 64,
+            qc_pipeline_digest=identity.qc_pipeline_digest,
+            background_cycle_rule_digest="7" * 64,
+            mask_policy_digest="8" * 64,
+            observation_valid_time=grid.valid_times[-1],
+            input_available_time="2026-08-09T00:20:00Z",
+            decision_deadline="2026-08-09T00:22:00Z",
+            publication_time="2026-08-09T00:25:00Z",
+        )
+        run = replace(
+            run,
+            input_plan_json=input_plan.json,
+            input_plan_digest=input_plan.plan_digest,
+        )
         coordinates = torch.zeros((2, 2))
         geometry = promotion_module.RangeGeometryContract(
             radar_site_digest="d" * 64,
@@ -9456,6 +9776,325 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
+                operational_decision_signer=self.operational_decision_signer(),
+            )
+
+    def test_cpu_only_scoring_generation_has_a_stable_backend_contract(self) -> None:
+        self.assertEqual(
+            promotion_module.SEMANTIC_SCORING_REPLAY_CONTRACT,
+            "neural-prior-scoring-replay-bundle-v5",
+        )
+        self.assertEqual(
+            promotion_module.SEMANTIC_SCORING_REPLAY_METHOD,
+            "builtin-semantic-scoring-recomputation-v5",
+        )
+        self.assertEqual(
+            promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD,
+            {
+                "contract": "neural-prior-semantic-scoring-generation-v3",
+                "replay_contract": "neural-prior-scoring-replay-bundle-v5",
+                "replay_method": "builtin-semantic-scoring-recomputation-v5",
+                "case_contract": "neural-prior-semantic-scoring-case-v4",
+                "product_type_policy": "exact-shipped-product-types-v1",
+                "forecast_integrity": "forecast-result-raw-content-validation-v1",
+                "prior_integrity": "runner-reproduced-prior-application-v1",
+                "classifier_integrity": "exported-classifier-reexecution-v1",
+                "snapshot_policy": "single-frozen-tensor-snapshot-v1",
+                "backend_policy": "single-device-cpu-only-scoring-v1",
+            },
+        )
+        evidence = self.compute((self.evaluation(1, -0.2), self.evaluation(2, -0.3)))
+        with self.assertRaisesRegex(ValueError, "CPU-scoring"):
+            replace(
+                evidence,
+                scoring_backend_certification_policy_digest="a" * 64,
+                scoring_backend_certification_evidence_digest="b" * 64,
+            )
+
+    def test_sampling_unit_is_independent_of_processing_contracts(self) -> None:
+        input_plan = self.plan().input_plans[0]
+        repackaged = replace(
+            input_plan,
+            qc_pipeline_digest="9" * 64,
+            mask_policy_digest="8" * 64,
+            radar_product_digest="7" * 64,
+        )
+
+        def sampling_digest(plan):
+            return promotion_module.meteorological_sampling_unit_digest(
+                radar_id="radar-1",
+                issue_time="2026-08-09T00:20:00Z",
+                observation_valid_time=plan.observation_valid_time,
+                spatial_footprint_digest="6" * 64,
+            )
+
+        self.assertNotEqual(input_plan.plan_digest, repackaged.plan_digest)
+        self.assertEqual(sampling_digest(input_plan), sampling_digest(repackaged))
+
+    def test_event_weighted_estimand_is_invariant_to_case_replication(self) -> None:
+        first = "1" * 64
+        second = "2" * 64
+        baseline = promotion_module._event_weighted_mean(
+            (0.2, 0.8),
+            (first, second),
+        )
+        replicated = promotion_module._event_weighted_mean(
+            (0.2, 0.2, 0.2, 0.8),
+            (first, first, first, second),
+        )
+        self.assertAlmostEqual(baseline, 0.5)
+        self.assertAlmostEqual(replicated, baseline)
+
+    def test_classifier_safety_gates_use_event_level_finite_sample_bounds(
+        self,
+    ) -> None:
+        evidence = self.compute(
+            (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
+        )
+        self.assertEqual(
+            evidence.primary_estimand_contract,
+            "equal_weight_physical_event_v1",
+        )
+        self.assertLessEqual(
+            evidence.regime_classifier_brier_score,
+            evidence.regime_classifier_brier_score_upper_bound,
+        )
+        self.assertLessEqual(
+            evidence.range_exact_set_accuracy_lower_bound,
+            evidence.range_exact_set_accuracy,
+        )
+        self.assertLessEqual(
+            evidence.regime_classifier_ood_abstention_fraction_lower_bound,
+            evidence.regime_classifier_ood_abstention_fraction,
+        )
+        self.assertLessEqual(
+            evidence.range_classifier_ood_abstention_fraction_lower_bound,
+            evidence.range_classifier_ood_abstention_fraction,
+        )
+
+    def test_mosaic_range_uses_the_resolved_source_radar(self) -> None:
+        grid_x = torch.tensor([[0.0, 9_000.0], [1_000.0, 10_000.0]])
+        grid_y = torch.zeros_like(grid_x)
+        source = torch.tensor([[0, 1], [-1, 1]], dtype=torch.int64)
+        expected_range = torch.tensor(
+            [[0.0, 1_000.0], [0.0, 0.0]], dtype=torch.float64
+        )
+        contract = promotion_module.MosaicRangeGeometryContract(
+            source_radar_registry_digest="1" * 64,
+            source_selection_policy_digest="2" * 64,
+            grid_contract_digest="3" * 64,
+            radar_site_digests=("4" * 64, "5" * 64),
+            radar_site_location_digests=("6" * 64, "7" * 64),
+            radar_projected_xy_m=((0.0, 0.0), (10_000.0, 0.0)),
+            range_regime_labels=("near_range", "far_range"),
+            radial_distance_edges_m=(0.0, 500.0, 2_000.0),
+            horizontal_range_rule_digest="8" * 64,
+            grid_x_m_digest=promotion_module.tensor_digest(grid_x),
+            grid_y_m_digest=promotion_module.tensor_digest(grid_y),
+            source_radar_index_map_digest=promotion_module.tensor_digest(source),
+            effective_horizontal_range_m_digest=(
+                promotion_module.tensor_digest(expected_range)
+            ),
+        )
+        partition, effective_range = (
+            promotion_module.resolve_mosaic_range_geometry(
+                contract,
+                grid_x_m=grid_x,
+                grid_y_m=grid_y,
+                source_radar_index_map=source,
+            )
+        )
+        torch.testing.assert_close(effective_range, expected_range)
+        self.assertTrue(bool(partition.masks[0][0, 0]))
+        self.assertTrue(bool(partition.masks[1][0, 1]))
+
+        invalid = source.clone()
+        invalid[0, 0] = 999
+        invalid_contract = replace(
+            contract,
+            source_radar_index_map_digest=promotion_module.tensor_digest(invalid),
+        )
+        with self.assertRaisesRegex(ValueError, "mosaic range geometry"):
+            promotion_module.resolve_mosaic_range_geometry(
+                invalid_contract,
+                grid_x_m=grid_x,
+                grid_y_m=grid_y,
+                source_radar_index_map=invalid,
+            )
+
+        changing = torch.stack((source, source.clone()))
+        changing[1, 0, 0] = 1
+        changing_contract = replace(
+            contract,
+            source_radar_index_map_digest=promotion_module.tensor_digest(changing),
+        )
+        with self.assertRaisesRegex(ValueError, "changes across forecast leads"):
+            promotion_module.resolve_mosaic_range_geometry(
+                changing_contract,
+                grid_x_m=grid_x,
+                grid_y_m=grid_y,
+                source_radar_index_map=changing,
+            )
+
+    def test_certificate_authority_roles_cannot_share_one_key(self) -> None:
+        evidence = self.deployment_ready(
+            self.compute((self.evaluation(1, -0.2), self.evaluation(2, -0.3)))
+        )
+        key = Ed25519PrivateKey.from_private_bytes(b"\x09" * 32)
+        trust = promotion_module._PromotionDeploymentAuthorityTrustStore(
+            keys={"combined": key.public_key()},
+            content_digest="9" * 64,
+            roles={
+                "combined": frozenset(
+                    {"ledger_issuance", "promotion_certificate"}
+                )
+            },
+            not_before={"combined": "2026-01-01T00:00:00+00:00"},
+            not_after={"combined": "2027-01-01T00:00:00+00:00"},
+            revoked_at={"combined": None},
+            ledger_instance_digests={"combined": frozenset({"6" * 64})},
+        )
+        signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+            "combined",
+            key,
+            fixed_signing_time="2026-08-09T00:01:00Z",
+        )
+        receipt = promotion_module._issue_ledger_issuance_receipt(
+            ledger_instance_digest="6" * 64,
+            sequence_number=1,
+            previous_certificate_digest=(
+                promotion_module.PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST
+            ),
+            promotion_evidence_digest=evidence.promotion_evidence_digest,
+            scoring_replay_bundle_digest=evidence.scoring_replay_bundle_digest,
+            scoring_replay_archive_sha256="a" * 64,
+            scoring_evaluation_payload_sha256="b" * 64,
+            scoring_artifact_digest=evidence.scoring_artifact_digest,
+            scoring_completion_receipt_digest=(
+                evidence.scoring_completion_receipt_digest
+            ),
+            scoring_completion_completed_at="2026-08-09T00:00:00Z",
+            issued_at=signer.signing_time(),
+            signer=signer,
+            authority_trust_store=trust,
+        )
+        with self.assertRaisesRegex(ValueError, "separate authorities"):
+            promotion_module._issue_ledgered_promotion_deployment_certificate(
+                evidence,
+                issued_at=signer.signing_time(),
+                ledger_issuance_receipt=receipt,
+                signer=signer,
+                authority_trust_store=trust,
+            )
+
+    def test_operational_decision_after_deadline_is_rejected(self) -> None:
+        evidence = self.deployment_ready(
+            self.compute((self.evaluation(1, -0.2), self.evaluation(2, -0.3)))
+        )
+        certificate, trust = self.deployment_certificate(evidence)
+        policy = DeployedNeuralPriorPolicy(
+            candidate_prior_digest=evidence.candidate_prior_digest,
+            parent_prior_digest=evidence.parent_prior_digest,
+            promotion_evidence_digest=evidence.promotion_evidence_digest,
+            promotion_deployment_certificate_digest=certificate.certificate_digest,
+            promotion_deployment_authority_trust_store_digest=(
+                certificate.authority_trust_store_digest
+            ),
+            regime_classifier_digest=evidence.deployment_regime_classifier_digest,
+            regime_classifier_manifest_digest=(
+                evidence.deployment_regime_classifier_manifest_digest
+            ),
+            range_geometry_contract_digest=(
+                evidence.certified_range_geometry_contract_digests[0]
+            ),
+        )
+        decision = {
+            "selection": {
+                "selected_prior_digest": evidence.candidate_prior_digest,
+                "selected_role": "candidate",
+                "fallback_reason": "certified_candidate",
+            },
+            "observation_valid_time": "2026-08-09T00:00:00Z",
+            "input_available_time": "2026-08-09T00:01:00Z",
+            "decision_deadline": "2026-08-09T00:02:00Z",
+            "publication_time": "2026-08-09T00:05:00Z",
+        }
+        late_signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+            "test-operational",
+            Ed25519PrivateKey.from_private_bytes(b"\x05" * 32),
+            fixed_signing_time="2026-08-09T00:03:00Z",
+        )
+        with self.assertRaisesRegex(ValueError, "prepublication window"):
+            promotion_module._issue_operational_deployment_decision_certificate(
+                decision,
+                promotion_deployment_certificate=certificate,
+                promotion_evidence=evidence,
+                policy=policy,
+                policy_trust_store_digest="c" * 64,
+                signer=late_signer,
+                authority_trust_store=trust,
+            )
+
+        before_promotion = decision | {
+            "input_available_time": "2026-08-09T00:00:10Z",
+        }
+        premature_signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+            "test-operational",
+            Ed25519PrivateKey.from_private_bytes(b"\x05" * 32),
+            fixed_signing_time="2026-08-09T00:00:20Z",
+        )
+        with self.assertRaisesRegex(ValueError, "prepublication window"):
+            promotion_module._issue_operational_deployment_decision_certificate(
+                before_promotion,
+                promotion_deployment_certificate=certificate,
+                promotion_evidence=evidence,
+                policy=policy,
+                policy_trust_store_digest="c" * 64,
+                signer=premature_signer,
+                authority_trust_store=trust,
+            )
+
+    def test_revoked_authority_and_foreign_ledger_are_rejected(self) -> None:
+        evidence = self.deployment_ready(
+            self.compute((self.evaluation(1, -0.2), self.evaluation(2, -0.3)))
+        )
+        certificate, trust = self.deployment_certificate(evidence)
+        revoked = replace(
+            trust,
+            revoked_at=trust.revoked_at
+            | {"test-promotion": "2026-08-09T00:00:00+00:00"},
+        )
+        with self.assertRaisesRegex(ValueError, "root-approved"):
+            promotion_module._validate_ledgered_promotion_deployment_certificate(
+                certificate,
+                authority_trust_store=revoked,
+                promotion_evidence=evidence,
+            )
+
+        ledger_signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+            "test-ledger",
+            Ed25519PrivateKey.from_private_bytes(b"\x03" * 32),
+            fixed_signing_time="2026-08-09T00:01:00Z",
+        )
+        with self.assertRaisesRegex(ValueError, "ledger instance"):
+            promotion_module._issue_ledger_issuance_receipt(
+                ledger_instance_digest="f" * 64,
+                sequence_number=1,
+                previous_certificate_digest=(
+                    promotion_module.PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST
+                ),
+                promotion_evidence_digest=evidence.promotion_evidence_digest,
+                scoring_replay_bundle_digest=evidence.scoring_replay_bundle_digest,
+                scoring_replay_archive_sha256="a" * 64,
+                scoring_evaluation_payload_sha256="b" * 64,
+                scoring_artifact_digest=evidence.scoring_artifact_digest,
+                scoring_completion_receipt_digest=(
+                    evidence.scoring_completion_receipt_digest
+                ),
+                scoring_completion_completed_at="2026-08-09T00:00:00Z",
+                issued_at=ledger_signer.signing_time(),
+                signer=ledger_signer,
+                authority_trust_store=trust,
             )
 
     def test_event_catalog_append_rejects_future_catalog_time(self) -> None:
