@@ -128,6 +128,8 @@ class OperationalCalibrationManifestTests(unittest.TestCase):
                 source_radar_index_map_digest="7" * 64,
                 effective_horizontal_range_map_digest="8" * 64,
                 source_selection_policy_digest="9" * 64,
+                outage_mask_digest="a" * 64,
+                dynamic_qc_valid_mask_digest="b" * 64,
             ),
         )
 

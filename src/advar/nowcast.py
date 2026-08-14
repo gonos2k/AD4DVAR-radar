@@ -7,6 +7,8 @@ from enum import Enum
 import json
 import math
 
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 import torch
 from torch import Tensor
 
@@ -1387,12 +1389,14 @@ class ForecastRunContract:
     prior_deployment_decision_artifact_digest: str | None = None
     prior_deployment_fallback_reason: str | None = None
     prior_deployment_lineage_contract: str = (
-        "neural-prior-deployment-lineage-v11"
+        "neural-prior-deployment-lineage-v12"
     )
     prior_lineage_contract: str = "neural-prior-run-lineage-v2"
     input_plan_json: str | None = None
     input_plan_digest: str | None = None
     input_plan_resolution_digest: str | None = None
+    analysis_input_derivation_artifact_json: str | None = None
+    analysis_input_derivation_artifact_digest: str | None = None
     forecast_integrator_version: str = FORECAST_INTEGRATOR_VERSION
 
     @classmethod
@@ -1435,6 +1439,8 @@ class ForecastRunContract:
         prior_deployment_fallback_reason: str | None = None,
         input_plan_json: str | None = None,
         input_plan_digest: str | None = None,
+        analysis_input_derivation_artifact_json: str | None = None,
+        analysis_input_derivation_artifact_digest: str | None = None,
     ) -> ForecastRunContract:
         _validate_frames(frames_dbz)
         latest_frame = frames_dbz[-1]
@@ -1546,9 +1552,13 @@ class ForecastRunContract:
                 prior_deployment_decision_artifact_digest
             ),
             fallback_reason=prior_deployment_fallback_reason,
-            contract="neural-prior-deployment-lineage-v11",
+            contract="neural-prior-deployment-lineage-v12",
         )
         _validate_input_plan_lineage(input_plan_json, input_plan_digest)
+        _validate_analysis_input_derivation_lineage(
+            analysis_input_derivation_artifact_json,
+            analysis_input_derivation_artifact_digest,
+        )
         _validate_input_plan_resolution(
             input_plan_json,
             operational_data_identity_json,
@@ -1686,6 +1696,12 @@ class ForecastRunContract:
             input_plan_json=input_plan_json,
             input_plan_digest=input_plan_digest,
             input_plan_resolution_digest=resolution_digest,
+            analysis_input_derivation_artifact_json=(
+                analysis_input_derivation_artifact_json
+            ),
+            analysis_input_derivation_artifact_digest=(
+                analysis_input_derivation_artifact_digest
+            ),
         )
 
     @property
@@ -1938,6 +1954,29 @@ class ForecastRunContract:
             contract=self.prior_deployment_lineage_contract,
         )
         _validate_input_plan_lineage(self.input_plan_json, self.input_plan_digest)
+        _validate_analysis_input_derivation_lineage(
+            self.analysis_input_derivation_artifact_json,
+            self.analysis_input_derivation_artifact_digest,
+        )
+        _validate_analysis_input_derivation_against_run(
+            self.analysis_input_derivation_artifact_json,
+            input_plan_digest=self.input_plan_digest,
+            input_frames_digest=self.input_frames_digest,
+            observation_masks_digest=self.observation_masks_digest,
+            observation_quality_weight_digest=(
+                self.observation_quality_weight_digest
+            ),
+            observation_std_dbz_digest=self.observation_std_dbz_digest,
+            background_frames_digest=self.background_frames_digest,
+            input_bundle_digest=self.input_bundle_digest,
+            full_analysis_input_digest=self.full_analysis_input_digest,
+            grid_time_contract_digest=self.grid_time_contract_digest,
+            grid_time_contract=self.grid_time_contract,
+            operational_data_identity_json=self.operational_data_identity_json,
+            operational_data_identity_digest=(
+                self.operational_data_identity_digest
+            ),
+        )
         _validate_input_plan_resolution(
             self.input_plan_json,
             self.operational_data_identity_json,
@@ -2192,6 +2231,115 @@ def _validate_input_plan_lineage(
         raise ValueError("input plan payload digest mismatch")
 
 
+def _validate_analysis_input_derivation_lineage(
+    artifact_json: str | None,
+    artifact_digest: str | None,
+) -> None:
+    if artifact_json is None and artifact_digest is None:
+        return
+    if artifact_json is None or artifact_digest is None:
+        raise ValueError(
+            "analysis input derivation JSON and digest must be provided together"
+        )
+    _validate_sha256_digest(
+        "analysis_input_derivation_artifact_digest",
+        artifact_digest,
+    )
+    try:
+        payload = json.loads(artifact_json)
+    except json.JSONDecodeError as error:
+        raise ValueError("invalid analysis input derivation JSON") from error
+    if (
+        not isinstance(payload, dict)
+        or payload.get("contract") != "analysis-input-derivation-artifact-v3"
+        or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        != artifact_json
+        or json_digest(payload) != artifact_digest
+    ):
+        raise ValueError("analysis input derivation payload digest mismatch")
+
+
+def _validate_analysis_input_derivation_against_run(
+    artifact_json: str | None,
+    *,
+    input_plan_digest: str | None,
+    input_frames_digest: str,
+    observation_masks_digest: str | None,
+    observation_quality_weight_digest: str | None,
+    observation_std_dbz_digest: str | None,
+    background_frames_digest: str | None,
+    input_bundle_digest: str,
+    full_analysis_input_digest: str | None,
+    grid_time_contract_digest: str | None,
+    grid_time_contract: RadarGridTimeContract | None,
+    operational_data_identity_json: str | None,
+    operational_data_identity_digest: str | None,
+) -> None:
+    if artifact_json is None:
+        return
+    payload = json.loads(artifact_json)
+    unsigned = dict(payload)
+    signature_hex = unsigned.pop("processor_signature_hex", None)
+    try:
+        key = Ed25519PublicKey.from_public_bytes(
+            bytes.fromhex(str(payload["processor_public_key_hex"]))
+        )
+        key.verify(
+            bytes.fromhex(str(signature_hex)),
+            json_digest(unsigned).encode("ascii"),
+        )
+    except (InvalidSignature, KeyError, TypeError, ValueError) as error:
+        raise ValueError("analysis input derivation signature is invalid") from error
+    background_times = () if grid_time_contract is None else (
+        grid_time_contract.background_valid_times or ()
+    )
+    background_source_digest: str | None = None
+    if background_frames_digest is not None:
+        if (
+            not background_times
+            or operational_data_identity_json is None
+            or operational_data_identity_digest is None
+        ):
+            raise ValueError("background derivation is missing model-cycle lineage")
+        identity = OperationalDataIdentity.from_json(
+            operational_data_identity_json
+        )
+        if identity.digest != operational_data_identity_digest:
+            raise ValueError("background operational data identity digest mismatch")
+        background_source_digest = json_digest(
+            {
+                "contract": "background-source-cycle-identity-v1",
+                "background_model_digest": identity.background_model_digest,
+                "background_cycle_rule_digest": (
+                    identity.background_cycle_rule_digest
+                ),
+                "background_valid_times": list(background_times),
+                "operational_data_identity_digest": identity.digest,
+            }
+        )
+    if (
+        payload.get("input_plan_digest") != input_plan_digest
+        or payload.get("input_frames_digest") != input_frames_digest
+        or payload.get("observation_masks_digest")
+        != observation_masks_digest
+        or payload.get("observation_quality_weight_digest")
+        != observation_quality_weight_digest
+        or payload.get("observation_std_dbz_digest")
+        != observation_std_dbz_digest
+        or payload.get("background_frames_digest")
+        != background_frames_digest
+        or payload.get("input_bundle_digest") != input_bundle_digest
+        or payload.get("full_analysis_input_digest")
+        != full_analysis_input_digest
+        or payload.get("grid_contract_digest") != grid_time_contract_digest
+        or tuple(payload.get("background_valid_times", ()))
+        != tuple(background_times)
+        or payload.get("background_source_identity_digest")
+        != background_source_digest
+    ):
+        raise ValueError("analysis input derivation disagrees with forecast run")
+
+
 def _validate_input_plan_resolution(
     input_plan_json: str | None,
     operational_data_identity_json: str | None,
@@ -2376,7 +2524,8 @@ def _validate_prior_deployment_lineage(
         "neural-prior-deployment-lineage-v8-audit",
         "neural-prior-deployment-lineage-v9-audit",
         "neural-prior-deployment-lineage-v10-audit",
-        "neural-prior-deployment-lineage-v11",
+        "neural-prior-deployment-lineage-v11-audit",
+        "neural-prior-deployment-lineage-v12",
     }:
         raise ValueError("unsupported neural-prior deployment lineage")
     values = (
@@ -2518,6 +2667,8 @@ def _validate_prior_deployment_lineage(
         "neural-prior-deployment-lineage-v7-audit",
         "neural-prior-deployment-lineage-v8-audit",
         "neural-prior-deployment-lineage-v9-audit",
+        "neural-prior-deployment-lineage-v10-audit",
+        "neural-prior-deployment-lineage-v11-audit",
     }:
         if all(value is None for value in values):
             return
@@ -2531,7 +2682,7 @@ def _validate_prior_deployment_lineage(
         ):
             raise ValueError("legacy deployment decision digest mismatch")
         return
-    if contract != "neural-prior-deployment-lineage-v11":
+    if contract != "neural-prior-deployment-lineage-v12":
         raise ValueError("legacy deployment lineage is audit-only")
     if any(value is None for value in values) or prior_role is None:
         raise ValueError("neural-prior deployment lineage must be complete")
@@ -2803,6 +2954,9 @@ def _forecast_run_identity_digest(
             "prior_lineage_contract": run.prior_lineage_contract,
             "input_plan_digest": run.input_plan_digest,
             "input_plan_resolution_digest": run.input_plan_resolution_digest,
+            "analysis_input_derivation_artifact_digest": (
+                run.analysis_input_derivation_artifact_digest
+            ),
             "state_metadata_digest": state_digest,
             "forecast_dbz_digest": forecast_digest,
             "valid_mask_digest": valid_mask_digest,

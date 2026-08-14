@@ -110,8 +110,8 @@ jobs:
 
           path = Path(os.environ["RUNNER_TEMP"]) / "forecast.npz"
           with np.load(path, allow_pickle=False) as result:
-              assert result["output_contract_version"].item() == "nowcast-npz-v66"
-              assert result["forecast_run_artifact_version"].item() == "forecast-run-v60"
+              assert result["output_contract_version"].item() == "nowcast-npz-v67"
+              assert result["forecast_run_artifact_version"].item() == "forecast-run-v61"
               assert result["operational_runtime_profile_digest"].item() == ""
               assert not result["operational_calibration_manifest_present"].item()
               assert result["operational_calibration_manifest_json"].item() == ""
