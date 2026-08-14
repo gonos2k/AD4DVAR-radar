@@ -642,6 +642,19 @@ class EpisodeLedgerTests(unittest.TestCase):
                 torch.zeros((1, 2, 2), dtype=torch.bool)
             ),
         )
+        training_registry_key = (
+            promotion_module.Ed25519PrivateKey.from_private_bytes(b"\x24" * 32)
+        )
+        training_registry_receipt = (
+            promotion_module.TrainingRawRegistryReceipt.issue(
+                raw_volume_identity_digests=("6" * 64,),
+                sampling_unit_digests=("7" * 64,),
+                registry_id="clock-global-sampling-registry",
+                authority_id="clock-sampling-authority",
+                authority_private_key=training_registry_key,
+                committed_at="2028-12-31T00:00:00Z",
+            )
+        )
         classifier_manifest = promotion_module.RegimeClassifierManifest(
             classifier_digest="b" * 64,
             training_dataset_digest="c" * 64,
@@ -653,6 +666,16 @@ class EpisodeLedgerTests(unittest.TestCase):
             training_days=("2029-01-01",),
             training_radar_ids=("classifier-radar",),
             training_grid_contract_digests=("3" * 64,),
+            training_raw_volume_identity_digests=("6" * 64,),
+            training_sampling_unit_digests=("7" * 64,),
+            training_raw_registry_receipt_digest=(
+                training_registry_receipt.receipt_digest
+            ),
+            training_raw_registry_receipt_payload_json=json.dumps(
+                training_registry_receipt.payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
             training_time_windows=((
                 "2029-01-01T00:00:00Z",
                 "2029-01-01T01:00:00Z",
@@ -710,20 +733,21 @@ class EpisodeLedgerTests(unittest.TestCase):
             "rule_digest",
             json_digest(decision_rule.payload),
         )
-        raw_unit = promotion_module.RawRadarObservationUnit.from_ingestor(
+        raw_ingestor_key = (
+            promotion_module.Ed25519PrivateKey.from_private_bytes(b"\x23" * 32)
+        )
+        processor_key = (
+            promotion_module.Ed25519PrivateKey.from_private_bytes(b"\x25" * 32)
+        )
+        raw_slot = promotion_module.RawObservationSlotPlan(
             radar_site_digest="a" * 64,
             acquisition_valid_time=input_plan.observation_valid_time,
-            scan_strategy_digest="5" * 64,
-            raw_volume_object_digest="1" * 64,
-            raw_ingestor_id="clock-raw-ingestor",
-            raw_ingestor_private_key=(
-                promotion_module.Ed25519PrivateKey.from_private_bytes(
-                    b"\x23" * 32
-                )
-            ),
+            scan_strategy_rule_digest="5" * 64,
+            source_selection_rule_digest="6" * 64,
+            canonical_geodetic_footprint_digest="6" * 64,
         )
         sampling_unit = promotion_module.MeteorologicalSamplingUnit(
-            raw_observation_digests=(raw_unit.observation_digest,),
+            raw_observation_slot_digests=(raw_slot.slot_digest,),
             canonical_geodetic_footprint_digest="6" * 64,
         )
         cases = (
@@ -775,18 +799,24 @@ class EpisodeLedgerTests(unittest.TestCase):
                     winner_selection_rule_digest="5" * 64,
                 )
             ),
-            raw_observation_digests=(raw_unit.observation_digest,),
+            raw_observation_slot_digests=(raw_slot.slot_digest,),
             registry_id="clock-global-sampling-registry",
             authority_id="clock-sampling-authority",
             authority_private_key=registry_key,
             reserved_at="2029-01-01T00:00:00Z",
+            registry_sequence_number=(
+                training_registry_receipt.registry_sequence_number + 1
+            ),
+            previous_registry_root_digest=(
+                training_registry_receipt.committed_registry_root_digest
+            ),
         )
         experiment_family = promotion_module.PromotionExperimentFamily(
             holdout_cohort_digest=holdout_cohort_digest,
             meteorological_sampling_unit_digests=tuple(
                 item.meteorological_sampling_unit_digest for item in cases
             ),
-            raw_observation_digests=(raw_unit.observation_digest,),
+            raw_observation_slot_digests=(raw_slot.slot_digest,),
             global_sampling_reservation=reservation,
             parent_prior_digest="6" * 64,
             trials=trials,
@@ -798,8 +828,18 @@ class EpisodeLedgerTests(unittest.TestCase):
             candidate_family_digests=("7" * 64,),
             cases=cases,
             input_plans=(input_plan,),
-            raw_observation_units=(raw_unit,),
+            raw_observation_slot_plans=(raw_slot,),
             meteorological_sampling_units=(sampling_unit,),
+            raw_ingestor_trust_store=promotion_module.RawIngestorTrustStore(
+                authorities=((
+                    "clock-raw-ingestor",
+                    raw_ingestor_key.public_key().public_bytes_raw().hex(),
+                ),),
+            ),
+            analysis_processor_id="clock-analysis-processor",
+            analysis_processor_public_key_hex=(
+                processor_key.public_key().public_bytes_raw().hex()
+            ),
             uncertainty_target_plans=(target_plan,),
             state_calibration_target_plans=(state_target_plan,),
             range_band_contracts=(range_contract,),
@@ -821,11 +861,24 @@ class EpisodeLedgerTests(unittest.TestCase):
             approved_plan_digests=(plan.plan_digest,),
             approved_metric_contract_digests=("9" * 64,),
             maximum_candidate_family_size=1,
+            sampling_registry_id=(
+                plan.promotion_experiment_family.global_sampling_reservation.registry_id
+            ),
             sampling_registry_authority_id=(
                 plan.promotion_experiment_family.global_sampling_reservation.authority_id
             ),
             sampling_registry_authority_public_key_hex=(
                 plan.promotion_experiment_family.global_sampling_reservation.authority_public_key_hex
+            ),
+            approved_sampling_registry_root_digests=(
+                plan.promotion_experiment_family.global_sampling_reservation.committed_registry_root_digest,
+            ),
+            raw_ingestor_trust_store_digest=(
+                plan.raw_ingestor_trust_store.content_digest
+            ),
+            analysis_processor_id=plan.analysis_processor_id,
+            analysis_processor_public_key_hex=(
+                plan.analysis_processor_public_key_hex
             ),
         )
         trust = SimpleNamespace(
@@ -1009,7 +1062,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 30)
+            self.assertEqual(version, 33)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4322,7 +4375,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 30)
+        self.assertEqual(version, 33)
 
 
 if __name__ == "__main__":

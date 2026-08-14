@@ -927,7 +927,7 @@ root-approved `RangeGeometryContract`에서 결정한다. 현재 격자의 완�
 하나라도 미인증이면 전체 parent로 fallback한다. Single-site는 projected horizontal
 single-radar geometry를 사용하고, mosaic는 `SourceRadarRegistry`와
 `RadarSiteLocationRegistry`의 동일한 site ordering에 결합된
-`MosaicRangeGeometryContract-v2`를 사용한다. Input-time `[H,W]` source-index map으로
+`MosaicRangeGeometryContract-v3`를 사용한다. Input-time `[H,W]` source-index map으로
 cell별 effective horizontal range를 계산하며 source가 없는 `-1` 셀은 어떤 range band에도
 포함하지 않는다. Geometry grid digest, coordinate shape, source-map digest와 effective-range
 digest는 operational run의 source identity와 직접 비교된다. Beam-height는 아직 이
@@ -948,9 +948,9 @@ evaluation JSON에 무관한 임의 tensor를 붙인 snapshot은 자동승격 �
 Forecast, prior application, inference runner, verification, metric config, calibration
 target, classifier와 operational-domain artifact는 각각 제품 validator와 runner
 reproduction을 통과해야 하며, factory가 한 번 동결한 tensor snapshot과 completion 시점의
-live product bytes가 다르면 거부된다. Replay v6 contract/method와 CPU-only generation
-v4 digest는 `HoldoutScoringArtifact-v6`, promotion evidence v26,
-`DeployedNeuralPriorPolicy-v12`와 deployment-decision artifact v10까지 직접 전파된다.
+live product bytes가 다르면 거부된다. Replay v7 contract/method와 CPU-only generation
+v5 digest는 `HoldoutScoringArtifact-v7`, promotion evidence v27,
+`DeployedNeuralPriorPolicy-v13`과 deployment-decision artifact v11까지 직접 전파된다.
 따라서 replay 세대를 식별하지 못하는 v22 promotion evidence는 audit-only이며 배포 selector가
 소비할 수 없다.
 Audit load는 저장된 typed evaluation을 볼 수 있지만, 자동 completion과 promotion은
@@ -973,14 +973,37 @@ availability 이후 decision deadline 이전에 data-ingestor가 서명한
 publication eligibility는 `[lead,H,W]`로 분리되며, exact source-map·selection-policy·
 input/full-analysis digest에 결합된다. Ledger에 deadline 전에 append되지 않은 resolved
 coverage나 resolved coverage가 없는 mosaic scoring input은 fail-close한다.
-Holdout의 meteorological sampling identity는 processing grid가 아니라 ingestor가 서명한
-raw radar-volume object, radar site, scan strategy와 acquisition time으로 구성한다. 중앙
-sampling registry가 raw-volume digest를 experiment family에 전역 예약하며, 서로 다른
-regrid 또는 겹치는 3-frame window가 raw volume 하나라도 공유하면 다른 family에서
-재사용할 수 없다.
+`MosaicRangeGeometryContract-v3`는 radar registry, site-location ordering, projection과
+range resolver만 사전 고정하고 issue-time source handoff map 자체는 고정하지 않는다.
+`RangeBandContract-v3`는 허용 가능한 active-range set을 outcome-blind하게 등록하며,
+실제 source/outage/dynamic-QC/nominal·resolved coverage bytes와 계산된 effective range는
+case별 replay archive에 저장된다. 따라서 outage로 source radar가 바뀌어도 같은 resolver
+계약 아래 재현할 수 있고, source가 없거나 QC-invalid인 셀은 어떤 range band에도
+참여하지 않는다.
+Holdout의 meteorological sampling identity는 processing grid나 아직 관측되지 않은 content
+hash가 아니라 issue 전에 예약된 radar-site/acquisition/scan observation slot으로 구성한다.
+Ingest 뒤에는 signer-independent canonical raw-volume identity와 별도 ingestor attestation을
+slot에 결합하고, 중앙 sampling registry가 연속 sequence/root로 그 resolution을 봉인한다.
+각 case의 canonical binary32 gridded source bytes와 resolution은 scoring보다 늦게 붙일 수
+없으며 `append_analysis_input_provenance()`가 trusted ledger clock으로 decision deadline
+이전에 먼저 durable commit한 exact row만 scoring replay가 소비한다. 제품 decoder는 그
+source bytes를 float32로 다시 해석하고 native flag·finite·positive-weight·observation-std
+QC를 재실행한다. 현재 지원하는 regrid 계약은 source와 target grid가 같은 exact-identity
+경로이며 임의 polar decoder나 공간 resampler를 인증한다고 주장하지 않는다. 서명된
+`AnalysisInputDerivationArtifact-v3`는 이 decode/QC/source selection/identity-regrid 결과가
+실제 input tensor digest와 같음을 forecast run과 semantic replay에 결합한다. Background는
+관측 시각을 재사용하지 않고 실제 `background_valid_times`, background-model identity,
+등록된 cycle-rule, operational-data identity와 frame bytes를 함께 봉인한다. Canonical raw
+identity v2는 content뿐 아니라 radar-product와 source-grid identity도 포함하므로 같은
+bytes를 다른 product/grid metadata로 재라벨링할 수 없다.
+서로 다른 regrid 또는 겹치는 3-frame window가 canonical raw volume
+하나라도 공유하면 다른 family에서 재사용할 수 없고, candidate/classifier training raw
+identity와 holdout raw identity도 겹칠 수 없다. Candidate와 classifier는 plan 등록 전에
+global registry에 commit된 하나의 family-wide signed training-raw receipt를 공유하며,
+ledger는 그 canonical payload preimage를 저장하고 scoring에서 다시 검증한다.
 선택 digest뿐 아니라 classifier probability, 활성 band, policy, certified group,
 horizontal range-geometry payload, operational radar source와 trust-store snapshot을 포함한
-canonical deployment-decision payload도 forecast run identity 및 v60 artifact에 남는다.
+canonical deployment-decision payload도 forecast run identity 및 v61 artifact에 남는다.
 적재 시 physical partition과 current-run grid/shape/site를 포함한 selector를 다시 실행해
 저장된 candidate/parent 선택과 exact 비교한다. v54 run은 source-aware selection 이전
 계약을 `neural-prior-deployment-lineage-v5-audit`로만 읽고, v53 run은 current-grid binding과 durable geometry
@@ -1002,8 +1025,8 @@ probability의 binary Brier를 physical event 동일가중 UCB로 판정한다. 
 surrogate와 ECE는 diagnostic-only다. Sample-size preflight도 known weather/range,
 weather/range OOD와 Brier-valid event subset을 각각 확인한다.
 
-현재 promotion evidence는 v26, candidate manifest는 v12, holdout plan은 v18,
-holdout evaluation은 v21, promotion policy는 v27, metric support는 v3이다.
+현재 promotion evidence는 v27, candidate manifest는 v13, holdout plan은 v19,
+holdout evaluation은 v22, promotion policy는 v28, metric support는 v3이다.
 `sealed_historical` plan은 결과 비공개 escrow를 증명하지 않으므로 연구·shadow audit에만
 사용되고 deployment eligibility는 prospective plan에만 부여된다. Candidate-neutral
 `PhysicalEventCatalogPlan`은 association·spatial-membership rule, spatial reference,
@@ -1557,25 +1580,27 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v66`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v60`
+- `output_contract_version`: 현재 `nowcast-npz-v67`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v61`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
 
-`forecast-run-v60`은 CPU-only scoring generation v4, raw radar-volume 단위의 전역
+`forecast-run-v61`은 CPU-only scoring generation v5, two-phase raw observation slot과
+canonical raw-volume identity 단위의 전역
 sampling reservation, source-registry와 location-registry가 결합된 mosaic range domain,
 역할 분리된 ledger issuance
 receipt/promotion certificate/operational decision signature, 그리고 input-plan의
-sub-second decision deadline chronology를 함께 검증한다. `forecast-run-v59`는
+sub-second decision deadline chronology와 final decision-row publication receipt를 함께
+검증한다. `forecast-run-v60`은
 audit-only다.
 
-`forecast-run-v60`은 원자적 ledger sequence를 가진 deployment certificate
-v4, deployment-decision artifact v10과
-`neural-prior-deployment-lineage-v11`을 current 의미로 결합한다. Decision
+`forecast-run-v61`은 원자적 ledger sequence를 가진 deployment certificate
+v4, deployment-decision artifact v11과
+`neural-prior-deployment-lineage-v12`를 current 의미로 결합한다. Decision
 artifact는 unsigned promotion subset을 보존하지 않고 certificate 안의 완전한
-`NeuralPriorPromotionEvidence-v26`만 typed decode한다. 이전
-`forecast-run-v59`, `forecast-run-v58`, `forecast-run-v57`, `forecast-run-v56`은
+`NeuralPriorPromotionEvidence-v27`만 typed decode한다. 이전
+`forecast-run-v60`, `forecast-run-v59`, `forecast-run-v58`, `forecast-run-v57`, `forecast-run-v56`은
 각 세대의 decision artifact를 보존하는 audit lineage로만
 적재되며 current operational deployment replay에는 사용할 수 없다.
 
@@ -1586,8 +1611,13 @@ exported prior/classifier와 전체 metric engine을 인증하지 않으므로 m
 certificate 세대가 도입되기 전까지 MPS scoring과 operational MPS deployment는
 fail-close한다. Current deployment는 EpisodeLedger가 발급한 root-signed
 promotion deployment certificate와 외부 authority 및 learning-policy trust
-store를 함께 요구한다. 저장되는 operational selection 전체도 별도의 authority-signed
-`OperationalDeploymentDecisionCertificate-v3`와 ledger-recorded decision receipt에
+store를 함께 요구한다. Authority trust-store v3는 승인된 ledger-instance digest마다
+유일한 canonical `index.sqlite` 절대경로도 root-owned 설정으로 고정하므로,
+Python 객체를 위조해 공격자 DB로 verifier를 재지정할 수 없다. 저장되는 operational
+selection 전체도 별도의 authority-signed
+`OperationalDeploymentDecisionCertificate-v4`와 먼저 durable commit된 ledger decision
+receipt, 그리고 final certificate row의 commit 뒤 ledger signer가 발급한
+`OperationalDecisionPublicationReceipt-v1`에
 결합되므로, 재시작 시 regime evidence,
 policy threshold 또는 selected prior를 재해시해 바꾸는 경로가 차단된다.
 - `displacement_yx`: `(row, column)` pixel/step

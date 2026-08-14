@@ -185,10 +185,8 @@ class MosaicRangeGeometryContract:
     horizontal_range_rule_digest: str
     grid_x_m_digest: str
     grid_y_m_digest: str
-    source_radar_index_map_digest: str
-    effective_horizontal_range_m_digest: str
-    resolver_algorithm: str = "source-index-projected-horizontal-range-v2"
-    contract: str = "mosaic-horizontal-range-geometry-contract-v2"
+    resolver_algorithm: str = "source-index-projected-horizontal-range-v3"
+    contract: str = "mosaic-horizontal-range-geometry-contract-v3"
     contract_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -201,14 +199,12 @@ class MosaicRangeGeometryContract:
             "horizontal_range_rule_digest",
             "grid_x_m_digest",
             "grid_y_m_digest",
-            "source_radar_index_map_digest",
-            "effective_horizontal_range_m_digest",
         ):
             _require_digest(name, getattr(self, name))
         if (
-            self.contract != "mosaic-horizontal-range-geometry-contract-v2"
+            self.contract != "mosaic-horizontal-range-geometry-contract-v3"
             or self.resolver_algorithm
-            != "source-index-projected-horizontal-range-v2"
+            != "source-index-projected-horizontal-range-v3"
             or not self.radar_site_digests
             or len(set(self.radar_site_digests)) != len(self.radar_site_digests)
             or len(self.radar_site_digests)
@@ -289,10 +285,8 @@ class MosaicRangeGeometryContract:
         horizontal_range_rule_digest: str,
         grid_x_m_digest: str,
         grid_y_m_digest: str,
-        source_radar_index_map_digest: str,
-        effective_horizontal_range_m_digest: str,
-        resolver_algorithm: str = "source-index-projected-horizontal-range-v2",
-        contract: str = "mosaic-horizontal-range-geometry-contract-v2",
+        resolver_algorithm: str = "source-index-projected-horizontal-range-v3",
+        contract: str = "mosaic-horizontal-range-geometry-contract-v3",
     ) -> MosaicRangeGeometryContract:
         """Build a mosaic geometry only from two integrity-checked registries."""
 
@@ -324,10 +318,6 @@ class MosaicRangeGeometryContract:
             horizontal_range_rule_digest=horizontal_range_rule_digest,
             grid_x_m_digest=grid_x_m_digest,
             grid_y_m_digest=grid_y_m_digest,
-            source_radar_index_map_digest=source_radar_index_map_digest,
-            effective_horizontal_range_m_digest=(
-                effective_horizontal_range_m_digest
-            ),
             resolver_algorithm=resolver_algorithm,
             contract=contract,
         )
@@ -357,14 +347,14 @@ class RangePartitionEvidence:
     range_band_mask_digests: tuple[str, ...]
     valid_range_domain_mask_digest: str
     active_range_regimes: tuple[str, ...]
-    contract: str = "radar-range-partition-evidence-v3"
+    contract: str = "radar-range-partition-evidence-v4"
     evidence_digest: str = field(init=False)
 
     def _validate_content(self, masks: tuple[Tensor, ...]) -> None:
         _require_digest("range geometry contract", self.range_geometry_contract_digest)
         _require_digest("range partition grid", self.grid_contract_digest)
         if (
-            self.contract != "radar-range-partition-evidence-v3"
+            self.contract != "radar-range-partition-evidence-v4"
             or not masks
             or len(masks) != len(self.range_regime_labels)
             or len(self.range_band_mask_digests) != len(masks)
@@ -514,7 +504,6 @@ def resolve_mosaic_range_geometry(
         or not bool(torch.all(torch.isfinite(y)))
         or tensor_digest(x) != contract.grid_x_m_digest
         or tensor_digest(y) != contract.grid_y_m_digest
-        or tensor_digest(source) != contract.source_radar_index_map_digest
         or bool(
             torch.any(
                 (source < -1) | (source >= len(contract.radar_site_digests))
@@ -542,10 +531,7 @@ def resolve_mosaic_range_geometry(
         resolved_distance,
         torch.zeros_like(resolved_distance),
     )
-    if (
-        tensor_digest(distance) != contract.effective_horizontal_range_m_digest
-        or bool(torch.any(distance > contract.radial_distance_edges_m[-1]))
-    ):
+    if bool(torch.any(distance > contract.radial_distance_edges_m[-1])):
         raise ValueError("mosaic effective range disagrees with its contract")
     masks = tuple(
         valid_source
@@ -580,4 +566,42 @@ def resolve_mosaic_range_geometry(
             ),
         ),
         distance,
+    )
+
+
+def restrict_range_partition_domain(
+    partition: RangePartitionEvidence,
+    *,
+    valid_range_domain_mask: Tensor,
+) -> RangePartitionEvidence:
+    """Restrict physical range bands to the currently usable source domain."""
+
+    partition.validate_integrity()
+    domain = valid_range_domain_mask.detach().clone()
+    if (
+        domain.dtype is not torch.bool
+        or domain.shape != partition.valid_range_domain_mask.shape
+        or domain.device != partition.valid_range_domain_mask.device
+        or bool(torch.any(domain & ~partition.valid_range_domain_mask))
+    ):
+        raise ValueError("range partition restriction is outside its source domain")
+    masks = tuple(mask & domain for mask in partition.masks)
+    return RangePartitionEvidence(
+        range_geometry_contract_digest=partition.range_geometry_contract_digest,
+        grid_contract_digest=partition.grid_contract_digest,
+        range_regime_labels=partition.range_regime_labels,
+        masks=masks,
+        valid_range_domain_mask=domain,
+        range_band_mask_digests=tuple(tensor_digest(mask) for mask in masks),
+        valid_range_domain_mask_digest=tensor_digest(domain),
+        active_range_regimes=tuple(
+            label
+            for label, mask in zip(
+                partition.range_regime_labels,
+                masks,
+                strict=True,
+            )
+            if bool(torch.any(mask))
+        ),
+        contract="radar-range-partition-evidence-v4",
     )

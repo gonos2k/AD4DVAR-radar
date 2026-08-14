@@ -232,6 +232,20 @@ class ForecastRunArtifactTests(unittest.TestCase):
             Ed25519PrivateKey.from_private_bytes(b"\x03" * 32),
             fixed_signing_time="2026-08-09T00:01:00Z",
         )
+        accepted_at = ledger_signer.signing_time()
+        commit_entry_digest, committed_chain_root_digest = (
+            promotion_module._operational_decision_commit_digests(
+                artifact,
+                ledger_instance_digest=(
+                    promotion_certificate.ledger_instance_digest
+                ),
+                sequence_number=1,
+                previous_operational_decision_digest=(
+                    promotion_module.OPERATIONAL_DECISION_LEDGER_GENESIS_DIGEST
+                ),
+                accepted_at=accepted_at,
+            )
+        )
         ledger_receipt = promotion_module._issue_operational_decision_ledger_receipt(
             artifact,
             ledger_instance_digest=promotion_certificate.ledger_instance_digest,
@@ -239,7 +253,10 @@ class ForecastRunArtifactTests(unittest.TestCase):
             previous_operational_decision_digest=(
                 promotion_module.OPERATIONAL_DECISION_LEDGER_GENESIS_DIGEST
             ),
-            recorded_at=signer.signing_time(),
+            accepted_at=accepted_at,
+            committed_at=accepted_at,
+            commit_entry_digest=commit_entry_digest,
+            committed_chain_root_digest=committed_chain_root_digest,
             signer=ledger_signer,
             authority_trust_store=cls._deployment_certificate_trust(),
         )
@@ -259,11 +276,23 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 authority_trust_store=cls._deployment_certificate_trust(),
             )
         )
+        publication_receipt = (
+            promotion_module._issue_operational_decision_publication_receipt(
+                decision_certificate,
+                decision_row_committed_at=accepted_at,
+                signer=ledger_signer,
+                authority_trust_store=cls._deployment_certificate_trust(),
+            )
+        )
         return artifact | {
             "operational_decision_certificate": (
                 decision_certificate.payload
                 | {"certificate_digest": decision_certificate.certificate_digest}
-            )
+            ),
+            "operational_decision_publication_receipt": (
+                publication_receipt.payload
+                | {"receipt_digest": publication_receipt.receipt_digest}
+            ),
         }
 
     def _state_contract(self) -> NeuralPriorStateContract:
@@ -393,7 +422,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact = {
-            "contract": "neural-prior-deployment-decision-artifact-v10",
+            "contract": "neural-prior-deployment-decision-artifact-v11",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "operational_grid_contract_digest": "d" * 64,
             "operational_frame_shape": list(frames.shape[1:]),
@@ -1448,7 +1477,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v10",
+            "contract": "neural-prior-deployment-decision-artifact-v11",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "operational_grid_contract_digest": "d" * 64,
             "operational_frame_shape": list(frames.shape[1:]),
@@ -1548,6 +1577,13 @@ class ForecastRunArtifactTests(unittest.TestCase):
             legacy_path = Path(temporary) / "legacy-v55.npz"
             self._save_arrays(legacy_path, legacy_arrays)
             legacy = load_forecast_run(legacy_path)
+            v60_arrays = dict(legacy_arrays)
+            v60_arrays["forecast_run_artifact_version"] = np.asarray(
+                "forecast-run-v60"
+            )
+            v60_path = Path(temporary) / "legacy-v60.npz"
+            self._save_arrays(v60_path, v60_arrays)
+            legacy_v60 = load_forecast_run(v60_path)
 
         self.assertEqual(
             loaded.run.prior_promotion_evidence_digest,
@@ -1575,6 +1611,14 @@ class ForecastRunArtifactTests(unittest.TestCase):
         )
         self.assertEqual(
             legacy.run.prior_deployment_fallback_reason,
+            "certified_candidate",
+        )
+        self.assertEqual(
+            legacy_v60.run.prior_deployment_lineage_contract,
+            "neural-prior-deployment-lineage-v11-audit",
+        )
+        self.assertEqual(
+            legacy_v60.run.prior_deployment_fallback_reason,
             "certified_candidate",
         )
 

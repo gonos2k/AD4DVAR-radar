@@ -124,6 +124,8 @@ class OperationalDataIdentity:
     source_radar_index_map_digest: str | None = None
     effective_horizontal_range_map_digest: str | None = None
     source_selection_policy_digest: str | None = None
+    outage_mask_digest: str | None = None
+    dynamic_qc_valid_mask_digest: str | None = None
 
     def __post_init__(self) -> None:
         _canonical_string("radar_class", self.radar_class)
@@ -162,6 +164,8 @@ class OperationalDataIdentity:
             self.source_radar_index_map_digest,
             self.effective_horizontal_range_map_digest,
             self.source_selection_policy_digest,
+            self.outage_mask_digest,
+            self.dynamic_qc_valid_mask_digest,
         )
         if any(value is not None for value in source_values):
             if self.radar_source_kind is None:
@@ -182,6 +186,8 @@ class OperationalDataIdentity:
                     self.source_radar_index_map_digest,
                     self.effective_horizontal_range_map_digest,
                     self.source_selection_policy_digest,
+                    self.outage_mask_digest,
+                    self.dynamic_qc_valid_mask_digest,
                 )
             elif self.radar_source_kind == "mosaic":
                 required = (
@@ -189,6 +195,8 @@ class OperationalDataIdentity:
                     self.source_radar_index_map_digest,
                     self.effective_horizontal_range_map_digest,
                     self.source_selection_policy_digest,
+                    self.outage_mask_digest,
+                    self.dynamic_qc_valid_mask_digest,
                 )
                 forbidden = (
                     self.radar_site_digest,
@@ -210,6 +218,8 @@ class OperationalDataIdentity:
                     self.effective_horizontal_range_map_digest,
                 ),
                 ("source_selection_policy_digest", self.source_selection_policy_digest),
+                ("outage_mask_digest", self.outage_mask_digest),
+                ("dynamic_qc_valid_mask_digest", self.dynamic_qc_valid_mask_digest),
             ):
                 if value is not None:
                     _sha256(name, value)
@@ -257,6 +267,8 @@ class OperationalDataIdentity:
                 assert self.source_radar_index_map_digest is not None
                 assert self.effective_horizontal_range_map_digest is not None
                 assert self.source_selection_policy_digest is not None
+                assert self.outage_mask_digest is not None
+                assert self.dynamic_qc_valid_mask_digest is not None
                 result.update(
                     {
                         "source_radar_index_map_digest": (
@@ -267,6 +279,10 @@ class OperationalDataIdentity:
                         ),
                         "source_selection_policy_digest": (
                             self.source_selection_policy_digest
+                        ),
+                        "outage_mask_digest": self.outage_mask_digest,
+                        "dynamic_qc_valid_mask_digest": (
+                            self.dynamic_qc_valid_mask_digest
                         ),
                     }
                 )
@@ -313,6 +329,8 @@ class OperationalDataIdentity:
             "source_radar_index_map_digest",
             "effective_horizontal_range_map_digest",
             "source_selection_policy_digest",
+            "outage_mask_digest",
+            "dynamic_qc_valid_mask_digest",
         }
         allowed = {
             frozenset(base_fields),
@@ -404,6 +422,21 @@ class OperationalDataIdentity:
                     value["source_selection_policy_digest"],
                 )
                 if "source_selection_policy_digest" in value
+                else None
+            ),
+            outage_mask_digest=(
+                _required_string(
+                    "outage_mask_digest", value["outage_mask_digest"]
+                )
+                if "outage_mask_digest" in value
+                else None
+            ),
+            dynamic_qc_valid_mask_digest=(
+                _required_string(
+                    "dynamic_qc_valid_mask_digest",
+                    value["dynamic_qc_valid_mask_digest"],
+                )
+                if "dynamic_qc_valid_mask_digest" in value
                 else None
             ),
         )
