@@ -19,6 +19,94 @@ def _require_digest(name: str, value: str) -> None:
 
 
 @dataclass(frozen=True)
+class SourceRadarRegistry:
+    """Canonical mapping from mosaic integer indices to physical radar sites."""
+
+    radar_site_digests: tuple[str, ...]
+    source_selection_policy_digest: str
+    contract: str = "source-radar-registry-v1"
+    registry_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "source-radar-registry-v1"
+            or not self.radar_site_digests
+            or len(set(self.radar_site_digests)) != len(self.radar_site_digests)
+        ):
+            raise ValueError("source radar registry is invalid")
+        for value in self.radar_site_digests:
+            _require_digest("source radar site", value)
+        _require_digest(
+            "source selection policy", self.source_selection_policy_digest
+        )
+        object.__setattr__(self, "registry_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "radar_site_digests": list(self.radar_site_digests),
+            "source_selection_policy_digest": (
+                self.source_selection_policy_digest
+            ),
+        }
+
+    def validate_integrity(self) -> None:
+        if self.registry_digest != json_digest(self.payload):
+            raise ValueError("source radar registry digest mismatch")
+
+
+@dataclass(frozen=True)
+class RadarSiteLocationRegistry:
+    """Ordered projected locations bound to one mosaic source registry."""
+
+    projection_digest: str
+    radar_site_digests: tuple[str, ...]
+    radar_site_location_digests: tuple[str, ...]
+    radar_projected_xy_m: tuple[tuple[float, float], ...]
+    contract: str = "radar-site-location-registry-v1"
+    registry_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "radar-site-location-registry-v1"
+            or not self.radar_site_digests
+            or len(set(self.radar_site_digests)) != len(self.radar_site_digests)
+            or len(self.radar_site_digests)
+            != len(self.radar_site_location_digests)
+            or len(self.radar_site_digests) != len(self.radar_projected_xy_m)
+            or len(set(self.radar_site_location_digests))
+            != len(self.radar_site_location_digests)
+            or any(
+                len(point) != 2
+                or any(not math.isfinite(coordinate) for coordinate in point)
+                for point in self.radar_projected_xy_m
+            )
+        ):
+            raise ValueError("radar site-location registry is invalid")
+        _require_digest("projection", self.projection_digest)
+        for value in (*self.radar_site_digests, *self.radar_site_location_digests):
+            _require_digest("radar site location", value)
+        object.__setattr__(self, "registry_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "projection_digest": self.projection_digest,
+            "radar_site_digests": list(self.radar_site_digests),
+            "radar_site_location_digests": list(
+                self.radar_site_location_digests
+            ),
+            "radar_projected_xy_m": [list(point) for point in self.radar_projected_xy_m],
+        }
+
+    def validate_integrity(self) -> None:
+        if self.registry_digest != json_digest(self.payload):
+            raise ValueError("radar site-location registry digest mismatch")
+
+
+@dataclass(frozen=True)
 class RangeGeometryContract:
     """Horizontal radial bands fixed by one radar site and projected grid."""
 
@@ -85,8 +173,10 @@ class MosaicRangeGeometryContract:
     """Source-aware horizontal bands for a dynamically resolved radar mosaic."""
 
     source_radar_registry_digest: str
+    radar_site_location_registry_digest: str
     source_selection_policy_digest: str
     grid_contract_digest: str
+    projection_digest: str
     radar_site_digests: tuple[str, ...]
     radar_site_location_digests: tuple[str, ...]
     radar_projected_xy_m: tuple[tuple[float, float], ...]
@@ -97,15 +187,17 @@ class MosaicRangeGeometryContract:
     grid_y_m_digest: str
     source_radar_index_map_digest: str
     effective_horizontal_range_m_digest: str
-    resolver_algorithm: str = "source-index-projected-horizontal-range-v1"
-    contract: str = "mosaic-horizontal-range-geometry-contract-v1"
+    resolver_algorithm: str = "source-index-projected-horizontal-range-v2"
+    contract: str = "mosaic-horizontal-range-geometry-contract-v2"
     contract_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
         for name in (
             "source_radar_registry_digest",
+            "radar_site_location_registry_digest",
             "source_selection_policy_digest",
             "grid_contract_digest",
+            "projection_digest",
             "horizontal_range_rule_digest",
             "grid_x_m_digest",
             "grid_y_m_digest",
@@ -114,9 +206,9 @@ class MosaicRangeGeometryContract:
         ):
             _require_digest(name, getattr(self, name))
         if (
-            self.contract != "mosaic-horizontal-range-geometry-contract-v1"
+            self.contract != "mosaic-horizontal-range-geometry-contract-v2"
             or self.resolver_algorithm
-            != "source-index-projected-horizontal-range-v1"
+            != "source-index-projected-horizontal-range-v2"
             or not self.radar_site_digests
             or len(set(self.radar_site_digests)) != len(self.radar_site_digests)
             or len(self.radar_site_digests)
@@ -153,7 +245,92 @@ class MosaicRangeGeometryContract:
             raise ValueError("mosaic range geometry contract is invalid")
         for digest in (*self.radar_site_digests, *self.radar_site_location_digests):
             _require_digest("mosaic radar site", digest)
+        expected_source_registry_digest = json_digest(
+            {
+                "contract": "source-radar-registry-v1",
+                "radar_site_digests": list(self.radar_site_digests),
+                "source_selection_policy_digest": (
+                    self.source_selection_policy_digest
+                ),
+            }
+        )
+        expected_location_registry_digest = json_digest(
+            {
+                "contract": "radar-site-location-registry-v1",
+                "projection_digest": self.projection_digest,
+                "radar_site_digests": list(self.radar_site_digests),
+                "radar_site_location_digests": list(
+                    self.radar_site_location_digests
+                ),
+                "radar_projected_xy_m": [
+                    list(point) for point in self.radar_projected_xy_m
+                ],
+            }
+        )
+        if (
+            self.source_radar_registry_digest
+            != expected_source_registry_digest
+            or self.radar_site_location_registry_digest
+            != expected_location_registry_digest
+        ):
+            raise ValueError("mosaic range registries disagree with site ordering")
         object.__setattr__(self, "contract_digest", json_digest(self.payload))
+
+    @classmethod
+    def from_registry(
+        cls,
+        source_registry: SourceRadarRegistry,
+        location_registry: RadarSiteLocationRegistry,
+        *,
+        grid_contract_digest: str,
+        projection_digest: str,
+        range_regime_labels: tuple[str, ...],
+        radial_distance_edges_m: tuple[float, ...],
+        horizontal_range_rule_digest: str,
+        grid_x_m_digest: str,
+        grid_y_m_digest: str,
+        source_radar_index_map_digest: str,
+        effective_horizontal_range_m_digest: str,
+        resolver_algorithm: str = "source-index-projected-horizontal-range-v2",
+        contract: str = "mosaic-horizontal-range-geometry-contract-v2",
+    ) -> MosaicRangeGeometryContract:
+        """Build a mosaic geometry only from two integrity-checked registries."""
+
+        if type(source_registry) is not SourceRadarRegistry or type(
+            location_registry
+        ) is not RadarSiteLocationRegistry:
+            raise TypeError("mosaic range geometry requires exact registry types")
+        source_registry.validate_integrity()
+        location_registry.validate_integrity()
+        if source_registry.radar_site_digests != location_registry.radar_site_digests:
+            raise ValueError("mosaic source and location registry order disagrees")
+        if projection_digest != location_registry.projection_digest:
+            raise ValueError("mosaic projection and grid contract disagree")
+        return cls(
+            source_radar_registry_digest=source_registry.registry_digest,
+            radar_site_location_registry_digest=location_registry.registry_digest,
+            source_selection_policy_digest=(
+                source_registry.source_selection_policy_digest
+            ),
+            radar_site_digests=source_registry.radar_site_digests,
+            radar_site_location_digests=(
+                location_registry.radar_site_location_digests
+            ),
+            radar_projected_xy_m=location_registry.radar_projected_xy_m,
+            grid_contract_digest=grid_contract_digest,
+            projection_digest=projection_digest,
+            range_regime_labels=range_regime_labels,
+            radial_distance_edges_m=radial_distance_edges_m,
+            horizontal_range_rule_digest=horizontal_range_rule_digest,
+            grid_x_m_digest=grid_x_m_digest,
+            grid_y_m_digest=grid_y_m_digest,
+            source_radar_index_map_digest=source_radar_index_map_digest,
+            effective_horizontal_range_m_digest=(
+                effective_horizontal_range_m_digest
+            ),
+            resolver_algorithm=resolver_algorithm,
+            contract=contract,
+        )
 
     @property
     def payload(self) -> dict[str, object]:
@@ -176,21 +353,29 @@ class RangePartitionEvidence:
     grid_contract_digest: str
     range_regime_labels: tuple[str, ...]
     masks: tuple[Tensor, ...]
+    valid_range_domain_mask: Tensor
     range_band_mask_digests: tuple[str, ...]
+    valid_range_domain_mask_digest: str
     active_range_regimes: tuple[str, ...]
-    contract: str = "radar-range-partition-evidence-v2"
+    contract: str = "radar-range-partition-evidence-v3"
     evidence_digest: str = field(init=False)
 
     def _validate_content(self, masks: tuple[Tensor, ...]) -> None:
         _require_digest("range geometry contract", self.range_geometry_contract_digest)
         _require_digest("range partition grid", self.grid_contract_digest)
         if (
-            self.contract != "radar-range-partition-evidence-v2"
+            self.contract != "radar-range-partition-evidence-v3"
             or not masks
             or len(masks) != len(self.range_regime_labels)
             or len(self.range_band_mask_digests) != len(masks)
             or any(mask.ndim != 2 or mask.dtype is not torch.bool for mask in masks)
             or any(mask.shape != masks[0].shape for mask in masks[1:])
+            or self.valid_range_domain_mask.dtype is not torch.bool
+            or self.valid_range_domain_mask.ndim != 2
+            or self.valid_range_domain_mask.shape != masks[0].shape
+            or self.valid_range_domain_mask.device != masks[0].device
+            or self.valid_range_domain_mask_digest
+            != tensor_digest(self.valid_range_domain_mask)
             or any(
                 digest != tensor_digest(mask)
                 for digest, mask in zip(
@@ -210,11 +395,16 @@ class RangePartitionEvidence:
         membership = torch.stack(
             tuple(mask.to(torch.int8) for mask in masks)
         ).sum(dim=0)
-        if bool(torch.any(membership != 1)):
+        if not torch.equal(
+            membership,
+            self.valid_range_domain_mask.to(torch.int8),
+        ):
             raise ValueError("range partition is incomplete")
 
     def __post_init__(self) -> None:
         masks = tuple(mask.detach().clone() for mask in self.masks)
+        domain = self.valid_range_domain_mask.detach().clone()
+        object.__setattr__(self, "valid_range_domain_mask", domain)
         self._validate_content(masks)
         object.__setattr__(self, "masks", masks)
         object.__setattr__(self, "evidence_digest", json_digest(self.payload))
@@ -232,6 +422,7 @@ class RangePartitionEvidence:
             "grid_contract_digest": self.grid_contract_digest,
             "range_regime_labels": list(self.range_regime_labels),
             "range_band_mask_digests": list(self.range_band_mask_digests),
+            "valid_range_domain_mask_digest": self.valid_range_domain_mask_digest,
             "active_range_regimes": list(self.active_range_regimes),
             "grid_shape": list(self.masks[0].shape),
         }
@@ -281,12 +472,15 @@ def resolve_range_geometry(
         )
         for index, (lower, upper) in enumerate(zip(edges, edges[1:]))
     )
+    valid_domain = torch.ones_like(distance, dtype=torch.bool)
     return RangePartitionEvidence(
         range_geometry_contract_digest=contract.contract_digest,
         grid_contract_digest=contract.grid_contract_digest,
         range_regime_labels=contract.range_regime_labels,
         masks=masks,
+        valid_range_domain_mask=valid_domain,
         range_band_mask_digests=tuple(tensor_digest(mask) for mask in masks),
+        valid_range_domain_mask_digest=tensor_digest(valid_domain),
         active_range_regimes=tuple(
             label
             for label, mask in zip(contract.range_regime_labels, masks, strict=True)
@@ -311,8 +505,8 @@ def resolve_mosaic_range_geometry(
     if (
         x.ndim != 2
         or y.shape != x.shape
-        or source.ndim not in (2, 3)
-        or source.shape[-2:] != x.shape
+        or source.ndim != 2
+        or source.shape != x.shape
         or not x.is_floating_point()
         or not y.is_floating_point()
         or source.dtype not in (torch.int8, torch.int16, torch.int32, torch.int64)
@@ -328,10 +522,6 @@ def resolve_mosaic_range_geometry(
         )
     ):
         raise ValueError("mosaic range geometry inputs disagree with their contract")
-    if source.ndim == 3:
-        if not all(torch.equal(source[0], item) for item in source[1:]):
-            raise ValueError("mosaic input source map changes across forecast leads")
-        source = source[0]
     site_xy = torch.tensor(
         contract.radar_projected_xy_m,
         dtype=torch.float64,
@@ -345,9 +535,8 @@ def resolve_mosaic_range_geometry(
         (x.to(torch.float64) - source_x).square()
         + (y.to(torch.float64) - source_y).square()
     )
-    # No-source cells remain inside the total partition with a canonical
-    # zero-range sentinel.  The preregistered source-coverage mask excludes
-    # them from every scoring denominator.
+    # A zero sentinel keeps the archived tensor finite, while valid_source
+    # separately determines statistical range-band membership.
     distance = torch.where(
         valid_source,
         resolved_distance,
@@ -359,7 +548,8 @@ def resolve_mosaic_range_geometry(
     ):
         raise ValueError("mosaic effective range disagrees with its contract")
     masks = tuple(
-        (distance >= lower)
+        valid_source
+        & (distance >= lower)
         & (
             distance <= upper
             if index == len(contract.range_regime_labels) - 1
@@ -378,7 +568,9 @@ def resolve_mosaic_range_geometry(
             grid_contract_digest=contract.grid_contract_digest,
             range_regime_labels=contract.range_regime_labels,
             masks=masks,
+            valid_range_domain_mask=valid_source,
             range_band_mask_digests=tuple(tensor_digest(mask) for mask in masks),
+            valid_range_domain_mask_digest=tensor_digest(valid_source),
             active_range_regimes=tuple(
                 label
                 for label, mask in zip(

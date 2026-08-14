@@ -108,10 +108,14 @@ from .promotion import (
     LegacyNeuralPriorHoldoutPlanV14Audit,
     LegacyNeuralPriorHoldoutPlanV15Audit,
     LegacyNeuralPriorHoldoutPlanV16Audit,
+    LegacyNeuralPriorHoldoutPlanV17Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
     NeuralPriorInputPlan,
+    RawRadarObservationUnit,
+    MeteorologicalSamplingUnit,
+    GlobalSamplingReservationReceipt,
     PriorUncertaintyTargetPlan,
     NeuralPriorStateCalibrationPlan,
     RangeBandContract,
@@ -140,14 +144,19 @@ from .promotion import (
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionEvidence,
     LedgeredPromotionDeploymentCertificate,
+    DeployedNeuralPriorPolicy,
+    OperationalDeploymentDecisionCertificate,
     DeploymentAuthoritySigner,
     PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST,
+    OPERATIONAL_DECISION_LEDGER_GENESIS_DIGEST,
     _PromotionDeploymentAuthorityTrustStore,
     _issue_ledger_issuance_receipt,
     _issue_ledgered_promotion_deployment_certificate,
     _ledgered_promotion_deployment_certificate_from_payload,
     _load_promotion_deployment_authority_trust_store,
     _validate_ledgered_promotion_deployment_certificate,
+    _issue_operational_decision_ledger_receipt,
+    _issue_operational_deployment_decision_certificate,
     LegacyNeuralPriorPromotionEvidenceAuditV3,
     LegacyNeuralPriorPromotionEvidenceAuditV4,
     LegacyNeuralPriorPromotionEvidenceAuditV5,
@@ -170,6 +179,7 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV22,
     LegacyNeuralPriorPromotionEvidenceAuditV23,
     LegacyNeuralPriorPromotionEvidenceAuditV24,
+    LegacyNeuralPriorPromotionEvidenceAuditV25,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     ScoringReplayCaseArtifact,
@@ -203,7 +213,7 @@ _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _SCHEDULER_TRUST_STORE_CONTRACT = "advar-trusted-scheduler-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 29
+_INDEX_SCHEMA_VERSION = 30
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST = (
@@ -1520,6 +1530,69 @@ class LegacyScoringReplayBundleManifestAuditV4(
 
 
 @dataclass(frozen=True)
+class LegacyScoringReplayBundleManifestAuditV5(
+    LegacyScoringReplayBundleManifestAuditV4
+):
+    """CPU-only generation-v3 replay retained for byte audit only."""
+
+    replay_method: str = "builtin-semantic-scoring-recomputation-v5"
+    contract: str = "neural-prior-scoring-replay-bundle-v5"
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-scoring-replay-bundle-v5"
+            or self.replay_method
+            != "builtin-semantic-scoring-recomputation-v5"
+            or not self.ordered_case_ids
+            or len(set(self.ordered_case_ids)) != len(self.ordered_case_ids)
+            or len(self.ordered_case_ids)
+            != len(self.ordered_evaluation_digests)
+            or len(self.semantic_case_digests) != len(self.ordered_case_ids)
+            or any(
+                case_id not in self.ordered_case_ids
+                for case_id in (
+                    *self.dynamic_source_case_ids,
+                    *self.background_case_ids,
+                )
+            )
+        ):
+            raise ValueError("legacy v5 semantic replay manifest is invalid")
+        for value in (
+            self.scoring_input_artifact_digest,
+            *self.ordered_evaluation_digests,
+            *self.semantic_case_digests,
+            self.algorithm_source_manifest_digest,
+            self.runtime_compatibility_digest,
+            self.runtime_exact_digest,
+            self.tensor_archive_sha256,
+            self.evaluation_payload_sha256,
+        ):
+            if re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError("legacy v5 semantic replay digest is invalid")
+        expected = {
+            (case_id, role)
+            for case_id in self.ordered_case_ids
+            for role in (
+                SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                | (
+                    SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
+                    if case_id in self.dynamic_source_case_ids
+                    else frozenset()
+                )
+                | (
+                    SCORING_REPLAY_BACKGROUND_TENSOR_ROLES
+                    if case_id in self.background_case_ids
+                    else frozenset()
+                )
+            )
+        }
+        actual = {(item.case_id, item.role) for item in self.tensor_records}
+        if actual != expected or len(actual) != len(self.tensor_records):
+            raise ValueError("legacy v5 semantic replay tensor set is incomplete")
+        object.__setattr__(self, "bundle_digest", _json_digest(self.payload))
+
+
+@dataclass(frozen=True)
 class LoadedScoringReplayBundle:
     manifest: (
         ScoringReplayBundleManifest
@@ -1527,6 +1600,7 @@ class LoadedScoringReplayBundle:
         | LegacyScoringReplayBundleManifestAuditV2
         | LegacyScoringReplayBundleManifestAuditV3
         | LegacyScoringReplayBundleManifestAuditV4
+        | LegacyScoringReplayBundleManifestAuditV5
     )
     evaluations: tuple[PriorHoldoutEvaluation, ...]
     tensors: dict[tuple[str, str], Tensor]
@@ -3271,6 +3345,16 @@ class EpisodeLedger:
             raise ValueError("holdout plan is not approved")
         if len(plan.candidate_family_digests) > policy.maximum_candidate_family_size:
             raise ValueError("holdout candidate family exceeds policy")
+        sampling_reservation = (
+            plan.promotion_experiment_family.global_sampling_reservation
+        )
+        if (
+            sampling_reservation.authority_id
+            != policy.sampling_registry_authority_id
+            or sampling_reservation.authority_public_key_hex
+            != policy.sampling_registry_authority_public_key_hex
+        ):
+            raise ValueError("global sampling reservation authority is not approved")
         approved_metrics = set(policy.approved_metric_contract_digests)
         if any(item.metric_contract_digest not in approved_metrics for item in plan.cases):
             raise ValueError("holdout metric contract is not approved")
@@ -3400,6 +3484,31 @@ class EpisodeLedger:
                     raise ValueError(
                         "meteorological sampling unit is reserved by another family"
                     )
+            for raw_observation_digest in family.raw_observation_digests:
+                connection.execute(
+                    "INSERT OR IGNORE INTO promotion_raw_observation_reservations "
+                    "(raw_observation_digest,family_digest,global_receipt_digest,"
+                    "reserved_at) VALUES (?,?,?,?)",
+                    (
+                        raw_observation_digest,
+                        family.family_digest,
+                        family.global_sampling_reservation.receipt_digest,
+                        now.isoformat(),
+                    ),
+                )
+                retained_raw_observation = connection.execute(
+                    "SELECT family_digest,global_receipt_digest FROM "
+                    "promotion_raw_observation_reservations "
+                    "WHERE raw_observation_digest = ?",
+                    (raw_observation_digest,),
+                ).fetchone()
+                if retained_raw_observation != (
+                    family.family_digest,
+                    family.global_sampling_reservation.receipt_digest,
+                ):
+                    raise ValueError(
+                        "raw radar observation is reserved by another family"
+                    )
             matching_trial = next(
                 item
                 for item in family.trials
@@ -3453,6 +3562,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanV14Audit
         | LegacyNeuralPriorHoldoutPlanV15Audit
         | LegacyNeuralPriorHoldoutPlanV16Audit
+        | LegacyNeuralPriorHoldoutPlanV17Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -3550,6 +3660,13 @@ class EpisodeLedger:
             )
         if value.get("contract") == "neural-prior-holdout-plan-v16":
             return LegacyNeuralPriorHoldoutPlanV16Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v17":
+            return LegacyNeuralPriorHoldoutPlanV17Audit(
                 plan_digest=plan_digest,
                 payload_json=json.dumps(
                     value, sort_keys=True, separators=(",", ":")
@@ -3667,6 +3784,33 @@ class EpisodeLedger:
             )
             for item in value["input_plans"]
         )
+        value["raw_observation_units"] = tuple(
+            RawRadarObservationUnit(
+                **{
+                    key: entry
+                    for key, entry in item.items()
+                    if key != "observation_digest"
+                }
+            )
+            for item in value["raw_observation_units"]
+        )
+        value["meteorological_sampling_units"] = tuple(
+            MeteorologicalSamplingUnit(
+                **cast(
+                    Any,
+                    {
+                        key: (
+                            tuple(entry)
+                            if key == "raw_observation_digests"
+                            else entry
+                        )
+                        for key, entry in item.items()
+                        if key != "sampling_unit_digest"
+                    },
+                )
+            )
+            for item in value["meteorological_sampling_units"]
+        )
         value["uncertainty_target_plans"] = tuple(
             PriorUncertaintyTargetPlan(
                 **{
@@ -3733,7 +3877,7 @@ class EpisodeLedger:
                 )
             if (
                 geometry_values.get("contract")
-                == "mosaic-horizontal-range-geometry-contract-v1"
+                == "mosaic-horizontal-range-geometry-contract-v2"
             ):
                 decoded_geometries.append(
                     MosaicRangeGeometryContract(**cast(Any, geometry_values))
@@ -3800,6 +3944,19 @@ class EpisodeLedger:
         family_values.pop("total_family_size", None)
         family_values["meteorological_sampling_unit_digests"] = tuple(
             family_values["meteorological_sampling_unit_digests"]
+        )
+        family_values["raw_observation_digests"] = tuple(
+            family_values["raw_observation_digests"]
+        )
+        reservation_values = dict(
+            family_values["global_sampling_reservation"]
+        )
+        reservation_values.pop("receipt_digest", None)
+        reservation_values["raw_observation_digests"] = tuple(
+            reservation_values["raw_observation_digests"]
+        )
+        family_values["global_sampling_reservation"] = (
+            GlobalSamplingReservationReceipt(**reservation_values)
         )
         family_values["trials"] = tuple(
             PromotionExperimentTrial(
@@ -4417,6 +4574,7 @@ class EpisodeLedger:
                     LegacyScoringReplayBundleManifestAuditV2,
                     LegacyScoringReplayBundleManifestAuditV3,
                     LegacyScoringReplayBundleManifestAuditV4,
+                    LegacyScoringReplayBundleManifestAuditV5,
                 ),
             ):
                 raise ValueError(
@@ -5247,6 +5405,35 @@ class EpisodeLedger:
                     raise FileExistsError(
                         "meteorological sampling unit is already consumed"
                     ) from error
+            for raw_observation_digest in (
+                plan.promotion_experiment_family.raw_observation_digests
+            ):
+                reservation = connection.execute(
+                    "SELECT family_digest FROM "
+                    "promotion_raw_observation_reservations "
+                    "WHERE raw_observation_digest = ?",
+                    (raw_observation_digest,),
+                ).fetchone()
+                if reservation != (evidence.promotion_experiment_family_digest,):
+                    raise ValueError(
+                        "promotion raw observation lacks its family reservation"
+                    )
+                try:
+                    connection.execute(
+                        "INSERT INTO promotion_raw_observation_consumptions "
+                        "(raw_observation_digest,family_digest,"
+                        "promotion_evidence_digest,consumed_at) VALUES (?,?,?,?)",
+                        (
+                            raw_observation_digest,
+                            evidence.promotion_experiment_family_digest,
+                            evidence.promotion_evidence_digest,
+                            datetime.now(timezone.utc).isoformat(),
+                        ),
+                    )
+                except sqlite3.IntegrityError as error:
+                    raise FileExistsError(
+                        "raw radar observation is already consumed"
+                    ) from error
         return evidence.promotion_evidence_digest
 
     def issue_neural_prior_promotion_deployment_certificate(
@@ -5464,6 +5651,122 @@ class EpisodeLedger:
                 ) from error
         return certificate
 
+    def issue_operational_deployment_decision(
+        self,
+        decision_payload: dict[str, object],
+        *,
+        promotion_deployment_certificate: LedgeredPromotionDeploymentCertificate,
+        promotion_evidence: NeuralPriorPromotionEvidence,
+        policy: DeployedNeuralPriorPolicy,
+        policy_trust_store_digest: str,
+        ledger_signer: DeploymentAuthoritySigner,
+        operational_signer: DeploymentAuthoritySigner,
+        authority_trust_store_path: str | Path,
+    ) -> OperationalDeploymentDecisionCertificate:
+        """Record and sign one operational choice in a single ledger transaction."""
+
+        authority_trust = _load_promotion_deployment_authority_trust_store(
+            authority_trust_store_path
+        )
+        if (
+            ledger_signer.authority_id == operational_signer.authority_id
+            or ledger_signer.public_key_hex == operational_signer.public_key_hex
+        ):
+            raise ValueError(
+                "ledger and operational decisions require separate authority keys"
+            )
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.row_factory = sqlite3.Row
+            promotion_row = connection.execute(
+                "SELECT certificate_digest,ledger_instance_digest FROM "
+                "neural_prior_promotion_deployment_certificates_v3 "
+                "WHERE certificate_digest = ?",
+                (promotion_deployment_certificate.certificate_digest,),
+            ).fetchone()
+            head = connection.execute(
+                "SELECT ledger_instance_digest,sequence_number,"
+                "certificate_digest FROM operational_decision_chain_head "
+                "WHERE singleton = 1"
+            ).fetchone()
+            if (
+                promotion_row is None
+                or head is None
+                or promotion_row["ledger_instance_digest"]
+                != promotion_deployment_certificate.ledger_instance_digest
+                or head["ledger_instance_digest"]
+                != promotion_deployment_certificate.ledger_instance_digest
+            ):
+                raise ValueError(
+                    "operational decision requires its ledgered promotion certificate"
+                )
+            recorded_at = datetime.now(timezone.utc).isoformat()
+            sequence_number = int(head["sequence_number"]) + 1
+            receipt = _issue_operational_decision_ledger_receipt(
+                decision_payload,
+                ledger_instance_digest=head["ledger_instance_digest"],
+                sequence_number=sequence_number,
+                previous_operational_decision_digest=head["certificate_digest"],
+                recorded_at=recorded_at,
+                signer=ledger_signer,
+                authority_trust_store=authority_trust,
+            )
+            certificate = _issue_operational_deployment_decision_certificate(
+                decision_payload,
+                promotion_deployment_certificate=promotion_deployment_certificate,
+                promotion_evidence=promotion_evidence,
+                policy=policy,
+                policy_trust_store_digest=policy_trust_store_digest,
+                ledger_receipt=receipt,
+                signer=operational_signer,
+                authority_trust_store=authority_trust,
+            )
+            payload_json = json.dumps(
+                certificate.payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            try:
+                connection.execute(
+                    "INSERT INTO operational_deployment_decisions "
+                    "(certificate_digest,ledger_instance_digest,sequence_number,"
+                    "previous_certificate_digest,promotion_certificate_digest,"
+                    "input_plan_digest,payload_json,recorded_at) "
+                    "VALUES (?,?,?,?,?,?,?,?)",
+                    (
+                        certificate.certificate_digest,
+                        certificate.ledger_instance_digest,
+                        certificate.ledger_sequence_number,
+                        certificate.previous_operational_decision_digest,
+                        certificate.promotion_deployment_certificate_digest,
+                        certificate.input_plan_digest,
+                        payload_json,
+                        certificate.issued_at,
+                    ),
+                )
+                updated = connection.execute(
+                    "UPDATE operational_decision_chain_head SET "
+                    "sequence_number = ?,certificate_digest = ?,updated_at = ? "
+                    "WHERE singleton = 1 AND sequence_number = ? AND "
+                    "certificate_digest = ?",
+                    (
+                        certificate.ledger_sequence_number,
+                        certificate.certificate_digest,
+                        certificate.issued_at,
+                        int(head["sequence_number"]),
+                        head["certificate_digest"],
+                    ),
+                )
+                if updated.rowcount != 1:
+                    raise sqlite3.IntegrityError(
+                        "operational decision chain head changed"
+                    )
+            except sqlite3.IntegrityError as error:
+                raise FileExistsError(
+                    "operational deployment decision is already recorded"
+                ) from error
+        return certificate
+
     def load_neural_prior_promotion_deployment_certificate(
         self,
         certificate_digest: str,
@@ -5566,6 +5869,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV22
         | LegacyNeuralPriorPromotionEvidenceAuditV23
         | LegacyNeuralPriorPromotionEvidenceAuditV24
+        | LegacyNeuralPriorPromotionEvidenceAuditV25
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -5642,6 +5946,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV22
                 | LegacyNeuralPriorPromotionEvidenceAuditV23
                 | LegacyNeuralPriorPromotionEvidenceAuditV24
+                | LegacyNeuralPriorPromotionEvidenceAuditV25
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -5750,6 +6055,7 @@ class EpisodeLedger:
                         "neural-prior-promotion-evidence-v23",
                         "neural-prior-promotion-evidence-v24",
                         "neural-prior-promotion-evidence-v25",
+                        "neural-prior-promotion-evidence-v26",
                     ):
                         raw_payload = json.loads(row["evidence_payload_json"])
                         if not isinstance(raw_payload, dict):
@@ -5780,6 +6086,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v23",
                             "neural-prior-promotion-evidence-v24",
                             "neural-prior-promotion-evidence-v25",
+                            "neural-prior-promotion-evidence-v26",
                         ):
                             raw_payload["regime_classifier_evidence_digests"] = tuple(
                                 raw_payload["regime_classifier_evidence_digests"]
@@ -5808,6 +6115,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v23",
                             "neural-prior-promotion-evidence-v24",
                             "neural-prior-promotion-evidence-v25",
+                            "neural-prior-promotion-evidence-v26",
                         ):
                             raw_payload["range_band_skill_bounds"] = tuple(
                                 tuple(item)
@@ -5830,6 +6138,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v23",
                             "neural-prior-promotion-evidence-v24",
                             "neural-prior-promotion-evidence-v25",
+                            "neural-prior-promotion-evidence-v26",
                         ):
                             raw_payload[
                                 "range_band_skill_inference_diagnostics"
@@ -5853,6 +6162,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v23",
                             "neural-prior-promotion-evidence-v24",
                             "neural-prior-promotion-evidence-v25",
+                            "neural-prior-promotion-evidence-v26",
                         ):
                             raw_payload[
                                 "certified_range_geometry_contract_digests"
@@ -6073,6 +6383,15 @@ class EpisodeLedger:
                             )
                         elif contract == "neural-prior-promotion-evidence-v24":
                             evidence = LegacyNeuralPriorPromotionEvidenceAuditV24(
+                                promotion_evidence_digest=promotion_evidence_digest,
+                                payload_json=json.dumps(
+                                    raw_payload,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                ),
+                            )
+                        elif contract == "neural-prior-promotion-evidence-v25":
+                            evidence = LegacyNeuralPriorPromotionEvidenceAuditV25(
                                 promotion_evidence_digest=promotion_evidence_digest,
                                 payload_json=json.dumps(
                                     raw_payload,
@@ -6527,6 +6846,38 @@ class EpisodeLedger:
             )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS promotion_raw_observation_reservations (
+                    raw_observation_digest TEXT PRIMARY KEY,
+                    family_digest TEXT NOT NULL,
+                    global_receipt_digest TEXT NOT NULL,
+                    reserved_at TEXT NOT NULL,
+                    FOREIGN KEY (family_digest)
+                        REFERENCES neural_prior_promotion_experiment_families(
+                            family_digest
+                        )
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS promotion_raw_observation_consumptions (
+                    raw_observation_digest TEXT PRIMARY KEY,
+                    family_digest TEXT NOT NULL,
+                    promotion_evidence_digest TEXT NOT NULL,
+                    consumed_at TEXT NOT NULL,
+                    FOREIGN KEY (family_digest)
+                        REFERENCES neural_prior_promotion_experiment_families(
+                            family_digest
+                        ),
+                    FOREIGN KEY (promotion_evidence_digest)
+                        REFERENCES neural_prior_promotions(
+                            promotion_evidence_digest
+                        )
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS neural_prior_resolved_source_coverage_artifacts (
                     artifact_digest TEXT PRIMARY KEY,
                     operational_domain_artifact_digest TEXT NOT NULL UNIQUE,
@@ -6756,6 +7107,54 @@ class EpisodeLedger:
                         now,
                     ),
                 )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS operational_deployment_decisions (
+                    certificate_digest TEXT PRIMARY KEY,
+                    ledger_instance_digest TEXT NOT NULL,
+                    sequence_number INTEGER NOT NULL UNIQUE CHECK(sequence_number > 0),
+                    previous_certificate_digest TEXT NOT NULL UNIQUE,
+                    promotion_certificate_digest TEXT NOT NULL,
+                    input_plan_digest TEXT NOT NULL UNIQUE,
+                    payload_json TEXT NOT NULL,
+                    recorded_at TEXT NOT NULL,
+                    FOREIGN KEY (promotion_certificate_digest)
+                        REFERENCES neural_prior_promotion_deployment_certificates_v3(
+                            certificate_digest
+                        )
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS operational_decision_chain_head (
+                    singleton INTEGER PRIMARY KEY CHECK(singleton = 1),
+                    ledger_instance_digest TEXT NOT NULL,
+                    sequence_number INTEGER NOT NULL CHECK(sequence_number >= 0),
+                    certificate_digest TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+            if connection.execute(
+                "SELECT 1 FROM operational_decision_chain_head WHERE singleton = 1"
+            ).fetchone() is None:
+                deployment_head = connection.execute(
+                    "SELECT ledger_instance_digest,updated_at FROM "
+                    "deployment_certificate_chain_head WHERE singleton = 1"
+                ).fetchone()
+                assert deployment_head is not None
+                connection.execute(
+                    "INSERT INTO operational_decision_chain_head "
+                    "(singleton,ledger_instance_digest,sequence_number,"
+                    "certificate_digest,updated_at) VALUES (1,?,?,?,?)",
+                    (
+                        deployment_head[0],
+                        0,
+                        OPERATIONAL_DECISION_LEDGER_GENESIS_DIGEST,
+                        deployment_head[1],
+                    ),
+                )
             _ensure_variational_learning_approval_schema(connection)
             _ensure_realized_intervention_schema(connection)
             _ensure_prospective_receipt_schema(connection)
@@ -6791,6 +7190,8 @@ class EpisodeLedger:
                 "neural_prior_experiment_family_consumptions",
                 "promotion_sampling_unit_reservations",
                 "promotion_sampling_unit_consumptions",
+                "promotion_raw_observation_reservations",
+                "promotion_raw_observation_consumptions",
                 "neural_prior_resolved_source_coverage_artifacts",
                 "neural_prior_holdout_scoring_input_artifacts",
                 "trusted_process_start_receipts_v2",
@@ -6800,6 +7201,7 @@ class EpisodeLedger:
                 "trusted_process_completion_receipts",
                 "neural_prior_promotions",
                 "neural_prior_promotion_deployment_certificates_v3",
+                "operational_deployment_decisions",
             ):
                 connection.execute(
                     f"""
@@ -7263,7 +7665,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v20"
+        or value[0].get("contract") != "prior-holdout-evaluation-v21"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:
@@ -7302,6 +7704,10 @@ def _decode_evaluation_audit_payloads(
         "verification_valid_times",
         "classified_range_regimes",
         "reference_active_range_regimes",
+        "classifier_regime_labels",
+        "classifier_range_regime_labels",
+        "classifier_regime_probabilities",
+        "classifier_range_regime_probabilities",
     }
     for raw in value:
         assert isinstance(raw, dict)
@@ -7442,7 +7848,7 @@ def _decode_holdout_scoring_artifact(
         raise ValueError("invalid holdout scoring artifact payload")
     values = dict(value)
     stored_digest = values.pop("artifact_digest", None)
-    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v5":
+    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v6":
         raise ValueError("legacy holdout scoring artifacts are audit-only")
     for name in (
         "ordered_case_ids",
@@ -7469,6 +7875,7 @@ def _decode_scoring_replay_bundle_manifest(
     | LegacyScoringReplayBundleManifestAuditV2
     | LegacyScoringReplayBundleManifestAuditV3
     | LegacyScoringReplayBundleManifestAuditV4
+    | LegacyScoringReplayBundleManifestAuditV5
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -7503,6 +7910,7 @@ def _decode_scoring_replay_bundle_manifest(
             | LegacyScoringReplayBundleManifestAuditV2
             | LegacyScoringReplayBundleManifestAuditV3
             | LegacyScoringReplayBundleManifestAuditV4
+            | LegacyScoringReplayBundleManifestAuditV5
         ) = LegacyScoringReplayBundleManifestAuditV1(
             **cast(Any, values)
         )
@@ -7526,6 +7934,10 @@ def _decode_scoring_replay_bundle_manifest(
             )
         elif values.get("contract") == "neural-prior-scoring-replay-bundle-v4":
             manifest = LegacyScoringReplayBundleManifestAuditV4(
+                **cast(Any, values)
+            )
+        elif values.get("contract") == "neural-prior-scoring-replay-bundle-v5":
+            manifest = LegacyScoringReplayBundleManifestAuditV5(
                 **cast(Any, values)
             )
         else:

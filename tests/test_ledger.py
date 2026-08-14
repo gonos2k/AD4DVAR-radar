@@ -710,6 +710,22 @@ class EpisodeLedgerTests(unittest.TestCase):
             "rule_digest",
             json_digest(decision_rule.payload),
         )
+        raw_unit = promotion_module.RawRadarObservationUnit.from_ingestor(
+            radar_site_digest="a" * 64,
+            acquisition_valid_time=input_plan.observation_valid_time,
+            scan_strategy_digest="5" * 64,
+            raw_volume_object_digest="1" * 64,
+            raw_ingestor_id="clock-raw-ingestor",
+            raw_ingestor_private_key=(
+                promotion_module.Ed25519PrivateKey.from_private_bytes(
+                    b"\x23" * 32
+                )
+            ),
+        )
+        sampling_unit = promotion_module.MeteorologicalSamplingUnit(
+            raw_observation_digests=(raw_unit.observation_digest,),
+            canonical_geodetic_footprint_digest="6" * 64,
+        )
         cases = (
                 NeuralPriorHoldoutPlanCase(
                     case_id="case-clock",
@@ -732,31 +748,48 @@ class EpisodeLedgerTests(unittest.TestCase):
                         issuance_domain_plan.plan_digest
                     ),
                     meteorological_sampling_unit_digest=(
-                        promotion_module.meteorological_sampling_unit_digest(
-                            radar_id="radar-clock",
-                            issue_time=issue,
-                            observation_valid_time=input_plan.observation_valid_time,
-                            spatial_footprint_digest=input_plan.grid_contract_digest,
-                        )
+                        sampling_unit.sampling_unit_digest
                     ),
                     issue_time=issue,
                 ),
             )
+        holdout_cohort_digest = promotion_module._holdout_dataset_digest(cases)
+        trials = (
+            promotion_module.PromotionExperimentTrial(
+                candidate_prior_digest="7" * 64,
+                promotion_decision_rule_digest=decision_rule.rule_digest,
+                classifier_manifest_digests=(
+                    classifier_manifest.manifest_digest,
+                ),
+            ),
+        )
+        registry_key = promotion_module.Ed25519PrivateKey.from_private_bytes(
+            b"\x24" * 32
+        )
+        reservation = promotion_module.GlobalSamplingReservationReceipt.issue(
+            experiment_scope_digest=(
+                promotion_module._promotion_experiment_scope_digest(
+                    holdout_cohort_digest=holdout_cohort_digest,
+                    parent_prior_digest="6" * 64,
+                    trials=trials,
+                    winner_selection_rule_digest="5" * 64,
+                )
+            ),
+            raw_observation_digests=(raw_unit.observation_digest,),
+            registry_id="clock-global-sampling-registry",
+            authority_id="clock-sampling-authority",
+            authority_private_key=registry_key,
+            reserved_at="2029-01-01T00:00:00Z",
+        )
         experiment_family = promotion_module.PromotionExperimentFamily(
-            holdout_cohort_digest=promotion_module._holdout_dataset_digest(cases),
+            holdout_cohort_digest=holdout_cohort_digest,
             meteorological_sampling_unit_digests=tuple(
                 item.meteorological_sampling_unit_digest for item in cases
             ),
+            raw_observation_digests=(raw_unit.observation_digest,),
+            global_sampling_reservation=reservation,
             parent_prior_digest="6" * 64,
-            trials=(
-                promotion_module.PromotionExperimentTrial(
-                    candidate_prior_digest="7" * 64,
-                    promotion_decision_rule_digest=decision_rule.rule_digest,
-                    classifier_manifest_digests=(
-                        classifier_manifest.manifest_digest,
-                    ),
-                ),
-            ),
+            trials=trials,
             winner_selection_rule_digest="5" * 64,
         )
         plan = NeuralPriorHoldoutPlan(
@@ -765,6 +798,8 @@ class EpisodeLedgerTests(unittest.TestCase):
             candidate_family_digests=("7" * 64,),
             cases=cases,
             input_plans=(input_plan,),
+            raw_observation_units=(raw_unit,),
+            meteorological_sampling_units=(sampling_unit,),
             uncertainty_target_plans=(target_plan,),
             state_calibration_target_plans=(state_target_plan,),
             range_band_contracts=(range_contract,),
@@ -786,6 +821,12 @@ class EpisodeLedgerTests(unittest.TestCase):
             approved_plan_digests=(plan.plan_digest,),
             approved_metric_contract_digests=("9" * 64,),
             maximum_candidate_family_size=1,
+            sampling_registry_authority_id=(
+                plan.promotion_experiment_family.global_sampling_reservation.authority_id
+            ),
+            sampling_registry_authority_public_key_hex=(
+                plan.promotion_experiment_family.global_sampling_reservation.authority_public_key_hex
+            ),
         )
         trust = SimpleNamespace(
             approved_policy_digests=frozenset(
@@ -968,7 +1009,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-        self.assertEqual(version, 29)
+        self.assertEqual(version, 30)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4281,7 +4322,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 29)
+        self.assertEqual(version, 30)
 
 
 if __name__ == "__main__":

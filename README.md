@@ -924,12 +924,14 @@ logits는 holdout의 shadow classifier 진단에만 남는다. Operational range
 radar-site identity, grid coordinates, radial distance edges와 resolver algorithm을 묶은
 root-approved `RangeGeometryContract`에서 결정한다. 현재 격자의 완전분할에서 비어 있지
 않은 모든 band와 exact geometry contract가 인증돼야 candidate를 전 격자에 선택하며,
-하나라도 미인증이면 전체 parent로 fallback한다. 현재 구현은 beam-height나 mosaic source
-selection을 암시하지 않는 projected horizontal single-radar geometry로 명시하며, geometry
-grid digest와 coordinate shape를 operational run의 grid와 직접 비교한다. Operational
-data identity는 single-site와 mosaic source 계약을 구분하고, single-radar geometry는
-현재 input의 radar-site 및 site-location digest와 같아야 한다. Mosaic source는 source-radar
-index/effective-range map 계약 없이는 single-radar geometry 경로에 들어갈 수 없다.
+하나라도 미인증이면 전체 parent로 fallback한다. Single-site는 projected horizontal
+single-radar geometry를 사용하고, mosaic는 `SourceRadarRegistry`와
+`RadarSiteLocationRegistry`의 동일한 site ordering에 결합된
+`MosaicRangeGeometryContract-v2`를 사용한다. Input-time `[H,W]` source-index map으로
+cell별 effective horizontal range를 계산하며 source가 없는 `-1` 셀은 어떤 range band에도
+포함하지 않는다. Geometry grid digest, coordinate shape, source-map digest와 effective-range
+digest는 operational run의 source identity와 직접 비교된다. Beam-height는 아직 이
+horizontal range 계약의 범위 밖이다.
 `infer_deployed_neural_prior()`는 root-owned trust store가 승인한
 `DeployedNeuralPriorPolicy`의 confidence rule까지 확인한 뒤 candidate 또는 parent를
 선택한다. 연구용 `NeuralPriorInferenceRunner.infer()`는 operational input을 항상 거부한다.
@@ -946,9 +948,9 @@ evaluation JSON에 무관한 임의 tensor를 붙인 snapshot은 자동승격 �
 Forecast, prior application, inference runner, verification, metric config, calibration
 target, classifier와 operational-domain artifact는 각각 제품 validator와 runner
 reproduction을 통과해야 하며, factory가 한 번 동결한 tensor snapshot과 completion 시점의
-live product bytes가 다르면 거부된다. Replay v5 contract/method와 CPU-only generation
-v3 digest는 `HoldoutScoringArtifact-v5`, promotion evidence v25,
-`DeployedNeuralPriorPolicy-v11`과 deployment-decision artifact v9까지 직접 전파된다.
+live product bytes가 다르면 거부된다. Replay v6 contract/method와 CPU-only generation
+v4 digest는 `HoldoutScoringArtifact-v6`, promotion evidence v26,
+`DeployedNeuralPriorPolicy-v12`와 deployment-decision artifact v10까지 직접 전파된다.
 따라서 replay 세대를 식별하지 못하는 v22 promotion evidence는 audit-only이며 배포 selector가
 소비할 수 없다.
 Audit load는 저장된 typed evaluation을 볼 수 있지만, 자동 completion과 promotion은
@@ -971,9 +973,14 @@ availability 이후 decision deadline 이전에 data-ingestor가 서명한
 publication eligibility는 `[lead,H,W]`로 분리되며, exact source-map·selection-policy·
 input/full-analysis digest에 결합된다. Ledger에 deadline 전에 append되지 않은 resolved
 coverage나 resolved coverage가 없는 mosaic scoring input은 fail-close한다.
+Holdout의 meteorological sampling identity는 processing grid가 아니라 ingestor가 서명한
+raw radar-volume object, radar site, scan strategy와 acquisition time으로 구성한다. 중앙
+sampling registry가 raw-volume digest를 experiment family에 전역 예약하며, 서로 다른
+regrid 또는 겹치는 3-frame window가 raw volume 하나라도 공유하면 다른 family에서
+재사용할 수 없다.
 선택 digest뿐 아니라 classifier probability, 활성 band, policy, certified group,
 horizontal range-geometry payload, operational radar source와 trust-store snapshot을 포함한
-canonical deployment-decision payload도 forecast run identity 및 v59 artifact에 남는다.
+canonical deployment-decision payload도 forecast run identity 및 v60 artifact에 남는다.
 적재 시 physical partition과 current-run grid/shape/site를 포함한 selector를 다시 실행해
 저장된 candidate/parent 선택과 exact 비교한다. v54 run은 source-aware selection 이전
 계약을 `neural-prior-deployment-lineage-v5-audit`로만 읽고, v53 run은 current-grid binding과 durable geometry
@@ -989,8 +996,14 @@ exclusion mask가 target mask를 덮었는지 계산해 확인한다. 불확실�
 fraction·면적과 parent 대비 abstention 증가 및 NLL abstention penalty를 함께 적용한다.
 따라서 caller가 `eligible=True` 객체만 직접 만들어 prior를 승격할 수 없다.
 
-현재 promotion evidence는 v25, candidate manifest는 v12, holdout plan은 v17,
-holdout evaluation은 v20, promotion policy는 v26, metric support는 v3이다.
+Classifier calibration gate는 weather softmax의 multiclass Brier, conditionally-independent
+Bernoulli range heads의 multilabel Brier, weather unknown probability와 no-active-range
+probability의 binary Brier를 physical event 동일가중 UCB로 판정한다. 기존 joint-min
+surrogate와 ECE는 diagnostic-only다. Sample-size preflight도 known weather/range,
+weather/range OOD와 Brier-valid event subset을 각각 확인한다.
+
+현재 promotion evidence는 v26, candidate manifest는 v12, holdout plan은 v18,
+holdout evaluation은 v21, promotion policy는 v27, metric support는 v3이다.
 `sealed_historical` plan은 결과 비공개 escrow를 증명하지 않으므로 연구·shadow audit에만
 사용되고 deployment eligibility는 prospective plan에만 부여된다. Candidate-neutral
 `PhysicalEventCatalogPlan`은 association·spatial-membership rule, spatial reference,
@@ -1544,22 +1557,25 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v65`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v59`
+- `output_contract_version`: 현재 `nowcast-npz-v66`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v60`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
 
-`forecast-run-v59`는 CPU-only scoring generation v3, 역할 분리된 ledger issuance
+`forecast-run-v60`은 CPU-only scoring generation v4, raw radar-volume 단위의 전역
+sampling reservation, source-registry와 location-registry가 결합된 mosaic range domain,
+역할 분리된 ledger issuance
 receipt/promotion certificate/operational decision signature, 그리고 input-plan의
-decision deadline chronology를 함께 검증한다. `forecast-run-v58`은 audit-only다.
+sub-second decision deadline chronology를 함께 검증한다. `forecast-run-v59`는
+audit-only다.
 
-`forecast-run-v59`는 원자적 ledger sequence를 가진 deployment certificate
-v3, deployment-decision artifact v9과
-`neural-prior-deployment-lineage-v10`을 current 의미로 결합한다. Decision
+`forecast-run-v60`은 원자적 ledger sequence를 가진 deployment certificate
+v4, deployment-decision artifact v10과
+`neural-prior-deployment-lineage-v11`을 current 의미로 결합한다. Decision
 artifact는 unsigned promotion subset을 보존하지 않고 certificate 안의 완전한
-`NeuralPriorPromotionEvidence-v25`만 typed decode한다. 이전
-`forecast-run-v58`, `forecast-run-v57`, `forecast-run-v56`은
+`NeuralPriorPromotionEvidence-v26`만 typed decode한다. 이전
+`forecast-run-v59`, `forecast-run-v58`, `forecast-run-v57`, `forecast-run-v56`은
 각 세대의 decision artifact를 보존하는 audit lineage로만
 적재되며 current operational deployment replay에는 사용할 수 없다.
 
@@ -1571,7 +1587,8 @@ certificate 세대가 도입되기 전까지 MPS scoring과 operational MPS depl
 fail-close한다. Current deployment는 EpisodeLedger가 발급한 root-signed
 promotion deployment certificate와 외부 authority 및 learning-policy trust
 store를 함께 요구한다. 저장되는 operational selection 전체도 별도의 authority-signed
-`OperationalDeploymentDecisionCertificate-v2`에 결합되므로, 재시작 시 regime evidence,
+`OperationalDeploymentDecisionCertificate-v3`와 ledger-recorded decision receipt에
+결합되므로, 재시작 시 regime evidence,
 policy threshold 또는 selected prior를 재해시해 바꾸는 경로가 차단된다.
 - `displacement_yx`: `(row, column)` pixel/step
 - `grid_velocity_mps_yx`, `displacement_mps_yx`: 호환용 grid-axis

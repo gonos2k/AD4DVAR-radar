@@ -944,14 +944,14 @@ class NeuralPriorDeploymentSelection:
         "no_certified_regime",
         "ambiguous_classifier_branch",
     ]
-    contract: str = "neural-prior-deployment-selection-v8"
+    contract: str = "neural-prior-deployment-selection-v9"
     selection_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use the certified neural-prior deployment selector")
 
     def validate_integrity(self) -> None:
-        if self.contract != "neural-prior-deployment-selection-v8":
+        if self.contract != "neural-prior-deployment-selection-v9":
             raise ValueError("unsupported neural-prior deployment selection")
         for name in (
             "selected_prior_digest",
@@ -1007,7 +1007,7 @@ def _new_neural_prior_deployment_selection(
     object.__setattr__(
         result,
         "contract",
-        "neural-prior-deployment-selection-v8",
+        "neural-prior-deployment-selection-v9",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
