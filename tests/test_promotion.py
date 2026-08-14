@@ -70,6 +70,49 @@ from advar import (
 from advar.sensitivity import _LearningPolicyTrustStore
 
 
+class _TestOperationalDecisionRecorder:
+    """Test adapter that emits the same signed receipt as EpisodeLedger."""
+
+    def issue_operational_deployment_decision(
+        self,
+        decision_payload,
+        *,
+        promotion_deployment_certificate,
+        promotion_evidence,
+        policy,
+        policy_trust_store_digest,
+        ledger_signer,
+        operational_signer,
+        authority_trust_store_path,
+    ):
+        trust = promotion_module._load_promotion_deployment_authority_trust_store(
+            authority_trust_store_path
+        )
+        receipt = promotion_module._issue_operational_decision_ledger_receipt(
+            decision_payload,
+            ledger_instance_digest=(
+                promotion_deployment_certificate.ledger_instance_digest
+            ),
+            sequence_number=1,
+            previous_operational_decision_digest=(
+                promotion_module.OPERATIONAL_DECISION_LEDGER_GENESIS_DIGEST
+            ),
+            recorded_at=operational_signer.signing_time(),
+            signer=ledger_signer,
+            authority_trust_store=trust,
+        )
+        return promotion_module._issue_operational_deployment_decision_certificate(
+            decision_payload,
+            promotion_deployment_certificate=promotion_deployment_certificate,
+            promotion_evidence=promotion_evidence,
+            policy=policy,
+            policy_trust_store_digest=policy_trust_store_digest,
+            ledger_receipt=receipt,
+            signer=operational_signer,
+            authority_trust_store=trust,
+        )
+
+
 class _FixedRegimeClassifier(nn.Module):
     def __init__(self, regime_logits: tuple[float, ...], range_logits: tuple[float, ...]):
         super().__init__()
@@ -159,7 +202,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         evaluation = self.evaluation(1, -1.0)
         policy = self.policy()
 
-        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v17")
+        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v18")
         self.assertTrue(
             all(
                 item.contract == "neural-prior-range-band-contract-v2"
@@ -172,7 +215,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             evaluation.contract,
-            "prior-holdout-evaluation-v20",
+            "prior-holdout-evaluation-v21",
         )
         self.assertTrue(
             all(
@@ -180,7 +223,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 for band in evaluation.range_band_evaluations
             )
         )
-        self.assertEqual(policy.contract, "neural-prior-promotion-policy-v26")
+        self.assertEqual(policy.contract, "neural-prior-promotion-policy-v27")
 
     def test_semantic_replay_generation_reaches_promotion_and_deployment(
         self,
@@ -207,10 +250,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
         self.assertEqual(
             scoring.contract,
-            "neural-prior-holdout-scoring-artifact-v5",
+            "neural-prior-holdout-scoring-artifact-v6",
         )
-        self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v25")
-        self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v11")
+        self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v26")
+        self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v12")
         self.assertEqual(
             evidence.semantic_replay_generation_digest,
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST,
@@ -234,7 +277,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_evidence=evidence,
         )
         minimal_evidence = {
-            "contract": "neural-prior-promotion-evidence-v25",
+            "contract": "neural-prior-promotion-evidence-v26",
             "deployment_eligible": True,
         }
         forged_values = dict(certificate.payload)
@@ -771,7 +814,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             signed_training_member_manifest_digest="5" * 64,
         )
 
-    def plan(self) -> NeuralPriorHoldoutPlan:
+    def plan(
+        self,
+        *,
+        first_labeling_valid_time: str = "2026-08-09T01:00:00Z",
+    ) -> NeuralPriorHoldoutPlan:
         input_plans = tuple(
             promotion_module.NeuralPriorInputPlan(
                 valid_times=(issue,),
@@ -795,6 +842,25 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ("2026-08-09T00:00:00Z", "2026-08-10T00:00:00Z"),
                 start=1,
             )
+        )
+        raw_ingestor_key = Ed25519PrivateKey.from_private_bytes(b"\x21" * 32)
+        raw_units = tuple(
+            promotion_module.RawRadarObservationUnit.from_ingestor(
+                radar_site_digest="a" * 64,
+                acquisition_valid_time=input_plan.observation_valid_time,
+                scan_strategy_digest="5" * 64,
+                raw_volume_object_digest=("1" if index == 1 else "2") * 64,
+                raw_ingestor_id="test-raw-ingestor",
+                raw_ingestor_private_key=raw_ingestor_key,
+            )
+            for index, input_plan in enumerate(input_plans, start=1)
+        )
+        sampling_units = tuple(
+            promotion_module.MeteorologicalSamplingUnit(
+                raw_observation_digests=(raw_unit.observation_digest,),
+                canonical_geodetic_footprint_digest="6" * 64,
+            )
+            for raw_unit in raw_units
         )
         target_plans = tuple(
             PriorUncertaintyTargetPlan(
@@ -903,7 +969,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 adjudication_policy_digest="6" * 64,
             )
             for index, valid_time in enumerate(
-                ("2026-08-09T01:00:00Z", "2026-08-10T01:00:00Z"),
+                (first_labeling_valid_time, "2026-08-10T01:00:00Z"),
                 start=1,
             )
         )
@@ -931,12 +997,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         issuance_plans[0].plan_digest
                     ),
                     meteorological_sampling_unit_digest=(
-                        promotion_module.meteorological_sampling_unit_digest(
-                            radar_id="radar-1",
-                            issue_time="2026-08-09T00:00:00Z",
-                            observation_valid_time=input_plans[0].observation_valid_time,
-                            spatial_footprint_digest=input_plans[0].grid_contract_digest,
-                        )
+                        sampling_units[0].sampling_unit_digest
                     ),
                     issue_time="2026-08-09T00:00:00Z",
                 ),
@@ -963,32 +1024,51 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         issuance_plans[1].plan_digest
                     ),
                     meteorological_sampling_unit_digest=(
-                        promotion_module.meteorological_sampling_unit_digest(
-                            radar_id="radar-1",
-                            issue_time="2026-08-10T00:00:00Z",
-                            observation_valid_time=input_plans[1].observation_valid_time,
-                            spatial_footprint_digest=input_plans[1].grid_contract_digest,
-                        )
+                        sampling_units[1].sampling_unit_digest
                     ),
                     issue_time="2026-08-10T00:00:00Z",
                 ),
             )
         decision_rule_digest = self.decision_rule().rule_digest
+        holdout_cohort_digest = promotion_module._holdout_dataset_digest(cases)
+        trials = (
+            promotion_module.PromotionExperimentTrial(
+                candidate_prior_digest="c" * 64,
+                promotion_decision_rule_digest=decision_rule_digest,
+                classifier_manifest_digests=(
+                    classifier_manifest.manifest_digest,
+                ),
+            ),
+        )
+        sampling_registry_key = Ed25519PrivateKey.from_private_bytes(b"\x22" * 32)
+        reservation = promotion_module.GlobalSamplingReservationReceipt.issue(
+            experiment_scope_digest=(
+                promotion_module._promotion_experiment_scope_digest(
+                    holdout_cohort_digest=holdout_cohort_digest,
+                    parent_prior_digest="d" * 64,
+                    trials=trials,
+                    winner_selection_rule_digest="f" * 64,
+                )
+            ),
+            raw_observation_digests=tuple(
+                item.observation_digest for item in raw_units
+            ),
+            registry_id="test-global-sampling-registry",
+            authority_id="test-sampling-authority",
+            authority_private_key=sampling_registry_key,
+            reserved_at="2026-08-06T00:00:00Z",
+        )
         experiment_family = promotion_module.PromotionExperimentFamily(
-            holdout_cohort_digest=promotion_module._holdout_dataset_digest(cases),
+            holdout_cohort_digest=holdout_cohort_digest,
             meteorological_sampling_unit_digests=tuple(
                 item.meteorological_sampling_unit_digest for item in cases
             ),
-            parent_prior_digest="d" * 64,
-            trials=(
-                promotion_module.PromotionExperimentTrial(
-                    candidate_prior_digest="c" * 64,
-                    promotion_decision_rule_digest=decision_rule_digest,
-                    classifier_manifest_digests=(
-                        classifier_manifest.manifest_digest,
-                    ),
-                ),
+            raw_observation_digests=tuple(
+                item.observation_digest for item in raw_units
             ),
+            global_sampling_reservation=reservation,
+            parent_prior_digest="d" * 64,
+            trials=trials,
             winner_selection_rule_digest="f" * 64,
         )
         return NeuralPriorHoldoutPlan(
@@ -997,6 +1077,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             candidate_family_digests=("c" * 64,),
             cases=cases,
             input_plans=input_plans,
+            raw_observation_units=raw_units,
+            meteorological_sampling_units=sampling_units,
             uncertainty_target_plans=target_plans,
             state_calibration_target_plans=state_target_plans,
             range_band_contracts=range_contracts,
@@ -1765,6 +1847,23 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             projection="EPSG:3857",
             grid_hash="4" * 64,
         )
+        grid_x = torch.tensor([[0.0, 1_000.0], [0.0, 1_000.0]])
+        grid_y = torch.tensor([[0.0, 0.0], [1_000.0, 1_000.0]])
+        source_map = torch.tensor([[0, 1], [0, 1]], dtype=torch.int64)
+        source_registry = promotion_module.SourceRadarRegistry(
+            radar_site_digests=("a" * 64, "e" * 64),
+            source_selection_policy_digest="2" * 64,
+        )
+        location_registry = promotion_module.RadarSiteLocationRegistry(
+            projection_digest="7" * 64,
+            radar_site_digests=source_registry.radar_site_digests,
+            radar_site_location_digests=("b" * 64, "f" * 64),
+            radar_projected_xy_m=((0.0, 0.0), (1_000.0, 0.0)),
+        )
+        effective_range = torch.tensor(
+            [[0.0, 0.0], [1_000.0, 1_000.0]],
+            dtype=torch.float64,
+        )
         input_plan = promotion_module.NeuralPriorInputPlan(
             valid_times=grid.valid_times,
             grid_contract_digest=grid.digest,
@@ -1777,18 +1876,50 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             decision_deadline="2026-08-09T00:22:00Z",
             publication_time="2026-08-09T00:25:00Z",
         )
+        semantic_raw_key = Ed25519PrivateKey.from_private_bytes(b"\x31" * 32)
+        raw_units = tuple(
+            promotion_module.RawRadarObservationUnit.from_ingestor(
+                radar_site_digest=radar_site_digest,
+                acquisition_valid_time=valid_time,
+                scan_strategy_digest="5" * 64,
+                raw_volume_object_digest=f"{index:x}" * 64,
+                raw_ingestor_id="semantic-raw-ingestor",
+                raw_ingestor_private_key=semantic_raw_key,
+            )
+            for index, (valid_time, radar_site_digest) in enumerate(
+                (
+                    (valid_time, radar_site_digest)
+                    for valid_time in grid.valid_times
+                    for radar_site_digest in source_registry.radar_site_digests
+                ),
+                start=1,
+            )
+        )
+        sampling_unit = promotion_module.MeteorologicalSamplingUnit(
+            raw_observation_digests=tuple(
+                item.observation_digest for item in raw_units
+            ),
+            canonical_geodetic_footprint_digest="6" * 64,
+        )
         data_identity = promotion_module.OperationalDataIdentity(
-            radar_class="single-site",
+            radar_class="mosaic",
             qc_pipeline_digest="9" * 64,
             observation_error_model_digest="2" * 64,
             background_model_digest="3" * 64,
             radar_product_digest="a" * 64,
             background_cycle_rule_digest="1" * 64,
             mask_policy_digest="3" * 64,
-            radar_source_kind="single_site",
-            radar_site_digest="a" * 64,
-            radar_site_location_digest="b" * 64,
-            radar_source_contract_digest="d" * 64,
+            radar_source_kind="mosaic",
+            radar_source_contract_digest=source_registry.registry_digest,
+            source_radar_index_map_digest=promotion_module.tensor_digest(
+                source_map
+            ),
+            effective_horizontal_range_map_digest=(
+                promotion_module.tensor_digest(effective_range)
+            ),
+            source_selection_policy_digest=(
+                source_registry.source_selection_policy_digest
+            ),
         )
         calibration = OperationalCalibrationManifest(
             calibration_id="semantic-replay-p0",
@@ -2073,25 +2204,32 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             floor_representation_contract_digest="e" * 64,
             contract="radar-verification-bundle-v3",
         )
-        grid_x = torch.tensor([[0.0, 1_000.0], [0.0, 1_000.0]])
-        grid_y = torch.tensor([[0.0, 0.0], [1_000.0, 1_000.0]])
-        range_geometry = promotion_module.RangeGeometryContract(
-            radar_site_digest="a" * 64,
-            radar_site_location_digest="b" * 64,
+        range_geometry = promotion_module.MosaicRangeGeometryContract.from_registry(
+            source_registry,
+            location_registry,
             grid_contract_digest=grid.digest,
-            radar_x_m=0.0,
-            radar_y_m=0.0,
+            projection_digest=location_registry.projection_digest,
             range_regime_labels=("near_range", "far_range"),
             radial_distance_edges_m=(0.0, 30_000.0, 100_000.0),
             horizontal_range_rule_digest="c" * 64,
             grid_x_m_digest=promotion_module.tensor_digest(grid_x),
             grid_y_m_digest=promotion_module.tensor_digest(grid_y),
+            source_radar_index_map_digest=promotion_module.tensor_digest(
+                source_map
+            ),
+            effective_horizontal_range_m_digest=(
+                promotion_module.tensor_digest(effective_range)
+            ),
         )
-        range_partition = promotion_module.resolve_range_geometry(
-            range_geometry,
-            grid_x_m=grid_x,
-            grid_y_m=grid_y,
+        range_partition, resolved_effective_range = (
+            promotion_module.resolve_mosaic_range_geometry(
+                range_geometry,
+                grid_x_m=grid_x,
+                grid_y_m=grid_y,
+                source_radar_index_map=source_map,
+            )
         )
+        self.assertTrue(torch.equal(resolved_effective_range, effective_range))
         range_contract = promotion_module.RangeBandContract(
             case_id=case_id,
             range_regime_labels=("near_range", "far_range"),
@@ -2104,10 +2242,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         issuance_plan = promotion_module.OperationalIssuanceDomainPlan(
             case_id=case_id,
             grid_contract_digest=grid.digest,
-            radar_source_contract_digest="d" * 64,
+            radar_source_contract_digest=source_registry.registry_digest,
             lead_minutes=(60,),
             publication_policy_digest="1" * 64,
-            source_coverage_policy_digest="2" * 64,
+            source_coverage_policy_digest=(
+                source_registry.source_selection_policy_digest
+            ),
             permanent_exclusion_policy_digest="3" * 64,
             publication_eligible_mask_digest=(
                 promotion_module.tensor_digest(publication)
@@ -2118,6 +2258,31 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             permanent_exclusion_mask_digest=(
                 promotion_module.tensor_digest(torch.zeros_like(publication))
             ),
+            radar_source_kind="mosaic",
+            source_radar_registry_digest=source_registry.registry_digest,
+            source_radar_count=len(source_registry.radar_site_digests),
+            data_ingestor_id="trusted-radar-ingestor",
+            data_ingestor_public_key_hex=(
+                promotion_module.regime_reference_public_key_hex(
+                    self.scheduler_key()
+                )
+            ),
+        )
+        resolved_coverage = (
+            promotion_module.ResolvedSourceCoverageArtifact.from_observations(
+                issuance_plan,
+                input_plan,
+                source_registry,
+                nominal_source_coverage_mask=publication,
+                source_radar_index_map=source_map,
+                outage_mask=torch.zeros((2, 2), dtype=torch.bool),
+                dynamic_qc_valid_mask=torch.ones((2, 2), dtype=torch.bool),
+                input_bundle_digest=base_run.input_bundle_digest,
+                full_analysis_input_digest=base_run.full_analysis_input_digest,
+                resolved_at="2026-08-09T00:21:00Z",
+                data_ingestor_id="trusted-radar-ingestor",
+                data_ingestor_private_key=self.scheduler_key(),
+            )
         )
         issuance_domain = (
             promotion_module.OperationalIssuanceDomainArtifact.from_masks(
@@ -2125,6 +2290,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 publication_eligible_mask=publication,
                 source_coverage_mask=publication,
                 permanent_exclusion_mask=torch.zeros_like(publication),
+                resolved_source_coverage=resolved_coverage,
             )
         )
         reference_plan = promotion_module.RegimeReferencePlan(
@@ -2286,32 +2452,53 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             regime_reference_plan_digest=reference_plan.plan_digest,
             operational_issuance_domain_plan_digest=issuance_plan.plan_digest,
             meteorological_sampling_unit_digest=(
-                promotion_module.meteorological_sampling_unit_digest(
-                    radar_id="radar-1",
-                    issue_time=issue_time,
-                    observation_valid_time=input_plan.observation_valid_time,
-                    spatial_footprint_digest=input_plan.grid_contract_digest,
-                )
+                sampling_unit.sampling_unit_digest
             ),
             issue_time=issue_time,
         )
-        experiment_family = promotion_module.PromotionExperimentFamily(
-            holdout_cohort_digest=promotion_module._holdout_dataset_digest(
-                (plan_case,)
+        holdout_cohort_digest = promotion_module._holdout_dataset_digest(
+            (plan_case,)
+        )
+        trials = (
+            promotion_module.PromotionExperimentTrial(
+                candidate_prior_digest=candidate_runner.neural_prior_digest,
+                promotion_decision_rule_digest=decision_rule.rule_digest,
+                classifier_manifest_digests=(
+                    classifier_manifest.manifest_digest,
+                ),
             ),
+        )
+        semantic_sampling_registry_key = Ed25519PrivateKey.from_private_bytes(
+            b"\x32" * 32
+        )
+        reservation = promotion_module.GlobalSamplingReservationReceipt.issue(
+            experiment_scope_digest=(
+                promotion_module._promotion_experiment_scope_digest(
+                    holdout_cohort_digest=holdout_cohort_digest,
+                    parent_prior_digest=parent_runner.neural_prior_digest,
+                    trials=trials,
+                    winner_selection_rule_digest="f" * 64,
+                )
+            ),
+            raw_observation_digests=tuple(
+                item.observation_digest for item in raw_units
+            ),
+            registry_id="semantic-global-sampling-registry",
+            authority_id="semantic-sampling-authority",
+            authority_private_key=semantic_sampling_registry_key,
+            reserved_at="2026-06-30T00:00:00Z",
+        )
+        experiment_family = promotion_module.PromotionExperimentFamily(
+            holdout_cohort_digest=holdout_cohort_digest,
             meteorological_sampling_unit_digests=(
                 plan_case.meteorological_sampling_unit_digest,
             ),
-            parent_prior_digest=parent_runner.neural_prior_digest,
-            trials=(
-                promotion_module.PromotionExperimentTrial(
-                    candidate_prior_digest=candidate_runner.neural_prior_digest,
-                    promotion_decision_rule_digest=decision_rule.rule_digest,
-                    classifier_manifest_digests=(
-                        classifier_manifest.manifest_digest,
-                    ),
-                ),
+            raw_observation_digests=tuple(
+                item.observation_digest for item in raw_units
             ),
+            global_sampling_reservation=reservation,
+            parent_prior_digest=parent_runner.neural_prior_digest,
+            trials=trials,
             winner_selection_rule_digest="f" * 64,
         )
         plan = NeuralPriorHoldoutPlan(
@@ -2320,6 +2507,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             candidate_family_digests=(candidate_runner.neural_prior_digest,),
             cases=(plan_case,),
             input_plans=(input_plan,),
+            raw_observation_units=raw_units,
+            meteorological_sampling_units=(sampling_unit,),
             uncertainty_target_plans=(target_plan,),
             state_calibration_target_plans=(state_target_plan,),
             range_band_contracts=(range_contract,),
@@ -2584,15 +2773,77 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             range_grid_x_m=grid_x,
             range_grid_y_m=grid_y,
             operational_issuance_domain=issuance_domain,
+            resolved_source_coverage=resolved_coverage,
         )
         evaluation = replay_case.recompute_evaluation()
         self.assertEqual(evaluation.case_id, case_id)
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            with ledger._connect() as connection:
+                connection.execute(
+                    "INSERT INTO neural_prior_holdout_scoring_input_artifacts "
+                    "(artifact_digest, holdout_plan_digest, payload_json, "
+                    "created_at) VALUES (?, ?, ?, ?)",
+                    (
+                        scoring_input.artifact_digest,
+                        plan.plan_digest,
+                        json.dumps(
+                            scoring_input.payload
+                            | {"artifact_digest": scoring_input.artifact_digest},
+                            sort_keys=True,
+                        ),
+                        "2026-08-09T02:20:00+00:00",
+                    ),
+                )
+                connection.execute(
+                    "INSERT INTO trusted_process_start_receipts_v2 "
+                    "(receipt_digest, catalog_plan_digest, "
+                    "catalog_result_digest, process_kind, scheduler_id, "
+                    "scheduler_sequence_number, job_id, launch_nonce, "
+                    "previous_receipt_digest, receipt_json, started_at, "
+                    "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        scoring_start.receipt_digest,
+                        catalog_plan.plan_digest,
+                        catalog_result.result_digest,
+                        "candidate_scoring",
+                        scoring_start.scheduler_id,
+                        scoring_start.scheduler_sequence_number,
+                        scoring_start.job_id,
+                        scoring_start.launch_nonce,
+                        scoring_start.previous_receipt_digest,
+                        json.dumps(
+                            {
+                                "subject_digests": [
+                                    scoring_input.artifact_digest
+                                ]
+                            },
+                            sort_keys=True,
+                        ),
+                        scoring_start.started_at,
+                        "2026-08-09T02:30:00+00:00",
+                    ),
+                )
+            replay_manifest = ledger.append_neural_prior_scoring_replay_bundle(
+                scoring_input,
+                (replay_case,),
+                algorithm_source_manifest_digest=algorithm_bundle_digest(),
+            )
+            replayed = ledger.load_neural_prior_scoring_replay_bundle(
+                replay_manifest.bundle_digest,
+                cases=(replay_case,),
+            )
+            self.assertTrue(replayed.semantic_replay_verified)
+            self.assertEqual(
+                replayed.evaluations[0].evaluation_digest,
+                evaluation.evaluation_digest,
+            )
         scoring_artifact = promotion_module.HoldoutScoringArtifact.from_evaluations(
             manifest,
             plan,
             scoring_input,
             (evaluation,),
-            scoring_replay_bundle_digest="b" * 64,
+            scoring_replay_bundle_digest=replay_manifest.bundle_digest,
         )
         scoring_log = promotion_module.ProcessLogArtifact(
             process_kind="candidate_scoring",
@@ -3474,6 +3725,27 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
             classifier_regime_confidence=classifier_regime_confidence,
             classifier_range_confidence=classifier_range_confidence,
+            classifier_regime_labels=(
+                "convective",
+                "stratiform",
+                "unknown",
+            ),
+            classifier_range_regime_labels=("near_range", "far_range"),
+            classifier_range_probability_contract=(
+                "conditionally-independent-bernoulli-range-heads-v1"
+            ),
+            classifier_regime_probabilities=tuple(
+                0.9
+                if label
+                == (case.regime if classified_regime is None else classified_regime)
+                else 0.05
+                for label in ("convective", "stratiform", "unknown")
+            ),
+            classifier_range_regime_probabilities=tuple(
+                0.9 if label in predicted_set else 0.1
+                for label in ("near_range", "far_range")
+            ),
+            classifier_range_presence_probability_threshold=0.8,
             classifier_regime_entropy=classifier_regime_entropy,
             classifier_is_ood=classifier_is_ood,
             classifier_reference_agreement=classifier_reference_agreement,
@@ -3749,6 +4021,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             minimum_regime_classifier_ood_cases=0,
             minimum_regime_classifier_ood_abstention_lower_bound=0.0,
             maximum_regime_classifier_brier_score_upper_bound=1.0,
+            maximum_weather_multiclass_brier_score_upper_bound=1.0,
+            maximum_range_multilabel_brier_score_upper_bound=1.0,
+            maximum_weather_ood_brier_score_upper_bound=1.0,
+            maximum_range_ood_brier_score_upper_bound=1.0,
             minimum_regime_classifier_accuracy_lower_bound=0.0,
             minimum_regime_classifier_recall_lower_bound=0.0,
             maximum_regime_classifier_false_routing_upper_bound=1.0,
@@ -3888,6 +4164,18 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
 
     @staticmethod
+    def operational_ledger_signer():
+        return promotion_module.Ed25519DeploymentAuthoritySigner(
+            "test-ledger",
+            Ed25519PrivateKey.from_private_bytes(b"\x03" * 32),
+            fixed_signing_time="2026-08-09T00:01:00Z",
+        )
+
+    @staticmethod
+    def operational_decision_recorder():
+        return _TestOperationalDecisionRecorder()
+
+    @staticmethod
     def validate_deployment_artifact(
         artifact_json,
         *,
@@ -3987,12 +4275,31 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_decision_rule_digest=decision_rule.rule_digest,
             classifier_manifest_digests=(classifier_manifest.manifest_digest,),
         )
+        family = plan.promotion_experiment_family
+        updated_reservation = promotion_module.GlobalSamplingReservationReceipt.issue(
+            experiment_scope_digest=(
+                promotion_module._promotion_experiment_scope_digest(
+                    holdout_cohort_digest=family.holdout_cohort_digest,
+                    parent_prior_digest=family.parent_prior_digest,
+                    trials=(experiment_trial,),
+                    winner_selection_rule_digest=family.winner_selection_rule_digest,
+                )
+            ),
+            raw_observation_digests=family.raw_observation_digests,
+            registry_id=family.global_sampling_reservation.registry_id,
+            authority_id=family.global_sampling_reservation.authority_id,
+            authority_private_key=Ed25519PrivateKey.from_private_bytes(
+                b"\x22" * 32
+            ),
+            reserved_at=family.global_sampling_reservation.reserved_at,
+        )
         plan = replace(
             plan,
             regime_classifier_manifests=(classifier_manifest,),
             promotion_experiment_family=replace(
-                plan.promotion_experiment_family,
+                family,
                 trials=(experiment_trial,),
+                global_sampling_reservation=updated_reservation,
             ),
             promotion_decision_rule_digest=decision_rule.rule_digest,
         )
@@ -4199,6 +4506,20 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         for digest in (
                             experiment_family.meteorological_sampling_unit_digests
                         )
+                    ),
+                )
+                connection.executemany(
+                    "INSERT INTO promotion_raw_observation_reservations "
+                    "(raw_observation_digest,family_digest,global_receipt_digest,"
+                    "reserved_at) VALUES (?,?,?,?)",
+                    tuple(
+                        (
+                            digest,
+                            experiment_family.family_digest,
+                            experiment_family.global_sampling_reservation.receipt_digest,
+                            "2026-08-07T00:00:00+00:00",
+                        )
+                        for digest in experiment_family.raw_observation_digests
                     ),
                 )
                 approval_schema = connection.execute(
@@ -4454,13 +4775,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v25")
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v26")
             self.assertTrue(loaded.deployment_eligible)
             ledger_authority_key = Ed25519PrivateKey.from_private_bytes(
                 b"\x03" * 32
             )
             promotion_authority_key = Ed25519PrivateKey.from_private_bytes(
                 b"\x04" * 32
+            )
+            operational_authority_key = Ed25519PrivateKey.from_private_bytes(
+                b"\x05" * 32
             )
             with sqlite3.connect(ledger.index_path) as connection:
                 ledger_instance_digest = connection.execute(
@@ -4472,6 +4796,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     keys={
                         "test-ledger": ledger_authority_key.public_key(),
                         "test-promotion": promotion_authority_key.public_key(),
+                        "test-operational": (
+                            operational_authority_key.public_key()
+                        ),
                     },
                     content_digest="7" * 64,
                     roles={
@@ -4479,19 +4806,29 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         "test-promotion": frozenset(
                             {"promotion_certificate"}
                         ),
+                        "test-operational": frozenset(
+                            {"operational_decision"}
+                        ),
                     },
                     not_before={
                         "test-ledger": "2026-01-01T00:00:00+00:00",
                         "test-promotion": "2026-01-01T00:00:00+00:00",
+                        "test-operational": "2026-01-01T00:00:00+00:00",
                     },
                     not_after={
                         "test-ledger": "2027-01-01T00:00:00+00:00",
                         "test-promotion": "2027-01-01T00:00:00+00:00",
+                        "test-operational": "2027-01-01T00:00:00+00:00",
                     },
-                    revoked_at={"test-ledger": None, "test-promotion": None},
+                    revoked_at={
+                        "test-ledger": None,
+                        "test-promotion": None,
+                        "test-operational": None,
+                    },
                     ledger_instance_digests={
                         "test-ledger": frozenset({ledger_instance_digest}),
                         "test-promotion": frozenset(),
+                        "test-operational": frozenset(),
                     },
                 )
             )
@@ -4588,7 +4925,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             self.assertEqual(
                 certificate.contract,
-                "ledgered-promotion-deployment-certificate-v3",
+                "ledgered-promotion-deployment-certificate-v4",
             )
             self.assertEqual(certificate.sequence_number, 1)
             self.assertEqual(
@@ -4599,6 +4936,108 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 reloaded_certificate.certificate_digest,
                 certificate.certificate_digest,
             )
+            deployment_policy = DeployedNeuralPriorPolicy(
+                candidate_prior_digest=evidence.candidate_prior_digest,
+                parent_prior_digest=evidence.parent_prior_digest,
+                promotion_evidence_digest=evidence.promotion_evidence_digest,
+                promotion_deployment_certificate_digest=(
+                    certificate.certificate_digest
+                ),
+                promotion_deployment_authority_trust_store_digest=(
+                    certificate.authority_trust_store_digest
+                ),
+                regime_classifier_digest=(
+                    evidence.deployment_regime_classifier_digest
+                ),
+                regime_classifier_manifest_digest=(
+                    evidence.deployment_regime_classifier_manifest_digest
+                ),
+                range_geometry_contract_digest=(
+                    evidence.certified_range_geometry_contract_digests[0]
+                ),
+            )
+            operational_signer = (
+                promotion_module.Ed25519DeploymentAuthoritySigner(
+                    "test-operational",
+                    operational_authority_key,
+                    fixed_signing_time="2026-08-12T02:35:00Z",
+                )
+            )
+            operational_input_plan = plan.input_plans[0]
+            operational_cycle_id = promotion_module.json_digest(
+                {
+                    "contract": "advar-operational-cycle-v1",
+                    "input_plan_digest": operational_input_plan.plan_digest,
+                    "full_analysis_input_digest": (
+                        manifest.holdout_cases[0].full_analysis_input_digest
+                    ),
+                }
+            )
+            operational_decision = {
+                "promotion_deployment_certificate": certificate.payload
+                | {"certificate_digest": certificate.certificate_digest},
+                "full_analysis_input_digest": (
+                    manifest.holdout_cases[0].full_analysis_input_digest
+                ),
+                "input_plan_digest": operational_input_plan.plan_digest,
+                "observation_valid_time": "2026-08-12T02:31:00Z",
+                "input_available_time": "2026-08-12T02:32:00Z",
+                "decision_deadline": "2026-08-12T02:40:00Z",
+                "publication_time": "2026-08-12T02:45:00Z",
+                "operational_cycle_id": operational_cycle_id,
+                "selection": {
+                    "selected_prior_digest": evidence.candidate_prior_digest,
+                    "selected_role": "candidate",
+                    "fallback_reason": "certified_candidate",
+                },
+            }
+            with (
+                patch.object(
+                    ledger_module,
+                    "_load_promotion_deployment_authority_trust_store",
+                    return_value=authority_trust,
+                ),
+                patch.object(
+                    ledger_module,
+                    "datetime",
+                    wraps=datetime,
+                ) as decision_datetime,
+            ):
+                decision_datetime.now.return_value = datetime.fromisoformat(
+                    "2026-08-12T02:35:00+00:00"
+                )
+                operational_certificate = (
+                    ledger.issue_operational_deployment_decision(
+                        operational_decision,
+                        promotion_deployment_certificate=certificate,
+                        promotion_evidence=evidence,
+                        policy=deployment_policy,
+                        policy_trust_store_digest="b" * 64,
+                        ledger_signer=ledger_signer,
+                        operational_signer=operational_signer,
+                        authority_trust_store_path=(
+                            "/etc/advar/deployment-authorities.json"
+                        ),
+                    )
+                )
+                with self.assertRaisesRegex(ValueError, "separate authority"):
+                    ledger.issue_operational_deployment_decision(
+                        operational_decision,
+                        promotion_deployment_certificate=certificate,
+                        promotion_evidence=evidence,
+                        policy=deployment_policy,
+                        policy_trust_store_digest="b" * 64,
+                        ledger_signer=ledger_signer,
+                        operational_signer=ledger_signer,
+                        authority_trust_store_path=(
+                            "/etc/advar/deployment-authorities.json"
+                        ),
+                    )
+            self.assertEqual(
+                operational_certificate.contract,
+                "operational-deployment-decision-certificate-v3",
+            )
+            self.assertEqual(operational_certificate.ledger_sequence_number, 1)
 
             legacy_payload = evidence._payload()
             legacy_payload["contract"] = "neural-prior-promotion-evidence-v12"
@@ -5158,6 +5597,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
+                operational_decision_recorder=self.operational_decision_recorder(),
+                operational_ledger_signer=self.operational_ledger_signer(),
                 operational_decision_signer=self.operational_decision_signer(),
             )
 
@@ -5219,6 +5660,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
+                operational_decision_recorder=self.operational_decision_recorder(),
+                operational_ledger_signer=self.operational_ledger_signer(),
                 operational_decision_signer=self.operational_decision_signer(),
             )
 
@@ -5245,6 +5688,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
+                operational_decision_recorder=self.operational_decision_recorder(),
+                operational_ledger_signer=self.operational_ledger_signer(),
                 operational_decision_signer=self.operational_decision_signer(),
             )
 
@@ -6366,9 +6811,43 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
             for index in range(1, 20)
         )
+        expanded_trials = (original_trial, *additional)
+        reservation = promotion_module.GlobalSamplingReservationReceipt.issue(
+            experiment_scope_digest=(
+                promotion_module._promotion_experiment_scope_digest(
+                    holdout_cohort_digest=(
+                        plan.promotion_experiment_family.holdout_cohort_digest
+                    ),
+                    parent_prior_digest=(
+                        plan.promotion_experiment_family.parent_prior_digest
+                    ),
+                    trials=expanded_trials,
+                    winner_selection_rule_digest=(
+                        plan.promotion_experiment_family
+                        .winner_selection_rule_digest
+                    ),
+                )
+            ),
+            raw_observation_digests=(
+                plan.promotion_experiment_family.raw_observation_digests
+            ),
+            registry_id=(
+                plan.promotion_experiment_family
+                .global_sampling_reservation.registry_id
+            ),
+            authority_id=(
+                plan.promotion_experiment_family
+                .global_sampling_reservation.authority_id
+            ),
+            authority_private_key=Ed25519PrivateKey.from_private_bytes(
+                b"\x22" * 32
+            ),
+            reserved_at="2026-06-30T00:00:00Z",
+        )
         family = replace(
             plan.promotion_experiment_family,
-            trials=(original_trial, *additional),
+            trials=expanded_trials,
+            global_sampling_reservation=reservation,
         )
         expanded_plan = replace(plan, promotion_experiment_family=family)
         policy = replace(
@@ -6403,34 +6882,97 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             qc_pipeline_digest="9" * 64,
             mask_policy_digest="8" * 64,
         )
-        repackaged_cases = (
-            replace(
-                plan.cases[0],
-                input_plan_digest=repackaged_input.plan_digest,
+        replacement_raw = promotion_module.RawRadarObservationUnit.from_ingestor(
+            radar_site_digest=plan.raw_observation_units[1].radar_site_digest,
+            acquisition_valid_time=(
+                plan.raw_observation_units[1].acquisition_valid_time
             ),
-            *plan.cases[1:],
+            scan_strategy_digest=(
+                plan.raw_observation_units[1].scan_strategy_digest
+            ),
+            raw_volume_object_digest="9" * 64,
+            raw_ingestor_id=plan.raw_observation_units[1].raw_ingestor_id,
+            raw_ingestor_private_key=Ed25519PrivateKey.from_private_bytes(
+                b"\x21" * 32
+            ),
+        )
+        second_raw_units = (plan.raw_observation_units[0], replacement_raw)
+        regridded_sampling_units = tuple(
+            promotion_module.MeteorologicalSamplingUnit(
+                raw_observation_digests=(raw_unit.observation_digest,),
+                canonical_geodetic_footprint_digest="7" * 64,
+            )
+            for raw_unit in second_raw_units
+        )
+        repackaged_cases = tuple(
+            replace(
+                item,
+                input_plan_digest=(
+                    repackaged_input.plan_digest
+                    if index == 0
+                    else item.input_plan_digest
+                ),
+                meteorological_sampling_unit_digest=(
+                    regridded_sampling_units[index].sampling_unit_digest
+                ),
+            )
+            for index, item in enumerate(plan.cases)
+        )
+        second_cohort_digest = promotion_module._holdout_dataset_digest(
+            repackaged_cases
+        )
+        second_registry_key = Ed25519PrivateKey.from_private_bytes(b"\x22" * 32)
+        second_reservation = promotion_module.GlobalSamplingReservationReceipt.issue(
+            experiment_scope_digest=(
+                promotion_module._promotion_experiment_scope_digest(
+                    holdout_cohort_digest=second_cohort_digest,
+                    parent_prior_digest=plan.promotion_experiment_family.parent_prior_digest,
+                    trials=plan.promotion_experiment_family.trials,
+                    winner_selection_rule_digest="e" * 64,
+                )
+            ),
+            raw_observation_digests=tuple(
+                item.observation_digest for item in second_raw_units
+            ),
+            registry_id="test-global-sampling-registry",
+            authority_id="test-sampling-authority",
+            authority_private_key=second_registry_key,
+            reserved_at="2026-08-06T00:00:00Z",
         )
         second_family = replace(
             plan.promotion_experiment_family,
-            holdout_cohort_digest=promotion_module._holdout_dataset_digest(
-                repackaged_cases
+            holdout_cohort_digest=second_cohort_digest,
+            meteorological_sampling_unit_digests=tuple(
+                item.sampling_unit_digest
+                for item in regridded_sampling_units
+            ),
+            raw_observation_digests=tuple(
+                item.observation_digest for item in second_raw_units
             ),
             winner_selection_rule_digest="e" * 64,
+            global_sampling_reservation=second_reservation,
         )
         second_plan = replace(
             plan,
             plan_id="holdout-plan-second-family",
             cases=repackaged_cases,
             input_plans=(repackaged_input, *plan.input_plans[1:]),
+            raw_observation_units=second_raw_units,
+            meteorological_sampling_units=regridded_sampling_units,
             promotion_experiment_family=second_family,
         )
         self.assertNotEqual(
             plan.promotion_experiment_family.holdout_cohort_digest,
             second_family.holdout_cohort_digest,
         )
-        self.assertEqual(
+        self.assertNotEqual(
             set(plan.promotion_experiment_family.meteorological_sampling_unit_digests),
             set(second_family.meteorological_sampling_unit_digests),
+        )
+        self.assertEqual(
+            set(plan.promotion_experiment_family.raw_observation_digests)
+            & set(second_family.raw_observation_digests),
+            {plan.raw_observation_units[0].observation_digest},
         )
         first_policy = promotion_module.NeuralPriorHoldoutPlanPolicy(
             approved_plan_digests=(plan.plan_digest,),
@@ -6438,6 +6980,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 sorted({item.metric_contract_digest for item in plan.cases})
             ),
             maximum_candidate_family_size=1,
+            sampling_registry_authority_id=(
+                plan.promotion_experiment_family.global_sampling_reservation.authority_id
+            ),
+            sampling_registry_authority_public_key_hex=(
+                plan.promotion_experiment_family.global_sampling_reservation.authority_public_key_hex
+            ),
         )
         second_policy = replace(
             first_policy,
@@ -6484,7 +7032,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     policy_trust_store_path="/etc/advar/learning-policies.json",
                     scheduler_trust_store_path="/etc/advar/schedulers.json",
                 )
-                with self.assertRaisesRegex(ValueError, "meteorological sampling unit"):
+                with self.assertRaisesRegex(ValueError, "raw radar observation"):
                     ledger.append_neural_prior_holdout_plan(
                         second_plan,
                         promotion_decision_rule=decision_rule,
@@ -6604,11 +7152,31 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             self.plan(),
             policy,
             available_physical_events=30,
+            classifier_subset_event_counts=tuple(
+                (name, 30)
+                for name in (
+                    "known_weather",
+                    "known_range",
+                    "weather_ood",
+                    "range_ood",
+                    "brier_valid",
+                )
+            ),
         )
         sufficient = promotion_module.promotion_sample_size_preflight(
             self.plan(),
             policy,
             available_physical_events=small.required_physical_events,
+            classifier_subset_event_counts=tuple(
+                (name, small.required_physical_events)
+                for name in (
+                    "known_weather",
+                    "known_range",
+                    "weather_ood",
+                    "range_ood",
+                    "brier_valid",
+                )
+            ),
         )
 
         self.assertFalse(small.feasible)
@@ -6628,6 +7196,30 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             result.sample_size_available_physical_events,
             result.sample_size_required_physical_events,
         )
+
+    def test_sample_size_preflight_is_subset_aware(self) -> None:
+        result = promotion_module.promotion_sample_size_preflight(
+            self.plan(),
+            self.policy(),
+            available_physical_events=10_000,
+            classifier_subset_event_counts=(
+                ("known_weather", 10_000),
+                ("known_range", 10_000),
+                ("weather_ood", 0),
+                ("range_ood", 10_000),
+                ("brier_valid", 10_000),
+            ),
+        )
+
+        self.assertFalse(result.classifier_subset_feasible)
+        self.assertFalse(result.feasible)
+        weather_ood = next(
+            item
+            for item in result.classifier_subset_event_counts
+            if item[0] == "weather_ood"
+        )
+        self.assertEqual(weather_ood[1], 0)
+        self.assertGreater(weather_ood[2], 0)
 
     def test_metric_cell_family_includes_local_issuance_bounds(self) -> None:
         policy = self.policy()
@@ -7132,6 +7724,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             issuance_cell_event_counts=(
                 ("convective", "near_range", 60, 200, 1),
             ),
+            classifier_subset_event_counts=tuple(
+                (name, 200)
+                for name in (
+                    "known_weather",
+                    "known_range",
+                    "weather_ood",
+                    "range_ood",
+                    "brier_valid",
+                )
+            ),
         )
 
         self.assertFalse(preflight.cell_feasible)
@@ -7489,6 +8091,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "/etc/advar/deployment-authorities.json"
                 ),
                 operational_input_plan=self.plan().input_plans[0],
+                operational_decision_recorder=self.operational_decision_recorder(),
+                operational_ledger_signer=self.operational_ledger_signer(),
                 operational_decision_signer=self.operational_decision_signer(),
             )
 
@@ -7614,6 +8218,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "/etc/advar/deployment-authorities.json"
                 ),
                 operational_input_plan=self.plan().input_plans[0],
+                operational_decision_recorder=self.operational_decision_recorder(),
+                operational_ledger_signer=self.operational_ledger_signer(),
                 operational_decision_signer=self.operational_decision_signer(),
             )
 
@@ -7713,6 +8319,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "/etc/advar/deployment-authorities.json"
                 ),
                 operational_input_plan=self.plan().input_plans[0],
+                operational_decision_recorder=self.operational_decision_recorder(),
+                operational_ledger_signer=self.operational_ledger_signer(),
                 operational_decision_signer=self.operational_decision_signer(),
             )
         changed_trust = _LearningPolicyTrustStore(
@@ -7749,6 +8357,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "/etc/advar/deployment-authorities.json"
                 ),
                 operational_input_plan=self.plan().input_plans[0],
+                operational_decision_recorder=self.operational_decision_recorder(),
+                operational_ledger_signer=self.operational_ledger_signer(),
                 operational_decision_signer=self.operational_decision_signer(),
             )
         self.assertNotEqual(
@@ -7790,6 +8400,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "/etc/advar/deployment-authorities.json"
                 ),
                 operational_input_plan=self.plan().input_plans[0],
+                operational_decision_recorder=self.operational_decision_recorder(),
+                operational_ledger_signer=self.operational_ledger_signer(),
                 operational_decision_signer=self.operational_decision_signer(),
             )
 
@@ -7842,6 +8454,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "/etc/advar/deployment-authorities.json"
                 ),
                 operational_input_plan=self.plan().input_plans[0],
+                operational_decision_recorder=self.operational_decision_recorder(),
+                operational_ledger_signer=self.operational_ledger_signer(),
                 operational_decision_signer=self.operational_decision_signer(),
                 )
             )
@@ -7945,6 +8559,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "/etc/advar/deployment-authorities.json"
                 ),
                 operational_input_plan=self.plan().input_plans[0],
+                operational_decision_recorder=self.operational_decision_recorder(),
+                operational_ledger_signer=self.operational_ledger_signer(),
                 operational_decision_signer=self.operational_decision_signer(),
             )
         self.assertIs(selected, parent)
@@ -8195,6 +8811,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
+                operational_decision_recorder=self.operational_decision_recorder(),
+                operational_ledger_signer=self.operational_ledger_signer(),
                 operational_decision_signer=(
                     promotion_module.Ed25519DeploymentAuthoritySigner(
                         "test-operational",
@@ -8249,7 +8867,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             loaded.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v10",
+            "neural-prior-deployment-lineage-v11",
         )
 
     def test_current_physical_range_partition_controls_deployment(self) -> None:
@@ -8362,6 +8980,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "/etc/advar/deployment-authorities.json"
                 ),
                 operational_input_plan=self.plan().input_plans[0],
+                operational_decision_recorder=self.operational_decision_recorder(),
+                operational_ledger_signer=self.operational_ledger_signer(),
                 operational_decision_signer=self.operational_decision_signer(),
             )
 
@@ -8829,6 +9449,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "/etc/advar/deployment-authorities.json"
                 ),
                 operational_input_plan=self.plan().input_plans[0],
+                operational_decision_recorder=self.operational_decision_recorder(),
+                operational_ledger_signer=self.operational_ledger_signer(),
                 operational_decision_signer=self.operational_decision_signer(),
             )
 
@@ -9406,6 +10028,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             active_range_regimes=(case.range_regime,),
             regime_confidence=1.0,
             range_regime_confidence=1.0,
+            regime_labels=("convective", "stratiform", "unknown"),
+            range_regime_labels=("near_range", "far_range"),
+            range_probability_contract=(
+                "conditionally-independent-bernoulli-range-heads-v1"
+            ),
+            range_presence_probability_threshold=0.8,
+            regime_probabilities=(1.0, 0.0, 0.0),
+            range_regime_probabilities=(1.0, 0.0),
             regime_entropy=0.0,
             is_ood=False,
             weather_top1_top2_gap=1.0,
@@ -9776,25 +10406,27 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 deployment_certificate_trust_store_path=(
                     "/etc/advar/deployment-authorities.json"
                 ),
+                operational_decision_recorder=self.operational_decision_recorder(),
+                operational_ledger_signer=self.operational_ledger_signer(),
                 operational_decision_signer=self.operational_decision_signer(),
             )
 
     def test_cpu_only_scoring_generation_has_a_stable_backend_contract(self) -> None:
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_CONTRACT,
-            "neural-prior-scoring-replay-bundle-v5",
+            "neural-prior-scoring-replay-bundle-v6",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_METHOD,
-            "builtin-semantic-scoring-recomputation-v5",
+            "builtin-semantic-scoring-recomputation-v6",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD,
             {
-                "contract": "neural-prior-semantic-scoring-generation-v3",
-                "replay_contract": "neural-prior-scoring-replay-bundle-v5",
-                "replay_method": "builtin-semantic-scoring-recomputation-v5",
-                "case_contract": "neural-prior-semantic-scoring-case-v4",
+                "contract": "neural-prior-semantic-scoring-generation-v4",
+                "replay_contract": "neural-prior-scoring-replay-bundle-v6",
+                "replay_method": "builtin-semantic-scoring-recomputation-v6",
+                "case_contract": "neural-prior-semantic-scoring-case-v5",
                 "product_type_policy": "exact-shipped-product-types-v1",
                 "forecast_integrity": "forecast-result-raw-content-validation-v1",
                 "prior_integrity": "runner-reproduced-prior-application-v1",
@@ -9820,16 +10452,49 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             radar_product_digest="7" * 64,
         )
 
-        def sampling_digest(plan):
+        def sampling_digest(_plan):
             return promotion_module.meteorological_sampling_unit_digest(
-                radar_id="radar-1",
-                issue_time="2026-08-09T00:20:00Z",
-                observation_valid_time=plan.observation_valid_time,
-                spatial_footprint_digest="6" * 64,
+                raw_observation_digests=(
+                    self.plan().raw_observation_units[0].observation_digest,
+                ),
+                canonical_geodetic_footprint_digest="6" * 64,
             )
 
         self.assertNotEqual(input_plan.plan_digest, repackaged.plan_digest)
         self.assertEqual(sampling_digest(input_plan), sampling_digest(repackaged))
+
+    def test_overlapping_windows_share_raw_observation_identity(self) -> None:
+        raw = tuple(
+            promotion_module.RawRadarObservationUnit.from_ingestor(
+                radar_site_digest="a" * 64,
+                acquisition_valid_time=f"2026-08-09T00:{index:02d}:00Z",
+                scan_strategy_digest="5" * 64,
+                raw_volume_object_digest=f"{ordinal}" * 64,
+                raw_ingestor_id="overlap-ingestor",
+                raw_ingestor_private_key=Ed25519PrivateKey.from_private_bytes(
+                    b"\x41" * 32
+                ),
+            )
+            for ordinal, index in enumerate((0, 10, 20, 30), start=1)
+        )
+        first = promotion_module.MeteorologicalSamplingUnit(
+            raw_observation_digests=tuple(
+                item.observation_digest for item in raw[:3]
+            ),
+            canonical_geodetic_footprint_digest="6" * 64,
+        )
+        second = promotion_module.MeteorologicalSamplingUnit(
+            raw_observation_digests=tuple(
+                item.observation_digest for item in raw[1:]
+            ),
+            canonical_geodetic_footprint_digest="6" * 64,
+        )
+        self.assertNotEqual(first.sampling_unit_digest, second.sampling_unit_digest)
+        self.assertEqual(
+            set(first.raw_observation_digests)
+            & set(second.raw_observation_digests),
+            {raw[1].observation_digest, raw[2].observation_digest},
+        )
 
     def test_event_weighted_estimand_is_invariant_to_case_replication(self) -> None:
         first = "1" * 64
@@ -9871,6 +10536,27 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             evidence.range_classifier_ood_abstention_fraction_lower_bound,
             evidence.range_classifier_ood_abstention_fraction,
         )
+        for score, upper_bound in (
+            (
+                evidence.weather_multiclass_brier_score,
+                evidence.weather_multiclass_brier_score_upper_bound,
+            ),
+            (
+                evidence.range_multilabel_brier_score,
+                evidence.range_multilabel_brier_score_upper_bound,
+            ),
+            (
+                evidence.weather_ood_brier_score,
+                evidence.weather_ood_brier_score_upper_bound,
+            ),
+            (
+                evidence.range_ood_brier_score,
+                evidence.range_ood_brier_score_upper_bound,
+            ),
+        ):
+            self.assertGreaterEqual(score, 0.0)
+            self.assertLessEqual(score, 1.0)
+            self.assertLessEqual(score, upper_bound)
 
     def test_mosaic_range_uses_the_resolved_source_radar(self) -> None:
         grid_x = torch.tensor([[0.0, 9_000.0], [1_000.0, 10_000.0]])
@@ -9879,13 +10565,21 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         expected_range = torch.tensor(
             [[0.0, 1_000.0], [0.0, 0.0]], dtype=torch.float64
         )
-        contract = promotion_module.MosaicRangeGeometryContract(
-            source_radar_registry_digest="1" * 64,
+        source_registry = promotion_module.SourceRadarRegistry(
+            radar_site_digests=("4" * 64, "5" * 64),
             source_selection_policy_digest="2" * 64,
-            grid_contract_digest="3" * 64,
+        )
+        location_registry = promotion_module.RadarSiteLocationRegistry(
+            projection_digest="3" * 64,
             radar_site_digests=("4" * 64, "5" * 64),
             radar_site_location_digests=("6" * 64, "7" * 64),
             radar_projected_xy_m=((0.0, 0.0), (10_000.0, 0.0)),
+        )
+        contract = promotion_module.MosaicRangeGeometryContract.from_registry(
+            source_registry,
+            location_registry,
+            grid_contract_digest="3" * 64,
+            projection_digest="3" * 64,
             range_regime_labels=("near_range", "far_range"),
             radial_distance_edges_m=(0.0, 500.0, 2_000.0),
             horizontal_range_rule_digest="8" * 64,
@@ -9907,6 +10601,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         torch.testing.assert_close(effective_range, expected_range)
         self.assertTrue(bool(partition.masks[0][0, 0]))
         self.assertTrue(bool(partition.masks[1][0, 1]))
+        self.assertFalse(bool(partition.valid_range_domain_mask[1, 0]))
+        self.assertFalse(any(bool(mask[1, 0]) for mask in partition.masks))
 
         invalid = source.clone()
         invalid[0, 0] = 999
@@ -9923,17 +10619,55 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
 
         changing = torch.stack((source, source.clone()))
-        changing[1, 0, 0] = 1
         changing_contract = replace(
             contract,
             source_radar_index_map_digest=promotion_module.tensor_digest(changing),
         )
-        with self.assertRaisesRegex(ValueError, "changes across forecast leads"):
+        with self.assertRaisesRegex(ValueError, "inputs disagree"):
             promotion_module.resolve_mosaic_range_geometry(
                 changing_contract,
                 grid_x_m=grid_x,
                 grid_y_m=grid_y,
                 source_radar_index_map=changing,
+            )
+
+        with self.assertRaisesRegex(ValueError, "registries disagree"):
+            replace(
+                contract,
+                radar_projected_xy_m=tuple(reversed(contract.radar_projected_xy_m)),
+            )
+        with self.assertRaisesRegex(ValueError, "registries disagree"):
+            replace(contract, source_radar_registry_digest="f" * 64)
+        with self.assertRaisesRegex(ValueError, "order disagrees"):
+            promotion_module.MosaicRangeGeometryContract.from_registry(
+                source_registry,
+                replace(
+                    location_registry,
+                    radar_site_digests=tuple(
+                        reversed(location_registry.radar_site_digests)
+                    ),
+                    radar_site_location_digests=tuple(
+                        reversed(
+                            location_registry.radar_site_location_digests
+                        )
+                    ),
+                    radar_projected_xy_m=tuple(
+                        reversed(location_registry.radar_projected_xy_m)
+                    ),
+                ),
+                grid_contract_digest="3" * 64,
+                projection_digest="3" * 64,
+                range_regime_labels=("near_range", "far_range"),
+                radial_distance_edges_m=(0.0, 500.0, 2_000.0),
+                horizontal_range_rule_digest="8" * 64,
+                grid_x_m_digest=promotion_module.tensor_digest(grid_x),
+                grid_y_m_digest=promotion_module.tensor_digest(grid_y),
+                source_radar_index_map_digest=promotion_module.tensor_digest(
+                    source
+                ),
+                effective_horizontal_range_m_digest=(
+                    promotion_module.tensor_digest(expected_range)
+                ),
             )
 
     def test_certificate_authority_roles_cannot_share_one_key(self) -> None:
@@ -10009,6 +10743,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
         )
         decision = {
+            "promotion_deployment_certificate": certificate.payload
+            | {"certificate_digest": certificate.certificate_digest},
+            "input_plan_digest": "1" * 64,
             "selection": {
                 "selected_prior_digest": evidence.candidate_prior_digest,
                 "selected_role": "candidate",
@@ -10024,14 +10761,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             Ed25519PrivateKey.from_private_bytes(b"\x05" * 32),
             fixed_signing_time="2026-08-09T00:03:00Z",
         )
-        with self.assertRaisesRegex(ValueError, "prepublication window"):
-            promotion_module._issue_operational_deployment_decision_certificate(
+        with self.assertRaisesRegex(ValueError, "before its deadline"):
+            promotion_module._issue_operational_decision_ledger_receipt(
                 decision,
-                promotion_deployment_certificate=certificate,
-                promotion_evidence=evidence,
-                policy=policy,
-                policy_trust_store_digest="c" * 64,
-                signer=late_signer,
+                ledger_instance_digest=certificate.ledger_instance_digest,
+                sequence_number=1,
+                previous_operational_decision_digest=(
+                    promotion_module.OPERATIONAL_DECISION_LEDGER_GENESIS_DIGEST
+                ),
+                recorded_at=late_signer.signing_time(),
+                signer=self.operational_ledger_signer(),
                 authority_trust_store=trust,
             )
 
@@ -10043,6 +10782,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             Ed25519PrivateKey.from_private_bytes(b"\x05" * 32),
             fixed_signing_time="2026-08-09T00:00:20Z",
         )
+        premature_receipt = (
+            promotion_module._issue_operational_decision_ledger_receipt(
+                before_promotion,
+                ledger_instance_digest=certificate.ledger_instance_digest,
+                sequence_number=1,
+                previous_operational_decision_digest=(
+                    promotion_module.OPERATIONAL_DECISION_LEDGER_GENESIS_DIGEST
+                ),
+                recorded_at=premature_signer.signing_time(),
+                signer=self.operational_ledger_signer(),
+                authority_trust_store=trust,
+            )
+        )
         with self.assertRaisesRegex(ValueError, "prepublication window"):
             promotion_module._issue_operational_deployment_decision_certificate(
                 before_promotion,
@@ -10050,8 +10802,78 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 promotion_evidence=evidence,
                 policy=policy,
                 policy_trust_store_digest="c" * 64,
+                ledger_receipt=premature_receipt,
                 signer=premature_signer,
                 authority_trust_store=trust,
+            )
+
+    def test_fractional_second_chronology_uses_instants_not_strings(self) -> None:
+        common = {
+            "valid_times": ("2026-08-09T00:00:00Z",),
+            "grid_contract_digest": "1" * 64,
+            "radar_product_digest": "2" * 64,
+            "qc_pipeline_digest": "3" * 64,
+            "background_cycle_rule_digest": "4" * 64,
+            "mask_policy_digest": "5" * 64,
+            "observation_valid_time": "2026-08-09T09:00:00+09:00",
+            "input_available_time": "2026-08-09T00:00:00Z",
+            "publication_time": "2026-08-09T00:00:01Z",
+        }
+        equal_instant = promotion_module.NeuralPriorInputPlan(
+            **common,
+            decision_deadline="2026-08-09T00:00:00.500000Z",
+        )
+        self.assertEqual(
+            equal_instant.observation_valid_time,
+            "2026-08-09T00:00:00Z",
+        )
+        with self.assertRaisesRegex(ValueError, "latency window"):
+            promotion_module.NeuralPriorInputPlan(
+                **(
+                    common
+                    | {
+                        "input_available_time": (
+                            "2026-08-09T00:00:00.500000Z"
+                        ),
+                        "decision_deadline": "2026-08-09T00:00:00Z",
+                    }
+                ),
+            )
+
+        fractional_reference_plan = self.plan(
+            first_labeling_valid_time="2026-08-09T00:00:00.500000Z"
+        )
+        self.assertEqual(
+            fractional_reference_plan.regime_reference_plans[
+                0
+            ].labeling_valid_time,
+            "2026-08-09T00:00:00.500000Z",
+        )
+
+        evidence = self.deployment_ready(
+            self.compute((self.evaluation(1, -0.2), self.evaluation(2, -0.3)))
+        )
+        certificate, trust = self.deployment_certificate(evidence)
+        still_valid = replace(
+            trust,
+            revoked_at=trust.revoked_at
+            | {"test-promotion": "2026-08-09T00:00:40.500000Z"},
+        )
+        promotion_module._validate_ledgered_promotion_deployment_certificate(
+            certificate,
+            authority_trust_store=still_valid,
+            promotion_evidence=evidence,
+        )
+        revoked_before_issue = replace(
+            trust,
+            revoked_at=trust.revoked_at
+            | {"test-promotion": "2026-08-09T00:00:39.999999Z"},
+        )
+        with self.assertRaisesRegex(ValueError, "root-approved"):
+            promotion_module._validate_ledgered_promotion_deployment_certificate(
+                certificate,
+                authority_trust_store=revoked_before_issue,
+                promotion_evidence=evidence,
             )
 
     def test_revoked_authority_and_foreign_ledger_are_rejected(self) -> None:

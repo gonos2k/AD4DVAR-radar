@@ -178,6 +178,14 @@ def _canonical_time(value: str) -> str:
     return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _canonical_datetime(value: str) -> datetime:
+    """Parse one canonical UTC instant for ordering, never serialization."""
+
+    return datetime.fromisoformat(
+        _canonical_time(value).replace("Z", "+00:00")
+    )
+
+
 @dataclass(frozen=True)
 class RealizedObservationIntervention:
     """A learning-approved counterfactual that was actually applied."""
@@ -1660,7 +1668,13 @@ class ProspectiveInterventionDecision:
         available = _canonical_time(self.input_available_time)
         deadline = _canonical_time(self.decision_deadline)
         publication = _canonical_time(self.publication_time)
-        if not valid <= available <= decided <= deadline < publication:
+        if not (
+            _canonical_datetime(valid)
+            <= _canonical_datetime(available)
+            <= _canonical_datetime(decided)
+            <= _canonical_datetime(deadline)
+            < _canonical_datetime(publication)
+        ):
             raise ValueError("prospective decision time order is invalid")
         expected_contract_digest = _action_contract_digest(
             _ACTION_CONTRACT_BY_TYPE[self.intervention_type]
@@ -1919,7 +1933,7 @@ class OperatorActionApproval:
                 raise ValueError(f"{name} must be nonempty and canonical")
         reviewed = _canonical_time(self.reviewed_at)
         expires = _canonical_time(self.expires_at)
-        if reviewed >= expires:
+        if _canonical_datetime(reviewed) >= _canonical_datetime(expires):
             raise ValueError("operator approval must expire after review")
         if (
             not isinstance(self.operator_signature, str)
@@ -1958,7 +1972,12 @@ class OperatorActionApproval:
         expires = _canonical_time(expires_at)
         decided = _canonical_time(decision.decided_at)
         deadline = _canonical_time(decision.decision_deadline)
-        if not decided <= reviewed < expires <= deadline:
+        if not (
+            _canonical_datetime(decided)
+            <= _canonical_datetime(reviewed)
+            < _canonical_datetime(expires)
+            <= _canonical_datetime(deadline)
+        ):
             raise ValueError("operator approval is outside the decision window")
         values = {
             "decision_digest": decision.decision_digest,
@@ -2124,7 +2143,13 @@ class RealizedInterventionReceipt:
         valid = _canonical_time(self.observation_valid_time)
         available = _canonical_time(self.input_available_time)
         publication = _canonical_time(self.publication_time)
-        if not valid <= available <= applied <= received < publication:
+        if not (
+            _canonical_datetime(valid)
+            <= _canonical_datetime(available)
+            <= _canonical_datetime(applied)
+            <= _canonical_datetime(received)
+            < _canonical_datetime(publication)
+        ):
             raise ValueError("receipt time order is invalid")
         object.__setattr__(self, "applied_time", applied)
         object.__setattr__(self, "receipt_time", received)

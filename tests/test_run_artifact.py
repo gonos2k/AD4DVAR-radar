@@ -227,6 +227,22 @@ class ForecastRunArtifactTests(unittest.TestCase):
             key,
             fixed_signing_time="2026-08-09T00:01:00Z",
         )
+        ledger_signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+            "test-ledger",
+            Ed25519PrivateKey.from_private_bytes(b"\x03" * 32),
+            fixed_signing_time="2026-08-09T00:01:00Z",
+        )
+        ledger_receipt = promotion_module._issue_operational_decision_ledger_receipt(
+            artifact,
+            ledger_instance_digest=promotion_certificate.ledger_instance_digest,
+            sequence_number=1,
+            previous_operational_decision_digest=(
+                promotion_module.OPERATIONAL_DECISION_LEDGER_GENESIS_DIGEST
+            ),
+            recorded_at=signer.signing_time(),
+            signer=ledger_signer,
+            authority_trust_store=cls._deployment_certificate_trust(),
+        )
         decision_certificate = (
             promotion_module._issue_operational_deployment_decision_certificate(
                 artifact,
@@ -238,6 +254,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
                         "content_digest"
                     ]
                 ),
+                ledger_receipt=ledger_receipt,
                 signer=signer,
                 authority_trust_store=cls._deployment_certificate_trust(),
             )
@@ -320,7 +337,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
         }
         range_partition_digest = json_digest(range_partition)
         regime = {
-            "contract": "neural-prior-regime-classification-evidence-v3",
+            "contract": "neural-prior-regime-classification-evidence-v4",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "input_frames_digest": tensor_digest(frames),
             "classifier_digest": classifier_digest,
@@ -331,6 +348,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "range_regime_confidence": 1.0,
             "regime_labels": ["convective", "unknown"],
             "range_regime_labels": ["near_range"],
+            "range_probability_contract": (
+                "conditionally-independent-bernoulli-range-heads-v1"
+            ),
             "range_presence_probability_threshold": 0.8,
             "regime_probabilities": [1.0, 0.0],
             "range_regime_probabilities": [1.0],
@@ -373,7 +393,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact = {
-            "contract": "neural-prior-deployment-decision-artifact-v9",
+            "contract": "neural-prior-deployment-decision-artifact-v10",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "operational_grid_contract_digest": "d" * 64,
             "operational_frame_shape": list(frames.shape[1:]),
@@ -1370,7 +1390,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
         }
         range_partition_digest = json_digest(range_partition)
         regime_payload = {
-            "contract": "neural-prior-regime-classification-evidence-v3",
+            "contract": "neural-prior-regime-classification-evidence-v4",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "input_frames_digest": tensor_digest(frames),
             "classifier_digest": classifier_digest,
@@ -1381,6 +1401,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "range_regime_confidence": 1.0,
             "regime_labels": ["convective", "unknown"],
             "range_regime_labels": ["near_range"],
+            "range_probability_contract": (
+                "conditionally-independent-bernoulli-range-heads-v1"
+            ),
             "range_presence_probability_threshold": 0.8,
             "regime_probabilities": [1.0, 0.0],
             "range_regime_probabilities": [1.0],
@@ -1425,7 +1448,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v9",
+            "contract": "neural-prior-deployment-decision-artifact-v10",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "operational_grid_contract_digest": "d" * 64,
             "operational_frame_shape": list(frames.shape[1:]),

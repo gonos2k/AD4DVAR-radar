@@ -39,8 +39,10 @@ from .nowcast import (
 )
 from .range_geometry import (
     MosaicRangeGeometryContract,
+    RadarSiteLocationRegistry,
     RangeGeometryContract,
     RangePartitionEvidence,
+    SourceRadarRegistry,
     resolve_mosaic_range_geometry,
     resolve_range_geometry,
 )
@@ -71,6 +73,9 @@ PROMOTION_DEPLOYMENT_AUTHORITY_TRUST_STORE_CONTRACT = (
 )
 PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST = json_digest(
     {"contract": "advar-promotion-deployment-certificate-genesis-v3"}
+)
+OPERATIONAL_DECISION_LEDGER_GENESIS_DIGEST = json_digest(
+    {"contract": "advar-operational-decision-ledger-genesis-v1"}
 )
 _MAXIMUM_PROMOTION_DEPLOYMENT_TRUST_STORE_BYTES = 1024 * 1024
 
@@ -195,16 +200,16 @@ _UNCERTAINTY_SCORE_SUPPORT = UncertaintyScoreSupportContract()
 
 
 SEMANTIC_SCORING_REPLAY_CONTRACT = (
-    "neural-prior-scoring-replay-bundle-v5"
+    "neural-prior-scoring-replay-bundle-v6"
 )
 SEMANTIC_SCORING_REPLAY_METHOD = (
-    "builtin-semantic-scoring-recomputation-v5"
+    "builtin-semantic-scoring-recomputation-v6"
 )
 SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD: dict[str, str] = {
-    "contract": "neural-prior-semantic-scoring-generation-v3",
+    "contract": "neural-prior-semantic-scoring-generation-v4",
     "replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
     "replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
-    "case_contract": "neural-prior-semantic-scoring-case-v4",
+    "case_contract": "neural-prior-semantic-scoring-case-v5",
     "product_type_policy": "exact-shipped-product-types-v1",
     "forecast_integrity": "forecast-result-raw-content-validation-v1",
     "prior_integrity": "runner-reproduced-prior-application-v1",
@@ -292,6 +297,232 @@ class PromotionMetricScale:
 
 
 @dataclass(frozen=True)
+class RawRadarObservationUnit:
+    """Ingestor-signed identity of one immutable raw radar volume."""
+
+    radar_site_digest: str
+    acquisition_valid_time: str
+    scan_strategy_digest: str
+    raw_volume_object_digest: str
+    raw_ingestor_id: str
+    raw_ingestor_public_key_hex: str
+    raw_ingestor_signature_hex: str
+    contract: str = "raw-radar-observation-unit-v1"
+    observation_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        for name in (
+            "radar_site_digest",
+            "scan_strategy_digest",
+            "raw_volume_object_digest",
+        ):
+            _require_digest(name, getattr(self, name))
+        if (
+            self.contract != "raw-radar-observation-unit-v1"
+            or not self.raw_ingestor_id
+            or self.raw_ingestor_id.strip() != self.raw_ingestor_id
+        ):
+            raise ValueError("raw radar observation identity is invalid")
+        acquired = _canonical_time(self.acquisition_valid_time)
+        try:
+            public_key = Ed25519PublicKey.from_public_bytes(
+                bytes.fromhex(self.raw_ingestor_public_key_hex)
+            )
+            public_key.verify(
+                bytes.fromhex(self.raw_ingestor_signature_hex),
+                json_digest(self.unsigned_payload | {"acquisition_valid_time": acquired})
+                .encode("ascii"),
+            )
+        except (InvalidSignature, ValueError, TypeError) as error:
+            raise ValueError("raw radar observation signature is invalid") from error
+        object.__setattr__(self, "acquisition_valid_time", acquired)
+        object.__setattr__(self, "observation_digest", json_digest(self.payload))
+
+    @property
+    def unsigned_payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "radar_site_digest": self.radar_site_digest,
+            "acquisition_valid_time": self.acquisition_valid_time,
+            "scan_strategy_digest": self.scan_strategy_digest,
+            "raw_volume_object_digest": self.raw_volume_object_digest,
+            "raw_ingestor_id": self.raw_ingestor_id,
+            "raw_ingestor_public_key_hex": self.raw_ingestor_public_key_hex,
+        }
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return self.unsigned_payload | {
+            "raw_ingestor_signature_hex": self.raw_ingestor_signature_hex,
+        }
+
+    @classmethod
+    def from_ingestor(
+        cls,
+        *,
+        radar_site_digest: str,
+        acquisition_valid_time: str,
+        scan_strategy_digest: str,
+        raw_volume_object_digest: str,
+        raw_ingestor_id: str,
+        raw_ingestor_private_key: Ed25519PrivateKey,
+    ) -> RawRadarObservationUnit:
+        public_key_hex = raw_ingestor_private_key.public_key().public_bytes(
+            serialization.Encoding.Raw,
+            serialization.PublicFormat.Raw,
+        ).hex()
+        unsigned = {
+            "contract": "raw-radar-observation-unit-v1",
+            "radar_site_digest": radar_site_digest,
+            "acquisition_valid_time": _canonical_time(acquisition_valid_time),
+            "scan_strategy_digest": scan_strategy_digest,
+            "raw_volume_object_digest": raw_volume_object_digest,
+            "raw_ingestor_id": raw_ingestor_id,
+            "raw_ingestor_public_key_hex": public_key_hex,
+        }
+        return cls(
+            **unsigned,
+            raw_ingestor_signature_hex=raw_ingestor_private_key.sign(
+                json_digest(unsigned).encode("ascii")
+            ).hex(),
+        )
+
+
+@dataclass(frozen=True)
+class MeteorologicalSamplingUnit:
+    """Processing-independent case identity over its raw input volumes."""
+
+    raw_observation_digests: tuple[str, ...]
+    canonical_geodetic_footprint_digest: str
+    contract: str = "meteorological-sampling-unit-v2"
+    sampling_unit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        ordered = tuple(sorted(self.raw_observation_digests))
+        if (
+            self.contract != "meteorological-sampling-unit-v2"
+            or not ordered
+            or len(set(ordered)) != len(ordered)
+        ):
+            raise ValueError("meteorological sampling unit is invalid")
+        for digest in ordered:
+            _require_digest("raw radar observation", digest)
+        _require_digest(
+            "canonical geodetic footprint",
+            self.canonical_geodetic_footprint_digest,
+        )
+        object.__setattr__(self, "raw_observation_digests", ordered)
+        object.__setattr__(self, "sampling_unit_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "raw_observation_digests": list(self.raw_observation_digests),
+            "canonical_geodetic_footprint_digest": (
+                self.canonical_geodetic_footprint_digest
+            ),
+        }
+
+
+@dataclass(frozen=True)
+class GlobalSamplingReservationReceipt:
+    """Central-authority reservation of raw volumes for one experiment scope."""
+
+    experiment_scope_digest: str
+    raw_observation_digests: tuple[str, ...]
+    registry_id: str
+    authority_id: str
+    authority_public_key_hex: str
+    reserved_at: str
+    authority_signature_hex: str
+    contract: str = "global-sampling-registry-reservation-v1"
+    receipt_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        ordered = tuple(sorted(self.raw_observation_digests))
+        _require_digest("sampling experiment scope", self.experiment_scope_digest)
+        for digest in ordered:
+            _require_digest("sampling raw observation", digest)
+        if (
+            self.contract != "global-sampling-registry-reservation-v1"
+            or not ordered
+            or len(set(ordered)) != len(ordered)
+            or not self.registry_id
+            or not self.authority_id
+        ):
+            raise ValueError("global sampling reservation is invalid")
+        reserved = _canonical_time(self.reserved_at)
+        object.__setattr__(self, "raw_observation_digests", ordered)
+        object.__setattr__(self, "reserved_at", reserved)
+        try:
+            key = Ed25519PublicKey.from_public_bytes(
+                bytes.fromhex(self.authority_public_key_hex)
+            )
+            key.verify(
+                bytes.fromhex(self.authority_signature_hex),
+                json_digest(self.unsigned_payload).encode("ascii"),
+            )
+        except (InvalidSignature, ValueError, TypeError) as error:
+            raise ValueError("global sampling reservation signature is invalid") from error
+        object.__setattr__(self, "receipt_digest", json_digest(self.payload))
+
+    @property
+    def unsigned_payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "experiment_scope_digest": self.experiment_scope_digest,
+            "raw_observation_digests": list(self.raw_observation_digests),
+            "registry_id": self.registry_id,
+            "authority_id": self.authority_id,
+            "authority_public_key_hex": self.authority_public_key_hex,
+            "reserved_at": self.reserved_at,
+        }
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return self.unsigned_payload | {
+            "authority_signature_hex": self.authority_signature_hex,
+        }
+
+    @classmethod
+    def issue(
+        cls,
+        *,
+        experiment_scope_digest: str,
+        raw_observation_digests: tuple[str, ...],
+        registry_id: str,
+        authority_id: str,
+        authority_private_key: Ed25519PrivateKey,
+        reserved_at: str,
+    ) -> GlobalSamplingReservationReceipt:
+        public_key_hex = authority_private_key.public_key().public_bytes(
+            serialization.Encoding.Raw,
+            serialization.PublicFormat.Raw,
+        ).hex()
+        unsigned = {
+            "contract": "global-sampling-registry-reservation-v1",
+            "experiment_scope_digest": experiment_scope_digest,
+            "raw_observation_digests": list(sorted(raw_observation_digests)),
+            "registry_id": registry_id,
+            "authority_id": authority_id,
+            "authority_public_key_hex": public_key_hex,
+            "reserved_at": _canonical_time(reserved_at),
+        }
+        return cls(
+            experiment_scope_digest=experiment_scope_digest,
+            raw_observation_digests=tuple(sorted(raw_observation_digests)),
+            registry_id=registry_id,
+            authority_id=authority_id,
+            authority_public_key_hex=public_key_hex,
+            reserved_at=cast(str, unsigned["reserved_at"]),
+            authority_signature_hex=authority_private_key.sign(
+                json_digest(unsigned).encode("ascii")
+            ).hex(),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorInputPlan:
     """Content-addressed future input-selection rules, never future data."""
 
@@ -324,7 +555,12 @@ class NeuralPriorInputPlan:
         publication = _canonical_time(self.publication_time)
         if not times or times[-1] != valid:
             raise ValueError("input plan must end at its observation valid time")
-        if not valid <= available <= deadline < publication:
+        if not (
+            _canonical_datetime(valid)
+            <= _canonical_datetime(available)
+            <= _canonical_datetime(deadline)
+            < _canonical_datetime(publication)
+        ):
             raise ValueError("input plan latency window is invalid")
         object.__setattr__(self, "valid_times", times)
         object.__setattr__(self, "observation_valid_time", valid)
@@ -356,30 +592,17 @@ class NeuralPriorInputPlan:
 
 def meteorological_sampling_unit_digest(
     *,
-    radar_id: str,
-    issue_time: str,
-    observation_valid_time: str,
-    spatial_footprint_digest: str,
+    raw_observation_digests: tuple[str, ...],
+    canonical_geodetic_footprint_digest: str,
 ) -> str:
-    """Identify weather sampling independently of QC and verification policy.
+    """Return the v2 raw-volume-based meteorological sampling identity."""
 
-    Product, QC, mask, background, and verification-plan identities are
-    deliberately excluded.  Repackaging one radar volume under a different
-    processing contract therefore cannot create a fresh statistical sample.
-    """
-
-    if not radar_id or radar_id.strip() != radar_id:
-        raise ValueError("meteorological sampling radar ID must be canonical")
-    _require_digest("meteorological spatial footprint", spatial_footprint_digest)
-    return json_digest(
-        {
-            "contract": "meteorological-sampling-unit-v1",
-            "radar_id": radar_id,
-            "issue_time": _canonical_time(issue_time),
-            "observation_valid_time": _canonical_time(observation_valid_time),
-            "spatial_footprint_digest": spatial_footprint_digest,
-        }
-    )
+    return MeteorologicalSamplingUnit(
+        raw_observation_digests=raw_observation_digests,
+        canonical_geodetic_footprint_digest=(
+            canonical_geodetic_footprint_digest
+        ),
+    ).sampling_unit_digest
 
 
 PriorUncertaintyTargetKind = Literal[
@@ -649,8 +872,10 @@ class RangeBandContract:
 
 def _validate_complete_range_partition(
     range_band_masks: dict[str, Tensor],
+    *,
+    valid_range_domain_mask: Tensor | None = None,
 ) -> None:
-    """Require each operational grid cell to belong to exactly one band."""
+    """Require one band on the valid range domain and none outside it."""
 
     masks = tuple(range_band_masks.values())
     if (
@@ -665,7 +890,17 @@ def _validate_complete_range_partition(
     membership = torch.stack(tuple(mask.to(torch.int8) for mask in masks)).sum(
         dim=0
     )
-    if bool(torch.any(membership != 1)):
+    domain = (
+        torch.ones_like(masks[0], dtype=torch.bool)
+        if valid_range_domain_mask is None
+        else valid_range_domain_mask
+    )
+    if (
+        domain.dtype is not torch.bool
+        or domain.shape != masks[0].shape
+        or domain.device != masks[0].device
+        or not torch.equal(membership, domain.to(torch.int8))
+    ):
         raise ValueError("range-band masks are not a complete partition")
 
 
@@ -756,40 +991,6 @@ class OperationalIssuanceDomainPlan:
             key: (list(value) if key == "lead_minutes" else value)
             for key, value in self.__dict__.items()
             if key != "plan_digest"
-        }
-
-
-@dataclass(frozen=True)
-class SourceRadarRegistry:
-    """Canonical mapping from mosaic integer indices to physical radar sites."""
-
-    radar_site_digests: tuple[str, ...]
-    source_selection_policy_digest: str
-    contract: str = "source-radar-registry-v1"
-    registry_digest: str = field(init=False)
-
-    def __post_init__(self) -> None:
-        if (
-            self.contract != "source-radar-registry-v1"
-            or not self.radar_site_digests
-            or len(set(self.radar_site_digests)) != len(self.radar_site_digests)
-        ):
-            raise ValueError("source radar registry is invalid")
-        for value in self.radar_site_digests:
-            _require_digest("source radar site", value)
-        _require_digest(
-            "source selection policy", self.source_selection_policy_digest
-        )
-        object.__setattr__(self, "registry_digest", json_digest(self.payload))
-
-    @property
-    def payload(self) -> dict[str, object]:
-        return {
-            "contract": self.contract,
-            "radar_site_digests": list(self.radar_site_digests),
-            "source_selection_policy_digest": (
-                self.source_selection_policy_digest
-            ),
         }
 
 
@@ -1460,7 +1661,10 @@ class RegimeClassifierManifest:
             (_canonical_time(start), _canonical_time(end))
             for start, end in self.training_time_windows
         )
-        if not windows or any(start >= end for start, end in windows):
+        if not windows or any(
+            _canonical_datetime(start) >= _canonical_datetime(end)
+            for start, end in windows
+        ):
             raise ValueError("classifier training windows are invalid")
         object.__setattr__(self, "training_time_windows", windows)
         object.__setattr__(self, "manifest_digest", json_digest(self.payload))
@@ -1590,7 +1794,9 @@ class RegimeReferenceEvidence:
         labeler_private_key: Ed25519PrivateKey,
     ) -> RegimeReferenceEvidence:
         labeled = _canonical_time(labeled_at)
-        if labeled < plan.labeling_valid_time:
+        if _canonical_datetime(labeled) < _canonical_datetime(
+            plan.labeling_valid_time
+        ):
             raise ValueError("regime reference was labeled before its valid time")
         for name, value in (
             ("full_analysis_input_digest", full_analysis_input_digest),
@@ -1641,7 +1847,8 @@ def validate_regime_reference_evidence(
         or evidence.reference_plan_digest != plan.plan_digest
         or evidence.labeler_id != plan.labeler_id
         or evidence.evidence_digest != json_digest(evidence.payload)
-        or _canonical_time(evidence.labeled_at) < plan.labeling_valid_time
+        or _canonical_datetime(evidence.labeled_at)
+        < _canonical_datetime(plan.labeling_valid_time)
         or len(evidence.labeler_signature) != 128
     ):
         raise ValueError("regime-reference evidence is invalid")
@@ -1879,8 +2086,8 @@ def validate_trusted_process_start_receipt(
         raise ValueError("trusted process-start receipt authority is invalid")
     if catalog_result is not None and (
         receipt.catalog_result_digest != catalog_result.result_digest
-        or _canonical_time(catalog_result.cataloged_at)
-        >= _canonical_time(receipt.started_at)
+        or _canonical_datetime(catalog_result.cataloged_at)
+        >= _canonical_datetime(receipt.started_at)
     ):
         raise ValueError("trusted process start does not follow its event catalog")
 
@@ -2064,8 +2271,8 @@ def validate_trusted_process_completion_receipt(
             != start.scheduler_public_key_hex
             or receipt.scheduler_trust_store_digest
             != start.scheduler_trust_store_digest
-            or _canonical_time(receipt.completed_at)
-            <= _canonical_time(start.started_at)
+            or _canonical_datetime(receipt.completed_at)
+            <= _canonical_datetime(start.started_at)
             or receipt.receipt_digest != json_digest(receipt.payload)
             or len(receipt.scheduler_signature) != 128
         ):
@@ -2387,8 +2594,8 @@ def validate_physical_event_catalog(
 ) -> None:
     try:
         validate_physical_event_track_artifact(evidence.object_track_artifact)
-        start = _canonical_time(evidence.start_time)
-        end = _canonical_time(evidence.end_time)
+        start = _canonical_datetime(evidence.start_time)
+        end = _canonical_datetime(evidence.end_time)
         minimum_x, minimum_y, maximum_x, maximum_y = (
             evidence.spatial_envelope_xy_m
         )
@@ -2957,7 +3164,8 @@ def validate_physical_event_catalog_result(
             or result.result_digest != json_digest(result.payload)
             or result.association_graph_digest
             != _event_association_graph_digest(plan.plan_digest, result.event_evidences)
-            or cataloged_at > plan.catalog_completion_deadline
+            or _canonical_datetime(cataloged_at)
+            > _canonical_datetime(plan.catalog_completion_deadline)
             or len(result.adjudicator_signature) != 128
         ):
             raise ValueError("physical event-catalog result is invalid")
@@ -3048,12 +3256,15 @@ def validate_physical_event_catalog_result(
                 raise ValueError(
                     "physical event spatial-membership evidence disagrees with catalog"
                 )
-        if max(_canonical_time(item.input_available_time) for item in spatial) > cataloged_at:
+        if max(
+            _canonical_datetime(item.input_available_time) for item in spatial
+        ) > _canonical_datetime(cataloged_at):
             raise ValueError(
                 "physical event catalog predates member input availability"
             )
         if candidate_scoring_started_at is not None and (
-            cataloged_at >= _canonical_time(candidate_scoring_started_at)
+            _canonical_datetime(cataloged_at)
+            >= _canonical_datetime(candidate_scoring_started_at)
         ):
             raise ValueError(
                 "physical event catalog must be fixed before candidate scoring"
@@ -3796,6 +4007,43 @@ class LegacyNeuralPriorHoldoutPlanV16Audit:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV17Audit:
+    """Raw v17 plan retained before raw-volume sampling identity."""
+
+    plan_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-plan-audit-v17"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _require_digest("legacy holdout plan digest", self.plan_digest)
+        payload = json.loads(self.payload_json)
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != "neural-prior-holdout-plan-v17"
+            or payload.get("plan_digest") != self.plan_digest
+            or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            != self.payload_json
+        ):
+            raise ValueError("invalid legacy v17 holdout plan")
+        original = dict(payload)
+        original.pop("plan_digest")
+        if json_digest(original) != self.plan_digest:
+            raise ValueError("legacy v17 holdout plan digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "plan_digest": self.plan_digest,
+                    "payload": payload,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class PromotionExperimentTrial:
     """One preregistered candidate/rule/classifier trial in a cohort."""
 
@@ -3835,25 +4083,50 @@ class PromotionExperimentTrial:
         }
 
 
+def _promotion_experiment_scope_digest(
+    *,
+    holdout_cohort_digest: str,
+    parent_prior_digest: str,
+    trials: tuple[PromotionExperimentTrial, ...],
+    winner_selection_rule_digest: str,
+) -> str:
+    """Identify one experiment scope before its global reservation exists."""
+
+    return json_digest(
+        {
+            "contract": "neural-prior-promotion-experiment-scope-v1",
+            "holdout_cohort_digest": holdout_cohort_digest,
+            "parent_prior_digest": parent_prior_digest,
+            "trial_digests": [item.trial_digest for item in trials],
+            "winner_selection_rule_digest": winner_selection_rule_digest,
+        }
+    )
+
+
 @dataclass(frozen=True)
 class PromotionExperimentFamily:
     """Outcome-blind multiplicity contract shared by overlapping plans."""
 
     holdout_cohort_digest: str
     meteorological_sampling_unit_digests: tuple[str, ...]
+    raw_observation_digests: tuple[str, ...]
+    global_sampling_reservation: GlobalSamplingReservationReceipt
     parent_prior_digest: str
     trials: tuple[PromotionExperimentTrial, ...]
     winner_selection_rule_digest: str
-    contract: str = "neural-prior-promotion-experiment-family-v2"
+    contract: str = "neural-prior-promotion-experiment-family-v3"
     family_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
         if (
-            self.contract != "neural-prior-promotion-experiment-family-v2"
+            self.contract != "neural-prior-promotion-experiment-family-v3"
             or not self.trials
             or not self.meteorological_sampling_unit_digests
             or len(set(self.meteorological_sampling_unit_digests))
             != len(self.meteorological_sampling_unit_digests)
+            or not self.raw_observation_digests
+            or len(set(self.raw_observation_digests))
+            != len(self.raw_observation_digests)
             or len({item.trial_digest for item in self.trials})
             != len(self.trials)
         ):
@@ -3866,6 +4139,23 @@ class PromotionExperimentFamily:
             _require_digest(name, getattr(self, name))
         for digest in self.meteorological_sampling_unit_digests:
             _require_digest("meteorological sampling unit", digest)
+        for digest in self.raw_observation_digests:
+            _require_digest("raw radar observation", digest)
+        expected_scope = _promotion_experiment_scope_digest(
+            holdout_cohort_digest=self.holdout_cohort_digest,
+            parent_prior_digest=self.parent_prior_digest,
+            trials=self.trials,
+            winner_selection_rule_digest=self.winner_selection_rule_digest,
+        )
+        if (
+            type(self.global_sampling_reservation)
+            is not GlobalSamplingReservationReceipt
+            or self.global_sampling_reservation.experiment_scope_digest
+            != expected_scope
+            or self.global_sampling_reservation.raw_observation_digests
+            != tuple(sorted(self.raw_observation_digests))
+        ):
+            raise ValueError("global sampling reservation disagrees with family")
         object.__setattr__(self, "family_digest", json_digest(self.payload))
 
     @property
@@ -3879,6 +4169,15 @@ class PromotionExperimentFamily:
             "holdout_cohort_digest": self.holdout_cohort_digest,
             "meteorological_sampling_unit_digests": list(
                 self.meteorological_sampling_unit_digests
+            ),
+            "raw_observation_digests": list(self.raw_observation_digests),
+            "global_sampling_reservation": (
+                self.global_sampling_reservation.payload
+                | {
+                    "receipt_digest": (
+                        self.global_sampling_reservation.receipt_digest
+                    )
+                }
             ),
             "parent_prior_digest": self.parent_prior_digest,
             "trials": [item.payload for item in self.trials],
@@ -3896,6 +4195,8 @@ class NeuralPriorHoldoutPlan:
     candidate_family_digests: tuple[str, ...]
     cases: tuple[NeuralPriorHoldoutPlanCase, ...]
     input_plans: tuple[NeuralPriorInputPlan, ...]
+    raw_observation_units: tuple[RawRadarObservationUnit, ...]
+    meteorological_sampling_units: tuple[MeteorologicalSamplingUnit, ...]
     uncertainty_target_plans: tuple[PriorUncertaintyTargetPlan, ...]
     state_calibration_target_plans: tuple[
         NeuralPriorStateCalibrationPlan, ...
@@ -3921,11 +4222,11 @@ class NeuralPriorHoldoutPlan:
     mode: Literal["prospective", "sealed_historical"] = "prospective"
     sealed_historical_dataset_digest: str | None = None
     candidate_training_started_at: str | None = None
-    contract: str = "neural-prior-holdout-plan-v17"
+    contract: str = "neural-prior-holdout-plan-v18"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v17":
+        if self.contract != "neural-prior-holdout-plan-v18":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -3949,17 +4250,49 @@ class NeuralPriorHoldoutPlan:
         retained_plans = {item.plan_digest: item for item in self.input_plans}
         if set(retained_plans) != set(input_plans):
             raise ValueError("holdout input-plan payloads are incomplete")
+        raw_units = {
+            item.observation_digest: item for item in self.raw_observation_units
+        }
+        if (
+            not raw_units
+            or len(raw_units) != len(self.raw_observation_units)
+            or set(raw_units)
+            != set(self.promotion_experiment_family.raw_observation_digests)
+        ):
+            raise ValueError("holdout raw observation identities are incomplete")
+        sampling_units = {
+            item.sampling_unit_digest: item
+            for item in self.meteorological_sampling_units
+        }
+        if (
+            len(sampling_units) != len(self.meteorological_sampling_units)
+            or set(sampling_units)
+            != set(
+                self.promotion_experiment_family.meteorological_sampling_unit_digests
+            )
+        ):
+            raise ValueError("holdout meteorological sampling units are incomplete")
         for case in self.cases:
             input_plan = retained_plans[case.input_plan_digest]
-            expected_sampling_unit = meteorological_sampling_unit_digest(
-                radar_id=case.radar_id,
-                issue_time=case.issue_time,
-                observation_valid_time=input_plan.observation_valid_time,
-                spatial_footprint_digest=input_plan.grid_contract_digest,
+            sampling_unit = sampling_units.get(
+                case.meteorological_sampling_unit_digest
             )
-            if case.meteorological_sampling_unit_digest != expected_sampling_unit:
+            if sampling_unit is None:
                 raise ValueError(
                     "holdout sampling unit is not derived from raw weather identity"
+                )
+            case_raw_units = tuple(
+                raw_units[digest]
+                for digest in sampling_unit.raw_observation_digests
+            )
+            # A mosaic may contribute one raw volume per radar for the same
+            # input instant.  Compare the covered instants, not a single-site
+            # one-volume-per-time multiset.
+            if {
+                item.acquisition_valid_time for item in case_raw_units
+            } != set(input_plan.valid_times):
+                raise ValueError(
+                    "holdout raw observation times disagree with its input plan"
                 )
         target_plans = tuple(
             item.uncertainty_target_plan_digest for item in self.cases
@@ -4059,8 +4392,12 @@ class NeuralPriorHoldoutPlan:
         ):
             raise ValueError("holdout regime-reference plans are incomplete")
         if any(
-            reference_plans[item.regime_reference_plan_digest].labeling_valid_time
-            <= item.issue_time
+            _canonical_datetime(
+                reference_plans[
+                    item.regime_reference_plan_digest
+                ].labeling_valid_time
+            )
+            <= _canonical_datetime(item.issue_time)
             for item in self.cases
         ):
             raise ValueError("regime reference must be produced after issue")
@@ -4124,7 +4461,9 @@ class NeuralPriorHoldoutPlan:
                 or set(classifier.training_storm_ids) & holdout_storm_ids
                 or set(classifier.training_days) & holdout_days
                 or any(
-                    start <= issue <= end
+                    _canonical_datetime(start)
+                    <= _canonical_datetime(issue)
+                    <= _canonical_datetime(end)
                     for start, end in classifier.training_time_windows
                     for issue in holdout_issues
                 )
@@ -4151,12 +4490,20 @@ class NeuralPriorHoldoutPlan:
         ):
             raise ValueError("holdout plan disagrees with its experiment family")
         registered = _canonical_time(self.registered_at)
+        if _canonical_datetime(
+            self.promotion_experiment_family.global_sampling_reservation.reserved_at
+        ) > _canonical_datetime(registered):
+            raise ValueError("global sampling reservation must precede plan registration")
         if self.mode == "prospective":
             if self.sealed_historical_dataset_digest is not None or (
                 self.candidate_training_started_at is not None
             ):
                 raise ValueError("prospective holdout cannot use a sealed dataset")
-            if any(registered >= item.issue_time for item in self.cases):
+            if any(
+                _canonical_datetime(registered)
+                >= _canonical_datetime(item.issue_time)
+                for item in self.cases
+            ):
                 raise ValueError("holdout plan must precede every issue time")
             if any(
                 item.regime != "pending" or item.storm_id != "pending"
@@ -4175,7 +4522,7 @@ class NeuralPriorHoldoutPlan:
                 self.sealed_historical_dataset_digest,
             )
             started = _canonical_time(self.candidate_training_started_at)
-            if registered >= started:
+            if _canonical_datetime(registered) >= _canonical_datetime(started):
                 raise ValueError("historical holdout must be sealed before training")
             object.__setattr__(self, "candidate_training_started_at", started)
         else:
@@ -4229,10 +4576,12 @@ class NeuralPriorHoldoutPlanPolicy:
     approved_plan_digests: tuple[str, ...]
     approved_metric_contract_digests: tuple[str, ...]
     maximum_candidate_family_size: int
-    contract: str = "neural-prior-holdout-plan-policy-v1"
+    sampling_registry_authority_id: str
+    sampling_registry_authority_public_key_hex: str
+    contract: str = "neural-prior-holdout-plan-policy-v2"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-policy-v1":
+        if self.contract != "neural-prior-holdout-plan-policy-v2":
             raise ValueError("unsupported holdout plan policy")
         if not self.approved_plan_digests or not self.approved_metric_contract_digests:
             raise ValueError("holdout policy approvals must be nonempty")
@@ -4243,6 +4592,18 @@ class NeuralPriorHoldoutPlanPolicy:
             or self.maximum_candidate_family_size != 1
         ):
             raise ValueError("current scoring contract requires family size one")
+        if (
+            not self.sampling_registry_authority_id
+            or self.sampling_registry_authority_id.strip()
+            != self.sampling_registry_authority_id
+        ):
+            raise ValueError("sampling registry authority ID is invalid")
+        try:
+            Ed25519PublicKey.from_public_bytes(
+                bytes.fromhex(self.sampling_registry_authority_public_key_hex)
+            )
+        except (ValueError, TypeError) as error:
+            raise ValueError("sampling registry authority key is invalid") from error
 
     @property
     def digest(self) -> str:
@@ -4255,6 +4616,12 @@ class NeuralPriorHoldoutPlanPolicy:
                 ),
                 "maximum_candidate_family_size": (
                     self.maximum_candidate_family_size
+                ),
+                "sampling_registry_authority_id": (
+                    self.sampling_registry_authority_id
+                ),
+                "sampling_registry_authority_public_key_hex": (
+                    self.sampling_registry_authority_public_key_hex
                 ),
             }
         )
@@ -4868,6 +5235,14 @@ def _canonical_time(value: str) -> str:
     return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _canonical_datetime(value: str) -> datetime:
+    """Parse one canonical UTC instant for ordering, never serialization."""
+
+    return datetime.fromisoformat(
+        _canonical_time(value).replace("Z", "+00:00")
+    )
+
+
 def _holdout_plan_payload(plan: NeuralPriorHoldoutPlan) -> dict[str, object]:
     return {
         "contract": plan.contract,
@@ -4876,6 +5251,14 @@ def _holdout_plan_payload(plan: NeuralPriorHoldoutPlan) -> dict[str, object]:
         "candidate_family_digests": list(plan.candidate_family_digests),
         "cases": [item.__dict__ for item in plan.cases],
         "input_plans": [item.payload for item in plan.input_plans],
+        "raw_observation_units": [
+            item.payload | {"observation_digest": item.observation_digest}
+            for item in plan.raw_observation_units
+        ],
+        "meteorological_sampling_units": [
+            item.payload | {"sampling_unit_digest": item.sampling_unit_digest}
+            for item in plan.meteorological_sampling_units
+        ],
         "uncertainty_target_plans": [
             item.payload for item in plan.uncertainty_target_plans
         ],
@@ -5211,8 +5594,10 @@ class NeuralPriorCandidateManifest:
             catalog = catalogs[item.physical_event_digest]
             issue_time = _canonical_time(item.issue_time)
             if (
-                issue_time < _canonical_time(catalog.start_time)
-                or issue_time >= _canonical_time(catalog.end_time)
+                _canonical_datetime(issue_time)
+                < _canonical_datetime(catalog.start_time)
+                or _canonical_datetime(issue_time)
+                >= _canonical_datetime(catalog.end_time)
                 or item.radar_id not in catalog.participating_radar_ids
             ):
                 raise ValueError(
@@ -5223,7 +5608,9 @@ class NeuralPriorCandidateManifest:
         ):
             raise ValueError("candidate event catalogs disagree with catalog result")
         scoring_started = _canonical_time(self.candidate_scoring_started_at)
-        if _canonical_time(self.physical_event_catalog_result.cataloged_at) >= scoring_started:
+        if _canonical_datetime(
+            self.physical_event_catalog_result.cataloged_at
+        ) >= _canonical_datetime(scoring_started):
             raise ValueError("physical event catalog must be fixed before candidate scoring")
         object.__setattr__(self, "candidate_scoring_started_at", scoring_started)
         if len(set(self.training_case_ids)) != len(self.training_case_ids):
@@ -5334,11 +5721,18 @@ class NeuralPriorCandidateManifest:
             (_canonical_time(start), _canonical_time(end))
             for start, end in self.training_time_windows
         )
-        if any(start >= end for start, end in windows):
+        if any(
+            _canonical_datetime(start) >= _canonical_datetime(end)
+            for start, end in windows
+        ):
             raise ValueError("training time windows must have positive duration")
         holdout_issues = tuple(item.issue_time for item in self.holdout_cases)
         if any(
-            start <= issue <= end for start, end in windows for issue in holdout_issues
+            _canonical_datetime(start)
+            <= _canonical_datetime(issue)
+            <= _canonical_datetime(end)
+            for start, end in windows
+            for issue in holdout_issues
         ):
             raise ValueError("training windows overlap holdout issues")
         object.__setattr__(self, "training_time_windows", windows)
@@ -6164,6 +6558,12 @@ class PriorHoldoutEvaluation:
     classified_range_regimes: tuple[str, ...]
     classifier_regime_confidence: float
     classifier_range_confidence: float
+    classifier_regime_labels: tuple[str, ...]
+    classifier_range_regime_labels: tuple[str, ...]
+    classifier_range_probability_contract: str
+    classifier_regime_probabilities: tuple[float, ...]
+    classifier_range_regime_probabilities: tuple[float, ...]
+    classifier_range_presence_probability_threshold: float
     classifier_regime_entropy: float
     classifier_is_ood: bool
     classifier_reference_agreement: bool
@@ -6253,14 +6653,14 @@ class PriorHoldoutEvaluation:
     state_calibration_echo_object_count: int
     issue_time: str
     verification_valid_times: tuple[str, ...]
-    contract: str = "prior-holdout-evaluation-v20"
+    contract: str = "prior-holdout-evaluation-v21"
     evaluation_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use PriorHoldoutEvaluation.from_forecasts")
 
     def __post_init__(self) -> None:
-        if self.contract != "prior-holdout-evaluation-v20":
+        if self.contract != "prior-holdout-evaluation-v21":
             raise ValueError("unsupported prior holdout evaluation")
         for name in (
             "holdout_plan_digest",
@@ -6297,6 +6697,33 @@ class PriorHoldoutEvaluation:
             or any(not value for value in self.classified_range_regimes)
             or not 0.0 <= self.classifier_regime_confidence <= 1.0
             or not 0.0 <= self.classifier_range_confidence <= 1.0
+            or len(self.classifier_regime_labels)
+            != len(self.classifier_regime_probabilities)
+            or len(self.classifier_range_regime_labels)
+            != len(self.classifier_range_regime_probabilities)
+            or not self.classifier_regime_probabilities
+            or not self.classifier_range_regime_probabilities
+            or self.classifier_range_probability_contract
+            != "conditionally-independent-bernoulli-range-heads-v1"
+            or len(set(self.classifier_regime_labels))
+            != len(self.classifier_regime_labels)
+            or len(set(self.classifier_range_regime_labels))
+            != len(self.classifier_range_regime_labels)
+            or any(
+                not math.isfinite(value) or not 0.0 <= value <= 1.0
+                for value in (
+                    self.classifier_regime_probabilities
+                    + self.classifier_range_regime_probabilities
+                )
+            )
+            or not math.isclose(
+                sum(self.classifier_regime_probabilities),
+                1.0,
+                abs_tol=1.0e-12,
+            )
+            or not 0.5
+            < self.classifier_range_presence_probability_threshold
+            < 1.0
             or not math.isfinite(self.classifier_regime_entropy)
             or self.classifier_regime_entropy < 0.0
             or len(set(self.reference_active_range_regimes))
@@ -6680,10 +7107,8 @@ class PriorHoldoutEvaluation:
         elif type(range_geometry) is MosaicRangeGeometryContract:
             if resolved_source_coverage is None:
                 raise ValueError("mosaic scoring requires resolved source coverage")
-            source_maps = resolved_source_coverage.source_radar_index_map
-            if source_maps.ndim != 3 or not all(
-                torch.equal(source_maps[0], item) for item in source_maps[1:]
-            ):
+            source_map = resolved_source_coverage.source_radar_index_map
+            if source_map.ndim != 2:
                 raise ValueError(
                     "mosaic scoring requires one pre-issue input source map"
                 )
@@ -6691,7 +7116,7 @@ class PriorHoldoutEvaluation:
                 range_geometry,
                 grid_x_m=range_grid_x_m,
                 grid_y_m=range_grid_y_m,
-                source_radar_index_map=source_maps,
+                source_radar_index_map=source_map,
             )
         else:
             raise TypeError("unsupported range geometry contract")
@@ -6721,7 +7146,10 @@ class PriorHoldoutEvaluation:
             != range_contract.reference_active_range_regimes
         ):
             raise ValueError("holdout range-band masks disagree with their plan")
-        _validate_complete_range_partition(range_band_masks)
+        _validate_complete_range_partition(
+            range_band_masks,
+            valid_range_domain_mask=range_partition.valid_range_domain_mask,
+        )
         if (
             regime_classification_evidence.full_analysis_input_digest
             != candidate_forecast.run.full_analysis_input_digest
@@ -7828,6 +8256,24 @@ class PriorHoldoutEvaluation:
             classifier_range_confidence=(
                 regime_classification_evidence.range_regime_confidence
             ),
+            classifier_regime_labels=(
+                regime_classification_evidence.regime_labels
+            ),
+            classifier_range_regime_labels=(
+                regime_classification_evidence.range_regime_labels
+            ),
+            classifier_range_probability_contract=(
+                regime_classification_evidence.range_probability_contract
+            ),
+            classifier_regime_probabilities=(
+                regime_classification_evidence.regime_probabilities
+            ),
+            classifier_range_regime_probabilities=(
+                regime_classification_evidence.range_regime_probabilities
+            ),
+            classifier_range_presence_probability_threshold=(
+                regime_classification_evidence.range_presence_probability_threshold
+            ),
             classifier_regime_entropy=(
                 regime_classification_evidence.regime_entropy
             ),
@@ -8468,7 +8914,7 @@ class ScoringReplayCaseArtifact:
     ) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-semantic-scoring-case-v4",
+                "contract": "neural-prior-semantic-scoring-case-v5",
                 "semantic_replay_generation_digest": (
                     SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
                 ),
@@ -9009,7 +9455,7 @@ def _new_prior_holdout_evaluation(**values: object) -> PriorHoldoutEvaluation:
     object.__setattr__(
         result,
         "contract",
-        "prior-holdout-evaluation-v20",
+        "prior-holdout-evaluation-v21",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -9067,6 +9513,19 @@ def _evaluation_digest(value: PriorHoldoutEvaluation) -> str:
             "classified_range_regimes": list(value.classified_range_regimes),
             "classifier_regime_confidence": value.classifier_regime_confidence,
             "classifier_range_confidence": value.classifier_range_confidence,
+            "classifier_regime_labels": list(value.classifier_regime_labels),
+            "classifier_range_regime_labels": list(
+                value.classifier_range_regime_labels
+            ),
+            "classifier_regime_probabilities": list(
+                value.classifier_regime_probabilities
+            ),
+            "classifier_range_regime_probabilities": list(
+                value.classifier_range_regime_probabilities
+            ),
+            "classifier_range_presence_probability_threshold": (
+                value.classifier_range_presence_probability_threshold
+            ),
             "classifier_regime_entropy": value.classifier_regime_entropy,
             "classifier_is_ood": value.classifier_is_ood,
             "classifier_reference_agreement": (
@@ -9522,7 +9981,7 @@ class HoldoutScoringArtifact:
     parent_forecast_digests: tuple[str, ...]
     verification_digests: tuple[str, ...]
     metric_contract_digests: tuple[str, ...]
-    contract: str = "neural-prior-holdout-scoring-artifact-v5"
+    contract: str = "neural-prior-holdout-scoring-artifact-v6"
     artifact_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -9621,7 +10080,7 @@ class HoldoutScoringArtifact:
             "metric_contract_digests": tuple(
                 item.metric_contract_digest for item in ordered
             ),
-            "contract": "neural-prior-holdout-scoring-artifact-v5",
+            "contract": "neural-prior-holdout-scoring-artifact-v6",
         }
         artifact = _new_holdout_scoring_artifact(**values)
         validate_holdout_scoring_artifact(
@@ -9667,7 +10126,7 @@ def validate_holdout_scoring_artifact(
     ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
     start = manifest.candidate_scoring_start_receipt
     if (
-        artifact.contract != "neural-prior-holdout-scoring-artifact-v5"
+        artifact.contract != "neural-prior-holdout-scoring-artifact-v6"
         or artifact.artifact_digest != json_digest(artifact.payload)
         or artifact.holdout_plan_digest != plan.plan_digest
         or artifact.candidate_manifest_digest != manifest.manifest_digest
@@ -10104,6 +10563,10 @@ class NeuralPriorPromotionPolicy:
     minimum_regime_classifier_recall_lower_bound: float = 0.8
     maximum_regime_classifier_calibration_error: float = 0.1
     maximum_regime_classifier_brier_score_upper_bound: float = 0.1
+    maximum_weather_multiclass_brier_score_upper_bound: float = 0.1
+    maximum_range_multilabel_brier_score_upper_bound: float = 0.1
+    maximum_weather_ood_brier_score_upper_bound: float = 0.1
+    maximum_range_ood_brier_score_upper_bound: float = 0.1
     maximum_regime_classifier_false_routing_fraction: float = 0.05
     maximum_regime_classifier_false_routing_upper_bound: float = 0.05
     minimum_regime_classifier_clusters: int = 5
@@ -10138,10 +10601,10 @@ class NeuralPriorPromotionPolicy:
     minimum_deployment_metric_cell_events: int = 5
     minimum_continuous_metric_cell_events: int = 10
     allow_shadow_small_sample_bootstrap: bool = False
-    contract: str = "neural-prior-promotion-policy-v26"
+    contract: str = "neural-prior-promotion-policy-v27"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-policy-v26":
+        if self.contract != "neural-prior-promotion-policy-v27":
             raise ValueError("unsupported neural-prior promotion policy")
         if type(self.allow_shadow_small_sample_bootstrap) is not bool:
             raise ValueError("shadow bootstrap flag must be boolean")
@@ -10294,6 +10757,10 @@ class NeuralPriorPromotionPolicy:
             self.minimum_regime_classifier_recall_lower_bound,
             self.maximum_regime_classifier_calibration_error,
             self.maximum_regime_classifier_brier_score_upper_bound,
+            self.maximum_weather_multiclass_brier_score_upper_bound,
+            self.maximum_range_multilabel_brier_score_upper_bound,
+            self.maximum_weather_ood_brier_score_upper_bound,
+            self.maximum_range_ood_brier_score_upper_bound,
             self.maximum_regime_classifier_false_routing_fraction,
             self.maximum_regime_classifier_false_routing_upper_bound,
             self.minimum_regime_classifier_ood_abstention_fraction,
@@ -10594,6 +11061,18 @@ class NeuralPriorPromotionPolicy:
             "maximum_regime_classifier_brier_score_upper_bound": (
                 self.maximum_regime_classifier_brier_score_upper_bound
             ),
+            "maximum_weather_multiclass_brier_score_upper_bound": (
+                self.maximum_weather_multiclass_brier_score_upper_bound
+            ),
+            "maximum_range_multilabel_brier_score_upper_bound": (
+                self.maximum_range_multilabel_brier_score_upper_bound
+            ),
+            "maximum_weather_ood_brier_score_upper_bound": (
+                self.maximum_weather_ood_brier_score_upper_bound
+            ),
+            "maximum_range_ood_brier_score_upper_bound": (
+                self.maximum_range_ood_brier_score_upper_bound
+            ),
             "maximum_regime_classifier_false_routing_fraction": self.maximum_regime_classifier_false_routing_fraction,
             "maximum_regime_classifier_false_routing_upper_bound": (
                 self.maximum_regime_classifier_false_routing_upper_bound
@@ -10756,10 +11235,12 @@ class PromotionSampleSizePreflight:
     issuance_cell_event_counts: tuple[
         tuple[str, str, int, int, int], ...
     ]
+    classifier_subset_event_counts: tuple[tuple[str, int, int], ...]
     automatic_inference: bool
     cell_feasible: bool
+    classifier_subset_feasible: bool
     feasible: bool
-    contract: str = "neural-prior-promotion-sample-size-preflight-v3"
+    contract: str = "neural-prior-promotion-sample-size-preflight-v4"
     preflight_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -10773,7 +11254,7 @@ class PromotionSampleSizePreflight:
         )
         if (
             self.contract
-            != "neural-prior-promotion-sample-size-preflight-v3"
+            != "neural-prior-promotion-sample-size-preflight-v4"
             or type(self.automatic_inference) is not bool
             or any(type(value) is not int or value < 0 for value in values)
             or self.family_size == 0
@@ -10787,6 +11268,8 @@ class PromotionSampleSizePreflight:
             != len(self.metric_cell_event_counts)
             or len({item[:3] for item in self.issuance_cell_event_counts})
             != len(self.issuance_cell_event_counts)
+            or len({item[0] for item in self.classifier_subset_event_counts})
+            != len(self.classifier_subset_event_counts)
             or any(
                 len(item) != 6
                 or not all(item[index] for index in range(3))
@@ -10810,6 +11293,15 @@ class PromotionSampleSizePreflight:
                 or item[4] <= 0
                 for item in self.issuance_cell_event_counts
             )
+            or any(
+                len(item) != 3
+                or not item[0]
+                or type(item[1]) is not int
+                or item[1] < 0
+                or type(item[2]) is not int
+                or item[2] <= 0
+                for item in self.classifier_subset_event_counts
+            )
             or self.cell_feasible
             != all(
                 item[-2] >= item[-1]
@@ -10818,10 +11310,16 @@ class PromotionSampleSizePreflight:
                     *self.issuance_cell_event_counts,
                 )
             )
+            or self.classifier_subset_feasible
+            != all(
+                available >= required
+                for _, available, required in self.classifier_subset_event_counts
+            )
             or self.feasible
             != (
                 self.available_physical_events >= self.required_physical_events
                 and self.cell_feasible
+                and self.classifier_subset_feasible
                 and self.automatic_inference
             )
         ):
@@ -11354,6 +11852,28 @@ class LegacyNeuralPriorPromotionEvidenceAuditV24:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV25:
+    """CPU-only scoring-generation-v3 evidence retained for audit only."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v25"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v25",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
@@ -11417,6 +11937,14 @@ class NeuralPriorPromotionEvidence:
     regime_classifier_calibration_error: float
     regime_classifier_brier_score: float
     regime_classifier_brier_score_upper_bound: float
+    weather_multiclass_brier_score: float
+    weather_multiclass_brier_score_upper_bound: float
+    range_multilabel_brier_score: float
+    range_multilabel_brier_score_upper_bound: float
+    weather_ood_brier_score: float
+    weather_ood_brier_score_upper_bound: float
+    range_ood_brier_score: float
+    range_ood_brier_score_upper_bound: float
     regime_classifier_false_routing_fraction: float
     regime_classifier_false_routing_upper_bound: float
     regime_classifier_cluster_count: int
@@ -11506,11 +12034,11 @@ class NeuralPriorPromotionEvidence:
     deployment_eligible: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v25"
+    contract: str = "neural-prior-promotion-evidence-v26"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v25":
+        if self.contract != "neural-prior-promotion-evidence-v26":
             raise ValueError("unsupported neural-prior promotion evidence")
         if self.primary_estimand_contract != "equal_weight_physical_event_v1":
             raise ValueError("unsupported promotion estimand")
@@ -11603,6 +12131,14 @@ class NeuralPriorPromotionEvidence:
             self.regime_classifier_calibration_error,
             self.regime_classifier_brier_score,
             self.regime_classifier_brier_score_upper_bound,
+            self.weather_multiclass_brier_score,
+            self.weather_multiclass_brier_score_upper_bound,
+            self.range_multilabel_brier_score,
+            self.range_multilabel_brier_score_upper_bound,
+            self.weather_ood_brier_score,
+            self.weather_ood_brier_score_upper_bound,
+            self.range_ood_brier_score,
+            self.range_ood_brier_score_upper_bound,
             self.regime_classifier_false_routing_fraction,
             self.regime_classifier_false_routing_upper_bound,
             self.regime_classifier_ood_abstention_fraction,
@@ -12134,6 +12670,7 @@ def promotion_sample_size_preflight(
     issuance_cell_event_counts: tuple[
         tuple[str, str, int, int, int], ...
     ] | None = None,
+    classifier_subset_event_counts: tuple[tuple[str, int], ...],
 ) -> PromotionSampleSizePreflight:
     """Reject holdouts that cannot pass rate gates even with perfect outcomes."""
 
@@ -12197,6 +12734,29 @@ def promotion_sample_size_preflight(
 
     minimum_perfect_success_events = required_events(success_margin)
     minimum_zero_failure_events = required_events(failure_margin)
+    exact_set_events = required_events(
+        1.0 - policy.minimum_range_exact_set_accuracy_lower_bound
+    )
+    weather_ood_events = max(
+        policy.minimum_regime_classifier_ood_cases,
+        required_events(
+            1.0 - policy.minimum_regime_classifier_ood_abstention_lower_bound
+        ),
+    )
+    range_ood_events = max(
+        policy.minimum_range_classifier_ood_cases,
+        required_events(
+            1.0 - policy.minimum_range_classifier_ood_abstention_lower_bound
+        ),
+    )
+    proper_brier_events = required_events(
+        min(
+            policy.maximum_weather_multiclass_brier_score_upper_bound,
+            policy.maximum_range_multilabel_brier_score_upper_bound,
+            policy.maximum_weather_ood_brier_score_upper_bound,
+            policy.maximum_range_ood_brier_score_upper_bound,
+        )
+    )
     minimum_structural_events = max(
         10,
         policy.minimum_material_clusters,
@@ -12239,9 +12799,38 @@ def promotion_sample_size_preflight(
             )
             for item in policy.required_range_issuance
         )
+    required_classifier_subsets = {
+        "known_weather": minimum_perfect_success_events,
+        "known_range": max(minimum_perfect_success_events, exact_set_events),
+        "weather_ood": weather_ood_events,
+        "range_ood": range_ood_events,
+        "brier_valid": proper_brier_events,
+    }
+    supplied_classifier_subsets = dict(classifier_subset_event_counts)
+    if (
+        len(supplied_classifier_subsets) != len(classifier_subset_event_counts)
+        or set(supplied_classifier_subsets) != set(required_classifier_subsets)
+        or any(
+            type(value) is not int or value < 0
+            for value in supplied_classifier_subsets.values()
+        )
+    ):
+        raise ValueError("classifier preflight subset counts are incomplete")
+    resolved_classifier_subset_counts = tuple(
+        (
+            name,
+            supplied_classifier_subsets[name],
+            required_classifier_subsets[name],
+        )
+        for name in sorted(required_classifier_subsets)
+    )
     cell_feasible = all(
         item[-2] >= item[-1]
         for item in (*metric_cell_event_counts, *issuance_cell_event_counts)
+    )
+    classifier_subset_feasible = all(
+        available >= required
+        for _, available, required in resolved_classifier_subset_counts
     )
     return PromotionSampleSizePreflight(
         family_size=family_size,
@@ -12252,11 +12841,14 @@ def promotion_sample_size_preflight(
         required_physical_events=required_physical_events,
         metric_cell_event_counts=metric_cell_event_counts,
         issuance_cell_event_counts=issuance_cell_event_counts,
+        classifier_subset_event_counts=resolved_classifier_subset_counts,
         automatic_inference=not policy.allow_shadow_small_sample_bootstrap,
         cell_feasible=cell_feasible,
+        classifier_subset_feasible=classifier_subset_feasible,
         feasible=(
             available_physical_events >= required_physical_events
             and cell_feasible
+            and classifier_subset_feasible
             and not policy.allow_shadow_small_sample_bootstrap
         ),
     )
@@ -13344,6 +13936,83 @@ def compute_neural_prior_promotion(
         if classifier_brier_values
         else 1.0
     )
+    weather_brier_values: list[float] = []
+    range_brier_values: list[float] = []
+    weather_ood_brier_values: list[float] = []
+    range_ood_brier_values: list[float] = []
+    proper_score_clusters: list[str] = []
+    for item in evaluations:
+        if item.regime not in item.classifier_regime_labels:
+            raise ValueError("weather reference is outside classifier labels")
+        weather_brier_values.append(
+            sum(
+                (
+                    probability - float(label == item.regime)
+                )
+                ** 2
+                for label, probability in zip(
+                    item.classifier_regime_labels,
+                    item.classifier_regime_probabilities,
+                    strict=True,
+                )
+            )
+            / 2.0
+        )
+        reference_ranges = set(item.reference_active_range_regimes)
+        if not reference_ranges <= set(item.classifier_range_regime_labels):
+            raise ValueError("range reference is outside classifier labels")
+        range_brier_values.append(
+            sum(
+                (probability - float(label in reference_ranges)) ** 2
+                for label, probability in zip(
+                    item.classifier_range_regime_labels,
+                    item.classifier_range_regime_probabilities,
+                    strict=True,
+                )
+            )
+            / len(item.classifier_range_regime_probabilities)
+        )
+        unknown_probability = item.classifier_regime_probabilities[
+            item.classifier_regime_labels.index("unknown")
+        ]
+        weather_ood_brier_values.append(
+            (unknown_probability - float(item.regime == "unknown")) ** 2
+        )
+        no_active_range_probability = math.prod(
+            1.0 - probability
+            for probability in item.classifier_range_regime_probabilities
+        )
+        range_ood_brier_values.append(
+            (
+                no_active_range_probability
+                - float(item.classifier_reference_range_is_ood)
+            )
+            ** 2
+        )
+        proper_score_clusters.append(_physical_event_cluster(item))
+
+    def proper_score_summary(values: list[float]) -> tuple[float, float]:
+        return (
+            _event_weighted_mean(values, proper_score_clusters),
+            _bounded_event_mean_upper_bound(
+                values,
+                proper_score_clusters,
+                policy,
+                family_size=family_size,
+                absolute_bound=1.0,
+            ),
+        )
+
+    weather_brier, weather_brier_upper = proper_score_summary(
+        weather_brier_values
+    )
+    range_brier, range_brier_upper = proper_score_summary(range_brier_values)
+    weather_ood_brier, weather_ood_brier_upper = proper_score_summary(
+        weather_ood_brier_values
+    )
+    range_ood_brier, range_ood_brier_upper = proper_score_summary(
+        range_ood_brier_values
+    )
     classifier_validated = (
         classifier_accuracy >= policy.minimum_regime_classifier_accuracy
         and minimum_classifier_recall >= policy.minimum_regime_classifier_recall
@@ -13353,6 +14022,14 @@ def compute_neural_prior_promotion(
         >= policy.minimum_regime_classifier_recall_lower_bound
         and classifier_brier_score_upper_bound
         <= policy.maximum_regime_classifier_brier_score_upper_bound
+        and weather_brier_upper
+        <= policy.maximum_weather_multiclass_brier_score_upper_bound
+        and range_brier_upper
+        <= policy.maximum_range_multilabel_brier_score_upper_bound
+        and weather_ood_brier_upper
+        <= policy.maximum_weather_ood_brier_score_upper_bound
+        and range_ood_brier_upper
+        <= policy.maximum_range_ood_brier_score_upper_bound
         and classifier_false_routing_fraction
         <= policy.maximum_regime_classifier_false_routing_fraction
         and classifier_false_routing_upper_bound
@@ -14164,6 +14841,52 @@ def compute_neural_prior_promotion(
                 issuance_cell_event_count_map.items()
             )
         ),
+        classifier_subset_event_counts=(
+            (
+                "known_weather",
+                len(
+                    {
+                        _physical_event_cluster(item)
+                        for item in evaluations
+                        if item.regime != "unknown"
+                    }
+                ),
+            ),
+            (
+                "known_range",
+                len(
+                    {
+                        _physical_event_cluster(item)
+                        for item in evaluations
+                        if not item.classifier_reference_range_is_ood
+                    }
+                ),
+            ),
+            (
+                "weather_ood",
+                len(
+                    {
+                        _physical_event_cluster(item)
+                        for item in evaluations
+                        if item.regime == "unknown"
+                    }
+                ),
+            ),
+            (
+                "range_ood",
+                len(
+                    {
+                        _physical_event_cluster(item)
+                        for item in evaluations
+                        if item.classifier_reference_range_is_ood
+                    }
+                ),
+            ),
+            (
+                "brier_valid",
+                len({_physical_event_cluster(item) for item in evaluations}),
+            ),
+        ),
     )
     return NeuralPriorPromotionEvidence(
         candidate_prior_digest=manifest.candidate_prior_digest,
@@ -14256,6 +14979,14 @@ def compute_neural_prior_promotion(
         regime_classifier_brier_score_upper_bound=(
             classifier_brier_score_upper_bound
         ),
+        weather_multiclass_brier_score=weather_brier,
+        weather_multiclass_brier_score_upper_bound=weather_brier_upper,
+        range_multilabel_brier_score=range_brier,
+        range_multilabel_brier_score_upper_bound=range_brier_upper,
+        weather_ood_brier_score=weather_ood_brier,
+        weather_ood_brier_score_upper_bound=weather_ood_brier_upper,
+        range_ood_brier_score=range_ood_brier,
+        range_ood_brier_score_upper_bound=range_ood_brier_upper,
         regime_classifier_false_routing_fraction=(
             classifier_false_routing_fraction
         ),
@@ -14412,6 +15143,7 @@ class RegimeClassificationEvidence:
     range_regime_confidence: float
     regime_labels: tuple[str, ...]
     range_regime_labels: tuple[str, ...]
+    range_probability_contract: str
     range_presence_probability_threshold: float
     regime_probabilities: tuple[float, ...]
     range_regime_probabilities: tuple[float, ...]
@@ -14422,7 +15154,7 @@ class RegimeClassificationEvidence:
     input_device: str
     weather_top1_top2_gap: float
     minimum_range_presence_margin: float
-    contract: str = "neural-prior-regime-classification-evidence-v3"
+    contract: str = "neural-prior-regime-classification-evidence-v4"
     evidence_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -14438,7 +15170,7 @@ class RegimeClassificationEvidence:
 
     def validate_integrity(self) -> None:
         if (
-            self.contract != "neural-prior-regime-classification-evidence-v3"
+            self.contract != "neural-prior-regime-classification-evidence-v4"
             or not self.regime
             or not self.range_regime
             or len(self.regime_labels) != len(self.regime_probabilities)
@@ -14456,6 +15188,8 @@ class RegimeClassificationEvidence:
             or not 0.0 <= self.range_regime_confidence <= 1.0
             or not self.regime_probabilities
             or not self.range_regime_probabilities
+            or self.range_probability_contract
+            != "conditionally-independent-bernoulli-range-heads-v1"
             or not 0.5 < self.range_presence_probability_threshold < 1.0
             or any(
                 not math.isfinite(value) or not 0.0 <= value <= 1.0
@@ -14617,12 +15351,15 @@ class NeuralPriorRegimeClassifier:
     def _current_classifier_digest(self) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-regime-classifier-v3",
+                "contract": "neural-prior-regime-classifier-v4",
                 "graph_digest": self._graph_digest,
                 "model_state_digest": _module_state_digest(self._model),
                 "classifier_algorithm_digest": self.classifier_algorithm_digest,
                 "regime_labels": list(self.regime_labels),
                 "range_regime_labels": list(self.range_regime_labels),
+                "range_probability_contract": (
+                    "conditionally-independent-bernoulli-range-heads-v1"
+                ),
                 "range_presence_probability_threshold": (
                     self.range_presence_probability_threshold
                 ),
@@ -14706,7 +15443,7 @@ class NeuralPriorRegimeClassifier:
         )
         result = object.__new__(RegimeClassificationEvidence)
         values: dict[str, object] = {
-            "contract": "neural-prior-regime-classification-evidence-v3",
+            "contract": "neural-prior-regime-classification-evidence-v4",
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "input_frames_digest": tensor_digest(frames_dbz),
             "classifier_digest": self.classifier_digest,
@@ -14721,6 +15458,9 @@ class NeuralPriorRegimeClassifier:
             ),
             "regime_labels": self.regime_labels,
             "range_regime_labels": self.range_regime_labels,
+            "range_probability_contract": (
+                "conditionally-independent-bernoulli-range-heads-v1"
+            ),
             "range_presence_probability_threshold": (
                 self.range_presence_probability_threshold
             ),
@@ -14948,7 +15688,10 @@ def _load_promotion_deployment_authority_trust_store(
             if entry["revoked_at"] is None
             else _canonical_time(entry["revoked_at"])
         )
-        if start >= end or (revoked is not None and revoked < start):
+        if _canonical_datetime(start) >= _canonical_datetime(end) or (
+            revoked is not None
+            and _canonical_datetime(revoked) < _canonical_datetime(start)
+        ):
             raise ValueError("deployment authority validity window is invalid")
         keys[authority_id] = key
         roles[authority_id] = frozenset(cast(list[AuthorityRole], entry["roles"]))
@@ -14968,6 +15711,15 @@ def _load_promotion_deployment_authority_trust_store(
                 entry["ledger_instance_digests"]
             ),
         }
+    public_key_owners: dict[str, str] = {}
+    for authority_id, entry in canonical_authorities.items():
+        assert isinstance(entry, dict)
+        public_key_hex = cast(str, entry["public_key_hex"])
+        previous = public_key_owners.setdefault(public_key_hex, authority_id)
+        if previous != authority_id:
+            raise ValueError(
+                "deployment authority public keys must have one canonical identity"
+            )
     canonical = {
         "contract": PROMOTION_DEPLOYMENT_AUTHORITY_TRUST_STORE_CONTRACT,
         "authorities": dict(sorted(canonical_authorities.items())),
@@ -14993,16 +15745,21 @@ def _trusted_authority_key(
 ) -> Ed25519PublicKey:
     key = trust_store.keys.get(authority_id)
     canonical_time = _canonical_time(issued_at)
+    issued = _canonical_datetime(canonical_time)
+    not_before = trust_store.not_before.get(authority_id)
+    not_after = trust_store.not_after.get(authority_id)
+    revoked = trust_store.revoked_at.get(authority_id)
     if (
         key is None
         or role not in trust_store.roles.get(authority_id, frozenset())
-        or not trust_store.not_before.get(authority_id, "")
-        <= canonical_time
-        <= trust_store.not_after.get(authority_id, "")
-        or (
-            trust_store.revoked_at.get(authority_id) is not None
-            and canonical_time >= cast(str, trust_store.revoked_at[authority_id])
+        or not_before is None
+        or not_after is None
+        or not (
+            _canonical_datetime(not_before)
+            <= issued
+            <= _canonical_datetime(not_after)
         )
+        or (revoked is not None and issued >= _canonical_datetime(revoked))
         or key.public_bytes(
             serialization.Encoding.Raw,
             serialization.PublicFormat.Raw,
@@ -15127,9 +15884,9 @@ def _issue_ledger_issuance_receipt(
     canonical_issued_at = _canonical_time(issued_at)
     canonical_completed_at = _canonical_time(scoring_completion_completed_at)
     if (
-        datetime.fromisoformat(canonical_completed_at.replace("Z", "+00:00"))
-        > datetime.fromisoformat(canonical_issued_at.replace("Z", "+00:00"))
-        or datetime.fromisoformat(canonical_issued_at.replace("Z", "+00:00"))
+        _canonical_datetime(canonical_completed_at)
+        > _canonical_datetime(canonical_issued_at)
+        or _canonical_datetime(canonical_issued_at)
         > datetime.now(timezone.utc)
     ):
         raise ValueError("ledger issuance receipt chronology is invalid")
@@ -15232,11 +15989,9 @@ def _validate_ledger_issuance_receipt(
         or receipt.issued_at != _canonical_time(receipt.issued_at)
         or receipt.scoring_completion_completed_at
         != _canonical_time(receipt.scoring_completion_completed_at)
-        or datetime.fromisoformat(
-            receipt.scoring_completion_completed_at.replace("Z", "+00:00")
-        )
-        > datetime.fromisoformat(receipt.issued_at.replace("Z", "+00:00"))
-        or datetime.fromisoformat(receipt.issued_at.replace("Z", "+00:00"))
+        or _canonical_datetime(receipt.scoring_completion_completed_at)
+        > _canonical_datetime(receipt.issued_at)
+        or _canonical_datetime(receipt.issued_at)
         > datetime.now(timezone.utc)
         or (
             receipt.sequence_number == 1
@@ -15312,7 +16067,7 @@ class LedgeredPromotionDeploymentCertificate:
     authority_public_key_hex: str
     authority_trust_store_digest: str
     authority_signature_hex: str
-    contract: str = "ledgered-promotion-deployment-certificate-v3"
+    contract: str = "ledgered-promotion-deployment-certificate-v4"
     certificate_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -15352,7 +16107,7 @@ def _decode_current_neural_prior_promotion_evidence(
     if (
         not isinstance(raw, dict)
         or set(raw) != expected
-        or raw.get("contract") != "neural-prior-promotion-evidence-v25"
+        or raw.get("contract") != "neural-prior-promotion-evidence-v26"
         or json.dumps(raw, sort_keys=True, separators=(",", ":"))
         != payload_json
     ):
@@ -15516,7 +16271,7 @@ def _issue_ledgered_promotion_deployment_certificate(
         "authority_id": signer.authority_id,
         "authority_public_key_hex": signer.public_key_hex,
         "authority_trust_store_digest": authority_trust_store.content_digest,
-        "contract": "ledgered-promotion-deployment-certificate-v3",
+        "contract": "ledgered-promotion-deployment-certificate-v4",
     }
     signature = signer.sign(
         json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
@@ -15560,7 +16315,7 @@ def _validate_ledgered_promotion_deployment_certificate(
     if (
         type(certificate) is not LedgeredPromotionDeploymentCertificate
         or certificate.contract
-        != "ledgered-promotion-deployment-certificate-v3"
+        != "ledgered-promotion-deployment-certificate-v4"
         or certificate.certificate_digest != json_digest(certificate.payload)
         or certificate.issued_at != _canonical_time(certificate.issued_at)
     ):
@@ -15630,9 +16385,9 @@ def _validate_ledgered_promotion_deployment_certificate(
         != receipt.scoring_completion_receipt_digest
         or certificate.authority_id == receipt.signer_id
         or certificate.authority_public_key_hex == receipt.signer_public_key_hex
-        or datetime.fromisoformat(certificate.issued_at.replace("Z", "+00:00"))
-        < datetime.fromisoformat(receipt.issued_at.replace("Z", "+00:00"))
-        or datetime.fromisoformat(certificate.issued_at.replace("Z", "+00:00"))
+        or _canonical_datetime(certificate.issued_at)
+        < _canonical_datetime(receipt.issued_at)
+        or _canonical_datetime(certificate.issued_at)
         > datetime.now(timezone.utc)
     ):
         raise ValueError("deployment certificate ledger receipt disagrees")
@@ -15711,7 +16466,7 @@ class DeployedNeuralPriorPolicy:
     minimum_regime_confidence: float = 0.8
     minimum_weather_top1_top2_gap: float = 0.05
     minimum_deployment_confidence_margin: float = 0.05
-    contract: str = "deployed-neural-prior-policy-v11"
+    contract: str = "deployed-neural-prior-policy-v12"
     policy_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -15728,7 +16483,7 @@ class DeployedNeuralPriorPolicy:
         ):
             _require_digest(name, getattr(self, name))
         if (
-            self.contract != "deployed-neural-prior-policy-v11"
+            self.contract != "deployed-neural-prior-policy-v12"
             or self.candidate_prior_digest == self.parent_prior_digest
             or self.semantic_replay_generation_digest
             != SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
@@ -15786,12 +16541,17 @@ class OperationalDeploymentDecisionCertificate:
     selected_prior_digest: str
     selected_role: Literal["candidate", "parent"]
     fallback_reason: str
+    operational_ledger_receipt_payload_json: str
+    operational_ledger_receipt_digest: str
+    ledger_instance_digest: str
+    ledger_sequence_number: int
+    previous_operational_decision_digest: str
     issued_at: str
     authority_id: str
     authority_public_key_hex: str
     authority_trust_store_digest: str
     authority_signature_hex: str
-    contract: str = "operational-deployment-decision-certificate-v2"
+    contract: str = "operational-deployment-decision-certificate-v3"
     certificate_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -15814,6 +16574,204 @@ class OperationalDeploymentDecisionCertificate:
         }
 
 
+@dataclass(frozen=True, init=False)
+class OperationalDecisionLedgerReceipt:
+    """Ledger-signed proof that a decision was recorded before publication."""
+
+    ledger_instance_digest: str
+    sequence_number: int
+    previous_operational_decision_digest: str
+    decision_payload_digest: str
+    promotion_deployment_certificate_digest: str
+    input_plan_digest: str
+    decision_deadline: str
+    publication_time: str
+    recorded_at: str
+    signer_id: str
+    signer_public_key_hex: str
+    signer_trust_store_digest: str
+    signer_signature_hex: str
+    contract: str = "operational-decision-ledger-receipt-v1"
+    receipt_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("operational decision receipts are created transactionally")
+
+    @property
+    def unsigned_payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key not in {"signer_signature_hex", "receipt_digest"}
+        }
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "receipt_digest"
+        }
+
+
+def _issue_operational_decision_ledger_receipt(
+    decision_payload: dict[str, object],
+    *,
+    ledger_instance_digest: str,
+    sequence_number: int,
+    previous_operational_decision_digest: str,
+    recorded_at: str,
+    signer: DeploymentAuthoritySigner,
+    authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+) -> OperationalDecisionLedgerReceipt:
+    canonical_recorded_at = _canonical_time(recorded_at)
+    _validate_signer(
+        signer,
+        trust_store=authority_trust_store,
+        role="ledger_issuance",
+        issued_at=canonical_recorded_at,
+    )
+    if ledger_instance_digest not in authority_trust_store.ledger_instance_digests.get(
+        signer.authority_id, frozenset()
+    ):
+        raise ValueError("operational decision belongs to an unapproved ledger")
+    deadline = _canonical_datetime(cast(str, decision_payload.get("decision_deadline")))
+    publication = _canonical_datetime(cast(str, decision_payload.get("publication_time")))
+    recorded = _canonical_datetime(canonical_recorded_at)
+    if not recorded <= deadline < publication or recorded > datetime.now(timezone.utc):
+        raise ValueError("operational decision was not recorded before its deadline")
+    values: dict[str, object] = {
+        "ledger_instance_digest": ledger_instance_digest,
+        "sequence_number": sequence_number,
+        "previous_operational_decision_digest": previous_operational_decision_digest,
+        "decision_payload_digest": json_digest(decision_payload),
+        "promotion_deployment_certificate_digest": cast(
+            dict[str, object], decision_payload["promotion_deployment_certificate"]
+        )["certificate_digest"],
+        "input_plan_digest": decision_payload.get("input_plan_digest"),
+        "decision_deadline": decision_payload.get("decision_deadline"),
+        "publication_time": decision_payload.get("publication_time"),
+        "recorded_at": canonical_recorded_at,
+        "signer_id": signer.authority_id,
+        "signer_public_key_hex": signer.public_key_hex,
+        "signer_trust_store_digest": authority_trust_store.content_digest,
+        "contract": "operational-decision-ledger-receipt-v1",
+    }
+    signature = signer.sign(
+        json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
+    ).hex()
+    result = object.__new__(OperationalDecisionLedgerReceipt)
+    for name, value in values.items():
+        object.__setattr__(result, name, value)
+    object.__setattr__(result, "signer_signature_hex", signature)
+    object.__setattr__(result, "receipt_digest", json_digest(result.payload))
+    _validate_operational_decision_ledger_receipt(
+        result,
+        decision_payload=decision_payload,
+        authority_trust_store=authority_trust_store,
+    )
+    return result
+
+
+def _operational_decision_ledger_receipt_from_payload(
+    payload: dict[str, object],
+) -> OperationalDecisionLedgerReceipt:
+    expected = {
+        item.name
+        for item in OperationalDecisionLedgerReceipt.__dataclass_fields__.values()
+        if item.name != "receipt_digest"
+    }
+    if set(payload) != expected:
+        raise ValueError("operational decision ledger receipt is incomplete")
+    result = object.__new__(OperationalDecisionLedgerReceipt)
+    for name, value in payload.items():
+        object.__setattr__(result, name, value)
+    object.__setattr__(result, "receipt_digest", json_digest(result.payload))
+    return result
+
+
+def _validate_operational_decision_ledger_receipt(
+    receipt: OperationalDecisionLedgerReceipt,
+    *,
+    decision_payload: dict[str, object],
+    authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+) -> None:
+    for name in (
+        "ledger_instance_digest",
+        "previous_operational_decision_digest",
+        "decision_payload_digest",
+        "promotion_deployment_certificate_digest",
+        "input_plan_digest",
+        "signer_trust_store_digest",
+    ):
+        _require_digest(name, getattr(receipt, name))
+    if (
+        type(receipt) is not OperationalDecisionLedgerReceipt
+        or receipt.contract != "operational-decision-ledger-receipt-v1"
+        or receipt.receipt_digest != json_digest(receipt.payload)
+        or type(receipt.sequence_number) is not int
+        or receipt.sequence_number <= 0
+        or receipt.recorded_at != _canonical_time(receipt.recorded_at)
+        or receipt.decision_payload_digest != json_digest(decision_payload)
+        or receipt.promotion_deployment_certificate_digest
+        != cast(
+            dict[str, object], decision_payload["promotion_deployment_certificate"]
+        ).get("certificate_digest")
+        or receipt.input_plan_digest != decision_payload.get("input_plan_digest")
+        or receipt.decision_deadline != decision_payload.get("decision_deadline")
+        or receipt.publication_time != decision_payload.get("publication_time")
+        or (
+            receipt.sequence_number == 1
+            and receipt.previous_operational_decision_digest
+            != OPERATIONAL_DECISION_LEDGER_GENESIS_DIGEST
+        )
+        or not _canonical_datetime(receipt.recorded_at)
+        <= _canonical_datetime(receipt.decision_deadline)
+        < _canonical_datetime(receipt.publication_time)
+        or _canonical_datetime(receipt.recorded_at) > datetime.now(timezone.utc)
+    ):
+        raise ValueError("operational decision ledger receipt is invalid")
+    key = _trusted_authority_key(
+        authority_trust_store,
+        authority_id=receipt.signer_id,
+        public_key_hex=receipt.signer_public_key_hex,
+        role="ledger_issuance",
+        issued_at=receipt.recorded_at,
+    )
+    if receipt.ledger_instance_digest not in authority_trust_store.ledger_instance_digests.get(
+        receipt.signer_id, frozenset()
+    ):
+        raise ValueError("operational decision ledger is not root-approved")
+    try:
+        key.verify(
+            bytes.fromhex(receipt.signer_signature_hex),
+            json.dumps(
+                receipt.unsigned_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode(),
+        )
+    except (InvalidSignature, ValueError) as error:
+        raise ValueError("operational decision ledger signature is invalid") from error
+
+
+class OperationalDecisionRecorder(Protocol):
+    """Transactional ledger boundary used by the online selector."""
+
+    def issue_operational_deployment_decision(
+        self,
+        decision_payload: dict[str, object],
+        *,
+        promotion_deployment_certificate: LedgeredPromotionDeploymentCertificate,
+        promotion_evidence: NeuralPriorPromotionEvidence,
+        policy: DeployedNeuralPriorPolicy,
+        policy_trust_store_digest: str,
+        ledger_signer: DeploymentAuthoritySigner,
+        operational_signer: DeploymentAuthoritySigner,
+        authority_trust_store_path: str | Path,
+    ) -> OperationalDeploymentDecisionCertificate: ...
+
+
 def _issue_operational_deployment_decision_certificate(
     decision_payload: dict[str, object],
     *,
@@ -15821,13 +16779,19 @@ def _issue_operational_deployment_decision_certificate(
     promotion_evidence: NeuralPriorPromotionEvidence,
     policy: DeployedNeuralPriorPolicy,
     policy_trust_store_digest: str,
+    ledger_receipt: OperationalDecisionLedgerReceipt,
     signer: DeploymentAuthoritySigner,
     authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
 ) -> OperationalDeploymentDecisionCertificate:
     selection = decision_payload.get("selection")
     if not isinstance(selection, dict):
         raise ValueError("operational deployment selection is incomplete")
-    issued_at = _canonical_time(signer.signing_time())
+    issued_at = ledger_receipt.recorded_at
+    _validate_operational_decision_ledger_receipt(
+        ledger_receipt,
+        decision_payload=decision_payload,
+        authority_trust_store=authority_trust_store,
+    )
     _validate_signer(
         signer,
         trust_store=authority_trust_store,
@@ -15842,20 +16806,42 @@ def _issue_operational_deployment_decision_certificate(
         raise ValueError(
             "promotion certification and operational signing require separate authorities"
         )
-    observation = _canonical_time(
+    try:
+        receipt_payload = json.loads(
+            promotion_deployment_certificate.ledger_issuance_receipt_payload_json
+        )
+        if not isinstance(receipt_payload, dict):
+            raise ValueError
+        promotion_ledger_receipt = _ledger_issuance_receipt_from_payload(
+            receipt_payload
+        )
+    except (TypeError, ValueError, json.JSONDecodeError) as error:
+        raise ValueError("promotion ledger issuance receipt is invalid") from error
+    if (
+        signer.authority_id == promotion_ledger_receipt.signer_id
+        or signer.public_key_hex == promotion_ledger_receipt.signer_public_key_hex
+    ):
+        raise ValueError(
+            "ledger issuance and operational signing require separate authorities"
+        )
+    observation = _canonical_datetime(
         cast(str, decision_payload.get("observation_valid_time"))
     )
-    available = _canonical_time(cast(str, decision_payload.get("input_available_time")))
-    deadline = _canonical_time(cast(str, decision_payload.get("decision_deadline")))
-    publication = _canonical_time(cast(str, decision_payload.get("publication_time")))
+    available = _canonical_datetime(
+        cast(str, decision_payload.get("input_available_time"))
+    )
+    deadline = _canonical_datetime(
+        cast(str, decision_payload.get("decision_deadline"))
+    )
+    publication = _canonical_datetime(
+        cast(str, decision_payload.get("publication_time"))
+    )
+    issued = _canonical_datetime(issued_at)
     if (
-        not observation <= available <= issued_at <= deadline < publication
-        or datetime.fromisoformat(issued_at.replace("Z", "+00:00"))
-        < datetime.fromisoformat(
-            promotion_deployment_certificate.issued_at.replace("Z", "+00:00")
-        )
-        or datetime.fromisoformat(issued_at.replace("Z", "+00:00"))
-        > datetime.now(timezone.utc)
+        not observation <= available <= issued <= deadline < publication
+        or issued
+        < _canonical_datetime(promotion_deployment_certificate.issued_at)
+        or issued > datetime.now(timezone.utc)
     ):
         raise ValueError("operational decision is outside its prepublication window")
     values: dict[str, object] = {
@@ -15880,11 +16866,22 @@ def _issue_operational_deployment_decision_certificate(
         "selected_prior_digest": selection.get("selected_prior_digest"),
         "selected_role": selection.get("selected_role"),
         "fallback_reason": selection.get("fallback_reason"),
+        "operational_ledger_receipt_payload_json": json.dumps(
+            ledger_receipt.payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ),
+        "operational_ledger_receipt_digest": ledger_receipt.receipt_digest,
+        "ledger_instance_digest": ledger_receipt.ledger_instance_digest,
+        "ledger_sequence_number": ledger_receipt.sequence_number,
+        "previous_operational_decision_digest": (
+            ledger_receipt.previous_operational_decision_digest
+        ),
         "issued_at": issued_at,
         "authority_id": signer.authority_id,
         "authority_public_key_hex": signer.public_key_hex,
         "authority_trust_store_digest": authority_trust_store.content_digest,
-        "contract": "operational-deployment-decision-certificate-v2",
+        "contract": "operational-deployment-decision-certificate-v3",
     }
     signature = signer.sign(
         json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
@@ -15933,13 +16930,16 @@ def _validate_operational_deployment_decision_certificate(
         "input_plan_digest",
         "operational_cycle_id",
         "selected_prior_digest",
+        "operational_ledger_receipt_digest",
+        "ledger_instance_digest",
+        "previous_operational_decision_digest",
         "authority_trust_store_digest",
     ):
         _require_digest(name, getattr(certificate, name))
     if (
         type(certificate) is not OperationalDeploymentDecisionCertificate
         or certificate.contract
-        != "operational-deployment-decision-certificate-v2"
+        != "operational-deployment-decision-certificate-v3"
         or certificate.certificate_digest != json_digest(certificate.payload)
         or certificate.decision_payload_digest != json_digest(decision_payload)
         or certificate.promotion_deployment_certificate_digest
@@ -15977,34 +16977,84 @@ def _validate_operational_deployment_decision_certificate(
         or certificate.issued_at != _canonical_time(certificate.issued_at)
     ):
         raise ValueError("operational decision certificate integrity is invalid")
-    observation = _canonical_time(certificate.observation_valid_time)
-    available = _canonical_time(certificate.input_available_time)
-    decision = _canonical_time(certificate.issued_at)
-    deadline = _canonical_time(certificate.decision_deadline)
-    publication = _canonical_time(certificate.publication_time)
+    try:
+        operational_receipt_payload = json.loads(
+            certificate.operational_ledger_receipt_payload_json
+        )
+        if not isinstance(operational_receipt_payload, dict):
+            raise ValueError
+        operational_receipt = _operational_decision_ledger_receipt_from_payload(
+            operational_receipt_payload
+        )
+    except (TypeError, ValueError, json.JSONDecodeError) as error:
+        raise ValueError("operational decision ledger receipt is invalid") from error
+    _validate_operational_decision_ledger_receipt(
+        operational_receipt,
+        decision_payload=decision_payload,
+        authority_trust_store=authority_trust_store,
+    )
+    if (
+        certificate.operational_ledger_receipt_payload_json
+        != json.dumps(
+            operational_receipt.payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        or certificate.operational_ledger_receipt_digest
+        != operational_receipt.receipt_digest
+        or certificate.ledger_instance_digest
+        != operational_receipt.ledger_instance_digest
+        or certificate.ledger_sequence_number
+        != operational_receipt.sequence_number
+        or certificate.previous_operational_decision_digest
+        != operational_receipt.previous_operational_decision_digest
+        or certificate.issued_at != operational_receipt.recorded_at
+    ):
+        raise ValueError("operational decision ledger lineage disagrees")
+    observation = _canonical_datetime(certificate.observation_valid_time)
+    available = _canonical_datetime(certificate.input_available_time)
+    decision = _canonical_datetime(certificate.issued_at)
+    deadline = _canonical_datetime(certificate.decision_deadline)
+    publication = _canonical_datetime(certificate.publication_time)
     if (
         not observation <= available <= decision <= deadline < publication
-        or datetime.fromisoformat(decision.replace("Z", "+00:00"))
-        < datetime.fromisoformat(
+        or decision
+        < _canonical_datetime(
             cast(
                 str,
                 cast(
                     dict[str, object],
                     decision_payload["promotion_deployment_certificate"],
                 )["issued_at"],
-            ).replace("Z", "+00:00")
+            )
         )
-        or datetime.fromisoformat(decision.replace("Z", "+00:00"))
-        > datetime.now(timezone.utc)
+        or decision > datetime.now(timezone.utc)
     ):
         raise ValueError("operational decision chronology is invalid")
     promotion_payload = cast(
         dict[str, object], decision_payload["promotion_deployment_certificate"]
     )
+    try:
+        ledger_receipt_payload = json.loads(
+            cast(str, promotion_payload["ledger_issuance_receipt_payload_json"])
+        )
+        if not isinstance(ledger_receipt_payload, dict):
+            raise ValueError
+        ledger_receipt = _ledger_issuance_receipt_from_payload(
+            ledger_receipt_payload
+        )
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+        raise ValueError("operational decision ledger receipt is invalid") from error
     if (
         certificate.authority_id == promotion_payload.get("authority_id")
         or certificate.authority_public_key_hex
         == promotion_payload.get("authority_public_key_hex")
+        or certificate.authority_id == ledger_receipt.signer_id
+        or certificate.authority_public_key_hex
+        == ledger_receipt.signer_public_key_hex
+        or certificate.authority_id == operational_receipt.signer_id
+        or certificate.authority_public_key_hex
+        == operational_receipt.signer_public_key_hex
     ):
         raise ValueError("operational decision authority is not role-separated")
     key = _trusted_authority_key(
@@ -16047,6 +17097,8 @@ def _select_deployed_prior(
     operational_input_plan: NeuralPriorInputPlan,
     policy_trust_store_path: str | Path,
     deployment_certificate_trust_store_path: str | Path,
+    operational_decision_recorder: OperationalDecisionRecorder,
+    operational_ledger_signer: DeploymentAuthoritySigner,
     operational_decision_signer: DeploymentAuthoritySigner,
 ) -> tuple[NeuralPriorInferenceRunner, NeuralPriorDeploymentSelection]:
     """Select the candidate only for classifier-attested certified regimes."""
@@ -16071,9 +17123,9 @@ def _select_deployed_prior(
     if (
         type(promotion_evidence) is not NeuralPriorPromotionEvidence
         or promotion_evidence.contract
-        != "neural-prior-promotion-evidence-v25"
+        != "neural-prior-promotion-evidence-v26"
         or type(policy) is not DeployedNeuralPriorPolicy
-        or policy.contract != "deployed-neural-prior-policy-v11"
+        or policy.contract != "deployed-neural-prior-policy-v12"
     ):
         raise TypeError("current replay-generation deployment evidence is required")
     policy.validate_integrity()
@@ -16174,7 +17226,7 @@ def _select_deployed_prior(
         role = "candidate"
         reason = "certified_candidate"
     deployment_decision_core: dict[str, object] = {
-        "contract": "neural-prior-deployment-decision-artifact-v9",
+        "contract": "neural-prior-deployment-decision-artifact-v10",
         "full_analysis_input_digest": regime_evidence.full_analysis_input_digest,
         "input_plan_digest": operational_input_plan.plan_digest,
         "observation_valid_time": operational_input_plan.observation_valid_time,
@@ -16231,14 +17283,15 @@ def _select_deployed_prior(
         },
     }
     operational_decision_certificate = (
-        _issue_operational_deployment_decision_certificate(
+        operational_decision_recorder.issue_operational_deployment_decision(
             deployment_decision_core,
             promotion_deployment_certificate=promotion_deployment_certificate,
             promotion_evidence=promotion_evidence,
             policy=policy,
             policy_trust_store_digest=trust.content_digest,
-            signer=operational_decision_signer,
-            authority_trust_store=deployment_authority_trust,
+            ledger_signer=operational_ledger_signer,
+            operational_signer=operational_decision_signer,
+            authority_trust_store_path=deployment_certificate_trust_store_path,
         )
     )
     deployment_decision_payload = deployment_decision_core | {
@@ -16320,7 +17373,7 @@ def validate_neural_prior_deployment_decision_artifact(
     if (
         not isinstance(payload, dict)
         or payload.get("contract")
-        != "neural-prior-deployment-decision-artifact-v9"
+        != "neural-prior-deployment-decision-artifact-v10"
         or json.dumps(payload, sort_keys=True, separators=(",", ":"))
         != artifact_json
     ):
@@ -16454,7 +17507,7 @@ def validate_neural_prior_deployment_decision_artifact(
         reconstructed_geometry = (
             MosaicRangeGeometryContract(**cast(Any, geometry_values))
             if geometry_values.get("contract")
-            == "mosaic-horizontal-range-geometry-contract-v1"
+            == "mosaic-horizontal-range-geometry-contract-v2"
             else RangeGeometryContract(**cast(Any, geometry_values))
         )
     except (TypeError, ValueError) as error:
@@ -16485,7 +17538,7 @@ def validate_neural_prior_deployment_decision_artifact(
         != promotion_evidence.candidate_prior_digest
         or policy.get("parent_prior_digest")
         != promotion_evidence.parent_prior_digest
-        or policy.get("contract") != "deployed-neural-prior-policy-v11"
+        or policy.get("contract") != "deployed-neural-prior-policy-v12"
         or policy.get("semantic_replay_generation_digest")
         != promotion_evidence.semantic_replay_generation_digest
         or promotion_evidence.scoring_replay_contract
@@ -16641,6 +17694,8 @@ def infer_deployed_neural_prior(
     policy: DeployedNeuralPriorPolicy,
     policy_trust_store_path: str | Path,
     deployment_certificate_trust_store_path: str | Path,
+    operational_decision_recorder: OperationalDecisionRecorder,
+    operational_ledger_signer: DeploymentAuthoritySigner,
     operational_decision_signer: DeploymentAuthoritySigner,
     mps_backend_certification: MPSBackendCertificationEvidence | None = None,
     mps_backend_certification_policy: (
@@ -16749,6 +17804,8 @@ def infer_deployed_neural_prior(
         deployment_certificate_trust_store_path=(
             deployment_certificate_trust_store_path
         ),
+        operational_decision_recorder=operational_decision_recorder,
+        operational_ledger_signer=operational_ledger_signer,
         operational_decision_signer=operational_decision_signer,
     )
     return runner._infer_deployed(
