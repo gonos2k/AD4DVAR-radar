@@ -8,6 +8,7 @@ from dataclasses import asdict, dataclass, field, fields, is_dataclass, replace
 import io
 import json
 import math
+import threading
 from typing import Literal, cast
 
 import torch
@@ -73,8 +74,8 @@ CensoredBackgroundPolicy = Literal[
     "external_background",
 ]
 MAXIMUM_OBSERVATION_COMMON_BIAS_MODE_COUNT = 64
-P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v14"
-P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v12"
+P1_LINEARIZATION_CONTRACT = "p1-final-frozen-irls-gn-v15"
+P1_LINEARIZATION_DIGEST_CONTRACT = "p1-linearization-digest-v13"
 _WHITENER_APPLY_COUNTER: ContextVar[list[int] | None] = ContextVar(
     "advar_whitener_apply_counter",
     default=None,
@@ -916,6 +917,209 @@ class NeuralPriorProbabilityOutput:
     truncated_scale_dbz: Tensor
 
 
+@dataclass(frozen=True)
+class BoundNeuralPriorInput:
+    """Immutable five-channel evaluation point for one prior application."""
+
+    frames_dbz: Tensor
+    qc_valid_mask: Tensor | None
+    quality_weight: Tensor | None
+    observation_std_dbz: Tensor | None
+    source_available_mask: Tensor | None
+    model_input: Tensor
+    input_bundle_digest: str
+    full_analysis_input_digest: str
+    input_frames_digest: str
+    learned_model_input_features_digest: str | None
+    learned_input_feature_contract: str | None
+    contract: str = "bound-neural-prior-input-v1"
+
+    def __post_init__(self) -> None:
+        if self.contract != "bound-neural-prior-input-v1":
+            raise ValueError("unsupported bound neural-prior input")
+        for name in (
+            "input_bundle_digest",
+            "full_analysis_input_digest",
+            "input_frames_digest",
+        ):
+            _require_prior_digest(name, getattr(self, name))
+        frames = self.frames_dbz.detach().clone()
+        model_input = self.model_input.detach().clone()
+        if (
+            frames.ndim != 3
+            or not frames.is_floating_point()
+            or tensor_digest(frames) != self.input_frames_digest
+        ):
+            raise ValueError("bound neural-prior radar frames are invalid")
+        components = (
+            self.qc_valid_mask,
+            self.quality_weight,
+            self.observation_std_dbz,
+            self.source_available_mask,
+        )
+        if self.learned_input_feature_contract is None:
+            if any(value is not None for value in components):
+                raise ValueError("legacy bound input cannot retain learned channels")
+            if self.learned_model_input_features_digest is not None or not torch.equal(
+                model_input, frames
+            ):
+                raise ValueError("legacy bound neural-prior input is invalid")
+            retained_components: tuple[Tensor | None, ...] = (None,) * 4
+        else:
+            if (
+                self.learned_input_feature_contract
+                != LEARNED_RADAR_INPUT_FEATURE_CONTRACT
+                or any(value is None for value in components)
+                or self.learned_model_input_features_digest is None
+            ):
+                raise ValueError("bound learned input lineage is incomplete")
+            assert self.qc_valid_mask is not None
+            assert self.quality_weight is not None
+            assert self.observation_std_dbz is not None
+            assert self.source_available_mask is not None
+            retained_components = tuple(
+                value.detach().clone()
+                for value in (
+                    self.qc_valid_mask,
+                    self.quality_weight,
+                    self.observation_std_dbz,
+                    self.source_available_mask,
+                )
+            )
+            retained_qc, retained_quality, retained_std, retained_source = (
+                retained_components
+            )
+            assert retained_qc is not None
+            assert retained_quality is not None
+            assert retained_std is not None
+            assert retained_source is not None
+            reconstructed = learned_radar_input_features(
+                frames,
+                retained_qc,
+                retained_quality,
+                retained_std,
+                retained_source,
+            )
+            if (
+                not torch.equal(model_input, reconstructed)
+                or tensor_digest(model_input)
+                != self.learned_model_input_features_digest
+            ):
+                raise ValueError("bound learned model input cannot be reproduced")
+        object.__setattr__(self, "frames_dbz", frames)
+        object.__setattr__(self, "model_input", model_input)
+        for name, retained in zip(
+            (
+                "qc_valid_mask",
+                "quality_weight",
+                "observation_std_dbz",
+                "source_available_mask",
+            ),
+            retained_components,
+            strict=True,
+        ):
+            object.__setattr__(self, name, retained)
+        self.validate_integrity()
+
+    def validate_integrity(self) -> None:
+        """Fail closed if any retained tensor was mutated after binding."""
+
+        if self.contract != "bound-neural-prior-input-v1":
+            raise ValueError("unsupported bound neural-prior input")
+        for name in (
+            "input_bundle_digest",
+            "full_analysis_input_digest",
+            "input_frames_digest",
+        ):
+            _require_prior_digest(name, getattr(self, name))
+        if (
+            not isinstance(self.frames_dbz, Tensor)
+            or self.frames_dbz.ndim != 3
+            or not self.frames_dbz.is_floating_point()
+            or tensor_digest(self.frames_dbz) != self.input_frames_digest
+            or not isinstance(self.model_input, Tensor)
+            or not self.model_input.is_floating_point()
+        ):
+            raise ValueError("bound neural-prior radar frames are invalid")
+        components = (
+            self.qc_valid_mask,
+            self.quality_weight,
+            self.observation_std_dbz,
+            self.source_available_mask,
+        )
+        if self.learned_input_feature_contract is None:
+            if (
+                any(value is not None for value in components)
+                or self.learned_model_input_features_digest is not None
+                or not torch.equal(self.model_input, self.frames_dbz)
+            ):
+                raise ValueError("legacy bound neural-prior input is invalid")
+            return
+        if (
+            self.learned_input_feature_contract
+            != LEARNED_RADAR_INPUT_FEATURE_CONTRACT
+            or self.learned_model_input_features_digest is None
+            or any(not isinstance(value, Tensor) for value in components)
+        ):
+            raise ValueError("bound learned input lineage is incomplete")
+        assert self.qc_valid_mask is not None
+        assert self.quality_weight is not None
+        assert self.observation_std_dbz is not None
+        assert self.source_available_mask is not None
+        reconstructed = learned_radar_input_features(
+            self.frames_dbz,
+            self.qc_valid_mask,
+            self.quality_weight,
+            self.observation_std_dbz,
+            self.source_available_mask,
+        )
+        if (
+            not torch.equal(self.model_input, reconstructed)
+            or tensor_digest(self.model_input)
+            != self.learned_model_input_features_digest
+        ):
+            raise ValueError("bound learned model input cannot be reproduced")
+
+    @property
+    def context_digest(self) -> str:
+        return json_digest(
+            {
+                "contract": self.contract,
+                "frames_dbz": tensor_digest(self.frames_dbz),
+                "qc_valid_mask": (
+                    None
+                    if self.qc_valid_mask is None
+                    else tensor_digest(self.qc_valid_mask)
+                ),
+                "quality_weight": (
+                    None
+                    if self.quality_weight is None
+                    else tensor_digest(self.quality_weight)
+                ),
+                "observation_std_dbz": (
+                    None
+                    if self.observation_std_dbz is None
+                    else tensor_digest(self.observation_std_dbz)
+                ),
+                "source_available_mask": (
+                    None
+                    if self.source_available_mask is None
+                    else tensor_digest(self.source_available_mask)
+                ),
+                "model_input": tensor_digest(self.model_input),
+                "input_bundle_digest": self.input_bundle_digest,
+                "full_analysis_input_digest": self.full_analysis_input_digest,
+                "input_frames_digest": self.input_frames_digest,
+                "learned_model_input_features_digest": (
+                    self.learned_model_input_features_digest
+                ),
+                "learned_input_feature_contract": (
+                    self.learned_input_feature_contract
+                ),
+            }
+        )
+
+
 @dataclass(frozen=True, init=False)
 class NeuralPriorDeploymentSelection:
     """Fail-closed candidate/parent choice for one operational input."""
@@ -949,14 +1153,14 @@ class NeuralPriorDeploymentSelection:
         "no_certified_regime",
         "ambiguous_classifier_branch",
     ]
-    contract: str = "neural-prior-deployment-selection-v12"
+    contract: str = "neural-prior-deployment-selection-v13"
     selection_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use the certified neural-prior deployment selector")
 
     def validate_integrity(self) -> None:
-        if self.contract != "neural-prior-deployment-selection-v12":
+        if self.contract != "neural-prior-deployment-selection-v13":
             raise ValueError("unsupported neural-prior deployment selection")
         for name in (
             "selected_prior_digest",
@@ -1012,7 +1216,7 @@ def _new_neural_prior_deployment_selection(
     object.__setattr__(
         result,
         "contract",
-        "neural-prior-deployment-selection-v12",
+        "neural-prior-deployment-selection-v13",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -1029,6 +1233,7 @@ class NeuralPriorInferenceEvidence:
     input_bundle_digest: str
     full_analysis_input_digest: str
     input_frames_digest: str
+    bound_input_digest: str
     analysis_input_derivation_artifact_json: str | None
     analysis_input_derivation_artifact_digest: str | None
     feature_tensor_digest: str
@@ -1069,17 +1274,18 @@ class NeuralPriorInferenceEvidence:
     uncertainty_contract: Literal["model_spatial", "constant_research"]
     execution_contract_digest: str
     dependency: PriorDependency
-    contract: str = "neural-prior-inference-evidence-v9"
+    contract: str = "neural-prior-inference-evidence-v10"
     evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-inference-evidence-v9":
+        if self.contract != "neural-prior-inference-evidence-v10":
             raise ValueError("unsupported neural-prior inference evidence")
         for name in (
             "neural_prior_digest",
             "input_bundle_digest",
             "full_analysis_input_digest",
             "input_frames_digest",
+            "bound_input_digest",
             "feature_tensor_digest",
             "feature_extractor_digest",
             "feature_extractor_code_digest",
@@ -1318,9 +1524,10 @@ class NeuralPriorInferenceRunner:
         actual_feature_digest = feature_graph_digest
         actual_algorithm_digest = json_digest(
             {
-                "contract": "advar-neural-prior-inference-algorithm-v7",
+                "contract": "advar-neural-prior-inference-algorithm-v8",
                 "export": "torch.export",
                 "derivatives": "rademacher-jvp-vjp-finite-difference",
+                "derivative_evaluation_point": "bound-neural-prior-input-v1",
                 "output": "state-and-hurdle-probability-heads",
                 "state_contract_digest": state_contract.contract_digest,
                 "probability_contract_digest": (
@@ -1407,11 +1614,9 @@ class NeuralPriorInferenceRunner:
         self._example_frames_dtype = example_frames.dtype
         self._example_shape = tuple(example_model_input.shape)
         self._example_dtype = example_model_input.dtype
-        self._active_frames_digest: str | None = None
-        self._active_model_input: Tensor | None = None
         self.execution_contract_digest = json_digest(
             {
-                "contract": "neural-prior-execution-contract-v9",
+                "contract": "neural-prior-execution-contract-v10",
                 "model_state_digest": self._model_state_digest,
                 "model_code_digest": self._model_code_digest,
                 "feature_extractor_digest": actual_feature_digest,
@@ -1447,6 +1652,7 @@ class NeuralPriorInferenceRunner:
             }
         )
         self.neural_prior_digest = self.execution_contract_digest
+        self._derivative_lock = threading.RLock()
         self._certified_derivative_defect = self._validate_derivatives(
             canonical_model_input,
             probe_count=derivative_probe_count,
@@ -1469,7 +1675,7 @@ class NeuralPriorInferenceRunner:
         ):
             raise ValueError("neural-prior input shape or dtype changed")
 
-    def _model_input(
+    def _bind_input(
         self,
         frames_dbz: Tensor,
         *,
@@ -1478,7 +1684,7 @@ class NeuralPriorInferenceRunner:
         quality_weight: Tensor | None,
         observation_std_dbz: Tensor | None,
         source_available_mask: Tensor | None,
-    ) -> Tensor:
+    ) -> BoundNeuralPriorInput:
         """Rebuild and bind the exact learned tensor for one analysis run."""
 
         if (
@@ -1497,49 +1703,53 @@ class NeuralPriorInferenceRunner:
                 raise ValueError(
                     "legacy neural-prior runner cannot accept learned input channels"
                 )
-            return frames_dbz
-        if any(value is None for value in components):
-            raise ValueError(
-                "current neural-prior inference requires all learned input channels"
+            model_input = frames_dbz
+        else:
+            if any(value is None for value in components):
+                raise ValueError(
+                    "current neural-prior inference requires all learned input channels"
+                )
+            assert qc_valid_mask is not None
+            assert quality_weight is not None
+            assert observation_std_dbz is not None
+            assert source_available_mask is not None
+            model_input = learned_radar_input_features(
+                frames_dbz,
+                qc_valid_mask,
+                quality_weight,
+                observation_std_dbz,
+                source_available_mask,
             )
-        assert qc_valid_mask is not None
-        assert quality_weight is not None
-        assert observation_std_dbz is not None
-        assert source_available_mask is not None
-        model_input = learned_radar_input_features(
-            frames_dbz,
-            qc_valid_mask,
-            quality_weight,
-            observation_std_dbz,
-            source_available_mask,
+            if (
+                input_run.observation_masks_digest != tensor_digest(qc_valid_mask)
+                or input_run.observation_quality_weight_digest
+                != tensor_digest(quality_weight)
+                or input_run.observation_std_dbz_digest
+                != tensor_digest(observation_std_dbz)
+                or input_run.source_available_mask_digest
+                != tensor_digest(source_available_mask)
+                or input_run.learned_model_input_features_digest
+                != tensor_digest(model_input)
+            ):
+                raise ValueError("learned input channels disagree with the input run")
+        assert input_run.full_analysis_input_digest is not None
+        return BoundNeuralPriorInput(
+            frames_dbz=frames_dbz,
+            qc_valid_mask=qc_valid_mask,
+            quality_weight=quality_weight,
+            observation_std_dbz=observation_std_dbz,
+            source_available_mask=source_available_mask,
+            model_input=model_input,
+            input_bundle_digest=input_run.input_bundle_digest,
+            full_analysis_input_digest=input_run.full_analysis_input_digest,
+            input_frames_digest=input_run.input_frames_digest,
+            learned_model_input_features_digest=(
+                None
+                if self.learned_input_feature_contract is None
+                else input_run.learned_model_input_features_digest
+            ),
+            learned_input_feature_contract=self.learned_input_feature_contract,
         )
-        if (
-            input_run.observation_masks_digest != tensor_digest(qc_valid_mask)
-            or input_run.observation_quality_weight_digest
-            != tensor_digest(quality_weight)
-            or input_run.observation_std_dbz_digest
-            != tensor_digest(observation_std_dbz)
-            or input_run.source_available_mask_digest
-            != tensor_digest(source_available_mask)
-            or input_run.learned_model_input_features_digest
-            != tensor_digest(model_input)
-        ):
-            raise ValueError("learned input channels disagree with the input run")
-        return model_input
-
-    def _retained_model_input(self, frames_dbz: Tensor) -> Tensor:
-        """Return the input fixed by the most recent bound inference."""
-
-        if self.learned_input_feature_contract is None:
-            return frames_dbz
-        if (
-            self._active_model_input is None
-            or self._active_frames_digest != tensor_digest(frames_dbz)
-        ):
-            raise ValueError(
-                "learned neural-prior derivatives require the bound analysis input"
-            )
-        return self._active_model_input
 
     def _derivative_outputs(self, frames_dbz: Tensor) -> tuple[Tensor, Tensor]:
         self._validate_input_contract(frames_dbz)
@@ -1861,7 +2071,7 @@ class NeuralPriorInferenceRunner:
             raise ValueError("neural-prior derivative defect exceeds its contract")
         if tensor_digest(frames_dbz) != input_run.input_frames_digest:
             raise ValueError("neural-prior frames disagree with the input run")
-        model_input = self._model_input(
+        bound_input = self._bind_input(
             frames_dbz,
             input_run=input_run,
             qc_valid_mask=qc_valid_mask,
@@ -1869,8 +2079,7 @@ class NeuralPriorInferenceRunner:
             observation_std_dbz=observation_std_dbz,
             source_available_mask=source_available_mask,
         )
-        self._active_frames_digest = tensor_digest(frames_dbz)
-        self._active_model_input = model_input.detach().clone()
+        model_input = bound_input.model_input
         execution_mode = None
         retained_analysis_json = getattr(input_run, "analysis_config_json", None)
         if retained_analysis_json is not None:
@@ -2023,6 +2232,7 @@ class NeuralPriorInferenceRunner:
             input_bundle_digest=input_run.input_bundle_digest,
             full_analysis_input_digest=input_run.full_analysis_input_digest,
             input_frames_digest=tensor_digest(frames_dbz),
+            bound_input_digest=bound_input.context_digest,
             analysis_input_derivation_artifact_json=(
                 input_run.analysis_input_derivation_artifact_json
             ),
@@ -2091,6 +2301,7 @@ class NeuralPriorInferenceRunner:
             probability_output=probability_output,
             state_contract=self.state_contract,
             inference_evidence=evidence,
+            bound_input=bound_input,
             deployment_selection=deployment_selection,
             role=role,
             support_policy=self.support_policy,
@@ -2101,30 +2312,21 @@ class NeuralPriorInferenceRunner:
     def reproduce(
         self,
         application: NeuralPriorApplication,
-        frames_dbz: Tensor,
-        *,
-        input_run: ForecastRunContract | None = None,
-        qc_valid_mask: Tensor | None = None,
-        quality_weight: Tensor | None = None,
-        observation_std_dbz: Tensor | None = None,
-        source_available_mask: Tensor | None = None,
+        bound_input: BoundNeuralPriorInput,
     ) -> None:
         """Independently rerun one retained application."""
 
         application.validate_integrity()
-        if self.learned_input_feature_contract is None:
-            model_input = frames_dbz
-        elif input_run is None:
-            model_input = self._retained_model_input(frames_dbz)
-        else:
-            model_input = self._model_input(
-                frames_dbz,
-                input_run=input_run,
-                qc_valid_mask=qc_valid_mask,
-                quality_weight=quality_weight,
-                observation_std_dbz=observation_std_dbz,
-                source_available_mask=source_available_mask,
-            )
+        bound_input.validate_integrity()
+        if (
+            not isinstance(bound_input, BoundNeuralPriorInput)
+            or bound_input.context_digest
+            != application.inference_evidence.bound_input_digest
+            or bound_input.learned_input_feature_contract
+            != self.learned_input_feature_contract
+        ):
+            raise ValueError("neural-prior bound input disagrees with application")
+        model_input = bound_input.model_input
         (
             features,
             state_output,
@@ -2143,7 +2345,7 @@ class NeuralPriorInferenceRunner:
         if (
             self.neural_prior_digest != evidence.neural_prior_digest
             or evidence.execution_contract_digest != self.execution_contract_digest
-            or tensor_digest(frames_dbz) != evidence.input_frames_digest
+            or tensor_digest(bound_input.frames_dbz) != evidence.input_frames_digest
             or tensor_digest(features) != evidence.feature_tensor_digest
             or tensor_digest(state_background)
             != evidence.output_state_background_digest
@@ -2171,78 +2373,88 @@ class NeuralPriorInferenceRunner:
 
     def validate_retained_output(
         self,
-        frames_dbz: Tensor,
+        bound_input: BoundNeuralPriorInput,
         raw_background_dbz: Tensor,
         *,
         execution_contract_digest: str,
     ) -> None:
         """Reproduce the raw prior output retained by a restart artifact."""
 
+        bound_input.validate_integrity()
         if execution_contract_digest != self.execution_contract_digest:
             raise ValueError("neural-prior execution contract mismatch")
-        _, state_output, _, _ = self._output(self._retained_model_input(frames_dbz))
+        _, state_output, _, _ = self._output(bound_input.model_input)
         if not torch.equal(state_output.background_dbz, raw_background_dbz):
             raise ValueError("retained neural-prior output cannot be reproduced")
 
-    def jvp(self, frames_dbz: Tensor, tangent: Tensor) -> Tensor:
-        return self.jvp_components(frames_dbz, tangent)[0]
+    def jvp(self, bound_input: BoundNeuralPriorInput, tangent: Tensor) -> Tensor:
+        return self.jvp_components(bound_input, tangent)[0]
 
     def jvp_components(
         self,
-        frames_dbz: Tensor,
+        bound_input: BoundNeuralPriorInput,
         tangent: Tensor,
     ) -> tuple[Tensor, Tensor]:
+        bound_input.validate_integrity()
         if self.dependency != "radar_dependent":
-            zero = frames_dbz.new_zeros(frames_dbz.shape[-2:])
+            zero = bound_input.frames_dbz.new_zeros(
+                bound_input.frames_dbz.shape[-2:]
+            )
             return zero, zero.clone()
         self._validate_state()
-        model_input = self._retained_model_input(frames_dbz)
+        model_input = bound_input.model_input
         model_tangent = tangent
         if model_input.ndim == 4:
             model_tangent = torch.zeros_like(model_input)
             model_tangent[0] = tangent
-        return cast(
-            tuple[Tensor, Tensor],
-            torch.func.jvp(
-                self._derivative_outputs,
-                (model_input,),
-                (model_tangent,),
-            )[1],
-        )
+        with self._derivative_lock:
+            return cast(
+                tuple[Tensor, Tensor],
+                torch.func.jvp(
+                    self._derivative_outputs,
+                    (model_input,),
+                    (model_tangent,),
+                )[1],
+            )
 
-    def vjp(self, frames_dbz: Tensor, cotangent: Tensor) -> Tensor:
+    def vjp(self, bound_input: BoundNeuralPriorInput, cotangent: Tensor) -> Tensor:
         return self.vjp_components(
-            frames_dbz,
+            bound_input,
             cotangent,
             torch.zeros_like(cotangent),
         )
 
     def vjp_components(
         self,
-        frames_dbz: Tensor,
+        bound_input: BoundNeuralPriorInput,
         mean_cotangent: Tensor,
         log_std_cotangent: Tensor,
     ) -> Tensor:
+        bound_input.validate_integrity()
         if self.dependency != "radar_dependent":
-            return torch.zeros_like(frames_dbz)
+            return torch.zeros_like(bound_input.frames_dbz)
         self._validate_state()
-        model_input = self._retained_model_input(frames_dbz)
-        _, pullback = cast(
-            tuple[
-                tuple[Tensor, Tensor],
-                Callable[[tuple[Tensor, Tensor]], tuple[Tensor]],
-            ],
-            torch.func.vjp(
-                self._derivative_outputs,
-                model_input,
-            ),
-        )
-        result = cast(Tensor, pullback((mean_cotangent, log_std_cotangent))[0])
+        model_input = bound_input.model_input
+        with self._derivative_lock:
+            _, pullback = cast(
+                tuple[
+                    tuple[Tensor, Tensor],
+                    Callable[[tuple[Tensor, Tensor]], tuple[Tensor]],
+                ],
+                torch.func.vjp(
+                    self._derivative_outputs,
+                    model_input,
+                ),
+            )
+            result = cast(
+                Tensor,
+                pullback((mean_cotangent, log_std_cotangent))[0],
+            )
         return result[0] if result.ndim == 4 else result
 
     def validate_adjoint_direction(
         self,
-        frames_dbz: Tensor,
+        bound_input: BoundNeuralPriorInput,
         mean_cotangent: Tensor,
         log_std_cotangent: Tensor | None = None,
     ) -> float:
@@ -2250,7 +2462,9 @@ class NeuralPriorInferenceRunner:
 
         if self.dependency != "radar_dependent":
             return 0.0
-        self._validate_input_contract(frames_dbz)
+        bound_input.validate_integrity()
+        self._validate_input_contract(bound_input.model_input)
+        frames_dbz = bound_input.frames_dbz
         generator = torch.Generator(device="cpu").manual_seed(1)
         tangent = (
             torch.randint(
@@ -2261,14 +2475,14 @@ class NeuralPriorInferenceRunner:
                 dtype=torch.int8,
             ).to(frames_dbz) * 2.0 - 1.0
         )
-        mean_forward, log_std_forward = self.jvp_components(frames_dbz, tangent)
+        mean_forward, log_std_forward = self.jvp_components(bound_input, tangent)
         retained_log_std_cotangent = (
             torch.zeros_like(mean_cotangent)
             if log_std_cotangent is None
             else log_std_cotangent
         )
         reverse = self.vjp_components(
-            frames_dbz,
+            bound_input,
             mean_cotangent,
             retained_log_std_cotangent,
         )
@@ -2294,12 +2508,13 @@ class NeuralPriorApplication:
     probability_output: NeuralPriorProbabilityOutput
     state_contract: NeuralPriorStateContract
     inference_evidence: NeuralPriorInferenceEvidence
+    bound_input: BoundNeuralPriorInput
     deployment_selection: NeuralPriorDeploymentSelection | None
     role: Literal["candidate", "parent"]
     support_policy: PriorSupportPolicy
     maximum_added_area_km2: float
     maximum_added_echo_integral: float
-    contract: str = "neural-prior-application-v9"
+    contract: str = "neural-prior-application-v10"
     application_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -2399,7 +2614,7 @@ class NeuralPriorApplication:
 
 def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
     result = object.__new__(NeuralPriorApplication)
-    object.__setattr__(result, "contract", "neural-prior-application-v9")
+    object.__setattr__(result, "contract", "neural-prior-application-v10")
     for name, value in values.items():
         object.__setattr__(result, name, value)
     if not isinstance(result.state_output, NeuralPriorStateOutput) or not isinstance(
@@ -2460,6 +2675,18 @@ def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
         if not math.isfinite(value) or value < 0.0:
             raise ValueError(f"{name} must be finite and nonnegative")
     result.inference_evidence.validate_integrity()
+    if (
+        not isinstance(result.bound_input, BoundNeuralPriorInput)
+        or result.bound_input.context_digest
+        != result.inference_evidence.bound_input_digest
+        or result.bound_input.input_bundle_digest
+        != result.inference_evidence.input_bundle_digest
+        or result.bound_input.full_analysis_input_digest
+        != result.inference_evidence.full_analysis_input_digest
+        or result.bound_input.input_frames_digest
+        != result.inference_evidence.input_frames_digest
+    ):
+        raise ValueError("neural-prior bound input disagrees with inference")
     if result.deployment_selection is not None:
         result.deployment_selection.validate_integrity()
         if (
@@ -2561,6 +2788,7 @@ def _neural_prior_application_digest(value: NeuralPriorApplication) -> str:
             "truncated_scale_dbz": tensor_digest(value.truncated_scale_dbz),
             "state_contract_digest": value.state_contract.contract_digest,
             "inference_evidence_digest": value.inference_evidence.evidence_digest,
+            "bound_input_digest": value.bound_input.context_digest,
             "deployment_selection_digest": (
                 None
                 if value.deployment_selection is None
@@ -2618,6 +2846,7 @@ class FrozenOuterState:
     neural_prior_raw_background_dbz: Tensor | None = None
     neural_prior_execution_contract_digest: str | None = None
     neural_prior_role: Literal["candidate", "parent"] | None = None
+    neural_prior_bound_input: BoundNeuralPriorInput | None = None
 
     @property
     def amplitude_displacement_tolerance_yx(self) -> tuple[int, int]:
@@ -3806,6 +4035,9 @@ def prepare_analysis(
             else neural_prior.inference_evidence.execution_contract_digest
         ),
         neural_prior_role=(None if neural_prior is None else neural_prior.role),
+        neural_prior_bound_input=(
+            None if neural_prior is None else neural_prior.bound_input
+        ),
     )
     linearization_bytes = _retained_tensor_bytes((observations, frozen))
     if linearization_bytes > analysis_config.maximum_linearization_bytes:
@@ -8628,6 +8860,7 @@ def _validate_control(
         frozen.neural_prior_raw_background_dbz,
         frozen.neural_prior_execution_contract_digest,
         frozen.neural_prior_role,
+        frozen.neural_prior_bound_input,
     )
     if frozen.observation_derived_initial_background:
         if any(value is not None for value in prior_values):
@@ -8641,6 +8874,7 @@ def _validate_control(
         raw_background,
         execution_digest,
         role,
+        bound_input,
     ) = prior_values
     if (
         not isinstance(std, Tensor)
@@ -8661,6 +8895,9 @@ def _validate_control(
         or not bool(torch.all(torch.isfinite(raw_background)))
         or not isinstance(execution_digest, str)
         or role not in ("candidate", "parent")
+        or not isinstance(bound_input, BoundNeuralPriorInput)
+        or bound_input.input_frames_digest
+        != tensor_digest(frozen.input_frames_dbz)
     ):
         raise ValueError("retained neural-prior state is incomplete")
     _require_prior_digest("neural_prior_application_digest", application_digest)
@@ -8886,6 +9123,47 @@ def _clone_frozen_outer_state(frozen: FrozenOuterState) -> FrozenOuterState:
             frozen.neural_prior_execution_contract_digest
         ),
         neural_prior_role=frozen.neural_prior_role,
+        neural_prior_bound_input=(
+            None
+            if frozen.neural_prior_bound_input is None
+            else BoundNeuralPriorInput(
+                frames_dbz=_clone_tensor(
+                    frozen.neural_prior_bound_input.frames_dbz
+                ),
+                qc_valid_mask=_clone_optional_tensor(
+                    frozen.neural_prior_bound_input.qc_valid_mask
+                ),
+                quality_weight=_clone_optional_tensor(
+                    frozen.neural_prior_bound_input.quality_weight
+                ),
+                observation_std_dbz=_clone_optional_tensor(
+                    frozen.neural_prior_bound_input.observation_std_dbz
+                ),
+                source_available_mask=_clone_optional_tensor(
+                    frozen.neural_prior_bound_input.source_available_mask
+                ),
+                model_input=_clone_tensor(
+                    frozen.neural_prior_bound_input.model_input
+                ),
+                input_bundle_digest=(
+                    frozen.neural_prior_bound_input.input_bundle_digest
+                ),
+                full_analysis_input_digest=(
+                    frozen.neural_prior_bound_input.full_analysis_input_digest
+                ),
+                input_frames_digest=(
+                    frozen.neural_prior_bound_input.input_frames_digest
+                ),
+                learned_model_input_features_digest=(
+                    frozen.neural_prior_bound_input
+                    .learned_model_input_features_digest
+                ),
+                learned_input_feature_contract=(
+                    frozen.neural_prior_bound_input
+                    .learned_input_feature_contract
+                ),
+            )
+        ),
     )
 
 
@@ -9002,6 +9280,11 @@ def _frozen_outer_state_digest_values(
             frozen.neural_prior_execution_contract_digest
         )
         values["neural_prior_role"] = frozen.neural_prior_role
+        values["neural_prior_bound_input_digest"] = (
+            None
+            if frozen.neural_prior_bound_input is None
+            else frozen.neural_prior_bound_input.context_digest
+        )
     return values
 
 

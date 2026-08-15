@@ -2026,7 +2026,7 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertEqual(fso.full_map_lead_minutes, (10,))
         self.assertEqual(
             fso.linearization_contract,
-            "p1-final-frozen-irls-gn-v14",
+            "p1-final-frozen-irls-gn-v15",
         )
         self.assertEqual(
             fso.forecast_run_digest,
@@ -3117,7 +3117,7 @@ class VariationalFSOTests(unittest.TestCase):
 
         self.assertEqual(
             restarted.linearization.contract,
-            "p1-final-frozen-irls-gn-v14",
+            "p1-final-frozen-irls-gn-v15",
         )
 
     def test_p1_linearization_artifact_rejects_tamper_and_runtime_mismatch(

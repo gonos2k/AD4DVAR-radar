@@ -40,6 +40,7 @@ from .variational import (
     AnalysisLinearization,
     AnalysisObservations,
     AnalysisResult,
+    BoundNeuralPriorInput,
     FrozenObservationWhitener,
     FrozenOuterState,
     P1LinearizationState,
@@ -55,10 +56,11 @@ from .variational import (
 )
 
 
-P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v14"
+P1_LINEARIZATION_ARTIFACT_VERSION = "p1-linearization-v15"
 _LEGACY_P1_LINEARIZATION_ARTIFACT_VERSIONS = {
     "p1-linearization-v12",
     "p1-linearization-v13",
+    "p1-linearization-v14",
 }
 DEFAULT_MAXIMUM_MEMBER_COUNT = 96
 DEFAULT_MAXIMUM_MEMBER_BYTES = 2 * 1024**3
@@ -72,6 +74,7 @@ _DATACLASS_TYPES = {
         AnalysisFeasibilityMargins,
         AnalysisLinearization,
         AnalysisObservations,
+        BoundNeuralPriorInput,
         ForecastMetadata,
         FrozenObservationWhitener,
         FrozenOuterState,

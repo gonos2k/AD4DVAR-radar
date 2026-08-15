@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+import base64
 from copy import copy
 from dataclasses import asdict, fields, replace
 from datetime import datetime, timedelta, timezone
@@ -658,9 +659,11 @@ class EpisodeLedgerTests(unittest.TestCase):
         processor_key = promotion_module.Ed25519PrivateKey.from_private_bytes(
             b"\x25" * 32
         )
+        feature_tensor = torch.arange(12, dtype=torch.float64).reshape(3, 2, 2)
+        target_tensor = torch.arange(4, dtype=torch.float64).reshape(2, 2)
         member_unsigned = {
             "contract": "analysis-input-derivation-artifact-v5",
-            "case_id": "clock-training-member",
+            "case_id": "classifier-training-case",
             "input_plan_digest": "9" * 64,
             "resolved_raw_observation_receipt_digests": ("5" * 64,),
             "canonical_raw_volume_identity_digests": ("6" * 64,),
@@ -682,7 +685,9 @@ class EpisodeLedgerTests(unittest.TestCase):
             "observation_quality_weight_digest": "0" * 64,
             "observation_std_dbz_digest": "1" * 64,
             "source_available_mask_digest": "2" * 64,
-            "learned_model_input_features_digest": "3" * 64,
+            "learned_model_input_features_digest": tensor_digest(
+                feature_tensor
+            ),
             "background_frames_digest": None,
             "input_bundle_digest": "1" * 64,
             "full_analysis_input_digest": "2" * 64,
@@ -714,26 +719,65 @@ class EpisodeLedgerTests(unittest.TestCase):
                 ],
             }
         )
+        target_derivation = (
+            promotion_module.TrainingTargetDerivationArtifact.issue(
+                case_id=member_derivation.case_id,
+                target_source_identity_digest="4" * 64,
+                target_source_valid_time="2028-12-29T00:00:00Z",
+                target_qc_policy_digest="5" * 64,
+                target_censor_policy_digest="6" * 64,
+                target_algorithm_digest="6" * 64,
+                target_schema_digest="7" * 64,
+                target_tensor=target_tensor,
+                generated_at="2028-12-30T00:00:00Z",
+                training_cutoff_time="2028-12-31T00:00:00Z",
+                processor_id=member_derivation.processor_id,
+                processor_private_key=processor_key,
+            )
+        )
+        target_derivation_json = json.dumps(
+            target_derivation.payload
+            | {"artifact_digest": target_derivation.artifact_digest},
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        feature_archive = promotion_module.encode_training_tensor_archive(
+            {"feature_00000": feature_tensor}
+        )
+        target_archive = promotion_module.encode_training_tensor_archive(
+            {"target_00000": target_tensor}
+        )
         training_feature_dataset = (
             promotion_module.TrainingFeatureDatasetArtifact(
-                member_analysis_derivation_artifact_digests=(
-                    member_derivation.artifact_digest,
-                ),
-                member_feature_tensor_digests=(
-                    member_derivation.learned_model_input_features_digest,
-                ),
-                member_target_tensor_digests=("4" * 64,),
-                sample_order=(member_derivation.case_id,),
-                sample_weights=(1.0,),
-                split_labels=("train",),
-                augmentation_seeds=(0,),
+                members=(promotion_module.TrainingDatasetMember(
+                    case_id=member_derivation.case_id,
+                    analysis_derivation_artifact_digest=(
+                        member_derivation.artifact_digest
+                    ),
+                    feature_archive_member="feature_00000",
+                    feature_tensor_digest=(
+                        member_derivation.learned_model_input_features_digest
+                    ),
+                    target_archive_member="target_00000",
+                    target_tensor_digest=tensor_digest(target_tensor),
+                    target_derivation_artifact_json=target_derivation_json,
+                    sample_weight=1.0,
+                    split="train",
+                    augmentation_seed=0,
+                ),),
                 normalization_statistics_digest="5" * 64,
                 feature_algorithm_digest="f" * 64,
                 feature_schema_digest="0" * 64,
                 target_algorithm_digest="6" * 64,
                 target_schema_digest="7" * 64,
-                feature_tensor_archive_sha256="8" * 64,
-                target_tensor_archive_sha256="9" * 64,
+                feature_tensor_archive_sha256=hashlib.sha256(
+                    base64.b64decode(feature_archive)
+                ).hexdigest(),
+                target_tensor_archive_sha256=hashlib.sha256(
+                    base64.b64decode(target_archive)
+                ).hexdigest(),
+                feature_tensor_archive_base64=feature_archive,
+                target_tensor_archive_base64=target_archive,
             )
         )
         training_feature_dataset_json = json.dumps(
@@ -1193,7 +1237,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-            self.assertEqual(version, 37)
+            self.assertEqual(version, 38)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4506,7 +4550,112 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 37)
+        self.assertEqual(version, 38)
+
+    def test_operational_raw_resolution_history_is_append_only(self) -> None:
+        ledger = EpisodeLedger(self.root / "operational-raw-history")
+        authority = Ed25519PrivateKey.generate()
+        slot = "1" * 64
+
+        def entry(
+            *,
+            identity: str,
+            kind: str,
+            previous: str,
+            transition: str,
+            ordinal: int,
+        ):
+            return promotion_module.OperationalRawResolutionHistoryEntry.issue(
+                provenance_plan_digest=f"{ordinal:x}" * 64,
+                slot_digest=slot,
+                resolution_identity_digest=identity,
+                resolution_kind=kind,
+                previous_entry_digest=previous,
+                transition=transition,
+                reason=f"audited transition {ordinal}",
+                issued_at=f"2026-08-16T00:00:0{ordinal}Z",
+                authority_id="analysis-processor",
+                authority_private_key=authority,
+            )
+
+        invalid_first = entry(
+            identity="2" * 64,
+            kind="missing",
+            previous=promotion_module.OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST,
+            transition="correction",
+            ordinal=1,
+        )
+        with sqlite3.connect(ledger.index_path) as connection:
+            with self.assertRaisesRegex(ValueError, "equivocated"):
+                ledger._record_operational_raw_resolution_history(
+                    connection,
+                    entry=invalid_first,
+                    raw_resolution_receipt_digest="9" * 64,
+                    recorded_at="2026-08-16T00:00:01Z",
+                )
+
+        transitions = (
+            ("2" * 64, "missing", "original"),
+            ("3" * 64, "resolved", "correction"),
+            ("3" * 64, "resolved", "reuse"),
+            ("4" * 64, "resolved", "supersession"),
+            ("5" * 64, "missing", "cancellation"),
+        )
+        previous = promotion_module.OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST
+        expected = []
+        for ordinal, (identity, kind, transition) in enumerate(
+            transitions, start=1
+        ):
+            current = entry(
+                identity=identity,
+                kind=kind,
+                previous=previous,
+                transition=transition,
+                ordinal=ordinal,
+            )
+            with sqlite3.connect(ledger.index_path) as connection:
+                ledger._record_operational_raw_resolution_history(
+                    connection,
+                    entry=current,
+                    raw_resolution_receipt_digest=f"{ordinal + 9:x}" * 64,
+                    recorded_at=f"2026-08-16T00:01:0{ordinal}Z",
+                )
+            expected.append(current)
+            previous = current.entry_digest
+
+        retained = ledger.load_operational_raw_resolution_history(slot)
+        self.assertEqual(retained, tuple(expected))
+        forged_previous = entry(
+            identity="6" * 64,
+            kind="resolved",
+            previous="f" * 64,
+            transition="correction",
+            ordinal=6,
+        )
+        with sqlite3.connect(ledger.index_path) as connection:
+            with self.assertRaisesRegex(ValueError, "equivocated"):
+                ledger._record_operational_raw_resolution_history(
+                    connection,
+                    entry=forged_previous,
+                    raw_resolution_receipt_digest="f" * 64,
+                    recorded_at="2026-08-16T00:01:06Z",
+                )
+
+        backdated = entry(
+            identity="6" * 64,
+            kind="resolved",
+            previous=previous,
+            transition="correction",
+            ordinal=1,
+        )
+        with sqlite3.connect(ledger.index_path) as connection:
+            with self.assertRaisesRegex(ValueError, "chronology regressed"):
+                ledger._record_operational_raw_resolution_history(
+                    connection,
+                    entry=backdated,
+                    raw_resolution_receipt_digest="e" * 64,
+                    recorded_at="2026-08-16T00:01:07Z",
+                )
 
 
 if __name__ == "__main__":

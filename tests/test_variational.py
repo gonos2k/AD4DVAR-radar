@@ -1,4 +1,5 @@
 from dataclasses import replace
+from concurrent.futures import ThreadPoolExecutor
 import math
 from pathlib import Path
 import sys
@@ -415,14 +416,14 @@ class VariationalAnalysisTests(unittest.TestCase):
             role="candidate",
         )
 
-        runner.reproduce(application, frames)
-        with self.assertRaisesRegex(ValueError, "cannot be reproduced"):
-            runner.reproduce(application, frames + 1.0)
+        runner.reproduce(application, application.bound_input)
+        with self.assertRaisesRegex(ValueError, "radar frames are invalid"):
+            replace(application.bound_input, frames_dbz=frames + 1.0)
         with self.assertRaisesRegex(TypeError, "InferenceRunner"):
             NeuralPriorApplication()
         application.initial_background_dbz[0, 0] = 99.0
         with self.assertRaisesRegex(ValueError, "application digest"):
-            runner.reproduce(application, frames)
+            runner.reproduce(application, application.bound_input)
 
     def test_operational_candidate_requires_input_bound_deployment_selection(
         self,
@@ -575,7 +576,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             application.inference_evidence.support_event_digest,
             _PRIOR_PROBABILITY_CONTRACT.support_event_digest,
         )
-        runner.reproduce(application, frames)
+        runner.reproduce(application, application.bound_input)
 
     def test_p1_consumes_state_head_not_truncated_probability_location(self) -> None:
         frames = torch.full((3, 4, 4), 20.0, dtype=torch.float64)
@@ -850,7 +851,7 @@ class VariationalAnalysisTests(unittest.TestCase):
         )
         application = stochastic.infer(frames, input_run=run, role="candidate")
         with self.assertRaisesRegex(ValueError, "cannot be reproduced"):
-            stochastic.reproduce(application, frames)
+            stochastic.reproduce(application, application.bound_input)
 
         mutating = NeuralPriorInferenceRunner(
             _MutatingPrior().eval(),
@@ -878,24 +879,210 @@ class VariationalAnalysisTests(unittest.TestCase):
                 runner.infer(frames, input_run=run, role="candidate")
 
         cotangent = torch.arange(16, dtype=torch.float64).reshape(4, 4)
+        application = runner.infer(frames, input_run=run, role="candidate")
         with patch.object(
             runner,
             "vjp_components",
             return_value=torch.zeros_like(frames),
         ):
             with self.assertRaisesRegex(ValueError, "adjoint-direction defect"):
-                runner.validate_adjoint_direction(frames, cotangent)
+                runner.validate_adjoint_direction(
+                    application.bound_input,
+                    cotangent,
+                )
 
     def test_radar_dependent_prior_exposes_matching_jvp_and_vjp(self) -> None:
         frames = torch.arange(48, dtype=torch.float64).reshape(3, 4, 4)
         tangent = torch.ones_like(frames)
         cotangent = torch.full((4, 4), 2.0, dtype=torch.float64)
         runner = _prior_runner(1.0, "candidate")
+        run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        application = runner.infer(frames, input_run=run, role="candidate")
 
-        torch.testing.assert_close(runner.jvp(frames, tangent), tangent[0])
+        torch.testing.assert_close(
+            runner.jvp(application.bound_input, tangent),
+            tangent[0],
+        )
         expected = torch.zeros_like(frames)
         expected[0] = cotangent
-        torch.testing.assert_close(runner.vjp(frames, cotangent), expected)
+        torch.testing.assert_close(
+            runner.vjp(application.bound_input, cotangent),
+            expected,
+        )
+
+    def test_bound_learned_input_is_reentrant_and_restartable(self) -> None:
+        frames = torch.full((3, 4, 4), -10.0, dtype=torch.float64)
+        source = torch.ones_like(frames, dtype=torch.bool)
+        valid_a = torch.ones_like(frames, dtype=torch.bool)
+        valid_b = valid_a.clone()
+        valid_b[0] = False
+        quality_a = torch.ones_like(frames)
+        quality_b = quality_a.clone()
+        quality_b[0] = 0.0
+        std_a = torch.full_like(frames, 2.0)
+        std_b = std_a.clone()
+        std_b[0] = 1.0
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-15T00:00:00Z",
+                "2026-08-15T00:10:00Z",
+                "2026-08-15T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="a" * 64,
+        )
+
+        def make_runner() -> NeuralPriorInferenceRunner:
+            return NeuralPriorInferenceRunner(
+                _OffsetPrior(30.0).eval(),
+                lambda value: value[0, 0] * (1.0 + value[1, 0]),
+                example_frames=frames,
+                example_qc_valid_mask=valid_a,
+                example_quality_weight=quality_a,
+                example_observation_std_dbz=std_a,
+                example_source_available_mask=source,
+                state_contract=_PRIOR_STATE_CONTRACT,
+                probability_contract=_PRIOR_PROBABILITY_CONTRACT,
+                model_contract_digest="4" * 64,
+                feature_schema_digest="5" * 64,
+                training_manifest_digest="6" * 64,
+                allow_constant_uncertainty=True,
+                dependency="radar_dependent",
+                support_policy="expand_control",
+                maximum_added_area_km2=16.0,
+                maximum_added_echo_integral=1.0e6,
+            )
+
+        def make_run(
+            valid: torch.Tensor,
+            quality: torch.Tensor,
+            std: torch.Tensor,
+        ) -> ForecastRunContract:
+            return ForecastRunContract.from_inputs(
+                NowcastConfig(),
+                frames,
+                valid,
+                None,
+                observation_quality_weight=quality,
+                observation_std_dbz=std,
+                source_available_mask=source,
+                grid_time_contract=grid,
+            )
+
+        runner = make_runner()
+        run_a = make_run(valid_a, quality_a, std_a)
+        run_b = make_run(valid_b, quality_b, std_b)
+
+        application_a = runner.infer(
+            frames,
+            input_run=run_a,
+            role="candidate",
+            qc_valid_mask=valid_a,
+            quality_weight=quality_a,
+            observation_std_dbz=std_a,
+            source_available_mask=source,
+        )
+        tangent = torch.ones_like(frames)
+        a_before = runner.jvp(application_a.bound_input, tangent)
+        application_b = runner.infer(
+            frames,
+            input_run=run_b,
+            role="candidate",
+            qc_valid_mask=valid_b,
+            quality_weight=quality_b,
+            observation_std_dbz=std_b,
+            source_available_mask=source,
+        )
+        a_after = runner.jvp(application_a.bound_input, tangent)
+        b_result = runner.jvp(application_b.bound_input, tangent)
+        torch.testing.assert_close(a_before, a_after)
+        self.assertFalse(torch.equal(a_after, b_result))
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "invalid cells are not canonical|disagree with the input run",
+        ):
+            runner.infer(
+                frames,
+                input_run=run_b,
+                role="candidate",
+                qc_valid_mask=valid_b,
+                quality_weight=quality_a,
+                observation_std_dbz=std_b,
+                source_available_mask=source,
+            )
+        torch.testing.assert_close(
+            runner.jvp(application_a.bound_input, tangent),
+            a_before,
+        )
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            concurrent_a = executor.submit(
+                runner.jvp,
+                application_a.bound_input,
+                tangent,
+            )
+            concurrent_b = executor.submit(
+                runner.jvp,
+                application_b.bound_input,
+                tangent,
+            )
+            torch.testing.assert_close(concurrent_a.result(), a_before)
+            torch.testing.assert_close(concurrent_b.result(), b_result)
+
+        fresh_runner = make_runner()
+        torch.testing.assert_close(
+            fresh_runner.jvp(application_a.bound_input, tangent),
+            a_before,
+        )
+        tampered_bound = replace(application_a.bound_input)
+        assert tampered_bound.quality_weight is not None
+        tampered_bound.quality_weight[0, 0, 0] = 0.5
+        with self.assertRaisesRegex(
+            ValueError,
+            "bound learned model input cannot be reproduced",
+        ):
+            fresh_runner.jvp(tampered_bound, tangent)
+
+        _, analysis = variational_nowcast(
+            frames,
+            analysis_config=AnalysisConfig(
+                final_linearization_relative_stationarity_tolerance=1.0e9,
+                final_robust_relative_stationarity_tolerance=1.0e9,
+                final_field_gradient_max_tolerance=1.0e9,
+                final_irls_relative_weight_tolerance=1.0e9,
+            ),
+            observation_std_dbz=std_a,
+            quality_weight=quality_a,
+            qc_mask=valid_a,
+            source_available_mask=source,
+            grid_time_contract=grid,
+            neural_prior=application_a,
+        )
+        assert analysis.linearization is not None
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "bound-input-linearization.npz"
+            save_p1_linearization(analysis, path)
+            restarted = load_p1_linearization(path)
+        restarted_bound = (
+            restarted.linearization.frozen.neural_prior_bound_input
+        )
+        assert restarted_bound is not None
+        self.assertEqual(
+            restarted_bound.context_digest,
+            application_a.bound_input.context_digest,
+        )
+        torch.testing.assert_close(
+            fresh_runner.jvp(restarted_bound, tangent),
+            a_before,
+        )
 
     def test_radar_prior_total_derivative_includes_log_std(self) -> None:
         frames = torch.ones((3, 4, 4), dtype=torch.float64)
@@ -910,8 +1097,15 @@ class VariationalAnalysisTests(unittest.TestCase):
             training_manifest_digest="6" * 64,
             dependency="radar_dependent",
         )
-        mean_jvp, log_std_jvp = runner.jvp_components(
+        run = ForecastRunContract.from_inputs(
+            NowcastConfig(),
             frames,
+            torch.ones_like(frames, dtype=torch.bool),
+            None,
+        )
+        application = runner.infer(frames, input_run=run, role="candidate")
+        mean_jvp, log_std_jvp = runner.jvp_components(
+            application.bound_input,
             torch.ones_like(frames),
         )
         torch.testing.assert_close(mean_jvp, torch.zeros_like(mean_jvp))
@@ -920,7 +1114,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             torch.full_like(log_std_jvp, 0.1),
         )
         reverse = runner.vjp_components(
-            frames,
+            application.bound_input,
             torch.zeros((4, 4), dtype=torch.float64),
             torch.ones((4, 4), dtype=torch.float64),
         )
