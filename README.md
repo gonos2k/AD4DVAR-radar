@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.78
+# ADVAR 3-frame radar nowcast v0.86
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -760,6 +760,7 @@ if promotion.eligible:
         prior_holdout_evaluations,
         policy=promotion_policy,
         policy_trust_store_path="/etc/advar/learning-policies.json",
+        raw_ingestor_trust_store_path="/etc/advar/raw-ingestors.json",
     )
 ```
 
@@ -912,8 +913,13 @@ plan·candidate·rule·classifier trial은 하나의 root-approved
 `PromotionExperimentFamily`에 사전등록되며 전체 trial multiplicity가 모든 skill,
 uncertainty, classifier, metric-cell bound와 sample-size preflight에 적용된다. 동일한
 input/verification cohort는 ledger에서 다른 family로 다시 등록하거나 promotion 후 재사용할
-수 없다. Classifier
-accuracy·recall·range-set precision과 false-routing은 point estimate뿐 아니라
+수 없다. Candidate와 classifier의 `TrainingDatasetDerivationArtifact-v1`은 각 training member의
+완전한 signed `AnalysisInputDerivationArtifact-v4` preimage를 보존하고, 그 member들의
+raw identity/input-bundle/full-analysis/grid 집합과 decoder/QC/regrid digest가 선언된
+training dataset lineage와 정확히 일치해야 한다. Feature algorithm/schema digest도
+dataset identity에 결합되지만, 이 계약은 임의 native decoder나 feature implementation을
+실행하는 증명으로 해석하지 않는다. Classifier accuracy·recall·range-set precision과
+false-routing은 point estimate뿐 아니라
 physical-event cluster 신뢰하한·상한도 통과해야 한다. Prospective plan에는 미래 weather
 정답 대신 `pending`과 `RegimeReferencePlan`의 labeler/source/adjudication rule만 기록한다.
 검증시각 뒤의 observed label은 exact input·verification·storm에 묶인 Ed25519
@@ -990,7 +996,7 @@ slot에 결합하고, 중앙 sampling registry가 연속 sequence/root로 그 re
 source bytes를 float32로 다시 해석하고 native flag·finite·positive-weight·observation-std
 QC를 재실행한다. 현재 지원하는 regrid 계약은 source와 target grid가 같은 exact-identity
 경로이며 임의 polar decoder나 공간 resampler를 인증한다고 주장하지 않는다. 서명된
-`AnalysisInputDerivationArtifact-v3`는 이 decode/QC/source selection/identity-regrid 결과가
+`AnalysisInputDerivationArtifact-v4`는 이 decode/QC/source selection/identity-regrid 결과가
 실제 input tensor digest와 같음을 forecast run과 semantic replay에 결합한다. Background는
 관측 시각을 재사용하지 않고 실제 `background_valid_times`, background-model identity,
 등록된 cycle-rule, operational-data identity와 frame bytes를 함께 봉인한다. Canonical raw
@@ -1003,7 +1009,7 @@ global registry에 commit된 하나의 family-wide signed training-raw receipt�
 ledger는 그 canonical payload preimage를 저장하고 scoring에서 다시 검증한다.
 선택 digest뿐 아니라 classifier probability, 활성 band, policy, certified group,
 horizontal range-geometry payload, operational radar source와 trust-store snapshot을 포함한
-canonical deployment-decision payload도 forecast run identity 및 v61 artifact에 남는다.
+canonical deployment-decision payload도 forecast run identity 및 v62 artifact에 남는다.
 적재 시 physical partition과 current-run grid/shape/site를 포함한 selector를 다시 실행해
 저장된 candidate/parent 선택과 exact 비교한다. v54 run은 source-aware selection 이전
 계약을 `neural-prior-deployment-lineage-v5-audit`로만 읽고, v53 run은 current-grid binding과 durable geometry
@@ -1580,27 +1586,31 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v67`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v61`
+- `output_contract_version`: 현재 `nowcast-npz-v68`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v62`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
 
-`forecast-run-v61`은 CPU-only scoring generation v5, two-phase raw observation slot과
+`forecast-run-v62`는 CPU-only scoring generation v6, two-phase raw observation slot과
 canonical raw-volume identity 단위의 전역
-sampling reservation, source-registry와 location-registry가 결합된 mosaic range domain,
+sampling reservation, 같은 family의 rolling-window membership, source-registry와
+location-registry가 결합된 mosaic range domain,
 역할 분리된 ledger issuance
 receipt/promotion certificate/operational decision signature, 그리고 input-plan의
 sub-second decision deadline chronology와 final decision-row publication receipt를 함께
-검증한다. `forecast-run-v60`은
+검증한다. QC-invalid 관측은 registered finite fill/zero/sentinel로 canonicalize되어
+classifier와 learned prior에 유입되지 않으며, signed
+`AnalysisInputDerivationArtifact-v4`의 canonical JSON과 digest도 NPZ에 보존된다.
+`forecast-run-v61`은
 audit-only다.
 
-`forecast-run-v61`은 원자적 ledger sequence를 가진 deployment certificate
-v4, deployment-decision artifact v11과
-`neural-prior-deployment-lineage-v12`를 current 의미로 결합한다. Decision
+`forecast-run-v62`는 원자적 ledger sequence를 가진 promotion deployment
+certificate v4, deployment-decision artifact v12와
+`neural-prior-deployment-lineage-v13`을 current 의미로 결합한다. Decision
 artifact는 unsigned promotion subset을 보존하지 않고 certificate 안의 완전한
-`NeuralPriorPromotionEvidence-v27`만 typed decode한다. 이전
-`forecast-run-v60`, `forecast-run-v59`, `forecast-run-v58`, `forecast-run-v57`, `forecast-run-v56`은
+`NeuralPriorPromotionEvidence-v28`만 typed decode한다. 이전
+`forecast-run-v61`, `forecast-run-v60`, `forecast-run-v59`, `forecast-run-v58`, `forecast-run-v57`, `forecast-run-v56`은
 각 세대의 decision artifact를 보존하는 audit lineage로만
 적재되며 current operational deployment replay에는 사용할 수 없다.
 
@@ -1610,16 +1620,34 @@ automatic promotion scoring은 현재 CPU-only다. Generic MPS backend evidence�
 exported prior/classifier와 전체 metric engine을 인증하지 않으므로 model-scoring
 certificate 세대가 도입되기 전까지 MPS scoring과 operational MPS deployment는
 fail-close한다. Current deployment는 EpisodeLedger가 발급한 root-signed
-promotion deployment certificate와 외부 authority 및 learning-policy trust
-store를 함께 요구한다. Authority trust-store v3는 승인된 ledger-instance digest마다
+promotion deployment certificate와 외부 authority, learning-policy 및 current
+raw-ingestor trust store를 함께 요구한다. Authority trust-store v3는 승인된 ledger-instance digest마다
 유일한 canonical `index.sqlite` 절대경로도 root-owned 설정으로 고정하므로,
 Python 객체를 위조해 공격자 DB로 verifier를 재지정할 수 없다. 저장되는 operational
 selection 전체도 별도의 authority-signed
-`OperationalDeploymentDecisionCertificate-v4`와 먼저 durable commit된 ledger decision
+`OperationalDeploymentDecisionCertificate-v5`와 먼저 durable commit된 ledger decision
 receipt, 그리고 final certificate row의 commit 뒤 ledger signer가 발급한
-`OperationalDecisionPublicationReceipt-v1`에
+`OperationalDecisionPublicationReceipt-v3`에
 결합되므로, 재시작 시 regime evidence,
 policy threshold 또는 selected prior를 재해시해 바꾸는 경로가 차단된다.
+Operational issuance는 cycle-id 기반 state machine으로 재개되며 terminal
+`published` row만 선택 가능하다. Certificate signer, decision-row transaction,
+publication signer 또는 final activation이 실패하면 동일 cycle은 이미 durable한
+certificate/receipt를 재사용해 재개되고, activation 전 publication은 `usable=0`이다.
+Raw ingestor trust-store v2는 plan에 고정된 snapshot과 provenance commit, scoring
+replay/completion, promotion, certificate 발급 및 operational decision 시점의 current
+root-owned store 양쪽에서 attestation 시각의 key validity/revocation을 대조한다.
+Current store의 content digest는 replay-v8 manifest, scoring-v8 artifact, scheduler가
+봉인한 completion output, promotion evidence v28, promotion deployment certificate와
+operational decision certificate에 연속 결합된다. Certificate/publication 서명 전후와
+activation 직전·직후에도 store를 다시 읽고, durable `forecast-run-v62` load에서도 외부
+store와 대조하므로 이후 revocation view가 달라지면 기존 certificate를 automatic
+deployment에 재사용할 수 없다.
+Index schema 36은 replay, scoring completion, promotion evidence와 promotion
+certificate를 immutable payload와 별도의 raw-trust activation row로 기록한다. 각
+payload는 처음에는 `usable=0`이며 current store 재검증을 거친 activation만
+`usable=1`로 소비된다. Activation 직후 store 변경은 `usable=0`으로 fail-close된다.
+training/raw-slot/raw-resolution은 동일한 global registry chain을 사용한다.
 - `displacement_yx`: `(row, column)` pixel/step
 - `grid_velocity_mps_yx`, `displacement_mps_yx`: 호환용 grid-axis
   `(row, column)` m/s

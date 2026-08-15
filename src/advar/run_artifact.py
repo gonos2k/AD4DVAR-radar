@@ -36,8 +36,9 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v61"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v62"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
+    "forecast-run-v61",
     "forecast-run-v60",
     "forecast-run-v42",
     "forecast-run-v43",
@@ -211,6 +212,9 @@ _CORE_ARRAY_NAMES = frozenset(
         "input_plan_json",
         "input_plan_digest",
         "input_plan_resolution_digest",
+        "analysis_input_derivation_artifact_present",
+        "analysis_input_derivation_artifact_json",
+        "analysis_input_derivation_artifact_digest",
     }
 )
 _CLI_EXTRA_ARRAY_NAMES = frozenset(
@@ -478,6 +482,19 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             ""
             if result.run.input_plan_resolution_digest is None
             else result.run.input_plan_resolution_digest
+        ),
+        "analysis_input_derivation_artifact_present": np.asarray(
+            result.run.analysis_input_derivation_artifact_json is not None
+        ),
+        "analysis_input_derivation_artifact_json": np.asarray(
+            ""
+            if result.run.analysis_input_derivation_artifact_json is None
+            else result.run.analysis_input_derivation_artifact_json
+        ),
+        "analysis_input_derivation_artifact_digest": np.asarray(
+            ""
+            if result.run.analysis_input_derivation_artifact_digest is None
+            else result.run.analysis_input_derivation_artifact_digest
         ),
         "run_background_age_minutes": np.asarray(
             np.nan
@@ -954,6 +971,7 @@ def load_forecast_run(
     *,
     deployment_certificate_trust_store_path: str | Path | None = None,
     deployment_policy_trust_store_path: str | Path | None = None,
+    raw_ingestor_trust_store_path: str | Path | None = None,
     maximum_member_count: int = DEFAULT_MAXIMUM_MEMBER_COUNT,
     maximum_member_bytes: int = DEFAULT_MAXIMUM_MEMBER_BYTES,
     maximum_total_expanded_bytes: int = (
@@ -1375,6 +1393,13 @@ def load_forecast_run(
             operational_data_identity_json,
             operational_data_identity_digest,
         ) = _operational_data_identity_lineage(loaded_arrays)
+        (
+            analysis_input_derivation_artifact_json,
+            analysis_input_derivation_artifact_digest,
+        ) = _analysis_input_derivation_lineage(
+            loaded_arrays,
+            require_member=version == FORECAST_RUN_ARTIFACT_VERSION,
+        )
         latest_observation_mask_digest = _digest_scalar(
             loaded_arrays,
             "latest_observation_mask_digest",
@@ -1435,6 +1460,10 @@ def load_forecast_run(
             elif version == "forecast-run-v60":
                 prior_deployment_lineage_contract = (
                     "neural-prior-deployment-lineage-v11-audit"
+                )
+            elif version == "forecast-run-v61":
+                prior_deployment_lineage_contract = (
+                    "neural-prior-deployment-lineage-v12-audit"
                 )
         elif version in _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS:
             prior_deployment_lineage_contract = (
@@ -1686,6 +1715,12 @@ def load_forecast_run(
                     )
                 )
             ),
+            analysis_input_derivation_artifact_json=(
+                analysis_input_derivation_artifact_json
+            ),
+            analysis_input_derivation_artifact_digest=(
+                analysis_input_derivation_artifact_digest
+            ),
             forecast_integrator_version=_string_scalar(
                 loaded_arrays,
                 "forecast_integrator_version",
@@ -1714,6 +1749,11 @@ def load_forecast_run(
                 raise ValueError(
                     "current deployed forecast requires an external "
                     "deployment policy trust store"
+                )
+            if raw_ingestor_trust_store_path is None:
+                raise ValueError(
+                    "current deployed forecast requires an external "
+                    "raw-ingestor trust store"
                 )
             if (
                 validate_neural_prior_deployment_decision_artifact(
@@ -1746,6 +1786,9 @@ def load_forecast_run(
                     ),
                     deployment_policy_trust_store_path=(
                         deployment_policy_trust_store_path
+                    ),
+                    raw_ingestor_trust_store_path=(
+                        raw_ingestor_trust_store_path
                     ),
                 )
                 != run.prior_deployment_decision_artifact_digest
@@ -2146,6 +2189,63 @@ def _analysis_lineage(
         validated_config_digest,
         _validate_digest("analysis_input_digest", input_digest),
     )
+
+
+def _analysis_input_derivation_lineage(
+    arrays: _ArtifactArrays,
+    *,
+    require_member: bool,
+) -> tuple[str | None, str | None]:
+    names = {
+        "analysis_input_derivation_artifact_present",
+        "analysis_input_derivation_artifact_json",
+        "analysis_input_derivation_artifact_digest",
+    }
+    present_names = names.intersection(arrays)
+    if not present_names:
+        if require_member:
+            raise ValueError(
+                "current forecast run lacks analysis-input derivation lineage"
+            )
+        return None, None
+    if present_names != names:
+        raise ValueError("analysis-input derivation lineage is incomplete")
+    present = _bool_scalar(
+        arrays,
+        "analysis_input_derivation_artifact_present",
+    )
+    artifact_json = _string_scalar(
+        arrays,
+        "analysis_input_derivation_artifact_json",
+    )
+    artifact_digest = _string_scalar(
+        arrays,
+        "analysis_input_derivation_artifact_digest",
+    )
+    if not present:
+        if artifact_json or artifact_digest:
+            raise ValueError(
+                "absent analysis-input derivation must have empty lineage"
+            )
+        return None, None
+    try:
+        payload = json.loads(artifact_json)
+    except json.JSONDecodeError as error:
+        raise ValueError(
+            "invalid analysis-input derivation artifact JSON"
+        ) from error
+    validated_digest = _validate_digest(
+        "analysis_input_derivation_artifact_digest",
+        artifact_digest,
+    )
+    if (
+        not isinstance(payload, dict)
+        or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        != artifact_json
+        or json_digest(payload) != validated_digest
+    ):
+        raise ValueError("analysis-input derivation artifact digest mismatch")
+    return artifact_json, validated_digest
 
 
 def _operational_calibration_manifest_lineage(

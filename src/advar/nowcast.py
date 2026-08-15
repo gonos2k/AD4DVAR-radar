@@ -1389,7 +1389,7 @@ class ForecastRunContract:
     prior_deployment_decision_artifact_digest: str | None = None
     prior_deployment_fallback_reason: str | None = None
     prior_deployment_lineage_contract: str = (
-        "neural-prior-deployment-lineage-v12"
+        "neural-prior-deployment-lineage-v13"
     )
     prior_lineage_contract: str = "neural-prior-run-lineage-v2"
     input_plan_json: str | None = None
@@ -1552,13 +1552,20 @@ class ForecastRunContract:
                 prior_deployment_decision_artifact_digest
             ),
             fallback_reason=prior_deployment_fallback_reason,
-            contract="neural-prior-deployment-lineage-v12",
+            contract="neural-prior-deployment-lineage-v13",
         )
         _validate_input_plan_lineage(input_plan_json, input_plan_digest)
         _validate_analysis_input_derivation_lineage(
             analysis_input_derivation_artifact_json,
             analysis_input_derivation_artifact_digest,
         )
+        if (
+            prior_deployment_decision_artifact_json is not None
+            and analysis_input_derivation_artifact_json is None
+        ):
+            raise ValueError(
+                "current deployed forecasts require analysis-input provenance"
+            )
         _validate_input_plan_resolution(
             input_plan_json,
             operational_data_identity_json,
@@ -1958,6 +1965,15 @@ class ForecastRunContract:
             self.analysis_input_derivation_artifact_json,
             self.analysis_input_derivation_artifact_digest,
         )
+        if (
+            self.prior_deployment_lineage_contract
+            == "neural-prior-deployment-lineage-v13"
+            and self.prior_deployment_decision_artifact_json is not None
+            and self.analysis_input_derivation_artifact_json is None
+        ):
+            raise ValueError(
+                "current deployed forecasts require analysis-input provenance"
+            )
         _validate_analysis_input_derivation_against_run(
             self.analysis_input_derivation_artifact_json,
             input_plan_digest=self.input_plan_digest,
@@ -2249,14 +2265,137 @@ def _validate_analysis_input_derivation_lineage(
         payload = json.loads(artifact_json)
     except json.JSONDecodeError as error:
         raise ValueError("invalid analysis input derivation JSON") from error
+    if not isinstance(payload, dict):
+        raise ValueError("analysis input derivation payload digest mismatch")
+    expected_fields = {
+        "contract",
+        "case_id",
+        "input_plan_digest",
+        "resolved_raw_observation_receipt_digests",
+        "canonical_raw_volume_identity_digests",
+        "global_raw_resolution_receipt_digest",
+        "decoder_version_digest",
+        "qc_algorithm_digest",
+        "qc_policy_digest",
+        "source_selection_evidence_digest",
+        "regrid_algorithm_digest",
+        "grid_contract_digest",
+        "background_cycle_rule_digest",
+        "background_valid_times",
+        "background_source_identity_digest",
+        "background_input_identity_digests",
+        "input_frames_digest",
+        "observation_masks_digest",
+        "observation_quality_weight_digest",
+        "observation_std_dbz_digest",
+        "background_frames_digest",
+        "input_bundle_digest",
+        "full_analysis_input_digest",
+        "processed_at",
+        "processor_id",
+        "processor_public_key_hex",
+        "processor_signature_hex",
+    }
+    digest_fields = expected_fields - {
+        "contract",
+        "case_id",
+        "resolved_raw_observation_receipt_digests",
+        "canonical_raw_volume_identity_digests",
+        "background_valid_times",
+        "background_source_identity_digest",
+        "background_input_identity_digests",
+        "background_frames_digest",
+        "processed_at",
+        "processor_id",
+        "processor_public_key_hex",
+        "processor_signature_hex",
+    }
+    raw_receipts = payload.get("resolved_raw_observation_receipt_digests")
+    raw_identities = payload.get("canonical_raw_volume_identity_digests")
+    background_times = payload.get("background_valid_times")
+    background_identities = payload.get("background_input_identity_digests")
     if (
-        not isinstance(payload, dict)
-        or payload.get("contract") != "analysis-input-derivation-artifact-v3"
+        set(payload) != expected_fields
+        or payload.get("contract") != "analysis-input-derivation-artifact-v4"
+        or not isinstance(payload.get("case_id"), str)
+        or not str(payload.get("case_id", "")).strip()
+        or str(payload.get("case_id")) != str(payload.get("case_id")).strip()
+        or not isinstance(payload.get("processor_id"), str)
+        or not str(payload.get("processor_id", "")).strip()
+        or str(payload.get("processor_id"))
+        != str(payload.get("processor_id")).strip()
+        or not isinstance(raw_receipts, list)
+        or not raw_receipts
+        or raw_receipts != sorted(raw_receipts)
+        or len(set(raw_receipts)) != len(raw_receipts)
+        or not isinstance(raw_identities, list)
+        or not raw_identities
+        or raw_identities != sorted(raw_identities)
+        or len(set(raw_identities)) != len(raw_identities)
+        or not isinstance(background_times, list)
+        or not isinstance(background_identities, list)
+        or len(background_times) != len(background_identities)
+        or any(
+            not isinstance(value, str)
+            for value in (*raw_receipts, *raw_identities, *background_identities)
+        )
+        or any(
+            len(value) != 64
+            or any(character not in "0123456789abcdef" for character in value)
+            for value in (*raw_receipts, *raw_identities, *background_identities)
+        )
+        or any(
+            not isinstance(payload.get(name), str)
+            for name in digest_fields
+        )
+        or any(
+            len(str(payload[name])) != 64
+            or any(character not in "0123456789abcdef" for character in str(payload[name]))
+            for name in digest_fields
+        )
+        or (
+            (payload.get("background_frames_digest") is None)
+            != (not background_times)
+        )
+        or (
+            (payload.get("background_source_identity_digest") is None)
+            != (not background_times)
+        )
         or json.dumps(payload, sort_keys=True, separators=(",", ":"))
         != artifact_json
         or json_digest(payload) != artifact_digest
     ):
         raise ValueError("analysis input derivation payload digest mismatch")
+    for value in (
+        payload.get("background_frames_digest"),
+        payload.get("background_source_identity_digest"),
+    ):
+        if value is not None:
+            _validate_sha256_digest("background derivation digest", value)
+    try:
+        processed = datetime.fromisoformat(
+            str(payload["processed_at"]).replace("Z", "+00:00")
+        )
+        if processed.tzinfo is None or (
+            processed.astimezone(timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z")
+            != payload["processed_at"]
+        ):
+            raise ValueError
+        for value in background_times:
+            parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+            if parsed.tzinfo is None or (
+                parsed.astimezone(timezone.utc)
+                .isoformat()
+                .replace("+00:00", "Z")
+                != value
+            ):
+                raise ValueError
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            "analysis input derivation time is not canonical"
+        ) from error
 
 
 def _validate_analysis_input_derivation_against_run(
@@ -2525,7 +2664,8 @@ def _validate_prior_deployment_lineage(
         "neural-prior-deployment-lineage-v9-audit",
         "neural-prior-deployment-lineage-v10-audit",
         "neural-prior-deployment-lineage-v11-audit",
-        "neural-prior-deployment-lineage-v12",
+        "neural-prior-deployment-lineage-v12-audit",
+        "neural-prior-deployment-lineage-v13",
     }:
         raise ValueError("unsupported neural-prior deployment lineage")
     values = (
@@ -2669,6 +2809,7 @@ def _validate_prior_deployment_lineage(
         "neural-prior-deployment-lineage-v9-audit",
         "neural-prior-deployment-lineage-v10-audit",
         "neural-prior-deployment-lineage-v11-audit",
+        "neural-prior-deployment-lineage-v12-audit",
     }:
         if all(value is None for value in values):
             return
@@ -2682,7 +2823,7 @@ def _validate_prior_deployment_lineage(
         ):
             raise ValueError("legacy deployment decision digest mismatch")
         return
-    if contract != "neural-prior-deployment-lineage-v12":
+    if contract != "neural-prior-deployment-lineage-v13":
         raise ValueError("legacy deployment lineage is audit-only")
     if any(value is None for value in values) or prior_role is None:
         raise ValueError("neural-prior deployment lineage must be complete")
@@ -2727,6 +2868,7 @@ def _validate_prior_deployment_lineage(
         "promotion_ineligible",
         "no_certified_regime",
         "ambiguous_classifier_branch",
+        "unverified_routing_evidence",
     } or (
         (prior_role == "candidate")
         != (fallback_reason == "certified_candidate")
