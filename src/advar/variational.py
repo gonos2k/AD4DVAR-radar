@@ -944,14 +944,14 @@ class NeuralPriorDeploymentSelection:
         "no_certified_regime",
         "ambiguous_classifier_branch",
     ]
-    contract: str = "neural-prior-deployment-selection-v10"
+    contract: str = "neural-prior-deployment-selection-v11"
     selection_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use the certified neural-prior deployment selector")
 
     def validate_integrity(self) -> None:
-        if self.contract != "neural-prior-deployment-selection-v10":
+        if self.contract != "neural-prior-deployment-selection-v11":
             raise ValueError("unsupported neural-prior deployment selection")
         for name in (
             "selected_prior_digest",
@@ -1007,7 +1007,7 @@ def _new_neural_prior_deployment_selection(
     object.__setattr__(
         result,
         "contract",
-        "neural-prior-deployment-selection-v10",
+        "neural-prior-deployment-selection-v11",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -1024,6 +1024,8 @@ class NeuralPriorInferenceEvidence:
     input_bundle_digest: str
     full_analysis_input_digest: str
     input_frames_digest: str
+    analysis_input_derivation_artifact_json: str | None
+    analysis_input_derivation_artifact_digest: str | None
     feature_tensor_digest: str
     feature_extractor_digest: str
     feature_extractor_code_digest: str
@@ -1062,11 +1064,11 @@ class NeuralPriorInferenceEvidence:
     uncertainty_contract: Literal["model_spatial", "constant_research"]
     execution_contract_digest: str
     dependency: PriorDependency
-    contract: str = "neural-prior-inference-evidence-v8"
+    contract: str = "neural-prior-inference-evidence-v9"
     evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-inference-evidence-v8":
+        if self.contract != "neural-prior-inference-evidence-v9":
             raise ValueError("unsupported neural-prior inference evidence")
         for name in (
             "neural_prior_digest",
@@ -1122,6 +1124,39 @@ class NeuralPriorInferenceEvidence:
             raise ValueError("neural-prior feature source identities are incomplete")
         for digest in self.feature_source_identity_digests:
             _require_prior_digest("feature source identity digest", digest)
+        derivation_values = (
+            self.analysis_input_derivation_artifact_json,
+            self.analysis_input_derivation_artifact_digest,
+        )
+        if any(value is None for value in derivation_values) and not all(
+            value is None for value in derivation_values
+        ):
+            raise ValueError("neural-prior derivation lineage is incomplete")
+        if self.analysis_input_derivation_artifact_json is not None:
+            assert self.analysis_input_derivation_artifact_digest is not None
+            try:
+                derivation_payload = json.loads(
+                    self.analysis_input_derivation_artifact_json
+                )
+            except json.JSONDecodeError as error:
+                raise ValueError(
+                    "neural-prior derivation lineage is invalid"
+                ) from error
+            _require_prior_digest(
+                "analysis input derivation artifact digest",
+                self.analysis_input_derivation_artifact_digest,
+            )
+            if (
+                json.dumps(
+                    derivation_payload,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                != self.analysis_input_derivation_artifact_json
+                or json_digest(derivation_payload)
+                != self.analysis_input_derivation_artifact_digest
+            ):
+                raise ValueError("neural-prior derivation lineage is invalid")
         if type(self.state_input_identity_verified) is not bool or any(
             not math.isfinite(value) or value < 0.0
             for value in (
@@ -1823,6 +1858,12 @@ class NeuralPriorInferenceRunner:
             input_bundle_digest=input_run.input_bundle_digest,
             full_analysis_input_digest=input_run.full_analysis_input_digest,
             input_frames_digest=tensor_digest(frames_dbz),
+            analysis_input_derivation_artifact_json=(
+                input_run.analysis_input_derivation_artifact_json
+            ),
+            analysis_input_derivation_artifact_digest=(
+                input_run.analysis_input_derivation_artifact_digest
+            ),
             feature_tensor_digest=tensor_digest(features),
             feature_extractor_digest=self.feature_extractor_digest,
             feature_extractor_code_digest=self._feature_extractor_code_digest,
@@ -2067,7 +2108,7 @@ class NeuralPriorApplication:
     support_policy: PriorSupportPolicy
     maximum_added_area_km2: float
     maximum_added_echo_integral: float
-    contract: str = "neural-prior-application-v8"
+    contract: str = "neural-prior-application-v9"
     application_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -2167,7 +2208,7 @@ class NeuralPriorApplication:
 
 def _new_neural_prior_application(**values: object) -> NeuralPriorApplication:
     result = object.__new__(NeuralPriorApplication)
-    object.__setattr__(result, "contract", "neural-prior-application-v8")
+    object.__setattr__(result, "contract", "neural-prior-application-v9")
     for name, value in values.items():
         object.__setattr__(result, name, value)
     if not isinstance(result.state_output, NeuralPriorStateOutput) or not isinstance(
@@ -5886,6 +5927,16 @@ def variational_nowcast(
         ),
         input_plan_json=input_plan_json,
         input_plan_digest=input_plan_digest,
+        analysis_input_derivation_artifact_json=(
+            None
+            if neural_prior is None
+            else neural_prior.inference_evidence.analysis_input_derivation_artifact_json
+        ),
+        analysis_input_derivation_artifact_digest=(
+            None
+            if neural_prior is None
+            else neural_prior.inference_evidence.analysis_input_derivation_artifact_digest
+        ),
     )
     if neural_prior is not None:
         evidence = neural_prior.inference_evidence

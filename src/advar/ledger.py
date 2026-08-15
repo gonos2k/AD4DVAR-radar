@@ -47,7 +47,11 @@ from .nowcast import (
     _forecast_input_bundle_digest,
     _forecast_input_plan_resolution_digest,
 )
-from .range_geometry import resolve_mosaic_range_geometry
+from .range_geometry import (
+    resolve_mosaic_range_geometry,
+    resolve_range_geometry,
+    restrict_range_partition_domain,
+)
 
 from .sensitivity import (
     CONTEXT_FEATURE_NAMES,
@@ -90,6 +94,7 @@ from .promotion import (
     LegacyNeuralPriorCandidateManifestAuditV10,
     LegacyNeuralPriorCandidateManifestAuditV11,
     LegacyNeuralPriorCandidateManifestAuditV12,
+    LegacyNeuralPriorCandidateManifestAuditV13,
     NeuralPriorCandidateManifest,
     LegacyNeuralPriorHoldoutPlanAudit,
     LegacyNeuralPriorHoldoutPlanCase,
@@ -112,6 +117,7 @@ from .promotion import (
     LegacyNeuralPriorHoldoutPlanV16Audit,
     LegacyNeuralPriorHoldoutPlanV17Audit,
     LegacyNeuralPriorHoldoutPlanV18Audit,
+    LegacyNeuralPriorHoldoutPlanV19Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
@@ -158,6 +164,9 @@ from .promotion import (
     PromotionExperimentFamily,
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionEvidence,
+    NeuralPriorRegimeClassifier,
+    RegimeClassificationEvidence,
+    RangePartitionEvidence,
     LedgeredPromotionDeploymentCertificate,
     DeployedNeuralPriorPolicy,
     OperationalDeploymentDecisionCertificate,
@@ -173,9 +182,13 @@ from .promotion import (
     _load_promotion_deployment_authority_trust_store,
     _validate_ledgered_promotion_deployment_certificate,
     _issue_operational_decision_ledger_receipt,
+    _operational_decision_ledger_receipt_from_payload,
     _issue_operational_deployment_decision_certificate,
+    _replay_operational_deployment_selection,
+    _operational_deployment_decision_certificate_from_payload,
     _issue_operational_decision_publication_receipt,
     _operational_decision_publication_receipt_from_payload,
+    _validate_operational_decision_publication_receipt,
     _operational_decision_commit_digests,
     LegacyNeuralPriorPromotionEvidenceAuditV3,
     LegacyNeuralPriorPromotionEvidenceAuditV4,
@@ -201,6 +214,7 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV24,
     LegacyNeuralPriorPromotionEvidenceAuditV25,
     LegacyNeuralPriorPromotionEvidenceAuditV26,
+    LegacyNeuralPriorPromotionEvidenceAuditV27,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     ScoringReplayCaseArtifact,
@@ -234,9 +248,17 @@ _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _SCHEDULER_TRUST_STORE_CONTRACT = "advar-trusted-scheduler-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 33
+_INDEX_SCHEMA_VERSION = 36
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
+_RAW_TRUST_ACTIVATION_KINDS = frozenset(
+    {
+        "scoring_replay_bundle",
+        "scoring_completion",
+        "promotion_evidence",
+        "promotion_deployment_certificate",
+    }
+)
 _EPISODE_LEDGER_INITIALIZATION_TOKEN = object()
 _NATIVE_PATH_TYPE = type(Path())
 _PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST = (
@@ -246,6 +268,7 @@ _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
 _MAXIMUM_ACTION_ARTIFACT_FILE_BYTES = 2 * 1024**3
 _MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES = 8 * 1024**3
 _MAXIMUM_ACTION_GENERATOR_BYTES = 512 * 1024**2
+_MAXIMUM_RAW_INGESTOR_TRUST_STORE_BYTES = 1024 * 1024
 
 
 def _semantic_replay_execution_device(
@@ -607,6 +630,127 @@ def _load_scheduler_trust_store(path: str | Path) -> _SchedulerTrustStore:
             raise ValueError("scheduler public keys must contain 32 bytes")
         keys[key_id] = key
     return _SchedulerTrustStore(keys=keys, content_digest=_json_digest(document))
+
+
+def _load_raw_ingestor_trust_store(path: str | Path) -> RawIngestorTrustStore:
+    """Load the current root-owned raw-ingestor revocation view."""
+
+    source = Path(path)
+    if not source.is_absolute():
+        raise ValueError("raw-ingestor trust store path must be absolute")
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(source, flags)
+    try:
+        metadata = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_uid != 0
+            or metadata.st_mode & 0o022
+            or metadata.st_size > _MAXIMUM_RAW_INGESTOR_TRUST_STORE_BYTES
+        ):
+            raise ValueError(
+                "raw-ingestor trust store must be root-owned, immutable, and bounded"
+            )
+        with os.fdopen(descriptor, encoding="utf-8") as stream:
+            descriptor = -1
+            document = json.load(stream)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+    if not isinstance(document, dict) or set(document) != {
+        "contract",
+        "authorities",
+    }:
+        raise ValueError("invalid raw-ingestor trust store")
+    authorities = document["authorities"]
+    if not isinstance(authorities, list):
+        raise ValueError("invalid raw-ingestor trust store")
+    try:
+        return RawIngestorTrustStore(
+            authorities=tuple(tuple(item) for item in authorities),
+            contract=cast(str, document["contract"]),
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError("invalid raw-ingestor trust store") from error
+
+
+def _validate_current_raw_ingestor_receipt(
+    receipt: ResolvedRawObservationReceipt,
+    slot: RawObservationSlotPlan,
+    *,
+    pinned_trust_store: RawIngestorTrustStore,
+    current_trust_store: RawIngestorTrustStore,
+) -> None:
+    """Require the plan-pinned key and the current revocation view."""
+
+    pinned_keys = {
+        (authority_id, public_key_hex)
+        for authority_id, public_key_hex, *_ in pinned_trust_store.authorities
+    }
+    current_keys = {
+        (authority_id, public_key_hex)
+        for authority_id, public_key_hex, *_ in current_trust_store.authorities
+    }
+    if pinned_keys != current_keys:
+        raise ValueError(
+            "current raw-ingestor trust store changed pinned identities"
+        )
+    receipt.validate_against(slot, pinned_trust_store)
+    receipt.validate_against(slot, current_trust_store)
+
+
+def _validate_current_scoring_raw_ingestor_receipts(
+    cases: tuple[ScoringReplayCaseArtifact, ...],
+    *,
+    raw_ingestor_trust_store_path: str | Path,
+) -> RawIngestorTrustStore:
+    """Recheck every replay receipt against the current root revocation view."""
+
+    if not cases or any(
+        type(item) is not ScoringReplayCaseArtifact for item in cases
+    ):
+        raise TypeError("raw-ingestor revalidation requires typed replay cases")
+    current = _load_raw_ingestor_trust_store(
+        raw_ingestor_trust_store_path
+    )
+    for case in cases:
+        planned_case = case.plan.case(case.case_id)
+        sampling_unit = next(
+            item
+            for item in case.plan.meteorological_sampling_units
+            if item.sampling_unit_digest
+            == planned_case.meteorological_sampling_unit_digest
+        )
+        slots = {
+            item.slot_digest: item
+            for item in case.plan.raw_observation_slot_plans
+            if item.slot_digest in sampling_unit.raw_observation_slot_digests
+        }
+        if set(slots) != {
+            item.slot_plan_digest for item in case.resolved_raw_observations
+        }:
+            raise ValueError("scoring replay raw-ingestor lineage is incomplete")
+        for receipt in case.resolved_raw_observations:
+            _validate_current_raw_ingestor_receipt(
+                receipt,
+                slots[receipt.slot_plan_digest],
+                pinned_trust_store=case.plan.raw_ingestor_trust_store,
+                current_trust_store=current,
+            )
+    return current
+
+
+def _require_current_raw_ingestor_trust_store_digest(
+    raw_ingestor_trust_store_path: str | Path,
+    expected_digest: str,
+) -> RawIngestorTrustStore:
+    """Reload the root-owned revocation view and require one exact snapshot."""
+
+    current = _load_raw_ingestor_trust_store(raw_ingestor_trust_store_path)
+    if current.content_digest != expected_digest:
+        raise ValueError("raw-ingestor trust store changed during issuance")
+    return current
 
 
 def _validate_scheduler_authority(
@@ -1079,6 +1223,7 @@ SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES = (
     LEGACY_SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
     | frozenset(
         {
+            "input_history_source_radar_index_map",
             "nominal_source_coverage_mask",
             "resolved_source_coverage_mask",
             "effective_horizontal_range_m",
@@ -1125,6 +1270,7 @@ class ScoringReplayBundleManifest:
     tensor_archive_sha256: str
     evaluation_payload_sha256: str
     raw_provenance_payload_sha256: str
+    raw_ingestor_trust_store_digest: str | None = None
     replay_method: str = SEMANTIC_SCORING_REPLAY_METHOD
     contract: str = SEMANTIC_SCORING_REPLAY_CONTRACT
     bundle_digest: str = field(init=False)
@@ -1175,6 +1321,16 @@ class ScoringReplayBundleManifest:
             raise ValueError("scoring replay backend certification is incomplete")
         if any(value is not None for value in certification_digests):
             raise ValueError("current scoring replay is CPU-only")
+        if (
+            self.raw_ingestor_trust_store_digest is None
+            or re.fullmatch(
+                r"[0-9a-f]{64}", self.raw_ingestor_trust_store_digest
+            )
+            is None
+        ):
+            raise ValueError(
+                "current scoring replay requires raw-ingestor trust lineage"
+            )
         expected = {
             (case_id, role)
             for case_id in self.ordered_case_ids
@@ -1217,7 +1373,7 @@ class ScoringReplayBundleManifest:
 
     @property
     def payload(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "contract": self.contract,
             "scoring_input_artifact_digest": self.scoring_input_artifact_digest,
             "ordered_case_ids": list(self.ordered_case_ids),
@@ -1246,6 +1402,11 @@ class ScoringReplayBundleManifest:
             ),
             "replay_method": self.replay_method,
         }
+        if self.raw_ingestor_trust_store_digest is not None:
+            payload["raw_ingestor_trust_store_digest"] = (
+                self.raw_ingestor_trust_store_digest
+            )
+        return payload
 
 
 @dataclass(frozen=True)
@@ -1704,6 +1865,75 @@ class LegacyScoringReplayBundleManifestAuditV6(
 
 
 @dataclass(frozen=True)
+class LegacyScoringReplayBundleManifestAuditV7(ScoringReplayBundleManifest):
+    """Pre-canonical-masked-input v7 replay retained for byte audit only."""
+
+    replay_method: str = "builtin-semantic-scoring-recomputation-v7"
+    contract: str = "neural-prior-scoring-replay-bundle-v7"
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-scoring-replay-bundle-v7"
+            or self.replay_method
+            != "builtin-semantic-scoring-recomputation-v7"
+            or not self.ordered_case_ids
+            or len(set(self.ordered_case_ids)) != len(self.ordered_case_ids)
+            or len(self.ordered_case_ids)
+            != len(self.ordered_evaluation_digests)
+            or len(self.semantic_case_digests) != len(self.ordered_case_ids)
+            or any(
+                case_id not in self.ordered_case_ids
+                for case_id in (
+                    *self.dynamic_source_case_ids,
+                    *self.background_case_ids,
+                )
+            )
+            or any(
+                value is not None
+                for value in (
+                    self.scoring_backend_certification_policy_digest,
+                    self.scoring_backend_certification_evidence_digest,
+                )
+            )
+        ):
+            raise ValueError("legacy v7 semantic replay manifest is invalid")
+        for value in (
+            self.scoring_input_artifact_digest,
+            *self.ordered_evaluation_digests,
+            *self.semantic_case_digests,
+            self.algorithm_source_manifest_digest,
+            self.runtime_compatibility_digest,
+            self.runtime_exact_digest,
+            self.tensor_archive_sha256,
+            self.evaluation_payload_sha256,
+            self.raw_provenance_payload_sha256,
+        ):
+            if re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError("legacy v7 semantic replay digest is invalid")
+        expected = {
+            (case_id, role)
+            for case_id in self.ordered_case_ids
+            for role in (
+                SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                | (
+                    SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
+                    if case_id in self.dynamic_source_case_ids
+                    else frozenset()
+                )
+                | (
+                    SCORING_REPLAY_BACKGROUND_TENSOR_ROLES
+                    if case_id in self.background_case_ids
+                    else frozenset()
+                )
+            )
+        }
+        actual = {(item.case_id, item.role) for item in self.tensor_records}
+        if actual != expected or len(actual) != len(self.tensor_records):
+            raise ValueError("legacy v7 semantic replay tensor set is incomplete")
+        object.__setattr__(self, "bundle_digest", _json_digest(self.payload))
+
+
+@dataclass(frozen=True)
 class LoadedScoringReplayBundle:
     manifest: (
         ScoringReplayBundleManifest
@@ -1713,6 +1943,7 @@ class LoadedScoringReplayBundle:
         | LegacyScoringReplayBundleManifestAuditV4
         | LegacyScoringReplayBundleManifestAuditV5
         | LegacyScoringReplayBundleManifestAuditV6
+        | LegacyScoringReplayBundleManifestAuditV7
     )
     evaluations: tuple[PriorHoldoutEvaluation, ...]
     tensors: dict[tuple[str, str], Tensor]
@@ -1744,6 +1975,7 @@ _REPLAY_BOOLEAN_ROLES = frozenset(
 _REPLAY_INTEGER_ROLES = frozenset(
     {
         "source_radar_index_map",
+        "input_history_source_radar_index_map",
         "raw_source_reflectivity_bits",
         "raw_source_quality_bits",
         "raw_source_observation_std_bits",
@@ -1846,6 +2078,7 @@ def _validate_scoring_replay_case_tensors(
             "verification_frames_dbz",
                 "verification_valid_mask",
                 "operational_issuance_mask",
+                "input_history_source_radar_index_map",
                 "raw_source_reflectivity_bits",
                 "raw_source_qc_flags",
                 "raw_source_quality_bits",
@@ -1857,6 +2090,11 @@ def _validate_scoring_replay_case_tensors(
     }
     if any(tensors[role].shape != spatial_shape for role in two_dimensional):
         raise ValueError("scoring replay spatial tensor shape is invalid")
+    if dynamic_source and (
+        tensors["input_history_source_radar_index_map"].shape
+        != input_frames.shape
+    ):
+        raise ValueError("scoring replay source history shape is invalid")
     for role in ("input_qc_valid_mask", "input_quality_weight"):
         if tensors[role].shape != input_frames.shape:
             raise ValueError("scoring replay input tensor shape is invalid")
@@ -2135,6 +2373,10 @@ def _validate_current_raw_provenance_payload(
                 object.__setattr__(coverage, name, value)
             for name, value in (
                 ("_source_radar_index_map", case_tensors["source_radar_index_map"]),
+                (
+                    "_input_history_source_radar_index_map",
+                    case_tensors["input_history_source_radar_index_map"],
+                ),
                 ("_outage_mask", case_tensors["outage_mask"]),
                 ("_dynamic_qc_valid_mask", case_tensors["dynamic_qc_valid_mask"]),
                 (
@@ -3968,6 +4210,12 @@ class EpisodeLedger:
             datetime.fromisoformat(item.issue_time.replace("Z", "+00:00"))
             for item in plan.cases
         )
+        raw_slot_times = tuple(
+            datetime.fromisoformat(
+                item.acquisition_valid_time.replace("Z", "+00:00")
+            )
+            for item in plan.raw_observation_slot_plans
+        )
         started = None
         if plan.mode == "sealed_historical":
             assert plan.candidate_training_started_at is not None
@@ -3983,6 +4231,12 @@ class EpisodeLedger:
                 now >= issue for issue in issue_times
             ):
                 raise ValueError("holdout plan must be recorded before forecast issue")
+            if plan.mode == "prospective" and (
+                not raw_slot_times or now >= min(raw_slot_times)
+            ):
+                raise ValueError(
+                    "holdout plan must be durably recorded before raw observation slots"
+                )
             if started is not None and now >= started:
                 raise ValueError(
                     "historical holdout must be recorded before candidate training"
@@ -4145,6 +4399,23 @@ class EpisodeLedger:
                 ).fetchone()
                 if retained_training != (receipt_json,):
                     raise ValueError("training raw registry entry equivocated")
+                EpisodeLedger._record_global_sampling_registry_entry(
+                    connection,
+                    registry_id=training_receipt.registry_id,
+                    registry_sequence_number=(
+                        training_receipt.registry_sequence_number
+                    ),
+                    previous_registry_root_digest=(
+                        training_receipt.previous_registry_root_digest
+                    ),
+                    committed_registry_root_digest=(
+                        training_receipt.committed_registry_root_digest
+                    ),
+                    receipt_digest=training_receipt.receipt_digest,
+                    entry_kind="training_raw",
+                    family_digest=family.family_digest,
+                    created_at=now.isoformat(),
+                )
             reservation_entry = connection.execute(
                 "SELECT registry_sequence_number,previous_registry_root_digest,"
                 "committed_registry_root_digest,receipt_digest FROM "
@@ -4153,55 +4424,35 @@ class EpisodeLedger:
                 (sampling_reservation.registry_id,),
             ).fetchone()
             if reservation_entry is None:
-                predecessor = max(
-                    classifier_training_receipts,
-                    key=lambda item: item.registry_sequence_number,
+                raise ValueError("training raw registry entry was not committed")
+            expected_sequence = int(reservation_entry[0]) + 1
+            expected_previous = str(reservation_entry[2])
+            if (
+                sampling_reservation.registry_sequence_number
+                != expected_sequence
+                or sampling_reservation.previous_registry_root_digest
+                != expected_previous
+            ):
+                raise ValueError(
+                    "global sampling registry reservation is not contiguous"
                 )
-                expected_sequence = predecessor.registry_sequence_number + 1
-                expected_previous = predecessor.committed_registry_root_digest
-            else:
-                expected_sequence = int(reservation_entry[0]) + 1
-                expected_previous = str(reservation_entry[2])
-            retained_registry_receipt = connection.execute(
-                "SELECT registry_sequence_number,previous_registry_root_digest,"
-                "committed_registry_root_digest FROM "
-                "global_sampling_registry_entries WHERE receipt_digest = ?",
-                (sampling_reservation.receipt_digest,),
-            ).fetchone()
-            expected_registry_entry = (
-                sampling_reservation.registry_sequence_number,
-                sampling_reservation.previous_registry_root_digest,
-                sampling_reservation.committed_registry_root_digest,
-            )
-            if retained_registry_receipt is None:
-                if (
+            EpisodeLedger._record_global_sampling_registry_entry(
+                connection,
+                registry_id=sampling_reservation.registry_id,
+                registry_sequence_number=(
                     sampling_reservation.registry_sequence_number
-                    != expected_sequence
-                    or sampling_reservation.previous_registry_root_digest
-                    != expected_previous
-                ):
-                    raise ValueError(
-                        "global sampling registry reservation is not contiguous"
-                    )
-                connection.execute(
-                    "INSERT INTO global_sampling_registry_entries "
-                    "(registry_id,registry_sequence_number,"
-                    "previous_registry_root_digest,committed_registry_root_digest,"
-                    "receipt_digest,entry_kind,family_digest,created_at) "
-                    "VALUES (?,?,?,?,?,?,?,?)",
-                    (
-                        sampling_reservation.registry_id,
-                        sampling_reservation.registry_sequence_number,
-                        sampling_reservation.previous_registry_root_digest,
-                        sampling_reservation.committed_registry_root_digest,
-                        sampling_reservation.receipt_digest,
-                        "slot_reservation",
-                        family.family_digest,
-                        now.isoformat(),
-                    ),
-                )
-            elif tuple(retained_registry_receipt) != expected_registry_entry:
-                raise ValueError("global sampling registry receipt equivocated")
+                ),
+                previous_registry_root_digest=(
+                    sampling_reservation.previous_registry_root_digest
+                ),
+                committed_registry_root_digest=(
+                    sampling_reservation.committed_registry_root_digest
+                ),
+                receipt_digest=sampling_reservation.receipt_digest,
+                entry_kind="slot_reservation",
+                family_digest=family.family_digest,
+                created_at=now.isoformat(),
+            )
             matching_trial = next(
                 item
                 for item in family.trials
@@ -4230,6 +4481,10 @@ class EpisodeLedger:
                 final >= issue for issue in issue_times
             ):
                 raise ValueError("holdout plan crossed its forecast issue time")
+            if plan.mode == "prospective" and final >= min(raw_slot_times):
+                raise ValueError(
+                    "holdout plan crossed its earliest raw observation slot"
+                )
             if started is not None and final >= started:
                 raise ValueError("holdout plan crossed candidate training time")
         return plan.plan_digest
@@ -4257,6 +4512,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanV16Audit
         | LegacyNeuralPriorHoldoutPlanV17Audit
         | LegacyNeuralPriorHoldoutPlanV18Audit
+        | LegacyNeuralPriorHoldoutPlanV19Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -4368,6 +4624,13 @@ class EpisodeLedger:
             )
         if value.get("contract") == "neural-prior-holdout-plan-v18":
             return LegacyNeuralPriorHoldoutPlanV18Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v19":
+            return LegacyNeuralPriorHoldoutPlanV19Audit(
                 plan_digest=plan_digest,
                 payload_json=json.dumps(
                     value, sort_keys=True, separators=(",", ":")
@@ -4865,6 +5128,146 @@ class EpisodeLedger:
                 ) from error
         return resolved.artifact_digest
 
+    @staticmethod
+    def _record_global_sampling_registry_entry(
+        connection: sqlite3.Connection,
+        *,
+        registry_id: str,
+        registry_sequence_number: int,
+        previous_registry_root_digest: str,
+        committed_registry_root_digest: str,
+        receipt_digest: str,
+        entry_kind: str,
+        family_digest: str,
+        created_at: str,
+    ) -> None:
+        """Append one non-equivocating entry to the mirrored global registry."""
+
+        if entry_kind not in {"training_raw", "slot_reservation", "raw_resolution"}:
+            raise ValueError("global sampling registry entry kind is invalid")
+        retained = connection.execute(
+            "SELECT registry_id,registry_sequence_number,"
+            "previous_registry_root_digest,committed_registry_root_digest,"
+            "entry_kind,family_digest FROM global_sampling_registry_entries "
+            "WHERE receipt_digest = ?",
+            (receipt_digest,),
+        ).fetchone()
+        expected = (
+            registry_id,
+            registry_sequence_number,
+            previous_registry_root_digest,
+            committed_registry_root_digest,
+            entry_kind,
+            family_digest,
+        )
+        if retained is not None:
+            if tuple(retained) != expected:
+                raise ValueError("global sampling registry entry equivocated")
+            return
+        head = connection.execute(
+            "SELECT registry_sequence_number,committed_registry_root_digest "
+            "FROM global_sampling_registry_entries WHERE registry_id = ? "
+            "ORDER BY registry_sequence_number DESC LIMIT 1",
+            (registry_id,),
+        ).fetchone()
+        expected_sequence = 1 if head is None else int(head[0]) + 1
+        expected_previous = (
+            GLOBAL_SAMPLING_REGISTRY_GENESIS_DIGEST
+            if head is None
+            else str(head[1])
+        )
+        if (
+            registry_sequence_number != expected_sequence
+            or previous_registry_root_digest != expected_previous
+        ):
+            raise ValueError("global sampling registry entry is not contiguous")
+        connection.execute(
+            "INSERT INTO global_sampling_registry_entries "
+            "(registry_id,registry_sequence_number,"
+            "previous_registry_root_digest,committed_registry_root_digest,"
+            "receipt_digest,entry_kind,family_digest,created_at) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            (
+                registry_id,
+                registry_sequence_number,
+                previous_registry_root_digest,
+                committed_registry_root_digest,
+                receipt_digest,
+                entry_kind,
+                family_digest,
+                created_at,
+            ),
+        )
+
+    @staticmethod
+    def _record_raw_volume_resolution_membership(
+        connection: sqlite3.Connection,
+        *,
+        global_resolution_receipt_digest: str,
+        raw_observation_slot_digest: str,
+        raw_volume_identity_digest: str,
+        case_id: str,
+        family_digest: str,
+        resolved_at: str,
+    ) -> None:
+        """Reserve one stable raw identity and attach one rolling-window use."""
+
+        connection.execute(
+            "INSERT OR IGNORE INTO "
+            "promotion_raw_volume_identity_reservations "
+            "(raw_volume_identity_digest,family_digest,"
+            "global_resolution_receipt_digest,reserved_at) VALUES (?,?,?,?)",
+            (
+                raw_volume_identity_digest,
+                family_digest,
+                global_resolution_receipt_digest,
+                resolved_at,
+            ),
+        )
+        retained_identity = connection.execute(
+            "SELECT family_digest FROM "
+            "promotion_raw_volume_identity_reservations "
+            "WHERE raw_volume_identity_digest = ?",
+            (raw_volume_identity_digest,),
+        ).fetchone()
+        if retained_identity != (family_digest,):
+            raise ValueError(
+                "canonical raw volume is reserved by another family"
+            )
+        connection.execute(
+            "INSERT OR IGNORE INTO raw_observation_slot_identity_bindings "
+            "(raw_observation_slot_digest,raw_volume_identity_digest,"
+            "family_digest,first_resolved_at) VALUES (?,?,?,?)",
+            (
+                raw_observation_slot_digest,
+                raw_volume_identity_digest,
+                family_digest,
+                resolved_at,
+            ),
+        )
+        retained_slot = connection.execute(
+            "SELECT raw_volume_identity_digest,family_digest FROM "
+            "raw_observation_slot_identity_bindings "
+            "WHERE raw_observation_slot_digest = ?",
+            (raw_observation_slot_digest,),
+        ).fetchone()
+        if retained_slot != (raw_volume_identity_digest, family_digest):
+            raise ValueError("raw observation slot resolution equivocated")
+        connection.execute(
+            "INSERT INTO raw_volume_resolution_memberships "
+            "(global_resolution_receipt_digest,raw_observation_slot_digest,"
+            "raw_volume_identity_digest,case_id,family_digest,resolved_at) "
+            "VALUES (?,?,?,?,?,?)",
+            (
+                global_resolution_receipt_digest,
+                raw_observation_slot_digest,
+                raw_volume_identity_digest,
+                case_id,
+                family_digest,
+                resolved_at,
+            ),
+        )
+
     def append_analysis_input_provenance(
         self,
         plan: NeuralPriorHoldoutPlan,
@@ -4876,10 +5279,12 @@ class EpisodeLedger:
         derivation: AnalysisInputDerivationArtifact,
         resolved_source_coverage: ResolvedSourceCoverageArtifact | None,
         background_frames_dbz: Tensor | None = None,
+        raw_ingestor_trust_store_path: str | Path,
     ) -> str:
         """Durably commit raw bytes and their derivation before the case deadline."""
 
         validate_neural_prior_holdout_plan(plan)
+        run.validate_integrity()
         planned_case = plan.case(case_id)
         input_plan = next(
             item
@@ -4892,18 +5297,39 @@ class EpisodeLedger:
             if item.sampling_unit_digest
             == planned_case.meteorological_sampling_unit_digest
         )
+        range_band = next(
+            item
+            for item in plan.range_band_contracts
+            if item.contract_digest == planned_case.range_band_contract_digest
+        )
+        range_geometry = next(
+            item
+            for item in plan.range_geometry_contracts
+            if item.contract_digest == range_band.range_geometry_contract_digest
+        )
+        issuance_plan = next(
+            item
+            for item in plan.operational_issuance_domain_plans
+            if item.plan_digest
+            == planned_case.operational_issuance_domain_plan_digest
+        )
         slot_by_digest = {
             item.slot_digest: item
             for item in plan.raw_observation_slot_plans
             if item.slot_digest in sampling_unit.raw_observation_slot_digests
         }
+        current_raw_ingestor_trust = _load_raw_ingestor_trust_store(
+            raw_ingestor_trust_store_path
+        )
         receipt_by_slot = {
             item.slot_plan_digest: item for item in resolved_raw_observations
         }
         for slot_digest, receipt in receipt_by_slot.items():
-            receipt.validate_against(
+            _validate_current_raw_ingestor_receipt(
+                receipt,
                 slot_by_digest[slot_digest],
-                plan.raw_ingestor_trust_store,
+                pinned_trust_store=plan.raw_ingestor_trust_store,
+                current_trust_store=current_raw_ingestor_trust,
             )
         ordered_receipts = tuple(
             sorted(
@@ -4914,6 +5340,47 @@ class EpisodeLedger:
                 ),
             )
         )
+        raw_sites = {
+            item.raw_volume_identity.radar_site_digest
+            for item in ordered_receipts
+        }
+        slot_source_rules = {
+            slot_by_digest[item.slot_plan_digest].source_selection_rule_digest
+            for item in ordered_receipts
+        }
+        if run.operational_data_identity_json is None:
+            raise ValueError("analysis provenance requires operational source identity")
+        operational_identity = OperationalDataIdentity.from_json(
+            run.operational_data_identity_json
+        )
+        if type(range_geometry) is RangeGeometryContract:
+            if (
+                raw_sites != {range_geometry.radar_site_digest}
+                or operational_identity.radar_source_kind != "single_site"
+                or operational_identity.radar_site_digest
+                != range_geometry.radar_site_digest
+                or operational_identity.radar_site_location_digest
+                != range_geometry.radar_site_location_digest
+                or slot_source_rules
+                != {issuance_plan.radar_source_contract_digest}
+            ):
+                raise ValueError(
+                    "single-site raw provenance disagrees with radar geometry"
+                )
+        elif type(range_geometry) is MosaicRangeGeometryContract:
+            if (
+                raw_sites != set(range_geometry.radar_site_digests)
+                or operational_identity.radar_source_kind != "mosaic"
+                or operational_identity.source_selection_policy_digest
+                != range_geometry.source_selection_policy_digest
+                or slot_source_rules
+                != {range_geometry.source_selection_policy_digest}
+            ):
+                raise ValueError(
+                    "mosaic raw provenance disagrees with radar registry"
+                )
+        else:
+            raise TypeError("current range geometry contract is required")
         bindings = tuple(
             sorted(
                 (
@@ -4958,7 +5425,7 @@ class EpisodeLedger:
                 {
                     "contract": "canonical-binary32-radar-decoder-v1",
                     "raw_volume_contract": (
-                        "canonical-raw-grid-volume-artifact-v2"
+                        "canonical-raw-grid-volume-artifact-v3"
                     ),
                 }
             )
@@ -4966,7 +5433,7 @@ class EpisodeLedger:
             != _json_digest(
                 {
                     "contract": (
-                        "native-flags-finite-positive-weight-std-qc-v1"
+                        "native-flags-canonical-masked-input-qc-v2"
                     ),
                     "registered_qc_pipeline_digest": (
                         input_plan.qc_pipeline_digest
@@ -4984,6 +5451,20 @@ class EpisodeLedger:
             )
             or derivation.background_cycle_rule_digest
             != input_plan.background_cycle_rule_digest
+            or run.input_plan_digest != input_plan.plan_digest
+            or run.analysis_input_derivation_artifact_digest
+            != derivation.artifact_digest
+            or run.analysis_input_derivation_artifact_json
+            != json.dumps(
+                derivation.payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            or derivation.input_bundle_digest != run.input_bundle_digest
+            or derivation.full_analysis_input_digest
+            != run.full_analysis_input_digest
+            or derivation.grid_contract_digest
+            != run.grid_time_contract_digest
         ):
             raise ValueError("analysis input provenance disagrees with its plan")
         if resolved_source_coverage is not None:
@@ -5070,6 +5551,10 @@ class EpisodeLedger:
                     "source_radar_index_map": (
                         resolved_source_coverage._source_radar_index_map
                     ),
+                    "input_history_source_radar_index_map": (
+                        resolved_source_coverage
+                        ._input_history_source_radar_index_map
+                    ),
                     "outage_mask": resolved_source_coverage._outage_mask,
                     "dynamic_qc_valid_mask": (
                         resolved_source_coverage._dynamic_qc_valid_mask
@@ -5086,6 +5571,9 @@ class EpisodeLedger:
             "contract": "analysis-input-provenance-bundle-v1",
             "holdout_plan_digest": plan.plan_digest,
             "case_id": case_id,
+            "raw_ingestor_trust_store_digest": (
+                current_raw_ingestor_trust.content_digest
+            ),
             "input_plan": input_plan.payload | {"plan_digest": input_plan.plan_digest},
             "resolved_raw_observations": [
                 item.payload | {"receipt_digest": item.receipt_digest}
@@ -5154,6 +5642,23 @@ class EpisodeLedger:
                     raise ValueError(
                         "analysis input provenance missed its durable deadline"
                     )
+                final_raw_ingestor_trust = _load_raw_ingestor_trust_store(
+                    raw_ingestor_trust_store_path
+                )
+                if (
+                    final_raw_ingestor_trust.content_digest
+                    != current_raw_ingestor_trust.content_digest
+                ):
+                    raise ValueError(
+                        "raw-ingestor trust store changed during provenance commit"
+                    )
+                for slot_digest, receipt in receipt_by_slot.items():
+                    _validate_current_raw_ingestor_receipt(
+                        receipt,
+                        slot_by_digest[slot_digest],
+                        pinned_trust_store=plan.raw_ingestor_trust_store,
+                        current_trust_store=final_raw_ingestor_trust,
+                    )
                 plan_row = connection.execute(
                     "SELECT plan_json FROM neural_prior_holdout_plans "
                     "WHERE plan_digest = ?",
@@ -5188,42 +5693,46 @@ class EpisodeLedger:
                 os.rename(temporary, target)
                 published = True
                 _fsync_directory(self.analysis_input_provenance_dir)
-                connection.execute(
-                    "INSERT INTO global_sampling_registry_entries "
-                    "(registry_id,registry_sequence_number,"
-                    "previous_registry_root_digest,committed_registry_root_digest,"
-                    "receipt_digest,entry_kind,family_digest,created_at) "
-                    "VALUES (?,?,?,?,?,?,?,?)",
-                    (
-                        global_resolution.registry_id,
-                        global_resolution.registry_sequence_number,
-                        global_resolution.previous_registry_root_digest,
-                        global_resolution.committed_registry_root_digest,
-                        global_resolution.receipt_digest,
-                        "raw_resolution",
-                        plan.promotion_experiment_family.family_digest,
-                        now.isoformat(),
+                EpisodeLedger._record_global_sampling_registry_entry(
+                    connection,
+                    registry_id=global_resolution.registry_id,
+                    registry_sequence_number=(
+                        global_resolution.registry_sequence_number
                     ),
+                    previous_registry_root_digest=(
+                        global_resolution.previous_registry_root_digest
+                    ),
+                    committed_registry_root_digest=(
+                        global_resolution.committed_registry_root_digest
+                    ),
+                    receipt_digest=global_resolution.receipt_digest,
+                    entry_kind="raw_resolution",
+                    family_digest=(
+                        plan.promotion_experiment_family.family_digest
+                    ),
+                    created_at=now.isoformat(),
                 )
-                for _, raw_identity_digest in bindings:
-                    connection.execute(
-                        "INSERT INTO promotion_raw_volume_identity_reservations "
-                        "(raw_volume_identity_digest,family_digest,"
-                        "global_resolution_receipt_digest,reserved_at) "
-                        "VALUES (?,?,?,?)",
-                        (
-                            raw_identity_digest,
-                            plan.promotion_experiment_family.family_digest,
-                            global_resolution.receipt_digest,
-                            now.isoformat(),
+                for slot_digest, raw_identity_digest in bindings:
+                    EpisodeLedger._record_raw_volume_resolution_membership(
+                        connection,
+                        global_resolution_receipt_digest=(
+                            global_resolution.receipt_digest
                         ),
+                        raw_observation_slot_digest=slot_digest,
+                        raw_volume_identity_digest=raw_identity_digest,
+                        case_id=case_id,
+                        family_digest=(
+                            plan.promotion_experiment_family.family_digest
+                        ),
+                        resolved_at=now.isoformat(),
                     )
                 connection.execute(
                     "INSERT INTO neural_prior_analysis_input_provenance "
                     "(artifact_digest,holdout_plan_digest,case_id,input_plan_digest,"
                     "global_resolution_receipt_digest,payload_json,arrays_sha256,"
-                    "metadata_sha256,path,committed_at,usable) "
-                    "VALUES (?,?,?,?,?,?,?,?,?,?,0)",
+                    "metadata_sha256,path,raw_ingestor_trust_store_digest,"
+                    "raw_trust_validated_at,committed_at,usable) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,NULL,?,0)",
                     (
                         derivation.artifact_digest,
                         plan.plan_digest,
@@ -5232,30 +5741,55 @@ class EpisodeLedger:
                         global_resolution.receipt_digest,
                         json.dumps(
                             derivation.payload
-                            | {"artifact_digest": derivation.artifact_digest},
+                            | {
+                                "artifact_digest": derivation.artifact_digest,
+                                "input_plan": input_plan.payload
+                                | {"plan_digest": input_plan.plan_digest},
+                            },
                             sort_keys=True,
                             separators=(",", ":"),
                         ),
                         checksums["source_and_derived_arrays.npz"],
                         checksums["provenance.json"],
                         str(target),
+                        final_raw_ingestor_trust.content_digest,
                         now.isoformat(),
                     ),
                 )
                 connection.commit()
             postcommit = datetime.now(timezone.utc)
-            usable = int(postcommit <= deadline)
+            postcommit_raw_ingestor_trust = _load_raw_ingestor_trust_store(
+                raw_ingestor_trust_store_path
+            )
+            for slot_digest, receipt in receipt_by_slot.items():
+                _validate_current_raw_ingestor_receipt(
+                    receipt,
+                    slot_by_digest[slot_digest],
+                    pinned_trust_store=plan.raw_ingestor_trust_store,
+                    current_trust_store=postcommit_raw_ingestor_trust,
+                )
+            usable = int(
+                postcommit <= deadline
+                and postcommit_raw_ingestor_trust.content_digest
+                == current_raw_ingestor_trust.content_digest
+            )
             with self._connect() as connection:
                 connection.execute("BEGIN IMMEDIATE")
                 connection.execute(
                     "UPDATE neural_prior_analysis_input_provenance SET "
-                    "committed_at = ?, usable = ? WHERE artifact_digest = ?",
-                    (postcommit.isoformat(), usable, derivation.artifact_digest),
+                    "raw_trust_validated_at = ?, committed_at = ?, usable = ? "
+                    "WHERE artifact_digest = ?",
+                    (
+                        postcommit.isoformat() if usable else None,
+                        postcommit.isoformat(),
+                        usable,
+                        derivation.artifact_digest,
+                    ),
                 )
                 connection.commit()
             if not usable:
                 raise ValueError(
-                    "analysis input provenance committed after its deadline"
+                    "analysis input provenance missed its trust/deadline gate"
                 )
         except Exception:
             if temporary.exists():
@@ -5374,6 +5908,7 @@ class EpisodeLedger:
         cases: tuple[ScoringReplayCaseArtifact, ...],
         *,
         algorithm_source_manifest_digest: str,
+        raw_ingestor_trust_store_path: str | Path,
         mps_backend_certification_policy: (
             MPSBackendCertificationPolicy | None
         ) = None,
@@ -5386,6 +5921,10 @@ class EpisodeLedger:
         if not cases or any(type(item) is not ScoringReplayCaseArtifact for item in cases):
             raise TypeError("scoring replay requires typed product case artifacts")
         ordered_cases = tuple(sorted(cases, key=lambda item: item.case_id))
+        current_scoring_raw_trust = _validate_current_scoring_raw_ingestor_receipts(
+            ordered_cases,
+            raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+        )
         plan = ordered_cases[0].plan
         if any(item.plan.plan_digest != plan.plan_digest for item in ordered_cases):
             raise ValueError("scoring replay cases use different holdout plans")
@@ -5506,6 +6045,7 @@ class EpisodeLedger:
             tempfile.mkdtemp(prefix=".scoring-replay.", dir=self.scoring_replays_dir)
         )
         published = False
+        registered = False
         target: Path | None = None
         try:
             arrays: dict[str, NDArray[Any]] = {}
@@ -5666,6 +6206,9 @@ class EpisodeLedger:
                 raw_provenance_payload_sha256=(
                     _file_digest(raw_provenance_path)
                 ),
+                raw_ingestor_trust_store_digest=(
+                    current_scoring_raw_trust.content_digest
+                ),
             )
             manifest_path = temporary / "manifest.json"
             manifest_path.write_text(
@@ -5681,6 +6224,19 @@ class EpisodeLedger:
                 raise FileExistsError("scoring replay bundle already exists")
             with self._connect() as connection:
                 connection.execute("BEGIN IMMEDIATE")
+                final_scoring_raw_trust = _validate_current_scoring_raw_ingestor_receipts(
+                    ordered_cases,
+                    raw_ingestor_trust_store_path=(
+                        raw_ingestor_trust_store_path
+                    ),
+                )
+                if (
+                    final_scoring_raw_trust.content_digest
+                    != current_scoring_raw_trust.content_digest
+                ):
+                    raise ValueError(
+                        "raw-ingestor trust store changed during replay commit"
+                    )
                 input_row = connection.execute(
                     "SELECT payload_json FROM "
                     "neural_prior_holdout_scoring_input_artifacts "
@@ -5771,7 +6327,8 @@ class EpisodeLedger:
                         )
                     provenance_row = connection.execute(
                         "SELECT payload_json,arrays_sha256,metadata_sha256,path,"
-                        "committed_at,usable FROM "
+                        "committed_at,usable,raw_ingestor_trust_store_digest,"
+                        "raw_trust_validated_at FROM "
                         "neural_prior_analysis_input_provenance "
                         "WHERE artifact_digest = ? AND holdout_plan_digest = ? "
                         "AND case_id = ? AND input_plan_digest = ? "
@@ -5795,7 +6352,9 @@ class EpisodeLedger:
                         | {
                             "artifact_digest": (
                                 replay_case.analysis_input_derivation.artifact_digest
-                            )
+                            ),
+                            "input_plan": retained_input_plan.payload
+                            | {"plan_digest": retained_input_plan.plan_digest},
                         },
                         sort_keys=True,
                         separators=(",", ":"),
@@ -5804,6 +6363,9 @@ class EpisodeLedger:
                         provenance_row is None
                         or provenance_row[0] != expected_derivation_json
                         or int(provenance_row[5]) != 1
+                        or provenance_row[6]
+                        != final_scoring_raw_trust.content_digest
+                        or provenance_row[7] is None
                         or datetime.fromisoformat(str(provenance_row[4]))
                         > datetime.fromisoformat(
                             retained_input_plan.decision_deadline.replace(
@@ -5827,23 +6389,43 @@ class EpisodeLedger:
                         raise ValueError(
                             "analysis input provenance durable bytes changed"
                         )
-                    for _, raw_identity_digest in (
+                    for slot_digest, raw_identity_digest in (
                         global_resolution.slot_identity_bindings
                     ):
                         retained = connection.execute(
-                            "SELECT family_digest,global_resolution_receipt_digest "
+                            "SELECT reservation.family_digest,membership.case_id "
                             "FROM promotion_raw_volume_identity_reservations "
-                            "WHERE raw_volume_identity_digest = ?",
-                            (raw_identity_digest,),
+                            "AS reservation JOIN "
+                            "raw_volume_resolution_memberships AS membership "
+                            "ON membership.raw_volume_identity_digest = "
+                            "reservation.raw_volume_identity_digest "
+                            "WHERE reservation.raw_volume_identity_digest = ? "
+                            "AND membership.global_resolution_receipt_digest = ? "
+                            "AND membership.raw_observation_slot_digest = ?",
+                            (
+                                raw_identity_digest,
+                                global_resolution.receipt_digest,
+                                slot_digest,
+                            ),
                         ).fetchone()
                         if retained != (
                             family.family_digest,
-                            global_resolution.receipt_digest,
+                            replay_case.case_id,
                         ):
                             raise ValueError(
                                 "canonical raw volume lacks its committed reservation"
                             )
-                temporary.rename(target)
+                _publish_durable_directory(
+                    temporary=temporary,
+                    target=target,
+                    durable_files=(
+                        archive_path,
+                        evaluation_path,
+                        raw_provenance_path,
+                        manifest_path,
+                    ),
+                    parent=self.scoring_replays_dir,
+                )
                 published = True
                 connection.execute(
                     "INSERT INTO neural_prior_scoring_replay_bundles "
@@ -5862,9 +6444,31 @@ class EpisodeLedger:
                         datetime.now(timezone.utc).isoformat(),
                     ),
                 )
+                self._prepare_raw_trust_artifact_activation(
+                    connection,
+                    artifact_kind="scoring_replay_bundle",
+                    artifact_digest=manifest.bundle_digest,
+                    raw_ingestor_trust_store_digest=(
+                        current_scoring_raw_trust.content_digest
+                    ),
+                )
+            registered = True
+            self._activate_raw_trust_artifact(
+                artifact_kind="scoring_replay_bundle",
+                artifact_digest=manifest.bundle_digest,
+                raw_ingestor_trust_store_digest=(
+                    current_scoring_raw_trust.content_digest
+                ),
+                raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+            )
             return manifest
         except Exception:
-            if published and target is not None and target.exists():
+            if (
+                published
+                and not registered
+                and target is not None
+                and target.exists()
+            ):
                 shutil.rmtree(target)
             raise
         finally:
@@ -5898,6 +6502,19 @@ class EpisodeLedger:
             and retained_manifest_payload.get("contract")
             == SEMANTIC_SCORING_REPLAY_CONTRACT
         )
+        if current_bundle:
+            retained_raw_trust_digest = retained_manifest_payload.get(
+                "raw_ingestor_trust_store_digest"
+            )
+            if not isinstance(retained_raw_trust_digest, str):
+                raise ValueError("current scoring replay raw trust is missing")
+            with self._connect() as connection:
+                self._require_raw_trust_artifact_usable(
+                    connection,
+                    artifact_kind="scoring_replay_bundle",
+                    artifact_digest=bundle_digest,
+                    raw_ingestor_trust_store_digest=retained_raw_trust_digest,
+                )
         expected_artifact_members = {
             "manifest.json",
             "evaluations.json",
@@ -6206,6 +6823,7 @@ class EpisodeLedger:
         scheduler_trust_store_path: str | Path,
         scoring_artifact: HoldoutScoringArtifact | None = None,
         scoring_replay_cases: tuple[ScoringReplayCaseArtifact, ...] | None = None,
+        raw_ingestor_trust_store_path: str | Path | None = None,
         mps_backend_certification_policy: (
             MPSBackendCertificationPolicy | None
         ) = None,
@@ -6226,6 +6844,7 @@ class EpisodeLedger:
             != process_log_artifact.artifact_digest
         ):
             raise ValueError("process completion does not seal its process log")
+        ordered_replay_cases: tuple[ScoringReplayCaseArtifact, ...] = ()
         if start.process_kind == "candidate_scoring":
             if (
                 scoring_artifact is None
@@ -6239,14 +6858,24 @@ class EpisodeLedger:
                 raise ValueError(
                     "scoring completion requires its canonical scoring artifact"
                 )
+            if not scoring_replay_cases:
+                raise ValueError("scoring completion requires semantic replay cases")
+            if raw_ingestor_trust_store_path is None:
+                raise ValueError(
+                    "scoring completion requires the current raw-ingestor trust store"
+                )
+            ordered_replay_cases = tuple(
+                sorted(scoring_replay_cases, key=lambda item: item.case_id)
+            )
+            completion_raw_trust = _validate_current_scoring_raw_ingestor_receipts(
+                ordered_replay_cases,
+                raw_ingestor_trust_store_path=(
+                    raw_ingestor_trust_store_path
+                ),
+            )
             replay = self.load_neural_prior_scoring_replay_bundle(
                 scoring_artifact.scoring_replay_bundle_digest,
                 cases=scoring_replay_cases,
-            )
-            if not scoring_replay_cases:
-                raise ValueError("scoring completion requires semantic replay cases")
-            ordered_replay_cases = tuple(
-                sorted(scoring_replay_cases, key=lambda item: item.case_id)
             )
             replay_case_tensors = {
                 item.case_id: item.replay_tensors()
@@ -6298,12 +6927,17 @@ class EpisodeLedger:
                 != scoring_certification_evidence_digest
                 or replay.manifest.algorithm_source_manifest_digest
                 != algorithm_bundle_digest()
+                or replay.manifest.raw_ingestor_trust_store_digest
+                != completion_raw_trust.content_digest
+                or scoring_artifact.raw_ingestor_trust_store_digest
+                != completion_raw_trust.content_digest
             ):
                 raise ValueError(
                     "scoring completion replay bundle disagrees with its output"
                 )
         elif (
             scoring_artifact is not None
+            or raw_ingestor_trust_store_path is not None
             or mps_backend_certification_policy is not None
             or mps_backend_certification is not None
         ):
@@ -6325,6 +6959,24 @@ class EpisodeLedger:
             raise ValueError("process completion scheduler is not root-approved")
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
+            if start.process_kind == "candidate_scoring":
+                assert raw_ingestor_trust_store_path is not None
+                final_completion_raw_trust = (
+                    _validate_current_scoring_raw_ingestor_receipts(
+                        ordered_replay_cases,
+                        raw_ingestor_trust_store_path=(
+                            raw_ingestor_trust_store_path
+                        ),
+                    )
+                )
+                if (
+                    scoring_artifact is None
+                    or scoring_artifact.raw_ingestor_trust_store_digest
+                    != final_completion_raw_trust.content_digest
+                ):
+                    raise ValueError(
+                        "raw-ingestor trust changed during scoring completion"
+                    )
             start_row = connection.execute(
                 "SELECT receipt_json, created_at FROM "
                 "trusted_process_start_receipts_v2 WHERE receipt_digest = ?",
@@ -6408,10 +7060,29 @@ class EpisodeLedger:
                         now.isoformat(),
                     ),
                 )
+                if scoring_artifact is not None:
+                    self._prepare_raw_trust_artifact_activation(
+                        connection,
+                        artifact_kind="scoring_completion",
+                        artifact_digest=completion.receipt_digest,
+                        raw_ingestor_trust_store_digest=(
+                            scoring_artifact.raw_ingestor_trust_store_digest
+                        ),
+                    )
             except sqlite3.IntegrityError as error:
                 raise FileExistsError(
                     "trusted process-completion receipt is already registered"
                 ) from error
+        if scoring_artifact is not None:
+            assert raw_ingestor_trust_store_path is not None
+            self._activate_raw_trust_artifact(
+                artifact_kind="scoring_completion",
+                artifact_digest=completion.receipt_digest,
+                raw_ingestor_trust_store_digest=(
+                    scoring_artifact.raw_ingestor_trust_store_digest
+                ),
+                raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+            )
         return completion.receipt_digest
 
     def append_neural_prior_promotion(
@@ -6428,9 +7099,17 @@ class EpisodeLedger:
         scoring_replay_cases: tuple[ScoringReplayCaseArtifact, ...],
         policy: NeuralPriorPromotionPolicy,
         policy_trust_store_path: str | Path,
+        raw_ingestor_trust_store_path: str | Path,
     ) -> str:
         """Append one promotion over every preregistered holdout case."""
 
+        ordered_replay_cases = tuple(
+            sorted(scoring_replay_cases, key=lambda item: item.case_id)
+        )
+        promotion_raw_trust = _validate_current_scoring_raw_ingestor_receipts(
+            ordered_replay_cases,
+            raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+        )
         replay = self.load_neural_prior_scoring_replay_bundle(
             scoring_artifact.scoring_replay_bundle_digest,
             cases=scoring_replay_cases,
@@ -6456,6 +7135,12 @@ class EpisodeLedger:
             != scoring_artifact.scoring_backend_certification_policy_digest
             or evidence.scoring_backend_certification_evidence_digest
             != scoring_artifact.scoring_backend_certification_evidence_digest
+            or replay.manifest.raw_ingestor_trust_store_digest
+            != promotion_raw_trust.content_digest
+            or scoring_artifact.raw_ingestor_trust_store_digest
+            != promotion_raw_trust.content_digest
+            or evidence.raw_ingestor_trust_store_digest
+            != promotion_raw_trust.content_digest
         ):
             raise ValueError("promotion scoring replay bundle is inconsistent")
         recomputed = compute_neural_prior_promotion(
@@ -6478,6 +7163,21 @@ class EpisodeLedger:
             raise ValueError("neural-prior promotion evidence is not reproducible")
         validate_neural_prior_promotion(evidence)
         with self._connect() as connection:
+            final_promotion_raw_trust = (
+                _validate_current_scoring_raw_ingestor_receipts(
+                    ordered_replay_cases,
+                    raw_ingestor_trust_store_path=(
+                        raw_ingestor_trust_store_path
+                    ),
+                )
+            )
+            if (
+                evidence.raw_ingestor_trust_store_digest
+                != final_promotion_raw_trust.content_digest
+            ):
+                raise ValueError(
+                    "raw-ingestor trust changed during promotion append"
+                )
             input_row = connection.execute(
                 "SELECT payload_json FROM "
                 "neural_prior_holdout_scoring_input_artifacts "
@@ -6616,6 +7316,15 @@ class EpisodeLedger:
                 ):
                     raise ValueError(
                         "promotion trusted process receipt chain is not registered"
+                    )
+                if start.process_kind == "candidate_scoring":
+                    self._require_raw_trust_artifact_usable(
+                        connection,
+                        artifact_kind="scoring_completion",
+                        artifact_digest=completion.receipt_digest,
+                        raw_ingestor_trust_store_digest=(
+                            evidence.raw_ingestor_trust_store_digest
+                        ),
                     )
             scoring_artifact_row = connection.execute(
                 "SELECT payload_json FROM "
@@ -6803,6 +7512,14 @@ class EpisodeLedger:
                 f"({','.join('?' for _ in columns)})",
                 tuple(promotion_row[name] for name in columns),
             )
+            self._prepare_raw_trust_artifact_activation(
+                connection,
+                artifact_kind="promotion_evidence",
+                artifact_digest=evidence.promotion_evidence_digest,
+                raw_ingestor_trust_store_digest=(
+                    evidence.raw_ingestor_trust_store_digest
+                ),
+            )
             for sampling_unit_digest in (
                 plan.promotion_experiment_family.meteorological_sampling_unit_digests
             ):
@@ -6859,6 +7576,14 @@ class EpisodeLedger:
                     raise FileExistsError(
                         "canonical raw volume is already consumed"
                     ) from error
+        self._activate_raw_trust_artifact(
+            artifact_kind="promotion_evidence",
+            artifact_digest=evidence.promotion_evidence_digest,
+            raw_ingestor_trust_store_digest=(
+                evidence.raw_ingestor_trust_store_digest
+            ),
+            raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+        )
         return evidence.promotion_evidence_digest
 
     def issue_neural_prior_promotion_deployment_certificate(
@@ -6869,6 +7594,7 @@ class EpisodeLedger:
         ledger_signer: DeploymentAuthoritySigner,
         deployment_signer: DeploymentAuthoritySigner,
         authority_trust_store_path: str | Path,
+        raw_ingestor_trust_store_path: str | Path,
     ) -> LedgeredPromotionDeploymentCertificate:
         """Issue the sole deployment-capable view of a ledgered promotion."""
 
@@ -6888,6 +7614,17 @@ class EpisodeLedger:
             raise ValueError("automatic deployment requires CPU-scored evidence")
         authority_trust = _load_promotion_deployment_authority_trust_store(
             authority_trust_store_path
+        )
+        ordered_replay_cases = tuple(
+            sorted(scoring_replay_cases, key=lambda item: item.case_id)
+        )
+        current_raw_ingestor_trust = (
+            _validate_current_scoring_raw_ingestor_receipts(
+                ordered_replay_cases,
+                raw_ingestor_trust_store_path=(
+                    raw_ingestor_trust_store_path
+                ),
+            )
         )
         if (
             ledger_signer.authority_id == deployment_signer.authority_id
@@ -6914,6 +7651,21 @@ class EpisodeLedger:
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             connection.row_factory = sqlite3.Row
+            final_raw_ingestor_trust = (
+                _validate_current_scoring_raw_ingestor_receipts(
+                    ordered_replay_cases,
+                    raw_ingestor_trust_store_path=(
+                        raw_ingestor_trust_store_path
+                    ),
+                )
+            )
+            if (
+                final_raw_ingestor_trust.content_digest
+                != current_raw_ingestor_trust.content_digest
+            ):
+                raise ValueError(
+                    "raw-ingestor trust store changed during certificate issuance"
+                )
             promotion_row = connection.execute(
                 "SELECT evidence_payload_json FROM neural_prior_promotions "
                 "WHERE promotion_evidence_digest = ?",
@@ -6952,6 +7704,22 @@ class EpisodeLedger:
             ):
                 raise ValueError(
                     "deployment certificate requires complete ledger preimages"
+                )
+            for artifact_kind, artifact_digest in (
+                ("promotion_evidence", evidence.promotion_evidence_digest),
+                ("scoring_replay_bundle", evidence.scoring_replay_bundle_digest),
+                (
+                    "scoring_completion",
+                    evidence.scoring_completion_receipt_digest,
+                ),
+            ):
+                self._require_raw_trust_artifact_usable(
+                    connection,
+                    artifact_kind=artifact_kind,
+                    artifact_digest=artifact_digest,
+                    raw_ingestor_trust_store_digest=(
+                        evidence.raw_ingestor_trust_store_digest
+                    ),
                 )
             scoring_artifact = _decode_holdout_scoring_artifact(
                 scoring_row["payload_json"],
@@ -7026,6 +7794,9 @@ class EpisodeLedger:
                 ledger_issuance_receipt=ledger_receipt,
                 signer=deployment_signer,
                 authority_trust_store=authority_trust,
+                raw_ingestor_trust_store_digest=(
+                    final_raw_ingestor_trust.content_digest
+                ),
             )
             payload_json = json.dumps(
                 certificate.payload,
@@ -7051,6 +7822,14 @@ class EpisodeLedger:
                         promotion_issued_at,
                     ),
                 )
+                self._prepare_raw_trust_artifact_activation(
+                    connection,
+                    artifact_kind="promotion_deployment_certificate",
+                    artifact_digest=certificate.certificate_digest,
+                    raw_ingestor_trust_store_digest=(
+                        certificate.raw_ingestor_trust_store_digest
+                    ),
+                )
                 updated = connection.execute(
                     "UPDATE deployment_certificate_chain_head SET "
                     "sequence_number = ?, certificate_digest = ?, "
@@ -7074,9 +7853,1051 @@ class EpisodeLedger:
                 raise FileExistsError(
                     "promotion deployment certificate already exists"
                 ) from error
+        self._activate_raw_trust_artifact(
+            artifact_kind="promotion_deployment_certificate",
+            artifact_digest=certificate.certificate_digest,
+            raw_ingestor_trust_store_digest=(
+                certificate.raw_ingestor_trust_store_digest
+            ),
+            raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+        )
         return certificate
 
     def issue_operational_deployment_decision(
+        self,
+        decision_payload: dict[str, object],
+        *,
+        promotion_deployment_certificate: LedgeredPromotionDeploymentCertificate,
+        promotion_evidence: NeuralPriorPromotionEvidence,
+        policy: DeployedNeuralPriorPolicy,
+        policy_trust_store_digest: str,
+        ledger_signer: DeploymentAuthoritySigner,
+        operational_signer: DeploymentAuthoritySigner,
+        authority_trust_store_path: str | Path,
+        raw_ingestor_trust_store_path: str | Path = (
+            "/etc/advar/raw-ingestors.json"
+        ),
+        regime_evidence: RegimeClassificationEvidence | None = None,
+        range_partition_evidence: RangePartitionEvidence | None = None,
+        range_geometry_contract: (
+            RangeGeometryContract | MosaicRangeGeometryContract | None
+        ) = None,
+        regime_classifier: NeuralPriorRegimeClassifier | None = None,
+        input_run: ForecastRunContract | None = None,
+        range_grid_x_m: Tensor | None = None,
+        range_grid_y_m: Tensor | None = None,
+    ) -> OperationalDeploymentDecisionCertificate:
+        """Issue or resume one failure-atomic operational decision."""
+
+        authority_trust = _load_promotion_deployment_authority_trust_store(
+            authority_trust_store_path
+        )
+        current_raw_ingestor_trust = _load_raw_ingestor_trust_store(
+            raw_ingestor_trust_store_path
+        )
+        with self._connect() as connection:
+            self._require_raw_trust_artifact_usable(
+                connection,
+                artifact_kind="promotion_deployment_certificate",
+                artifact_digest=(
+                    promotion_deployment_certificate.certificate_digest
+                ),
+                raw_ingestor_trust_store_digest=(
+                    promotion_deployment_certificate
+                    .raw_ingestor_trust_store_digest
+                ),
+            )
+        if (
+            ledger_signer.authority_id == operational_signer.authority_id
+            or ledger_signer.public_key_hex == operational_signer.public_key_hex
+            or ledger_signer.authority_id
+            == promotion_deployment_certificate.authority_id
+            or ledger_signer.public_key_hex
+            == promotion_deployment_certificate.authority_public_key_hex
+        ):
+            raise ValueError(
+                "promotion, ledger, and operational roles require separate keys"
+            )
+        canonical_decision = json.dumps(
+            decision_payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        operational_cycle_id = str(
+            decision_payload.get("operational_cycle_id", "")
+        )
+        input_plan_digest = str(decision_payload.get("input_plan_digest", ""))
+        if not re.fullmatch(r"[0-9a-f]{64}", operational_cycle_id) or not re.fullmatch(
+            r"[0-9a-f]{64}", input_plan_digest
+        ):
+            raise ValueError("operational decision identity is invalid")
+        if operational_cycle_id != _json_digest(
+            {
+                "contract": "advar-operational-cycle-v2",
+                "input_plan_digest": input_plan_digest,
+                "full_analysis_input_digest": decision_payload.get(
+                    "full_analysis_input_digest"
+                ),
+                "analysis_input_derivation_artifact_digest": (
+                    decision_payload.get(
+                        "analysis_input_derivation_artifact_digest"
+                    )
+                ),
+                "global_raw_resolution_receipt_digest": decision_payload.get(
+                    "global_raw_resolution_receipt_digest"
+                ),
+                "resolved_raw_volume_identity_set_digest": (
+                    decision_payload.get(
+                        "resolved_raw_volume_identity_set_digest"
+                    )
+                ),
+            }
+        ):
+            raise ValueError("operational cycle provenance is invalid")
+        deadline = datetime.fromisoformat(
+            str(decision_payload["decision_deadline"]).replace("Z", "+00:00")
+        )
+        derivation_digest = str(
+            decision_payload.get("analysis_input_derivation_artifact_digest", "")
+        )
+        global_resolution_digest = str(
+            decision_payload.get("global_raw_resolution_receipt_digest", "")
+        )
+        raw_identity_set_digest = str(
+            decision_payload.get("resolved_raw_volume_identity_set_digest", "")
+        )
+        provenance_commitment_digest = str(
+            decision_payload.get(
+                "analysis_input_provenance_commitment_digest",
+                "",
+            )
+        )
+        if (
+            decision_payload.get("analysis_processor_trust_store_digest")
+            != authority_trust.content_digest
+            or decision_payload.get("raw_ingestor_trust_store_digest")
+            != current_raw_ingestor_trust.content_digest
+            or promotion_deployment_certificate.raw_ingestor_trust_store_digest
+            != current_raw_ingestor_trust.content_digest
+            or provenance_commitment_digest
+            != _json_digest(
+                {
+                    "contract": (
+                        "operational-analysis-input-provenance-commitment-v2"
+                    ),
+                    "analysis_input_derivation_artifact_digest": (
+                        derivation_digest
+                    ),
+                    "global_raw_resolution_receipt_digest": (
+                        global_resolution_digest
+                    ),
+                    "resolved_raw_volume_identity_set_digest": (
+                        raw_identity_set_digest
+                    ),
+                    "analysis_processor_trust_store_digest": (
+                        authority_trust.content_digest
+                    ),
+                    "raw_ingestor_trust_store_digest": (
+                        current_raw_ingestor_trust.content_digest
+                    ),
+                }
+            )
+        ):
+            raise ValueError("operational analysis provenance is untrusted")
+        with self._connect() as connection:
+            provenance_row = connection.execute(
+                "SELECT payload_json,arrays_sha256,metadata_sha256,path,usable,"
+                "raw_ingestor_trust_store_digest,raw_trust_validated_at FROM "
+                "neural_prior_analysis_input_provenance "
+                "WHERE artifact_digest = ? AND input_plan_digest = ? "
+                "AND global_resolution_receipt_digest = ?",
+                (
+                    derivation_digest,
+                    input_plan_digest,
+                    global_resolution_digest,
+                ),
+            ).fetchone()
+        if (
+            provenance_row is None
+            or int(provenance_row[4]) != 1
+            or provenance_row[5] != current_raw_ingestor_trust.content_digest
+            or provenance_row[6] is None
+        ):
+            raise ValueError(
+                "operational decision requires committed analysis provenance"
+            )
+        provenance_path = Path(str(provenance_row[3]))
+        expected_provenance_path = (
+            self.analysis_input_provenance_dir / derivation_digest
+        )
+        arrays_path = provenance_path / "source_and_derived_arrays.npz"
+        metadata_path = provenance_path / "provenance.json"
+        if (
+            provenance_path != expected_provenance_path
+            or provenance_path.is_symlink()
+            or not provenance_path.is_dir()
+            or not arrays_path.is_file()
+            or not metadata_path.is_file()
+            or _file_digest(arrays_path) != str(provenance_row[1])
+            or _file_digest(metadata_path) != str(provenance_row[2])
+        ):
+            raise ValueError(
+                "operational decision requires durable analysis provenance"
+            )
+        try:
+            provenance_payload = json.loads(str(provenance_row[0]))
+            raw_identities = provenance_payload[
+                "canonical_raw_volume_identity_digests"
+            ]
+            input_plan_payload = dict(provenance_payload["input_plan"])
+            retained_input_plan_digest = input_plan_payload.pop(
+                "plan_digest"
+            )
+            valid_times = input_plan_payload.get("valid_times")
+            if not isinstance(valid_times, list):
+                raise TypeError
+            input_plan_payload["valid_times"] = tuple(valid_times)
+            committed_input_plan = NeuralPriorInputPlan(
+                **cast(Any, input_plan_payload)
+            )
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+            raise ValueError(
+                "committed analysis provenance payload is invalid"
+            ) from error
+        if (
+            not isinstance(provenance_payload, dict)
+            or not isinstance(raw_identities, list)
+            or any(type(item) is not str for item in raw_identities)
+            or provenance_payload.get("artifact_digest") != derivation_digest
+            or provenance_payload.get("input_plan_digest") != input_plan_digest
+            or provenance_payload.get("global_raw_resolution_receipt_digest")
+            != global_resolution_digest
+        ):
+            raise ValueError("committed analysis provenance changed")
+        if (
+            provenance_payload.get("full_analysis_input_digest")
+            != decision_payload.get("full_analysis_input_digest")
+        ):
+            raise ValueError(
+                "committed analysis provenance full input changed"
+            )
+        if (
+            committed_input_plan.plan_digest != retained_input_plan_digest
+            or committed_input_plan.plan_digest != input_plan_digest
+            or committed_input_plan.observation_valid_time
+            != decision_payload.get("observation_valid_time")
+            or committed_input_plan.input_available_time
+            != decision_payload.get("input_available_time")
+            or committed_input_plan.decision_deadline
+            != decision_payload.get("decision_deadline")
+            or committed_input_plan.publication_time
+            != decision_payload.get("publication_time")
+        ):
+            raise ValueError(
+                "committed analysis provenance input plan changed"
+            )
+        if raw_identity_set_digest != _json_digest(
+            {
+                "contract": "resolved-raw-volume-identity-set-v1",
+                "identity_digests": sorted(raw_identities),
+            }
+        ):
+            raise ValueError(
+                "committed analysis provenance raw identity set changed"
+            )
+        if decision_payload.get("routing_semantic_replay_verified") is True:
+            if (
+                type(regime_classifier) is not NeuralPriorRegimeClassifier
+                or type(input_run) is not ForecastRunContract
+                or type(range_grid_x_m) is not Tensor
+                or type(range_grid_y_m) is not Tensor
+                or type(regime_evidence) is not RegimeClassificationEvidence
+                or type(range_partition_evidence) is not RangePartitionEvidence
+                or type(range_geometry_contract)
+                not in (RangeGeometryContract, MosaicRangeGeometryContract)
+            ):
+                raise ValueError(
+                    "operational routing requires product-owned replay inputs"
+                )
+            input_run.validate_integrity()
+            if (
+                input_run.input_plan_digest != input_plan_digest
+                or input_run.full_analysis_input_digest
+                != decision_payload.get("full_analysis_input_digest")
+                or input_run.analysis_input_derivation_artifact_digest
+                != derivation_digest
+            ):
+                raise ValueError(
+                    "operational routing run disagrees with committed provenance"
+                )
+            try:
+                with np.load(arrays_path, allow_pickle=False) as archive:
+                    committed_frames = torch.from_numpy(
+                        np.array(archive["derived_input_frames"], copy=True)
+                    )
+                    committed_source_map = (
+                        torch.from_numpy(
+                            np.array(
+                                archive["source_radar_index_map"], copy=True
+                            )
+                        )
+                        if "source_radar_index_map" in archive.files
+                        else None
+                    )
+                    committed_outage_mask = (
+                        torch.from_numpy(
+                            np.array(archive["outage_mask"], copy=True)
+                        )
+                        if "outage_mask" in archive.files
+                        else None
+                    )
+                    committed_dynamic_qc_mask = (
+                        torch.from_numpy(
+                            np.array(
+                                archive["dynamic_qc_valid_mask"], copy=True
+                            )
+                        )
+                        if "dynamic_qc_valid_mask" in archive.files
+                        else None
+                    )
+            except (KeyError, OSError, ValueError) as error:
+                raise ValueError(
+                    "committed routing replay arrays are invalid"
+                ) from error
+            if tensor_digest(committed_frames) != input_run.input_frames_digest:
+                raise ValueError(
+                    "committed routing frames disagree with the forecast run"
+                )
+            replayed_regime = NeuralPriorRegimeClassifier.classify(
+                regime_classifier,
+                committed_frames,
+                input_run=input_run,
+            )
+            if (
+                replayed_regime.payload != regime_evidence.payload
+                or replayed_regime.evidence_digest
+                != regime_evidence.evidence_digest
+            ):
+                raise ValueError(
+                    "operational regime evidence was not produced by replay"
+                )
+            assert range_geometry_contract is not None
+            assert range_grid_x_m is not None
+            assert range_grid_y_m is not None
+            if type(range_geometry_contract) is RangeGeometryContract:
+                replayed_range = resolve_range_geometry(
+                    range_geometry_contract,
+                    grid_x_m=range_grid_x_m,
+                    grid_y_m=range_grid_y_m,
+                )
+                if any(
+                    item is not None
+                    for item in (
+                        committed_source_map,
+                        committed_outage_mask,
+                        committed_dynamic_qc_mask,
+                    )
+                ):
+                    raise ValueError(
+                        "single-site routing retained mosaic provenance"
+                    )
+            else:
+                mosaic_geometry = cast(
+                    MosaicRangeGeometryContract,
+                    range_geometry_contract,
+                )
+                if (
+                    committed_source_map is None
+                    or committed_outage_mask is None
+                    or committed_dynamic_qc_mask is None
+                    or committed_outage_mask.dtype is not torch.bool
+                    or committed_dynamic_qc_mask.dtype is not torch.bool
+                    or committed_outage_mask.shape
+                    != committed_source_map.shape
+                    or committed_dynamic_qc_mask.shape
+                    != committed_source_map.shape
+                ):
+                    raise ValueError(
+                        "mosaic routing provenance is incomplete"
+                    )
+                replayed_range, _ = resolve_mosaic_range_geometry(
+                    mosaic_geometry,
+                    grid_x_m=range_grid_x_m,
+                    grid_y_m=range_grid_y_m,
+                    source_radar_index_map=committed_source_map,
+                )
+                replayed_range = restrict_range_partition_domain(
+                    replayed_range,
+                    valid_range_domain_mask=(
+                        (committed_source_map >= 0)
+                        & ~committed_outage_mask
+                        & committed_dynamic_qc_mask
+                    ),
+                )
+            if (
+                replayed_range.payload != range_partition_evidence.payload
+                or replayed_range.evidence_digest
+                != range_partition_evidence.evidence_digest
+            ):
+                raise ValueError(
+                    "operational range evidence was not produced by replay"
+                )
+        _validate_ledgered_promotion_deployment_certificate(
+            promotion_deployment_certificate,
+            authority_trust_store=authority_trust,
+            promotion_evidence=promotion_evidence,
+        )
+        policy.validate_integrity()
+        _replay_operational_deployment_selection(
+            decision_payload,
+            promotion_deployment_certificate=(
+                promotion_deployment_certificate
+            ),
+            promotion_evidence=promotion_evidence,
+            policy=policy,
+            policy_trust_store_digest=policy_trust_store_digest,
+            regime_evidence=regime_evidence,
+            range_partition_evidence=range_partition_evidence,
+            range_geometry_contract=range_geometry_contract,
+        )
+        _require_current_raw_ingestor_trust_store_digest(
+            raw_ingestor_trust_store_path,
+            current_raw_ingestor_trust.content_digest,
+        )
+
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            _require_current_raw_ingestor_trust_store_digest(
+                raw_ingestor_trust_store_path,
+                current_raw_ingestor_trust.content_digest,
+            )
+            connection.row_factory = sqlite3.Row
+            retained = connection.execute(
+                "SELECT * FROM operational_decision_issuance_states "
+                "WHERE operational_cycle_id = ?",
+                (operational_cycle_id,),
+            ).fetchone()
+            if retained is None:
+                prepared_at = datetime.now(timezone.utc)
+                if prepared_at > deadline:
+                    raise ValueError(
+                        "operational decision missed its preparation deadline"
+                    )
+                connection.execute(
+                    "INSERT INTO operational_decision_issuance_states "
+                    "(operational_cycle_id,input_plan_digest,"
+                    "promotion_certificate_digest,decision_payload_json,status,"
+                    "prepared_at,updated_at) VALUES (?,?,?,?,?,?,?)",
+                    (
+                        operational_cycle_id,
+                        input_plan_digest,
+                        promotion_deployment_certificate.certificate_digest,
+                        canonical_decision,
+                        "prepared",
+                        prepared_at.isoformat(),
+                        prepared_at.isoformat(),
+                    ),
+                )
+            else:
+                if (
+                    retained["input_plan_digest"] != input_plan_digest
+                    or retained["promotion_certificate_digest"]
+                    != promotion_deployment_certificate.certificate_digest
+                    or retained["decision_payload_json"] != canonical_decision
+                ):
+                    raise ValueError("operational cycle id was reused")
+                if retained["status"] == "expired":
+                    raise ValueError("operational decision issuance expired")
+                if retained["status"] == "published":
+                    stored = connection.execute(
+                        "SELECT payload_json FROM "
+                        "operational_deployment_decisions_v2 "
+                        "WHERE certificate_digest = ?",
+                        (retained["certificate_digest"],),
+                    ).fetchone()
+                    if stored is None:
+                        raise ValueError(
+                            "published operational decision is incomplete"
+                        )
+                    payload = json.loads(str(stored[0]))
+                    if not isinstance(payload, dict):
+                        raise ValueError(
+                            "published operational decision is invalid"
+                        )
+                    return _operational_deployment_decision_certificate_from_payload(
+                        payload
+                    )
+
+        certificate: OperationalDeploymentDecisionCertificate
+        receipt_payload: dict[str, object]
+        retained_publication_receipt_json: str | None = None
+        retained_publication_receipt_digest: str | None = None
+        publication_payload_committed_at_text: str | None = None
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            _require_current_raw_ingestor_trust_store_digest(
+                raw_ingestor_trust_store_path,
+                current_raw_ingestor_trust.content_digest,
+            )
+            connection.row_factory = sqlite3.Row
+            state = connection.execute(
+                "SELECT * FROM operational_decision_issuance_states "
+                "WHERE operational_cycle_id = ?",
+                (operational_cycle_id,),
+            ).fetchone()
+            if state is None:
+                raise ValueError("operational decision preparation disappeared")
+            if state["status"] == "decision_recorded":
+                stored = connection.execute(
+                    "SELECT d.payload_json,p.receipt_json FROM "
+                    "operational_deployment_decisions_v2 AS d JOIN "
+                    "operational_decision_commit_proofs AS p "
+                    "ON p.receipt_digest = d.receipt_digest "
+                    "WHERE d.certificate_digest = ?",
+                    (state["certificate_digest"],),
+                ).fetchone()
+                if stored is None:
+                    raise ValueError(
+                        "recorded operational decision is incomplete"
+                    )
+                certificate_payload = json.loads(str(stored[0]))
+                receipt_payload = json.loads(str(stored[1]))
+                if not isinstance(certificate_payload, dict) or not isinstance(
+                    receipt_payload, dict
+                ):
+                    raise ValueError("recorded operational decision is invalid")
+                certificate = (
+                    _operational_deployment_decision_certificate_from_payload(
+                        certificate_payload
+                    )
+                )
+            elif state["status"] == "prepared":
+                promotion_row = connection.execute(
+                    "SELECT certificate_digest,ledger_instance_digest FROM "
+                    "neural_prior_promotion_deployment_certificates_v3 "
+                    "WHERE certificate_digest = ?",
+                    (promotion_deployment_certificate.certificate_digest,),
+                ).fetchone()
+                head = connection.execute(
+                    "SELECT ledger_instance_digest,sequence_number,"
+                    "certificate_digest FROM operational_decision_chain_head "
+                    "WHERE singleton = 1"
+                ).fetchone()
+                if (
+                    promotion_row is None
+                    or head is None
+                    or promotion_row["ledger_instance_digest"]
+                    != promotion_deployment_certificate.ledger_instance_digest
+                    or head["ledger_instance_digest"]
+                    != promotion_deployment_certificate.ledger_instance_digest
+                ):
+                    raise ValueError(
+                        "operational decision requires its ledgered promotion certificate"
+                    )
+                accepted_at = datetime.now(timezone.utc)
+                if accepted_at > deadline:
+                    raise ValueError(
+                        "operational decision missed its acceptance deadline"
+                    )
+                accepted_at_text = accepted_at.isoformat().replace(
+                    "+00:00", "Z"
+                )
+                sequence_number = int(head["sequence_number"]) + 1
+                ledger_instance_digest = str(head["ledger_instance_digest"])
+                previous = str(head["certificate_digest"])
+                commit_entry_digest, chain_root = (
+                    _operational_decision_commit_digests(
+                        decision_payload,
+                        ledger_instance_digest=ledger_instance_digest,
+                        sequence_number=sequence_number,
+                        previous_operational_decision_digest=previous,
+                        accepted_at=accepted_at_text,
+                    )
+                )
+                proof_committed_at = datetime.now(timezone.utc)
+                if proof_committed_at > deadline:
+                    raise ValueError(
+                        "operational decision proof missed its deadline"
+                    )
+                receipt = _issue_operational_decision_ledger_receipt(
+                    decision_payload,
+                    ledger_instance_digest=ledger_instance_digest,
+                    sequence_number=sequence_number,
+                    previous_operational_decision_digest=previous,
+                    accepted_at=accepted_at_text,
+                    committed_at=proof_committed_at.isoformat(),
+                    commit_entry_digest=commit_entry_digest,
+                    committed_chain_root_digest=chain_root,
+                    signer=ledger_signer,
+                    authority_trust_store=authority_trust,
+                )
+                certificate = _issue_operational_deployment_decision_certificate(
+                    decision_payload,
+                    promotion_deployment_certificate=(
+                        promotion_deployment_certificate
+                    ),
+                    promotion_evidence=promotion_evidence,
+                    policy=policy,
+                    policy_trust_store_digest=policy_trust_store_digest,
+                    regime_evidence=regime_evidence,
+                    range_partition_evidence=range_partition_evidence,
+                    range_geometry_contract=range_geometry_contract,
+                    ledger_receipt=receipt,
+                    signer=operational_signer,
+                    authority_trust_store=authority_trust,
+                )
+                _require_current_raw_ingestor_trust_store_digest(
+                    raw_ingestor_trust_store_path,
+                    current_raw_ingestor_trust.content_digest,
+                )
+                if datetime.now(timezone.utc) > deadline:
+                    raise ValueError(
+                        "operational decision signature missed its deadline"
+                    )
+                receipt_payload = receipt.payload
+                certificate_payload = certificate.payload
+                connection.execute(
+                    "INSERT INTO operational_decision_commits "
+                    "(commit_entry_digest,committed_chain_root_digest,"
+                    "ledger_instance_digest,sequence_number,"
+                    "previous_commit_root_digest,promotion_certificate_digest,"
+                    "input_plan_digest,decision_payload_json,accepted_at) "
+                    "VALUES (?,?,?,?,?,?,?,?,?)",
+                    (
+                        commit_entry_digest,
+                        chain_root,
+                        ledger_instance_digest,
+                        sequence_number,
+                        previous,
+                        promotion_deployment_certificate.certificate_digest,
+                        input_plan_digest,
+                        canonical_decision,
+                        receipt.accepted_at,
+                    ),
+                )
+                connection.execute(
+                    "INSERT INTO operational_decision_commit_proofs "
+                    "(receipt_digest,commit_entry_digest,receipt_json,"
+                    "committed_at,created_at) VALUES (?,?,?,?,?)",
+                    (
+                        receipt.receipt_digest,
+                        commit_entry_digest,
+                        json.dumps(
+                            receipt_payload,
+                            sort_keys=True,
+                            separators=(",", ":"),
+                        ),
+                        receipt.committed_at,
+                        datetime.now(timezone.utc).isoformat(),
+                    ),
+                )
+                connection.execute(
+                    "INSERT INTO operational_deployment_decisions_v2 "
+                    "(certificate_digest,ledger_instance_digest,sequence_number,"
+                    "previous_certificate_digest,promotion_certificate_digest,"
+                    "input_plan_digest,commit_entry_digest,receipt_digest,"
+                    "payload_json,recorded_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        certificate.certificate_digest,
+                        certificate.ledger_instance_digest,
+                        certificate.ledger_sequence_number,
+                        certificate.previous_operational_decision_digest,
+                        certificate.promotion_deployment_certificate_digest,
+                        certificate.input_plan_digest,
+                        commit_entry_digest,
+                        receipt.receipt_digest,
+                        json.dumps(
+                            certificate_payload,
+                            sort_keys=True,
+                            separators=(",", ":"),
+                        ),
+                        certificate.issued_at,
+                    ),
+                )
+                connection.execute(
+                    "UPDATE operational_decision_issuance_states SET "
+                    "status = 'decision_recorded',certificate_digest = ?,"
+                    "updated_at = ? WHERE operational_cycle_id = ?",
+                    (
+                        certificate.certificate_digest,
+                        datetime.now(timezone.utc).isoformat(),
+                        operational_cycle_id,
+                    ),
+                )
+                updated = connection.execute(
+                    "UPDATE operational_decision_chain_head SET "
+                    "sequence_number = ?,certificate_digest = ?,updated_at = ? "
+                    "WHERE singleton = 1 AND sequence_number = ? AND "
+                    "certificate_digest = ?",
+                    (
+                        certificate.ledger_sequence_number,
+                        str(receipt_payload["committed_chain_root_digest"]),
+                        datetime.now(timezone.utc).isoformat(),
+                        int(head["sequence_number"]),
+                        head["certificate_digest"],
+                    ),
+                )
+                if updated.rowcount != 1:
+                    raise sqlite3.IntegrityError(
+                        "operational decision chain head changed"
+                    )
+            else:
+                raise ValueError("operational decision state is invalid")
+
+        retained_committed_at = state["decision_row_committed_at"]
+        if retained_committed_at is None:
+            decision_row_committed_at = datetime.now(timezone.utc)
+            if decision_row_committed_at > deadline:
+                self._expire_operational_decision_issuance(
+                    operational_cycle_id,
+                    certificate.certificate_digest,
+                    expired_at=decision_row_committed_at,
+                )
+                raise ValueError(
+                    "operational decision recording committed after its deadline"
+                )
+            decision_row_committed_at_text = (
+                decision_row_committed_at.isoformat().replace("+00:00", "Z")
+            )
+            with self._connect() as connection:
+                connection.execute("BEGIN IMMEDIATE")
+                updated = connection.execute(
+                    "UPDATE operational_decision_issuance_states SET "
+                    "decision_row_committed_at = ?,updated_at = ? "
+                    "WHERE operational_cycle_id = ? AND "
+                    "status = 'decision_recorded' AND "
+                    "decision_row_committed_at IS NULL",
+                    (
+                        decision_row_committed_at_text,
+                        decision_row_committed_at_text,
+                        operational_cycle_id,
+                    ),
+                )
+                if updated.rowcount != 1:
+                    raise sqlite3.IntegrityError(
+                        "operational decision commit timestamp changed"
+                    )
+        else:
+            try:
+                decision_row_committed_at = datetime.fromisoformat(
+                    str(retained_committed_at).replace("Z", "+00:00")
+                )
+            except ValueError as error:
+                raise ValueError(
+                    "recorded operational decision timestamp is invalid"
+                ) from error
+            decision_row_committed_at_text = (
+                decision_row_committed_at.isoformat().replace("+00:00", "Z")
+            )
+            if decision_row_committed_at > deadline:
+                self._expire_operational_decision_issuance(
+                    operational_cycle_id,
+                    certificate.certificate_digest,
+                    expired_at=decision_row_committed_at,
+                )
+                raise ValueError(
+                    "operational decision recording committed after its deadline"
+                )
+
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.row_factory = sqlite3.Row
+            state = connection.execute(
+                "SELECT status,certificate_digest FROM "
+                "operational_decision_issuance_states "
+                "WHERE operational_cycle_id = ?",
+                (operational_cycle_id,),
+            ).fetchone()
+            if (
+                state is None
+                or state["status"] != "decision_recorded"
+                or state["certificate_digest"] != certificate.certificate_digest
+            ):
+                raise ValueError("operational decision publication state changed")
+            if datetime.now(timezone.utc) > deadline:
+                raise ValueError(
+                    "operational decision publication missed its deadline"
+                )
+            staged_publication = connection.execute(
+                "SELECT decision_row_committed_at,"
+                "publication_payload_committed_at,activation_committed_at,"
+                "usable,receipt_digest,receipt_json FROM "
+                "operational_decision_publications "
+                "WHERE certificate_digest = ?",
+                (certificate.certificate_digest,),
+            ).fetchone()
+            if staged_publication is None:
+                connection.execute(
+                    "INSERT INTO operational_decision_publications "
+                    "(certificate_digest,decision_row_committed_at,"
+                    "publication_payload_committed_at,activation_committed_at,"
+                    "usable,receipt_digest,receipt_json,created_at) "
+                    "VALUES (?,?,NULL,NULL,0,NULL,NULL,?)",
+                    (
+                        certificate.certificate_digest,
+                        decision_row_committed_at_text,
+                        datetime.now(timezone.utc).isoformat(),
+                    ),
+                )
+            elif (
+                str(staged_publication["decision_row_committed_at"])
+                != decision_row_committed_at_text
+                or staged_publication["activation_committed_at"] is not None
+                or int(staged_publication["usable"]) != 0
+                or (
+                    staged_publication["receipt_digest"] is None
+                    and staged_publication["receipt_json"] is not None
+                )
+                or (
+                    staged_publication["receipt_digest"] is not None
+                    and staged_publication["receipt_json"] is None
+                )
+                or (
+                    staged_publication["publication_payload_committed_at"]
+                    is not None
+                    and staged_publication["receipt_digest"] is None
+                )
+            ):
+                raise ValueError(
+                    "retained operational publication state changed"
+                )
+            if staged_publication is not None:
+                retained_publication_receipt_json = cast(
+                    str | None,
+                    staged_publication["receipt_json"],
+                )
+                retained_publication_receipt_digest = cast(
+                    str | None,
+                    staged_publication["receipt_digest"],
+                )
+                publication_payload_committed_at_text = cast(
+                    str | None,
+                    staged_publication["publication_payload_committed_at"],
+                )
+
+        if retained_publication_receipt_json is None:
+            _require_current_raw_ingestor_trust_store_digest(
+                raw_ingestor_trust_store_path,
+                current_raw_ingestor_trust.content_digest,
+            )
+            publication_receipt = (
+                _issue_operational_decision_publication_receipt(
+                    certificate,
+                    decision_row_committed_at=decision_row_committed_at_text,
+                    signer=ledger_signer,
+                    authority_trust_store=authority_trust,
+                )
+            )
+            post_signature = datetime.now(timezone.utc)
+            _require_current_raw_ingestor_trust_store_digest(
+                raw_ingestor_trust_store_path,
+                current_raw_ingestor_trust.content_digest,
+            )
+            if post_signature > deadline:
+                self._expire_operational_decision_issuance(
+                    operational_cycle_id,
+                    certificate.certificate_digest,
+                    expired_at=post_signature,
+                )
+                raise ValueError(
+                    "operational decision publication missed its deadline"
+                )
+            canonical_publication_receipt = json.dumps(
+                publication_receipt.payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            with self._connect() as connection:
+                connection.execute("BEGIN IMMEDIATE")
+                _require_current_raw_ingestor_trust_store_digest(
+                    raw_ingestor_trust_store_path,
+                    current_raw_ingestor_trust.content_digest,
+                )
+                attached = connection.execute(
+                    "UPDATE operational_decision_publications SET "
+                    "receipt_digest = ?,receipt_json = ? "
+                    "WHERE certificate_digest = ? AND usable = 0 AND "
+                    "publication_payload_committed_at IS NULL AND "
+                    "activation_committed_at IS NULL AND receipt_digest IS NULL "
+                    "AND receipt_json IS NULL",
+                    (
+                        publication_receipt.receipt_digest,
+                        canonical_publication_receipt,
+                        certificate.certificate_digest,
+                    ),
+                )
+                if attached.rowcount != 1:
+                    raise sqlite3.IntegrityError(
+                        "operational publication receipt attachment changed"
+                    )
+        else:
+            try:
+                retained_payload = json.loads(retained_publication_receipt_json)
+                if not isinstance(retained_payload, dict):
+                    raise ValueError
+                publication_receipt = (
+                    _operational_decision_publication_receipt_from_payload(
+                        retained_payload
+                    )
+                )
+            except (json.JSONDecodeError, TypeError, ValueError) as error:
+                raise ValueError(
+                    "retained operational publication receipt is invalid"
+                ) from error
+            _validate_operational_decision_publication_receipt(
+                publication_receipt,
+                certificate=certificate,
+                authority_trust_store=authority_trust,
+            )
+            if (
+                publication_receipt.receipt_digest
+                != retained_publication_receipt_digest
+            ):
+                raise ValueError(
+                    "retained operational publication receipt changed"
+                )
+
+        if publication_payload_committed_at_text is None:
+            payload_committed_at = datetime.now(timezone.utc)
+            publication_payload_committed_at_text = (
+                payload_committed_at.isoformat().replace("+00:00", "Z")
+            )
+            with self._connect() as connection:
+                connection.execute("BEGIN IMMEDIATE")
+                _require_current_raw_ingestor_trust_store_digest(
+                    raw_ingestor_trust_store_path,
+                    current_raw_ingestor_trust.content_digest,
+                )
+                marked = connection.execute(
+                    "UPDATE operational_decision_publications SET "
+                    "publication_payload_committed_at = ? "
+                    "WHERE certificate_digest = ? AND usable = 0 AND "
+                    "publication_payload_committed_at IS NULL AND "
+                    "activation_committed_at IS NULL AND receipt_digest = ?",
+                    (
+                        publication_payload_committed_at_text,
+                        certificate.certificate_digest,
+                        publication_receipt.receipt_digest,
+                    ),
+                )
+                if marked.rowcount != 1:
+                    raise sqlite3.IntegrityError(
+                        "operational publication commit observation changed"
+                    )
+            if payload_committed_at > deadline:
+                self._expire_operational_decision_issuance(
+                    operational_cycle_id,
+                    certificate.certificate_digest,
+                    expired_at=payload_committed_at,
+                )
+                raise ValueError(
+                    "operational decision publication committed after its deadline"
+                )
+        else:
+            payload_committed_at = datetime.fromisoformat(
+                publication_payload_committed_at_text.replace("Z", "+00:00")
+            )
+            if payload_committed_at > deadline:
+                self._expire_operational_decision_issuance(
+                    operational_cycle_id,
+                    certificate.certificate_digest,
+                    expired_at=payload_committed_at,
+                )
+                raise ValueError(
+                    "operational decision publication committed after its deadline"
+                )
+
+        # The signed publication payload was durably present before the deadline.
+        # Activation is now an idempotent bookkeeping transition: a crash before
+        # it leaves ``usable = 0``, while a retry can safely activate the exact
+        # already-committed payload without repeating either authority signature.
+        activation_committed_at = datetime.now(timezone.utc).isoformat().replace(
+            "+00:00", "Z"
+        )
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            _require_current_raw_ingestor_trust_store_digest(
+                raw_ingestor_trust_store_path,
+                current_raw_ingestor_trust.content_digest,
+            )
+            finalized = connection.execute(
+                "UPDATE operational_decision_publications SET "
+                "activation_committed_at = ?,usable = 1 "
+                "WHERE certificate_digest = ? AND usable = 0 AND "
+                "publication_payload_committed_at = ? AND "
+                "activation_committed_at IS NULL AND receipt_digest = ?",
+                (
+                    activation_committed_at,
+                    certificate.certificate_digest,
+                    publication_payload_committed_at_text,
+                    publication_receipt.receipt_digest,
+                ),
+            )
+            published = connection.execute(
+                "UPDATE operational_decision_issuance_states SET "
+                "status = 'published',updated_at = ? "
+                "WHERE operational_cycle_id = ? AND "
+                "status = 'decision_recorded'",
+                (activation_committed_at, operational_cycle_id),
+            )
+            if finalized.rowcount != 1 or published.rowcount != 1:
+                raise sqlite3.IntegrityError(
+                    "operational decision publication finalization changed"
+                )
+        try:
+            _require_current_raw_ingestor_trust_store_digest(
+                raw_ingestor_trust_store_path,
+                current_raw_ingestor_trust.content_digest,
+            )
+        except ValueError:
+            self._expire_operational_decision_issuance(
+                operational_cycle_id,
+                certificate.certificate_digest,
+            )
+            raise
+        return certificate
+
+    def _expire_operational_decision_issuance(
+        self,
+        operational_cycle_id: str,
+        certificate_digest: str,
+        *,
+        expired_at: datetime | None = None,
+    ) -> None:
+        """Retain an immutable decision with a fail-closed expiry marker."""
+
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT certificate_digest FROM "
+                "operational_deployment_decisions_v2 "
+                "WHERE certificate_digest = ?",
+                (certificate_digest,),
+            ).fetchone()
+            now = (
+                datetime.now(timezone.utc) if expired_at is None else expired_at
+            ).isoformat()
+            if row is not None:
+                connection.execute(
+                    "INSERT OR IGNORE INTO operational_decision_publications "
+                    "(certificate_digest,decision_row_committed_at,"
+                    "activation_committed_at,usable,receipt_digest,receipt_json,"
+                    "created_at) VALUES (?,?,NULL,0,NULL,NULL,?)",
+                    (certificate_digest, now, now),
+                )
+                connection.execute(
+                    "UPDATE operational_decision_publications SET usable = 0 "
+                    "WHERE certificate_digest = ? AND usable = 1",
+                    (certificate_digest,),
+                )
+            connection.execute(
+                "UPDATE operational_decision_issuance_states SET "
+                "status = 'expired',updated_at = ? "
+                "WHERE operational_cycle_id = ?",
+                (now, operational_cycle_id),
+            )
+
+    def _issue_operational_deployment_decision_legacy(
         self,
         decision_payload: dict[str, object],
         *,
@@ -7227,6 +9048,9 @@ class EpisodeLedger:
                 promotion_evidence=promotion_evidence,
                 policy=policy,
                 policy_trust_store_digest=policy_trust_store_digest,
+                regime_evidence=None,
+                range_partition_evidence=None,
+                range_geometry_contract=None,
                 ledger_receipt=receipt,
                 signer=operational_signer,
                 authority_trust_store=authority_trust,
@@ -7391,9 +9215,14 @@ class EpisodeLedger:
             row = connection.execute(
                 "SELECT d.*,p.receipt_json,p.committed_at AS proof_committed_at,"
                 "c.decision_payload_json,c.committed_chain_root_digest,"
+                "c.ledger_instance_digest AS commit_ledger_instance_digest,"
+                "c.sequence_number AS commit_sequence_number,"
+                "c.previous_commit_root_digest,c.accepted_at,"
                 "u.decision_row_committed_at,u.usable,u.receipt_digest AS "
                 "publication_receipt_digest,u.receipt_json AS "
-                "publication_receipt_json "
+                "publication_receipt_json,u.publication_payload_committed_at,"
+                "u.activation_committed_at,"
+                "s.status AS issuance_status,s.updated_at AS issuance_updated_at "
                 "FROM operational_deployment_decisions_v2 AS d "
                 "JOIN operational_decision_commit_proofs AS p "
                 "ON p.receipt_digest = d.receipt_digest "
@@ -7401,6 +9230,8 @@ class EpisodeLedger:
                 "ON c.commit_entry_digest = d.commit_entry_digest "
                 "JOIN operational_decision_publications AS u "
                 "ON u.certificate_digest = d.certificate_digest "
+                "JOIN operational_decision_issuance_states AS s "
+                "ON s.certificate_digest = d.certificate_digest "
                 "WHERE d.certificate_digest = ?",
                 (certificate.certificate_digest,),
             ).fetchone()
@@ -7415,6 +9246,12 @@ class EpisodeLedger:
                     publication_payload
                 )
             )
+            ledger_receipt_payload = json.loads(canonical_receipt)
+            if not isinstance(ledger_receipt_payload, dict):
+                raise ValueError
+            ledger_receipt = _operational_decision_ledger_receipt_from_payload(
+                ledger_receipt_payload
+            )
         except (json.JSONDecodeError, TypeError, ValueError) as error:
             raise ValueError(
                 "operational decision lacks its committed publication receipt"
@@ -7422,6 +9259,7 @@ class EpisodeLedger:
         if (
             row is None
             or int(row["usable"]) != 1
+            or row["issuance_status"] != "published"
             or row["payload_json"] != canonical_certificate
             or row["decision_payload_json"] != canonical_decision
             or row["receipt_json"] != canonical_receipt
@@ -7438,11 +9276,56 @@ class EpisodeLedger:
             or row["input_plan_digest"] != certificate.input_plan_digest
             or row["publication_receipt_digest"]
             != publication_receipt.receipt_digest
+            or row["committed_chain_root_digest"]
+            != ledger_receipt.committed_chain_root_digest
+            or row["proof_committed_at"] != ledger_receipt.committed_at
+            or row["commit_ledger_instance_digest"]
+            != ledger_receipt.ledger_instance_digest
+            or int(row["commit_sequence_number"])
+            != ledger_receipt.sequence_number
+            or row["previous_commit_root_digest"]
+            != ledger_receipt.previous_operational_decision_digest
+            or row["accepted_at"] != ledger_receipt.accepted_at
+            or row["decision_row_committed_at"]
+            != publication_receipt.decision_row_committed_at
+            or row["publication_payload_committed_at"] is None
+            or row["activation_committed_at"] is None
+            or row["issuance_updated_at"] != row["activation_committed_at"]
+            or datetime.fromisoformat(
+                certificate.issued_at.replace("Z", "+00:00")
+            )
+            > datetime.fromisoformat(
+                str(row["decision_row_committed_at"]).replace("Z", "+00:00")
+            )
             or datetime.fromisoformat(
                 str(row["decision_row_committed_at"]).replace("Z", "+00:00")
             )
             > datetime.fromisoformat(
+                publication_receipt.issued_at.replace("Z", "+00:00")
+            )
+            or datetime.fromisoformat(
+                publication_receipt.issued_at.replace("Z", "+00:00")
+            )
+            > datetime.fromisoformat(
+                str(row["publication_payload_committed_at"]).replace(
+                    "Z", "+00:00"
+                )
+            )
+            or datetime.fromisoformat(
+                str(row["publication_payload_committed_at"]).replace(
+                    "Z", "+00:00"
+                )
+            )
+            > datetime.fromisoformat(
                 certificate.decision_deadline.replace("Z", "+00:00")
+            )
+            or datetime.fromisoformat(
+                str(row["publication_payload_committed_at"]).replace(
+                    "Z", "+00:00"
+                )
+            )
+            > datetime.fromisoformat(
+                str(row["activation_committed_at"]).replace("Z", "+00:00")
             )
         ):
             raise ValueError(
@@ -7456,6 +9339,7 @@ class EpisodeLedger:
         ledger_signer: DeploymentAuthoritySigner,
         operational_signer: DeploymentAuthoritySigner,
         authority_trust_store_path: str | Path,
+        raw_ingestor_trust_store_path: str | Path,
     ) -> _EpisodeLedgerOperationalDecisionClient:
         """Bind signer capabilities inside the only automatic ledger client."""
 
@@ -7466,6 +9350,15 @@ class EpisodeLedger:
             promotion_evidence: NeuralPriorPromotionEvidence,
             policy: DeployedNeuralPriorPolicy,
             policy_trust_store_digest: str,
+            regime_evidence: RegimeClassificationEvidence,
+            range_partition_evidence: RangePartitionEvidence,
+            range_geometry_contract: (
+                RangeGeometryContract | MosaicRangeGeometryContract
+            ),
+            regime_classifier: NeuralPriorRegimeClassifier,
+            input_run: ForecastRunContract,
+            range_grid_x_m: Tensor,
+            range_grid_y_m: Tensor,
         ) -> OperationalDeploymentDecisionCertificate:
             return self.issue_operational_deployment_decision(
                 decision_payload,
@@ -7476,6 +9369,16 @@ class EpisodeLedger:
                 ledger_signer=ledger_signer,
                 operational_signer=operational_signer,
                 authority_trust_store_path=authority_trust_store_path,
+                raw_ingestor_trust_store_path=(
+                    raw_ingestor_trust_store_path
+                ),
+                regime_evidence=regime_evidence,
+                range_partition_evidence=range_partition_evidence,
+                range_geometry_contract=range_geometry_contract,
+                regime_classifier=regime_classifier,
+                input_run=input_run,
+                range_grid_x_m=range_grid_x_m,
+                range_grid_y_m=range_grid_y_m,
             )
 
         result = object.__new__(_EpisodeLedgerOperationalDecisionClient)
@@ -7485,6 +9388,11 @@ class EpisodeLedger:
             result,
             "_authority_trust_store_path",
             str(Path(authority_trust_store_path).expanduser().resolve()),
+        )
+        object.__setattr__(
+            result,
+            "_raw_ingestor_trust_store_path",
+            str(Path(raw_ingestor_trust_store_path).expanduser().resolve()),
         )
         return result
 
@@ -7514,6 +9422,15 @@ class EpisodeLedger:
         certificate = _ledgered_promotion_deployment_certificate_from_payload(
             payload
         )
+        with self._connect() as connection:
+            self._require_raw_trust_artifact_usable(
+                connection,
+                artifact_kind="promotion_deployment_certificate",
+                artifact_digest=certificate.certificate_digest,
+                raw_ingestor_trust_store_digest=(
+                    certificate.raw_ingestor_trust_store_digest
+                ),
+            )
         evidence = self.load_neural_prior_promotion(
             certificate.promotion_evidence_digest
         )
@@ -7592,6 +9509,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV24
         | LegacyNeuralPriorPromotionEvidenceAuditV25
         | LegacyNeuralPriorPromotionEvidenceAuditV26
+        | LegacyNeuralPriorPromotionEvidenceAuditV27
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -7670,6 +9588,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV24
                 | LegacyNeuralPriorPromotionEvidenceAuditV25
                 | LegacyNeuralPriorPromotionEvidenceAuditV26
+                | LegacyNeuralPriorPromotionEvidenceAuditV27
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -7780,6 +9699,7 @@ class EpisodeLedger:
                         "neural-prior-promotion-evidence-v25",
                         "neural-prior-promotion-evidence-v26",
                         "neural-prior-promotion-evidence-v27",
+                        "neural-prior-promotion-evidence-v28",
                     ):
                         raw_payload = json.loads(row["evidence_payload_json"])
                         if not isinstance(raw_payload, dict):
@@ -7812,6 +9732,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v25",
                             "neural-prior-promotion-evidence-v26",
                             "neural-prior-promotion-evidence-v27",
+                            "neural-prior-promotion-evidence-v28",
                         ):
                             raw_payload["regime_classifier_evidence_digests"] = tuple(
                                 raw_payload["regime_classifier_evidence_digests"]
@@ -7842,6 +9763,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v25",
                             "neural-prior-promotion-evidence-v26",
                             "neural-prior-promotion-evidence-v27",
+                            "neural-prior-promotion-evidence-v28",
                         ):
                             raw_payload["range_band_skill_bounds"] = tuple(
                                 tuple(item)
@@ -7866,6 +9788,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v25",
                             "neural-prior-promotion-evidence-v26",
                             "neural-prior-promotion-evidence-v27",
+                            "neural-prior-promotion-evidence-v28",
                         ):
                             raw_payload[
                                 "range_band_skill_inference_diagnostics"
@@ -7891,6 +9814,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v25",
                             "neural-prior-promotion-evidence-v26",
                             "neural-prior-promotion-evidence-v27",
+                            "neural-prior-promotion-evidence-v28",
                         ):
                             raw_payload[
                                 "certified_range_geometry_contract_digests"
@@ -8136,6 +10060,15 @@ class EpisodeLedger:
                                     separators=(",", ":"),
                                 ),
                             )
+                        elif contract == "neural-prior-promotion-evidence-v27":
+                            evidence = LegacyNeuralPriorPromotionEvidenceAuditV27(
+                                promotion_evidence_digest=promotion_evidence_digest,
+                                payload_json=json.dumps(
+                                    raw_payload,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                ),
+                            )
                         else:
                             raw_payload["range_metric_cell_bounds"] = tuple(
                                 tuple(item)
@@ -8175,6 +10108,15 @@ class EpisodeLedger:
             expected_digest=row["candidate_manifest_digest"],
         )
         if type(evidence) is NeuralPriorPromotionEvidence:
+            with self._connect() as connection:
+                self._require_raw_trust_artifact_usable(
+                    connection,
+                    artifact_kind="promotion_evidence",
+                    artifact_digest=evidence.promotion_evidence_digest,
+                    raw_ingestor_trust_store_digest=(
+                        evidence.raw_ingestor_trust_store_digest
+                    ),
+                )
             if not isinstance(manifest, NeuralPriorCandidateManifest) or any(
                 not isinstance(item, PriorHoldoutEvaluation)
                 for item in evaluations
@@ -8604,7 +10546,11 @@ class EpisodeLedger:
                     committed_registry_root_digest TEXT NOT NULL UNIQUE,
                     receipt_digest TEXT NOT NULL UNIQUE,
                     entry_kind TEXT NOT NULL CHECK (
-                        entry_kind IN ('slot_reservation', 'raw_resolution')
+                        entry_kind IN (
+                            'training_raw',
+                            'slot_reservation',
+                            'raw_resolution'
+                        )
                     ),
                     family_digest TEXT NOT NULL,
                     created_at TEXT NOT NULL,
@@ -8637,6 +10583,53 @@ class EpisodeLedger:
                     family_digest TEXT NOT NULL,
                     global_resolution_receipt_digest TEXT NOT NULL,
                     reserved_at TEXT NOT NULL,
+                    FOREIGN KEY (family_digest)
+                        REFERENCES neural_prior_promotion_experiment_families(
+                            family_digest
+                        )
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS raw_observation_slot_identity_bindings (
+                    raw_observation_slot_digest TEXT PRIMARY KEY,
+                    raw_volume_identity_digest TEXT NOT NULL,
+                    family_digest TEXT NOT NULL,
+                    first_resolved_at TEXT NOT NULL,
+                    FOREIGN KEY (raw_volume_identity_digest)
+                        REFERENCES promotion_raw_volume_identity_reservations(
+                            raw_volume_identity_digest
+                        ),
+                    FOREIGN KEY (family_digest)
+                        REFERENCES neural_prior_promotion_experiment_families(
+                            family_digest
+                        )
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS raw_volume_resolution_memberships (
+                    global_resolution_receipt_digest TEXT NOT NULL,
+                    raw_observation_slot_digest TEXT NOT NULL,
+                    raw_volume_identity_digest TEXT NOT NULL,
+                    case_id TEXT NOT NULL,
+                    family_digest TEXT NOT NULL,
+                    resolved_at TEXT NOT NULL,
+                    PRIMARY KEY (
+                        global_resolution_receipt_digest,
+                        raw_observation_slot_digest
+                    ),
+                    UNIQUE (
+                        family_digest,
+                        case_id,
+                        raw_observation_slot_digest
+                    ),
+                    FOREIGN KEY (raw_volume_identity_digest)
+                        REFERENCES promotion_raw_volume_identity_reservations(
+                            raw_volume_identity_digest
+                        ),
                     FOREIGN KEY (family_digest)
                         REFERENCES neural_prior_promotion_experiment_families(
                             family_digest
@@ -8721,6 +10714,8 @@ class EpisodeLedger:
                     arrays_sha256 TEXT NOT NULL,
                     metadata_sha256 TEXT NOT NULL,
                     path TEXT NOT NULL UNIQUE,
+                    raw_ingestor_trust_store_digest TEXT NOT NULL,
+                    raw_trust_validated_at TEXT,
                     committed_at TEXT NOT NULL,
                     usable INTEGER NOT NULL DEFAULT 0 CHECK (usable IN (0, 1)),
                     UNIQUE (holdout_plan_digest, case_id),
@@ -8729,6 +10724,22 @@ class EpisodeLedger:
                 )
                 """
             )
+            provenance_columns = {
+                row[1]
+                for row in connection.execute(
+                    "PRAGMA table_info(neural_prior_analysis_input_provenance)"
+                ).fetchall()
+            }
+            if "raw_ingestor_trust_store_digest" not in provenance_columns:
+                connection.execute(
+                    "ALTER TABLE neural_prior_analysis_input_provenance "
+                    "ADD COLUMN raw_ingestor_trust_store_digest TEXT"
+                )
+            if "raw_trust_validated_at" not in provenance_columns:
+                connection.execute(
+                    "ALTER TABLE neural_prior_analysis_input_provenance "
+                    "ADD COLUMN raw_trust_validated_at TEXT"
+                )
             connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS neural_prior_holdout_scoring_input_artifacts (
@@ -8814,6 +10825,34 @@ class EpisodeLedger:
                     created_at TEXT NOT NULL,
                     FOREIGN KEY (start_receipt_digest)
                         REFERENCES trusted_process_start_receipts_v2(receipt_digest)
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS raw_trust_artifact_activations (
+                    artifact_kind TEXT NOT NULL CHECK (
+                        artifact_kind IN (
+                            'scoring_replay_bundle',
+                            'scoring_completion',
+                            'promotion_evidence',
+                            'promotion_deployment_certificate'
+                        )
+                    ),
+                    artifact_digest TEXT NOT NULL CHECK (
+                        length(artifact_digest) = 64
+                        AND artifact_digest NOT GLOB '*[^0-9a-f]*'
+                    ),
+                    raw_ingestor_trust_store_digest TEXT NOT NULL CHECK (
+                        length(raw_ingestor_trust_store_digest) = 64
+                        AND raw_ingestor_trust_store_digest
+                            NOT GLOB '*[^0-9a-f]*'
+                    ),
+                    usable INTEGER NOT NULL DEFAULT 0 CHECK (usable IN (0, 1)),
+                    prepared_at TEXT NOT NULL,
+                    activated_at TEXT,
+                    expired_at TEXT,
+                    PRIMARY KEY (artifact_kind, artifact_digest)
                 )
                 """
             )
@@ -8947,6 +10986,32 @@ class EpisodeLedger:
                 )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS operational_decision_issuance_states (
+                    operational_cycle_id TEXT PRIMARY KEY,
+                    input_plan_digest TEXT NOT NULL UNIQUE,
+                    promotion_certificate_digest TEXT NOT NULL,
+                    decision_payload_json TEXT NOT NULL,
+                    status TEXT NOT NULL CHECK (
+                        status IN (
+                            'prepared',
+                            'decision_recorded',
+                            'published',
+                            'expired'
+                        )
+                    ),
+                    prepared_at TEXT NOT NULL,
+                    decision_row_committed_at TEXT,
+                    certificate_digest TEXT UNIQUE,
+                    updated_at TEXT NOT NULL,
+                    FOREIGN KEY (promotion_certificate_digest)
+                        REFERENCES neural_prior_promotion_deployment_certificates_v3(
+                            certificate_digest
+                        )
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS operational_decision_commits (
                     commit_entry_digest TEXT PRIMARY KEY,
                     committed_chain_root_digest TEXT NOT NULL UNIQUE,
@@ -9006,6 +11071,8 @@ class EpisodeLedger:
                 CREATE TABLE IF NOT EXISTS operational_decision_publications (
                     certificate_digest TEXT PRIMARY KEY,
                     decision_row_committed_at TEXT NOT NULL,
+                    publication_payload_committed_at TEXT,
+                    activation_committed_at TEXT,
                     usable INTEGER NOT NULL CHECK(usable IN (0, 1)),
                     receipt_digest TEXT UNIQUE,
                     receipt_json TEXT,
@@ -9017,6 +11084,22 @@ class EpisodeLedger:
                 )
                 """
             )
+            publication_columns = {
+                row[1]
+                for row in connection.execute(
+                    "PRAGMA table_info(operational_decision_publications)"
+                ).fetchall()
+            }
+            if "activation_committed_at" not in publication_columns:
+                connection.execute(
+                    "ALTER TABLE operational_decision_publications "
+                    "ADD COLUMN activation_committed_at TEXT"
+                )
+            if "publication_payload_committed_at" not in publication_columns:
+                connection.execute(
+                    "ALTER TABLE operational_decision_publications "
+                    "ADD COLUMN publication_payload_committed_at TEXT"
+                )
             connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS operational_deployment_decisions (
@@ -9100,8 +11183,12 @@ class EpisodeLedger:
                 "neural_prior_experiment_family_consumptions",
                 "promotion_sampling_unit_reservations",
                 "promotion_sampling_unit_consumptions",
+                "training_raw_registry_entries",
+                "global_sampling_registry_entries",
                 "promotion_raw_observation_slot_reservations",
                 "promotion_raw_volume_identity_reservations",
+                "raw_observation_slot_identity_bindings",
+                "raw_volume_resolution_memberships",
                 "promotion_raw_volume_identity_consumptions",
                 "promotion_raw_observation_reservations",
                 "promotion_raw_observation_consumptions",
@@ -9117,7 +11204,6 @@ class EpisodeLedger:
                 "operational_decision_commits",
                 "operational_decision_commit_proofs",
                 "operational_deployment_decisions_v2",
-                "operational_decision_publications",
                 "operational_deployment_decisions",
             ):
                 connection.execute(
@@ -9139,6 +11225,183 @@ class EpisodeLedger:
                     """
                 )
             connection.execute(
+                "DROP TRIGGER IF EXISTS raw_trust_artifact_activations_no_insert"
+            )
+            connection.execute(
+                """
+                CREATE TRIGGER raw_trust_artifact_activations_no_insert
+                BEFORE INSERT ON raw_trust_artifact_activations
+                WHEN NEW.artifact_kind NOT IN (
+                        'scoring_replay_bundle',
+                        'scoring_completion',
+                        'promotion_evidence',
+                        'promotion_deployment_certificate'
+                    )
+                    OR length(NEW.artifact_digest) != 64
+                    OR NEW.artifact_digest GLOB '*[^0-9a-f]*'
+                    OR length(NEW.raw_ingestor_trust_store_digest) != 64
+                    OR NEW.raw_ingestor_trust_store_digest GLOB '*[^0-9a-f]*'
+                    OR NEW.usable != 0
+                    OR NEW.activated_at IS NOT NULL
+                    OR NEW.expired_at IS NOT NULL
+                    OR julianday(NEW.prepared_at) IS NULL
+                    OR NOT (
+                        NEW.prepared_at GLOB '*Z'
+                        OR NEW.prepared_at GLOB '*+00:00'
+                    )
+                BEGIN
+                    SELECT RAISE(
+                        ABORT,
+                        'raw trust artifact must begin prepared and unusable'
+                    );
+                END
+                """
+            )
+            connection.execute(
+                "DROP TRIGGER IF EXISTS raw_trust_artifact_activations_no_update"
+            )
+            connection.execute(
+                """
+                CREATE TRIGGER raw_trust_artifact_activations_no_update
+                BEFORE UPDATE ON raw_trust_artifact_activations
+                WHEN NOT (
+                    OLD.artifact_kind = NEW.artifact_kind
+                    AND OLD.artifact_digest = NEW.artifact_digest
+                    AND OLD.raw_ingestor_trust_store_digest =
+                        NEW.raw_ingestor_trust_store_digest
+                    AND OLD.prepared_at = NEW.prepared_at
+                    AND (
+                        (
+                            OLD.usable = 0 AND NEW.usable = 1
+                            AND OLD.activated_at IS NULL
+                            AND NEW.activated_at IS NOT NULL
+                            AND julianday(NEW.activated_at) IS NOT NULL
+                            AND (
+                                NEW.activated_at GLOB '*Z'
+                                OR NEW.activated_at GLOB '*+00:00'
+                            )
+                            AND julianday(NEW.activated_at)
+                                >= julianday(OLD.prepared_at)
+                            AND OLD.expired_at IS NULL
+                            AND NEW.expired_at IS NULL
+                        )
+                        OR (
+                            OLD.usable = 1 AND NEW.usable = 0
+                            AND OLD.activated_at = NEW.activated_at
+                            AND OLD.expired_at IS NULL
+                            AND NEW.expired_at IS NOT NULL
+                            AND julianday(NEW.expired_at) IS NOT NULL
+                            AND (
+                                NEW.expired_at GLOB '*Z'
+                                OR NEW.expired_at GLOB '*+00:00'
+                            )
+                            AND julianday(NEW.expired_at)
+                                >= julianday(OLD.activated_at)
+                        )
+                    )
+                )
+                BEGIN
+                    SELECT RAISE(
+                        ABORT,
+                        'raw trust artifact activation transition is invalid'
+                    );
+                END
+                """
+            )
+            connection.execute(
+                """
+                CREATE TRIGGER IF NOT EXISTS
+                    raw_trust_artifact_activations_no_delete
+                BEFORE DELETE ON raw_trust_artifact_activations
+                BEGIN
+                    SELECT RAISE(
+                        ABORT,
+                        'raw trust artifact activations are immutable'
+                    );
+                END
+                """
+            )
+            connection.execute(
+                "DROP TRIGGER IF EXISTS operational_decision_publications_no_update"
+            )
+            connection.execute(
+                """
+                CREATE TRIGGER operational_decision_publications_no_update
+                BEFORE UPDATE ON operational_decision_publications
+                WHEN NOT (
+                    (
+                        OLD.usable = 0 AND NEW.usable = 0
+                        AND OLD.activation_committed_at IS NULL
+                        AND NEW.activation_committed_at IS NULL
+                        AND OLD.publication_payload_committed_at IS NULL
+                        AND NEW.publication_payload_committed_at IS NULL
+                        AND OLD.receipt_digest IS NULL
+                        AND NEW.receipt_digest IS NOT NULL
+                        AND OLD.receipt_json IS NULL
+                        AND NEW.receipt_json IS NOT NULL
+                    )
+                    OR (
+                        OLD.usable = 0 AND NEW.usable = 0
+                        AND OLD.activation_committed_at IS NULL
+                        AND NEW.activation_committed_at IS NULL
+                        AND OLD.publication_payload_committed_at IS NULL
+                        AND NEW.publication_payload_committed_at IS NOT NULL
+                        AND NEW.receipt_digest IS OLD.receipt_digest
+                        AND NEW.receipt_json IS OLD.receipt_json
+                    )
+                    OR (
+                        OLD.usable = 0 AND NEW.usable = 1
+                        AND OLD.activation_committed_at IS NULL
+                        AND NEW.activation_committed_at IS NOT NULL
+                        AND NEW.publication_payload_committed_at
+                            IS OLD.publication_payload_committed_at
+                        AND OLD.publication_payload_committed_at IS NOT NULL
+                        AND NEW.receipt_digest IS OLD.receipt_digest
+                        AND OLD.receipt_digest IS NOT NULL
+                        AND NEW.receipt_json IS OLD.receipt_json
+                        AND OLD.receipt_json IS NOT NULL
+                        AND (
+                            SELECT status FROM
+                                operational_decision_issuance_states
+                            WHERE certificate_digest = NEW.certificate_digest
+                        ) = 'decision_recorded'
+                    )
+                    OR (
+                        OLD.usable = 1 AND NEW.usable = 0
+                        AND NEW.activation_committed_at
+                            IS OLD.activation_committed_at
+                        AND NEW.publication_payload_committed_at
+                            IS OLD.publication_payload_committed_at
+                        AND NEW.receipt_digest IS OLD.receipt_digest
+                        AND NEW.receipt_json IS OLD.receipt_json
+                    )
+                )
+                OR NEW.certificate_digest != OLD.certificate_digest
+                OR NEW.decision_row_committed_at
+                    != OLD.decision_row_committed_at
+                OR NEW.created_at != OLD.created_at
+                BEGIN
+                    SELECT RAISE(
+                        ABORT,
+                        'operational decision publications may only fail closed'
+                    );
+                END
+                """
+            )
+            connection.execute(
+                """
+                CREATE TRIGGER IF NOT EXISTS
+                    operational_decision_publications_no_delete
+                BEFORE DELETE ON operational_decision_publications
+                BEGIN
+                    SELECT RAISE(
+                        ABORT,
+                        'operational_decision_publications rows are immutable'
+                    );
+                END
+                """
+            )
+            connection.execute(
                 """
                 CREATE TRIGGER IF NOT EXISTS episode_impacts_no_late_insert
                 BEFORE INSERT ON episode_impacts
@@ -9154,6 +11417,139 @@ class EpisodeLedger:
                 END
                 """
             )
+
+    @staticmethod
+    def _prepare_raw_trust_artifact_activation(
+        connection: sqlite3.Connection,
+        *,
+        artifact_kind: str,
+        artifact_digest: str,
+        raw_ingestor_trust_store_digest: str,
+    ) -> None:
+        if (
+            artifact_kind not in _RAW_TRUST_ACTIVATION_KINDS
+            or re.fullmatch(r"[0-9a-f]{64}", artifact_digest) is None
+            or re.fullmatch(
+                r"[0-9a-f]{64}", raw_ingestor_trust_store_digest
+            )
+            is None
+        ):
+            raise ValueError("raw trust artifact activation identity is invalid")
+        connection.execute(
+            "INSERT INTO raw_trust_artifact_activations "
+            "(artifact_kind,artifact_digest,"
+            "raw_ingestor_trust_store_digest,usable,prepared_at) "
+            "VALUES (?,?,?,?,?)",
+            (
+                artifact_kind,
+                artifact_digest,
+                raw_ingestor_trust_store_digest,
+                0,
+                datetime.now(timezone.utc).isoformat(),
+            ),
+        )
+
+    @staticmethod
+    def _require_raw_trust_artifact_usable(
+        connection: sqlite3.Connection,
+        *,
+        artifact_kind: str,
+        artifact_digest: str,
+        raw_ingestor_trust_store_digest: str,
+    ) -> None:
+        row = connection.execute(
+            "SELECT raw_ingestor_trust_store_digest,usable,prepared_at,"
+            "activated_at,expired_at FROM raw_trust_artifact_activations "
+            "WHERE artifact_kind = ? AND artifact_digest = ?",
+            (artifact_kind, artifact_digest),
+        ).fetchone()
+        try:
+            prepared_at = datetime.fromisoformat(
+                str(row[2]).replace("Z", "+00:00")
+            )
+            activated_at = datetime.fromisoformat(
+                str(row[3]).replace("Z", "+00:00")
+            )
+            chronology_valid = (
+                prepared_at.utcoffset() == timedelta(0)
+                and activated_at.utcoffset() == timedelta(0)
+                and prepared_at <= activated_at
+            )
+        except (IndexError, TypeError, ValueError):
+            chronology_valid = False
+        if (
+            row is None
+            or row[0] != raw_ingestor_trust_store_digest
+            or int(row[1]) != 1
+            or not chronology_valid
+            or row[3] is None
+            or row[4] is not None
+        ):
+            raise ValueError("raw trust artifact is not durably usable")
+
+    def _expire_raw_trust_artifact_activation(
+        self,
+        *,
+        artifact_kind: str,
+        artifact_digest: str,
+    ) -> None:
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.execute(
+                "UPDATE raw_trust_artifact_activations SET usable = 0, "
+                "expired_at = ? WHERE artifact_kind = ? AND "
+                "artifact_digest = ? AND usable = 1 AND expired_at IS NULL",
+                (
+                    datetime.now(timezone.utc).isoformat(),
+                    artifact_kind,
+                    artifact_digest,
+                ),
+            )
+
+    def _activate_raw_trust_artifact(
+        self,
+        *,
+        artifact_kind: str,
+        artifact_digest: str,
+        raw_ingestor_trust_store_digest: str,
+        raw_ingestor_trust_store_path: str | Path,
+    ) -> None:
+        _require_current_raw_ingestor_trust_store_digest(
+            raw_ingestor_trust_store_path,
+            raw_ingestor_trust_store_digest,
+        )
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            _require_current_raw_ingestor_trust_store_digest(
+                raw_ingestor_trust_store_path,
+                raw_ingestor_trust_store_digest,
+            )
+            activated_at = datetime.now(timezone.utc).isoformat()
+            updated = connection.execute(
+                "UPDATE raw_trust_artifact_activations SET usable = 1, "
+                "activated_at = ? WHERE artifact_kind = ? AND "
+                "artifact_digest = ? AND raw_ingestor_trust_store_digest = ? "
+                "AND usable = 0 AND activated_at IS NULL AND expired_at IS NULL",
+                (
+                    activated_at,
+                    artifact_kind,
+                    artifact_digest,
+                    raw_ingestor_trust_store_digest,
+                ),
+            )
+            if updated.rowcount != 1:
+                raise ValueError("raw trust artifact activation is unavailable")
+        try:
+            _require_current_raw_ingestor_trust_store_digest(
+                raw_ingestor_trust_store_path,
+                raw_ingestor_trust_store_digest,
+            )
+        except Exception:
+            self._expire_raw_trust_artifact_activation(
+                artifact_kind=artifact_kind,
+                artifact_digest=artifact_digest,
+            )
+            raise
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.index_path, timeout=30.0)
@@ -9800,7 +12196,7 @@ def _decode_holdout_scoring_artifact(
         raise ValueError("invalid holdout scoring artifact payload")
     values = dict(value)
     stored_digest = values.pop("artifact_digest", None)
-    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v7":
+    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v8":
         raise ValueError("legacy holdout scoring artifacts are audit-only")
     for name in (
         "ordered_case_ids",
@@ -9829,6 +12225,7 @@ def _decode_scoring_replay_bundle_manifest(
     | LegacyScoringReplayBundleManifestAuditV4
     | LegacyScoringReplayBundleManifestAuditV5
     | LegacyScoringReplayBundleManifestAuditV6
+    | LegacyScoringReplayBundleManifestAuditV7
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -9865,6 +12262,7 @@ def _decode_scoring_replay_bundle_manifest(
             | LegacyScoringReplayBundleManifestAuditV4
             | LegacyScoringReplayBundleManifestAuditV5
             | LegacyScoringReplayBundleManifestAuditV6
+            | LegacyScoringReplayBundleManifestAuditV7
         ) = LegacyScoringReplayBundleManifestAuditV1(
             **cast(Any, values)
         )
@@ -9896,6 +12294,10 @@ def _decode_scoring_replay_bundle_manifest(
             )
         elif values.get("contract") == "neural-prior-scoring-replay-bundle-v6":
             manifest = LegacyScoringReplayBundleManifestAuditV6(
+                **cast(Any, values)
+            )
+        elif values.get("contract") == "neural-prior-scoring-replay-bundle-v7":
+            manifest = LegacyScoringReplayBundleManifestAuditV7(
                 **cast(Any, values)
             )
         else:
@@ -9941,6 +12343,7 @@ def _decode_candidate_manifest(
     | LegacyNeuralPriorCandidateManifestAuditV10
     | LegacyNeuralPriorCandidateManifestAuditV11
     | LegacyNeuralPriorCandidateManifestAuditV12
+    | LegacyNeuralPriorCandidateManifestAuditV13
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -10079,6 +12482,18 @@ def _decode_candidate_manifest(
         if audit_v12.manifest_digest != expected_digest:
             raise ValueError("candidate manifest ledger digest mismatch")
         return audit_v12
+    if values.get("contract") == "neural-prior-candidate-manifest-v13":
+        audit_v13 = LegacyNeuralPriorCandidateManifestAuditV13(
+            manifest_digest=str(stored_digest),
+            payload_json=json.dumps(
+                value,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+        )
+        if audit_v13.manifest_digest != expected_digest:
+            raise ValueError("candidate manifest ledger digest mismatch")
+        return audit_v13
     values["holdout_cases"] = tuple(
         NeuralPriorHoldoutCase(
             **cast(
@@ -11390,6 +13805,30 @@ def _fsync_directory(path: Path) -> None:
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+
+
+def _publish_durable_directory(
+    *,
+    temporary: Path,
+    target: Path,
+    durable_files: tuple[Path, ...],
+    parent: Path,
+) -> None:
+    """Publish complete bytes before a SQLite row can reference them."""
+
+    for path in durable_files:
+        _fsync_file(path)
+    _fsync_directory(temporary)
+    renamed = False
+    try:
+        temporary.rename(target)
+        renamed = True
+        _fsync_directory(parent)
+    except Exception:
+        if renamed and target.exists():
+            shutil.rmtree(target)
+            _fsync_directory(parent)
+        raise
 
 
 def _validate_episode_id(episode_id: str) -> None:

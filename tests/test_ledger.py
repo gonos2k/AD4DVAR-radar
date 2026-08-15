@@ -655,9 +655,91 @@ class EpisodeLedgerTests(unittest.TestCase):
                 committed_at="2028-12-31T00:00:00Z",
             )
         )
+        processor_key = promotion_module.Ed25519PrivateKey.from_private_bytes(
+            b"\x25" * 32
+        )
+        member_unsigned = {
+            "contract": "analysis-input-derivation-artifact-v4",
+            "case_id": "clock-training-member",
+            "input_plan_digest": "9" * 64,
+            "resolved_raw_observation_receipt_digests": ("5" * 64,),
+            "canonical_raw_volume_identity_digests": ("6" * 64,),
+            "global_raw_resolution_receipt_digest": (
+                training_registry_receipt.receipt_digest
+            ),
+            "decoder_version_digest": "8" * 64,
+            "qc_algorithm_digest": "a" * 64,
+            "qc_policy_digest": "b" * 64,
+            "source_selection_evidence_digest": "c" * 64,
+            "regrid_algorithm_digest": "5" * 64,
+            "grid_contract_digest": "3" * 64,
+            "background_cycle_rule_digest": "d" * 64,
+            "background_valid_times": (),
+            "background_source_identity_digest": None,
+            "background_input_identity_digests": (),
+            "input_frames_digest": "e" * 64,
+            "observation_masks_digest": "f" * 64,
+            "observation_quality_weight_digest": "0" * 64,
+            "observation_std_dbz_digest": "1" * 64,
+            "background_frames_digest": None,
+            "input_bundle_digest": "1" * 64,
+            "full_analysis_input_digest": "2" * 64,
+            "processed_at": "2028-12-30T00:00:00Z",
+            "processor_id": "clock-analysis-processor",
+            "processor_public_key_hex": (
+                processor_key.public_key().public_bytes_raw().hex()
+            ),
+        }
+        member_derivation = promotion_module.AnalysisInputDerivationArtifact(
+            **member_unsigned,
+            processor_signature_hex=processor_key.sign(
+                promotion_module.json_digest(member_unsigned).encode("ascii")
+            ).hex(),
+        )
+        signed_member_manifest_digest = promotion_module.json_digest(
+            {
+                "contract": "signed-training-member-manifest-v1",
+                "members": [
+                    {
+                        "analysis_input_derivation_artifact_digest": (
+                            member_derivation.artifact_digest
+                        ),
+                        "processor_id": member_derivation.processor_id,
+                        "processor_public_key_hex": (
+                            member_derivation.processor_public_key_hex
+                        ),
+                    }
+                ],
+            }
+        )
+        training_derivation = promotion_module.TrainingDatasetDerivationArtifact(
+            training_raw_registry_receipt_digest=(
+                training_registry_receipt.receipt_digest
+            ),
+            raw_volume_identity_digests=("6" * 64,),
+            sampling_unit_digests=("7" * 64,),
+            training_input_bundle_digests=("1" * 64,),
+            training_full_analysis_input_digests=("2" * 64,),
+            training_grid_contract_digests=("3" * 64,),
+            training_member_analysis_derivation_artifact_jsons=(
+                json.dumps(
+                    member_derivation.payload,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+            ),
+            decoder_algorithm_digest="8" * 64,
+            qc_algorithm_digest="a" * 64,
+            regrid_algorithm_digest="5" * 64,
+            feature_algorithm_digest="f" * 64,
+            feature_schema_digest="0" * 64,
+            signed_training_member_manifest_digest=(
+                signed_member_manifest_digest
+            ),
+        )
         classifier_manifest = promotion_module.RegimeClassifierManifest(
             classifier_digest="b" * 64,
-            training_dataset_digest="c" * 64,
+            training_dataset_digest=training_derivation.training_dataset_digest,
             training_case_ids=("classifier-training-case",),
             training_input_bundle_digests=("1" * 64,),
             training_full_analysis_input_digests=("2" * 64,),
@@ -676,6 +758,14 @@ class EpisodeLedgerTests(unittest.TestCase):
                 sort_keys=True,
                 separators=(",", ":"),
             ),
+            training_dataset_derivation_artifact_digest=(
+                training_derivation.artifact_digest
+            ),
+            training_dataset_derivation_artifact_json=json.dumps(
+                training_derivation.payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
             training_time_windows=((
                 "2029-01-01T00:00:00Z",
                 "2029-01-01T01:00:00Z",
@@ -685,7 +775,9 @@ class EpisodeLedgerTests(unittest.TestCase):
                 promotion_module.numerical_runtime_identity_digest("cpu")
             ),
             reference_label_contract_digest="e" * 64,
-            signed_training_member_manifest_digest="4" * 64,
+            signed_training_member_manifest_digest=(
+                signed_member_manifest_digest
+            ),
         )
         labeler_key = promotion_module.Ed25519PrivateKey.from_private_bytes(
             b"\x02" * 32
@@ -740,7 +832,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             promotion_module.Ed25519PrivateKey.from_private_bytes(b"\x25" * 32)
         )
         raw_slot = promotion_module.RawObservationSlotPlan(
-            radar_site_digest="a" * 64,
+            radar_site_digest=range_geometry.radar_site_digest,
             acquisition_valid_time=input_plan.observation_valid_time,
             scan_strategy_rule_digest="5" * 64,
             source_selection_rule_digest="6" * 64,
@@ -834,6 +926,9 @@ class EpisodeLedgerTests(unittest.TestCase):
                 authorities=((
                     "clock-raw-ingestor",
                     raw_ingestor_key.public_key().public_bytes_raw().hex(),
+                    "2026-01-01T00:00:00Z",
+                    "2027-01-01T00:00:00Z",
+                    None,
                 ),),
             ),
             analysis_processor_id="clock-analysis-processor",
@@ -1062,7 +1157,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-            self.assertEqual(version, 33)
+            self.assertEqual(version, 36)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4375,7 +4470,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 33)
+        self.assertEqual(version, 36)
 
 
 if __name__ == "__main__":
