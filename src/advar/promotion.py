@@ -64,6 +64,8 @@ from .variational import (
     _export_graph,
     _module_state_digest,
     _new_neural_prior_deployment_selection,
+    learned_radar_input_features,
+    LEARNED_RADAR_INPUT_FEATURE_CONTRACT,
     NeuralPriorApplication,
     NeuralPriorDeploymentSelection,
     NeuralPriorInferenceRunner,
@@ -202,22 +204,23 @@ _UNCERTAINTY_SCORE_SUPPORT = UncertaintyScoreSupportContract()
 
 
 SEMANTIC_SCORING_REPLAY_CONTRACT = (
-    "neural-prior-scoring-replay-bundle-v8"
+    "neural-prior-scoring-replay-bundle-v9"
 )
 SEMANTIC_SCORING_REPLAY_METHOD = (
-    "builtin-semantic-scoring-recomputation-v8"
+    "builtin-semantic-scoring-recomputation-v9"
 )
 SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD: dict[str, str] = {
-    "contract": "neural-prior-semantic-scoring-generation-v6",
+    "contract": "neural-prior-semantic-scoring-generation-v7",
     "replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
     "replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
-    "case_contract": "neural-prior-semantic-scoring-case-v7",
+    "case_contract": "neural-prior-semantic-scoring-case-v8",
     "product_type_policy": "exact-shipped-product-types-v1",
     "forecast_integrity": "forecast-result-raw-content-validation-v1",
     "prior_integrity": "runner-reproduced-prior-application-v1",
     "classifier_integrity": "exported-classifier-reexecution-v1",
     "snapshot_policy": "single-frozen-tensor-snapshot-v1",
     "backend_policy": "single-device-cpu-only-scoring-v1",
+    "learned_input_feature_contract": LEARNED_RADAR_INPUT_FEATURE_CONTRACT,
 }
 SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST = json_digest(
     SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD
@@ -845,6 +848,22 @@ class ResolvedRawObservationReceipt:
             },
         }
 
+    @property
+    def resolution_identity_digest(self) -> str:
+        return self.raw_volume_identity.identity_digest
+
+    @property
+    def radar_site_digest(self) -> str:
+        return self.raw_volume_identity.radar_site_digest
+
+    @property
+    def acquisition_valid_time(self) -> str:
+        return self.raw_volume_identity.acquisition_valid_time
+
+    @property
+    def observed_at(self) -> str:
+        return self.raw_volume_attestation.received_at
+
     def validate_against(
         self,
         slot: RawObservationSlotPlan,
@@ -915,6 +934,154 @@ class ResolvedRawObservationReceipt:
                 ).hex(),
             ),
         )
+
+
+@dataclass(frozen=True)
+class MissingRawObservationReceipt:
+    """Signed evidence that one reserved radar slot produced no usable volume."""
+
+    slot_plan_digest: str
+    radar_site_digest: str
+    acquisition_valid_time: str
+    missing_reason: Literal["outage", "late", "corrupt", "unavailable"]
+    authority_id: str
+    authority_public_key_hex: str
+    observed_at: str
+    authority_signature_hex: str
+    contract: str = "missing-raw-observation-receipt-v1"
+    resolution_identity_digest: str = field(init=False)
+    receipt_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        for name in ("slot_plan_digest", "radar_site_digest"):
+            _require_digest(name, getattr(self, name))
+        if (
+            self.contract != "missing-raw-observation-receipt-v1"
+            or self.missing_reason
+            not in ("outage", "late", "corrupt", "unavailable")
+            or not self.authority_id
+            or self.authority_id.strip() != self.authority_id
+        ):
+            raise ValueError("missing raw-observation receipt is invalid")
+        acquisition = _canonical_time(self.acquisition_valid_time)
+        observed = _canonical_time(self.observed_at)
+        if _canonical_datetime(observed) < _canonical_datetime(acquisition):
+            raise ValueError("missing observation cannot precede its slot")
+        object.__setattr__(self, "acquisition_valid_time", acquisition)
+        object.__setattr__(self, "observed_at", observed)
+        missing_identity = json_digest(
+            {
+                "contract": "missing-raw-observation-identity-v1",
+                "slot_plan_digest": self.slot_plan_digest,
+                "radar_site_digest": self.radar_site_digest,
+                "acquisition_valid_time": acquisition,
+            }
+        )
+        object.__setattr__(
+            self,
+            "resolution_identity_digest",
+            missing_identity,
+        )
+        try:
+            key = Ed25519PublicKey.from_public_bytes(
+                bytes.fromhex(self.authority_public_key_hex)
+            )
+            key.verify(
+                bytes.fromhex(self.authority_signature_hex),
+                json_digest(self.unsigned_payload).encode("ascii"),
+            )
+        except (InvalidSignature, TypeError, ValueError) as error:
+            raise ValueError(
+                "missing raw-observation signature is invalid"
+            ) from error
+        object.__setattr__(self, "receipt_digest", json_digest(self.payload))
+
+    @property
+    def unsigned_payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "slot_plan_digest": self.slot_plan_digest,
+            "radar_site_digest": self.radar_site_digest,
+            "acquisition_valid_time": self.acquisition_valid_time,
+            "missing_reason": self.missing_reason,
+            "authority_id": self.authority_id,
+            "authority_public_key_hex": self.authority_public_key_hex,
+            "observed_at": self.observed_at,
+            "resolution_identity_digest": self.resolution_identity_digest,
+        }
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return self.unsigned_payload | {
+            "authority_signature_hex": self.authority_signature_hex,
+        }
+
+    def validate_against(
+        self,
+        slot: RawObservationSlotPlan,
+        trust_store: RawIngestorTrustStore,
+    ) -> None:
+        if (
+            self.slot_plan_digest != slot.slot_digest
+            or self.radar_site_digest != slot.radar_site_digest
+            or self.acquisition_valid_time != slot.acquisition_valid_time
+            or trust_store.approved_key(self.authority_id, at=self.observed_at)
+            != self.authority_public_key_hex
+        ):
+            raise ValueError("missing observation disagrees with its slot")
+
+    @classmethod
+    def issue(
+        cls,
+        *,
+        slot: RawObservationSlotPlan,
+        missing_reason: Literal["outage", "late", "corrupt", "unavailable"],
+        authority_id: str,
+        authority_private_key: Ed25519PrivateKey,
+        observed_at: str,
+    ) -> MissingRawObservationReceipt:
+        public_key_hex = authority_private_key.public_key().public_bytes(
+            serialization.Encoding.Raw,
+            serialization.PublicFormat.Raw,
+        ).hex()
+        acquisition = _canonical_time(slot.acquisition_valid_time)
+        observed = _canonical_time(observed_at)
+        identity = json_digest(
+            {
+                "contract": "missing-raw-observation-identity-v1",
+                "slot_plan_digest": slot.slot_digest,
+                "radar_site_digest": slot.radar_site_digest,
+                "acquisition_valid_time": acquisition,
+            }
+        )
+        unsigned = {
+            "contract": "missing-raw-observation-receipt-v1",
+            "slot_plan_digest": slot.slot_digest,
+            "radar_site_digest": slot.radar_site_digest,
+            "acquisition_valid_time": acquisition,
+            "missing_reason": missing_reason,
+            "authority_id": authority_id,
+            "authority_public_key_hex": public_key_hex,
+            "observed_at": observed,
+            "resolution_identity_digest": identity,
+        }
+        return cls(
+            slot_plan_digest=slot.slot_digest,
+            radar_site_digest=slot.radar_site_digest,
+            acquisition_valid_time=acquisition,
+            missing_reason=missing_reason,
+            authority_id=authority_id,
+            authority_public_key_hex=public_key_hex,
+            observed_at=observed,
+            authority_signature_hex=authority_private_key.sign(
+                json_digest(unsigned).encode("ascii")
+            ).hex(),
+        )
+
+
+RawObservationResolutionReceipt = (
+    ResolvedRawObservationReceipt | MissingRawObservationReceipt
+)
 
 
 @dataclass(frozen=True)
@@ -1503,26 +1670,210 @@ class GlobalRawVolumeResolutionReceipt:
         )
 
 
+@dataclass(frozen=True)
+class OperationalAnalysisInputProvenancePlan:
+    """Prospective raw-to-analysis plan for a non-holdout operational cycle."""
+
+    plan_id: str
+    input_plan: NeuralPriorInputPlan
+    raw_observation_slot_plans: tuple[RawObservationSlotPlan, ...]
+    raw_ingestor_trust_store: RawIngestorTrustStore
+    analysis_processor_id: str
+    analysis_processor_public_key_hex: str
+    analysis_processor_trust_store_digest: str
+    range_geometry_contract: RangeGeometryContract | MosaicRangeGeometryContract
+    operational_issuance_domain_plan: OperationalIssuanceDomainPlan
+    registered_at: str
+    contract: str = "operational-analysis-input-provenance-plan-v1"
+    plan_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "operational-analysis-input-provenance-plan-v1"
+            or not self.plan_id
+            or self.plan_id.strip() != self.plan_id
+            or type(self.input_plan) is not NeuralPriorInputPlan
+            or type(self.raw_ingestor_trust_store) is not RawIngestorTrustStore
+            or type(self.range_geometry_contract)
+            not in (RangeGeometryContract, MosaicRangeGeometryContract)
+            or type(self.operational_issuance_domain_plan)
+            is not OperationalIssuanceDomainPlan
+            or not self.analysis_processor_id
+            or self.analysis_processor_id.strip() != self.analysis_processor_id
+        ):
+            raise ValueError("operational provenance plan identity is invalid")
+        try:
+            Ed25519PublicKey.from_public_bytes(
+                bytes.fromhex(self.analysis_processor_public_key_hex)
+            )
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                "operational provenance processor key is invalid"
+            ) from error
+        _require_digest(
+            "analysis processor trust store",
+            self.analysis_processor_trust_store_digest,
+        )
+        slots = tuple(sorted(
+            self.raw_observation_slot_plans,
+            key=lambda item: (item.acquisition_valid_time, item.radar_site_digest),
+        ))
+        if (
+            not slots
+            or any(type(item) is not RawObservationSlotPlan for item in slots)
+            or len({item.slot_digest for item in slots}) != len(slots)
+            or {item.acquisition_valid_time for item in slots}
+            != set(self.input_plan.valid_times)
+        ):
+            raise ValueError("operational provenance raw slots are incomplete")
+        geometry = self.range_geometry_contract
+        issuance = self.operational_issuance_domain_plan
+        if (
+            issuance.case_id != self.plan_id
+            or issuance.grid_contract_digest
+            != self.input_plan.grid_contract_digest
+            or geometry.grid_contract_digest
+            != self.input_plan.grid_contract_digest
+        ):
+            raise ValueError(
+                "operational provenance issuance plan disagrees with its cycle"
+            )
+        if type(geometry) is RangeGeometryContract:
+            if (
+                issuance.radar_source_kind != "single_site"
+                or
+                {item.radar_site_digest for item in slots}
+                != {geometry.radar_site_digest}
+                or {item.source_selection_rule_digest for item in slots}
+                != {issuance.radar_source_contract_digest}
+            ):
+                raise ValueError(
+                    "single-site operational provenance topology disagrees"
+                )
+        else:
+            mosaic = cast(MosaicRangeGeometryContract, geometry)
+            if issuance.radar_source_kind != "mosaic":
+                raise ValueError(
+                    "mosaic operational issuance-domain kind disagrees"
+                )
+            for valid_time in self.input_plan.valid_times:
+                if {
+                    item.radar_site_digest
+                    for item in slots
+                    if item.acquisition_valid_time == valid_time
+                } != set(mosaic.radar_site_digests):
+                    raise ValueError(
+                        "mosaic operational provenance topology disagrees"
+                    )
+            if {item.source_selection_rule_digest for item in slots} != {
+                mosaic.source_selection_policy_digest
+            }:
+                raise ValueError(
+                    "mosaic operational source-selection contract disagrees"
+                )
+        registered = _canonical_time(self.registered_at)
+        if _canonical_datetime(registered) >= min(
+            _canonical_datetime(item.acquisition_valid_time) for item in slots
+        ):
+            raise ValueError(
+                "operational provenance plan must precede every raw slot"
+            )
+        object.__setattr__(self, "raw_observation_slot_plans", slots)
+        object.__setattr__(self, "registered_at", registered)
+        object.__setattr__(self, "plan_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "plan_id": self.plan_id,
+            "input_plan": self.input_plan.payload
+            | {"plan_digest": self.input_plan.plan_digest},
+            "raw_observation_slot_plans": [
+                item.payload | {"slot_digest": item.slot_digest}
+                for item in self.raw_observation_slot_plans
+            ],
+            "raw_ingestor_trust_store": self.raw_ingestor_trust_store.payload
+            | {"content_digest": self.raw_ingestor_trust_store.content_digest},
+            "analysis_processor_id": self.analysis_processor_id,
+            "analysis_processor_public_key_hex": (
+                self.analysis_processor_public_key_hex
+            ),
+            "analysis_processor_trust_store_digest": (
+                self.analysis_processor_trust_store_digest
+            ),
+            "range_geometry_contract": self.range_geometry_contract.payload
+            | {"contract_digest": self.range_geometry_contract.contract_digest},
+            "operational_issuance_domain_plan": (
+                self.operational_issuance_domain_plan.payload
+                | {"plan_digest": self.operational_issuance_domain_plan.plan_digest}
+            ),
+            "registered_at": self.registered_at,
+        }
+
+
+@dataclass(frozen=True)
+class OperationalRawVolumeResolutionReceipt:
+    """Ledger-bound resolution of operational slots without sampling semantics."""
+
+    provenance_plan_digest: str
+    input_plan_digest: str
+    slot_identity_bindings: tuple[tuple[str, str], ...]
+    resolved_at: str
+    contract: str = "operational-raw-volume-resolution-receipt-v1"
+    receipt_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        for name in ("provenance_plan_digest", "input_plan_digest"):
+            _require_digest(name, getattr(self, name))
+        ordered = tuple(sorted(self.slot_identity_bindings))
+        if (
+            self.contract != "operational-raw-volume-resolution-receipt-v1"
+            or not ordered
+            or len({item[0] for item in ordered}) != len(ordered)
+        ):
+            raise ValueError("operational raw-volume resolution is invalid")
+        for slot_digest, identity_digest in ordered:
+            _require_digest("operational raw slot", slot_digest)
+            _require_digest("operational raw identity", identity_digest)
+        object.__setattr__(self, "slot_identity_bindings", ordered)
+        object.__setattr__(self, "resolved_at", _canonical_time(self.resolved_at))
+        object.__setattr__(self, "receipt_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "provenance_plan_digest": self.provenance_plan_digest,
+            "input_plan_digest": self.input_plan_digest,
+            "slot_identity_bindings": [
+                list(item) for item in self.slot_identity_bindings
+            ],
+            "resolved_at": self.resolved_at,
+        }
+
+
 def _derive_analysis_inputs_from_raw_products(
     *,
     input_plan: NeuralPriorInputPlan,
-    resolved_raw_observations: tuple[ResolvedRawObservationReceipt, ...],
+    resolved_raw_observations: tuple[RawObservationResolutionReceipt, ...],
     resolved_source_coverage: ResolvedSourceCoverageArtifact | None,
 ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
     """Replay the supported raw-grid decode/QC/source-selection transform."""
 
     if not resolved_raw_observations:
         raise ValueError("analysis derivation requires raw-grid products")
-    by_time: dict[str, list[CanonicalRawGridVolumeArtifact]] = {}
+    by_time: dict[str, list[RawObservationResolutionReceipt]] = {}
     for receipt in resolved_raw_observations:
-        volume = receipt.raw_grid_volume
-        volume.validate_integrity()
-        if (
-            volume.radar_product_digest != input_plan.radar_product_digest
-            or volume.grid_contract_digest != input_plan.grid_contract_digest
-        ):
-            raise ValueError("raw-grid product disagrees with the input plan")
-        by_time.setdefault(volume.acquisition_valid_time, []).append(volume)
+        if type(receipt) is ResolvedRawObservationReceipt:
+            volume = receipt.raw_grid_volume
+            volume.validate_integrity()
+            if (
+                volume.radar_product_digest != input_plan.radar_product_digest
+                or volume.grid_contract_digest != input_plan.grid_contract_digest
+            ):
+                raise ValueError("raw-grid product disagrees with the input plan")
+        by_time.setdefault(receipt.acquisition_valid_time, []).append(receipt)
     if set(by_time) != set(input_plan.valid_times):
         raise ValueError("raw-grid products do not cover the input times")
 
@@ -1532,10 +1883,15 @@ def _derive_analysis_inputs_from_raw_products(
     standard_deviations: list[Tensor] = []
     if resolved_source_coverage is None:
         for valid_time in input_plan.valid_times:
-            volumes = by_time[valid_time]
-            if len(volumes) != 1:
+            receipts = by_time[valid_time]
+            if len(receipts) != 1:
                 raise ValueError("single-site derivation requires one raw volume per time")
-            volume = volumes[0]
+            receipt = receipts[0]
+            if type(receipt) is not ResolvedRawObservationReceipt:
+                raise ValueError(
+                    "single-site derivation cannot infer a grid from a missing volume"
+                )
+            volume = receipt.raw_grid_volume
             frame, mask, quality, observation_std = volume.decode_and_qc()
             frames.append(frame)
             masks.append(mask)
@@ -1551,21 +1907,52 @@ def _derive_analysis_inputs_from_raw_products(
             source_map = source_history[time_index]
             source_domain = source_map >= 0
             safe_source_map = source_map.clamp(min=0)
-            site_volumes = by_time[valid_time]
-            site_keys = tuple(item.radar_site_digest for item in site_volumes)
+            site_receipts = by_time[valid_time]
+            site_keys = tuple(item.radar_site_digest for item in site_receipts)
             if len(set(site_keys)) != len(site_keys):
                 raise ValueError(
                     "mosaic derivation has duplicate radar-site/time products"
                 )
             by_site = {
-                item.radar_site_digest: item for item in site_volumes
+                item.radar_site_digest: item for item in site_receipts
             }
             if set(by_site) != set(source_sites):
                 raise ValueError(
                     "mosaic derivation requires every registered site and input time"
                 )
             ordered = tuple(by_site[site] for site in source_sites)
-            decoded = tuple(item.decode_and_qc() for item in ordered)
+            if any(
+                type(item) is MissingRawObservationReceipt
+                and bool(torch.any(source_map == index))
+                for index, item in enumerate(ordered)
+            ):
+                raise ValueError("mosaic source map selects a missing radar volume")
+
+            def decode(
+                receipt: RawObservationResolutionReceipt,
+            ) -> tuple[Tensor, Tensor, Tensor, Tensor]:
+                if type(receipt) is ResolvedRawObservationReceipt:
+                    return receipt.raw_grid_volume.decode_and_qc()
+                float_fill = torch.full(
+                    source_map.shape,
+                    CANONICAL_INVALID_REFLECTIVITY_FILL_DBZ,
+                    dtype=torch.float32,
+                    device=source_map.device,
+                )
+                return (
+                    float_fill,
+                    torch.zeros_like(source_map, dtype=torch.bool),
+                    torch.full_like(
+                        float_fill,
+                        CANONICAL_INVALID_QUALITY_WEIGHT,
+                    ),
+                    torch.full_like(
+                        float_fill,
+                        CANONICAL_INVALID_OBSERVATION_STD_DBZ,
+                    ),
+                )
+
+            decoded = tuple(decode(item) for item in ordered)
 
             def select(index: int) -> Tensor:
                 stacked = torch.stack(tuple(item[index] for item in decoded))
@@ -1707,6 +2094,8 @@ class AnalysisInputDerivationArtifact:
     observation_masks_digest: str
     observation_quality_weight_digest: str
     observation_std_dbz_digest: str
+    source_available_mask_digest: str
+    learned_model_input_features_digest: str
     background_frames_digest: str | None
     input_bundle_digest: str
     full_analysis_input_digest: str
@@ -1714,7 +2103,7 @@ class AnalysisInputDerivationArtifact:
     processor_id: str
     processor_public_key_hex: str
     processor_signature_hex: str
-    contract: str = "analysis-input-derivation-artifact-v4"
+    contract: str = "analysis-input-derivation-artifact-v5"
     artifact_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -1725,7 +2114,7 @@ class AnalysisInputDerivationArtifact:
         )
         backgrounds = tuple(self.background_input_identity_digests)
         if (
-            self.contract != "analysis-input-derivation-artifact-v4"
+            self.contract != "analysis-input-derivation-artifact-v5"
             or not self.case_id
             or self.case_id.strip() != self.case_id
             or not raw_receipts
@@ -1750,6 +2139,8 @@ class AnalysisInputDerivationArtifact:
             "observation_masks_digest",
             "observation_quality_weight_digest",
             "observation_std_dbz_digest",
+            "source_available_mask_digest",
+            "learned_model_input_features_digest",
             "input_bundle_digest",
             "full_analysis_input_digest",
         ):
@@ -1841,6 +2232,12 @@ class AnalysisInputDerivationArtifact:
                 self.observation_quality_weight_digest
             ),
             "observation_std_dbz_digest": self.observation_std_dbz_digest,
+            "source_available_mask_digest": (
+                self.source_available_mask_digest
+            ),
+            "learned_model_input_features_digest": (
+                self.learned_model_input_features_digest
+            ),
             "background_frames_digest": self.background_frames_digest,
             "input_bundle_digest": self.input_bundle_digest,
             "full_analysis_input_digest": self.full_analysis_input_digest,
@@ -1861,8 +2258,13 @@ class AnalysisInputDerivationArtifact:
         *,
         case_id: str,
         input_plan: NeuralPriorInputPlan,
-        resolved_raw_observations: tuple[ResolvedRawObservationReceipt, ...],
-        global_resolution_receipt: GlobalRawVolumeResolutionReceipt,
+        resolved_raw_observations: tuple[
+            RawObservationResolutionReceipt, ...
+        ],
+        global_resolution_receipt: (
+            GlobalRawVolumeResolutionReceipt
+            | OperationalRawVolumeResolutionReceipt
+        ),
         run: ForecastRunContract,
         resolved_source_coverage: ResolvedSourceCoverageArtifact | None,
         background_frames_dbz: Tensor | None,
@@ -1875,7 +2277,7 @@ class AnalysisInputDerivationArtifact:
             sorted(
                 (
                     item.slot_plan_digest,
-                    item.raw_volume_identity.identity_digest,
+                    item.resolution_identity_digest,
                 )
                 for item in resolved_raw_observations
             )
@@ -1885,7 +2287,7 @@ class AnalysisInputDerivationArtifact:
             global_resolution_receipt.slot_identity_bindings
             != resolved_bindings
             or any(
-                _canonical_datetime(item.raw_volume_attestation.received_at)
+                _canonical_datetime(item.observed_at)
                 > _canonical_datetime(global_resolution_receipt.resolved_at)
                 for item in resolved_raw_observations
             )
@@ -1922,18 +2324,41 @@ class AnalysisInputDerivationArtifact:
             if background_frames_dbz is None
             else tensor_digest(background_frames_dbz)
         )
+        source_available_mask = (
+            torch.ones_like(derived_masks, dtype=torch.bool)
+            if resolved_source_coverage is None
+            else (
+                resolved_source_coverage
+                .input_history_source_radar_index_map >= 0
+            )
+        )
+        learned_model_input_features_digest = tensor_digest(
+            learned_radar_input_features(
+                derived_frames,
+                derived_masks,
+                derived_quality,
+                derived_std,
+                source_available_mask,
+            )
+        )
         if (
             run.input_plan_digest != input_plan.plan_digest
             or run.grid_time_contract_digest is None
             or run.observation_masks_digest is None
             or run.observation_quality_weight_digest is None
             or run.observation_std_dbz_digest is None
+            or run.source_available_mask_digest is None
+            or run.learned_model_input_features_digest is None
             or run.full_analysis_input_digest is None
             or tensor_digest(derived_frames) != run.input_frames_digest
             or tensor_digest(derived_masks) != run.observation_masks_digest
             or tensor_digest(derived_quality)
             != run.observation_quality_weight_digest
             or tensor_digest(derived_std) != run.observation_std_dbz_digest
+            or tensor_digest(source_available_mask)
+            != run.source_available_mask_digest
+            or learned_model_input_features_digest
+            != run.learned_model_input_features_digest
             or derived_background_digest != run.background_frames_digest
         ):
             raise ValueError(
@@ -1944,7 +2369,7 @@ class AnalysisInputDerivationArtifact:
             serialization.PublicFormat.Raw,
         ).hex()
         unsigned: dict[str, object] = {
-            "contract": "analysis-input-derivation-artifact-v4",
+            "contract": "analysis-input-derivation-artifact-v5",
             "case_id": case_id,
             "input_plan_digest": input_plan.plan_digest,
             "resolved_raw_observation_receipt_digests": sorted(
@@ -1953,6 +2378,7 @@ class AnalysisInputDerivationArtifact:
             "canonical_raw_volume_identity_digests": sorted(
                 item.raw_volume_identity.identity_digest
                 for item in resolved_raw_observations
+                if type(item) is ResolvedRawObservationReceipt
             ),
             "global_raw_resolution_receipt_digest": (
                 global_resolution_receipt.receipt_digest
@@ -1999,6 +2425,12 @@ class AnalysisInputDerivationArtifact:
                 run.observation_quality_weight_digest
             ),
             "observation_std_dbz_digest": run.observation_std_dbz_digest,
+            "source_available_mask_digest": (
+                run.source_available_mask_digest
+            ),
+            "learned_model_input_features_digest": (
+                run.learned_model_input_features_digest
+            ),
             "background_frames_digest": run.background_frames_digest,
             "input_bundle_digest": run.input_bundle_digest,
             "full_analysis_input_digest": run.full_analysis_input_digest,
@@ -3228,6 +3660,140 @@ def validate_operational_issuance_domain_artifact(
 
 
 @dataclass(frozen=True)
+class TrainingFeatureDatasetArtifact:
+    """Exact ordered feature/target dataset archive manifest.
+
+    Feature digests are reproduced by the product-owned five-channel builder
+    recorded in each signed analysis derivation. Target bytes live in the
+    content-addressed target archive and are bound with their generation
+    contract, order, split, weight, normalization and augmentation seed.
+    """
+
+    member_analysis_derivation_artifact_digests: tuple[str, ...]
+    member_feature_tensor_digests: tuple[str, ...]
+    member_target_tensor_digests: tuple[str, ...]
+    sample_order: tuple[str, ...]
+    sample_weights: tuple[float, ...]
+    split_labels: tuple[str, ...]
+    augmentation_seeds: tuple[int, ...]
+    normalization_statistics_digest: str
+    feature_algorithm_digest: str
+    feature_schema_digest: str
+    target_algorithm_digest: str
+    target_schema_digest: str
+    feature_tensor_archive_sha256: str
+    target_tensor_archive_sha256: str
+    contract: str = "training-feature-dataset-artifact-v1"
+    dataset_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        count = len(self.member_analysis_derivation_artifact_digests)
+        if (
+            self.contract != "training-feature-dataset-artifact-v1"
+            or count == 0
+            or any(
+                len(values) != count
+                for values in (
+                    self.member_feature_tensor_digests,
+                    self.member_target_tensor_digests,
+                    self.sample_order,
+                    self.sample_weights,
+                    self.split_labels,
+                    self.augmentation_seeds,
+                )
+            )
+            or len(set(self.sample_order)) != count
+            or any(
+                not value or value.strip() != value
+                for value in self.sample_order
+            )
+            or any(
+                value not in {"train", "validation", "test"}
+                for value in self.split_labels
+            )
+            or any(
+                not math.isfinite(value) or value <= 0.0
+                for value in self.sample_weights
+            )
+            or any(type(value) is not int or value < 0 for value in self.augmentation_seeds)
+        ):
+            raise ValueError("training feature dataset manifest is invalid")
+        for name, values in (
+            (
+                "training member derivation",
+                self.member_analysis_derivation_artifact_digests,
+            ),
+            ("training feature tensor", self.member_feature_tensor_digests),
+            ("training target tensor", self.member_target_tensor_digests),
+        ):
+            for value in values:
+                _require_digest(name, value)
+        for name in (
+            "normalization_statistics_digest",
+            "feature_algorithm_digest",
+            "feature_schema_digest",
+            "target_algorithm_digest",
+            "target_schema_digest",
+            "feature_tensor_archive_sha256",
+            "target_tensor_archive_sha256",
+        ):
+            _require_digest(name, getattr(self, name))
+        object.__setattr__(self, "dataset_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: list(value) if isinstance(value, tuple) else value
+            for key, value in self.__dict__.items()
+            if key != "dataset_digest"
+        }
+
+
+def _training_feature_dataset_from_json(
+    text: str,
+    *,
+    expected_digest: str,
+) -> TrainingFeatureDatasetArtifact:
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as error:
+        raise ValueError("training feature dataset is invalid") from error
+    if not isinstance(payload, dict):
+        raise ValueError("training feature dataset is invalid")
+    values = dict(payload)
+    stored_digest = values.pop("dataset_digest", None)
+    for name in (
+        "member_analysis_derivation_artifact_digests",
+        "member_feature_tensor_digests",
+        "member_target_tensor_digests",
+        "sample_order",
+        "sample_weights",
+        "split_labels",
+        "augmentation_seeds",
+    ):
+        retained = values.get(name)
+        if not isinstance(retained, list):
+            raise ValueError("training feature dataset is invalid")
+        values[name] = tuple(retained)
+    try:
+        artifact = TrainingFeatureDatasetArtifact(**cast(Any, values))
+    except (TypeError, ValueError) as error:
+        raise ValueError("training feature dataset is invalid") from error
+    canonical = json.dumps(
+        artifact.payload | {"dataset_digest": artifact.dataset_digest},
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    if (
+        artifact.dataset_digest != expected_digest
+        or stored_digest != expected_digest
+        or text != canonical
+    ):
+        raise ValueError("training feature dataset digest mismatch")
+    return artifact
+
+
+@dataclass(frozen=True)
 class TrainingDatasetDerivationArtifact:
     """Content-addressed signed-member training lineage preimage.
 
@@ -3249,12 +3815,14 @@ class TrainingDatasetDerivationArtifact:
     feature_algorithm_digest: str
     feature_schema_digest: str
     signed_training_member_manifest_digest: str
-    contract: str = "training-dataset-derivation-artifact-v1"
+    training_feature_dataset_artifact_digest: str
+    training_feature_dataset_artifact_json: str
+    contract: str = "training-dataset-derivation-artifact-v2"
     training_dataset_digest: str = field(init=False)
     artifact_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "training-dataset-derivation-artifact-v1":
+        if self.contract != "training-dataset-derivation-artifact-v2":
             raise ValueError("unsupported training-dataset derivation artifact")
         for name in (
             "training_raw_registry_receipt_digest",
@@ -3264,6 +3832,7 @@ class TrainingDatasetDerivationArtifact:
             "feature_algorithm_digest",
             "feature_schema_digest",
             "signed_training_member_manifest_digest",
+            "training_feature_dataset_artifact_digest",
         ):
             _require_digest(name, getattr(self, name))
         for name, values in (
@@ -3289,6 +3858,10 @@ class TrainingDatasetDerivationArtifact:
         member_derivations = tuple(
             _analysis_input_derivation_from_json(text)
             for text in self.training_member_analysis_derivation_artifact_jsons
+        )
+        feature_dataset = _training_feature_dataset_from_json(
+            self.training_feature_dataset_artifact_json,
+            expected_digest=self.training_feature_dataset_artifact_digest,
         )
         expected_member_manifest_digest = json_digest(
             {
@@ -3341,19 +3914,30 @@ class TrainingDatasetDerivationArtifact:
             != {self.regrid_algorithm_digest}
             or self.signed_training_member_manifest_digest
             != expected_member_manifest_digest
+            or feature_dataset.member_analysis_derivation_artifact_digests
+            != tuple(item.artifact_digest for item in member_derivations)
+            or feature_dataset.member_feature_tensor_digests
+            != tuple(
+                item.learned_model_input_features_digest
+                for item in member_derivations
+            )
+            or feature_dataset.feature_algorithm_digest
+            != self.feature_algorithm_digest
+            or feature_dataset.feature_schema_digest
+            != self.feature_schema_digest
         ):
             raise ValueError("training member derivations disagree with the dataset")
         object.__setattr__(
             self,
             "training_dataset_digest",
-            json_digest(self.dataset_payload),
+            feature_dataset.dataset_digest,
         )
         object.__setattr__(self, "artifact_digest", json_digest(self.payload))
 
     @property
     def dataset_payload(self) -> dict[str, object]:
         return {
-            "contract": "derived-training-dataset-v1",
+            "contract": "derived-training-dataset-v2",
             "training_raw_registry_receipt_digest": (
                 self.training_raw_registry_receipt_digest
             ),
@@ -3380,6 +3964,12 @@ class TrainingDatasetDerivationArtifact:
             "feature_schema_digest": self.feature_schema_digest,
             "signed_training_member_manifest_digest": (
                 self.signed_training_member_manifest_digest
+            ),
+            "training_feature_dataset_artifact_digest": (
+                self.training_feature_dataset_artifact_digest
+            ),
+            "training_feature_dataset_artifact_json": (
+                self.training_feature_dataset_artifact_json
             ),
         }
 
@@ -3475,11 +4065,11 @@ class RegimeClassifierManifest:
     numerical_runtime_digest: str
     reference_label_contract_digest: str
     signed_training_member_manifest_digest: str
-    contract: str = "neural-prior-regime-classifier-manifest-v5"
+    contract: str = "neural-prior-regime-classifier-manifest-v6"
     manifest_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-regime-classifier-manifest-v5":
+        if self.contract != "neural-prior-regime-classifier-manifest-v6":
             raise ValueError("unsupported regime-classifier manifest")
         for name in (
             "classifier_digest",
@@ -6034,6 +6624,43 @@ class LegacyNeuralPriorHoldoutPlanV19Audit:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV20Audit:
+    """Pre-feature-dataset-replay holdout retained for audit only."""
+
+    plan_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-plan-audit-v20"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _require_digest("legacy holdout plan digest", self.plan_digest)
+        payload = json.loads(self.payload_json)
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != "neural-prior-holdout-plan-v20"
+            or payload.get("plan_digest") != self.plan_digest
+            or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            != self.payload_json
+        ):
+            raise ValueError("invalid legacy v20 holdout plan")
+        original = dict(payload)
+        original.pop("plan_digest")
+        if json_digest(original) != self.plan_digest:
+            raise ValueError("legacy v20 holdout plan digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "plan_digest": self.plan_digest,
+                    "payload": payload,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class PromotionExperimentTrial:
     """One preregistered candidate/rule/classifier trial in a cohort."""
 
@@ -6217,11 +6844,11 @@ class NeuralPriorHoldoutPlan:
     mode: Literal["prospective", "sealed_historical"] = "prospective"
     sealed_historical_dataset_digest: str | None = None
     candidate_training_started_at: str | None = None
-    contract: str = "neural-prior-holdout-plan-v20"
+    contract: str = "neural-prior-holdout-plan-v21"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v20":
+        if self.contract != "neural-prior-holdout-plan-v21":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -7411,6 +8038,43 @@ class LegacyNeuralPriorCandidateManifestAuditV13:
         )
 
 
+@dataclass(frozen=True)
+class LegacyNeuralPriorCandidateManifestAuditV14:
+    """Pre-feature-dataset-replay manifest retained for audit only."""
+
+    manifest_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-candidate-manifest-audit-v14"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _require_digest("legacy candidate manifest digest", self.manifest_digest)
+        payload = json.loads(self.payload_json)
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != "neural-prior-candidate-manifest-v14"
+            or payload.get("manifest_digest") != self.manifest_digest
+            or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            != self.payload_json
+        ):
+            raise ValueError("invalid legacy v14 candidate manifest")
+        original = dict(payload)
+        original.pop("manifest_digest")
+        if json_digest(original) != self.manifest_digest:
+            raise ValueError("legacy v14 candidate manifest digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "manifest_digest": self.manifest_digest,
+                    "payload": payload,
+                }
+            ),
+        )
+
+
 def _candidate_training_execution_contract_digest(
     *,
     training_dataset_digest: str,
@@ -7426,7 +8090,7 @@ def _candidate_training_execution_contract_digest(
 
     return json_digest(
         {
-            "contract": "neural-prior-training-execution-contract-v3",
+            "contract": "neural-prior-training-execution-contract-v4",
             "training_dataset_digest": training_dataset_digest,
             "candidate_training_manifest_digest": candidate_training_manifest_digest,
             "model_contract_digest": model_contract_digest,
@@ -7678,11 +8342,11 @@ class NeuralPriorCandidateManifest:
     candidate_training_start_receipt: TrustedProcessStartReceipt
     candidate_training_completion_receipt: TrustedProcessCompletionReceipt
     candidate_scoring_start_receipt: TrustedProcessStartReceipt
-    contract: str = "neural-prior-candidate-manifest-v14"
+    contract: str = "neural-prior-candidate-manifest-v15"
     manifest_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-candidate-manifest-v14":
+        if self.contract != "neural-prior-candidate-manifest-v15":
             raise ValueError("unsupported neural-prior candidate manifest")
         for name in (
             "candidate_prior_digest",
@@ -9321,14 +9985,34 @@ class PriorHoldoutEvaluation:
         range_grid_y_m: Tensor,
         operational_issuance_domain: OperationalIssuanceDomainArtifact,
         resolved_source_coverage: ResolvedSourceCoverageArtifact | None = None,
+        input_qc_valid_mask: Tensor | None = None,
+        input_quality_weight: Tensor | None = None,
+        input_observation_std_dbz: Tensor | None = None,
+        input_source_available_mask: Tensor | None = None,
     ) -> PriorHoldoutEvaluation:
         """Evaluate every planned prior case without intervention selection."""
 
         validate_neural_prior_holdout_plan(plan)
         validate_neural_prior_candidate_manifest(manifest)
+        if input_qc_valid_mask is None:
+            input_qc_valid_mask = torch.ones_like(
+                input_frames_dbz, dtype=torch.bool
+            )
+        if input_quality_weight is None:
+            input_quality_weight = torch.ones_like(input_frames_dbz)
+        if input_observation_std_dbz is None:
+            input_observation_std_dbz = torch.ones_like(input_frames_dbz)
+        if input_source_available_mask is None:
+            input_source_available_mask = torch.ones_like(
+                input_frames_dbz, dtype=torch.bool
+            )
         regime_classification_evidence = regime_classifier.classify(
             input_frames_dbz,
             input_run=candidate_forecast.run,
+            qc_valid_mask=input_qc_valid_mask,
+            quality_weight=input_quality_weight,
+            observation_std_dbz=input_observation_std_dbz,
+            source_available_mask=input_source_available_mask,
         )
         regime_classification_evidence.validate_integrity()
         if (
@@ -10836,6 +11520,7 @@ class ScoringReplayCaseArtifact:
     input_frames_dbz: Tensor
     input_qc_valid_mask: Tensor
     input_quality_weight: Tensor
+    input_observation_std_dbz: Tensor
     background_frames_dbz: Tensor | None
     uncertainty_target: PriorUncertaintyTarget
     state_calibration_target: NeuralPriorStateCalibrationTarget
@@ -10845,7 +11530,7 @@ class ScoringReplayCaseArtifact:
     range_grid_y_m: Tensor
     operational_issuance_domain: OperationalIssuanceDomainArtifact
     analysis_input_derivation: AnalysisInputDerivationArtifact
-    resolved_raw_observations: tuple[ResolvedRawObservationReceipt, ...]
+    resolved_raw_observations: tuple[RawObservationResolutionReceipt, ...]
     global_raw_resolution_receipt: GlobalRawVolumeResolutionReceipt
     resolved_source_coverage: ResolvedSourceCoverageArtifact | None = None
     _frozen_replay_tensors: tuple[tuple[str, Tensor], ...] = field(
@@ -10875,6 +11560,7 @@ class ScoringReplayCaseArtifact:
         input_frames_dbz: Tensor,
         input_qc_valid_mask: Tensor,
         input_quality_weight: Tensor,
+        input_observation_std_dbz: Tensor,
         background_frames_dbz: Tensor | None,
         uncertainty_target: PriorUncertaintyTarget,
         state_calibration_target: NeuralPriorStateCalibrationTarget,
@@ -10884,7 +11570,9 @@ class ScoringReplayCaseArtifact:
         range_grid_y_m: Tensor,
         operational_issuance_domain: OperationalIssuanceDomainArtifact,
         analysis_input_derivation: AnalysisInputDerivationArtifact,
-        resolved_raw_observations: tuple[ResolvedRawObservationReceipt, ...],
+        resolved_raw_observations: tuple[
+            RawObservationResolutionReceipt, ...
+        ],
         global_raw_resolution_receipt: GlobalRawVolumeResolutionReceipt,
         resolved_source_coverage: ResolvedSourceCoverageArtifact | None = None,
     ) -> ScoringReplayCaseArtifact:
@@ -10963,7 +11651,11 @@ class ScoringReplayCaseArtifact:
         if (
             not resolved_raw_observations
             or any(
-                type(item) is not ResolvedRawObservationReceipt
+                type(item)
+                not in (
+                    ResolvedRawObservationReceipt,
+                    MissingRawObservationReceipt,
+                )
                 for item in resolved_raw_observations
             )
         ):
@@ -10986,6 +11678,9 @@ class ScoringReplayCaseArtifact:
             "input_frames_dbz": input_frames_dbz.detach().clone(),
             "input_qc_valid_mask": input_qc_valid_mask.detach().clone(),
             "input_quality_weight": input_quality_weight.detach().clone(),
+            "input_observation_std_dbz": (
+                input_observation_std_dbz.detach().clone()
+            ),
             "background_frames_dbz": (
                 None
                 if background_frames_dbz is None
@@ -11018,6 +11713,19 @@ class ScoringReplayCaseArtifact:
         result.validate_integrity()
         return result
 
+    @property
+    def input_source_available_mask(self) -> Tensor:
+        """Return the time-resolved source-presence channel for learned models."""
+
+        if self.resolved_source_coverage is None:
+            return torch.ones_like(self.input_qc_valid_mask, dtype=torch.bool)
+        source_history = (
+            self.resolved_source_coverage.input_history_source_radar_index_map
+        )
+        if source_history.shape != self.input_qc_valid_mask.shape:
+            raise ValueError("semantic replay source history shape is invalid")
+        return source_history >= 0
+
     def _validate_product_integrity(self) -> None:
         if (
             not self.case_id
@@ -11035,6 +11743,15 @@ class ScoringReplayCaseArtifact:
             or self.input_quality_weight.dtype != self.input_frames_dbz.dtype
             or self.input_quality_weight.device != self.input_frames_dbz.device
             or not bool(torch.all(torch.isfinite(self.input_quality_weight)))
+            or not self.input_observation_std_dbz.is_floating_point()
+            or self.input_observation_std_dbz.shape
+            != self.input_frames_dbz.shape
+            or self.input_observation_std_dbz.dtype
+            != self.input_frames_dbz.dtype
+            or self.input_observation_std_dbz.device
+            != self.input_frames_dbz.device
+            or not bool(torch.all(torch.isfinite(self.input_observation_std_dbz)))
+            or bool(torch.any(self.input_observation_std_dbz <= 0.0))
             or (
                 self.background_frames_dbz is not None
                 and (
@@ -11062,16 +11779,30 @@ class ScoringReplayCaseArtifact:
             self.candidate_prior_runner,
             self.candidate_prior_application,
             self.input_frames_dbz,
+            input_run=self.candidate_forecast.run,
+            qc_valid_mask=self.input_qc_valid_mask,
+            quality_weight=self.input_quality_weight,
+            observation_std_dbz=self.input_observation_std_dbz,
+            source_available_mask=self.input_source_available_mask,
         )
         NeuralPriorInferenceRunner.reproduce(
             self.parent_prior_runner,
             self.parent_prior_application,
             self.input_frames_dbz,
+            input_run=self.parent_forecast.run,
+            qc_valid_mask=self.input_qc_valid_mask,
+            quality_weight=self.input_quality_weight,
+            observation_std_dbz=self.input_observation_std_dbz,
+            source_available_mask=self.input_source_available_mask,
         )
         regime_evidence = NeuralPriorRegimeClassifier.classify(
             self.regime_classifier,
             self.input_frames_dbz,
             input_run=self.candidate_forecast.run,
+            qc_valid_mask=self.input_qc_valid_mask,
+            quality_weight=self.input_quality_weight,
+            observation_std_dbz=self.input_observation_std_dbz,
+            source_available_mask=self.input_source_available_mask,
         )
         RegimeClassificationEvidence.validate_integrity(regime_evidence)
         if (
@@ -11224,7 +11955,7 @@ class ScoringReplayCaseArtifact:
             sorted(
                 (
                     item.slot_plan_digest,
-                    item.raw_volume_identity.identity_digest,
+                    item.resolution_identity_digest,
                 )
                 for item in self.resolved_raw_observations
             )
@@ -11246,7 +11977,7 @@ class ScoringReplayCaseArtifact:
             or _canonical_datetime(global_resolution.resolved_at)
             < max(
                 _canonical_datetime(
-                    item.raw_volume_attestation.received_at
+                    item.observed_at
                 )
                 for item in self.resolved_raw_observations
             )
@@ -11273,6 +12004,7 @@ class ScoringReplayCaseArtifact:
             sorted(
                 item.raw_volume_identity.identity_digest
                 for item in self.resolved_raw_observations
+                if type(item) is ResolvedRawObservationReceipt
             )
         )
         (
@@ -11394,7 +12126,7 @@ class ScoringReplayCaseArtifact:
                 self.resolved_source_coverage.source_radar_site_digests
             ).issubset(
                 {
-                    item.raw_volume_identity.radar_site_digest
+                    item.radar_site_digest
                     for item in self.resolved_raw_observations
                 }
             ):
@@ -11419,6 +12151,10 @@ class ScoringReplayCaseArtifact:
             candidate_prior_runner=self.candidate_prior_runner,
             parent_prior_runner=self.parent_prior_runner,
             input_frames_dbz=self.input_frames_dbz,
+            input_qc_valid_mask=self.input_qc_valid_mask,
+            input_quality_weight=self.input_quality_weight,
+            input_observation_std_dbz=self.input_observation_std_dbz,
+            input_source_available_mask=self.input_source_available_mask,
             uncertainty_target=self.uncertainty_target,
             state_calibration_target=self.state_calibration_target,
             regime_classifier=self.regime_classifier,
@@ -11436,14 +12172,53 @@ class ScoringReplayCaseArtifact:
             self.regime_classifier.classification_logits(
                 self.input_frames_dbz,
                 input_run=self.candidate_forecast.run,
+                qc_valid_mask=self.input_qc_valid_mask,
+                quality_weight=self.input_quality_weight,
+                observation_std_dbz=self.input_observation_std_dbz,
+                source_available_mask=self.input_source_available_mask,
             )
         )
         candidate = self.candidate_prior_application
         parent = self.parent_prior_application
+        retained_raw = tuple(
+            sorted(
+                (
+                    item
+                    for item in self.resolved_raw_observations
+                    if type(item) is ResolvedRawObservationReceipt
+                ),
+                key=lambda receipt: (
+                    receipt.acquisition_valid_time,
+                    receipt.radar_site_digest,
+                ),
+            )
+        )
+        height, width = self.input_frames_dbz.shape[-2:]
+
+        def stacked_raw(
+            attribute: str,
+            *,
+            dtype: torch.dtype,
+        ) -> Tensor:
+            if not retained_raw:
+                return torch.empty(
+                    (0, height, width),
+                    dtype=dtype,
+                    device=self.input_frames_dbz.device,
+                )
+            return torch.stack(
+                tuple(
+                    getattr(item.raw_grid_volume, attribute)
+                    for item in retained_raw
+                )
+            )
+
         result = {
             "input_radar_frames": self.input_frames_dbz,
             "input_qc_valid_mask": self.input_qc_valid_mask,
             "input_quality_weight": self.input_quality_weight,
+            "input_observation_std_dbz": self.input_observation_std_dbz,
+            "input_source_available_mask": self.input_source_available_mask,
             "candidate_forecast_dbz": self.candidate_forecast.forecast_dbz,
             "candidate_publication_mask": self.candidate_forecast.valid_mask,
             "candidate_background_fallback_mask": (
@@ -11513,53 +12288,21 @@ class ScoringReplayCaseArtifact:
             "operational_issuance_mask": (
                 self.operational_issuance_domain.eligible_mask
             ),
-            "raw_source_reflectivity_bits": torch.stack(
-                tuple(
-                    item.raw_grid_volume._raw_reflectivity_bits
-                    for item in sorted(
-                        self.resolved_raw_observations,
-                        key=lambda receipt: (
-                            receipt.raw_grid_volume.acquisition_valid_time,
-                            receipt.raw_grid_volume.radar_site_digest,
-                        ),
-                    )
-                )
+            "raw_source_reflectivity_bits": stacked_raw(
+                "_raw_reflectivity_bits",
+                dtype=torch.int32,
             ),
-            "raw_source_qc_flags": torch.stack(
-                tuple(
-                    item.raw_grid_volume._raw_qc_flags
-                    for item in sorted(
-                        self.resolved_raw_observations,
-                        key=lambda receipt: (
-                            receipt.raw_grid_volume.acquisition_valid_time,
-                            receipt.raw_grid_volume.radar_site_digest,
-                        ),
-                    )
-                )
+            "raw_source_qc_flags": stacked_raw(
+                "_raw_qc_flags",
+                dtype=torch.bool,
             ),
-            "raw_source_quality_bits": torch.stack(
-                tuple(
-                    item.raw_grid_volume._raw_quality_bits
-                    for item in sorted(
-                        self.resolved_raw_observations,
-                        key=lambda receipt: (
-                            receipt.raw_grid_volume.acquisition_valid_time,
-                            receipt.raw_grid_volume.radar_site_digest,
-                        ),
-                    )
-                )
+            "raw_source_quality_bits": stacked_raw(
+                "_raw_quality_bits",
+                dtype=torch.int32,
             ),
-            "raw_source_observation_std_bits": torch.stack(
-                tuple(
-                    item.raw_grid_volume._raw_observation_std_bits
-                    for item in sorted(
-                        self.resolved_raw_observations,
-                        key=lambda receipt: (
-                            receipt.raw_grid_volume.acquisition_valid_time,
-                            receipt.raw_grid_volume.radar_site_digest,
-                        ),
-                    )
-                )
+            "raw_source_observation_std_bits": stacked_raw(
+                "_raw_observation_std_bits",
+                dtype=torch.int32,
             ),
         }
         if self.background_frames_dbz is not None:
@@ -11625,7 +12368,7 @@ class ScoringReplayCaseArtifact:
     ) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-semantic-scoring-case-v7",
+                "contract": "neural-prior-semantic-scoring-case-v8",
                 "semantic_replay_generation_digest": (
                     SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
                 ),
@@ -12703,7 +13446,7 @@ class HoldoutScoringArtifact:
     parent_forecast_digests: tuple[str, ...]
     verification_digests: tuple[str, ...]
     metric_contract_digests: tuple[str, ...]
-    contract: str = "neural-prior-holdout-scoring-artifact-v8"
+    contract: str = "neural-prior-holdout-scoring-artifact-v9"
     artifact_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -12809,7 +13552,7 @@ class HoldoutScoringArtifact:
             "metric_contract_digests": tuple(
                 item.metric_contract_digest for item in ordered
             ),
-            "contract": "neural-prior-holdout-scoring-artifact-v8",
+            "contract": "neural-prior-holdout-scoring-artifact-v9",
         }
         artifact = _new_holdout_scoring_artifact(**values)
         validate_holdout_scoring_artifact(
@@ -12859,7 +13602,7 @@ def validate_holdout_scoring_artifact(
     ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
     start = manifest.candidate_scoring_start_receipt
     if (
-        artifact.contract != "neural-prior-holdout-scoring-artifact-v8"
+        artifact.contract != "neural-prior-holdout-scoring-artifact-v9"
         or artifact.artifact_digest != json_digest(artifact.payload)
         or artifact.holdout_plan_digest != plan.plan_digest
         or artifact.candidate_manifest_digest != manifest.manifest_digest
@@ -13333,10 +14076,10 @@ class NeuralPriorPromotionPolicy:
     minimum_deployment_metric_cell_events: int = 5
     minimum_continuous_metric_cell_events: int = 10
     allow_shadow_small_sample_bootstrap: bool = False
-    contract: str = "neural-prior-promotion-policy-v28"
+    contract: str = "neural-prior-promotion-policy-v29"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-policy-v28":
+        if self.contract != "neural-prior-promotion-policy-v29":
             raise ValueError("unsupported neural-prior promotion policy")
         if type(self.allow_shadow_small_sample_bootstrap) is not bool:
             raise ValueError("shadow bootstrap flag must be boolean")
@@ -14651,6 +15394,28 @@ class LegacyNeuralPriorPromotionEvidenceAuditV27:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV28:
+    """Pre-five-channel v28 evidence retained for audit only."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v28"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v28",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
@@ -14812,11 +15577,11 @@ class NeuralPriorPromotionEvidence:
     deployment_eligible: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v28"
+    contract: str = "neural-prior-promotion-evidence-v29"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v28":
+        if self.contract != "neural-prior-promotion-evidence-v29":
             raise ValueError("unsupported neural-prior promotion evidence")
         if self.primary_estimand_contract != "equal_weight_physical_event_v1":
             raise ValueError("unsupported promotion estimand")
@@ -18086,7 +18851,7 @@ class RegimeClassificationEvidence:
     input_device: str
     weather_top1_top2_gap: float
     minimum_range_presence_margin: float
-    contract: str = "neural-prior-regime-classification-evidence-v4"
+    contract: str = "neural-prior-regime-classification-evidence-v5"
     evidence_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -18102,7 +18867,10 @@ class RegimeClassificationEvidence:
 
     def validate_integrity(self) -> None:
         if (
-            self.contract != "neural-prior-regime-classification-evidence-v4"
+            self.contract not in (
+                "neural-prior-regime-classification-evidence-v4",
+                "neural-prior-regime-classification-evidence-v5",
+            )
             or not self.regime
             or not self.range_regime
             or len(self.regime_labels) != len(self.regime_probabilities)
@@ -18223,6 +18991,10 @@ class NeuralPriorRegimeClassifier:
         model: nn.Module,
         *,
         example_frames: Tensor,
+        example_qc_valid_mask: Tensor | None = None,
+        example_quality_weight: Tensor | None = None,
+        example_observation_std_dbz: Tensor | None = None,
+        example_source_available_mask: Tensor | None = None,
         regime_labels: tuple[str, ...],
         range_regime_labels: tuple[str, ...],
         classifier_algorithm_digest: str,
@@ -18253,8 +19025,36 @@ class NeuralPriorRegimeClassifier:
             raise ValueError("range presence threshold must be inside (0.5,1)")
         if example_frames.ndim != 3 or not example_frames.is_floating_point():
             raise ValueError("regime classifier example must be [T,H,W]")
-        exported, graph_digest = _export_graph(model, example_frames)
-        output = exported(example_frames)
+        observation_components = (
+            example_qc_valid_mask,
+            example_quality_weight,
+            example_observation_std_dbz,
+            example_source_available_mask,
+        )
+        if any(value is not None for value in observation_components) and any(
+            value is None for value in observation_components
+        ):
+            raise ValueError("classifier learned input channels are all-or-none")
+        if all(value is not None for value in observation_components):
+            assert example_qc_valid_mask is not None
+            assert example_quality_weight is not None
+            assert example_observation_std_dbz is not None
+            assert example_source_available_mask is not None
+            example_model_input = learned_radar_input_features(
+                example_frames,
+                example_qc_valid_mask,
+                example_quality_weight,
+                example_observation_std_dbz,
+                example_source_available_mask,
+            )
+            learned_input_feature_contract: str | None = (
+                LEARNED_RADAR_INPUT_FEATURE_CONTRACT
+            )
+        else:
+            example_model_input = example_frames
+            learned_input_feature_contract = None
+        exported, graph_digest = _export_graph(model, example_model_input)
+        output = exported(example_model_input)
         if (
             not isinstance(output, tuple)
             or len(output) != 2
@@ -18273,6 +19073,9 @@ class NeuralPriorRegimeClassifier:
         self.range_presence_probability_threshold = (
             range_presence_probability_threshold
         )
+        self.learned_input_feature_contract = learned_input_feature_contract
+        self._example_frames_shape = tuple(example_frames.shape)
+        self._example_frames_dtype = example_frames.dtype
         self.numerical_runtime_digest = numerical_runtime_identity_digest(
             example_frames.device
         )
@@ -18283,7 +19086,11 @@ class NeuralPriorRegimeClassifier:
     def _current_classifier_digest(self) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-regime-classifier-v4",
+                "contract": (
+                    "neural-prior-regime-classifier-v5"
+                    if self.learned_input_feature_contract is not None
+                    else "neural-prior-regime-classifier-v4"
+                ),
                 "graph_digest": self._graph_digest,
                 "model_state_digest": _module_state_digest(self._model),
                 "classifier_algorithm_digest": self.classifier_algorithm_digest,
@@ -18298,14 +19105,77 @@ class NeuralPriorRegimeClassifier:
                 "numerical_runtime_digest": self.numerical_runtime_digest,
                 "input_dtype": self.input_dtype,
                 "input_device": self.input_device,
+                "learned_input_feature_contract": (
+                    self.learned_input_feature_contract
+                ),
             }
         )
+
+    def _model_input(
+        self,
+        frames_dbz: Tensor,
+        *,
+        input_run: ForecastRunContract,
+        qc_valid_mask: Tensor | None,
+        quality_weight: Tensor | None,
+        observation_std_dbz: Tensor | None,
+        source_available_mask: Tensor | None,
+    ) -> Tensor:
+        if (
+            tuple(frames_dbz.shape) != self._example_frames_shape
+            or frames_dbz.dtype != self._example_frames_dtype
+        ):
+            raise ValueError("regime classifier radar input changed")
+        components = (
+            qc_valid_mask,
+            quality_weight,
+            observation_std_dbz,
+            source_available_mask,
+        )
+        if self.learned_input_feature_contract is None:
+            if any(value is not None for value in components):
+                raise ValueError(
+                    "legacy classifier cannot accept learned input channels"
+                )
+            return frames_dbz
+        if any(value is None for value in components):
+            raise ValueError(
+                "current regime classifier requires all learned input channels"
+            )
+        assert qc_valid_mask is not None
+        assert quality_weight is not None
+        assert observation_std_dbz is not None
+        assert source_available_mask is not None
+        model_input = learned_radar_input_features(
+            frames_dbz,
+            qc_valid_mask,
+            quality_weight,
+            observation_std_dbz,
+            source_available_mask,
+        )
+        if (
+            input_run.observation_masks_digest != tensor_digest(qc_valid_mask)
+            or input_run.observation_quality_weight_digest
+            != tensor_digest(quality_weight)
+            or input_run.observation_std_dbz_digest
+            != tensor_digest(observation_std_dbz)
+            or input_run.source_available_mask_digest
+            != tensor_digest(source_available_mask)
+            or input_run.learned_model_input_features_digest
+            != tensor_digest(model_input)
+        ):
+            raise ValueError("classifier input channels disagree with the input run")
+        return model_input
 
     def classify(
         self,
         frames_dbz: Tensor,
         *,
         input_run: ForecastRunContract,
+        qc_valid_mask: Tensor | None = None,
+        quality_weight: Tensor | None = None,
+        observation_std_dbz: Tensor | None = None,
+        source_available_mask: Tensor | None = None,
     ) -> RegimeClassificationEvidence:
         input_run.validate_integrity()
         if (
@@ -18322,6 +19192,10 @@ class NeuralPriorRegimeClassifier:
         regime_logits, range_logits = self.classification_logits(
             frames_dbz,
             input_run=input_run,
+            qc_valid_mask=qc_valid_mask,
+            quality_weight=quality_weight,
+            observation_std_dbz=observation_std_dbz,
+            source_available_mask=source_available_mask,
         )
         output = (regime_logits, range_logits)
         if not isinstance(output, tuple) or len(output) != 2:
@@ -18375,7 +19249,11 @@ class NeuralPriorRegimeClassifier:
         )
         result = object.__new__(RegimeClassificationEvidence)
         values: dict[str, object] = {
-            "contract": "neural-prior-regime-classification-evidence-v4",
+            "contract": (
+                "neural-prior-regime-classification-evidence-v5"
+                if self.learned_input_feature_contract is not None
+                else "neural-prior-regime-classification-evidence-v4"
+            ),
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "input_frames_digest": tensor_digest(frames_dbz),
             "classifier_digest": self.classifier_digest,
@@ -18421,6 +19299,10 @@ class NeuralPriorRegimeClassifier:
         frames_dbz: Tensor,
         *,
         input_run: ForecastRunContract,
+        qc_valid_mask: Tensor | None = None,
+        quality_weight: Tensor | None = None,
+        observation_std_dbz: Tensor | None = None,
+        source_available_mask: Tensor | None = None,
     ) -> tuple[Tensor, Tensor]:
         """Return attested raw logits used by scoring and semantic replay."""
 
@@ -18436,7 +19318,15 @@ class NeuralPriorRegimeClassifier:
             or str(frames_dbz.device) != self.input_device
         ):
             raise ValueError("regime classifier input or artifact changed")
-        output = self._exported(frames_dbz)
+        model_input = self._model_input(
+            frames_dbz,
+            input_run=input_run,
+            qc_valid_mask=qc_valid_mask,
+            quality_weight=quality_weight,
+            observation_std_dbz=observation_std_dbz,
+            source_available_mask=source_available_mask,
+        )
+        output = self._exported(model_input)
         if (
             not isinstance(output, tuple)
             or len(output) != 2
@@ -19070,7 +19960,7 @@ def _decode_current_neural_prior_promotion_evidence(
     if (
         not isinstance(raw, dict)
         or set(raw) != expected
-        or raw.get("contract") != "neural-prior-promotion-evidence-v28"
+        or raw.get("contract") != "neural-prior-promotion-evidence-v29"
         or json.dumps(raw, sort_keys=True, separators=(",", ":"))
         != payload_json
     ):
@@ -19648,6 +20538,210 @@ class OperationalDecisionPublicationReceipt:
         }
 
 
+@dataclass(frozen=True, init=False)
+class OperationalDecisionActivationReceipt:
+    """Ledger signature over the final published and usable decision state."""
+
+    operational_decision_certificate_digest: str
+    publication_receipt_digest: str
+    decision_payload_digest: str
+    ledger_instance_digest: str
+    sequence_number: int
+    committed_chain_root_digest: str
+    publication_payload_committed_at: str
+    activation_committed_at: str
+    terminal_status: Literal["published"]
+    usable: Literal[True]
+    issued_at: str
+    signer_id: str
+    signer_public_key_hex: str
+    signer_trust_store_digest: str
+    signer_signature_hex: str
+    contract: str = "operational-decision-activation-receipt-v1"
+    receipt_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("operational activation receipts are ledger-issued")
+
+    @property
+    def unsigned_payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key not in {"signer_signature_hex", "receipt_digest"}
+        }
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "receipt_digest"
+        }
+
+
+def _operational_decision_activation_receipt_from_payload(
+    payload: dict[str, object],
+) -> OperationalDecisionActivationReceipt:
+    expected = {
+        item.name
+        for item in OperationalDecisionActivationReceipt.__dataclass_fields__.values()
+        if item.name != "receipt_digest"
+    }
+    if set(payload) != expected:
+        raise ValueError("operational activation receipt is incomplete")
+    result = object.__new__(OperationalDecisionActivationReceipt)
+    for name, value in payload.items():
+        object.__setattr__(result, name, value)
+    object.__setattr__(result, "receipt_digest", json_digest(result.payload))
+    return result
+
+
+def _issue_operational_decision_activation_receipt(
+    certificate: OperationalDeploymentDecisionCertificate,
+    publication_receipt: OperationalDecisionPublicationReceipt,
+    *,
+    publication_payload_committed_at: str,
+    activation_committed_at: str,
+    committed_chain_root_digest: str,
+    signer: DeploymentAuthoritySigner,
+    authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+) -> OperationalDecisionActivationReceipt:
+    """Countersign an activation that the ledger has already committed."""
+
+    issued_at = _canonical_time(signer.signing_time())
+    publication_commit = _canonical_time(publication_payload_committed_at)
+    activation_commit = _canonical_time(activation_committed_at)
+    _require_digest("committed chain root", committed_chain_root_digest)
+    _validate_signer(
+        signer,
+        trust_store=authority_trust_store,
+        role="ledger_issuance",
+        issued_at=issued_at,
+    )
+    if (
+        certificate.ledger_instance_digest
+        not in authority_trust_store.ledger_instance_digests.get(
+            signer.authority_id,
+            frozenset(),
+        )
+        or not _canonical_datetime(publication_commit)
+        <= _canonical_datetime(activation_commit)
+        <= _canonical_datetime(issued_at)
+        < _canonical_datetime(certificate.publication_time)
+        or _canonical_datetime(publication_receipt.issued_at)
+        > _canonical_datetime(issued_at)
+        or _canonical_datetime(issued_at) > datetime.now(timezone.utc)
+    ):
+        raise ValueError("operational activation chronology is invalid")
+    ledger_payload = json.loads(certificate.operational_ledger_receipt_payload_json)
+    if not isinstance(ledger_payload, dict):
+        raise ValueError("operational activation ledger lineage is invalid")
+    ledger_receipt = _operational_decision_ledger_receipt_from_payload(
+        ledger_payload
+    )
+    if (
+        signer.authority_id != ledger_receipt.signer_id
+        or signer.public_key_hex != ledger_receipt.signer_public_key_hex
+        or committed_chain_root_digest
+        != ledger_receipt.committed_chain_root_digest
+    ):
+        raise ValueError("operational activation requires the committing ledger")
+    values: dict[str, object] = {
+        "operational_decision_certificate_digest": certificate.certificate_digest,
+        "publication_receipt_digest": publication_receipt.receipt_digest,
+        "decision_payload_digest": certificate.decision_payload_digest,
+        "ledger_instance_digest": certificate.ledger_instance_digest,
+        "sequence_number": certificate.ledger_sequence_number,
+        "committed_chain_root_digest": committed_chain_root_digest,
+        "publication_payload_committed_at": publication_commit,
+        "activation_committed_at": activation_commit,
+        "terminal_status": "published",
+        "usable": True,
+        "issued_at": issued_at,
+        "signer_id": signer.authority_id,
+        "signer_public_key_hex": signer.public_key_hex,
+        "signer_trust_store_digest": authority_trust_store.content_digest,
+        "contract": "operational-decision-activation-receipt-v1",
+    }
+    signature = signer.sign(
+        json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
+    ).hex()
+    result = object.__new__(OperationalDecisionActivationReceipt)
+    for name, value in values.items():
+        object.__setattr__(result, name, value)
+    object.__setattr__(result, "signer_signature_hex", signature)
+    object.__setattr__(result, "receipt_digest", json_digest(result.payload))
+    return result
+
+
+def _validate_operational_decision_activation_receipt(
+    receipt: OperationalDecisionActivationReceipt,
+    *,
+    certificate: OperationalDeploymentDecisionCertificate,
+    publication_receipt: OperationalDecisionPublicationReceipt,
+    authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+) -> None:
+    for name in (
+        "operational_decision_certificate_digest",
+        "publication_receipt_digest",
+        "decision_payload_digest",
+        "ledger_instance_digest",
+        "committed_chain_root_digest",
+        "signer_trust_store_digest",
+    ):
+        _require_digest(name, getattr(receipt, name))
+    ledger_payload = json.loads(certificate.operational_ledger_receipt_payload_json)
+    if not isinstance(ledger_payload, dict):
+        raise ValueError("operational activation ledger lineage is invalid")
+    ledger_receipt = _operational_decision_ledger_receipt_from_payload(
+        ledger_payload
+    )
+    if (
+        type(receipt) is not OperationalDecisionActivationReceipt
+        or receipt.contract != "operational-decision-activation-receipt-v1"
+        or receipt.receipt_digest != json_digest(receipt.payload)
+        or receipt.operational_decision_certificate_digest
+        != certificate.certificate_digest
+        or receipt.publication_receipt_digest != publication_receipt.receipt_digest
+        or receipt.decision_payload_digest != certificate.decision_payload_digest
+        or receipt.ledger_instance_digest != certificate.ledger_instance_digest
+        or receipt.sequence_number != certificate.ledger_sequence_number
+        or receipt.committed_chain_root_digest
+        != ledger_receipt.committed_chain_root_digest
+        or receipt.terminal_status != "published"
+        or receipt.usable is not True
+        or not _canonical_datetime(receipt.publication_payload_committed_at)
+        <= _canonical_datetime(receipt.activation_committed_at)
+        <= _canonical_datetime(receipt.issued_at)
+        < _canonical_datetime(certificate.publication_time)
+        or _canonical_datetime(publication_receipt.issued_at)
+        > _canonical_datetime(receipt.issued_at)
+        or receipt.signer_id != ledger_receipt.signer_id
+        or receipt.signer_public_key_hex != ledger_receipt.signer_public_key_hex
+        or receipt.signer_trust_store_digest != authority_trust_store.content_digest
+    ):
+        raise ValueError("operational activation receipt is invalid")
+    key = _trusted_authority_key(
+        authority_trust_store,
+        authority_id=receipt.signer_id,
+        public_key_hex=receipt.signer_public_key_hex,
+        role="ledger_issuance",
+        issued_at=receipt.issued_at,
+    )
+    try:
+        key.verify(
+            bytes.fromhex(receipt.signer_signature_hex),
+            json.dumps(
+                receipt.unsigned_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode(),
+        )
+    except (InvalidSignature, ValueError) as error:
+        raise ValueError("operational activation signature is invalid") from error
+
+
 def _operational_decision_publication_receipt_from_payload(
     payload: dict[str, object],
 ) -> OperationalDecisionPublicationReceipt:
@@ -20076,7 +21170,10 @@ class _EpisodeLedgerOperationalDecisionClient:
         self,
         certificate: OperationalDeploymentDecisionCertificate,
         decision_payload: dict[str, object],
-    ) -> OperationalDecisionPublicationReceipt:
+    ) -> tuple[
+        OperationalDecisionPublicationReceipt,
+        OperationalDecisionActivationReceipt,
+    ]:
         """Invoke only the exact bound EpisodeLedger's DB-backed verifier."""
 
         ledger_type = getattr(
@@ -20109,22 +21206,29 @@ class _EpisodeLedgerOperationalDecisionClient:
             raise ValueError(
                 "automatic deployment ledger instance has no root-approved index"
             )
-        publication = ledger_type._validate_committed_operational_decision(
+        publication, activation = ledger_type._validate_committed_operational_decision(
             self._ledger,
             certificate,
             decision_payload,
             expected_index_path=expected_index_path,
+            authority_trust_store_path=self._authority_trust_store_path,
         )
         _validate_operational_decision_publication_receipt(
             publication,
             certificate=certificate,
             authority_trust_store=authority_trust_store,
         )
+        _validate_operational_decision_activation_receipt(
+            activation,
+            certificate=certificate,
+            publication_receipt=publication,
+            authority_trust_store=authority_trust_store,
+        )
         if self.current_raw_ingestor_trust_store_digest() != raw_trust_before:
             raise ValueError(
                 "operational decision raw-ingestor trust changed during validation"
             )
-        return publication
+        return publication, activation
 
 
 def _replay_operational_deployment_selection(
@@ -20761,7 +21865,7 @@ def _select_deployed_prior(
     if (
         type(promotion_evidence) is not NeuralPriorPromotionEvidence
         or promotion_evidence.contract
-        != "neural-prior-promotion-evidence-v28"
+        != "neural-prior-promotion-evidence-v29"
         or type(policy) is not DeployedNeuralPriorPolicy
         or policy.contract != "deployed-neural-prior-policy-v14"
     ):
@@ -20893,7 +21997,7 @@ def _select_deployed_prior(
         role = "candidate"
         reason = "certified_candidate"
     deployment_decision_core: dict[str, object] = {
-        "contract": "neural-prior-deployment-decision-artifact-v12",
+        "contract": "neural-prior-deployment-decision-artifact-v13",
         "routing_semantic_replay_verified": True,
         "full_analysis_input_digest": regime_evidence.full_analysis_input_digest,
         "analysis_input_derivation_artifact_digest": (
@@ -20991,11 +22095,12 @@ def _select_deployed_prior(
             range_grid_y_m=range_grid_y_m,
         )
     )
-    operational_publication_receipt = (
-        operational_decision_client._validate_committed_decision(
-            operational_decision_certificate,
-            deployment_decision_core,
-        )
+    (
+        operational_publication_receipt,
+        operational_activation_receipt,
+    ) = operational_decision_client._validate_committed_decision(
+        operational_decision_certificate,
+        deployment_decision_core,
     )
     deployment_decision_payload = deployment_decision_core | {
         "operational_decision_certificate": (
@@ -21009,6 +22114,10 @@ def _select_deployed_prior(
         "operational_decision_publication_receipt": (
             operational_publication_receipt.payload
             | {"receipt_digest": operational_publication_receipt.receipt_digest}
+        ),
+        "operational_decision_activation_receipt": (
+            operational_activation_receipt.payload
+            | {"receipt_digest": operational_activation_receipt.receipt_digest}
         ),
     }
     deployment_decision_json = json.dumps(
@@ -21071,6 +22180,13 @@ def validate_neural_prior_deployment_decision_artifact(
     expected_operational_radar_site_digest: str | None = None,
     expected_operational_radar_site_location_digest: str | None = None,
     expected_input_plan_digest: str | None = None,
+    expected_full_analysis_input_digest: str | None = None,
+    expected_analysis_input_derivation_artifact_digest: str | None = None,
+    expected_promotion_evidence_digest: str | None = None,
+    expected_regime_classification_evidence_digest: str | None = None,
+    expected_deployment_policy_digest: str | None = None,
+    expected_deployment_selection_digest: str | None = None,
+    expected_selected_prior_digest: str | None = None,
     deployment_certificate_trust_store_path: str | Path,
     deployment_policy_trust_store_path: str | Path,
     raw_ingestor_trust_store_path: str | Path,
@@ -21088,7 +22204,7 @@ def validate_neural_prior_deployment_decision_artifact(
     if (
         not isinstance(payload, dict)
         or payload.get("contract")
-        != "neural-prior-deployment-decision-artifact-v12"
+        != "neural-prior-deployment-decision-artifact-v13"
         or json.dumps(payload, sort_keys=True, separators=(",", ":"))
         != artifact_json
     ):
@@ -21102,6 +22218,9 @@ def validate_neural_prior_deployment_decision_artifact(
     operational_publication_payload = payload.get(
         "operational_decision_publication_receipt"
     )
+    operational_activation_payload = payload.get(
+        "operational_decision_activation_receipt"
+    )
     range_partition = payload.get("range_partition_evidence")
     range_geometry = payload.get("range_geometry_contract")
     trust = payload.get("policy_trust_store")
@@ -21114,6 +22233,7 @@ def validate_neural_prior_deployment_decision_artifact(
             certificate_payload,
             operational_certificate_payload,
             operational_publication_payload,
+            operational_activation_payload,
             range_partition,
             range_geometry,
             trust,
@@ -21126,6 +22246,7 @@ def validate_neural_prior_deployment_decision_artifact(
     assert isinstance(certificate_payload, dict)
     assert isinstance(operational_certificate_payload, dict)
     assert isinstance(operational_publication_payload, dict)
+    assert isinstance(operational_activation_payload, dict)
     assert isinstance(range_partition, dict)
     assert isinstance(range_geometry, dict)
     assert isinstance(trust, dict)
@@ -21180,6 +22301,7 @@ def validate_neural_prior_deployment_decision_artifact(
     decision_core = dict(payload)
     decision_core.pop("operational_decision_certificate")
     decision_core.pop("operational_decision_publication_receipt")
+    decision_core.pop("operational_decision_activation_receipt")
     if operational_certificate_digest != operational_certificate.certificate_digest:
         raise ValueError("operational decision certificate digest mismatch")
     _validate_operational_deployment_decision_certificate(
@@ -21216,6 +22338,29 @@ def validate_neural_prior_deployment_decision_artifact(
     _validate_operational_decision_publication_receipt(
         operational_publication,
         certificate=operational_certificate,
+        authority_trust_store=authority_trust_store,
+    )
+    operational_activation_values = dict(operational_activation_payload)
+    operational_activation_digest = operational_activation_values.pop(
+        "receipt_digest",
+        None,
+    )
+    try:
+        operational_activation = (
+            _operational_decision_activation_receipt_from_payload(
+                operational_activation_values
+            )
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            "operational decision activation receipt is invalid"
+        ) from error
+    if operational_activation_digest != operational_activation.receipt_digest:
+        raise ValueError("operational activation receipt digest mismatch")
+    _validate_operational_decision_activation_receipt(
+        operational_activation,
+        certificate=operational_certificate,
+        publication_receipt=operational_publication,
         authority_trust_store=authority_trust_store,
     )
     promotion_evidence = _decode_current_neural_prior_promotion_evidence(
@@ -21414,6 +22559,28 @@ def validate_neural_prior_deployment_decision_artifact(
         expected_operational_radar_site_location_digest is not None
         and payload.get("operational_radar_site_location_digest")
         != expected_operational_radar_site_location_digest
+    ) or (
+        expected_full_analysis_input_digest is not None
+        and payload.get("full_analysis_input_digest")
+        != expected_full_analysis_input_digest
+    ) or (
+        expected_analysis_input_derivation_artifact_digest is not None
+        and payload.get("analysis_input_derivation_artifact_digest")
+        != expected_analysis_input_derivation_artifact_digest
+    ) or (
+        expected_promotion_evidence_digest is not None
+        and promotion_evidence.promotion_evidence_digest
+        != expected_promotion_evidence_digest
+    ) or (
+        expected_regime_classification_evidence_digest is not None
+        and regime_digest != expected_regime_classification_evidence_digest
+    ) or (
+        expected_deployment_policy_digest is not None
+        and policy_digest != expected_deployment_policy_digest
+    ) or (
+        expected_selected_prior_digest is not None
+        and selection.get("selected_prior_digest")
+        != expected_selected_prior_digest
     ):
         raise ValueError(
             "neural-prior deployment artifact disagrees with current forecast run"
@@ -21426,6 +22593,35 @@ def validate_neural_prior_deployment_decision_artifact(
         policy_trust_store_digest=external_policy_trust.content_digest,
         allow_committed_routing_evidence=True,
     )
+    reconstructed_selection = _new_neural_prior_deployment_selection(
+        selected_prior_digest=selection["selected_prior_digest"],
+        selected_role=selection["selected_role"],
+        full_analysis_input_digest=payload["full_analysis_input_digest"],
+        promotion_evidence_digest=promotion_evidence.promotion_evidence_digest,
+        promotion_deployment_certificate_digest=certificate.certificate_digest,
+        regime_classification_evidence_digest=regime_digest,
+        deployment_policy_digest=policy_digest,
+        deployment_policy_trust_store_digest=external_policy_trust.content_digest,
+        range_geometry_contract_digest=range_geometry_digest,
+        range_partition_evidence_digest=range_partition_digest,
+        classifier_numerical_runtime_digest=regime["numerical_runtime_digest"],
+        classifier_input_dtype=regime["input_dtype"],
+        classifier_input_device=regime["input_device"],
+        weather_top1_top2_gap=regime["weather_top1_top2_gap"],
+        minimum_range_presence_margin=regime["minimum_range_presence_margin"],
+        deployment_confidence_margin=selection["deployment_confidence_margin"],
+        deployment_decision_artifact_json=artifact_json,
+        deployment_decision_artifact_digest=json_digest(payload),
+        fallback_reason=selection["fallback_reason"],
+    )
+    if (
+        expected_deployment_selection_digest is not None
+        and reconstructed_selection.selection_digest
+        != expected_deployment_selection_digest
+    ):
+        raise ValueError(
+            "neural-prior deployment artifact selection disagrees with forecast run"
+        )
     if (
         ledger_module._load_raw_ingestor_trust_store(
             raw_ingestor_trust_store_path
@@ -21472,6 +22668,9 @@ def _validate_operational_range_geometry_source(
 def infer_deployed_neural_prior(
     frames_dbz: Tensor,
     *,
+    qc_valid_mask: Tensor,
+    quality_weight: Tensor,
+    observation_std_dbz: Tensor,
     input_run: ForecastRunContract,
     candidate_runner: NeuralPriorInferenceRunner,
     parent_runner: NeuralPriorInferenceRunner,
@@ -21482,6 +22681,7 @@ def infer_deployed_neural_prior(
     grid_x_m: Tensor,
     grid_y_m: Tensor,
     source_radar_index_map: Tensor | None = None,
+    input_history_source_radar_index_map: Tensor | None = None,
     outage_mask: Tensor | None = None,
     dynamic_qc_valid_mask: Tensor | None = None,
     policy: DeployedNeuralPriorPolicy,
@@ -21520,6 +22720,29 @@ def infer_deployed_neural_prior(
         source_identity,
         range_geometry_contract,
     )
+    if source_identity.radar_source_kind == "single_site":
+        if input_history_source_radar_index_map is not None:
+            raise ValueError("single-site inference cannot accept mosaic history")
+        source_available_mask = torch.ones_like(
+            qc_valid_mask, dtype=torch.bool
+        )
+    else:
+        if (
+            input_history_source_radar_index_map is None
+            or input_history_source_radar_index_map.dtype != torch.int64
+            or input_history_source_radar_index_map.shape != frames_dbz.shape
+            or input_history_source_radar_index_map.device != frames_dbz.device
+        ):
+            raise ValueError(
+                "mosaic learned inference requires time-resolved source history"
+            )
+        source_available_mask = input_history_source_radar_index_map >= 0
+    if (
+        input_run.source_available_mask_digest is None
+        or tensor_digest(source_available_mask)
+        != input_run.source_available_mask_digest
+    ):
+        raise ValueError("learned source availability disagrees with the input run")
     if input_run.input_plan_json is None or input_run.input_plan_digest is None:
         raise ValueError("operational neural prior requires a bound input plan")
     if (
@@ -21553,6 +22776,15 @@ def infer_deployed_neural_prior(
             list[str],
             derivation_payload["canonical_raw_volume_identity_digests"],
         )
+        if (
+            derivation_payload["contract"]
+            != "analysis-input-derivation-artifact-v5"
+            or derivation_payload["source_available_mask_digest"]
+            != input_run.source_available_mask_digest
+            or derivation_payload["learned_model_input_features_digest"]
+            != input_run.learned_model_input_features_digest
+        ):
+            raise ValueError
     except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
         raise ValueError("operational analysis provenance is invalid") from error
     authority_trust = _load_promotion_deployment_authority_trust_store(
@@ -21596,7 +22828,21 @@ def infer_deployed_neural_prior(
         raise ValueError("operational input plan cannot be reconstructed") from error
     if operational_input_plan.plan_digest != input_run.input_plan_digest:
         raise ValueError("operational input-plan digest disagrees")
-    regime_evidence = regime_classifier.classify(frames_dbz, input_run=input_run)
+    if (
+        regime_classifier.learned_input_feature_contract
+        != LEARNED_RADAR_INPUT_FEATURE_CONTRACT
+    ):
+        raise ValueError(
+            "automatic deployment requires the current classifier input contract"
+        )
+    regime_evidence = regime_classifier.classify(
+        frames_dbz,
+        input_run=input_run,
+        qc_valid_mask=qc_valid_mask,
+        quality_weight=quality_weight,
+        observation_std_dbz=observation_std_dbz,
+        source_available_mask=source_available_mask,
+    )
     if type(range_geometry_contract) is RangeGeometryContract:
         range_partition_evidence = resolve_range_geometry(
             range_geometry_contract,
@@ -21688,4 +22934,8 @@ def infer_deployed_neural_prior(
         frames_dbz,
         input_run=input_run,
         deployment_selection=selection,
+        qc_valid_mask=qc_valid_mask,
+        quality_weight=quality_weight,
+        observation_std_dbz=observation_std_dbz,
+        source_available_mask=source_available_mask,
     )

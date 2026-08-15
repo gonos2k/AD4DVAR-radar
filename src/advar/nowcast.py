@@ -13,6 +13,7 @@ import torch
 from torch import Tensor
 
 from ._digest import dataclass_digest, json_digest, tensor_digest
+from ._learned_input import learned_radar_input_features
 from .calibration import (
     OperationalCalibrationManifest,
     OperationalDataIdentity,
@@ -1355,6 +1356,8 @@ class ForecastRunContract:
     observation_masks_digest: str | None
     observation_quality_weight_digest: str | None
     observation_std_dbz_digest: str | None
+    source_available_mask_digest: str | None
+    learned_model_input_features_digest: str | None
     background_frames_digest: str | None
     fixed_input_context_digest: str | None
     full_analysis_input_digest: str | None
@@ -1389,7 +1392,7 @@ class ForecastRunContract:
     prior_deployment_decision_artifact_digest: str | None = None
     prior_deployment_fallback_reason: str | None = None
     prior_deployment_lineage_contract: str = (
-        "neural-prior-deployment-lineage-v13"
+        "neural-prior-deployment-lineage-v14"
     )
     prior_lineage_contract: str = "neural-prior-run-lineage-v2"
     input_plan_json: str | None = None
@@ -1410,6 +1413,7 @@ class ForecastRunContract:
         *,
         observation_quality_weight: Tensor | None = None,
         observation_std_dbz: Tensor | None = None,
+        source_available_mask: Tensor | None = None,
         grid_time_contract: RadarGridTimeContract | None = None,
         analysis_config_json: str | None = None,
         analysis_config_digest: str | None = None,
@@ -1461,6 +1465,19 @@ class ForecastRunContract:
             if observation_std_dbz is None
             else observation_std_dbz
         )
+        accepted_source_available = (
+            torch.ones_like(observation_masks, dtype=torch.bool)
+            if source_available_mask is None
+            else source_available_mask
+        )
+        if (
+            accepted_source_available.shape != frames_dbz.shape
+            or accepted_source_available.dtype is not torch.bool
+            or accepted_source_available.device != frames_dbz.device
+        ):
+            raise ValueError(
+                "source_available_mask must be boolean with the frame shape"
+            )
         for name, value in (
             ("observation_quality_weight", accepted_quality_weight),
             ("observation_std_dbz", accepted_observation_std),
@@ -1471,6 +1488,9 @@ class ForecastRunContract:
                 or not bool(torch.all(torch.isfinite(value)))
             ):
                 raise ValueError(f"{name} must be finite and match the frames")
+        effective_observation_mask = (
+            observation_masks & accepted_source_available
+        )
         if bool(
             torch.any(
                 (accepted_quality_weight < 0.0)
@@ -1478,12 +1498,30 @@ class ForecastRunContract:
             )
         ) or bool(
             torch.any(
-                accepted_quality_weight.masked_select(~observation_masks) != 0.0
+                accepted_quality_weight.masked_select(
+                    ~effective_observation_mask
+                )
+                != 0.0
             )
         ):
             raise ValueError("observation quality weights are invalid")
         if bool(torch.any(accepted_observation_std <= 0.0)):
             raise ValueError("observation standard deviations must be positive")
+        accepted_quality_weight = torch.where(
+            effective_observation_mask,
+            accepted_quality_weight,
+            torch.zeros_like(accepted_quality_weight),
+        )
+        accepted_observation_std = torch.where(
+            effective_observation_mask,
+            accepted_observation_std,
+            torch.ones_like(accepted_observation_std),
+        )
+        learned_frames_dbz = torch.where(
+            effective_observation_mask,
+            frames_dbz,
+            torch.full_like(frames_dbz, -10.0),
+        )
         background_present = background_frames_dbz is not None
         _validate_background_age(
             config,
@@ -1552,7 +1590,7 @@ class ForecastRunContract:
                 prior_deployment_decision_artifact_digest
             ),
             fallback_reason=prior_deployment_fallback_reason,
-            contract="neural-prior-deployment-lineage-v13",
+            contract="neural-prior-deployment-lineage-v14",
         )
         _validate_input_plan_lineage(input_plan_json, input_plan_digest)
         _validate_analysis_input_derivation_lineage(
@@ -1598,6 +1636,18 @@ class ForecastRunContract:
             accepted_quality_weight
         )
         observation_std_dbz_digest = tensor_digest(accepted_observation_std)
+        source_available_mask_digest = tensor_digest(
+            accepted_source_available
+        )
+        learned_model_input_features_digest = tensor_digest(
+            learned_radar_input_features(
+                learned_frames_dbz,
+                observation_masks,
+                accepted_quality_weight,
+                accepted_observation_std,
+                accepted_source_available,
+            )
+        )
         background_frames_digest = (
             None
             if background_frames_dbz is None
@@ -1609,6 +1659,10 @@ class ForecastRunContract:
                 observation_quality_weight_digest
             ),
             observation_std_dbz_digest=observation_std_dbz_digest,
+            source_available_mask_digest=source_available_mask_digest,
+            learned_model_input_features_digest=(
+                learned_model_input_features_digest
+            ),
             background_frames_digest=background_frames_digest,
             background_age_minutes=background_age_minutes,
             grid_time_contract_digest=(
@@ -1649,6 +1703,10 @@ class ForecastRunContract:
                 observation_quality_weight_digest
             ),
             observation_std_dbz_digest=observation_std_dbz_digest,
+            source_available_mask_digest=source_available_mask_digest,
+            learned_model_input_features_digest=(
+                learned_model_input_features_digest
+            ),
             background_frames_digest=background_frames_digest,
             fixed_input_context_digest=fixed_input_context_digest,
             full_analysis_input_digest=full_analysis_input_digest,
@@ -1800,6 +1858,16 @@ class ForecastRunContract:
                 "observation_std_dbz_digest",
                 self.observation_std_dbz_digest,
             )
+        if self.source_available_mask_digest is not None:
+            _validate_sha256_digest(
+                "source_available_mask_digest",
+                self.source_available_mask_digest,
+            )
+        if self.learned_model_input_features_digest is not None:
+            _validate_sha256_digest(
+                "learned_model_input_features_digest",
+                self.learned_model_input_features_digest,
+            )
         if self.background_frames_digest is not None:
             _validate_sha256_digest(
                 "background_frames_digest",
@@ -1826,6 +1894,13 @@ class ForecastRunContract:
             value is None for value in full_context_values
         ):
             raise ValueError("full input-context digests must be recorded together")
+        if (
+            self.learned_model_input_features_digest is not None
+            and self.source_available_mask_digest is None
+        ):
+            raise ValueError(
+                "learned input features require source-availability lineage"
+            )
         _validate_sha256_digest(
             "latest_frame_digest",
             self.latest_frame_digest,
@@ -1967,9 +2042,17 @@ class ForecastRunContract:
         )
         if (
             self.prior_deployment_lineage_contract
-            == "neural-prior-deployment-lineage-v13"
+            == "neural-prior-deployment-lineage-v14"
             and self.prior_deployment_decision_artifact_json is not None
-            and self.analysis_input_derivation_artifact_json is None
+            and (
+                self.analysis_input_derivation_artifact_json is None
+                or self.source_available_mask_digest is None
+                or self.learned_model_input_features_digest is None
+                or json.loads(self.analysis_input_derivation_artifact_json).get(
+                    "contract"
+                )
+                != "analysis-input-derivation-artifact-v5"
+            )
         ):
             raise ValueError(
                 "current deployed forecasts require analysis-input provenance"
@@ -1983,6 +2066,10 @@ class ForecastRunContract:
                 self.observation_quality_weight_digest
             ),
             observation_std_dbz_digest=self.observation_std_dbz_digest,
+            source_available_mask_digest=self.source_available_mask_digest,
+            learned_model_input_features_digest=(
+                self.learned_model_input_features_digest
+            ),
             background_frames_digest=self.background_frames_digest,
             input_bundle_digest=self.input_bundle_digest,
             full_analysis_input_digest=self.full_analysis_input_digest,
@@ -2029,6 +2116,12 @@ class ForecastRunContract:
                     self.observation_quality_weight_digest
                 ),
                 observation_std_dbz_digest=self.observation_std_dbz_digest,
+                source_available_mask_digest=(
+                    self.source_available_mask_digest
+                ),
+                learned_model_input_features_digest=(
+                    self.learned_model_input_features_digest
+                ),
                 background_frames_digest=self.background_frames_digest,
                 background_age_minutes=self.background_age_minutes,
                 grid_time_contract_digest=self.grid_time_contract_digest,
@@ -2178,6 +2271,8 @@ def _forecast_fixed_input_context_digest(
     observation_masks_digest: str,
     observation_quality_weight_digest: str,
     observation_std_dbz_digest: str,
+    source_available_mask_digest: str | None,
+    learned_model_input_features_digest: str | None,
     background_frames_digest: str | None,
     background_age_minutes: float | None,
     grid_time_contract_digest: str | None,
@@ -2188,9 +2283,14 @@ def _forecast_fixed_input_context_digest(
 ) -> str:
     """Address every non-radar input that a dBZ action must preserve."""
 
-    return json_digest(
-        {
-            "contract": "forecast-fixed-input-context-v1",
+    payload: dict[str, object] = {
+            "contract": (
+                "forecast-fixed-input-context-v3"
+                if learned_model_input_features_digest is not None
+                else "forecast-fixed-input-context-v2"
+                if source_available_mask_digest is not None
+                else "forecast-fixed-input-context-v1"
+            ),
             "observation_masks_digest": observation_masks_digest,
             "observation_quality_weight_digest": (
                 observation_quality_weight_digest
@@ -2208,7 +2308,12 @@ def _forecast_fixed_input_context_digest(
             "operational_data_identity_digest": operational_data_identity_digest,
             "input_plan_digest": input_plan_digest,
         }
-    )
+    if source_available_mask_digest is not None:
+        payload["source_available_mask_digest"] = source_available_mask_digest
+    # The learned feature digest includes the dBZ frames themselves.  It is
+    # bound directly by the run identity, while this digest deliberately
+    # remains the non-radar context preserved by a dBZ-only intervention.
+    return json_digest(payload)
 
 
 def _validate_sha256_digest(name: str, value: str) -> None:
@@ -2267,6 +2372,7 @@ def _validate_analysis_input_derivation_lineage(
         raise ValueError("invalid analysis input derivation JSON") from error
     if not isinstance(payload, dict):
         raise ValueError("analysis input derivation payload digest mismatch")
+    contract = payload.get("contract")
     expected_fields = {
         "contract",
         "case_id",
@@ -2296,6 +2402,13 @@ def _validate_analysis_input_derivation_lineage(
         "processor_public_key_hex",
         "processor_signature_hex",
     }
+    if contract == "analysis-input-derivation-artifact-v5":
+        expected_fields.update(
+            {
+                "source_available_mask_digest",
+                "learned_model_input_features_digest",
+            }
+        )
     digest_fields = expected_fields - {
         "contract",
         "case_id",
@@ -2316,7 +2429,10 @@ def _validate_analysis_input_derivation_lineage(
     background_identities = payload.get("background_input_identity_digests")
     if (
         set(payload) != expected_fields
-        or payload.get("contract") != "analysis-input-derivation-artifact-v4"
+        or contract not in (
+            "analysis-input-derivation-artifact-v4",
+            "analysis-input-derivation-artifact-v5",
+        )
         or not isinstance(payload.get("case_id"), str)
         or not str(payload.get("case_id", "")).strip()
         or str(payload.get("case_id")) != str(payload.get("case_id")).strip()
@@ -2406,6 +2522,8 @@ def _validate_analysis_input_derivation_against_run(
     observation_masks_digest: str | None,
     observation_quality_weight_digest: str | None,
     observation_std_dbz_digest: str | None,
+    source_available_mask_digest: str | None,
+    learned_model_input_features_digest: str | None,
     background_frames_digest: str | None,
     input_bundle_digest: str,
     full_analysis_input_digest: str | None,
@@ -2465,6 +2583,10 @@ def _validate_analysis_input_derivation_against_run(
         != observation_quality_weight_digest
         or payload.get("observation_std_dbz_digest")
         != observation_std_dbz_digest
+        or payload.get("source_available_mask_digest")
+        != source_available_mask_digest
+        or payload.get("learned_model_input_features_digest")
+        != learned_model_input_features_digest
         or payload.get("background_frames_digest")
         != background_frames_digest
         or payload.get("input_bundle_digest") != input_bundle_digest
@@ -2665,7 +2787,8 @@ def _validate_prior_deployment_lineage(
         "neural-prior-deployment-lineage-v10-audit",
         "neural-prior-deployment-lineage-v11-audit",
         "neural-prior-deployment-lineage-v12-audit",
-        "neural-prior-deployment-lineage-v13",
+        "neural-prior-deployment-lineage-v13-audit",
+        "neural-prior-deployment-lineage-v14",
     }:
         raise ValueError("unsupported neural-prior deployment lineage")
     values = (
@@ -2810,6 +2933,7 @@ def _validate_prior_deployment_lineage(
         "neural-prior-deployment-lineage-v10-audit",
         "neural-prior-deployment-lineage-v11-audit",
         "neural-prior-deployment-lineage-v12-audit",
+        "neural-prior-deployment-lineage-v13-audit",
     }:
         if all(value is None for value in values):
             return
@@ -2823,7 +2947,7 @@ def _validate_prior_deployment_lineage(
         ):
             raise ValueError("legacy deployment decision digest mismatch")
         return
-    if contract != "neural-prior-deployment-lineage-v13":
+    if contract != "neural-prior-deployment-lineage-v14":
         raise ValueError("legacy deployment lineage is audit-only")
     if any(value is None for value in values) or prior_role is None:
         raise ValueError("neural-prior deployment lineage must be complete")
@@ -3030,6 +3154,10 @@ def _forecast_run_identity_digest(
                 run.observation_quality_weight_digest
             ),
             "observation_std_dbz_digest": run.observation_std_dbz_digest,
+            "source_available_mask_digest": run.source_available_mask_digest,
+            "learned_model_input_features_digest": (
+                run.learned_model_input_features_digest
+            ),
             "background_frames_digest": run.background_frames_digest,
             "fixed_input_context_digest": run.fixed_input_context_digest,
             "full_analysis_input_digest": run.full_analysis_input_digest,

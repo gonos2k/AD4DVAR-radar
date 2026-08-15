@@ -793,6 +793,16 @@ class InterventionInputContext:
             raise ValueError("invalid observations must have zero quality weight")
         if bool(torch.any(observation_std_dbz <= 0.0)):
             raise ValueError("observation_std_dbz must be positive")
+        canonical_quality_weight = torch.where(
+            observation_masks,
+            quality_weight,
+            torch.zeros_like(quality_weight),
+        )
+        canonical_observation_std_dbz = torch.where(
+            observation_masks,
+            observation_std_dbz,
+            torch.ones_like(observation_std_dbz),
+        )
         if background_frames_dbz is not None and (
             background_frames_dbz.shape != shape
             or background_frames_dbz.dtype != frames_dbz.dtype
@@ -807,12 +817,13 @@ class InterventionInputContext:
         ):
             raise ValueError("intervention masks disagree with the input run")
         if run.observation_quality_weight_digest is None or (
-            tensor_digest(quality_weight)
+            tensor_digest(canonical_quality_weight)
             != run.observation_quality_weight_digest
         ):
             raise ValueError("intervention quality weights disagree with the input run")
         if run.observation_std_dbz_digest is None or (
-            tensor_digest(observation_std_dbz) != run.observation_std_dbz_digest
+            tensor_digest(canonical_observation_std_dbz)
+            != run.observation_std_dbz_digest
         ):
             raise ValueError(
                 "intervention observation errors disagree with the input run"
@@ -856,8 +867,12 @@ class InterventionInputContext:
                 ),
                 "frames_digest": tensor_digest(frames_dbz),
                 "observation_masks_digest": tensor_digest(observation_masks),
-                "quality_weight_digest": tensor_digest(quality_weight),
-                "observation_std_dbz_digest": tensor_digest(observation_std_dbz),
+                "quality_weight_digest": tensor_digest(
+                    canonical_quality_weight
+                ),
+                "observation_std_dbz_digest": tensor_digest(
+                    canonical_observation_std_dbz
+                ),
                 "background_frames_digest": background_digest,
                 "radar_id": radar_id,
                 "context_schema_digest": _INTERVENTION_CONTEXT_SCHEMA_DIGEST,
@@ -875,8 +890,14 @@ class InterventionInputContext:
         for name, value in (
             ("_frames_dbz", frames_dbz.detach().clone()),
             ("_observation_masks", observation_masks.detach().clone()),
-            ("_quality_weight", quality_weight.detach().clone()),
-            ("_observation_std_dbz", observation_std_dbz.detach().clone()),
+            (
+                "_quality_weight",
+                canonical_quality_weight.detach().clone(),
+            ),
+            (
+                "_observation_std_dbz",
+                canonical_observation_std_dbz.detach().clone(),
+            ),
             (
                 "_background_frames_dbz",
                 None
@@ -2418,7 +2439,7 @@ def validate_intervention_action_transition(
         raise ValueError("receipt runs disagree with the decision input plan")
     unchanged_run_fields = (
         "analysis_config_digest",
-        "observation_std_dbz_digest",
+        "source_available_mask_digest",
         "background_frames_digest",
         "background_age_minutes",
         "grid_time_contract_digest",
@@ -2471,6 +2492,10 @@ def validate_intervention_action_transition(
         ):
             raise ValueError("QC receipt did not change its fixed input context")
     else:
+        if actual_input_before_run.observation_std_dbz_digest != (
+            actual_input_after_run.observation_std_dbz_digest
+        ):
+            raise ValueError("receipt changed non-radar input state")
         if before_digest == after_digest or (
             actual_input_before_run.input_bundle_digest
             == actual_input_after_run.input_bundle_digest

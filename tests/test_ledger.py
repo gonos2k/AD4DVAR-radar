@@ -659,7 +659,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             b"\x25" * 32
         )
         member_unsigned = {
-            "contract": "analysis-input-derivation-artifact-v4",
+            "contract": "analysis-input-derivation-artifact-v5",
             "case_id": "clock-training-member",
             "input_plan_digest": "9" * 64,
             "resolved_raw_observation_receipt_digests": ("5" * 64,),
@@ -681,6 +681,8 @@ class EpisodeLedgerTests(unittest.TestCase):
             "observation_masks_digest": "f" * 64,
             "observation_quality_weight_digest": "0" * 64,
             "observation_std_dbz_digest": "1" * 64,
+            "source_available_mask_digest": "2" * 64,
+            "learned_model_input_features_digest": "3" * 64,
             "background_frames_digest": None,
             "input_bundle_digest": "1" * 64,
             "full_analysis_input_digest": "2" * 64,
@@ -712,6 +714,34 @@ class EpisodeLedgerTests(unittest.TestCase):
                 ],
             }
         )
+        training_feature_dataset = (
+            promotion_module.TrainingFeatureDatasetArtifact(
+                member_analysis_derivation_artifact_digests=(
+                    member_derivation.artifact_digest,
+                ),
+                member_feature_tensor_digests=(
+                    member_derivation.learned_model_input_features_digest,
+                ),
+                member_target_tensor_digests=("4" * 64,),
+                sample_order=(member_derivation.case_id,),
+                sample_weights=(1.0,),
+                split_labels=("train",),
+                augmentation_seeds=(0,),
+                normalization_statistics_digest="5" * 64,
+                feature_algorithm_digest="f" * 64,
+                feature_schema_digest="0" * 64,
+                target_algorithm_digest="6" * 64,
+                target_schema_digest="7" * 64,
+                feature_tensor_archive_sha256="8" * 64,
+                target_tensor_archive_sha256="9" * 64,
+            )
+        )
+        training_feature_dataset_json = json.dumps(
+            training_feature_dataset.payload
+            | {"dataset_digest": training_feature_dataset.dataset_digest},
+            sort_keys=True,
+            separators=(",", ":"),
+        )
         training_derivation = promotion_module.TrainingDatasetDerivationArtifact(
             training_raw_registry_receipt_digest=(
                 training_registry_receipt.receipt_digest
@@ -735,6 +765,12 @@ class EpisodeLedgerTests(unittest.TestCase):
             feature_schema_digest="0" * 64,
             signed_training_member_manifest_digest=(
                 signed_member_manifest_digest
+            ),
+            training_feature_dataset_artifact_digest=(
+                training_feature_dataset.dataset_digest
+            ),
+            training_feature_dataset_artifact_json=(
+                training_feature_dataset_json
             ),
         )
         classifier_manifest = promotion_module.RegimeClassifierManifest(
@@ -1157,7 +1193,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-            self.assertEqual(version, 36)
+            self.assertEqual(version, 37)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4470,7 +4506,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 36)
+        self.assertEqual(version, 37)
 
 
 if __name__ == "__main__":
