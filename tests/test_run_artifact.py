@@ -690,7 +690,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact = {
-            "contract": "neural-prior-deployment-decision-artifact-v13",
+            "contract": "neural-prior-deployment-decision-artifact-v14",
             "routing_semantic_replay_verified": False,
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "analysis_input_derivation_artifact_digest": (
@@ -1961,7 +1961,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v13",
+            "contract": "neural-prior-deployment-decision-artifact-v14",
             "routing_semantic_replay_verified": False,
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "analysis_input_derivation_artifact_digest": (
@@ -2168,6 +2168,13 @@ class ForecastRunArtifactTests(unittest.TestCase):
             v61_path = Path(temporary) / "legacy-v61.npz"
             self._save_arrays(v61_path, v61_arrays)
             legacy_v61 = load_forecast_run(v61_path)
+            v63_arrays = dict(legacy_arrays)
+            v63_arrays["forecast_run_artifact_version"] = np.asarray(
+                "forecast-run-v63"
+            )
+            v63_path = Path(temporary) / "legacy-v63.npz"
+            self._save_arrays(v63_path, v63_arrays)
+            legacy_v63 = load_forecast_run(v63_path)
 
         self.assertEqual(
             loaded.run.prior_promotion_evidence_digest,
@@ -2211,6 +2218,14 @@ class ForecastRunArtifactTests(unittest.TestCase):
         )
         self.assertEqual(
             legacy_v61.run.prior_deployment_fallback_reason,
+            "unverified_routing_evidence",
+        )
+        self.assertEqual(
+            legacy_v63.run.prior_deployment_lineage_contract,
+            "neural-prior-deployment-lineage-v14-audit",
+        )
+        self.assertEqual(
+            legacy_v63.run.prior_deployment_fallback_reason,
             "unverified_routing_evidence",
         )
 

@@ -4,6 +4,8 @@ from dataclasses import asdict, replace
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+import base64
+import hashlib
 import json
 import sqlite3
 import tempfile
@@ -198,7 +200,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         evaluation = self.evaluation(1, -1.0)
         policy = self.policy()
 
-        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v21")
+        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v22")
         self.assertTrue(
             all(
                 item.contract == "neural-prior-range-band-contract-v3"
@@ -207,7 +209,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             manifest.contract,
-            "neural-prior-candidate-manifest-v15",
+            "neural-prior-candidate-manifest-v16",
         )
         self.assertEqual(
             evaluation.contract,
@@ -246,10 +248,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
         self.assertEqual(
             scoring.contract,
-            "neural-prior-holdout-scoring-artifact-v9",
+            "neural-prior-holdout-scoring-artifact-v10",
         )
-        self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v29")
-        self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v14")
+        self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v30")
+        self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v15")
         self.assertEqual(
             evidence.semantic_replay_generation_digest,
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST,
@@ -891,9 +893,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             if input_bundle_digest is None
             else input_bundle_digest
         )
+        feature_tensor = torch.arange(12, dtype=torch.float64).reshape(3, 2, 2)
+        target_tensor = torch.arange(4, dtype=torch.float64).reshape(2, 2)
         member_unsigned = {
             "contract": "analysis-input-derivation-artifact-v5",
-            "case_id": "classifier-training-member" if classifier else "candidate-training-member",
+            "case_id": "classifier-training-case" if classifier else "training-case",
             "input_plan_digest": "1" * 64,
             "resolved_raw_observation_receipt_digests": ("2" * 64,),
             "canonical_raw_volume_identity_digests": tuple(
@@ -915,7 +919,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             "observation_quality_weight_digest": "7" * 64,
             "observation_std_dbz_digest": "8" * 64,
             "source_available_mask_digest": "9" * 64,
-            "learned_model_input_features_digest": "a" * 64,
+            "learned_model_input_features_digest": promotion_module.tensor_digest(
+                feature_tensor
+            ),
             "background_frames_digest": None,
             "input_bundle_digest": retained_input_bundle_digest,
             "full_analysis_input_digest": "8" * 64,
@@ -947,25 +953,64 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ],
             }
         )
+        target_derivation = (
+            promotion_module.TrainingTargetDerivationArtifact.issue(
+                case_id=member.case_id,
+                target_source_identity_digest="d" * 64,
+                target_source_valid_time="2026-06-01T00:10:00Z",
+                target_qc_policy_digest="2" * 64,
+                target_censor_policy_digest="3" * 64,
+                target_algorithm_digest="f" * 64,
+                target_schema_digest="1" * 64,
+                target_tensor=target_tensor,
+                generated_at="2026-06-01T00:20:00Z",
+                training_cutoff_time="2026-06-01T01:00:00Z",
+                processor_id=processor_id,
+                processor_private_key=processor_key,
+            )
+        )
+        target_derivation_json = json.dumps(
+            target_derivation.payload
+            | {"artifact_digest": target_derivation.artifact_digest},
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        feature_archive = promotion_module.encode_training_tensor_archive(
+            {"feature_00000": feature_tensor}
+        )
+        target_archive = promotion_module.encode_training_tensor_archive(
+            {"target_00000": target_tensor}
+        )
         feature_dataset = promotion_module.TrainingFeatureDatasetArtifact(
-            member_analysis_derivation_artifact_digests=(
-                member.artifact_digest,
-            ),
-            member_feature_tensor_digests=(
-                member.learned_model_input_features_digest,
-            ),
-            member_target_tensor_digests=("d" * 64,),
-            sample_order=(member.case_id,),
-            sample_weights=(1.0,),
-            split_labels=("train",),
-            augmentation_seeds=(0,),
+            members=(promotion_module.TrainingDatasetMember(
+                case_id=member.case_id,
+                analysis_derivation_artifact_digest=member.artifact_digest,
+                feature_archive_member="feature_00000",
+                feature_tensor_digest=(
+                    member.learned_model_input_features_digest
+                ),
+                target_archive_member="target_00000",
+                target_tensor_digest=promotion_module.tensor_digest(
+                    target_tensor
+                ),
+                target_derivation_artifact_json=target_derivation_json,
+                sample_weight=1.0,
+                split="train",
+                augmentation_seed=0,
+            ),),
             normalization_statistics_digest="e" * 64,
             feature_algorithm_digest=("5" if classifier else "3") * 64,
             feature_schema_digest=("5" if classifier else "4") * 64,
             target_algorithm_digest="f" * 64,
             target_schema_digest="1" * 64,
-            feature_tensor_archive_sha256="2" * 64,
-            target_tensor_archive_sha256="3" * 64,
+            feature_tensor_archive_sha256=hashlib.sha256(
+                base64.b64decode(feature_archive)
+            ).hexdigest(),
+            target_tensor_archive_sha256=hashlib.sha256(
+                base64.b64decode(target_archive)
+            ).hexdigest(),
+            feature_tensor_archive_base64=feature_archive,
+            target_tensor_archive_base64=target_archive,
         )
         feature_dataset_json = json.dumps(
             feature_dataset.payload
@@ -6554,7 +6599,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v29")
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v30")
             self.assertTrue(loaded.deployment_eligible)
             ledger_authority_key = Ed25519PrivateKey.from_private_bytes(
                 b"\x03" * 32
@@ -6768,7 +6813,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             self.assertEqual(
                 certificate.contract,
-                "ledgered-promotion-deployment-certificate-v4",
+                "ledgered-promotion-deployment-certificate-v5",
             )
             self.assertEqual(certificate.sequence_number, 1)
             self.assertEqual(
@@ -6911,7 +6956,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     )
             self.assertEqual(
                 operational_certificate.contract,
-                "operational-deployment-decision-certificate-v5",
+                "operational-deployment-decision-certificate-v6",
             )
             self.assertEqual(operational_certificate.ledger_sequence_number, 1)
 
@@ -11075,7 +11120,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             loaded.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v14",
+            "neural-prior-deployment-lineage-v15",
         )
 
     def test_current_physical_range_partition_controls_deployment(self) -> None:
@@ -11382,29 +11427,24 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             classifier=True,
             input_bundle_digest=completed.input_bundle_digest,
         )
-        classifier = replace(
-            retained,
-            training_case_ids=("renamed-training-case",),
-            training_storm_ids=("renamed-training-storm",),
-            training_input_bundle_digests=(completed.input_bundle_digest,),
-            training_dataset_digest=derivation.training_dataset_digest,
-            training_dataset_derivation_artifact_digest=(
-                derivation.artifact_digest
-            ),
-            training_dataset_derivation_artifact_json=json.dumps(
-                derivation.payload,
-                sort_keys=True,
-                separators=(",", ":"),
-            ),
-            signed_training_member_manifest_digest=(
-                derivation.signed_training_member_manifest_digest
-            ),
-        )
-
-        with self.assertRaisesRegex(ValueError, "classifier training inputs"):
-            promotion_module._validate_classifier_holdout_independence(
-                classifier,
-                (completed,),
+        with self.assertRaisesRegex(ValueError, "derivation disagrees"):
+            replace(
+                retained,
+                training_case_ids=("renamed-training-case",),
+                training_storm_ids=("renamed-training-storm",),
+                training_input_bundle_digests=(completed.input_bundle_digest,),
+                training_dataset_digest=derivation.training_dataset_digest,
+                training_dataset_derivation_artifact_digest=(
+                    derivation.artifact_digest
+                ),
+                training_dataset_derivation_artifact_json=json.dumps(
+                    derivation.payload,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+                signed_training_member_manifest_digest=(
+                    derivation.signed_training_member_manifest_digest
+                ),
             )
 
     def test_classifier_training_event_cannot_overlap_holdout_cycle(self) -> None:
@@ -12024,6 +12064,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             truncated_location_dbz=torch.zeros((2, 2)),
             truncated_scale_dbz=torch.ones((2, 2)),
             event_probability=torch.zeros((2, 2)),
+            bound_input=SimpleNamespace(context_digest="a" * 64),
             inference_evidence=SimpleNamespace(
                 evidence_digest=case.candidate_inference_evidence_digest,
                 inference_algorithm_digest="8" * 64,
@@ -12068,6 +12109,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             truncated_location_dbz=torch.zeros((2, 2)),
             truncated_scale_dbz=torch.ones((2, 2)),
             event_probability=torch.zeros((2, 2)),
+            bound_input=SimpleNamespace(context_digest="b" * 64),
             inference_evidence=SimpleNamespace(
                 evidence_digest=case.parent_inference_evidence_digest,
                 inference_algorithm_digest="8" * 64,
@@ -12615,19 +12657,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def test_cpu_only_scoring_generation_has_a_stable_backend_contract(self) -> None:
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_CONTRACT,
-            "neural-prior-scoring-replay-bundle-v9",
+            "neural-prior-scoring-replay-bundle-v10",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_METHOD,
-            "builtin-semantic-scoring-recomputation-v9",
+            "builtin-semantic-scoring-recomputation-v10",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD,
             {
-                "contract": "neural-prior-semantic-scoring-generation-v7",
-                "replay_contract": "neural-prior-scoring-replay-bundle-v9",
-                "replay_method": "builtin-semantic-scoring-recomputation-v9",
-                "case_contract": "neural-prior-semantic-scoring-case-v8",
+                "contract": "neural-prior-semantic-scoring-generation-v8",
+                "replay_contract": "neural-prior-scoring-replay-bundle-v10",
+                "replay_method": "builtin-semantic-scoring-recomputation-v10",
+                "case_contract": "neural-prior-semantic-scoring-case-v9",
                 "product_type_policy": "exact-shipped-product-types-v1",
                 "forecast_integrity": "forecast-result-raw-content-validation-v1",
                 "prior_integrity": "runner-reproduced-prior-application-v1",
@@ -12710,7 +12752,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
 
         low = canonical_inputs(-10.0, 0.0, 99.0)
-        extreme = canonical_inputs(70.0, 1_000.0, 0.001)
+        extreme = canonical_inputs(70.0, 1.0, 0.001)
         for left, right in zip(low, extreme, strict=True):
             self.assertTrue(torch.equal(left, right))
         self.assertEqual(
@@ -13032,6 +13074,47 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             replayed.training_dataset_digest,
             replayed.training_feature_dataset_artifact_digest,
         )
+        dataset = promotion_module._training_feature_dataset_from_json(
+            artifact.training_feature_dataset_artifact_json,
+            expected_digest=artifact.training_feature_dataset_artifact_digest,
+        )
+        corrupted = bytearray(base64.b64decode(dataset.target_tensor_archive_base64))
+        corrupted[-1] ^= 1
+        with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+            replace(
+                dataset,
+                target_tensor_archive_base64=base64.b64encode(corrupted).decode(
+                    "ascii"
+                ),
+            )
+        with self.assertRaisesRegex(ValueError, "encoding|manifest"):
+            replace(dataset, feature_tensor_archive_base64="")
+        with self.assertRaisesRegex(ValueError, "target lineage"):
+            replace(
+                dataset,
+                members=(
+                    replace(dataset.members[0], case_id="wrong-training-case"),
+                ),
+            )
+        target_values = json.loads(
+            dataset.member_target_derivation_artifact_jsons[0]
+        )
+        target_values["generated_at"] = "2026-06-02T00:00:00Z"
+        target_values["artifact_digest"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "target derivation"):
+            replace(
+                dataset,
+                members=(
+                    replace(
+                        dataset.members[0],
+                        target_derivation_artifact_json=json.dumps(
+                            target_values,
+                            sort_keys=True,
+                            separators=(",", ":"),
+                        ),
+                    ),
+                ),
+            )
         changed = json.loads(artifact_json)
         changed["raw_volume_identity_digests"] = ["f" * 64]
         with self.assertRaisesRegex(ValueError, "invalid|digest mismatch"):
@@ -13567,6 +13650,28 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
                 for item in receipts
             ),
+            history_entries=tuple(
+                promotion_module.OperationalRawResolutionHistoryEntry.issue(
+                    provenance_plan_digest=operational_plan.plan_digest,
+                    slot_digest=item.slot_plan_digest,
+                    resolution_identity_digest=(
+                        item.raw_volume_identity.identity_digest
+                    ),
+                    resolution_kind="resolved",
+                    previous_entry_digest=(
+                        promotion_module.OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST
+                    ),
+                    transition="original",
+                    reason="initial operational resolution",
+                    issued_at=max(
+                        retained.raw_volume_attestation.received_at
+                        for retained in receipts
+                    ),
+                    authority_id=operational_plan.analysis_processor_id,
+                    authority_private_key=processor_key,
+                )
+                for item in receipts
+            ),
             resolved_at=max(
                 item.raw_volume_attestation.received_at for item in receipts
             ),
@@ -13788,6 +13893,69 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 slot,
                 pinned_trust_store=valid_store,
                 current_trust_store=revoked_store,
+            )
+
+    def test_raw_quality_weight_is_rejected_outside_unit_interval(self) -> None:
+        common = {
+            "reflectivity_dbz": torch.zeros((2, 2), dtype=torch.float32),
+            "qc_valid_mask": torch.ones((2, 2), dtype=torch.bool),
+            "observation_std_dbz": torch.full(
+                (2, 2), 2.0, dtype=torch.float32
+            ),
+            "radar_site_digest": "1" * 64,
+            "acquisition_valid_time": "2026-08-15T00:00:00Z",
+            "canonical_scan_identity_digest": "2" * 64,
+            "radar_product_digest": "3" * 64,
+            "grid_contract_digest": "4" * 64,
+        }
+        for boundary in (0.0, 1.0):
+            artifact = (
+                promotion_module.CanonicalRawGridVolumeArtifact.from_tensors(
+                    **common,
+                    quality_weight=torch.full(
+                        (2, 2), boundary, dtype=torch.float32
+                    ),
+                )
+            )
+            _, _, quality, _ = artifact.decode_and_qc()
+            torch.testing.assert_close(
+                quality,
+                torch.full_like(quality, boundary),
+            )
+        above = torch.nextafter(
+            torch.tensor(1.0, dtype=torch.float32),
+            torch.tensor(float("inf"), dtype=torch.float32),
+        )
+        for invalid in (
+            above,
+            torch.tensor(-torch.finfo(torch.float32).eps),
+            torch.tensor(float("nan"), dtype=torch.float32),
+            torch.tensor(float("inf"), dtype=torch.float32),
+        ):
+            with self.subTest(invalid=invalid):
+                quality = torch.full((2, 2), invalid, dtype=torch.float32)
+                with self.assertRaisesRegex(ValueError, "tensors are invalid"):
+                    promotion_module.CanonicalRawGridVolumeArtifact.from_tensors(
+                        **common,
+                        quality_weight=quality,
+                    )
+        with self.assertRaisesRegex(ValueError, "registered QC contract"):
+            promotion_module.CanonicalRawGridVolumeArtifact.from_encoded_tensors(
+                raw_reflectivity_bits=torch.zeros(
+                    (2, 2), dtype=torch.float32
+                ).view(torch.int32),
+                raw_qc_flags=torch.ones((2, 2), dtype=torch.bool),
+                raw_quality_bits=torch.full((2, 2), above).view(torch.int32),
+                raw_observation_std_bits=torch.full(
+                    (2, 2), 2.0, dtype=torch.float32
+                ).view(torch.int32),
+                radar_site_digest=common["radar_site_digest"],
+                acquisition_valid_time=common["acquisition_valid_time"],
+                canonical_scan_identity_digest=common[
+                    "canonical_scan_identity_digest"
+                ],
+                radar_product_digest=common["radar_product_digest"],
+                grid_contract_digest=common["grid_contract_digest"],
             )
 
     def test_background_lineage_uses_model_times_not_observation_times(
@@ -15710,6 +15878,52 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertEqual(state, ("decision_recorded",))
         self.assertEqual(publication, (0,))
 
+        with sqlite3.connect(
+            self._latest_operational_ledger.index_path
+        ) as connection:
+            connection.execute(
+                "CREATE TRIGGER test_fail_activation_receipt_insert "
+                "BEFORE INSERT ON operational_decision_activation_receipts "
+                "BEGIN SELECT RAISE(ABORT, 'injected activation receipt failure'); END"
+            )
+        try:
+            with self.assertRaisesRegex(
+                sqlite3.IntegrityError,
+                "injected activation receipt",
+            ):
+                issue()
+        finally:
+            with sqlite3.connect(
+                self._latest_operational_ledger.index_path
+            ) as connection:
+                connection.execute(
+                    "DROP TRIGGER IF EXISTS "
+                    "test_fail_activation_receipt_insert"
+                )
+        with sqlite3.connect(
+            self._latest_operational_ledger.index_path
+        ) as connection:
+            atomic_state = connection.execute(
+                "SELECT status FROM operational_decision_issuance_states "
+                "WHERE operational_cycle_id = ?",
+                (decision["operational_cycle_id"],),
+            ).fetchone()
+            atomic_publication = connection.execute(
+                "SELECT usable,activation_committed_at FROM "
+                "operational_decision_publications WHERE certificate_digest = "
+                "(SELECT certificate_digest FROM "
+                "operational_decision_issuance_states WHERE "
+                "operational_cycle_id = ?)",
+                (decision["operational_cycle_id"],),
+            ).fetchone()
+            activation_receipt_count = connection.execute(
+                "SELECT COUNT(*) FROM "
+                "operational_decision_activation_receipts"
+            ).fetchone()[0]
+        self.assertEqual(atomic_state, ("decision_recorded",))
+        self.assertEqual(atomic_publication, (0, None))
+        self.assertEqual(activation_receipt_count, 0)
+
         resume_time = (
             promotion_module._canonical_datetime(input_plan.decision_deadline)
             + timedelta(seconds=1)
@@ -15756,15 +15970,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 "(SELECT COUNT(*) FROM operational_deployment_decisions_v2 "
                 "WHERE input_plan_digest = ?),"
                 "(SELECT COUNT(*) FROM operational_decision_publications "
+                "WHERE certificate_digest = ?),"
+                "(SELECT COUNT(*) FROM "
+                "operational_decision_activation_receipts "
                 "WHERE certificate_digest = ?)",
                 (
                     input_plan_digest,
                     input_plan_digest,
                     issued.certificate_digest,
+                    issued.certificate_digest,
                 ),
             ).fetchone()
         self.assertEqual(state, ("published",))
-        self.assertEqual(counts, (1, 1, 1))
+        self.assertEqual(counts, (1, 1, 1, 1))
 
     def test_raw_trust_artifact_activation_change_fails_closed(self) -> None:
         expected_raw_trust_digest = (
@@ -15984,11 +16202,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 "operational_cycle_id = ?)",
                 (decision["operational_cycle_id"],),
             ).fetchone()
-        self.assertEqual(state, ("expired",))
+        self.assertEqual(state, ("decision_recorded",))
         self.assertIsNotNone(publication)
         assert publication is not None
         self.assertEqual(publication[0], 0)
-        self.assertIsNotNone(publication[1])
+        self.assertIsNone(publication[1])
 
     def test_fractional_second_chronology_uses_instants_not_strings(self) -> None:
         common = {

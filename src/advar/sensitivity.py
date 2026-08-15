@@ -46,6 +46,7 @@ from .variational import (
     AnalysisLinearization,
     AnalysisObservations,
     AnalysisResult,
+    BoundNeuralPriorInput,
     FrozenOuterState,
     NeuralPriorApplication,
     NeuralPriorInferenceRunner,
@@ -1179,7 +1180,7 @@ def _physical_radar_channels(
         background[0] = torch.where(
             _neural_prior_derivative_mask(frozen),
             neural_prior_runner.jvp(
-                frozen.input_frames_dbz,
+                _require_bound_neural_prior_input(frozen),
                 delta_dbz,
             ),
             torch.zeros_like(background[0]),
@@ -1206,9 +1207,12 @@ def _validate_retained_prior_runner(
     if application is not None:
         if application.application_digest != frozen.neural_prior_application_digest:
             raise ValueError("neural-prior perturbation application mismatch")
-        runner.reproduce(application, frozen.input_frames_dbz)
+        runner.reproduce(
+            application,
+            _require_bound_neural_prior_input(frozen),
+        )
     runner.validate_retained_output(
-        frozen.input_frames_dbz,
+        _require_bound_neural_prior_input(frozen),
         raw,
         execution_contract_digest=execution_digest,
     )
@@ -1224,6 +1228,15 @@ def _neural_prior_derivative_mask(
     if valid is None or raw is None:
         raise ValueError("neural-prior derivative requires retained prior state")
     return valid
+
+
+def _require_bound_neural_prior_input(
+    frozen: FrozenOuterState,
+) -> BoundNeuralPriorInput:
+    bound_input = frozen.neural_prior_bound_input
+    if bound_input is None:
+        raise ValueError("neural-prior bound input is missing from restart state")
+    return bound_input
 
 
 def _neural_prior_support_margin(
@@ -7092,13 +7105,13 @@ def _compute_variational_products(
                 neural_prior_adjoint_direction_maximum_defect = max(
                     neural_prior_adjoint_direction_maximum_defect,
                     neural_prior_runner.validate_adjoint_direction(
-                        frozen.input_frames_dbz,
+                        _require_bound_neural_prior_input(frozen),
                         prior_cotangent,
                         prior_log_std_cotangent,
                     ),
                 )
                 prior_input_sensitivity = neural_prior_runner.vjp_components(
-                    frozen.input_frames_dbz,
+                    _require_bound_neural_prior_input(frozen),
                     prior_cotangent,
                     prior_log_std_cotangent,
                 )
