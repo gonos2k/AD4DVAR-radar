@@ -36,8 +36,9 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v62"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v63"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
+    "forecast-run-v62",
     "forecast-run-v61",
     "forecast-run-v60",
     "forecast-run-v42",
@@ -77,6 +78,8 @@ _CORE_ARRAY_NAMES = frozenset(
         "observation_masks_digest",
         "observation_quality_weight_digest",
         "observation_std_dbz_digest",
+        "source_available_mask_digest",
+        "learned_model_input_features_digest",
         "background_frames_digest",
         "fixed_input_context_digest",
         "full_analysis_input_digest",
@@ -332,6 +335,8 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             result.run.observation_masks_digest,
             result.run.observation_quality_weight_digest,
             result.run.observation_std_dbz_digest,
+            result.run.source_available_mask_digest,
+            result.run.learned_model_input_features_digest,
             result.run.fixed_input_context_digest,
             result.run.full_analysis_input_digest,
         )
@@ -373,6 +378,12 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         ),
         "observation_std_dbz_digest": np.asarray(
             result.run.observation_std_dbz_digest
+        ),
+        "source_available_mask_digest": np.asarray(
+            result.run.source_available_mask_digest
+        ),
+        "learned_model_input_features_digest": np.asarray(
+            result.run.learned_model_input_features_digest
         ),
         "background_frames_digest": np.asarray(
             ""
@@ -1465,6 +1476,10 @@ def load_forecast_run(
                 prior_deployment_lineage_contract = (
                     "neural-prior-deployment-lineage-v12-audit"
                 )
+            elif version == "forecast-run-v62":
+                prior_deployment_lineage_contract = (
+                    "neural-prior-deployment-lineage-v13-audit"
+                )
         elif version in _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS:
             prior_deployment_lineage_contract = (
                 "neural-prior-deployment-lineage-v0-audit"
@@ -1514,6 +1529,19 @@ def load_forecast_run(
             observation_std_dbz_digest=(
                 _digest_scalar(loaded_arrays, "observation_std_dbz_digest")
                 if "observation_std_dbz_digest" in loaded_arrays
+                else None
+            ),
+            source_available_mask_digest=(
+                _digest_scalar(loaded_arrays, "source_available_mask_digest")
+                if "source_available_mask_digest" in loaded_arrays
+                else None
+            ),
+            learned_model_input_features_digest=(
+                _digest_scalar(
+                    loaded_arrays,
+                    "learned_model_input_features_digest",
+                )
+                if "learned_model_input_features_digest" in loaded_arrays
                 else None
             ),
             background_frames_digest=(
@@ -1755,6 +1783,22 @@ def load_forecast_run(
                     "current deployed forecast requires an external "
                     "raw-ingestor trust store"
                 )
+            try:
+                current_input_plan_payload = json.loads(
+                    "" if run.input_plan_json is None else run.input_plan_json
+                )
+            except json.JSONDecodeError as error:
+                raise ValueError(
+                    "current deployed forecast has an invalid input plan"
+                ) from error
+            if (
+                not isinstance(current_input_plan_payload, dict)
+                or current_input_plan_payload.get("contract")
+                != "neural-prior-input-plan-v2"
+            ):
+                raise ValueError(
+                    "current deployed forecast requires a typed input plan"
+                )
             if (
                 validate_neural_prior_deployment_decision_artifact(
                     run.prior_deployment_decision_artifact_json,
@@ -1781,6 +1825,25 @@ def load_forecast_run(
                         else source_identity.radar_site_location_digest
                     ),
                     expected_input_plan_digest=run.input_plan_digest,
+                    expected_full_analysis_input_digest=(
+                        run.full_analysis_input_digest
+                    ),
+                    expected_analysis_input_derivation_artifact_digest=(
+                        run.analysis_input_derivation_artifact_digest
+                    ),
+                    expected_promotion_evidence_digest=(
+                        run.prior_promotion_evidence_digest
+                    ),
+                    expected_regime_classification_evidence_digest=(
+                        run.prior_regime_classification_evidence_digest
+                    ),
+                    expected_deployment_policy_digest=(
+                        run.prior_deployment_policy_digest
+                    ),
+                    expected_deployment_selection_digest=(
+                        run.prior_deployment_selection_digest
+                    ),
+                    expected_selected_prior_digest=run.neural_prior_digest,
                     deployment_certificate_trust_store_path=(
                         deployment_certificate_trust_store_path
                     ),

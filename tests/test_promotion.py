@@ -8,6 +8,7 @@ import json
 import sqlite3
 import tempfile
 from types import SimpleNamespace
+from typing import cast
 import unittest
 from unittest.mock import Mock, patch
 
@@ -197,7 +198,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         evaluation = self.evaluation(1, -1.0)
         policy = self.policy()
 
-        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v20")
+        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v21")
         self.assertTrue(
             all(
                 item.contract == "neural-prior-range-band-contract-v3"
@@ -206,7 +207,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             manifest.contract,
-            "neural-prior-candidate-manifest-v14",
+            "neural-prior-candidate-manifest-v15",
         )
         self.assertEqual(
             evaluation.contract,
@@ -218,7 +219,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 for band in evaluation.range_band_evaluations
             )
         )
-        self.assertEqual(policy.contract, "neural-prior-promotion-policy-v28")
+        self.assertEqual(policy.contract, "neural-prior-promotion-policy-v29")
 
     def test_semantic_replay_generation_reaches_promotion_and_deployment(
         self,
@@ -245,9 +246,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
         self.assertEqual(
             scoring.contract,
-            "neural-prior-holdout-scoring-artifact-v8",
+            "neural-prior-holdout-scoring-artifact-v9",
         )
-        self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v28")
+        self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v29")
         self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v14")
         self.assertEqual(
             evidence.semantic_replay_generation_digest,
@@ -891,7 +892,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             else input_bundle_digest
         )
         member_unsigned = {
-            "contract": "analysis-input-derivation-artifact-v4",
+            "contract": "analysis-input-derivation-artifact-v5",
             "case_id": "classifier-training-member" if classifier else "candidate-training-member",
             "input_plan_digest": "1" * 64,
             "resolved_raw_observation_receipt_digests": ("2" * 64,),
@@ -913,6 +914,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             "observation_masks_digest": "6" * 64,
             "observation_quality_weight_digest": "7" * 64,
             "observation_std_dbz_digest": "8" * 64,
+            "source_available_mask_digest": "9" * 64,
+            "learned_model_input_features_digest": "a" * 64,
             "background_frames_digest": None,
             "input_bundle_digest": retained_input_bundle_digest,
             "full_analysis_input_digest": "8" * 64,
@@ -944,6 +947,32 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ],
             }
         )
+        feature_dataset = promotion_module.TrainingFeatureDatasetArtifact(
+            member_analysis_derivation_artifact_digests=(
+                member.artifact_digest,
+            ),
+            member_feature_tensor_digests=(
+                member.learned_model_input_features_digest,
+            ),
+            member_target_tensor_digests=("d" * 64,),
+            sample_order=(member.case_id,),
+            sample_weights=(1.0,),
+            split_labels=("train",),
+            augmentation_seeds=(0,),
+            normalization_statistics_digest="e" * 64,
+            feature_algorithm_digest=("5" if classifier else "3") * 64,
+            feature_schema_digest=("5" if classifier else "4") * 64,
+            target_algorithm_digest="f" * 64,
+            target_schema_digest="1" * 64,
+            feature_tensor_archive_sha256="2" * 64,
+            target_tensor_archive_sha256="3" * 64,
+        )
+        feature_dataset_json = json.dumps(
+            feature_dataset.payload
+            | {"dataset_digest": feature_dataset.dataset_digest},
+            sort_keys=True,
+            separators=(",", ":"),
+        )
         return promotion_module.TrainingDatasetDerivationArtifact(
             training_raw_registry_receipt_digest=(
                 receipt.receipt_digest
@@ -968,6 +997,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             feature_algorithm_digest=("5" if classifier else "3") * 64,
             feature_schema_digest=("5" if classifier else "4") * 64,
             signed_training_member_manifest_digest=member_manifest_digest,
+            training_feature_dataset_artifact_digest=(
+                feature_dataset.dataset_digest
+            ),
+            training_feature_dataset_artifact_json=feature_dataset_json,
         )
 
     def plan(
@@ -1457,6 +1490,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         run_kwargs = {
             "observation_quality_weight": input_quality,
             "observation_std_dbz": observation_std,
+            "source_available_mask": torch.ones_like(
+                input_valid,
+                dtype=torch.bool,
+            ),
             "grid_time_contract": grid,
             "operational_calibration_manifest_json": calibration.json,
             "operational_calibration_manifest_digest": calibration.digest,
@@ -2013,8 +2050,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             def prior_runner(offset: float, training_digest: str):
                 return promotion_module.NeuralPriorInferenceRunner(
                     _ReplayPrior(offset).eval(),
-                    lambda value: value[-1],
+                    lambda value: value[0, -1],
                     example_frames=input_frames,
+                    example_qc_valid_mask=input_valid,
+                    example_quality_weight=input_quality,
+                    example_observation_std_dbz=torch.full_like(
+                        input_frames, 2.0
+                    ),
+                    example_source_available_mask=torch.ones_like(
+                        input_valid
+                    ),
                     model_contract_digest=retained_manifest.model_contract_digest,
                     feature_schema_digest=retained_manifest.feature_schema_digest,
                     training_manifest_digest=training_digest,
@@ -2036,11 +2081,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 input_frames,
                 input_run=base_run,
                 role="candidate",
+                qc_valid_mask=input_valid,
+                quality_weight=input_quality,
+                observation_std_dbz=torch.full_like(input_frames, 2.0),
+                source_available_mask=torch.ones_like(input_valid),
             )
             parent_application = parent_runner.infer(
                 input_frames,
                 input_run=base_run,
                 role="parent",
+                qc_valid_mask=input_valid,
+                quality_weight=input_quality,
+                observation_std_dbz=torch.full_like(input_frames, 2.0),
+                source_available_mask=torch.ones_like(input_valid),
             )
 
             def forecast_result(runner, application, role):
@@ -2137,6 +2190,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     (1.0, -1.0),
                 ).eval(),
                 example_frames=input_frames,
+                example_qc_valid_mask=input_valid,
+                example_quality_weight=input_quality,
+                example_observation_std_dbz=torch.full_like(
+                    input_frames, 2.0
+                ),
+                example_source_available_mask=torch.ones_like(input_valid),
                 regime_labels=("convective", "stratiform", "unknown"),
                 range_regime_labels=("near_range", "far_range"),
                 classifier_algorithm_digest="5" * 64,
@@ -2168,6 +2227,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     input_frames_dbz=input_frames,
                     input_qc_valid_mask=input_valid,
                     input_quality_weight=input_quality,
+                    input_observation_std_dbz=torch.full_like(
+                        input_frames, 2.0
+                    ),
                     background_frames_dbz=None,
                     uncertainty_target=self.uncertainty_target(index),
                     state_calibration_target=self.state_target(index),
@@ -2440,6 +2502,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         run_kwargs = {
             "observation_quality_weight": input_quality,
             "observation_std_dbz": observation_std,
+            "source_available_mask": input_history_source_map >= 0,
             "grid_time_contract": grid,
             "operational_calibration_manifest_json": calibration.json,
             "operational_calibration_manifest_digest": calibration.digest,
@@ -2460,8 +2523,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         def prior_runner(offset: float, training_digest: str):
             return promotion_module.NeuralPriorInferenceRunner(
                 _ReplayPrior(offset).eval(),
-                lambda value: value[-1],
+                lambda value: value[0, -1],
                 example_frames=input_frames,
+                example_qc_valid_mask=input_valid,
+                example_quality_weight=input_quality,
+                example_observation_std_dbz=observation_std,
+                example_source_available_mask=(
+                    input_history_source_map >= 0
+                ),
                 model_contract_digest="2" * 64,
                 feature_schema_digest="4" * 64,
                 training_manifest_digest=training_digest,
@@ -2469,8 +2538,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 probability_contract=self.probability_contract(),
                 dependency="radar_dependent",
                 allow_constant_uncertainty=False,
-                feature_exclusion_mask=torch.ones_like(
-                    input_frames, dtype=torch.bool
+                feature_exclusion_mask=torch.ones(
+                    (5, *input_frames.shape), dtype=torch.bool
                 ),
             )
 
@@ -2480,11 +2549,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             input_frames,
             input_run=base_run,
             role="candidate",
+            qc_valid_mask=input_valid,
+            quality_weight=input_quality,
+            observation_std_dbz=observation_std,
+            source_available_mask=input_history_source_map >= 0,
         )
         parent_application = parent_runner.infer(
             input_frames,
             input_run=base_run,
             role="parent",
+            qc_valid_mask=input_valid,
+            quality_weight=input_quality,
+            observation_std_dbz=observation_std,
+            source_available_mask=input_history_source_map >= 0,
         )
 
         def product_forecast(runner, application, role):
@@ -2587,6 +2664,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 (12.0, -12.0),
             ).eval(),
             example_frames=input_frames,
+            example_qc_valid_mask=input_valid,
+            example_quality_weight=input_quality,
+            example_observation_std_dbz=observation_std,
+            example_source_available_mask=input_history_source_map >= 0,
             regime_labels=("convective", "stratiform", "unknown"),
             range_regime_labels=("near_range", "far_range"),
             classifier_algorithm_digest="5" * 64,
@@ -3147,11 +3228,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             input_frames,
             input_run=base_run,
             role="candidate",
+            qc_valid_mask=input_valid,
+            quality_weight=input_quality,
+            observation_std_dbz=observation_std,
+            source_available_mask=input_history_source_map >= 0,
         )
         parent_application = parent_runner.infer(
             input_frames,
             input_run=base_run,
             role="parent",
+            qc_valid_mask=input_valid,
+            quality_weight=input_quality,
+            observation_std_dbz=observation_std,
+            source_available_mask=input_history_source_map >= 0,
         )
         candidate_forecast = product_forecast(
             candidate_runner,
@@ -3449,6 +3538,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             input_frames_dbz=input_frames,
             input_qc_valid_mask=input_valid,
             input_quality_weight=input_quality,
+            input_observation_std_dbz=observation_std,
             background_frames_dbz=None,
             uncertainty_target=uncertainty_target,
             state_calibration_target=state_target,
@@ -3783,6 +3873,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 "input_frames_dbz",
                 "input_qc_valid_mask",
                 "input_quality_weight",
+                "input_observation_std_dbz",
                 "background_frames_dbz",
                 "uncertainty_target",
                 "state_calibration_target",
@@ -5251,14 +5342,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
             with sqlite3.connect(ledger.index_path) as connection:
                 connection.execute(
-                    "INSERT OR REPLACE INTO neural_prior_analysis_input_provenance "
-                    "(artifact_digest,holdout_plan_digest,case_id,"
-                    "input_plan_digest,global_resolution_receipt_digest,"
+                    "INSERT OR REPLACE INTO analysis_input_provenance_commits "
+                    "(artifact_digest,provenance_kind,provenance_plan_digest,case_id,"
+                    "input_plan_digest,raw_resolution_receipt_digest,"
                     "payload_json,arrays_sha256,metadata_sha256,path,"
                     "raw_ingestor_trust_store_digest,raw_trust_validated_at,"
-                    "committed_at,usable) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1)",
+                    "committed_at,usable) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
                     (
                         derivation_digest,
+                        "holdout",
                         "5" * 64,
                         f"operational-{input_plan.plan_digest[:16]}",
                         input_plan.plan_digest,
@@ -5369,6 +5461,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             or run.observation_masks_digest is None
             or run.observation_quality_weight_digest is None
             or run.observation_std_dbz_digest is None
+            or run.source_available_mask_digest is None
+            or run.learned_model_input_features_digest is None
             or run.full_analysis_input_digest is None
             or run.grid_time_contract_digest is None
             or run.background_frames_digest is not None
@@ -5377,7 +5471,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         input_plan = json.loads(run.input_plan_json)
         processor_key = Ed25519PrivateKey.from_private_bytes(b"\x23" * 32)
         unsigned = {
-            "contract": "analysis-input-derivation-artifact-v4",
+            "contract": "analysis-input-derivation-artifact-v5",
             "case_id": f"operational-{run.input_plan_digest[:16]}",
             "input_plan_digest": run.input_plan_digest,
             "resolved_raw_observation_receipt_digests": ["a" * 64],
@@ -5403,6 +5497,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 run.observation_quality_weight_digest
             ),
             "observation_std_dbz_digest": run.observation_std_dbz_digest,
+            "source_available_mask_digest": (
+                run.source_available_mask_digest
+            ),
+            "learned_model_input_features_digest": (
+                run.learned_model_input_features_digest
+            ),
             "background_frames_digest": None,
             "input_bundle_digest": run.input_bundle_digest,
             "full_analysis_input_digest": run.full_analysis_input_digest,
@@ -5428,6 +5528,46 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             analysis_input_derivation_artifact_digest=artifact.artifact_digest,
         )
 
+    @staticmethod
+    def current_classifier_input_run(frames):
+        input_mask = torch.ones_like(frames, dtype=torch.bool)
+        return ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            frames,
+            input_mask,
+            None,
+            observation_quality_weight=torch.ones_like(frames),
+            observation_std_dbz=torch.full_like(frames, 2.0),
+            source_available_mask=input_mask,
+        )
+
+    @staticmethod
+    def current_regime_classifier(model, frames, regime_labels, range_labels):
+        input_mask = torch.ones_like(frames, dtype=torch.bool)
+        return NeuralPriorRegimeClassifier(
+            model,
+            example_frames=frames,
+            example_qc_valid_mask=input_mask,
+            example_quality_weight=torch.ones_like(frames),
+            example_observation_std_dbz=torch.full_like(frames, 2.0),
+            example_source_available_mask=input_mask,
+            regime_labels=regime_labels,
+            range_regime_labels=range_labels,
+            classifier_algorithm_digest="1" * 64,
+        )
+
+    @staticmethod
+    def classify_current(classifier, frames, run):
+        input_mask = torch.ones_like(frames, dtype=torch.bool)
+        return classifier.classify(
+            frames,
+            input_run=run,
+            qc_valid_mask=input_mask,
+            quality_weight=torch.ones_like(frames),
+            observation_std_dbz=torch.full_like(frames, 2.0),
+            source_available_mask=input_mask,
+        )
+
     def commit_run_analysis_provenance(self, run, frames_dbz):
         payload = json.loads(run.analysis_input_derivation_artifact_json)
         ledger = self._latest_operational_ledger
@@ -5451,6 +5591,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             derived_input_frames=(
                 frames_dbz.detach().cpu().contiguous().numpy()
             ),
+            derived_qc_valid_mask=np.ones(
+                tuple(frames_dbz.shape),
+                dtype=np.bool_,
+            ),
+            derived_quality_weight=np.ones(
+                tuple(frames_dbz.shape),
+                dtype=np.float32,
+            ),
+            derived_observation_std_dbz=np.full(
+                tuple(frames_dbz.shape),
+                2.0,
+                dtype=np.float32,
+            ),
         )
         metadata_path.write_text(
             json.dumps(payload, sort_keys=True, separators=(",", ":")),
@@ -5458,14 +5611,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         with sqlite3.connect(ledger.index_path) as connection:
             connection.execute(
-                "INSERT OR REPLACE INTO neural_prior_analysis_input_provenance "
-                "(artifact_digest,holdout_plan_digest,case_id,input_plan_digest,"
-                "global_resolution_receipt_digest,payload_json,arrays_sha256,"
+                "INSERT OR REPLACE INTO analysis_input_provenance_commits "
+                "(artifact_digest,provenance_kind,provenance_plan_digest,case_id,"
+                "input_plan_digest,raw_resolution_receipt_digest,payload_json,arrays_sha256,"
                 "metadata_sha256,path,raw_ingestor_trust_store_digest,"
                 "raw_trust_validated_at,committed_at,usable) "
-                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1)",
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
                 (
                     run.analysis_input_derivation_artifact_digest,
+                    "holdout",
                     "5" * 64,
                     payload["case_id"],
                     run.input_plan_digest,
@@ -5604,6 +5758,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 replay_frames,
                 torch.ones_like(replay_frames, dtype=torch.bool),
                 None,
+                observation_quality_weight=torch.ones_like(replay_frames),
+                observation_std_dbz=torch.full_like(replay_frames, 2.0),
+                source_available_mask=torch.ones_like(
+                    replay_frames,
+                    dtype=torch.bool,
+                ),
                 grid_time_contract=live_grid,
                 operational_calibration_manifest_json=calibration.json,
                 operational_calibration_manifest_digest=calibration.digest,
@@ -5620,6 +5780,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             mutable_args[4] = kwargs["regime_classifier"].classify(
                 replay_frames,
                 input_run=routing_run,
+                qc_valid_mask=torch.ones_like(
+                    replay_frames,
+                    dtype=torch.bool,
+                ),
+                quality_weight=torch.ones_like(replay_frames),
+                observation_std_dbz=torch.full_like(replay_frames, 2.0),
+                source_available_mask=torch.ones_like(
+                    replay_frames,
+                    dtype=torch.bool,
+                ),
             )
             args = tuple(mutable_args)
             kwargs["input_run"] = routing_run
@@ -6211,7 +6381,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     scoring_input_artifact=scoring_input,
                     scheduler_trust_store_path="/etc/advar/schedulers.json",
                 )
-                replay_manifest = (
+                with patch.object(
+                    EpisodeLedger,
+                    "_activate_raw_trust_artifact",
+                    side_effect=RuntimeError("injected postcommit crash"),
+                ), self.assertRaisesRegex(RuntimeError, "postcommit crash"):
                     ledger.append_neural_prior_scoring_replay_bundle(
                         scoring_input,
                         replay_cases,
@@ -6222,10 +6396,26 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                             "/etc/advar/raw-ingestors.json"
                         ),
                     )
+                reconciled = ledger.reconcile_prepared_raw_trust_activations(
+                    raw_ingestor_trust_store_path=(
+                        "/etc/advar/raw-ingestors.json"
+                    ),
+                    authority_trust_store_path=(
+                        "/etc/advar/deployment-authorities.json"
+                    ),
                 )
+                self.assertEqual(len(reconciled), 1)
                 replayed = ledger.load_neural_prior_scoring_replay_bundle(
-                    replay_manifest.bundle_digest,
+                    reconciled[0][1],
                     cases=replay_cases,
+                )
+                self.assertIsInstance(
+                    replayed.manifest,
+                    ledger_module.ScoringReplayBundleManifest,
+                )
+                replay_manifest = cast(
+                    ledger_module.ScoringReplayBundleManifest,
+                    replayed.manifest,
                 )
                 self.assertTrue(replayed.semantic_replay_verified)
                 self.assertEqual(
@@ -6364,7 +6554,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v28")
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v29")
             self.assertTrue(loaded.deployment_eligible)
             ledger_authority_key = Ed25519PrivateKey.from_private_bytes(
                 b"\x03" * 32
@@ -7269,6 +7459,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         ), self.assertRaisesRegex(ValueError, "operational grid"):
             promotion_module.infer_deployed_neural_prior(
                 frames,
+                qc_valid_mask=torch.ones_like(frames, dtype=torch.bool),
+                quality_weight=torch.ones_like(frames),
+                observation_std_dbz=torch.full_like(frames, 2.0),
                 input_run=run,
                 candidate_runner=Mock(),
                 parent_runner=Mock(),
@@ -7330,6 +7523,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         ), self.assertRaisesRegex(ValueError, "radar frames"):
             promotion_module.infer_deployed_neural_prior(
                 frames,
+                qc_valid_mask=torch.ones_like(frames, dtype=torch.bool),
+                quality_weight=torch.ones_like(frames),
+                observation_std_dbz=torch.full_like(frames, 2.0),
                 input_run=run,
                 candidate_runner=Mock(),
                 parent_runner=Mock(),
@@ -9791,18 +9987,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
     def test_classifier_attested_uncertified_regime_selects_parent(self) -> None:
         frames = torch.zeros((3, 2, 2))
-        run = ForecastRunContract.from_inputs(
-            NowcastConfig(),
-            frames,
-            torch.ones_like(frames, dtype=torch.bool),
-            None,
-        )
-        classifier = NeuralPriorRegimeClassifier(
+        run = self.current_classifier_input_run(frames)
+        classifier = self.current_regime_classifier(
             _FixedRegimeClassifier((0.0, 12.0, -12.0), (0.0, 12.0)).eval(),
-            example_frames=frames,
-            regime_labels=("convective", "unseen", "unknown"),
-            range_regime_labels=("near_range", "unseen_range"),
-            classifier_algorithm_digest="1" * 64,
+            frames,
+            ("convective", "unseen", "unknown"),
+            ("near_range", "unseen_range"),
         )
         promotion_policy = replace(
             self.policy(),
@@ -9847,7 +10037,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             range_geometry_contract_digest=geometry.contract_digest,
         )
 
-        classified = classifier.classify(frames, input_run=run)
+        classified = self.classify_current(classifier, frames, run)
         trust = _LearningPolicyTrustStore(
             approved_policy_digests=frozenset((deployment_policy.policy_digest,)),
             content_digest=promotion_module.json_digest(
@@ -9955,18 +10145,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
     def test_classifier_attested_certified_regime_selects_candidate(self) -> None:
         frames = torch.zeros((3, 2, 2))
-        run = ForecastRunContract.from_inputs(
-            NowcastConfig(),
-            frames,
-            torch.ones_like(frames, dtype=torch.bool),
-            None,
-        )
-        classifier = NeuralPriorRegimeClassifier(
+        run = self.current_classifier_input_run(frames)
+        classifier = self.current_regime_classifier(
             _FixedRegimeClassifier((12.0, 0.0, -12.0), (12.0, 0.0)).eval(),
-            example_frames=frames,
-            regime_labels=("convective", "unseen", "unknown"),
-            range_regime_labels=("near_range", "unseen_range"),
-            classifier_algorithm_digest="1" * 64,
+            frames,
+            ("convective", "unseen", "unknown"),
+            ("near_range", "unseen_range"),
         )
         promotion_policy = replace(
             self.policy(),
@@ -10011,7 +10195,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             range_geometry_contract_digest=geometry.contract_digest,
         )
 
-        classified = classifier.classify(frames, input_run=run)
+        classified = self.classify_current(classifier, frames, run)
         trust = _LearningPolicyTrustStore(
             approved_policy_digests=frozenset((deployment_policy.policy_digest,)),
             content_digest=promotion_module.json_digest(
@@ -10305,18 +10489,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
     def test_all_active_range_bands_must_be_certified(self) -> None:
         frames = torch.zeros((3, 2, 2))
-        run = ForecastRunContract.from_inputs(
-            NowcastConfig(),
-            frames,
-            torch.ones_like(frames, dtype=torch.bool),
-            None,
-        )
-        classifier = NeuralPriorRegimeClassifier(
+        run = self.current_classifier_input_run(frames)
+        classifier = self.current_regime_classifier(
             _FixedRegimeClassifier((12.0, 0.0, -12.0), (12.0, 12.0)).eval(),
-            example_frames=frames,
-            regime_labels=("convective", "stratiform", "unknown"),
-            range_regime_labels=("near_range", "far_range"),
-            classifier_algorithm_digest="1" * 64,
+            frames,
+            ("convective", "stratiform", "unknown"),
+            ("near_range", "far_range"),
         )
         promotion_policy = replace(
             self.policy(),
@@ -10386,7 +10564,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 parent,
                 evidence,
                 deployment_certificate,
-                classifier.classify(frames, input_run=run),
+                self.classify_current(classifier, frames, run),
                 partition,
                 deployment_policy,
                 regime_classifier=classifier,
@@ -10549,6 +10727,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 (12.0, 0.0),
             ).eval(),
             example_frames=frames,
+            example_qc_valid_mask=torch.ones_like(frames, dtype=torch.bool),
+            example_quality_weight=torch.ones_like(frames),
+            example_observation_std_dbz=torch.full_like(frames, 2.0),
+            example_source_available_mask=torch.ones_like(
+                frames, dtype=torch.bool
+            ),
             regime_labels=("convective", "stratiform", "unknown"),
             range_regime_labels=("near_range", "far_range"),
             classifier_algorithm_digest="5" * 64,
@@ -10654,7 +10838,17 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         original_issuer = operational_client._issuer
 
         def issue_forged_exact_regime(decision_payload, **kwargs):
-            genuine = classifier.classify(frames, input_run=input_run)
+            genuine = classifier.classify(
+                frames,
+                input_run=input_run,
+                qc_valid_mask=torch.ones_like(frames, dtype=torch.bool),
+                quality_weight=torch.ones_like(frames),
+                observation_std_dbz=torch.full_like(frames, 2.0),
+                source_available_mask=torch.ones_like(
+                    frames,
+                    dtype=torch.bool,
+                ),
+            )
             forged = object.__new__(promotion_module.RegimeClassificationEvidence)
             for name, value in genuine.__dict__.items():
                 object.__setattr__(forged, name, value)
@@ -10713,6 +10907,17 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ):
                 promotion_module.infer_deployed_neural_prior(
                     frames,
+                    qc_valid_mask=replay_case.input_qc_valid_mask,
+                    quality_weight=replay_case.input_quality_weight,
+                    observation_std_dbz=(
+                        replay_case.input_observation_std_dbz
+                    ),
+                    input_history_source_radar_index_map=(
+                        None
+                        if replay_case.resolved_source_coverage is None
+                        else replay_case.resolved_source_coverage
+                        .input_history_source_radar_index_map
+                    ),
                     input_run=input_run,
                     candidate_runner=replay_case.candidate_prior_runner,
                     parent_runner=replay_case.parent_prior_runner,
@@ -10761,6 +10966,17 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ):
                 promotion_module.infer_deployed_neural_prior(
                     frames,
+                    qc_valid_mask=replay_case.input_qc_valid_mask,
+                    quality_weight=replay_case.input_quality_weight,
+                    observation_std_dbz=(
+                        replay_case.input_observation_std_dbz
+                    ),
+                    input_history_source_radar_index_map=(
+                        None
+                        if replay_case.resolved_source_coverage is None
+                        else replay_case.resolved_source_coverage
+                        .input_history_source_radar_index_map
+                    ),
                     input_run=input_run,
                     candidate_runner=replay_case.candidate_prior_runner,
                     parent_runner=replay_case.parent_prior_runner,
@@ -10781,6 +10997,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             application = promotion_module.infer_deployed_neural_prior(
                 frames,
+                qc_valid_mask=replay_case.input_qc_valid_mask,
+                quality_weight=replay_case.input_quality_weight,
+                observation_std_dbz=replay_case.input_observation_std_dbz,
+                input_history_source_radar_index_map=(
+                    None
+                    if replay_case.resolved_source_coverage is None
+                    else replay_case.resolved_source_coverage
+                    .input_history_source_radar_index_map
+                ),
                 input_run=input_run,
                 candidate_runner=replay_case.candidate_prior_runner,
                 parent_runner=replay_case.parent_prior_runner,
@@ -10850,23 +11075,17 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             loaded.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v13",
+            "neural-prior-deployment-lineage-v14",
         )
 
     def test_current_physical_range_partition_controls_deployment(self) -> None:
         frames = torch.zeros((3, 2, 2))
-        run = ForecastRunContract.from_inputs(
-            NowcastConfig(),
-            frames,
-            torch.ones_like(frames, dtype=torch.bool),
-            None,
-        )
-        classifier = NeuralPriorRegimeClassifier(
+        run = self.current_classifier_input_run(frames)
+        classifier = self.current_regime_classifier(
             _FixedRegimeClassifier((12.0, 0.0, -12.0), (12.0, 0.0)).eval(),
-            example_frames=frames,
-            regime_labels=("convective", "unseen", "unknown"),
-            range_regime_labels=("near_range", "far_range"),
-            classifier_algorithm_digest="1" * 64,
+            frames,
+            ("convective", "unseen", "unknown"),
+            ("near_range", "far_range"),
         )
         promotion_policy = replace(
             self.policy(),
@@ -10952,7 +11171,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 parent,
                 evidence,
                 deployment_certificate,
-                classifier.classify(frames, input_run=run),
+                self.classify_current(classifier, frames, run),
                 partition,
                 deployment_policy,
                 regime_classifier=classifier,
@@ -11343,18 +11562,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
     def test_ambiguous_current_weather_branch_falls_back_to_parent(self) -> None:
         frames = torch.zeros((3, 2, 2))
-        run = ForecastRunContract.from_inputs(
-            NowcastConfig(),
-            frames,
-            torch.ones_like(frames, dtype=torch.bool),
-            None,
-        )
-        classifier = NeuralPriorRegimeClassifier(
+        run = self.current_classifier_input_run(frames)
+        classifier = self.current_regime_classifier(
             _FixedRegimeClassifier((0.01, 0.0), (12.0,)).eval(),
-            example_frames=frames,
-            regime_labels=("convective", "unknown"),
-            range_regime_labels=("near_range",),
-            classifier_algorithm_digest="1" * 64,
+            frames,
+            ("convective", "unknown"),
+            ("near_range",),
         )
         promotion_policy = replace(
             self.policy(),
@@ -11440,7 +11653,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 parent,
                 evidence,
                 deployment_certificate,
-                classifier.classify(frames, input_run=run),
+                self.classify_current(classifier, frames, run),
                 partition,
                 deployment_policy,
                 regime_classifier=classifier,
@@ -12402,25 +12615,28 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def test_cpu_only_scoring_generation_has_a_stable_backend_contract(self) -> None:
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_CONTRACT,
-            "neural-prior-scoring-replay-bundle-v8",
+            "neural-prior-scoring-replay-bundle-v9",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_METHOD,
-            "builtin-semantic-scoring-recomputation-v8",
+            "builtin-semantic-scoring-recomputation-v9",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD,
             {
-                "contract": "neural-prior-semantic-scoring-generation-v6",
-                "replay_contract": "neural-prior-scoring-replay-bundle-v8",
-                "replay_method": "builtin-semantic-scoring-recomputation-v8",
-                "case_contract": "neural-prior-semantic-scoring-case-v7",
+                "contract": "neural-prior-semantic-scoring-generation-v7",
+                "replay_contract": "neural-prior-scoring-replay-bundle-v9",
+                "replay_method": "builtin-semantic-scoring-recomputation-v9",
+                "case_contract": "neural-prior-semantic-scoring-case-v8",
                 "product_type_policy": "exact-shipped-product-types-v1",
                 "forecast_integrity": "forecast-result-raw-content-validation-v1",
                 "prior_integrity": "runner-reproduced-prior-application-v1",
                 "classifier_integrity": "exported-classifier-reexecution-v1",
                 "snapshot_policy": "single-frozen-tensor-snapshot-v1",
                 "backend_policy": "single-device-cpu-only-scoring-v1",
+                "learned_input_feature_contract": (
+                    "learned-radar-input-features-v1"
+                ),
             },
         )
         evidence = self.compute((self.evaluation(1, -0.2), self.evaluation(2, -0.3)))
@@ -12509,25 +12725,46 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             None,
             observation_quality_weight=low[2],
             observation_std_dbz=low[3],
+            source_available_mask=torch.ones_like(low[1]),
         )
         classifier = NeuralPriorRegimeClassifier(
             _FrameSensitiveRegimeClassifier().eval(),
             example_frames=low[0],
+            example_qc_valid_mask=low[1],
+            example_quality_weight=low[2],
+            example_observation_std_dbz=low[3],
+            example_source_available_mask=torch.ones_like(low[1]),
             regime_labels=("convective", "stratiform", "unknown"),
             range_regime_labels=("near_range", "far_range"),
             classifier_algorithm_digest="1" * 64,
         )
-        low_logits = classifier.classification_logits(low[0], input_run=run)
+        low_logits = classifier.classification_logits(
+            low[0],
+            input_run=run,
+            qc_valid_mask=low[1],
+            quality_weight=low[2],
+            observation_std_dbz=low[3],
+            source_available_mask=torch.ones_like(low[1]),
+        )
         extreme_logits = classifier.classification_logits(
-            extreme[0], input_run=run
+            extreme[0],
+            input_run=run,
+            qc_valid_mask=extreme[1],
+            quality_weight=extreme[2],
+            observation_std_dbz=extreme[3],
+            source_available_mask=torch.ones_like(extreme[1]),
         )
         for left, right in zip(low_logits, extreme_logits, strict=True):
             self.assertTrue(torch.equal(left, right))
 
         runner = promotion_module.NeuralPriorInferenceRunner(
             _ReplayPrior(0.1).eval(),
-            lambda value: value[-1],
+            lambda value: value[0, -1],
             example_frames=low[0],
+            example_qc_valid_mask=low[1],
+            example_quality_weight=low[2],
+            example_observation_std_dbz=low[3],
+            example_source_available_mask=torch.ones_like(low[1]),
             model_contract_digest="2" * 64,
             feature_schema_digest="3" * 64,
             training_manifest_digest="4" * 64,
@@ -12537,9 +12774,23 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             allow_constant_uncertainty=False,
             maximum_derivative_defect=0.999,
         )
-        low_prior = runner.infer(low[0], input_run=run, role="candidate")
+        low_prior = runner.infer(
+            low[0],
+            input_run=run,
+            role="candidate",
+            qc_valid_mask=low[1],
+            quality_weight=low[2],
+            observation_std_dbz=low[3],
+            source_available_mask=torch.ones_like(low[1]),
+        )
         extreme_prior = runner.infer(
-            extreme[0], input_run=run, role="candidate"
+            extreme[0],
+            input_run=run,
+            role="candidate",
+            qc_valid_mask=extreme[1],
+            quality_weight=extreme[2],
+            observation_std_dbz=extreme[3],
+            source_available_mask=torch.ones_like(extreme[1]),
         )
         self.assertEqual(low_prior.application_digest, extreme_prior.application_digest)
         for name in (
@@ -12779,7 +13030,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertEqual(replayed, artifact)
         self.assertEqual(
             replayed.training_dataset_digest,
-            promotion_module.json_digest(replayed.dataset_payload),
+            replayed.training_feature_dataset_artifact_digest,
         )
         changed = json.loads(artifact_json)
         changed["raw_volume_identity_digests"] = ["f" * 64]
@@ -12975,6 +13226,121 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 resolved_source_coverage=coverage,
             )
 
+    def test_complete_mosaic_outage_uses_signed_missing_receipts(self) -> None:
+        issuance_plan, input_plan, source_registry = self.mosaic_issuance_context()
+        source_key = self.scheduler_key()
+        site_digests = source_registry.radar_site_digests
+        slots = tuple(
+            promotion_module.RawObservationSlotPlan(
+                radar_site_digest=site_digest,
+                acquisition_valid_time=valid_time,
+                scan_strategy_rule_digest="5" * 64,
+                source_selection_rule_digest=(
+                    source_registry.source_selection_policy_digest
+                ),
+                canonical_geodetic_footprint_digest="6" * 64,
+            )
+            for valid_time in input_plan.valid_times
+            for site_digest in site_digests
+        )
+        outage_time = input_plan.valid_times[1]
+        receipts: list[promotion_module.RawObservationResolutionReceipt] = []
+        for slot in slots:
+            if (
+                slot.radar_site_digest == site_digests[0]
+                and slot.acquisition_valid_time != outage_time
+            ):
+                receipt = promotion_module.ResolvedRawObservationReceipt.from_ingestor(
+                    slot=slot,
+                    raw_grid_volume=(
+                        promotion_module.CanonicalRawGridVolumeArtifact.from_tensors(
+                            reflectivity_dbz=torch.full((2, 2), 20.0),
+                            qc_valid_mask=torch.ones((2, 2), dtype=torch.bool),
+                            quality_weight=torch.ones((2, 2)),
+                            observation_std_dbz=torch.full((2, 2), 2.0),
+                            radar_site_digest=slot.radar_site_digest,
+                            acquisition_valid_time=slot.acquisition_valid_time,
+                            canonical_scan_identity_digest=(
+                                slot.scan_strategy_rule_digest
+                            ),
+                            radar_product_digest=input_plan.radar_product_digest,
+                            grid_contract_digest=input_plan.grid_contract_digest,
+                        )
+                    ),
+                    raw_ingestor_id="trusted-radar-ingestor",
+                    raw_ingestor_private_key=source_key,
+                    received_at=slot.acquisition_valid_time,
+                )
+            else:
+                receipt = promotion_module.MissingRawObservationReceipt.issue(
+                    slot=slot,
+                    missing_reason="outage",
+                    authority_id="trusted-radar-ingestor",
+                    authority_private_key=source_key,
+                    observed_at=slot.acquisition_valid_time,
+                )
+            receipts.append(receipt)
+
+        nominal = torch.ones((1, 2, 2), dtype=torch.bool)
+        source_history = torch.stack(
+            (
+                torch.zeros((2, 2), dtype=torch.int64),
+                torch.full((2, 2), -1, dtype=torch.int64),
+                torch.zeros((2, 2), dtype=torch.int64),
+            )
+        )
+        coverage = promotion_module.ResolvedSourceCoverageArtifact.from_observations(
+            issuance_plan,
+            input_plan,
+            source_registry,
+            nominal_source_coverage_mask=nominal,
+            source_radar_index_map=source_history[-1],
+            outage_mask=torch.zeros((2, 2), dtype=torch.bool),
+            dynamic_qc_valid_mask=torch.ones((2, 2), dtype=torch.bool),
+            input_bundle_digest="4" * 64,
+            full_analysis_input_digest="5" * 64,
+            resolved_at=input_plan.input_available_time,
+            data_ingestor_id="trusted-radar-ingestor",
+            data_ingestor_private_key=source_key,
+            input_history_source_radar_index_map=source_history,
+        )
+        frames, masks, quality, observation_std = (
+            promotion_module._derive_analysis_inputs_from_raw_products(
+                input_plan=input_plan,
+                resolved_raw_observations=tuple(receipts),
+                resolved_source_coverage=coverage,
+            )
+        )
+        self.assertTrue(torch.all(frames[0] == 20.0))
+        self.assertTrue(torch.all(frames[1] == -10.0))
+        self.assertFalse(bool(torch.any(masks[1])))
+        self.assertTrue(torch.all(quality[1] == 0.0))
+        self.assertTrue(torch.all(observation_std[1] == 1.0))
+
+        selected_missing_history = source_history.clone()
+        selected_missing_history[1] = 0
+        selected_missing = promotion_module.ResolvedSourceCoverageArtifact.from_observations(
+            issuance_plan,
+            input_plan,
+            source_registry,
+            nominal_source_coverage_mask=nominal,
+            source_radar_index_map=source_history[-1],
+            outage_mask=torch.zeros((2, 2), dtype=torch.bool),
+            dynamic_qc_valid_mask=torch.ones((2, 2), dtype=torch.bool),
+            input_bundle_digest="4" * 64,
+            full_analysis_input_digest="5" * 64,
+            resolved_at=input_plan.input_available_time,
+            data_ingestor_id="trusted-radar-ingestor",
+            data_ingestor_private_key=source_key,
+            input_history_source_radar_index_map=selected_missing_history,
+        )
+        with self.assertRaisesRegex(ValueError, "selects a missing radar volume"):
+            promotion_module._derive_analysis_inputs_from_raw_products(
+                input_plan=input_plan,
+                resolved_raw_observations=tuple(receipts),
+                resolved_source_coverage=selected_missing,
+            )
+
     def test_wrong_single_site_radar_is_rejected(self) -> None:
         plan = self.plan()
         retained_slot = plan.raw_observation_slot_plans[0]
@@ -13105,6 +13471,186 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                             "/etc/advar/schedulers.json"
                         ),
                     )
+
+    def test_future_operational_provenance_does_not_require_holdout(self) -> None:
+        holdout = self.plan()
+        planned = holdout.cases[0]
+        input_plan = next(
+            item
+            for item in holdout.input_plans
+            if item.plan_digest == planned.input_plan_digest
+        )
+        sampling_unit = next(
+            item
+            for item in holdout.meteorological_sampling_units
+            if item.sampling_unit_digest
+            == planned.meteorological_sampling_unit_digest
+        )
+        slots = tuple(
+            item
+            for item in holdout.raw_observation_slot_plans
+            if item.slot_digest
+            in sampling_unit.raw_observation_slot_digests
+        )
+        range_band = next(
+            item
+            for item in holdout.range_band_contracts
+            if item.contract_digest == planned.range_band_contract_digest
+        )
+        geometry = next(
+            item
+            for item in holdout.range_geometry_contracts
+            if item.contract_digest
+            == range_band.range_geometry_contract_digest
+        )
+        issuance = next(
+            item
+            for item in holdout.operational_issuance_domain_plans
+            if item.plan_digest
+            == planned.operational_issuance_domain_plan_digest
+        )
+        processor_key = Ed25519PrivateKey.from_private_bytes(b"\x23" * 32)
+        processor_public_key_hex = (
+            processor_key.public_key().public_bytes_raw().hex()
+        )
+        authority_trust = promotion_module._PromotionDeploymentAuthorityTrustStore(
+            keys={"test-analysis-processor": processor_key.public_key()},
+            content_digest="7" * 64,
+            roles={
+                "test-analysis-processor": frozenset({"analysis_processor"})
+            },
+            not_before={
+                "test-analysis-processor": "2026-01-01T00:00:00+00:00"
+            },
+            not_after={
+                "test-analysis-processor": "2031-01-01T00:00:00+00:00"
+            },
+            revoked_at={"test-analysis-processor": None},
+            ledger_instance_digests={
+                "test-analysis-processor": frozenset()
+            },
+            ledger_instance_index_paths={},
+        )
+        operational_plan = promotion_module.OperationalAnalysisInputProvenancePlan(
+            plan_id="future-operational-cycle",
+            input_plan=input_plan,
+            raw_observation_slot_plans=slots,
+            raw_ingestor_trust_store=holdout.raw_ingestor_trust_store,
+            analysis_processor_id="test-analysis-processor",
+            analysis_processor_public_key_hex=processor_public_key_hex,
+            analysis_processor_trust_store_digest=authority_trust.content_digest,
+            range_geometry_contract=geometry,
+            operational_issuance_domain_plan=replace(
+                issuance,
+                case_id="future-operational-cycle",
+            ),
+            registered_at="2026-08-07T00:00:00Z",
+        )
+        (
+            _,
+            _,
+            _,
+            _,
+            _,
+            base_run,
+            _,
+            receipts,
+            _,
+        ) = self.analysis_input_context(1, plan=holdout)
+        resolution = promotion_module.OperationalRawVolumeResolutionReceipt(
+            provenance_plan_digest=operational_plan.plan_digest,
+            input_plan_digest=input_plan.plan_digest,
+            slot_identity_bindings=tuple(
+                (
+                    item.slot_plan_digest,
+                    item.raw_volume_identity.identity_digest,
+                )
+                for item in receipts
+            ),
+            resolved_at=max(
+                item.raw_volume_attestation.received_at for item in receipts
+            ),
+        )
+        derivation = promotion_module.AnalysisInputDerivationArtifact.from_products(
+            case_id=operational_plan.plan_id,
+            input_plan=input_plan,
+            resolved_raw_observations=receipts,
+            global_resolution_receipt=resolution,
+            run=base_run,
+            resolved_source_coverage=None,
+            background_frames_dbz=None,
+            processed_at=(
+                promotion_module._canonical_datetime(resolution.resolved_at)
+                + timedelta(seconds=10)
+            ).isoformat(),
+            processor_id=operational_plan.analysis_processor_id,
+            processor_private_key=processor_key,
+        )
+        run = replace(
+            base_run,
+            analysis_input_derivation_artifact_json=json.dumps(
+                derivation.payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            analysis_input_derivation_artifact_digest=derivation.artifact_digest,
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            with (
+                patch.object(
+                    ledger_module,
+                    "_load_promotion_deployment_authority_trust_store",
+                    return_value=authority_trust,
+                ),
+                patch.object(
+                    ledger_module,
+                    "_load_raw_ingestor_trust_store",
+                    return_value=holdout.raw_ingestor_trust_store,
+                ),
+                patch.object(ledger_module, "datetime", wraps=datetime) as clock,
+            ):
+                clock.now.return_value = datetime.fromisoformat(
+                    "2026-08-08T00:00:00+00:00"
+                )
+                ledger.append_operational_analysis_input_provenance_plan(
+                    operational_plan,
+                    analysis_processor_trust_store_path=(
+                        "/etc/advar/deployment-authorities.json"
+                    ),
+                )
+                clock.now.return_value = (
+                    promotion_module._canonical_datetime(
+                        derivation.processed_at
+                    )
+                    + timedelta(seconds=1)
+                )
+                ledger.append_operational_analysis_input_provenance(
+                    operational_plan,
+                    run=run,
+                    resolved_raw_observations=receipts,
+                    raw_resolution=resolution,
+                    derivation=derivation,
+                    resolved_source_coverage=None,
+                    raw_ingestor_trust_store_path=(
+                        "/etc/advar/raw-ingestors.json"
+                    ),
+                    analysis_processor_trust_store_path=(
+                        "/etc/advar/deployment-authorities.json"
+                    ),
+                )
+            with sqlite3.connect(ledger.index_path) as connection:
+                retained = connection.execute(
+                    "SELECT provenance_kind,usable FROM "
+                    "analysis_input_provenance_commits WHERE artifact_digest = ?",
+                    (derivation.artifact_digest,),
+                ).fetchone()
+                holdout_rows = connection.execute(
+                    "SELECT COUNT(*) FROM neural_prior_holdout_plans"
+                ).fetchone()[0]
+        self.assertEqual(retained, ("operational", 1))
+        self.assertEqual(holdout_rows, 0)
 
     def test_raw_identity_survives_ingestor_key_rotation(self) -> None:
         plan = self.plan()
@@ -15164,13 +15710,36 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertEqual(state, ("decision_recorded",))
         self.assertEqual(publication, (0,))
 
-        with patch.object(
-            ledger_module,
-            "_issue_operational_decision_publication_receipt",
-            wraps=real_publication_issuer,
+        resume_time = (
+            promotion_module._canonical_datetime(input_plan.decision_deadline)
+            + timedelta(seconds=1)
+        )
+        self.assertLess(
+            resume_time,
+            promotion_module._canonical_datetime(input_plan.publication_time),
+        )
+        ledger_signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+            "test-ledger",
+            Ed25519PrivateKey.from_private_bytes(b"\x03" * 32),
+            fixed_signing_time=resume_time.isoformat(),
+        )
+        with (
+            patch.object(
+                ledger_module,
+                "_issue_operational_decision_publication_receipt",
+                wraps=real_publication_issuer,
+            ),
+            patch.object(ledger_module, "datetime", wraps=datetime) as clock,
+            patch.object(
+                promotion_module,
+                "datetime",
+                wraps=datetime,
+            ) as promotion_clock,
         ):
+            clock.now.return_value = resume_time
+            promotion_clock.now.return_value = resume_time
             issued = issue()
-        replayed = issue()
+            replayed = issue()
         self.assertEqual(issued.certificate_digest, replayed.certificate_digest)
         with sqlite3.connect(
             self._latest_operational_ledger.index_path
