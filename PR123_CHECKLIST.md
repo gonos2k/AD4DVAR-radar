@@ -39,7 +39,7 @@ checked only when the production path and its adversarial regression exist.
 - [x] Run the full CPU test suite and subtests.
 - [x] Build source/wheel distributions and run installed CLI smoke.
 - [x] Audit the complete diff and migrations.
-- [ ] Open the PR, require every CI check to pass, and merge.
+- [x] Open the PR, require every CI check to pass, and merge.
 
 ## Verification evidence
 
@@ -48,3 +48,4 @@ checked only when the production path and its adversarial regression exist.
 - `python -m build`: v0.88.0 sdist and wheel built successfully.
 - Fresh-venv wheel smoke: `forecast-run-v64` and `nowcast-npz-v70` validated.
 - `git diff --check`: clean; schema upgrade tests validate index schema 38.
+- PR #123 merged as `710e830e048d142ecafe04a87f4e002455cf8a7e` after all required CI checks passed.

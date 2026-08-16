@@ -6621,6 +6621,7 @@ def _compute_variational_products(
     observations = linearization.observations
     frozen = linearization.frozen
     control = analysis.control
+    validated_prior_input = None
     if frozen.neural_prior_dependency == "radar_dependent":
         if neural_prior_runner is None:
             raise ValueError("radar-dependent prior FSO requires an inference runner")
@@ -6628,6 +6629,9 @@ def _compute_variational_products(
             frozen,
             neural_prior_runner,
             neural_prior_application,
+        )
+        validated_prior_input = neural_prior_runner.validated_bound_input(
+            _require_bound_neural_prior_input(frozen)
         )
     perturbation_diagnostics = None
     if observation_perturbation is not None:
@@ -7089,6 +7093,7 @@ def _compute_variational_products(
                 prior_input_sensitivity = torch.zeros_like(background_sensitivity)
             elif frozen.neural_prior_dependency == "radar_dependent":
                 assert neural_prior_runner is not None
+                assert validated_prior_input is not None
                 prior_cotangent = torch.where(
                     _neural_prior_derivative_mask(frozen),
                     background_sensitivity[0],
@@ -7105,13 +7110,13 @@ def _compute_variational_products(
                 neural_prior_adjoint_direction_maximum_defect = max(
                     neural_prior_adjoint_direction_maximum_defect,
                     neural_prior_runner.validate_adjoint_direction(
-                        _require_bound_neural_prior_input(frozen),
+                        validated_prior_input,
                         prior_cotangent,
                         prior_log_std_cotangent,
                     ),
                 )
                 prior_input_sensitivity = neural_prior_runner.vjp_components(
-                    _require_bound_neural_prior_input(frozen),
+                    validated_prior_input,
                     prior_cotangent,
                     prior_log_std_cotangent,
                 )
@@ -7366,6 +7371,8 @@ def _compute_variational_products(
         gauss_newton_diagnostics=gauss_newton_diagnostics,
     )
     fso = replace(fso, variational_fso_digest=variational_fso_digest(fso))
+    if validated_prior_input is not None:
+        validated_prior_input.validate_completion()
     if impact_accumulators is None:
         return fso, None, None
     total_impact = _impact_channel(impact_accumulators[5])

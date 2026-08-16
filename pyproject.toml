@@ -1,17 +1,18 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools==84.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "advar-radar-nowcast"
-version = "0.88.0"
+version = "0.89.0"
 description = "A matrix-free three-frame variational radar nowcast"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "cryptography>=42",
+    "cryptography>=50.0.0",
+    "filelock>=3.20.3",
     "numpy>=1.24",
-    "torch>=2.1",
+    "torch>=2.13.0",
 ]
 
 [project.scripts]

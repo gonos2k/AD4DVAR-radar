@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.86
+# ADVAR 3-frame radar nowcast v0.89
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -57,6 +57,27 @@ JVP/VJP/GN-HVP 연산자를 사용하게 한다. trial은 실제 셀로 다시 �
 python3 -m pip install -e .
 python3 -m unittest discover -s tests -v
 ```
+
+배포·필수 CI는 일반 resolver 설치를 사용하지 않는다. Linux x86-64 CPU용
+Python 3.10/3.12 runtime closure와 test/build closure를 각각
+`requirements/*-linux.lock`에 exact version과 distribution SHA-256으로 보존한다.
+검증된 direct runtime version은 `requirements/runtime.in`에 고정한다.
+CI는 PyTorch CPU index를 명시하고 `--require-hashes --only-binary=:all:`로만
+설치한 뒤 project 자체는 `--no-build-isolation --no-deps`로 연결한다. 따라서
+같은 source commit의 required test, wheel build와 installed-wheel smoke가 새로
+게시된 transitive dependency나 build backend를 조용히 선택하지 않는다.
+`check_dependency_locks.py`, `pip check`, `pip-audit --strict --disable-pip
+--no-deps`가 lock 동기화·설치 closure·알려진 취약점을 required job에서
+검사한다. PyTorch의 public version을 lock에 기록하되 SHA-256은 CPU index에서
+resolve한 artifact만 허용하므로 vulnerability database identity와 실제 wheel
+identity를 함께 유지한다.
+감사·installer·build·test module은 isolated Python mode에서 실행하고 감사기는
+checkout 밖의 runner 임시 directory에서 먼저 실행한다. 저장소의 동명
+`pip_audit.py`, `pip.py`, `build.py`, `pytest.py`가 required tool을 shadow할 수
+없으며, 실제 `pip_audit` module이 interpreter site-packages 아래에 있는지도
+canary로 확인한다. Lock checker는 runtime과 CI closure의 version뿐 아니라 hash
+set이 같은지, direct numerical/security pin이 Python 세대 사이에서 같은지,
+`nvidia-*`·`triton`이 없는 CPU-only closure인지도 검증한다.
 
 Python API:
 
@@ -914,7 +935,7 @@ plan·candidate·rule·classifier trial은 하나의 root-approved
 uncertainty, classifier, metric-cell bound와 sample-size preflight에 적용된다. 동일한
 input/verification cohort는 ledger에서 다른 family로 다시 등록하거나 promotion 후 재사용할
 수 없다. Candidate와 classifier의 `TrainingDatasetDerivationArtifact-v1`은 각 training member의
-완전한 signed `AnalysisInputDerivationArtifact-v4` preimage를 보존하고, 그 member들의
+완전한 signed `AnalysisInputDerivationArtifact-v5` preimage를 보존하고, 그 member들의
 raw identity/input-bundle/full-analysis/grid 집합과 decoder/QC/regrid digest가 선언된
 training dataset lineage와 정확히 일치해야 한다. Feature algorithm/schema digest도
 dataset identity에 결합되지만, 이 계약은 임의 native decoder나 feature implementation을
@@ -954,9 +975,10 @@ evaluation JSON에 무관한 임의 tensor를 붙인 snapshot은 자동승격 �
 Forecast, prior application, inference runner, verification, metric config, calibration
 target, classifier와 operational-domain artifact는 각각 제품 validator와 runner
 reproduction을 통과해야 하며, factory가 한 번 동결한 tensor snapshot과 completion 시점의
-live product bytes가 다르면 거부된다. Replay v9 contract/method와 five-channel CPU-only generation
-v7 digest는 `HoldoutScoringArtifact-v9`, promotion evidence v29,
-`DeployedNeuralPriorPolicy-v14`과 deployment-decision artifact v13까지 직접 전파된다.
+live product bytes가 다르면 거부된다. Replay v10 contract/method와 bounded-quality
+five-channel CPU-only generation v8 digest는 `HoldoutScoringArtifact-v10`, promotion
+evidence v30, `DeployedNeuralPriorPolicy-v15`과 deployment-decision artifact v16까지
+직접 전파된다.
 따라서 이전 replay 세대의 promotion evidence는 audit-only이며 배포 selector가
 소비할 수 없다.
 Audit load는 저장된 typed evaluation을 볼 수 있지만, 자동 completion과 promotion은
@@ -991,12 +1013,20 @@ hash가 아니라 issue 전에 예약된 radar-site/acquisition/scan observation
 Ingest 뒤에는 signer-independent canonical raw-volume identity와 별도 ingestor attestation을
 slot에 결합하고, 중앙 sampling registry가 연속 sequence/root로 그 resolution을 봉인한다.
 각 case의 canonical binary32 gridded source bytes와 resolution은 scoring보다 늦게 붙일 수
-없으며 `append_analysis_input_provenance()`가 trusted ledger clock으로 decision deadline
-이전에 먼저 durable commit한 exact row만 scoring replay가 소비한다. 제품 decoder는 그
+없으며 `append_analysis_input_provenance()`가 deadline 전에 durable payload를 commit하고
+exact ledger instance와 registry/history side-effect set에 결합된
+`analysis-input-provenance-preparation-receipt-v3`를 함께 commit한 exact row만
+scoring replay가 소비한다. Process crash로 receipt 발급만 늦어진 경우에는 pre-deadline
+payload commit과 전체 raw-to-derived replay 및 ledger side effect를 다시 검증한 뒤에만
+root-approved ledger authority가 receipt를 발급할 수 있다. Receipt 검증 authority는 row
+내부의 자기 선언 key가 아니라 root-owned ledger trust와 exact ledger-instance binding에서
+도출하므로, self-signed derivation/receipt나 registry/history를 건너뛴 SQL row는 소비자가
+거부한다.
+제품 decoder는 그
 source bytes를 float32로 다시 해석하고 native flag·finite·positive-weight·observation-std
 QC를 재실행한다. 현재 지원하는 regrid 계약은 source와 target grid가 같은 exact-identity
 경로이며 임의 polar decoder나 공간 resampler를 인증한다고 주장하지 않는다. 서명된
-`AnalysisInputDerivationArtifact-v4`는 이 decode/QC/source selection/identity-regrid 결과가
+`AnalysisInputDerivationArtifact-v5`는 이 decode/QC/source selection/identity-regrid 결과가
 실제 input tensor digest와 같음을 forecast run과 semantic replay에 결합한다. Background는
 관측 시각을 재사용하지 않고 실제 `background_valid_times`, background-model identity,
 등록된 cycle-rule, operational-data identity와 frame bytes를 함께 봉인한다. Canonical raw
@@ -1009,7 +1039,7 @@ global registry에 commit된 하나의 family-wide signed training-raw receipt�
 ledger는 그 canonical payload preimage를 저장하고 scoring에서 다시 검증한다.
 선택 digest뿐 아니라 classifier probability, 활성 band, policy, certified group,
 horizontal range-geometry payload, operational radar source와 trust-store snapshot을 포함한
-canonical deployment-decision payload도 forecast run identity 및 v62 artifact에 남는다.
+canonical deployment-decision payload도 forecast run identity 및 current v65 artifact에 남는다.
 적재 시 physical partition과 current-run grid/shape/site를 포함한 selector를 다시 실행해
 저장된 candidate/parent 선택과 exact 비교한다. v54 run은 source-aware selection 이전
 계약을 `neural-prior-deployment-lineage-v5-audit`로만 읽고, v53 run은 current-grid binding과 durable geometry
@@ -1031,12 +1061,16 @@ probability의 binary Brier를 physical event 동일가중 UCB로 판정한다. 
 surrogate와 ECE는 diagnostic-only다. Sample-size preflight도 known weather/range,
 weather/range OOD와 Brier-valid event subset을 각각 확인한다.
 
-현재 promotion evidence는 v29, candidate manifest는 v15, holdout plan은 v21,
+현재 promotion evidence는 v30, candidate manifest는 v18, holdout plan은 v24,
 holdout evaluation은 v22, promotion policy는 v29, metric support는 v3이다.
-Training lineage는 ordered feature/target tensor digest, split, weight, augmentation
-seed, normalization과 archive checksum을 포함하는
-`TrainingFeatureDatasetArtifact-v1`을 요구한다. 이 계약은 canonical grid-product
-feature/target replay를 인증하지만 native polar acquisition decoder까지 인증하지는
+Training lineage는 case별 feature/target/mask/quality member, split, weight,
+augmentation seed와 normalization bytes를 포함하는
+`TrainingFeatureDatasetArtifact-v4`를 요구한다. Production archive는 inline base64가
+아니라 content-addressed read-only NPZ shard로 저장된다. Product-owned loader는 한 번 연
+file descriptor에서 byte snapshot을 고정하고, SHA-256과 ZIP/NPY preflight 뒤 실제 tensor
+digest를 다시 계산한다. Trainer는 이 validated snapshot tensor만 소비하므로 validation 뒤
+경로를 swap/restore해도 학습 입력은 변하지 않는다. 이 계약은 canonical grid-product
+feature/target archive를 인증하지만 native polar acquisition decoder까지 인증하지는
 않는다.
 `sealed_historical` plan은 결과 비공개 escrow를 증명하지 않으므로 연구·shadow audit에만
 사용되고 deployment eligibility는 prospective plan에만 부여된다. Candidate-neutral
@@ -1233,6 +1267,10 @@ runtime identity가 달라져도 fail-close한다. 따라서 이 artifact는 임
 사이의 이식 포맷이 아니라 동일 수치계약에서 3시간 지연 FSO를 재개하는 감사
 포맷이다. `p1-linearization-v14`는 five-channel bound input이 없는 audit-only
 세대로 보존된다.
+반복 JVP/VJP는 `ValidatedBoundNeuralPriorInputHandle-v1`에서 경계 시점의 전체
+cryptographic validation과 tensor version snapshot을 한 번 수행한다. Matrix-free
+hot path에서는 object identity와 in-place version만 확인하고, FSO/P1 연산 종료 시
+전체 digest를 다시 검증한다.
 
 `NumericalRuntimeManifest-v2`는 운용상 함께 취급할 수 있는 compatibility digest와
 정확한 replay를 위한 exact digest를 분리한다. Exact identity에는 실제 device
@@ -1592,32 +1630,32 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v70`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v64`
+- `output_contract_version`: 현재 `nowcast-npz-v71`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v65`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
 
-`forecast-run-v64`는 bounded-quality five-channel CPU-only scoring generation v8, two-phase raw observation slot과
+`forecast-run-v65`는 bounded-quality five-channel CPU-only scoring generation v8, two-phase raw observation slot과
 canonical raw-volume identity 단위의 전역
 sampling reservation, 같은 family의 rolling-window membership, source-registry와
 location-registry가 결합된 mosaic range domain,
 역할 분리된 ledger issuance
 receipt/promotion certificate/operational decision signature, 그리고 input-plan의
 sub-second decision deadline chronology, final decision-row publication receipt와
-terminal activation receipt를 함께
+terminal activation receipt와 writer-lock-bound commit authorization receipt를 함께
 검증한다. QC-invalid 관측은 registered finite fill/zero/sentinel로 canonicalize되어
 classifier와 learned prior에 유입되지 않으며, signed
 `AnalysisInputDerivationArtifact-v5`의 canonical JSON과 digest도 NPZ에 보존된다.
-`forecast-run-v63` 이하는
+`forecast-run-v64` 이하는
 audit-only다.
 
-`forecast-run-v64`는 원자적 ledger sequence를 가진 promotion deployment
-certificate v5, deployment-decision artifact v14와
-`neural-prior-deployment-lineage-v15`를 current 의미로 결합한다. Decision
+`forecast-run-v65`는 원자적 ledger sequence를 가진 promotion deployment
+certificate v5, deployment-decision artifact v16과
+`neural-prior-deployment-lineage-v16`을 current 의미로 결합한다. Decision
 artifact는 unsigned promotion subset을 보존하지 않고 certificate 안의 완전한
 `NeuralPriorPromotionEvidence-v30`만 typed decode한다. 이전
-`forecast-run-v63`, `forecast-run-v62`, `forecast-run-v61`, `forecast-run-v60`, `forecast-run-v59`, `forecast-run-v58`, `forecast-run-v57`, `forecast-run-v56`은
+`forecast-run-v64`, `forecast-run-v63`, `forecast-run-v62`, `forecast-run-v61`, `forecast-run-v60`, `forecast-run-v59`, `forecast-run-v58`, `forecast-run-v57`, `forecast-run-v56`은
 각 세대의 decision artifact를 보존하는 audit lineage로만
 적재되며 current operational deployment replay에는 사용할 수 없다.
 
@@ -1635,27 +1673,39 @@ selection 전체도 별도의 authority-signed
 `OperationalDeploymentDecisionCertificate-v6`와 먼저 durable commit된 ledger decision
 receipt, final certificate row의 commit 뒤 ledger signer가 발급한
 `OperationalDecisionPublicationReceipt-v3`, 최종 `published/usable` 상태와
-publication/activation commit 시각을 봉인한
-`OperationalDecisionActivationReceipt-v2`에
+publication payload commit 및 activation authorization 시각을 봉인한
+`OperationalDecisionActivationReceipt-v3`와
+`OperationalDecisionCommitAuthorizationReceipt-v2`에
 결합되므로, 재시작 시 regime evidence,
 policy threshold 또는 selected prior를 재해시해 바꾸는 경로가 차단된다.
+이 authorization은 SQLite의 물리 fsync 완료시각을 주장하지 않는다. Finalizer는
+non-waiting `BEGIN IMMEDIATE`로 writer lock을 먼저 획득하고 signed guard interval
+안에서 authorization receipt, `published`, `usable`을 한 transaction으로 기록한다.
 Operational issuance는 cycle-id 기반 state machine으로 재개되며 terminal
-`published` row만 선택 가능하다. Certificate signer, decision-row transaction,
-publication signer 또는 final activation이 실패하면 동일 cycle은 이미 durable한
-certificate/receipt를 재사용해 재개되고, activation 전 publication은 `usable=0`이다.
+`published` row만 선택 가능하다. Activation receipt는 먼저 `usable=0` 상태로 durable하게
+staging되고, commit authorization receipt의 INSERT와 `published/usable` 전환이 하나의
+transaction에서 수행된다. Certificate signer, decision-row transaction, publication
+signer 또는 final activation이 실패하면 동일 cycle은 이미 durable한 certificate/receipt를
+재사용해 재개되고, commit authorization receipt가 없는 publication은 계속 `usable=0`이다.
 Raw ingestor trust-store v2는 plan에 고정된 snapshot과 provenance commit, scoring
 replay/completion, promotion, certificate 발급 및 operational decision 시점의 current
 root-owned store 양쪽에서 attestation 시각의 key validity/revocation을 대조한다.
 Current store의 content digest는 replay-v10 manifest, scoring-v10 artifact, scheduler가
 봉인한 completion output, promotion evidence v30, promotion deployment certificate와
 operational decision certificate에 연속 결합된다. Certificate/publication 서명 전후와
-activation 직전·직후에도 store를 다시 읽고, durable `forecast-run-v64` load에서도 외부
+activation 직전·직후에도 store를 다시 읽고, durable `forecast-run-v65` load에서도 외부
 store와 대조하므로 이후 revocation view가 달라지면 기존 certificate를 automatic
 deployment에 재사용할 수 없다.
-Index schema 38은 replay, scoring completion, promotion evidence와 promotion
+Index schema 39는 replay, scoring completion, promotion evidence와 promotion
 certificate를 immutable payload와 별도의 raw-trust activation row로 기록한다. 각
 payload는 처음에는 `usable=0`이며 current store 재검증을 거친 activation만
 `usable=1`로 소비된다. Activation 직후 store 변경은 `usable=0`으로 fail-close된다.
+Analysis-input provenance는 별도의 `prepared/active/expired` 상태와 payload/activation
+시각을 보존한다. Exact retry와 startup reconciliation은 content-addressed directory를
+single-open file-descriptor snapshot으로 읽고 NPZ·metadata checksum, raw-ingestor receipt,
+slot binding, source coverage, raw-to-derived tensor replay, processor signature와 current
+trust를 모두 다시 검증해 prepared row 또는 rename 뒤 orphan directory를 idempotently
+활성화한다.
 training/raw-slot/raw-resolution은 동일한 global registry chain을 사용한다.
 일반 미래 운영 cycle은 별도의 `OperationalAnalysisInputProvenancePlan-v1`과
 `OperationalRawVolumeResolutionReceipt-v2`를 사용하므로 promotion holdout family를
@@ -1664,20 +1714,33 @@ raw-to-grid replay를 사용한다.
 운영 raw slot의 해석은 `OperationalRawResolutionHistoryEntry-v1` sequence로 별도
 보존한다. 동일 identity 재사용은 허용하지만 missing→resolved correction,
 resolved→resolved supersession, resolved→missing cancellation은 직전 entry digest와
-processor signature가 없으면 거부된다. Raw ingress의 quality weight는 finite `[0,1]`
+plan에 고정된 processor signature가 없으면 거부된다. Schema-38 이전 operational
+resolution은 immutable legacy anchor로 이력 genesis에 결합되며, 새 entry와 composite
+receipt는 append 시 canonical decode와 signature 검증을 다시 수행한다. Raw ingress의
+quality weight는 finite `[0,1]`
 범위를 벗어나면 즉시 fail-close한다.
 
 Learned prior 실행은 runner 내부의 마지막 입력 cache를 사용하지 않는다.
 `BoundNeuralPriorInput-v1`이 canonical dBZ, QC mask, quality, observation standard
 deviation, source availability와 완성된 five-channel tensor를 불변 context로 묶으며,
 reproduce/JVP/VJP와 P1 linearization restart는 이 context를 명시적으로 전달한다.
+반복 미분용 validated handle은 caller tensor와 분리된 private clone을 봉인하고 public
+access에는 defensive copy만 반환하므로 PyTorch `.data` alias도 평가점을 바꾸지 못한다.
 따라서 같은 dBZ라도 QC context가 다른 동시 실행과 delayed FSO가 서로 오염되지 않는다.
 
-`TrainingFeatureDatasetArtifact-v2`는 `TrainingDatasetMember` record와 실제 canonical
-feature/target NPZ bytes를 content-address한다. Loader는 archive SHA-256, ZIP member,
-dtype/shape와 tensor digest를 재계산하며, 각 target는 source valid time, QC/censor
-policy, 생성 algorithm/schema, training cutoff와 승인 processor signature를 가진
-`TrainingTargetDerivationArtifact-v1`에 결합된다.
+`TrainingFeatureDatasetArtifact-v4`는 `TrainingDatasetMember` record와 외부 immutable
+feature/target/normalization NPZ shard를 content-address한다. Loader는 한 번 연 file
+descriptor의 byte snapshot에서 archive SHA-256, ZIP member, dtype/shape와 tensor digest를
+재계산하며, training execution v8의 start/completion subject는 이 validated snapshot-set
+digest와 exact equality로 결합된다. Product 밖의 trainer도 검증 뒤 원래 path를 다시 읽는
+대신 이 snapshot handle만 소비해야 한다. 각 target는 value,
+valid-mask, quality, unit, shape, source plan/receipt, physical event, valid time,
+training cutoff와 승인 processor signature를 가진
+`TrainingTargetDerivationArtifact-v3`에 결합된다. Target source identity/time/event/object는
+plan에 별도로 고정된 `TrainingTargetSourceReceipt-v1` authority signature가 없으면 사용할
+수 없다. Target는 nonempty·finite이어야 하고
+valid time이 등록된 training-window union 안에 있어야 한다. Tensor/QC 표현이 달라도
+holdout verification target와 source identity/valid time이 같으면 재사용으로 거부된다.
 Mosaic source가 실제로 도착하지 않은 경우에는 synthetic all-invalid raw volume을
 만들지 않고 `MissingRawObservationReceipt-v1`로 slot/site/time, outage·late·corrupt·
 unavailable 사유와 ingestor authority signature를 봉인한다. Source-history map이 이

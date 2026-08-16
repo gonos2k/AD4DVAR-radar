@@ -321,8 +321,18 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 decision_certificate,
                 publication_receipt,
                 publication_payload_committed_at=accepted_at,
-                activation_committed_at=accepted_at,
+                activation_authorized_at=accepted_at,
+                publication_guard_interval_seconds=0.05,
                 committed_chain_root_digest=committed_chain_root_digest,
+                signer=ledger_signer,
+                authority_trust_store=cls._deployment_certificate_trust(),
+            )
+        )
+        commit_authorization = (
+            promotion_module._issue_operational_decision_commit_authorization_receipt(
+                decision_certificate,
+                activation_receipt,
+                terminal_commit_authorized_at=accepted_at,
                 signer=ledger_signer,
                 authority_trust_store=cls._deployment_certificate_trust(),
             )
@@ -339,6 +349,10 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "operational_decision_activation_receipt": (
                 activation_receipt.payload
                 | {"receipt_digest": activation_receipt.receipt_digest}
+            ),
+            "operational_decision_commit_authorization_receipt": (
+                commit_authorization.payload
+                | {"receipt_digest": commit_authorization.receipt_digest}
             ),
         }
 
@@ -690,7 +704,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact = {
-            "contract": "neural-prior-deployment-decision-artifact-v14",
+            "contract": "neural-prior-deployment-decision-artifact-v16",
             "routing_semantic_replay_verified": False,
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "analysis_input_derivation_artifact_digest": (
@@ -866,6 +880,26 @@ class ForecastRunArtifactTests(unittest.TestCase):
         artifact = json.loads(selection.deployment_decision_artifact_json)
         artifact.pop("operational_decision_activation_receipt")
 
+        with patch.object(
+            ledger_module,
+            "_load_raw_ingestor_trust_store",
+            return_value=SimpleNamespace(content_digest="9" * 64),
+        ), self.assertRaisesRegex(ValueError, "incomplete"):
+            validate_neural_prior_deployment_decision_artifact(
+                json.dumps(artifact, sort_keys=True, separators=(",", ":")),
+                deployment_certificate_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
+                deployment_policy_trust_store_path=(
+                    "/etc/advar/deployment-policies.json"
+                ),
+                raw_ingestor_trust_store_path=(
+                    "/etc/advar/raw-ingestors.json"
+                ),
+            )
+
+        artifact = json.loads(selection.deployment_decision_artifact_json)
+        artifact.pop("operational_decision_commit_authorization_receipt")
         with patch.object(
             ledger_module,
             "_load_raw_ingestor_trust_store",
@@ -1961,7 +1995,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v14",
+            "contract": "neural-prior-deployment-decision-artifact-v16",
             "routing_semantic_replay_verified": False,
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "analysis_input_derivation_artifact_digest": (
@@ -2175,6 +2209,13 @@ class ForecastRunArtifactTests(unittest.TestCase):
             v63_path = Path(temporary) / "legacy-v63.npz"
             self._save_arrays(v63_path, v63_arrays)
             legacy_v63 = load_forecast_run(v63_path)
+            v64_arrays = dict(legacy_arrays)
+            v64_arrays["forecast_run_artifact_version"] = np.asarray(
+                "forecast-run-v64"
+            )
+            v64_path = Path(temporary) / "legacy-v64.npz"
+            self._save_arrays(v64_path, v64_arrays)
+            legacy_v64 = load_forecast_run(v64_path)
 
         self.assertEqual(
             loaded.run.prior_promotion_evidence_digest,
@@ -2226,6 +2267,14 @@ class ForecastRunArtifactTests(unittest.TestCase):
         )
         self.assertEqual(
             legacy_v63.run.prior_deployment_fallback_reason,
+            "unverified_routing_evidence",
+        )
+        self.assertEqual(
+            legacy_v64.run.prior_deployment_lineage_contract,
+            "neural-prior-deployment-lineage-v15-audit",
+        )
+        self.assertEqual(
+            legacy_v64.run.prior_deployment_fallback_reason,
             "unverified_routing_evidence",
         )
 

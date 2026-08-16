@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass, field, fields, replace
 from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
 import hashlib
+import io
 import json
 import math
 import os
@@ -15,6 +16,8 @@ import shutil
 import sqlite3
 import stat
 import tempfile
+import uuid
+import zipfile
 from typing import Any, cast
 
 import numpy as np
@@ -99,6 +102,7 @@ from .promotion import (
     LegacyNeuralPriorCandidateManifestAuditV13,
     LegacyNeuralPriorCandidateManifestAuditV14,
     LegacyNeuralPriorCandidateManifestAuditV15,
+    LegacyNeuralPriorCandidateManifestAuditV16,
     NeuralPriorCandidateManifest,
     LegacyNeuralPriorHoldoutPlanAudit,
     LegacyNeuralPriorHoldoutPlanCase,
@@ -124,6 +128,7 @@ from .promotion import (
     LegacyNeuralPriorHoldoutPlanV19Audit,
     LegacyNeuralPriorHoldoutPlanV20Audit,
     LegacyNeuralPriorHoldoutPlanV21Audit,
+    LegacyNeuralPriorHoldoutPlanV22Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
@@ -142,7 +147,9 @@ from .promotion import (
     OperationalRawVolumeResolutionReceipt,
     OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST,
     AnalysisInputDerivationArtifact,
+    _analysis_input_derivation_from_json,
     _operational_raw_resolution_history_entry_from_json,
+    _operational_raw_volume_resolution_receipt_from_json,
     _training_raw_registry_receipt_from_json,
     MeteorologicalSamplingUnit,
     GlobalSamplingReservationReceipt,
@@ -185,6 +192,7 @@ from .promotion import (
     OperationalDeploymentDecisionCertificate,
     OperationalDecisionPublicationReceipt,
     OperationalDecisionActivationReceipt,
+    OperationalDecisionCommitAuthorizationReceipt,
     _EpisodeLedgerOperationalDecisionClient,
     DeploymentAuthoritySigner,
     PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST,
@@ -207,6 +215,9 @@ from .promotion import (
     _issue_operational_decision_activation_receipt,
     _operational_decision_activation_receipt_from_payload,
     _validate_operational_decision_activation_receipt,
+    _issue_operational_decision_commit_authorization_receipt,
+    _operational_decision_commit_authorization_receipt_from_payload,
+    _validate_operational_decision_commit_authorization_receipt,
     _operational_decision_commit_digests,
     LegacyNeuralPriorPromotionEvidenceAuditV3,
     LegacyNeuralPriorPromotionEvidenceAuditV4,
@@ -268,7 +279,7 @@ _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _SCHEDULER_TRUST_STORE_CONTRACT = "advar-trusted-scheduler-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 38
+_INDEX_SCHEMA_VERSION = 39
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _RAW_TRUST_ACTIVATION_KINDS = frozenset(
@@ -289,6 +300,8 @@ _MAXIMUM_ACTION_ARTIFACT_FILE_BYTES = 2 * 1024**3
 _MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES = 8 * 1024**3
 _MAXIMUM_ACTION_GENERATOR_BYTES = 512 * 1024**2
 _MAXIMUM_RAW_INGESTOR_TRUST_STORE_BYTES = 1024 * 1024
+_MAXIMUM_ANALYSIS_PROVENANCE_FILE_BYTES = 2 * 1024**3
+_MAXIMUM_ANALYSIS_PROVENANCE_EXPANDED_BYTES = 8 * 1024**3
 
 
 def _semantic_replay_execution_device(
@@ -4530,6 +4543,10 @@ class EpisodeLedger:
             or plan.analysis_processor_id != policy.analysis_processor_id
             or plan.analysis_processor_public_key_hex
             != policy.analysis_processor_public_key_hex
+            or plan.training_target_source_authority_id
+            != policy.training_target_source_authority_id
+            or plan.training_target_source_authority_public_key_hex
+            != policy.training_target_source_authority_public_key_hex
             or family_training_receipt.registry_id
             != sampling_reservation.registry_id
             or family_training_receipt.authority_id
@@ -4855,6 +4872,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanV19Audit
         | LegacyNeuralPriorHoldoutPlanV20Audit
         | LegacyNeuralPriorHoldoutPlanV21Audit
+        | LegacyNeuralPriorHoldoutPlanV22Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -4987,6 +5005,13 @@ class EpisodeLedger:
             )
         if value.get("contract") == "neural-prior-holdout-plan-v21":
             return LegacyNeuralPriorHoldoutPlanV21Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v22":
+            return LegacyNeuralPriorHoldoutPlanV22Audit(
                 plan_digest=plan_digest,
                 payload_json=json.dumps(
                     value, sort_keys=True, separators=(",", ":")
@@ -5704,6 +5729,8 @@ class EpisodeLedger:
         resolved_source_coverage: ResolvedSourceCoverageArtifact | None,
         background_frames_dbz: Tensor | None = None,
         raw_ingestor_trust_store_path: str | Path,
+        analysis_processor_trust_store_path: str | Path,
+        provenance_commit_signer: DeploymentAuthoritySigner,
     ) -> str:
         """Durably commit raw bytes and their derivation before the case deadline."""
 
@@ -5995,7 +6022,34 @@ class EpisodeLedger:
                 | {"artifact_digest": resolved_source_coverage.artifact_digest}
             ),
         }
+        canonical_payload = json.dumps(
+            derivation.payload
+            | {
+                "artifact_digest": derivation.artifact_digest,
+                "input_plan": input_plan.payload
+                | {"plan_digest": input_plan.plan_digest},
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
         target = self.analysis_input_provenance_dir / derivation.artifact_digest
+        with self._connect() as connection:
+            retained = connection.execute(
+                "SELECT provenance_kind,payload_json,status FROM "
+                "analysis_input_provenance_commits WHERE artifact_digest = ?",
+                (derivation.artifact_digest,),
+            ).fetchone()
+        if retained is not None:
+            if tuple(retained[:2]) != ("holdout", canonical_payload):
+                raise ValueError("holdout provenance commit equivocated")
+            return self.reconcile_prepared_analysis_input_provenance(
+                derivation.artifact_digest,
+                raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+                analysis_processor_trust_store_path=(
+                    analysis_processor_trust_store_path
+                ),
+                provenance_commit_signer=provenance_commit_signer,
+            )
         temporary = Path(
             tempfile.mkdtemp(
                 prefix=f".{derivation.artifact_digest}.",
@@ -6092,12 +6146,31 @@ class EpisodeLedger:
                         "global raw-volume resolution is not a committed successor"
                     )
                 if target.exists():
-                    raise FileExistsError(
-                        "analysis input provenance is already committed"
-                    )
-                os.rename(temporary, target)
+                    if (
+                        target.is_symlink()
+                        or not target.is_dir()
+                        or _file_digest(
+                            target / "source_and_derived_arrays.npz"
+                        ) != checksums["source_and_derived_arrays.npz"]
+                        or _file_digest(target / "provenance.json")
+                        != checksums["provenance.json"]
+                        or (target / "checksums.json").read_text("utf-8")
+                        != _json_text(checksums)
+                    ):
+                        quarantine = self.analysis_input_provenance_dir / (
+                            f".{derivation.artifact_digest}.quarantine."
+                            f"{uuid.uuid4().hex}"
+                        )
+                        os.replace(target, quarantine)
+                        _fsync_directory(self.analysis_input_provenance_dir)
+                        raise ValueError(
+                            "orphan analysis provenance bytes equivocated"
+                        )
+                    shutil.rmtree(temporary)
+                else:
+                    os.rename(temporary, target)
+                    _fsync_directory(self.analysis_input_provenance_dir)
                 published = True
-                _fsync_directory(self.analysis_input_provenance_dir)
                 EpisodeLedger._record_global_sampling_registry_entry(
                     connection,
                     registry_id=global_resolution.registry_id,
@@ -6131,13 +6204,77 @@ class EpisodeLedger:
                         ),
                         resolved_at=now.isoformat(),
                     )
+                authority_trust = (
+                    _load_promotion_deployment_authority_trust_store(
+                        analysis_processor_trust_store_path
+                    )
+                )
+                ledger_instance_digest = (
+                    self._analysis_provenance_ledger_instance_digest(connection)
+                )
+                holdout_memberships = tuple(
+                    (
+                        slot_digest,
+                        raw_identity_digest,
+                        case_id,
+                        plan.promotion_experiment_family.family_digest,
+                    )
+                    for slot_digest, raw_identity_digest in sorted(bindings)
+                )
+                side_effect_digest = _json_digest(
+                    {
+                        "contract": (
+                            "analysis-provenance-ledger-side-effects-v1"
+                        ),
+                        "provenance_kind": "holdout",
+                        "registry_id": global_resolution.registry_id,
+                        "registry_sequence_number": (
+                            global_resolution.registry_sequence_number
+                        ),
+                        "committed_registry_root_digest": (
+                            global_resolution.committed_registry_root_digest
+                        ),
+                        "raw_resolution_receipt_digest": (
+                            global_resolution.receipt_digest
+                        ),
+                        "memberships": [
+                            list(item) for item in holdout_memberships
+                        ],
+                    }
+                )
+                (
+                    preparation_receipt_json,
+                    preparation_receipt_digest,
+                ) = self._issue_analysis_provenance_preparation_receipt(
+                    artifact_digest=derivation.artifact_digest,
+                    provenance_kind="holdout",
+                    provenance_plan_digest=plan.plan_digest,
+                    input_plan_digest=input_plan.plan_digest,
+                    raw_resolution_receipt_digest=(
+                        global_resolution.receipt_digest
+                    ),
+                    payload_json=canonical_payload,
+                    payload_committed_at=now.isoformat(),
+                    deadline=input_plan.decision_deadline,
+                    ledger_instance_digest=ledger_instance_digest,
+                    side_effect_digest=side_effect_digest,
+                    authority_trust_store=authority_trust,
+                    signer=provenance_commit_signer,
+                )
+                if datetime.now(timezone.utc) > deadline:
+                    raise ValueError(
+                        "analysis provenance ledger receipt missed its deadline"
+                    )
                 connection.execute(
                     "INSERT INTO neural_prior_analysis_input_provenance "
                     "(artifact_digest,holdout_plan_digest,case_id,input_plan_digest,"
                     "global_resolution_receipt_digest,payload_json,arrays_sha256,"
                     "metadata_sha256,path,raw_ingestor_trust_store_digest,"
-                    "raw_trust_validated_at,committed_at,usable) "
-                    "VALUES (?,?,?,?,?,?,?,?,?,?,NULL,?,0)",
+                    "raw_trust_validated_at,committed_at,usable,status,"
+                    "payload_committed_at,preparation_receipt_json,"
+                    "preparation_receipt_digest,activated_at,expired_at) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,NULL,?,0,'prepared',?,"
+                    "?,?,NULL,NULL)",
                     (
                         derivation.artifact_digest,
                         plan.plan_digest,
@@ -6159,6 +6296,9 @@ class EpisodeLedger:
                         str(target),
                         final_raw_ingestor_trust.content_digest,
                         now.isoformat(),
+                        now.isoformat(),
+                        preparation_receipt_json,
+                        preparation_receipt_digest,
                     ),
                 )
                 connection.execute(
@@ -6167,7 +6307,11 @@ class EpisodeLedger:
                     "case_id,input_plan_digest,raw_resolution_receipt_digest,"
                     "payload_json,arrays_sha256,metadata_sha256,path,"
                     "raw_ingestor_trust_store_digest,raw_trust_validated_at,"
-                    "committed_at,usable) VALUES (?,?,?,?,?,?,?,?,?,?,?,NULL,?,0)",
+                    "committed_at,usable,status,payload_committed_at,"
+                    "preparation_receipt_json,preparation_receipt_digest,"
+                    "activated_at,expired_at) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,NULL,?,0,'prepared',?,"
+                    "?,?,NULL,NULL)",
                     (
                         derivation.artifact_digest,
                         "holdout",
@@ -6190,54 +6334,20 @@ class EpisodeLedger:
                         str(target),
                         final_raw_ingestor_trust.content_digest,
                         now.isoformat(),
+                        now.isoformat(),
+                        preparation_receipt_json,
+                        preparation_receipt_digest,
                     ),
                 )
                 connection.commit()
-            postcommit = datetime.now(timezone.utc)
-            postcommit_raw_ingestor_trust = _load_raw_ingestor_trust_store(
-                raw_ingestor_trust_store_path
+            self.reconcile_prepared_analysis_input_provenance(
+                derivation.artifact_digest,
+                raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+                analysis_processor_trust_store_path=(
+                    analysis_processor_trust_store_path
+                ),
+                provenance_commit_signer=provenance_commit_signer,
             )
-            for slot_digest, receipt in receipt_by_slot.items():
-                _validate_current_raw_ingestor_receipt(
-                    receipt,
-                    slot_by_digest[slot_digest],
-                    pinned_trust_store=plan.raw_ingestor_trust_store,
-                    current_trust_store=postcommit_raw_ingestor_trust,
-                )
-            usable = int(
-                postcommit <= deadline
-                and postcommit_raw_ingestor_trust.content_digest
-                == current_raw_ingestor_trust.content_digest
-            )
-            with self._connect() as connection:
-                connection.execute("BEGIN IMMEDIATE")
-                connection.execute(
-                    "UPDATE neural_prior_analysis_input_provenance SET "
-                    "raw_trust_validated_at = ?, committed_at = ?, usable = ? "
-                    "WHERE artifact_digest = ?",
-                    (
-                        postcommit.isoformat() if usable else None,
-                        postcommit.isoformat(),
-                        usable,
-                        derivation.artifact_digest,
-                    ),
-                )
-                connection.execute(
-                    "UPDATE analysis_input_provenance_commits SET "
-                    "raw_trust_validated_at = ?, committed_at = ?, usable = ? "
-                    "WHERE artifact_digest = ?",
-                    (
-                        postcommit.isoformat() if usable else None,
-                        postcommit.isoformat(),
-                        usable,
-                        derivation.artifact_digest,
-                    ),
-                )
-                connection.commit()
-            if not usable:
-                raise ValueError(
-                    "analysis input provenance missed its trust/deadline gate"
-                )
         except Exception:
             if temporary.exists():
                 shutil.rmtree(temporary)
@@ -6253,19 +6363,2053 @@ class EpisodeLedger:
             raise
         return derivation.artifact_digest
 
+    def _validate_analysis_input_provenance_directory(
+        self,
+        *,
+        artifact_digest: str,
+        path_text: str,
+        arrays_sha256: str,
+        metadata_sha256: str,
+    ) -> Path:
+        """Rehash one ledger-owned provenance directory without trusting links."""
+
+        path, _, _ = self._snapshot_analysis_input_provenance_directory(
+            artifact_digest=artifact_digest,
+            path_text=path_text,
+            arrays_sha256=arrays_sha256,
+            metadata_sha256=metadata_sha256,
+        )
+        return path
+
+    def _snapshot_analysis_input_provenance_directory(
+        self,
+        *,
+        artifact_digest: str,
+        path_text: str,
+        arrays_sha256: str,
+        metadata_sha256: str,
+    ) -> tuple[Path, bytes, str]:
+        """Read immutable provenance members once through pinned descriptors."""
+
+        expected = self.analysis_input_provenance_dir / artifact_digest
+        path = Path(path_text)
+        if path != expected:
+            raise ValueError("analysis provenance durable path changed")
+        directory_flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+        directory_flags |= getattr(os, "O_DIRECTORY", 0)
+        directory_flags |= getattr(os, "O_NOFOLLOW", 0)
+        try:
+            directory = os.open(path, directory_flags)
+        except OSError as error:
+            raise ValueError("analysis provenance directory is unsafe") from error
+
+        def read_member(name: str, maximum_bytes: int) -> bytes:
+            flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+            flags |= getattr(os, "O_NOFOLLOW", 0)
+            descriptor = os.open(name, flags, dir_fd=directory)
+            try:
+                before = os.fstat(descriptor)
+                if (
+                    not stat.S_ISREG(before.st_mode)
+                    or before.st_uid not in {0, os.getuid()}
+                    or before.st_mode & 0o022
+                    or before.st_size > maximum_bytes
+                ):
+                    raise ValueError("analysis provenance member is unsafe")
+                chunks: list[bytes] = []
+                retained = 0
+                while True:
+                    chunk = os.read(descriptor, 1024 * 1024)
+                    if not chunk:
+                        break
+                    retained += len(chunk)
+                    if retained > maximum_bytes:
+                        raise ValueError("analysis provenance member is too large")
+                    chunks.append(chunk)
+                after = os.fstat(descriptor)
+                if (
+                    before.st_dev,
+                    before.st_ino,
+                    before.st_size,
+                    before.st_mtime_ns,
+                    stat.S_IMODE(before.st_mode),
+                ) != (
+                    after.st_dev,
+                    after.st_ino,
+                    after.st_size,
+                    after.st_mtime_ns,
+                    stat.S_IMODE(after.st_mode),
+                ):
+                    raise ValueError("analysis provenance member changed")
+                return b"".join(chunks)
+            finally:
+                os.close(descriptor)
+
+        try:
+            directory_stat = os.fstat(directory)
+            if (
+                not stat.S_ISDIR(directory_stat.st_mode)
+                or directory_stat.st_uid not in {0, os.getuid()}
+                or directory_stat.st_mode & 0o022
+                or set(os.listdir(directory))
+                != {
+                    "source_and_derived_arrays.npz",
+                    "provenance.json",
+                    "checksums.json",
+                }
+            ):
+                raise ValueError("analysis provenance directory is unsafe")
+            arrays_bytes = read_member(
+                "source_and_derived_arrays.npz",
+                _MAXIMUM_ANALYSIS_PROVENANCE_FILE_BYTES,
+            )
+            metadata_bytes = read_member(
+                "provenance.json",
+                _MAXIMUM_ANALYSIS_PROVENANCE_FILE_BYTES,
+            )
+            checksums_bytes = read_member("checksums.json", 1024 * 1024)
+        except (OSError, ValueError) as error:
+            raise ValueError("analysis provenance durable bytes changed") from error
+        finally:
+            os.close(directory)
+        if (
+            hashlib.sha256(arrays_bytes).hexdigest() != arrays_sha256
+            or hashlib.sha256(metadata_bytes).hexdigest() != metadata_sha256
+        ):
+            raise ValueError("analysis provenance durable bytes changed")
+        try:
+            metadata_text = metadata_bytes.decode("utf-8")
+            checksums_text = checksums_bytes.decode("utf-8")
+            checksums = json.loads(checksums_text)
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise ValueError("analysis provenance checksums are invalid") from error
+        expected_checksums = {
+            "source_and_derived_arrays.npz": arrays_sha256,
+            "provenance.json": metadata_sha256,
+        }
+        if (
+            checksums != expected_checksums
+            or checksums_text != _json_text(expected_checksums)
+        ):
+            raise ValueError("analysis provenance checksums are invalid")
+        return path, arrays_bytes, metadata_text
+
     @staticmethod
+    def _analysis_provenance_raw_resolution_time(
+        *,
+        provenance_kind: str,
+        metadata_text: str,
+        expected_receipt_digest: str,
+    ) -> str:
+        """Recover the signed/typed raw-resolution time from durable metadata."""
+
+        try:
+            metadata = json.loads(metadata_text)
+            if not isinstance(metadata, dict):
+                raise TypeError
+            if provenance_kind == "holdout":
+                raw = metadata["global_resolution"]
+                if not isinstance(raw, dict):
+                    raise TypeError
+                values = dict(raw)
+                retained_digest = values.pop("receipt_digest")
+                bindings = values.get("slot_identity_bindings")
+                if not isinstance(bindings, list):
+                    raise TypeError
+                values["slot_identity_bindings"] = tuple(
+                    (str(item[0]), str(item[1]))
+                    for item in bindings
+                    if isinstance(item, list) and len(item) == 2
+                )
+                if len(values["slot_identity_bindings"]) != len(bindings):
+                    raise ValueError
+                resolution = GlobalRawVolumeResolutionReceipt(
+                    **cast(Any, values)
+                )
+                if (
+                    retained_digest != expected_receipt_digest
+                    or resolution.receipt_digest != expected_receipt_digest
+                    or raw
+                    != resolution.payload
+                    | {"receipt_digest": resolution.receipt_digest}
+                ):
+                    raise ValueError
+                return resolution.resolved_at
+            if provenance_kind == "operational":
+                raw = metadata["raw_resolution"]
+                if not isinstance(raw, dict):
+                    raise TypeError
+                resolution = (
+                    _operational_raw_volume_resolution_receipt_from_json(
+                        _json_text(raw),
+                        expected_digest=expected_receipt_digest,
+                    )
+                )
+                return resolution.resolved_at
+            raise ValueError
+        except (
+            KeyError,
+            TypeError,
+            ValueError,
+            json.JSONDecodeError,
+        ) as error:
+            raise ValueError(
+                "analysis provenance raw resolution is invalid"
+            ) from error
+
+    @staticmethod
+    def _operational_provenance_plan_from_json(
+        text: str,
+        *,
+        expected_digest: str,
+    ) -> OperationalAnalysisInputProvenancePlan:
+        """Decode the complete registered operational plan preimage."""
+
+        try:
+            payload = json.loads(text)
+            if not isinstance(payload, dict) or text != _json_text(payload):
+                raise TypeError
+            values = dict(payload)
+            retained_digest = values.pop("plan_digest")
+
+            input_values = dict(values["input_plan"])
+            retained_input_digest = input_values.pop("plan_digest")
+            input_values["valid_times"] = tuple(input_values["valid_times"])
+            input_plan = NeuralPriorInputPlan(**cast(Any, input_values))
+            if retained_input_digest != input_plan.plan_digest:
+                raise ValueError
+            values["input_plan"] = input_plan
+
+            slots: list[RawObservationSlotPlan] = []
+            for retained_slot in values["raw_observation_slot_plans"]:
+                slot_values = dict(retained_slot)
+                retained_slot_digest = slot_values.pop("slot_digest")
+                slot = RawObservationSlotPlan(**cast(Any, slot_values))
+                if retained_slot_digest != slot.slot_digest:
+                    raise ValueError
+                slots.append(slot)
+            values["raw_observation_slot_plans"] = tuple(slots)
+
+            trust_values = dict(values["raw_ingestor_trust_store"])
+            retained_trust_digest = trust_values.pop("content_digest")
+            trust_values["authorities"] = tuple(
+                tuple(item) for item in trust_values["authorities"]
+            )
+            raw_trust = RawIngestorTrustStore(**cast(Any, trust_values))
+            if retained_trust_digest != raw_trust.content_digest:
+                raise ValueError
+            values["raw_ingestor_trust_store"] = raw_trust
+
+            geometry_values = dict(values["range_geometry_contract"])
+            retained_geometry_digest = geometry_values.pop("contract_digest")
+            for name in (
+                "range_regime_labels",
+                "radial_distance_edges_m",
+                "radar_site_digests",
+                "radar_site_location_digests",
+            ):
+                if name in geometry_values:
+                    geometry_values[name] = tuple(geometry_values[name])
+            if "radar_projected_xy_m" in geometry_values:
+                geometry_values["radar_projected_xy_m"] = tuple(
+                    tuple(point)
+                    for point in geometry_values["radar_projected_xy_m"]
+                )
+            geometry: RangeGeometryContract | MosaicRangeGeometryContract
+            if geometry_values.get("contract") == (
+                "mosaic-horizontal-range-geometry-contract-v3"
+            ):
+                geometry = MosaicRangeGeometryContract(
+                    **cast(Any, geometry_values)
+                )
+            else:
+                geometry = RangeGeometryContract(**cast(Any, geometry_values))
+            if retained_geometry_digest != geometry.contract_digest:
+                raise ValueError
+            values["range_geometry_contract"] = geometry
+
+            issuance_values = dict(values["operational_issuance_domain_plan"])
+            retained_issuance_digest = issuance_values.pop("plan_digest")
+            issuance_values["lead_minutes"] = tuple(
+                issuance_values["lead_minutes"]
+            )
+            issuance = OperationalIssuanceDomainPlan(
+                **cast(Any, issuance_values)
+            )
+            if retained_issuance_digest != issuance.plan_digest:
+                raise ValueError
+            values["operational_issuance_domain_plan"] = issuance
+            plan = OperationalAnalysisInputProvenancePlan(
+                **cast(Any, values)
+            )
+        except (
+            KeyError,
+            TypeError,
+            ValueError,
+            json.JSONDecodeError,
+        ) as error:
+            raise ValueError(
+                "registered operational provenance plan is invalid"
+            ) from error
+        if (
+            retained_digest != expected_digest
+            or plan.plan_digest != expected_digest
+            or text != _json_text(plan.payload | {"plan_digest": plan.plan_digest})
+        ):
+            raise ValueError("registered operational provenance plan changed")
+        return plan
+
+    @staticmethod
+    def _issue_analysis_provenance_preparation_receipt(
+        *,
+        artifact_digest: str,
+        provenance_kind: str,
+        provenance_plan_digest: str,
+        input_plan_digest: str,
+        raw_resolution_receipt_digest: str,
+        payload_json: str,
+        payload_committed_at: str,
+        deadline: str,
+        ledger_instance_digest: str,
+        side_effect_digest: str,
+        authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+        signer: DeploymentAuthoritySigner,
+    ) -> tuple[str, str]:
+        if re.fullmatch(r"[0-9a-f]{64}", ledger_instance_digest) is None:
+            raise ValueError("provenance ledger instance digest is invalid")
+        if re.fullmatch(r"[0-9a-f]{64}", side_effect_digest) is None:
+            raise ValueError("provenance side-effect digest is invalid")
+        prepared_at = datetime.now(timezone.utc).isoformat().replace(
+            "+00:00", "Z"
+        )
+        _trusted_authority_key(
+            authority_trust_store,
+            authority_id=signer.authority_id,
+            public_key_hex=signer.public_key_hex,
+            role="ledger_issuance",
+            issued_at=prepared_at,
+        )
+        if ledger_instance_digest not in (
+            authority_trust_store.ledger_instance_digests.get(
+                signer.authority_id,
+                frozenset(),
+            )
+        ):
+            raise ValueError("provenance signer is not bound to this ledger")
+        payload_commit = _canonical_utc_datetime(
+            payload_committed_at, "payload_committed_at"
+        )
+        if not (
+            payload_commit
+            <= _canonical_utc_datetime(prepared_at, "prepared_at")
+            <= _canonical_utc_datetime(deadline, "decision_deadline")
+        ):
+            raise ValueError("provenance payload missed its durable deadline")
+        unsigned: dict[str, object] = {
+            "contract": "analysis-input-provenance-preparation-receipt-v3",
+            "artifact_digest": artifact_digest,
+            "provenance_kind": provenance_kind,
+            "provenance_plan_digest": provenance_plan_digest,
+            "input_plan_digest": input_plan_digest,
+            "raw_resolution_receipt_digest": raw_resolution_receipt_digest,
+            "payload_json_digest": hashlib.sha256(
+                payload_json.encode("utf-8")
+            ).hexdigest(),
+            "payload_committed_at": payload_committed_at,
+            "prepared_at": prepared_at,
+            "ledger_instance_digest": ledger_instance_digest,
+            "side_effect_digest": side_effect_digest,
+            "authority_id": signer.authority_id,
+            "authority_public_key_hex": signer.public_key_hex,
+            "authority_signature_hex": "",
+        }
+        payload = dict(unsigned)
+        payload["authority_signature_hex"] = signer.sign(
+            _json_digest(unsigned).encode("ascii")
+        ).hex()
+        receipt_digest = _json_digest(payload)
+        return (
+            _json_text(payload | {"receipt_digest": receipt_digest}),
+            receipt_digest,
+        )
+
+    @staticmethod
+    def _validate_analysis_provenance_preparation_receipt(
+        receipt_json: str,
+        receipt_digest: str,
+        *,
+        artifact_digest: str,
+        provenance_kind: str,
+        provenance_plan_digest: str,
+        input_plan_digest: str,
+        raw_resolution_receipt_digest: str,
+        payload_json: str,
+        payload_committed_at: str,
+        deadline: str,
+        ledger_instance_digest: str,
+        side_effect_digest: str,
+        authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+    ) -> None:
+        try:
+            payload = json.loads(receipt_json)
+            if not isinstance(payload, dict):
+                raise TypeError
+            retained = dict(payload)
+            stored_digest = retained.pop("receipt_digest")
+            signature = str(retained["authority_signature_hex"])
+            unsigned = dict(retained)
+            unsigned["authority_signature_hex"] = ""
+            if (
+                set(retained)
+                != {
+                    "contract",
+                    "artifact_digest",
+                    "provenance_kind",
+                    "provenance_plan_digest",
+                    "input_plan_digest",
+                    "raw_resolution_receipt_digest",
+                    "payload_json_digest",
+                    "payload_committed_at",
+                    "prepared_at",
+                    "ledger_instance_digest",
+                    "side_effect_digest",
+                    "authority_id",
+                    "authority_public_key_hex",
+                    "authority_signature_hex",
+                }
+                or receipt_json != _json_text(payload)
+                or stored_digest != receipt_digest
+                or _json_digest(retained) != receipt_digest
+                or retained["contract"]
+                != "analysis-input-provenance-preparation-receipt-v3"
+                or retained["artifact_digest"] != artifact_digest
+                or retained["provenance_kind"] != provenance_kind
+                or retained["provenance_plan_digest"]
+                != provenance_plan_digest
+                or retained["input_plan_digest"] != input_plan_digest
+                or retained["raw_resolution_receipt_digest"]
+                != raw_resolution_receipt_digest
+                or retained["payload_json_digest"]
+                != hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
+                or retained["payload_committed_at"] != payload_committed_at
+                or retained["ledger_instance_digest"]
+                != ledger_instance_digest
+                or retained["side_effect_digest"] != side_effect_digest
+                or _canonical_utc_datetime(
+                    str(retained["payload_committed_at"]),
+                    "payload_committed_at",
+                )
+                > _canonical_utc_datetime(
+                    str(retained["prepared_at"]),
+                    "prepared_at",
+                )
+                or _canonical_utc_datetime(
+                    str(retained["prepared_at"]),
+                    "prepared_at",
+                )
+                > _canonical_utc_datetime(deadline, "decision_deadline")
+            ):
+                raise ValueError
+            authority_id = str(retained["authority_id"])
+            authority_public_key_hex = str(
+                retained["authority_public_key_hex"]
+            )
+            key = _trusted_authority_key(
+                authority_trust_store,
+                authority_id=authority_id,
+                public_key_hex=authority_public_key_hex,
+                role="ledger_issuance",
+                issued_at=str(retained["prepared_at"]),
+            )
+            if ledger_instance_digest not in (
+                authority_trust_store.ledger_instance_digests.get(
+                    authority_id,
+                    frozenset(),
+                )
+            ):
+                raise ValueError
+            key.verify(
+                bytes.fromhex(signature),
+                _json_digest(unsigned).encode("ascii"),
+            )
+        except (
+            InvalidSignature,
+            KeyError,
+            TypeError,
+            ValueError,
+            json.JSONDecodeError,
+        ) as error:
+            raise ValueError(
+                "analysis provenance preparation receipt is invalid"
+            ) from error
+
+    def _registered_analysis_provenance_context(
+        self,
+        *,
+        artifact_digest: str,
+        provenance_kind: str,
+        provenance_plan_digest: str,
+        case_id: str,
+        input_plan_digest: str,
+        raw_resolution_receipt_digest: str,
+        payload_json: str,
+        analysis_processor_trust_store_path: str | Path,
+    ) -> tuple[
+        NeuralPriorInputPlan,
+        AnalysisInputDerivationArtifact,
+        str,
+        str,
+        _PromotionDeploymentAuthorityTrustStore,
+        NeuralPriorHoldoutPlan | OperationalAnalysisInputProvenancePlan,
+    ]:
+        """Derive provenance authority only from a registered root-bound plan."""
+
+        try:
+            payload = json.loads(payload_json)
+            if not isinstance(payload, dict):
+                raise TypeError
+            derivation_payload = dict(payload)
+            retained_artifact_digest = derivation_payload.pop(
+                "artifact_digest"
+            )
+            embedded_input_plan = derivation_payload.pop("input_plan")
+            if not isinstance(embedded_input_plan, dict):
+                raise TypeError
+            derivation = _analysis_input_derivation_from_json(
+                _json_text(derivation_payload),
+                expected_digest=artifact_digest,
+            )
+        except (
+            KeyError,
+            TypeError,
+            ValueError,
+            json.JSONDecodeError,
+        ) as error:
+            raise ValueError(
+                "prepared provenance derivation is invalid"
+            ) from error
+        if retained_artifact_digest != artifact_digest:
+            raise ValueError("prepared provenance artifact identity changed")
+
+        expected_trust_digest: str | None = None
+        if provenance_kind == "holdout":
+            try:
+                registered = self.load_neural_prior_holdout_plan(
+                    provenance_plan_digest
+                )
+            except (KeyError, TypeError, ValueError) as error:
+                raise ValueError(
+                    "prepared provenance lacks its registered holdout plan"
+                ) from error
+            if type(registered) is not NeuralPriorHoldoutPlan:
+                raise ValueError(
+                    "prepared provenance requires a current holdout plan"
+                )
+            planned_case = registered.case(case_id)
+            try:
+                registered_input_plan = next(
+                    item
+                    for item in registered.input_plans
+                    if item.plan_digest == input_plan_digest
+                )
+            except StopIteration as error:
+                raise ValueError(
+                    "prepared provenance input plan is not registered"
+                ) from error
+            if planned_case.input_plan_digest != input_plan_digest:
+                raise ValueError(
+                    "prepared provenance case disagrees with its plan"
+                )
+            expected_authority_id = registered.analysis_processor_id
+            expected_authority_public_key_hex = (
+                registered.analysis_processor_public_key_hex
+            )
+            provenance_plan: (
+                NeuralPriorHoldoutPlan
+                | OperationalAnalysisInputProvenancePlan
+            ) = registered
+        elif provenance_kind == "operational":
+            with self._connect() as connection:
+                plan_row = connection.execute(
+                    "SELECT input_plan_digest,payload_json FROM "
+                    "operational_analysis_input_provenance_plans "
+                    "WHERE plan_digest = ?",
+                    (provenance_plan_digest,),
+                ).fetchone()
+            try:
+                if plan_row is None:
+                    raise KeyError
+                operational_plan = self._operational_provenance_plan_from_json(
+                    str(plan_row[1]),
+                    expected_digest=provenance_plan_digest,
+                )
+                registered_input_plan = operational_plan.input_plan
+                expected_case_id = operational_plan.plan_id
+                expected_authority_id = operational_plan.analysis_processor_id
+                expected_authority_public_key_hex = (
+                    operational_plan.analysis_processor_public_key_hex
+                )
+                expected_trust_digest = (
+                    operational_plan.analysis_processor_trust_store_digest
+                )
+            except (
+                KeyError,
+                TypeError,
+                ValueError,
+                json.JSONDecodeError,
+            ) as error:
+                raise ValueError(
+                    "prepared provenance lacks its registered operational plan"
+                ) from error
+            if (
+                str(plan_row[0]) != input_plan_digest
+                or registered_input_plan.plan_digest != input_plan_digest
+                or expected_case_id != case_id
+            ):
+                raise ValueError(
+                    "prepared provenance operational plan changed"
+                )
+            provenance_plan = operational_plan
+        else:
+            raise ValueError("prepared provenance kind is invalid")
+
+        embedded_input = dict(embedded_input_plan)
+        embedded_input_digest = embedded_input.pop("plan_digest", None)
+        valid_times = embedded_input.get("valid_times")
+        if not isinstance(valid_times, list):
+            raise ValueError("prepared provenance input plan is invalid")
+        embedded_input["valid_times"] = tuple(valid_times)
+        try:
+            decoded_embedded_input = NeuralPriorInputPlan(
+                **cast(Any, embedded_input)
+            )
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                "prepared provenance input plan is invalid"
+            ) from error
+        if (
+            embedded_input_digest != registered_input_plan.plan_digest
+            or decoded_embedded_input != registered_input_plan
+            or derivation.case_id != case_id
+            or derivation.input_plan_digest != input_plan_digest
+            or derivation.global_raw_resolution_receipt_digest
+            != raw_resolution_receipt_digest
+            or derivation.processor_id != expected_authority_id
+            or derivation.processor_public_key_hex
+            != expected_authority_public_key_hex
+            or payload_json
+            != _json_text(
+                derivation.payload
+                | {
+                    "artifact_digest": derivation.artifact_digest,
+                    "input_plan": registered_input_plan.payload
+                    | {"plan_digest": registered_input_plan.plan_digest},
+                }
+            )
+        ):
+            raise ValueError(
+                "prepared provenance disagrees with its registered plan"
+            )
+        authority_trust = _load_promotion_deployment_authority_trust_store(
+            analysis_processor_trust_store_path
+        )
+        if (
+            expected_trust_digest is not None
+            and authority_trust.content_digest != expected_trust_digest
+        ):
+            raise ValueError(
+                "prepared provenance processor trust snapshot changed"
+            )
+        _trusted_authority_key(
+            authority_trust,
+            authority_id=expected_authority_id,
+            public_key_hex=expected_authority_public_key_hex,
+            role="analysis_processor",
+            issued_at=derivation.processed_at,
+        )
+        return (
+            registered_input_plan,
+            derivation,
+            expected_authority_id,
+            expected_authority_public_key_hex,
+            authority_trust,
+            provenance_plan,
+        )
+
+    @staticmethod
+    def _decode_provenance_raw_observations(
+        raw_payloads: object,
+        arrays: Mapping[str, Tensor],
+    ) -> tuple[RawObservationResolutionReceipt, ...]:
+        """Rebuild signed raw receipts from one pinned NPZ byte snapshot."""
+
+        if not isinstance(raw_payloads, list) or not raw_payloads:
+            raise ValueError("analysis provenance raw products are incomplete")
+        ordered_payloads = sorted(
+            raw_payloads,
+            key=lambda item: (
+                (
+                    item["raw_grid_volume"]["acquisition_valid_time"]
+                    if isinstance(item, dict)
+                    and item.get("contract")
+                    == "resolved-raw-observation-receipt-v1"
+                    else item["acquisition_valid_time"]
+                ),
+                (
+                    item["raw_grid_volume"]["radar_site_digest"]
+                    if isinstance(item, dict)
+                    and item.get("contract")
+                    == "resolved-raw-observation-receipt-v1"
+                    else item["radar_site_digest"]
+                ),
+            ),
+        )
+        raw_roles = (
+            "raw_source_reflectivity_bits",
+            "raw_source_qc_flags",
+            "raw_source_quality_bits",
+            "raw_source_observation_std_bits",
+        )
+        present_count = sum(
+            isinstance(item, dict)
+            and item.get("contract")
+            == "resolved-raw-observation-receipt-v1"
+            for item in ordered_payloads
+        )
+        if any(
+            role not in arrays or arrays[role].shape[0] != present_count
+            for role in raw_roles
+        ):
+            raise ValueError("analysis provenance raw product count is invalid")
+        receipts: list[RawObservationResolutionReceipt] = []
+        raw_index = 0
+        for retained_receipt in ordered_payloads:
+            if not isinstance(retained_receipt, dict):
+                raise ValueError("analysis provenance raw receipt is invalid")
+            if retained_receipt.get("contract") == (
+                "missing-raw-observation-receipt-v1"
+            ):
+                missing_values = dict(retained_receipt)
+                retained_receipt_digest = missing_values.pop(
+                    "receipt_digest", None
+                )
+                retained_identity_digest = missing_values.pop(
+                    "resolution_identity_digest", None
+                )
+                missing = MissingRawObservationReceipt(
+                    **cast(Any, missing_values)
+                )
+                if (
+                    missing.receipt_digest != retained_receipt_digest
+                    or missing.resolution_identity_digest
+                    != retained_identity_digest
+                ):
+                    raise ValueError("analysis provenance missing receipt changed")
+                receipts.append(missing)
+                continue
+            try:
+                retained_volume = dict(retained_receipt["raw_grid_volume"])
+                rebuilt_volume = (
+                    CanonicalRawGridVolumeArtifact.from_encoded_tensors(
+                        raw_reflectivity_bits=(
+                            arrays["raw_source_reflectivity_bits"][raw_index]
+                        ),
+                        raw_qc_flags=arrays["raw_source_qc_flags"][raw_index],
+                        raw_quality_bits=(
+                            arrays["raw_source_quality_bits"][raw_index]
+                        ),
+                        raw_observation_std_bits=(
+                            arrays["raw_source_observation_std_bits"][raw_index]
+                        ),
+                        radar_site_digest=cast(
+                            str, retained_volume["radar_site_digest"]
+                        ),
+                        acquisition_valid_time=cast(
+                            str, retained_volume["acquisition_valid_time"]
+                        ),
+                        canonical_scan_identity_digest=cast(
+                            str,
+                            retained_volume["canonical_scan_identity_digest"],
+                        ),
+                        radar_product_digest=cast(
+                            str, retained_volume["radar_product_digest"]
+                        ),
+                        grid_contract_digest=cast(
+                            str, retained_volume["grid_contract_digest"]
+                        ),
+                    )
+                )
+                identity_values = dict(retained_receipt["raw_volume_identity"])
+                retained_identity_digest = identity_values.pop(
+                    "identity_digest", None
+                )
+                identity = CanonicalRawVolumeIdentity(
+                    **cast(Any, identity_values)
+                )
+                attestation_values = dict(
+                    retained_receipt["raw_volume_attestation"]
+                )
+                retained_attestation_digest = attestation_values.pop(
+                    "attestation_digest", None
+                )
+                attestation = RawVolumeAttestation(
+                    **cast(Any, attestation_values)
+                )
+                receipt = ResolvedRawObservationReceipt(
+                    slot_plan_digest=cast(
+                        str, retained_receipt["slot_plan_digest"]
+                    ),
+                    raw_grid_volume=rebuilt_volume,
+                    raw_volume_identity=identity,
+                    raw_volume_attestation=attestation,
+                    contract=cast(str, retained_receipt["contract"]),
+                )
+            except (KeyError, TypeError, ValueError) as error:
+                raise ValueError(
+                    "analysis provenance raw receipt is invalid"
+                ) from error
+            if (
+                retained_volume
+                != rebuilt_volume.payload
+                | {"artifact_digest": rebuilt_volume.artifact_digest}
+                or identity.identity_digest != retained_identity_digest
+                or attestation.attestation_digest
+                != retained_attestation_digest
+                or receipt.receipt_digest
+                != retained_receipt.get("receipt_digest")
+            ):
+                raise ValueError("analysis provenance raw receipt changed")
+            receipts.append(receipt)
+            raw_index += 1
+        return tuple(receipts)
+
+    def _validate_recoverable_analysis_provenance_replay(
+        self,
+        *,
+        provenance_kind: str,
+        provenance_plan_digest: str,
+        case_id: str,
+        input_plan: NeuralPriorInputPlan,
+        derivation: AnalysisInputDerivationArtifact,
+        raw_resolution_receipt_digest: str,
+        arrays_bytes: bytes,
+        metadata_text: str,
+        current_raw_trust: RawIngestorTrustStore,
+        provenance_plan: (
+            NeuralPriorHoldoutPlan
+            | OperationalAnalysisInputProvenancePlan
+        ),
+    ) -> None:
+        """Replay the same raw/slot/QC invariants used by a normal append."""
+
+        try:
+            metadata = json.loads(metadata_text)
+            if (
+                not isinstance(metadata, dict)
+                or metadata_text != _json_text(metadata)
+            ):
+                raise TypeError
+        except (TypeError, json.JSONDecodeError) as error:
+            raise ValueError("analysis provenance metadata is invalid") from error
+
+        if provenance_kind == "holdout":
+            if type(provenance_plan) is not NeuralPriorHoldoutPlan:
+                raise ValueError("holdout provenance plan type changed")
+            plan = provenance_plan
+            planned_case = plan.case(case_id)
+            sampling = next(
+                item
+                for item in plan.meteorological_sampling_units
+                if item.sampling_unit_digest
+                == planned_case.meteorological_sampling_unit_digest
+            )
+            slots = {
+                item.slot_digest: item
+                for item in plan.raw_observation_slot_plans
+                if item.slot_digest in sampling.raw_observation_slot_digests
+            }
+            pinned_raw_trust = plan.raw_ingestor_trust_store
+            range_band = next(
+                item
+                for item in plan.range_band_contracts
+                if item.contract_digest == planned_case.range_band_contract_digest
+            )
+            geometry = next(
+                item
+                for item in plan.range_geometry_contracts
+                if item.contract_digest
+                == range_band.range_geometry_contract_digest
+            )
+            expected_keys = {
+                "contract",
+                "holdout_plan_digest",
+                "case_id",
+                "raw_ingestor_trust_store_digest",
+                "input_plan",
+                "resolved_raw_observations",
+                "global_resolution",
+                "analysis_input_derivation",
+                "resolved_source_coverage",
+            }
+            if (
+                set(metadata) != expected_keys
+                or metadata["contract"] != "analysis-input-provenance-bundle-v1"
+                or metadata["holdout_plan_digest"] != plan.plan_digest
+                or metadata["case_id"] != case_id
+                or metadata["raw_ingestor_trust_store_digest"]
+                != current_raw_trust.content_digest
+            ):
+                raise ValueError("holdout provenance metadata changed")
+        elif provenance_kind == "operational":
+            if type(provenance_plan) is not OperationalAnalysisInputProvenancePlan:
+                raise ValueError("operational provenance plan type changed")
+            operational_plan = provenance_plan
+            slots = {
+                item.slot_digest: item
+                for item in operational_plan.raw_observation_slot_plans
+            }
+            pinned_raw_trust = operational_plan.raw_ingestor_trust_store
+            geometry = operational_plan.range_geometry_contract
+            expected_keys = {
+                "contract",
+                "provenance_kind",
+                "provenance_plan",
+                "input_plan",
+                "resolved_raw_observations",
+                "raw_resolution",
+                "analysis_input_derivation",
+                "resolved_source_coverage",
+            }
+            if (
+                set(metadata) != expected_keys
+                or metadata["contract"] != "analysis-input-provenance-bundle-v2"
+                or metadata["provenance_kind"] != "operational"
+                or _json_text(metadata["provenance_plan"])
+                != _json_text(
+                    operational_plan.payload
+                    | {"plan_digest": operational_plan.plan_digest}
+                )
+            ):
+                raise ValueError("operational provenance metadata changed")
+        else:
+            raise ValueError("analysis provenance kind is invalid")
+
+        if _json_text(metadata["input_plan"]) != _json_text(
+            input_plan.payload | {"plan_digest": input_plan.plan_digest}
+        ) or _json_text(metadata["analysis_input_derivation"]) != _json_text(
+            derivation.payload | {"artifact_digest": derivation.artifact_digest}
+        ):
+            raise ValueError("analysis provenance registered preimage changed")
+
+        coverage_payload = metadata["resolved_source_coverage"]
+        expected_array_names = {
+            "raw_source_reflectivity_bits",
+            "raw_source_qc_flags",
+            "raw_source_quality_bits",
+            "raw_source_observation_std_bits",
+            "derived_input_frames",
+            "derived_qc_valid_mask",
+            "derived_quality_weight",
+            "derived_observation_std_dbz",
+        }
+        if derivation.background_frames_digest is not None:
+            expected_array_names.add("background_frames_dbz")
+        coverage_roles = {
+            "source_radar_index_map",
+            "input_history_source_radar_index_map",
+            "outage_mask",
+            "dynamic_qc_valid_mask",
+            "nominal_source_coverage_mask",
+            "resolved_source_coverage_mask",
+        }
+        if coverage_payload is not None:
+            expected_array_names |= coverage_roles
+        try:
+            with zipfile.ZipFile(io.BytesIO(arrays_bytes)) as archive:
+                infos = archive.infolist()
+                retained_names = {
+                    item.filename.removesuffix(".npy")
+                    for item in infos
+                    if item.filename.endswith(".npy")
+                }
+                if (
+                    len(infos) > 16
+                    or any(item.is_dir() for item in infos)
+                    or len(retained_names) != len(infos)
+                    or retained_names != expected_array_names
+                    or sum(item.file_size for item in infos)
+                    > _MAXIMUM_ANALYSIS_PROVENANCE_EXPANDED_BYTES
+                ):
+                    raise ValueError
+            with np.load(io.BytesIO(arrays_bytes), allow_pickle=False) as archive:
+                arrays = {
+                    name: torch.from_numpy(np.array(archive[name], copy=True))
+                    for name in archive.files
+                }
+        except (KeyError, OSError, ValueError, zipfile.BadZipFile) as error:
+            raise ValueError("analysis provenance tensor archive is invalid") from error
+
+        receipts = self._decode_provenance_raw_observations(
+            metadata["resolved_raw_observations"], arrays
+        )
+        receipts_by_slot = {item.slot_plan_digest: item for item in receipts}
+        if (
+            not receipts
+            or len(receipts_by_slot) != len(receipts)
+            or set(receipts_by_slot) != set(slots)
+        ):
+            raise ValueError("analysis provenance slot coverage changed")
+        for slot_digest, receipt in receipts_by_slot.items():
+            _validate_current_raw_ingestor_receipt(
+                receipt,
+                slots[slot_digest],
+                pinned_trust_store=pinned_raw_trust,
+                current_trust_store=current_raw_trust,
+            )
+        ordered_receipts = tuple(
+            sorted(
+                receipts,
+                key=lambda item: (
+                    item.acquisition_valid_time,
+                    item.radar_site_digest,
+                ),
+            )
+        )
+        expected_bindings = tuple(
+            sorted(
+                (
+                    item.slot_plan_digest,
+                    item.resolution_identity_digest,
+                )
+                for item in ordered_receipts
+            )
+        )
+        if provenance_kind == "holdout":
+            resolution_values = dict(metadata["global_resolution"])
+            retained_resolution_digest = resolution_values.pop(
+                "receipt_digest", None
+            )
+            resolution_values["slot_identity_bindings"] = tuple(
+                tuple(item)
+                for item in resolution_values["slot_identity_bindings"]
+            )
+            resolution = GlobalRawVolumeResolutionReceipt(
+                **cast(Any, resolution_values)
+            )
+            assert type(provenance_plan) is NeuralPriorHoldoutPlan
+            reservation = (
+                provenance_plan.promotion_experiment_family
+                .global_sampling_reservation
+            )
+            if (
+                retained_resolution_digest != raw_resolution_receipt_digest
+                or resolution.receipt_digest != raw_resolution_receipt_digest
+                or resolution.slot_identity_bindings != expected_bindings
+                or resolution.reservation_receipt_digest
+                != reservation.receipt_digest
+                or resolution.experiment_scope_digest
+                != reservation.experiment_scope_digest
+                or resolution.registry_id != reservation.registry_id
+                or resolution.authority_id != reservation.authority_id
+                or resolution.authority_public_key_hex
+                != reservation.authority_public_key_hex
+            ):
+                raise ValueError("holdout raw resolution changed")
+        else:
+            resolution = _operational_raw_volume_resolution_receipt_from_json(
+                _json_text(metadata["raw_resolution"]),
+                expected_digest=raw_resolution_receipt_digest,
+            )
+            assert type(provenance_plan) is OperationalAnalysisInputProvenancePlan
+            if (
+                resolution.provenance_plan_digest != provenance_plan_digest
+                or resolution.input_plan_digest != input_plan.plan_digest
+                or resolution.slot_identity_bindings != expected_bindings
+                or any(
+                    item.provenance_plan_digest != provenance_plan_digest
+                    or item.authority_id
+                    != provenance_plan.analysis_processor_id
+                    or item.authority_public_key_hex
+                    != provenance_plan.analysis_processor_public_key_hex
+                    for item in resolution.history_entries
+                )
+            ):
+                raise ValueError("operational raw resolution changed")
+
+        resolved_at = _canonical_utc_datetime(
+            resolution.resolved_at,
+            "raw_resolution_resolved_at",
+        )
+        if any(
+            _canonical_utc_datetime(receipt.observed_at, "raw_observed_at")
+            > resolved_at
+            for receipt in ordered_receipts
+        ):
+            raise ValueError("raw observation arrived after its resolution")
+
+        coverage: ResolvedSourceCoverageArtifact | None = None
+        if coverage_payload is not None:
+            if not isinstance(coverage_payload, dict):
+                raise ValueError("analysis source coverage is invalid")
+            coverage_values = dict(coverage_payload)
+            retained_coverage_digest = coverage_values.pop(
+                "artifact_digest", None
+            )
+            coverage = object.__new__(ResolvedSourceCoverageArtifact)
+            for name, value in coverage_values.items():
+                if name in {"source_radar_site_digests", "resolved_cell_counts"}:
+                    value = tuple(cast(list[object], value))
+                object.__setattr__(coverage, name, value)
+            for name, value in (
+                ("_source_radar_index_map", arrays["source_radar_index_map"]),
+                (
+                    "_input_history_source_radar_index_map",
+                    arrays["input_history_source_radar_index_map"],
+                ),
+                ("_outage_mask", arrays["outage_mask"]),
+                ("_dynamic_qc_valid_mask", arrays["dynamic_qc_valid_mask"]),
+                (
+                    "_nominal_source_coverage_mask",
+                    arrays["nominal_source_coverage_mask"],
+                ),
+                (
+                    "_resolved_mask",
+                    arrays["resolved_source_coverage_mask"],
+                ),
+            ):
+                object.__setattr__(coverage, name, value)
+            object.__setattr__(
+                coverage, "artifact_digest", retained_coverage_digest
+            )
+            validate_resolved_source_coverage_artifact(coverage)
+            if (
+                type(geometry) is not MosaicRangeGeometryContract
+                or coverage.case_id != case_id
+                or coverage.grid_contract_digest != input_plan.grid_contract_digest
+                or coverage.source_radar_registry_digest
+                != geometry.source_radar_registry_digest
+                or derivation.source_selection_evidence_digest
+                != coverage.artifact_digest
+            ):
+                raise ValueError("analysis mosaic source coverage changed")
+        elif (
+            type(geometry) is not RangeGeometryContract
+            or derivation.source_selection_evidence_digest
+            != _json_digest({"contract": "single-site-source-selection-v1"})
+        ):
+            raise ValueError("analysis single-site source coverage changed")
+
+        derived_frames, derived_masks, derived_quality, derived_std = (
+            _derive_analysis_inputs_from_raw_products(
+                input_plan=input_plan,
+                resolved_raw_observations=ordered_receipts,
+                resolved_source_coverage=coverage,
+            )
+        )
+        source_available = (
+            torch.ones_like(derived_masks, dtype=torch.bool)
+            if coverage is None
+            else coverage.input_history_source_radar_index_map >= 0
+        )
+        if (
+            not torch.equal(arrays["derived_input_frames"], derived_frames)
+            or not torch.equal(arrays["derived_qc_valid_mask"], derived_masks)
+            or not torch.equal(arrays["derived_quality_weight"], derived_quality)
+            or not torch.equal(arrays["derived_observation_std_dbz"], derived_std)
+            or derivation.resolved_raw_observation_receipt_digests
+            != tuple(sorted(item.receipt_digest for item in ordered_receipts))
+            or derivation.canonical_raw_volume_identity_digests
+            != tuple(
+                sorted(
+                    item.raw_volume_identity.identity_digest
+                    for item in ordered_receipts
+                    if type(item) is ResolvedRawObservationReceipt
+                )
+            )
+            or derivation.input_frames_digest != tensor_digest(derived_frames)
+            or derivation.observation_masks_digest != tensor_digest(derived_masks)
+            or derivation.observation_quality_weight_digest
+            != tensor_digest(derived_quality)
+            or derivation.observation_std_dbz_digest != tensor_digest(derived_std)
+            or derivation.source_available_mask_digest
+            != tensor_digest(source_available)
+            or derivation.learned_model_input_features_digest
+            != tensor_digest(
+                learned_radar_input_features(
+                    derived_frames,
+                    derived_masks,
+                    derived_quality,
+                    derived_std,
+                    source_available,
+                )
+            )
+            or (
+                derivation.background_frames_digest is None
+                and "background_frames_dbz" in arrays
+            )
+            or (
+                derivation.background_frames_digest is not None
+                and tensor_digest(arrays["background_frames_dbz"])
+                != derivation.background_frames_digest
+            )
+        ):
+            raise ValueError(
+                "analysis provenance raw products do not reproduce input"
+            )
+
+    @staticmethod
+    def _analysis_provenance_ledger_instance_digest(
+        connection: sqlite3.Connection,
+    ) -> str:
+        row = connection.execute(
+            "SELECT ledger_instance_digest FROM "
+            "deployment_certificate_chain_head WHERE singleton = 1"
+        ).fetchone()
+        if row is None:
+            raise ValueError("analysis provenance ledger instance is unavailable")
+        digest = str(row[0])
+        if re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+            raise ValueError(
+                "analysis provenance ledger instance digest is invalid"
+            )
+        return digest
+
+    def _validate_analysis_provenance_side_effects(
+        self,
+        *,
+        provenance_kind: str,
+        provenance_plan_digest: str,
+        case_id: str,
+        raw_resolution_receipt_digest: str,
+        metadata_text: str,
+        provenance_plan: (
+            NeuralPriorHoldoutPlan
+            | OperationalAnalysisInputProvenancePlan
+        ),
+    ) -> tuple[str, str]:
+        """Verify the registry/history rows committed with a provenance bundle."""
+
+        try:
+            metadata = json.loads(metadata_text)
+            if not isinstance(metadata, dict):
+                raise TypeError
+        except (TypeError, json.JSONDecodeError) as error:
+            raise ValueError("analysis provenance metadata is invalid") from error
+        with self._connect() as connection:
+            ledger_instance_digest = (
+                self._analysis_provenance_ledger_instance_digest(connection)
+            )
+            if provenance_kind == "holdout":
+                if type(provenance_plan) is not NeuralPriorHoldoutPlan:
+                    raise ValueError("holdout provenance plan type changed")
+                values = dict(metadata["global_resolution"])
+                retained_digest = values.pop("receipt_digest", None)
+                bindings = values.get("slot_identity_bindings")
+                if not isinstance(bindings, list):
+                    raise ValueError("holdout resolution bindings are invalid")
+                values["slot_identity_bindings"] = tuple(
+                    tuple(item) for item in bindings
+                )
+                resolution = GlobalRawVolumeResolutionReceipt(
+                    **cast(Any, values)
+                )
+                family = provenance_plan.promotion_experiment_family
+                registry_row = connection.execute(
+                    "SELECT registry_id,registry_sequence_number,"
+                    "previous_registry_root_digest,"
+                    "committed_registry_root_digest,receipt_digest,"
+                    "entry_kind,family_digest FROM "
+                    "global_sampling_registry_entries WHERE receipt_digest = ?",
+                    (raw_resolution_receipt_digest,),
+                ).fetchone()
+                expected_registry = (
+                    resolution.registry_id,
+                    resolution.registry_sequence_number,
+                    resolution.previous_registry_root_digest,
+                    resolution.committed_registry_root_digest,
+                    resolution.receipt_digest,
+                    "raw_resolution",
+                    family.family_digest,
+                )
+                membership_rows = connection.execute(
+                    "SELECT raw_observation_slot_digest,"
+                    "raw_volume_identity_digest,case_id,family_digest FROM "
+                    "raw_volume_resolution_memberships WHERE "
+                    "global_resolution_receipt_digest = ? ORDER BY "
+                    "raw_observation_slot_digest",
+                    (raw_resolution_receipt_digest,),
+                ).fetchall()
+                expected_memberships = tuple(
+                    (
+                        slot_digest,
+                        identity_digest,
+                        case_id,
+                        family.family_digest,
+                    )
+                    for slot_digest, identity_digest in sorted(
+                        resolution.slot_identity_bindings
+                    )
+                )
+                if (
+                    retained_digest != raw_resolution_receipt_digest
+                    or resolution.receipt_digest
+                    != raw_resolution_receipt_digest
+                    or registry_row is None
+                    or tuple(registry_row) != expected_registry
+                    or tuple(tuple(row) for row in membership_rows)
+                    != expected_memberships
+                ):
+                    raise ValueError(
+                        "holdout provenance registry side effects changed"
+                    )
+                for slot_digest, identity_digest in (
+                    resolution.slot_identity_bindings
+                ):
+                    slot_row = connection.execute(
+                        "SELECT raw_volume_identity_digest,family_digest FROM "
+                        "raw_observation_slot_identity_bindings WHERE "
+                        "raw_observation_slot_digest = ?",
+                        (slot_digest,),
+                    ).fetchone()
+                    identity_row = connection.execute(
+                        "SELECT family_digest FROM "
+                        "promotion_raw_volume_identity_reservations WHERE "
+                        "raw_volume_identity_digest = ?",
+                        (identity_digest,),
+                    ).fetchone()
+                    if slot_row != (
+                        identity_digest,
+                        family.family_digest,
+                    ) or identity_row != (family.family_digest,):
+                        raise ValueError(
+                            "holdout provenance reservation side effects changed"
+                        )
+                side_effect_payload: dict[str, object] = {
+                    "contract": "analysis-provenance-ledger-side-effects-v1",
+                    "provenance_kind": "holdout",
+                    "registry_id": resolution.registry_id,
+                    "registry_sequence_number": (
+                        resolution.registry_sequence_number
+                    ),
+                    "committed_registry_root_digest": (
+                        resolution.committed_registry_root_digest
+                    ),
+                    "raw_resolution_receipt_digest": resolution.receipt_digest,
+                    "memberships": [list(item) for item in expected_memberships],
+                }
+            elif provenance_kind == "operational":
+                if type(provenance_plan) is not (
+                    OperationalAnalysisInputProvenancePlan
+                ):
+                    raise ValueError("operational provenance plan type changed")
+                resolution = (
+                    _operational_raw_volume_resolution_receipt_from_json(
+                        _json_text(metadata["raw_resolution"]),
+                        expected_digest=raw_resolution_receipt_digest,
+                    )
+                )
+                for target in resolution.history_entries:
+                    rows = connection.execute(
+                        "SELECT sequence_number,entry_digest,"
+                        "previous_entry_digest,provenance_plan_digest,"
+                        "resolution_identity_digest,resolution_kind,"
+                        "transition,entry_json,raw_resolution_receipt_digest,"
+                        "recorded_at FROM operational_raw_resolution_history "
+                        "WHERE slot_digest = ? ORDER BY sequence_number",
+                        (target.slot_digest,),
+                    ).fetchall()
+                    previous = OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST
+                    previous_identity: str | None = None
+                    previous_kind: str | None = None
+                    anchor = connection.execute(
+                        "SELECT slot_digest,anchor_digest,"
+                        "provenance_artifact_digest,"
+                        "raw_resolution_receipt_digest,"
+                        "resolution_identity_digest,resolution_kind,"
+                        "anchored_at FROM "
+                        "operational_raw_resolution_legacy_anchors "
+                        "WHERE slot_digest = ?",
+                        (target.slot_digest,),
+                    ).fetchone()
+                    if anchor is not None:
+                        previous, previous_identity, previous_kind = (
+                            self._validate_operational_raw_resolution_legacy_anchor(
+                                connection,
+                                anchor,
+                            )
+                        )
+                    found = False
+                    for expected_sequence, row in enumerate(rows, start=1):
+                        sequence, entry, retained_receipt = (
+                            self._validate_operational_raw_history_row(
+                                connection,
+                                row,
+                                fallback_authority_id=(
+                                    provenance_plan.analysis_processor_id
+                                ),
+                                fallback_authority_public_key_hex=(
+                                    provenance_plan
+                                    .analysis_processor_public_key_hex
+                                ),
+                            )
+                        )
+                        if (
+                            sequence != expected_sequence
+                            or entry.previous_entry_digest != previous
+                        ):
+                            raise ValueError(
+                                "operational raw-resolution history is broken"
+                            )
+                        if previous_identity is None:
+                            expected_transition = "original"
+                        elif entry.resolution_identity_digest == previous_identity:
+                            expected_transition = "reuse"
+                        elif previous_kind == "missing" and (
+                            entry.resolution_kind == "resolved"
+                        ):
+                            expected_transition = "correction"
+                        elif previous_kind == "resolved" and (
+                            entry.resolution_kind == "resolved"
+                        ):
+                            expected_transition = "supersession"
+                        elif previous_kind == "resolved" and (
+                            entry.resolution_kind == "missing"
+                        ):
+                            expected_transition = "cancellation"
+                        else:
+                            raise ValueError(
+                                "operational raw-resolution transition is invalid"
+                            )
+                        if entry.transition != expected_transition:
+                            raise ValueError(
+                                "operational raw-resolution transition changed"
+                            )
+                        if entry.entry_digest == target.entry_digest:
+                            if (
+                                entry != target
+                                or retained_receipt
+                                != raw_resolution_receipt_digest
+                            ):
+                                raise ValueError(
+                                    "operational provenance history changed"
+                                )
+                            found = True
+                        previous = entry.entry_digest
+                        previous_identity = entry.resolution_identity_digest
+                        previous_kind = entry.resolution_kind
+                    if not found:
+                        raise ValueError(
+                            "operational provenance history is not committed"
+                        )
+                side_effect_payload = {
+                    "contract": "analysis-provenance-ledger-side-effects-v1",
+                    "provenance_kind": "operational",
+                    "raw_resolution_receipt_digest": resolution.receipt_digest,
+                    "history_entry_digests": sorted(
+                        item.entry_digest for item in resolution.history_entries
+                    ),
+                }
+            else:
+                raise ValueError("analysis provenance kind is invalid")
+        return ledger_instance_digest, _json_digest(side_effect_payload)
+
+    def reconcile_prepared_analysis_input_provenance(
+        self,
+        artifact_digest: str,
+        *,
+        raw_ingestor_trust_store_path: str | Path,
+        analysis_processor_trust_store_path: str | Path,
+        provenance_commit_signer: DeploymentAuthoritySigner | None = None,
+    ) -> str:
+        """Idempotently activate a fully committed prepared provenance row.
+
+        The payload transaction has already validated the raw receipts and
+        processor signature. Recovery independently rehashes its immutable
+        files, requires an exact-ledger preparation authorization over the
+        registry/history side effects before the deadline, and checks the same current
+        root-owned raw-ingestor trust snapshot before activation.
+        """
+
+        if not re.fullmatch(r"[0-9a-f]{64}", artifact_digest):
+            raise ValueError("analysis provenance digest is invalid")
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT provenance_kind,payload_json,arrays_sha256,"
+                "metadata_sha256,path,raw_ingestor_trust_store_digest,"
+                "payload_committed_at,status,usable,provenance_plan_digest,"
+                "case_id,input_plan_digest,raw_resolution_receipt_digest,"
+                "preparation_receipt_json,preparation_receipt_digest FROM "
+                "analysis_input_provenance_commits WHERE artifact_digest = ?",
+                (artifact_digest,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(f"unknown analysis provenance: {artifact_digest}")
+        provenance_kind = str(row[0])
+        status = str(row[7])
+        if not (
+            (status == "active" and int(row[8]) == 1)
+            or (status == "prepared" and int(row[8]) == 0)
+        ):
+            raise ValueError("analysis provenance is not recoverable")
+        _, arrays_bytes, metadata_text = (
+            self._snapshot_analysis_input_provenance_directory(
+                artifact_digest=artifact_digest,
+                path_text=str(row[4]),
+                arrays_sha256=str(row[2]),
+                metadata_sha256=str(row[3]),
+            )
+        )
+        raw_resolution_time = self._analysis_provenance_raw_resolution_time(
+            provenance_kind=provenance_kind,
+            metadata_text=metadata_text,
+            expected_receipt_digest=str(row[12]),
+        )
+        (
+            input_plan,
+            derivation,
+            processor_id,
+            processor_public_key_hex,
+            processor_trust,
+            provenance_plan,
+        ) = self._registered_analysis_provenance_context(
+            artifact_digest=artifact_digest,
+            provenance_kind=provenance_kind,
+            provenance_plan_digest=str(row[9]),
+            case_id=str(row[10]),
+            input_plan_digest=str(row[11]),
+            raw_resolution_receipt_digest=str(row[12]),
+            payload_json=str(row[1]),
+            analysis_processor_trust_store_path=(
+                analysis_processor_trust_store_path
+            ),
+        )
+        expected_trust_digest = str(row[5])
+        current_trust = _load_raw_ingestor_trust_store(
+            raw_ingestor_trust_store_path
+        )
+        if current_trust.content_digest != expected_trust_digest:
+            expired_at = datetime.now(timezone.utc).isoformat()
+            with self._connect() as connection:
+                connection.execute("BEGIN IMMEDIATE")
+                connection.execute(
+                    "UPDATE analysis_input_provenance_commits SET "
+                    "status = 'expired',usable = 0,expired_at = ? "
+                    "WHERE artifact_digest = ? AND status IN ('prepared','active')",
+                    (expired_at, artifact_digest),
+                )
+                if provenance_kind == "holdout":
+                    connection.execute(
+                        "UPDATE neural_prior_analysis_input_provenance SET "
+                        "status = 'expired',usable = 0,expired_at = ? "
+                        "WHERE artifact_digest = ? AND "
+                        "status IN ('prepared','active')",
+                        (expired_at, artifact_digest),
+                    )
+            raise ValueError("prepared provenance trust snapshot changed")
+        self._validate_recoverable_analysis_provenance_replay(
+            provenance_kind=provenance_kind,
+            provenance_plan_digest=str(row[9]),
+            case_id=str(row[10]),
+            input_plan=input_plan,
+            derivation=derivation,
+            raw_resolution_receipt_digest=str(row[12]),
+            arrays_bytes=arrays_bytes,
+            metadata_text=metadata_text,
+            current_raw_trust=current_trust,
+            provenance_plan=provenance_plan,
+        )
+        ledger_instance_digest, side_effect_digest = (
+            self._validate_analysis_provenance_side_effects(
+                provenance_kind=provenance_kind,
+                provenance_plan_digest=str(row[9]),
+                case_id=str(row[10]),
+                raw_resolution_receipt_digest=str(row[12]),
+                metadata_text=metadata_text,
+                provenance_plan=provenance_plan,
+            )
+        )
+        payload_commit = _canonical_utc_datetime(
+            str(row[6]), "payload_committed_at"
+        )
+        deadline = _canonical_utc_datetime(
+            input_plan.decision_deadline, "decision_deadline"
+        )
+        if not (
+            _canonical_utc_datetime(
+                raw_resolution_time,
+                "raw_resolution_resolved_at",
+            )
+            <= _canonical_utc_datetime(
+                derivation.processed_at,
+                "derivation_processed_at",
+            )
+            <= payload_commit
+            <= deadline
+        ):
+            raise ValueError("prepared provenance missed its durable deadline")
+        preparation_receipt_json = (
+            None if row[13] is None else str(row[13])
+        )
+        preparation_receipt_digest = (
+            None if row[14] is None else str(row[14])
+        )
+        if (
+            preparation_receipt_json is None
+            or preparation_receipt_digest is None
+        ):
+            if status != "prepared" or provenance_commit_signer is None:
+                raise ValueError(
+                    "prepared provenance requires a signed ledger preparation receipt"
+                )
+            if datetime.now(timezone.utc) > deadline:
+                raise ValueError(
+                    "prepared provenance lacks a predeadline ledger receipt"
+                )
+            (
+                preparation_receipt_json,
+                preparation_receipt_digest,
+            ) = self._issue_analysis_provenance_preparation_receipt(
+                artifact_digest=artifact_digest,
+                provenance_kind=provenance_kind,
+                provenance_plan_digest=str(row[9]),
+                input_plan_digest=str(row[11]),
+                raw_resolution_receipt_digest=str(row[12]),
+                payload_json=str(row[1]),
+                payload_committed_at=str(row[6]),
+                deadline=input_plan.decision_deadline,
+                ledger_instance_digest=ledger_instance_digest,
+                side_effect_digest=side_effect_digest,
+                authority_trust_store=processor_trust,
+                signer=provenance_commit_signer,
+            )
+            with self._connect() as connection:
+                connection.execute("BEGIN IMMEDIATE")
+                updated = connection.execute(
+                    "UPDATE analysis_input_provenance_commits SET "
+                    "preparation_receipt_json=?,preparation_receipt_digest=? "
+                    "WHERE artifact_digest=? AND status='prepared' AND "
+                    "preparation_receipt_json IS NULL AND "
+                    "preparation_receipt_digest IS NULL",
+                    (
+                        preparation_receipt_json,
+                        preparation_receipt_digest,
+                        artifact_digest,
+                    ),
+                )
+                if updated.rowcount != 1:
+                    raise ValueError("provenance preparation receipt raced")
+                if provenance_kind == "holdout":
+                    updated_holdout = connection.execute(
+                        "UPDATE neural_prior_analysis_input_provenance SET "
+                        "preparation_receipt_json=?,"
+                        "preparation_receipt_digest=? WHERE artifact_digest=? "
+                        "AND status='prepared' AND "
+                        "preparation_receipt_json IS NULL AND "
+                        "preparation_receipt_digest IS NULL",
+                        (
+                            preparation_receipt_json,
+                            preparation_receipt_digest,
+                            artifact_digest,
+                        ),
+                    )
+                    if updated_holdout.rowcount != 1:
+                        raise ValueError(
+                            "holdout provenance preparation receipt raced"
+                        )
+        self._validate_analysis_provenance_preparation_receipt(
+            preparation_receipt_json,
+            preparation_receipt_digest,
+            artifact_digest=artifact_digest,
+            provenance_kind=provenance_kind,
+            provenance_plan_digest=str(row[9]),
+            input_plan_digest=str(row[11]),
+            raw_resolution_receipt_digest=str(row[12]),
+            payload_json=str(row[1]),
+            payload_committed_at=str(row[6]),
+            deadline=input_plan.decision_deadline,
+            ledger_instance_digest=ledger_instance_digest,
+            side_effect_digest=side_effect_digest,
+            authority_trust_store=processor_trust,
+        )
+        try:
+            receipt_payload = json.loads(preparation_receipt_json)
+            if not isinstance(receipt_payload, dict):
+                raise TypeError
+            prepared_at = str(receipt_payload["prepared_at"])
+        except (
+            KeyError,
+            TypeError,
+            ValueError,
+            json.JSONDecodeError,
+        ) as error:
+            raise ValueError(
+                "analysis provenance preparation receipt is invalid"
+            ) from error
+        _trusted_authority_key(
+            processor_trust,
+            authority_id=processor_id,
+            public_key_hex=processor_public_key_hex,
+            role="analysis_processor",
+            issued_at=prepared_at,
+        )
+        if payload_commit > _canonical_utc_datetime(prepared_at, "prepared_at"):
+            raise ValueError("prepared provenance receipt predates its payload")
+        if status == "active":
+            return artifact_digest
+        activated_at = datetime.now(timezone.utc).isoformat()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            final_trust = _load_raw_ingestor_trust_store(
+                raw_ingestor_trust_store_path
+            )
+            if final_trust.content_digest != expected_trust_digest:
+                raise ValueError("raw-ingestor trust changed during recovery")
+            updated = connection.execute(
+                "UPDATE analysis_input_provenance_commits SET "
+                "status = 'active',usable = 1,"
+                "raw_trust_validated_at = ?,activated_at = ? "
+                "WHERE artifact_digest = ? AND status = 'prepared' AND usable = 0",
+                (activated_at, activated_at, artifact_digest),
+            )
+            if updated.rowcount != 1:
+                raise ValueError("prepared provenance activation raced")
+            if provenance_kind == "holdout":
+                updated_holdout = connection.execute(
+                    "UPDATE neural_prior_analysis_input_provenance SET "
+                    "status = 'active',usable = 1,"
+                    "raw_trust_validated_at = ?,activated_at = ? "
+                    "WHERE artifact_digest = ? AND status = 'prepared' "
+                    "AND usable = 0",
+                    (activated_at, activated_at, artifact_digest),
+                )
+                if updated_holdout.rowcount != 1:
+                    raise ValueError("holdout provenance activation raced")
+        post_trust = _load_raw_ingestor_trust_store(
+            raw_ingestor_trust_store_path
+        )
+        if post_trust.content_digest != expected_trust_digest:
+            expired_at = datetime.now(timezone.utc).isoformat()
+            with self._connect() as connection:
+                connection.execute("BEGIN IMMEDIATE")
+                connection.execute(
+                    "UPDATE analysis_input_provenance_commits SET "
+                    "status = 'expired',usable = 0,expired_at = ? "
+                    "WHERE artifact_digest = ? AND status = 'active'",
+                    (expired_at, artifact_digest),
+                )
+                if provenance_kind == "holdout":
+                    connection.execute(
+                        "UPDATE neural_prior_analysis_input_provenance SET "
+                        "status = 'expired',usable = 0,expired_at = ? "
+                        "WHERE artifact_digest = ? AND status = 'active'",
+                        (expired_at, artifact_digest),
+                    )
+            raise ValueError("raw-ingestor trust changed after recovery")
+        return artifact_digest
+
+    @staticmethod
+    def _operational_raw_history_plan_authority(
+        connection: sqlite3.Connection,
+        *,
+        provenance_plan_digest: str,
+        fallback_authority_id: str | None = None,
+        fallback_authority_public_key_hex: str | None = None,
+    ) -> tuple[str, str]:
+        row = connection.execute(
+            "SELECT payload_json FROM "
+            "operational_analysis_input_provenance_plans "
+            "WHERE plan_digest = ?",
+            (provenance_plan_digest,),
+        ).fetchone()
+        if row is None:
+            if (
+                fallback_authority_id is None
+                or fallback_authority_public_key_hex is None
+            ):
+                raise ValueError(
+                    "operational raw-resolution history plan is unavailable"
+                )
+            return fallback_authority_id, fallback_authority_public_key_hex
+        try:
+            payload = json.loads(str(row[0]))
+            if not isinstance(payload, dict):
+                raise TypeError
+            values = dict(payload)
+            stored_digest = values.pop("plan_digest")
+            authority_id = values["analysis_processor_id"]
+            authority_key = values["analysis_processor_public_key_hex"]
+            canonical = json.dumps(
+                payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+            raise ValueError(
+                "operational raw-resolution history plan is invalid"
+            ) from error
+        if (
+            stored_digest != provenance_plan_digest
+            or _json_digest(values) != provenance_plan_digest
+            or str(row[0]) != canonical
+            or not isinstance(authority_id, str)
+            or not authority_id
+            or authority_id.strip() != authority_id
+            or not isinstance(authority_key, str)
+            or re.fullmatch(r"[0-9a-f]{64}", authority_key) is None
+        ):
+            raise ValueError(
+                "operational raw-resolution history plan changed"
+            )
+        return authority_id, authority_key
+
+    @staticmethod
+    def _validate_operational_raw_history_row(
+        connection: sqlite3.Connection,
+        row: sqlite3.Row | tuple[object, ...],
+        *,
+        fallback_authority_id: str | None = None,
+        fallback_authority_public_key_hex: str | None = None,
+    ) -> tuple[int, OperationalRawResolutionHistoryEntry, str]:
+        try:
+            sequence_number = int(cast(Any, row[0]))
+            entry_digest = str(row[1])
+            previous_entry_digest = str(row[2])
+            provenance_plan_digest = str(row[3])
+            resolution_identity_digest = str(row[4])
+            resolution_kind = str(row[5])
+            transition = str(row[6])
+            entry_json = str(row[7])
+            raw_resolution_receipt_digest = str(row[8])
+            recorded_at = str(row[9])
+        except (IndexError, TypeError, ValueError) as error:
+            raise ValueError(
+                "operational raw-resolution history row is invalid"
+            ) from error
+        entry = _operational_raw_resolution_history_entry_from_json(
+            entry_json,
+            expected_digest=entry_digest,
+        )
+        authority_id, authority_key = (
+            EpisodeLedger._operational_raw_history_plan_authority(
+                connection,
+                provenance_plan_digest=entry.provenance_plan_digest,
+                fallback_authority_id=fallback_authority_id,
+                fallback_authority_public_key_hex=(
+                    fallback_authority_public_key_hex
+                ),
+            )
+        )
+        if (
+            sequence_number <= 0
+            or previous_entry_digest != entry.previous_entry_digest
+            or provenance_plan_digest != entry.provenance_plan_digest
+            or resolution_identity_digest != entry.resolution_identity_digest
+            or resolution_kind != entry.resolution_kind
+            or transition != entry.transition
+            or entry.authority_id != authority_id
+            or entry.authority_public_key_hex != authority_key
+            or re.fullmatch(r"[0-9a-f]{64}", raw_resolution_receipt_digest)
+            is None
+        ):
+            raise ValueError(
+                "operational raw-resolution history row changed"
+            )
+        _canonical_utc_datetime(recorded_at, "recorded_at")
+        return sequence_number, entry, raw_resolution_receipt_digest
+
+    def _validate_operational_raw_resolution_legacy_anchor(
+        self,
+        connection: sqlite3.Connection,
+        row: sqlite3.Row | tuple[object, ...],
+    ) -> tuple[str, str, str]:
+        """Rebuild one legacy anchor from its immutable provenance bytes."""
+
+        try:
+            slot_digest = str(row[0])
+            anchor_digest = str(row[1])
+            provenance_artifact_digest = str(row[2])
+            raw_resolution_receipt_digest = str(row[3])
+            resolution_identity_digest = str(row[4])
+            resolution_kind = str(row[5])
+            anchored_at = str(row[6])
+        except (IndexError, TypeError, ValueError) as error:
+            raise ValueError(
+                "operational raw-resolution legacy anchor is invalid"
+            ) from error
+        for name, value in (
+            ("legacy slot", slot_digest),
+            ("legacy anchor", anchor_digest),
+            ("legacy provenance", provenance_artifact_digest),
+            ("legacy raw resolution", raw_resolution_receipt_digest),
+            ("legacy resolution identity", resolution_identity_digest),
+        ):
+            if re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError(f"{name} digest is invalid")
+        if resolution_kind not in {"resolved", "missing"}:
+            raise ValueError("legacy resolution kind is invalid")
+        _canonical_utc_datetime(anchored_at, "legacy anchored_at")
+        expected_anchor_digest = _json_digest(
+            {
+                "contract": "operational-raw-resolution-legacy-anchor-v1",
+                "slot_digest": slot_digest,
+                "resolution_identity_digest": resolution_identity_digest,
+                "resolution_kind": resolution_kind,
+                "provenance_artifact_digest": provenance_artifact_digest,
+                "raw_resolution_receipt_digest": raw_resolution_receipt_digest,
+            }
+        )
+        commit = connection.execute(
+            "SELECT provenance_kind,path,arrays_sha256,metadata_sha256,"
+            "raw_resolution_receipt_digest,payload_committed_at FROM "
+            "analysis_input_provenance_commits WHERE artifact_digest = ?",
+            (provenance_artifact_digest,),
+        ).fetchone()
+        if (
+            anchor_digest != expected_anchor_digest
+            or commit is None
+            or str(commit[0]) != "operational"
+            or str(commit[4]) != raw_resolution_receipt_digest
+            or str(commit[5]) != anchored_at
+        ):
+            raise ValueError(
+                "operational raw-resolution legacy anchor changed"
+            )
+        provenance_path = self._validate_analysis_input_provenance_directory(
+            artifact_digest=provenance_artifact_digest,
+            path_text=str(commit[1]),
+            arrays_sha256=str(commit[2]),
+            metadata_sha256=str(commit[3]),
+        )
+        try:
+            metadata_text = (provenance_path / "provenance.json").read_text(
+                "utf-8"
+            )
+            metadata = json.loads(metadata_text)
+            if not isinstance(metadata, dict) or metadata_text != _json_text(metadata):
+                raise TypeError
+            resolution_payload = dict(metadata["raw_resolution"])
+            observations = metadata["resolved_raw_observations"]
+            if not isinstance(observations, list) or any(
+                not isinstance(item, dict) for item in observations
+            ):
+                raise TypeError
+            if resolution_payload.get("contract") == (
+                "operational-raw-volume-resolution-receipt-v2"
+            ):
+                resolution = _operational_raw_volume_resolution_receipt_from_json(
+                    _json_text(resolution_payload),
+                    expected_digest=raw_resolution_receipt_digest,
+                )
+                bindings = resolution.slot_identity_bindings
+            else:
+                stored_digest = resolution_payload.pop("receipt_digest")
+                if (
+                    set(resolution_payload)
+                    != {
+                        "contract",
+                        "provenance_plan_digest",
+                        "input_plan_digest",
+                        "slot_identity_bindings",
+                        "resolved_at",
+                    }
+                    or resolution_payload.get("contract")
+                    != "operational-raw-volume-resolution-receipt-v1"
+                    or stored_digest != raw_resolution_receipt_digest
+                    or _json_digest(resolution_payload)
+                    != raw_resolution_receipt_digest
+                ):
+                    raise ValueError
+                raw_bindings = resolution_payload["slot_identity_bindings"]
+                if not isinstance(raw_bindings, list):
+                    raise TypeError
+                bindings = tuple(
+                    sorted((str(item[0]), str(item[1])) for item in raw_bindings)
+                )
+                if (
+                    [list(item) for item in bindings] != raw_bindings
+                    or len({item[0] for item in bindings}) != len(bindings)
+                ):
+                    raise ValueError
+            observation = next(
+                (
+                    item
+                    for item in observations
+                    if item.get("slot_plan_digest") == slot_digest
+                ),
+                None,
+            )
+            if observation is None or sum(
+                item.get("slot_plan_digest") == slot_digest
+                for item in observations
+            ) != 1:
+                raise ValueError
+            observed_kind = (
+                "missing"
+                if observation.get("contract")
+                == "missing-raw-observation-receipt-v1"
+                else "resolved"
+            )
+            observed_identity = str(
+                observation["resolution_identity_digest"]
+                if observed_kind == "missing"
+                else observation["raw_volume_identity"]["identity_digest"]
+            )
+        except (
+            KeyError,
+            OSError,
+            StopIteration,
+            TypeError,
+            ValueError,
+            json.JSONDecodeError,
+        ) as error:
+            raise ValueError(
+                "operational raw-resolution legacy anchor preimage is invalid"
+            ) from error
+        if (
+            (slot_digest, resolution_identity_digest) not in bindings
+            or observed_identity != resolution_identity_digest
+            or observed_kind != resolution_kind
+        ):
+            raise ValueError(
+                "operational raw-resolution legacy anchor preimage changed"
+            )
+        return anchor_digest, resolution_identity_digest, resolution_kind
+
     def _record_operational_raw_resolution_history(
+        self,
         connection: sqlite3.Connection,
         *,
         entry: OperationalRawResolutionHistoryEntry,
         raw_resolution_receipt_digest: str,
         recorded_at: str,
+        expected_authority_id: str | None = None,
+        expected_authority_public_key_hex: str | None = None,
     ) -> None:
         """Append one cross-cycle slot interpretation without equivocation."""
 
+        entry_json = json.dumps(
+            entry.payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        entry = _operational_raw_resolution_history_entry_from_json(
+            entry_json,
+            expected_digest=entry.entry_digest,
+        )
+        if expected_authority_id is not None and (
+            entry.authority_id != expected_authority_id
+            or entry.authority_public_key_hex
+            != expected_authority_public_key_hex
+        ):
+            raise ValueError(
+                "operational raw correction authority disagrees with its plan"
+            )
+
         retained = connection.execute(
-            "SELECT sequence_number,entry_digest,resolution_identity_digest,"
-            "resolution_kind,entry_json FROM operational_raw_resolution_history "
+            "SELECT sequence_number,entry_digest,previous_entry_digest,"
+            "provenance_plan_digest,resolution_identity_digest,resolution_kind,"
+            "transition,entry_json,raw_resolution_receipt_digest,recorded_at "
+            "FROM operational_raw_resolution_history "
             "WHERE slot_digest = ? ORDER BY sequence_number DESC LIMIT 1",
             (entry.slot_digest,),
         ).fetchone()
@@ -6275,16 +8419,64 @@ class EpisodeLedger:
             raise ValueError("operational raw-resolution history is future-dated")
         if retained is None:
             sequence_number = 1
-            expected_previous = OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST
-            expected_transition = "original"
+            legacy_anchor = connection.execute(
+                "SELECT slot_digest,anchor_digest,provenance_artifact_digest,"
+                "raw_resolution_receipt_digest,resolution_identity_digest,"
+                "resolution_kind,anchored_at FROM "
+                "operational_raw_resolution_legacy_anchors "
+                "WHERE slot_digest = ?",
+                (entry.slot_digest,),
+            ).fetchone()
+            if legacy_anchor is None:
+                expected_previous = OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST
+                expected_transition = "original"
+            else:
+                (
+                    expected_previous,
+                    previous_identity,
+                    previous_kind,
+                ) = self._validate_operational_raw_resolution_legacy_anchor(
+                    connection,
+                    legacy_anchor,
+                )
+                if entry.resolution_identity_digest == previous_identity:
+                    expected_transition = "reuse"
+                elif (
+                    previous_kind == "missing"
+                    and entry.resolution_kind == "resolved"
+                ):
+                    expected_transition = "correction"
+                elif (
+                    previous_kind == "resolved"
+                    and entry.resolution_kind == "resolved"
+                ):
+                    expected_transition = "supersession"
+                elif (
+                    previous_kind == "resolved"
+                    and entry.resolution_kind == "missing"
+                ):
+                    expected_transition = "cancellation"
+                else:
+                    raise ValueError(
+                        "operational raw-resolution transition is invalid"
+                    )
         else:
-            sequence_number = int(retained[0]) + 1
-            expected_previous = str(retained[1])
-            previous_identity = str(retained[2])
-            previous_kind = str(retained[3])
-            previous_entry = _operational_raw_resolution_history_entry_from_json(
-                str(retained[4]), expected_digest=expected_previous
+            (
+                retained_sequence,
+                previous_entry,
+                _retained_receipt_digest,
+            ) = EpisodeLedger._validate_operational_raw_history_row(
+                connection,
+                retained,
+                fallback_authority_id=expected_authority_id,
+                fallback_authority_public_key_hex=(
+                    expected_authority_public_key_hex
+                ),
             )
+            sequence_number = retained_sequence + 1
+            expected_previous = previous_entry.entry_digest
+            previous_identity = previous_entry.resolution_identity_digest
+            previous_kind = previous_entry.resolution_kind
             if issued < _canonical_utc_datetime(
                 previous_entry.issued_at,
                 "previous issued_at",
@@ -6322,7 +8514,7 @@ class EpisodeLedger:
                 entry.resolution_identity_digest,
                 entry.resolution_kind,
                 entry.transition,
-                json.dumps(entry.payload, sort_keys=True, separators=(",", ":")),
+                entry_json,
                 raw_resolution_receipt_digest,
                 recorded_at,
             ),
@@ -6331,31 +8523,115 @@ class EpisodeLedger:
     def load_operational_raw_resolution_history(
         self,
         slot_digest: str,
+        *,
+        expected_authority_id: str | None = None,
+        expected_authority_public_key_hex: str | None = None,
     ) -> tuple[OperationalRawResolutionHistoryEntry, ...]:
         """Load and independently verify the append-only history for one slot."""
 
         if not re.fullmatch(r"[0-9a-f]{64}", slot_digest):
             raise ValueError("operational raw slot digest is invalid")
         with self._connect() as connection:
+            anchor = connection.execute(
+                "SELECT slot_digest,anchor_digest,provenance_artifact_digest,"
+                "raw_resolution_receipt_digest,resolution_identity_digest,"
+                "resolution_kind,anchored_at FROM "
+                "operational_raw_resolution_legacy_anchors "
+                "WHERE slot_digest = ?",
+                (slot_digest,),
+            ).fetchone()
             rows = connection.execute(
                 "SELECT sequence_number,entry_digest,previous_entry_digest,"
-                "entry_json FROM operational_raw_resolution_history "
+                "provenance_plan_digest,resolution_identity_digest,"
+                "resolution_kind,transition,entry_json,"
+                "raw_resolution_receipt_digest,recorded_at "
+                "FROM operational_raw_resolution_history "
                 "WHERE slot_digest = ? ORDER BY sequence_number",
                 (slot_digest,),
             ).fetchall()
-        entries: list[OperationalRawResolutionHistoryEntry] = []
-        previous = OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST
-        for expected_sequence, row in enumerate(rows, start=1):
-            if int(row[0]) != expected_sequence or str(row[2]) != previous:
-                raise ValueError("operational raw-resolution history chain is broken")
-            entry = _operational_raw_resolution_history_entry_from_json(
-                str(row[3]), expected_digest=str(row[1])
-            )
-            if entry.slot_digest != slot_digest:
-                raise ValueError("operational raw-resolution history slot changed")
-            entries.append(entry)
-            previous = entry.entry_digest
+            entries: list[OperationalRawResolutionHistoryEntry] = []
+            previous = OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST
+            if anchor is not None:
+                previous, _identity, _kind = (
+                    self._validate_operational_raw_resolution_legacy_anchor(
+                        connection,
+                        anchor,
+                    )
+                )
+            for expected_sequence, row in enumerate(rows, start=1):
+                sequence, entry, _receipt_digest = (
+                    self._validate_operational_raw_history_row(
+                        connection,
+                        row,
+                        fallback_authority_id=expected_authority_id,
+                        fallback_authority_public_key_hex=(
+                            expected_authority_public_key_hex
+                        ),
+                    )
+                )
+                if (
+                    sequence != expected_sequence
+                    or entry.previous_entry_digest != previous
+                    or entry.slot_digest != slot_digest
+                ):
+                    raise ValueError(
+                        "operational raw-resolution history chain is broken"
+                    )
+                entries.append(entry)
+                previous = entry.entry_digest
         return tuple(entries)
+
+    def operational_raw_resolution_predecessor(
+        self,
+        slot_digest: str,
+        *,
+        expected_authority_id: str | None = None,
+        expected_authority_public_key_hex: str | None = None,
+    ) -> tuple[str, str | None, str | None]:
+        """Return the signed predecessor and prior interpretation for a slot."""
+
+        if not re.fullmatch(r"[0-9a-f]{64}", slot_digest):
+            raise ValueError("operational raw slot digest is invalid")
+        with self._connect() as connection:
+            retained = connection.execute(
+                "SELECT sequence_number,entry_digest,previous_entry_digest,"
+                "provenance_plan_digest,resolution_identity_digest,"
+                "resolution_kind,transition,entry_json,"
+                "raw_resolution_receipt_digest,recorded_at "
+                "FROM operational_raw_resolution_history "
+                "WHERE slot_digest = ? ORDER BY sequence_number DESC LIMIT 1",
+                (slot_digest,),
+            ).fetchone()
+            if retained is not None:
+                _sequence, entry, _receipt_digest = (
+                    self._validate_operational_raw_history_row(
+                        connection,
+                        retained,
+                        fallback_authority_id=expected_authority_id,
+                        fallback_authority_public_key_hex=(
+                            expected_authority_public_key_hex
+                        ),
+                    )
+                )
+                return (
+                    entry.entry_digest,
+                    entry.resolution_identity_digest,
+                    entry.resolution_kind,
+                )
+            anchor = connection.execute(
+                "SELECT slot_digest,anchor_digest,provenance_artifact_digest,"
+                "raw_resolution_receipt_digest,resolution_identity_digest,"
+                "resolution_kind,anchored_at FROM "
+                "operational_raw_resolution_legacy_anchors "
+                "WHERE slot_digest = ?",
+                (slot_digest,),
+            ).fetchone()
+            if anchor is not None:
+                return self._validate_operational_raw_resolution_legacy_anchor(
+                    connection,
+                    anchor,
+                )
+        return OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST, None, None
 
     def append_operational_analysis_input_provenance(
         self,
@@ -6371,12 +8647,23 @@ class EpisodeLedger:
         background_frames_dbz: Tensor | None = None,
         raw_ingestor_trust_store_path: str | Path,
         analysis_processor_trust_store_path: str | Path,
+        provenance_commit_signer: DeploymentAuthoritySigner,
     ) -> str:
         """Commit provenance for a future production cycle without a holdout."""
 
         if type(plan) is not OperationalAnalysisInputProvenancePlan:
             raise TypeError("current operational provenance plan is required")
         run.validate_integrity()
+        raw_resolution_json = json.dumps(
+            raw_resolution.payload
+            | {"receipt_digest": raw_resolution.receipt_digest},
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        raw_resolution = _operational_raw_volume_resolution_receipt_from_json(
+            raw_resolution_json,
+            expected_digest=raw_resolution.receipt_digest,
+        )
         input_plan = plan.input_plan
         slot_by_digest = {
             item.slot_digest: item for item in plan.raw_observation_slot_plans
@@ -6466,6 +8753,14 @@ class EpisodeLedger:
                 role="analysis_processor",
                 issued_at=history.issued_at,
             )
+            if (
+                history.authority_id != plan.analysis_processor_id
+                or history.authority_public_key_hex
+                != plan.analysis_processor_public_key_hex
+            ):
+                raise ValueError(
+                    "operational raw correction authority disagrees with its plan"
+                )
         if (
             set(receipts_by_slot) != set(slot_by_digest)
             or raw_resolution.provenance_plan_digest != plan.plan_digest
@@ -6638,14 +8933,22 @@ class EpisodeLedger:
         )
         with self._connect() as connection:
             retained = connection.execute(
-                "SELECT payload_json,usable FROM analysis_input_provenance_commits "
+                "SELECT provenance_kind,payload_json,status FROM "
+                "analysis_input_provenance_commits "
                 "WHERE artifact_digest = ?",
                 (derivation.artifact_digest,),
             ).fetchone()
         if retained is not None:
-            if retained != (canonical_payload, 1):
+            if tuple(retained[:2]) != ("operational", canonical_payload):
                 raise ValueError("operational provenance commit equivocated")
-            return derivation.artifact_digest
+            return self.reconcile_prepared_analysis_input_provenance(
+                derivation.artifact_digest,
+                raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+                analysis_processor_trust_store_path=(
+                    analysis_processor_trust_store_path
+                ),
+                provenance_commit_signer=provenance_commit_signer,
+            )
         temporary = Path(tempfile.mkdtemp(
             prefix=f".{derivation.artifact_digest}.",
             dir=self.analysis_input_provenance_dir,
@@ -6718,12 +9021,31 @@ class EpisodeLedger:
                         current_trust_store=final_raw_trust,
                     )
                 if target.exists():
-                    raise FileExistsError(
-                        "operational analysis provenance already exists"
-                    )
-                os.rename(temporary, target)
+                    if (
+                        target.is_symlink()
+                        or not target.is_dir()
+                        or _file_digest(
+                            target / "source_and_derived_arrays.npz"
+                        ) != checksums["source_and_derived_arrays.npz"]
+                        or _file_digest(target / "provenance.json")
+                        != checksums["provenance.json"]
+                        or (target / "checksums.json").read_text("utf-8")
+                        != _json_text(checksums)
+                    ):
+                        quarantine = self.analysis_input_provenance_dir / (
+                            f".{derivation.artifact_digest}.quarantine."
+                            f"{uuid.uuid4().hex}"
+                        )
+                        os.replace(target, quarantine)
+                        _fsync_directory(self.analysis_input_provenance_dir)
+                        raise ValueError(
+                            "orphan operational provenance bytes equivocated"
+                        )
+                    shutil.rmtree(temporary)
+                else:
+                    os.rename(temporary, target)
+                    _fsync_directory(self.analysis_input_provenance_dir)
                 published = True
-                _fsync_directory(self.analysis_input_provenance_dir)
                 for history in raw_resolution.history_entries:
                     self._record_operational_raw_resolution_history(
                         connection,
@@ -6732,6 +9054,51 @@ class EpisodeLedger:
                             raw_resolution.receipt_digest
                         ),
                         recorded_at=now.isoformat(),
+                        expected_authority_id=plan.analysis_processor_id,
+                        expected_authority_public_key_hex=(
+                            plan.analysis_processor_public_key_hex
+                        ),
+                    )
+                ledger_instance_digest = (
+                    self._analysis_provenance_ledger_instance_digest(connection)
+                )
+                side_effect_digest = _json_digest(
+                    {
+                        "contract": (
+                            "analysis-provenance-ledger-side-effects-v1"
+                        ),
+                        "provenance_kind": "operational",
+                        "raw_resolution_receipt_digest": (
+                            raw_resolution.receipt_digest
+                        ),
+                        "history_entry_digests": sorted(
+                            item.entry_digest
+                            for item in raw_resolution.history_entries
+                        ),
+                    }
+                )
+                (
+                    preparation_receipt_json,
+                    preparation_receipt_digest,
+                ) = self._issue_analysis_provenance_preparation_receipt(
+                    artifact_digest=derivation.artifact_digest,
+                    provenance_kind="operational",
+                    provenance_plan_digest=plan.plan_digest,
+                    input_plan_digest=input_plan.plan_digest,
+                    raw_resolution_receipt_digest=(
+                        raw_resolution.receipt_digest
+                    ),
+                    payload_json=canonical_payload,
+                    payload_committed_at=now.isoformat(),
+                    deadline=input_plan.decision_deadline,
+                    ledger_instance_digest=ledger_instance_digest,
+                    side_effect_digest=side_effect_digest,
+                    authority_trust_store=analysis_trust,
+                    signer=provenance_commit_signer,
+                )
+                if datetime.now(timezone.utc) > deadline:
+                    raise ValueError(
+                        "operational provenance ledger receipt missed its deadline"
                     )
                 connection.execute(
                     "INSERT INTO analysis_input_provenance_commits "
@@ -6739,7 +9106,11 @@ class EpisodeLedger:
                     "case_id,input_plan_digest,raw_resolution_receipt_digest,"
                     "payload_json,arrays_sha256,metadata_sha256,path,"
                     "raw_ingestor_trust_store_digest,raw_trust_validated_at,"
-                    "committed_at,usable) VALUES (?,?,?,?,?,?,?,?,?,?,?,NULL,?,0)",
+                    "committed_at,usable,status,payload_committed_at,"
+                    "preparation_receipt_json,preparation_receipt_digest,"
+                    "activated_at,expired_at) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,NULL,?,0,'prepared',?,"
+                    "?,?,NULL,NULL)",
                     (
                         derivation.artifact_digest,
                         "operational",
@@ -6753,34 +9124,19 @@ class EpisodeLedger:
                         str(target),
                         final_raw_trust.content_digest,
                         now.isoformat(),
+                        now.isoformat(),
+                        preparation_receipt_json,
+                        preparation_receipt_digest,
                     ),
                 )
-            postcommit = datetime.now(timezone.utc)
-            post_trust = _load_raw_ingestor_trust_store(
-                raw_ingestor_trust_store_path
+            self.reconcile_prepared_analysis_input_provenance(
+                derivation.artifact_digest,
+                raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+                analysis_processor_trust_store_path=(
+                    analysis_processor_trust_store_path
+                ),
+                provenance_commit_signer=provenance_commit_signer,
             )
-            usable = int(
-                postcommit
-                <= datetime.fromisoformat(
-                    input_plan.decision_deadline.replace("Z", "+00:00")
-                )
-                and post_trust.content_digest == current_raw_trust.content_digest
-            )
-            with self._connect() as connection:
-                connection.execute("BEGIN IMMEDIATE")
-                connection.execute(
-                    "UPDATE analysis_input_provenance_commits SET "
-                    "raw_trust_validated_at = ?,committed_at = ?,usable = ? "
-                    "WHERE artifact_digest = ?",
-                    (
-                        postcommit.isoformat() if usable else None,
-                        postcommit.isoformat(),
-                        usable,
-                        derivation.artifact_digest,
-                    ),
-                )
-            if not usable:
-                raise ValueError("operational provenance trust/deadline gate failed")
         except Exception:
             if temporary.exists():
                 shutil.rmtree(temporary)
@@ -6899,6 +9255,7 @@ class EpisodeLedger:
         *,
         algorithm_source_manifest_digest: str,
         raw_ingestor_trust_store_path: str | Path,
+        analysis_processor_trust_store_path: str | Path,
         mps_backend_certification_policy: (
             MPSBackendCertificationPolicy | None
         ) = None,
@@ -6915,6 +9272,14 @@ class EpisodeLedger:
             ordered_cases,
             raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
         )
+        for replay_case in ordered_cases:
+            self.reconcile_prepared_analysis_input_provenance(
+                replay_case.analysis_input_derivation.artifact_digest,
+                raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+                analysis_processor_trust_store_path=(
+                    analysis_processor_trust_store_path
+                ),
+            )
         plan = ordered_cases[0].plan
         if any(item.plan.plan_digest != plan.plan_digest for item in ordered_cases):
             raise ValueError("scoring replay cases use different holdout plans")
@@ -8989,6 +11354,16 @@ class EpisodeLedger:
             )
         ):
             raise ValueError("operational analysis provenance is untrusted")
+        try:
+            self.reconcile_prepared_analysis_input_provenance(
+                derivation_digest,
+                raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+                analysis_processor_trust_store_path=authority_trust_store_path,
+            )
+        except KeyError as error:
+            raise ValueError(
+                "operational decision requires committed analysis provenance"
+            ) from error
         published_certificate: OperationalDeploymentDecisionCertificate | None = None
         with self._connect() as connection:
             provenance_row = connection.execute(
@@ -9351,8 +11726,19 @@ class EpisodeLedger:
                     )
 
         if published_certificate is not None:
-            self._ensure_operational_decision_activation_receipt(
+            retained_activation = self._ensure_operational_decision_activation_receipt(
                 published_certificate,
+                ledger_signer=ledger_signer,
+                authority_trust=authority_trust,
+                raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+                raw_ingestor_trust_store_digest=(
+                    current_raw_ingestor_trust.content_digest
+                ),
+            )
+            self._ensure_operational_decision_commit_authorization_receipt(
+                published_certificate,
+                retained_activation,
+                operational_cycle_id=operational_cycle_id,
                 ledger_signer=ledger_signer,
                 authority_trust=authority_trust,
                 raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
@@ -9367,6 +11753,9 @@ class EpisodeLedger:
         retained_publication_receipt_json: str | None = None
         retained_publication_receipt_digest: str | None = None
         publication_payload_committed_at_text: str | None = None
+        retained_activation_receipt_json: str | None = None
+        retained_activation_receipt_digest: str | None = None
+        retained_activation_authorized_at: str | None = None
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             _require_current_raw_ingestor_trust_store_digest(
@@ -9649,11 +12038,15 @@ class EpisodeLedger:
             ):
                 raise ValueError("operational decision publication state changed")
             staged_publication = connection.execute(
-                "SELECT decision_row_committed_at,"
-                "publication_payload_committed_at,activation_committed_at,"
-                "usable,receipt_digest,receipt_json FROM "
-                "operational_decision_publications "
-                "WHERE certificate_digest = ?",
+                "SELECT u.decision_row_committed_at,"
+                "u.publication_payload_committed_at,u.activation_committed_at,"
+                "u.usable,u.receipt_digest,u.receipt_json,"
+                "a.receipt_digest AS activation_receipt_digest,"
+                "a.receipt_json AS activation_receipt_json FROM "
+                "operational_decision_publications AS u LEFT JOIN "
+                "operational_decision_activation_receipts AS a "
+                "ON a.certificate_digest = u.certificate_digest "
+                "WHERE u.certificate_digest = ?",
                 (certificate.certificate_digest,),
             ).fetchone()
             now = datetime.now(timezone.utc)
@@ -9686,7 +12079,6 @@ class EpisodeLedger:
             elif (
                 str(staged_publication["decision_row_committed_at"])
                 != decision_row_committed_at_text
-                or staged_publication["activation_committed_at"] is not None
                 or int(staged_publication["usable"]) != 0
                 or (
                     staged_publication["receipt_digest"] is None
@@ -9700,6 +12092,26 @@ class EpisodeLedger:
                     staged_publication["publication_payload_committed_at"]
                     is not None
                     and staged_publication["receipt_digest"] is None
+                )
+                or (
+                    staged_publication["activation_committed_at"] is None
+                    and (
+                        staged_publication["activation_receipt_digest"]
+                        is not None
+                        or staged_publication["activation_receipt_json"]
+                        is not None
+                    )
+                )
+                or (
+                    staged_publication["activation_committed_at"] is not None
+                    and (
+                        staged_publication["activation_receipt_digest"] is None
+                        or staged_publication["activation_receipt_json"] is None
+                        or staged_publication[
+                            "publication_payload_committed_at"
+                        ]
+                        is None
+                    )
                 )
             ):
                 raise ValueError(
@@ -9717,6 +12129,18 @@ class EpisodeLedger:
                 publication_payload_committed_at_text = cast(
                     str | None,
                     staged_publication["publication_payload_committed_at"],
+                )
+                retained_activation_receipt_json = cast(
+                    str | None,
+                    staged_publication["activation_receipt_json"],
+                )
+                retained_activation_receipt_digest = cast(
+                    str | None,
+                    staged_publication["activation_receipt_digest"],
+                )
+                retained_activation_authorized_at = cast(
+                    str | None,
+                    staged_publication["activation_committed_at"],
                 )
 
         if retained_publication_receipt_json is None:
@@ -9826,7 +12250,7 @@ class EpisodeLedger:
                 )
                 if marked.rowcount != 1:
                     raise sqlite3.IntegrityError(
-                        "operational publication commit observation changed"
+                        "operational publication payload marker changed"
                     )
             if payload_committed_at > deadline:
                 self._expire_operational_decision_issuance(
@@ -9851,22 +12275,14 @@ class EpisodeLedger:
                     "operational decision publication committed after its deadline"
                 )
 
-        # The signed publication payload was durably present before the deadline.
-        # Complete the ledger signature before opening the final transaction, then
-        # make the receipt and both terminal state changes visible atomically.
-        # A crash before the transaction leaves ``usable = 0``; a crash after it
-        # cannot expose ``published`` without the exact signed activation receipt.
-        activation_committed_at = datetime.now(timezone.utc).isoformat().replace(
-            "+00:00", "Z"
+        # Hold the SQLite writer lock before fixing the signed authorization
+        # instant. Commit the authorization receipt while the publication is
+        # still unusable, observe that durable staging commit, and only then
+        # expose published/usable together with the observation receipt.
+        publication_guard_interval_seconds = 0.05
+        publication_guard = timedelta(
+            seconds=publication_guard_interval_seconds
         )
-        if datetime.fromisoformat(
-            activation_committed_at.replace("Z", "+00:00")
-        ) >= publication_time:
-            self._expire_operational_decision_issuance(
-                operational_cycle_id,
-                certificate.certificate_digest,
-            )
-            raise ValueError("operational decision missed its publication time")
         committed_chain_root_digest = str(
             receipt_payload["committed_chain_root_digest"]
         )
@@ -9874,74 +12290,134 @@ class EpisodeLedger:
             raw_ingestor_trust_store_path,
             current_raw_ingestor_trust.content_digest,
         )
-        activation_receipt = _issue_operational_decision_activation_receipt(
-            certificate,
-            publication_receipt,
-            publication_payload_committed_at=(
-                publication_payload_committed_at_text
-            ),
-            activation_committed_at=activation_committed_at,
-            committed_chain_root_digest=committed_chain_root_digest,
-            signer=ledger_signer,
-            authority_trust_store=authority_trust,
-        )
-        _require_current_raw_ingestor_trust_store_digest(
-            raw_ingestor_trust_store_path,
-            current_raw_ingestor_trust.content_digest,
-        )
-        canonical_activation_receipt = json.dumps(
-            activation_receipt.payload,
-            sort_keys=True,
-            separators=(",", ":"),
-        )
-        with self._connect() as connection:
-            connection.execute("BEGIN IMMEDIATE")
-            _require_current_raw_ingestor_trust_store_digest(
-                raw_ingestor_trust_store_path,
-                current_raw_ingestor_trust.content_digest,
-            )
-            finalized = connection.execute(
-                "UPDATE operational_decision_publications SET "
-                "activation_committed_at = ?,usable = 1 "
-                "WHERE certificate_digest = ? AND usable = 0 AND "
-                "publication_payload_committed_at = ? AND "
-                "activation_committed_at IS NULL AND receipt_digest = ?",
-                (
-                    activation_committed_at,
+        if retained_activation_receipt_json is None:
+            try:
+                with self._connect() as connection:
+                    connection.execute("BEGIN IMMEDIATE")
+                    activation_authorized = datetime.now(timezone.utc)
+                    if activation_authorized + publication_guard >= publication_time:
+                        raise ValueError(
+                            "operational publication guard interval was missed"
+                        )
+                    activation_authorized_at = (
+                        activation_authorized.isoformat().replace("+00:00", "Z")
+                    )
+                    _require_current_raw_ingestor_trust_store_digest(
+                        raw_ingestor_trust_store_path,
+                        current_raw_ingestor_trust.content_digest,
+                    )
+                    activation_receipt = (
+                        _issue_operational_decision_activation_receipt(
+                            certificate,
+                            publication_receipt,
+                            publication_payload_committed_at=(
+                                publication_payload_committed_at_text
+                            ),
+                            activation_authorized_at=activation_authorized_at,
+                            publication_guard_interval_seconds=(
+                                publication_guard_interval_seconds
+                            ),
+                            committed_chain_root_digest=(
+                                committed_chain_root_digest
+                            ),
+                            signer=ledger_signer,
+                            authority_trust_store=authority_trust,
+                        )
+                    )
+                    if (
+                        datetime.now(timezone.utc) + publication_guard
+                        >= publication_time
+                    ):
+                        raise ValueError(
+                            "operational activation signing crossed its guard"
+                        )
+                    _require_current_raw_ingestor_trust_store_digest(
+                        raw_ingestor_trust_store_path,
+                        current_raw_ingestor_trust.content_digest,
+                    )
+                    canonical_activation_receipt = json.dumps(
+                        activation_receipt.payload,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    )
+                    inserted = connection.execute(
+                        "INSERT INTO operational_decision_activation_receipts "
+                        "(certificate_digest,receipt_digest,receipt_json,created_at) "
+                        "SELECT ?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM "
+                        "operational_decision_activation_receipts WHERE "
+                        "certificate_digest = ?)",
+                        (
+                            certificate.certificate_digest,
+                            activation_receipt.receipt_digest,
+                            canonical_activation_receipt,
+                            activation_authorized_at,
+                            certificate.certificate_digest,
+                        ),
+                    )
+                    staged = connection.execute(
+                        "UPDATE operational_decision_publications SET "
+                        "activation_committed_at = ? "
+                        "WHERE certificate_digest = ? AND usable = 0 AND "
+                        "publication_payload_committed_at = ? AND "
+                        "activation_committed_at IS NULL AND receipt_digest = ?",
+                        (
+                            activation_authorized_at,
+                            certificate.certificate_digest,
+                            publication_payload_committed_at_text,
+                            publication_receipt.receipt_digest,
+                        ),
+                    )
+                    if inserted.rowcount != 1 or staged.rowcount != 1:
+                        raise sqlite3.IntegrityError(
+                            "operational activation authorization changed"
+                        )
+            except ValueError:
+                self._expire_operational_decision_issuance(
+                    operational_cycle_id,
                     certificate.certificate_digest,
-                    publication_payload_committed_at_text,
-                    publication_receipt.receipt_digest,
-                ),
-            )
-            inserted = connection.execute(
-                "INSERT INTO operational_decision_activation_receipts "
-                "(certificate_digest,receipt_digest,receipt_json,created_at) "
-                "SELECT ?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM "
-                "operational_decision_activation_receipts WHERE "
-                "certificate_digest = ?)",
-                (
-                    certificate.certificate_digest,
-                    activation_receipt.receipt_digest,
-                    canonical_activation_receipt,
-                    activation_committed_at,
-                    certificate.certificate_digest,
-                ),
-            )
-            published = connection.execute(
-                "UPDATE operational_decision_issuance_states SET "
-                "status = 'published',updated_at = ? "
-                "WHERE operational_cycle_id = ? AND "
-                "status = 'decision_recorded'",
-                (activation_committed_at, operational_cycle_id),
-            )
-            if (
-                finalized.rowcount != 1
-                or inserted.rowcount != 1
-                or published.rowcount != 1
-            ):
-                raise sqlite3.IntegrityError(
-                    "operational decision publication finalization changed"
                 )
+                raise
+        else:
+            try:
+                retained_activation_payload = json.loads(
+                    retained_activation_receipt_json
+                )
+                if not isinstance(retained_activation_payload, dict):
+                    raise ValueError
+                activation_receipt = (
+                    _operational_decision_activation_receipt_from_payload(
+                        retained_activation_payload
+                    )
+                )
+                _validate_operational_decision_activation_receipt(
+                    activation_receipt,
+                    certificate=certificate,
+                    publication_receipt=publication_receipt,
+                    authority_trust_store=authority_trust,
+                )
+            except (json.JSONDecodeError, TypeError, ValueError) as error:
+                raise ValueError(
+                    "retained operational activation receipt is invalid"
+                ) from error
+            if (
+                activation_receipt.receipt_digest
+                != retained_activation_receipt_digest
+                or activation_receipt.activation_authorized_at
+                != retained_activation_authorized_at
+            ):
+                raise ValueError("retained operational activation changed")
+
+        self._ensure_operational_decision_commit_authorization_receipt(
+            certificate,
+            activation_receipt,
+            operational_cycle_id=operational_cycle_id,
+            ledger_signer=ledger_signer,
+            authority_trust=authority_trust,
+            raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+            raw_ingestor_trust_store_digest=(
+                current_raw_ingestor_trust.content_digest
+            ),
+        )
         try:
             _require_current_raw_ingestor_trust_store_digest(
                 raw_ingestor_trust_store_path,
@@ -9972,6 +12448,168 @@ class EpisodeLedger:
         ):
             raise ValueError("operational activation receipt changed after commit")
         return certificate
+
+    def _ensure_operational_decision_commit_authorization_receipt(
+        self,
+        certificate: OperationalDeploymentDecisionCertificate,
+        activation_receipt: OperationalDecisionActivationReceipt,
+        *,
+        operational_cycle_id: str,
+        ledger_signer: DeploymentAuthoritySigner,
+        authority_trust: _PromotionDeploymentAuthorityTrustStore,
+        raw_ingestor_trust_store_path: str | Path,
+        raw_ingestor_trust_store_digest: str,
+    ) -> OperationalDecisionCommitAuthorizationReceipt:
+        """Authorize the terminal transition under a bounded writer lock."""
+
+        with self._connect() as connection:
+            retained = connection.execute(
+                "SELECT o.receipt_digest,o.receipt_json,u.usable,s.status "
+                "FROM operational_decision_commit_authorization_receipts AS o "
+                "JOIN operational_decision_publications AS u "
+                "ON u.certificate_digest = o.certificate_digest "
+                "JOIN operational_decision_issuance_states AS s "
+                "ON s.certificate_digest = o.certificate_digest "
+                "WHERE o.certificate_digest = ?",
+                (certificate.certificate_digest,),
+            ).fetchone()
+        if retained is not None:
+            try:
+                payload = json.loads(str(retained[1]))
+                if not isinstance(payload, dict):
+                    raise ValueError
+                receipt = (
+                    _operational_decision_commit_authorization_receipt_from_payload(
+                        payload
+                    )
+                )
+                _validate_operational_decision_commit_authorization_receipt(
+                    receipt,
+                    certificate=certificate,
+                    activation_receipt=activation_receipt,
+                    authority_trust_store=authority_trust,
+                )
+            except (json.JSONDecodeError, TypeError, ValueError) as error:
+                raise ValueError(
+                    "operational commit authorization is invalid"
+                ) from error
+            if (
+                receipt.receipt_digest != retained[0]
+                or int(retained[2]) != 1
+                or retained[3] != "published"
+            ):
+                raise ValueError("operational commit authorization changed")
+            return receipt
+
+        _require_current_raw_ingestor_trust_store_digest(
+            raw_ingestor_trust_store_path,
+            raw_ingestor_trust_store_digest,
+        )
+        publication_time = _canonical_utc_datetime(
+            certificate.publication_time,
+            "publication_time",
+        )
+        publication_guard = timedelta(
+            seconds=activation_receipt.publication_guard_interval_seconds
+        )
+        with self._connect() as connection:
+            lock_budget = (
+                publication_time
+                - publication_guard
+                - datetime.now(timezone.utc)
+            ).total_seconds()
+            if lock_budget <= 0.0:
+                raise ValueError(
+                    "operational terminal commit missed its publication guard"
+                )
+            connection.execute(
+                "PRAGMA busy_timeout = "
+                f"{max(1, min(1000, int(lock_budget * 1000)))}"
+            )
+            try:
+                connection.execute("BEGIN IMMEDIATE")
+            except sqlite3.OperationalError as error:
+                raise ValueError(
+                    "operational terminal writer lock is unavailable"
+                ) from error
+            commit_authorized = datetime.now(timezone.utc)
+            if commit_authorized + publication_guard >= publication_time:
+                raise ValueError(
+                    "operational terminal commit missed its publication guard"
+                )
+            _require_current_raw_ingestor_trust_store_digest(
+                raw_ingestor_trust_store_path,
+                raw_ingestor_trust_store_digest,
+            )
+            receipt = _issue_operational_decision_commit_authorization_receipt(
+                certificate,
+                activation_receipt,
+                terminal_commit_authorized_at=(
+                    commit_authorized.isoformat().replace("+00:00", "Z")
+                ),
+                signer=ledger_signer,
+                authority_trust_store=authority_trust,
+            )
+            if datetime.now(timezone.utc) + publication_guard >= publication_time:
+                raise ValueError(
+                    "operational terminal authorization signing crossed its guard"
+                )
+            inserted = connection.execute(
+                "INSERT INTO operational_decision_commit_authorization_receipts "
+                "(certificate_digest,receipt_digest,receipt_json,"
+                "terminal_commit_authorized_at,created_at) VALUES (?,?,?,?,?)",
+                (
+                    certificate.certificate_digest,
+                    receipt.receipt_digest,
+                    json.dumps(
+                        receipt.payload,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                    receipt.terminal_commit_authorized_at,
+                    datetime.now(timezone.utc).isoformat(),
+                ),
+            )
+            finalized = connection.execute(
+                "UPDATE operational_decision_publications SET usable = 1 "
+                "WHERE certificate_digest = ? AND usable = 0 AND "
+                "activation_committed_at = ? AND "
+                "publication_payload_committed_at IS NOT NULL AND "
+                "receipt_digest IS NOT NULL",
+                (
+                    certificate.certificate_digest,
+                    activation_receipt.activation_authorized_at,
+                ),
+            )
+            published = connection.execute(
+                "UPDATE operational_decision_issuance_states SET "
+                "status = 'published',updated_at = ? "
+                "WHERE operational_cycle_id = ? AND "
+                "certificate_digest = ? AND status = 'decision_recorded'",
+                (
+                    activation_receipt.activation_authorized_at,
+                    operational_cycle_id,
+                    certificate.certificate_digest,
+                ),
+            )
+            if (
+                inserted.rowcount != 1
+                or finalized.rowcount != 1
+                or published.rowcount != 1
+            ):
+                raise sqlite3.IntegrityError(
+                    "operational publication finalization changed"
+                )
+            connection.commit()
+        if datetime.now(timezone.utc) >= publication_time:
+            self._expire_operational_decision_issuance(
+                operational_cycle_id,
+                certificate.certificate_digest,
+            )
+            raise ValueError(
+                "operational terminal commit completed after publication"
+            )
+        return receipt
 
     def _ensure_operational_decision_activation_receipt(
         self,
@@ -10048,48 +12686,7 @@ class EpisodeLedger:
             if receipt.receipt_digest != row["activation_receipt_digest"]:
                 raise ValueError("operational activation receipt changed")
             return receipt
-        _require_current_raw_ingestor_trust_store_digest(
-            raw_ingestor_trust_store_path,
-            raw_ingestor_trust_store_digest,
-        )
-        receipt = _issue_operational_decision_activation_receipt(
-            certificate,
-            publication_receipt,
-            publication_payload_committed_at=str(
-                row["publication_payload_committed_at"]
-            ),
-            activation_committed_at=str(row["activation_committed_at"]),
-            committed_chain_root_digest=str(row["committed_chain_root_digest"]),
-            signer=ledger_signer,
-            authority_trust_store=authority_trust,
-        )
-        _require_current_raw_ingestor_trust_store_digest(
-            raw_ingestor_trust_store_path,
-            raw_ingestor_trust_store_digest,
-        )
-        canonical = json.dumps(
-            receipt.payload,
-            sort_keys=True,
-            separators=(",", ":"),
-        )
-        with self._connect() as connection:
-            connection.execute("BEGIN IMMEDIATE")
-            _require_current_raw_ingestor_trust_store_digest(
-                raw_ingestor_trust_store_path,
-                raw_ingestor_trust_store_digest,
-            )
-            connection.execute(
-                "INSERT INTO operational_decision_activation_receipts "
-                "(certificate_digest,receipt_digest,receipt_json,created_at) "
-                "VALUES (?,?,?,?)",
-                (
-                    certificate.certificate_digest,
-                    receipt.receipt_digest,
-                    canonical,
-                    datetime.now(timezone.utc).isoformat(),
-                ),
-            )
-        return receipt
+        raise ValueError("operational activation receipt is missing")
 
     def _expire_operational_decision_issuance(
         self,
@@ -10424,6 +13021,7 @@ class EpisodeLedger:
     ) -> tuple[
         OperationalDecisionPublicationReceipt,
         OperationalDecisionActivationReceipt,
+        OperationalDecisionCommitAuthorizationReceipt,
     ]:
         """Prove that an automatic decision is an on-time row in this ledger."""
 
@@ -10462,7 +13060,10 @@ class EpisodeLedger:
                 "u.activation_committed_at,"
                 "s.status AS issuance_status,s.updated_at AS issuance_updated_at,"
                 "a.receipt_digest AS activation_receipt_digest,"
-                "a.receipt_json AS activation_receipt_json "
+                "a.receipt_json AS activation_receipt_json,"
+                "o.receipt_digest AS commit_authorization_receipt_digest,"
+                "o.receipt_json AS commit_authorization_receipt_json,"
+                "o.terminal_commit_authorized_at "
                 "FROM operational_deployment_decisions_v2 AS d "
                 "JOIN operational_decision_commit_proofs AS p "
                 "ON p.receipt_digest = d.receipt_digest "
@@ -10474,6 +13075,8 @@ class EpisodeLedger:
                 "ON s.certificate_digest = d.certificate_digest "
                 "JOIN operational_decision_activation_receipts AS a "
                 "ON a.certificate_digest = d.certificate_digest "
+                "JOIN operational_decision_commit_authorization_receipts AS o "
+                "ON o.certificate_digest = d.certificate_digest "
                 "WHERE d.certificate_digest = ?",
                 (certificate.certificate_digest,),
             ).fetchone()
@@ -10496,6 +13099,18 @@ class EpisodeLedger:
             activation_receipt = (
                 _operational_decision_activation_receipt_from_payload(
                     activation_payload
+                )
+            )
+            observation_payload = json.loads(
+                "" if row is None else str(
+                    row["commit_authorization_receipt_json"]
+                )
+            )
+            if not isinstance(observation_payload, dict):
+                raise ValueError
+            commit_authorization_receipt = (
+                _operational_decision_commit_authorization_receipt_from_payload(
+                    observation_payload
                 )
             )
             ledger_receipt_payload = json.loads(canonical_receipt)
@@ -10530,6 +13145,10 @@ class EpisodeLedger:
             != publication_receipt.receipt_digest
             or row["activation_receipt_digest"]
             != activation_receipt.receipt_digest
+            or row["commit_authorization_receipt_digest"]
+            != commit_authorization_receipt.receipt_digest
+            or row["terminal_commit_authorized_at"]
+            != commit_authorization_receipt.terminal_commit_authorized_at
             or row["committed_chain_root_digest"]
             != ledger_receipt.committed_chain_root_digest
             or row["proof_committed_at"] != ledger_receipt.committed_at
@@ -10545,6 +13164,8 @@ class EpisodeLedger:
             or row["publication_payload_committed_at"] is None
             or row["activation_committed_at"] is None
             or row["issuance_updated_at"] != row["activation_committed_at"]
+            or row["activation_committed_at"]
+            != activation_receipt.activation_authorized_at
             or datetime.fromisoformat(
                 certificate.issued_at.replace("Z", "+00:00")
             )
@@ -10595,7 +13216,21 @@ class EpisodeLedger:
                 )
             ),
         )
-        return publication_receipt, activation_receipt
+        _validate_operational_decision_commit_authorization_receipt(
+            commit_authorization_receipt,
+            certificate=certificate,
+            activation_receipt=activation_receipt,
+            authority_trust_store=(
+                _load_promotion_deployment_authority_trust_store(
+                    authority_trust_store_path
+                )
+            ),
+        )
+        return (
+            publication_receipt,
+            activation_receipt,
+            commit_authorization_receipt,
+        )
 
     def committed_operational_decision_client(
         self,
@@ -11523,6 +14158,9 @@ class EpisodeLedger:
 
     def _initialize_index(self) -> None:
         with self._connect() as connection:
+            previous_schema_version = int(
+                connection.execute("PRAGMA user_version").fetchone()[0]
+            )
             connection.execute("PRAGMA journal_mode = WAL")
             connection.execute(
                 """
@@ -12019,6 +14657,14 @@ class EpisodeLedger:
                     raw_trust_validated_at TEXT,
                     committed_at TEXT NOT NULL,
                     usable INTEGER NOT NULL DEFAULT 0 CHECK (usable IN (0, 1)),
+                    status TEXT NOT NULL DEFAULT 'prepared' CHECK (
+                        status IN ('prepared', 'active', 'expired')
+                    ),
+                    payload_committed_at TEXT,
+                    preparation_receipt_json TEXT,
+                    preparation_receipt_digest TEXT,
+                    activated_at TEXT,
+                    expired_at TEXT,
                     UNIQUE (holdout_plan_digest, case_id),
                     FOREIGN KEY (holdout_plan_digest)
                         REFERENCES neural_prior_holdout_plans(plan_digest)
@@ -12052,6 +14698,21 @@ class EpisodeLedger:
             )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS operational_raw_resolution_legacy_anchors (
+                    slot_digest TEXT PRIMARY KEY,
+                    anchor_digest TEXT NOT NULL UNIQUE,
+                    provenance_artifact_digest TEXT NOT NULL,
+                    raw_resolution_receipt_digest TEXT NOT NULL,
+                    resolution_identity_digest TEXT NOT NULL,
+                    resolution_kind TEXT NOT NULL CHECK(
+                        resolution_kind IN ('resolved', 'missing')
+                    ),
+                    anchored_at TEXT NOT NULL
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS operational_analysis_input_provenance_plans (
                     plan_digest TEXT PRIMARY KEY,
                     plan_id TEXT NOT NULL UNIQUE,
@@ -12080,7 +14741,15 @@ class EpisodeLedger:
                     raw_ingestor_trust_store_digest TEXT NOT NULL,
                     raw_trust_validated_at TEXT,
                     committed_at TEXT NOT NULL,
-                    usable INTEGER NOT NULL DEFAULT 0 CHECK (usable IN (0, 1))
+                    usable INTEGER NOT NULL DEFAULT 0 CHECK (usable IN (0, 1)),
+                    status TEXT NOT NULL DEFAULT 'prepared' CHECK (
+                        status IN ('prepared', 'active', 'expired')
+                    ),
+                    payload_committed_at TEXT,
+                    preparation_receipt_json TEXT,
+                    preparation_receipt_digest TEXT,
+                    activated_at TEXT,
+                    expired_at TEXT
                 )
                 """
             )
@@ -12110,51 +14779,6 @@ class EpisodeLedger:
                 END
                 """
             )
-            connection.execute(
-                "DROP TRIGGER IF EXISTS analysis_input_provenance_commits_update"
-            )
-            connection.execute(
-                """
-                CREATE TRIGGER analysis_input_provenance_commits_update
-                BEFORE UPDATE ON analysis_input_provenance_commits
-                WHEN
-                    NEW.artifact_digest != OLD.artifact_digest
-                    OR NEW.provenance_kind != OLD.provenance_kind
-                    OR NEW.provenance_plan_digest != OLD.provenance_plan_digest
-                    OR NEW.case_id != OLD.case_id
-                    OR NEW.input_plan_digest != OLD.input_plan_digest
-                    OR NEW.raw_resolution_receipt_digest
-                        != OLD.raw_resolution_receipt_digest
-                    OR NEW.payload_json != OLD.payload_json
-                    OR NEW.arrays_sha256 != OLD.arrays_sha256
-                    OR NEW.metadata_sha256 != OLD.metadata_sha256
-                    OR NEW.path != OLD.path
-                    OR NEW.raw_ingestor_trust_store_digest
-                        != OLD.raw_ingestor_trust_store_digest
-                    OR NEW.committed_at < OLD.committed_at
-                    OR NEW.usable NOT IN (0, 1)
-                    OR (OLD.usable = 1 AND NEW.usable = 1)
-                BEGIN
-                    SELECT RAISE(
-                        ABORT,
-                        'analysis provenance commits may only activate or expire'
-                    );
-                END
-                """
-            )
-            connection.execute(
-                """
-                CREATE TRIGGER IF NOT EXISTS
-                    analysis_input_provenance_commits_no_delete
-                BEFORE DELETE ON analysis_input_provenance_commits
-                BEGIN
-                    SELECT RAISE(
-                        ABORT,
-                        'analysis provenance commits are immutable'
-                    );
-                END
-                """
-            )
             provenance_columns = {
                 row[1]
                 for row in connection.execute(
@@ -12171,6 +14795,520 @@ class EpisodeLedger:
                     "ALTER TABLE neural_prior_analysis_input_provenance "
                     "ADD COLUMN raw_trust_validated_at TEXT"
                 )
+            for name, declaration in (
+                ("status", "TEXT NOT NULL DEFAULT 'prepared'"),
+                ("payload_committed_at", "TEXT"),
+                ("preparation_receipt_json", "TEXT"),
+                ("preparation_receipt_digest", "TEXT"),
+                ("activated_at", "TEXT"),
+                ("expired_at", "TEXT"),
+            ):
+                if name not in provenance_columns:
+                    connection.execute(
+                        "ALTER TABLE neural_prior_analysis_input_provenance "
+                        f"ADD COLUMN {name} {declaration}"
+                    )
+            commit_columns = {
+                row[1]
+                for row in connection.execute(
+                    "PRAGMA table_info(analysis_input_provenance_commits)"
+                ).fetchall()
+            }
+            for name, declaration in (
+                ("status", "TEXT NOT NULL DEFAULT 'prepared'"),
+                ("payload_committed_at", "TEXT"),
+                ("preparation_receipt_json", "TEXT"),
+                ("preparation_receipt_digest", "TEXT"),
+                ("activated_at", "TEXT"),
+                ("expired_at", "TEXT"),
+            ):
+                if name not in commit_columns:
+                    connection.execute(
+                        "ALTER TABLE analysis_input_provenance_commits "
+                        f"ADD COLUMN {name} {declaration}"
+                    )
+            connection.execute(
+                "DROP TRIGGER IF EXISTS "
+                "operational_raw_resolution_legacy_anchors_insert"
+            )
+            connection.execute(
+                """
+                CREATE TRIGGER operational_raw_resolution_legacy_anchors_insert
+                BEFORE INSERT ON operational_raw_resolution_legacy_anchors
+                WHEN NOT EXISTS (
+                    SELECT 1 FROM analysis_input_provenance_commits AS p
+                    WHERE p.artifact_digest = NEW.provenance_artifact_digest
+                      AND p.provenance_kind = 'operational'
+                      AND p.raw_resolution_receipt_digest =
+                          NEW.raw_resolution_receipt_digest
+                      AND p.payload_committed_at = NEW.anchored_at
+                )
+                BEGIN
+                    SELECT RAISE(
+                        ABORT,
+                        'legacy raw-resolution anchor requires provenance'
+                    );
+                END
+                """
+            )
+            connection.execute(
+                "DROP TRIGGER IF EXISTS analysis_input_provenance_commits_update"
+            )
+            for table in (
+                "neural_prior_analysis_input_provenance",
+                "analysis_input_provenance_commits",
+            ):
+                immutable_identity = (
+                    "OLD.holdout_plan_digest = NEW.holdout_plan_digest "
+                    "AND OLD.case_id = NEW.case_id "
+                    "AND OLD.input_plan_digest = NEW.input_plan_digest "
+                    "AND OLD.global_resolution_receipt_digest = "
+                    "NEW.global_resolution_receipt_digest"
+                    if table == "neural_prior_analysis_input_provenance"
+                    else
+                    "OLD.provenance_kind = NEW.provenance_kind "
+                    "AND OLD.provenance_plan_digest = "
+                    "NEW.provenance_plan_digest "
+                    "AND OLD.case_id = NEW.case_id "
+                    "AND OLD.input_plan_digest = NEW.input_plan_digest "
+                    "AND OLD.raw_resolution_receipt_digest = "
+                    "NEW.raw_resolution_receipt_digest"
+                )
+                connection.execute(
+                    f"DROP TRIGGER IF EXISTS {table}_prepared_insert"
+                )
+                connection.execute(
+                    f"""
+                    CREATE TRIGGER {table}_prepared_insert
+                    BEFORE INSERT ON {table}
+                    WHEN NOT (
+                        NEW.status = 'prepared'
+                        AND NEW.usable = 0
+                        AND NEW.raw_trust_validated_at IS NULL
+                        AND NEW.activated_at IS NULL
+                        AND NEW.expired_at IS NULL
+                        AND NEW.payload_committed_at IS NEW.committed_at
+                        AND (
+                            (
+                                NEW.preparation_receipt_json IS NULL
+                                AND NEW.preparation_receipt_digest IS NULL
+                            )
+                            OR (
+                                NEW.preparation_receipt_json IS NOT NULL
+                                AND NEW.preparation_receipt_digest IS NOT NULL
+                            )
+                        )
+                        AND julianday(NEW.committed_at) IS NOT NULL
+                        AND (
+                            substr(NEW.committed_at, -1) = 'Z'
+                            OR substr(NEW.committed_at, -6) = '+00:00'
+                        )
+                        AND length(NEW.raw_ingestor_trust_store_digest) = 64
+                        AND NEW.raw_ingestor_trust_store_digest NOT GLOB
+                            '*[^0-9a-f]*'
+                    )
+                    BEGIN
+                        SELECT RAISE(
+                            ABORT,
+                            'analysis provenance must be inserted prepared'
+                        );
+                    END
+                    """
+                )
+                connection.execute(
+                    f"DROP TRIGGER IF EXISTS {table}_state_update"
+                )
+                connection.execute(
+                    f"UPDATE {table} SET payload_committed_at = committed_at "
+                    "WHERE payload_committed_at IS NULL"
+                )
+                connection.execute(
+                    f"UPDATE {table} SET status = CASE "
+                    "WHEN usable = 1 THEN 'active' "
+                    "WHEN raw_trust_validated_at IS NULL THEN 'prepared' "
+                    "ELSE 'expired' END, "
+                    "activated_at = CASE WHEN usable = 1 THEN "
+                    "raw_trust_validated_at ELSE activated_at END, "
+                    "expired_at = CASE WHEN usable = 0 AND "
+                    "raw_trust_validated_at IS NOT NULL THEN committed_at "
+                    "ELSE expired_at END"
+                )
+                connection.execute(
+                    f"""
+                    CREATE TRIGGER {table}_state_update
+                    BEFORE UPDATE ON {table}
+                    WHEN NOT (
+                        OLD.artifact_digest = NEW.artifact_digest
+                        AND {immutable_identity}
+                        AND OLD.payload_json = NEW.payload_json
+                        AND OLD.arrays_sha256 = NEW.arrays_sha256
+                        AND OLD.metadata_sha256 = NEW.metadata_sha256
+                        AND OLD.path = NEW.path
+                        AND OLD.raw_ingestor_trust_store_digest =
+                            NEW.raw_ingestor_trust_store_digest
+                        AND OLD.committed_at = NEW.committed_at
+                        AND OLD.payload_committed_at = NEW.payload_committed_at
+                        AND (
+                            (
+                                OLD.status = 'prepared'
+                                AND NEW.status = 'prepared'
+                                AND OLD.usable = 0 AND NEW.usable = 0
+                                AND OLD.raw_trust_validated_at
+                                    IS NEW.raw_trust_validated_at
+                                AND OLD.activated_at IS NEW.activated_at
+                                AND OLD.expired_at IS NEW.expired_at
+                                AND OLD.preparation_receipt_json IS NULL
+                                AND OLD.preparation_receipt_digest IS NULL
+                                AND NEW.preparation_receipt_json IS NOT NULL
+                                AND NEW.preparation_receipt_digest IS NOT NULL
+                            )
+                            OR (
+                                OLD.status = 'prepared'
+                                AND NEW.status = 'active'
+                                AND OLD.usable = 0 AND NEW.usable = 1
+                                AND OLD.activated_at IS NULL
+                                AND NEW.activated_at IS NOT NULL
+                                AND NEW.raw_trust_validated_at
+                                    IS NEW.activated_at
+                                AND julianday(NEW.activated_at) IS NOT NULL
+                                AND (
+                                    substr(NEW.activated_at, -1) = 'Z'
+                                    OR substr(NEW.activated_at, -6) = '+00:00'
+                                )
+                                AND julianday(NEW.activated_at) >=
+                                    julianday(OLD.payload_committed_at)
+                                AND OLD.preparation_receipt_json
+                                    IS NEW.preparation_receipt_json
+                                AND OLD.preparation_receipt_digest
+                                    IS NEW.preparation_receipt_digest
+                                AND NEW.preparation_receipt_json IS NOT NULL
+                                AND NEW.preparation_receipt_digest IS NOT NULL
+                                AND NEW.expired_at IS NULL
+                            )
+                            OR (
+                                OLD.status IN ('prepared', 'active')
+                                AND NEW.status = 'expired'
+                                AND NEW.usable = 0
+                                AND NEW.activated_at IS OLD.activated_at
+                                AND NEW.raw_trust_validated_at
+                                    IS OLD.raw_trust_validated_at
+                                AND OLD.preparation_receipt_json
+                                    IS NEW.preparation_receipt_json
+                                AND OLD.preparation_receipt_digest
+                                    IS NEW.preparation_receipt_digest
+                                AND OLD.expired_at IS NULL
+                                AND NEW.expired_at IS NOT NULL
+                                AND julianday(NEW.expired_at) IS NOT NULL
+                                AND (
+                                    substr(NEW.expired_at, -1) = 'Z'
+                                    OR substr(NEW.expired_at, -6) = '+00:00'
+                                )
+                                AND julianday(NEW.expired_at) >=
+                                    julianday(OLD.payload_committed_at)
+                            )
+                        )
+                    )
+                    BEGIN
+                        SELECT RAISE(
+                            ABORT,
+                            'analysis provenance state transition is invalid'
+                        );
+                    END
+                    """
+                )
+                connection.execute(
+                    f"DROP TRIGGER IF EXISTS {table}_no_delete"
+                )
+                connection.execute(
+                    f"""
+                    CREATE TRIGGER {table}_no_delete
+                    BEFORE DELETE ON {table}
+                    BEGIN
+                        SELECT RAISE(
+                            ABORT,
+                            'analysis provenance rows are immutable'
+                        );
+                    END
+                    """
+                )
+            if previous_schema_version < 38:
+                legacy_rows = connection.execute(
+                    "SELECT artifact_digest,raw_resolution_receipt_digest,path,"
+                    "payload_committed_at,arrays_sha256,metadata_sha256,"
+                    "provenance_plan_digest FROM "
+                    "analysis_input_provenance_commits "
+                    "WHERE provenance_kind = 'operational'"
+                ).fetchall()
+                for legacy_row in legacy_rows:
+                    provenance_path = (
+                        self._validate_analysis_input_provenance_directory(
+                            artifact_digest=str(legacy_row[0]),
+                            path_text=str(legacy_row[2]),
+                            arrays_sha256=str(legacy_row[4]),
+                            metadata_sha256=str(legacy_row[5]),
+                        )
+                    )
+                    metadata_path = provenance_path / "provenance.json"
+                    try:
+                        metadata_text = metadata_path.read_text("utf-8")
+                        legacy_metadata = json.loads(metadata_text)
+                        if (
+                            not isinstance(legacy_metadata, dict)
+                            or metadata_text != _json_text(legacy_metadata)
+                        ):
+                            raise TypeError
+                        raw_resolution_payload = dict(
+                            legacy_metadata["raw_resolution"]
+                        )
+                        raw_observations = legacy_metadata[
+                            "resolved_raw_observations"
+                        ]
+                        if (
+                            not isinstance(raw_observations, list)
+                            or any(
+                                not isinstance(item, dict)
+                                for item in raw_observations
+                            )
+                        ):
+                            raise TypeError
+                        raw_resolution_text = _json_text(
+                            raw_resolution_payload
+                        )
+                        if raw_resolution_payload.get("contract") == (
+                            "operational-raw-volume-resolution-receipt-v2"
+                        ):
+                            current_resolution = (
+                                _operational_raw_volume_resolution_receipt_from_json(
+                                    raw_resolution_text,
+                                    expected_digest=str(legacy_row[1]),
+                                )
+                            )
+                            bindings = current_resolution.slot_identity_bindings
+                            resolution_plan_digest = (
+                                current_resolution.provenance_plan_digest
+                            )
+                            resolution_input_plan_digest = (
+                                current_resolution.input_plan_digest
+                            )
+                        else:
+                            stored_receipt_digest = raw_resolution_payload.pop(
+                                "receipt_digest"
+                            )
+                            if set(raw_resolution_payload) != {
+                                "contract",
+                                "provenance_plan_digest",
+                                "input_plan_digest",
+                                "slot_identity_bindings",
+                                "resolved_at",
+                            } or raw_resolution_payload.get("contract") != (
+                                "operational-raw-volume-resolution-receipt-v1"
+                            ):
+                                raise ValueError
+                            raw_bindings = raw_resolution_payload[
+                                "slot_identity_bindings"
+                            ]
+                            if (
+                                not isinstance(raw_bindings, list)
+                                or not raw_bindings
+                                or any(
+                                    not isinstance(item, list)
+                                    or len(item) != 2
+                                    for item in raw_bindings
+                                )
+                            ):
+                                raise TypeError
+                            bindings = tuple(
+                                sorted(
+                                    (str(item[0]), str(item[1]))
+                                    for item in raw_bindings
+                                )
+                            )
+                            if (
+                                len({item[0] for item in bindings})
+                                != len(bindings)
+                                or [list(item) for item in bindings]
+                                != raw_bindings
+                            ):
+                                raise ValueError
+                            for slot_digest, identity_digest in bindings:
+                                if (
+                                    re.fullmatch(r"[0-9a-f]{64}", slot_digest)
+                                    is None
+                                    or re.fullmatch(
+                                        r"[0-9a-f]{64}", identity_digest
+                                    )
+                                    is None
+                                ):
+                                    raise ValueError
+                            raw_resolution_payload["resolved_at"] = (
+                                _canonical_utc_datetime(
+                                    str(raw_resolution_payload["resolved_at"]),
+                                    "resolved_at",
+                                )
+                                .isoformat()
+                                .replace("+00:00", "Z")
+                            )
+                            calculated_receipt_digest = _json_digest(
+                                raw_resolution_payload
+                            )
+                            if (
+                                stored_receipt_digest
+                                != calculated_receipt_digest
+                                or calculated_receipt_digest
+                                != str(legacy_row[1])
+                            ):
+                                raise ValueError
+                            resolution_plan_digest = str(
+                                raw_resolution_payload[
+                                    "provenance_plan_digest"
+                                ]
+                            )
+                            resolution_input_plan_digest = str(
+                                raw_resolution_payload["input_plan_digest"]
+                            )
+                        plan_row = connection.execute(
+                            "SELECT payload_json FROM "
+                            "operational_analysis_input_provenance_plans "
+                            "WHERE plan_digest = ?",
+                            (str(legacy_row[6]),),
+                        ).fetchone()
+                        if plan_row is None:
+                            raise ValueError
+                        plan_payload = json.loads(str(plan_row[0]))
+                        if (
+                            not isinstance(plan_payload, dict)
+                            or str(plan_row[0]) != _json_text(plan_payload)
+                            or legacy_metadata.get("provenance_plan")
+                            != plan_payload
+                        ):
+                            raise ValueError
+                        plan_values = dict(plan_payload)
+                        stored_plan_digest = plan_values.pop("plan_digest")
+                        if (
+                            stored_plan_digest != str(legacy_row[6])
+                            or _json_digest(plan_values)
+                            != str(legacy_row[6])
+                            or resolution_plan_digest != str(legacy_row[6])
+                        ):
+                            raise ValueError
+                        input_plan_payload = plan_payload["input_plan"]
+                        if (
+                            not isinstance(input_plan_payload, dict)
+                            or resolution_input_plan_digest
+                            != input_plan_payload.get("plan_digest")
+                        ):
+                            raise ValueError
+                        derivation_payload = legacy_metadata[
+                            "analysis_input_derivation"
+                        ]
+                        if not isinstance(derivation_payload, dict):
+                            raise TypeError
+                        derivation_values = dict(derivation_payload)
+                        stored_derivation_digest = derivation_values.pop(
+                            "artifact_digest"
+                        )
+                        if stored_derivation_digest != str(legacy_row[0]):
+                            raise ValueError
+                        derivation = _analysis_input_derivation_from_json(
+                            _json_text(derivation_values),
+                            expected_digest=str(legacy_row[0]),
+                        )
+                        if (
+                            derivation.processor_id
+                            != plan_payload["analysis_processor_id"]
+                            or derivation.processor_public_key_hex
+                            != plan_payload[
+                                "analysis_processor_public_key_hex"
+                            ]
+                        ):
+                            raise ValueError
+                        kinds = {
+                            str(item["slot_plan_digest"]): (
+                                "missing"
+                                if item.get("contract")
+                                == "missing-raw-observation-receipt-v1"
+                                else "resolved"
+                            )
+                            for item in raw_observations
+                        }
+                        observation_identities = {
+                            str(item["slot_plan_digest"]): str(
+                                item["resolution_identity_digest"]
+                                if item.get("contract")
+                                == "missing-raw-observation-receipt-v1"
+                                else item["raw_volume_identity"][
+                                    "identity_digest"
+                                ]
+                            )
+                            for item in raw_observations
+                        }
+                        if (
+                            set(kinds) != {item[0] for item in bindings}
+                            or any(
+                                observation_identities[slot_digest]
+                                != identity_digest
+                                for slot_digest, identity_digest in bindings
+                            )
+                        ):
+                            raise ValueError
+                    except (
+                        KeyError,
+                        OSError,
+                        TypeError,
+                        ValueError,
+                        json.JSONDecodeError,
+                    ) as error:
+                        raise ValueError(
+                            "legacy operational provenance cannot be anchored"
+                        ) from error
+                    for slot_digest, identity_digest in bindings:
+                        anchor_payload = {
+                            "contract": (
+                                "operational-raw-resolution-legacy-anchor-v1"
+                            ),
+                            "slot_digest": slot_digest,
+                            "resolution_identity_digest": identity_digest,
+                            "resolution_kind": kinds[str(slot_digest)],
+                            "provenance_artifact_digest": str(legacy_row[0]),
+                            "raw_resolution_receipt_digest": str(legacy_row[1]),
+                        }
+                        anchor_digest = _json_digest(anchor_payload)
+                        retained_anchor = connection.execute(
+                            "SELECT anchor_digest,resolution_identity_digest,"
+                            "resolution_kind FROM "
+                            "operational_raw_resolution_legacy_anchors "
+                            "WHERE slot_digest = ?",
+                            (slot_digest,),
+                        ).fetchone()
+                        expected_anchor = (
+                            anchor_digest,
+                            identity_digest,
+                            kinds[str(slot_digest)],
+                        )
+                        if retained_anchor is not None:
+                            if tuple(retained_anchor) != expected_anchor:
+                                raise ValueError(
+                                    "legacy operational raw slot equivocated"
+                                )
+                            continue
+                        connection.execute(
+                            "INSERT INTO "
+                            "operational_raw_resolution_legacy_anchors "
+                            "(slot_digest,anchor_digest,"
+                            "provenance_artifact_digest,"
+                            "raw_resolution_receipt_digest,"
+                            "resolution_identity_digest,resolution_kind,"
+                            "anchored_at) VALUES (?,?,?,?,?,?,?)",
+                            (
+                                slot_digest,
+                                anchor_digest,
+                                legacy_row[0],
+                                legacy_row[1],
+                                identity_digest,
+                                kinds[str(slot_digest)],
+                                legacy_row[3],
+                            ),
+                        )
             connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS neural_prior_holdout_scoring_input_artifacts (
@@ -12529,6 +15667,22 @@ class EpisodeLedger:
                 )
                 """
             )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS
+                    operational_decision_commit_authorization_receipts (
+                    certificate_digest TEXT PRIMARY KEY,
+                    receipt_digest TEXT NOT NULL UNIQUE,
+                    receipt_json TEXT NOT NULL,
+                    terminal_commit_authorized_at TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (certificate_digest)
+                        REFERENCES operational_deployment_decisions_v2(
+                            certificate_digest
+                        )
+                )
+                """
+            )
             publication_columns = {
                 row[1]
                 for row in connection.execute(
@@ -12638,6 +15792,7 @@ class EpisodeLedger:
                 "promotion_raw_observation_reservations",
                 "promotion_raw_observation_consumptions",
                 "operational_raw_resolution_history",
+                "operational_raw_resolution_legacy_anchors",
                 "neural_prior_resolved_source_coverage_artifacts",
                 "neural_prior_holdout_scoring_input_artifacts",
                 "trusted_process_start_receipts_v2",
@@ -12810,7 +15965,7 @@ class EpisodeLedger:
                         AND NEW.receipt_json IS OLD.receipt_json
                     )
                     OR (
-                        OLD.usable = 0 AND NEW.usable = 1
+                        OLD.usable = 0 AND NEW.usable = 0
                         AND OLD.activation_committed_at IS NULL
                         AND NEW.activation_committed_at IS NOT NULL
                         AND NEW.publication_payload_committed_at
@@ -12825,6 +15980,39 @@ class EpisodeLedger:
                                 operational_decision_issuance_states
                             WHERE certificate_digest = NEW.certificate_digest
                         ) = 'decision_recorded'
+                        AND EXISTS (
+                            SELECT 1 FROM
+                                operational_decision_activation_receipts
+                            WHERE certificate_digest = NEW.certificate_digest
+                        )
+                    )
+                    OR (
+                        OLD.usable = 0 AND NEW.usable = 1
+                        AND OLD.activation_committed_at IS NOT NULL
+                        AND NEW.activation_committed_at
+                            IS OLD.activation_committed_at
+                        AND NEW.publication_payload_committed_at
+                            IS OLD.publication_payload_committed_at
+                        AND OLD.publication_payload_committed_at IS NOT NULL
+                        AND NEW.receipt_digest IS OLD.receipt_digest
+                        AND OLD.receipt_digest IS NOT NULL
+                        AND NEW.receipt_json IS OLD.receipt_json
+                        AND OLD.receipt_json IS NOT NULL
+                        AND (
+                            SELECT status FROM
+                                operational_decision_issuance_states
+                            WHERE certificate_digest = NEW.certificate_digest
+                        ) = 'decision_recorded'
+                        AND EXISTS (
+                            SELECT 1 FROM
+                                operational_decision_activation_receipts
+                            WHERE certificate_digest = NEW.certificate_digest
+                        )
+                        AND EXISTS (
+                            SELECT 1 FROM
+                                operational_decision_commit_authorization_receipts
+                            WHERE certificate_digest = NEW.certificate_digest
+                        )
                     )
                     OR (
                         OLD.usable = 1 AND NEW.usable = 0
@@ -12890,6 +16078,25 @@ class EpisodeLedger:
                 END
                 """
             )
+            for action in ("UPDATE", "DELETE"):
+                trigger = (
+                    "operational_decision_commit_authorizations_no_"
+                    f"{action.lower()}"
+                )
+                connection.execute(f"DROP TRIGGER IF EXISTS {trigger}")
+                connection.execute(
+                    f"""
+                    CREATE TRIGGER {trigger}
+                    BEFORE {action}
+                    ON operational_decision_commit_authorization_receipts
+                    BEGIN
+                        SELECT RAISE(
+                            ABORT,
+                            'operational commit authorizations are immutable'
+                        );
+                    END
+                    """
+                )
             connection.execute(
                 """
                 CREATE TRIGGER IF NOT EXISTS episode_impacts_no_late_insert
@@ -13992,6 +17199,7 @@ def _decode_candidate_manifest(
     | LegacyNeuralPriorCandidateManifestAuditV13
     | LegacyNeuralPriorCandidateManifestAuditV14
     | LegacyNeuralPriorCandidateManifestAuditV15
+    | LegacyNeuralPriorCandidateManifestAuditV16
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -14166,6 +17374,18 @@ def _decode_candidate_manifest(
         if audit_v15.manifest_digest != expected_digest:
             raise ValueError("candidate manifest ledger digest mismatch")
         return audit_v15
+    if values.get("contract") == "neural-prior-candidate-manifest-v16":
+        audit_v16 = LegacyNeuralPriorCandidateManifestAuditV16(
+            manifest_digest=str(stored_digest),
+            payload_json=json.dumps(
+                value,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+        )
+        if audit_v16.manifest_digest != expected_digest:
+            raise ValueError("candidate manifest ledger digest mismatch")
+        return audit_v16
     values["holdout_cases"] = tuple(
         NeuralPriorHoldoutCase(
             **cast(

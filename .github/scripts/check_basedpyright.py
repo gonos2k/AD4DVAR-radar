@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -31,9 +32,11 @@ def _print_diagnostic(diagnostic: dict[str, Any]) -> None:
 
 def main() -> int:
     targets = sys.argv[1:] or ["src/advar"]
+    isolated = ["-I"] if os.environ.get("CI") == "true" else []
     completed = subprocess.run(
         [
             sys.executable,
+            *isolated,
             "-m",
             "basedpyright",
             "--level",

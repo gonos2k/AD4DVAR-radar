@@ -990,7 +990,8 @@ class VariationalAnalysisTests(unittest.TestCase):
             source_available_mask=source,
         )
         tangent = torch.ones_like(frames)
-        a_before = runner.jvp(application_a.bound_input, tangent)
+        handle_a = runner.validated_bound_input(application_a.bound_input)
+        a_before = runner.jvp(handle_a, tangent)
         application_b = runner.infer(
             frames,
             input_run=run_b,
@@ -1000,8 +1001,9 @@ class VariationalAnalysisTests(unittest.TestCase):
             observation_std_dbz=std_b,
             source_available_mask=source,
         )
-        a_after = runner.jvp(application_a.bound_input, tangent)
-        b_result = runner.jvp(application_b.bound_input, tangent)
+        handle_b = runner.validated_bound_input(application_b.bound_input)
+        a_after = runner.jvp(handle_a, tangent)
+        b_result = runner.jvp(handle_b, tangent)
         torch.testing.assert_close(a_before, a_after)
         self.assertFalse(torch.equal(a_after, b_result))
 
@@ -1026,12 +1028,12 @@ class VariationalAnalysisTests(unittest.TestCase):
         with ThreadPoolExecutor(max_workers=2) as executor:
             concurrent_a = executor.submit(
                 runner.jvp,
-                application_a.bound_input,
+                handle_a,
                 tangent,
             )
             concurrent_b = executor.submit(
                 runner.jvp,
-                application_b.bound_input,
+                handle_b,
                 tangent,
             )
             torch.testing.assert_close(concurrent_a.result(), a_before)
@@ -1083,6 +1085,42 @@ class VariationalAnalysisTests(unittest.TestCase):
             fresh_runner.jvp(restarted_bound, tangent),
             a_before,
         )
+        restarted_handle = fresh_runner.validated_bound_input(restarted_bound)
+        torch.testing.assert_close(
+            fresh_runner.jvp(restarted_handle, tangent),
+            a_before,
+        )
+        restarted_handle.validate_completion()
+        assert restarted_bound.quality_weight is not None
+        expected_from_snapshot = fresh_runner.jvp(restarted_handle, tangent)
+        restarted_bound.quality_weight.data[0, 0, 0] = 0.5
+        torch.testing.assert_close(
+            fresh_runner.jvp(restarted_handle, tangent),
+            expected_from_snapshot,
+        )
+        exposed_copy = restarted_handle.bound_input
+        assert exposed_copy.quality_weight is not None
+        exposed_copy.quality_weight.data.fill_(0.25)
+        exposed_copy.model_input.data.add_(100.0)
+        torch.testing.assert_close(
+            fresh_runner.jvp(restarted_handle, tangent),
+            expected_from_snapshot,
+        )
+        private_snapshot = restarted_handle._snapshot
+        retained_private_model_input = private_snapshot.model_input.clone()
+        private_snapshot.model_input.data.add_(100.0)
+        with self.assertRaisesRegex(
+            ValueError,
+            "mutated|reproduced|context digest",
+        ):
+            fresh_runner.jvp(restarted_handle, tangent)
+        private_snapshot.model_input.data.copy_(retained_private_model_input)
+        torch.testing.assert_close(
+            fresh_runner.jvp(restarted_handle, tangent),
+            expected_from_snapshot,
+        )
+        restarted_bound.quality_weight.data.fill_(1.0)
+        restarted_handle.validate_completion()
 
     def test_radar_prior_total_derivative_includes_log_std(self) -> None:
         frames = torch.ones((3, 4, 4), dtype=torch.float64)

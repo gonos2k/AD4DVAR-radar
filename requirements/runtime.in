@@ -1,0 +1,6 @@
+# Exact direct runtime pins for the Linux CPU deployment closure. Public
+# package metadata keeps lower compatibility floors in pyproject.toml.
+cryptography==50.0.0
+filelock==3.32.3
+numpy==2.2.6
+torch==2.13.0

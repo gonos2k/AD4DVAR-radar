@@ -7,8 +7,10 @@ from pathlib import Path
 import base64
 import hashlib
 import json
+import shutil
 import sqlite3
 import tempfile
+import time
 from types import SimpleNamespace
 from typing import cast
 import unittest
@@ -200,7 +202,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         evaluation = self.evaluation(1, -1.0)
         policy = self.policy()
 
-        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v22")
+        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v24")
         self.assertTrue(
             all(
                 item.contract == "neural-prior-range-band-contract-v3"
@@ -209,7 +211,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             manifest.contract,
-            "neural-prior-candidate-manifest-v16",
+            "neural-prior-candidate-manifest-v18",
         )
         self.assertEqual(
             evaluation.contract,
@@ -876,6 +878,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         input_bundle_digest: str | None = None,
         processor_id: str = "test-analysis-processor",
         processor_private_key: Ed25519PrivateKey | None = None,
+        target_source_valid_time: str | None = None,
+        target_physical_event_digest: str | None = None,
+        target_source_authority_id: str = "test-target-source-authority",
+        target_source_private_key: Ed25519PrivateKey | None = None,
     ):
         del numerical_runtime_digest
         receipt = (
@@ -953,18 +959,67 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ],
             }
         )
+        default_target_time = (
+            "2026-06-01T00:10:00Z"
+            if classifier
+            else "2026-07-01T00:10:00Z"
+        )
+        retained_target_time = (
+            default_target_time
+            if target_source_valid_time is None
+            else target_source_valid_time
+        )
+        retained_generated_at = (
+            promotion_module._canonical_datetime(retained_target_time)
+            + timedelta(minutes=10)
+        ).isoformat()
+        retained_cutoff_time = (
+            promotion_module._canonical_datetime(retained_target_time)
+            + timedelta(minutes=20)
+        ).isoformat()
+        target_source_key = (
+            Ed25519PrivateKey.from_private_bytes(b"\x28" * 32)
+            if target_source_private_key is None
+            else target_source_private_key
+        )
+        retained_target_event = (
+            target_physical_event_digest
+            if target_physical_event_digest is not None
+            else promotion_module.json_digest(
+                {
+                    "contract": "test-training-target-event-v1",
+                    "case_id": member.case_id,
+                    "target_source_valid_time": retained_target_time,
+                }
+            )
+        )
+        target_source_receipt = (
+            promotion_module.TrainingTargetSourceReceipt.issue(
+                target_source_identity_digest="d" * 64,
+                target_source_valid_time=retained_target_time,
+                physical_event_digest=retained_target_event,
+                source_object_digest=promotion_module.tensor_digest(
+                    target_tensor
+                ),
+                observed_at=(
+                    promotion_module._canonical_datetime(retained_target_time)
+                    + timedelta(minutes=5)
+                ).isoformat(),
+                authority_id=target_source_authority_id,
+                authority_private_key=target_source_key,
+            )
+        )
         target_derivation = (
             promotion_module.TrainingTargetDerivationArtifact.issue(
                 case_id=member.case_id,
-                target_source_identity_digest="d" * 64,
-                target_source_valid_time="2026-06-01T00:10:00Z",
+                target_source_receipt=target_source_receipt,
                 target_qc_policy_digest="2" * 64,
                 target_censor_policy_digest="3" * 64,
                 target_algorithm_digest="f" * 64,
                 target_schema_digest="1" * 64,
                 target_tensor=target_tensor,
-                generated_at="2026-06-01T00:20:00Z",
-                training_cutoff_time="2026-06-01T01:00:00Z",
+                generated_at=retained_generated_at,
+                training_cutoff_time=retained_cutoff_time,
                 processor_id=processor_id,
                 processor_private_key=processor_key,
             )
@@ -975,11 +1030,35 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             sort_keys=True,
             separators=(",", ":"),
         )
-        feature_archive = promotion_module.encode_training_tensor_archive(
-            {"feature_00000": feature_tensor}
+        archive_temp = getattr(self, "_training_archive_temp", None)
+        if archive_temp is None:
+            archive_temp = tempfile.TemporaryDirectory()
+            setattr(self, "_training_archive_temp", archive_temp)
+            self.addCleanup(archive_temp.cleanup)
+        archive_root = Path(archive_temp.name) / "training-shards"
+        feature_shard = promotion_module.write_training_tensor_archive_shard(
+            {"feature_00000": feature_tensor},
+            directory=archive_root,
+            shard_id="features-00000",
         )
-        target_archive = promotion_module.encode_training_tensor_archive(
-            {"target_00000": target_tensor}
+        target_shard = promotion_module.write_training_tensor_archive_shard(
+            {
+                "target_00000": target_tensor,
+                "target_valid_mask_00000": torch.ones_like(
+                    target_tensor, dtype=torch.bool
+                ),
+                "target_quality_00000": torch.ones_like(target_tensor),
+            },
+            directory=archive_root,
+            shard_id="targets-00000",
+        )
+        normalization_tensor = torch.tensor([0.0, 1.0])
+        normalization_shard = (
+            promotion_module.write_training_tensor_archive_shard(
+                {"normalization": normalization_tensor},
+                directory=archive_root,
+                shard_id="normalization",
+            )
         )
         feature_dataset = promotion_module.TrainingFeatureDatasetArtifact(
             members=(promotion_module.TrainingDatasetMember(
@@ -993,24 +1072,25 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 target_tensor_digest=promotion_module.tensor_digest(
                     target_tensor
                 ),
+                target_valid_mask_archive_member=(
+                    "target_valid_mask_00000"
+                ),
+                target_quality_archive_member="target_quality_00000",
                 target_derivation_artifact_json=target_derivation_json,
                 sample_weight=1.0,
                 split="train",
                 augmentation_seed=0,
             ),),
-            normalization_statistics_digest="e" * 64,
+            normalization_statistics_digest=promotion_module.tensor_digest(
+                normalization_tensor
+            ),
             feature_algorithm_digest=("5" if classifier else "3") * 64,
             feature_schema_digest=("5" if classifier else "4") * 64,
             target_algorithm_digest="f" * 64,
             target_schema_digest="1" * 64,
-            feature_tensor_archive_sha256=hashlib.sha256(
-                base64.b64decode(feature_archive)
-            ).hexdigest(),
-            target_tensor_archive_sha256=hashlib.sha256(
-                base64.b64decode(target_archive)
-            ).hexdigest(),
-            feature_tensor_archive_base64=feature_archive,
-            target_tensor_archive_base64=target_archive,
+            feature_archive_shards=(feature_shard,),
+            target_archive_shards=(target_shard,),
+            normalization_statistics_shard=normalization_shard,
         )
         feature_dataset_json = json.dumps(
             feature_dataset.payload
@@ -1338,6 +1418,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             analysis_processor_public_key_hex=(
                 processor_key.public_key().public_bytes_raw().hex()
             ),
+            training_target_source_authority_id=(
+                "test-target-source-authority"
+            ),
+            training_target_source_authority_public_key_hex=(
+                Ed25519PrivateKey.from_private_bytes(b"\x28" * 32)
+                .public_key()
+                .public_bytes_raw()
+                .hex()
+            ),
             uncertainty_target_plans=target_plans,
             state_calibration_target_plans=state_target_plans,
             range_band_contracts=range_contracts,
@@ -1663,6 +1752,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 planned.uncertainty_target_plan_digest
             ),
             uncertainty_target_digest=uncertainty_target.target_digest,
+            verification_target_source_identity_digest=(
+                plan.uncertainty_target_plans[index - 1].source_identity_digest
+            ),
+            verification_target_valid_time=(
+                plan.uncertainty_target_plans[index - 1].target_valid_time
+            ),
+            verification_target_tensor_digest=promotion_module.tensor_digest(
+                uncertainty_target._target_dbz
+            ),
             state_calibration_target_plan_digest=(
                 planned.state_calibration_target_plan_digest
             ),
@@ -1938,7 +2036,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             self.training_event_catalog_plan(),
             catalog_result_digest=self.training_event_catalog_result().result_digest,
             process_kind="candidate_training",
-            subject_digests=(derivation.training_dataset_digest, "2" * 64),
+            subject_digests=(
+                derivation.training_dataset_digest,
+                "2" * 64,
+                derivation.training_tensor_snapshot_set_digest,
+            ),
             process_algorithm_digest="3" * 64,
             process_runtime_digest="4" * 64,
             execution_contract_digest=(
@@ -1954,6 +2056,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     ),
                     training_dataset_derivation_artifact_digest=(
                         derivation.artifact_digest
+                    ),
+                    training_tensor_snapshot_set_digest=(
+                        derivation.training_tensor_snapshot_set_digest
                     ),
                 )
             ),
@@ -3218,6 +3323,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             analysis_processor_public_key_hex=(
                 semantic_processor_key.public_key().public_bytes_raw().hex()
             ),
+            training_target_source_authority_id=(
+                "test-target-source-authority"
+            ),
+            training_target_source_authority_public_key_hex=(
+                Ed25519PrivateKey.from_private_bytes(b"\x28" * 32)
+                .public_key()
+                .public_bytes_raw()
+                .hex()
+            ),
             uncertainty_target_plans=(target_plan,),
             state_calibration_target_plans=(state_target_plan,),
             range_band_contracts=(range_contract,),
@@ -3402,6 +3516,13 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             metric_contract_digest=metric_config.digest,
             uncertainty_target_plan_digest=target_plan.plan_digest,
             uncertainty_target_digest=uncertainty_target.target_digest,
+            verification_target_source_identity_digest=(
+                target_plan.source_identity_digest
+            ),
+            verification_target_valid_time=target_plan.target_valid_time,
+            verification_target_tensor_digest=promotion_module.tensor_digest(
+                uncertainty_target._target_dbz
+            ),
             prior_probability_contract_digest=(
                 self.probability_contract().contract_digest
             ),
@@ -3459,6 +3580,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 training_dataset_derivation_artifact_digest=(
                     candidate_training_derivation.artifact_digest
                 ),
+                training_tensor_snapshot_set_digest=(
+                    candidate_training_derivation.training_tensor_snapshot_set_digest
+                ),
             )
         )
         training_start = promotion_module.TrustedProcessStartReceipt.from_plan(
@@ -3468,6 +3592,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             subject_digests=(
                 candidate_training_derivation.training_dataset_digest,
                 "2" * 64,
+                candidate_training_derivation.training_tensor_snapshot_set_digest,
             ),
             process_algorithm_digest="3" * 64,
             process_runtime_digest=candidate_runner.numerical_runtime_digest,
@@ -3742,6 +3867,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ledger_module,
                 "_load_raw_ingestor_trust_store",
                 return_value=plan.raw_ingestor_trust_store,
+            ), patch.object(
+                ledger_module,
+                "_load_promotion_deployment_authority_trust_store",
+                return_value=self.provenance_authority_trust_store(
+                    ledger,
+                    authority_id=plan.analysis_processor_id,
+                    private_key=semantic_processor_key,
+                ),
             ):
                 trusted_datetime.now.return_value = datetime.fromisoformat(
                     "2026-08-09T00:21:30+00:00"
@@ -3756,6 +3889,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     resolved_source_coverage=resolved_coverage,
                     raw_ingestor_trust_store_path=(
                         "/etc/advar/raw-ingestors.json"
+                    ),
+                    analysis_processor_trust_store_path=(
+                        "/etc/advar/deployment-authorities.json"
+                    ),
+                    provenance_commit_signer=(
+                        self.provenance_ledger_signer(
+                            "2026-08-09T00:21:30+00:00"
+                        )
                     ),
                 )
             revoked_attestation = (
@@ -3788,6 +3929,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ledger_module,
                 "_load_raw_ingestor_trust_store",
                 return_value=revoked_store,
+            ), patch.object(
+                ledger_module,
+                "_load_promotion_deployment_authority_trust_store",
+                return_value=self.provenance_authority_trust_store(
+                    ledger,
+                    authority_id=plan.analysis_processor_id,
+                    private_key=semantic_processor_key,
+                ),
             ), self.assertRaisesRegex(ValueError, "disagrees with its slot"):
                 ledger.append_neural_prior_scoring_replay_bundle(
                     scoring_input,
@@ -3796,11 +3945,22 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     raw_ingestor_trust_store_path=(
                         "/etc/advar/raw-ingestors.json"
                     ),
+                    analysis_processor_trust_store_path=(
+                        "/etc/advar/deployment-authorities.json"
+                    ),
                 )
             with patch.object(
                 ledger_module,
                 "_load_raw_ingestor_trust_store",
                 return_value=plan.raw_ingestor_trust_store,
+            ), patch.object(
+                ledger_module,
+                "_load_promotion_deployment_authority_trust_store",
+                return_value=self.provenance_authority_trust_store(
+                    ledger,
+                    authority_id=plan.analysis_processor_id,
+                    private_key=semantic_processor_key,
+                ),
             ):
                 replay_manifest = (
                     ledger.append_neural_prior_scoring_replay_bundle(
@@ -3811,6 +3971,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         ),
                         raw_ingestor_trust_store_path=(
                             "/etc/advar/raw-ingestors.json"
+                        ),
+                        analysis_processor_trust_store_path=(
+                            "/etc/advar/deployment-authorities.json"
                         ),
                     )
                 )
@@ -5096,6 +5259,76 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
         )
 
+    @staticmethod
+    def analysis_processor_trust_store(
+        *,
+        authority_id: str,
+        private_key: Ed25519PrivateKey,
+        content_digest: str = "7" * 64,
+    ):
+        return promotion_module._PromotionDeploymentAuthorityTrustStore(
+            keys={authority_id: private_key.public_key()},
+            content_digest=content_digest,
+            roles={authority_id: frozenset({"analysis_processor"})},
+            not_before={authority_id: "2026-01-01T00:00:00+00:00"},
+            not_after={authority_id: "2031-01-01T00:00:00+00:00"},
+            revoked_at={authority_id: None},
+            ledger_instance_digests={authority_id: frozenset()},
+            ledger_instance_index_paths={},
+        )
+
+    @staticmethod
+    def provenance_authority_trust_store(
+        ledger: EpisodeLedger,
+        *,
+        authority_id: str,
+        private_key: Ed25519PrivateKey,
+        content_digest: str = "7" * 64,
+    ):
+        with sqlite3.connect(ledger.index_path) as connection:
+            ledger_instance_digest = connection.execute(
+                "SELECT ledger_instance_digest FROM "
+                "deployment_certificate_chain_head WHERE singleton = 1"
+            ).fetchone()[0]
+        ledger_key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
+        return promotion_module._PromotionDeploymentAuthorityTrustStore(
+            keys={
+                authority_id: private_key.public_key(),
+                "test-ledger": ledger_key.public_key(),
+            },
+            content_digest=content_digest,
+            roles={
+                authority_id: frozenset({"analysis_processor"}),
+                "test-ledger": frozenset({"ledger_issuance"}),
+            },
+            not_before={
+                authority_id: "2026-01-01T00:00:00+00:00",
+                "test-ledger": "2026-01-01T00:00:00+00:00",
+            },
+            not_after={
+                authority_id: "2031-01-01T00:00:00+00:00",
+                "test-ledger": "2031-01-01T00:00:00+00:00",
+            },
+            revoked_at={authority_id: None, "test-ledger": None},
+            ledger_instance_digests={
+                authority_id: frozenset(),
+                "test-ledger": frozenset({ledger_instance_digest}),
+            },
+            ledger_instance_index_paths={
+                ledger_instance_digest: ledger.index_path,
+            },
+        )
+
+    @staticmethod
+    def provenance_ledger_signer(
+        fixed_signing_time: str,
+    ) -> promotion_module.Ed25519DeploymentAuthoritySigner:
+        return promotion_module.Ed25519DeploymentAuthoritySigner(
+            authority_id="test-ledger",
+            private_key=Ed25519PrivateKey.from_private_bytes(b"\x03" * 32),
+            fixed_signing_time=fixed_signing_time,
+        )
+
     def deployment_certificate(self, evidence):
         retained_roots = getattr(self, "_operational_ledger_roots", [])
         ledger_root = tempfile.TemporaryDirectory()
@@ -5317,25 +5550,448 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             publication_time=(now + timedelta(minutes=10)).isoformat(),
         )
 
+    def _synthetic_operational_plan_and_resolution(
+        self,
+        *,
+        input_plan,
+        case_id,
+        ledger=None,
+        source_frames_dbz=None,
+    ):
+        processor_key = Ed25519PrivateKey.from_private_bytes(b"\x23" * 32)
+        raw_ingestor_key = Ed25519PrivateKey.from_private_bytes(b"\x21" * 32)
+        trust_digest = getattr(
+            getattr(self, "_latest_deployment_authority_trust", None),
+            "content_digest",
+            "7" * 64,
+        )
+        source_rule_digest = "d" * 64
+        site_digest = "a" * 64
+        slots = tuple(
+            promotion_module.RawObservationSlotPlan(
+                radar_site_digest=site_digest,
+                acquisition_valid_time=valid_time,
+                scan_strategy_rule_digest="5" * 64,
+                source_selection_rule_digest=source_rule_digest,
+                canonical_geodetic_footprint_digest="6" * 64,
+            )
+            for valid_time in input_plan.valid_times
+        )
+        geometry = promotion_module.RangeGeometryContract(
+            radar_site_digest=site_digest,
+            radar_site_location_digest=site_digest,
+            grid_contract_digest=input_plan.grid_contract_digest,
+            radar_x_m=0.0,
+            radar_y_m=0.0,
+            range_regime_labels=("near_range", "far_range"),
+            radial_distance_edges_m=(0.0, 30_000.0, 100_000.0),
+            horizontal_range_rule_digest="c" * 64,
+            grid_x_m_digest=promotion_module.tensor_digest(
+                torch.zeros((2, 2), dtype=torch.float32)
+            ),
+            grid_y_m_digest=promotion_module.tensor_digest(
+                torch.zeros((2, 2), dtype=torch.float32)
+            ),
+        )
+        issuance = promotion_module.OperationalIssuanceDomainPlan(
+            case_id=case_id,
+            grid_contract_digest=input_plan.grid_contract_digest,
+            radar_source_contract_digest=source_rule_digest,
+            lead_minutes=(60,),
+            publication_policy_digest="1" * 64,
+            source_coverage_policy_digest="2" * 64,
+            permanent_exclusion_policy_digest="3" * 64,
+            publication_eligible_mask_digest=promotion_module.tensor_digest(
+                torch.ones((1, 2, 2), dtype=torch.bool)
+            ),
+            source_coverage_mask_digest=promotion_module.tensor_digest(
+                torch.ones((1, 2, 2), dtype=torch.bool)
+            ),
+            permanent_exclusion_mask_digest=promotion_module.tensor_digest(
+                torch.zeros((1, 2, 2), dtype=torch.bool)
+            ),
+        )
+        plan = promotion_module.OperationalAnalysisInputProvenancePlan(
+            plan_id=case_id,
+            input_plan=input_plan,
+            raw_observation_slot_plans=slots,
+            raw_ingestor_trust_store=self.plan().raw_ingestor_trust_store,
+            analysis_processor_id="test-analysis-processor",
+            analysis_processor_public_key_hex=(
+                processor_key.public_key().public_bytes_raw().hex()
+            ),
+            analysis_processor_trust_store_digest=trust_digest,
+            range_geometry_contract=geometry,
+            operational_issuance_domain_plan=issuance,
+            registered_at=(
+                promotion_module._canonical_datetime(
+                    min(item.acquisition_valid_time for item in slots)
+                )
+                - timedelta(days=1)
+            ).isoformat(),
+        )
+        retained_source_frames = (
+            torch.zeros((len(slots), 2, 2), dtype=torch.float32)
+            if source_frames_dbz is None
+            else source_frames_dbz.detach().to(
+                device="cpu",
+                dtype=torch.float32,
+            )
+        )
+        if retained_source_frames.shape != (len(slots), 2, 2):
+            raise AssertionError("synthetic source frames changed")
+        receipts = tuple(
+            promotion_module.ResolvedRawObservationReceipt.from_ingestor(
+                slot=slot,
+                raw_grid_volume=(
+                    promotion_module.CanonicalRawGridVolumeArtifact.from_tensors(
+                        reflectivity_dbz=retained_source_frames[index - 1],
+                        qc_valid_mask=torch.ones((2, 2), dtype=torch.bool),
+                        quality_weight=torch.ones((2, 2), dtype=torch.float32),
+                        observation_std_dbz=torch.full(
+                            (2, 2), 2.0, dtype=torch.float32
+                        ),
+                        radar_site_digest=slot.radar_site_digest,
+                        acquisition_valid_time=slot.acquisition_valid_time,
+                        canonical_scan_identity_digest=(
+                            slot.scan_strategy_rule_digest
+                        ),
+                        radar_product_digest=input_plan.radar_product_digest,
+                        grid_contract_digest=input_plan.grid_contract_digest,
+                    )
+                ),
+                raw_ingestor_id="test-raw-ingestor",
+                raw_ingestor_private_key=raw_ingestor_key,
+                received_at=input_plan.input_available_time,
+            )
+            for index, slot in enumerate(slots, start=1)
+        )
+        bindings = tuple(
+            sorted(
+                (
+                    item.slot_plan_digest,
+                    item.resolution_identity_digest,
+                )
+                for item in receipts
+            )
+        )
+        def history_entry(slot_digest, identity_digest):
+            if ledger is None:
+                previous, previous_identity, previous_kind = (
+                    promotion_module.OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST,
+                    None,
+                    None,
+                )
+            else:
+                previous, previous_identity, previous_kind = (
+                    ledger.operational_raw_resolution_predecessor(slot_digest)
+                )
+            if previous == promotion_module.OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST:
+                transition = "original"
+            elif previous_identity == identity_digest:
+                transition = "reuse"
+            elif previous_kind == "missing":
+                transition = "correction"
+            else:
+                transition = "supersession"
+            return promotion_module.OperationalRawResolutionHistoryEntry.issue(
+                provenance_plan_digest=plan.plan_digest,
+                slot_digest=slot_digest,
+                resolution_identity_digest=identity_digest,
+                resolution_kind="resolved",
+                previous_entry_digest=previous,
+                transition=transition,
+                reason="synthetic-selector-fixture",
+                issued_at=input_plan.input_available_time,
+                authority_id="test-analysis-processor",
+                authority_private_key=processor_key,
+            )
+        histories = tuple(
+            history_entry(slot_digest, identity_digest)
+            for slot_digest, identity_digest in bindings
+        )
+        resolution = promotion_module.OperationalRawVolumeResolutionReceipt(
+            provenance_plan_digest=plan.plan_digest,
+            input_plan_digest=input_plan.plan_digest,
+            slot_identity_bindings=bindings,
+            history_entries=histories,
+            resolved_at=input_plan.input_available_time,
+        )
+        return plan, resolution, receipts
+
+    def _commit_synthetic_analysis_provenance_row(
+        self,
+        *,
+        ledger,
+        artifact_digest,
+        provenance_kind,
+        provenance_plan_digest,
+        case_id,
+        input_plan_digest,
+        raw_resolution_receipt_digest,
+        payload,
+        arrays_path,
+        metadata_path,
+        raw_trust_digest,
+        source_frames_dbz=None,
+    ):
+        """Install a fully signed synthetic row for selector boundary tests."""
+
+        if provenance_kind == "operational":
+            input_plan_values = dict(payload["input_plan"])
+            input_plan_values.pop("plan_digest")
+            input_plan_values["valid_times"] = tuple(
+                input_plan_values["valid_times"]
+            )
+            synthetic_input_plan = promotion_module.NeuralPriorInputPlan(
+                **input_plan_values
+            )
+            (
+                registered_plan,
+                raw_resolution,
+                raw_receipts,
+            ) = self._synthetic_operational_plan_and_resolution(
+                input_plan=synthetic_input_plan,
+                case_id=case_id,
+                ledger=ledger,
+                source_frames_dbz=source_frames_dbz,
+            )
+            provenance_plan_digest = registered_plan.plan_digest
+            if raw_resolution.receipt_digest != raw_resolution_receipt_digest:
+                raise AssertionError("synthetic raw resolution changed")
+            if tuple(payload["canonical_raw_volume_identity_digests"]) != tuple(
+                sorted(
+                    item.raw_volume_identity.identity_digest
+                    for item in raw_receipts
+                )
+            ):
+                raise AssertionError("synthetic raw identities changed")
+            derived = promotion_module._derive_analysis_inputs_from_raw_products(
+                input_plan=synthetic_input_plan,
+                resolved_raw_observations=raw_receipts,
+                resolved_source_coverage=None,
+            )
+            np.savez_compressed(
+                arrays_path,
+                **{
+                    name: value.detach().cpu().contiguous().numpy()
+                    for name, value in {
+                        **ledger_module._raw_resolution_encoded_arrays(
+                            raw_receipts,
+                            derived_frames=derived[0],
+                        ),
+                        "derived_input_frames": derived[0],
+                        "derived_qc_valid_mask": derived[1],
+                        "derived_quality_weight": derived[2],
+                        "derived_observation_std_dbz": derived[3],
+                    }.items()
+                },
+            )
+            derivation_payload = dict(payload)
+            derivation_payload.pop("input_plan")
+            metadata_path.write_text(
+                json.dumps(
+                    {
+                        "contract": "analysis-input-provenance-bundle-v2",
+                        "provenance_kind": "operational",
+                        "provenance_plan": registered_plan.payload
+                        | {"plan_digest": registered_plan.plan_digest},
+                        "input_plan": synthetic_input_plan.payload
+                        | {"plan_digest": synthetic_input_plan.plan_digest},
+                        "resolved_raw_observations": [
+                            item.payload
+                            | {"receipt_digest": item.receipt_digest}
+                            for item in raw_receipts
+                        ],
+                        "raw_resolution": raw_resolution.payload
+                        | {"receipt_digest": raw_resolution.receipt_digest},
+                        "analysis_input_derivation": derivation_payload,
+                        "resolved_source_coverage": None,
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+                encoding="utf-8",
+            )
+            with ledger._connect() as connection:
+                connection.execute(
+                    "INSERT OR IGNORE INTO "
+                    "operational_analysis_input_provenance_plans "
+                    "(plan_digest,plan_id,input_plan_digest,payload_json,"
+                    "registered_at,created_at) VALUES (?,?,?,?,?,?)",
+                    (
+                        provenance_plan_digest,
+                        case_id,
+                        input_plan_digest,
+                        json.dumps(
+                            registered_plan.payload
+                            | {"plan_digest": provenance_plan_digest},
+                            sort_keys=True,
+                            separators=(",", ":"),
+                        ),
+                        payload["input_plan"]["input_available_time"],
+                        payload["input_plan"]["input_available_time"],
+                    ),
+                )
+        payload_json = json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        checksums = {
+            "source_and_derived_arrays.npz": ledger_module._file_digest(
+                arrays_path
+            ),
+            "provenance.json": ledger_module._file_digest(metadata_path),
+        }
+        (arrays_path.parent / "checksums.json").write_text(
+            ledger_module._json_text(checksums),
+            encoding="utf-8",
+        )
+        committed_at = str(payload["input_plan"]["input_available_time"])
+        with ledger._connect() as connection:
+            if provenance_kind == "operational":
+                for history in raw_resolution.history_entries:
+                    ledger._record_operational_raw_resolution_history(
+                        connection,
+                        entry=history,
+                        raw_resolution_receipt_digest=(
+                            raw_resolution.receipt_digest
+                        ),
+                        recorded_at=committed_at,
+                        expected_authority_id=(
+                            registered_plan.analysis_processor_id
+                        ),
+                        expected_authority_public_key_hex=(
+                            registered_plan.analysis_processor_public_key_hex
+                        ),
+                    )
+            inserted = connection.execute(
+                "INSERT OR IGNORE INTO analysis_input_provenance_commits "
+                "(artifact_digest,provenance_kind,provenance_plan_digest,case_id,"
+                "input_plan_digest,raw_resolution_receipt_digest,payload_json,"
+                "arrays_sha256,metadata_sha256,path,"
+                "raw_ingestor_trust_store_digest,raw_trust_validated_at,"
+                "committed_at,usable,status,payload_committed_at,"
+                "preparation_receipt_json,preparation_receipt_digest,"
+                "activated_at,expired_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,NULL,"
+                "?,0,'prepared',?,NULL,NULL,NULL,NULL)",
+                (
+                    artifact_digest,
+                    provenance_kind,
+                    provenance_plan_digest,
+                    case_id,
+                    input_plan_digest,
+                    raw_resolution_receipt_digest,
+                    payload_json,
+                    checksums["source_and_derived_arrays.npz"],
+                    checksums["provenance.json"],
+                    str(arrays_path.parent),
+                    raw_trust_digest,
+                    committed_at,
+                    committed_at,
+                ),
+            )
+        if inserted.rowcount == 0:
+            return
+        processor_key = Ed25519PrivateKey.from_private_bytes(b"\x23" * 32)
+        authority_trust = self.provenance_authority_trust_store(
+            ledger,
+            authority_id=str(payload["processor_id"]),
+            private_key=processor_key,
+            content_digest=getattr(
+                getattr(self, "_latest_deployment_authority_trust", None),
+                "content_digest",
+                "7" * 64,
+            ),
+        )
+        _, side_effect_digest = (
+            ledger._validate_analysis_provenance_side_effects(
+                provenance_kind=provenance_kind,
+                provenance_plan_digest=provenance_plan_digest,
+                case_id=case_id,
+                raw_resolution_receipt_digest=(
+                    raw_resolution_receipt_digest
+                ),
+                metadata_text=metadata_path.read_text("utf-8"),
+                provenance_plan=registered_plan,
+            )
+        )
+        with sqlite3.connect(ledger.index_path) as connection:
+            ledger_instance_digest = connection.execute(
+                "SELECT ledger_instance_digest FROM "
+                "deployment_certificate_chain_head WHERE singleton = 1"
+            ).fetchone()[0]
+        prepared_at = (
+            datetime.fromisoformat(committed_at.replace("Z", "+00:00"))
+            + timedelta(microseconds=1)
+        ).isoformat()
+        signer = self.provenance_ledger_signer(prepared_at)
+        with patch.object(
+            ledger_module,
+            "datetime",
+            wraps=datetime,
+        ) as trusted_datetime:
+            trusted_datetime.now.return_value = datetime.fromisoformat(
+                prepared_at.replace("Z", "+00:00")
+            )
+            receipt_json, receipt_digest = (
+                ledger._issue_analysis_provenance_preparation_receipt(
+                    artifact_digest=artifact_digest,
+                    provenance_kind=provenance_kind,
+                    provenance_plan_digest=provenance_plan_digest,
+                    input_plan_digest=input_plan_digest,
+                    raw_resolution_receipt_digest=(
+                        raw_resolution_receipt_digest
+                    ),
+                    payload_json=payload_json,
+                    payload_committed_at=committed_at,
+                    deadline=str(
+                        payload["input_plan"]["decision_deadline"]
+                    ),
+                    ledger_instance_digest=ledger_instance_digest,
+                    side_effect_digest=side_effect_digest,
+                    authority_trust_store=authority_trust,
+                    signer=signer,
+                )
+            )
+        with ledger._connect() as connection:
+            connection.execute(
+                "UPDATE analysis_input_provenance_commits SET "
+                "preparation_receipt_json=?,preparation_receipt_digest=? "
+                "WHERE artifact_digest=? AND status='prepared'",
+                (receipt_json, receipt_digest, artifact_digest),
+            )
+            connection.execute(
+                "UPDATE analysis_input_provenance_commits SET "
+                "status='active',usable=1,raw_trust_validated_at=?,"
+                "activated_at=? WHERE artifact_digest=? AND status='prepared'",
+                (prepared_at, prepared_at, artifact_digest),
+            )
+
     def operational_provenance_kwargs(
         self,
         input_plan,
         *,
         full_analysis_input_digest,
+        processed_at=None,
     ):
-        derivation_digest = promotion_module.json_digest(
-            {
-                "contract": "synthetic-operational-derivation-v1",
-                "input_plan_digest": input_plan.plan_digest,
-            }
+        case_id = f"operational-{input_plan.plan_digest[:16]}"
+        ledger = getattr(self, "_latest_operational_ledger", None)
+        synthetic_plan, synthetic_resolution, raw_receipts = (
+            self._synthetic_operational_plan_and_resolution(
+                input_plan=input_plan,
+                case_id=case_id,
+                ledger=ledger,
+            )
         )
-        resolution_digest = promotion_module.json_digest(
-            {
-                "contract": "synthetic-operational-resolution-v1",
-                "input_plan_digest": input_plan.plan_digest,
-            }
+        raw_identities = tuple(
+            sorted(
+                item.raw_volume_identity.identity_digest
+                for item in raw_receipts
+            )
         )
-        raw_identities = ("3" * 64, "4" * 64)
+        resolution_digest = synthetic_resolution.receipt_digest
         raw_set_digest = promotion_module.json_digest(
             {
                 "contract": "resolved-raw-volume-identity-set-v1",
@@ -5348,6 +6004,161 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             "7" * 64,
         )
         raw_trust_digest = self.plan().raw_ingestor_trust_store.content_digest
+        if ledger is not None:
+            processor_key = Ed25519PrivateKey.from_private_bytes(b"\x23" * 32)
+            derived = promotion_module._derive_analysis_inputs_from_raw_products(
+                input_plan=input_plan,
+                resolved_raw_observations=raw_receipts,
+                resolved_source_coverage=None,
+            )
+            source_available = torch.ones_like(derived[1], dtype=torch.bool)
+            unsigned_derivation = {
+                "contract": "analysis-input-derivation-artifact-v5",
+                "case_id": case_id,
+                "input_plan_digest": input_plan.plan_digest,
+                "resolved_raw_observation_receipt_digests": sorted(
+                    item.receipt_digest for item in raw_receipts
+                ),
+                "canonical_raw_volume_identity_digests": list(
+                    raw_identities
+                ),
+                "global_raw_resolution_receipt_digest": resolution_digest,
+                "decoder_version_digest": promotion_module.json_digest(
+                    {
+                        "contract": "canonical-binary32-radar-decoder-v1",
+                        "raw_volume_contract": (
+                            "canonical-raw-grid-volume-artifact-v4"
+                        ),
+                    }
+                ),
+                "qc_algorithm_digest": promotion_module.json_digest(
+                    {
+                        "contract": (
+                            "native-flags-canonical-masked-input-qc-v3"
+                        ),
+                        "registered_qc_pipeline_digest": (
+                            input_plan.qc_pipeline_digest
+                        ),
+                    }
+                ),
+                "qc_policy_digest": input_plan.mask_policy_digest,
+                "source_selection_evidence_digest": (
+                    promotion_module.json_digest(
+                        {"contract": "single-site-source-selection-v1"}
+                    )
+                ),
+                "regrid_algorithm_digest": promotion_module.json_digest(
+                    {
+                        "contract": "exact-source-grid-identity-regrid-v1",
+                        "source_grid_digest": input_plan.grid_contract_digest,
+                        "target_grid_digest": input_plan.grid_contract_digest,
+                    }
+                ),
+                "grid_contract_digest": input_plan.grid_contract_digest,
+                "background_cycle_rule_digest": (
+                    input_plan.background_cycle_rule_digest
+                ),
+                "background_valid_times": [],
+                "background_source_identity_digest": None,
+                "background_input_identity_digests": [],
+                "input_frames_digest": promotion_module.tensor_digest(
+                    derived[0]
+                ),
+                "observation_masks_digest": promotion_module.tensor_digest(
+                    derived[1]
+                ),
+                "observation_quality_weight_digest": (
+                    promotion_module.tensor_digest(derived[2])
+                ),
+                "observation_std_dbz_digest": promotion_module.tensor_digest(
+                    derived[3]
+                ),
+                "source_available_mask_digest": (
+                    promotion_module.tensor_digest(source_available)
+                ),
+                "learned_model_input_features_digest": (
+                    promotion_module.tensor_digest(
+                        promotion_module.learned_radar_input_features(
+                            derived[0],
+                            derived[1],
+                            derived[2],
+                            derived[3],
+                            source_available,
+                        )
+                    )
+                ),
+                "background_frames_digest": None,
+                "input_bundle_digest": "8" * 64,
+                "full_analysis_input_digest": full_analysis_input_digest,
+                "processed_at": (
+                    input_plan.input_available_time
+                    if processed_at is None
+                    else processed_at
+                ),
+                "processor_id": "test-analysis-processor",
+                "processor_public_key_hex": (
+                    processor_key.public_key().public_bytes_raw().hex()
+                ),
+            }
+            derivation = promotion_module.AnalysisInputDerivationArtifact(
+                **unsigned_derivation,
+                processor_signature_hex=processor_key.sign(
+                    promotion_module.json_digest(unsigned_derivation).encode(
+                        "ascii"
+                    )
+                ).hex(),
+            )
+            derivation_digest = derivation.artifact_digest
+            payload = derivation.payload | {
+                "artifact_digest": derivation_digest,
+                "input_plan": input_plan.payload
+                | {"plan_digest": input_plan.plan_digest},
+            }
+            target = ledger.analysis_input_provenance_dir / derivation_digest
+            target.mkdir(parents=True, exist_ok=True)
+            arrays_path = target / "source_and_derived_arrays.npz"
+            metadata_path = target / "provenance.json"
+            np.savez_compressed(
+                arrays_path,
+                derived_input_frames=np.zeros((3, 2, 2), dtype=np.float32),
+            )
+            metadata_path.write_text(
+                json.dumps(payload, sort_keys=True, separators=(",", ":")),
+                encoding="utf-8",
+            )
+            self._commit_synthetic_analysis_provenance_row(
+                ledger=ledger,
+                artifact_digest=derivation_digest,
+                provenance_kind="operational",
+                provenance_plan_digest=synthetic_plan.plan_digest,
+                case_id=case_id,
+                input_plan_digest=input_plan.plan_digest,
+                raw_resolution_receipt_digest=resolution_digest,
+                payload=payload,
+                arrays_path=arrays_path,
+                metadata_path=metadata_path,
+                raw_trust_digest=raw_trust_digest,
+            )
+        else:
+            derivation_digest = promotion_module.json_digest(
+                {
+                    "contract": "synthetic-operational-derivation-v1",
+                    "input_plan_digest": input_plan.plan_digest,
+                }
+            )
+        # The selector fixture must derive its decision identity from the exact
+        # durable derivation preimage installed above, never from an earlier
+        # synthetic receipt object.
+        if ledger is not None:
+            raw_identities = tuple(
+                sorted(payload["canonical_raw_volume_identity_digests"])
+            )
+            raw_set_digest = promotion_module.json_digest(
+                {
+                    "contract": "resolved-raw-volume-identity-set-v1",
+                    "identity_digests": list(raw_identities),
+                }
+            )
         commitment_digest = promotion_module.json_digest(
             {
                 "contract": (
@@ -5362,53 +6173,6 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 "raw_ingestor_trust_store_digest": raw_trust_digest,
             }
         )
-        ledger = getattr(self, "_latest_operational_ledger", None)
-        if ledger is not None:
-            payload = {
-                "artifact_digest": derivation_digest,
-                "input_plan_digest": input_plan.plan_digest,
-                "input_plan": input_plan.payload
-                | {"plan_digest": input_plan.plan_digest},
-                "global_raw_resolution_receipt_digest": resolution_digest,
-                "canonical_raw_volume_identity_digests": list(raw_identities),
-                "full_analysis_input_digest": full_analysis_input_digest,
-            }
-            target = ledger.analysis_input_provenance_dir / derivation_digest
-            target.mkdir(parents=True, exist_ok=True)
-            arrays_path = target / "source_and_derived_arrays.npz"
-            metadata_path = target / "provenance.json"
-            np.savez_compressed(
-                arrays_path,
-                derived_input_frames=np.zeros((3, 2, 2), dtype=np.float32),
-            )
-            metadata_path.write_text(
-                json.dumps(payload, sort_keys=True, separators=(",", ":")),
-                encoding="utf-8",
-            )
-            with sqlite3.connect(ledger.index_path) as connection:
-                connection.execute(
-                    "INSERT OR REPLACE INTO analysis_input_provenance_commits "
-                    "(artifact_digest,provenance_kind,provenance_plan_digest,case_id,"
-                    "input_plan_digest,raw_resolution_receipt_digest,"
-                    "payload_json,arrays_sha256,metadata_sha256,path,"
-                    "raw_ingestor_trust_store_digest,raw_trust_validated_at,"
-                    "committed_at,usable) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
-                    (
-                        derivation_digest,
-                        "holdout",
-                        "5" * 64,
-                        f"operational-{input_plan.plan_digest[:16]}",
-                        input_plan.plan_digest,
-                        resolution_digest,
-                        json.dumps(payload, sort_keys=True, separators=(",", ":")),
-                        ledger_module._file_digest(arrays_path),
-                        ledger_module._file_digest(metadata_path),
-                        str(target),
-                        raw_trust_digest,
-                        "2026-08-15T00:00:00+00:00",
-                        "2026-08-15T00:00:00+00:00",
-                    ),
-                )
         return {
             "analysis_input_derivation_artifact_digest": derivation_digest,
             "global_raw_resolution_receipt_digest": resolution_digest,
@@ -5497,7 +6261,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             },
         }
 
-    def with_synthetic_analysis_derivation(self, run):
+    def with_synthetic_analysis_derivation(self, run, source_frames_dbz):
         """Attach a fully signed current derivation to an operational test run."""
 
         if (
@@ -5515,13 +6279,35 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             raise ValueError("synthetic provenance requires a complete no-background run")
         input_plan = json.loads(run.input_plan_json)
         processor_key = Ed25519PrivateKey.from_private_bytes(b"\x23" * 32)
+        decoded_input_plan = dict(input_plan)
+        decoded_input_plan["valid_times"] = tuple(
+            decoded_input_plan["valid_times"]
+        )
+        typed_input_plan = promotion_module.NeuralPriorInputPlan(
+            **decoded_input_plan
+        )
+        case_id = f"operational-{run.input_plan_digest[:16]}"
+        _, raw_resolution, raw_receipts = (
+            self._synthetic_operational_plan_and_resolution(
+                input_plan=typed_input_plan,
+                case_id=case_id,
+                source_frames_dbz=source_frames_dbz,
+            )
+        )
         unsigned = {
             "contract": "analysis-input-derivation-artifact-v5",
-            "case_id": f"operational-{run.input_plan_digest[:16]}",
+            "case_id": case_id,
             "input_plan_digest": run.input_plan_digest,
-            "resolved_raw_observation_receipt_digests": ["a" * 64],
-            "canonical_raw_volume_identity_digests": ["b" * 64],
-            "global_raw_resolution_receipt_digest": "c" * 64,
+            "resolved_raw_observation_receipt_digests": sorted(
+                item.receipt_digest for item in raw_receipts
+            ),
+            "canonical_raw_volume_identity_digests": sorted(
+                item.raw_volume_identity.identity_digest
+                for item in raw_receipts
+            ),
+            "global_raw_resolution_receipt_digest": (
+                raw_resolution.receipt_digest
+            ),
             "decoder_version_digest": "d" * 64,
             "qc_algorithm_digest": "e" * 64,
             "qc_policy_digest": "f" * 64,
@@ -5654,30 +6440,22 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             json.dumps(payload, sort_keys=True, separators=(",", ":")),
             encoding="utf-8",
         )
-        with sqlite3.connect(ledger.index_path) as connection:
-            connection.execute(
-                "INSERT OR REPLACE INTO analysis_input_provenance_commits "
-                "(artifact_digest,provenance_kind,provenance_plan_digest,case_id,"
-                "input_plan_digest,raw_resolution_receipt_digest,payload_json,arrays_sha256,"
-                "metadata_sha256,path,raw_ingestor_trust_store_digest,"
-                "raw_trust_validated_at,committed_at,usable) "
-                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,1)",
-                (
-                    run.analysis_input_derivation_artifact_digest,
-                    "holdout",
-                    "5" * 64,
-                    payload["case_id"],
-                    run.input_plan_digest,
-                    payload["global_raw_resolution_receipt_digest"],
-                    json.dumps(payload, sort_keys=True, separators=(",", ":")),
-                    ledger_module._file_digest(arrays_path),
-                    ledger_module._file_digest(metadata_path),
-                    str(target),
-                    raw_trust_digest,
-                    payload["processed_at"],
-                    payload["processed_at"],
-                ),
-            )
+        self._commit_synthetic_analysis_provenance_row(
+            ledger=ledger,
+            artifact_digest=run.analysis_input_derivation_artifact_digest,
+            provenance_kind="operational",
+            provenance_plan_digest="5" * 64,
+            case_id=payload["case_id"],
+            input_plan_digest=run.input_plan_digest,
+            raw_resolution_receipt_digest=(
+                payload["global_raw_resolution_receipt_digest"]
+            ),
+            payload=payload,
+            arrays_path=arrays_path,
+            metadata_path=metadata_path,
+            raw_trust_digest=raw_trust_digest,
+            source_frames_dbz=frames_dbz,
+        )
 
     def select_deployed_prior(self, *args, **kwargs):
         """Exercise the production selector with a committed provenance row."""
@@ -5818,9 +6596,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 input_plan_json=operational_plan.json,
                 input_plan_digest=operational_plan.plan_digest,
             )
-            routing_run = self.with_synthetic_analysis_derivation(routing_run)
+            routing_run = self.with_synthetic_analysis_derivation(
+                routing_run,
+                replay_frames,
+            )
             self._latest_routing_input_run = routing_run
             self.commit_run_analysis_provenance(routing_run, replay_frames)
+            routing_derivation = json.loads(
+                routing_run.analysis_input_derivation_artifact_json
+            )
             mutable_args = list(args)
             mutable_args[4] = kwargs["regime_classifier"].classify(
                 replay_frames,
@@ -5841,7 +6625,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             raw_identity_set_digest = promotion_module.json_digest(
                 {
                     "contract": "resolved-raw-volume-identity-set-v1",
-                    "identity_digests": ["b" * 64],
+                    "identity_digests": sorted(
+                        routing_derivation[
+                            "canonical_raw_volume_identity_digests"
+                        ]
+                    ),
                 }
             )
             kwargs.update(
@@ -5849,7 +6637,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "analysis_input_derivation_artifact_digest": (
                         routing_run.analysis_input_derivation_artifact_digest
                     ),
-                    "global_raw_resolution_receipt_digest": "c" * 64,
+                    "global_raw_resolution_receipt_digest": (
+                        routing_derivation[
+                            "global_raw_resolution_receipt_digest"
+                        ]
+                    ),
                     "resolved_raw_volume_identity_set_digest": (
                         raw_identity_set_digest
                     ),
@@ -6345,6 +7137,17 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "_load_raw_ingestor_trust_store",
                     return_value=plan.raw_ingestor_trust_store,
                 ),
+                patch.object(
+                    ledger_module,
+                    "_load_promotion_deployment_authority_trust_store",
+                    return_value=self.provenance_authority_trust_store(
+                        ledger,
+                        authority_id=plan.analysis_processor_id,
+                        private_key=Ed25519PrivateKey.from_private_bytes(
+                            b"\x23" * 32
+                        ),
+                    ),
+                ),
             ):
                 trusted_datetime.now.return_value = datetime.fromisoformat(
                     "2026-07-01T03:00:00+00:00"
@@ -6399,6 +7202,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         raw_ingestor_trust_store_path=(
                             "/etc/advar/raw-ingestors.json"
                         ),
+                        analysis_processor_trust_store_path=(
+                            "/etc/advar/deployment-authorities.json"
+                        ),
+                        provenance_commit_signer=(
+                            self.provenance_ledger_signer(
+                                trusted_datetime.now.return_value.isoformat()
+                            )
+                        ),
                     )
                 trusted_datetime.now.return_value = datetime.fromisoformat(
                     "2026-08-10T04:00:00+00:00"
@@ -6439,6 +7250,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         ),
                         raw_ingestor_trust_store_path=(
                             "/etc/advar/raw-ingestors.json"
+                        ),
+                        analysis_processor_trust_store_path=(
+                            "/etc/advar/deployment-authorities.json"
                         ),
                     )
                 reconciled = ledger.reconcile_prepared_raw_trust_activations(
@@ -8354,6 +9168,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             subject_digests=(
                 training_derivation.training_dataset_digest,
                 "2" * 64,
+                training_derivation.training_tensor_snapshot_set_digest,
             ),
             process_algorithm_digest="3" * 64,
             process_runtime_digest="4" * 64,
@@ -8372,6 +9187,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     ),
                     training_dataset_derivation_artifact_digest=(
                         training_derivation.artifact_digest
+                    ),
+                    training_tensor_snapshot_set_digest=(
+                        training_derivation.training_tensor_snapshot_set_digest
                     ),
                 )
             ),
@@ -8951,6 +9769,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             analysis_processor_id=plan.analysis_processor_id,
             analysis_processor_public_key_hex=(
                 plan.analysis_processor_public_key_hex
+            ),
+            training_target_source_authority_id=(
+                plan.training_target_source_authority_id
+            ),
+            training_target_source_authority_public_key_hex=(
+                plan.training_target_source_authority_public_key_hex
             ),
         )
         second_policy = replace(
@@ -10765,7 +11589,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             input_plan_json=operational_input_plan.json,
             input_plan_digest=operational_input_plan.plan_digest,
         )
-        input_run = self.with_synthetic_analysis_derivation(baseline.run)
+        input_run = self.with_synthetic_analysis_derivation(
+            baseline.run,
+            frames,
+        )
         classifier = NeuralPriorRegimeClassifier(
             _FixedRegimeClassifier(
                 (12.0, 0.0, -12.0),
@@ -11120,7 +11947,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             loaded.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v15",
+            "neural-prior-deployment-lineage-v16",
         )
 
     def test_current_physical_range_partition_controls_deployment(self) -> None:
@@ -13078,23 +13905,188 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             artifact.training_feature_dataset_artifact_json,
             expected_digest=artifact.training_feature_dataset_artifact_digest,
         )
-        corrupted = bytearray(base64.b64decode(dataset.target_tensor_archive_base64))
+        target_path = Path(dataset.target_archive_shards[0].archive_path)
+        original_target_bytes = target_path.read_bytes()
+        validated_target_snapshot = (
+            dataset.load_validated_tensor_snapshots()
+        )
+        training_handle = dataset.validated_execution_handle()
+        self.assertEqual(
+            training_handle.training_tensor_snapshot_set_digest,
+            artifact.training_tensor_snapshot_set_digest,
+        )
+        handle_snapshots = training_handle.tensor_snapshots()
+        corrupted = bytearray(original_target_bytes)
         corrupted[-1] ^= 1
-        with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+        target_path.chmod(0o600)
+        target_path.write_bytes(corrupted)
+        try:
+            self.assertTrue(
+                torch.equal(
+                    validated_target_snapshot["target_00000"],
+                    torch.arange(4, dtype=torch.float64).reshape(2, 2),
+                )
+            )
+            self.assertTrue(
+                torch.equal(
+                    handle_snapshots["target_00000"],
+                    torch.arange(4, dtype=torch.float64).reshape(2, 2),
+                )
+            )
+            with self.assertRaisesRegex(ValueError, "invalid|shard"):
+                promotion_module._training_feature_dataset_from_json(
+                    artifact.training_feature_dataset_artifact_json,
+                    expected_digest=(
+                        artifact.training_feature_dataset_artifact_digest
+                    ),
+                )
+        finally:
+            target_path.write_bytes(original_target_bytes)
+            target_path.chmod(0o444)
+        private_name, private_tensor = training_handle._tensor_snapshots[0]
+        self.assertTrue(private_name)
+        retained_private_tensor = private_tensor.clone()
+        private_tensor.data.add_(1.0)
+        with self.assertRaisesRegex(ValueError, "snapshot changed"):
+            training_handle.tensor_snapshots()
+        private_tensor.data.copy_(retained_private_tensor)
+        training_handle.validate_integrity()
+        with self.assertRaisesRegex(ValueError, "shards"):
+            replace(dataset, feature_archive_shards=())
+        with self.assertRaisesRegex(ValueError, "shard manifest"):
             replace(
                 dataset,
-                target_tensor_archive_base64=base64.b64encode(corrupted).decode(
-                    "ascii"
+                members=(
+                    replace(
+                        dataset.members[0],
+                        target_valid_mask_archive_member=(
+                            "missing-target-mask"
+                        ),
+                    ),
                 ),
             )
-        with self.assertRaisesRegex(ValueError, "encoding|manifest"):
-            replace(dataset, feature_tensor_archive_base64="")
         with self.assertRaisesRegex(ValueError, "target lineage"):
             replace(
                 dataset,
                 members=(
                     replace(dataset.members[0], case_id="wrong-training-case"),
                 ),
+            )
+        feature_tensor = torch.arange(12, dtype=torch.float64).reshape(3, 2, 2)
+        target_tensor = torch.arange(4, dtype=torch.float64).reshape(2, 2)
+        target_valid_mask = torch.ones_like(target_tensor, dtype=torch.bool)
+        target_quality = torch.ones_like(target_tensor)
+        processor_key = Ed25519PrivateKey.from_private_bytes(b"\x23" * 32)
+        second_source_receipt = (
+            promotion_module.TrainingTargetSourceReceipt.issue(
+                target_source_identity_digest="d" * 64,
+                target_source_valid_time="2026-06-01T00:20:00Z",
+                physical_event_digest="e" * 64,
+                source_object_digest=promotion_module.tensor_digest(
+                    target_tensor
+                ),
+                observed_at="2026-06-01T00:25:00Z",
+                authority_id="test-target-source-authority",
+                authority_private_key=Ed25519PrivateKey.from_private_bytes(
+                    b"\x28" * 32
+                ),
+            )
+        )
+        second_target = promotion_module.TrainingTargetDerivationArtifact.issue(
+            case_id="classifier-training-case-2",
+            target_source_receipt=second_source_receipt,
+            target_qc_policy_digest="2" * 64,
+            target_censor_policy_digest="3" * 64,
+            target_algorithm_digest=dataset.target_algorithm_digest,
+            target_schema_digest=dataset.target_schema_digest,
+            target_tensor=target_tensor,
+            target_valid_mask=target_valid_mask,
+            target_quality=target_quality,
+            generated_at="2026-06-01T00:30:00Z",
+            training_cutoff_time="2026-06-01T00:40:00Z",
+            processor_id="test-analysis-processor",
+            processor_private_key=processor_key,
+        )
+        order_test_root = target_path.parent / "order-test"
+        order_feature_shard = (
+            promotion_module.write_training_tensor_archive_shard(
+                {
+                    "feature_a": feature_tensor,
+                    "feature_b": feature_tensor,
+                },
+                directory=order_test_root,
+                shard_id="order-features",
+            )
+        )
+        order_target_shard = (
+            promotion_module.write_training_tensor_archive_shard(
+                {
+                    "target_a": target_tensor,
+                    "target_b": target_tensor,
+                    "target_valid_a": target_valid_mask,
+                    "target_valid_b": target_valid_mask,
+                    "target_quality_a": target_quality,
+                    "target_quality_b": target_quality,
+                },
+                directory=order_test_root,
+                shard_id="order-targets",
+            )
+        )
+        first_member = replace(
+            dataset.members[0],
+            feature_archive_member="feature_a",
+            target_archive_member="target_a",
+            target_valid_mask_archive_member="target_valid_a",
+            target_quality_archive_member="target_quality_a",
+        )
+        second_member = promotion_module.TrainingDatasetMember(
+            case_id=second_target.case_id,
+            analysis_derivation_artifact_digest="e" * 64,
+            feature_archive_member="feature_b",
+            feature_tensor_digest=promotion_module.tensor_digest(feature_tensor),
+            target_archive_member="target_b",
+            target_tensor_digest=second_target.target_tensor_digest,
+            target_valid_mask_archive_member="target_valid_b",
+            target_quality_archive_member="target_quality_b",
+            target_derivation_artifact_json=json.dumps(
+                second_target.payload
+                | {"artifact_digest": second_target.artifact_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            sample_weight=1.0,
+            split="train",
+            augmentation_seed=1,
+        )
+        ordered_dataset = promotion_module.TrainingFeatureDatasetArtifact(
+            members=(first_member, second_member),
+            normalization_statistics_digest=(
+                dataset.normalization_statistics_digest
+            ),
+            feature_algorithm_digest=dataset.feature_algorithm_digest,
+            feature_schema_digest=dataset.feature_schema_digest,
+            target_algorithm_digest=dataset.target_algorithm_digest,
+            target_schema_digest=dataset.target_schema_digest,
+            feature_archive_shards=(order_feature_shard,),
+            target_archive_shards=(order_target_shard,),
+            normalization_statistics_shard=(
+                dataset.normalization_statistics_shard
+            ),
+        )
+        order_tampered = ordered_dataset.payload | {
+            "dataset_digest": ordered_dataset.dataset_digest
+        }
+        order_tampered["members"] = list(
+            reversed(cast(list[object], order_tampered["members"]))
+        )
+        with self.assertRaisesRegex(ValueError, "digest mismatch"):
+            promotion_module._training_feature_dataset_from_json(
+                json.dumps(
+                    order_tampered,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+                expected_digest=ordered_dataset.dataset_digest,
             )
         target_values = json.loads(
             dataset.member_target_derivation_artifact_jsons[0]
@@ -13161,6 +14153,184 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 self.plan(),
                 regime_classifier_manifests=(attacker_manifest,),
             )
+
+        relabeled_target_derivation = self.training_dataset_derivation(
+            classifier=True,
+            target_source_authority_id="unapproved-target-source",
+            target_source_private_key=Ed25519PrivateKey.from_private_bytes(
+                b"\x79" * 32
+            ),
+        )
+        relabeled_target_manifest = replace(
+            manifest,
+            training_dataset_digest=(
+                relabeled_target_derivation.training_dataset_digest
+            ),
+            training_dataset_derivation_artifact_digest=(
+                relabeled_target_derivation.artifact_digest
+            ),
+            training_dataset_derivation_artifact_json=json.dumps(
+                relabeled_target_derivation.payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            signed_training_member_manifest_digest=(
+                relabeled_target_derivation
+                .signed_training_member_manifest_digest
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "target source authority"):
+            replace(
+                self.plan(),
+                regime_classifier_manifests=(relabeled_target_manifest,),
+            )
+
+    def test_training_targets_are_finite_nonempty_and_inside_windows(self) -> None:
+        processor_key = Ed25519PrivateKey.from_private_bytes(b"\x23" * 32)
+        target_source_receipt = (
+            promotion_module.TrainingTargetSourceReceipt.issue(
+                target_source_identity_digest="1" * 64,
+                target_source_valid_time="2026-06-01T00:10:00Z",
+                physical_event_digest="6" * 64,
+                source_object_digest="7" * 64,
+                observed_at="2026-06-01T00:15:00Z",
+                authority_id="test-target-source-authority",
+                authority_private_key=Ed25519PrivateKey.from_private_bytes(
+                    b"\x28" * 32
+                ),
+            )
+        )
+        common = {
+            "case_id": "target-contract",
+            "target_source_receipt": target_source_receipt,
+            "target_qc_policy_digest": "2" * 64,
+            "target_censor_policy_digest": "3" * 64,
+            "target_algorithm_digest": "4" * 64,
+            "target_schema_digest": "5" * 64,
+            "generated_at": "2026-06-01T00:20:00Z",
+            "training_cutoff_time": "2026-06-01T00:30:00Z",
+            "processor_id": "test-analysis-processor",
+            "processor_private_key": processor_key,
+        }
+        for invalid in (
+            torch.empty(0),
+            torch.tensor([float("nan")]),
+            torch.tensor([float("inf")]),
+        ):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(
+                ValueError, "finite and nonempty"
+            ):
+                promotion_module.TrainingTargetDerivationArtifact.issue(
+                    **common,
+                    target_tensor=invalid,
+                )
+        with self.assertRaisesRegex(ValueError, "chronology"):
+            promotion_module.TrainingTargetDerivationArtifact.issue(
+                **(common | {"generated_at": common["training_cutoff_time"]}),
+                target_tensor=torch.ones(1),
+            )
+
+        outside = self.training_dataset_derivation(
+            classifier=True,
+            target_source_valid_time="2026-06-01T02:00:00Z",
+        )
+        classifier = self.classifier_manifest()
+        with self.assertRaisesRegex(ValueError, "outside its training window"):
+            replace(
+                classifier,
+                training_dataset_digest=outside.training_dataset_digest,
+                training_dataset_derivation_artifact_digest=(
+                    outside.artifact_digest
+                ),
+                training_dataset_derivation_artifact_json=json.dumps(
+                    outside.payload,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+                signed_training_member_manifest_digest=(
+                    outside.signed_training_member_manifest_digest
+                ),
+            )
+
+        candidate_holdout = replace(
+            self.completed_case(1),
+            verification_target_source_identity_digest="d" * 64,
+            verification_target_valid_time="2026-07-01T00:10:00Z",
+            verification_target_tensor_digest="0" * 64,
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "training target source overlaps",
+        ):
+            replace(
+                self.manifest(),
+                holdout_cases=(candidate_holdout, self.completed_case(2)),
+            )
+
+        classifier_holdout = replace(
+            self.completed_case(1),
+            verification_target_source_identity_digest="d" * 64,
+            verification_target_valid_time="2026-06-01T00:10:00Z",
+            verification_target_tensor_digest="0" * 64,
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "training target source overlaps",
+        ):
+            promotion_module._validate_classifier_holdout_independence(
+                self.classifier_manifest(),
+                (classifier_holdout, self.completed_case(2)),
+            )
+
+        offset_derivation = self.training_dataset_derivation(
+            classifier=True,
+            target_source_valid_time="2026-06-01T09:10:00+09:00",
+        )
+        self.assertEqual(
+            offset_derivation.target_derivations[0].target_source_valid_time,
+            "2026-06-01T00:10:00Z",
+        )
+        offset_classifier = replace(
+            self.classifier_manifest(),
+            training_dataset_digest=offset_derivation.training_dataset_digest,
+            training_dataset_derivation_artifact_digest=(
+                offset_derivation.artifact_digest
+            ),
+            training_dataset_derivation_artifact_json=json.dumps(
+                offset_derivation.payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            signed_training_member_manifest_digest=(
+                offset_derivation.signed_training_member_manifest_digest
+            ),
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "training target source overlaps",
+        ):
+            promotion_module._validate_classifier_holdout_independence(
+                offset_classifier,
+                (classifier_holdout, self.completed_case(2)),
+            )
+
+    def test_training_shard_rejects_oversized_file_before_hashing(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "oversized.npz"
+            with path.open("wb") as stream:
+                stream.seek(512 * 1024**2)
+                stream.write(b"\0")
+            with self.assertRaisesRegex(ValueError, "bytes"):
+                promotion_module.TrainingTensorArchiveShard(
+                    shard_id="oversized",
+                    archive_path=str(path.resolve()),
+                    archive_sha256="0" * 64,
+                    archive_size_bytes=path.stat().st_size,
+                    member_names=("target",),
+                    member_tensor_digests=("1" * 64,),
+                    member_dtypes=("float32",),
+                    member_shapes=((1,),),
+                )
 
     def test_scoring_replay_crash_durability(self) -> None:
         events: list[tuple[str, str]] = []
@@ -13503,6 +14673,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             analysis_processor_public_key_hex=(
                 plan.analysis_processor_public_key_hex
             ),
+            training_target_source_authority_id=(
+                plan.training_target_source_authority_id
+            ),
+            training_target_source_authority_public_key_hex=(
+                plan.training_target_source_authority_public_key_hex
+            ),
         )
         trust = _LearningPolicyTrustStore(
             approved_policy_digests=frozenset((
@@ -13703,6 +14879,32 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             ledger = EpisodeLedger(Path(directory))
+            orphan_ledger = EpisodeLedger(Path(directory) / "orphan-ledger")
+            authority_trust = self.provenance_authority_trust_store(
+                ledger,
+                authority_id=operational_plan.analysis_processor_id,
+                private_key=processor_key,
+                content_digest=authority_trust.content_digest,
+            )
+            with sqlite3.connect(orphan_ledger.index_path) as connection:
+                orphan_instance = connection.execute(
+                    "SELECT ledger_instance_digest FROM "
+                    "deployment_certificate_chain_head WHERE singleton = 1"
+                ).fetchone()[0]
+            authority_trust = replace(
+                authority_trust,
+                ledger_instance_digests={
+                    **authority_trust.ledger_instance_digests,
+                    "test-ledger": (
+                        authority_trust.ledger_instance_digests["test-ledger"]
+                        | frozenset({orphan_instance})
+                    ),
+                },
+                ledger_instance_index_paths={
+                    **authority_trust.ledger_instance_index_paths,
+                    orphan_instance: orphan_ledger.index_path,
+                },
+            )
             with (
                 patch.object(
                     ledger_module,
@@ -13731,13 +14933,445 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     )
                     + timedelta(seconds=1)
                 )
+                append_arguments = {
+                    "run": run,
+                    "resolved_raw_observations": receipts,
+                    "raw_resolution": resolution,
+                    "derivation": derivation,
+                    "resolved_source_coverage": None,
+                    "raw_ingestor_trust_store_path": (
+                        "/etc/advar/raw-ingestors.json"
+                    ),
+                    "analysis_processor_trust_store_path": (
+                        "/etc/advar/deployment-authorities.json"
+                    ),
+                    "provenance_commit_signer": (
+                        self.provenance_ledger_signer(
+                            (
+                                promotion_module._canonical_datetime(
+                                    derivation.processed_at
+                                )
+                                + timedelta(seconds=1)
+                            ).isoformat()
+                        )
+                    ),
+                }
+                with patch.object(
+                    EpisodeLedger,
+                    "reconcile_prepared_analysis_input_provenance",
+                    side_effect=RuntimeError("simulated postcommit crash"),
+                ), self.assertRaisesRegex(RuntimeError, "postcommit crash"):
+                    ledger.append_operational_analysis_input_provenance(
+                        operational_plan,
+                        **append_arguments,
+                    )
+                with sqlite3.connect(ledger.index_path) as connection:
+                    prepared = connection.execute(
+                        "SELECT status,usable FROM "
+                        "analysis_input_provenance_commits "
+                        "WHERE artifact_digest = ?",
+                        (derivation.artifact_digest,),
+                    ).fetchone()
+                self.assertEqual(prepared, ("prepared", 0))
+                recovery_time = (
+                    promotion_module._canonical_datetime(
+                        input_plan.decision_deadline
+                    )
+                    + timedelta(seconds=1)
+                )
+                clock.now.return_value = recovery_time
+                append_arguments["provenance_commit_signer"] = (
+                    self.provenance_ledger_signer(recovery_time.isoformat())
+                )
                 ledger.append_operational_analysis_input_provenance(
                     operational_plan,
-                    run=run,
-                    resolved_raw_observations=receipts,
-                    raw_resolution=resolution,
-                    derivation=derivation,
-                    resolved_source_coverage=None,
+                    **append_arguments,
+                )
+                clock.now.return_value = datetime.fromisoformat(
+                    "2026-08-08T00:00:00+00:00"
+                )
+                orphan_ledger.append_operational_analysis_input_provenance_plan(
+                    operational_plan,
+                    analysis_processor_trust_store_path=(
+                        "/etc/advar/deployment-authorities.json"
+                    ),
+                )
+                shutil.copytree(
+                    ledger.analysis_input_provenance_dir
+                    / derivation.artifact_digest,
+                    orphan_ledger.analysis_input_provenance_dir
+                    / derivation.artifact_digest,
+                )
+                clock.now.return_value = (
+                    promotion_module._canonical_datetime(
+                        derivation.processed_at
+                    )
+                    + timedelta(seconds=1)
+                )
+                append_arguments["provenance_commit_signer"] = (
+                    self.provenance_ledger_signer(
+                        clock.now.return_value.isoformat()
+                    )
+                )
+                orphan_ledger.append_operational_analysis_input_provenance(
+                    operational_plan,
+                    **append_arguments,
+                )
+                with sqlite3.connect(orphan_ledger.index_path) as connection:
+                    adopted = connection.execute(
+                        "SELECT status,usable FROM "
+                        "analysis_input_provenance_commits "
+                        "WHERE artifact_digest = ?",
+                        (derivation.artifact_digest,),
+                    ).fetchone()
+                self.assertEqual(adopted, ("active", 1))
+                with orphan_ledger._connect() as connection:
+                    connection.execute(
+                        "DROP TRIGGER "
+                        "operational_raw_resolution_history_no_delete"
+                    )
+                    connection.execute(
+                        "DELETE FROM operational_raw_resolution_history"
+                    )
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "history is not committed",
+                ):
+                    orphan_ledger.reconcile_prepared_analysis_input_provenance(
+                        derivation.artifact_digest,
+                        raw_ingestor_trust_store_path=(
+                            "/etc/advar/raw-ingestors.json"
+                        ),
+                        analysis_processor_trust_store_path=(
+                            "/etc/advar/deployment-authorities.json"
+                        ),
+                    )
+            with sqlite3.connect(ledger.index_path) as connection:
+                retained = connection.execute(
+                    "SELECT provenance_kind,status,usable FROM "
+                    "analysis_input_provenance_commits WHERE artifact_digest = ?",
+                    (derivation.artifact_digest,),
+                ).fetchone()
+                holdout_rows = connection.execute(
+                    "SELECT COUNT(*) FROM neural_prior_holdout_plans"
+                ).fetchone()[0]
+                connection.execute(
+                    "DROP TRIGGER operational_raw_resolution_history_no_delete"
+                )
+                connection.execute(
+                    "DROP TRIGGER "
+                    "operational_raw_resolution_legacy_anchors_no_delete"
+                )
+                connection.execute(
+                    "DELETE FROM operational_raw_resolution_history"
+                )
+                connection.execute(
+                    "DELETE FROM operational_raw_resolution_legacy_anchors"
+                )
+                connection.execute("PRAGMA user_version = 37")
+            metadata_path = (
+                ledger.analysis_input_provenance_dir
+                / derivation.artifact_digest
+                / "provenance.json"
+            )
+            original_metadata = metadata_path.read_text("utf-8")
+            tampered_metadata = json.loads(original_metadata)
+            tampered_metadata["raw_resolution"]["slot_identity_bindings"][0][
+                1
+            ] = "f" * 64
+            metadata_path.write_text(
+                json.dumps(
+                    tampered_metadata,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                ValueError,
+                "durable bytes changed",
+            ):
+                EpisodeLedger(Path(directory))
+            metadata_path.write_text(original_metadata, encoding="utf-8")
+            migrated = EpisodeLedger(Path(directory))
+            migrated_predecessors = tuple(
+                migrated.operational_raw_resolution_predecessor(
+                    item.slot_plan_digest
+                )
+                for item in receipts
+            )
+            poisoned_slot = receipts[0].slot_plan_digest
+            poisoned_identity = "f" * 64
+            with migrated._connect() as connection:
+                commit = connection.execute(
+                    "SELECT artifact_digest,raw_resolution_receipt_digest,"
+                    "payload_committed_at FROM "
+                    "analysis_input_provenance_commits WHERE "
+                    "provenance_kind = 'operational'"
+                ).fetchone()
+                assert commit is not None
+                connection.execute(
+                    "DROP TRIGGER "
+                    "operational_raw_resolution_legacy_anchors_no_delete"
+                )
+                connection.execute(
+                    "DELETE FROM operational_raw_resolution_legacy_anchors "
+                    "WHERE slot_digest = ?",
+                    (poisoned_slot,),
+                )
+                poisoned_anchor = promotion_module.json_digest(
+                    {
+                        "contract": (
+                            "operational-raw-resolution-legacy-anchor-v1"
+                        ),
+                        "slot_digest": poisoned_slot,
+                        "resolution_identity_digest": poisoned_identity,
+                        "resolution_kind": "resolved",
+                        "provenance_artifact_digest": str(commit[0]),
+                        "raw_resolution_receipt_digest": str(commit[1]),
+                    }
+                )
+                connection.execute(
+                    "INSERT INTO operational_raw_resolution_legacy_anchors "
+                    "(slot_digest,anchor_digest,provenance_artifact_digest,"
+                    "raw_resolution_receipt_digest,resolution_identity_digest,"
+                    "resolution_kind,anchored_at) VALUES (?,?,?,?,?,?,?)",
+                    (
+                        poisoned_slot,
+                        poisoned_anchor,
+                        commit[0],
+                        commit[1],
+                        poisoned_identity,
+                        "resolved",
+                        commit[2],
+                    ),
+                )
+            with self.assertRaisesRegex(
+                ValueError,
+                "legacy anchor preimage changed",
+            ):
+                migrated.operational_raw_resolution_predecessor(poisoned_slot)
+        self.assertEqual(retained, ("operational", "active", 1))
+        self.assertEqual(holdout_rows, 0)
+        self.assertTrue(
+            all(
+                predecessor
+                != promotion_module.OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST
+                and identity == receipt.resolution_identity_digest
+                and kind == "resolved"
+                for (predecessor, identity, kind), receipt in zip(
+                    migrated_predecessors,
+                    receipts,
+                    strict=True,
+                )
+            )
+        )
+
+    def test_self_authorized_provenance_receipt_is_rejected(self) -> None:
+        plan = self.plan()
+        replay_case = self.scoring_replay_cases(
+            (self.evaluation(1, -0.2),),
+            plan=plan,
+        )[0]
+        original = replay_case.analysis_input_derivation
+        input_plan = next(
+            item
+            for item in plan.input_plans
+            if item.plan_digest == original.input_plan_digest
+        )
+        attacker_key = Ed25519PrivateKey.from_private_bytes(b"\x44" * 32)
+        forged_unsigned = original.unsigned_payload | {
+            "processor_id": "attacker-analysis-processor",
+            "processor_public_key_hex": (
+                attacker_key.public_key().public_bytes_raw().hex()
+            ),
+        }
+        forged = promotion_module.AnalysisInputDerivationArtifact(
+            **forged_unsigned,
+            processor_signature_hex=attacker_key.sign(
+                promotion_module.json_digest(forged_unsigned).encode("ascii")
+            ).hex(),
+        )
+        payload = forged.payload | {
+            "artifact_digest": forged.artifact_digest,
+            "input_plan": input_plan.payload
+            | {"plan_digest": input_plan.plan_digest},
+        }
+        payload_json = json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        committed_at = input_plan.input_available_time
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            target = (
+                ledger.analysis_input_provenance_dir
+                / forged.artifact_digest
+            )
+            target.mkdir()
+            arrays_path = target / "source_and_derived_arrays.npz"
+            metadata_path = target / "provenance.json"
+            np.savez_compressed(
+                arrays_path,
+                derived_input_frames=np.zeros((3, 2, 2), dtype=np.float32),
+            )
+            metadata_path.write_text(
+                json.dumps(
+                    {
+                        "contract": "analysis-input-provenance-bundle-v1",
+                        "global_resolution": (
+                            replay_case.global_raw_resolution_receipt.payload
+                            | {
+                                "receipt_digest": (
+                                    replay_case
+                                    .global_raw_resolution_receipt
+                                    .receipt_digest
+                                )
+                            }
+                        ),
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+                encoding="utf-8",
+            )
+            checksums = {
+                "source_and_derived_arrays.npz": ledger_module._file_digest(
+                    arrays_path
+                ),
+                "provenance.json": ledger_module._file_digest(metadata_path),
+            }
+            (target / "checksums.json").write_text(
+                ledger_module._json_text(checksums),
+                encoding="utf-8",
+            )
+            with ledger._connect() as connection:
+                connection.execute(
+                    "INSERT INTO neural_prior_holdout_plans "
+                    "(plan_digest,plan_id,plan_json,policy_digest,"
+                    "trust_store_digest,registered_at,created_at) "
+                    "VALUES (?,?,?,?,?,?,?)",
+                    (
+                        plan.plan_digest,
+                        plan.plan_id,
+                        json.dumps(asdict(plan), sort_keys=True),
+                        "6" * 64,
+                        "7" * 64,
+                        plan.registered_at,
+                        plan.registered_at,
+                    ),
+                )
+                connection.create_function(
+                    "advar_trusted_utc_now",
+                    0,
+                    lambda: committed_at,
+                )
+                connection.execute(
+                    "INSERT INTO analysis_input_provenance_commits "
+                    "(artifact_digest,provenance_kind,"
+                    "provenance_plan_digest,case_id,input_plan_digest,"
+                    "raw_resolution_receipt_digest,payload_json,"
+                    "arrays_sha256,metadata_sha256,path,"
+                    "raw_ingestor_trust_store_digest,"
+                    "raw_trust_validated_at,committed_at,usable,status,"
+                    "payload_committed_at,preparation_receipt_json,"
+                    "preparation_receipt_digest,activated_at,expired_at) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,NULL,?,0,'prepared',"
+                    "?,NULL,NULL,NULL,NULL)",
+                    (
+                        forged.artifact_digest,
+                        "holdout",
+                        plan.plan_digest,
+                        forged.case_id,
+                        input_plan.plan_digest,
+                        forged.global_raw_resolution_receipt_digest,
+                        payload_json,
+                        checksums["source_and_derived_arrays.npz"],
+                        checksums["provenance.json"],
+                        str(target),
+                        plan.raw_ingestor_trust_store.content_digest,
+                        committed_at,
+                        committed_at,
+                    ),
+                )
+            ledger_signer = self.provenance_ledger_signer(committed_at)
+            trusted_processor = Ed25519PrivateKey.from_private_bytes(
+                b"\x23" * 32
+            )
+            authority_trust = self.provenance_authority_trust_store(
+                ledger,
+                authority_id=plan.analysis_processor_id,
+                private_key=trusted_processor,
+                content_digest="7" * 64,
+            )
+            with sqlite3.connect(ledger.index_path) as connection:
+                ledger_instance_digest = connection.execute(
+                    "SELECT ledger_instance_digest FROM "
+                    "deployment_certificate_chain_head WHERE singleton = 1"
+                ).fetchone()[0]
+            with patch.object(
+                ledger_module,
+                "datetime",
+                wraps=datetime,
+            ) as clock:
+                clock.now.return_value = promotion_module._canonical_datetime(
+                    committed_at
+                )
+                receipt_json, receipt_digest = (
+                    ledger._issue_analysis_provenance_preparation_receipt(
+                        artifact_digest=forged.artifact_digest,
+                        provenance_kind="holdout",
+                        provenance_plan_digest=plan.plan_digest,
+                        input_plan_digest=input_plan.plan_digest,
+                        raw_resolution_receipt_digest=(
+                            forged.global_raw_resolution_receipt_digest
+                        ),
+                        payload_json=payload_json,
+                        payload_committed_at=committed_at,
+                        deadline=input_plan.decision_deadline,
+                        ledger_instance_digest=ledger_instance_digest,
+                        side_effect_digest="a" * 64,
+                        authority_trust_store=authority_trust,
+                        signer=ledger_signer,
+                    )
+                )
+            with ledger._connect() as connection:
+                connection.execute(
+                    "UPDATE analysis_input_provenance_commits SET "
+                    "preparation_receipt_json=?,"
+                    "preparation_receipt_digest=? "
+                    "WHERE artifact_digest=? AND status='prepared'",
+                    (
+                        receipt_json,
+                        receipt_digest,
+                        forged.artifact_digest,
+                    ),
+                )
+                connection.execute(
+                    "UPDATE analysis_input_provenance_commits SET "
+                    "status='active',usable=1,"
+                    "raw_trust_validated_at=?,activated_at=? "
+                    "WHERE artifact_digest=? AND status='prepared'",
+                    (
+                        committed_at,
+                        committed_at,
+                        forged.artifact_digest,
+                    ),
+                )
+            with (
+                patch.object(
+                    ledger_module,
+                    "_load_promotion_deployment_authority_trust_store",
+                    return_value=authority_trust,
+                ),
+                self.assertRaisesRegex(
+                    ValueError,
+                    "disagrees with its registered plan",
+                ),
+            ):
+                ledger.reconcile_prepared_analysis_input_provenance(
+                    forged.artifact_digest,
                     raw_ingestor_trust_store_path=(
                         "/etc/advar/raw-ingestors.json"
                     ),
@@ -13745,17 +15379,114 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         "/etc/advar/deployment-authorities.json"
                     ),
                 )
-            with sqlite3.connect(ledger.index_path) as connection:
-                retained = connection.execute(
-                    "SELECT provenance_kind,usable FROM "
-                    "analysis_input_provenance_commits WHERE artifact_digest = ?",
-                    (derivation.artifact_digest,),
+
+    def test_recovery_rechecks_processor_and_derivation_chronology(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            processor_key = Ed25519PrivateKey.from_private_bytes(b"\x23" * 32)
+            processor_trust = self.provenance_authority_trust_store(
+                ledger,
+                authority_id="test-analysis-processor",
+                private_key=processor_key,
+            )
+            self._latest_operational_ledger = ledger
+            self._latest_deployment_authority_trust = processor_trust
+            input_plan = self.live_operational_input_plan(
+                self.plan().input_plans[0]
+            )
+            provenance = self.operational_provenance_kwargs(
+                input_plan,
+                full_analysis_input_digest="f" * 64,
+            )
+            artifact_digest = provenance[
+                "analysis_input_derivation_artifact_digest"
+            ]
+            with ledger._connect() as connection:
+                row = connection.execute(
+                    "SELECT payload_json,raw_resolution_receipt_digest "
+                    "FROM analysis_input_provenance_commits "
+                    "WHERE artifact_digest=?",
+                    (artifact_digest,),
                 ).fetchone()
-                holdout_rows = connection.execute(
-                    "SELECT COUNT(*) FROM neural_prior_holdout_plans"
-                ).fetchone()[0]
-        self.assertEqual(retained, ("operational", 1))
-        self.assertEqual(holdout_rows, 0)
+            assert row is not None
+            retained_payload = json.loads(str(row[0]))
+            processed_at = promotion_module._canonical_datetime(
+                retained_payload["processed_at"]
+            )
+            revoked_at = (processed_at + timedelta(microseconds=1)).isoformat()
+            revoked_trust = replace(
+                processor_trust,
+                revoked_at={
+                    **processor_trust.revoked_at,
+                    "test-analysis-processor": revoked_at,
+                },
+            )
+            with (
+                patch.object(
+                    ledger_module,
+                    "_load_promotion_deployment_authority_trust_store",
+                    return_value=revoked_trust,
+                ),
+                patch.object(
+                    ledger_module,
+                    "_load_raw_ingestor_trust_store",
+                    return_value=self.plan().raw_ingestor_trust_store,
+                ),
+                self.assertRaisesRegex(ValueError, "not root-approved"),
+            ):
+                ledger.reconcile_prepared_analysis_input_provenance(
+                    artifact_digest,
+                    raw_ingestor_trust_store_path=(
+                        "/etc/advar/raw-ingestors.json"
+                    ),
+                    analysis_processor_trust_store_path=(
+                        "/etc/advar/deployment-authorities.json"
+                    ),
+                )
+
+            future_input_plan = self.live_operational_input_plan(
+                self.plan().input_plans[1]
+            )
+            future_processed_at = promotion_module._canonical_time(
+                (
+                    promotion_module._canonical_datetime(
+                        future_input_plan.decision_deadline
+                    )
+                    + timedelta(seconds=1)
+                ).isoformat()
+            )
+            future_provenance = self.operational_provenance_kwargs(
+                future_input_plan,
+                full_analysis_input_digest="e" * 64,
+                processed_at=future_processed_at,
+            )
+            future_artifact_digest = future_provenance[
+                "analysis_input_derivation_artifact_digest"
+            ]
+            with (
+                patch.object(
+                    ledger_module,
+                    "_load_promotion_deployment_authority_trust_store",
+                    return_value=processor_trust,
+                ),
+                patch.object(
+                    ledger_module,
+                    "_load_raw_ingestor_trust_store",
+                    return_value=self.plan().raw_ingestor_trust_store,
+                ),
+                self.assertRaisesRegex(ValueError, "durable deadline"),
+            ):
+                ledger.reconcile_prepared_analysis_input_provenance(
+                    future_artifact_digest,
+                    raw_ingestor_trust_store_path=(
+                        "/etc/advar/raw-ingestors.json"
+                    ),
+                    analysis_processor_trust_store_path=(
+                        "/etc/advar/deployment-authorities.json"
+                    ),
+                )
 
     def test_raw_identity_survives_ingestor_key_rotation(self) -> None:
         plan = self.plan()
@@ -14106,6 +15837,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 subject_digests=(
                     training_derivation.training_dataset_digest,
                     manifest.candidate_training_manifest_digest,
+                    training_derivation.training_tensor_snapshot_set_digest,
                 ),
                 process_algorithm_digest=manifest.algorithm_bundle_digest,
                 process_runtime_digest=manifest.numerical_runtime_digest,
@@ -14124,6 +15856,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         training_raw_registry_receipt_digest=receipt.receipt_digest,
                         training_dataset_derivation_artifact_digest=(
                             training_derivation.artifact_digest
+                        ),
+                        training_tensor_snapshot_set_digest=(
+                            training_derivation.training_tensor_snapshot_set_digest
                         ),
                     )
                 ),
@@ -14530,6 +16265,18 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         background_frames_dbz=case.background_frames_dbz,
                         raw_ingestor_trust_store_path=(
                             "/etc/advar/raw-ingestors.json"
+                        ),
+                        analysis_processor_trust_store_path=(
+                            "/etc/advar/deployment-authorities.json"
+                        ),
+                        provenance_commit_signer=(
+                            promotion_module.Ed25519DeploymentAuthoritySigner(
+                                authority_id=plan.analysis_processor_id,
+                                private_key=Ed25519PrivateKey.from_private_bytes(
+                                    b"\x23" * 32
+                                ),
+                                fixed_signing_time=after_deadline.isoformat(),
+                            )
                         ),
                     )
 
@@ -15324,6 +17071,148 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "/etc/advar/deployment-authorities.json"
                 ),
             )
+
+    def test_activation_write_lock_crossing_publication_fails_closed(self) -> None:
+        evidence = self.deployment_ready(
+            self.compute((self.evaluation(1, -0.2), self.evaluation(2, -0.3)))
+        )
+        certificate, _ = self.deployment_certificate(evidence)
+        policy = DeployedNeuralPriorPolicy(
+            candidate_prior_digest=evidence.candidate_prior_digest,
+            parent_prior_digest=evidence.parent_prior_digest,
+            promotion_evidence_digest=evidence.promotion_evidence_digest,
+            promotion_deployment_certificate_digest=certificate.certificate_digest,
+            promotion_deployment_authority_trust_store_digest=(
+                certificate.authority_trust_store_digest
+            ),
+            regime_classifier_digest=evidence.deployment_regime_classifier_digest,
+            regime_classifier_manifest_digest=(
+                evidence.deployment_regime_classifier_manifest_digest
+            ),
+            range_geometry_contract_digest=(
+                evidence.certified_range_geometry_contract_digests[0]
+            ),
+        )
+        before = datetime.now().astimezone()
+        publication = before + timedelta(minutes=10)
+        after = publication + timedelta(microseconds=1)
+        input_plan = replace(
+            self.live_operational_input_plan(self.plan().input_plans[0]),
+            decision_deadline=(before + timedelta(minutes=5)).isoformat(),
+            publication_time=publication.isoformat(),
+        )
+        decision = self.operational_decision_payload(
+            evidence=evidence,
+            certificate=certificate,
+            policy=policy,
+            input_plan=input_plan,
+            full_analysis_input_digest="2" * 64,
+        )
+        ledger = self._latest_operational_ledger
+        real_connect = ledger._connect
+        trusted_now = [before]
+        delayed = [False]
+
+        class DelayedActivationConnection:
+            def __init__(self):
+                self._connection = real_connect()
+
+            def __enter__(self):
+                self._connection.__enter__()
+                return self
+
+            def __exit__(self, *args):
+                return self._connection.__exit__(*args)
+
+            @property
+            def row_factory(self):
+                return self._connection.row_factory
+
+            @row_factory.setter
+            def row_factory(self, value):
+                self._connection.row_factory = value
+
+            def execute(self, sql, parameters=()):
+                if sql == "BEGIN IMMEDIATE" and not delayed[0]:
+                    with sqlite3.connect(ledger.index_path) as inspector:
+                        activation_ready = inspector.execute(
+                            "SELECT 1 FROM operational_decision_publications p "
+                            "JOIN operational_decision_issuance_states s ON "
+                            "s.certificate_digest = p.certificate_digest "
+                            "WHERE s.operational_cycle_id = ? AND "
+                            "s.status = 'decision_recorded' AND p.usable = 0 AND "
+                            "p.receipt_digest IS NOT NULL AND "
+                            "p.publication_payload_committed_at IS NOT NULL AND "
+                            "p.activation_committed_at IS NULL",
+                            (decision["operational_cycle_id"],),
+                        ).fetchone()
+                    if activation_ready is not None:
+                        delayed[0] = True
+                        blocker = sqlite3.connect(
+                            ledger.index_path,
+                            check_same_thread=False,
+                        )
+                        blocker.execute("BEGIN IMMEDIATE")
+
+                        def release_after_publication():
+                            time.sleep(0.05)
+                            trusted_now[0] = after
+                            blocker.commit()
+                            blocker.close()
+
+                        with ThreadPoolExecutor(max_workers=1) as executor:
+                            future = executor.submit(release_after_publication)
+                            result = self._connection.execute(sql, parameters)
+                            future.result()
+                            return result
+                return self._connection.execute(sql, parameters)
+
+        def delayed_connect(instance):
+            self.assertIs(instance, ledger)
+            return DelayedActivationConnection()
+
+        with patch.object(
+            ledger_module.EpisodeLedger,
+            "_connect",
+            delayed_connect,
+        ), patch.object(
+            ledger_module,
+            "datetime",
+            wraps=datetime,
+        ) as clock, self.assertRaisesRegex(
+            ValueError,
+            "guard interval",
+        ):
+            clock.now.side_effect = lambda *_args, **_kwargs: trusted_now[0]
+            ledger.issue_operational_deployment_decision(
+                decision,
+                promotion_deployment_certificate=certificate,
+                promotion_evidence=evidence,
+                policy=policy,
+                policy_trust_store_digest="c" * 64,
+                ledger_signer=self.operational_ledger_signer(),
+                operational_signer=self.operational_decision_signer(),
+                authority_trust_store_path=(
+                    "/etc/advar/deployment-authorities.json"
+                ),
+            )
+        self.assertTrue(delayed[0])
+        with sqlite3.connect(ledger.index_path) as connection:
+            state = connection.execute(
+                "SELECT status FROM operational_decision_issuance_states "
+                "WHERE operational_cycle_id = ?",
+                (decision["operational_cycle_id"],),
+            ).fetchone()
+            publication_row = connection.execute(
+                "SELECT usable,activation_committed_at FROM "
+                "operational_decision_publications WHERE certificate_digest = "
+                "(SELECT certificate_digest FROM "
+                "operational_decision_issuance_states WHERE "
+                "operational_cycle_id = ?)",
+                (decision["operational_cycle_id"],),
+            ).fetchone()
+        self.assertEqual(state, ("expired",))
+        self.assertEqual(publication_row, (0, None))
         with sqlite3.connect(
             self._latest_operational_ledger.index_path
         ) as connection:
@@ -15611,7 +17500,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             / "source_and_derived_arrays.npz"
         )
         arrays_path.unlink()
-        with self.assertRaisesRegex(ValueError, "durable analysis provenance"):
+        with self.assertRaisesRegex(
+            ValueError,
+            "(?:durable analysis provenance|provenance durable bytes changed)",
+        ):
             issue(decision)
 
     def test_operational_fault_injection_every_stage_is_retryable(self) -> None:
@@ -15882,14 +17774,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             self._latest_operational_ledger.index_path
         ) as connection:
             connection.execute(
-                "CREATE TRIGGER test_fail_activation_receipt_insert "
-                "BEFORE INSERT ON operational_decision_activation_receipts "
-                "BEGIN SELECT RAISE(ABORT, 'injected activation receipt failure'); END"
+                "CREATE TRIGGER test_fail_commit_authorization_insert "
+                "BEFORE INSERT ON "
+                "operational_decision_commit_authorization_receipts "
+                "BEGIN SELECT RAISE(ABORT, "
+                "'injected commit authorization failure'); END"
             )
         try:
             with self.assertRaisesRegex(
                 sqlite3.IntegrityError,
-                "injected activation receipt",
+                "injected commit authorization",
             ):
                 issue()
         finally:
@@ -15898,7 +17792,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ) as connection:
                 connection.execute(
                     "DROP TRIGGER IF EXISTS "
-                    "test_fail_activation_receipt_insert"
+                    "test_fail_commit_authorization_insert"
                 )
         with sqlite3.connect(
             self._latest_operational_ledger.index_path
@@ -15920,9 +17814,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 "SELECT COUNT(*) FROM "
                 "operational_decision_activation_receipts"
             ).fetchone()[0]
+            authorization_receipt_count = connection.execute(
+                "SELECT COUNT(*) FROM "
+                "operational_decision_commit_authorization_receipts"
+            ).fetchone()[0]
         self.assertEqual(atomic_state, ("decision_recorded",))
-        self.assertEqual(atomic_publication, (0, None))
-        self.assertEqual(activation_receipt_count, 0)
+        self.assertEqual(atomic_publication[0], 0)
+        self.assertIsNotNone(atomic_publication[1])
+        self.assertEqual(activation_receipt_count, 1)
+        self.assertEqual(authorization_receipt_count, 0)
 
         resume_time = (
             promotion_module._canonical_datetime(input_plan.decision_deadline)
@@ -16202,7 +18102,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 "operational_cycle_id = ?)",
                 (decision["operational_cycle_id"],),
             ).fetchone()
-        self.assertEqual(state, ("decision_recorded",))
+        self.assertEqual(state, ("expired",))
         self.assertIsNotNone(publication)
         assert publication is not None
         self.assertEqual(publication[0], 0)
