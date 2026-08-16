@@ -65,7 +65,7 @@ regression are all present.
 - [x] Run the full CPU test suite and subtests on the final tree.
 - [x] Build source/wheel distributions and run installed CLI smoke on the final tree.
 - [x] Audit the complete diff and migrations.
-- [ ] Open the PR, require every CI check to pass, and merge.
+- [x] Open the PR, require every CI check to pass, and merge.
 
 ## Verification evidence
 
@@ -84,3 +84,7 @@ regression are all present.
 - Installed-wheel CLI smoke: package `0.89.0`, output `nowcast-npz-v71`,
   forecast run `forecast-run-v65`, finite-mask and output-shape checks passed.
 - `git diff --check`: clean.
+- PR [#124](https://github.com/gonos2k/AD4DVAR-radar/pull/124) final head
+  `55fdbf8f18d6114a68b14509ce8db3056c47e849` passed Python 3.10 CPU in
+  34m6s, Python 3.12 CPU in 36m9s, and Wheel/CLI smoke in 1m34s, then merged
+  as `7be9f49758d8b1dd6cb91144048474f1724912a1`.
