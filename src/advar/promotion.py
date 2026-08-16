@@ -19,6 +19,7 @@ import random
 import re
 import stat
 from statistics import NormalDist
+import tempfile
 from typing import Any, cast, Literal, Protocol
 import zipfile
 
@@ -2002,6 +2003,68 @@ class OperationalRawVolumeResolutionReceipt:
         }
 
 
+def _operational_raw_volume_resolution_receipt_from_json(
+    text: str,
+    *,
+    expected_digest: str | None = None,
+) -> OperationalRawVolumeResolutionReceipt:
+    """Decode and canonically rehash one complete operational resolution."""
+
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as error:
+        raise ValueError("operational raw-volume resolution is invalid") from error
+    if not isinstance(payload, dict):
+        raise ValueError("operational raw-volume resolution is invalid")
+    values = dict(payload)
+    stored_digest = values.pop("receipt_digest", None)
+    raw_bindings = values.get("slot_identity_bindings")
+    raw_entries = values.get("history_entries")
+    if (
+        not isinstance(raw_bindings, list)
+        or any(not isinstance(item, list) or len(item) != 2 for item in raw_bindings)
+        or not isinstance(raw_entries, list)
+        or any(not isinstance(item, dict) for item in raw_entries)
+    ):
+        raise ValueError("operational raw-volume resolution is invalid")
+    try:
+        values["slot_identity_bindings"] = tuple(
+            (str(item[0]), str(item[1])) for item in raw_bindings
+        )
+        decoded_entries: list[OperationalRawResolutionHistoryEntry] = []
+        for raw_entry in raw_entries:
+            entry_values = dict(raw_entry)
+            entry_digest = entry_values.pop("entry_digest", None)
+            entry_json = json.dumps(
+                entry_values,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            decoded_entries.append(
+                _operational_raw_resolution_history_entry_from_json(
+                    entry_json,
+                    expected_digest=(
+                        None if entry_digest is None else str(entry_digest)
+                    ),
+                )
+            )
+        values["history_entries"] = tuple(decoded_entries)
+        receipt = OperationalRawVolumeResolutionReceipt(**cast(Any, values))
+    except (TypeError, ValueError) as error:
+        raise ValueError("operational raw-volume resolution is invalid") from error
+    canonical = json.dumps(
+        receipt.payload | {"receipt_digest": receipt.receipt_digest},
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    if (
+        expected_digest is not None
+        and receipt.receipt_digest != expected_digest
+    ) or stored_digest != receipt.receipt_digest or text != canonical:
+        raise ValueError("operational raw-volume resolution digest mismatch")
+    return receipt
+
+
 def _operational_raw_resolution_history_entry_from_json(
     text: str,
     *,
@@ -3835,6 +3898,117 @@ def validate_operational_issuance_domain_artifact(
 
 
 @dataclass(frozen=True)
+class TrainingTargetSourceReceipt:
+    """Independent authority receipt for one immutable verification source."""
+
+    target_source_identity_digest: str
+    target_source_valid_time: str
+    physical_event_digest: str
+    source_object_digest: str
+    observed_at: str
+    authority_id: str
+    authority_public_key_hex: str
+    authority_signature_hex: str
+    contract: str = "training-target-source-receipt-v1"
+    receipt_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "training-target-source-receipt-v1"
+            or not self.authority_id
+            or self.authority_id.strip() != self.authority_id
+        ):
+            raise ValueError("training target source receipt is invalid")
+        for name in (
+            "target_source_identity_digest",
+            "physical_event_digest",
+            "source_object_digest",
+        ):
+            _require_digest(name, getattr(self, name))
+        source_time = _canonical_time(self.target_source_valid_time)
+        observed_at = _canonical_time(self.observed_at)
+        object.__setattr__(self, "target_source_valid_time", source_time)
+        object.__setattr__(self, "observed_at", observed_at)
+        if _canonical_datetime(observed_at) < _canonical_datetime(source_time):
+            raise ValueError("training target source chronology is invalid")
+        unsigned = {
+            key: value
+            for key, value in self.payload.items()
+            if key != "authority_signature_hex"
+        }
+        try:
+            Ed25519PublicKey.from_public_bytes(
+                bytes.fromhex(self.authority_public_key_hex)
+            ).verify(
+                bytes.fromhex(self.authority_signature_hex),
+                json_digest(unsigned).encode("ascii"),
+            )
+        except (InvalidSignature, ValueError) as error:
+            raise ValueError("training target source receipt is unsigned") from error
+        object.__setattr__(self, "receipt_digest", json_digest(self.payload))
+
+    @classmethod
+    def issue(
+        cls,
+        *,
+        target_source_identity_digest: str,
+        target_source_valid_time: str,
+        physical_event_digest: str,
+        source_object_digest: str,
+        observed_at: str,
+        authority_id: str,
+        authority_private_key: Ed25519PrivateKey,
+    ) -> TrainingTargetSourceReceipt:
+        unsigned: dict[str, object] = {
+            "target_source_identity_digest": target_source_identity_digest,
+            "target_source_valid_time": _canonical_time(
+                target_source_valid_time
+            ),
+            "physical_event_digest": physical_event_digest,
+            "source_object_digest": source_object_digest,
+            "observed_at": _canonical_time(observed_at),
+            "authority_id": authority_id,
+            "authority_public_key_hex": (
+                authority_private_key.public_key().public_bytes_raw().hex()
+            ),
+            "contract": "training-target-source-receipt-v1",
+        }
+        return cls(
+            **cast(Any, unsigned),
+            authority_signature_hex=authority_private_key.sign(
+                json_digest(unsigned).encode("ascii")
+            ).hex(),
+        )
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "receipt_digest"
+        }
+
+
+def _training_target_source_receipt_from_json(
+    text: str,
+) -> TrainingTargetSourceReceipt:
+    try:
+        payload = json.loads(text)
+        if not isinstance(payload, dict) or text != json.dumps(
+            payload, sort_keys=True, separators=(",", ":")
+        ):
+            raise TypeError
+        values = dict(payload)
+        retained_digest = values.pop("receipt_digest")
+        receipt = TrainingTargetSourceReceipt(**cast(Any, values))
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+        raise ValueError("training target source receipt is invalid") from error
+    if retained_digest != receipt.receipt_digest:
+        raise ValueError("training target source receipt digest mismatch")
+    return receipt
+
+
+@dataclass(frozen=True)
 class TrainingTargetDerivationArtifact:
     """Signed origin and chronology for one training target tensor."""
 
@@ -3851,12 +4025,20 @@ class TrainingTargetDerivationArtifact:
     processor_id: str
     processor_public_key_hex: str
     processor_signature_hex: str
-    contract: str = "training-target-derivation-artifact-v1"
+    target_source_receipt_json: str
+    target_plan_digest: str = ""
+    target_source_receipt_digest: str = ""
+    physical_event_digest: str = ""
+    target_valid_mask_digest: str = ""
+    target_quality_digest: str = ""
+    target_units: str = ""
+    target_shape: tuple[int, ...] = ()
+    contract: str = "training-target-derivation-artifact-v3"
     artifact_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
         if (
-            self.contract != "training-target-derivation-artifact-v1"
+            self.contract != "training-target-derivation-artifact-v3"
             or not self.case_id
             or self.case_id.strip() != self.case_id
             or not self.processor_id
@@ -3870,12 +4052,46 @@ class TrainingTargetDerivationArtifact:
             "target_algorithm_digest",
             "target_schema_digest",
             "target_tensor_digest",
+            "target_plan_digest",
+            "target_source_receipt_digest",
+            "physical_event_digest",
+            "target_valid_mask_digest",
+            "target_quality_digest",
         ):
             _require_digest(name, getattr(self, name))
-        source_time = _canonical_datetime(self.target_source_valid_time)
-        generated = _canonical_datetime(self.generated_at)
-        cutoff = _canonical_datetime(self.training_cutoff_time)
-        if not source_time <= generated < cutoff:
+        if (
+            not self.target_units
+            or self.target_units.strip() != self.target_units
+            or not self.target_shape
+            or any(type(value) is not int or value <= 0 for value in self.target_shape)
+        ):
+            raise ValueError("training target physical schema is invalid")
+        canonical_source_time = _canonical_time(self.target_source_valid_time)
+        canonical_generated = _canonical_time(self.generated_at)
+        canonical_cutoff = _canonical_time(self.training_cutoff_time)
+        object.__setattr__(
+            self, "target_source_valid_time", canonical_source_time
+        )
+        object.__setattr__(self, "generated_at", canonical_generated)
+        object.__setattr__(self, "training_cutoff_time", canonical_cutoff)
+        source_time = _canonical_datetime(canonical_source_time)
+        generated = _canonical_datetime(canonical_generated)
+        cutoff = _canonical_datetime(canonical_cutoff)
+        source_receipt = _training_target_source_receipt_from_json(
+            self.target_source_receipt_json
+        )
+        if not (
+            source_time <= generated < cutoff
+            and source_receipt.target_source_identity_digest
+            == self.target_source_identity_digest
+            and source_receipt.target_source_valid_time
+            == canonical_source_time
+            and source_receipt.physical_event_digest
+            == self.physical_event_digest
+            and source_receipt.receipt_digest
+            == self.target_source_receipt_digest
+            and _canonical_datetime(source_receipt.observed_at) <= generated
+        ):
             raise ValueError("training target chronology is invalid")
         unsigned = {
             key: value
@@ -3898,34 +4114,96 @@ class TrainingTargetDerivationArtifact:
         cls,
         *,
         case_id: str,
-        target_source_identity_digest: str,
-        target_source_valid_time: str,
+        target_source_receipt: TrainingTargetSourceReceipt,
         target_qc_policy_digest: str,
         target_censor_policy_digest: str,
         target_algorithm_digest: str,
         target_schema_digest: str,
         target_tensor: Tensor,
+        target_valid_mask: Tensor | None = None,
+        target_quality: Tensor | None = None,
+        target_units: str = "unitless",
+        target_plan_digest: str | None = None,
         generated_at: str,
         training_cutoff_time: str,
         processor_id: str,
         processor_private_key: Ed25519PrivateKey,
     ) -> TrainingTargetDerivationArtifact:
+        if (
+            not isinstance(target_tensor, Tensor)
+            or not target_tensor.is_floating_point()
+            or target_tensor.numel() == 0
+            or not bool(torch.all(torch.isfinite(target_tensor)))
+        ):
+            raise ValueError("training target tensor must be finite and nonempty")
+        valid_mask = (
+            torch.ones_like(target_tensor, dtype=torch.bool)
+            if target_valid_mask is None
+            else target_valid_mask
+        )
+        quality = (
+            torch.ones_like(target_tensor)
+            if target_quality is None
+            else target_quality
+        )
+        if (
+            valid_mask.dtype is not torch.bool
+            or valid_mask.shape != target_tensor.shape
+            or quality.shape != target_tensor.shape
+            or not quality.is_floating_point()
+            or not bool(torch.all(torch.isfinite(quality)))
+            or not bool(torch.all((quality >= 0.0) & (quality <= 1.0)))
+            or not bool(torch.any(valid_mask))
+        ):
+            raise ValueError("training target mask/quality is invalid")
+        if type(target_source_receipt) is not TrainingTargetSourceReceipt:
+            raise TypeError("current training target source receipt is required")
+        canonical_source_time = target_source_receipt.target_source_valid_time
+        target_source_identity_digest = (
+            target_source_receipt.target_source_identity_digest
+        )
+        plan_digest = target_plan_digest or json_digest(
+            {
+                "contract": "training-target-plan-v1",
+                "target_source_identity_digest": target_source_identity_digest,
+                "target_source_valid_time": canonical_source_time,
+                "target_qc_policy_digest": target_qc_policy_digest,
+                "target_censor_policy_digest": target_censor_policy_digest,
+                "target_algorithm_digest": target_algorithm_digest,
+                "target_schema_digest": target_schema_digest,
+            }
+        )
+        source_receipt_digest = target_source_receipt.receipt_digest
+        event_digest = target_source_receipt.physical_event_digest
         unsigned: dict[str, object] = {
             "case_id": case_id,
             "target_source_identity_digest": target_source_identity_digest,
-            "target_source_valid_time": _canonical_time(target_source_valid_time),
+            "target_source_valid_time": canonical_source_time,
             "target_qc_policy_digest": target_qc_policy_digest,
             "target_censor_policy_digest": target_censor_policy_digest,
             "target_algorithm_digest": target_algorithm_digest,
             "target_schema_digest": target_schema_digest,
             "target_tensor_digest": tensor_digest(target_tensor),
+            "target_plan_digest": plan_digest,
+            "target_source_receipt_digest": source_receipt_digest,
+            "target_source_receipt_json": json.dumps(
+                target_source_receipt.payload
+                | {"receipt_digest": target_source_receipt.receipt_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            "physical_event_digest": event_digest,
+            "target_valid_mask_digest": tensor_digest(valid_mask),
+            "target_quality_digest": tensor_digest(quality),
+            "target_units": target_units,
+            "target_shape": tuple(target_tensor.shape),
             "generated_at": _canonical_time(generated_at),
             "training_cutoff_time": _canonical_time(training_cutoff_time),
             "processor_id": processor_id,
             "processor_public_key_hex": (
                 processor_private_key.public_key().public_bytes_raw().hex()
             ),
-            "contract": "training-target-derivation-artifact-v1",
+            "contract": "training-target-derivation-artifact-v3",
         }
         return cls(
             **cast(Any, unsigned),
@@ -3954,6 +4232,8 @@ def _training_target_derivation_from_json(
         raise ValueError("training target derivation is invalid")
     values = dict(payload)
     stored_digest = values.pop("artifact_digest", None)
+    if isinstance(values.get("target_shape"), list):
+        values["target_shape"] = tuple(values["target_shape"])
     try:
         artifact = TrainingTargetDerivationArtifact(**cast(Any, values))
     except (TypeError, ValueError) as error:
@@ -4051,6 +4331,322 @@ def _validate_training_tensor_archive(
 
 
 @dataclass(frozen=True)
+class TrainingTensorArchiveShard:
+    """One immutable external NPZ shard and its ordered tensor manifest."""
+
+    shard_id: str
+    archive_path: str
+    archive_sha256: str
+    archive_size_bytes: int
+    member_names: tuple[str, ...]
+    member_tensor_digests: tuple[str, ...]
+    member_dtypes: tuple[str, ...]
+    member_shapes: tuple[tuple[int, ...], ...]
+    contract: str = "training-tensor-archive-shard-v1"
+    shard_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "training-tensor-archive-shard-v1"
+            or not self.shard_id
+            or self.shard_id.strip() != self.shard_id
+            or type(self.archive_size_bytes) is not int
+            or self.archive_size_bytes <= 0
+            or not self.member_names
+            or len(self.member_names) != len(set(self.member_names))
+            or not (
+                len(self.member_names)
+                == len(self.member_tensor_digests)
+                == len(self.member_dtypes)
+                == len(self.member_shapes)
+            )
+        ):
+            raise ValueError("training tensor shard manifest is invalid")
+        _require_digest("training shard archive", self.archive_sha256)
+        for digest in self.member_tensor_digests:
+            _require_digest("training shard tensor", digest)
+        if any(
+            not name
+            or name.strip() != name
+            or name == "allow_pickle"
+            or "/" in name
+            or "\\" in name
+            for name in self.member_names
+        ) or any(
+            not shape
+            or any(type(value) is not int or value <= 0 for value in shape)
+            for shape in self.member_shapes
+        ):
+            raise ValueError("training tensor shard members are invalid")
+        path = Path(self.archive_path)
+        if not path.is_absolute():
+            raise ValueError("training tensor shard path must be absolute")
+        object.__setattr__(self, "shard_digest", json_digest(self.payload))
+        _validate_training_tensor_archive_shard(self)
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "shard_id": self.shard_id,
+            "archive_path": self.archive_path,
+            "archive_sha256": self.archive_sha256,
+            "archive_size_bytes": self.archive_size_bytes,
+            "member_names": list(self.member_names),
+            "member_tensor_digests": list(self.member_tensor_digests),
+            "member_dtypes": list(self.member_dtypes),
+            "member_shapes": [list(shape) for shape in self.member_shapes],
+            "contract": self.contract,
+        }
+
+
+def _stream_file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        while chunk := stream.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _validate_training_tensor_archive_shard(
+    shard: TrainingTensorArchiveShard,
+) -> None:
+    _load_training_tensor_archive_shard_snapshot(shard)
+
+
+def _load_training_tensor_archive_shard_snapshot(
+    shard: TrainingTensorArchiveShard,
+) -> dict[str, Tensor]:
+    """Open once and return the exact validated bytes used by a trainer.
+
+    Validation and NumPy decoding share one file descriptor and one in-memory
+    byte snapshot.  A later path replacement therefore cannot alter the
+    tensors returned to the product-owned training executor.
+    """
+
+    path = Path(shard.archive_path)
+    descriptor: int | None = None
+    try:
+        before = path.stat(follow_symlinks=False)
+        resolved_path = path.resolve(strict=True)
+        parent = path.parent.stat(follow_symlinks=False)
+    except OSError as error:
+        raise ValueError("training tensor shard is unavailable") from error
+    if (
+        path != resolved_path
+        or path.is_symlink()
+        or not stat.S_ISREG(before.st_mode)
+        or not stat.S_ISDIR(parent.st_mode)
+        or path.name != f"{shard.archive_sha256}.npz"
+        or before.st_size != shard.archive_size_bytes
+        or before.st_size > 512 * 1024**2
+        or before.st_uid not in {os.getuid(), 0}
+        or before.st_mode & (stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
+        or parent.st_uid not in {os.getuid(), 0}
+        or parent.st_mode & (stat.S_IWGRP | stat.S_IWOTH)
+    ):
+        raise ValueError("training tensor shard bytes are invalid")
+    try:
+        open_flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+        descriptor = os.open(path, open_flags)
+        opened = os.fstat(descriptor)
+        if (
+            opened.st_dev != before.st_dev
+            or opened.st_ino != before.st_ino
+            or opened.st_size != before.st_size
+            or not stat.S_ISREG(opened.st_mode)
+        ):
+            raise ValueError("training tensor shard changed before open")
+        chunks: list[bytes] = []
+        remaining = shard.archive_size_bytes
+        while remaining:
+            chunk = os.read(descriptor, min(1024 * 1024, remaining))
+            if not chunk:
+                raise ValueError("training tensor shard was truncated")
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        if os.read(descriptor, 1):
+            raise ValueError("training tensor shard grew during validation")
+        raw = b"".join(chunks)
+        if hashlib.sha256(raw).hexdigest() != shard.archive_sha256:
+            raise ValueError("training tensor shard checksum mismatch")
+        stream = io.BytesIO(raw)
+        with zipfile.ZipFile(stream) as archive:
+            infos = sorted(archive.infolist(), key=lambda item: item.filename)
+            if (
+                len(infos) != len(shard.member_names)
+                or len(infos) > 4096
+                or any(
+                    info.is_dir()
+                    or info.filename != f"{name}.npy"
+                    or info.file_size > 256 * 1024**2
+                    for info, name in zip(
+                        infos,
+                        sorted(shard.member_names),
+                        strict=True,
+                    )
+                )
+                or sum(info.file_size for info in infos) > 1024**3
+            ):
+                raise ValueError("training tensor shard membership is invalid")
+        tensors: dict[str, Tensor] = {}
+        with np.load(io.BytesIO(raw), allow_pickle=False) as archive:
+            if set(archive.files) != set(shard.member_names):
+                raise ValueError("training tensor shard membership is invalid")
+            manifest = {
+                name: (digest, dtype, shape)
+                for name, digest, dtype, shape in zip(
+                    shard.member_names,
+                    shard.member_tensor_digests,
+                    shard.member_dtypes,
+                    shard.member_shapes,
+                    strict=True,
+                )
+            }
+            for name in shard.member_names:
+                array = np.array(archive[name], copy=True)
+                digest, dtype, shape = manifest[name]
+                if (
+                    array.dtype.hasobject
+                    or array.dtype.fields is not None
+                    or array.dtype.kind not in ("f", "b")
+                    or str(array.dtype) != dtype
+                    or tuple(array.shape) != shape
+                    or array.size == 0
+                    or (array.dtype.kind == "f" and not np.isfinite(array).all())
+                    or tensor_digest(torch.from_numpy(array)) != digest
+                ):
+                    raise ValueError("training tensor shard member mismatch")
+                tensors[name] = torch.from_numpy(array).detach().clone()
+    except (OSError, ValueError, zipfile.BadZipFile) as error:
+        raise ValueError("training tensor shard is invalid") from error
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+    try:
+        after = path.stat(follow_symlinks=False)
+    except OSError as error:
+        raise ValueError("training tensor shard changed after open") from error
+    if (
+        before.st_dev,
+        before.st_ino,
+        before.st_size,
+        before.st_mtime_ns,
+        stat.S_IMODE(before.st_mode),
+    ) != (
+        after.st_dev,
+        after.st_ino,
+        after.st_size,
+        after.st_mtime_ns,
+        stat.S_IMODE(after.st_mode),
+    ):
+        raise ValueError("training tensor shard changed during validation")
+    return tensors
+
+
+def load_training_tensor_archive_shard(
+    shard: TrainingTensorArchiveShard,
+) -> dict[str, Tensor]:
+    """Return defensive tensors from one validated single-open snapshot."""
+
+    if type(shard) is not TrainingTensorArchiveShard:
+        raise TypeError("current training tensor shard is required")
+    return {
+        name: tensor.detach().clone()
+        for name, tensor in _load_training_tensor_archive_shard_snapshot(
+            shard
+        ).items()
+    }
+
+
+def write_training_tensor_archive_shard(
+    tensors: dict[str, Tensor],
+    *,
+    directory: str | Path,
+    shard_id: str,
+) -> TrainingTensorArchiveShard:
+    """Atomically publish one content-addressed, pickle-free NPZ shard."""
+
+    if not tensors or not shard_id or shard_id.strip() != shard_id:
+        raise ValueError("training tensor shard inputs are invalid")
+    root = Path(directory).expanduser().resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    arrays: dict[str, np.ndarray[Any, Any]] = {}
+    names: list[str] = []
+    digests: list[str] = []
+    dtypes: list[str] = []
+    shapes: list[tuple[int, ...]] = []
+    for name, tensor in sorted(tensors.items()):
+        if (
+            not name
+            or name.strip() != name
+            or name == "allow_pickle"
+            or "/" in name
+            or "\\" in name
+            or not isinstance(tensor, Tensor)
+            or tensor.numel() == 0
+            or tensor.dtype not in {
+                torch.bool,
+                torch.float16,
+                torch.float32,
+                torch.float64,
+            }
+            or (
+                tensor.is_floating_point()
+                and not bool(torch.all(torch.isfinite(tensor)))
+            )
+        ):
+            raise ValueError("training tensor shard member is invalid")
+        array = np.array(tensor.detach().contiguous().cpu().numpy(), copy=True)
+        arrays[name] = array
+        names.append(name)
+        digests.append(tensor_digest(torch.from_numpy(array)))
+        dtypes.append(str(array.dtype))
+        shapes.append(tuple(array.shape))
+    descriptor: int | None = None
+    temporary_path: Path | None = None
+    try:
+        descriptor, raw_path = tempfile.mkstemp(
+            prefix=f".{shard_id}.", suffix=".npz", dir=root
+        )
+        os.close(descriptor)
+        descriptor = None
+        temporary_path = Path(raw_path)
+        savez = cast(Any, np.savez)
+        savez(temporary_path, **arrays)
+        with temporary_path.open("rb") as stream:
+            os.fsync(stream.fileno())
+        archive_sha256 = _stream_file_sha256(temporary_path)
+        final_path = root / f"{archive_sha256}.npz"
+        if final_path.exists():
+            if _stream_file_sha256(final_path) != archive_sha256:
+                raise ValueError("training tensor shard path equivocated")
+            temporary_path.unlink()
+        else:
+            os.replace(temporary_path, final_path)
+        os.chmod(final_path, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+        directory_fd = os.open(root, os.O_RDONLY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
+        return TrainingTensorArchiveShard(
+            shard_id=shard_id,
+            archive_path=str(final_path),
+            archive_sha256=archive_sha256,
+            archive_size_bytes=final_path.stat().st_size,
+            member_names=tuple(names),
+            member_tensor_digests=tuple(digests),
+            member_dtypes=tuple(dtypes),
+            member_shapes=tuple(shapes),
+        )
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
+
+
+@dataclass(frozen=True)
 class TrainingDatasetMember:
     """One ordered feature/target training sample and its signed lineage."""
 
@@ -4060,6 +4656,8 @@ class TrainingDatasetMember:
     feature_tensor_digest: str
     target_archive_member: str
     target_tensor_digest: str
+    target_valid_mask_archive_member: str
+    target_quality_archive_member: str
     target_derivation_artifact_json: str
     sample_weight: float
     split: Literal["train", "validation", "test"]
@@ -4077,6 +4675,16 @@ class TrainingDatasetMember:
             or self.target_archive_member.strip() != self.target_archive_member
             or "/" in self.target_archive_member
             or "\\" in self.target_archive_member
+            or not self.target_valid_mask_archive_member
+            or self.target_valid_mask_archive_member.strip()
+            != self.target_valid_mask_archive_member
+            or "/" in self.target_valid_mask_archive_member
+            or "\\" in self.target_valid_mask_archive_member
+            or not self.target_quality_archive_member
+            or self.target_quality_archive_member.strip()
+            != self.target_quality_archive_member
+            or "/" in self.target_quality_archive_member
+            or "\\" in self.target_quality_archive_member
             or not math.isfinite(self.sample_weight)
             or self.sample_weight <= 0.0
             or self.split not in {"train", "validation", "test"}
@@ -4119,21 +4727,22 @@ class TrainingFeatureDatasetArtifact:
     feature_schema_digest: str
     target_algorithm_digest: str
     target_schema_digest: str
-    feature_tensor_archive_sha256: str
-    target_tensor_archive_sha256: str
-    feature_tensor_archive_base64: str
-    target_tensor_archive_base64: str
-    contract: str = "training-feature-dataset-artifact-v2"
+    feature_archive_shards: tuple[TrainingTensorArchiveShard, ...]
+    target_archive_shards: tuple[TrainingTensorArchiveShard, ...]
+    normalization_statistics_shard: TrainingTensorArchiveShard
+    contract: str = "training-feature-dataset-artifact-v4"
     dataset_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
         count = len(self.members)
         if (
-            self.contract != "training-feature-dataset-artifact-v2"
+            self.contract != "training-feature-dataset-artifact-v4"
             or count == 0
             or len(set(self.sample_order)) != count
             or len(set(self.feature_archive_member_names)) != count
             or len(set(self.target_archive_member_names)) != count
+            or len(set(self.target_valid_mask_archive_member_names)) != count
+            or len(set(self.target_quality_archive_member_names)) != count
         ):
             raise ValueError("training feature dataset manifest is invalid")
         for name, values in (
@@ -4152,10 +4761,25 @@ class TrainingFeatureDatasetArtifact:
             "feature_schema_digest",
             "target_algorithm_digest",
             "target_schema_digest",
-            "feature_tensor_archive_sha256",
-            "target_tensor_archive_sha256",
         ):
             _require_digest(name, getattr(self, name))
+        if (
+            not self.feature_archive_shards
+            or not self.target_archive_shards
+            or any(
+                type(item) is not TrainingTensorArchiveShard
+                for item in (
+                    *self.feature_archive_shards,
+                    *self.target_archive_shards,
+                    self.normalization_statistics_shard,
+                )
+            )
+            or len({item.shard_id for item in self.feature_archive_shards})
+            != len(self.feature_archive_shards)
+            or len({item.shard_id for item in self.target_archive_shards})
+            != len(self.target_archive_shards)
+        ):
+            raise ValueError("training feature dataset shards are invalid")
         target_derivations = tuple(
             _training_target_derivation_from_json(
                 item.target_derivation_artifact_json
@@ -4173,18 +4797,106 @@ class TrainingFeatureDatasetArtifact:
             != {self.target_schema_digest}
         ):
             raise ValueError("training target derivations disagree with dataset")
-        _validate_training_tensor_archive(
-            self.feature_tensor_archive_base64,
-            expected_sha256=self.feature_tensor_archive_sha256,
-            member_names=self.feature_archive_member_names,
-            tensor_digests=self.member_feature_tensor_digests,
-        )
-        _validate_training_tensor_archive(
-            self.target_tensor_archive_base64,
-            expected_sha256=self.target_tensor_archive_sha256,
-            member_names=self.target_archive_member_names,
-            tensor_digests=self.member_target_tensor_digests,
-        )
+        feature_manifest = {
+            name: digest
+            for shard in self.feature_archive_shards
+            for name, digest in zip(
+                shard.member_names,
+                shard.member_tensor_digests,
+                strict=True,
+            )
+        }
+        target_manifest = {
+            name: digest
+            for shard in self.target_archive_shards
+            for name, digest in zip(
+                shard.member_names,
+                shard.member_tensor_digests,
+                strict=True,
+            )
+        }
+        feature_schema = {
+            name: (dtype, shape)
+            for shard in self.feature_archive_shards
+            for name, dtype, shape in zip(
+                shard.member_names,
+                shard.member_dtypes,
+                shard.member_shapes,
+                strict=True,
+            )
+        }
+        target_archive_schema = {
+            name: (dtype, shape)
+            for shard in self.target_archive_shards
+            for name, dtype, shape in zip(
+                shard.member_names,
+                shard.member_dtypes,
+                shard.member_shapes,
+                strict=True,
+            )
+        }
+        if (
+            len(feature_manifest)
+            != sum(len(item.member_names) for item in self.feature_archive_shards)
+            or len(target_manifest)
+            != sum(len(item.member_names) for item in self.target_archive_shards)
+            or tuple(
+                feature_manifest.get(name)
+                for name in self.feature_archive_member_names
+            )
+            != self.member_feature_tensor_digests
+            or tuple(target_manifest.get(name) for name in self.target_archive_member_names)
+            != self.member_target_tensor_digests
+            or tuple(
+                target_manifest.get(name)
+                for name in self.target_valid_mask_archive_member_names
+            )
+            != tuple(item.target_valid_mask_digest for item in target_derivations)
+            or tuple(
+                target_manifest.get(name)
+                for name in self.target_quality_archive_member_names
+            )
+            != tuple(item.target_quality_digest for item in target_derivations)
+            or self.normalization_statistics_shard.member_tensor_digests
+            != (self.normalization_statistics_digest,)
+            or any(
+                feature_schema.get(member.feature_archive_member, ("", ()))[0]
+                not in {"float16", "float32", "float64"}
+                for member in self.members
+            )
+            or any(
+                target_archive_schema.get(
+                    member.target_archive_member, ("", ())
+                )[0]
+                not in {"float16", "float32", "float64"}
+                or target_archive_schema.get(
+                    member.target_archive_member, ("", ())
+                )[1]
+                != target.target_shape
+                or target_archive_schema.get(
+                    member.target_valid_mask_archive_member, ("", ())
+                )
+                != ("bool", target.target_shape)
+                or target_archive_schema.get(
+                    member.target_quality_archive_member, ("", ())
+                )[0]
+                not in {"float16", "float32", "float64"}
+                or target_archive_schema.get(
+                    member.target_quality_archive_member, ("", ())
+                )[1]
+                != target.target_shape
+                for member, target in zip(
+                    self.members, target_derivations, strict=True
+                )
+            )
+        ):
+            raise ValueError("training feature dataset shard manifest disagrees")
+        for shard in (
+            *self.feature_archive_shards,
+            *self.target_archive_shards,
+            self.normalization_statistics_shard,
+        ):
+            _validate_training_tensor_archive_shard(shard)
         object.__setattr__(self, "dataset_digest", json_digest(self.payload))
 
     @property
@@ -4192,7 +4904,9 @@ class TrainingFeatureDatasetArtifact:
         return {
             key: (
                 [item.payload for item in value]
-                if key == "members"
+                if key in {"members", "feature_archive_shards", "target_archive_shards"}
+                else value.payload
+                if key == "normalization_statistics_shard"
                 else value
             )
             for key, value in self.__dict__.items()
@@ -4224,6 +4938,16 @@ class TrainingFeatureDatasetArtifact:
         return tuple(item.target_archive_member for item in self.members)
 
     @property
+    def target_valid_mask_archive_member_names(self) -> tuple[str, ...]:
+        return tuple(
+            item.target_valid_mask_archive_member for item in self.members
+        )
+
+    @property
+    def target_quality_archive_member_names(self) -> tuple[str, ...]:
+        return tuple(item.target_quality_archive_member for item in self.members)
+
+    @property
     def sample_order(self) -> tuple[str, ...]:
         return tuple(item.case_id for item in self.members)
 
@@ -4238,6 +4962,133 @@ class TrainingFeatureDatasetArtifact:
     @property
     def augmentation_seeds(self) -> tuple[int, ...]:
         return tuple(item.augmentation_seed for item in self.members)
+
+    def load_validated_tensor_snapshots(self) -> dict[str, Tensor]:
+        """Load the exact single-open tensor snapshots a trainer may consume."""
+
+        if self.dataset_digest != json_digest(self.payload):
+            raise ValueError("training feature dataset manifest changed")
+        tensors: dict[str, Tensor] = {}
+        for shard in (
+            *self.feature_archive_shards,
+            *self.target_archive_shards,
+            self.normalization_statistics_shard,
+        ):
+            for name, tensor in load_training_tensor_archive_shard(shard).items():
+                if name in tensors:
+                    raise ValueError("training tensor member is duplicated")
+                tensors[name] = tensor
+        expected = {
+            *self.feature_archive_member_names,
+            *self.target_archive_member_names,
+            *self.target_valid_mask_archive_member_names,
+            *self.target_quality_archive_member_names,
+            *self.normalization_statistics_shard.member_names,
+        }
+        if set(tensors) != expected:
+            raise ValueError("training tensor snapshot membership changed")
+        return {
+            name: tensor.detach().clone()
+            for name, tensor in tensors.items()
+        }
+
+    @property
+    def training_tensor_snapshot_set_digest(self) -> str:
+        """Address the exact ordered tensor identities authorized for training."""
+
+        members = sorted(
+            (
+                (name, digest)
+                for shard in (
+                    *self.feature_archive_shards,
+                    *self.target_archive_shards,
+                    self.normalization_statistics_shard,
+                )
+                for name, digest in zip(
+                    shard.member_names,
+                    shard.member_tensor_digests,
+                    strict=True,
+                )
+            ),
+            key=lambda item: item[0],
+        )
+        return json_digest(
+            {
+                "contract": "training-tensor-snapshot-set-v1",
+                "training_dataset_digest": self.dataset_digest,
+                "members": [
+                    {"name": name, "tensor_digest": digest}
+                    for name, digest in members
+                ],
+            }
+        )
+
+    def validated_execution_handle(self) -> ValidatedTrainingDatasetHandle:
+        """Open and seal the only tensor snapshot authorized for execution."""
+
+        return ValidatedTrainingDatasetHandle.from_dataset(self)
+
+
+@dataclass(frozen=True, slots=True)
+class ValidatedTrainingDatasetHandle:
+    """Product-owned immutable training input snapshot and execution identity."""
+
+    training_dataset_digest: str
+    training_tensor_snapshot_set_digest: str
+    _tensor_snapshots: tuple[tuple[str, Tensor], ...] = field(repr=False)
+    contract: str = "validated-training-dataset-handle-v1"
+
+    @classmethod
+    def from_dataset(
+        cls,
+        dataset: TrainingFeatureDatasetArtifact,
+    ) -> ValidatedTrainingDatasetHandle:
+        if type(dataset) is not TrainingFeatureDatasetArtifact:
+            raise TypeError("current training feature dataset is required")
+        tensors = dataset.load_validated_tensor_snapshots()
+        retained = tuple(
+            (name, tensor.detach().clone())
+            for name, tensor in sorted(tensors.items())
+        )
+        handle = cls(
+            training_dataset_digest=dataset.dataset_digest,
+            training_tensor_snapshot_set_digest=(
+                dataset.training_tensor_snapshot_set_digest
+            ),
+            _tensor_snapshots=retained,
+        )
+        handle.validate_integrity()
+        return handle
+
+    def validate_integrity(self) -> None:
+        if (
+            self.contract != "validated-training-dataset-handle-v1"
+            or not self._tensor_snapshots
+            or len({name for name, _tensor in self._tensor_snapshots})
+            != len(self._tensor_snapshots)
+        ):
+            raise ValueError("validated training dataset handle is invalid")
+        actual = json_digest(
+            {
+                "contract": "training-tensor-snapshot-set-v1",
+                "training_dataset_digest": self.training_dataset_digest,
+                "members": [
+                    {"name": name, "tensor_digest": tensor_digest(tensor)}
+                    for name, tensor in self._tensor_snapshots
+                ],
+            }
+        )
+        if actual != self.training_tensor_snapshot_set_digest:
+            raise ValueError("validated training tensor snapshot changed")
+
+    def tensor_snapshots(self) -> dict[str, Tensor]:
+        """Return defensive clones of the signed execution snapshot."""
+
+        self.validate_integrity()
+        return {
+            name: tensor.detach().clone()
+            for name, tensor in self._tensor_snapshots
+        }
 
 
 def _training_feature_dataset_from_json(
@@ -4261,6 +5112,50 @@ def _training_feature_dataset_from_json(
     try:
         values["members"] = tuple(
             TrainingDatasetMember(**cast(Any, item)) for item in raw_members
+        )
+        for name in ("feature_archive_shards", "target_archive_shards"):
+            raw_shards = values.get(name)
+            if not isinstance(raw_shards, list):
+                raise TypeError
+            decoded_shards: list[TrainingTensorArchiveShard] = []
+            for raw_shard in raw_shards:
+                if not isinstance(raw_shard, dict):
+                    raise TypeError
+                shard_values = dict(raw_shard)
+                shard_values["member_names"] = tuple(
+                    shard_values["member_names"]
+                )
+                shard_values["member_tensor_digests"] = tuple(
+                    shard_values["member_tensor_digests"]
+                )
+                shard_values["member_dtypes"] = tuple(
+                    shard_values["member_dtypes"]
+                )
+                shard_values["member_shapes"] = tuple(
+                    tuple(shape) for shape in shard_values["member_shapes"]
+                )
+                decoded_shards.append(
+                    TrainingTensorArchiveShard(**cast(Any, shard_values))
+                )
+            values[name] = tuple(decoded_shards)
+        raw_normalization = values.get("normalization_statistics_shard")
+        if not isinstance(raw_normalization, dict):
+            raise TypeError
+        normalization_values = dict(raw_normalization)
+        normalization_values["member_names"] = tuple(
+            normalization_values["member_names"]
+        )
+        normalization_values["member_tensor_digests"] = tuple(
+            normalization_values["member_tensor_digests"]
+        )
+        normalization_values["member_dtypes"] = tuple(
+            normalization_values["member_dtypes"]
+        )
+        normalization_values["member_shapes"] = tuple(
+            tuple(shape) for shape in normalization_values["member_shapes"]
+        )
+        values["normalization_statistics_shard"] = TrainingTensorArchiveShard(
+            **cast(Any, normalization_values)
         )
     except (TypeError, ValueError) as error:
         raise ValueError("training feature dataset is invalid") from error
@@ -4306,12 +5201,12 @@ class TrainingDatasetDerivationArtifact:
     signed_training_member_manifest_digest: str
     training_feature_dataset_artifact_digest: str
     training_feature_dataset_artifact_json: str
-    contract: str = "training-dataset-derivation-artifact-v3"
+    contract: str = "training-dataset-derivation-artifact-v5"
     training_dataset_digest: str = field(init=False)
     artifact_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "training-dataset-derivation-artifact-v3":
+        if self.contract != "training-dataset-derivation-artifact-v5":
             raise ValueError("unsupported training-dataset derivation artifact")
         for name in (
             "training_raw_registry_receipt_digest",
@@ -4445,9 +5340,17 @@ class TrainingDatasetDerivationArtifact:
         )
 
     @property
+    def training_tensor_snapshot_set_digest(self) -> str:
+        feature_dataset = _training_feature_dataset_from_json(
+            self.training_feature_dataset_artifact_json,
+            expected_digest=self.training_feature_dataset_artifact_digest,
+        )
+        return feature_dataset.training_tensor_snapshot_set_digest
+
+    @property
     def dataset_payload(self) -> dict[str, object]:
         return {
-            "contract": "derived-training-dataset-v3",
+            "contract": "derived-training-dataset-v5",
             "training_raw_registry_receipt_digest": (
                 self.training_raw_registry_receipt_digest
             ),
@@ -4535,8 +5438,10 @@ def _validate_training_derivation_processor_authority(
     *,
     processor_id: str,
     processor_public_key_hex: str,
+    target_source_authority_id: str,
+    target_source_authority_public_key_hex: str,
 ) -> None:
-    """Require every signed training member to use the preregistered key."""
+    """Bind processors and independent target sources to preregistered keys."""
 
     members = tuple(
         _analysis_input_derivation_from_json(text)
@@ -4560,6 +5465,16 @@ def _validate_training_derivation_processor_authority(
         for item in targets
     ):
         raise ValueError("training member processor authority is untrusted")
+    for target in targets:
+        source = _training_target_source_receipt_from_json(
+            target.target_source_receipt_json
+        )
+        if (
+            source.authority_id != target_source_authority_id
+            or source.authority_public_key_hex
+            != target_source_authority_public_key_hex
+        ):
+            raise ValueError("training target source authority is untrusted")
 
 
 @dataclass(frozen=True)
@@ -4587,11 +5502,11 @@ class RegimeClassifierManifest:
     numerical_runtime_digest: str
     reference_label_contract_digest: str
     signed_training_member_manifest_digest: str
-    contract: str = "neural-prior-regime-classifier-manifest-v7"
+    contract: str = "neural-prior-regime-classifier-manifest-v9"
     manifest_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-regime-classifier-manifest-v7":
+        if self.contract != "neural-prior-regime-classifier-manifest-v9":
             raise ValueError("unsupported regime-classifier manifest")
         for name in (
             "classifier_digest",
@@ -4677,12 +5592,13 @@ class RegimeClassifierManifest:
             for start, end in windows
         ):
             raise ValueError("classifier training windows are invalid")
-        latest_training_data_time = max(
-            _canonical_datetime(end) for _, end in windows
-        )
         if any(
-            _canonical_datetime(item.target_source_valid_time)
-            > latest_training_data_time
+            not any(
+                _canonical_datetime(start)
+                <= _canonical_datetime(item.target_source_valid_time)
+                < _canonical_datetime(end)
+                for start, end in windows
+            )
             for item in derivation.target_derivations
         ):
             raise ValueError("classifier target is outside its training window")
@@ -7230,6 +8146,43 @@ class LegacyNeuralPriorHoldoutPlanV21Audit:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV22Audit:
+    """Pre-target-v2/sharded training holdout retained for audit only."""
+
+    plan_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-plan-audit-v22"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _require_digest("legacy holdout plan digest", self.plan_digest)
+        payload = json.loads(self.payload_json)
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != "neural-prior-holdout-plan-v22"
+            or payload.get("plan_digest") != self.plan_digest
+            or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            != self.payload_json
+        ):
+            raise ValueError("invalid legacy v22 holdout plan")
+        original = dict(payload)
+        original.pop("plan_digest")
+        if json_digest(original) != self.plan_digest:
+            raise ValueError("legacy v22 holdout plan digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "plan_digest": self.plan_digest,
+                    "payload": payload,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class PromotionExperimentTrial:
     """One preregistered candidate/rule/classifier trial in a cohort."""
 
@@ -7388,6 +8341,8 @@ class NeuralPriorHoldoutPlan:
     raw_ingestor_trust_store: RawIngestorTrustStore
     analysis_processor_id: str
     analysis_processor_public_key_hex: str
+    training_target_source_authority_id: str
+    training_target_source_authority_public_key_hex: str
     uncertainty_target_plans: tuple[PriorUncertaintyTargetPlan, ...]
     state_calibration_target_plans: tuple[
         NeuralPriorStateCalibrationPlan, ...
@@ -7413,11 +8368,11 @@ class NeuralPriorHoldoutPlan:
     mode: Literal["prospective", "sealed_historical"] = "prospective"
     sealed_historical_dataset_digest: str | None = None
     candidate_training_started_at: str | None = None
-    contract: str = "neural-prior-holdout-plan-v22"
+    contract: str = "neural-prior-holdout-plan-v24"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v22":
+        if self.contract != "neural-prior-holdout-plan-v24":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -7489,14 +8444,27 @@ class NeuralPriorHoldoutPlan:
             type(self.raw_ingestor_trust_store) is not RawIngestorTrustStore
             or not self.analysis_processor_id
             or self.analysis_processor_id.strip() != self.analysis_processor_id
+            or not self.training_target_source_authority_id
+            or self.training_target_source_authority_id.strip()
+            != self.training_target_source_authority_id
+            or self.training_target_source_authority_id
+            == self.analysis_processor_id
         ):
             raise ValueError("holdout data-provenance authorities are invalid")
         try:
             processor_key = bytes.fromhex(self.analysis_processor_public_key_hex)
             Ed25519PublicKey.from_public_bytes(processor_key)
+            target_source_key = bytes.fromhex(
+                self.training_target_source_authority_public_key_hex
+            )
+            Ed25519PublicKey.from_public_bytes(target_source_key)
         except (ValueError, TypeError) as error:
             raise ValueError("analysis processor authority key is invalid") from error
-        if len(processor_key) != 32:
+        if (
+            len(processor_key) != 32
+            or len(target_source_key) != 32
+            or target_source_key == processor_key
+        ):
             raise ValueError("analysis processor authority key is invalid")
         for classifier_manifest in self.regime_classifier_manifests:
             classifier_derivation = _training_dataset_derivation_from_json(
@@ -7509,6 +8477,12 @@ class NeuralPriorHoldoutPlan:
                 classifier_derivation,
                 processor_id=self.analysis_processor_id,
                 processor_public_key_hex=self.analysis_processor_public_key_hex,
+                target_source_authority_id=(
+                    self.training_target_source_authority_id
+                ),
+                target_source_authority_public_key_hex=(
+                    self.training_target_source_authority_public_key_hex
+                ),
             )
         target_plans = tuple(
             item.uncertainty_target_plan_digest for item in self.cases
@@ -7862,10 +8836,12 @@ class NeuralPriorHoldoutPlanPolicy:
     raw_ingestor_trust_store_digest: str
     analysis_processor_id: str
     analysis_processor_public_key_hex: str
-    contract: str = "neural-prior-holdout-plan-policy-v5"
+    training_target_source_authority_id: str
+    training_target_source_authority_public_key_hex: str
+    contract: str = "neural-prior-holdout-plan-policy-v6"
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-policy-v5":
+        if self.contract != "neural-prior-holdout-plan-policy-v6":
             raise ValueError("unsupported holdout plan policy")
         if not self.approved_plan_digests or not self.approved_metric_contract_digests:
             raise ValueError("holdout policy approvals must be nonempty")
@@ -7882,6 +8858,11 @@ class NeuralPriorHoldoutPlanPolicy:
             or not self.approved_sampling_registry_root_digests
             or not self.analysis_processor_id
             or self.analysis_processor_id.strip() != self.analysis_processor_id
+            or not self.training_target_source_authority_id
+            or self.training_target_source_authority_id.strip()
+            != self.training_target_source_authority_id
+            or self.training_target_source_authority_id
+            == self.analysis_processor_id
         ):
             raise ValueError("holdout provenance policy identity is invalid")
         for digest in self.approved_sampling_registry_root_digests:
@@ -7903,6 +8884,14 @@ class NeuralPriorHoldoutPlanPolicy:
             Ed25519PublicKey.from_public_bytes(
                 bytes.fromhex(self.analysis_processor_public_key_hex)
             )
+            target_source_key = bytes.fromhex(
+                self.training_target_source_authority_public_key_hex
+            )
+            Ed25519PublicKey.from_public_bytes(target_source_key)
+            if target_source_key == bytes.fromhex(
+                self.analysis_processor_public_key_hex
+            ):
+                raise ValueError
         except (ValueError, TypeError) as error:
             raise ValueError("sampling registry authority key is invalid") from error
 
@@ -7934,6 +8923,12 @@ class NeuralPriorHoldoutPlanPolicy:
                 "analysis_processor_id": self.analysis_processor_id,
                 "analysis_processor_public_key_hex": (
                     self.analysis_processor_public_key_hex
+                ),
+                "training_target_source_authority_id": (
+                    self.training_target_source_authority_id
+                ),
+                "training_target_source_authority_public_key_hex": (
+                    self.training_target_source_authority_public_key_hex
                 ),
             }
         )
@@ -7975,6 +8970,9 @@ class NeuralPriorHoldoutCase:
     metric_contract_digest: str
     uncertainty_target_plan_digest: str
     uncertainty_target_digest: str
+    verification_target_source_identity_digest: str
+    verification_target_valid_time: str
+    verification_target_tensor_digest: str
     prior_probability_contract_digest: str
     state_calibration_target_plan_digest: str
     state_calibration_target_digest: str
@@ -8004,6 +9002,8 @@ class NeuralPriorHoldoutCase:
             "metric_contract_digest",
             "uncertainty_target_plan_digest",
             "uncertainty_target_digest",
+            "verification_target_source_identity_digest",
+            "verification_target_tensor_digest",
             "prior_probability_contract_digest",
             "state_calibration_target_plan_digest",
             "state_calibration_target_digest",
@@ -8031,6 +9031,11 @@ class NeuralPriorHoldoutCase:
             raise ValueError("completed raw-volume identities are invalid")
         for digest in self.resolved_raw_volume_identity_digests:
             _require_digest("completed raw-volume identity", digest)
+        object.__setattr__(
+            self,
+            "verification_target_valid_time",
+            _canonical_time(self.verification_target_valid_time),
+        )
         if (
             type(self.dynamic_range_source_resolution) is not bool
             or (
@@ -8118,6 +9123,29 @@ def _validate_classifier_holdout_independence(
         item.physical_event_digest for item in cases
     }:
         raise ValueError("classifier training physical events overlap the holdout")
+    classifier_derivation = _training_dataset_derivation_from_json(
+        classifier.training_dataset_derivation_artifact_json,
+        expected_digest=classifier.training_dataset_derivation_artifact_digest,
+    )
+    if {item.physical_event_digest for item in classifier_derivation.target_derivations} & {
+        item.physical_event_digest for item in cases
+    }:
+        raise ValueError("classifier training targets overlap the holdout")
+    holdout_targets = {
+        (
+            item.verification_target_source_identity_digest,
+            _canonical_time(item.verification_target_valid_time),
+        )
+        for item in cases
+    }
+    if {
+        (
+            item.target_source_identity_digest,
+            _canonical_time(item.target_source_valid_time),
+        )
+        for item in classifier_derivation.target_derivations
+    } & holdout_targets:
+        raise ValueError("classifier training target source overlaps the holdout")
     holdout_raw_identities = {
         digest
         for item in cases
@@ -8681,6 +9709,43 @@ class LegacyNeuralPriorCandidateManifestAuditV15:
         )
 
 
+@dataclass(frozen=True)
+class LegacyNeuralPriorCandidateManifestAuditV16:
+    """Pre-target-v2/sharded training manifest retained for audit only."""
+
+    manifest_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-candidate-manifest-audit-v16"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _require_digest("legacy candidate manifest digest", self.manifest_digest)
+        payload = json.loads(self.payload_json)
+        if (
+            not isinstance(payload, dict)
+            or payload.get("contract") != "neural-prior-candidate-manifest-v16"
+            or payload.get("manifest_digest") != self.manifest_digest
+            or json.dumps(payload, sort_keys=True, separators=(",", ":"))
+            != self.payload_json
+        ):
+            raise ValueError("invalid legacy v16 candidate manifest")
+        original = dict(payload)
+        original.pop("manifest_digest")
+        if json_digest(original) != self.manifest_digest:
+            raise ValueError("legacy v16 candidate manifest digest mismatch")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "manifest_digest": self.manifest_digest,
+                    "payload": payload,
+                }
+            ),
+        )
+
+
 def _candidate_training_execution_contract_digest(
     *,
     training_dataset_digest: str,
@@ -8691,12 +9756,13 @@ def _candidate_training_execution_contract_digest(
     numerical_runtime_digest: str,
     training_raw_registry_receipt_digest: str,
     training_dataset_derivation_artifact_digest: str,
+    training_tensor_snapshot_set_digest: str,
 ) -> str:
     """Address the exact contract authorized for one training process."""
 
     return json_digest(
         {
-            "contract": "neural-prior-training-execution-contract-v5",
+            "contract": "neural-prior-training-execution-contract-v8",
             "training_dataset_digest": training_dataset_digest,
             "candidate_training_manifest_digest": candidate_training_manifest_digest,
             "model_contract_digest": model_contract_digest,
@@ -8708,6 +9774,9 @@ def _candidate_training_execution_contract_digest(
             ),
             "training_dataset_derivation_artifact_digest": (
                 training_dataset_derivation_artifact_digest
+            ),
+            "training_tensor_snapshot_set_digest": (
+                training_tensor_snapshot_set_digest
             ),
         }
     )
@@ -8766,6 +9835,12 @@ def _holdout_plan_payload(plan: NeuralPriorHoldoutPlan) -> dict[str, object]:
         "analysis_processor_id": plan.analysis_processor_id,
         "analysis_processor_public_key_hex": (
             plan.analysis_processor_public_key_hex
+        ),
+        "training_target_source_authority_id": (
+            plan.training_target_source_authority_id
+        ),
+        "training_target_source_authority_public_key_hex": (
+            plan.training_target_source_authority_public_key_hex
         ),
         "uncertainty_target_plans": [
             item.payload for item in plan.uncertainty_target_plans
@@ -8948,11 +10023,11 @@ class NeuralPriorCandidateManifest:
     candidate_training_start_receipt: TrustedProcessStartReceipt
     candidate_training_completion_receipt: TrustedProcessCompletionReceipt
     candidate_scoring_start_receipt: TrustedProcessStartReceipt
-    contract: str = "neural-prior-candidate-manifest-v16"
+    contract: str = "neural-prior-candidate-manifest-v18"
     manifest_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-candidate-manifest-v16":
+        if self.contract != "neural-prior-candidate-manifest-v18":
             raise ValueError("unsupported neural-prior candidate manifest")
         for name in (
             "candidate_prior_digest",
@@ -8984,6 +10059,10 @@ class NeuralPriorCandidateManifest:
             self.candidate_training_completion_receipt,
             self.candidate_training_start_receipt,
         )
+        training_derivation = _training_dataset_derivation_from_json(
+            self.training_dataset_derivation_artifact_json,
+            expected_digest=self.training_dataset_derivation_artifact_digest,
+        )
         training_execution_contract = _candidate_training_execution_contract_digest(
             training_dataset_digest=self.training_dataset_digest,
             candidate_training_manifest_digest=(
@@ -8998,6 +10077,9 @@ class NeuralPriorCandidateManifest:
             ),
             training_dataset_derivation_artifact_digest=(
                 self.training_dataset_derivation_artifact_digest
+            ),
+            training_tensor_snapshot_set_digest=(
+                training_derivation.training_tensor_snapshot_set_digest
             ),
         )
         if (
@@ -9017,6 +10099,7 @@ class NeuralPriorCandidateManifest:
             != {
                 self.training_dataset_digest,
                 self.candidate_training_manifest_digest,
+                training_derivation.training_tensor_snapshot_set_digest,
             }
             or self.candidate_training_start_receipt.process_algorithm_digest
             != self.algorithm_bundle_digest
@@ -9308,6 +10391,35 @@ class NeuralPriorCandidateManifest:
             for start, end in windows
         ):
             raise ValueError("training time windows must have positive duration")
+        if any(
+            not any(
+                _canonical_datetime(start)
+                <= _canonical_datetime(target.target_source_valid_time)
+                < _canonical_datetime(end)
+                for start, end in windows
+            )
+            for target in derivation.target_derivations
+        ):
+            raise ValueError("candidate target is outside its training windows")
+        if {item.physical_event_digest for item in derivation.target_derivations} & {
+            item.physical_event_digest for item in self.holdout_cases
+        }:
+            raise ValueError("training targets overlap holdout physical events")
+        holdout_targets = {
+            (
+                item.verification_target_source_identity_digest,
+                _canonical_time(item.verification_target_valid_time),
+            )
+            for item in self.holdout_cases
+        }
+        if {
+            (
+                item.target_source_identity_digest,
+                _canonical_time(item.target_source_valid_time),
+            )
+            for item in derivation.target_derivations
+        } & holdout_targets:
+            raise ValueError("training target source overlaps the holdout")
         holdout_issues = tuple(item.issue_time for item in self.holdout_cases)
         if any(
             _canonical_datetime(start)
@@ -17370,6 +18482,12 @@ def compute_neural_prior_promotion(
         candidate_training_derivation,
         processor_id=plan.analysis_processor_id,
         processor_public_key_hex=plan.analysis_processor_public_key_hex,
+        target_source_authority_id=(
+            plan.training_target_source_authority_id
+        ),
+        target_source_authority_public_key_hex=(
+            plan.training_target_source_authority_public_key_hex
+        ),
     )
     validate_holdout_scoring_artifact(
         scoring_artifact,
@@ -21165,7 +22283,7 @@ class OperationalDecisionPublicationReceipt:
 
 @dataclass(frozen=True, init=False)
 class OperationalDecisionActivationReceipt:
-    """Ledger signature over the final published and usable decision state."""
+    """Ledger authorization to atomically expose a published decision."""
 
     operational_decision_certificate_digest: str
     publication_receipt_digest: str
@@ -21174,7 +22292,8 @@ class OperationalDecisionActivationReceipt:
     sequence_number: int
     committed_chain_root_digest: str
     publication_payload_committed_at: str
-    activation_committed_at: str
+    activation_authorized_at: str
+    publication_guard_interval_seconds: float
     terminal_status: Literal["published"]
     usable: Literal[True]
     issued_at: str
@@ -21182,7 +22301,7 @@ class OperationalDecisionActivationReceipt:
     signer_public_key_hex: str
     signer_trust_store_digest: str
     signer_signature_hex: str
-    contract: str = "operational-decision-activation-receipt-v2"
+    contract: str = "operational-decision-activation-receipt-v3"
     receipt_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -21227,16 +22346,22 @@ def _issue_operational_decision_activation_receipt(
     publication_receipt: OperationalDecisionPublicationReceipt,
     *,
     publication_payload_committed_at: str,
-    activation_committed_at: str,
+    activation_authorized_at: str,
+    publication_guard_interval_seconds: float,
     committed_chain_root_digest: str,
     signer: DeploymentAuthoritySigner,
     authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
 ) -> OperationalDecisionActivationReceipt:
-    """Countersign an activation that the ledger has already committed."""
+    """Authorize the terminal transaction after its SQLite lock is held."""
 
     issued_at = _canonical_time(signer.signing_time())
     publication_commit = _canonical_time(publication_payload_committed_at)
-    activation_commit = _canonical_time(activation_committed_at)
+    activation_authorized = _canonical_time(activation_authorized_at)
+    if (
+        not math.isfinite(publication_guard_interval_seconds)
+        or publication_guard_interval_seconds < 0.05
+    ):
+        raise ValueError("operational publication guard is invalid")
     _require_digest("committed chain root", committed_chain_root_digest)
     _validate_signer(
         signer,
@@ -21251,7 +22376,7 @@ def _issue_operational_decision_activation_receipt(
             frozenset(),
         )
         or not _canonical_datetime(publication_commit)
-        <= _canonical_datetime(activation_commit)
+        <= _canonical_datetime(activation_authorized)
         <= _canonical_datetime(issued_at)
         < _canonical_datetime(certificate.publication_time)
         or _canonical_datetime(publication_receipt.issued_at)
@@ -21280,14 +22405,17 @@ def _issue_operational_decision_activation_receipt(
         "sequence_number": certificate.ledger_sequence_number,
         "committed_chain_root_digest": committed_chain_root_digest,
         "publication_payload_committed_at": publication_commit,
-        "activation_committed_at": activation_commit,
+        "activation_authorized_at": activation_authorized,
+        "publication_guard_interval_seconds": (
+            publication_guard_interval_seconds
+        ),
         "terminal_status": "published",
         "usable": True,
         "issued_at": issued_at,
         "signer_id": signer.authority_id,
         "signer_public_key_hex": signer.public_key_hex,
         "signer_trust_store_digest": authority_trust_store.content_digest,
-        "contract": "operational-decision-activation-receipt-v2",
+        "contract": "operational-decision-activation-receipt-v3",
     }
     signature = signer.sign(
         json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
@@ -21324,7 +22452,7 @@ def _validate_operational_decision_activation_receipt(
     )
     if (
         type(receipt) is not OperationalDecisionActivationReceipt
-        or receipt.contract != "operational-decision-activation-receipt-v2"
+        or receipt.contract != "operational-decision-activation-receipt-v3"
         or receipt.receipt_digest != json_digest(receipt.payload)
         or receipt.operational_decision_certificate_digest
         != certificate.certificate_digest
@@ -21336,8 +22464,10 @@ def _validate_operational_decision_activation_receipt(
         != ledger_receipt.committed_chain_root_digest
         or receipt.terminal_status != "published"
         or receipt.usable is not True
+        or not math.isfinite(receipt.publication_guard_interval_seconds)
+        or receipt.publication_guard_interval_seconds < 0.05
         or not _canonical_datetime(receipt.publication_payload_committed_at)
-        <= _canonical_datetime(receipt.activation_committed_at)
+        <= _canonical_datetime(receipt.activation_authorized_at)
         <= _canonical_datetime(receipt.issued_at)
         < _canonical_datetime(certificate.publication_time)
         or _canonical_datetime(publication_receipt.issued_at)
@@ -21365,6 +22495,173 @@ def _validate_operational_decision_activation_receipt(
         )
     except (InvalidSignature, ValueError) as error:
         raise ValueError("operational activation signature is invalid") from error
+
+
+@dataclass(frozen=True, init=False)
+class OperationalDecisionCommitAuthorizationReceipt:
+    """Ledger authorization made while the terminal SQLite writer lock is held.
+
+    SQLite does not expose a cryptographically attestable physical fsync time.
+    This receipt therefore proves a guarded terminal-commit authorization, not
+    an after-COMMIT observation.
+    """
+
+    operational_decision_certificate_digest: str
+    activation_receipt_digest: str
+    ledger_instance_digest: str
+    sequence_number: int
+    activation_authorized_at: str
+    terminal_commit_authorized_at: str
+    publication_time: str
+    signer_id: str
+    signer_public_key_hex: str
+    signer_trust_store_digest: str
+    signer_signature_hex: str
+    contract: str = "operational-decision-commit-authorization-receipt-v2"
+    receipt_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("operational commit authorizations are ledger-issued")
+
+    @property
+    def unsigned_payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key not in {"signer_signature_hex", "receipt_digest"}
+        }
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "receipt_digest"
+        }
+
+
+def _operational_decision_commit_authorization_receipt_from_payload(
+    payload: dict[str, object],
+) -> OperationalDecisionCommitAuthorizationReceipt:
+    expected = {
+        item.name
+        for item in OperationalDecisionCommitAuthorizationReceipt.__dataclass_fields__.values()
+        if item.name != "receipt_digest"
+    }
+    if set(payload) != expected:
+        raise ValueError("operational commit authorization is incomplete")
+    result = object.__new__(OperationalDecisionCommitAuthorizationReceipt)
+    for name, value in payload.items():
+        object.__setattr__(result, name, value)
+    object.__setattr__(result, "receipt_digest", json_digest(result.payload))
+    return result
+
+
+def _issue_operational_decision_commit_authorization_receipt(
+    certificate: OperationalDeploymentDecisionCertificate,
+    activation_receipt: OperationalDecisionActivationReceipt,
+    *,
+    terminal_commit_authorized_at: str,
+    signer: DeploymentAuthoritySigner,
+    authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+) -> OperationalDecisionCommitAuthorizationReceipt:
+    authorized = _canonical_time(terminal_commit_authorized_at)
+    _validate_signer(
+        signer,
+        trust_store=authority_trust_store,
+        role="ledger_issuance",
+        issued_at=authorized,
+    )
+    if (
+        activation_receipt.operational_decision_certificate_digest
+        != certificate.certificate_digest
+        or not _canonical_datetime(activation_receipt.activation_authorized_at)
+        <= _canonical_datetime(authorized)
+        < _canonical_datetime(certificate.publication_time)
+    ):
+        raise ValueError("operational commit authorization chronology is invalid")
+    values: dict[str, object] = {
+        "operational_decision_certificate_digest": certificate.certificate_digest,
+        "activation_receipt_digest": activation_receipt.receipt_digest,
+        "ledger_instance_digest": certificate.ledger_instance_digest,
+        "sequence_number": certificate.ledger_sequence_number,
+        "activation_authorized_at": activation_receipt.activation_authorized_at,
+        "terminal_commit_authorized_at": authorized,
+        "publication_time": certificate.publication_time,
+        "signer_id": signer.authority_id,
+        "signer_public_key_hex": signer.public_key_hex,
+        "signer_trust_store_digest": authority_trust_store.content_digest,
+        "contract": "operational-decision-commit-authorization-receipt-v2",
+    }
+    result = object.__new__(OperationalDecisionCommitAuthorizationReceipt)
+    for name, value in values.items():
+        object.__setattr__(result, name, value)
+    object.__setattr__(
+        result,
+        "signer_signature_hex",
+        signer.sign(
+            json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
+        ).hex(),
+    )
+    object.__setattr__(result, "receipt_digest", json_digest(result.payload))
+    return result
+
+
+def _validate_operational_decision_commit_authorization_receipt(
+    receipt: OperationalDecisionCommitAuthorizationReceipt,
+    *,
+    certificate: OperationalDeploymentDecisionCertificate,
+    activation_receipt: OperationalDecisionActivationReceipt,
+    authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+) -> None:
+    for name in (
+        "operational_decision_certificate_digest",
+        "activation_receipt_digest",
+        "ledger_instance_digest",
+        "signer_trust_store_digest",
+    ):
+        _require_digest(name, getattr(receipt, name))
+    if (
+        type(receipt) is not OperationalDecisionCommitAuthorizationReceipt
+        or receipt.contract
+        != "operational-decision-commit-authorization-receipt-v2"
+        or receipt.receipt_digest != json_digest(receipt.payload)
+        or receipt.operational_decision_certificate_digest
+        != certificate.certificate_digest
+        or receipt.activation_receipt_digest != activation_receipt.receipt_digest
+        or receipt.ledger_instance_digest != certificate.ledger_instance_digest
+        or receipt.sequence_number != certificate.ledger_sequence_number
+        or receipt.activation_authorized_at
+        != activation_receipt.activation_authorized_at
+        or receipt.publication_time != certificate.publication_time
+        or not _canonical_datetime(receipt.activation_authorized_at)
+        <= _canonical_datetime(receipt.terminal_commit_authorized_at)
+        < _canonical_datetime(receipt.publication_time)
+        or receipt.signer_id != activation_receipt.signer_id
+        or receipt.signer_public_key_hex
+        != activation_receipt.signer_public_key_hex
+        or receipt.signer_trust_store_digest
+        != authority_trust_store.content_digest
+    ):
+        raise ValueError("operational commit authorization is invalid")
+    key = _trusted_authority_key(
+        authority_trust_store,
+        authority_id=receipt.signer_id,
+        public_key_hex=receipt.signer_public_key_hex,
+        role="ledger_issuance",
+        issued_at=receipt.terminal_commit_authorized_at,
+    )
+    try:
+        key.verify(
+            bytes.fromhex(receipt.signer_signature_hex),
+            json.dumps(
+                receipt.unsigned_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode(),
+        )
+    except (InvalidSignature, ValueError) as error:
+        raise ValueError("operational commit authorization signature is invalid") from error
 
 
 def _operational_decision_publication_receipt_from_payload(
@@ -21798,6 +23095,7 @@ class _EpisodeLedgerOperationalDecisionClient:
     ) -> tuple[
         OperationalDecisionPublicationReceipt,
         OperationalDecisionActivationReceipt,
+        OperationalDecisionCommitAuthorizationReceipt,
     ]:
         """Invoke only the exact bound EpisodeLedger's DB-backed verifier."""
 
@@ -21831,12 +23129,14 @@ class _EpisodeLedgerOperationalDecisionClient:
             raise ValueError(
                 "automatic deployment ledger instance has no root-approved index"
             )
-        publication, activation = ledger_type._validate_committed_operational_decision(
+        publication, activation, authorization = (
+            ledger_type._validate_committed_operational_decision(
             self._ledger,
             certificate,
             decision_payload,
             expected_index_path=expected_index_path,
             authority_trust_store_path=self._authority_trust_store_path,
+            )
         )
         _validate_operational_decision_publication_receipt(
             publication,
@@ -21849,11 +23149,17 @@ class _EpisodeLedgerOperationalDecisionClient:
             publication_receipt=publication,
             authority_trust_store=authority_trust_store,
         )
+        _validate_operational_decision_commit_authorization_receipt(
+            authorization,
+            certificate=certificate,
+            activation_receipt=activation,
+            authority_trust_store=authority_trust_store,
+        )
         if self.current_raw_ingestor_trust_store_digest() != raw_trust_before:
             raise ValueError(
                 "operational decision raw-ingestor trust changed during validation"
             )
-        return publication, activation
+        return publication, activation, authorization
 
 
 def _replay_operational_deployment_selection(
@@ -22622,7 +23928,7 @@ def _select_deployed_prior(
         role = "candidate"
         reason = "certified_candidate"
     deployment_decision_core: dict[str, object] = {
-        "contract": "neural-prior-deployment-decision-artifact-v14",
+        "contract": "neural-prior-deployment-decision-artifact-v16",
         "routing_semantic_replay_verified": True,
         "full_analysis_input_digest": regime_evidence.full_analysis_input_digest,
         "analysis_input_derivation_artifact_digest": (
@@ -22723,6 +24029,7 @@ def _select_deployed_prior(
     (
         operational_publication_receipt,
         operational_activation_receipt,
+        operational_commit_authorization_receipt,
     ) = operational_decision_client._validate_committed_decision(
         operational_decision_certificate,
         deployment_decision_core,
@@ -22743,6 +24050,14 @@ def _select_deployed_prior(
         "operational_decision_activation_receipt": (
             operational_activation_receipt.payload
             | {"receipt_digest": operational_activation_receipt.receipt_digest}
+        ),
+        "operational_decision_commit_authorization_receipt": (
+            operational_commit_authorization_receipt.payload
+            | {
+                "receipt_digest": (
+                    operational_commit_authorization_receipt.receipt_digest
+                )
+            }
         ),
     }
     deployment_decision_json = json.dumps(
@@ -22829,7 +24144,7 @@ def validate_neural_prior_deployment_decision_artifact(
     if (
         not isinstance(payload, dict)
         or payload.get("contract")
-        != "neural-prior-deployment-decision-artifact-v14"
+        != "neural-prior-deployment-decision-artifact-v16"
         or json.dumps(payload, sort_keys=True, separators=(",", ":"))
         != artifact_json
     ):
@@ -22846,6 +24161,9 @@ def validate_neural_prior_deployment_decision_artifact(
     operational_activation_payload = payload.get(
         "operational_decision_activation_receipt"
     )
+    operational_commit_authorization_payload = payload.get(
+        "operational_decision_commit_authorization_receipt"
+    )
     range_partition = payload.get("range_partition_evidence")
     range_geometry = payload.get("range_geometry_contract")
     trust = payload.get("policy_trust_store")
@@ -22859,6 +24177,7 @@ def validate_neural_prior_deployment_decision_artifact(
             operational_certificate_payload,
             operational_publication_payload,
             operational_activation_payload,
+            operational_commit_authorization_payload,
             range_partition,
             range_geometry,
             trust,
@@ -22872,6 +24191,7 @@ def validate_neural_prior_deployment_decision_artifact(
     assert isinstance(operational_certificate_payload, dict)
     assert isinstance(operational_publication_payload, dict)
     assert isinstance(operational_activation_payload, dict)
+    assert isinstance(operational_commit_authorization_payload, dict)
     assert isinstance(range_partition, dict)
     assert isinstance(range_geometry, dict)
     assert isinstance(trust, dict)
@@ -22927,6 +24247,7 @@ def validate_neural_prior_deployment_decision_artifact(
     decision_core.pop("operational_decision_certificate")
     decision_core.pop("operational_decision_publication_receipt")
     decision_core.pop("operational_decision_activation_receipt")
+    decision_core.pop("operational_decision_commit_authorization_receipt")
     if operational_certificate_digest != operational_certificate.certificate_digest:
         raise ValueError("operational decision certificate digest mismatch")
     _validate_operational_deployment_decision_certificate(
@@ -22986,6 +24307,34 @@ def validate_neural_prior_deployment_decision_artifact(
         operational_activation,
         certificate=operational_certificate,
         publication_receipt=operational_publication,
+        authority_trust_store=authority_trust_store,
+    )
+    operational_authorization_values = dict(
+        operational_commit_authorization_payload
+    )
+    operational_authorization_digest = operational_authorization_values.pop(
+        "receipt_digest",
+        None,
+    )
+    try:
+        operational_authorization = (
+            _operational_decision_commit_authorization_receipt_from_payload(
+                operational_authorization_values
+            )
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            "operational commit authorization receipt is invalid"
+        ) from error
+    if (
+        operational_authorization_digest
+        != operational_authorization.receipt_digest
+    ):
+        raise ValueError("operational commit authorization digest mismatch")
+    _validate_operational_decision_commit_authorization_receipt(
+        operational_authorization,
+        certificate=operational_certificate,
+        activation_receipt=operational_activation,
         authority_trust_store=authority_trust_store,
     )
     promotion_evidence = _decode_current_neural_prior_promotion_evidence(

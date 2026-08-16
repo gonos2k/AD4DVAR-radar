@@ -1120,6 +1120,110 @@ class BoundNeuralPriorInput:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class ValidatedBoundNeuralPriorInputHandle:
+    """Sealed hot-path snapshot for one fully validated bound input.
+
+    The snapshot is cloned at the trust boundary.  Every derivative call
+    rehashes it and computes from a new private clone.  This deliberately
+    rejects ``.data`` mutations, which bypass PyTorch version counters, and
+    removes the validate/use race even if a caller reaches the private field.
+    """
+
+    _snapshot: BoundNeuralPriorInput = field(repr=False)
+    context_digest: str
+    _tensor_ids: tuple[int, ...]
+    _tensor_versions: tuple[int, ...]
+    _metadata: tuple[str | None, ...]
+    contract: str = "validated-bound-neural-prior-input-handle-v1"
+
+    @classmethod
+    def seal(
+        cls,
+        bound_input: BoundNeuralPriorInput,
+    ) -> ValidatedBoundNeuralPriorInputHandle:
+        if type(bound_input) is not BoundNeuralPriorInput:
+            raise TypeError("current bound neural-prior input is required")
+        bound_input.validate_integrity()
+        snapshot = replace(bound_input)
+        snapshot.validate_integrity()
+        tensors = cls._tensors(snapshot)
+        return cls(
+            _snapshot=snapshot,
+            context_digest=snapshot.context_digest,
+            _tensor_ids=tuple(id(value) for value in tensors),
+            _tensor_versions=tuple(
+                int(getattr(value, "_version")) for value in tensors
+            ),
+            _metadata=(
+                snapshot.contract,
+                snapshot.input_bundle_digest,
+                snapshot.full_analysis_input_digest,
+                snapshot.input_frames_digest,
+                snapshot.learned_model_input_features_digest,
+                snapshot.learned_input_feature_contract,
+            ),
+        )
+
+    @staticmethod
+    def _tensors(bound_input: BoundNeuralPriorInput) -> tuple[Tensor, ...]:
+        return tuple(
+            value
+            for value in (
+                bound_input.frames_dbz,
+                bound_input.qc_valid_mask,
+                bound_input.quality_weight,
+                bound_input.observation_std_dbz,
+                bound_input.source_available_mask,
+                bound_input.model_input,
+            )
+            if isinstance(value, Tensor)
+        )
+
+    def _validated_snapshot(self) -> BoundNeuralPriorInput:
+        if self.contract != "validated-bound-neural-prior-input-handle-v1":
+            raise ValueError("validated bound-input handle contract changed")
+        tensors = self._tensors(self._snapshot)
+        metadata = (
+            self._snapshot.contract,
+            self._snapshot.input_bundle_digest,
+            self._snapshot.full_analysis_input_digest,
+            self._snapshot.input_frames_digest,
+            self._snapshot.learned_model_input_features_digest,
+            self._snapshot.learned_input_feature_contract,
+        )
+        if (
+            tuple(id(value) for value in tensors) != self._tensor_ids
+            or tuple(int(getattr(value, "_version")) for value in tensors)
+            != self._tensor_versions
+            or metadata != self._metadata
+        ):
+            raise ValueError("validated bound neural-prior input was mutated")
+        self._snapshot.validate_integrity()
+        if self._snapshot.context_digest != self.context_digest:
+            raise ValueError("validated bound-input context digest changed")
+        return replace(self._snapshot)
+
+    @property
+    def bound_input(self) -> BoundNeuralPriorInput:
+        """Return a defensive copy, never the derivative snapshot itself."""
+
+        return self._validated_snapshot()
+
+    def assert_unmodified(self) -> BoundNeuralPriorInput:
+        """Validate the seal and return a defensive diagnostic copy."""
+
+        return self.bound_input
+
+    def validate_completion(self) -> None:
+        """Rehash the complete context at an external operation boundary."""
+
+        bound_input = self._validated_snapshot()
+        bound_input.validate_integrity()
+        if bound_input.context_digest != self.context_digest:
+            raise ValueError("validated bound-input context digest changed")
+
+
 @dataclass(frozen=True, init=False)
 class NeuralPriorDeploymentSelection:
     """Fail-closed candidate/parent choice for one operational input."""
@@ -1600,6 +1704,7 @@ class NeuralPriorInferenceRunner:
         self.support_policy: PriorSupportPolicy = support_policy
         self.maximum_added_area_km2 = maximum_added_area_km2
         self.maximum_added_echo_integral = maximum_added_echo_integral
+        self._derivative_lock = threading.RLock()
         self._feature_exclusion_mask = retained_exclusion_mask
         self.feature_exclusion_contract_digest = (
             actual_exclusion_contract_digest
@@ -1652,7 +1757,6 @@ class NeuralPriorInferenceRunner:
             }
         )
         self.neural_prior_digest = self.execution_contract_digest
-        self._derivative_lock = threading.RLock()
         self._certified_derivative_defect = self._validate_derivatives(
             canonical_model_input,
             probe_count=derivative_probe_count,
@@ -2371,6 +2475,33 @@ class NeuralPriorInferenceRunner:
         ):
             raise ValueError("neural-prior inference cannot be reproduced")
 
+    def validated_bound_input(
+        self,
+        bound_input: BoundNeuralPriorInput,
+    ) -> ValidatedBoundNeuralPriorInputHandle:
+        """Perform full boundary validation once and return a sealed handle."""
+
+        handle = ValidatedBoundNeuralPriorInputHandle.seal(bound_input)
+        if bound_input.learned_input_feature_contract != self.learned_input_feature_contract:
+            raise ValueError("bound input disagrees with runner feature contract")
+        return handle
+
+    def _hot_bound_input(
+        self,
+        value: BoundNeuralPriorInput | ValidatedBoundNeuralPriorInputHandle,
+    ) -> BoundNeuralPriorInput:
+        handle = (
+            self.validated_bound_input(value)
+            if type(value) is BoundNeuralPriorInput
+            else value
+        )
+        if type(handle) is not ValidatedBoundNeuralPriorInputHandle:
+            raise TypeError("validated bound neural-prior input is required")
+        bound_input = handle._validated_snapshot()
+        if bound_input.learned_input_feature_contract != self.learned_input_feature_contract:
+            raise ValueError("bound input disagrees with runner feature contract")
+        return bound_input
+
     def validate_retained_output(
         self,
         bound_input: BoundNeuralPriorInput,
@@ -2387,15 +2518,19 @@ class NeuralPriorInferenceRunner:
         if not torch.equal(state_output.background_dbz, raw_background_dbz):
             raise ValueError("retained neural-prior output cannot be reproduced")
 
-    def jvp(self, bound_input: BoundNeuralPriorInput, tangent: Tensor) -> Tensor:
+    def jvp(
+        self,
+        bound_input: BoundNeuralPriorInput | ValidatedBoundNeuralPriorInputHandle,
+        tangent: Tensor,
+    ) -> Tensor:
         return self.jvp_components(bound_input, tangent)[0]
 
     def jvp_components(
         self,
-        bound_input: BoundNeuralPriorInput,
+        bound_input: BoundNeuralPriorInput | ValidatedBoundNeuralPriorInputHandle,
         tangent: Tensor,
     ) -> tuple[Tensor, Tensor]:
-        bound_input.validate_integrity()
+        bound_input = self._hot_bound_input(bound_input)
         if self.dependency != "radar_dependent":
             zero = bound_input.frames_dbz.new_zeros(
                 bound_input.frames_dbz.shape[-2:]
@@ -2417,7 +2552,11 @@ class NeuralPriorInferenceRunner:
                 )[1],
             )
 
-    def vjp(self, bound_input: BoundNeuralPriorInput, cotangent: Tensor) -> Tensor:
+    def vjp(
+        self,
+        bound_input: BoundNeuralPriorInput | ValidatedBoundNeuralPriorInputHandle,
+        cotangent: Tensor,
+    ) -> Tensor:
         return self.vjp_components(
             bound_input,
             cotangent,
@@ -2426,11 +2565,11 @@ class NeuralPriorInferenceRunner:
 
     def vjp_components(
         self,
-        bound_input: BoundNeuralPriorInput,
+        bound_input: BoundNeuralPriorInput | ValidatedBoundNeuralPriorInputHandle,
         mean_cotangent: Tensor,
         log_std_cotangent: Tensor,
     ) -> Tensor:
-        bound_input.validate_integrity()
+        bound_input = self._hot_bound_input(bound_input)
         if self.dependency != "radar_dependent":
             return torch.zeros_like(bound_input.frames_dbz)
         self._validate_state()
@@ -2454,7 +2593,9 @@ class NeuralPriorInferenceRunner:
 
     def validate_adjoint_direction(
         self,
-        bound_input: BoundNeuralPriorInput,
+        bound_input: (
+            BoundNeuralPriorInput | ValidatedBoundNeuralPriorInputHandle
+        ),
         mean_cotangent: Tensor,
         log_std_cotangent: Tensor | None = None,
     ) -> float:
@@ -2462,9 +2603,14 @@ class NeuralPriorInferenceRunner:
 
         if self.dependency != "radar_dependent":
             return 0.0
-        bound_input.validate_integrity()
-        self._validate_input_contract(bound_input.model_input)
-        frames_dbz = bound_input.frames_dbz
+        handle = (
+            self.validated_bound_input(bound_input)
+            if type(bound_input) is BoundNeuralPriorInput
+            else bound_input
+        )
+        resolved = self._hot_bound_input(handle)
+        self._validate_input_contract(resolved.model_input)
+        frames_dbz = resolved.frames_dbz
         generator = torch.Generator(device="cpu").manual_seed(1)
         tangent = (
             torch.randint(
@@ -2475,14 +2621,14 @@ class NeuralPriorInferenceRunner:
                 dtype=torch.int8,
             ).to(frames_dbz) * 2.0 - 1.0
         )
-        mean_forward, log_std_forward = self.jvp_components(bound_input, tangent)
+        mean_forward, log_std_forward = self.jvp_components(handle, tangent)
         retained_log_std_cotangent = (
             torch.zeros_like(mean_cotangent)
             if log_std_cotangent is None
             else log_std_cotangent
         )
         reverse = self.vjp_components(
-            bound_input,
+            handle,
             mean_cotangent,
             retained_log_std_cotangent,
         )

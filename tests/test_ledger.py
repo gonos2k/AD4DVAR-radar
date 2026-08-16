@@ -719,18 +719,31 @@ class EpisodeLedgerTests(unittest.TestCase):
                 ],
             }
         )
+        target_source_key = (
+            promotion_module.Ed25519PrivateKey.from_private_bytes(b"\x28" * 32)
+        )
+        target_source_receipt = (
+            promotion_module.TrainingTargetSourceReceipt.issue(
+                target_source_identity_digest="4" * 64,
+                target_source_valid_time="2029-01-01T00:10:00Z",
+                physical_event_digest="9" * 64,
+                source_object_digest=tensor_digest(target_tensor),
+                observed_at="2029-01-01T00:15:00Z",
+                authority_id="test-target-source-authority",
+                authority_private_key=target_source_key,
+            )
+        )
         target_derivation = (
             promotion_module.TrainingTargetDerivationArtifact.issue(
                 case_id=member_derivation.case_id,
-                target_source_identity_digest="4" * 64,
-                target_source_valid_time="2028-12-29T00:00:00Z",
+                target_source_receipt=target_source_receipt,
                 target_qc_policy_digest="5" * 64,
                 target_censor_policy_digest="6" * 64,
                 target_algorithm_digest="6" * 64,
                 target_schema_digest="7" * 64,
                 target_tensor=target_tensor,
-                generated_at="2028-12-30T00:00:00Z",
-                training_cutoff_time="2028-12-31T00:00:00Z",
+                generated_at="2029-01-01T00:20:00Z",
+                training_cutoff_time="2029-01-01T00:30:00Z",
                 processor_id=member_derivation.processor_id,
                 processor_private_key=processor_key,
             )
@@ -741,11 +754,30 @@ class EpisodeLedgerTests(unittest.TestCase):
             sort_keys=True,
             separators=(",", ":"),
         )
-        feature_archive = promotion_module.encode_training_tensor_archive(
-            {"feature_00000": feature_tensor}
+        archive_root = self.root / "training-shards"
+        feature_shard = promotion_module.write_training_tensor_archive_shard(
+            {"feature_00000": feature_tensor},
+            directory=archive_root,
+            shard_id="features-00000",
         )
-        target_archive = promotion_module.encode_training_tensor_archive(
-            {"target_00000": target_tensor}
+        target_shard = promotion_module.write_training_tensor_archive_shard(
+            {
+                "target_00000": target_tensor,
+                "target_valid_mask_00000": torch.ones_like(
+                    target_tensor, dtype=torch.bool
+                ),
+                "target_quality_00000": torch.ones_like(target_tensor),
+            },
+            directory=archive_root,
+            shard_id="targets-00000",
+        )
+        normalization_tensor = torch.tensor([0.0, 1.0])
+        normalization_shard = (
+            promotion_module.write_training_tensor_archive_shard(
+                {"normalization": normalization_tensor},
+                directory=archive_root,
+                shard_id="normalization",
+            )
         )
         training_feature_dataset = (
             promotion_module.TrainingFeatureDatasetArtifact(
@@ -760,24 +792,25 @@ class EpisodeLedgerTests(unittest.TestCase):
                     ),
                     target_archive_member="target_00000",
                     target_tensor_digest=tensor_digest(target_tensor),
+                    target_valid_mask_archive_member=(
+                        "target_valid_mask_00000"
+                    ),
+                    target_quality_archive_member="target_quality_00000",
                     target_derivation_artifact_json=target_derivation_json,
                     sample_weight=1.0,
                     split="train",
                     augmentation_seed=0,
                 ),),
-                normalization_statistics_digest="5" * 64,
+                normalization_statistics_digest=tensor_digest(
+                    normalization_tensor
+                ),
                 feature_algorithm_digest="f" * 64,
                 feature_schema_digest="0" * 64,
                 target_algorithm_digest="6" * 64,
                 target_schema_digest="7" * 64,
-                feature_tensor_archive_sha256=hashlib.sha256(
-                    base64.b64decode(feature_archive)
-                ).hexdigest(),
-                target_tensor_archive_sha256=hashlib.sha256(
-                    base64.b64decode(target_archive)
-                ).hexdigest(),
-                feature_tensor_archive_base64=feature_archive,
-                target_tensor_archive_base64=target_archive,
+                feature_archive_shards=(feature_shard,),
+                target_archive_shards=(target_shard,),
+                normalization_statistics_shard=normalization_shard,
             )
         )
         training_feature_dataset_json = json.dumps(
@@ -1015,6 +1048,15 @@ class EpisodeLedgerTests(unittest.TestCase):
             analysis_processor_public_key_hex=(
                 processor_key.public_key().public_bytes_raw().hex()
             ),
+            training_target_source_authority_id=(
+                "test-target-source-authority"
+            ),
+            training_target_source_authority_public_key_hex=(
+                target_source_key
+                .public_key()
+                .public_bytes_raw()
+                .hex()
+            ),
             uncertainty_target_plans=(target_plan,),
             state_calibration_target_plans=(state_target_plan,),
             range_band_contracts=(range_contract,),
@@ -1054,6 +1096,12 @@ class EpisodeLedgerTests(unittest.TestCase):
             analysis_processor_id=plan.analysis_processor_id,
             analysis_processor_public_key_hex=(
                 plan.analysis_processor_public_key_hex
+            ),
+            training_target_source_authority_id=(
+                plan.training_target_source_authority_id
+            ),
+            training_target_source_authority_public_key_hex=(
+                plan.training_target_source_authority_public_key_hex
             ),
         )
         trust = SimpleNamespace(
@@ -1237,7 +1285,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-            self.assertEqual(version, 38)
+            self.assertEqual(version, 39)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4550,7 +4598,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 38)
+        self.assertEqual(version, 39)
 
     def test_operational_raw_resolution_history_is_append_only(self) -> None:
         ledger = EpisodeLedger(self.root / "operational-raw-history")
@@ -4594,6 +4642,55 @@ class EpisodeLedgerTests(unittest.TestCase):
                     recorded_at="2026-08-16T00:00:01Z",
                 )
 
+        mutable = entry(
+            identity="2" * 64,
+            kind="missing",
+            previous=promotion_module.OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST,
+            transition="original",
+            ordinal=1,
+        )
+        object.__setattr__(mutable, "reason", "mutated after signing")
+        with sqlite3.connect(ledger.index_path) as connection:
+            with self.assertRaisesRegex(ValueError, "invalid|digest|unsigned"):
+                ledger._record_operational_raw_resolution_history(
+                    connection,
+                    entry=mutable,
+                    raw_resolution_receipt_digest="8" * 64,
+                    recorded_at="2026-08-16T00:00:01Z",
+                    expected_authority_id="analysis-processor",
+                    expected_authority_public_key_hex=(
+                        authority.public_key().public_bytes_raw().hex()
+                    ),
+                )
+
+        alternate_authority = Ed25519PrivateKey.generate()
+        alternate = promotion_module.OperationalRawResolutionHistoryEntry.issue(
+            provenance_plan_digest="1" * 64,
+            slot_digest=slot,
+            resolution_identity_digest="2" * 64,
+            resolution_kind="missing",
+            previous_entry_digest=(
+                promotion_module.OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST
+            ),
+            transition="original",
+            reason="alternate approved processor",
+            issued_at="2026-08-16T00:00:01Z",
+            authority_id="alternate-analysis-processor",
+            authority_private_key=alternate_authority,
+        )
+        with sqlite3.connect(ledger.index_path) as connection:
+            with self.assertRaisesRegex(ValueError, "disagrees with its plan"):
+                ledger._record_operational_raw_resolution_history(
+                    connection,
+                    entry=alternate,
+                    raw_resolution_receipt_digest="7" * 64,
+                    recorded_at="2026-08-16T00:00:01Z",
+                    expected_authority_id="analysis-processor",
+                    expected_authority_public_key_hex=(
+                        authority.public_key().public_bytes_raw().hex()
+                    ),
+                )
+
         transitions = (
             ("2" * 64, "missing", "original"),
             ("3" * 64, "resolved", "correction"),
@@ -4619,12 +4716,89 @@ class EpisodeLedgerTests(unittest.TestCase):
                     entry=current,
                     raw_resolution_receipt_digest=f"{ordinal + 9:x}" * 64,
                     recorded_at=f"2026-08-16T00:01:0{ordinal}Z",
+                    expected_authority_id="analysis-processor",
+                    expected_authority_public_key_hex=(
+                        authority.public_key().public_bytes_raw().hex()
+                    ),
                 )
             expected.append(current)
             previous = current.entry_digest
 
-        retained = ledger.load_operational_raw_resolution_history(slot)
+        retained = ledger.load_operational_raw_resolution_history(
+            slot,
+            expected_authority_id="analysis-processor",
+            expected_authority_public_key_hex=(
+                authority.public_key().public_bytes_raw().hex()
+            ),
+        )
         self.assertEqual(retained, tuple(expected))
+
+        poisoned_slot = "c" * 64
+        attacker_key = Ed25519PrivateKey.generate()
+        poisoned = promotion_module.OperationalRawResolutionHistoryEntry.issue(
+            provenance_plan_digest="1" * 64,
+            slot_digest=poisoned_slot,
+            resolution_identity_digest="7" * 64,
+            resolution_kind="resolved",
+            previous_entry_digest=(
+                promotion_module.OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST
+            ),
+            transition="original",
+            reason="unauthorized predecessor",
+            issued_at="2026-08-16T00:02:00Z",
+            authority_id="attacker",
+            authority_private_key=attacker_key,
+        )
+        with sqlite3.connect(ledger.index_path) as connection:
+            connection.execute(
+                "INSERT INTO operational_raw_resolution_history "
+                "(slot_digest,sequence_number,entry_digest,"
+                "previous_entry_digest,provenance_plan_digest,"
+                "resolution_identity_digest,resolution_kind,transition,"
+                "entry_json,raw_resolution_receipt_digest,recorded_at) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    poisoned.slot_digest,
+                    1,
+                    poisoned.entry_digest,
+                    poisoned.previous_entry_digest,
+                    poisoned.provenance_plan_digest,
+                    poisoned.resolution_identity_digest,
+                    poisoned.resolution_kind,
+                    poisoned.transition,
+                    json.dumps(
+                        poisoned.payload,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                    "8" * 64,
+                    "2026-08-16T00:02:01Z",
+                ),
+            )
+        authorized_successor = promotion_module.OperationalRawResolutionHistoryEntry.issue(
+            provenance_plan_digest="1" * 64,
+            slot_digest=poisoned_slot,
+            resolution_identity_digest="8" * 64,
+            resolution_kind="resolved",
+            previous_entry_digest=poisoned.entry_digest,
+            transition="supersession",
+            reason="must not extend poisoned predecessor",
+            issued_at="2026-08-16T00:02:02Z",
+            authority_id="analysis-processor",
+            authority_private_key=authority,
+        )
+        with sqlite3.connect(ledger.index_path) as connection:
+            with self.assertRaisesRegex(ValueError, "row changed"):
+                ledger._record_operational_raw_resolution_history(
+                    connection,
+                    entry=authorized_successor,
+                    raw_resolution_receipt_digest="9" * 64,
+                    recorded_at="2026-08-16T00:02:03Z",
+                    expected_authority_id="analysis-processor",
+                    expected_authority_public_key_hex=(
+                        authority.public_key().public_bytes_raw().hex()
+                    ),
+                )
         forged_previous = entry(
             identity="6" * 64,
             kind="resolved",
@@ -4639,6 +4813,10 @@ class EpisodeLedgerTests(unittest.TestCase):
                     entry=forged_previous,
                     raw_resolution_receipt_digest="f" * 64,
                     recorded_at="2026-08-16T00:01:06Z",
+                    expected_authority_id="analysis-processor",
+                    expected_authority_public_key_hex=(
+                        authority.public_key().public_bytes_raw().hex()
+                    ),
                 )
 
         backdated = entry(
@@ -4655,7 +4833,99 @@ class EpisodeLedgerTests(unittest.TestCase):
                     entry=backdated,
                     raw_resolution_receipt_digest="e" * 64,
                     recorded_at="2026-08-16T00:01:07Z",
+                    expected_authority_id="analysis-processor",
+                    expected_authority_public_key_hex=(
+                        authority.public_key().public_bytes_raw().hex()
+                    ),
                 )
+
+    def test_analysis_provenance_sql_requires_prepared_immutable_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            committed_at = "2026-08-16T00:00:00+00:00"
+            values = (
+                "1" * 64,
+                "operational",
+                "2" * 64,
+                "sql-state-case",
+                "3" * 64,
+                "4" * 64,
+                "{}",
+                "5" * 64,
+                "6" * 64,
+                str(Path(directory) / "artifact"),
+                "7" * 64,
+                None,
+                committed_at,
+                1,
+                "active",
+                committed_at,
+                committed_at,
+                None,
+            )
+            statement = (
+                "INSERT INTO analysis_input_provenance_commits "
+                "(artifact_digest,provenance_kind,provenance_plan_digest,"
+                "case_id,input_plan_digest,raw_resolution_receipt_digest,"
+                "payload_json,arrays_sha256,metadata_sha256,path,"
+                "raw_ingestor_trust_store_digest,raw_trust_validated_at,"
+                "committed_at,usable,status,payload_committed_at,"
+                "activated_at,expired_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,"
+                "?,?,?,?,?,?)"
+            )
+            with sqlite3.connect(ledger.index_path) as connection:
+                with self.assertRaisesRegex(
+                    sqlite3.IntegrityError,
+                    "inserted prepared",
+                ):
+                    connection.execute(statement, values)
+                with self.assertRaisesRegex(
+                    sqlite3.IntegrityError,
+                    "inserted prepared",
+                ):
+                    connection.execute(
+                        "INSERT INTO neural_prior_analysis_input_provenance "
+                        "(artifact_digest,holdout_plan_digest,case_id,"
+                        "input_plan_digest,global_resolution_receipt_digest,"
+                        "payload_json,arrays_sha256,metadata_sha256,path,"
+                        "raw_ingestor_trust_store_digest,"
+                        "raw_trust_validated_at,committed_at,usable,status,"
+                        "payload_committed_at,activated_at,expired_at) "
+                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        (
+                            "8" * 64,
+                            "9" * 64,
+                            "holdout-direct-active",
+                            "a" * 64,
+                            "b" * 64,
+                            "{}",
+                            "c" * 64,
+                            "d" * 64,
+                            str(Path(directory) / "holdout-artifact"),
+                            "e" * 64,
+                            committed_at,
+                            committed_at,
+                            1,
+                            "active",
+                            committed_at,
+                            committed_at,
+                            None,
+                        ),
+                    )
+                prepared = list(values)
+                prepared[13] = 0
+                prepared[14] = "prepared"
+                prepared[16] = None
+                connection.execute(statement, tuple(prepared))
+                with self.assertRaisesRegex(
+                    sqlite3.IntegrityError,
+                    "state transition",
+                ):
+                    connection.execute(
+                        "UPDATE analysis_input_provenance_commits "
+                        "SET case_id = ? WHERE artifact_digest = ?",
+                        ("swapped-case", "1" * 64),
+                    )
 
 
 if __name__ == "__main__":
