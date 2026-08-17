@@ -1098,6 +1098,35 @@ class VariationalAnalysisTests(unittest.TestCase):
             fresh_runner.jvp(restarted_handle, tangent),
             expected_from_snapshot,
         )
+        with fresh_runner.derivative_session(restarted_handle) as session:
+            torch.testing.assert_close(
+                fresh_runner.jvp(session, tangent),
+                expected_from_snapshot,
+            )
+            session_source_snapshot = restarted_handle._snapshot
+            retained_source_model_input = (
+                session_source_snapshot.model_input.clone()
+            )
+            session_source_snapshot.model_input.data.add_(100.0)
+            # The inner operator consumes its operation-local clone rather
+            # than rehashing or aliasing the public handle on every call.
+            torch.testing.assert_close(
+                fresh_runner.jvp(session, tangent),
+                expected_from_snapshot,
+            )
+            torch.testing.assert_close(
+                fresh_runner.vjp(
+                    session,
+                    torch.ones_like(expected_from_snapshot),
+                ),
+                fresh_runner.vjp(
+                    application_a.bound_input,
+                    torch.ones_like(expected_from_snapshot),
+                ),
+            )
+            session_source_snapshot.model_input.data.copy_(
+                retained_source_model_input
+            )
         exposed_copy = restarted_handle.bound_input
         assert exposed_copy.quality_weight is not None
         exposed_copy.quality_weight.data.fill_(0.25)

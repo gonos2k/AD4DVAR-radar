@@ -103,6 +103,8 @@ from .promotion import (
     LegacyNeuralPriorCandidateManifestAuditV14,
     LegacyNeuralPriorCandidateManifestAuditV15,
     LegacyNeuralPriorCandidateManifestAuditV16,
+    LegacyNeuralPriorCandidateManifestAuditV17,
+    LegacyNeuralPriorCandidateManifestAuditV18,
     NeuralPriorCandidateManifest,
     LegacyNeuralPriorHoldoutPlanAudit,
     LegacyNeuralPriorHoldoutPlanCase,
@@ -129,6 +131,8 @@ from .promotion import (
     LegacyNeuralPriorHoldoutPlanV20Audit,
     LegacyNeuralPriorHoldoutPlanV21Audit,
     LegacyNeuralPriorHoldoutPlanV22Audit,
+    LegacyNeuralPriorHoldoutPlanV23Audit,
+    LegacyNeuralPriorHoldoutPlanV24Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
@@ -138,6 +142,8 @@ from .promotion import (
     CanonicalRawVolumeIdentity,
     RawVolumeAttestation,
     RawIngestorTrustStore,
+    TrainingTargetSourceTrustStore,
+    TrainingDatasetDerivationArtifact,
     ResolvedRawObservationReceipt,
     MissingRawObservationReceipt,
     RawObservationResolutionReceipt,
@@ -246,6 +252,8 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV27,
     LegacyNeuralPriorPromotionEvidenceAuditV28,
     LegacyNeuralPriorPromotionEvidenceAuditV29,
+    LegacyNeuralPriorPromotionEvidenceAuditV30,
+    LegacyHoldoutScoringArtifactAuditV10,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     ScoringReplayCaseArtifact,
@@ -269,6 +277,7 @@ from .promotion import (
     _new_trusted_process_start_receipt,
     _new_trusted_process_completion_receipt,
     _new_holdout_scoring_artifact,
+    _training_target_source_trust_store_from_json,
     validate_holdout_scoring_artifact,
     validate_promotion_decision_rule,
 )
@@ -279,7 +288,7 @@ _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _SCHEDULER_TRUST_STORE_CONTRACT = "advar-trusted-scheduler-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 39
+_INDEX_SCHEMA_VERSION = 40
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _RAW_TRUST_ACTIVATION_KINDS = frozenset(
@@ -300,6 +309,7 @@ _MAXIMUM_ACTION_ARTIFACT_FILE_BYTES = 2 * 1024**3
 _MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES = 8 * 1024**3
 _MAXIMUM_ACTION_GENERATOR_BYTES = 512 * 1024**2
 _MAXIMUM_RAW_INGESTOR_TRUST_STORE_BYTES = 1024 * 1024
+_MAXIMUM_TRAINING_TARGET_SOURCE_TRUST_STORE_BYTES = 1024 * 1024
 _MAXIMUM_ANALYSIS_PROVENANCE_FILE_BYTES = 2 * 1024**3
 _MAXIMUM_ANALYSIS_PROVENANCE_EXPANDED_BYTES = 8 * 1024**3
 
@@ -706,6 +716,58 @@ def _load_raw_ingestor_trust_store(path: str | Path) -> RawIngestorTrustStore:
         )
     except (TypeError, ValueError) as error:
         raise ValueError("invalid raw-ingestor trust store") from error
+
+
+def _load_training_target_source_trust_store(
+    path: str | Path,
+) -> TrainingTargetSourceTrustStore:
+    """Load the sole root-owned current target-source revocation view."""
+
+    source = Path(path)
+    if not source.is_absolute():
+        raise ValueError("training target-source trust store path must be absolute")
+    for parent in (source.parent, *source.parents):
+        metadata = parent.stat(follow_symlinks=False)
+        if (
+            not stat.S_ISDIR(metadata.st_mode)
+            or metadata.st_uid != 0
+            or metadata.st_mode & 0o022
+        ):
+            raise ValueError(
+                "training target-source trust ancestry must be root-owned"
+            )
+        if parent == parent.parent:
+            break
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(source, flags)
+    try:
+        metadata = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_uid != 0
+            or metadata.st_mode & 0o022
+            or metadata.st_size
+            > _MAXIMUM_TRAINING_TARGET_SOURCE_TRUST_STORE_BYTES
+        ):
+            raise ValueError(
+                "training target-source trust store must be root-owned, immutable, and bounded"
+            )
+        with os.fdopen(descriptor, encoding="utf-8") as stream:
+            descriptor = -1
+            document = json.load(stream)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+    if not isinstance(document, dict):
+        raise ValueError("invalid training target-source trust store")
+    retained_digest = document.get("content_digest")
+    if not isinstance(retained_digest, str):
+        raise ValueError("invalid training target-source trust store")
+    return _training_target_source_trust_store_from_json(
+        json.dumps(document, sort_keys=True, separators=(",", ":")),
+        expected_digest=retained_digest,
+    )
 
 
 def _validate_current_raw_ingestor_receipt(
@@ -4540,6 +4602,8 @@ class EpisodeLedger:
             != policy.sampling_registry_authority_public_key_hex
             or plan.raw_ingestor_trust_store.content_digest
             != policy.raw_ingestor_trust_store_digest
+            or plan.training_target_source_trust_store.content_digest
+            != policy.training_target_source_trust_store_digest
             or plan.analysis_processor_id != policy.analysis_processor_id
             or plan.analysis_processor_public_key_hex
             != policy.analysis_processor_public_key_hex
@@ -4873,6 +4937,8 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanV20Audit
         | LegacyNeuralPriorHoldoutPlanV21Audit
         | LegacyNeuralPriorHoldoutPlanV22Audit
+        | LegacyNeuralPriorHoldoutPlanV23Audit
+        | LegacyNeuralPriorHoldoutPlanV24Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -5012,6 +5078,20 @@ class EpisodeLedger:
             )
         if value.get("contract") == "neural-prior-holdout-plan-v22":
             return LegacyNeuralPriorHoldoutPlanV22Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v23":
+            return LegacyNeuralPriorHoldoutPlanV23Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v24":
+            return LegacyNeuralPriorHoldoutPlanV24Audit(
                 plan_digest=plan_digest,
                 payload_json=json.dumps(
                     value, sort_keys=True, separators=(",", ":")
@@ -5163,6 +5243,28 @@ class EpisodeLedger:
         )
         value["raw_ingestor_trust_store"] = RawIngestorTrustStore(
             **cast(Any, raw_trust_values)
+        )
+        target_trust_values = dict(
+            value["training_target_source_trust_store"]
+        )
+        target_trust_values.pop("content_digest", None)
+        target_trust_values["authorities"] = tuple(
+            (
+                str(item[0]),
+                str(item[1]),
+                int(item[2]),
+                str(item[3]),
+                str(item[4]),
+                None if item[5] is None else str(item[5]),
+                tuple(item[6]),
+                tuple(item[7]),
+            )
+            for item in target_trust_values["authorities"]
+        )
+        value["training_target_source_trust_store"] = (
+            TrainingTargetSourceTrustStore(
+                **cast(Any, target_trust_values)
+            )
         )
         value["uncertainty_target_plans"] = tuple(
             PriorUncertaintyTargetPlan(
@@ -10017,6 +10119,8 @@ class EpisodeLedger:
         receipt: TrustedProcessStartReceipt,
         *,
         scoring_input_artifact: HoldoutScoringInputArtifact | None = None,
+        training_dataset_derivation: TrainingDatasetDerivationArtifact | None = None,
+        training_target_source_trust_store_path: str | Path | None = None,
         scheduler_trust_store_path: str | Path,
     ) -> str:
         """Append a root-authorized training or scoring launch after cataloging."""
@@ -10051,8 +10155,34 @@ class EpisodeLedger:
                 != plan.scoring_execution_contract_digest
             ):
                 raise ValueError("scoring start receipt disagrees with holdout plan")
-        elif receipt.process_kind != "candidate_training":
-            raise ValueError("training catalog requires a training start receipt")
+        else:
+            if receipt.process_kind != "candidate_training":
+                raise ValueError("training catalog requires a training start receipt")
+            if training_target_source_trust_store_path is None:
+                raise ValueError(
+                    "training start requires the current target-source trust store"
+                )
+            current_target_source_trust_store = (
+                _load_training_target_source_trust_store(
+                    training_target_source_trust_store_path
+                )
+            )
+            if (
+                training_dataset_derivation is None
+                or training_dataset_derivation.training_dataset_digest
+                not in receipt.subject_digests
+                or training_dataset_derivation.training_tensor_snapshot_set_digest
+                not in receipt.subject_digests
+                or training_dataset_derivation.normalization_derivation_artifact_digest
+                not in receipt.subject_digests
+            ):
+                raise ValueError(
+                    "training start requires its dataset derivation and current trust"
+                )
+            training_dataset_derivation.validate_target_source_trust_at(
+                current_target_source_trust_store,
+                at=receipt.started_at,
+            )
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             catalog_table = (
@@ -10115,6 +10245,18 @@ class EpisodeLedger:
                     raise ValueError(
                         "process cannot start before scoring input ledger append"
                     )
+            else:
+                assert training_dataset_derivation is not None
+                assert training_target_source_trust_store_path is not None
+                final_target_source_trust = (
+                    _load_training_target_source_trust_store(
+                        training_target_source_trust_store_path
+                    )
+                )
+                training_dataset_derivation.validate_target_source_trust_at(
+                    final_target_source_trust,
+                    at=receipt.started_at,
+                )
             predecessor = connection.execute(
                 "SELECT receipt_digest, scheduler_sequence_number "
                 "FROM trusted_process_start_receipts_v2 "
@@ -10171,6 +10313,8 @@ class EpisodeLedger:
         scoring_artifact: HoldoutScoringArtifact | None = None,
         scoring_replay_cases: tuple[ScoringReplayCaseArtifact, ...] | None = None,
         raw_ingestor_trust_store_path: str | Path | None = None,
+        training_dataset_derivation: TrainingDatasetDerivationArtifact | None = None,
+        training_target_source_trust_store_path: str | Path | None = None,
         mps_backend_certification_policy: (
             MPSBackendCertificationPolicy | None
         ) = None,
@@ -10335,6 +10479,32 @@ class EpisodeLedger:
             )
             if start_row is None or start_row[0] != expected_start_json:
                 raise ValueError("process completion requires its ledger start row")
+            if start.process_kind == "candidate_training":
+                if training_target_source_trust_store_path is None:
+                    raise ValueError(
+                        "training completion requires the current target-source trust store"
+                    )
+                current_target_source_trust_store = (
+                    _load_training_target_source_trust_store(
+                        training_target_source_trust_store_path
+                    )
+                )
+                if (
+                    training_dataset_derivation is None
+                    or training_dataset_derivation.training_dataset_digest
+                    not in start.subject_digests
+                    or training_dataset_derivation.training_tensor_snapshot_set_digest
+                    not in start.subject_digests
+                    or training_dataset_derivation.normalization_derivation_artifact_digest
+                    not in start.subject_digests
+                ):
+                    raise ValueError(
+                        "training completion requires its dataset derivation and current trust"
+                    )
+                training_dataset_derivation.validate_target_source_trust_at(
+                    current_target_source_trust_store,
+                    at=completion.completed_at,
+                )
             now = datetime.now(timezone.utc)
             completed_at = datetime.fromisoformat(
                 completion.completed_at.replace("Z", "+00:00")
@@ -10447,6 +10617,7 @@ class EpisodeLedger:
         policy: NeuralPriorPromotionPolicy,
         policy_trust_store_path: str | Path,
         raw_ingestor_trust_store_path: str | Path,
+        training_target_source_trust_store_path: str | Path,
     ) -> str:
         """Append one promotion over every preregistered holdout case."""
 
@@ -10456,6 +10627,11 @@ class EpisodeLedger:
         promotion_raw_trust = _validate_current_scoring_raw_ingestor_receipts(
             ordered_replay_cases,
             raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
+        )
+        training_target_source_trust_store = (
+            _load_training_target_source_trust_store(
+                training_target_source_trust_store_path
+            )
         )
         replay = self.load_neural_prior_scoring_replay_bundle(
             scoring_artifact.scoring_replay_bundle_digest,
@@ -10500,16 +10676,33 @@ class EpisodeLedger:
             scoring_completion_receipt=scoring_completion_receipt,
             policy=policy,
             policy_trust_store_path=policy_trust_store_path,
+            current_training_target_source_trust_store=(
+                training_target_source_trust_store
+            ),
         )
         validate_neural_prior_holdout_plan(plan)
         validate_neural_prior_candidate_manifest(manifest)
         if (
             recomputed.promotion_evidence_digest
             != evidence.promotion_evidence_digest
+            or evidence.training_target_source_trust_store_digest
+            != training_target_source_trust_store.content_digest
         ):
             raise ValueError("neural-prior promotion evidence is not reproducible")
         validate_neural_prior_promotion(evidence)
         with self._connect() as connection:
+            final_target_source_trust = (
+                _load_training_target_source_trust_store(
+                    training_target_source_trust_store_path
+                )
+            )
+            if (
+                final_target_source_trust.content_digest
+                != evidence.training_target_source_trust_store_digest
+            ):
+                raise ValueError(
+                    "training target-source trust changed during promotion append"
+                )
             final_promotion_raw_trust = (
                 _validate_current_scoring_raw_ingestor_receipts(
                     ordered_replay_cases,
@@ -10942,6 +11135,7 @@ class EpisodeLedger:
         deployment_signer: DeploymentAuthoritySigner,
         authority_trust_store_path: str | Path,
         raw_ingestor_trust_store_path: str | Path,
+        training_target_source_trust_store_path: str | Path,
     ) -> LedgeredPromotionDeploymentCertificate:
         """Issue the sole deployment-capable view of a ledgered promotion."""
 
@@ -10973,6 +11167,18 @@ class EpisodeLedger:
                 ),
             )
         )
+        current_target_source_trust = (
+            _load_training_target_source_trust_store(
+                training_target_source_trust_store_path
+            )
+        )
+        if (
+            current_target_source_trust.content_digest
+            != evidence.training_target_source_trust_store_digest
+        ):
+            raise ValueError(
+                "training target-source trust changed before certificate issuance"
+            )
         if (
             ledger_signer.authority_id == deployment_signer.authority_id
             or ledger_signer.public_key_hex == deployment_signer.public_key_hex
@@ -11012,6 +11218,20 @@ class EpisodeLedger:
             ):
                 raise ValueError(
                     "raw-ingestor trust store changed during certificate issuance"
+                )
+            final_target_source_trust = (
+                _load_training_target_source_trust_store(
+                    training_target_source_trust_store_path
+                )
+            )
+            if (
+                final_target_source_trust.content_digest
+                != current_target_source_trust.content_digest
+                or final_target_source_trust.content_digest
+                != evidence.training_target_source_trust_store_digest
+            ):
+                raise ValueError(
+                    "training target-source trust changed during certificate issuance"
                 )
             promotion_row = connection.execute(
                 "SELECT evidence_payload_json FROM neural_prior_promotions "
@@ -11072,6 +11292,8 @@ class EpisodeLedger:
                 scoring_row["payload_json"],
                 evidence.scoring_artifact_digest,
             )
+            if type(scoring_artifact) is not HoldoutScoringArtifact:
+                raise ValueError("current deployment requires current scoring artifact")
             completion_receipt = _decode_completion_receipt(
                 completion_row["receipt_json"],
                 evidence.scoring_completion_receipt_digest,
@@ -11224,6 +11446,9 @@ class EpisodeLedger:
         raw_ingestor_trust_store_path: str | Path = (
             "/etc/advar/raw-ingestors.json"
         ),
+        training_target_source_trust_store_path: str | Path = (
+            "/etc/advar/training-target-sources.json"
+        ),
         regime_evidence: RegimeClassificationEvidence | None = None,
         range_partition_evidence: RangePartitionEvidence | None = None,
         range_geometry_contract: (
@@ -11242,6 +11467,25 @@ class EpisodeLedger:
         current_raw_ingestor_trust = _load_raw_ingestor_trust_store(
             raw_ingestor_trust_store_path
         )
+        current_target_source_trust = (
+            _load_training_target_source_trust_store(
+                training_target_source_trust_store_path
+            )
+        )
+        if (
+            current_target_source_trust.content_digest
+            != promotion_evidence.training_target_source_trust_store_digest
+            or current_target_source_trust.content_digest
+            != promotion_deployment_certificate
+            .training_target_source_trust_store_digest
+            or decision_payload.get(
+                "training_target_source_trust_store_digest"
+            )
+            != current_target_source_trust.content_digest
+        ):
+            raise ValueError(
+                "operational decision target-source trust is no longer current"
+            )
         with self._connect() as connection:
             self._require_raw_trust_artifact_usable(
                 connection,
@@ -12447,6 +12691,22 @@ class EpisodeLedger:
             != activation_receipt.receipt_digest
         ):
             raise ValueError("operational activation receipt changed after commit")
+        try:
+            if (
+                _load_training_target_source_trust_store(
+                    training_target_source_trust_store_path
+                ).content_digest
+                != current_target_source_trust.content_digest
+            ):
+                raise ValueError(
+                    "operational target-source trust changed during issuance"
+                )
+        except ValueError:
+            self._expire_operational_decision_issuance(
+                operational_cycle_id,
+                certificate.certificate_digest,
+            )
+            raise
         return certificate
 
     def _ensure_operational_decision_commit_authorization_receipt(
@@ -13239,6 +13499,9 @@ class EpisodeLedger:
         operational_signer: DeploymentAuthoritySigner,
         authority_trust_store_path: str | Path,
         raw_ingestor_trust_store_path: str | Path,
+        training_target_source_trust_store_path: str | Path = (
+            "/etc/advar/training-target-sources.json"
+        ),
     ) -> _EpisodeLedgerOperationalDecisionClient:
         """Bind signer capabilities inside the only automatic ledger client."""
 
@@ -13271,6 +13534,9 @@ class EpisodeLedger:
                 raw_ingestor_trust_store_path=(
                     raw_ingestor_trust_store_path
                 ),
+                training_target_source_trust_store_path=(
+                    training_target_source_trust_store_path
+                ),
                 regime_evidence=regime_evidence,
                 range_partition_evidence=range_partition_evidence,
                 range_geometry_contract=range_geometry_contract,
@@ -13292,6 +13558,15 @@ class EpisodeLedger:
             result,
             "_raw_ingestor_trust_store_path",
             str(Path(raw_ingestor_trust_store_path).expanduser().resolve()),
+        )
+        object.__setattr__(
+            result,
+            "_training_target_source_trust_store_path",
+            str(
+                Path(training_target_source_trust_store_path)
+                .expanduser()
+                .resolve()
+            ),
         )
         return result
 
@@ -13415,6 +13690,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV27
         | LegacyNeuralPriorPromotionEvidenceAuditV28
         | LegacyNeuralPriorPromotionEvidenceAuditV29
+        | LegacyNeuralPriorPromotionEvidenceAuditV30
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -13496,6 +13772,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV27
                 | LegacyNeuralPriorPromotionEvidenceAuditV28
                 | LegacyNeuralPriorPromotionEvidenceAuditV29
+                | LegacyNeuralPriorPromotionEvidenceAuditV30
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -13608,7 +13885,7 @@ class EpisodeLedger:
                         "neural-prior-promotion-evidence-v27",
                         "neural-prior-promotion-evidence-v28",
                         "neural-prior-promotion-evidence-v29",
-                        "neural-prior-promotion-evidence-v30",
+                        "neural-prior-promotion-evidence-v31",
                     ):
                         raw_payload = json.loads(row["evidence_payload_json"])
                         if not isinstance(raw_payload, dict):
@@ -13643,7 +13920,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v27",
                             "neural-prior-promotion-evidence-v28",
                             "neural-prior-promotion-evidence-v29",
-                            "neural-prior-promotion-evidence-v30",
+                            "neural-prior-promotion-evidence-v31",
                         ):
                             raw_payload["regime_classifier_evidence_digests"] = tuple(
                                 raw_payload["regime_classifier_evidence_digests"]
@@ -13676,7 +13953,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v27",
                             "neural-prior-promotion-evidence-v28",
                             "neural-prior-promotion-evidence-v29",
-                            "neural-prior-promotion-evidence-v30",
+                            "neural-prior-promotion-evidence-v31",
                         ):
                             raw_payload["range_band_skill_bounds"] = tuple(
                                 tuple(item)
@@ -13703,7 +13980,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v27",
                             "neural-prior-promotion-evidence-v28",
                             "neural-prior-promotion-evidence-v29",
-                            "neural-prior-promotion-evidence-v30",
+                            "neural-prior-promotion-evidence-v31",
                         ):
                             raw_payload[
                                 "range_band_skill_inference_diagnostics"
@@ -13731,7 +14008,7 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v27",
                             "neural-prior-promotion-evidence-v28",
                             "neural-prior-promotion-evidence-v29",
-                            "neural-prior-promotion-evidence-v30",
+                            "neural-prior-promotion-evidence-v31",
                         ):
                             raw_payload[
                                 "certified_range_geometry_contract_digests"
@@ -14004,6 +14281,15 @@ class EpisodeLedger:
                                     separators=(",", ":"),
                                 ),
                             )
+                        elif contract == "neural-prior-promotion-evidence-v30":
+                            evidence = LegacyNeuralPriorPromotionEvidenceAuditV30(
+                                promotion_evidence_digest=promotion_evidence_digest,
+                                payload_json=json.dumps(
+                                    raw_payload,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                ),
+                            )
                         else:
                             raw_payload["range_metric_cell_bounds"] = tuple(
                                 tuple(item)
@@ -14089,6 +14375,8 @@ class EpisodeLedger:
             scoring_artifact = _decode_holdout_scoring_artifact(
                 scoring_row[0], evidence.scoring_artifact_digest
             )
+            if type(scoring_artifact) is not HoldoutScoringArtifact:
+                raise ValueError("current promotion requires current scoring artifact")
             with self._connect() as connection:
                 scoring_input_row = connection.execute(
                     "SELECT payload_json FROM "
@@ -16354,6 +16642,8 @@ class EpisodeLedger:
         scoring = _decode_holdout_scoring_artifact(
             row[2], completion.output_artifact_digest
         )
+        if type(scoring) is not HoldoutScoringArtifact:
+            raise ValueError("current completion requires current scoring artifact")
         process_log = _decode_process_log_artifact(
             row[3], completion.process_log_digest
         )
@@ -16838,7 +17128,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v22"
+        or value[0].get("contract") != "prior-holdout-evaluation-v23"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:
@@ -17015,13 +17305,20 @@ def _decode_holdout_scoring_input_artifact(
 def _decode_holdout_scoring_artifact(
     text: str,
     expected_digest: str,
-) -> HoldoutScoringArtifact:
+) -> HoldoutScoringArtifact | LegacyHoldoutScoringArtifactAuditV10:
     value = json.loads(text)
     if not isinstance(value, dict):
         raise ValueError("invalid holdout scoring artifact payload")
     values = dict(value)
     stored_digest = values.pop("artifact_digest", None)
-    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v10":
+    if values.get("contract") == "neural-prior-holdout-scoring-artifact-v10":
+        if stored_digest != expected_digest:
+            raise ValueError("holdout scoring artifact digest mismatch")
+        return LegacyHoldoutScoringArtifactAuditV10(
+            artifact_digest=expected_digest,
+            payload_json=json.dumps(value, sort_keys=True, separators=(",", ":")),
+        )
+    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v11":
         raise ValueError("legacy holdout scoring artifacts are audit-only")
     for name in (
         "ordered_case_ids",
@@ -17200,6 +17497,8 @@ def _decode_candidate_manifest(
     | LegacyNeuralPriorCandidateManifestAuditV14
     | LegacyNeuralPriorCandidateManifestAuditV15
     | LegacyNeuralPriorCandidateManifestAuditV16
+    | LegacyNeuralPriorCandidateManifestAuditV17
+    | LegacyNeuralPriorCandidateManifestAuditV18
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -17386,6 +17685,26 @@ def _decode_candidate_manifest(
         if audit_v16.manifest_digest != expected_digest:
             raise ValueError("candidate manifest ledger digest mismatch")
         return audit_v16
+    if values.get("contract") == "neural-prior-candidate-manifest-v17":
+        audit_v17 = LegacyNeuralPriorCandidateManifestAuditV17(
+            manifest_digest=str(stored_digest),
+            payload_json=json.dumps(
+                value, sort_keys=True, separators=(",", ":")
+            ),
+        )
+        if audit_v17.manifest_digest != expected_digest:
+            raise ValueError("candidate manifest ledger digest mismatch")
+        return audit_v17
+    if values.get("contract") == "neural-prior-candidate-manifest-v18":
+        audit_v18 = LegacyNeuralPriorCandidateManifestAuditV18(
+            manifest_digest=str(stored_digest),
+            payload_json=json.dumps(
+                value, sort_keys=True, separators=(",", ":")
+            ),
+        )
+        if audit_v18.manifest_digest != expected_digest:
+            raise ValueError("candidate manifest ledger digest mismatch")
+        return audit_v18
     values["holdout_cases"] = tuple(
         NeuralPriorHoldoutCase(
             **cast(

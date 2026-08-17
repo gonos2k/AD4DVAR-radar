@@ -139,6 +139,8 @@ jobs:
             --strict \
             --disable-pip \
             --no-deps \
+            --format json \
+            --output "$RUNNER_TEMP/runtime-audit.json" \
             --requirement "$GITHUB_WORKSPACE/requirements/runtime-py312-linux.lock"
 
       - name: Build source and wheel distributions
@@ -196,8 +198,8 @@ jobs:
 
           path = Path(os.environ["RUNNER_TEMP"]) / "forecast.npz"
           with np.load(path, allow_pickle=False) as result:
-              assert result["output_contract_version"].item() == "nowcast-npz-v71"
-              assert result["forecast_run_artifact_version"].item() == "forecast-run-v65"
+              assert result["output_contract_version"].item() == "nowcast-npz-v72"
+              assert result["forecast_run_artifact_version"].item() == "forecast-run-v66"
               assert result["operational_runtime_profile_digest"].item() == ""
               assert not result["operational_calibration_manifest_present"].item()
               assert result["operational_calibration_manifest_json"].item() == ""
@@ -236,3 +238,64 @@ jobs:
               )
               assert result["data_status"].item() == "OBSERVED"
           PY
+
+      - name: Generate an ephemeral candidate-smoke signing key
+        working-directory: ${{ runner.temp }}
+        run: |
+          "$GITHUB_WORKSPACE/.wheel-venv/bin/python" -I - <<'PY'
+          from pathlib import Path
+          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+          key = Ed25519PrivateKey.generate()
+          private_path = Path("candidate-smoke-signing-key.raw")
+          private_path.write_bytes(key.private_bytes_raw())
+          private_path.chmod(0o600)
+          Path("candidate-smoke-public-key.hex").write_text(
+              key.public_key().public_bytes_raw().hex(),
+              encoding="ascii",
+          )
+          PY
+
+      - name: Build the signed candidate-smoke deployment bundle
+        run: |
+          .wheel-venv/bin/python -I .github/scripts/build_deployment_bundle.py build \
+            --wheel "$(find dist -maxdepth 1 -name '*.whl' -print -quit)" \
+            --lock requirements/runtime-py312-linux.lock \
+            --audit "$RUNNER_TEMP/runtime-audit.json" \
+            --output "$RUNNER_TEMP/advar-linux-cpu-candidate-smoke" \
+            --source-commit "$GITHUB_SHA" \
+            --repository "$GITHUB_REPOSITORY" \
+            --source-ref "$GITHUB_REF" \
+            --workflow-sha "${{ github.workflow_sha }}" \
+            --mode candidate-smoke \
+            --signer-id ci-candidate-smoke \
+            --signing-private-key \
+              "$RUNNER_TEMP/candidate-smoke-signing-key.raw"
+
+      - name: Verify the candidate-smoke bundle with an external public key
+        working-directory: ${{ runner.temp }}
+        env:
+          ADVAR_SOURCE_COMMIT: ${{ github.sha }}
+          ADVAR_REPOSITORY: ${{ github.repository }}
+          ADVAR_SOURCE_REF: ${{ github.ref }}
+          ADVAR_WORKFLOW_SHA: ${{ github.workflow_sha }}
+          ADVAR_WORKSPACE: ${{ github.workspace }}
+        run: |
+          "$ADVAR_WORKSPACE/.wheel-venv/bin/python" -I \
+            "$ADVAR_WORKSPACE/.github/scripts/build_deployment_bundle.py" verify \
+            --bundle advar-linux-cpu-candidate-smoke \
+            --trusted-public-key candidate-smoke-public-key.hex \
+            --expected-mode candidate-smoke \
+            --expected-repository "$ADVAR_REPOSITORY" \
+            --expected-source-ref "$ADVAR_SOURCE_REF" \
+            --expected-source-commit "$ADVAR_SOURCE_COMMIT" \
+            --expected-workflow-sha "$ADVAR_WORKFLOW_SHA" \
+            --expected-signer-id ci-candidate-smoke
+
+      - name: Upload the non-deployable candidate-smoke bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: advar-linux-cpu-candidate-smoke-${{ github.sha }}
+          path: ${{ runner.temp }}/advar-linux-cpu-candidate-smoke
+          if-no-files-found: error
+          retention-days: 30

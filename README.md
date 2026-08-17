@@ -1,9 +1,13 @@
-# ADVAR 3-frame radar nowcast v0.89
+# ADVAR 3-frame radar nowcast v0.90
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
 검사한다. 별도 package job은 sdist와 wheel을 빌드한 뒤 격리 환경에 wheel을
-설치하여 `advar-nowcast` CLI와 NPZ 출력계약을 smoke-test한다.
+설치하여 `advar-nowcast` CLI와 NPZ 출력계약을 smoke-test한다. 성공한 package
+job은 wheel, 해당 Python/Linux CPU hash lock, strict vulnerability audit,
+CycloneDX SBOM, 설치 attestation과 전체 file-hash manifest를 하나의 signed
+`advar-linux-cpu-deployment-bundle-v2`로 묶는다. 일반 PR/push CI가 업로드하는
+artifact는 ephemeral key의 `candidate-smoke`이며 배포 권한이 없다.
 
 10분 간격 레이더 dBZ 3장으로 다음 3시간을 10분 간격으로 예측하는
 작고 해석 가능한 matrix-free 변분 구현이다. 기존 FFT 기준예측은 항상
@@ -78,6 +82,38 @@ checkout 밖의 runner 임시 directory에서 먼저 실행한다. 저장소의 
 canary로 확인한다. Lock checker는 runtime과 CI closure의 version뿐 아니라 hash
 set이 같은지, direct numerical/security pin이 Python 세대 사이에서 같은지,
 `nvidia-*`·`triton`이 없는 CPU-only closure인지도 검증한다.
+
+승인된 Linux CPU 배포는 bundle의 detached Ed25519 signature를 배포 host에
+out-of-band로 고정한 공개키로 검증하고, `mode=deployable`, repository/ref/commit,
+workflow SHA와 signer identity가 승인값과 exact 일치하는지 확인한다. Private key는
+protected release environment에서만 공급하며 bundle이나 저장소에 넣지 않는다.
+Deploy host는 bundle directory와 모든 payload 및 public-key ancestry를 root-owned,
+group/world-non-writable 상태로 staging한 뒤 검증한다. Verifier는 symlink key/file을
+거부하고 public key를 `O_NOFOLLOW` 단일 file descriptor로 읽으므로 검증 후 다른
+wheel로 바꾸는 unprivileged path-swap은 허용되지 않는다.
+CI의 `candidate-smoke` public key는 일회성이므로 그 artifact는 설치 smoke evidence일
+뿐 release authority가 아니다. Signature 검증 뒤 manifest와 각 file SHA-256을
+검증하고 다음 순서만 사용한다. Wheel metadata의 범위 dependency를 다시 resolve하는 일반
+`pip install <wheel>`은 동일한 배포 closure로 간주하지 않는다.
+
+```bash
+python -I .github/scripts/build_deployment_bundle.py verify \
+  --bundle /srv/advar/bundles/<digest> \
+  --trusted-public-key /etc/advar/release-bundle-ed25519.pub \
+  --expected-mode deployable \
+  --expected-repository gonos2k/AD4DVAR-radar \
+  --expected-source-ref refs/tags/v0.90.0 \
+  --expected-source-commit <signed-release-commit> \
+  --expected-workflow-sha <protected-workflow-sha> \
+  --expected-signer-id advar-release
+```
+
+```bash
+python -I -m pip install --require-hashes --only-binary=:all: \
+  --extra-index-url https://download.pytorch.org/whl/cpu \
+  --requirement requirements/runtime-py312-linux.lock
+python -I -m pip install --no-deps advar_radar_nowcast-0.90.0-*.whl
+```
 
 Python API:
 
@@ -782,6 +818,9 @@ if promotion.eligible:
         policy=promotion_policy,
         policy_trust_store_path="/etc/advar/learning-policies.json",
         raw_ingestor_trust_store_path="/etc/advar/raw-ingestors.json",
+        training_target_source_trust_store_path=(
+            "/etc/advar/training-target-sources.json"
+        ),
     )
 ```
 
@@ -975,10 +1014,18 @@ evaluation JSON에 무관한 임의 tensor를 붙인 snapshot은 자동승격 �
 Forecast, prior application, inference runner, verification, metric config, calibration
 target, classifier와 operational-domain artifact는 각각 제품 validator와 runner
 reproduction을 통과해야 하며, factory가 한 번 동결한 tensor snapshot과 completion 시점의
-live product bytes가 다르면 거부된다. Replay v10 contract/method와 bounded-quality
-five-channel CPU-only generation v8 digest는 `HoldoutScoringArtifact-v10`, promotion
-evidence v30, `DeployedNeuralPriorPolicy-v15`과 deployment-decision artifact v16까지
+live product bytes가 다르면 거부된다. Replay v11 contract와 v11 method, typed
+verification-target identity를 포함한 five-channel CPU-only generation v9 digest는
+`HoldoutScoringArtifact-v11`, promotion evidence v31,
+`DeployedNeuralPriorPolicy-v17`과 deployment-decision artifact v17까지
 직접 전파된다.
+각 holdout case의 `VerificationTargetIdentityArtifact-v1`은 실제 scoring에 사용되는
+target plan에서 source identity와 UTC valid time을 가져오고, exact target value,
+valid-mask, quality, QC/censor policy 및 verification bundle digest를 함께 봉인한다.
+Evaluation factory는 metric 계산 전에 이 typed identity를 실제 target tensors에서
+다시 만들어 case 선언과 byte-for-byte 비교한다. Training/holdout overlap gate도 같은
+typed identity를 사용하므로 outer manifest digest를 다시 계산해도 scoring target를
+다른 source/time/value/mask/quality로 재라벨링할 수 없다.
 따라서 이전 replay 세대의 promotion evidence는 audit-only이며 배포 selector가
 소비할 수 없다.
 Audit load는 저장된 typed evaluation을 볼 수 있지만, 자동 completion과 promotion은
@@ -1039,7 +1086,7 @@ global registry에 commit된 하나의 family-wide signed training-raw receipt�
 ledger는 그 canonical payload preimage를 저장하고 scoring에서 다시 검증한다.
 선택 digest뿐 아니라 classifier probability, 활성 band, policy, certified group,
 horizontal range-geometry payload, operational radar source와 trust-store snapshot을 포함한
-canonical deployment-decision payload도 forecast run identity 및 current v65 artifact에 남는다.
+canonical deployment-decision payload도 forecast run identity 및 current v66 artifact에 남는다.
 적재 시 physical partition과 current-run grid/shape/site를 포함한 selector를 다시 실행해
 저장된 candidate/parent 선택과 exact 비교한다. v54 run은 source-aware selection 이전
 계약을 `neural-prior-deployment-lineage-v5-audit`로만 읽고, v53 run은 current-grid binding과 durable geometry
@@ -1061,15 +1108,21 @@ probability의 binary Brier를 physical event 동일가중 UCB로 판정한다. 
 surrogate와 ECE는 diagnostic-only다. Sample-size preflight도 known weather/range,
 weather/range OOD와 Brier-valid event subset을 각각 확인한다.
 
-현재 promotion evidence는 v30, candidate manifest는 v18, holdout plan은 v24,
-holdout evaluation은 v22, promotion policy는 v29, metric support는 v3이다.
+현재 promotion evidence는 v31, candidate manifest는 v19, holdout plan은 v25,
+holdout evaluation은 v23, promotion policy는 v30, metric support는 v3이다.
 Training lineage는 case별 feature/target/mask/quality member, split, weight,
 augmentation seed와 normalization bytes를 포함하는
-`TrainingFeatureDatasetArtifact-v4`를 요구한다. Production archive는 inline base64가
-아니라 content-addressed read-only NPZ shard로 저장된다. Product-owned loader는 한 번 연
+`TrainingFeatureDatasetArtifact-v5`와 `TrainingDatasetDerivationArtifact-v7`을
+요구한다. 같은 physical event의 모든 member는 하나의 train/validation/test split에만
+속하며, `NormalizationDerivationArtifact-v1`은 정확한 train member ordering과 실제
+statistics shard를 봉인한다. Production archive는 inline base64가 아니라 approved
+artifact-store ID와 `<sha256>.npz` 상대경로로 식별되는 content-addressed read-only NPZ
+shard로 저장된다. 절대 host path는 semantic digest에 들어가지 않는다. Product-owned loader는 한 번 연
 file descriptor에서 byte snapshot을 고정하고, SHA-256과 ZIP/NPY preflight 뒤 실제 tensor
-digest를 다시 계산한다. Trainer는 이 validated snapshot tensor만 소비하므로 validation 뒤
-경로를 swap/restore해도 학습 입력은 변하지 않는다. 이 계약은 canonical grid-product
+digest를 다시 계산한다. Dataset 전체 shard/archive/expanded/member budget을 먼저
+확인하고 trainer는 ordered streaming snapshot iterator만 소비하므로 전체 dataset을 두 벌
+메모리에 보존하지 않는다. Validation 뒤 path를 swap/restore해도 이미 검증된 snapshot과
+execution subject는 변하지 않는다. 이 계약은 canonical grid-product
 feature/target archive를 인증하지만 native polar acquisition decoder까지 인증하지는
 않는다.
 `sealed_historical` plan은 결과 비공개 escrow를 증명하지 않으므로 연구·shadow audit에만
@@ -1630,13 +1683,14 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v71`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v65`
+- `output_contract_version`: 현재 `nowcast-npz-v72`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v66`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
 
-`forecast-run-v65`는 bounded-quality five-channel CPU-only scoring generation v8, two-phase raw observation slot과
+`forecast-run-v66`은 typed verification-target identity와 target-source current trust를
+결합한 five-channel CPU-only scoring generation v9, two-phase raw observation slot과
 canonical raw-volume identity 단위의 전역
 sampling reservation, 같은 family의 rolling-window membership, source-registry와
 location-registry가 결합된 mosaic range domain,
@@ -1647,15 +1701,15 @@ terminal activation receipt와 writer-lock-bound commit authorization receipt를
 검증한다. QC-invalid 관측은 registered finite fill/zero/sentinel로 canonicalize되어
 classifier와 learned prior에 유입되지 않으며, signed
 `AnalysisInputDerivationArtifact-v5`의 canonical JSON과 digest도 NPZ에 보존된다.
-`forecast-run-v64` 이하는
+`forecast-run-v65` 이하는
 audit-only다.
 
-`forecast-run-v65`는 원자적 ledger sequence를 가진 promotion deployment
-certificate v5, deployment-decision artifact v16과
-`neural-prior-deployment-lineage-v16`을 current 의미로 결합한다. Decision
+`forecast-run-v66`은 원자적 ledger sequence를 가진 promotion deployment
+certificate v6, deployment-decision artifact v17과
+`neural-prior-deployment-lineage-v17`을 current 의미로 결합한다. Decision
 artifact는 unsigned promotion subset을 보존하지 않고 certificate 안의 완전한
-`NeuralPriorPromotionEvidence-v30`만 typed decode한다. 이전
-`forecast-run-v64`, `forecast-run-v63`, `forecast-run-v62`, `forecast-run-v61`, `forecast-run-v60`, `forecast-run-v59`, `forecast-run-v58`, `forecast-run-v57`, `forecast-run-v56`은
+`NeuralPriorPromotionEvidence-v31`만 typed decode한다. 이전
+`forecast-run-v65`, `forecast-run-v64`, `forecast-run-v63`, `forecast-run-v62`, `forecast-run-v61`, `forecast-run-v60`, `forecast-run-v59`, `forecast-run-v58`, `forecast-run-v57`, `forecast-run-v56`은
 각 세대의 decision artifact를 보존하는 audit lineage로만
 적재되며 current operational deployment replay에는 사용할 수 없다.
 
@@ -1690,13 +1744,13 @@ signer 또는 final activation이 실패하면 동일 cycle은 이미 durable한
 Raw ingestor trust-store v2는 plan에 고정된 snapshot과 provenance commit, scoring
 replay/completion, promotion, certificate 발급 및 operational decision 시점의 current
 root-owned store 양쪽에서 attestation 시각의 key validity/revocation을 대조한다.
-Current store의 content digest는 replay-v10 manifest, scoring-v10 artifact, scheduler가
-봉인한 completion output, promotion evidence v30, promotion deployment certificate와
+Current store의 content digest는 replay-v11 manifest, scoring-v11 artifact, scheduler가
+봉인한 completion output, promotion evidence v31, promotion deployment certificate v6와
 operational decision certificate에 연속 결합된다. Certificate/publication 서명 전후와
-activation 직전·직후에도 store를 다시 읽고, durable `forecast-run-v65` load에서도 외부
+activation 직전·직후에도 store를 다시 읽고, durable `forecast-run-v66` load에서도 외부
 store와 대조하므로 이후 revocation view가 달라지면 기존 certificate를 automatic
 deployment에 재사용할 수 없다.
-Index schema 39는 replay, scoring completion, promotion evidence와 promotion
+Index schema 40은 replay, scoring completion, promotion evidence와 promotion
 certificate를 immutable payload와 별도의 raw-trust activation row로 기록한다. 각
 payload는 처음에는 `usable=0`이며 current store 재검증을 거친 activation만
 `usable=1`로 소비된다. Activation 직후 store 변경은 `usable=0`으로 fail-close된다.
@@ -1728,17 +1782,22 @@ reproduce/JVP/VJP와 P1 linearization restart는 이 context를 명시적으로 
 access에는 defensive copy만 반환하므로 PyTorch `.data` alias도 평가점을 바꾸지 못한다.
 따라서 같은 dBZ라도 QC context가 다른 동시 실행과 delayed FSO가 서로 오염되지 않는다.
 
-`TrainingFeatureDatasetArtifact-v4`는 `TrainingDatasetMember` record와 외부 immutable
+`TrainingFeatureDatasetArtifact-v5`는 `TrainingDatasetMember` record와 외부 immutable
 feature/target/normalization NPZ shard를 content-address한다. Loader는 한 번 연 file
 descriptor의 byte snapshot에서 archive SHA-256, ZIP member, dtype/shape와 tensor digest를
-재계산하며, training execution v8의 start/completion subject는 이 validated snapshot-set
+재계산하며, training execution v9의 start/completion subject는 이 validated snapshot-set
 digest와 exact equality로 결합된다. Product 밖의 trainer도 검증 뒤 원래 path를 다시 읽는
 대신 이 snapshot handle만 소비해야 한다. 각 target는 value,
 valid-mask, quality, unit, shape, source plan/receipt, physical event, valid time,
 training cutoff와 승인 processor signature를 가진
-`TrainingTargetDerivationArtifact-v3`에 결합된다. Target source identity/time/event/object는
-plan에 별도로 고정된 `TrainingTargetSourceReceipt-v1` authority signature가 없으면 사용할
-수 없다. Target는 nonempty·finite이어야 하고
+`TrainingTargetDerivationArtifact-v4`에 결합된다. `quality[~valid_mask]`는 0이며 positive
+effective weight가 없는 target는 거부되고 product-owned loss는 정확히
+`sum(mask*quality*error)/sum(mask*quality)`를 사용한다. Target source
+identity/time/event/object는 plan에 별도로 고정된 `TrainingTargetSourceReceipt-v2`와
+root-signed `TrainingTargetSourceTrustStore-v1`의 유효 key epoch, source-contract 및
+radar/product scope가 없으면 사용할 수 없다. Current trust는 dataset seal, training
+start/completion, promotion, deployment issuance 및 `forecast-run-v66` durable load의
+시작/종료에서 다시 대조된다. Target는 nonempty·finite이어야 하고
 valid time이 등록된 training-window union 안에 있어야 한다. Tensor/QC 표현이 달라도
 holdout verification target와 source identity/valid time이 같으면 재사용으로 거부된다.
 Mosaic source가 실제로 도착하지 않은 경우에는 synthetic all-invalid raw volume을

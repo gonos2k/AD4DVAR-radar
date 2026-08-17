@@ -62,6 +62,16 @@ import test_promotion as promotion_test_module  # noqa: E402
 
 class ForecastRunArtifactTests(unittest.TestCase):
     _base_promotion_evidence: Any = None
+
+    def setUp(self) -> None:
+        target_trust_patch = patch.object(
+            ledger_module,
+            "_load_training_target_source_trust_store",
+            return_value=self._training_target_source_trust(),
+        )
+        target_trust_patch.start()
+        self.addCleanup(target_trust_patch.stop)
+
     class _Prior(nn.Module):
         def __init__(self) -> None:
             super().__init__()
@@ -199,6 +209,14 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 trust["approved_policy_digests"]
             ),
             content_digest=trust["content_digest"],
+        )
+
+    @staticmethod
+    def _training_target_source_trust():
+        return (
+            promotion_test_module.NeuralPriorPromotionTests()
+            .plan()
+            .training_target_source_trust_store
         )
 
     @classmethod
@@ -704,7 +722,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact = {
-            "contract": "neural-prior-deployment-decision-artifact-v16",
+            "contract": "neural-prior-deployment-decision-artifact-v17",
             "routing_semantic_replay_verified": False,
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "analysis_input_derivation_artifact_digest": (
@@ -720,6 +738,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "analysis_processor_trust_store_digest": "7" * 64,
             "raw_ingestor_trust_store_digest": (
                 promotion_evidence.raw_ingestor_trust_store_digest
+            ),
+            "training_target_source_trust_store_digest": (
+                promotion_evidence.training_target_source_trust_store_digest
             ),
             "input_plan_digest": input_run.input_plan_digest,
             "operational_grid_contract_digest": (
@@ -859,6 +880,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 raw_ingestor_trust_store_path=(
                     "/etc/advar/raw-ingestors.json"
                 ),
+                training_target_source_trust_store_path=(
+                    "/etc/advar/training-target-sources.json"
+                ),
             )
 
     def test_current_deployment_requires_terminal_activation_receipt(self) -> None:
@@ -896,6 +920,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 raw_ingestor_trust_store_path=(
                     "/etc/advar/raw-ingestors.json"
                 ),
+                training_target_source_trust_store_path=(
+                    "/etc/advar/training-target-sources.json"
+                ),
             )
 
         artifact = json.loads(selection.deployment_decision_artifact_json)
@@ -915,6 +942,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 ),
                 raw_ingestor_trust_store_path=(
                     "/etc/advar/raw-ingestors.json"
+                ),
+                training_target_source_trust_store_path=(
+                    "/etc/advar/training-target-sources.json"
                 ),
             )
 
@@ -970,6 +1000,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
                     ),
                     raw_ingestor_trust_store_path=(
                         "/etc/advar/raw-ingestors.json"
+                    ),
+                    training_target_source_trust_store_path=(
+                        "/etc/advar/training-target-sources.json"
                     ),
                 )
 
@@ -1052,6 +1085,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
                         raw_ingestor_trust_store_path=(
                             "/etc/advar/raw-ingestors.json"
                         ),
+                        training_target_source_trust_store_path=(
+                            "/etc/advar/training-target-sources.json"
+                        ),
                     )
 
         relaxed = json.loads(json.dumps(original))
@@ -1093,6 +1129,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 ),
                 raw_ingestor_trust_store_path=(
                     "/etc/advar/raw-ingestors.json"
+                ),
+                training_target_source_trust_store_path=(
+                    "/etc/advar/training-target-sources.json"
                 ),
             )
 
@@ -1995,7 +2034,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v16",
+            "contract": "neural-prior-deployment-decision-artifact-v17",
             "routing_semantic_replay_verified": False,
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "analysis_input_derivation_artifact_digest": (
@@ -2011,6 +2050,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "analysis_processor_trust_store_digest": "7" * 64,
             "raw_ingestor_trust_store_digest": (
                 promotion_evidence.raw_ingestor_trust_store_digest
+            ),
+            "training_target_source_trust_store_digest": (
+                promotion_evidence.training_target_source_trust_store_digest
             ),
             "input_plan_digest": input_run.input_plan_digest,
             "operational_grid_contract_digest": (
@@ -2147,6 +2189,21 @@ class ForecastRunArtifactTests(unittest.TestCase):
                             "/etc/advar/deployment-policies.json"
                         ),
                     )
+                with self.assertRaisesRegex(
+                    ValueError, "external training-target-source trust store"
+                ):
+                    load_forecast_run(
+                        path,
+                        deployment_certificate_trust_store_path=(
+                            "/etc/advar/deployment-authorities.json"
+                        ),
+                        deployment_policy_trust_store_path=(
+                            "/etc/advar/deployment-policies.json"
+                        ),
+                        raw_ingestor_trust_store_path=(
+                            "/etc/advar/raw-ingestors.json"
+                        ),
+                    )
                 loaded = load_forecast_run(
                     path,
                     deployment_certificate_trust_store_path=(
@@ -2157,6 +2214,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
                     ),
                     raw_ingestor_trust_store_path=(
                         "/etc/advar/raw-ingestors.json"
+                    ),
+                    training_target_source_trust_store_path=(
+                        "/etc/advar/training-target-sources.json"
                     ),
                 )
                 with patch.object(
@@ -2174,6 +2234,58 @@ class ForecastRunArtifactTests(unittest.TestCase):
                         ),
                         raw_ingestor_trust_store_path=(
                             "/etc/advar/raw-ingestors.json"
+                        ),
+                        training_target_source_trust_store_path=(
+                            "/etc/advar/training-target-sources.json"
+                        ),
+                    )
+                revoked_target_trust = (
+                    promotion_test_module.NeuralPriorPromotionTests()
+                    .target_source_trust_store(
+                        revoked_at="2026-08-09T00:00:00Z"
+                    )
+                )
+                with patch.object(
+                    ledger_module,
+                    "_load_training_target_source_trust_store",
+                    return_value=revoked_target_trust,
+                ), self.assertRaisesRegex(ValueError, "no longer current"):
+                    load_forecast_run(
+                        path,
+                        deployment_certificate_trust_store_path=(
+                            "/etc/advar/deployment-authorities.json"
+                        ),
+                        deployment_policy_trust_store_path=(
+                            "/etc/advar/deployment-policies.json"
+                        ),
+                        raw_ingestor_trust_store_path=(
+                            "/etc/advar/raw-ingestors.json"
+                        ),
+                        training_target_source_trust_store_path=(
+                            "/etc/advar/training-target-sources.json"
+                        ),
+                    )
+                with patch.object(
+                    ledger_module,
+                    "_load_training_target_source_trust_store",
+                    side_effect=(
+                        self._training_target_source_trust(),
+                        revoked_target_trust,
+                    ),
+                ), self.assertRaisesRegex(ValueError, "changed during"):
+                    load_forecast_run(
+                        path,
+                        deployment_certificate_trust_store_path=(
+                            "/etc/advar/deployment-authorities.json"
+                        ),
+                        deployment_policy_trust_store_path=(
+                            "/etc/advar/deployment-policies.json"
+                        ),
+                        raw_ingestor_trust_store_path=(
+                            "/etc/advar/raw-ingestors.json"
+                        ),
+                        training_target_source_trust_store_path=(
+                            "/etc/advar/training-target-sources.json"
                         ),
                     )
             with np.load(path, allow_pickle=False) as archive:
@@ -2370,6 +2482,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
                     ),
                     raw_ingestor_trust_store_path=(
                         "/etc/advar/raw-ingestors.json"
+                    ),
+                    training_target_source_trust_store_path=(
+                        "/etc/advar/training-target-sources.json"
                     ),
                 )
 

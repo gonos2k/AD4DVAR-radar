@@ -659,7 +659,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         processor_key = promotion_module.Ed25519PrivateKey.from_private_bytes(
             b"\x25" * 32
         )
-        feature_tensor = torch.arange(12, dtype=torch.float64).reshape(3, 2, 2)
+        feature_tensor = torch.arange(20, dtype=torch.float64).reshape(5, 2, 2)
         target_tensor = torch.arange(4, dtype=torch.float64).reshape(2, 2)
         member_unsigned = {
             "contract": "analysis-input-derivation-artifact-v5",
@@ -722,14 +722,137 @@ class EpisodeLedgerTests(unittest.TestCase):
         target_source_key = (
             promotion_module.Ed25519PrivateKey.from_private_bytes(b"\x28" * 32)
         )
+        target_source_trust_store = (
+            promotion_module.TrainingTargetSourceTrustStore.issue(
+                authorities=((
+                    "test-target-source-authority",
+                    target_source_key.public_key().public_bytes_raw().hex(),
+                    1,
+                    "2025-01-01T00:00:00Z",
+                    "2035-01-01T00:00:00Z",
+                    None,
+                    ("a" * 64,),
+                    ("b" * 64,),
+                ),),
+                root_authority_id="test-target-source-root",
+                root_private_key=promotion_module.Ed25519PrivateKey.from_private_bytes(
+                    b"\x2b" * 32
+                ),
+            )
+        )
+        event_key = promotion_module.Ed25519PrivateKey.from_private_bytes(
+            b"\x29" * 32
+        )
+        event_scheduler_key = (
+            promotion_module.Ed25519PrivateKey.from_private_bytes(b"\x2a" * 32)
+        )
+        training_event_plan = promotion_module.PhysicalEventCatalogPlan(
+            holdout_case_ids=(member_derivation.case_id,),
+            association_algorithm_digest="3" * 64,
+            spatial_membership_rule_digest="4" * 64,
+            adjudication_policy_digest="5" * 64,
+            adjudicator_id="training-event-adjudicator",
+            adjudicator_public_key_hex=(
+                promotion_module.regime_reference_public_key_hex(event_key)
+            ),
+            catalog_completion_deadline="2029-01-01T01:00:00Z",
+            spatial_reference_digest="7" * 64,
+            motion_association_rule_digest="8" * 64,
+            scheduler_id="training-event-scheduler",
+            scheduler_public_key_hex=(
+                promotion_module.regime_reference_public_key_hex(
+                    event_scheduler_key
+                )
+            ),
+            scheduler_trust_store_digest="9" * 64,
+        )
+        training_event_track = promotion_module.PhysicalEventTrackArtifact(
+            timestamps=(
+                "2029-01-01T00:00:00Z",
+                "2029-01-01T00:50:00Z",
+            ),
+            centroid_xy_m=((0.0, 0.0), (0.0, 0.0)),
+            object_mask_digests=("a" * 64, "b" * 64),
+            source_radar_ids=("classifier-radar", "classifier-radar"),
+            association_edge_digests=("c" * 64,),
+            spatial_reference_digest="7" * 64,
+        )
+        training_event = (
+            promotion_module.PhysicalEventCatalogEvidence.from_members(
+                event_id="classifier-training-event",
+                member_case_ids=(member_derivation.case_id,),
+                member_full_analysis_input_digests=(
+                    member_derivation.full_analysis_input_digest,
+                ),
+                start_time="2029-01-01T00:00:00Z",
+                end_time="2029-01-01T00:50:00Z",
+                spatial_envelope_xy_m=(0.0, 0.0, 10_000.0, 10_000.0),
+                object_track_artifact=training_event_track,
+                participating_radar_ids=("classifier-radar",),
+                association_algorithm_digest=(
+                    training_event_plan.association_algorithm_digest
+                ),
+                adjudication_policy_digest=(
+                    training_event_plan.adjudication_policy_digest
+                ),
+                adjudicator_id=training_event_plan.adjudicator_id,
+                adjudicator_private_key=event_key,
+            )
+        )
+        training_event_spatial = (
+            promotion_module.PhysicalEventCaseSpatialEvidence(
+                case_id=member_derivation.case_id,
+                full_analysis_input_digest=(
+                    member_derivation.full_analysis_input_digest
+                ),
+                physical_event_identity_digest=(
+                    training_event.physical_event_identity_digest
+                ),
+                observed_spatial_envelope_xy_m=(0.0, 0.0, 5_000.0, 5_000.0),
+                event_spatial_envelope_xy_m=(
+                    training_event.spatial_envelope_xy_m
+                ),
+                spatial_membership_rule_digest=(
+                    training_event_plan.spatial_membership_rule_digest
+                ),
+                source_object_evidence_digest=(
+                    training_event_track.object_mask_digests[0]
+                ),
+                track_artifact_digest=training_event_track.artifact_digest,
+                track_sample_index=0,
+                track_sample_time=training_event_track.timestamps[0],
+                track_object_mask_digest=(
+                    training_event_track.object_mask_digests[0]
+                ),
+                input_available_time="2029-01-01T00:10:00Z",
+                spatial_reference_digest=(
+                    training_event_plan.spatial_reference_digest
+                ),
+            )
+        )
+        training_event_result = (
+            promotion_module.PhysicalEventCatalogResult.from_plan(
+                training_event_plan,
+                event_evidences=(training_event,),
+                case_spatial_membership_evidences=(training_event_spatial,),
+                cataloged_at="2029-01-01T00:20:00Z",
+                adjudicator_private_key=event_key,
+            )
+        )
         target_source_receipt = (
             promotion_module.TrainingTargetSourceReceipt.issue(
                 target_source_identity_digest="4" * 64,
                 target_source_valid_time="2029-01-01T00:10:00Z",
-                physical_event_digest="9" * 64,
+                physical_event_digest=(
+                    training_event.physical_event_identity_digest
+                ),
                 source_object_digest=tensor_digest(target_tensor),
                 observed_at="2029-01-01T00:15:00Z",
+                source_contract_digest="a" * 64,
+                radar_product_scope_digest="b" * 64,
+                trust_store=target_source_trust_store,
                 authority_id="test-target-source-authority",
+                authority_key_epoch=1,
                 authority_private_key=target_source_key,
             )
         )
@@ -771,7 +894,18 @@ class EpisodeLedgerTests(unittest.TestCase):
             directory=archive_root,
             shard_id="targets-00000",
         )
-        normalization_tensor = torch.tensor([0.0, 1.0])
+        normalization_tensor = (
+            promotion_module.recompute_training_normalization_statistics(
+                (feature_tensor,),
+                channel_definitions=(
+                    "dbz",
+                    "qc_valid",
+                    "quality",
+                    "observation_std",
+                    "source_available",
+                ),
+            )
+        )
         normalization_shard = (
             promotion_module.write_training_tensor_archive_shard(
                 {"normalization": normalization_tensor},
@@ -779,9 +913,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 shard_id="normalization",
             )
         )
-        training_feature_dataset = (
-            promotion_module.TrainingFeatureDatasetArtifact(
-                members=(promotion_module.TrainingDatasetMember(
+        training_member = promotion_module.TrainingDatasetMember(
                     case_id=member_derivation.case_id,
                     analysis_derivation_artifact_digest=(
                         member_derivation.artifact_digest
@@ -800,7 +932,30 @@ class EpisodeLedgerTests(unittest.TestCase):
                     sample_weight=1.0,
                     split="train",
                     augmentation_seed=0,
-                ),),
+                )
+        normalization_derivation = (
+            promotion_module.NormalizationDerivationArtifact.from_training_dataset(
+                members=(training_member,),
+                normalization_shard=normalization_shard,
+                channel_definitions=(
+                    "dbz",
+                    "qc_valid",
+                    "quality",
+                    "observation_std",
+                    "source_available",
+                ),
+                normalization_algorithm_digest=(
+                    promotion_module.TRAINING_NORMALIZATION_ALGORITHM_DIGEST
+                ),
+                mask_weight_policy_digest=(
+                    promotion_module
+                    .TRAINING_NORMALIZATION_MASK_WEIGHT_POLICY_DIGEST
+                ),
+            )
+        )
+        training_feature_dataset = (
+            promotion_module.TrainingFeatureDatasetArtifact(
+                members=(training_member,),
                 normalization_statistics_digest=tensor_digest(
                     normalization_tensor
                 ),
@@ -811,6 +966,12 @@ class EpisodeLedgerTests(unittest.TestCase):
                 feature_archive_shards=(feature_shard,),
                 target_archive_shards=(target_shard,),
                 normalization_statistics_shard=normalization_shard,
+                normalization_derivation_artifact_json=(
+                    normalization_derivation.json
+                ),
+                normalization_derivation_artifact_digest=(
+                    normalization_derivation.artifact_digest
+                ),
             )
         )
         training_feature_dataset_json = json.dumps(
@@ -849,6 +1010,31 @@ class EpisodeLedgerTests(unittest.TestCase):
             training_feature_dataset_artifact_json=(
                 training_feature_dataset_json
             ),
+            training_physical_event_catalog_plan_digest=(
+                training_event_plan.plan_digest
+            ),
+            training_physical_event_catalog_plan_json=(
+                promotion_module._physical_event_catalog_plan_json(
+                    training_event_plan
+                )
+            ),
+            training_physical_event_catalog_result_digest=(
+                training_event_result.result_digest
+            ),
+            training_physical_event_catalog_result_json=(
+                promotion_module._physical_event_catalog_result_json(
+                    training_event_result
+                )
+            ),
+            training_target_source_trust_store_digest=(
+                target_source_trust_store.content_digest
+            ),
+            training_target_source_trust_store_json=json.dumps(
+                target_source_trust_store.payload
+                | {"content_digest": target_source_trust_store.content_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
         )
         classifier_manifest = promotion_module.RegimeClassifierManifest(
             classifier_digest="b" * 64,
@@ -856,7 +1042,9 @@ class EpisodeLedgerTests(unittest.TestCase):
             training_case_ids=("classifier-training-case",),
             training_input_bundle_digests=("1" * 64,),
             training_full_analysis_input_digests=("2" * 64,),
-            training_physical_event_digests=("9" * 64,),
+            training_physical_event_digests=(
+                training_event.physical_event_identity_digest,
+            ),
             training_storm_ids=("classifier-training-storm",),
             training_days=("2029-01-01",),
             training_radar_ids=("classifier-radar",),
@@ -1044,6 +1232,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                     None,
                 ),),
             ),
+            training_target_source_trust_store=target_source_trust_store,
             analysis_processor_id="clock-analysis-processor",
             analysis_processor_public_key_hex=(
                 processor_key.public_key().public_bytes_raw().hex()
@@ -1092,6 +1281,9 @@ class EpisodeLedgerTests(unittest.TestCase):
             ),
             raw_ingestor_trust_store_digest=(
                 plan.raw_ingestor_trust_store.content_digest
+            ),
+            training_target_source_trust_store_digest=(
+                plan.training_target_source_trust_store.content_digest
             ),
             analysis_processor_id=plan.analysis_processor_id,
             analysis_processor_public_key_hex=(
@@ -1285,7 +1477,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-            self.assertEqual(version, 39)
+            self.assertEqual(version, 40)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4598,7 +4790,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 39)
+        self.assertEqual(version, 40)
 
     def test_operational_raw_resolution_history_is_append_only(self) -> None:
         ledger = EpisodeLedger(self.root / "operational-raw-history")
