@@ -60,7 +60,7 @@ is complete.
 - [x] Run dependency lock synchronization, CPU-only checks, and strict vulnerability audits.
 - [x] Complete an independent security review and resolve every critical/high blocker.
 - [x] Audit the final diff and migrations.
-- [ ] Open the PR, require every required CI check to pass, and merge.
+- [x] Open the PR, require every required CI check to pass, and merge.
 
 ## Verification evidence
 
@@ -79,3 +79,7 @@ is complete.
 - Independent security review: no remaining critical/high code blocker;
   deployable bundles retain the documented protected external signer and
   root-owned staging trust boundary.
+- Delivery: PR #126 head `d22eedb2dab3ab0864e29f3c73ba45c5ac4caf71`
+  passed Python 3.10 CPU (58m12s), Python 3.12 CPU (55m20s), and Wheel/CLI
+  smoke (1m19s), then merged as
+  `0f2bbb79c3bb2ec1a4e00e9e2cd239ba22231804`.
