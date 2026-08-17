@@ -1224,6 +1224,25 @@ class ValidatedBoundNeuralPriorInputHandle:
             raise ValueError("validated bound-input context digest changed")
 
 
+@dataclass(frozen=True, slots=True)
+class NeuralPriorDerivativeSession:
+    """Opaque token for one operation-local, defensively cloned snapshot."""
+
+    _runner_identity: int
+    _nonce: int
+    context_digest: str
+    contract: str = "neural-prior-derivative-session-v1"
+
+
+@dataclass(slots=True)
+class _NeuralPriorDerivativeSessionState:
+    snapshot: BoundNeuralPriorInput
+    source_handle: ValidatedBoundNeuralPriorInputHandle
+    tensor_ids: tuple[int, ...]
+    tensor_versions: tuple[int, ...]
+    metadata: tuple[str | None, ...]
+
+
 @dataclass(frozen=True, init=False)
 class NeuralPriorDeploymentSelection:
     """Fail-closed candidate/parent choice for one operational input."""
@@ -1705,6 +1724,10 @@ class NeuralPriorInferenceRunner:
         self.maximum_added_area_km2 = maximum_added_area_km2
         self.maximum_added_echo_integral = maximum_added_echo_integral
         self._derivative_lock = threading.RLock()
+        self._derivative_session_sequence = 0
+        self._derivative_sessions: dict[
+            int, _NeuralPriorDerivativeSessionState
+        ] = {}
         self._feature_exclusion_mask = retained_exclusion_mask
         self.feature_exclusion_contract_digest = (
             actual_exclusion_contract_digest
@@ -2488,8 +2511,42 @@ class NeuralPriorInferenceRunner:
 
     def _hot_bound_input(
         self,
-        value: BoundNeuralPriorInput | ValidatedBoundNeuralPriorInputHandle,
+        value: (
+            BoundNeuralPriorInput
+            | ValidatedBoundNeuralPriorInputHandle
+            | NeuralPriorDerivativeSession
+        ),
     ) -> BoundNeuralPriorInput:
+        if type(value) is NeuralPriorDerivativeSession:
+            if (
+                value.contract != "neural-prior-derivative-session-v1"
+                or value._runner_identity != id(self)
+            ):
+                raise ValueError("neural-prior derivative session is invalid")
+            with self._derivative_lock:
+                state = self._derivative_sessions.get(value._nonce)
+                if state is None:
+                    raise ValueError("neural-prior derivative session is closed")
+                tensors = ValidatedBoundNeuralPriorInputHandle._tensors(
+                    state.snapshot
+                )
+                metadata = (
+                    state.snapshot.contract,
+                    state.snapshot.input_bundle_digest,
+                    state.snapshot.full_analysis_input_digest,
+                    state.snapshot.input_frames_digest,
+                    state.snapshot.learned_model_input_features_digest,
+                    state.snapshot.learned_input_feature_contract,
+                )
+                if (
+                    tuple(id(item) for item in tensors) != state.tensor_ids
+                    or tuple(int(getattr(item, "_version")) for item in tensors)
+                    != state.tensor_versions
+                    or metadata != state.metadata
+                    or state.snapshot.context_digest != value.context_digest
+                ):
+                    raise ValueError("neural-prior derivative session was mutated")
+                return state.snapshot
         handle = (
             self.validated_bound_input(value)
             if type(value) is BoundNeuralPriorInput
@@ -2501,6 +2558,61 @@ class NeuralPriorInferenceRunner:
         if bound_input.learned_input_feature_contract != self.learned_input_feature_contract:
             raise ValueError("bound input disagrees with runner feature contract")
         return bound_input
+
+    @contextmanager
+    def derivative_session(
+        self,
+        value: BoundNeuralPriorInput | ValidatedBoundNeuralPriorInputHandle,
+    ) -> Generator[NeuralPriorDerivativeSession, None, None]:
+        """Validate once, then use a private snapshot for an inner operator."""
+
+        source_handle = (
+            self.validated_bound_input(value)
+            if type(value) is BoundNeuralPriorInput
+            else value
+        )
+        if type(source_handle) is not ValidatedBoundNeuralPriorInputHandle:
+            raise TypeError("validated bound neural-prior input is required")
+        source_snapshot = source_handle._validated_snapshot()
+        snapshot = replace(source_snapshot)
+        snapshot.validate_integrity()
+        tensors = ValidatedBoundNeuralPriorInputHandle._tensors(snapshot)
+        metadata = (
+            snapshot.contract,
+            snapshot.input_bundle_digest,
+            snapshot.full_analysis_input_digest,
+            snapshot.input_frames_digest,
+            snapshot.learned_model_input_features_digest,
+            snapshot.learned_input_feature_contract,
+        )
+        with self._derivative_lock:
+            self._derivative_session_sequence += 1
+            nonce = self._derivative_session_sequence
+            self._derivative_sessions[nonce] = _NeuralPriorDerivativeSessionState(
+                snapshot=snapshot,
+                source_handle=source_handle,
+                tensor_ids=tuple(id(item) for item in tensors),
+                tensor_versions=tuple(
+                    int(getattr(item, "_version")) for item in tensors
+                ),
+                metadata=metadata,
+            )
+        token = NeuralPriorDerivativeSession(
+            _runner_identity=id(self),
+            _nonce=nonce,
+            context_digest=snapshot.context_digest,
+        )
+        try:
+            yield token
+        finally:
+            with self._derivative_lock:
+                retained = self._derivative_sessions.pop(nonce, None)
+            if retained is None:
+                raise ValueError("neural-prior derivative session disappeared")
+            retained.snapshot.validate_integrity()
+            if retained.snapshot.context_digest != token.context_digest:
+                raise ValueError("neural-prior derivative session changed")
+            retained.source_handle.validate_completion()
 
     def validate_retained_output(
         self,
@@ -2520,14 +2632,22 @@ class NeuralPriorInferenceRunner:
 
     def jvp(
         self,
-        bound_input: BoundNeuralPriorInput | ValidatedBoundNeuralPriorInputHandle,
+        bound_input: (
+            BoundNeuralPriorInput
+            | ValidatedBoundNeuralPriorInputHandle
+            | NeuralPriorDerivativeSession
+        ),
         tangent: Tensor,
     ) -> Tensor:
         return self.jvp_components(bound_input, tangent)[0]
 
     def jvp_components(
         self,
-        bound_input: BoundNeuralPriorInput | ValidatedBoundNeuralPriorInputHandle,
+        bound_input: (
+            BoundNeuralPriorInput
+            | ValidatedBoundNeuralPriorInputHandle
+            | NeuralPriorDerivativeSession
+        ),
         tangent: Tensor,
     ) -> tuple[Tensor, Tensor]:
         bound_input = self._hot_bound_input(bound_input)
@@ -2554,7 +2674,11 @@ class NeuralPriorInferenceRunner:
 
     def vjp(
         self,
-        bound_input: BoundNeuralPriorInput | ValidatedBoundNeuralPriorInputHandle,
+        bound_input: (
+            BoundNeuralPriorInput
+            | ValidatedBoundNeuralPriorInputHandle
+            | NeuralPriorDerivativeSession
+        ),
         cotangent: Tensor,
     ) -> Tensor:
         return self.vjp_components(
@@ -2565,7 +2689,11 @@ class NeuralPriorInferenceRunner:
 
     def vjp_components(
         self,
-        bound_input: BoundNeuralPriorInput | ValidatedBoundNeuralPriorInputHandle,
+        bound_input: (
+            BoundNeuralPriorInput
+            | ValidatedBoundNeuralPriorInputHandle
+            | NeuralPriorDerivativeSession
+        ),
         mean_cotangent: Tensor,
         log_std_cotangent: Tensor,
     ) -> Tensor:
@@ -2594,7 +2722,9 @@ class NeuralPriorInferenceRunner:
     def validate_adjoint_direction(
         self,
         bound_input: (
-            BoundNeuralPriorInput | ValidatedBoundNeuralPriorInputHandle
+            BoundNeuralPriorInput
+            | ValidatedBoundNeuralPriorInputHandle
+            | NeuralPriorDerivativeSession
         ),
         mean_cotangent: Tensor,
         log_std_cotangent: Tensor | None = None,

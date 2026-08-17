@@ -36,8 +36,9 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v65"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v66"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
+    "forecast-run-v65",
     "forecast-run-v64",
     "forecast-run-v63",
     "forecast-run-v62",
@@ -985,6 +986,7 @@ def load_forecast_run(
     deployment_certificate_trust_store_path: str | Path | None = None,
     deployment_policy_trust_store_path: str | Path | None = None,
     raw_ingestor_trust_store_path: str | Path | None = None,
+    training_target_source_trust_store_path: str | Path | None = None,
     maximum_member_count: int = DEFAULT_MAXIMUM_MEMBER_COUNT,
     maximum_member_bytes: int = DEFAULT_MAXIMUM_MEMBER_BYTES,
     maximum_total_expanded_bytes: int = (
@@ -1490,6 +1492,10 @@ def load_forecast_run(
                 prior_deployment_lineage_contract = (
                     "neural-prior-deployment-lineage-v15-audit"
                 )
+            elif version == "forecast-run-v65":
+                prior_deployment_lineage_contract = (
+                    "neural-prior-deployment-lineage-v16-audit"
+                )
         elif version in _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS:
             prior_deployment_lineage_contract = (
                 "neural-prior-deployment-lineage-v0-audit"
@@ -1793,6 +1799,11 @@ def load_forecast_run(
                     "current deployed forecast requires an external "
                     "raw-ingestor trust store"
                 )
+            if training_target_source_trust_store_path is None:
+                raise ValueError(
+                    "current deployed forecast requires an external "
+                    "training-target-source trust store"
+                )
             try:
                 current_input_plan_payload = json.loads(
                     "" if run.input_plan_json is None else run.input_plan_json
@@ -1862,6 +1873,9 @@ def load_forecast_run(
                     ),
                     raw_ingestor_trust_store_path=(
                         raw_ingestor_trust_store_path
+                    ),
+                    training_target_source_trust_store_path=(
+                        training_target_source_trust_store_path
                     ),
                 )
                 != run.prior_deployment_decision_artifact_digest

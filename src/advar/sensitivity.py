@@ -7107,19 +7107,22 @@ def _compute_variational_products(
                         frozen,
                     )
                 )
-                neural_prior_adjoint_direction_maximum_defect = max(
-                    neural_prior_adjoint_direction_maximum_defect,
-                    neural_prior_runner.validate_adjoint_direction(
-                        validated_prior_input,
+                with neural_prior_runner.derivative_session(
+                    validated_prior_input
+                ) as derivative_input:
+                    neural_prior_adjoint_direction_maximum_defect = max(
+                        neural_prior_adjoint_direction_maximum_defect,
+                        neural_prior_runner.validate_adjoint_direction(
+                            derivative_input,
+                            prior_cotangent,
+                            prior_log_std_cotangent,
+                        ),
+                    )
+                    prior_input_sensitivity = neural_prior_runner.vjp_components(
+                        derivative_input,
                         prior_cotangent,
                         prior_log_std_cotangent,
-                    ),
-                )
-                prior_input_sensitivity = neural_prior_runner.vjp_components(
-                    validated_prior_input,
-                    prior_cotangent,
-                    prior_log_std_cotangent,
-                )
+                    )
             dynamics_sensitivity = (
                 _frozen_baseline_dynamics_observation_sensitivity(
                     baseline_dynamics_path,

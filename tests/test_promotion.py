@@ -135,6 +135,33 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def scheduler_key() -> Ed25519PrivateKey:
         return Ed25519PrivateKey.from_private_bytes(b"\x02" * 32)
 
+    @staticmethod
+    def target_source_trust_store(
+        *,
+        authority_id: str = "test-target-source-authority",
+        authority_private_key: Ed25519PrivateKey | None = None,
+        revoked_at: str | None = None,
+    ):
+        authority_key = (
+            Ed25519PrivateKey.from_private_bytes(b"\x28" * 32)
+            if authority_private_key is None
+            else authority_private_key
+        )
+        return promotion_module.TrainingTargetSourceTrustStore.issue(
+            authorities=((
+                authority_id,
+                authority_key.public_key().public_bytes_raw().hex(),
+                1,
+                "2025-01-01T00:00:00Z",
+                "2035-01-01T00:00:00Z",
+                revoked_at,
+                ("a" * 64,),
+                ("b" * 64,),
+            ),),
+            root_authority_id="test-target-source-root",
+            root_private_key=Ed25519PrivateKey.from_private_bytes(b"\x2b" * 32),
+        )
+
     def scheduler_trust_store(self, plan=None):
         catalog_plan = self.event_catalog_plan() if plan is None else plan
         return ledger_module._SchedulerTrustStore(
@@ -202,7 +229,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         evaluation = self.evaluation(1, -1.0)
         policy = self.policy()
 
-        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v24")
+        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v25")
         self.assertTrue(
             all(
                 item.contract == "neural-prior-range-band-contract-v3"
@@ -211,11 +238,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             manifest.contract,
-            "neural-prior-candidate-manifest-v18",
+            "neural-prior-candidate-manifest-v19",
         )
         self.assertEqual(
             evaluation.contract,
-            "prior-holdout-evaluation-v22",
+            "prior-holdout-evaluation-v23",
         )
         self.assertTrue(
             all(
@@ -223,7 +250,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 for band in evaluation.range_band_evaluations
             )
         )
-        self.assertEqual(policy.contract, "neural-prior-promotion-policy-v29")
+        self.assertEqual(policy.contract, "neural-prior-promotion-policy-v30")
 
     def test_semantic_replay_generation_reaches_promotion_and_deployment(
         self,
@@ -250,10 +277,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
         self.assertEqual(
             scoring.contract,
-            "neural-prior-holdout-scoring-artifact-v10",
+            "neural-prior-holdout-scoring-artifact-v11",
         )
-        self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v30")
-        self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v15")
+        self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v31")
+        self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v17")
         self.assertEqual(
             evidence.semantic_replay_generation_digest,
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST,
@@ -261,6 +288,29 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertEqual(
             deployment.semantic_replay_generation_digest,
             evidence.semantic_replay_generation_digest,
+        )
+        legacy_scoring_payload = dict(scoring.payload)
+        legacy_scoring_payload["contract"] = (
+            "neural-prior-holdout-scoring-artifact-v10"
+        )
+        legacy_scoring_payload.pop(
+            "training_target_source_trust_store_digest"
+        )
+        legacy_scoring_digest = promotion_module.json_digest(
+            legacy_scoring_payload
+        )
+        decoded_legacy_scoring = ledger_module._decode_holdout_scoring_artifact(
+            json.dumps(
+                legacy_scoring_payload
+                | {"artifact_digest": legacy_scoring_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            legacy_scoring_digest,
+        )
+        self.assertIsInstance(
+            decoded_legacy_scoring,
+            promotion_module.LegacyHoldoutScoringArtifactAuditV10,
         )
 
     def test_deployment_certificate_binds_the_full_promotion_preimage(
@@ -306,6 +356,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ),
                 raw_ingestor_trust_store_digest=(
                     certificate.raw_ingestor_trust_store_digest
+                ),
+                training_target_source_trust_store_digest=(
+                    certificate.training_target_source_trust_store_digest
                 ),
                 previous_certificate_digest=(
                     certificate.previous_certificate_digest
@@ -812,13 +865,16 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def classifier_manifest(self):
         training_registry_receipt = self.training_raw_registry_receipt()
         derivation = self.training_dataset_derivation(classifier=True)
+        classifier_training_events = tuple(
+            item.physical_event_digest for item in derivation.target_derivations
+        )
         return promotion_module.RegimeClassifierManifest(
             classifier_digest="e" * 64,
             training_dataset_digest=derivation.training_dataset_digest,
             training_case_ids=("classifier-training-case",),
             training_input_bundle_digests=("9" * 64,),
             training_full_analysis_input_digests=("8" * 64,),
-            training_physical_event_digests=("4" * 64,),
+            training_physical_event_digests=classifier_training_events,
             training_storm_ids=("classifier-training-storm",),
             training_days=("2026-06-01",),
             training_radar_ids=("classifier-radar",),
@@ -882,6 +938,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         target_physical_event_digest: str | None = None,
         target_source_authority_id: str = "test-target-source-authority",
         target_source_private_key: Ed25519PrivateKey | None = None,
+        training_event_catalog_plan=None,
+        training_event_catalog_result=None,
     ):
         del numerical_runtime_digest
         receipt = (
@@ -899,7 +957,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             if input_bundle_digest is None
             else input_bundle_digest
         )
-        feature_tensor = torch.arange(12, dtype=torch.float64).reshape(3, 2, 2)
+        feature_tensor = torch.arange(20, dtype=torch.float64).reshape(5, 2, 2)
         target_tensor = torch.arange(4, dtype=torch.float64).reshape(2, 2)
         member_unsigned = {
             "contract": "analysis-input-derivation-artifact-v5",
@@ -982,17 +1040,120 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             if target_source_private_key is None
             else target_source_private_key
         )
-        retained_target_event = (
-            target_physical_event_digest
-            if target_physical_event_digest is not None
-            else promotion_module.json_digest(
-                {
-                    "contract": "test-training-target-event-v1",
-                    "case_id": member.case_id,
-                    "target_source_valid_time": retained_target_time,
-                }
-            )
+        target_source_trust_store = self.target_source_trust_store(
+            authority_id=target_source_authority_id,
+            authority_private_key=target_source_key,
         )
+        event_start = (
+            promotion_module._canonical_datetime(retained_target_time)
+            - timedelta(minutes=10)
+        ).isoformat()
+        event_end = (
+            promotion_module._canonical_datetime(retained_target_time)
+            + timedelta(minutes=50)
+        ).isoformat()
+        event_track = promotion_module.PhysicalEventTrackArtifact(
+            timestamps=(event_start, event_end),
+            centroid_xy_m=((50_000.0, 50_000.0), (50_000.0, 50_000.0)),
+            object_mask_digests=("e" * 64, "f" * 64),
+            source_radar_ids=("training-radar", "training-radar"),
+            association_edge_digests=("d" * 64,),
+            spatial_reference_digest="7" * 64,
+        )
+        event_plan = promotion_module.PhysicalEventCatalogPlan(
+            holdout_case_ids=(member.case_id,),
+            association_algorithm_digest="3" * 64,
+            spatial_membership_rule_digest="4" * 64,
+            adjudication_policy_digest="6" * 64,
+            adjudicator_id="independent-weather-labeler",
+            adjudicator_public_key_hex=(
+                promotion_module.regime_reference_public_key_hex(
+                    self.regime_labeler_key()
+                )
+            ),
+            catalog_completion_deadline=event_end,
+            spatial_reference_digest="7" * 64,
+            motion_association_rule_digest="8" * 64,
+            scheduler_id="trusted-training-scheduler",
+            scheduler_public_key_hex=(
+                promotion_module.regime_reference_public_key_hex(
+                    self.scheduler_key()
+                )
+            ),
+            scheduler_trust_store_digest="5" * 64,
+        )
+        event = promotion_module.PhysicalEventCatalogEvidence.from_members(
+            event_id=f"{member.case_id}-physical-event",
+            member_case_ids=(member.case_id,),
+            member_full_analysis_input_digests=(
+                member.full_analysis_input_digest,
+            ),
+            start_time=event_start,
+            end_time=event_end,
+            spatial_envelope_xy_m=(0.0, 0.0, 100_000.0, 100_000.0),
+            object_track_artifact=event_track,
+            participating_radar_ids=("training-radar",),
+            association_algorithm_digest=event_plan.association_algorithm_digest,
+            adjudication_policy_digest=event_plan.adjudication_policy_digest,
+            adjudicator_id=event_plan.adjudicator_id,
+            adjudicator_private_key=self.regime_labeler_key(),
+        )
+        retained_target_event = event.physical_event_identity_digest
+        if (
+            target_physical_event_digest is not None
+            and target_physical_event_digest != retained_target_event
+        ):
+            raise ValueError("test target event disagrees with signed catalog")
+        spatial_evidence = promotion_module.PhysicalEventCaseSpatialEvidence(
+            case_id=member.case_id,
+            full_analysis_input_digest=member.full_analysis_input_digest,
+            physical_event_identity_digest=retained_target_event,
+            observed_spatial_envelope_xy_m=(
+                10_000.0,
+                10_000.0,
+                90_000.0,
+                90_000.0,
+            ),
+            event_spatial_envelope_xy_m=event.spatial_envelope_xy_m,
+            spatial_membership_rule_digest=(
+                event_plan.spatial_membership_rule_digest
+            ),
+            source_object_evidence_digest=(
+                event_track.object_mask_digests[0]
+            ),
+            track_artifact_digest=event_track.artifact_digest,
+            track_sample_index=0,
+            track_sample_time=event_track.timestamps[0],
+            track_object_mask_digest=event_track.object_mask_digests[0],
+            input_available_time=retained_target_time,
+            spatial_reference_digest=event_plan.spatial_reference_digest,
+        )
+        event_result = promotion_module.PhysicalEventCatalogResult.from_plan(
+            event_plan,
+            event_evidences=(event,),
+            case_spatial_membership_evidences=(spatial_evidence,),
+            cataloged_at=(
+                promotion_module._canonical_datetime(retained_target_time)
+                + timedelta(minutes=30)
+            ).isoformat(),
+            adjudicator_private_key=self.regime_labeler_key(),
+        )
+        if (
+            training_event_catalog_plan is None
+        ) != (training_event_catalog_result is None):
+            raise ValueError("test training catalog overrides must be paired")
+        if training_event_catalog_plan is not None:
+            event_plan = training_event_catalog_plan
+            event_result = training_event_catalog_result
+            assert event_result is not None
+            if (
+                event_result.catalog_plan_digest != event_plan.plan_digest
+                or len(event_result.event_evidences) != 1
+            ):
+                raise ValueError("test training catalog override is invalid")
+            retained_target_event = (
+                event_result.event_evidences[0].physical_event_identity_digest
+            )
         target_source_receipt = (
             promotion_module.TrainingTargetSourceReceipt.issue(
                 target_source_identity_digest="d" * 64,
@@ -1005,7 +1166,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     promotion_module._canonical_datetime(retained_target_time)
                     + timedelta(minutes=5)
                 ).isoformat(),
+                source_contract_digest="a" * 64,
+                radar_product_scope_digest="b" * 64,
+                trust_store=target_source_trust_store,
                 authority_id=target_source_authority_id,
+                authority_key_epoch=1,
                 authority_private_key=target_source_key,
             )
         )
@@ -1052,7 +1217,18 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             directory=archive_root,
             shard_id="targets-00000",
         )
-        normalization_tensor = torch.tensor([0.0, 1.0])
+        normalization_tensor = (
+            promotion_module.recompute_training_normalization_statistics(
+                (feature_tensor,),
+                channel_definitions=(
+                    "dbz",
+                    "qc_valid",
+                    "quality",
+                    "observation_std",
+                    "source_available",
+                ),
+            )
+        )
         normalization_shard = (
             promotion_module.write_training_tensor_archive_shard(
                 {"normalization": normalization_tensor},
@@ -1060,8 +1236,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 shard_id="normalization",
             )
         )
-        feature_dataset = promotion_module.TrainingFeatureDatasetArtifact(
-            members=(promotion_module.TrainingDatasetMember(
+        training_member = promotion_module.TrainingDatasetMember(
                 case_id=member.case_id,
                 analysis_derivation_artifact_digest=member.artifact_digest,
                 feature_archive_member="feature_00000",
@@ -1080,7 +1255,29 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 sample_weight=1.0,
                 split="train",
                 augmentation_seed=0,
-            ),),
+            )
+        normalization_derivation = (
+            promotion_module.NormalizationDerivationArtifact.from_training_dataset(
+                members=(training_member,),
+                normalization_shard=normalization_shard,
+                channel_definitions=(
+                    "dbz",
+                    "qc_valid",
+                    "quality",
+                    "observation_std",
+                    "source_available",
+                ),
+                normalization_algorithm_digest=(
+                    promotion_module.TRAINING_NORMALIZATION_ALGORITHM_DIGEST
+                ),
+                mask_weight_policy_digest=(
+                    promotion_module
+                    .TRAINING_NORMALIZATION_MASK_WEIGHT_POLICY_DIGEST
+                ),
+            )
+        )
+        feature_dataset = promotion_module.TrainingFeatureDatasetArtifact(
+            members=(training_member,),
             normalization_statistics_digest=promotion_module.tensor_digest(
                 normalization_tensor
             ),
@@ -1091,6 +1288,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             feature_archive_shards=(feature_shard,),
             target_archive_shards=(target_shard,),
             normalization_statistics_shard=normalization_shard,
+            normalization_derivation_artifact_json=(
+                normalization_derivation.json
+            ),
+            normalization_derivation_artifact_digest=(
+                normalization_derivation.artifact_digest
+            ),
         )
         feature_dataset_json = json.dumps(
             feature_dataset.payload
@@ -1126,6 +1329,25 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 feature_dataset.dataset_digest
             ),
             training_feature_dataset_artifact_json=feature_dataset_json,
+            training_physical_event_catalog_plan_digest=event_plan.plan_digest,
+            training_physical_event_catalog_plan_json=(
+                promotion_module._physical_event_catalog_plan_json(event_plan)
+            ),
+            training_physical_event_catalog_result_digest=(
+                event_result.result_digest
+            ),
+            training_physical_event_catalog_result_json=(
+                promotion_module._physical_event_catalog_result_json(event_result)
+            ),
+            training_target_source_trust_store_digest=(
+                target_source_trust_store.content_digest
+            ),
+            training_target_source_trust_store_json=json.dumps(
+                target_source_trust_store.payload
+                | {"content_digest": target_source_trust_store.content_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
         )
 
     def plan(
@@ -1413,6 +1635,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "2027-01-01T00:00:00Z",
                     None,
                 ),),
+            ),
+            training_target_source_trust_store=(
+                self.target_source_trust_store()
             ),
             analysis_processor_id="test-analysis-processor",
             analysis_processor_public_key_hex=(
@@ -1704,6 +1929,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             resolution,
         ) = self.analysis_input_context(index, plan)
         uncertainty_target = self.uncertainty_target(index)
+        target_identity = (
+            promotion_module.VerificationTargetIdentityArtifact.from_scoring_target(
+                plan=plan.uncertainty_target_plans[index - 1],
+                target=uncertainty_target,
+            )
+        )
         state_target = self.state_target(index)
         assert base_run.full_analysis_input_digest is not None
         full_digest = base_run.full_analysis_input_digest
@@ -1752,14 +1983,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 planned.uncertainty_target_plan_digest
             ),
             uncertainty_target_digest=uncertainty_target.target_digest,
-            verification_target_source_identity_digest=(
-                plan.uncertainty_target_plans[index - 1].source_identity_digest
-            ),
-            verification_target_valid_time=(
-                plan.uncertainty_target_plans[index - 1].target_valid_time
-            ),
-            verification_target_tensor_digest=promotion_module.tensor_digest(
-                uncertainty_target._target_dbz
+            verification_target_identity_artifact_json=target_identity.json,
+            verification_target_identity_artifact_digest=(
+                target_identity.artifact_digest
             ),
             state_calibration_target_plan_digest=(
                 planned.state_calibration_target_plan_digest
@@ -2032,14 +2258,18 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
     def training_start_receipt(self):
         derivation = self.training_dataset_derivation()
+        training_catalog_plan, training_catalog_result = (
+            derivation.training_physical_event_catalog
+        )
         return promotion_module.TrustedProcessStartReceipt.from_plan(
-            self.training_event_catalog_plan(),
-            catalog_result_digest=self.training_event_catalog_result().result_digest,
+            training_catalog_plan,
+            catalog_result_digest=training_catalog_result.result_digest,
             process_kind="candidate_training",
             subject_digests=(
                 derivation.training_dataset_digest,
                 "2" * 64,
                 derivation.training_tensor_snapshot_set_digest,
+                derivation.normalization_derivation_artifact_digest,
             ),
             process_algorithm_digest="3" * 64,
             process_runtime_digest="4" * 64,
@@ -2059,6 +2289,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     ),
                     training_tensor_snapshot_set_digest=(
                         derivation.training_tensor_snapshot_set_digest
+                    ),
+                    normalization_derivation_artifact_digest=(
+                        derivation.normalization_derivation_artifact_digest
                     ),
                 )
             ),
@@ -2828,6 +3061,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             processor_id="semantic-analysis-processor",
             processor_private_key=semantic_processor_key,
         )
+        classifier_training_events = tuple(
+            item.physical_event_digest
+            for item in classifier_training_derivation.target_derivations
+        )
         classifier_manifest = promotion_module.RegimeClassifierManifest(
             classifier_digest=classifier.classifier_digest,
             training_dataset_digest=(
@@ -2836,7 +3073,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             training_case_ids=("classifier-training-case",),
             training_input_bundle_digests=("9" * 64,),
             training_full_analysis_input_digests=("8" * 64,),
-            training_physical_event_digests=("4" * 64,),
+            training_physical_event_digests=classifier_training_events,
             training_storm_ids=("classifier-training-storm",),
             training_days=("2026-06-01",),
             training_radar_ids=("classifier-radar",),
@@ -3319,6 +3556,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     None,
                 ),),
             ),
+            training_target_source_trust_store=(
+                self.target_source_trust_store()
+            ),
             analysis_processor_id="semantic-analysis-processor",
             analysis_processor_public_key_hex=(
                 semantic_processor_key.public_key().public_bytes_raw().hex()
@@ -3466,6 +3706,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             cataloged_at="2026-08-09T02:00:00Z",
             adjudicator_private_key=self.regime_labeler_key(),
         )
+        verification_target_identity = (
+            promotion_module.VerificationTargetIdentityArtifact.from_scoring_target(
+                plan=target_plan,
+                target=uncertainty_target,
+            )
+        )
         completed_case = NeuralPriorHoldoutCase(
             case_id=case_id,
             planned_storm_id="pending",
@@ -3516,12 +3762,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             metric_contract_digest=metric_config.digest,
             uncertainty_target_plan_digest=target_plan.plan_digest,
             uncertainty_target_digest=uncertainty_target.target_digest,
-            verification_target_source_identity_digest=(
-                target_plan.source_identity_digest
+            verification_target_identity_artifact_json=(
+                verification_target_identity.json
             ),
-            verification_target_valid_time=target_plan.target_valid_time,
-            verification_target_tensor_digest=promotion_module.tensor_digest(
-                uncertainty_target._target_dbz
+            verification_target_identity_artifact_digest=(
+                verification_target_identity.artifact_digest
             ),
             prior_probability_contract_digest=(
                 self.probability_contract().contract_digest
@@ -3557,12 +3802,13 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             parent_training_manifest_digest="3" * 64,
             holdout_cases=(completed_case,),
         )
-        training_plan = self.training_event_catalog_plan()
-        training_result = self.training_event_catalog_result()
         candidate_training_derivation = self.training_dataset_derivation(
             registry_receipt=semantic_training_registry_receipt,
             processor_id="semantic-analysis-processor",
             processor_private_key=semantic_processor_key,
+        )
+        training_plan, training_result = (
+            candidate_training_derivation.training_physical_event_catalog
         )
         training_execution = (
             promotion_module._candidate_training_execution_contract_digest(
@@ -3583,6 +3829,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 training_tensor_snapshot_set_digest=(
                     candidate_training_derivation.training_tensor_snapshot_set_digest
                 ),
+                normalization_derivation_artifact_digest=(
+                    candidate_training_derivation
+                    .normalization_derivation_artifact_digest
+                ),
             )
         )
         training_start = promotion_module.TrustedProcessStartReceipt.from_plan(
@@ -3593,6 +3843,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 candidate_training_derivation.training_dataset_digest,
                 "2" * 64,
                 candidate_training_derivation.training_tensor_snapshot_set_digest,
+                candidate_training_derivation.normalization_derivation_artifact_digest,
             ),
             process_algorithm_digest="3" * 64,
             process_runtime_digest=candidate_runner.numerical_runtime_digest,
@@ -3671,7 +3922,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 separators=(",", ":"),
             ),
             training_physical_event_digests=(
-                self.training_event_catalog().physical_event_identity_digest,
+                training_result.event_evidences[0]
+                .physical_event_identity_digest,
             ),
             training_physical_event_catalog_plan=training_plan,
             training_physical_event_catalog_result=training_result,
@@ -4467,6 +4719,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         plan = self.plan()
         training_registry_receipt = self.training_raw_registry_receipt()
         derivation = self.training_dataset_derivation()
+        training_catalog_plan, training_catalog_result = (
+            derivation.training_physical_event_catalog
+        )
         return NeuralPriorCandidateManifest(
             candidate_prior_digest="c" * 64,
             parent_prior_digest="d" * 64,
@@ -4503,13 +4758,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 separators=(",", ":"),
             ),
             training_physical_event_digests=(
-                self.training_event_catalog().physical_event_identity_digest,
+                training_catalog_result.event_evidences[0]
+                .physical_event_identity_digest,
             ),
             training_physical_event_catalog_plan=(
-                self.training_event_catalog_plan()
+                training_catalog_plan
             ),
             training_physical_event_catalog_result=(
-                self.training_event_catalog_result()
+                training_catalog_result
             ),
             candidate_training_started_at="2026-07-02T00:00:00Z",
             training_storm_ids=("training-storm",),
@@ -5044,6 +5300,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 prior_parent_valid_fraction - prior_candidate_valid_fraction
             ),
             prior_uncertainty_target_digest=case.uncertainty_target_digest,
+            verification_target_identity_artifact_digest=(
+                case.verification_target_identity_artifact_digest
+            ),
             prior_uncertainty_sample_count=prior_sample_count,
             prior_echo_intensity_sample_count=echo_count,
             prior_clear_sky_sample_count=clear_count,
@@ -5498,6 +5757,13 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         raw_trust_patcher.start()
         self.addCleanup(raw_trust_patcher.stop)
+        target_trust_patcher = patch.object(
+            ledger_module,
+            "_load_training_target_source_trust_store",
+            return_value=self.plan().training_target_source_trust_store,
+        )
+        target_trust_patcher.start()
+        self.addCleanup(target_trust_patcher.stop)
         return certificate, trust
 
     @staticmethod
@@ -5520,6 +5786,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             operational_signer=self.operational_decision_signer(),
             authority_trust_store_path="/etc/advar/deployment-authorities.json",
             raw_ingestor_trust_store_path="/etc/advar/raw-ingestors.json",
+            training_target_source_trust_store_path=(
+                "/etc/advar/training-target-sources.json"
+            ),
         )
 
     def live_operational_input_plan(self, plan):
@@ -6249,6 +6518,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             "publication_time": input_plan.publication_time,
             "operational_cycle_id": cycle_id,
             **provenance,
+            "training_target_source_trust_store_digest": (
+                evidence.training_target_source_trust_store_digest
+            ),
             "regime_classification_evidence": regime_payload
             | {"evidence_digest": promotion_module.json_digest(regime_payload)},
             "range_partition_evidence": range_payload
@@ -6680,6 +6952,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ledger_module,
             "_load_raw_ingestor_trust_store",
             return_value=self.plan().raw_ingestor_trust_store,
+        ), patch.object(
+            ledger_module,
+            "_load_training_target_source_trust_store",
+            return_value=self.plan().training_target_source_trust_store,
         ):
             return promotion_module.validate_neural_prior_deployment_decision_artifact(
                 artifact_json,
@@ -6691,6 +6967,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ),
                 raw_ingestor_trust_store_path=(
                     "/etc/advar/raw-ingestors.json"
+                ),
+                training_target_source_trust_store_path=(
+                    "/etc/advar/training-target-sources.json"
                 ),
                 **kwargs,
             )
@@ -7139,6 +7418,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ),
                 patch.object(
                     ledger_module,
+                    "_load_training_target_source_trust_store",
+                    return_value=plan.training_target_source_trust_store,
+                ),
+                patch.object(
+                    ledger_module,
                     "_load_promotion_deployment_authority_trust_store",
                     return_value=self.provenance_authority_trust_store(
                         ledger,
@@ -7149,6 +7433,22 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     ),
                 ),
             ):
+                training_derivation = (
+                    promotion_module._training_dataset_derivation_from_json(
+                        manifest.training_dataset_derivation_artifact_json,
+                        expected_digest=(
+                            manifest.training_dataset_derivation_artifact_digest
+                        ),
+                    )
+                )
+                training_target_trust = (
+                    promotion_module._training_target_source_trust_store_from_json(
+                        training_derivation.training_target_source_trust_store_json,
+                        expected_digest=(
+                            training_derivation.training_target_source_trust_store_digest
+                        ),
+                    )
+                )
                 trusted_datetime.now.return_value = datetime.fromisoformat(
                     "2026-07-01T03:00:00+00:00"
                 )
@@ -7159,20 +7459,66 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 trusted_datetime.now.return_value = datetime.fromisoformat(
                     "2026-07-02T01:00:00+00:00"
                 )
+                with patch.object(
+                    ledger_module,
+                    "_load_training_target_source_trust_store",
+                    return_value=self.target_source_trust_store(
+                        revoked_at="2026-07-01T12:00:00Z"
+                    ),
+                ), self.assertRaisesRegex(ValueError, r"target[- ]source"):
+                    ledger.append_trusted_process_start_receipt(
+                        manifest.training_physical_event_catalog_plan,
+                        manifest.training_physical_event_catalog_result,
+                        manifest.candidate_training_start_receipt,
+                        training_dataset_derivation=training_derivation,
+                        training_target_source_trust_store_path=(
+                            "/etc/advar/training-target-sources.json"
+                        ),
+                        scheduler_trust_store_path=(
+                            "/etc/advar/schedulers.json"
+                        ),
+                    )
                 ledger.append_trusted_process_start_receipt(
                     manifest.training_physical_event_catalog_plan,
                     manifest.training_physical_event_catalog_result,
                     manifest.candidate_training_start_receipt,
+                    training_dataset_derivation=training_derivation,
+                    training_target_source_trust_store_path=(
+                        "/etc/advar/training-target-sources.json"
+                    ),
                     scheduler_trust_store_path="/etc/advar/schedulers.json",
                 )
                 trusted_datetime.now.return_value = datetime.fromisoformat(
                     "2026-07-03T01:00:00+00:00"
                 )
+                with patch.object(
+                    ledger_module,
+                    "_load_training_target_source_trust_store",
+                    return_value=self.target_source_trust_store(
+                        revoked_at="2026-07-02T12:00:00Z"
+                    ),
+                ), self.assertRaisesRegex(ValueError, r"target[- ]source"):
+                    ledger.append_trusted_process_completion_receipt(
+                        manifest.candidate_training_start_receipt,
+                        manifest.candidate_training_completion_receipt,
+                        process_log_artifact=self.training_process_log(),
+                        scheduler_trust_store_path=(
+                            "/etc/advar/schedulers.json"
+                        ),
+                        training_dataset_derivation=training_derivation,
+                        training_target_source_trust_store_path=(
+                            "/etc/advar/training-target-sources.json"
+                        ),
+                    )
                 ledger.append_trusted_process_completion_receipt(
                     manifest.candidate_training_start_receipt,
                     manifest.candidate_training_completion_receipt,
                     process_log_artifact=self.training_process_log(),
                     scheduler_trust_store_path="/etc/advar/schedulers.json",
+                    training_dataset_derivation=training_derivation,
+                    training_target_source_trust_store_path=(
+                        "/etc/advar/training-target-sources.json"
+                    ),
                 )
                 for replay_case in sorted(
                     replay_cases,
@@ -7394,6 +7740,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ledger_module,
                 "_load_raw_ingestor_trust_store",
                 return_value=plan.raw_ingestor_trust_store,
+            ), patch.object(
+                ledger_module,
+                "_load_training_target_source_trust_store",
+                return_value=plan.training_target_source_trust_store,
             ):
                 stored = ledger.append_neural_prior_promotion(
                     evidence,
@@ -7410,10 +7760,13 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     raw_ingestor_trust_store_path=(
                         "/etc/advar/raw-ingestors.json"
                     ),
+                    training_target_source_trust_store_path=(
+                        "/etc/advar/training-target-sources.json"
+                    ),
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v30")
+            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v31")
             self.assertTrue(loaded.deployment_eligible)
             ledger_authority_key = Ed25519PrivateKey.from_private_bytes(
                 b"\x03" * 32
@@ -7522,6 +7875,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ledger_module,
                 "_load_raw_ingestor_trust_store",
                 return_value=plan.raw_ingestor_trust_store,
+            ), patch.object(
+                ledger_module,
+                "_load_training_target_source_trust_store",
+                return_value=plan.training_target_source_trust_store,
             ):
                 with patch.object(
                     ledger_module,
@@ -7541,6 +7898,34 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         ),
                         raw_ingestor_trust_store_path=(
                             "/etc/advar/raw-ingestors.json"
+                        ),
+                        training_target_source_trust_store_path=(
+                            "/etc/advar/training-target-sources.json"
+                        ),
+                    )
+                with patch.object(
+                    ledger_module,
+                    "_load_training_target_source_trust_store",
+                    return_value=self.target_source_trust_store(
+                        revoked_at="2026-08-12T02:20:00Z"
+                    ),
+                ), self.assertRaisesRegex(
+                    ValueError,
+                    "target-source trust changed",
+                ):
+                    ledger.issue_neural_prior_promotion_deployment_certificate(
+                        stored,
+                        scoring_replay_cases=replay_cases,
+                        ledger_signer=ledger_signer,
+                        deployment_signer=promotion_signer,
+                        authority_trust_store_path=(
+                            "/etc/advar/deployment-authorities.json"
+                        ),
+                        raw_ingestor_trust_store_path=(
+                            "/etc/advar/raw-ingestors.json"
+                        ),
+                        training_target_source_trust_store_path=(
+                            "/etc/advar/training-target-sources.json"
                         ),
                     )
                 for invalid_times in (
@@ -7580,6 +7965,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                             raw_ingestor_trust_store_path=(
                                 "/etc/advar/raw-ingestors.json"
                             ),
+                            training_target_source_trust_store_path=(
+                                "/etc/advar/training-target-sources.json"
+                            ),
                         )
 
                 def issue_certificate():
@@ -7594,6 +7982,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                             ),
                             raw_ingestor_trust_store_path=(
                                 "/etc/advar/raw-ingestors.json"
+                            ),
+                            training_target_source_trust_store_path=(
+                                "/etc/advar/training-target-sources.json"
                             ),
                         )
                     except FileExistsError as error:
@@ -7627,7 +8018,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             self.assertEqual(
                 certificate.contract,
-                "ledgered-promotion-deployment-certificate-v5",
+                "ledgered-promotion-deployment-certificate-v6",
             )
             self.assertEqual(certificate.sequence_number, 1)
             self.assertEqual(
@@ -7731,6 +8122,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     ledger_module,
                     "_load_raw_ingestor_trust_store",
                     return_value=plan.raw_ingestor_trust_store,
+                ),
+                patch.object(
+                    ledger_module,
+                    "_load_training_target_source_trust_store",
+                    return_value=plan.training_target_source_trust_store,
                 ),
                 patch.object(
                     ledger_module,
@@ -9160,7 +9556,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             cataloged_at="2026-08-09T03:00:00Z",
             adjudicator_private_key=self.regime_labeler_key(),
         )
-        training_derivation = self.training_dataset_derivation()
+        training_derivation = self.training_dataset_derivation(
+            target_source_valid_time="2026-08-09T00:10:00Z",
+            training_event_catalog_plan=training_plan,
+            training_event_catalog_result=training_result,
+        )
         training_receipt = promotion_module.TrustedProcessStartReceipt.from_plan(
             training_plan,
             catalog_result_digest=training_result.result_digest,
@@ -9169,6 +9569,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 training_derivation.training_dataset_digest,
                 "2" * 64,
                 training_derivation.training_tensor_snapshot_set_digest,
+                training_derivation.normalization_derivation_artifact_digest,
             ),
             process_algorithm_digest="3" * 64,
             process_runtime_digest="4" * 64,
@@ -9190,6 +9591,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     ),
                     training_tensor_snapshot_set_digest=(
                         training_derivation.training_tensor_snapshot_set_digest
+                    ),
+                    normalization_derivation_artifact_digest=(
+                        training_derivation.normalization_derivation_artifact_digest
                     ),
                 )
             ),
@@ -9216,8 +9620,23 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 training_physical_event_digests=(
                     shifted.physical_event_identity_digest,
                 ),
+                training_dataset_digest=(
+                    training_derivation.training_dataset_digest
+                ),
+                training_dataset_derivation_artifact_digest=(
+                    training_derivation.artifact_digest
+                ),
+                training_dataset_derivation_artifact_json=json.dumps(
+                    training_derivation.payload,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
                 training_physical_event_catalog_plan=training_plan,
                 training_physical_event_catalog_result=training_result,
+                training_time_windows=((
+                    "2026-08-09T00:00:00Z",
+                    "2026-08-09T01:00:00Z",
+                ),),
                 candidate_training_started_at=training_receipt.started_at,
                 candidate_training_start_receipt=training_receipt,
                 candidate_training_completion_receipt=training_completion,
@@ -9765,6 +10184,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
             raw_ingestor_trust_store_digest=(
                 plan.raw_ingestor_trust_store.content_digest
+            ),
+            training_target_source_trust_store_digest=(
+                plan.training_target_source_trust_store.content_digest
             ),
             analysis_processor_id=plan.analysis_processor_id,
             analysis_processor_public_key_hex=(
@@ -11705,6 +12127,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 raw_ingestor_trust_store_path=(
                     "/etc/advar/raw-ingestors.json"
                 ),
+                training_target_source_trust_store_path=(
+                    "/etc/advar/training-target-sources.json"
+                ),
             )
         )
         original_issuer = operational_client._issuer
@@ -11927,6 +12352,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ledger_module,
                 "_load_raw_ingestor_trust_store",
                 return_value=self.plan().raw_ingestor_trust_store,
+            ), patch.object(
+                ledger_module,
+                "_load_training_target_source_trust_store",
+                return_value=self.plan().training_target_source_trust_store,
             ):
                 loaded = load_forecast_run(
                     path,
@@ -11939,6 +12368,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     raw_ingestor_trust_store_path=(
                         "/etc/advar/raw-ingestors.json"
                     ),
+                    training_target_source_trust_store_path=(
+                        "/etc/advar/training-target-sources.json"
+                    ),
                 )
         self.assertEqual(loaded.run.prior_role, "parent")
         self.assertEqual(
@@ -11947,7 +12379,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             loaded.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v16",
+            "neural-prior-deployment-lineage-v17",
         )
 
     def test_current_physical_range_partition_controls_deployment(self) -> None:
@@ -12276,15 +12708,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
     def test_classifier_training_event_cannot_overlap_holdout_cycle(self) -> None:
         completed = self.completed_case(1)
-        classifier = replace(
-            self.plan().regime_classifier_manifests[0],
-            training_physical_event_digests=(completed.physical_event_digest,),
-        )
-
-        with self.assertRaisesRegex(ValueError, "physical events overlap"):
-            promotion_module._validate_classifier_holdout_independence(
-                classifier,
-                (completed,),
+        with self.assertRaisesRegex(ValueError, "derivation disagrees"):
+            replace(
+                self.plan().regime_classifier_manifests[0],
+                training_physical_event_digests=(
+                    completed.physical_event_digest,
+                ),
             )
 
     def test_prospective_plan_cannot_store_future_weather_truth(self) -> None:
@@ -13215,6 +13644,71 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         candidate_runner.reproduce.assert_called_once()
         parent_runner.reproduce.assert_called_once()
 
+        manifested_identity = case.verification_target_identity
+        forged_identity_values = (
+            {"source_identity_digest": "0" * 64},
+            {"target_valid_time": "2026-08-09T01:10:00Z"},
+            {"target_tensor_digest": "1" * 64},
+            {"target_valid_mask_digest": "2" * 64},
+            {"target_quality_digest": "3" * 64},
+        )
+        for identity_change in forged_identity_values:
+            with self.subTest(identity_change=tuple(identity_change)):
+                forged_identity = replace(
+                    manifested_identity,
+                    **identity_change,
+                )
+                forged_case = replace(
+                    case,
+                    verification_target_identity_artifact_json=(
+                        forged_identity.json
+                    ),
+                    verification_target_identity_artifact_digest=(
+                        forged_identity.artifact_digest
+                    ),
+                )
+                forged_manifest = replace(
+                    manifest,
+                    holdout_cases=(
+                        forged_case,
+                        *manifest.holdout_cases[1:],
+                    ),
+                )
+                with patch.object(
+                    promotion_module,
+                    "_forecast_result_content_digest",
+                    side_effect=(
+                        case.candidate_forecast_digest,
+                        case.parent_forecast_digest,
+                    ),
+                ), self.assertRaisesRegex(
+                    ValueError,
+                    "verification target identity disagrees with scoring target",
+                ):
+                    promotion_module.PriorHoldoutEvaluation.from_forecasts(
+                        forged_manifest,
+                        plan,
+                        case_id=case.case_id,
+                        candidate_forecast=candidate,
+                        parent_forecast=parent,
+                        verification=verification,
+                        metric_config=config,
+                        candidate_prior_application=candidate_app,
+                        parent_prior_application=parent_app,
+                        candidate_prior_runner=candidate_runner,
+                        parent_prior_runner=parent_runner,
+                        input_frames_dbz=torch.zeros((3, 2, 2)),
+                        uncertainty_target=self.uncertainty_target(1),
+                        state_calibration_target=self.state_target(1),
+                        regime_classifier=regime_classifier,
+                        regime_classifier_manifest=(
+                            plan.regime_classifier_manifests[0]
+                        ),
+                        range_grid_x_m=torch.zeros((2, 2)),
+                        range_grid_y_m=torch.zeros((2, 2)),
+                        operational_issuance_domain=self.issuance_domain(1),
+                    )
+
         candidate_runner.probability_contract = NeuralPriorProbabilityContract(
             support_threshold_dbz=35.0,
             support_product_digest="6" * 64,
@@ -13484,19 +13978,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def test_cpu_only_scoring_generation_has_a_stable_backend_contract(self) -> None:
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_CONTRACT,
-            "neural-prior-scoring-replay-bundle-v10",
+            "neural-prior-scoring-replay-bundle-v11",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_METHOD,
-            "builtin-semantic-scoring-recomputation-v10",
+            "builtin-semantic-scoring-recomputation-v11",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD,
             {
-                "contract": "neural-prior-semantic-scoring-generation-v8",
-                "replay_contract": "neural-prior-scoring-replay-bundle-v10",
-                "replay_method": "builtin-semantic-scoring-recomputation-v10",
-                "case_contract": "neural-prior-semantic-scoring-case-v9",
+                "contract": "neural-prior-semantic-scoring-generation-v9",
+                "replay_contract": "neural-prior-scoring-replay-bundle-v11",
+                "replay_method": "builtin-semantic-scoring-recomputation-v11",
+                "case_contract": "neural-prior-semantic-scoring-case-v10",
                 "product_type_policy": "exact-shipped-product-types-v1",
                 "forecast_integrity": "forecast-result-raw-content-validation-v1",
                 "prior_integrity": "runner-reproduced-prior-application-v1",
@@ -13916,6 +14410,46 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             artifact.training_tensor_snapshot_set_digest,
         )
         handle_snapshots = training_handle.tensor_snapshots()
+        streamed_shards = tuple(training_handle.iter_tensor_shards())
+        self.assertEqual(len(streamed_shards), 3)
+        self.assertFalse(hasattr(training_handle, "_tensor_snapshots"))
+        relocated_root = target_path.parent / "relocated-store"
+        relocated_root.mkdir()
+        relocated_feature_path = (
+            relocated_root
+            / dataset.feature_archive_shards[0].relative_content_path
+        )
+        relocated_feature_path.write_bytes(
+            Path(dataset.feature_archive_shards[0].archive_path).read_bytes()
+        )
+        relocated_feature_path.chmod(0o444)
+        relocated_feature_shard = replace(
+            dataset.feature_archive_shards[0],
+            archive_path=str(relocated_feature_path.resolve()),
+        )
+        relocated_dataset = replace(
+            dataset,
+            feature_archive_shards=(relocated_feature_shard,),
+        )
+        self.assertEqual(relocated_dataset.dataset_digest, dataset.dataset_digest)
+        total_archive_bytes = sum(
+            item.archive_size_bytes
+            for item in (
+                *dataset.feature_archive_shards,
+                *dataset.target_archive_shards,
+                dataset.normalization_statistics_shard,
+            )
+        )
+        with self.assertRaisesRegex(ValueError, "aggregate budget"):
+            replace(
+                dataset,
+                maximum_total_archive_bytes=total_archive_bytes - 1,
+            )
+        with self.assertRaisesRegex(ValueError, "manifest|path"):
+            replace(
+                dataset.feature_archive_shards[0],
+                relative_content_path="../forged.npz",
+            )
         corrupted = bytearray(original_target_bytes)
         corrupted[-1] ^= 1
         target_path.chmod(0o600)
@@ -13943,13 +14477,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         finally:
             target_path.write_bytes(original_target_bytes)
             target_path.chmod(0o444)
-        private_name, private_tensor = training_handle._tensor_snapshots[0]
-        self.assertTrue(private_name)
-        retained_private_tensor = private_tensor.clone()
-        private_tensor.data.add_(1.0)
-        with self.assertRaisesRegex(ValueError, "snapshot changed"):
+        retained_payload = training_handle._dataset_payload_json
+        object.__setattr__(
+            training_handle,
+            "_dataset_payload_json",
+            retained_payload.replace("feature_00000", "forged_00000"),
+        )
+        with self.assertRaisesRegex(ValueError, "invalid|snapshot changed"):
             training_handle.tensor_snapshots()
-        private_tensor.data.copy_(retained_private_tensor)
+        object.__setattr__(
+            training_handle,
+            "_dataset_payload_json",
+            retained_payload,
+        )
         training_handle.validate_integrity()
         with self.assertRaisesRegex(ValueError, "shards"):
             replace(dataset, feature_archive_shards=())
@@ -13972,7 +14512,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     replace(dataset.members[0], case_id="wrong-training-case"),
                 ),
             )
-        feature_tensor = torch.arange(12, dtype=torch.float64).reshape(3, 2, 2)
+        feature_tensor = torch.arange(20, dtype=torch.float64).reshape(5, 2, 2)
         target_tensor = torch.arange(4, dtype=torch.float64).reshape(2, 2)
         target_valid_mask = torch.ones_like(target_tensor, dtype=torch.bool)
         target_quality = torch.ones_like(target_tensor)
@@ -13986,7 +14526,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     target_tensor
                 ),
                 observed_at="2026-06-01T00:25:00Z",
+                source_contract_digest="a" * 64,
+                radar_product_scope_digest="b" * 64,
+                trust_store=self.target_source_trust_store(),
                 authority_id="test-target-source-authority",
+                authority_key_epoch=1,
                 authority_private_key=Ed25519PrivateKey.from_private_bytes(
                     b"\x28" * 32
                 ),
@@ -14058,6 +14602,163 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             split="train",
             augmentation_seed=1,
         )
+        first_target = dataset.target_derivations[0]
+        same_event_source = promotion_module.TrainingTargetSourceReceipt.issue(
+            target_source_identity_digest="e" * 64,
+            target_source_valid_time="2026-06-01T00:20:00Z",
+            physical_event_digest=first_target.physical_event_digest,
+            source_object_digest=promotion_module.tensor_digest(target_tensor),
+            observed_at="2026-06-01T00:25:00Z",
+            source_contract_digest="a" * 64,
+            radar_product_scope_digest="b" * 64,
+            trust_store=self.target_source_trust_store(),
+            authority_id="test-target-source-authority",
+            authority_key_epoch=1,
+            authority_private_key=Ed25519PrivateKey.from_private_bytes(
+                b"\x28" * 32
+            ),
+        )
+        same_event_target = (
+            promotion_module.TrainingTargetDerivationArtifact.issue(
+                case_id="classifier-training-case-2",
+                target_source_receipt=same_event_source,
+                target_qc_policy_digest="2" * 64,
+                target_censor_policy_digest="3" * 64,
+                target_algorithm_digest=dataset.target_algorithm_digest,
+                target_schema_digest=dataset.target_schema_digest,
+                target_tensor=target_tensor,
+                target_valid_mask=target_valid_mask,
+                target_quality=target_quality,
+                generated_at="2026-06-01T00:30:00Z",
+                training_cutoff_time="2026-06-01T00:40:00Z",
+                processor_id="test-analysis-processor",
+                processor_private_key=processor_key,
+            )
+        )
+        same_event_validation_member = replace(
+            second_member,
+            split="validation",
+            target_derivation_artifact_json=json.dumps(
+                same_event_target.payload
+                | {"artifact_digest": same_event_target.artifact_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "multiple training splits"):
+            promotion_module.TrainingFeatureDatasetArtifact(
+                members=(first_member, same_event_validation_member),
+                normalization_statistics_digest=(
+                    dataset.normalization_statistics_digest
+                ),
+                feature_algorithm_digest=dataset.feature_algorithm_digest,
+                feature_schema_digest=dataset.feature_schema_digest,
+                target_algorithm_digest=dataset.target_algorithm_digest,
+                target_schema_digest=dataset.target_schema_digest,
+                feature_archive_shards=(order_feature_shard,),
+                target_archive_shards=(order_target_shard,),
+                normalization_statistics_shard=(
+                    dataset.normalization_statistics_shard
+                ),
+                normalization_derivation_artifact_json=(
+                    dataset.normalization_derivation_artifact_json
+                ),
+                normalization_derivation_artifact_digest=(
+                    dataset.normalization_derivation_artifact_digest
+                ),
+            )
+        second_validation_member = replace(second_member, split="validation")
+        validation_normalization = (
+            promotion_module.NormalizationDerivationArtifact.from_training_dataset(
+                members=(first_member, second_validation_member),
+                normalization_shard=dataset.normalization_statistics_shard,
+                channel_definitions=(
+                    "dbz",
+                    "qc_valid",
+                    "quality",
+                    "observation_std",
+                    "source_available",
+                ),
+                normalization_algorithm_digest=(
+                    promotion_module.TRAINING_NORMALIZATION_ALGORITHM_DIGEST
+                ),
+                mask_weight_policy_digest=(
+                    promotion_module
+                    .TRAINING_NORMALIZATION_MASK_WEIGHT_POLICY_DIGEST
+                ),
+            )
+        )
+        validation_dataset = promotion_module.TrainingFeatureDatasetArtifact(
+            members=(first_member, second_validation_member),
+            normalization_statistics_digest=(
+                dataset.normalization_statistics_digest
+            ),
+            feature_algorithm_digest=dataset.feature_algorithm_digest,
+            feature_schema_digest=dataset.feature_schema_digest,
+            target_algorithm_digest=dataset.target_algorithm_digest,
+            target_schema_digest=dataset.target_schema_digest,
+            feature_archive_shards=(order_feature_shard,),
+            target_archive_shards=(order_target_shard,),
+            normalization_statistics_shard=dataset.normalization_statistics_shard,
+            normalization_derivation_artifact_json=(
+                validation_normalization.json
+            ),
+            normalization_derivation_artifact_digest=(
+                validation_normalization.artifact_digest
+            ),
+        )
+        forged_normalization = promotion_module.NormalizationDerivationArtifact(
+            ordered_train_member_digests=tuple(
+                promotion_module.json_digest(item.payload)
+                for item in validation_dataset.members
+            ),
+            train_case_ids=tuple(
+                item.case_id for item in validation_dataset.members
+            ),
+            channel_definitions=validation_normalization.channel_definitions,
+            normalization_algorithm_digest=(
+                validation_normalization.normalization_algorithm_digest
+            ),
+            mask_weight_policy_digest=(
+                validation_normalization.mask_weight_policy_digest
+            ),
+            statistics_tensor_digests=(
+                validation_normalization.statistics_tensor_digests
+            ),
+            normalization_shard_digest=(
+                validation_normalization.normalization_shard_digest
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "train-split exact"):
+            replace(
+                validation_dataset,
+                normalization_derivation_artifact_json=(
+                    forged_normalization.json
+                ),
+                normalization_derivation_artifact_digest=(
+                    forged_normalization.artifact_digest
+                ),
+            )
+        ordered_normalization = (
+            promotion_module.NormalizationDerivationArtifact.from_training_dataset(
+                members=(first_member, second_member),
+                normalization_shard=dataset.normalization_statistics_shard,
+                channel_definitions=(
+                    "dbz",
+                    "qc_valid",
+                    "quality",
+                    "observation_std",
+                    "source_available",
+                ),
+                normalization_algorithm_digest=(
+                    promotion_module.TRAINING_NORMALIZATION_ALGORITHM_DIGEST
+                ),
+                mask_weight_policy_digest=(
+                    promotion_module
+                    .TRAINING_NORMALIZATION_MASK_WEIGHT_POLICY_DIGEST
+                ),
+            )
+        )
         ordered_dataset = promotion_module.TrainingFeatureDatasetArtifact(
             members=(first_member, second_member),
             normalization_statistics_digest=(
@@ -14072,6 +14773,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             normalization_statistics_shard=(
                 dataset.normalization_statistics_shard
             ),
+            normalization_derivation_artifact_json=(
+                ordered_normalization.json
+            ),
+            normalization_derivation_artifact_digest=(
+                ordered_normalization.artifact_digest
+            ),
         )
         order_tampered = ordered_dataset.payload | {
             "dataset_digest": ordered_dataset.dataset_digest
@@ -14079,7 +14786,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         order_tampered["members"] = list(
             reversed(cast(list[object], order_tampered["members"]))
         )
-        with self.assertRaisesRegex(ValueError, "digest mismatch"):
+        with self.assertRaisesRegex(ValueError, "invalid|digest mismatch"):
             promotion_module._training_feature_dataset_from_json(
                 json.dumps(
                     order_tampered,
@@ -14194,7 +14901,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 physical_event_digest="6" * 64,
                 source_object_digest="7" * 64,
                 observed_at="2026-06-01T00:15:00Z",
+                source_contract_digest="a" * 64,
+                radar_product_scope_digest="b" * 64,
+                trust_store=self.target_source_trust_store(),
                 authority_id="test-target-source-authority",
+                authority_key_epoch=1,
                 authority_private_key=Ed25519PrivateKey.from_private_bytes(
                     b"\x28" * 32
                 ),
@@ -14229,6 +14940,76 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 **(common | {"generated_at": common["training_cutoff_time"]}),
                 target_tensor=torch.ones(1),
             )
+        target = torch.tensor([2.0, 0.0])
+        mask = torch.tensor([True, False])
+        quality = torch.tensor([0.5, 0.0])
+        base_loss = promotion_module.weighted_training_target_loss(
+            torch.tensor([4.0, -1_000.0]),
+            target,
+            mask,
+            quality,
+        )
+        changed_invalid_loss = promotion_module.weighted_training_target_loss(
+            torch.tensor([4.0, 1_000.0]),
+            target,
+            mask,
+            quality,
+        )
+        self.assertEqual(float(base_loss), 4.0)
+        self.assertEqual(float(changed_invalid_loss), float(base_loss))
+        with self.assertRaisesRegex(ValueError, "mask/quality"):
+            promotion_module.TrainingTargetDerivationArtifact.issue(
+                **common,
+                target_tensor=target,
+                target_valid_mask=mask,
+                target_quality=torch.tensor([0.5, 1.0]),
+            )
+        with self.assertRaisesRegex(ValueError, "mask/quality"):
+            promotion_module.TrainingTargetDerivationArtifact.issue(
+                **common,
+                target_tensor=target,
+                target_valid_mask=mask,
+                target_quality=torch.zeros_like(target),
+            )
+        with self.assertRaisesRegex(ValueError, "mask/quality"):
+            promotion_module.TrainingTargetDerivationArtifact.issue(
+                **common,
+                target_tensor=torch.tensor([2.0, 3.0]),
+                target_valid_mask=mask,
+                target_quality=quality,
+            )
+        with self.assertRaisesRegex(ValueError, "not approved"):
+            promotion_module.TrainingTargetSourceReceipt.issue(
+                target_source_identity_digest="1" * 64,
+                target_source_valid_time="2026-06-01T00:10:00Z",
+                physical_event_digest="6" * 64,
+                source_object_digest="7" * 64,
+                observed_at="2026-06-01T00:15:00Z",
+                source_contract_digest="c" * 64,
+                radar_product_scope_digest="b" * 64,
+                trust_store=self.target_source_trust_store(),
+                authority_id="test-target-source-authority",
+                authority_key_epoch=1,
+                authority_private_key=Ed25519PrivateKey.from_private_bytes(
+                    b"\x28" * 32
+                ),
+            )
+        source = promotion_module._training_target_source_receipt_from_json(
+            json.dumps(
+                target_source_receipt.payload
+                | {"receipt_digest": target_source_receipt.receipt_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+        with self.assertRaisesRegex(ValueError, "untrusted"):
+            source.validate_against(
+                self.target_source_trust_store(
+                    revoked_at="2026-06-01T00:25:00Z"
+                ),
+                at="2026-06-01T00:30:00Z",
+                require_bound_digest=False,
+            )
 
         outside = self.training_dataset_derivation(
             classifier=True,
@@ -14250,13 +15031,24 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 signed_training_member_manifest_digest=(
                     outside.signed_training_member_manifest_digest
                 ),
+                training_physical_event_digests=tuple(
+                    item.physical_event_digest
+                    for item in outside.target_derivations
+                ),
             )
 
+        candidate_case = self.completed_case(1)
+        candidate_identity = replace(
+            candidate_case.verification_target_identity,
+            source_identity_digest="d" * 64,
+            target_valid_time="2026-07-01T00:10:00Z",
+        )
         candidate_holdout = replace(
-            self.completed_case(1),
-            verification_target_source_identity_digest="d" * 64,
-            verification_target_valid_time="2026-07-01T00:10:00Z",
-            verification_target_tensor_digest="0" * 64,
+            candidate_case,
+            verification_target_identity_artifact_json=candidate_identity.json,
+            verification_target_identity_artifact_digest=(
+                candidate_identity.artifact_digest
+            ),
         )
         with self.assertRaisesRegex(
             ValueError,
@@ -14267,11 +15059,18 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 holdout_cases=(candidate_holdout, self.completed_case(2)),
             )
 
+        classifier_case = self.completed_case(1)
+        classifier_identity = replace(
+            classifier_case.verification_target_identity,
+            source_identity_digest="d" * 64,
+            target_valid_time="2026-06-01T00:10:00Z",
+        )
         classifier_holdout = replace(
-            self.completed_case(1),
-            verification_target_source_identity_digest="d" * 64,
-            verification_target_valid_time="2026-06-01T00:10:00Z",
-            verification_target_tensor_digest="0" * 64,
+            classifier_case,
+            verification_target_identity_artifact_json=classifier_identity.json,
+            verification_target_identity_artifact_digest=(
+                classifier_identity.artifact_digest
+            ),
         )
         with self.assertRaisesRegex(
             ValueError,
@@ -14316,15 +15115,21 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
     def test_training_shard_rejects_oversized_file_before_hashing(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "oversized.npz"
+            archive_sha256 = "0" * 64
+            relative_content_path = f"{archive_sha256}.npz"
+            path = Path(directory) / relative_content_path
             with path.open("wb") as stream:
                 stream.seek(512 * 1024**2)
                 stream.write(b"\0")
             with self.assertRaisesRegex(ValueError, "bytes"):
                 promotion_module.TrainingTensorArchiveShard(
                     shard_id="oversized",
+                    artifact_store_id=(
+                        "advar-content-addressed-training-store-v1"
+                    ),
+                    relative_content_path=relative_content_path,
                     archive_path=str(path.resolve()),
-                    archive_sha256="0" * 64,
+                    archive_sha256=archive_sha256,
                     archive_size_bytes=path.stat().st_size,
                     member_names=("target",),
                     member_tensor_digests=("1" * 64,),
@@ -14668,6 +15473,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
             raw_ingestor_trust_store_digest=(
                 plan.raw_ingestor_trust_store.content_digest
+            ),
+            training_target_source_trust_store_digest=(
+                plan.training_target_source_trust_store.content_digest
             ),
             analysis_processor_id=plan.analysis_processor_id,
             analysis_processor_public_key_hex=(
@@ -15838,6 +16646,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     training_derivation.training_dataset_digest,
                     manifest.candidate_training_manifest_digest,
                     training_derivation.training_tensor_snapshot_set_digest,
+                    training_derivation.normalization_derivation_artifact_digest,
                 ),
                 process_algorithm_digest=manifest.algorithm_bundle_digest,
                 process_runtime_digest=manifest.numerical_runtime_digest,
@@ -15859,6 +16668,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         ),
                         training_tensor_snapshot_set_digest=(
                             training_derivation.training_tensor_snapshot_set_digest
+                        ),
+                        normalization_derivation_artifact_digest=(
+                            training_derivation
+                            .normalization_derivation_artifact_digest
                         ),
                     )
                 ),
@@ -16307,6 +17120,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             "_raw_ingestor_trust_store_path",
             "/etc/advar/raw-ingestors.json",
         )
+        object.__setattr__(
+            forged,
+            "_training_target_source_trust_store_path",
+            "/etc/advar/training-target-sources.json",
+        )
         self.assertFalse(
             hasattr(
                 promotion_module,
@@ -16361,7 +17179,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             forged_decision = {
                 "raw_ingestor_trust_store_digest": (
                     forged_certificate.raw_ingestor_trust_store_digest
-                )
+                ),
+                "training_target_source_trust_store_digest": (
+                    self.plan().training_target_source_trust_store.content_digest
+                ),
             }
             with patch.object(
                 promotion_module,
@@ -16371,6 +17192,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ledger_module,
                 "_load_raw_ingestor_trust_store",
                 return_value=self.plan().raw_ingestor_trust_store,
+            ), patch.object(
+                ledger_module,
+                "_load_training_target_source_trust_store",
+                return_value=(
+                    self.plan().training_target_source_trust_store
+                ),
             ):
                 with self.assertRaisesRegex(ValueError, "committed publication"):
                     forged._validate_committed_decision(
