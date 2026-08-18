@@ -461,7 +461,10 @@ def _runtime_tree_snapshot(
                 or located.suffix == ".pth"
                 or located.name in {"sitecustomize.py", "usercustomize.py"}
             ):
-                raise ValueError("deployment runtime contains an import hook")
+                raise ValueError(
+                    "deployment runtime contains a forbidden import artifact: "
+                    f"site-{root_index}/{relative.as_posix()}"
+                )
             owner = claimed_paths.get((root, relative.as_posix()))
             if owner is None:
                 raise ValueError("deployment runtime contains an unowned file")

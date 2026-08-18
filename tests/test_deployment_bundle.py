@@ -110,7 +110,7 @@ class DeploymentBundleTests(unittest.TestCase):
                     ),
                     self.assertRaisesRegex(
                         ValueError,
-                        "import hook|bytecode cache|unowned file",
+                        "forbidden import artifact|unowned file",
                     ),
                 ):
                     bundle_module._runtime_tree_snapshot(
