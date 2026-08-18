@@ -48,10 +48,22 @@ class DeploymentBundleTests(unittest.TestCase):
             site = root / "venv/lib/python3.12/site-packages"
             torch_package = site / "torch"
             advar_package = site / "advar"
+            torch_metadata = site / "torch-2.13.0+cpu.dist-info"
+            advar_metadata = site / "advar_radar_nowcast-0.91.0.dist-info"
             torch_package.mkdir(parents=True)
             advar_package.mkdir()
+            torch_metadata.mkdir()
+            advar_metadata.mkdir()
             (torch_package / "__init__.py").write_text("", encoding="utf-8")
             (advar_package / "__init__.py").write_text("", encoding="utf-8")
+            (torch_metadata / "RECORD").write_text(
+                "../../../bin/torchrun,venv-specific-hash,1\n",
+                encoding="utf-8",
+            )
+            (advar_metadata / "direct_url.json").write_text(
+                '{"url":"file:///venv-specific-wheel-path"}',
+                encoding="utf-8",
+            )
 
             class FakeDistribution:
                 def __init__(self, version: str, files: list[Path]) -> None:
@@ -64,11 +76,21 @@ class DeploymentBundleTests(unittest.TestCase):
             distributions = {
                 "torch": FakeDistribution(
                     "2.13.0+cpu",
-                    [Path("torch/__init__.py"), Path("../../../bin/torchrun")],
+                    [
+                        Path("torch/__init__.py"),
+                        Path("torch-2.13.0+cpu.dist-info/RECORD"),
+                        Path("../../../bin/torchrun"),
+                    ],
                 ),
                 "advar-radar-nowcast": FakeDistribution(
                     "0.91.0",
-                    [Path("advar/__init__.py")],
+                    [
+                        Path("advar/__init__.py"),
+                        Path(
+                            "advar_radar_nowcast-0.91.0.dist-info/"
+                            "direct_url.json"
+                        ),
+                    ],
                 ),
             }
             with (

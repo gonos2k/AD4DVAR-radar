@@ -245,6 +245,11 @@ def _runtime_tree_snapshot(
                 or ".." in relative.parts
                 or "__pycache__" in relative.parts
                 or located.suffix == ".pyc"
+                or (
+                    len(relative.parts) >= 2
+                    and relative.parts[-2].endswith(".dist-info")
+                    and relative.name in {"RECORD", "direct_url.json"}
+                )
             ):
                 continue
             try:
