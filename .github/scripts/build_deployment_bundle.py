@@ -646,6 +646,37 @@ def _validate_runtime_tree_snapshot(value: object) -> dict[str, object]:
     return value
 
 
+def _runtime_tree_mismatch_fields(
+    expected: dict[str, object],
+    current: dict[str, object],
+) -> tuple[str, ...]:
+    """Return only schema field names, never runtime paths or file digests."""
+    mismatches: list[str] = []
+    for name in sorted(set(expected) | set(current)):
+        if name == "runtime_tree_digest" or expected.get(name) == current.get(name):
+            continue
+        if name != "interpreter_closure":
+            mismatches.append(name)
+            continue
+        expected_interpreter = expected.get(name)
+        current_interpreter = current.get(name)
+        if not isinstance(expected_interpreter, dict) or not isinstance(
+            current_interpreter, dict
+        ):
+            mismatches.append(name)
+            continue
+        for interpreter_name in sorted(
+            set(expected_interpreter) | set(current_interpreter)
+        ):
+            if interpreter_name == "interpreter_closure_digest":
+                continue
+            if expected_interpreter.get(interpreter_name) != current_interpreter.get(
+                interpreter_name
+            ):
+                mismatches.append(f"{name}.{interpreter_name}")
+    return tuple(mismatches)
+
+
 def _validate_identity(
     *,
     source_commit: str,
@@ -1113,15 +1144,19 @@ def verify_current_installation(bundle: Path) -> str:
         "platform_machine": platform.machine(),
         "python_abi": sys.implementation.cache_tag,
     }
+    runtime_mismatches = _runtime_tree_mismatch_fields(runtime_tree, current)
     if (
-        current != runtime_tree
+        runtime_mismatches
         or any(installation.get(name) != value for name, value in expected_platform.items())
         or platform.system() != "Linux"
         or manifest.get("python_tag")
         != f"py{sys.version_info.major}{sys.version_info.minor}"
         or manifest.get("platform") != f"linux-{platform.machine()}-cpu"
     ):
-        raise ValueError("installed runtime disagrees with the deployment bundle")
+        detail = ", ".join(runtime_mismatches) or "platform_identity"
+        raise ValueError(
+            "installed runtime disagrees with the deployment bundle: " + detail
+        )
     interpreter = runtime_tree["interpreter_closure"]
     assert isinstance(interpreter, dict)
     runtime_mode: BundleMode = (

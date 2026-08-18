@@ -40,6 +40,31 @@ def _write_test_wheel(
 
 
 class DeploymentBundleTests(unittest.TestCase):
+    def test_runtime_tree_mismatch_diagnostic_exposes_only_field_names(
+        self,
+    ) -> None:
+        expected = {
+            "runtime_tree_digest": "a" * 64,
+            "files": [{"path": "site-0/private-name.py", "sha256": "b" * 64}],
+            "interpreter_closure": {
+                "interpreter_closure_digest": "c" * 64,
+                "native_libraries": [{"path": "/private/runtime.so"}],
+            },
+        }
+        current = {
+            "runtime_tree_digest": "d" * 64,
+            "files": [{"path": "site-0/other-private-name.py", "sha256": "e" * 64}],
+            "interpreter_closure": {
+                "interpreter_closure_digest": "f" * 64,
+                "native_libraries": [{"path": "/other/private/runtime.so"}],
+            },
+        }
+
+        self.assertEqual(
+            bundle_module._runtime_tree_mismatch_fields(expected, current),
+            ("files", "interpreter_closure.native_libraries"),
+        )
+
     def test_runtime_tree_rejects_import_hooks_shadow_files_and_extra_distributions(
         self,
     ) -> None:
