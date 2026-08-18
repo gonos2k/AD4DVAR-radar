@@ -369,8 +369,6 @@ def _runtime_tree_snapshot(
         for located in sorted(root.rglob("*"), key=lambda item: item.as_posix()):
             metadata = _require_runtime_permissions(located, deployable=deployable)
             if stat.S_ISDIR(metadata.st_mode):
-                if located.name == "__pycache__":
-                    raise ValueError("deployment runtime contains bytecode cache")
                 continue
             relative = located.relative_to(root)
             if (

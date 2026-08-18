@@ -84,6 +84,7 @@ class RuntimeClosureTests(unittest.TestCase):
             source = root / "advar/__init__.py"
             source.parent.mkdir(parents=True)
             source.write_text("", encoding="utf-8")
+            (root / "advar/__pycache__").mkdir()
             distribution = _FakeDistribution(
                 root,
                 "advar-radar-nowcast",
