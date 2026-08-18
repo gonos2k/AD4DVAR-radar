@@ -40,6 +40,39 @@ def _write_test_wheel(
 
 
 class DeploymentBundleTests(unittest.TestCase):
+    def test_public_lock_accepts_exact_hashed_local_cpu_wheel(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            wheelhouse = root / "wheelhouse"
+            wheelhouse.mkdir()
+            torch_wheel = wheelhouse / "torch-2.13.0+cpu-py3-none-any.whl"
+            _write_test_wheel(
+                torch_wheel,
+                distribution="torch",
+                version="2.13.0+cpu",
+            )
+            locked = [
+                {
+                    "name": "torch",
+                    "version": "2.13.0",
+                    "sha256": [bundle_module._sha256(torch_wheel)],
+                }
+            ]
+
+            self.assertEqual(
+                bundle_module._validate_wheelhouse(wheelhouse, locked),
+                [
+                    {
+                        "name": "torch",
+                        "locked_version": "2.13.0",
+                        "wheel_version": "2.13.0+cpu",
+                        "filename": torch_wheel.name,
+                        "size_bytes": torch_wheel.stat().st_size,
+                        "sha256": bundle_module._sha256(torch_wheel),
+                    }
+                ],
+            )
+
     def test_bundle_seals_wheel_lock_sbom_audit_and_installation(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

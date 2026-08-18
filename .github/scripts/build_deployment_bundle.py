@@ -125,6 +125,23 @@ def _wheel_identity(path: Path) -> tuple[str, str]:
     return _normalized_distribution_name(name), version
 
 
+def _wheel_version_matches_lock(
+    *,
+    locked_version: str,
+    wheel_version: str,
+) -> bool:
+    """Match PEP 440 public pins while preserving an authenticated local tag."""
+    if wheel_version == locked_version:
+        return True
+    if "+" in locked_version:
+        return False
+    return re.fullmatch(
+        rf"{re.escape(locked_version)}\+[a-z0-9]+(?:[._-][a-z0-9]+)*",
+        wheel_version,
+        flags=re.IGNORECASE,
+    ) is not None
+
+
 def _validate_wheelhouse(
     wheelhouse: Path,
     locked: list[dict[str, object]],
@@ -149,7 +166,10 @@ def _validate_wheelhouse(
         if (
             package is None
             or name in seen
-            or version != package["version"]
+            or not _wheel_version_matches_lock(
+                locked_version=str(package["version"]),
+                wheel_version=version,
+            )
             or not isinstance(allowed_hashes, list)
             or digest not in allowed_hashes
         ):
@@ -158,7 +178,8 @@ def _validate_wheelhouse(
         selected.append(
             {
                 "name": name,
-                "version": version,
+                "locked_version": str(package["version"]),
+                "wheel_version": version,
                 "filename": wheel.name,
                 "size_bytes": wheel.stat().st_size,
                 "sha256": digest,
@@ -171,15 +192,15 @@ def _validate_wheelhouse(
 
 def _runtime_tree_snapshot(
     *,
-    locked: list[dict[str, object]],
+    selected_wheels: list[dict[str, object]],
     application_version: str,
 ) -> dict[str, object]:
     distributions = [
         {
             "name": _normalized_distribution_name(str(item["name"])),
-            "version": str(item["version"]),
+            "version": str(item["wheel_version"]),
         }
-        for item in locked
+        for item in selected_wheels
     ] + [
         {"name": "advar-radar-nowcast", "version": application_version}
     ]
@@ -439,7 +460,7 @@ def build_bundle(
         raise ValueError("application wheel disagrees with the installed runtime")
     runtime_tree = _validate_runtime_tree_snapshot(
         _runtime_tree_snapshot(
-            locked=locked,
+            selected_wheels=selected_wheels,
             application_version=package_version,
         )
     )
@@ -474,13 +495,18 @@ def build_bundle(
                 {
                     "type": "library",
                     "name": item["name"],
-                    "version": item["version"],
+                    "version": item["wheel_version"],
                     "hashes": [
-                        {"alg": "SHA-256", "content": digest}
-                        for digest in item["sha256"]
+                        {"alg": "SHA-256", "content": item["sha256"]}
+                    ],
+                    "properties": [
+                        {
+                            "name": "advar:locked-public-version",
+                            "value": item["locked_version"],
+                        }
                     ],
                 }
-                for item in locked
+                for item in selected_wheels
             ],
         },
     )
@@ -696,7 +722,10 @@ def verify_bundle(
         raise ValueError("deployment application wheel identity is invalid")
     expected_distributions = sorted(
         [
-            {"name": str(item["name"]), "version": str(item["version"])}
+            {
+                "name": str(item["name"]),
+                "version": str(item["wheel_version"]),
+            }
             for item in selected_wheels
         ]
         + [
@@ -734,9 +763,15 @@ def verify_current_installation(bundle: Path) -> str:
     ]
     if len(lock_names) != 1:
         raise ValueError("deployment bundle lock identity is invalid")
+    selected_wheels = _validate_wheelhouse(
+        bundle / "wheelhouse",
+        _locked_packages(bundle / lock_names[0]),
+    )
+    if selected_wheels != manifest.get("wheelhouse"):
+        raise ValueError("deployment bundle wheelhouse manifest is invalid")
     current = _validate_runtime_tree_snapshot(
         _runtime_tree_snapshot(
-            locked=_locked_packages(bundle / lock_names[0]),
+            selected_wheels=selected_wheels,
             application_version=str(manifest.get("package_version", "")),
         )
     )
