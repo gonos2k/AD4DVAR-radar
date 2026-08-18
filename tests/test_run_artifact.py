@@ -71,6 +71,12 @@ class ForecastRunArtifactTests(unittest.TestCase):
         )
         target_trust_patch.start()
         self.addCleanup(target_trust_patch.stop)
+        runtime_closure_patch = patch.object(
+            promotion_module,
+            "validate_current_runtime_closure",
+        )
+        runtime_closure_patch.start()
+        self.addCleanup(runtime_closure_patch.stop)
 
     class _Prior(nn.Module):
         def __init__(self) -> None:
@@ -169,34 +175,57 @@ class ForecastRunArtifactTests(unittest.TestCase):
         ledger_key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
         promotion_key = Ed25519PrivateKey.from_private_bytes(b"\x04" * 32)
         operational_key = Ed25519PrivateKey.from_private_bytes(b"\x05" * 32)
+        runtime_activation_key = Ed25519PrivateKey.from_private_bytes(
+            b"\x06" * 32
+        )
         return promotion_module._PromotionDeploymentAuthorityTrustStore(
             keys={
                 "test-ledger": ledger_key.public_key(),
                 "test-promotion": promotion_key.public_key(),
                 "test-operational": operational_key.public_key(),
+                "test-runtime-activation": (
+                    runtime_activation_key.public_key()
+                ),
             },
             content_digest="7" * 64,
             roles={
                 "test-ledger": frozenset({"ledger_issuance"}),
                 "test-promotion": frozenset({"promotion_certificate"}),
                 "test-operational": frozenset({"operational_decision"}),
+                "test-runtime-activation": frozenset({"runtime_activation"}),
             },
             not_before={
                 name: "2026-01-01T00:00:00+00:00"
-                for name in ("test-ledger", "test-promotion", "test-operational")
+                for name in (
+                    "test-ledger",
+                    "test-promotion",
+                    "test-operational",
+                    "test-runtime-activation",
+                )
             },
             not_after={
                 name: "2027-01-01T00:00:00+00:00"
-                for name in ("test-ledger", "test-promotion", "test-operational")
+                for name in (
+                    "test-ledger",
+                    "test-promotion",
+                    "test-operational",
+                    "test-runtime-activation",
+                )
             },
             revoked_at={
                 name: None
-                for name in ("test-ledger", "test-promotion", "test-operational")
+                for name in (
+                    "test-ledger",
+                    "test-promotion",
+                    "test-operational",
+                    "test-runtime-activation",
+                )
             },
             ledger_instance_digests={
                 "test-ledger": frozenset({"6" * 64}),
                 "test-promotion": frozenset(),
                 "test-operational": frozenset(),
+                "test-runtime-activation": frozenset(),
             },
         )
 
@@ -280,6 +309,30 @@ class ForecastRunArtifactTests(unittest.TestCase):
             fixed_signing_time=cast(str, artifact["input_available_time"]),
         )
         accepted_at = ledger_signer.signing_time()
+        runtime_signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+            "test-runtime-activation",
+            Ed25519PrivateKey.from_private_bytes(b"\x06" * 32),
+            fixed_signing_time=accepted_at,
+        )
+        runtime_activation_receipt = (
+            promotion_module._issue_deployment_runtime_activation_receipt(
+                deployment_bundle_digest="a" * 64,
+                runtime_tree_digest="b" * 64,
+                interpreter_closure_digest="c" * 64,
+                installation_attestation_sha256="d" * 64,
+                deployment_instance_digest="e" * 64,
+                host_identity_digest="f" * 64,
+                runtime_mode="deployable",
+                activation_sequence_number=1,
+                expires_at="2031-01-01T00:00:00Z",
+                signer=runtime_signer,
+                authority_trust_store=cls._deployment_certificate_trust(),
+            )
+        )
+        artifact["deployment_runtime_activation_receipt"] = (
+            runtime_activation_receipt.payload
+            | {"receipt_digest": runtime_activation_receipt.receipt_digest}
+        )
         commit_entry_digest, committed_chain_root_digest = (
             promotion_module._operational_decision_commit_digests(
                 artifact,
@@ -322,6 +375,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 range_partition_evidence=None,
                 range_geometry_contract=None,
                 ledger_receipt=ledger_receipt,
+                deployment_runtime_activation_receipt=(
+                    runtime_activation_receipt
+                ),
                 signer=signer,
                 authority_trust_store=cls._deployment_certificate_trust(),
             )
@@ -722,7 +778,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact = {
-            "contract": "neural-prior-deployment-decision-artifact-v17",
+            "contract": "neural-prior-deployment-decision-artifact-v18",
             "routing_semantic_replay_verified": False,
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "analysis_input_derivation_artifact_digest": (
@@ -2034,7 +2090,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v17",
+            "contract": "neural-prior-deployment-decision-artifact-v18",
             "routing_semantic_replay_verified": False,
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "analysis_input_derivation_artifact_digest": (
@@ -2168,6 +2224,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 return_value=self._deployment_certificate_trust(),
             ), patch.object(
                 promotion_module,
+                "validate_current_runtime_closure",
+            ), patch.object(
+                promotion_module,
                 "_load_learning_policy_trust_store",
                 return_value=self._deployment_policy_trust(
                     selection.deployment_decision_artifact_json
@@ -2219,6 +2278,36 @@ class ForecastRunArtifactTests(unittest.TestCase):
                         "/etc/advar/training-target-sources.json"
                     ),
                 )
+                deployment_trust = self._deployment_certificate_trust()
+                deployment_revocations = dict(deployment_trust.revoked_at)
+                deployment_revocations[
+                    "test-runtime-activation"
+                ] = "2026-08-10T00:00:00Z"
+                with patch.object(
+                    promotion_module,
+                    "_load_promotion_deployment_authority_trust_store",
+                    return_value=replace(
+                        deployment_trust,
+                        revoked_at=deployment_revocations,
+                    ),
+                ), self.assertRaisesRegex(
+                    ValueError, "runtime_activation authority"
+                ):
+                    load_forecast_run(
+                        path,
+                        deployment_certificate_trust_store_path=(
+                            "/etc/advar/deployment-authorities.json"
+                        ),
+                        deployment_policy_trust_store_path=(
+                            "/etc/advar/deployment-policies.json"
+                        ),
+                        raw_ingestor_trust_store_path=(
+                            "/etc/advar/raw-ingestors.json"
+                        ),
+                        training_target_source_trust_store_path=(
+                            "/etc/advar/training-target-sources.json"
+                        ),
+                    )
                 with patch.object(
                     ledger_module,
                     "_load_raw_ingestor_trust_store",

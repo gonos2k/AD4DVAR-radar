@@ -195,6 +195,7 @@ from .promotion import (
     RangePartitionEvidence,
     LedgeredPromotionDeploymentCertificate,
     DeployedNeuralPriorPolicy,
+    DeploymentRuntimeActivationReceipt,
     OperationalDeploymentDecisionCertificate,
     OperationalDecisionPublicationReceipt,
     OperationalDecisionActivationReceipt,
@@ -209,12 +210,15 @@ from .promotion import (
     _ledgered_promotion_deployment_certificate_from_payload,
     _load_promotion_deployment_authority_trust_store,
     _trusted_authority_key,
+    _validate_deployment_runtime_activation_receipt,
+    _deployment_runtime_activation_receipt_from_payload,
     _validate_ledgered_promotion_deployment_certificate,
     _issue_operational_decision_ledger_receipt,
     _operational_decision_ledger_receipt_from_payload,
     _issue_operational_deployment_decision_certificate,
     _replay_operational_deployment_selection,
     _operational_deployment_decision_certificate_from_payload,
+    _validate_operational_deployment_decision_certificate,
     _issue_operational_decision_publication_receipt,
     _operational_decision_publication_receipt_from_payload,
     _validate_operational_decision_publication_receipt,
@@ -289,7 +293,7 @@ _EXECUTOR_TRUST_STORE_CONTRACT = "advar-executor-trust-store-v2"
 _OPERATOR_TRUST_STORE_CONTRACT = "advar-operator-trust-store-v1"
 _SCHEDULER_TRUST_STORE_CONTRACT = "advar-trusted-scheduler-store-v1"
 _EPISODE_FILES = {"manifest.json", "sensitivity_arrays.npz"}
-_INDEX_SCHEMA_VERSION = 40
+_INDEX_SCHEMA_VERSION = 41
 _EPISODE_SCHEMA_VERSION = 18
 _MODEL_CONTRACT_SCHEMA_VERSION = 11
 _RAW_TRUST_ACTIVATION_KINDS = frozenset(
@@ -11509,6 +11513,9 @@ class EpisodeLedger:
         self,
         decision_payload: dict[str, object],
         *,
+        deployment_runtime_activation_receipt: (
+            DeploymentRuntimeActivationReceipt
+        ),
         promotion_deployment_certificate: LedgeredPromotionDeploymentCertificate,
         promotion_evidence: NeuralPriorPromotionEvidence,
         policy: DeployedNeuralPriorPolicy,
@@ -11537,6 +11544,24 @@ class EpisodeLedger:
         authority_trust = _load_promotion_deployment_authority_trust_store(
             authority_trust_store_path
         )
+        _validate_deployment_runtime_activation_receipt(
+            deployment_runtime_activation_receipt,
+            authority_trust_store=authority_trust,
+            required_valid_through=str(decision_payload.get("publication_time", "")),
+            require_current_runtime=True,
+        )
+        if (
+            decision_payload.get("deployment_runtime_activation_receipt")
+            != deployment_runtime_activation_receipt.payload
+            | {
+                "receipt_digest": (
+                    deployment_runtime_activation_receipt.receipt_digest
+                )
+            }
+        ):
+            raise ValueError(
+                "operational decision requires its exact runtime activation"
+            )
         current_raw_ingestor_trust = _load_raw_ingestor_trust_store(
             raw_ingestor_trust_store_path
         )
@@ -11989,6 +12014,44 @@ class EpisodeLedger:
                 "WHERE operational_cycle_id = ?",
                 (operational_cycle_id,),
             ).fetchone()
+            retained_runtime = connection.execute(
+                "SELECT receipt_json FROM deployment_runtime_activations "
+                "WHERE receipt_digest = ?",
+                (deployment_runtime_activation_receipt.receipt_digest,),
+            ).fetchone()
+            canonical_runtime_receipt = json.dumps(
+                deployment_runtime_activation_receipt.payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            if retained_runtime is None:
+                connection.execute(
+                    "INSERT INTO deployment_runtime_activations "
+                    "(receipt_digest,deployment_bundle_digest,"
+                    "runtime_tree_digest,interpreter_closure_digest,"
+                    "deployment_instance_digest,host_identity_digest,"
+                    "activation_sequence_number,receipt_json,activated_at,"
+                    "expires_at,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        deployment_runtime_activation_receipt.receipt_digest,
+                        deployment_runtime_activation_receipt
+                        .deployment_bundle_digest,
+                        deployment_runtime_activation_receipt.runtime_tree_digest,
+                        deployment_runtime_activation_receipt
+                        .interpreter_closure_digest,
+                        deployment_runtime_activation_receipt
+                        .deployment_instance_digest,
+                        deployment_runtime_activation_receipt.host_identity_digest,
+                        deployment_runtime_activation_receipt
+                        .activation_sequence_number,
+                        canonical_runtime_receipt,
+                        deployment_runtime_activation_receipt.activated_at,
+                        deployment_runtime_activation_receipt.expires_at,
+                        deployment_runtime_activation_receipt.activated_at,
+                    ),
+                )
+            elif retained_runtime[0] != canonical_runtime_receipt:
+                raise ValueError("deployment runtime activation equivocated")
             if retained is None:
                 prepared_at = datetime.now(timezone.utc)
                 if prepared_at > deadline:
@@ -11998,12 +12061,14 @@ class EpisodeLedger:
                 connection.execute(
                     "INSERT INTO operational_decision_issuance_states "
                     "(operational_cycle_id,input_plan_digest,"
-                    "promotion_certificate_digest,decision_payload_json,status,"
-                    "prepared_at,updated_at) VALUES (?,?,?,?,?,?,?)",
+                    "promotion_certificate_digest,runtime_activation_receipt_digest,"
+                    "decision_payload_json,status,prepared_at,updated_at) "
+                    "VALUES (?,?,?,?,?,?,?,?)",
                     (
                         operational_cycle_id,
                         input_plan_digest,
                         promotion_deployment_certificate.certificate_digest,
+                        deployment_runtime_activation_receipt.receipt_digest,
                         canonical_decision,
                         "prepared",
                         prepared_at.isoformat(),
@@ -12015,6 +12080,8 @@ class EpisodeLedger:
                     retained["input_plan_digest"] != input_plan_digest
                     or retained["promotion_certificate_digest"]
                     != promotion_deployment_certificate.certificate_digest
+                    or retained["runtime_activation_receipt_digest"]
+                    != deployment_runtime_activation_receipt.receipt_digest
                     or retained["decision_payload_json"] != canonical_decision
                 ):
                     raise ValueError("operational cycle id was reused")
@@ -12173,6 +12240,9 @@ class EpisodeLedger:
                 )
                 certificate = _issue_operational_deployment_decision_certificate(
                     decision_payload,
+                    deployment_runtime_activation_receipt=(
+                        deployment_runtime_activation_receipt
+                    ),
                     promotion_deployment_certificate=(
                         promotion_deployment_certificate
                     ),
@@ -12235,14 +12305,16 @@ class EpisodeLedger:
                     "INSERT INTO operational_deployment_decisions_v2 "
                     "(certificate_digest,ledger_instance_digest,sequence_number,"
                     "previous_certificate_digest,promotion_certificate_digest,"
-                    "input_plan_digest,commit_entry_digest,receipt_digest,"
-                    "payload_json,recorded_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                    "runtime_activation_receipt_digest,input_plan_digest,"
+                    "commit_entry_digest,receipt_digest,payload_json,recorded_at) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                     (
                         certificate.certificate_digest,
                         certificate.ledger_instance_digest,
                         certificate.ledger_sequence_number,
                         certificate.previous_operational_decision_digest,
                         certificate.promotion_deployment_certificate_digest,
+                        certificate.deployment_runtime_activation_receipt_digest,
                         certificate.input_plan_digest,
                         commit_entry_digest,
                         receipt.receipt_digest,
@@ -13065,6 +13137,9 @@ class EpisodeLedger:
         self,
         decision_payload: dict[str, object],
         *,
+        deployment_runtime_activation_receipt: (
+            DeploymentRuntimeActivationReceipt
+        ),
         promotion_deployment_certificate: LedgeredPromotionDeploymentCertificate,
         promotion_evidence: NeuralPriorPromotionEvidence,
         policy: DeployedNeuralPriorPolicy,
@@ -13208,6 +13283,9 @@ class EpisodeLedger:
             )
         certificate = _issue_operational_deployment_decision_certificate(
                 decision_payload,
+                deployment_runtime_activation_receipt=(
+                    deployment_runtime_activation_receipt
+                ),
                 promotion_deployment_certificate=promotion_deployment_certificate,
                 promotion_evidence=promotion_evidence,
                 policy=policy,
@@ -13269,14 +13347,16 @@ class EpisodeLedger:
                     "INSERT INTO operational_deployment_decisions_v2 "
                     "(certificate_digest,ledger_instance_digest,sequence_number,"
                     "previous_certificate_digest,promotion_certificate_digest,"
-                    "input_plan_digest,commit_entry_digest,receipt_digest,"
-                    "payload_json,recorded_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                    "runtime_activation_receipt_digest,input_plan_digest,"
+                    "commit_entry_digest,receipt_digest,payload_json,recorded_at) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                     (
                         certificate.certificate_digest,
                         certificate.ledger_instance_digest,
                         certificate.ledger_sequence_number,
                         certificate.previous_operational_decision_digest,
                         certificate.promotion_deployment_certificate_digest,
+                        certificate.deployment_runtime_activation_receipt_digest,
                         certificate.input_plan_digest,
                         commit_entry_digest,
                         receipt.receipt_digest,
@@ -13377,6 +13457,14 @@ class EpisodeLedger:
             separators=(",", ":"),
         )
         canonical_receipt = certificate.operational_ledger_receipt_payload_json
+        authority_trust = _load_promotion_deployment_authority_trust_store(
+            authority_trust_store_path
+        )
+        _validate_operational_deployment_decision_certificate(
+            certificate,
+            decision_payload=decision_payload,
+            authority_trust_store=authority_trust,
+        )
         with EpisodeLedger._connect_approved_index(
             expected_index_path
         ) as connection:
@@ -13396,7 +13484,9 @@ class EpisodeLedger:
                 "a.receipt_json AS activation_receipt_json,"
                 "o.receipt_digest AS commit_authorization_receipt_digest,"
                 "o.receipt_json AS commit_authorization_receipt_json,"
-                "o.terminal_commit_authorized_at "
+                "o.terminal_commit_authorized_at,"
+                "r.receipt_json AS runtime_activation_receipt_json,"
+                "r.expires_at AS runtime_activation_expires_at "
                 "FROM operational_deployment_decisions_v2 AS d "
                 "JOIN operational_decision_commit_proofs AS p "
                 "ON p.receipt_digest = d.receipt_digest "
@@ -13410,6 +13500,8 @@ class EpisodeLedger:
                 "ON a.certificate_digest = d.certificate_digest "
                 "JOIN operational_decision_commit_authorization_receipts AS o "
                 "ON o.certificate_digest = d.certificate_digest "
+                "JOIN deployment_runtime_activations AS r "
+                "ON r.receipt_digest = d.runtime_activation_receipt_digest "
                 "WHERE d.certificate_digest = ?",
                 (certificate.certificate_digest,),
             ).fetchone()
@@ -13452,6 +13544,18 @@ class EpisodeLedger:
             ledger_receipt = _operational_decision_ledger_receipt_from_payload(
                 ledger_receipt_payload
             )
+            runtime_payload = json.loads(
+                "" if row is None else str(
+                    row["runtime_activation_receipt_json"]
+                )
+            )
+            if not isinstance(runtime_payload, dict):
+                raise ValueError
+            runtime_receipt = (
+                _deployment_runtime_activation_receipt_from_payload(
+                    runtime_payload
+                )
+            )
         except (json.JSONDecodeError, TypeError, ValueError) as error:
             raise ValueError(
                 "operational decision lacks its committed publication receipt"
@@ -13473,6 +13577,12 @@ class EpisodeLedger:
             != certificate.previous_operational_decision_digest
             or row["promotion_certificate_digest"]
             != certificate.promotion_deployment_certificate_digest
+            or row["runtime_activation_receipt_digest"]
+            != certificate.deployment_runtime_activation_receipt_digest
+            or runtime_receipt.receipt_digest
+            != certificate.deployment_runtime_activation_receipt_digest
+            or row["runtime_activation_expires_at"]
+            != runtime_receipt.expires_at
             or row["input_plan_digest"] != certificate.input_plan_digest
             or row["publication_receipt_digest"]
             != publication_receipt.receipt_digest
@@ -13543,21 +13653,21 @@ class EpisodeLedger:
             activation_receipt,
             certificate=certificate,
             publication_receipt=publication_receipt,
-            authority_trust_store=(
-                _load_promotion_deployment_authority_trust_store(
-                    authority_trust_store_path
-                )
-            ),
+            authority_trust_store=authority_trust,
         )
         _validate_operational_decision_commit_authorization_receipt(
             commit_authorization_receipt,
             certificate=certificate,
             activation_receipt=activation_receipt,
-            authority_trust_store=(
-                _load_promotion_deployment_authority_trust_store(
-                    authority_trust_store_path
-                )
-            ),
+            authority_trust_store=authority_trust,
+        )
+        _validate_deployment_runtime_activation_receipt(
+            runtime_receipt,
+            authority_trust_store=authority_trust,
+            required_valid_through=datetime.now(timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z"),
+            require_current_runtime=True,
         )
         return (
             publication_receipt,
@@ -13581,6 +13691,9 @@ class EpisodeLedger:
         def issue(
             decision_payload: dict[str, object],
             *,
+            deployment_runtime_activation_receipt: (
+                DeploymentRuntimeActivationReceipt
+            ),
             promotion_deployment_certificate: LedgeredPromotionDeploymentCertificate,
             promotion_evidence: NeuralPriorPromotionEvidence,
             policy: DeployedNeuralPriorPolicy,
@@ -13597,6 +13710,9 @@ class EpisodeLedger:
         ) -> OperationalDeploymentDecisionCertificate:
             return self.issue_operational_deployment_decision(
                 decision_payload,
+                deployment_runtime_activation_receipt=(
+                    deployment_runtime_activation_receipt
+                ),
                 promotion_deployment_certificate=promotion_deployment_certificate,
                 promotion_evidence=promotion_evidence,
                 policy=policy,
@@ -15916,10 +16032,34 @@ class EpisodeLedger:
                 )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS deployment_runtime_activations (
+                    receipt_digest TEXT PRIMARY KEY,
+                    deployment_bundle_digest TEXT NOT NULL,
+                    runtime_tree_digest TEXT NOT NULL,
+                    interpreter_closure_digest TEXT NOT NULL,
+                    deployment_instance_digest TEXT NOT NULL,
+                    host_identity_digest TEXT NOT NULL,
+                    activation_sequence_number INTEGER NOT NULL CHECK (
+                        activation_sequence_number > 0
+                    ),
+                    receipt_json TEXT NOT NULL,
+                    activated_at TEXT NOT NULL,
+                    expires_at TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    UNIQUE (
+                        deployment_instance_digest,
+                        activation_sequence_number
+                    )
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS operational_decision_issuance_states (
                     operational_cycle_id TEXT PRIMARY KEY,
                     input_plan_digest TEXT NOT NULL UNIQUE,
                     promotion_certificate_digest TEXT NOT NULL,
+                    runtime_activation_receipt_digest TEXT NOT NULL,
                     decision_payload_json TEXT NOT NULL,
                     status TEXT NOT NULL CHECK (
                         status IN (
@@ -15936,7 +16076,9 @@ class EpisodeLedger:
                     FOREIGN KEY (promotion_certificate_digest)
                         REFERENCES neural_prior_promotion_deployment_certificates_v3(
                             certificate_digest
-                        )
+                        ),
+                    FOREIGN KEY (runtime_activation_receipt_digest)
+                        REFERENCES deployment_runtime_activations(receipt_digest)
                 )
                 """
             )
@@ -15980,6 +16122,7 @@ class EpisodeLedger:
                     sequence_number INTEGER NOT NULL UNIQUE CHECK(sequence_number > 0),
                     previous_certificate_digest TEXT NOT NULL UNIQUE,
                     promotion_certificate_digest TEXT NOT NULL,
+                    runtime_activation_receipt_digest TEXT NOT NULL,
                     input_plan_digest TEXT NOT NULL UNIQUE,
                     commit_entry_digest TEXT NOT NULL UNIQUE,
                     receipt_digest TEXT NOT NULL UNIQUE,
@@ -15989,6 +16132,8 @@ class EpisodeLedger:
                         REFERENCES neural_prior_promotion_deployment_certificates_v3(
                             certificate_digest
                         ),
+                    FOREIGN KEY (runtime_activation_receipt_digest)
+                        REFERENCES deployment_runtime_activations(receipt_digest),
                     FOREIGN KEY (commit_entry_digest)
                         REFERENCES operational_decision_commits(commit_entry_digest),
                     FOREIGN KEY (receipt_digest)
@@ -15996,6 +16141,28 @@ class EpisodeLedger:
                 )
                 """
             )
+            issuance_columns = {
+                row[1]
+                for row in connection.execute(
+                    "PRAGMA table_info(operational_decision_issuance_states)"
+                ).fetchall()
+            }
+            if "runtime_activation_receipt_digest" not in issuance_columns:
+                connection.execute(
+                    "ALTER TABLE operational_decision_issuance_states ADD COLUMN "
+                    "runtime_activation_receipt_digest TEXT"
+                )
+            decision_columns = {
+                row[1]
+                for row in connection.execute(
+                    "PRAGMA table_info(operational_deployment_decisions_v2)"
+                ).fetchall()
+            }
+            if "runtime_activation_receipt_digest" not in decision_columns:
+                connection.execute(
+                    "ALTER TABLE operational_deployment_decisions_v2 ADD COLUMN "
+                    "runtime_activation_receipt_digest TEXT"
+                )
             connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS operational_decision_publications (
@@ -16163,6 +16330,7 @@ class EpisodeLedger:
                 "trusted_process_completion_receipts",
                 "neural_prior_promotions",
                 "neural_prior_promotion_deployment_certificates_v3",
+                "deployment_runtime_activations",
                 "operational_decision_commits",
                 "operational_decision_commit_proofs",
                 "operational_deployment_decisions_v2",
