@@ -9,7 +9,14 @@
 - Verified base tree: `49ab7c0fa21a3248fb2c97fdaef2d6afde033ef1`.
 - Working branch: `agent/pr128-hermetic-deployment-real-case-evidence`.
 - Candidate package version: `0.91.0`.
-- Verified PR/head/tree: no PR or candidate head yet.
+- Verified PR: [#128](https://github.com/gonos2k/AD4DVAR-radar/pull/128),
+  open and non-draft.
+- Verified candidate head: `3c9fb9c61bef7567f993997d2daf690356d9f7b3`.
+- Verified candidate tree: `4fbd6e64d5b9a170260e2e25c09935803035d02d`.
+- Verified GitHub base: `main@90e0520bca51923ae4fdf4bd0468928e018aab72`.
+- Candidate CI run:
+  [32102928474](https://github.com/gonos2k/AD4DVAR-radar/actions/runs/32102928474),
+  three required checks in progress at checklist synchronization time.
 - Worktree state before editing: tracked files clean; user-owned `.omx/` remains
   untracked and out of scope.
 - CI snapshot: main run
@@ -68,7 +75,7 @@
   subtests).
 - [x] Changed verification/replay schemas, digest preimages, producers, consumers, and audit-only predecessor loaders are updated.
 - [x] Evidence, manifests, distribution documents, and workflow expectations are synchronized.
-- [ ] PR head equals the reported pushed commit.
+- [x] PR head equals the reported pushed commit.
 - [ ] CI failures are classified as code or external infrastructure/policy.
 - [x] Research, suppressed shadow, canary, LIVE, and external publication have separate decisions.
 - [x] External evidence requirements remain visible with owner and blocked stage.
@@ -98,4 +105,4 @@
 | Canary | HOLD | Requires hermetic install plus external real-case evidence. |
 | State-advancing LIVE | HOLD | Requires X128-001 and a protected deployable bundle. |
 | External publication | HOLD | Requires X128-001, X128-002, and sample-size preflight completion. |
-| PR merge | HOLD | No PR exists; repository closure and CI are incomplete. |
+| PR merge | HOLD | PR #128 is open; required CI and separate trust-root review are pending. |
