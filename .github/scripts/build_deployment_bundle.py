@@ -240,8 +240,11 @@ def _runtime_tree_snapshot(
                 except ValueError:
                     continue
                 break
-            if relative is None or "__pycache__" in relative.parts or (
-                located.suffix == ".pyc"
+            if (
+                relative is None
+                or ".." in relative.parts
+                or "__pycache__" in relative.parts
+                or located.suffix == ".pyc"
             ):
                 continue
             try:

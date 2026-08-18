@@ -40,6 +40,64 @@ def _write_test_wheel(
 
 
 class DeploymentBundleTests(unittest.TestCase):
+    def test_runtime_tree_excludes_distribution_files_outside_import_roots(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            site = root / "venv/lib/python3.12/site-packages"
+            torch_package = site / "torch"
+            advar_package = site / "advar"
+            torch_package.mkdir(parents=True)
+            advar_package.mkdir()
+            (torch_package / "__init__.py").write_text("", encoding="utf-8")
+            (advar_package / "__init__.py").write_text("", encoding="utf-8")
+
+            class FakeDistribution:
+                def __init__(self, version: str, files: list[Path]) -> None:
+                    self.version = version
+                    self.files = files
+
+                def locate_file(self, path: Path) -> Path:
+                    return site / path
+
+            distributions = {
+                "torch": FakeDistribution(
+                    "2.13.0+cpu",
+                    [Path("torch/__init__.py"), Path("../../../bin/torchrun")],
+                ),
+                "advar-radar-nowcast": FakeDistribution(
+                    "0.91.0",
+                    [Path("advar/__init__.py")],
+                ),
+            }
+            with (
+                mock.patch.object(
+                    bundle_module.sysconfig,
+                    "get_path",
+                    return_value=str(site),
+                ),
+                mock.patch.object(
+                    bundle_module.importlib.metadata,
+                    "distribution",
+                    side_effect=lambda name: distributions[name],
+                ),
+            ):
+                snapshot = bundle_module._runtime_tree_snapshot(
+                    selected_wheels=[
+                        {
+                            "name": "torch",
+                            "wheel_version": "2.13.0+cpu",
+                        }
+                    ],
+                    application_version="0.91.0",
+                )
+
+            self.assertEqual(
+                [item["path"] for item in snapshot["files"]],
+                ["site/advar/__init__.py", "site/torch/__init__.py"],
+            )
+
     def test_public_lock_accepts_exact_hashed_local_cpu_wheel(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
