@@ -97,6 +97,22 @@ def _normalized_distribution_name(value: str) -> str:
     return re.sub(r"[-_.]+", "-", value).lower()
 
 
+def _is_forbidden_runtime_artifact(relative: Path) -> bool:
+    return "__pycache__" in relative.parts or relative.suffix in {
+        ".pyc",
+        ".pyo",
+        ".pth",
+    }
+
+
+def _is_canonical_runtime_omission(relative: Path) -> bool:
+    return relative.name == "__pycache__" or relative.suffix in {
+        ".pyc",
+        ".pyo",
+        ".pth",
+    }
+
+
 def _runtime_import_roots() -> tuple[Path, ...]:
     candidates = {
         Path(value).absolute()
@@ -361,6 +377,7 @@ def _runtime_tree_snapshot(
     if actual_distributions != expected_names:
         raise ValueError("deployment runtime contains an extra distribution")
     files: list[dict[str, object]] = []
+    seen_claims: set[tuple[Path, str]] = set()
     native_extensions: list[Path] = []
     excluded_metadata = {"RECORD", "direct_url.json"}
     for root_index, root in enumerate(roots):
@@ -371,12 +388,13 @@ def _runtime_tree_snapshot(
             raise ValueError("deployment import root is not a directory")
         for located in sorted(root.rglob("*"), key=lambda item: item.as_posix()):
             metadata = _require_runtime_permissions(located, deployable=deployable)
-            if stat.S_ISDIR(metadata.st_mode):
-                continue
             relative = located.relative_to(root)
+            if stat.S_ISDIR(metadata.st_mode):
+                if (root, relative.as_posix()) in claimed_paths:
+                    seen_claims.add((root, relative.as_posix()))
+                continue
             if (
-                "__pycache__" in relative.parts
-                or located.suffix in {".pyc", ".pth"}
+                _is_forbidden_runtime_artifact(relative)
                 or located.name in {"sitecustomize.py", "usercustomize.py"}
             ):
                 raise ValueError(
@@ -386,6 +404,7 @@ def _runtime_tree_snapshot(
             owner = claimed_paths.get((root, relative.as_posix()))
             if owner is None:
                 raise ValueError("deployment runtime contains an unowned file")
+            seen_claims.add((root, relative.as_posix()))
             if (
                 len(relative.parts) >= 2
                 and relative.parts[-2].endswith(".dist-info")
@@ -407,6 +426,24 @@ def _runtime_tree_snapshot(
                 }
             )
     files.sort(key=lambda item: (str(item["distribution"]), str(item["path"])))
+    omitted_forbidden_files: list[dict[str, str]] = []
+    for (root, relative_text), owner in claimed_paths.items():
+        if (root, relative_text) in seen_claims:
+            continue
+        relative = Path(relative_text)
+        if not _is_canonical_runtime_omission(relative):
+            raise ValueError("deployment runtime is missing a locked file")
+        omitted_forbidden_files.append(
+            {
+                "distribution": owner,
+                "path": (
+                    f"site-{roots.index(root)}/{relative.as_posix()}"
+                ),
+            }
+        )
+    omitted_forbidden_files.sort(
+        key=lambda item: (item["distribution"], item["path"])
+    )
     interpreter_closure = _interpreter_closure_snapshot(
         native_extension_paths=tuple(native_extensions),
         deployable=deployable,
@@ -417,6 +454,7 @@ def _runtime_tree_snapshot(
         "import_root_count": len(roots),
         "distributions": expected_distributions,
         "files": files,
+        "omitted_forbidden_files": omitted_forbidden_files,
         "interpreter_closure": interpreter_closure,
     }
     return unsigned | {"runtime_tree_digest": _json_digest(unsigned)}

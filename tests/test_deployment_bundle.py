@@ -154,6 +154,52 @@ class DeploymentBundleTests(unittest.TestCase):
                     application_version="0.92.0",
                 )
 
+        with tempfile.TemporaryDirectory() as temporary:
+            site = Path(temporary) / "site-packages"
+            package_file = site / "advar/__init__.py"
+            package_file.parent.mkdir(parents=True)
+            package_file.write_text("", encoding="utf-8")
+            application = FakeDistribution(
+                site,
+                "advar-radar-nowcast",
+                "0.92.0",
+                [
+                    Path("advar/__init__.py"),
+                    Path("advar/missing.py"),
+                ],
+            )
+            with (
+                mock.patch.object(
+                    bundle_module,
+                    "_runtime_import_roots",
+                    return_value=(site,),
+                ),
+                mock.patch.object(
+                    bundle_module.importlib.metadata,
+                    "distribution",
+                    return_value=application,
+                ),
+                mock.patch.object(
+                    bundle_module.importlib.metadata,
+                    "distributions",
+                    return_value=(application,),
+                ),
+                mock.patch.object(
+                    bundle_module,
+                    "_interpreter_closure_snapshot",
+                    return_value={
+                        "contract": "advar-python-interpreter-closure-v1",
+                        "bytecode_write_disabled": True,
+                        "interpreter_closure_digest": "7" * 64,
+                    },
+                ),
+                self.assertRaisesRegex(ValueError, "missing a locked file"),
+            ):
+                bundle_module._runtime_tree_snapshot(
+                    selected_wheels=[],
+                    application_version="0.92.0",
+                )
+
     def test_runtime_tree_excludes_distribution_files_outside_import_roots(
         self,
     ) -> None:
@@ -347,6 +393,7 @@ class DeploymentBundleTests(unittest.TestCase):
                         "sha256": "8" * 64,
                     }
                 ],
+                "omitted_forbidden_files": [],
                 "interpreter_closure": {
                     "contract": "advar-python-interpreter-closure-v1",
                     "bytecode_write_disabled": True,

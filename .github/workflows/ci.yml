@@ -173,7 +173,7 @@ jobs:
             --no-index --no-deps --no-compile dist/*.whl
           python -I -m pip --python .wheel-venv/bin/python check
           find .wheel-venv -type f \
-            \( -name '*.pyc' -o -name '*.pyo' \) -delete
+            \( -name '*.pyc' -o -name '*.pyo' -o -name '*.pth' \) -delete
           .wheel-venv/bin/python -I -B - <<'PY'
           import torch
 
@@ -337,7 +337,7 @@ jobs:
             "$ADVAR_WORKSPACE"/dist/*.whl
           python -I -m pip --python replay-wheel-venv/bin/python check
           find replay-wheel-venv -type f \
-            \( -name '*.pyc' -o -name '*.pyo' \) -delete
+            \( -name '*.pyc' -o -name '*.pyo' -o -name '*.pth' \) -delete
           replay-wheel-venv/bin/python -I -B \
             "$ADVAR_WORKSPACE/.github/scripts/build_deployment_bundle.py" verify \
             --bundle advar-linux-cpu-candidate-smoke \
