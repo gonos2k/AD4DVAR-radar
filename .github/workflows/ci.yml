@@ -18,7 +18,7 @@ jobs:
   test:
     name: Python ${{ matrix.python-version }} CPU
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -146,13 +146,25 @@ jobs:
       - name: Build source and wheel distributions
         run: python -I -m build --no-isolation
 
-      - name: Install the built wheel in isolation
+      - name: Materialize the exact Linux CPU wheelhouse
+        run: |
+          mkdir "$RUNNER_TEMP/runtime-wheelhouse"
+          python -I -m pip download \
+            --require-hashes \
+            --only-binary=:all: \
+            --no-deps \
+            --extra-index-url https://download.pytorch.org/whl/cpu \
+            --requirement requirements/runtime-py312-linux.lock \
+            --dest "$RUNNER_TEMP/runtime-wheelhouse"
+
+      - name: Install the built wheel offline in isolation
         run: |
           python -I -m venv .wheel-venv
           .wheel-venv/bin/python -I -m pip install \
+            --no-index \
+            --find-links "$RUNNER_TEMP/runtime-wheelhouse" \
             --require-hashes \
             --only-binary=:all: \
-            --extra-index-url https://download.pytorch.org/whl/cpu \
             --requirement requirements/runtime-py312-linux.lock
           .wheel-venv/bin/python -I -m pip install --no-deps dist/*.whl
           .wheel-venv/bin/python -I -m pip check
@@ -262,6 +274,7 @@ jobs:
             --wheel "$(find dist -maxdepth 1 -name '*.whl' -print -quit)" \
             --lock requirements/runtime-py312-linux.lock \
             --audit "$RUNNER_TEMP/runtime-audit.json" \
+            --wheelhouse "$RUNNER_TEMP/runtime-wheelhouse" \
             --output "$RUNNER_TEMP/advar-linux-cpu-candidate-smoke" \
             --source-commit "$GITHUB_SHA" \
             --repository "$GITHUB_REPOSITORY" \
@@ -290,12 +303,94 @@ jobs:
             --expected-source-ref "$ADVAR_SOURCE_REF" \
             --expected-source-commit "$ADVAR_SOURCE_COMMIT" \
             --expected-workflow-sha "$ADVAR_WORKFLOW_SHA" \
-            --expected-signer-id ci-candidate-smoke
+            --expected-signer-id ci-candidate-smoke \
+            --verify-installation
+
+      - name: Reproduce the runtime tree in a second offline environment
+        working-directory: ${{ runner.temp }}
+        env:
+          ADVAR_SOURCE_COMMIT: ${{ github.sha }}
+          ADVAR_REPOSITORY: ${{ github.repository }}
+          ADVAR_SOURCE_REF: ${{ github.ref }}
+          ADVAR_WORKFLOW_SHA: ${{ github.workflow_sha }}
+          ADVAR_WORKSPACE: ${{ github.workspace }}
+        run: |
+          python -I -m venv replay-wheel-venv
+          replay-wheel-venv/bin/python -I -m pip install \
+            --no-index \
+            --find-links runtime-wheelhouse \
+            --require-hashes \
+            --only-binary=:all: \
+            --requirement "$ADVAR_WORKSPACE/requirements/runtime-py312-linux.lock"
+          replay-wheel-venv/bin/python -I -m pip install \
+            --no-index \
+            --no-deps \
+            "$ADVAR_WORKSPACE"/dist/*.whl
+          replay-wheel-venv/bin/python -I -m pip check
+          replay-wheel-venv/bin/python -I \
+            "$ADVAR_WORKSPACE/.github/scripts/build_deployment_bundle.py" verify \
+            --bundle advar-linux-cpu-candidate-smoke \
+            --trusted-public-key candidate-smoke-public-key.hex \
+            --expected-mode candidate-smoke \
+            --expected-repository "$ADVAR_REPOSITORY" \
+            --expected-source-ref "$ADVAR_SOURCE_REF" \
+            --expected-source-commit "$ADVAR_SOURCE_COMMIT" \
+            --expected-workflow-sha "$ADVAR_WORKFLOW_SHA" \
+            --expected-signer-id ci-candidate-smoke \
+            --verify-installation
+
+      - name: Bind the offline runtime tree to an activation receipt
+        working-directory: ${{ runner.temp }}
+        env:
+          ADVAR_SOURCE_COMMIT: ${{ github.sha }}
+          ADVAR_REPOSITORY: ${{ github.repository }}
+          ADVAR_SOURCE_REF: ${{ github.ref }}
+          ADVAR_WORKFLOW_SHA: ${{ github.workflow_sha }}
+          ADVAR_WORKSPACE: ${{ github.workspace }}
+        run: |
+          replay-wheel-venv/bin/python -I \
+            "$ADVAR_WORKSPACE/.github/scripts/build_deployment_bundle.py" \
+            activate-runtime \
+            --bundle advar-linux-cpu-candidate-smoke \
+            --trusted-bundle-public-key candidate-smoke-public-key.hex \
+            --expected-mode candidate-smoke \
+            --expected-repository "$ADVAR_REPOSITORY" \
+            --expected-source-ref "$ADVAR_SOURCE_REF" \
+            --expected-source-commit "$ADVAR_SOURCE_COMMIT" \
+            --expected-workflow-sha "$ADVAR_WORKFLOW_SHA" \
+            --expected-bundle-signer-id ci-candidate-smoke \
+            --deployment-instance-id ci-offline-replay \
+            --activation-signer-id ci-runtime-activation \
+            --activation-signing-private-key \
+              candidate-smoke-signing-key.raw \
+            --receipt runtime-activation-receipt.json
+          bundle_digest=$(replay-wheel-venv/bin/python -I - <<'PY'
+          import json
+          print(json.load(open("advar-linux-cpu-candidate-smoke/manifest.json"))["bundle_digest"])
+          PY
+          )
+          runtime_digest=$(replay-wheel-venv/bin/python -I - <<'PY'
+          import json
+          print(json.load(open("advar-linux-cpu-candidate-smoke/runtime-tree.json"))["runtime_tree_digest"])
+          PY
+          )
+          replay-wheel-venv/bin/python -I \
+            "$ADVAR_WORKSPACE/.github/scripts/build_deployment_bundle.py" \
+            verify-runtime-activation \
+            --receipt runtime-activation-receipt.json \
+            --trusted-activation-public-key candidate-smoke-public-key.hex \
+            --expected-bundle-digest "$bundle_digest" \
+            --expected-runtime-tree-digest "$runtime_digest" \
+            --expected-bundle-mode candidate-smoke \
+            --expected-deployment-instance-id ci-offline-replay \
+            --expected-activation-signer-id ci-runtime-activation
 
       - name: Upload the non-deployable candidate-smoke bundle
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: advar-linux-cpu-candidate-smoke-${{ github.sha }}
-          path: ${{ runner.temp }}/advar-linux-cpu-candidate-smoke
+          path: |
+            ${{ runner.temp }}/advar-linux-cpu-candidate-smoke
+            ${{ runner.temp }}/runtime-activation-receipt.json
           if-no-files-found: error
           retention-days: 30

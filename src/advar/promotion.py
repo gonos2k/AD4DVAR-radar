@@ -228,16 +228,16 @@ TRAINING_NORMALIZATION_MASK_WEIGHT_POLICY_DIGEST = json_digest(
 
 
 SEMANTIC_SCORING_REPLAY_CONTRACT = (
-    "neural-prior-scoring-replay-bundle-v11"
+    "neural-prior-scoring-replay-bundle-v12"
 )
 SEMANTIC_SCORING_REPLAY_METHOD = (
-    "builtin-semantic-scoring-recomputation-v11"
+    "builtin-semantic-scoring-recomputation-v12"
 )
 SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD: dict[str, str] = {
-    "contract": "neural-prior-semantic-scoring-generation-v9",
+    "contract": "neural-prior-semantic-scoring-generation-v10",
     "replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
     "replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
-    "case_contract": "neural-prior-semantic-scoring-case-v10",
+    "case_contract": "neural-prior-semantic-scoring-case-v11",
     "product_type_policy": "exact-shipped-product-types-v1",
     "forecast_integrity": "forecast-result-raw-content-validation-v1",
     "prior_integrity": "runner-reproduced-prior-application-v1",
@@ -10199,11 +10199,12 @@ class VerificationTargetIdentityArtifact:
     mask_policy_digest: str
     censor_policy_digest: str
     verification_bundle_digest: str
-    contract: str = "verification-target-identity-artifact-v1"
+    observation_error_contract_digest: str
+    contract: str = "verification-target-identity-artifact-v2"
     artifact_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "verification-target-identity-artifact-v1":
+        if self.contract != "verification-target-identity-artifact-v2":
             raise ValueError("unsupported verification target identity")
         for name in (
             "source_identity_digest",
@@ -10215,6 +10216,7 @@ class VerificationTargetIdentityArtifact:
             "mask_policy_digest",
             "censor_policy_digest",
             "verification_bundle_digest",
+            "observation_error_contract_digest",
         ):
             _require_digest(name, getattr(self, name))
         object.__setattr__(
@@ -10239,6 +10241,7 @@ class VerificationTargetIdentityArtifact:
             target.target_plan_digest != plan.plan_digest
             or target.source_digest != target.source_verification_bundle_digest
             or target.support_event_digest != plan.support_event_digest
+            or not target.observation_error_contract_digest
         ):
             raise ValueError("verification target disagrees with its plan")
         target_dbz = target._target_dbz.detach().clone()
@@ -10266,6 +10269,9 @@ class VerificationTargetIdentityArtifact:
             mask_policy_digest=plan.mask_policy_digest,
             censor_policy_digest=plan.censor_policy_digest,
             verification_bundle_digest=target.source_verification_bundle_digest,
+            observation_error_contract_digest=(
+                target.observation_error_contract_digest
+            ),
         )
 
     @property
@@ -12134,6 +12140,7 @@ class PriorUncertaintyTarget:
     source_digest: str
     independence_evidence_digest: str
     source_verification_bundle_digest: str
+    observation_error_contract_digest: str
     support_event_digest: str
     target_digest: str
 
@@ -12150,7 +12157,8 @@ class PriorUncertaintyTarget:
         verification.validate_integrity()
         if (
             plan.contract != "prior-uncertainty-target-plan-v6"
-            or verification.contract != "radar-verification-bundle-v3"
+            or verification.contract != "radar-verification-bundle-v4"
+            or verification.observation_error_contract is None
             or verification.mask_policy_digest != plan.mask_policy_digest
             or verification.censor_policy_digest != plan.censor_policy_digest
             or verification.floor_representation_contract_digest
@@ -12193,14 +12201,11 @@ class PriorUncertaintyTarget:
             raise ValueError("prior uncertainty target tensors are invalid")
         target = target_dbz.detach().clone()
         valid = valid_mask.detach().clone()
-        # VerificationBundle-v3 has a binary validity contract.  Preserve the
-        # exact metric weight as an explicit tensor instead of letting callers
-        # silently invent a second weighting policy after the target is sealed.
-        quality = valid.to(dtype=target.dtype).detach().clone()
+        quality = verification.metric_weight[index].to(target).detach().clone()
         support = echo_support.detach().clone()
         target_digest = json_digest(
             {
-                "contract": "prior-uncertainty-target-v5",
+                "contract": "prior-uncertainty-target-v6",
                 "target_dbz": tensor_digest(target),
                 "valid_mask": tensor_digest(valid),
                 "quality_weight": tensor_digest(quality),
@@ -12210,6 +12215,9 @@ class PriorUncertaintyTarget:
                 "independence_evidence_digest": independence_evidence_digest,
                 "source_verification_bundle_digest": (
                     source_verification_bundle_digest
+                ),
+                "observation_error_contract_digest": (
+                    verification.observation_error_contract.contract_digest
                 ),
                 "support_threshold_dbz": plan.support_threshold_dbz,
                 "support_event_digest": plan.support_event_digest,
@@ -12231,6 +12239,10 @@ class PriorUncertaintyTarget:
                 "source_verification_bundle_digest",
                 source_verification_bundle_digest,
             ),
+            (
+                "observation_error_contract_digest",
+                verification.observation_error_contract.contract_digest,
+            ),
             ("support_event_digest", plan.support_event_digest),
             ("target_digest", target_digest),
         ):
@@ -12244,9 +12256,11 @@ class NeuralPriorStateCalibrationTarget:
 
     _target_dbz: Tensor
     _valid_mask: Tensor
+    _quality_weight: Tensor
     _echo_support: Tensor
     target_plan_digest: str
     source_verification_bundle_digest: str
+    observation_error_contract_digest: str
     target_digest: str
 
     def __init__(self) -> None:
@@ -12263,7 +12277,8 @@ class NeuralPriorStateCalibrationTarget:
     ) -> NeuralPriorStateCalibrationTarget:
         verification.validate_integrity()
         if (
-            verification.contract != "radar-verification-bundle-v3"
+            verification.contract != "radar-verification-bundle-v4"
+            or verification.observation_error_contract is None
             or verification.mask_policy_digest != plan.mask_policy_digest
             or verification.censor_policy_digest != plan.censor_policy_digest
             or verification.floor_representation_contract_digest
@@ -12289,32 +12304,45 @@ class NeuralPriorStateCalibrationTarget:
         index = matches[0]
         target = verification.frames_dbz[index].detach().clone()
         valid = verification.valid_mask[index].detach().clone()
+        quality = verification.metric_weight[index].to(target).detach().clone()
         support = valid & (target >= plan.support_threshold_dbz)
         if (
             target.ndim != 2
             or not target.is_floating_point()
             or valid.shape != target.shape
             or valid.dtype is not torch.bool
-            or not bool(torch.any(valid & torch.isfinite(target)))
+            or quality.shape != target.shape
+            or not bool(torch.all(torch.isfinite(quality) & (quality >= 0.0)))
+            or not bool(torch.all(quality.masked_select(~valid) == 0.0))
+            or not bool(torch.any(valid & torch.isfinite(target) & (quality > 0.0)))
         ):
             raise ValueError("state calibration target tensors are invalid")
         target_digest = json_digest(
             {
-                "contract": "neural-prior-state-calibration-target-v2",
+                "contract": "neural-prior-state-calibration-target-v3",
                 "target_dbz": tensor_digest(target),
                 "valid_mask": tensor_digest(valid),
+                "quality_weight": tensor_digest(quality),
                 "echo_support": tensor_digest(support),
                 "target_plan_digest": plan.plan_digest,
                 "source_verification_bundle_digest": verification.content_digest,
+                "observation_error_contract_digest": (
+                    verification.observation_error_contract.contract_digest
+                ),
             }
         )
         result = object.__new__(cls)
         for name, value in (
             ("_target_dbz", target),
             ("_valid_mask", valid),
+            ("_quality_weight", quality),
             ("_echo_support", support),
             ("target_plan_digest", plan.plan_digest),
             ("source_verification_bundle_digest", verification.content_digest),
+            (
+                "observation_error_contract_digest",
+                verification.observation_error_contract.contract_digest,
+            ),
             ("target_digest", target_digest),
         ):
             object.__setattr__(result, name, value)
@@ -12792,6 +12820,7 @@ class PriorHoldoutEvaluation:
     prior_abstention_increase_vs_parent: float
     prior_uncertainty_target_digest: str
     verification_target_identity_artifact_digest: str
+    verification_observation_error_contract_digest: str
     prior_uncertainty_sample_count: int
     prior_echo_intensity_sample_count: int
     prior_clear_sky_sample_count: int
@@ -12821,14 +12850,14 @@ class PriorHoldoutEvaluation:
     state_calibration_echo_object_count: int
     issue_time: str
     verification_valid_times: tuple[str, ...]
-    contract: str = "prior-holdout-evaluation-v23"
+    contract: str = "prior-holdout-evaluation-v24"
     evaluation_digest: str = field(init=False)
 
     def __init__(self) -> None:
         raise TypeError("use PriorHoldoutEvaluation.from_forecasts")
 
     def __post_init__(self) -> None:
-        if self.contract != "prior-holdout-evaluation-v23":
+        if self.contract != "prior-holdout-evaluation-v24":
             raise ValueError("unsupported prior holdout evaluation")
         for name in (
             "holdout_plan_digest",
@@ -12845,6 +12874,7 @@ class PriorHoldoutEvaluation:
             "metric_contract_digest",
             "prior_uncertainty_target_digest",
             "verification_target_identity_artifact_digest",
+            "verification_observation_error_contract_digest",
             "state_calibration_target_digest",
             "regime_classifier_digest",
             "regime_classifier_manifest_digest",
@@ -13738,8 +13768,10 @@ class PriorHoldoutEvaluation:
             ):
                 raise ValueError("state calibration target was visible to features")
         prior_reference = uncertainty_target._target_dbz.to(input_frames_dbz)
+        prior_weight = uncertainty_target._quality_weight.to(input_frames_dbz)
         prior_valid = (
             uncertainty_target._valid_mask.to(input_frames_dbz.device)
+            & (prior_weight > 0.0)
             & torch.isfinite(prior_reference)
             & torch.isfinite(candidate_prior_application.truncated_location_dbz)
             & torch.isfinite(candidate_prior_application.truncated_scale_dbz)
@@ -13751,6 +13783,11 @@ class PriorHoldoutEvaluation:
         prior_sample_count = int(torch.count_nonzero(prior_valid))
         if prior_sample_count == 0:
             raise ValueError("holdout has no valid prior uncertainty samples")
+        prior_score_weight = torch.where(
+            prior_valid,
+            prior_weight,
+            torch.zeros_like(prior_weight),
+        )
         support_target = uncertainty_target._echo_support.to(
             candidate_prior_application.event_probability.device
         )
@@ -13759,6 +13796,7 @@ class PriorHoldoutEvaluation:
             prior_reference,
             support_target,
             prior_valid,
+            prior_score_weight,
             support_threshold_dbz=target_plan.support_threshold_dbz,
             reflectivity_resolution_dbz=(
                 target_plan.reflectivity_resolution_dbz
@@ -13771,6 +13809,7 @@ class PriorHoldoutEvaluation:
             prior_reference,
             support_target,
             prior_valid,
+            prior_score_weight,
             support_threshold_dbz=target_plan.support_threshold_dbz,
             reflectivity_resolution_dbz=(
                 target_plan.reflectivity_resolution_dbz
@@ -13815,9 +13854,16 @@ class PriorHoldoutEvaluation:
             if not echo_objects:
                 return None
             flat_probability = application.event_probability.flatten()
+            flat_weight = prior_score_weight.flatten()
             object_scores = torch.stack(
                 tuple(
-                    (1.0 - torch.mean(flat_probability[index])).square()
+                    (
+                        1.0
+                        - torch.sum(
+                            flat_probability[index] * flat_weight[index]
+                        )
+                        / flat_weight[index].sum()
+                    ).square()
                     for index in echo_objects
                 )
             )
@@ -13826,11 +13872,15 @@ class PriorHoldoutEvaluation:
         candidate_object_miss = object_miss_score(candidate_prior_application)
         parent_object_miss = object_miss_score(parent_prior_application)
         state_reference = state_calibration_target._target_dbz.to(input_frames_dbz)
+        state_weight = state_calibration_target._quality_weight.to(
+            input_frames_dbz
+        )
         state_support_target = state_calibration_target._echo_support.to(
             input_frames_dbz.device
         )
         state_valid = (
             state_calibration_target._valid_mask.to(input_frames_dbz.device)
+            & (state_weight > 0.0)
             & torch.isfinite(state_reference)
             & torch.isfinite(candidate_prior_application.state_background_dbz)
             & torch.isfinite(candidate_prior_application.state_std_dbz)
@@ -13839,11 +13889,17 @@ class PriorHoldoutEvaluation:
         )
         if not bool(torch.any(state_valid)):
             raise ValueError("holdout has no valid state calibration samples")
+        state_score_weight = torch.where(
+            state_valid,
+            state_weight,
+            torch.zeros_like(state_weight),
+        )
         candidate_state_scores = _state_calibration_scores(
             candidate_prior_application,
             state_reference,
             state_support_target,
             state_valid,
+            state_score_weight,
             plan=state_target_plan,
         )
         parent_state_scores = _state_calibration_scores(
@@ -13851,6 +13907,7 @@ class PriorHoldoutEvaluation:
             state_reference,
             state_support_target,
             state_valid,
+            state_score_weight,
             plan=state_target_plan,
         )
         state_echo_objects = _connected_component_flat_indices(
@@ -13863,9 +13920,16 @@ class PriorHoldoutEvaluation:
             if not state_echo_objects:
                 return None
             flat_probability = application.state_support_probability.flatten()
+            flat_weight = state_score_weight.flatten()
             values = torch.stack(
                 tuple(
-                    (1.0 - torch.mean(flat_probability[index])).square()
+                    (
+                        1.0
+                        - torch.sum(
+                            flat_probability[index] * flat_weight[index]
+                        )
+                        / flat_weight[index].sum()
+                    ).square()
                     for index in state_echo_objects
                 )
             )
@@ -14086,6 +14150,16 @@ class PriorHoldoutEvaluation:
                 raise ValueError("range-band paired metric domain is unavailable")
             band_prior_valid = prior_valid & range_mask.to(prior_valid.device)
             band_state_valid = state_valid & range_mask.to(state_valid.device)
+            band_prior_weight = torch.where(
+                band_prior_valid,
+                prior_score_weight,
+                torch.zeros_like(prior_score_weight),
+            )
+            band_state_weight = torch.where(
+                band_state_valid,
+                state_score_weight,
+                torch.zeros_like(state_score_weight),
+            )
             if not bool(torch.any(band_prior_valid)) or not bool(
                 torch.any(band_state_valid)
             ):
@@ -14095,6 +14169,7 @@ class PriorHoldoutEvaluation:
                 prior_reference,
                 support_target,
                 band_prior_valid,
+                band_prior_weight,
                 support_threshold_dbz=target_plan.support_threshold_dbz,
                 reflectivity_resolution_dbz=target_plan.reflectivity_resolution_dbz,
                 quantization_origin_dbz=target_plan.quantization_origin_dbz,
@@ -14105,6 +14180,7 @@ class PriorHoldoutEvaluation:
                 prior_reference,
                 support_target,
                 band_prior_valid,
+                band_prior_weight,
                 support_threshold_dbz=target_plan.support_threshold_dbz,
                 reflectivity_resolution_dbz=target_plan.reflectivity_resolution_dbz,
                 quantization_origin_dbz=target_plan.quantization_origin_dbz,
@@ -14115,6 +14191,7 @@ class PriorHoldoutEvaluation:
                 state_reference,
                 state_support_target,
                 band_state_valid,
+                band_state_weight,
                 plan=state_target_plan,
             )
             band_parent_state = _state_calibration_scores(
@@ -14122,6 +14199,7 @@ class PriorHoldoutEvaluation:
                 state_reference,
                 state_support_target,
                 band_state_valid,
+                band_state_weight,
                 plan=state_target_plan,
             )
 
@@ -14129,17 +14207,25 @@ class PriorHoldoutEvaluation:
                 probability: Tensor,
                 mask: Tensor,
                 target: Tensor,
+                weight: Tensor,
             ) -> tuple[float | None, int]:
                 objects = _connected_component_flat_indices(mask & target.to(mask))
                 if not objects:
                     return None, 0
                 flat = probability.flatten()
+                flat_weight = weight.flatten()
                 return (
                     float(
                         torch.mean(
                             torch.stack(
                                 tuple(
-                                    (1.0 - torch.mean(flat[index])).square()
+                                    (
+                                        1.0
+                                        - torch.sum(
+                                            flat[index] * flat_weight[index]
+                                        )
+                                        / flat_weight[index].sum()
+                                    ).square()
                                     for index in objects
                                 )
                             )
@@ -14152,11 +14238,13 @@ class PriorHoldoutEvaluation:
                 candidate_prior_application.event_probability,
                 band_prior_valid,
                 support_target,
+                band_prior_weight,
             )
             parent_band_object_miss, parent_band_object_count = masked_object_miss(
                 parent_prior_application.event_probability,
                 band_prior_valid,
                 support_target,
+                band_prior_weight,
             )
             (
                 candidate_band_state_object_miss,
@@ -14165,6 +14253,7 @@ class PriorHoldoutEvaluation:
                 candidate_prior_application.state_support_probability,
                 band_state_valid,
                 state_support_target,
+                band_state_weight,
             )
             (
                 parent_band_state_object_miss,
@@ -14173,6 +14262,7 @@ class PriorHoldoutEvaluation:
                 parent_prior_application.state_support_probability,
                 band_state_valid,
                 state_support_target,
+                band_state_weight,
             )
             (
                 candidate_component_scores,
@@ -14629,6 +14719,9 @@ class PriorHoldoutEvaluation:
             verification_target_identity_artifact_digest=(
                 actual_target_identity.artifact_digest
             ),
+            verification_observation_error_contract_digest=(
+                actual_target_identity.observation_error_contract_digest
+            ),
             prior_uncertainty_sample_count=prior_sample_count,
             prior_echo_intensity_sample_count=(
                 candidate_scores.echo_sample_count
@@ -15005,7 +15098,7 @@ class ScoringReplayCaseArtifact:
         )
         expected_uncertainty_digest = json_digest(
             {
-                "contract": "prior-uncertainty-target-v5",
+                "contract": "prior-uncertainty-target-v6",
                 "target_dbz": tensor_digest(self.uncertainty_target._target_dbz),
                 "valid_mask": tensor_digest(self.uncertainty_target._valid_mask),
                 "quality_weight": tensor_digest(
@@ -15022,6 +15115,9 @@ class ScoringReplayCaseArtifact:
                 "source_verification_bundle_digest": (
                     self.uncertainty_target.source_verification_bundle_digest
                 ),
+                "observation_error_contract_digest": (
+                    self.uncertainty_target.observation_error_contract_digest
+                ),
                 "support_threshold_dbz": uncertainty_plan.support_threshold_dbz,
                 "support_event_digest": uncertainty_plan.support_event_digest,
                 "prior_probability_contract_digest": (
@@ -15037,12 +15133,15 @@ class ScoringReplayCaseArtifact:
         )
         expected_state_digest = json_digest(
             {
-                "contract": "neural-prior-state-calibration-target-v2",
+                "contract": "neural-prior-state-calibration-target-v3",
                 "target_dbz": tensor_digest(
                     self.state_calibration_target._target_dbz
                 ),
                 "valid_mask": tensor_digest(
                     self.state_calibration_target._valid_mask
+                ),
+                "quality_weight": tensor_digest(
+                    self.state_calibration_target._quality_weight
                 ),
                 "echo_support": tensor_digest(
                     self.state_calibration_target._echo_support
@@ -15050,6 +15149,10 @@ class ScoringReplayCaseArtifact:
                 "target_plan_digest": state_plan.plan_digest,
                 "source_verification_bundle_digest": (
                     self.state_calibration_target.source_verification_bundle_digest
+                ),
+                "observation_error_contract_digest": (
+                    self.state_calibration_target
+                    .observation_error_contract_digest
                 ),
             }
         )
@@ -15559,7 +15662,7 @@ class ScoringReplayCaseArtifact:
     ) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-semantic-scoring-case-v10",
+                "contract": "neural-prior-semantic-scoring-case-v11",
                 "semantic_replay_generation_digest": (
                     SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
                 ),
@@ -15810,9 +15913,27 @@ def _state_calibration_scores(
     reference_dbz: Tensor,
     support_target: Tensor,
     evaluation_mask: Tensor,
+    evaluation_weight: Tensor,
     *,
     plan: NeuralPriorStateCalibrationPlan,
 ) -> _StateCalibrationScores:
+    if (
+        evaluation_weight.shape != evaluation_mask.shape
+        or not evaluation_weight.is_floating_point()
+        or not bool(torch.all(torch.isfinite(evaluation_weight)))
+        or not bool(torch.all(evaluation_weight >= 0.0))
+        or not bool(torch.all(evaluation_weight.masked_select(~evaluation_mask) == 0.0))
+        or float(evaluation_weight.masked_select(evaluation_mask).sum()) <= 0.0
+    ):
+        raise ValueError("state calibration weights are invalid")
+    selected_weight = evaluation_weight.masked_select(evaluation_mask).to(
+        torch.float64
+    )
+
+    def weighted_mean(values: Tensor, weights: Tensor) -> Tensor:
+        normalized = weights / weights.sum()
+        return torch.sum(values.to(torch.float64) * normalized)
+
     state_reference = reference_dbz.masked_select(evaluation_mask)
     state_location = application.state_background_dbz.masked_select(evaluation_mask)
     state_scale = application.state_std_dbz.masked_select(evaluation_mask)
@@ -15840,25 +15961,30 @@ def _state_calibration_scores(
         evaluation_mask
     )
     return _StateCalibrationScores(
-        gaussian_nll=float(torch.mean(nll).detach()),
-        pit_residual_mean_abs=float(torch.mean(absolute).detach()),
+        gaussian_nll=float(weighted_mean(nll, selected_weight).detach()),
+        pit_residual_mean_abs=float(
+            weighted_mean(absolute, selected_weight).detach()
+        ),
         underdispersion_fraction=float(
-            torch.mean((absolute > 2.0).to(absolute)).detach()
+            weighted_mean((absolute > 2.0).to(absolute), selected_weight).detach()
         ),
         support_brier_score=float(
-            torch.mean((support - target_values).square()).detach()
+            weighted_mean(
+                (support - target_values).square(), selected_weight
+            ).detach()
         ),
         echo_support_miss_score=(
             None
             if echo_count == 0
             else float(
-                torch.mean(
+                weighted_mean(
                     (
                         1.0
                         - application.state_support_probability.masked_select(
                             echo_mask
                         )
-                    ).square()
+                    ).square(),
+                    evaluation_weight.masked_select(echo_mask),
                 ).detach()
             )
         ),
@@ -15866,15 +15992,18 @@ def _state_calibration_scores(
             None
             if clear_count == 0
             else float(
-                torch.mean(
+                weighted_mean(
                     application.state_support_probability.masked_select(
                         clear_mask
-                    ).square()
+                    ).square(),
+                    evaluation_weight.masked_select(clear_mask),
                 ).detach()
             )
         ),
         valid_brier_score=float(
-            torch.mean((1.0 - valid_probability).square()).detach()
+            weighted_mean(
+                (1.0 - valid_probability).square(), selected_weight
+            ).detach()
         ),
         sample_count=int(torch.count_nonzero(evaluation_mask)),
         echo_sample_count=echo_count,
@@ -15959,6 +16088,7 @@ def _prior_uncertainty_scores(
     reference_dbz: Tensor,
     support_target: Tensor,
     evaluation_mask: Tensor,
+    evaluation_weight: Tensor,
     *,
     support_threshold_dbz: float,
     reflectivity_resolution_dbz: float = 0.5,
@@ -15966,6 +16096,20 @@ def _prior_uncertainty_scores(
     threshold_bin_convention: str = "nearest_rounding_threshold_censor",
 ) -> _PriorUncertaintyScores:
     """Score support everywhere and truncated intensity only on echoes."""
+
+    if (
+        evaluation_weight.shape != evaluation_mask.shape
+        or not evaluation_weight.is_floating_point()
+        or not bool(torch.all(torch.isfinite(evaluation_weight)))
+        or not bool(torch.all(evaluation_weight >= 0.0))
+        or not bool(torch.all(evaluation_weight.masked_select(~evaluation_mask) == 0.0))
+        or float(evaluation_weight.masked_select(evaluation_mask).sum()) <= 0.0
+    ):
+        raise ValueError("prior uncertainty weights are invalid")
+
+    def weighted_mean(values: Tensor, weights: Tensor) -> Tensor:
+        normalized = weights.to(torch.float64) / weights.sum().to(torch.float64)
+        return torch.sum(values.to(torch.float64) * normalized)
 
     echo_mask = evaluation_mask & support_target.to(
         device=evaluation_mask.device,
@@ -15998,25 +16142,36 @@ def _prior_uncertainty_scores(
         absolute = torch.abs(pit_residual).clamp(
             max=_UNCERTAINTY_SCORE_SUPPORT.maximum_pit_residual_abs
         )
-        mean_absolute = float(torch.mean(absolute).detach())
+        echo_weight = evaluation_weight.masked_select(echo_mask)
+        mean_absolute = float(weighted_mean(absolute, echo_weight).detach())
         underdispersion = float(
-            torch.mean((absolute > 2.0).to(absolute)).detach()
+            weighted_mean((absolute > 2.0).to(absolute), echo_weight).detach()
         )
-        intensity_nll = float(torch.mean(nll).detach())
+        intensity_nll = float(weighted_mean(nll, echo_weight).detach())
         echo_probability = application.event_probability.masked_select(
             echo_mask
         )
         echo_support_miss = float(
-            torch.mean((1.0 - echo_probability).square()).detach()
+            weighted_mean(
+                (1.0 - echo_probability).square(), echo_weight
+            ).detach()
         )
     support = application.event_probability.masked_select(evaluation_mask)
     target = support_target.to(application.event_probability).masked_select(
         evaluation_mask
     )
-    brier = float(torch.mean((support - target).square()).detach())
+    brier = float(
+        weighted_mean(
+            (support - target).square(),
+            evaluation_weight.masked_select(evaluation_mask),
+        ).detach()
+    )
     clear_probability = application.event_probability.masked_select(clear_mask)
     clear_false_echo = None if clear_count == 0 else float(
-        torch.mean(clear_probability.square()).detach()
+        weighted_mean(
+            clear_probability.square(),
+            evaluation_weight.masked_select(clear_mask),
+        ).detach()
     )
     return _PriorUncertaintyScores(
         conditional_pit_residual_mean_abs=mean_absolute,
@@ -16110,7 +16265,7 @@ def _new_prior_holdout_evaluation(**values: object) -> PriorHoldoutEvaluation:
     object.__setattr__(
         result,
         "contract",
-        "prior-holdout-evaluation-v23",
+        "prior-holdout-evaluation-v24",
     )
     for name, value in values.items():
         object.__setattr__(result, name, value)
@@ -16303,6 +16458,9 @@ def _evaluation_digest(value: PriorHoldoutEvaluation) -> str:
             ),
             "verification_target_identity_artifact_digest": (
                 value.verification_target_identity_artifact_digest
+            ),
+            "verification_observation_error_contract_digest": (
+                value.verification_observation_error_contract_digest
             ),
             "prior_uncertainty_sample_count": value.prior_uncertainty_sample_count,
             "prior_echo_intensity_sample_count": (
@@ -16641,7 +16799,7 @@ class HoldoutScoringArtifact:
     parent_forecast_digests: tuple[str, ...]
     verification_digests: tuple[str, ...]
     metric_contract_digests: tuple[str, ...]
-    contract: str = "neural-prior-holdout-scoring-artifact-v11"
+    contract: str = "neural-prior-holdout-scoring-artifact-v12"
     artifact_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -16753,7 +16911,7 @@ class HoldoutScoringArtifact:
             "metric_contract_digests": tuple(
                 item.metric_contract_digest for item in ordered
             ),
-            "contract": "neural-prior-holdout-scoring-artifact-v11",
+            "contract": "neural-prior-holdout-scoring-artifact-v12",
         }
         artifact = _new_holdout_scoring_artifact(**values)
         validate_holdout_scoring_artifact(
@@ -16781,6 +16939,35 @@ class LegacyHoldoutScoringArtifactAuditV10:
             payload_json=self.payload_json,
             digest_field="artifact_digest",
             original_contract="neural-prior-holdout-scoring-artifact-v10",
+        )
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "artifact_digest": self.artifact_digest,
+                    "payload_json": self.payload_json,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
+class LegacyHoldoutScoringArtifactAuditV11:
+    """Pre-observation-error scoring output retained for audit only."""
+
+    artifact_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-scoring-artifact-audit-v11"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _validate_generic_legacy_digest_payload(
+            digest=self.artifact_digest,
+            payload_json=self.payload_json,
+            digest_field="artifact_digest",
+            original_contract="neural-prior-holdout-scoring-artifact-v11",
         )
         object.__setattr__(
             self,
@@ -16836,7 +17023,7 @@ def validate_holdout_scoring_artifact(
     ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
     start = manifest.candidate_scoring_start_receipt
     if (
-        artifact.contract != "neural-prior-holdout-scoring-artifact-v11"
+        artifact.contract != "neural-prior-holdout-scoring-artifact-v12"
         or artifact.artifact_digest != json_digest(artifact.payload)
         or artifact.holdout_plan_digest != plan.plan_digest
         or artifact.candidate_manifest_digest != manifest.manifest_digest

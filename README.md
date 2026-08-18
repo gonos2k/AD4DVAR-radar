@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.90
+# ADVAR 3-frame radar nowcast v0.91
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -6,7 +6,8 @@
 설치하여 `advar-nowcast` CLI와 NPZ 출력계약을 smoke-test한다. 성공한 package
 job은 wheel, 해당 Python/Linux CPU hash lock, strict vulnerability audit,
 CycloneDX SBOM, 설치 attestation과 전체 file-hash manifest를 하나의 signed
-`advar-linux-cpu-deployment-bundle-v2`로 묶는다. 일반 PR/push CI가 업로드하는
+dependency wheelhouse와 설치 runtime tree까지 signed
+`advar-linux-cpu-deployment-bundle-v3`로 묶는다. 일반 PR/push CI가 업로드하는
 artifact는 ephemeral key의 `candidate-smoke`이며 배포 권한이 없다.
 
 10분 간격 레이더 dBZ 3장으로 다음 3시간을 10분 간격으로 예측하는
@@ -102,17 +103,41 @@ python -I .github/scripts/build_deployment_bundle.py verify \
   --trusted-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.90.0 \
+  --expected-source-ref refs/tags/v0.91.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-signer-id advar-release
 ```
 
 ```bash
-python -I -m pip install --require-hashes --only-binary=:all: \
-  --extra-index-url https://download.pytorch.org/whl/cpu \
-  --requirement requirements/runtime-py312-linux.lock
-python -I -m pip install --no-deps advar_radar_nowcast-0.90.0-*.whl
+python -I -m pip install --no-index --find-links wheelhouse \
+  --require-hashes --only-binary=:all: \
+  --requirement runtime-py312-linux.lock
+python -I -m pip install --no-index --no-deps \
+  advar_radar_nowcast-0.91.0-*.whl
+```
+
+설치 뒤에는 verifier가 lock에 이름이 있는 모든 distribution과 application의
+importable file tree를 다시 hash한다. Release bundle digest, runtime-tree digest,
+deployment instance와 activation time은 별도의
+`advar-runtime-closure-activation-receipt-v1`에 host activation key로 서명한다.
+Protected release signer와 activation signer의 private key는 둘 다 bundle 밖에
+보관하며, production에서는 root-owned immutable staging에서만 다음 명령을 실행한다.
+
+```bash
+python -I .github/scripts/build_deployment_bundle.py activate-runtime \
+  --bundle /srv/advar/bundles/<digest> \
+  --trusted-bundle-public-key /etc/advar/release-bundle-ed25519.pub \
+  --expected-mode deployable \
+  --expected-repository gonos2k/AD4DVAR-radar \
+  --expected-source-ref refs/tags/v0.91.0 \
+  --expected-source-commit <signed-release-commit> \
+  --expected-workflow-sha <protected-workflow-sha> \
+  --expected-bundle-signer-id advar-release \
+  --deployment-instance-id <host-or-slot-id> \
+  --activation-signer-id advar-runtime-activation \
+  --activation-signing-private-key /etc/advar/runtime-activation.key \
+  --receipt /var/lib/advar/runtime-activation-receipt.json
 ```
 
 Python API:
@@ -833,11 +858,12 @@ withheld radar/time/mask), QC·mask·censor·floor measurement contract,
 feature-exclusion 및 independence evidence를
 사전등록하며 plan payload 자체가 holdout digest에 포함된다. 실제 target은 임의
 Tensor로 만들 수 없고, plan에 고정된 radar product·QC·grid·valid time과 일치하는
-content-addressed `radar-verification-bundle-v3`에서만 생성한다.
+content-addressed `radar-verification-bundle-v4`에서만 생성한다.
 P1 state head에는 별도의 `NeuralPriorStateCalibrationPlan`을 사전등록한다. State target은
 state product·QC·mask·censor·floor policy, dBZ resolution·quantization origin과 prior output
 valid time에 결합되고 feature에서 withhold됐음을 검증한다. Target은 이 측정계보를 실제
-자료와 함께 attestation한 `radar-verification-bundle-v3`에서만 생성된다. Candidate와
+자료와 함께 observation-error contract를 attestation한
+`radar-verification-bundle-v4`에서만 생성된다. Candidate와
 parent의 state interval-Gaussian NLL·PIT,
 support Brier·pixel/object miss·false-support 및 validity Brier를 같은 target에서 paired
 평가한다. 절대 calibration과 cluster max-statistic 비열화 상한을 모두 통과하지 못하면
@@ -1014,20 +1040,29 @@ evaluation JSON에 무관한 임의 tensor를 붙인 snapshot은 자동승격 �
 Forecast, prior application, inference runner, verification, metric config, calibration
 target, classifier와 operational-domain artifact는 각각 제품 validator와 runner
 reproduction을 통과해야 하며, factory가 한 번 동결한 tensor snapshot과 completion 시점의
-live product bytes가 다르면 거부된다. Replay v11 contract와 v11 method, typed
-verification-target identity를 포함한 five-channel CPU-only generation v9 digest는
-`HoldoutScoringArtifact-v11`, promotion evidence v31,
+live product bytes가 다르면 거부된다. Replay v12 contract와 v12 method, typed
+verification-target identity를 포함한 five-channel CPU-only generation v10 digest는
+`HoldoutScoringArtifact-v12`, promotion evidence v31,
 `DeployedNeuralPriorPolicy-v17`과 deployment-decision artifact v17까지
 직접 전파된다.
-각 holdout case의 `VerificationTargetIdentityArtifact-v1`은 실제 scoring에 사용되는
+각 holdout case의 `VerificationTargetIdentityArtifact-v2`는 실제 scoring에 사용되는
 target plan에서 source identity와 UTC valid time을 가져오고, exact target value,
-valid-mask, quality, QC/censor policy 및 verification bundle digest를 함께 봉인한다.
+valid-mask, quality, QC/censor policy, observation-error contract 및 verification
+bundle digest를 함께 봉인한다.
 Evaluation factory는 metric 계산 전에 이 typed identity를 실제 target tensors에서
 다시 만들어 case 선언과 byte-for-byte 비교한다. Training/holdout overlap gate도 같은
 typed identity를 사용하므로 outer manifest digest를 다시 계산해도 scoring target를
 다른 source/time/value/mask/quality로 재라벨링할 수 없다.
 따라서 이전 replay 세대의 promotion evidence는 audit-only이며 배포 selector가
 소비할 수 없다.
+`VerificationObservationErrorContract-v1`은 radar calibration epoch, range/elevation
+validity, beam blockage/visibility, attenuation QC, censoring, mosaic source map,
+spatial-correlation block, source별 quality 의미와 observation-error scale을 exact
+target bytes에 결합한다. Current target와 state-calibration target는
+`radar-verification-bundle-v4`만 허용하며, scoring measure는
+`quality * min(1, (reference_std / observation_std)^2)`이다. Invalid·unobserved
+cell은 weight 0이어야 하고 low-quality 영역의 apparent gain은 promotion score에
+그 비율만큼만 기여한다.
 Audit load는 저장된 typed evaluation을 볼 수 있지만, 자동 completion과 promotion은
 동일한 typed replay case를 다시 제공해 semantic replay까지 통과해야 한다. 배포
 certificate 발급 시에도 typed case에서 제품 scorer를 다시 실행하며, checksum-only
@@ -1039,6 +1074,28 @@ completion, promotion load 시마다 다시 계산한다.
 한다. Replay bundle의 numerical runtime도 caller 문자열이 아니라 typed case의 실제
 input Tensor device에서 계산한다. 따라서 시간별 quality를 2차원 mask로 축약하거나
 background의 시간축 일부만 보존한 archive는 semantic replay 전에 거부된다.
+
+## 실제사례 acceptance (REPORT_ONLY)
+
+`advar-real-case-acceptance-manifest-v1`은 single-site, 지연 frame, complete outage,
+mosaic handoff, duplicate acquisition, target 지연/손상, key revocation, provenance
+crash, activation crash와 offline restart의 열 가지 시나리오를 exact physical-event와
+13단계 product artifact chain으로 묶는다. 이 harness는 ledger를 수정하거나 deployment를
+승인하지 않으며 항상 `REPORT_ONLY` report를 낸다.
+
+```bash
+python -I .github/scripts/run_real_case_acceptance.py \
+  --manifest /srv/advar/acceptance/manifest.json \
+  --artifact-root /srv/advar/acceptance/artifacts \
+  --report /srv/advar/acceptance/report.json
+```
+
+Manifest는 canonical `neural-prior-promotion-sample-size-preflight-v5` 파일의 SHA-256과
+product digest를 직접 포함한다. Verifier는 그 bytes를 typed preflight로 다시 만들고
+`required_physical_events`와 manifest count, 모든 case의 preflight digest가 정확히 같은지
+확인한다. 저장소의 synthetic unit fixture는 harness integrity만 검사하며 현업 radar
+acceptance evidence로 간주하지 않는다. LIVE 승격에는 legally usable native radar bytes,
+independent verification observations와 보호된 deployable signer가 별도로 필요하다.
 
 동적 mosaic/outage coverage는 nominal source domain을 미래에 고정하는 대신 input
 availability 이후 decision deadline 이전에 data-ingestor가 서명한
@@ -1690,7 +1747,7 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
 
 `forecast-run-v66`은 typed verification-target identity와 target-source current trust를
-결합한 five-channel CPU-only scoring generation v9, two-phase raw observation slot과
+결합한 five-channel CPU-only scoring generation v10, two-phase raw observation slot과
 canonical raw-volume identity 단위의 전역
 sampling reservation, 같은 family의 rolling-window membership, source-registry와
 location-registry가 결합된 mosaic range domain,
@@ -1744,7 +1801,7 @@ signer 또는 final activation이 실패하면 동일 cycle은 이미 durable한
 Raw ingestor trust-store v2는 plan에 고정된 snapshot과 provenance commit, scoring
 replay/completion, promotion, certificate 발급 및 operational decision 시점의 current
 root-owned store 양쪽에서 attestation 시각의 key validity/revocation을 대조한다.
-Current store의 content digest는 replay-v11 manifest, scoring-v11 artifact, scheduler가
+Current store의 content digest는 replay-v12 manifest, scoring-v12 artifact, scheduler가
 봉인한 completion output, promotion evidence v31, promotion deployment certificate v6와
 operational decision certificate에 연속 결합된다. Certificate/publication 서명 전후와
 activation 직전·직후에도 store를 다시 읽고, durable `forecast-run-v66` load에서도 외부
