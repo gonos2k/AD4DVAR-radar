@@ -20,6 +20,17 @@ class _FakeDistribution:
 
 
 class RuntimeClosureTests(unittest.TestCase):
+    def test_interpreter_snapshot_requires_bytecode_writes_disabled(self) -> None:
+        with patch.object(
+            runtime_closure_module.sys,
+            "dont_write_bytecode",
+            False,
+        ), self.assertRaisesRegex(ValueError, "disable bytecode writes"):
+            runtime_closure_module._interpreter_closure_snapshot(
+                native_extension_paths=(),
+                deployable=False,
+            )
+
     def test_runtime_file_snapshot_rejects_a_symlink(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             base = Path(temporary)
@@ -92,6 +103,7 @@ class RuntimeClosureTests(unittest.TestCase):
             )
             interpreter = {
                 "contract": "advar-python-interpreter-closure-v1",
+                "bytecode_write_disabled": True,
                 "interpreter_closure_digest": "7" * 64,
             }
             with (

@@ -171,10 +171,10 @@ jobs:
             --requirement requirements/runtime-py312-linux.lock
           python -I -m pip --python .wheel-venv/bin/python install \
             --no-index --no-deps --no-compile dist/*.whl
+          python -I -m pip --python .wheel-venv/bin/python check
           find .wheel-venv -type f \
             \( -name '*.pyc' -o -name '*.pyo' \) -delete
-          python -I -m pip --python .wheel-venv/bin/python check
-          .wheel-venv/bin/python -I - <<'PY'
+          .wheel-venv/bin/python -I -B - <<'PY'
           import torch
 
           assert torch.version.cuda is None
@@ -182,7 +182,7 @@ jobs:
 
       - name: Generate CLI smoke input
         run: |
-          .wheel-venv/bin/python -I - <<'PY'
+          .wheel-venv/bin/python -I -B - <<'PY'
           import os
           from pathlib import Path
 
@@ -208,7 +208,7 @@ jobs:
 
       - name: Validate installed CLI output contract
         run: |
-          .wheel-venv/bin/python -I - <<'PY'
+          .wheel-venv/bin/python -I -B - <<'PY'
           import os
           from pathlib import Path
 
@@ -260,7 +260,7 @@ jobs:
       - name: Generate separate ephemeral candidate-smoke authority keys
         working-directory: ${{ runner.temp }}
         run: |
-          "$GITHUB_WORKSPACE/.wheel-venv/bin/python" -I - <<'PY'
+          "$GITHUB_WORKSPACE/.wheel-venv/bin/python" -I -B - <<'PY'
           from pathlib import Path
           from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
@@ -277,7 +277,7 @@ jobs:
 
       - name: Build the signed candidate-smoke deployment bundle
         run: |
-          .wheel-venv/bin/python -I .github/scripts/build_deployment_bundle.py build \
+          .wheel-venv/bin/python -I -B .github/scripts/build_deployment_bundle.py build \
             --wheel "$(find dist -maxdepth 1 -name '*.whl' -print -quit)" \
             --lock requirements/runtime-py312-linux.lock \
             --audit "$RUNNER_TEMP/runtime-audit.json" \
@@ -301,7 +301,7 @@ jobs:
           ADVAR_WORKFLOW_SHA: ${{ github.workflow_sha }}
           ADVAR_WORKSPACE: ${{ github.workspace }}
         run: |
-          "$ADVAR_WORKSPACE/.wheel-venv/bin/python" -I \
+          "$ADVAR_WORKSPACE/.wheel-venv/bin/python" -I -B \
             "$ADVAR_WORKSPACE/.github/scripts/build_deployment_bundle.py" verify \
             --bundle advar-linux-cpu-candidate-smoke \
             --trusted-public-key candidate-smoke-bundle-public-key.hex \
@@ -335,10 +335,10 @@ jobs:
             --no-deps \
             --no-compile \
             "$ADVAR_WORKSPACE"/dist/*.whl
+          python -I -m pip --python replay-wheel-venv/bin/python check
           find replay-wheel-venv -type f \
             \( -name '*.pyc' -o -name '*.pyo' \) -delete
-          python -I -m pip --python replay-wheel-venv/bin/python check
-          replay-wheel-venv/bin/python -I \
+          replay-wheel-venv/bin/python -I -B \
             "$ADVAR_WORKSPACE/.github/scripts/build_deployment_bundle.py" verify \
             --bundle advar-linux-cpu-candidate-smoke \
             --trusted-public-key candidate-smoke-bundle-public-key.hex \
@@ -359,7 +359,7 @@ jobs:
           ADVAR_WORKFLOW_SHA: ${{ github.workflow_sha }}
           ADVAR_WORKSPACE: ${{ github.workspace }}
         run: |
-          replay-wheel-venv/bin/python -I \
+          replay-wheel-venv/bin/python -I -B \
             "$ADVAR_WORKSPACE/.github/scripts/build_deployment_bundle.py" \
             activate-runtime \
             --bundle advar-linux-cpu-candidate-smoke \
@@ -382,23 +382,23 @@ jobs:
             --activation-signing-private-key \
               candidate-smoke-runtime-activation-key.raw \
             --receipt runtime-activation-receipt.json
-          bundle_digest=$(replay-wheel-venv/bin/python -I - <<'PY'
+          bundle_digest=$(replay-wheel-venv/bin/python -I -B - <<'PY'
           import json
           print(json.load(open("advar-linux-cpu-candidate-smoke/manifest.json"))["bundle_digest"])
           PY
           )
-          runtime_digest=$(replay-wheel-venv/bin/python -I - <<'PY'
+          runtime_digest=$(replay-wheel-venv/bin/python -I -B - <<'PY'
           import json
           print(json.load(open("advar-linux-cpu-candidate-smoke/runtime-tree.json"))["runtime_tree_digest"])
           PY
           )
-          interpreter_digest=$(replay-wheel-venv/bin/python -I - <<'PY'
+          interpreter_digest=$(replay-wheel-venv/bin/python -I -B - <<'PY'
           import json
           tree = json.load(open("advar-linux-cpu-candidate-smoke/runtime-tree.json"))
           print(tree["interpreter_closure"]["interpreter_closure_digest"])
           PY
           )
-          replay-wheel-venv/bin/python -I \
+          replay-wheel-venv/bin/python -I -B \
             "$ADVAR_WORKSPACE/.github/scripts/build_deployment_bundle.py" \
             verify-runtime-activation \
             --receipt runtime-activation-receipt.json \

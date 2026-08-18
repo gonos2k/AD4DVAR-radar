@@ -334,6 +334,8 @@ def _interpreter_closure_snapshot(
     native_extension_paths: tuple[Path, ...],
     deployable: bool,
 ) -> dict[str, object]:
+    if not sys.dont_write_bytecode:
+        raise ValueError("deployment Python must disable bytecode writes")
     executable = Path(sys.executable).resolve(strict=True)
     executable_size, executable_sha256 = _runtime_file_snapshot(
         executable,
@@ -368,6 +370,7 @@ def _interpreter_closure_snapshot(
         "python_implementation": platform.python_implementation(),
         "python_version": platform.python_version(),
         "python_abi": sys.implementation.cache_tag,
+        "bytecode_write_disabled": True,
         "executable_size_bytes": executable_size,
         "executable_sha256": executable_sha256,
         "active_import_path": active_import_path_snapshot(
@@ -535,6 +538,7 @@ def _validate_runtime_tree_snapshot(value: object) -> dict[str, object]:
         or not isinstance(interpreter_closure, dict)
         or interpreter_closure.get("contract")
         != "advar-python-interpreter-closure-v1"
+        or interpreter_closure.get("bytecode_write_disabled") is not True
         or interpreter_closure.get("interpreter_closure_digest")
         != _json_digest(
             {

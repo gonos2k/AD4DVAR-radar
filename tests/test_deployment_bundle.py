@@ -105,6 +105,7 @@ class DeploymentBundleTests(unittest.TestCase):
                         "_interpreter_closure_snapshot",
                         return_value={
                             "contract": "advar-python-interpreter-closure-v1",
+                            "bytecode_write_disabled": True,
                             "interpreter_closure_digest": "7" * 64,
                         },
                     ),
@@ -235,6 +236,7 @@ class DeploymentBundleTests(unittest.TestCase):
                     "_interpreter_closure_snapshot",
                     return_value={
                         "contract": "advar-python-interpreter-closure-v1",
+                        "bytecode_write_disabled": True,
                         "interpreter_closure_digest": "7" * 64,
                     },
                 ),
@@ -347,8 +349,12 @@ class DeploymentBundleTests(unittest.TestCase):
                 ],
                 "interpreter_closure": {
                     "contract": "advar-python-interpreter-closure-v1",
+                    "bytecode_write_disabled": True,
                     "interpreter_closure_digest": bundle_module._json_digest(
-                        {"contract": "advar-python-interpreter-closure-v1"}
+                        {
+                            "contract": "advar-python-interpreter-closure-v1",
+                            "bytecode_write_disabled": True,
+                        }
                     ),
                 },
             }

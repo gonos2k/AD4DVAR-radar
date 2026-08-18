@@ -127,6 +127,9 @@ extension module이 연결한 native library의 bytes와 ABI도
 group/world-non-writable여야 한다. Release bundle digest, runtime-tree digest,
 interpreter closure, deployment instance, host identity와 activation expiry는 별도의
 `deployment-runtime-activation-receipt-v2`에 host activation key로 서명한다.
+Runtime snapshot·verify·launch process는 반드시 `python -I -B` 또는 동등한
+격리/bytecode-write 금지 launcher로 시작해야 하며 interpreter closure가 이 상태를
+봉인한다.
 Protected release signer와 activation signer의 private key는 둘 다 bundle 밖에
 보관하며, production에서는 root-owned immutable staging에서만 다음 명령을 실행한다.
 
