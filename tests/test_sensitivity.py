@@ -71,6 +71,7 @@ from advar.sensitivity import (  # noqa: E402
     SensitivityConfig,
     SparseRadarPerturbation,
     VerificationBundle,
+    VerificationObservationErrorContract,
     VariationalAdjointConfig,
     VariationalObservationPerturbation,
     compute_sensitivity_snapshot,
@@ -2270,6 +2271,55 @@ class VariationalFSOTests(unittest.TestCase):
             for value in torch.nonzero(bundle.valid_mask, as_tuple=False)[0]
         )
         bundle.frames_dbz[valid_index] += 1.0
+        with self.assertRaisesRegex(ValueError, "content digest"):
+            bundle.validate_integrity()
+
+    def test_verification_observation_error_controls_metric_weight(self) -> None:
+        frames = torch.tensor([[[12.0, 8.0], [2.0, -10.0]]])
+        valid = torch.tensor([[[True, True], [True, False]]])
+        quality = torch.tensor([[[1.0, 0.5], [0.0, 0.0]]])
+        error_std = torch.tensor([[[2.0, 4.0], [2.0, 0.0]]])
+        error = VerificationObservationErrorContract.from_tensors(
+            valid_mask=valid,
+            quality_weight=quality,
+            observation_std_dbz=error_std,
+            radar_source_kind="single_site",
+            source_calibration_epochs=(("1" * 64, "2" * 64),),
+            range_elevation_validity_domain_digest="3" * 64,
+            beam_blockage_visibility_mask_digest="4" * 64,
+            attenuation_qc_digest="5" * 64,
+            censoring_rule_digest="6" * 64,
+            spatial_correlation_block_digest="7" * 64,
+            quality_weight_interpretation_digest="8" * 64,
+            observation_error_model_digest="9" * 64,
+            minimum_detectable_echo_dbz=-10.0,
+            observation_error_reference_std_dbz=2.0,
+        )
+        bundle = VerificationBundle(
+            frames_dbz=frames,
+            valid_mask=valid,
+            valid_times=("2026-08-05T00:30:00Z",),
+            grid_contract_digest="a" * 64,
+            radar_product_digest="b" * 64,
+            qc_pipeline_digest="5" * 64,
+            mask_policy_digest="c" * 64,
+            censor_policy_digest="6" * 64,
+            reflectivity_resolution_dbz=0.5,
+            quantization_origin_dbz=-10.0,
+            threshold_bin_convention="nearest_rounding_threshold_censor",
+            floor_representation_contract_digest="d" * 64,
+            quality_weight=quality,
+            observation_std_dbz=error_std,
+            observation_error_contract=error,
+            contract="radar-verification-bundle-v4",
+        )
+        self.assertTrue(
+            torch.equal(
+                bundle.metric_weight,
+                torch.tensor([[[1.0, 0.125], [0.0, 0.0]]]),
+            )
+        )
+        bundle.quality_weight[0, 0, 0] = 0.0
         with self.assertRaisesRegex(ValueError, "content digest"):
             bundle.validate_integrity()
 

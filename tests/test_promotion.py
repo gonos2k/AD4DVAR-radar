@@ -12,7 +12,7 @@ import sqlite3
 import tempfile
 import time
 from types import SimpleNamespace
-from typing import cast
+from typing import Any, cast
 import unittest
 from unittest.mock import Mock, patch
 
@@ -60,6 +60,7 @@ from advar import (
     RealizedObservationIntervention,
     RadarGridTimeContract,
     VerificationBundle,
+    VerificationObservationErrorContract,
     algorithm_bundle_digest,
     compute_neural_prior_promotion,
     validate_neural_prior_candidate_manifest,
@@ -74,6 +75,73 @@ from advar import (
     variational_nowcast,
 )
 from advar.sensitivity import _LearningPolicyTrustStore
+
+
+def _verification_bundle_v4(
+    *,
+    frames_dbz: torch.Tensor,
+    valid_mask: torch.Tensor,
+    valid_times: tuple[str, ...],
+    grid_contract_digest: str,
+    radar_product_digest: str,
+    qc_pipeline_digest: str,
+    mask_policy_digest: str,
+    censor_policy_digest: str,
+    reflectivity_resolution_dbz: float,
+    quantization_origin_dbz: float,
+    threshold_bin_convention: str,
+    floor_representation_contract_digest: str,
+    radar_source_kind: str = "single_site",
+    source_radar_index_map_digest: str | None = None,
+) -> VerificationBundle:
+    quality = valid_mask.to(frames_dbz)
+    observation_std = torch.where(
+        valid_mask,
+        torch.full_like(frames_dbz, 2.0),
+        torch.zeros_like(frames_dbz),
+    )
+    source_epochs = (
+        (("1" * 64, "2" * 64), ("3" * 64, "4" * 64))
+        if radar_source_kind == "mosaic"
+        else ((radar_product_digest, "2" * 64),)
+    )
+    error_contract = VerificationObservationErrorContract.from_tensors(
+        valid_mask=valid_mask,
+        quality_weight=quality,
+        observation_std_dbz=observation_std,
+        radar_source_kind=cast(Any, radar_source_kind),
+        source_calibration_epochs=source_epochs,
+        range_elevation_validity_domain_digest="5" * 64,
+        beam_blockage_visibility_mask_digest="6" * 64,
+        attenuation_qc_digest=qc_pipeline_digest,
+        censoring_rule_digest=censor_policy_digest,
+        spatial_correlation_block_digest="7" * 64,
+        quality_weight_interpretation_digest="8" * 64,
+        observation_error_model_digest="9" * 64,
+        minimum_detectable_echo_dbz=-10.0,
+        observation_error_reference_std_dbz=2.0,
+        source_radar_index_map_digest=source_radar_index_map_digest,
+    )
+    return VerificationBundle(
+        frames_dbz=frames_dbz,
+        valid_mask=valid_mask,
+        valid_times=valid_times,
+        grid_contract_digest=grid_contract_digest,
+        radar_product_digest=radar_product_digest,
+        qc_pipeline_digest=qc_pipeline_digest,
+        mask_policy_digest=mask_policy_digest,
+        censor_policy_digest=censor_policy_digest,
+        reflectivity_resolution_dbz=reflectivity_resolution_dbz,
+        quantization_origin_dbz=quantization_origin_dbz,
+        threshold_bin_convention=threshold_bin_convention,
+        floor_representation_contract_digest=(
+            floor_representation_contract_digest
+        ),
+        quality_weight=quality,
+        observation_std_dbz=observation_std,
+        observation_error_contract=error_contract,
+        contract="radar-verification-bundle-v4",
+    )
 
 
 class _FixedRegimeClassifier(nn.Module):
@@ -242,7 +310,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             evaluation.contract,
-            "prior-holdout-evaluation-v23",
+            "prior-holdout-evaluation-v24",
         )
         self.assertTrue(
             all(
@@ -277,7 +345,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
         self.assertEqual(
             scoring.contract,
-            "neural-prior-holdout-scoring-artifact-v11",
+            "neural-prior-holdout-scoring-artifact-v12",
         )
         self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v31")
         self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v17")
@@ -311,6 +379,26 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertIsInstance(
             decoded_legacy_scoring,
             promotion_module.LegacyHoldoutScoringArtifactAuditV10,
+        )
+        prior_scoring_payload = dict(scoring.payload)
+        prior_scoring_payload["contract"] = (
+            "neural-prior-holdout-scoring-artifact-v11"
+        )
+        prior_scoring_digest = promotion_module.json_digest(
+            prior_scoring_payload
+        )
+        decoded_prior_scoring = ledger_module._decode_holdout_scoring_artifact(
+            json.dumps(
+                prior_scoring_payload
+                | {"artifact_digest": prior_scoring_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            prior_scoring_digest,
+        )
+        self.assertIsInstance(
+            decoded_prior_scoring,
+            promotion_module.LegacyHoldoutScoringArtifactAuditV11,
         )
 
     def test_deployment_certificate_binds_the_full_promotion_preimage(
@@ -3143,7 +3231,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             state_contract_digest=self.state_contract().contract_digest,
             support_threshold_dbz=5.0,
         )
-        target_verification = VerificationBundle(
+        target_verification = _verification_bundle_v4(
             frames_dbz=torch.tensor([[[10.0, 1.0], [10.0, 1.0]]]),
             valid_mask=torch.ones((1, 2, 2), dtype=torch.bool),
             valid_times=(target_time,),
@@ -3156,11 +3244,20 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             quantization_origin_dbz=-10.0,
             threshold_bin_convention="nearest_rounding_threshold_censor",
             floor_representation_contract_digest="e" * 64,
-            contract="radar-verification-bundle-v3",
         )
-        state_verification = replace(
-            target_verification,
+        state_verification = _verification_bundle_v4(
+            frames_dbz=target_verification.frames_dbz,
+            valid_mask=target_verification.valid_mask,
+            valid_times=target_verification.valid_times,
+            grid_contract_digest=grid.digest,
             radar_product_digest="a" * 64,
+            qc_pipeline_digest="9" * 64,
+            mask_policy_digest="3" * 64,
+            censor_policy_digest=self.state_contract().state_censor_policy_digest,
+            reflectivity_resolution_dbz=0.5,
+            quantization_origin_dbz=-10.0,
+            threshold_bin_convention="nearest_rounding_threshold_censor",
+            floor_representation_contract_digest="e" * 64,
         )
         uncertainty_target = PriorUncertaintyTarget.from_verification_bundle(
             plan=target_plan,
@@ -3170,7 +3267,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             plan=state_target_plan,
             verification=state_verification,
         )
-        verification = VerificationBundle(
+        verification = _verification_bundle_v4(
             frames_dbz=input_frames[-1].repeat((6, 1, 1)),
             valid_mask=torch.ones((6, 2, 2), dtype=torch.bool),
             valid_times=forecast_valid_times,
@@ -3183,7 +3280,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             quantization_origin_dbz=-10.0,
             threshold_bin_convention="nearest_rounding_threshold_censor",
             floor_representation_contract_digest="e" * 64,
-            contract="radar-verification-bundle-v3",
+            radar_source_kind="mosaic",
+            source_radar_index_map_digest=promotion_module.tensor_digest(
+                source_map
+            ),
         )
         range_geometry = promotion_module.MosaicRangeGeometryContract.from_registry(
             source_registry,
@@ -4604,7 +4704,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def state_target(self, index: int) -> NeuralPriorStateCalibrationTarget:
         plan = self.plan()
         target_plan = plan.state_calibration_target_plans[index - 1]
-        verification = VerificationBundle(
+        verification = _verification_bundle_v4(
             frames_dbz=torch.tensor([[[10.0, 1.0], [10.0, 1.0]]]),
             valid_mask=torch.ones((1, 2, 2), dtype=torch.bool),
             valid_times=(target_plan.target_valid_time,),
@@ -4621,7 +4721,6 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             floor_representation_contract_digest=(
                 target_plan.floor_representation_contract_digest
             ),
-            contract="radar-verification-bundle-v3",
         )
         return NeuralPriorStateCalibrationTarget.from_verification_bundle(
             plan=target_plan,
@@ -4631,7 +4730,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def uncertainty_target(self, index: int) -> PriorUncertaintyTarget:
         plan = self.plan()
         target_plan = plan.uncertainty_target_plans[index - 1]
-        verification = VerificationBundle(
+        verification = _verification_bundle_v4(
             frames_dbz=torch.tensor([[[10.0, 1.0], [10.0, 1.0]]]),
             valid_mask=torch.ones((1, 2, 2), dtype=torch.bool),
             valid_times=(target_plan.target_valid_time,),
@@ -4648,7 +4747,6 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             floor_representation_contract_digest=(
                 target_plan.floor_representation_contract_digest
             ),
-            contract="radar-verification-bundle-v3",
         )
         return PriorUncertaintyTarget.from_verification_bundle(
             plan=target_plan,
@@ -5302,6 +5400,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             prior_uncertainty_target_digest=case.uncertainty_target_digest,
             verification_target_identity_artifact_digest=(
                 case.verification_target_identity_artifact_digest
+            ),
+            verification_observation_error_contract_digest=(
+                case.verification_target_identity
+                .observation_error_contract_digest
             ),
             prior_uncertainty_sample_count=prior_sample_count,
             prior_echo_intensity_sample_count=echo_count,
@@ -8358,6 +8460,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 torch.full((1, 3), floor),
                 support,
                 mask,
+                torch.ones((1, 3)),
                 support_threshold_dbz=5.0,
             )
             for floor in (-10.0, 0.0, 4.9)
@@ -8482,6 +8585,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             torch.where(support, 5.0, -10.0),
             support,
             torch.ones(1000, dtype=torch.bool),
+            torch.ones(1000),
             support_threshold_dbz=5.0,
         )
         self.assertAlmostEqual(scores.support_brier_score, 0.001)
@@ -11156,6 +11260,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             torch.tensor([5.5]),
             torch.tensor([True]),
             torch.tensor([True]),
+            torch.tensor([1.0]),
             support_threshold_dbz=5.0,
             reflectivity_resolution_dbz=0.5,
             quantization_origin_dbz=-10.0,
@@ -11164,6 +11269,27 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertEqual(
             scores.echo_intensity_nll,
             promotion_module.UncertaintyScoreSupportContract().maximum_nll_score,
+        )
+
+    def test_uncertainty_scoring_uses_observation_error_weight(self) -> None:
+        application = SimpleNamespace(
+            truncated_location_dbz=torch.zeros(2),
+            truncated_scale_dbz=torch.ones(2),
+            event_probability=torch.tensor([0.0, 1.0]),
+        )
+        scores = promotion_module._prior_uncertainty_scores(
+            application,
+            torch.zeros(2),
+            torch.zeros(2, dtype=torch.bool),
+            torch.ones(2, dtype=torch.bool),
+            torch.tensor([1.0, 0.1]),
+            support_threshold_dbz=5.0,
+        )
+
+        self.assertAlmostEqual(scores.support_brier_score, 0.1 / 1.1)
+        self.assertAlmostEqual(
+            cast(float, scores.clear_sky_false_echo_score),
+            0.1 / 1.1,
         )
 
     def test_state_target_requires_v2_measurement_attestation(self) -> None:
@@ -13651,6 +13777,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             {"target_tensor_digest": "1" * 64},
             {"target_valid_mask_digest": "2" * 64},
             {"target_quality_digest": "3" * 64},
+            {"observation_error_contract_digest": "4" * 64},
         )
         for identity_change in forged_identity_values:
             with self.subTest(identity_change=tuple(identity_change)):
@@ -13978,19 +14105,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def test_cpu_only_scoring_generation_has_a_stable_backend_contract(self) -> None:
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_CONTRACT,
-            "neural-prior-scoring-replay-bundle-v11",
+            "neural-prior-scoring-replay-bundle-v12",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_METHOD,
-            "builtin-semantic-scoring-recomputation-v11",
+            "builtin-semantic-scoring-recomputation-v12",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD,
             {
-                "contract": "neural-prior-semantic-scoring-generation-v9",
-                "replay_contract": "neural-prior-scoring-replay-bundle-v11",
-                "replay_method": "builtin-semantic-scoring-recomputation-v11",
-                "case_contract": "neural-prior-semantic-scoring-case-v10",
+                "contract": "neural-prior-semantic-scoring-generation-v10",
+                "replay_contract": "neural-prior-scoring-replay-bundle-v12",
+                "replay_method": "builtin-semantic-scoring-recomputation-v12",
+                "case_contract": "neural-prior-semantic-scoring-case-v11",
                 "product_type_policy": "exact-shipped-product-types-v1",
                 "forecast_integrity": "forecast-result-raw-content-validation-v1",
                 "prior_integrity": "runner-reproduced-prior-application-v1",

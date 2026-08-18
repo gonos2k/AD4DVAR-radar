@@ -254,6 +254,7 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV29,
     LegacyNeuralPriorPromotionEvidenceAuditV30,
     LegacyHoldoutScoringArtifactAuditV10,
+    LegacyHoldoutScoringArtifactAuditV11,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     ScoringReplayCaseArtifact,
@@ -2216,6 +2217,77 @@ class LegacyScoringReplayBundleManifestAuditV9(ScoringReplayBundleManifest):
 
 
 @dataclass(frozen=True)
+class LegacyScoringReplayBundleManifestAuditV11(ScoringReplayBundleManifest):
+    """Pre-observation-error v11 replay retained for byte audit only."""
+
+    replay_method: str = "builtin-semantic-scoring-recomputation-v11"
+    contract: str = "neural-prior-scoring-replay-bundle-v11"
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-scoring-replay-bundle-v11"
+            or self.replay_method
+            != "builtin-semantic-scoring-recomputation-v11"
+            or not self.ordered_case_ids
+            or len(set(self.ordered_case_ids)) != len(self.ordered_case_ids)
+            or len(self.ordered_case_ids)
+            != len(self.ordered_evaluation_digests)
+            or len(self.semantic_case_digests) != len(self.ordered_case_ids)
+            or any(
+                case_id not in self.ordered_case_ids
+                for case_id in (
+                    *self.dynamic_source_case_ids,
+                    *self.background_case_ids,
+                )
+            )
+            or any(
+                value is not None
+                for value in (
+                    self.scoring_backend_certification_policy_digest,
+                    self.scoring_backend_certification_evidence_digest,
+                )
+            )
+            or self.raw_ingestor_trust_store_digest is None
+        ):
+            raise ValueError("legacy v11 semantic replay manifest is invalid")
+        for value in (
+            self.scoring_input_artifact_digest,
+            *self.ordered_evaluation_digests,
+            *self.semantic_case_digests,
+            self.algorithm_source_manifest_digest,
+            self.runtime_compatibility_digest,
+            self.runtime_exact_digest,
+            self.tensor_archive_sha256,
+            self.evaluation_payload_sha256,
+            self.raw_provenance_payload_sha256,
+            self.raw_ingestor_trust_store_digest,
+        ):
+            if re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError("legacy v11 semantic replay digest is invalid")
+        expected = {
+            (case_id, role)
+            for case_id in self.ordered_case_ids
+            for role in (
+                SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                | (
+                    SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
+                    if case_id in self.dynamic_source_case_ids
+                    else frozenset()
+                )
+                | (
+                    SCORING_REPLAY_BACKGROUND_TENSOR_ROLES
+                    if case_id in self.background_case_ids
+                    else frozenset()
+                )
+            )
+        }
+        actual = {(item.case_id, item.role) for item in self.tensor_records}
+        if actual != expected or len(actual) != len(self.tensor_records):
+            raise ValueError("legacy v11 semantic replay tensor set is incomplete")
+        object.__setattr__(self, "bundle_digest", _json_digest(self.payload))
+
+
+@dataclass(frozen=True)
 class LoadedScoringReplayBundle:
     manifest: (
         ScoringReplayBundleManifest
@@ -2228,6 +2300,7 @@ class LoadedScoringReplayBundle:
         | LegacyScoringReplayBundleManifestAuditV7
         | LegacyScoringReplayBundleManifestAuditV8
         | LegacyScoringReplayBundleManifestAuditV9
+        | LegacyScoringReplayBundleManifestAuditV11
     )
     evaluations: tuple[PriorHoldoutEvaluation, ...]
     tensors: dict[tuple[str, str], Tensor]
@@ -17128,7 +17201,7 @@ def _decode_evaluation_audit_payloads(
         raise ValueError("invalid promotion evaluation audit payload")
     if value and (
         isinstance(value[0].get("metric_change"), list)
-        or value[0].get("contract") != "prior-holdout-evaluation-v23"
+        or value[0].get("contract") != "prior-holdout-evaluation-v24"
     ):
         audits: list[LegacyPromotionEvaluationAudit] = []
         for raw in value:
@@ -17305,7 +17378,11 @@ def _decode_holdout_scoring_input_artifact(
 def _decode_holdout_scoring_artifact(
     text: str,
     expected_digest: str,
-) -> HoldoutScoringArtifact | LegacyHoldoutScoringArtifactAuditV10:
+) -> (
+    HoldoutScoringArtifact
+    | LegacyHoldoutScoringArtifactAuditV10
+    | LegacyHoldoutScoringArtifactAuditV11
+):
     value = json.loads(text)
     if not isinstance(value, dict):
         raise ValueError("invalid holdout scoring artifact payload")
@@ -17318,7 +17395,14 @@ def _decode_holdout_scoring_artifact(
             artifact_digest=expected_digest,
             payload_json=json.dumps(value, sort_keys=True, separators=(",", ":")),
         )
-    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v11":
+    if values.get("contract") == "neural-prior-holdout-scoring-artifact-v11":
+        if stored_digest != expected_digest:
+            raise ValueError("holdout scoring artifact digest mismatch")
+        return LegacyHoldoutScoringArtifactAuditV11(
+            artifact_digest=expected_digest,
+            payload_json=json.dumps(value, sort_keys=True, separators=(",", ":")),
+        )
+    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v12":
         raise ValueError("legacy holdout scoring artifacts are audit-only")
     for name in (
         "ordered_case_ids",
@@ -17350,6 +17434,7 @@ def _decode_scoring_replay_bundle_manifest(
     | LegacyScoringReplayBundleManifestAuditV7
     | LegacyScoringReplayBundleManifestAuditV8
     | LegacyScoringReplayBundleManifestAuditV9
+    | LegacyScoringReplayBundleManifestAuditV11
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -17389,6 +17474,7 @@ def _decode_scoring_replay_bundle_manifest(
             | LegacyScoringReplayBundleManifestAuditV7
             | LegacyScoringReplayBundleManifestAuditV8
             | LegacyScoringReplayBundleManifestAuditV9
+            | LegacyScoringReplayBundleManifestAuditV11
         ) = LegacyScoringReplayBundleManifestAuditV1(
             **cast(Any, values)
         )
@@ -17432,6 +17518,10 @@ def _decode_scoring_replay_bundle_manifest(
             )
         elif values.get("contract") == "neural-prior-scoring-replay-bundle-v9":
             manifest = LegacyScoringReplayBundleManifestAuditV9(
+                **cast(Any, values)
+            )
+        elif values.get("contract") == "neural-prior-scoring-replay-bundle-v11":
+            manifest = LegacyScoringReplayBundleManifestAuditV11(
                 **cast(Any, values)
             )
         else:
