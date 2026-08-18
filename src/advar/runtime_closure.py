@@ -143,9 +143,13 @@ def _linked_native_libraries(
     paths: tuple[Path, ...],
     *,
     deployable: bool,
+    import_roots: tuple[Path, ...],
 ) -> list[dict[str, object]]:
     if platform.system() != "Linux":
         return []
+    canonical_import_roots = tuple(
+        root.resolve(strict=True) for root in import_roots
+    )
     libraries: set[Path] = set()
     for source in paths:
         try:
@@ -170,14 +174,30 @@ def _linked_native_libraries(
             path,
             deployable=deployable,
         )
+        runtime_root_index = next(
+            (
+                index
+                for index, root in enumerate(canonical_import_roots)
+                if path.is_relative_to(root)
+            ),
+            None,
+        )
+        identity_path = path.as_posix()
+        if runtime_root_index is not None:
+            runtime_root = canonical_import_roots[runtime_root_index]
+            identity_path = (
+                f"site-{runtime_root_index}/"
+                f"{path.relative_to(runtime_root).as_posix()}"
+            )
         result.append(
             {
                 "name": path.name,
-                "path": path.as_posix(),
+                "path": identity_path,
                 "size_bytes": size_bytes,
                 "sha256": sha256,
             }
         )
+    result.sort(key=lambda item: (str(item["path"]), str(item["sha256"])))
     return result
 
 
@@ -291,6 +311,7 @@ def _interpreter_closure_snapshot(
         "native_libraries": _linked_native_libraries(
             (executable, *native_extension_paths),
             deployable=deployable,
+            import_roots=import_roots,
         ),
     }
     return unsigned | {"interpreter_closure_digest": _json_digest(unsigned)}

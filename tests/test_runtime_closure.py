@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -20,6 +21,51 @@ class _FakeDistribution:
 
 
 class RuntimeClosureTests(unittest.TestCase):
+    def test_native_library_identity_is_relocatable_within_import_root(
+        self,
+    ) -> None:
+        retained: list[list[dict[str, object]]] = []
+        for name in ("first", "second"):
+            with tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary) / name / "site-packages"
+                source = root / "package/extension.so"
+                library = root / "package/lib/libnative.so"
+                source.parent.mkdir(parents=True)
+                library.parent.mkdir(parents=True)
+                source.write_bytes(b"extension")
+                library.write_bytes(b"native-library")
+                completed = subprocess.CompletedProcess(
+                    args=("ldd", str(source)),
+                    returncode=0,
+                    stdout=f"libnative.so => {library} (0x0000)\n",
+                    stderr="",
+                )
+                with (
+                    patch.object(
+                        runtime_closure_module.platform,
+                        "system",
+                        return_value="Linux",
+                    ),
+                    patch.object(
+                        runtime_closure_module.subprocess,
+                        "run",
+                        return_value=completed,
+                    ),
+                ):
+                    retained.append(
+                        runtime_closure_module._linked_native_libraries(
+                            (source,),
+                            deployable=False,
+                            import_roots=(root,),
+                        )
+                    )
+
+        self.assertEqual(retained[0], retained[1])
+        self.assertEqual(
+            retained[0][0]["path"],
+            "site-0/package/lib/libnative.so",
+        )
+
     def test_interpreter_snapshot_requires_bytecode_writes_disabled(self) -> None:
         with patch.object(
             runtime_closure_module.sys,
