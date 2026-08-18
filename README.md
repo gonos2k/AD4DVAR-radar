@@ -111,10 +111,12 @@ python -I .github/scripts/build_deployment_bundle.py verify \
 
 ```bash
 python -I -m pip install --no-index --find-links wheelhouse \
-  --require-hashes --only-binary=:all: \
+  --require-hashes --only-binary=:all: --no-compile \
   --requirement runtime-py312-linux.lock
-python -I -m pip install --no-index --no-deps \
+python -I -m pip install --no-index --no-deps --no-compile \
   advar_radar_nowcast-0.92.0-*.whl
+find <deployment-venv> -type f \
+  \( -name '*.pyc' -o -name '*.pyo' \) -delete
 ```
 
 설치 뒤에는 verifier가 활성 site-packages root를 전수조사해 lock에 없는

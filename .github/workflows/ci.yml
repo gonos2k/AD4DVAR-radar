@@ -171,6 +171,8 @@ jobs:
             --requirement requirements/runtime-py312-linux.lock
           python -I -m pip --python .wheel-venv/bin/python install \
             --no-index --no-deps --no-compile dist/*.whl
+          find .wheel-venv -type f \
+            \( -name '*.pyc' -o -name '*.pyo' \) -delete
           python -I -m pip --python .wheel-venv/bin/python check
           .wheel-venv/bin/python -I - <<'PY'
           import torch
@@ -333,6 +335,8 @@ jobs:
             --no-deps \
             --no-compile \
             "$ADVAR_WORKSPACE"/dist/*.whl
+          find replay-wheel-venv -type f \
+            \( -name '*.pyc' -o -name '*.pyo' \) -delete
           python -I -m pip --python replay-wheel-venv/bin/python check
           replay-wheel-venv/bin/python -I \
             "$ADVAR_WORKSPACE/.github/scripts/build_deployment_bundle.py" verify \
