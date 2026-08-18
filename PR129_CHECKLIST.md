@@ -58,7 +58,7 @@
 - [x] Adjacent and broad suites pass.
 - [x] PR #129A schema, receipt, certificate, decision, lineage, run, and output generations are synchronized locally.
 - [x] PR #129A bundle/runtime manifests and distribution documents are synchronized locally.
-- [ ] PR head equals the reported pushed commit.
+- [x] PR #129 base/head refs were verified at delivery.
 - [ ] CI failures are classified as code or external infrastructure/policy.
 - [x] Research, suppressed shadow, canary, LIVE, and external publication have separate decisions.
 - [x] External actions remain visible with owner and required action.
@@ -74,7 +74,7 @@
 | State-advancing LIVE | HOLD | Runtime activation is ledger-enforced in PR #129A; R129-003 through R129-006, R129-008, R129-009, X129-001, and X129-002 remain open. |
 | External publication | HOLD | Requires signed semantic acceptance evidence and protected authorities. |
 | MPS automatic scoring/deployment | NO-GO | Current operational contract remains CPU-only. |
-| PR merge | HOLD | No PR #129 exists; delivery and final-head CI are pending. |
+| PR merge | HOLD | PR #129 is open; implementation commit `be135add0ac7098989102beca5ff0768911fbe6a` is delivered, while final-head required CI and explicit merge authorization are pending. |
 
 ## PR #129A local evidence
 
