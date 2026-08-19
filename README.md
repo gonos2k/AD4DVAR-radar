@@ -1,4 +1,10 @@
-# ADVAR 3-frame radar nowcast v0.92
+# ADVAR 3-frame radar nowcast v0.94
+
+ADVAR는 운영 배포 시스템이 아니라 레이더 기반 변분 nowcast의 **과학적 실증과
+재현 가능한 offline 연구**를 위한 구현이다. 핵심 산출물은 수치 안정성, 입력·target
+provenance, 독립 physical-event 평가와 사전등록된 통계 계약이다. 저장소의 bundle 및
+activation 도구는 연구 환경 재현성과 candidate-smoke를 검사하기 위한 비권위적
+engineering scaffold이며, shadow·canary·state-advancing LIVE를 승인하지 않는다.
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -103,7 +109,7 @@ python -I .github/scripts/build_deployment_bundle.py verify \
   --trusted-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.93.0 \
+  --expected-source-ref refs/tags/v0.94.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-signer-id advar-release
@@ -114,7 +120,7 @@ python -I -m pip install --no-index --find-links wheelhouse \
   --require-hashes --only-binary=:all: --no-compile \
   --requirement runtime-py312-linux.lock
 python -I -m pip install --no-index --no-deps --no-compile \
-  advar_radar_nowcast-0.93.0-*.whl
+  advar_radar_nowcast-0.94.0-*.whl
 find <deployment-venv> -type f \
   \( -name '*.pyc' -o -name '*.pyo' -o -name '*.pth' \) -delete
 ```
@@ -141,7 +147,7 @@ python -I .github/scripts/build_deployment_bundle.py approve-release \
   --trusted-bundle-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.93.0 \
+  --expected-source-ref refs/tags/v0.94.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-bundle-signer-id advar-release \
@@ -156,7 +162,7 @@ python -I .github/scripts/build_deployment_bundle.py activate-runtime \
   --trusted-bundle-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.93.0 \
+  --expected-source-ref refs/tags/v0.94.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-bundle-signer-id advar-release \
@@ -907,12 +913,12 @@ withheld radar/time/mask), QC·mask·censor·floor measurement contract,
 feature-exclusion 및 independence evidence를
 사전등록하며 plan payload 자체가 holdout digest에 포함된다. 실제 target은 임의
 Tensor로 만들 수 없고, plan에 고정된 radar product·QC·grid·valid time과 일치하는
-content-addressed `radar-verification-bundle-v4`에서만 생성한다.
+content-addressed `radar-verification-bundle-v6`에서만 생성한다.
 P1 state head에는 별도의 `NeuralPriorStateCalibrationPlan`을 사전등록한다. State target은
 state product·QC·mask·censor·floor policy, dBZ resolution·quantization origin과 prior output
 valid time에 결합되고 feature에서 withhold됐음을 검증한다. Target은 이 측정계보를 실제
 자료와 함께 observation-error contract를 attestation한
-`radar-verification-bundle-v4`에서만 생성된다. Candidate와
+`radar-verification-bundle-v6`에서만 생성된다. Candidate와
 parent의 state interval-Gaussian NLL·PIT,
 support Brier·pixel/object miss·false-support 및 validity Brier를 같은 target에서 paired
 평가한다. 절대 calibration과 cluster max-statistic 비열화 상한을 모두 통과하지 못하면
@@ -1104,14 +1110,35 @@ typed identity를 사용하므로 outer manifest digest를 다시 계산해도 s
 다른 source/time/value/mask/quality로 재라벨링할 수 없다.
 따라서 이전 replay 세대의 promotion evidence는 audit-only이며 배포 selector가
 소비할 수 없다.
-`VerificationObservationErrorContract-v1`은 radar calibration epoch, range/elevation
-validity, beam blockage/visibility, attenuation QC, censoring, mosaic source map,
-spatial-correlation block, source별 quality 의미와 observation-error scale을 exact
-target bytes에 결합한다. Current target와 state-calibration target는
-`radar-verification-bundle-v4`만 허용하며, scoring measure는
+`VerificationObservationErrorPlan-v1`은 forecast scoring 전에 source/calibration
+registry, range/elevation·beam-blockage·QC·censoring·mosaic source-assignment
+algorithm, quality/std 생성규칙, spatial-block 생성규칙과 reference observation
+standard deviation을 사전등록한다. `VerificationObservationErrorContract-v3`는 그
+plan digest와 실제 radar calibration epoch, validity/visibility, source map 및 exact
+valid/quality/observation-std tensor digest에 per-cell `VerificationCellState`를
+결합한다. 이 상태 tensor는 clear, echo, source missing, QC invalid, beam blockage,
+below-detection censoring과 mosaic source 미할당을 서로 다른 과학적 의미로 보존한다.
+Holdout plan v26은 모든
+uncertainty/state target이 참조하는 observation-error plan payload의 정확한 집합을
+보존하고, current target는 `radar-verification-bundle-v6`만 허용한다. 따라서 결과를
+본 뒤 weighting policy를 바꾸면 기존 holdout plan과 일치하지 않는다. 현재 scoring
+measure는
 `quality * min(1, (reference_std / observation_std)^2)`이다. Invalid·unobserved
 cell은 weight 0이어야 하고 low-quality 영역의 apparent gain은 promotion score에
-그 비율만큼만 기여한다.
+그 비율만큼만 기여한다. Below-detection censored cell은 lineage에는 남지만 point-value
+metric weight는 0으로 둔다. 이는 proper censored likelihood가 도입되기 전까지 해당
+관측을 임의의 dBZ point truth로 취급하지 않기 위한 보수적 연구 계약이다.
+`compute_observation_error_gaussian_diagnostic()`은 promotion gate와 독립된 report-only
+artifact로 `sqrt(forecast_std**2 + observation_std**2)` predictive scale의 quantized
+Gaussian NLL/PIT를 계산한다. `BELOW_DETECTION_CENSORED` cell은 point value 대신
+`P(Y <= minimum_detectable_echo_dbz)`의 left-censored likelihood로 평가한다. 관측오차는
+이미 predictive variance에 포함되므로 이 진단의 aggregation에는 quality만 사용하고
+inverse-variance를 다시 곱하지 않는다. 결과는 항상 `diagnostic_only=True`이며,
+사전등록된 과학 protocol 없이 promotion을 승인하지 않는다.
+Spatial-correlation block identity도 observation-error plan과 realized contract에
+`spatial_correlation_role="diagnostic_only"`로 고정한다. Current confirmatory
+confidence bound는 pixel block이 아니라 independent physical-event cluster를 사용하며,
+spatial block metadata가 추론에 사용됐다고 주장하지 않는다.
 Audit load는 저장된 typed evaluation을 볼 수 있지만, 자동 completion과 promotion은
 동일한 typed replay case를 다시 제공해 semantic replay까지 통과해야 한다. 배포
 certificate 발급 시에도 typed case에서 제품 scorer를 다시 실행하며, checksum-only
@@ -1143,7 +1170,12 @@ Manifest는 canonical `neural-prior-promotion-sample-size-preflight-v5` 파일�
 product digest를 직접 포함한다. Verifier는 그 bytes를 typed preflight로 다시 만들고
 `required_physical_events`와 manifest count, 모든 case의 preflight digest가 정확히 같은지
 확인한다. 저장소의 synthetic unit fixture는 harness integrity만 검사하며 현업 radar
-acceptance evidence로 간주하지 않는다. LIVE 승격에는 legally usable native radar bytes,
+acceptance evidence로 간주하지 않는다. Current `advar-real-case-acceptance-report-v2`는
+이를 content-addressed artifact index로만 취급한다. Generic stage JSON은
+`semantic_e2e_validated=False`, `sample_size_satisfied=False`,
+`eligible_for_scientific_review=False`이며 caller가 제공한 event digest 수는
+`declared_event_label_count`로만 보고한다. 독립 event 수는 typed stage replay와
+제품이 재계산한 event identity가 도입되기 전까지 `None`이다. 실증 승격에는 legally usable native radar bytes,
 independent verification observations와 보호된 deployable signer가 별도로 필요하다.
 
 동적 mosaic/outage coverage는 nominal source domain을 미래에 고정하는 대신 input

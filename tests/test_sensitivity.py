@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar._digest import tensor_digest  # noqa: E402
 import advar.sensitivity as sensitivity_module  # noqa: E402
+import advar.promotion as promotion_module  # noqa: E402
 import advar.linearization_artifact as linearization_artifact_module  # noqa: E402
 from advar.linearization_artifact import (  # noqa: E402
     load_p1_linearization,
@@ -71,7 +72,9 @@ from advar.sensitivity import (  # noqa: E402
     SensitivityConfig,
     SparseRadarPerturbation,
     VerificationBundle,
+    VerificationCellState,
     VerificationObservationErrorContract,
+    VerificationObservationErrorPlan,
     VariationalAdjointConfig,
     VariationalObservationPerturbation,
     compute_sensitivity_snapshot,
@@ -2279,21 +2282,127 @@ class VariationalFSOTests(unittest.TestCase):
         valid = torch.tensor([[[True, True], [True, False]]])
         quality = torch.tensor([[[1.0, 0.5], [0.0, 0.0]]])
         error_std = torch.tensor([[[2.0, 4.0], [2.0, 0.0]]])
+        observation_state = torch.tensor(
+            [[[
+                int(VerificationCellState.OBSERVED_ECHO),
+                int(VerificationCellState.OBSERVED_ECHO),
+            ], [
+                int(VerificationCellState.OBSERVED_ECHO),
+                int(VerificationCellState.QC_INVALID),
+            ]]],
+            dtype=torch.uint8,
+        )
+        plan = VerificationObservationErrorPlan(
+            radar_source_kind="single_site",
+            source_registry_digest="0" * 64,
+            calibration_registry_digest="1" * 64,
+            range_elevation_validity_algorithm_digest="2" * 64,
+            beam_blockage_algorithm_digest="3" * 64,
+            attenuation_qc_digest="5" * 64,
+            censoring_rule_digest="6" * 64,
+            spatial_correlation_block_algorithm_digest="7" * 64,
+            quality_weight_interpretation_digest="8" * 64,
+            quality_weight_algorithm_digest="a" * 64,
+            observation_std_algorithm_digest="b" * 64,
+            observation_error_model_digest="9" * 64,
+            source_assignment_algorithm_digest="c" * 64,
+            minimum_detectable_echo_dbz=-10.0,
+            observation_error_reference_std_dbz=2.0,
+        )
         error = VerificationObservationErrorContract.from_tensors(
+            plan=plan,
+            frames_dbz=frames,
             valid_mask=valid,
             quality_weight=quality,
             observation_std_dbz=error_std,
-            radar_source_kind="single_site",
+            observation_state_code=observation_state,
+            source_radar_index_map=None,
             source_calibration_epochs=(("1" * 64, "2" * 64),),
             range_elevation_validity_domain_digest="3" * 64,
             beam_blockage_visibility_mask_digest="4" * 64,
+            spatial_correlation_block_digest="7" * 64,
+        )
+        self.assertEqual(error.observation_error_plan_digest, plan.plan_digest)
+        with self.assertRaisesRegex(ValueError, "observation-error plan"):
+            error.validate_against_plan(
+                replace(plan, observation_error_reference_std_dbz=4.0)
+            )
+        with self.assertRaisesRegex(ValueError, "observation-error plan"):
+            error.validate_against_plan(
+                replace(plan, spatial_correlation_role="inferential")  # type: ignore[arg-type]
+            )
+        bundle = VerificationBundle(
+            frames_dbz=frames,
+            valid_mask=valid,
+            valid_times=("2026-08-05T00:30:00Z",),
+            grid_contract_digest="a" * 64,
+            radar_product_digest="b" * 64,
+            qc_pipeline_digest="5" * 64,
+            mask_policy_digest="c" * 64,
+            censor_policy_digest="6" * 64,
+            reflectivity_resolution_dbz=0.5,
+            quantization_origin_dbz=-10.0,
+            threshold_bin_convention="nearest_rounding_threshold_censor",
+            floor_representation_contract_digest="d" * 64,
+            quality_weight=quality,
+            observation_std_dbz=error_std,
+            observation_state_code=observation_state,
+            observation_error_contract=error,
+            contract="radar-verification-bundle-v6",
+        )
+        self.assertTrue(
+            torch.equal(
+                bundle.metric_weight,
+                torch.tensor([[[1.0, 0.125], [0.0, 0.0]]]),
+            )
+        )
+        bundle.quality_weight[0, 0, 0] = 0.0
+        with self.assertRaisesRegex(ValueError, "content digest"):
+            bundle.validate_integrity()
+
+    def test_verification_cell_state_preserves_censoring_without_point_score(
+        self,
+    ) -> None:
+        plan = VerificationObservationErrorPlan(
+            radar_source_kind="single_site",
+            source_registry_digest="0" * 64,
+            calibration_registry_digest="1" * 64,
+            range_elevation_validity_algorithm_digest="2" * 64,
+            beam_blockage_algorithm_digest="3" * 64,
             attenuation_qc_digest="5" * 64,
             censoring_rule_digest="6" * 64,
-            spatial_correlation_block_digest="7" * 64,
+            spatial_correlation_block_algorithm_digest="7" * 64,
             quality_weight_interpretation_digest="8" * 64,
+            quality_weight_algorithm_digest="a" * 64,
+            observation_std_algorithm_digest="b" * 64,
             observation_error_model_digest="9" * 64,
+            source_assignment_algorithm_digest="c" * 64,
             minimum_detectable_echo_dbz=-10.0,
             observation_error_reference_std_dbz=2.0,
+        )
+        frames = torch.tensor([[[-10.0, 12.0]]])
+        valid = torch.ones_like(frames, dtype=torch.bool)
+        quality = torch.ones_like(frames)
+        error_std = torch.full_like(frames, 2.0)
+        state = torch.tensor(
+            [[[
+                int(VerificationCellState.BELOW_DETECTION_CENSORED),
+                int(VerificationCellState.OBSERVED_ECHO),
+            ]]],
+            dtype=torch.uint8,
+        )
+        error = VerificationObservationErrorContract.from_tensors(
+            plan=plan,
+            frames_dbz=frames,
+            valid_mask=valid,
+            quality_weight=quality,
+            observation_std_dbz=error_std,
+            observation_state_code=state,
+            source_radar_index_map=None,
+            source_calibration_epochs=(("1" * 64, "2" * 64),),
+            range_elevation_validity_domain_digest="3" * 64,
+            beam_blockage_visibility_mask_digest="4" * 64,
+            spatial_correlation_block_digest="7" * 64,
         )
         bundle = VerificationBundle(
             frames_dbz=frames,
@@ -2310,18 +2419,199 @@ class VariationalFSOTests(unittest.TestCase):
             floor_representation_contract_digest="d" * 64,
             quality_weight=quality,
             observation_std_dbz=error_std,
+            observation_state_code=state,
             observation_error_contract=error,
-            contract="radar-verification-bundle-v4",
+            contract="radar-verification-bundle-v6",
         )
         self.assertTrue(
-            torch.equal(
-                bundle.metric_weight,
-                torch.tensor([[[1.0, 0.125], [0.0, 0.0]]]),
+            torch.equal(bundle.metric_weight, torch.tensor([[[0.0, 1.0]]]))
+        )
+        with self.assertRaisesRegex(ValueError, "state semantics"):
+            VerificationObservationErrorContract.from_tensors(
+                plan=plan,
+                frames_dbz=frames,
+                valid_mask=valid,
+                quality_weight=quality,
+                observation_std_dbz=error_std,
+                observation_state_code=torch.tensor(
+                    [[[
+                        int(VerificationCellState.SOURCE_MISSING),
+                        int(VerificationCellState.OBSERVED_ECHO),
+                    ]]],
+                    dtype=torch.uint8,
+                ),
+                source_radar_index_map=None,
+                source_calibration_epochs=(("1" * 64, "2" * 64),),
+                range_elevation_validity_domain_digest="3" * 64,
+                beam_blockage_visibility_mask_digest="4" * 64,
+                spatial_correlation_block_digest="7" * 64,
+            )
+
+    def test_mosaic_cell_state_is_bound_to_source_assignment(self) -> None:
+        plan = VerificationObservationErrorPlan(
+            radar_source_kind="mosaic",
+            source_registry_digest="0" * 64,
+            calibration_registry_digest="1" * 64,
+            range_elevation_validity_algorithm_digest="2" * 64,
+            beam_blockage_algorithm_digest="3" * 64,
+            attenuation_qc_digest="5" * 64,
+            censoring_rule_digest="6" * 64,
+            spatial_correlation_block_algorithm_digest="7" * 64,
+            quality_weight_interpretation_digest="8" * 64,
+            quality_weight_algorithm_digest="a" * 64,
+            observation_std_algorithm_digest="b" * 64,
+            observation_error_model_digest="9" * 64,
+            source_assignment_algorithm_digest="c" * 64,
+            minimum_detectable_echo_dbz=-10.0,
+            observation_error_reference_std_dbz=2.0,
+        )
+        frames = torch.tensor([[[12.0, -10.0]]])
+        valid = torch.tensor([[[True, False]]])
+        quality = torch.tensor([[[1.0, 0.0]]])
+        error_std = torch.tensor([[[2.0, 0.0]]])
+        state = torch.tensor(
+            [[[
+                int(VerificationCellState.OBSERVED_ECHO),
+                int(VerificationCellState.MOSAIC_SOURCE_UNASSIGNED),
+            ]]],
+            dtype=torch.uint8,
+        )
+        source_map = torch.tensor([[[0, -1]]], dtype=torch.int64)
+        error = VerificationObservationErrorContract.from_tensors(
+            plan=plan,
+            frames_dbz=frames,
+            valid_mask=valid,
+            quality_weight=quality,
+            observation_std_dbz=error_std,
+            observation_state_code=state,
+            source_radar_index_map=source_map,
+            source_calibration_epochs=(
+                ("1" * 64, "2" * 64),
+                ("3" * 64, "4" * 64),
+            ),
+            range_elevation_validity_domain_digest="3" * 64,
+            beam_blockage_visibility_mask_digest="4" * 64,
+            spatial_correlation_block_digest="7" * 64,
+        )
+        self.assertEqual(
+            error.source_radar_index_map_digest,
+            tensor_digest(source_map),
+        )
+        with self.assertRaisesRegex(ValueError, "state semantics"):
+            VerificationObservationErrorContract.from_tensors(
+                plan=plan,
+                frames_dbz=frames,
+                valid_mask=valid,
+                quality_weight=quality,
+                observation_std_dbz=error_std,
+                observation_state_code=state,
+                source_radar_index_map=torch.tensor(
+                    [[[0, 1]]], dtype=torch.int64
+                ),
+                source_calibration_epochs=(
+                    ("1" * 64, "2" * 64),
+                    ("3" * 64, "4" * 64),
+                ),
+                range_elevation_validity_domain_digest="3" * 64,
+                beam_blockage_visibility_mask_digest="4" * 64,
+                spatial_correlation_block_digest="7" * 64,
+            )
+
+    def test_observation_error_gaussian_diagnostic_is_proper_and_report_only(
+        self,
+    ) -> None:
+        plan = VerificationObservationErrorPlan(
+            radar_source_kind="single_site",
+            source_registry_digest="0" * 64,
+            calibration_registry_digest="1" * 64,
+            range_elevation_validity_algorithm_digest="2" * 64,
+            beam_blockage_algorithm_digest="3" * 64,
+            attenuation_qc_digest="5" * 64,
+            censoring_rule_digest="6" * 64,
+            spatial_correlation_block_algorithm_digest="7" * 64,
+            quality_weight_interpretation_digest="8" * 64,
+            quality_weight_algorithm_digest="a" * 64,
+            observation_std_algorithm_digest="b" * 64,
+            observation_error_model_digest="9" * 64,
+            source_assignment_algorithm_digest="c" * 64,
+            minimum_detectable_echo_dbz=-10.0,
+            observation_error_reference_std_dbz=2.0,
+        )
+        frames = torch.tensor([[[12.0, -10.0]]])
+        valid = torch.ones_like(frames, dtype=torch.bool)
+        quality = torch.ones_like(frames)
+        observation_std = torch.full_like(frames, 2.0)
+        state = torch.tensor(
+            [[[
+                int(VerificationCellState.OBSERVED_ECHO),
+                int(VerificationCellState.BELOW_DETECTION_CENSORED),
+            ]]],
+            dtype=torch.uint8,
+        )
+        error = VerificationObservationErrorContract.from_tensors(
+            plan=plan,
+            frames_dbz=frames,
+            valid_mask=valid,
+            quality_weight=quality,
+            observation_std_dbz=observation_std,
+            observation_state_code=state,
+            source_radar_index_map=None,
+            source_calibration_epochs=(("1" * 64, "2" * 64),),
+            range_elevation_validity_domain_digest="3" * 64,
+            beam_blockage_visibility_mask_digest="4" * 64,
+            spatial_correlation_block_digest="7" * 64,
+        )
+        verification = VerificationBundle(
+            frames_dbz=frames,
+            valid_mask=valid,
+            valid_times=("2026-08-05T00:30:00Z",),
+            grid_contract_digest="a" * 64,
+            radar_product_digest="b" * 64,
+            qc_pipeline_digest="5" * 64,
+            mask_policy_digest="c" * 64,
+            censor_policy_digest="6" * 64,
+            reflectivity_resolution_dbz=0.5,
+            quantization_origin_dbz=-10.0,
+            threshold_bin_convention="nearest_rounding_threshold_censor",
+            floor_representation_contract_digest="d" * 64,
+            quality_weight=quality,
+            observation_std_dbz=observation_std,
+            observation_state_code=state,
+            observation_error_contract=error,
+            contract="radar-verification-bundle-v6",
+        )
+        forecast_std = torch.ones_like(frames)
+        calibrated = promotion_module.compute_observation_error_gaussian_diagnostic(
+            torch.tensor([[[12.0, -15.0]]]),
+            forecast_std,
+            verification,
+        )
+        misspecified = (
+            promotion_module.compute_observation_error_gaussian_diagnostic(
+                torch.tensor([[[0.0, 5.0]]]),
+                forecast_std,
+                verification,
             )
         )
-        bundle.quality_weight[0, 0, 0] = 0.0
-        with self.assertRaisesRegex(ValueError, "content digest"):
-            bundle.validate_integrity()
+        self.assertTrue(calibrated.diagnostic_only)
+        self.assertEqual(calibrated.point_sample_count, 1)
+        self.assertEqual(calibrated.censored_sample_count, 1)
+        self.assertLess(
+            calibrated.combined_gaussian_nll,
+            misspecified.combined_gaussian_nll,
+        )
+        assert calibrated.point_gaussian_nll is not None
+        assert misspecified.point_gaussian_nll is not None
+        assert calibrated.censored_gaussian_nll is not None
+        assert misspecified.censored_gaussian_nll is not None
+        self.assertLess(
+            calibrated.point_gaussian_nll,
+            misspecified.point_gaussian_nll,
+        )
+        self.assertLess(
+            calibrated.censored_gaussian_nll,
+            misspecified.censored_gaussian_nll,
+        )
 
     def test_correlated_observation_fso_matches_perturb_and_resolve(
         self,

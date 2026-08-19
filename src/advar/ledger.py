@@ -64,6 +64,7 @@ from .sensitivity import (
     LearningApprovalEvidence,
     SensitivitySnapshot,
     VariationalLearningImpact,
+    VerificationObservationErrorPlan,
     _load_learning_policy_trust_store,
     validate_variational_learning_impact,
 )
@@ -133,6 +134,7 @@ from .promotion import (
     LegacyNeuralPriorHoldoutPlanV22Audit,
     LegacyNeuralPriorHoldoutPlanV23Audit,
     LegacyNeuralPriorHoldoutPlanV24Audit,
+    LegacyNeuralPriorHoldoutPlanV25Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
@@ -5058,6 +5060,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanV22Audit
         | LegacyNeuralPriorHoldoutPlanV23Audit
         | LegacyNeuralPriorHoldoutPlanV24Audit
+        | LegacyNeuralPriorHoldoutPlanV25Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -5211,6 +5214,13 @@ class EpisodeLedger:
             )
         if value.get("contract") == "neural-prior-holdout-plan-v24":
             return LegacyNeuralPriorHoldoutPlanV24Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v25":
+            return LegacyNeuralPriorHoldoutPlanV25Audit(
                 plan_digest=plan_digest,
                 payload_json=json.dumps(
                     value, sort_keys=True, separators=(",", ":")
@@ -5404,6 +5414,16 @@ class EpisodeLedger:
                 }
             )
             for item in value["state_calibration_target_plans"]
+        )
+        value["verification_observation_error_plans"] = tuple(
+            VerificationObservationErrorPlan(
+                **{
+                    key: entry
+                    for key, entry in item.items()
+                    if key != "plan_digest"
+                }
+            )
+            for item in value["verification_observation_error_plans"]
         )
         value["range_band_contracts"] = tuple(
             RangeBandContract(

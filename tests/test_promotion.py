@@ -60,7 +60,9 @@ from advar import (
     RealizedObservationIntervention,
     RadarGridTimeContract,
     VerificationBundle,
+    VerificationCellState,
     VerificationObservationErrorContract,
+    VerificationObservationErrorPlan,
     algorithm_bundle_digest,
     compute_neural_prior_promotion,
     validate_neural_prior_candidate_manifest,
@@ -75,6 +77,32 @@ from advar import (
     variational_nowcast,
 )
 from advar.sensitivity import _LearningPolicyTrustStore
+
+
+def _verification_observation_error_plan(
+    *,
+    radar_product_digest: str,
+    qc_pipeline_digest: str,
+    censor_policy_digest: str,
+    radar_source_kind: str = "single_site",
+) -> VerificationObservationErrorPlan:
+    return VerificationObservationErrorPlan(
+        radar_source_kind=cast(Any, radar_source_kind),
+        source_registry_digest=radar_product_digest,
+        calibration_registry_digest="2" * 64,
+        range_elevation_validity_algorithm_digest="5" * 64,
+        beam_blockage_algorithm_digest="6" * 64,
+        attenuation_qc_digest=qc_pipeline_digest,
+        censoring_rule_digest=censor_policy_digest,
+        spatial_correlation_block_algorithm_digest="7" * 64,
+        quality_weight_interpretation_digest="8" * 64,
+        quality_weight_algorithm_digest="a" * 64,
+        observation_std_algorithm_digest="b" * 64,
+        observation_error_model_digest="9" * 64,
+        source_assignment_algorithm_digest="c" * 64,
+        minimum_detectable_echo_dbz=-10.0,
+        observation_error_reference_std_dbz=2.0,
+    )
 
 
 def _verification_bundle_v4(
@@ -92,7 +120,7 @@ def _verification_bundle_v4(
     threshold_bin_convention: str,
     floor_representation_contract_digest: str,
     radar_source_kind: str = "single_site",
-    source_radar_index_map_digest: str | None = None,
+    source_radar_index_map: torch.Tensor | None = None,
 ) -> VerificationBundle:
     quality = valid_mask.to(frames_dbz)
     observation_std = torch.where(
@@ -105,22 +133,61 @@ def _verification_bundle_v4(
         if radar_source_kind == "mosaic"
         else ((radar_product_digest, "2" * 64),)
     )
+    error_plan = _verification_observation_error_plan(
+        radar_product_digest=radar_product_digest,
+        qc_pipeline_digest=qc_pipeline_digest,
+        censor_policy_digest=censor_policy_digest,
+        radar_source_kind=radar_source_kind,
+    )
+    resolved_source_map = source_radar_index_map
+    if resolved_source_map is not None and resolved_source_map.ndim == 2:
+        resolved_source_map = (
+            resolved_source_map.unsqueeze(0)
+            .expand(frames_dbz.shape[0], -1, -1)
+            .clone()
+        )
+    observation_state = torch.where(
+        valid_mask,
+        torch.where(
+            frames_dbz >= error_plan.minimum_detectable_echo_dbz,
+            torch.full_like(
+                valid_mask,
+                VerificationCellState.OBSERVED_ECHO,
+                dtype=torch.uint8,
+            ),
+            torch.full_like(
+                valid_mask,
+                VerificationCellState.OBSERVED_CLEAR,
+                dtype=torch.uint8,
+            ),
+        ),
+        torch.full_like(
+            valid_mask,
+            VerificationCellState.QC_INVALID,
+            dtype=torch.uint8,
+        ),
+    )
+    if resolved_source_map is not None:
+        observation_state = torch.where(
+            resolved_source_map == -1,
+            torch.full_like(
+                observation_state,
+                VerificationCellState.MOSAIC_SOURCE_UNASSIGNED,
+            ),
+            observation_state,
+        )
     error_contract = VerificationObservationErrorContract.from_tensors(
+        plan=error_plan,
+        frames_dbz=frames_dbz,
         valid_mask=valid_mask,
         quality_weight=quality,
         observation_std_dbz=observation_std,
-        radar_source_kind=cast(Any, radar_source_kind),
+        observation_state_code=observation_state,
+        source_radar_index_map=resolved_source_map,
         source_calibration_epochs=source_epochs,
         range_elevation_validity_domain_digest="5" * 64,
         beam_blockage_visibility_mask_digest="6" * 64,
-        attenuation_qc_digest=qc_pipeline_digest,
-        censoring_rule_digest=censor_policy_digest,
         spatial_correlation_block_digest="7" * 64,
-        quality_weight_interpretation_digest="8" * 64,
-        observation_error_model_digest="9" * 64,
-        minimum_detectable_echo_dbz=-10.0,
-        observation_error_reference_std_dbz=2.0,
-        source_radar_index_map_digest=source_radar_index_map_digest,
     )
     return VerificationBundle(
         frames_dbz=frames_dbz,
@@ -139,8 +206,10 @@ def _verification_bundle_v4(
         ),
         quality_weight=quality,
         observation_std_dbz=observation_std,
+        observation_state_code=observation_state,
+        source_radar_index_map=resolved_source_map,
         observation_error_contract=error_contract,
-        contract="radar-verification-bundle-v4",
+        contract="radar-verification-bundle-v6",
     )
 
 
@@ -301,7 +370,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         evaluation = self.evaluation(1, -1.0)
         policy = self.policy()
 
-        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v25")
+        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v26")
         self.assertTrue(
             all(
                 item.contract == "neural-prior-range-band-contract-v3"
@@ -324,6 +393,20 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(policy.contract, "neural-prior-promotion-policy-v30")
 
+    def test_holdout_plan_requires_every_preregistered_observation_error_plan(
+        self,
+    ) -> None:
+        plan = self.plan()
+        with self.assertRaisesRegex(
+            ValueError,
+            "observation-error plans are incomplete",
+        ):
+            replace(
+                plan,
+                verification_observation_error_plans=(
+                    plan.verification_observation_error_plans[0],
+                ),
+            )
     def test_semantic_replay_generation_reaches_promotion_and_deployment(
         self,
     ) -> None:
@@ -1495,6 +1578,22 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
             for input_plan in input_plans
         )
+        uncertainty_observation_error_plan = (
+            _verification_observation_error_plan(
+                radar_product_digest="6" * 64,
+                qc_pipeline_digest="9" * 64,
+                censor_policy_digest=(
+                    self.state_contract().state_censor_policy_digest
+                ),
+            )
+        )
+        state_observation_error_plan = _verification_observation_error_plan(
+            radar_product_digest="a" * 64,
+            qc_pipeline_digest="9" * 64,
+            censor_policy_digest=(
+                self.state_contract().state_censor_policy_digest
+            ),
+        )
         target_plans = tuple(
             PriorUncertaintyTargetPlan(
                 plan_id=f"uncertainty-{index}",
@@ -1507,6 +1606,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 grid_contract_digest=self.input_grid(index).digest,
                 feature_exclusion_contract_digest="5" * 64,
                 independence_evidence_digest="8" * 64,
+                verification_observation_error_plan_digest=(
+                    uncertainty_observation_error_plan.plan_digest
+                ),
                 target_valid_time=valid_time,
                 prior_probability_contract_digest=(
                     self.probability_contract().contract_digest
@@ -1529,6 +1631,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 grid_contract_digest=self.input_grid(index).digest,
                 feature_exclusion_contract_digest="5" * 64,
                 independence_evidence_digest="8" * 64,
+                verification_observation_error_plan_digest=(
+                    state_observation_error_plan.plan_digest
+                ),
                 target_valid_time=valid_time,
                 state_contract_digest=self.state_contract().contract_digest,
                 support_threshold_dbz=5.0,
@@ -1746,6 +1851,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
             uncertainty_target_plans=target_plans,
             state_calibration_target_plans=state_target_plans,
+            verification_observation_error_plans=(
+                uncertainty_observation_error_plan,
+                state_observation_error_plan,
+            ),
             range_band_contracts=range_contracts,
             range_geometry_contracts=range_geometries,
             operational_issuance_domain_plans=issuance_plans,
@@ -3213,6 +3322,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 candidate_runner.feature_exclusion_contract_digest
             ),
             independence_evidence_digest="8" * 64,
+            verification_observation_error_plan_digest=(
+                _verification_observation_error_plan(
+                    radar_product_digest="6" * 64,
+                    qc_pipeline_digest="9" * 64,
+                    censor_policy_digest=(
+                        self.state_contract().state_censor_policy_digest
+                    ),
+                ).plan_digest
+            ),
             target_valid_time=target_time,
             prior_probability_contract_digest=(
                 self.probability_contract().contract_digest
@@ -3231,6 +3349,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 candidate_runner.feature_exclusion_contract_digest
             ),
             independence_evidence_digest="8" * 64,
+            verification_observation_error_plan_digest=(
+                _verification_observation_error_plan(
+                    radar_product_digest="a" * 64,
+                    qc_pipeline_digest="9" * 64,
+                    censor_policy_digest=(
+                        self.state_contract().state_censor_policy_digest
+                    ),
+                ).plan_digest
+            ),
             target_valid_time=target_time,
             state_contract_digest=self.state_contract().contract_digest,
             support_threshold_dbz=5.0,
@@ -3285,9 +3412,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             threshold_bin_convention="nearest_rounding_threshold_censor",
             floor_representation_contract_digest="e" * 64,
             radar_source_kind="mosaic",
-            source_radar_index_map_digest=promotion_module.tensor_digest(
-                source_map
-            ),
+            source_radar_index_map=source_map,
         )
         range_geometry = promotion_module.MosaicRangeGeometryContract.from_registry(
             source_registry,
@@ -3678,6 +3803,22 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ),
             uncertainty_target_plans=(target_plan,),
             state_calibration_target_plans=(state_target_plan,),
+            verification_observation_error_plans=(
+                _verification_observation_error_plan(
+                    radar_product_digest="6" * 64,
+                    qc_pipeline_digest="9" * 64,
+                    censor_policy_digest=(
+                        self.state_contract().state_censor_policy_digest
+                    ),
+                ),
+                _verification_observation_error_plan(
+                    radar_product_digest="a" * 64,
+                    qc_pipeline_digest="9" * 64,
+                    censor_policy_digest=(
+                        self.state_contract().state_censor_policy_digest
+                    ),
+                ),
+            ),
             range_band_contracts=(range_contract,),
             range_geometry_contracts=(range_geometry,),
             operational_issuance_domain_plans=(issuance_plan,),
@@ -4785,7 +4926,49 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 plan=target_plan,
                 verification=legacy_measurement_source,
             )
+        changed_error_plan = replace(
+            target_plan,
+            verification_observation_error_plan_digest="f" * 64,
+        )
+        with self.assertRaisesRegex(ValueError, "source disagrees"):
+            PriorUncertaintyTarget.from_verification_bundle(
+                plan=changed_error_plan,
+                verification=_verification_bundle_v4(
+                    frames_dbz=torch.ones((1, 2, 2)),
+                    valid_mask=torch.ones((1, 2, 2), dtype=torch.bool),
+                    valid_times=(target_plan.target_valid_time,),
+                    grid_contract_digest=target_plan.grid_contract_digest,
+                    radar_product_digest=target_plan.source_identity_digest,
+                    qc_pipeline_digest=target_plan.qc_pipeline_digest,
+                    mask_policy_digest=target_plan.mask_policy_digest,
+                    censor_policy_digest=target_plan.censor_policy_digest,
+                    reflectivity_resolution_dbz=(
+                        target_plan.reflectivity_resolution_dbz
+                    ),
+                    quantization_origin_dbz=(
+                        target_plan.quantization_origin_dbz
+                    ),
+                    threshold_bin_convention=(
+                        target_plan.threshold_bin_convention
+                    ),
+                    floor_representation_contract_digest=(
+                        target_plan.floor_representation_contract_digest
+                    ),
+                ),
+            )
         self.assertFalse(hasattr(PriorUncertaintyTarget, "from_tensors"))
+
+    def test_verification_target_identity_rechecks_observation_error_plan(
+        self,
+    ) -> None:
+        plan = self.plan().uncertainty_target_plans[0]
+        target = self.uncertainty_target(1)
+        object.__setattr__(target, "observation_error_plan_digest", "f" * 64)
+        with self.assertRaisesRegex(ValueError, "disagrees with its plan"):
+            promotion_module.VerificationTargetIdentityArtifact.from_scoring_target(
+                plan=plan,
+                target=target,
+            )
 
     def test_input_plan_must_match_actual_operational_identity(self) -> None:
         plan = self.plan().input_plans[0]
