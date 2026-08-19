@@ -1477,7 +1477,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         )
         with sqlite3.connect(self.ledger.index_path) as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
-            self.assertEqual(version, 40)
+            self.assertEqual(version, 41)
 
     def test_unavailable_optional_arrays_are_omitted(self) -> None:
         direct = replace(
@@ -4790,7 +4790,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(columns["forecast_score"][3], 0)
         self.assertEqual(columns["direct_sensitivity_norm"][3], 0)
         self.assertIn("DEFERRABLE INITIALLY DEFERRED", schema)
-        self.assertEqual(version, 40)
+        self.assertEqual(version, 41)
 
     def test_operational_raw_resolution_history_is_append_only(self) -> None:
         ledger = EpisodeLedger(self.root / "operational-raw-history")

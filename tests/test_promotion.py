@@ -5704,12 +5704,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         ledger_key = Ed25519PrivateKey.from_private_bytes(b"\x03" * 32)
         promotion_key = Ed25519PrivateKey.from_private_bytes(b"\x04" * 32)
         operational_key = Ed25519PrivateKey.from_private_bytes(b"\x05" * 32)
+        runtime_key = Ed25519PrivateKey.from_private_bytes(b"\x06" * 32)
         processor_key = Ed25519PrivateKey.from_private_bytes(b"\x23" * 32)
         trust = promotion_module._PromotionDeploymentAuthorityTrustStore(
             keys={
                 "test-ledger": ledger_key.public_key(),
                 "test-promotion": promotion_key.public_key(),
                 "test-operational": operational_key.public_key(),
+                "test-runtime-activation": runtime_key.public_key(),
                 "test-analysis-processor": processor_key.public_key(),
             },
             content_digest="7" * 64,
@@ -5717,6 +5719,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 "test-ledger": frozenset({"ledger_issuance"}),
                 "test-promotion": frozenset({"promotion_certificate"}),
                 "test-operational": frozenset({"operational_decision"}),
+                "test-runtime-activation": frozenset({"runtime_activation"}),
                 "test-analysis-processor": frozenset({"analysis_processor"}),
             },
             not_before={
@@ -5725,6 +5728,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "test-ledger",
                     "test-promotion",
                     "test-operational",
+                    "test-runtime-activation",
                     "test-analysis-processor",
                 )
             },
@@ -5734,6 +5738,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "test-ledger",
                     "test-promotion",
                     "test-operational",
+                    "test-runtime-activation",
                     "test-analysis-processor",
                 )
             },
@@ -5743,6 +5748,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "test-ledger",
                     "test-promotion",
                     "test-operational",
+                    "test-runtime-activation",
                     "test-analysis-processor",
                 )
             },
@@ -5750,6 +5756,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 "test-ledger": frozenset({ledger_instance_digest}),
                 "test-promotion": frozenset(),
                 "test-operational": frozenset(),
+                "test-runtime-activation": frozenset(),
                 "test-analysis-processor": frozenset(),
             },
             ledger_instance_index_paths={
@@ -5866,6 +5873,12 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         target_trust_patcher.start()
         self.addCleanup(target_trust_patcher.stop)
+        runtime_closure_patcher = patch.object(
+            promotion_module,
+            "validate_current_runtime_closure",
+        )
+        runtime_closure_patcher.start()
+        self.addCleanup(runtime_closure_patcher.stop)
         return certificate, trust
 
     @staticmethod
@@ -5891,6 +5904,48 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             training_target_source_trust_store_path=(
                 "/etc/advar/training-target-sources.json"
             ),
+        )
+
+    def deployment_runtime_activation_receipt(self):
+        runtime_key = Ed25519PrivateKey.from_private_bytes(b"\x06" * 32)
+        trust = getattr(self, "_latest_deployment_authority_trust", None)
+        if trust is None:
+            trust = promotion_module._PromotionDeploymentAuthorityTrustStore(
+                keys={"test-runtime-activation": runtime_key.public_key()},
+                content_digest="7" * 64,
+                roles={
+                    "test-runtime-activation": frozenset(
+                        {"runtime_activation"}
+                    )
+                },
+                not_before={
+                    "test-runtime-activation": "2026-01-01T00:00:00+00:00"
+                },
+                not_after={
+                    "test-runtime-activation": "2031-01-01T00:00:00+00:00"
+                },
+                revoked_at={"test-runtime-activation": None},
+                ledger_instance_digests={
+                    "test-runtime-activation": frozenset()
+                },
+            )
+        signer = promotion_module.Ed25519DeploymentAuthoritySigner(
+            "test-runtime-activation",
+            runtime_key,
+            fixed_signing_time="2026-08-09T00:00:45Z",
+        )
+        return promotion_module._issue_deployment_runtime_activation_receipt(
+            deployment_bundle_digest="a" * 64,
+            runtime_tree_digest="b" * 64,
+            interpreter_closure_digest="c" * 64,
+            installation_attestation_sha256="d" * 64,
+            deployment_instance_digest="e" * 64,
+            host_identity_digest="f" * 64,
+            runtime_mode="deployable",
+            activation_sequence_number=1,
+            expires_at="2031-01-01T00:00:00Z",
+            signer=signer,
+            authority_trust_store=trust,
         )
 
     def live_operational_input_plan(self, plan):
@@ -6563,6 +6618,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         full_analysis_input_digest,
         policy_trust_store_digest="c" * 64,
     ):
+        runtime_activation = self.deployment_runtime_activation_receipt()
         provenance = self.operational_provenance_kwargs(
             input_plan,
             full_analysis_input_digest=full_analysis_input_digest,
@@ -6622,6 +6678,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             **provenance,
             "training_target_source_trust_store_digest": (
                 evidence.training_target_source_trust_store_digest
+            ),
+            "deployment_runtime_activation_receipt": (
+                runtime_activation.payload
+                | {"receipt_digest": runtime_activation.receipt_digest}
             ),
             "regime_classification_evidence": regime_payload
             | {"evidence_digest": promotion_module.json_digest(regime_payload)},
@@ -7032,6 +7092,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             provenance.pop("raw_ingestor_trust_store_digest")
             provenance.pop("analysis_input_provenance_commitment_digest")
             kwargs.update(provenance)
+        kwargs.setdefault(
+            "deployment_runtime_activation_receipt",
+            self.deployment_runtime_activation_receipt(),
+        )
         return promotion_module._select_deployed_prior(*args, **kwargs)
 
     def validate_deployment_artifact(
@@ -7879,6 +7943,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             operational_authority_key = Ed25519PrivateKey.from_private_bytes(
                 b"\x05" * 32
             )
+            runtime_activation_key = Ed25519PrivateKey.from_private_bytes(
+                b"\x06" * 32
+            )
             analysis_processor_key = Ed25519PrivateKey.from_private_bytes(
                 b"\x23" * 32
             )
@@ -7895,6 +7962,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         "test-operational": (
                             operational_authority_key.public_key()
                         ),
+                        "test-runtime-activation": (
+                            runtime_activation_key.public_key()
+                        ),
                         "test-analysis-processor": (
                             analysis_processor_key.public_key()
                         ),
@@ -7908,6 +7978,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         "test-operational": frozenset(
                             {"operational_decision"}
                         ),
+                        "test-runtime-activation": frozenset(
+                            {"runtime_activation"}
+                        ),
                         "test-analysis-processor": frozenset(
                             {"analysis_processor"}
                         ),
@@ -7916,24 +7989,32 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         "test-ledger": "2026-01-01T00:00:00+00:00",
                         "test-promotion": "2026-01-01T00:00:00+00:00",
                         "test-operational": "2026-01-01T00:00:00+00:00",
+                        "test-runtime-activation": (
+                            "2026-01-01T00:00:00+00:00"
+                        ),
                         "test-analysis-processor": "2026-01-01T00:00:00+00:00",
                     },
                     not_after={
                         "test-ledger": "2027-01-01T00:00:00+00:00",
                         "test-promotion": "2027-01-01T00:00:00+00:00",
                         "test-operational": "2027-01-01T00:00:00+00:00",
+                        "test-runtime-activation": (
+                            "2027-01-01T00:00:00+00:00"
+                        ),
                         "test-analysis-processor": "2027-01-01T00:00:00+00:00",
                     },
                     revoked_at={
                         "test-ledger": None,
                         "test-promotion": None,
                         "test-operational": None,
+                        "test-runtime-activation": None,
                         "test-analysis-processor": None,
                     },
                     ledger_instance_digests={
                         "test-ledger": frozenset({ledger_instance_digest}),
                         "test-promotion": frozenset(),
                         "test-operational": frozenset(),
+                        "test-runtime-activation": frozenset(),
                         "test-analysis-processor": frozenset(),
                     },
                     ledger_instance_index_paths={
@@ -8235,6 +8316,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     "datetime",
                     wraps=datetime,
                 ) as decision_datetime,
+                patch.object(
+                    promotion_module,
+                    "validate_current_runtime_closure",
+                ),
             ):
                 decision_datetime.now.return_value = datetime.fromisoformat(
                     "2026-08-12T02:35:00+00:00"
@@ -8242,6 +8327,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 operational_certificate = (
                     ledger.issue_operational_deployment_decision(
                         operational_decision,
+                        deployment_runtime_activation_receipt=(
+                            self.deployment_runtime_activation_receipt()
+                        ),
                         promotion_deployment_certificate=certificate,
                         promotion_evidence=evidence,
                         policy=deployment_policy,
@@ -8256,6 +8344,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "separate keys"):
                     ledger.issue_operational_deployment_decision(
                         operational_decision,
+                        deployment_runtime_activation_receipt=(
+                            self.deployment_runtime_activation_receipt()
+                        ),
                         promotion_deployment_certificate=certificate,
                         promotion_evidence=evidence,
                         policy=deployment_policy,
@@ -8268,7 +8359,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     )
             self.assertEqual(
                 operational_certificate.contract,
-                "operational-deployment-decision-certificate-v6",
+                "operational-deployment-decision-certificate-v7",
             )
             self.assertEqual(operational_certificate.ledger_sequence_number, 1)
 
@@ -8818,6 +8909,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         ), self.assertRaisesRegex(ValueError, "operational grid"):
             promotion_module.infer_deployed_neural_prior(
                 frames,
+                deployment_runtime_activation_receipt=Mock(),
                 qc_valid_mask=torch.ones_like(frames, dtype=torch.bool),
                 quality_weight=torch.ones_like(frames),
                 observation_std_dbz=torch.full_like(frames, 2.0),
@@ -8882,6 +8974,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         ), self.assertRaisesRegex(ValueError, "radar frames"):
             promotion_module.infer_deployed_neural_prior(
                 frames,
+                deployment_runtime_activation_receipt=Mock(),
                 qc_valid_mask=torch.ones_like(frames, dtype=torch.bool),
                 quality_weight=torch.ones_like(frames),
                 observation_std_dbz=torch.full_like(frames, 2.0),
@@ -12330,6 +12423,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ):
                 promotion_module.infer_deployed_neural_prior(
                     frames,
+                    deployment_runtime_activation_receipt=(
+                        self.deployment_runtime_activation_receipt()
+                    ),
                     qc_valid_mask=replay_case.input_qc_valid_mask,
                     quality_weight=replay_case.input_quality_weight,
                     observation_std_dbz=(
@@ -12389,6 +12485,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             ):
                 promotion_module.infer_deployed_neural_prior(
                     frames,
+                    deployment_runtime_activation_receipt=(
+                        self.deployment_runtime_activation_receipt()
+                    ),
                     qc_valid_mask=replay_case.input_qc_valid_mask,
                     quality_weight=replay_case.input_quality_weight,
                     observation_std_dbz=(
@@ -12420,6 +12519,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             application = promotion_module.infer_deployed_neural_prior(
                 frames,
+                deployment_runtime_activation_receipt=(
+                    self.deployment_runtime_activation_receipt()
+                ),
                 qc_valid_mask=replay_case.input_qc_valid_mask,
                 quality_weight=replay_case.input_quality_weight,
                 observation_std_dbz=replay_case.input_observation_std_dbz,
@@ -12505,7 +12607,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         self.assertEqual(
             loaded.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v17",
+            "neural-prior-deployment-lineage-v18",
         )
 
     def test_current_physical_range_partition_controls_deployment(self) -> None:
@@ -17317,6 +17419,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 return_value=trust,
             ), patch.object(
                 ledger_module,
+                "_load_promotion_deployment_authority_trust_store",
+                return_value=trust,
+            ), patch.object(
+                ledger_module,
                 "_load_raw_ingestor_trust_store",
                 return_value=self.plan().raw_ingestor_trust_store,
             ), patch.object(
@@ -17326,7 +17432,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     self.plan().training_target_source_trust_store
                 ),
             ):
-                with self.assertRaisesRegex(ValueError, "committed publication"):
+                with self.assertRaisesRegex(ValueError, "selection is incomplete"):
                     forged._validate_committed_decision(
                         forged_certificate,
                         forged_decision,
@@ -17648,6 +17754,47 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 raw_ingestor_trust_store_digest="9" * 64,
             )
 
+    def test_deployment_authority_ids_cannot_alias_one_public_key(self) -> None:
+        public_key_hex = (
+            Ed25519PrivateKey.from_private_bytes(b"\x09" * 32)
+            .public_key()
+            .public_bytes_raw()
+            .hex()
+        )
+        authority = {
+            "public_key_hex": public_key_hex,
+            "not_before": "2026-01-01T00:00:00Z",
+            "not_after": "2027-01-01T00:00:00Z",
+            "revoked_at": None,
+            "ledger_instance_digests": [],
+            "ledger_instance_index_paths": {},
+        }
+        document = {
+            "contract": (
+                promotion_module.PROMOTION_DEPLOYMENT_AUTHORITY_TRUST_STORE_CONTRACT
+            ),
+            "authorities": {
+                "release": authority | {"roles": ["promotion_certificate"]},
+                "host": authority | {"roles": ["runtime_activation"]},
+            },
+        }
+        encoded = json.dumps(document).encode()
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "authorities.json"
+            path.write_bytes(encoded)
+            metadata = SimpleNamespace(
+                st_mode=promotion_module.stat.S_IFREG | 0o444,
+                st_uid=0,
+                st_size=len(encoded),
+            )
+            with patch.object(
+                promotion_module.os, "fstat", return_value=metadata
+            ):
+                with self.assertRaisesRegex(ValueError, "canonical identity"):
+                    promotion_module._load_promotion_deployment_authority_trust_store(
+                        path.resolve()
+                    )
+
     def test_operational_decision_after_deadline_is_rejected(self) -> None:
         evidence = self.deployment_ready(
             self.compute((self.evaluation(1, -0.2), self.evaluation(2, -0.3)))
@@ -17720,8 +17867,34 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 authority_trust_store=trust,
             )
 
+        premature_runtime_signer = (
+            promotion_module.Ed25519DeploymentAuthoritySigner(
+                "test-runtime-activation",
+                Ed25519PrivateKey.from_private_bytes(b"\x06" * 32),
+                fixed_signing_time="2026-08-09T00:00:05Z",
+            )
+        )
+        premature_runtime_receipt = (
+            promotion_module._issue_deployment_runtime_activation_receipt(
+                deployment_bundle_digest="a" * 64,
+                runtime_tree_digest="b" * 64,
+                interpreter_closure_digest="c" * 64,
+                installation_attestation_sha256="d" * 64,
+                deployment_instance_digest="e" * 64,
+                host_identity_digest="f" * 64,
+                runtime_mode="deployable",
+                activation_sequence_number=1,
+                expires_at="2031-01-01T00:00:00Z",
+                signer=premature_runtime_signer,
+                authority_trust_store=trust,
+            )
+        )
         before_promotion = decision | {
             "input_available_time": "2026-08-09T00:00:10Z",
+            "deployment_runtime_activation_receipt": (
+                premature_runtime_receipt.payload
+                | {"receipt_digest": premature_runtime_receipt.receipt_digest}
+            ),
         }
         premature_signer = promotion_module.Ed25519DeploymentAuthoritySigner(
             "test-operational",
@@ -17773,8 +17946,111 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 range_partition_evidence=None,
                 range_geometry_contract=None,
                 ledger_receipt=premature_receipt,
+                deployment_runtime_activation_receipt=(
+                    premature_runtime_receipt
+                ),
                 signer=premature_signer,
                 authority_trust_store=trust,
+            )
+
+    def test_runtime_activation_receipt_rejects_expiry_and_resigned_outer_digest(
+        self,
+    ) -> None:
+        evidence = self.deployment_ready(
+            self.compute((self.evaluation(1, -0.2), self.evaluation(2, -0.3)))
+        )
+        self.deployment_certificate(evidence)
+        receipt = self.deployment_runtime_activation_receipt()
+        trust = self._latest_deployment_authority_trust
+        promotion_module._validate_deployment_runtime_activation_receipt(
+            receipt,
+            authority_trust_store=trust,
+            required_valid_through="2026-08-18T00:00:00Z",
+        )
+        with patch.object(
+            promotion_module, "validate_current_runtime_closure"
+        ) as validate_live:
+            promotion_module._validate_deployment_runtime_activation_receipt(
+                receipt,
+                authority_trust_store=trust,
+                required_valid_through="2026-08-18T00:00:00Z",
+                require_current_runtime=True,
+            )
+            validate_live.assert_called_once_with(
+                expected_runtime_tree_digest=receipt.runtime_tree_digest,
+                expected_interpreter_closure_digest=(
+                    receipt.interpreter_closure_digest
+                ),
+                runtime_mode="deployable",
+            )
+        candidate_receipt = (
+            promotion_module._issue_deployment_runtime_activation_receipt(
+                deployment_bundle_digest="a" * 64,
+                runtime_tree_digest="b" * 64,
+                interpreter_closure_digest="c" * 64,
+                installation_attestation_sha256="d" * 64,
+                deployment_instance_digest="e" * 64,
+                host_identity_digest="f" * 64,
+                runtime_mode="candidate-smoke",
+                activation_sequence_number=2,
+                expires_at="2031-01-01T00:00:00Z",
+                signer=promotion_module.Ed25519DeploymentAuthoritySigner(
+                    "test-runtime-activation",
+                    Ed25519PrivateKey.from_private_bytes(b"\x06" * 32),
+                    fixed_signing_time="2026-08-09T00:00:46Z",
+                ),
+                authority_trust_store=trust,
+            )
+        )
+        with self.assertRaisesRegex(ValueError, "deployable mode"):
+            promotion_module._validate_deployment_runtime_activation_receipt(
+                candidate_receipt,
+                authority_trust_store=trust,
+                required_valid_through="2026-08-18T00:00:00Z",
+                require_current_runtime=True,
+            )
+        with self.assertRaisesRegex(ValueError, "invalid"):
+            promotion_module._validate_deployment_runtime_activation_receipt(
+                receipt,
+                authority_trust_store=trust,
+                required_valid_through="2032-01-01T00:00:00Z",
+            )
+        future_values = dict(receipt.payload)
+        future_values["activated_at"] = "2099-01-01T00:00:00Z"
+        future_values["expires_at"] = "2100-01-01T00:00:00Z"
+        future_receipt = (
+            promotion_module._deployment_runtime_activation_receipt_from_payload(
+                future_values
+            )
+        )
+        with self.assertRaisesRegex(ValueError, "invalid"):
+            promotion_module._validate_deployment_runtime_activation_receipt(
+                future_receipt,
+                authority_trust_store=trust,
+                required_valid_through="2099-06-01T00:00:00Z",
+            )
+        revoked_at = dict(trust.revoked_at)
+        revoked_at[receipt.authority_id] = "2026-08-10T00:00:00Z"
+        revoked_trust = replace(trust, revoked_at=revoked_at)
+        with self.assertRaisesRegex(ValueError, "not root-approved"):
+            promotion_module._validate_deployment_runtime_activation_receipt(
+                receipt,
+                authority_trust_store=revoked_trust,
+                required_valid_through="2026-08-18T00:00:00Z",
+            )
+
+        changed = dict(receipt.payload)
+        changed["runtime_tree_digest"] = "0" * 64
+        forged = (
+            promotion_module._deployment_runtime_activation_receipt_from_payload(
+                changed
+            )
+        )
+        with self.assertRaisesRegex(ValueError, "signature"):
+            promotion_module._validate_deployment_runtime_activation_receipt(
+                forged,
+                authority_trust_store=trust,
+                required_valid_through="2026-08-18T00:00:00Z",
             )
 
     def test_operational_commit_crossing_deadline_is_rejected(self) -> None:
@@ -17834,6 +18110,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "proof missed"):
                 self._latest_operational_ledger.issue_operational_deployment_decision(
                     decision,
+                    deployment_runtime_activation_receipt=(
+                        self.deployment_runtime_activation_receipt()
+                    ),
                     promotion_deployment_certificate=certificate,
                     promotion_evidence=evidence,
                     policy=policy,
@@ -17902,6 +18181,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "recording committed after"):
                 self._latest_operational_ledger.issue_operational_deployment_decision(
                     decision,
+                    deployment_runtime_activation_receipt=(
+                        self.deployment_runtime_activation_receipt()
+                    ),
                     promotion_deployment_certificate=certificate,
                     promotion_evidence=evidence,
                     policy=policy,
@@ -18010,6 +18292,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
             self._latest_operational_ledger.issue_operational_deployment_decision(
                 decision,
+                deployment_runtime_activation_receipt=(
+                    self.deployment_runtime_activation_receipt()
+                ),
                 promotion_deployment_certificate=certificate,
                 promotion_evidence=evidence,
                 policy=policy,
@@ -18140,6 +18425,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             clock.now.side_effect = lambda *_args, **_kwargs: trusted_now[0]
             ledger.issue_operational_deployment_decision(
                 decision,
+                deployment_runtime_activation_receipt=(
+                    self.deployment_runtime_activation_receipt()
+                ),
                 promotion_deployment_certificate=certificate,
                 promotion_evidence=evidence,
                 policy=policy,
@@ -18237,6 +18525,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         def issue(marker: str):
             return self._latest_operational_ledger.issue_operational_deployment_decision(
                 decisions[marker],
+                deployment_runtime_activation_receipt=(
+                    self.deployment_runtime_activation_receipt()
+                ),
                 promotion_deployment_certificate=certificate,
                 promotion_evidence=evidence,
                 policy=policy,
@@ -18333,6 +18624,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "provenance"):
             ledger.issue_operational_deployment_decision(
                 decision,
+                deployment_runtime_activation_receipt=(
+                    self.deployment_runtime_activation_receipt()
+                ),
                 promotion_deployment_certificate=certificate,
                 promotion_evidence=evidence,
                 policy=policy,
@@ -18379,6 +18673,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         def issue(payload):
             return self._latest_operational_ledger.issue_operational_deployment_decision(
                 payload,
+                deployment_runtime_activation_receipt=(
+                    self.deployment_runtime_activation_receipt()
+                ),
                 promotion_deployment_certificate=certificate,
                 promotion_evidence=evidence,
                 policy=policy,
@@ -18506,6 +18803,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         def issue():
             return self._latest_operational_ledger.issue_operational_deployment_decision(
                 decision,
+                deployment_runtime_activation_receipt=(
+                    self.deployment_runtime_activation_receipt()
+                ),
                 promotion_deployment_certificate=certificate,
                 promotion_evidence=evidence,
                 policy=policy,
@@ -19026,6 +19326,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         ), self.assertRaisesRegex(ValueError, "changed during issuance"):
             self._latest_operational_ledger.issue_operational_deployment_decision(
                 decision,
+                deployment_runtime_activation_receipt=(
+                    self.deployment_runtime_activation_receipt()
+                ),
                 promotion_deployment_certificate=certificate,
                 promotion_evidence=evidence,
                 policy=policy,

@@ -55,6 +55,7 @@ from .range_geometry import (
     resolve_range_geometry,
     restrict_range_partition_domain,
 )
+from .runtime_closure import validate_current_runtime_closure
 from .sensitivity import (
     SensitivityConfig,
     VerificationBundle,
@@ -92,6 +93,7 @@ OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST = json_digest(
     {"contract": "advar-operational-raw-resolution-genesis-v1"}
 )
 _MAXIMUM_PROMOTION_DEPLOYMENT_TRUST_STORE_BYTES = 1024 * 1024
+_MAXIMUM_RUNTIME_ACTIVATION_RECEIPT_BYTES = 1024 * 1024
 
 
 PromotionRejectionReason = Literal[
@@ -22861,6 +22863,7 @@ AuthorityRole = Literal[
     "promotion_certificate",
     "operational_decision",
     "analysis_processor",
+    "runtime_activation",
 ]
 
 
@@ -22975,6 +22978,7 @@ def _load_promotion_deployment_authority_trust_store(
         "promotion_certificate",
         "operational_decision",
         "analysis_processor",
+        "runtime_activation",
     }
     for authority_id, entry in document["authorities"].items():
         if (
@@ -23931,6 +23935,312 @@ class DeployedNeuralPriorPolicy:
             raise ValueError("neural-prior deployment policy digest mismatch")
 
 
+_RUNTIME_ACTIVATION_SIGNATURE_DOMAIN = (
+    b"ADVAR_DEPLOYMENT_RUNTIME_ACTIVATION_V2\x00"
+)
+
+
+@dataclass(frozen=True, init=False)
+class DeploymentRuntimeActivationReceipt:
+    """Host-authority proof that one sealed runtime is active and unexpired."""
+
+    deployment_bundle_digest: str
+    runtime_tree_digest: str
+    interpreter_closure_digest: str
+    installation_attestation_sha256: str
+    deployment_instance_digest: str
+    host_identity_digest: str
+    runtime_mode: Literal["candidate-smoke", "deployable"]
+    activation_sequence_number: int
+    activated_at: str
+    expires_at: str
+    authority_id: str
+    authority_public_key_hex: str
+    authority_trust_store_digest: str
+    authority_signature_hex: str
+    contract: str = "deployment-runtime-activation-receipt-v2"
+    receipt_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("deployment runtime activation receipts are authority-issued")
+
+    @property
+    def unsigned_payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key not in {"authority_signature_hex", "receipt_digest"}
+        }
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "receipt_digest"
+        }
+
+
+def _deployment_runtime_activation_receipt_from_payload(
+    payload: dict[str, object],
+) -> DeploymentRuntimeActivationReceipt:
+    expected = {
+        item.name
+        for item in DeploymentRuntimeActivationReceipt.__dataclass_fields__.values()
+        if item.name != "receipt_digest"
+    }
+    if set(payload) != expected:
+        raise ValueError("deployment runtime activation receipt is incomplete")
+    result = object.__new__(DeploymentRuntimeActivationReceipt)
+    for name, value in payload.items():
+        object.__setattr__(result, name, value)
+    object.__setattr__(result, "receipt_digest", json_digest(result.payload))
+    return result
+
+
+def _issue_deployment_runtime_activation_receipt(
+    *,
+    deployment_bundle_digest: str,
+    runtime_tree_digest: str,
+    interpreter_closure_digest: str,
+    installation_attestation_sha256: str,
+    deployment_instance_digest: str,
+    host_identity_digest: str,
+    runtime_mode: Literal["candidate-smoke", "deployable"],
+    activation_sequence_number: int,
+    expires_at: str,
+    signer: DeploymentAuthoritySigner,
+    authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+) -> DeploymentRuntimeActivationReceipt:
+    """Issue the product form of a host runtime activation receipt."""
+
+    activated_at = _canonical_time(signer.signing_time())
+    canonical_expiry = _canonical_time(expires_at)
+    for name, value in (
+        ("deployment bundle", deployment_bundle_digest),
+        ("runtime tree", runtime_tree_digest),
+        ("interpreter closure", interpreter_closure_digest),
+        ("installation attestation", installation_attestation_sha256),
+        ("deployment instance", deployment_instance_digest),
+        ("host identity", host_identity_digest),
+    ):
+        _require_digest(name, value)
+    _validate_signer(
+        signer,
+        trust_store=authority_trust_store,
+        role="runtime_activation",
+        issued_at=activated_at,
+    )
+    if (
+        isinstance(activation_sequence_number, bool)
+        or activation_sequence_number <= 0
+        or runtime_mode not in {"candidate-smoke", "deployable"}
+        or _canonical_datetime(activated_at)
+        >= _canonical_datetime(canonical_expiry)
+        or _canonical_datetime(activated_at) > datetime.now(timezone.utc)
+    ):
+        raise ValueError("deployment runtime activation chronology is invalid")
+    values: dict[str, object] = {
+        "deployment_bundle_digest": deployment_bundle_digest,
+        "runtime_tree_digest": runtime_tree_digest,
+        "interpreter_closure_digest": interpreter_closure_digest,
+        "installation_attestation_sha256": installation_attestation_sha256,
+        "deployment_instance_digest": deployment_instance_digest,
+        "host_identity_digest": host_identity_digest,
+        "runtime_mode": runtime_mode,
+        "activation_sequence_number": activation_sequence_number,
+        "activated_at": activated_at,
+        "expires_at": canonical_expiry,
+        "authority_id": signer.authority_id,
+        "authority_public_key_hex": signer.public_key_hex,
+        "authority_trust_store_digest": authority_trust_store.content_digest,
+        "contract": "deployment-runtime-activation-receipt-v2",
+    }
+    signature = signer.sign(
+        _RUNTIME_ACTIVATION_SIGNATURE_DOMAIN
+        + json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
+    ).hex()
+    result = object.__new__(DeploymentRuntimeActivationReceipt)
+    for name, value in values.items():
+        object.__setattr__(result, name, value)
+    object.__setattr__(result, "authority_signature_hex", signature)
+    object.__setattr__(result, "receipt_digest", json_digest(result.payload))
+    return result
+
+
+def _validate_deployment_runtime_activation_receipt(
+    receipt: DeploymentRuntimeActivationReceipt,
+    *,
+    authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+    required_valid_through: str | None = None,
+    require_current_runtime: bool = False,
+) -> None:
+    """Verify receipt bytes, host role, chronology, and optional expiry bound."""
+
+    for name, value in (
+        ("deployment bundle", receipt.deployment_bundle_digest),
+        ("runtime tree", receipt.runtime_tree_digest),
+        ("interpreter closure", receipt.interpreter_closure_digest),
+        ("installation attestation", receipt.installation_attestation_sha256),
+        ("deployment instance", receipt.deployment_instance_digest),
+        ("host identity", receipt.host_identity_digest),
+        ("authority trust store", receipt.authority_trust_store_digest),
+    ):
+        _require_digest(name, value)
+    activated = _canonical_datetime(receipt.activated_at)
+    expiry = _canonical_datetime(receipt.expires_at)
+    required = (
+        None
+        if required_valid_through is None
+        else _canonical_datetime(required_valid_through)
+    )
+    if (
+        type(receipt) is not DeploymentRuntimeActivationReceipt
+        or receipt.contract != "deployment-runtime-activation-receipt-v2"
+        or receipt.receipt_digest != json_digest(receipt.payload)
+        or receipt.authority_trust_store_digest
+        != authority_trust_store.content_digest
+        or isinstance(receipt.activation_sequence_number, bool)
+        or receipt.activation_sequence_number <= 0
+        or receipt.runtime_mode not in {"candidate-smoke", "deployable"}
+        or receipt.activated_at != _canonical_time(receipt.activated_at)
+        or receipt.expires_at != _canonical_time(receipt.expires_at)
+        or activated >= expiry
+        or activated > datetime.now(timezone.utc)
+        or (required is not None and activated > required)
+        or (required is not None and required > expiry)
+    ):
+        raise ValueError("deployment runtime activation receipt is invalid")
+    key = _trusted_authority_key(
+        authority_trust_store,
+        authority_id=receipt.authority_id,
+        public_key_hex=receipt.authority_public_key_hex,
+        role="runtime_activation",
+        issued_at=receipt.activated_at,
+    )
+    if required_valid_through is not None:
+        _trusted_authority_key(
+            authority_trust_store,
+            authority_id=receipt.authority_id,
+            public_key_hex=receipt.authority_public_key_hex,
+            role="runtime_activation",
+            issued_at=required_valid_through,
+        )
+    if require_current_runtime:
+        if receipt.runtime_mode != "deployable":
+            raise ValueError(
+                "operational runtime activation must use deployable mode"
+            )
+        validate_current_runtime_closure(
+            expected_runtime_tree_digest=receipt.runtime_tree_digest,
+            expected_interpreter_closure_digest=(
+                receipt.interpreter_closure_digest
+            ),
+            runtime_mode="deployable",
+        )
+    try:
+        key.verify(
+            bytes.fromhex(receipt.authority_signature_hex),
+            _RUNTIME_ACTIVATION_SIGNATURE_DOMAIN
+            + json.dumps(
+                receipt.unsigned_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode(),
+        )
+    except (InvalidSignature, ValueError) as error:
+        raise ValueError(
+            "deployment runtime activation signature is invalid"
+        ) from error
+
+
+def load_deployment_runtime_activation_receipt(
+    path: str | Path,
+    *,
+    authority_trust_store_path: str | Path,
+    required_valid_through: str,
+) -> DeploymentRuntimeActivationReceipt:
+    """Load one root-owned receipt and validate it against current authority trust."""
+
+    source = Path(path)
+    if not source.is_absolute():
+        raise ValueError("runtime activation receipt path must be absolute")
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(source, flags)
+    try:
+        metadata = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_uid != 0
+            or metadata.st_mode & 0o022
+            or metadata.st_size <= 0
+            or metadata.st_size > _MAXIMUM_RUNTIME_ACTIVATION_RECEIPT_BYTES
+        ):
+            raise ValueError(
+                "runtime activation receipt must be root-owned, immutable, "
+                "and bounded"
+            )
+        retained = bytearray()
+        while len(retained) < metadata.st_size:
+            block = os.read(
+                descriptor,
+                min(1024 * 1024, metadata.st_size - len(retained)),
+            )
+            if not block:
+                break
+        after = os.fstat(descriptor)
+        if (
+            len(retained) != metadata.st_size
+            or (
+                metadata.st_dev,
+                metadata.st_ino,
+                metadata.st_size,
+                metadata.st_mtime_ns,
+            )
+            != (
+                after.st_dev,
+                after.st_ino,
+                after.st_size,
+                after.st_mtime_ns,
+            )
+        ):
+            raise ValueError(
+                "runtime activation receipt changed during validation"
+            )
+    finally:
+        os.close(descriptor)
+    try:
+        payload = json.loads(bytes(retained))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("runtime activation receipt is invalid") from error
+    if not isinstance(payload, dict):
+        raise ValueError("runtime activation receipt is invalid")
+    values = dict(payload)
+    stored_digest = values.pop("receipt_digest", None)
+    try:
+        receipt = _deployment_runtime_activation_receipt_from_payload(values)
+    except (TypeError, ValueError) as error:
+        raise ValueError("runtime activation receipt is invalid") from error
+    canonical = json.dumps(
+        receipt.payload | {"receipt_digest": receipt.receipt_digest},
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode() + b"\n"
+    if stored_digest != receipt.receipt_digest or bytes(retained) != canonical:
+        raise ValueError("runtime activation receipt digest mismatch")
+    trust_store = _load_promotion_deployment_authority_trust_store(
+        authority_trust_store_path
+    )
+    _validate_deployment_runtime_activation_receipt(
+        receipt,
+        authority_trust_store=trust_store,
+        required_valid_through=required_valid_through,
+        require_current_runtime=True,
+    )
+    return receipt
+
+
 @dataclass(frozen=True, init=False)
 class OperationalDeploymentDecisionCertificate:
     """Authority signature over one complete operational selection input."""
@@ -23947,6 +24257,12 @@ class OperationalDeploymentDecisionCertificate:
     analysis_processor_trust_store_digest: str
     raw_ingestor_trust_store_digest: str
     analysis_input_provenance_commitment_digest: str
+    deployment_runtime_activation_receipt_digest: str
+    deployment_bundle_digest: str
+    runtime_tree_digest: str
+    interpreter_closure_digest: str
+    deployment_instance_digest: str
+    host_identity_digest: str
     input_plan_digest: str
     observation_valid_time: str
     input_available_time: str
@@ -23966,7 +24282,7 @@ class OperationalDeploymentDecisionCertificate:
     authority_public_key_hex: str
     authority_trust_store_digest: str
     authority_signature_hex: str
-    contract: str = "operational-deployment-decision-certificate-v6"
+    contract: str = "operational-deployment-decision-certificate-v7"
     certificate_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -24810,6 +25126,9 @@ class CommittedOperationalDecisionClient(Protocol):
         self,
         decision_payload: dict[str, object],
         *,
+        deployment_runtime_activation_receipt: (
+            DeploymentRuntimeActivationReceipt
+        ),
         promotion_deployment_certificate: LedgeredPromotionDeploymentCertificate,
         promotion_evidence: NeuralPriorPromotionEvidence,
         policy: DeployedNeuralPriorPolicy,
@@ -24843,6 +25162,9 @@ class _EpisodeLedgerOperationalDecisionClient:
         self,
         decision_payload: dict[str, object],
         *,
+        deployment_runtime_activation_receipt: (
+            DeploymentRuntimeActivationReceipt
+        ),
         promotion_deployment_certificate: LedgeredPromotionDeploymentCertificate,
         promotion_evidence: NeuralPriorPromotionEvidence,
         policy: DeployedNeuralPriorPolicy,
@@ -24857,6 +25179,9 @@ class _EpisodeLedgerOperationalDecisionClient:
     ) -> OperationalDeploymentDecisionCertificate:
         return self._issuer(
             decision_payload,
+            deployment_runtime_activation_receipt=(
+                deployment_runtime_activation_receipt
+            ),
             promotion_deployment_certificate=promotion_deployment_certificate,
             promotion_evidence=promotion_evidence,
             policy=policy,
@@ -25191,6 +25516,7 @@ def _replay_operational_deployment_selection(
 def _issue_operational_deployment_decision_certificate(
     decision_payload: dict[str, object],
     *,
+    deployment_runtime_activation_receipt: DeploymentRuntimeActivationReceipt,
     promotion_deployment_certificate: LedgeredPromotionDeploymentCertificate,
     promotion_evidence: NeuralPriorPromotionEvidence,
     policy: DeployedNeuralPriorPolicy,
@@ -25204,6 +25530,26 @@ def _issue_operational_deployment_decision_certificate(
     signer: DeploymentAuthoritySigner,
     authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
 ) -> OperationalDeploymentDecisionCertificate:
+    _validate_deployment_runtime_activation_receipt(
+        deployment_runtime_activation_receipt,
+        authority_trust_store=authority_trust_store,
+        required_valid_through=cast(str, decision_payload.get("publication_time")),
+    )
+    expected_runtime_activation = (
+        deployment_runtime_activation_receipt.payload
+        | {
+            "receipt_digest": (
+                deployment_runtime_activation_receipt.receipt_digest
+            )
+        }
+    )
+    if (
+        decision_payload.get("deployment_runtime_activation_receipt")
+        != expected_runtime_activation
+    ):
+        raise ValueError(
+            "operational decision runtime activation lineage disagrees"
+        )
     _validate_ledgered_promotion_deployment_certificate(
         promotion_deployment_certificate,
         authority_trust_store=authority_trust_store,
@@ -25315,6 +25661,24 @@ def _issue_operational_deployment_decision_certificate(
         "analysis_input_provenance_commitment_digest": decision_payload.get(
             "analysis_input_provenance_commitment_digest"
         ),
+        "deployment_runtime_activation_receipt_digest": (
+            deployment_runtime_activation_receipt.receipt_digest
+        ),
+        "deployment_bundle_digest": (
+            deployment_runtime_activation_receipt.deployment_bundle_digest
+        ),
+        "runtime_tree_digest": (
+            deployment_runtime_activation_receipt.runtime_tree_digest
+        ),
+        "interpreter_closure_digest": (
+            deployment_runtime_activation_receipt.interpreter_closure_digest
+        ),
+        "deployment_instance_digest": (
+            deployment_runtime_activation_receipt.deployment_instance_digest
+        ),
+        "host_identity_digest": (
+            deployment_runtime_activation_receipt.host_identity_digest
+        ),
         "input_plan_digest": decision_payload.get("input_plan_digest"),
         "observation_valid_time": decision_payload.get(
             "observation_valid_time"
@@ -25341,7 +25705,7 @@ def _issue_operational_deployment_decision_certificate(
         "authority_id": signer.authority_id,
         "authority_public_key_hex": signer.public_key_hex,
         "authority_trust_store_digest": authority_trust_store.content_digest,
-        "contract": "operational-deployment-decision-certificate-v6",
+        "contract": "operational-deployment-decision-certificate-v7",
     }
     signature = signer.sign(
         json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
@@ -25393,6 +25757,12 @@ def _validate_operational_deployment_decision_certificate(
         "analysis_processor_trust_store_digest",
         "raw_ingestor_trust_store_digest",
         "analysis_input_provenance_commitment_digest",
+        "deployment_runtime_activation_receipt_digest",
+        "deployment_bundle_digest",
+        "runtime_tree_digest",
+        "interpreter_closure_digest",
+        "deployment_instance_digest",
+        "host_identity_digest",
         "input_plan_digest",
         "operational_cycle_id",
         "selected_prior_digest",
@@ -25402,10 +25772,27 @@ def _validate_operational_deployment_decision_certificate(
         "authority_trust_store_digest",
     ):
         _require_digest(name, getattr(certificate, name))
+    runtime_payload = decision_payload.get(
+        "deployment_runtime_activation_receipt"
+    )
+    if not isinstance(runtime_payload, dict):
+        raise ValueError("operational runtime activation receipt is missing")
+    retained_runtime_payload = dict(runtime_payload)
+    runtime_receipt_digest = retained_runtime_payload.pop(
+        "receipt_digest", None
+    )
+    runtime_receipt = _deployment_runtime_activation_receipt_from_payload(
+        retained_runtime_payload
+    )
+    _validate_deployment_runtime_activation_receipt(
+        runtime_receipt,
+        authority_trust_store=authority_trust_store,
+        required_valid_through=certificate.publication_time,
+    )
     if (
         type(certificate) is not OperationalDeploymentDecisionCertificate
         or certificate.contract
-        != "operational-deployment-decision-certificate-v6"
+        != "operational-deployment-decision-certificate-v7"
         or certificate.certificate_digest != json_digest(certificate.payload)
         or certificate.decision_payload_digest != json_digest(decision_payload)
         or certificate.promotion_deployment_certificate_digest
@@ -25438,6 +25825,19 @@ def _validate_operational_deployment_decision_certificate(
         != decision_payload.get("raw_ingestor_trust_store_digest")
         or certificate.analysis_input_provenance_commitment_digest
         != decision_payload.get("analysis_input_provenance_commitment_digest")
+        or runtime_receipt_digest != runtime_receipt.receipt_digest
+        or certificate.deployment_runtime_activation_receipt_digest
+        != runtime_receipt.receipt_digest
+        or certificate.deployment_bundle_digest
+        != runtime_receipt.deployment_bundle_digest
+        or certificate.runtime_tree_digest
+        != runtime_receipt.runtime_tree_digest
+        or certificate.interpreter_closure_digest
+        != runtime_receipt.interpreter_closure_digest
+        or certificate.deployment_instance_digest
+        != runtime_receipt.deployment_instance_digest
+        or certificate.host_identity_digest
+        != runtime_receipt.host_identity_digest
         or certificate.input_plan_digest != decision_payload.get("input_plan_digest")
         or certificate.observation_valid_time
         != decision_payload.get("observation_valid_time")
@@ -25591,6 +25991,7 @@ def _select_deployed_prior(
     analysis_processor_trust_store_digest: str,
     policy_trust_store_path: str | Path,
     deployment_certificate_trust_store_path: str | Path,
+    deployment_runtime_activation_receipt: DeploymentRuntimeActivationReceipt,
     operational_decision_client: CommittedOperationalDecisionClient,
 ) -> tuple[NeuralPriorInferenceRunner, NeuralPriorDeploymentSelection]:
     """Select the candidate only for classifier-attested certified regimes."""
@@ -25632,6 +26033,12 @@ def _select_deployed_prior(
         _load_promotion_deployment_authority_trust_store(
             deployment_certificate_trust_store_path
         )
+    )
+    _validate_deployment_runtime_activation_receipt(
+        deployment_runtime_activation_receipt,
+        authority_trust_store=deployment_authority_trust,
+        required_valid_through=operational_input_plan.publication_time,
+        require_current_runtime=True,
     )
     _validate_ledgered_promotion_deployment_certificate(
         promotion_deployment_certificate,
@@ -25756,7 +26163,7 @@ def _select_deployed_prior(
         role = "candidate"
         reason = "certified_candidate"
     deployment_decision_core: dict[str, object] = {
-        "contract": "neural-prior-deployment-decision-artifact-v17",
+        "contract": "neural-prior-deployment-decision-artifact-v18",
         "routing_semantic_replay_verified": True,
         "full_analysis_input_digest": regime_evidence.full_analysis_input_digest,
         "analysis_input_derivation_artifact_digest": (
@@ -25777,6 +26184,14 @@ def _select_deployed_prior(
         ),
         "analysis_input_provenance_commitment_digest": (
             analysis_input_provenance_commitment_digest
+        ),
+        "deployment_runtime_activation_receipt": (
+            deployment_runtime_activation_receipt.payload
+            | {
+                "receipt_digest": (
+                    deployment_runtime_activation_receipt.receipt_digest
+                )
+            }
         ),
         "input_plan_digest": operational_input_plan.plan_digest,
         "observation_valid_time": operational_input_plan.observation_valid_time,
@@ -25844,6 +26259,9 @@ def _select_deployed_prior(
     operational_decision_certificate = (
         operational_decision_client.issue_operational_deployment_decision(
             deployment_decision_core,
+            deployment_runtime_activation_receipt=(
+                deployment_runtime_activation_receipt
+            ),
             promotion_deployment_certificate=promotion_deployment_certificate,
             promotion_evidence=promotion_evidence,
             policy=policy,
@@ -25966,6 +26384,7 @@ def validate_neural_prior_deployment_decision_artifact(
     deployment_policy_trust_store_path: str | Path,
     raw_ingestor_trust_store_path: str | Path,
     training_target_source_trust_store_path: str | Path,
+    require_current_runtime: bool = False,
 ) -> str:
     """Replay a durable classifier/policy/certification deployment choice."""
 
@@ -25985,7 +26404,7 @@ def validate_neural_prior_deployment_decision_artifact(
     if (
         not isinstance(payload, dict)
         or payload.get("contract")
-        != "neural-prior-deployment-decision-artifact-v17"
+        != "neural-prior-deployment-decision-artifact-v18"
         or json.dumps(payload, sort_keys=True, separators=(",", ":"))
         != artifact_json
     ):
@@ -26005,6 +26424,9 @@ def validate_neural_prior_deployment_decision_artifact(
     operational_commit_authorization_payload = payload.get(
         "operational_decision_commit_authorization_receipt"
     )
+    runtime_activation_payload = payload.get(
+        "deployment_runtime_activation_receipt"
+    )
     range_partition = payload.get("range_partition_evidence")
     range_geometry = payload.get("range_geometry_contract")
     trust = payload.get("policy_trust_store")
@@ -26019,6 +26441,7 @@ def validate_neural_prior_deployment_decision_artifact(
             operational_publication_payload,
             operational_activation_payload,
             operational_commit_authorization_payload,
+            runtime_activation_payload,
             range_partition,
             range_geometry,
             trust,
@@ -26033,6 +26456,7 @@ def validate_neural_prior_deployment_decision_artifact(
     assert isinstance(operational_publication_payload, dict)
     assert isinstance(operational_activation_payload, dict)
     assert isinstance(operational_commit_authorization_payload, dict)
+    assert isinstance(runtime_activation_payload, dict)
     assert isinstance(range_partition, dict)
     assert isinstance(range_geometry, dict)
     assert isinstance(trust, dict)
@@ -26066,6 +26490,30 @@ def validate_neural_prior_deployment_decision_artifact(
         raise ValueError("neural-prior deployment certificate digest mismatch")
     authority_trust_store = _load_promotion_deployment_authority_trust_store(
         deployment_certificate_trust_store_path
+    )
+    runtime_activation_values = dict(runtime_activation_payload)
+    runtime_activation_digest = runtime_activation_values.pop(
+        "receipt_digest", None
+    )
+    try:
+        runtime_activation_receipt = (
+            _deployment_runtime_activation_receipt_from_payload(
+                runtime_activation_values
+            )
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError(
+            "deployment runtime activation receipt is invalid"
+        ) from error
+    if runtime_activation_digest != runtime_activation_receipt.receipt_digest:
+        raise ValueError("deployment runtime activation digest mismatch")
+    _validate_deployment_runtime_activation_receipt(
+        runtime_activation_receipt,
+        authority_trust_store=authority_trust_store,
+        required_valid_through=datetime.now(timezone.utc)
+        .isoformat()
+        .replace("+00:00", "Z"),
+        require_current_runtime=require_current_runtime,
     )
     _validate_ledgered_promotion_deployment_certificate(
         certificate,
@@ -26528,6 +26976,7 @@ def infer_deployed_neural_prior(
     policy: DeployedNeuralPriorPolicy,
     policy_trust_store_path: str | Path,
     deployment_certificate_trust_store_path: str | Path,
+    deployment_runtime_activation_receipt: DeploymentRuntimeActivationReceipt,
     operational_decision_client: CommittedOperationalDecisionClient,
     mps_backend_certification: MPSBackendCertificationEvidence | None = None,
     mps_backend_certification_policy: (
@@ -26768,6 +27217,9 @@ def infer_deployed_neural_prior(
         policy_trust_store_path=policy_trust_store_path,
         deployment_certificate_trust_store_path=(
             deployment_certificate_trust_store_path
+        ),
+        deployment_runtime_activation_receipt=(
+            deployment_runtime_activation_receipt
         ),
         operational_decision_client=operational_decision_client,
     )

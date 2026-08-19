@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import types
@@ -40,6 +41,236 @@ def _write_test_wheel(
 
 
 class DeploymentBundleTests(unittest.TestCase):
+    def test_native_library_identity_is_relocatable_within_import_root(
+        self,
+    ) -> None:
+        retained: list[list[dict[str, object]]] = []
+        for name in ("first", "second"):
+            with tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary) / name / "site-packages"
+                source = root / "package/extension.so"
+                library = root / "package/lib/libnative.so"
+                source.parent.mkdir(parents=True)
+                library.parent.mkdir(parents=True)
+                source.write_bytes(b"extension")
+                library.write_bytes(b"native-library")
+                completed = subprocess.CompletedProcess(
+                    args=("ldd", str(source)),
+                    returncode=0,
+                    stdout=f"libnative.so => {library} (0x0000)\n",
+                    stderr="",
+                )
+                with (
+                    mock.patch.object(
+                        bundle_module.platform,
+                        "system",
+                        return_value="Linux",
+                    ),
+                    mock.patch.object(
+                        bundle_module.subprocess,
+                        "run",
+                        return_value=completed,
+                    ),
+                ):
+                    retained.append(
+                        bundle_module._linked_native_libraries(
+                            (source,),
+                            deployable=False,
+                            import_roots=(root,),
+                        )
+                    )
+
+        self.assertEqual(retained[0], retained[1])
+        self.assertEqual(
+            retained[0][0]["path"],
+            "site-0/package/lib/libnative.so",
+        )
+
+    def test_runtime_tree_mismatch_diagnostic_exposes_only_field_names(
+        self,
+    ) -> None:
+        expected = {
+            "runtime_tree_digest": "a" * 64,
+            "files": [{"path": "site-0/private-name.py", "sha256": "b" * 64}],
+            "interpreter_closure": {
+                "interpreter_closure_digest": "c" * 64,
+                "native_libraries": [{"path": "/private/runtime.so"}],
+            },
+        }
+        current = {
+            "runtime_tree_digest": "d" * 64,
+            "files": [{"path": "site-0/other-private-name.py", "sha256": "e" * 64}],
+            "interpreter_closure": {
+                "interpreter_closure_digest": "f" * 64,
+                "native_libraries": [{"path": "/other/private/runtime.so"}],
+            },
+        }
+
+        self.assertEqual(
+            bundle_module._runtime_tree_mismatch_fields(expected, current),
+            ("files", "interpreter_closure.native_libraries"),
+        )
+
+    def test_runtime_tree_rejects_import_hooks_shadow_files_and_extra_distributions(
+        self,
+    ) -> None:
+        class FakeDistribution:
+            def __init__(
+                self,
+                site: Path,
+                name: str,
+                version: str,
+                files: list[Path],
+            ) -> None:
+                self._site = site
+                self.metadata = {"Name": name}
+                self.version = version
+                self.files = files
+
+            def locate_file(self, path: Path) -> Path:
+                return self._site / path
+
+        for forbidden_name in (
+            "runtime-hook.pth",
+            "sitecustomize.py",
+            "advar/__pycache__/malicious.pyc",
+            "advar/shadow.py",
+        ):
+            with self.subTest(forbidden_name=forbidden_name), (
+                tempfile.TemporaryDirectory()
+            ) as temporary:
+                site = Path(temporary) / "site-packages"
+                package_file = site / "advar/__init__.py"
+                forbidden = site / forbidden_name
+                package_file.parent.mkdir(parents=True)
+                forbidden.parent.mkdir(parents=True, exist_ok=True)
+                package_file.write_text("", encoding="utf-8")
+                forbidden.write_bytes(b"malicious")
+                claimed = [Path("advar/__init__.py")]
+                if forbidden_name != "advar/shadow.py":
+                    claimed.append(Path(forbidden_name))
+                distribution = FakeDistribution(
+                    site,
+                    "advar-radar-nowcast",
+                    "0.92.0",
+                    claimed,
+                )
+                with (
+                    mock.patch.object(
+                        bundle_module,
+                        "_runtime_import_roots",
+                        return_value=(site,),
+                    ),
+                    mock.patch.object(
+                        bundle_module.importlib.metadata,
+                        "distribution",
+                        return_value=distribution,
+                    ),
+                    mock.patch.object(
+                        bundle_module.importlib.metadata,
+                        "distributions",
+                        return_value=(distribution,),
+                    ),
+                    mock.patch.object(
+                        bundle_module,
+                        "_interpreter_closure_snapshot",
+                        return_value={
+                            "contract": "advar-python-interpreter-closure-v1",
+                            "bytecode_write_disabled": True,
+                            "interpreter_closure_digest": "7" * 64,
+                        },
+                    ),
+                    self.assertRaisesRegex(
+                        ValueError,
+                        "forbidden import artifact|unowned file",
+                    ),
+                ):
+                    bundle_module._runtime_tree_snapshot(
+                        selected_wheels=[],
+                        application_version="0.92.0",
+                    )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            site = Path(temporary) / "site-packages"
+            package_file = site / "advar/__init__.py"
+            package_file.parent.mkdir(parents=True)
+            package_file.write_text("", encoding="utf-8")
+            application = FakeDistribution(
+                site,
+                "advar-radar-nowcast",
+                "0.92.0",
+                [Path("advar/__init__.py")],
+            )
+            extra = FakeDistribution(site, "unexpected", "1.0", [])
+            with (
+                mock.patch.object(
+                    bundle_module,
+                    "_runtime_import_roots",
+                    return_value=(site,),
+                ),
+                mock.patch.object(
+                    bundle_module.importlib.metadata,
+                    "distribution",
+                    return_value=application,
+                ),
+                mock.patch.object(
+                    bundle_module.importlib.metadata,
+                    "distributions",
+                    return_value=(application, extra),
+                ),
+                self.assertRaisesRegex(ValueError, "extra distribution"),
+            ):
+                bundle_module._runtime_tree_snapshot(
+                    selected_wheels=[],
+                    application_version="0.92.0",
+                )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            site = Path(temporary) / "site-packages"
+            package_file = site / "advar/__init__.py"
+            package_file.parent.mkdir(parents=True)
+            package_file.write_text("", encoding="utf-8")
+            application = FakeDistribution(
+                site,
+                "advar-radar-nowcast",
+                "0.92.0",
+                [
+                    Path("advar/__init__.py"),
+                    Path("advar/missing.py"),
+                ],
+            )
+            with (
+                mock.patch.object(
+                    bundle_module,
+                    "_runtime_import_roots",
+                    return_value=(site,),
+                ),
+                mock.patch.object(
+                    bundle_module.importlib.metadata,
+                    "distribution",
+                    return_value=application,
+                ),
+                mock.patch.object(
+                    bundle_module.importlib.metadata,
+                    "distributions",
+                    return_value=(application,),
+                ),
+                mock.patch.object(
+                    bundle_module,
+                    "_interpreter_closure_snapshot",
+                    return_value={
+                        "contract": "advar-python-interpreter-closure-v1",
+                        "bytecode_write_disabled": True,
+                        "interpreter_closure_digest": "7" * 64,
+                    },
+                ),
+                self.assertRaisesRegex(ValueError, "missing a locked file"),
+            ):
+                bundle_module._runtime_tree_snapshot(
+                    selected_wheels=[],
+                    application_version="0.92.0",
+                )
+
     def test_runtime_tree_excludes_distribution_files_outside_import_roots(
         self,
     ) -> None:
@@ -49,7 +280,7 @@ class DeploymentBundleTests(unittest.TestCase):
             torch_package = site / "torch"
             advar_package = site / "advar"
             torch_metadata = site / "torch-2.13.0+cpu.dist-info"
-            advar_metadata = site / "advar_radar_nowcast-0.91.0.dist-info"
+            advar_metadata = site / "advar_radar_nowcast-0.92.0.dist-info"
             torch_package.mkdir(parents=True)
             advar_package.mkdir()
             torch_metadata.mkdir()
@@ -66,7 +297,13 @@ class DeploymentBundleTests(unittest.TestCase):
             )
 
             class FakeDistribution:
-                def __init__(self, version: str, files: list[Path]) -> None:
+                def __init__(
+                    self,
+                    name: str,
+                    version: str,
+                    files: list[Path],
+                ) -> None:
+                    self.metadata = {"Name": name}
                     self.version = version
                     self.files = files
 
@@ -75,6 +312,7 @@ class DeploymentBundleTests(unittest.TestCase):
 
             distributions = {
                 "torch": FakeDistribution(
+                    "torch",
                     "2.13.0+cpu",
                     [
                         Path("torch/__init__.py"),
@@ -83,11 +321,12 @@ class DeploymentBundleTests(unittest.TestCase):
                     ],
                 ),
                 "advar-radar-nowcast": FakeDistribution(
-                    "0.91.0",
+                    "advar-radar-nowcast",
+                    "0.92.0",
                     [
                         Path("advar/__init__.py"),
                         Path(
-                            "advar_radar_nowcast-0.91.0.dist-info/"
+                            "advar_radar_nowcast-0.92.0.dist-info/"
                             "direct_url.json"
                         ),
                     ],
@@ -95,14 +334,28 @@ class DeploymentBundleTests(unittest.TestCase):
             }
             with (
                 mock.patch.object(
-                    bundle_module.sysconfig,
-                    "get_path",
-                    return_value=str(site),
+                    bundle_module,
+                    "_runtime_import_roots",
+                    return_value=(site,),
                 ),
                 mock.patch.object(
                     bundle_module.importlib.metadata,
                     "distribution",
                     side_effect=lambda name: distributions[name],
+                ),
+                mock.patch.object(
+                    bundle_module.importlib.metadata,
+                    "distributions",
+                    return_value=tuple(distributions.values()),
+                ),
+                mock.patch.object(
+                    bundle_module,
+                    "_interpreter_closure_snapshot",
+                    return_value={
+                        "contract": "advar-python-interpreter-closure-v1",
+                        "bytecode_write_disabled": True,
+                        "interpreter_closure_digest": "7" * 64,
+                    },
                 ),
             ):
                 snapshot = bundle_module._runtime_tree_snapshot(
@@ -112,12 +365,12 @@ class DeploymentBundleTests(unittest.TestCase):
                             "wheel_version": "2.13.0+cpu",
                         }
                     ],
-                    application_version="0.91.0",
+                    application_version="0.92.0",
                 )
 
             self.assertEqual(
                 [item["path"] for item in snapshot["files"]],
-                ["site/advar/__init__.py", "site/torch/__init__.py"],
+                ["site-0/advar/__init__.py", "site-0/torch/__init__.py"],
             )
 
     def test_public_lock_accepts_exact_hashed_local_cpu_wheel(self) -> None:
@@ -156,11 +409,11 @@ class DeploymentBundleTests(unittest.TestCase):
     def test_bundle_seals_wheel_lock_sbom_audit_and_installation(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            wheel = root / "advar_radar_nowcast-0.91.0-py3-none-any.whl"
+            wheel = root / "advar_radar_nowcast-0.92.0-py3-none-any.whl"
             _write_test_wheel(
                 wheel,
                 distribution="advar-radar-nowcast",
-                version="0.91.0",
+                version="0.92.0",
             )
             lock = root / (
                 "runtime-py"
@@ -196,19 +449,32 @@ class DeploymentBundleTests(unittest.TestCase):
                 version=types.SimpleNamespace(cuda=None),
             )
             runtime_tree_unsigned = {
-                "contract": "advar-import-runtime-tree-v1",
+                "contract": "advar-import-runtime-tree-v2",
+                "runtime_mode": "candidate-smoke",
+                "import_root_count": 1,
                 "distributions": [
-                    {"name": "advar-radar-nowcast", "version": "0.91.0"},
+                    {"name": "advar-radar-nowcast", "version": "0.92.0"},
                     {"name": "numpy", "version": "2.2.0"},
                 ],
                 "files": [
                     {
                         "distribution": "numpy",
-                        "path": "site/numpy/__init__.py",
+                        "path": "site-0/numpy/__init__.py",
                         "size_bytes": 10,
                         "sha256": "8" * 64,
                     }
                 ],
+                "omitted_forbidden_files": [],
+                "interpreter_closure": {
+                    "contract": "advar-python-interpreter-closure-v1",
+                    "bytecode_write_disabled": True,
+                    "interpreter_closure_digest": bundle_module._json_digest(
+                        {
+                            "contract": "advar-python-interpreter-closure-v1",
+                            "bytecode_write_disabled": True,
+                        }
+                    ),
+                },
             }
             runtime_tree = runtime_tree_unsigned | {
                 "runtime_tree_digest": bundle_module._json_digest(
@@ -222,12 +488,16 @@ class DeploymentBundleTests(unittest.TestCase):
                 mock.patch.object(
                     bundle_module.importlib.metadata,
                     "version",
-                    return_value="0.91.0",
+                    return_value="0.92.0",
                 ),
                 mock.patch.object(
                     bundle_module,
                     "_runtime_tree_snapshot",
                     return_value=runtime_tree,
+                ),
+                mock.patch.object(
+                    bundle_module,
+                    "validate_current_runtime_closure",
                 ),
             ):
                 bundle_module.build_bundle(
@@ -249,7 +519,7 @@ class DeploymentBundleTests(unittest.TestCase):
             )
             self.assertEqual(
                 manifest["contract"],
-                "advar-linux-cpu-deployment-bundle-v3",
+                "advar-linux-cpu-deployment-bundle-v4",
             )
             self.assertEqual(manifest["mode"], "candidate-smoke")
             self.assertEqual(manifest["source_commit"], "a" * 40)
@@ -287,6 +557,10 @@ class DeploymentBundleTests(unittest.TestCase):
                     "_runtime_tree_snapshot",
                     return_value=runtime_tree,
                 ),
+                mock.patch.object(
+                    bundle_module,
+                    "validate_current_runtime_closure",
+                ),
             ):
                 self.assertEqual(
                     bundle_module.verify_current_installation(output),
@@ -302,6 +576,10 @@ class DeploymentBundleTests(unittest.TestCase):
                     "_runtime_tree_snapshot",
                     return_value=runtime_tree,
                 ),
+                mock.patch.object(
+                    bundle_module,
+                    "validate_current_runtime_closure",
+                ),
             ):
                 activation = bundle_module.issue_runtime_activation_receipt(
                     output,
@@ -314,9 +592,13 @@ class DeploymentBundleTests(unittest.TestCase):
                     expected_source_commit="a" * 40,
                     expected_workflow_sha="b" * 40,
                     expected_bundle_signer_id="ci-candidate-smoke",
-                    deployment_instance_id="ci-offline-replay",
+                    deployment_instance_digest="a" * 64,
+                    host_identity_digest="b" * 64,
+                    activation_sequence_number=1,
                     activated_at="2026-08-18T00:00:00Z",
-                    activation_signer_id="ci-runtime-activation",
+                    expires_at="2030-01-01T00:00:00Z",
+                    activation_authority_id="ci-runtime-activation",
+                    activation_authority_trust_store_digest="c" * 64,
                     activation_signing_key=activation_key,
                 )
             activation_digest = (
@@ -325,31 +607,82 @@ class DeploymentBundleTests(unittest.TestCase):
                     trusted_activation_public_key_hex=(
                         activation_key.public_key().public_bytes_raw().hex()
                     ),
-                    expected_bundle_digest=manifest["bundle_digest"],
+                    expected_deployment_bundle_digest=(
+                        manifest["bundle_digest"]
+                    ),
                     expected_runtime_tree_digest=(
                         runtime_tree["runtime_tree_digest"]
                     ),
-                    expected_bundle_mode="candidate-smoke",
-                    expected_deployment_instance_id="ci-offline-replay",
-                    expected_activation_signer_id="ci-runtime-activation",
+                    expected_interpreter_closure_digest=(
+                        runtime_tree["interpreter_closure"]
+                        ["interpreter_closure_digest"]
+                    ),
+                    expected_deployment_instance_digest="a" * 64,
+                    expected_host_identity_digest="b" * 64,
+                    expected_mode="candidate-smoke",
+                    expected_activation_sequence_number=1,
+                    expected_activation_authority_id="ci-runtime-activation",
+                    expected_activation_authority_trust_store_digest="c" * 64,
                 )
             )
             self.assertEqual(activation_digest, activation["receipt_digest"])
+            with (
+                mock.patch.object(
+                    bundle_module,
+                    "verify_bundle",
+                    return_value=manifest["bundle_digest"],
+                ),
+                mock.patch.object(
+                    bundle_module,
+                    "verify_current_installation",
+                    return_value=runtime_tree["runtime_tree_digest"],
+                ),
+                self.assertRaisesRegex(ValueError, "expiry"),
+            ):
+                bundle_module.issue_runtime_activation_receipt(
+                    output,
+                    trusted_bundle_public_key_hex=(
+                        signing_key.public_key().public_bytes_raw().hex()
+                    ),
+                    expected_mode="candidate-smoke",
+                    expected_repository="gonos2k/AD4DVAR-radar",
+                    expected_source_ref="refs/pull/126/merge",
+                    expected_source_commit="a" * 40,
+                    expected_workflow_sha="b" * 40,
+                    expected_bundle_signer_id="ci-candidate-smoke",
+                    deployment_instance_digest="a" * 64,
+                    host_identity_digest="b" * 64,
+                    activation_sequence_number=2,
+                    activated_at="2099-01-01T00:00:00Z",
+                    expires_at="2100-01-01T00:00:00Z",
+                    activation_authority_id="ci-runtime-activation",
+                    activation_authority_trust_store_digest="c" * 64,
+                    activation_signing_key=activation_key,
+                )
             relabeled_activation = dict(activation)
-            relabeled_activation["deployment_instance_id"] = "production"
+            relabeled_activation["deployment_instance_digest"] = "d" * 64
             with self.assertRaisesRegex(ValueError, "identity"):
                 bundle_module.verify_runtime_activation_receipt(
                     relabeled_activation,
                     trusted_activation_public_key_hex=(
                         activation_key.public_key().public_bytes_raw().hex()
                     ),
-                    expected_bundle_digest=manifest["bundle_digest"],
+                    expected_deployment_bundle_digest=(
+                        manifest["bundle_digest"]
+                    ),
                     expected_runtime_tree_digest=(
                         runtime_tree["runtime_tree_digest"]
                     ),
-                    expected_bundle_mode="candidate-smoke",
-                    expected_deployment_instance_id="production",
-                    expected_activation_signer_id="ci-runtime-activation",
+                    expected_interpreter_closure_digest=(
+                        runtime_tree["interpreter_closure"]
+                        ["interpreter_closure_digest"]
+                    ),
+                    expected_deployment_instance_digest="d" * 64,
+                    expected_host_identity_digest="b" * 64,
+                    expected_mode="candidate-smoke",
+                    expected_activation_sequence_number=1,
+                    expected_activation_authority_id="ci-runtime-activation",
+                    expected_activation_authority_trust_store_digest="c" * 64,
                 )
 
             changed_tree = dict(runtime_tree)
@@ -392,7 +725,7 @@ class DeploymentBundleTests(unittest.TestCase):
                 mock.patch.object(
                     bundle_module.importlib.metadata,
                     "version",
-                    return_value="0.91.0",
+                    return_value="0.92.0",
                 ),
                 self.assertRaisesRegex(ValueError, "wheelhouse"),
             ):

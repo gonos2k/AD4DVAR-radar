@@ -85,6 +85,8 @@ from .intervention import (
 )
 from .promotion import (
     DeployedNeuralPriorPolicy,
+    DeploymentRuntimeActivationReceipt,
+    load_deployment_runtime_activation_receipt,
     DeploymentAuthoritySigner,
     Ed25519DeploymentAuthoritySigner,
     LedgeredPromotionDeploymentCertificate,
@@ -278,6 +280,10 @@ from .promotion import (
     validate_process_log_artifact,
     regime_reference_public_key_hex,
     recompute_prior_holdout_evaluation_from_bundle,
+)
+from .runtime_closure import (
+    snapshot_current_runtime,
+    validate_current_runtime_closure,
 )
 from .range_geometry import (
     MosaicRangeGeometryContract,
@@ -519,6 +525,10 @@ __all__ = [
     "MetricTaylorThreshold",
     "NeuralPriorPromotionEvidence",
     "DeployedNeuralPriorPolicy",
+    "DeploymentRuntimeActivationReceipt",
+    "load_deployment_runtime_activation_receipt",
+    "snapshot_current_runtime",
+    "validate_current_runtime_closure",
     "DeploymentAuthoritySigner",
     "Ed25519DeploymentAuthoritySigner",
     "LedgeredPromotionDeploymentCertificate",
