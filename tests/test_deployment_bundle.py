@@ -152,7 +152,7 @@ class DeploymentBundleTests(unittest.TestCase):
                 distribution = FakeDistribution(
                     site,
                     "advar-radar-nowcast",
-                    "0.92.0",
+                    "0.93.0",
                     claimed,
                 )
                 with (
@@ -187,7 +187,7 @@ class DeploymentBundleTests(unittest.TestCase):
                 ):
                     bundle_module._runtime_tree_snapshot(
                         selected_wheels=[],
-                        application_version="0.92.0",
+                        application_version="0.93.0",
                     )
 
         with tempfile.TemporaryDirectory() as temporary:
@@ -198,7 +198,7 @@ class DeploymentBundleTests(unittest.TestCase):
             application = FakeDistribution(
                 site,
                 "advar-radar-nowcast",
-                "0.92.0",
+                "0.93.0",
                 [Path("advar/__init__.py")],
             )
             extra = FakeDistribution(site, "unexpected", "1.0", [])
@@ -222,7 +222,7 @@ class DeploymentBundleTests(unittest.TestCase):
             ):
                 bundle_module._runtime_tree_snapshot(
                     selected_wheels=[],
-                    application_version="0.92.0",
+                    application_version="0.93.0",
                 )
 
         with tempfile.TemporaryDirectory() as temporary:
@@ -233,7 +233,7 @@ class DeploymentBundleTests(unittest.TestCase):
             application = FakeDistribution(
                 site,
                 "advar-radar-nowcast",
-                "0.92.0",
+                "0.93.0",
                 [
                     Path("advar/__init__.py"),
                     Path("advar/missing.py"),
@@ -268,7 +268,7 @@ class DeploymentBundleTests(unittest.TestCase):
             ):
                 bundle_module._runtime_tree_snapshot(
                     selected_wheels=[],
-                    application_version="0.92.0",
+                    application_version="0.93.0",
                 )
 
     def test_runtime_tree_excludes_distribution_files_outside_import_roots(
@@ -280,7 +280,7 @@ class DeploymentBundleTests(unittest.TestCase):
             torch_package = site / "torch"
             advar_package = site / "advar"
             torch_metadata = site / "torch-2.13.0+cpu.dist-info"
-            advar_metadata = site / "advar_radar_nowcast-0.92.0.dist-info"
+            advar_metadata = site / "advar_radar_nowcast-0.93.0.dist-info"
             torch_package.mkdir(parents=True)
             advar_package.mkdir()
             torch_metadata.mkdir()
@@ -322,11 +322,11 @@ class DeploymentBundleTests(unittest.TestCase):
                 ),
                 "advar-radar-nowcast": FakeDistribution(
                     "advar-radar-nowcast",
-                    "0.92.0",
+                    "0.93.0",
                     [
                         Path("advar/__init__.py"),
                         Path(
-                            "advar_radar_nowcast-0.92.0.dist-info/"
+                            "advar_radar_nowcast-0.93.0.dist-info/"
                             "direct_url.json"
                         ),
                     ],
@@ -365,7 +365,7 @@ class DeploymentBundleTests(unittest.TestCase):
                             "wheel_version": "2.13.0+cpu",
                         }
                     ],
-                    application_version="0.92.0",
+                    application_version="0.93.0",
                 )
 
             self.assertEqual(
@@ -409,11 +409,11 @@ class DeploymentBundleTests(unittest.TestCase):
     def test_bundle_seals_wheel_lock_sbom_audit_and_installation(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            wheel = root / "advar_radar_nowcast-0.92.0-py3-none-any.whl"
+            wheel = root / "advar_radar_nowcast-0.93.0-py3-none-any.whl"
             _write_test_wheel(
                 wheel,
                 distribution="advar-radar-nowcast",
-                version="0.92.0",
+                version="0.93.0",
             )
             lock = root / (
                 "runtime-py"
@@ -453,7 +453,7 @@ class DeploymentBundleTests(unittest.TestCase):
                 "runtime_mode": "candidate-smoke",
                 "import_root_count": 1,
                 "distributions": [
-                    {"name": "advar-radar-nowcast", "version": "0.92.0"},
+                    {"name": "advar-radar-nowcast", "version": "0.93.0"},
                     {"name": "numpy", "version": "2.2.0"},
                 ],
                 "files": [
@@ -488,7 +488,7 @@ class DeploymentBundleTests(unittest.TestCase):
                 mock.patch.object(
                     bundle_module.importlib.metadata,
                     "version",
-                    return_value="0.92.0",
+                    return_value="0.93.0",
                 ),
                 mock.patch.object(
                     bundle_module,
@@ -568,6 +568,23 @@ class DeploymentBundleTests(unittest.TestCase):
                 )
 
             activation_key = Ed25519PrivateKey.from_private_bytes(b"\x41" * 32)
+            release_approval = bundle_module.issue_bundle_release_approval(
+                output,
+                trusted_bundle_public_key_hex=(
+                    signing_key.public_key().public_bytes_raw().hex()
+                ),
+                expected_mode="candidate-smoke",
+                expected_repository="gonos2k/AD4DVAR-radar",
+                expected_source_ref="refs/pull/126/merge",
+                expected_source_commit="a" * 40,
+                expected_workflow_sha="b" * 40,
+                expected_bundle_signer_id="ci-candidate-smoke",
+                approved_at="2026-08-17T00:00:00Z",
+                expires_at="2030-01-01T00:00:00Z",
+                release_authority_id="ci-release-approval",
+                release_authority_trust_store_digest="d" * 64,
+                release_signing_key=signing_key,
+            )
             with (
                 mock.patch.object(bundle_module.platform, "system", return_value="Linux"),
                 mock.patch.object(bundle_module.platform, "machine", return_value="x86_64"),
@@ -583,7 +600,11 @@ class DeploymentBundleTests(unittest.TestCase):
             ):
                 activation = bundle_module.issue_runtime_activation_receipt(
                     output,
+                    release_approval=release_approval,
                     trusted_bundle_public_key_hex=(
+                        signing_key.public_key().public_bytes_raw().hex()
+                    ),
+                    trusted_release_public_key_hex=(
                         signing_key.public_key().public_bytes_raw().hex()
                     ),
                     expected_mode="candidate-smoke",
@@ -595,8 +616,14 @@ class DeploymentBundleTests(unittest.TestCase):
                     deployment_instance_digest="a" * 64,
                     host_identity_digest="b" * 64,
                     activation_sequence_number=1,
+                    previous_activation_receipt_digest=(
+                        bundle_module.RUNTIME_ACTIVATION_GENESIS_DIGEST
+                    ),
+                    rollback_reason_digest=None,
                     activated_at="2026-08-18T00:00:00Z",
                     expires_at="2030-01-01T00:00:00Z",
+                    expected_release_authority_id="ci-release-approval",
+                    expected_release_authority_trust_store_digest="d" * 64,
                     activation_authority_id="ci-runtime-activation",
                     activation_authority_trust_store_digest="c" * 64,
                     activation_signing_key=activation_key,
@@ -604,11 +631,18 @@ class DeploymentBundleTests(unittest.TestCase):
             activation_digest = (
                 bundle_module.verify_runtime_activation_receipt(
                     activation,
+                    release_approval=release_approval,
+                    trusted_release_public_key_hex=(
+                        signing_key.public_key().public_bytes_raw().hex()
+                    ),
                     trusted_activation_public_key_hex=(
                         activation_key.public_key().public_bytes_raw().hex()
                     ),
                     expected_deployment_bundle_digest=(
                         manifest["bundle_digest"]
+                    ),
+                    expected_bundle_manifest_digest=(
+                        bundle_module._json_digest(manifest)
                     ),
                     expected_runtime_tree_digest=(
                         runtime_tree["runtime_tree_digest"]
@@ -621,6 +655,12 @@ class DeploymentBundleTests(unittest.TestCase):
                     expected_host_identity_digest="b" * 64,
                     expected_mode="candidate-smoke",
                     expected_activation_sequence_number=1,
+                    expected_previous_activation_receipt_digest=(
+                        bundle_module.RUNTIME_ACTIVATION_GENESIS_DIGEST
+                    ),
+                    expected_rollback_reason_digest=None,
+                    expected_release_authority_id="ci-release-approval",
+                    expected_release_authority_trust_store_digest="d" * 64,
                     expected_activation_authority_id="ci-runtime-activation",
                     expected_activation_authority_trust_store_digest="c" * 64,
                 )
@@ -641,7 +681,11 @@ class DeploymentBundleTests(unittest.TestCase):
             ):
                 bundle_module.issue_runtime_activation_receipt(
                     output,
+                    release_approval=release_approval,
                     trusted_bundle_public_key_hex=(
+                        signing_key.public_key().public_bytes_raw().hex()
+                    ),
+                    trusted_release_public_key_hex=(
                         signing_key.public_key().public_bytes_raw().hex()
                     ),
                     expected_mode="candidate-smoke",
@@ -653,8 +697,12 @@ class DeploymentBundleTests(unittest.TestCase):
                     deployment_instance_digest="a" * 64,
                     host_identity_digest="b" * 64,
                     activation_sequence_number=2,
+                    previous_activation_receipt_digest=activation["receipt_digest"],
+                    rollback_reason_digest=None,
                     activated_at="2099-01-01T00:00:00Z",
                     expires_at="2100-01-01T00:00:00Z",
+                    expected_release_authority_id="ci-release-approval",
+                    expected_release_authority_trust_store_digest="d" * 64,
                     activation_authority_id="ci-runtime-activation",
                     activation_authority_trust_store_digest="c" * 64,
                     activation_signing_key=activation_key,
@@ -664,11 +712,18 @@ class DeploymentBundleTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "identity"):
                 bundle_module.verify_runtime_activation_receipt(
                     relabeled_activation,
+                    release_approval=release_approval,
+                    trusted_release_public_key_hex=(
+                        signing_key.public_key().public_bytes_raw().hex()
+                    ),
                     trusted_activation_public_key_hex=(
                         activation_key.public_key().public_bytes_raw().hex()
                     ),
                     expected_deployment_bundle_digest=(
                         manifest["bundle_digest"]
+                    ),
+                    expected_bundle_manifest_digest=(
+                        bundle_module._json_digest(manifest)
                     ),
                     expected_runtime_tree_digest=(
                         runtime_tree["runtime_tree_digest"]
@@ -681,8 +736,67 @@ class DeploymentBundleTests(unittest.TestCase):
                     expected_host_identity_digest="b" * 64,
                     expected_mode="candidate-smoke",
                     expected_activation_sequence_number=1,
+                    expected_previous_activation_receipt_digest=(
+                        bundle_module.RUNTIME_ACTIVATION_GENESIS_DIGEST
+                    ),
+                    expected_rollback_reason_digest=None,
+                    expected_release_authority_id="ci-release-approval",
+                    expected_release_authority_trust_store_digest="d" * 64,
                     expected_activation_authority_id="ci-runtime-activation",
                     expected_activation_authority_trust_store_digest="c" * 64,
+                )
+
+            relabeled_release = dict(release_approval)
+            relabeled_release["deployment_bundle_digest"] = "e" * 64
+            with self.assertRaisesRegex(ValueError, "identity"):
+                bundle_module.verify_bundle_release_approval(
+                    relabeled_release,
+                    trusted_release_public_key_hex=(
+                        signing_key.public_key().public_bytes_raw().hex()
+                    ),
+                    expected_deployment_bundle_digest="e" * 64,
+                    expected_bundle_manifest_digest=(
+                        bundle_module._json_digest(manifest)
+                    ),
+                    expected_repository="gonos2k/AD4DVAR-radar",
+                    expected_source_ref="refs/pull/126/merge",
+                    expected_source_commit="a" * 40,
+                    expected_platform="linux-x86_64-cpu",
+                    expected_mode="candidate-smoke",
+                    expected_release_authority_id="ci-release-approval",
+                    expected_release_authority_trust_store_digest="d" * 64,
+                    required_valid_through="2026-08-18T00:00:00Z",
+                )
+            with self.assertRaisesRegex(ValueError, "separate keys"):
+                bundle_module.issue_runtime_activation_receipt(
+                    output,
+                    release_approval=release_approval,
+                    trusted_bundle_public_key_hex=(
+                        signing_key.public_key().public_bytes_raw().hex()
+                    ),
+                    trusted_release_public_key_hex=(
+                        signing_key.public_key().public_bytes_raw().hex()
+                    ),
+                    expected_mode="candidate-smoke",
+                    expected_repository="gonos2k/AD4DVAR-radar",
+                    expected_source_ref="refs/pull/126/merge",
+                    expected_source_commit="a" * 40,
+                    expected_workflow_sha="b" * 40,
+                    expected_bundle_signer_id="ci-candidate-smoke",
+                    deployment_instance_digest="a" * 64,
+                    host_identity_digest="b" * 64,
+                    activation_sequence_number=1,
+                    previous_activation_receipt_digest=(
+                        bundle_module.RUNTIME_ACTIVATION_GENESIS_DIGEST
+                    ),
+                    rollback_reason_digest=None,
+                    activated_at="2026-08-18T00:00:00Z",
+                    expires_at="2030-01-01T00:00:00Z",
+                    expected_release_authority_id="ci-release-approval",
+                    expected_release_authority_trust_store_digest="d" * 64,
+                    activation_authority_id="ci-runtime-activation",
+                    activation_authority_trust_store_digest="c" * 64,
+                    activation_signing_key=signing_key,
                 )
 
             changed_tree = dict(runtime_tree)
@@ -725,7 +839,7 @@ class DeploymentBundleTests(unittest.TestCase):
                 mock.patch.object(
                     bundle_module.importlib.metadata,
                     "version",
-                    return_value="0.92.0",
+                    return_value="0.93.0",
                 ),
                 self.assertRaisesRegex(ValueError, "wheelhouse"),
             ):

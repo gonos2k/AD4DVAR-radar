@@ -178,6 +178,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
         runtime_activation_key = Ed25519PrivateKey.from_private_bytes(
             b"\x06" * 32
         )
+        release_approval_key = Ed25519PrivateKey.from_private_bytes(b"\x07" * 32)
         return promotion_module._PromotionDeploymentAuthorityTrustStore(
             keys={
                 "test-ledger": ledger_key.public_key(),
@@ -186,6 +187,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 "test-runtime-activation": (
                     runtime_activation_key.public_key()
                 ),
+                "test-release-approval": release_approval_key.public_key(),
             },
             content_digest="7" * 64,
             roles={
@@ -193,6 +195,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 "test-promotion": frozenset({"promotion_certificate"}),
                 "test-operational": frozenset({"operational_decision"}),
                 "test-runtime-activation": frozenset({"runtime_activation"}),
+                "test-release-approval": frozenset({"release_approval"}),
             },
             not_before={
                 name: "2026-01-01T00:00:00+00:00"
@@ -201,15 +204,17 @@ class ForecastRunArtifactTests(unittest.TestCase):
                     "test-promotion",
                     "test-operational",
                     "test-runtime-activation",
+                    "test-release-approval",
                 )
             },
             not_after={
-                name: "2027-01-01T00:00:00+00:00"
+                name: "2032-01-01T00:00:00+00:00"
                 for name in (
                     "test-ledger",
                     "test-promotion",
                     "test-operational",
                     "test-runtime-activation",
+                    "test-release-approval",
                 )
             },
             revoked_at={
@@ -219,6 +224,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
                     "test-promotion",
                     "test-operational",
                     "test-runtime-activation",
+                    "test-release-approval",
                 )
             },
             ledger_instance_digests={
@@ -226,6 +232,10 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 "test-promotion": frozenset(),
                 "test-operational": frozenset(),
                 "test-runtime-activation": frozenset(),
+                "test-release-approval": frozenset(),
+            },
+            ledger_instance_index_paths={
+                "6" * 64: Path("/approved/advar/index.sqlite")
             },
         )
 
@@ -314,9 +324,27 @@ class ForecastRunArtifactTests(unittest.TestCase):
             Ed25519PrivateKey.from_private_bytes(b"\x06" * 32),
             fixed_signing_time=accepted_at,
         )
+        release_approval = (
+            promotion_module._issue_deployment_bundle_release_approval(
+                deployment_bundle_digest="a" * 64,
+                bundle_manifest_digest="9" * 64,
+                source_commit="a" * 40,
+                repository="gonos2k/AD4DVAR-radar",
+                source_ref="refs/tags/v0.93.0",
+                platform="linux-x86_64-cpu",
+                runtime_mode="deployable",
+                expires_at="2031-01-01T00:00:00Z",
+                signer=promotion_module.Ed25519DeploymentAuthoritySigner(
+                    "test-release-approval",
+                    Ed25519PrivateKey.from_private_bytes(b"\x07" * 32),
+                    fixed_signing_time=accepted_at,
+                ),
+                authority_trust_store=cls._deployment_certificate_trust(),
+            )
+        )
         runtime_activation_receipt = (
             promotion_module._issue_deployment_runtime_activation_receipt(
-                deployment_bundle_digest="a" * 64,
+                release_approval=release_approval,
                 runtime_tree_digest="b" * 64,
                 interpreter_closure_digest="c" * 64,
                 installation_attestation_sha256="d" * 64,
@@ -324,10 +352,17 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 host_identity_digest="f" * 64,
                 runtime_mode="deployable",
                 activation_sequence_number=1,
+                previous_activation_receipt_digest=(
+                    promotion_module.DEPLOYMENT_RUNTIME_ACTIVATION_GENESIS_DIGEST
+                ),
                 expires_at="2031-01-01T00:00:00Z",
                 signer=runtime_signer,
                 authority_trust_store=cls._deployment_certificate_trust(),
             )
+        )
+        artifact["deployment_bundle_release_approval"] = (
+            release_approval.payload
+            | {"approval_digest": release_approval.approval_digest}
         )
         artifact["deployment_runtime_activation_receipt"] = (
             runtime_activation_receipt.payload
@@ -363,6 +398,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
         decision_certificate = (
             promotion_module._issue_operational_deployment_decision_certificate(
                 artifact,
+                deployment_bundle_release_approval=release_approval,
                 promotion_deployment_certificate=promotion_certificate,
                 promotion_evidence=promotion_evidence,
                 policy=policy,
@@ -778,7 +814,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact = {
-            "contract": "neural-prior-deployment-decision-artifact-v18",
+            "contract": "neural-prior-deployment-decision-artifact-v19",
             "routing_semantic_replay_verified": False,
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "analysis_input_derivation_artifact_digest": (
@@ -2090,7 +2126,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             "approved_policy_digests": [policy.policy_digest],
         }
         artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v18",
+            "contract": "neural-prior-deployment-decision-artifact-v19",
             "routing_semantic_replay_verified": False,
             "full_analysis_input_digest": input_run.full_analysis_input_digest,
             "analysis_input_derivation_artifact_digest": (
@@ -2178,6 +2214,53 @@ class ForecastRunArtifactTests(unittest.TestCase):
         artifact_json = json.dumps(
             artifact_payload, sort_keys=True, separators=(",", ":")
         )
+        publication_values = dict(
+            cast(
+                dict[str, object],
+                artifact_payload["operational_decision_publication_receipt"],
+            )
+        )
+        publication_values.pop("receipt_digest")
+        committed_publication = (
+            promotion_module._operational_decision_publication_receipt_from_payload(
+                publication_values
+            )
+        )
+        activation_values = dict(
+            cast(
+                dict[str, object],
+                artifact_payload["operational_decision_activation_receipt"],
+            )
+        )
+        activation_values.pop("receipt_digest")
+        committed_activation = (
+            promotion_module._operational_decision_activation_receipt_from_payload(
+                activation_values
+            )
+        )
+        authorization_values = dict(
+            cast(
+                dict[str, object],
+                artifact_payload[
+                    "operational_decision_commit_authorization_receipt"
+                ],
+            )
+        )
+        authorization_values.pop("receipt_digest")
+        committed_authorization = (
+            promotion_module._operational_decision_commit_authorization_receipt_from_payload(
+                authorization_values
+            )
+        )
+        committed_ledger = SimpleNamespace(
+            _validate_committed_operational_decision=unittest.mock.Mock(
+                return_value=(
+                    committed_publication,
+                    committed_activation,
+                    committed_authorization,
+                )
+            )
+        )
         selection = _new_neural_prior_deployment_selection(
             selected_prior_digest=runner.neural_prior_digest,
             selected_role="parent",
@@ -2222,6 +2305,10 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 promotion_module,
                 "_load_promotion_deployment_authority_trust_store",
                 return_value=self._deployment_certificate_trust(),
+            ), patch.object(
+                ledger_module.EpisodeLedger,
+                "_open_existing_index",
+                return_value=committed_ledger,
             ), patch.object(
                 promotion_module,
                 "validate_current_runtime_closure",

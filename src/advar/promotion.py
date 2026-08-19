@@ -81,7 +81,7 @@ from .variational import (
 
 
 PROMOTION_DEPLOYMENT_AUTHORITY_TRUST_STORE_CONTRACT = (
-    "advar-promotion-deployment-authority-trust-store-v3"
+    "advar-promotion-deployment-authority-trust-store-v4"
 )
 PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST = json_digest(
     {"contract": "advar-promotion-deployment-certificate-genesis-v3"}
@@ -93,7 +93,11 @@ OPERATIONAL_RAW_RESOLUTION_GENESIS_DIGEST = json_digest(
     {"contract": "advar-operational-raw-resolution-genesis-v1"}
 )
 _MAXIMUM_PROMOTION_DEPLOYMENT_TRUST_STORE_BYTES = 1024 * 1024
+_MAXIMUM_BUNDLE_RELEASE_APPROVAL_BYTES = 1024 * 1024
 _MAXIMUM_RUNTIME_ACTIVATION_RECEIPT_BYTES = 1024 * 1024
+DEPLOYMENT_RUNTIME_ACTIVATION_GENESIS_DIGEST = json_digest(
+    {"contract": "advar-deployment-runtime-activation-genesis-v1"}
+)
 
 
 PromotionRejectionReason = Literal[
@@ -22863,6 +22867,7 @@ AuthorityRole = Literal[
     "promotion_certificate",
     "operational_decision",
     "analysis_processor",
+    "release_approval",
     "runtime_activation",
 ]
 
@@ -22978,6 +22983,7 @@ def _load_promotion_deployment_authority_trust_store(
         "promotion_certificate",
         "operational_decision",
         "analysis_processor",
+        "release_approval",
         "runtime_activation",
     }
     for authority_id, entry in document["authorities"].items():
@@ -23935,8 +23941,295 @@ class DeployedNeuralPriorPolicy:
             raise ValueError("neural-prior deployment policy digest mismatch")
 
 
+_BUNDLE_RELEASE_APPROVAL_SIGNATURE_DOMAIN = (
+    b"ADVAR_DEPLOYMENT_BUNDLE_RELEASE_APPROVAL_V1\x00"
+)
+
+
+@dataclass(frozen=True, init=False)
+class DeploymentBundleReleaseApproval:
+    """Release-authority approval of one canonical deployment bundle."""
+
+    deployment_bundle_digest: str
+    bundle_manifest_digest: str
+    source_commit: str
+    repository: str
+    source_ref: str
+    platform: str
+    runtime_mode: Literal["candidate-smoke", "deployable"]
+    approved_at: str
+    expires_at: str
+    authority_id: str
+    authority_public_key_hex: str
+    authority_trust_store_digest: str
+    authority_signature_hex: str
+    contract: str = "deployment-bundle-release-approval-v1"
+    approval_digest: str = field(init=False)
+
+    def __init__(self) -> None:
+        raise TypeError("deployment bundle release approvals are authority-issued")
+
+    @property
+    def unsigned_payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key not in {"authority_signature_hex", "approval_digest"}
+        }
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "approval_digest"
+        }
+
+
+def _deployment_bundle_release_approval_from_payload(
+    payload: dict[str, object],
+) -> DeploymentBundleReleaseApproval:
+    expected = {
+        item.name
+        for item in DeploymentBundleReleaseApproval.__dataclass_fields__.values()
+        if item.name != "approval_digest"
+    }
+    if set(payload) != expected:
+        raise ValueError("deployment bundle release approval is incomplete")
+    result = object.__new__(DeploymentBundleReleaseApproval)
+    for name, value in payload.items():
+        object.__setattr__(result, name, value)
+    object.__setattr__(result, "approval_digest", json_digest(result.payload))
+    return result
+
+
+def _issue_deployment_bundle_release_approval(
+    *,
+    deployment_bundle_digest: str,
+    bundle_manifest_digest: str,
+    source_commit: str,
+    repository: str,
+    source_ref: str,
+    platform: str,
+    runtime_mode: Literal["candidate-smoke", "deployable"],
+    expires_at: str,
+    signer: DeploymentAuthoritySigner,
+    authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+) -> DeploymentBundleReleaseApproval:
+    """Issue a release-authority signature over one immutable bundle identity."""
+
+    approved_at = _canonical_time(signer.signing_time())
+    canonical_expiry = _canonical_time(expires_at)
+    _require_digest("deployment bundle", deployment_bundle_digest)
+    _require_digest("bundle manifest", bundle_manifest_digest)
+    _validate_signer(
+        signer,
+        trust_store=authority_trust_store,
+        role="release_approval",
+        issued_at=approved_at,
+    )
+    if (
+        re.fullmatch(r"[0-9a-f]{40}", source_commit) is None
+        or not repository
+        or repository.strip() != repository
+        or not source_ref
+        or source_ref.strip() != source_ref
+        or not platform
+        or platform.strip() != platform
+        or runtime_mode not in {"candidate-smoke", "deployable"}
+        or _canonical_datetime(approved_at)
+        >= _canonical_datetime(canonical_expiry)
+        or _canonical_datetime(approved_at) > datetime.now(timezone.utc)
+    ):
+        raise ValueError("deployment bundle release approval is invalid")
+    values: dict[str, object] = {
+        "deployment_bundle_digest": deployment_bundle_digest,
+        "bundle_manifest_digest": bundle_manifest_digest,
+        "source_commit": source_commit,
+        "repository": repository,
+        "source_ref": source_ref,
+        "platform": platform,
+        "runtime_mode": runtime_mode,
+        "approved_at": approved_at,
+        "expires_at": canonical_expiry,
+        "authority_id": signer.authority_id,
+        "authority_public_key_hex": signer.public_key_hex,
+        "authority_trust_store_digest": authority_trust_store.content_digest,
+        "contract": "deployment-bundle-release-approval-v1",
+    }
+    signature = signer.sign(
+        _BUNDLE_RELEASE_APPROVAL_SIGNATURE_DOMAIN
+        + json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
+    ).hex()
+    result = object.__new__(DeploymentBundleReleaseApproval)
+    for name, value in values.items():
+        object.__setattr__(result, name, value)
+    object.__setattr__(result, "authority_signature_hex", signature)
+    object.__setattr__(result, "approval_digest", json_digest(result.payload))
+    return result
+
+
+def _validate_deployment_bundle_release_approval(
+    approval: DeploymentBundleReleaseApproval,
+    *,
+    authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
+    required_valid_through: str | None = None,
+    require_deployable: bool = False,
+) -> None:
+    """Validate release approval bytes, current trust, mode, and chronology."""
+
+    _require_digest("deployment bundle", approval.deployment_bundle_digest)
+    _require_digest("bundle manifest", approval.bundle_manifest_digest)
+    _require_digest("authority trust store", approval.authority_trust_store_digest)
+    approved = _canonical_datetime(approval.approved_at)
+    expiry = _canonical_datetime(approval.expires_at)
+    required = (
+        None
+        if required_valid_through is None
+        else _canonical_datetime(required_valid_through)
+    )
+    if (
+        type(approval) is not DeploymentBundleReleaseApproval
+        or approval.contract != "deployment-bundle-release-approval-v1"
+        or approval.approval_digest != json_digest(approval.payload)
+        or approval.authority_trust_store_digest
+        != authority_trust_store.content_digest
+        or re.fullmatch(r"[0-9a-f]{40}", approval.source_commit) is None
+        or not approval.repository
+        or approval.repository.strip() != approval.repository
+        or not approval.source_ref
+        or approval.source_ref.strip() != approval.source_ref
+        or not approval.platform
+        or approval.platform.strip() != approval.platform
+        or approval.runtime_mode not in {"candidate-smoke", "deployable"}
+        or approval.approved_at != _canonical_time(approval.approved_at)
+        or approval.expires_at != _canonical_time(approval.expires_at)
+        or approved >= expiry
+        or approved > datetime.now(timezone.utc)
+        or (required is not None and approved > required)
+        or (required is not None and required > expiry)
+    ):
+        raise ValueError("deployment bundle release approval is invalid")
+    if require_deployable and approval.runtime_mode != "deployable":
+        raise ValueError(
+            "operational bundle release approval must use deployable mode"
+        )
+    key = _trusted_authority_key(
+        authority_trust_store,
+        authority_id=approval.authority_id,
+        public_key_hex=approval.authority_public_key_hex,
+        role="release_approval",
+        issued_at=approval.approved_at,
+    )
+    if required_valid_through is not None:
+        _trusted_authority_key(
+            authority_trust_store,
+            authority_id=approval.authority_id,
+            public_key_hex=approval.authority_public_key_hex,
+            role="release_approval",
+            issued_at=required_valid_through,
+        )
+    try:
+        key.verify(
+            bytes.fromhex(approval.authority_signature_hex),
+            _BUNDLE_RELEASE_APPROVAL_SIGNATURE_DOMAIN
+            + json.dumps(
+                approval.unsigned_payload,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode(),
+        )
+    except (InvalidSignature, ValueError) as error:
+        raise ValueError("deployment bundle release signature is invalid") from error
+
+
+def load_deployment_bundle_release_approval(
+    path: str | Path,
+    *,
+    authority_trust_store_path: str | Path,
+    required_valid_through: str,
+    require_deployable: bool = True,
+) -> DeploymentBundleReleaseApproval:
+    """Load canonical release approval bytes from a protected local file."""
+
+    source = Path(path)
+    if not source.is_absolute():
+        raise ValueError("bundle release approval path must be absolute")
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(source, flags)
+    try:
+        metadata = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_uid != 0
+            or metadata.st_mode & 0o022
+            or metadata.st_size <= 0
+            or metadata.st_size > _MAXIMUM_BUNDLE_RELEASE_APPROVAL_BYTES
+        ):
+            raise ValueError(
+                "bundle release approval must be root-owned, immutable, and bounded"
+            )
+        retained = bytearray()
+        while len(retained) < metadata.st_size:
+            block = os.read(
+                descriptor,
+                min(1024 * 1024, metadata.st_size - len(retained)),
+            )
+            if not block:
+                break
+        after = os.fstat(descriptor)
+        if (
+            len(retained) != metadata.st_size
+            or (
+                metadata.st_dev,
+                metadata.st_ino,
+                metadata.st_size,
+                metadata.st_mtime_ns,
+            )
+            != (
+                after.st_dev,
+                after.st_ino,
+                after.st_size,
+                after.st_mtime_ns,
+            )
+        ):
+            raise ValueError("bundle release approval changed during validation")
+    finally:
+        os.close(descriptor)
+    try:
+        payload = json.loads(bytes(retained))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("bundle release approval is invalid") from error
+    if not isinstance(payload, dict):
+        raise ValueError("bundle release approval is invalid")
+    values = dict(payload)
+    stored_digest = values.pop("approval_digest", None)
+    try:
+        approval = _deployment_bundle_release_approval_from_payload(values)
+    except (TypeError, ValueError) as error:
+        raise ValueError("bundle release approval is invalid") from error
+    canonical = json.dumps(
+        approval.payload | {"approval_digest": approval.approval_digest},
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode() + b"\n"
+    if stored_digest != approval.approval_digest or bytes(retained) != canonical:
+        raise ValueError("bundle release approval digest mismatch")
+    trust_store = _load_promotion_deployment_authority_trust_store(
+        authority_trust_store_path
+    )
+    _validate_deployment_bundle_release_approval(
+        approval,
+        authority_trust_store=trust_store,
+        required_valid_through=required_valid_through,
+        require_deployable=require_deployable,
+    )
+    return approval
+
+
 _RUNTIME_ACTIVATION_SIGNATURE_DOMAIN = (
-    b"ADVAR_DEPLOYMENT_RUNTIME_ACTIVATION_V2\x00"
+    b"ADVAR_DEPLOYMENT_RUNTIME_ACTIVATION_V3\x00"
 )
 
 
@@ -23945,6 +24238,7 @@ class DeploymentRuntimeActivationReceipt:
     """Host-authority proof that one sealed runtime is active and unexpired."""
 
     deployment_bundle_digest: str
+    release_approval_digest: str
     runtime_tree_digest: str
     interpreter_closure_digest: str
     installation_attestation_sha256: str
@@ -23952,13 +24246,15 @@ class DeploymentRuntimeActivationReceipt:
     host_identity_digest: str
     runtime_mode: Literal["candidate-smoke", "deployable"]
     activation_sequence_number: int
+    previous_activation_receipt_digest: str
+    rollback_reason_digest: str | None
     activated_at: str
     expires_at: str
     authority_id: str
     authority_public_key_hex: str
     authority_trust_store_digest: str
     authority_signature_hex: str
-    contract: str = "deployment-runtime-activation-receipt-v2"
+    contract: str = "deployment-runtime-activation-receipt-v3"
     receipt_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -24000,7 +24296,7 @@ def _deployment_runtime_activation_receipt_from_payload(
 
 def _issue_deployment_runtime_activation_receipt(
     *,
-    deployment_bundle_digest: str,
+    release_approval: DeploymentBundleReleaseApproval,
     runtime_tree_digest: str,
     interpreter_closure_digest: str,
     installation_attestation_sha256: str,
@@ -24008,6 +24304,8 @@ def _issue_deployment_runtime_activation_receipt(
     host_identity_digest: str,
     runtime_mode: Literal["candidate-smoke", "deployable"],
     activation_sequence_number: int,
+    previous_activation_receipt_digest: str,
+    rollback_reason_digest: str | None = None,
     expires_at: str,
     signer: DeploymentAuthoritySigner,
     authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
@@ -24016,15 +24314,25 @@ def _issue_deployment_runtime_activation_receipt(
 
     activated_at = _canonical_time(signer.signing_time())
     canonical_expiry = _canonical_time(expires_at)
+    _validate_deployment_bundle_release_approval(
+        release_approval,
+        authority_trust_store=authority_trust_store,
+        required_valid_through=canonical_expiry,
+        require_deployable=runtime_mode == "deployable",
+    )
     for name, value in (
-        ("deployment bundle", deployment_bundle_digest),
+        ("deployment bundle", release_approval.deployment_bundle_digest),
+        ("release approval", release_approval.approval_digest),
         ("runtime tree", runtime_tree_digest),
         ("interpreter closure", interpreter_closure_digest),
         ("installation attestation", installation_attestation_sha256),
         ("deployment instance", deployment_instance_digest),
         ("host identity", host_identity_digest),
+        ("previous activation", previous_activation_receipt_digest),
     ):
         _require_digest(name, value)
+    if rollback_reason_digest is not None:
+        _require_digest("rollback reason", rollback_reason_digest)
     _validate_signer(
         signer,
         trust_store=authority_trust_store,
@@ -24035,13 +24343,34 @@ def _issue_deployment_runtime_activation_receipt(
         isinstance(activation_sequence_number, bool)
         or activation_sequence_number <= 0
         or runtime_mode not in {"candidate-smoke", "deployable"}
+        or runtime_mode != release_approval.runtime_mode
+        or _canonical_datetime(release_approval.approved_at)
+        > _canonical_datetime(activated_at)
+        or (
+            activation_sequence_number == 1
+            and previous_activation_receipt_digest
+            != DEPLOYMENT_RUNTIME_ACTIVATION_GENESIS_DIGEST
+        )
+        or (
+            activation_sequence_number > 1
+            and previous_activation_receipt_digest
+            == DEPLOYMENT_RUNTIME_ACTIVATION_GENESIS_DIGEST
+        )
         or _canonical_datetime(activated_at)
         >= _canonical_datetime(canonical_expiry)
         or _canonical_datetime(activated_at) > datetime.now(timezone.utc)
     ):
         raise ValueError("deployment runtime activation chronology is invalid")
+    if (
+        signer.authority_id == release_approval.authority_id
+        or signer.public_key_hex == release_approval.authority_public_key_hex
+    ):
+        raise ValueError(
+            "release approval and runtime activation require separate authorities"
+        )
     values: dict[str, object] = {
-        "deployment_bundle_digest": deployment_bundle_digest,
+        "deployment_bundle_digest": release_approval.deployment_bundle_digest,
+        "release_approval_digest": release_approval.approval_digest,
         "runtime_tree_digest": runtime_tree_digest,
         "interpreter_closure_digest": interpreter_closure_digest,
         "installation_attestation_sha256": installation_attestation_sha256,
@@ -24049,12 +24378,16 @@ def _issue_deployment_runtime_activation_receipt(
         "host_identity_digest": host_identity_digest,
         "runtime_mode": runtime_mode,
         "activation_sequence_number": activation_sequence_number,
+        "previous_activation_receipt_digest": (
+            previous_activation_receipt_digest
+        ),
+        "rollback_reason_digest": rollback_reason_digest,
         "activated_at": activated_at,
         "expires_at": canonical_expiry,
         "authority_id": signer.authority_id,
         "authority_public_key_hex": signer.public_key_hex,
         "authority_trust_store_digest": authority_trust_store.content_digest,
-        "contract": "deployment-runtime-activation-receipt-v2",
+        "contract": "deployment-runtime-activation-receipt-v3",
     }
     signature = signer.sign(
         _RUNTIME_ACTIVATION_SIGNATURE_DOMAIN
@@ -24071,6 +24404,7 @@ def _issue_deployment_runtime_activation_receipt(
 def _validate_deployment_runtime_activation_receipt(
     receipt: DeploymentRuntimeActivationReceipt,
     *,
+    release_approval: DeploymentBundleReleaseApproval,
     authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
     required_valid_through: str | None = None,
     require_current_runtime: bool = False,
@@ -24079,14 +24413,24 @@ def _validate_deployment_runtime_activation_receipt(
 
     for name, value in (
         ("deployment bundle", receipt.deployment_bundle_digest),
+        ("release approval", receipt.release_approval_digest),
         ("runtime tree", receipt.runtime_tree_digest),
         ("interpreter closure", receipt.interpreter_closure_digest),
         ("installation attestation", receipt.installation_attestation_sha256),
         ("deployment instance", receipt.deployment_instance_digest),
         ("host identity", receipt.host_identity_digest),
         ("authority trust store", receipt.authority_trust_store_digest),
+        ("previous activation", receipt.previous_activation_receipt_digest),
     ):
         _require_digest(name, value)
+    if receipt.rollback_reason_digest is not None:
+        _require_digest("rollback reason", receipt.rollback_reason_digest)
+    _validate_deployment_bundle_release_approval(
+        release_approval,
+        authority_trust_store=authority_trust_store,
+        required_valid_through=required_valid_through,
+        require_deployable=require_current_runtime,
+    )
     activated = _canonical_datetime(receipt.activated_at)
     expiry = _canonical_datetime(receipt.expires_at)
     required = (
@@ -24096,13 +24440,28 @@ def _validate_deployment_runtime_activation_receipt(
     )
     if (
         type(receipt) is not DeploymentRuntimeActivationReceipt
-        or receipt.contract != "deployment-runtime-activation-receipt-v2"
+        or receipt.contract != "deployment-runtime-activation-receipt-v3"
         or receipt.receipt_digest != json_digest(receipt.payload)
+        or receipt.release_approval_digest != release_approval.approval_digest
+        or receipt.deployment_bundle_digest
+        != release_approval.deployment_bundle_digest
         or receipt.authority_trust_store_digest
         != authority_trust_store.content_digest
         or isinstance(receipt.activation_sequence_number, bool)
         or receipt.activation_sequence_number <= 0
         or receipt.runtime_mode not in {"candidate-smoke", "deployable"}
+        or receipt.runtime_mode != release_approval.runtime_mode
+        or _canonical_datetime(release_approval.approved_at) > activated
+        or (
+            receipt.activation_sequence_number == 1
+            and receipt.previous_activation_receipt_digest
+            != DEPLOYMENT_RUNTIME_ACTIVATION_GENESIS_DIGEST
+        )
+        or (
+            receipt.activation_sequence_number > 1
+            and receipt.previous_activation_receipt_digest
+            == DEPLOYMENT_RUNTIME_ACTIVATION_GENESIS_DIGEST
+        )
         or receipt.activated_at != _canonical_time(receipt.activated_at)
         or receipt.expires_at != _canonical_time(receipt.expires_at)
         or activated >= expiry
@@ -24111,6 +24470,14 @@ def _validate_deployment_runtime_activation_receipt(
         or (required is not None and required > expiry)
     ):
         raise ValueError("deployment runtime activation receipt is invalid")
+    if (
+        receipt.authority_id == release_approval.authority_id
+        or receipt.authority_public_key_hex
+        == release_approval.authority_public_key_hex
+    ):
+        raise ValueError(
+            "release approval and runtime activation require separate authorities"
+        )
     key = _trusted_authority_key(
         authority_trust_store,
         authority_id=receipt.authority_id,
@@ -24157,6 +24524,7 @@ def _validate_deployment_runtime_activation_receipt(
 def load_deployment_runtime_activation_receipt(
     path: str | Path,
     *,
+    release_approval_path: str | Path,
     authority_trust_store_path: str | Path,
     required_valid_through: str,
 ) -> DeploymentRuntimeActivationReceipt:
@@ -24232,8 +24600,15 @@ def load_deployment_runtime_activation_receipt(
     trust_store = _load_promotion_deployment_authority_trust_store(
         authority_trust_store_path
     )
+    release_approval = load_deployment_bundle_release_approval(
+        release_approval_path,
+        authority_trust_store_path=authority_trust_store_path,
+        required_valid_through=required_valid_through,
+        require_deployable=True,
+    )
     _validate_deployment_runtime_activation_receipt(
         receipt,
+        release_approval=release_approval,
         authority_trust_store=trust_store,
         required_valid_through=required_valid_through,
         require_current_runtime=True,
@@ -24257,6 +24632,7 @@ class OperationalDeploymentDecisionCertificate:
     analysis_processor_trust_store_digest: str
     raw_ingestor_trust_store_digest: str
     analysis_input_provenance_commitment_digest: str
+    deployment_bundle_release_approval_digest: str
     deployment_runtime_activation_receipt_digest: str
     deployment_bundle_digest: str
     runtime_tree_digest: str
@@ -24282,7 +24658,7 @@ class OperationalDeploymentDecisionCertificate:
     authority_public_key_hex: str
     authority_trust_store_digest: str
     authority_signature_hex: str
-    contract: str = "operational-deployment-decision-certificate-v7"
+    contract: str = "operational-deployment-decision-certificate-v8"
     certificate_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -25126,6 +25502,7 @@ class CommittedOperationalDecisionClient(Protocol):
         self,
         decision_payload: dict[str, object],
         *,
+        deployment_bundle_release_approval: DeploymentBundleReleaseApproval,
         deployment_runtime_activation_receipt: (
             DeploymentRuntimeActivationReceipt
         ),
@@ -25162,6 +25539,7 @@ class _EpisodeLedgerOperationalDecisionClient:
         self,
         decision_payload: dict[str, object],
         *,
+        deployment_bundle_release_approval: DeploymentBundleReleaseApproval,
         deployment_runtime_activation_receipt: (
             DeploymentRuntimeActivationReceipt
         ),
@@ -25179,6 +25557,9 @@ class _EpisodeLedgerOperationalDecisionClient:
     ) -> OperationalDeploymentDecisionCertificate:
         return self._issuer(
             decision_payload,
+            deployment_bundle_release_approval=(
+                deployment_bundle_release_approval
+            ),
             deployment_runtime_activation_receipt=(
                 deployment_runtime_activation_receipt
             ),
@@ -25516,6 +25897,7 @@ def _replay_operational_deployment_selection(
 def _issue_operational_deployment_decision_certificate(
     decision_payload: dict[str, object],
     *,
+    deployment_bundle_release_approval: DeploymentBundleReleaseApproval,
     deployment_runtime_activation_receipt: DeploymentRuntimeActivationReceipt,
     promotion_deployment_certificate: LedgeredPromotionDeploymentCertificate,
     promotion_evidence: NeuralPriorPromotionEvidence,
@@ -25530,8 +25912,15 @@ def _issue_operational_deployment_decision_certificate(
     signer: DeploymentAuthoritySigner,
     authority_trust_store: _PromotionDeploymentAuthorityTrustStore,
 ) -> OperationalDeploymentDecisionCertificate:
+    _validate_deployment_bundle_release_approval(
+        deployment_bundle_release_approval,
+        authority_trust_store=authority_trust_store,
+        required_valid_through=cast(str, decision_payload.get("publication_time")),
+        require_deployable=True,
+    )
     _validate_deployment_runtime_activation_receipt(
         deployment_runtime_activation_receipt,
+        release_approval=deployment_bundle_release_approval,
         authority_trust_store=authority_trust_store,
         required_valid_through=cast(str, decision_payload.get("publication_time")),
     )
@@ -25543,6 +25932,12 @@ def _issue_operational_deployment_decision_certificate(
             )
         }
     )
+    if (
+        decision_payload.get("deployment_bundle_release_approval")
+        != deployment_bundle_release_approval.payload
+        | {"approval_digest": deployment_bundle_release_approval.approval_digest}
+    ):
+        raise ValueError("operational decision release approval lineage disagrees")
     if (
         decision_payload.get("deployment_runtime_activation_receipt")
         != expected_runtime_activation
@@ -25575,6 +25970,18 @@ def _issue_operational_deployment_decision_certificate(
     ):
         raise ValueError(
             "promotion certification and operational signing require separate authorities"
+        )
+    if (
+        signer.authority_id == deployment_bundle_release_approval.authority_id
+        or signer.public_key_hex
+        == deployment_bundle_release_approval.authority_public_key_hex
+        or signer.authority_id
+        == deployment_runtime_activation_receipt.authority_id
+        or signer.public_key_hex
+        == deployment_runtime_activation_receipt.authority_public_key_hex
+    ):
+        raise ValueError(
+            "release, runtime activation, and operational signing require separate authorities"
         )
     try:
         receipt_payload = json.loads(
@@ -25661,6 +26068,9 @@ def _issue_operational_deployment_decision_certificate(
         "analysis_input_provenance_commitment_digest": decision_payload.get(
             "analysis_input_provenance_commitment_digest"
         ),
+        "deployment_bundle_release_approval_digest": (
+            deployment_bundle_release_approval.approval_digest
+        ),
         "deployment_runtime_activation_receipt_digest": (
             deployment_runtime_activation_receipt.receipt_digest
         ),
@@ -25705,7 +26115,7 @@ def _issue_operational_deployment_decision_certificate(
         "authority_id": signer.authority_id,
         "authority_public_key_hex": signer.public_key_hex,
         "authority_trust_store_digest": authority_trust_store.content_digest,
-        "contract": "operational-deployment-decision-certificate-v7",
+        "contract": "operational-deployment-decision-certificate-v8",
     }
     signature = signer.sign(
         json.dumps(values, sort_keys=True, separators=(",", ":")).encode()
@@ -25757,6 +26167,7 @@ def _validate_operational_deployment_decision_certificate(
         "analysis_processor_trust_store_digest",
         "raw_ingestor_trust_store_digest",
         "analysis_input_provenance_commitment_digest",
+        "deployment_bundle_release_approval_digest",
         "deployment_runtime_activation_receipt_digest",
         "deployment_bundle_digest",
         "runtime_tree_digest",
@@ -25772,11 +26183,25 @@ def _validate_operational_deployment_decision_certificate(
         "authority_trust_store_digest",
     ):
         _require_digest(name, getattr(certificate, name))
+    release_payload = decision_payload.get("deployment_bundle_release_approval")
     runtime_payload = decision_payload.get(
         "deployment_runtime_activation_receipt"
     )
-    if not isinstance(runtime_payload, dict):
+    if not isinstance(release_payload, dict) or not isinstance(runtime_payload, dict):
         raise ValueError("operational runtime activation receipt is missing")
+    retained_release_payload = dict(release_payload)
+    release_approval_digest = retained_release_payload.pop(
+        "approval_digest", None
+    )
+    release_approval = _deployment_bundle_release_approval_from_payload(
+        retained_release_payload
+    )
+    _validate_deployment_bundle_release_approval(
+        release_approval,
+        authority_trust_store=authority_trust_store,
+        required_valid_through=certificate.publication_time,
+        require_deployable=True,
+    )
     retained_runtime_payload = dict(runtime_payload)
     runtime_receipt_digest = retained_runtime_payload.pop(
         "receipt_digest", None
@@ -25786,13 +26211,14 @@ def _validate_operational_deployment_decision_certificate(
     )
     _validate_deployment_runtime_activation_receipt(
         runtime_receipt,
+        release_approval=release_approval,
         authority_trust_store=authority_trust_store,
         required_valid_through=certificate.publication_time,
     )
     if (
         type(certificate) is not OperationalDeploymentDecisionCertificate
         or certificate.contract
-        != "operational-deployment-decision-certificate-v7"
+        != "operational-deployment-decision-certificate-v8"
         or certificate.certificate_digest != json_digest(certificate.payload)
         or certificate.decision_payload_digest != json_digest(decision_payload)
         or certificate.promotion_deployment_certificate_digest
@@ -25825,6 +26251,9 @@ def _validate_operational_deployment_decision_certificate(
         != decision_payload.get("raw_ingestor_trust_store_digest")
         or certificate.analysis_input_provenance_commitment_digest
         != decision_payload.get("analysis_input_provenance_commitment_digest")
+        or release_approval_digest != release_approval.approval_digest
+        or certificate.deployment_bundle_release_approval_digest
+        != release_approval.approval_digest
         or runtime_receipt_digest != runtime_receipt.receipt_digest
         or certificate.deployment_runtime_activation_receipt_digest
         != runtime_receipt.receipt_digest
@@ -25941,6 +26370,12 @@ def _validate_operational_deployment_decision_certificate(
         or certificate.authority_id == operational_receipt.signer_id
         or certificate.authority_public_key_hex
         == operational_receipt.signer_public_key_hex
+        or certificate.authority_id == release_approval.authority_id
+        or certificate.authority_public_key_hex
+        == release_approval.authority_public_key_hex
+        or certificate.authority_id == runtime_receipt.authority_id
+        or certificate.authority_public_key_hex
+        == runtime_receipt.authority_public_key_hex
     ):
         raise ValueError("operational decision authority is not role-separated")
     key = _trusted_authority_key(
@@ -25991,6 +26426,7 @@ def _select_deployed_prior(
     analysis_processor_trust_store_digest: str,
     policy_trust_store_path: str | Path,
     deployment_certificate_trust_store_path: str | Path,
+    deployment_bundle_release_approval: DeploymentBundleReleaseApproval,
     deployment_runtime_activation_receipt: DeploymentRuntimeActivationReceipt,
     operational_decision_client: CommittedOperationalDecisionClient,
 ) -> tuple[NeuralPriorInferenceRunner, NeuralPriorDeploymentSelection]:
@@ -26036,6 +26472,7 @@ def _select_deployed_prior(
     )
     _validate_deployment_runtime_activation_receipt(
         deployment_runtime_activation_receipt,
+        release_approval=deployment_bundle_release_approval,
         authority_trust_store=deployment_authority_trust,
         required_valid_through=operational_input_plan.publication_time,
         require_current_runtime=True,
@@ -26163,7 +26600,7 @@ def _select_deployed_prior(
         role = "candidate"
         reason = "certified_candidate"
     deployment_decision_core: dict[str, object] = {
-        "contract": "neural-prior-deployment-decision-artifact-v18",
+        "contract": "neural-prior-deployment-decision-artifact-v19",
         "routing_semantic_replay_verified": True,
         "full_analysis_input_digest": regime_evidence.full_analysis_input_digest,
         "analysis_input_derivation_artifact_digest": (
@@ -26184,6 +26621,14 @@ def _select_deployed_prior(
         ),
         "analysis_input_provenance_commitment_digest": (
             analysis_input_provenance_commitment_digest
+        ),
+        "deployment_bundle_release_approval": (
+            deployment_bundle_release_approval.payload
+            | {
+                "approval_digest": (
+                    deployment_bundle_release_approval.approval_digest
+                )
+            }
         ),
         "deployment_runtime_activation_receipt": (
             deployment_runtime_activation_receipt.payload
@@ -26259,6 +26704,9 @@ def _select_deployed_prior(
     operational_decision_certificate = (
         operational_decision_client.issue_operational_deployment_decision(
             deployment_decision_core,
+            deployment_bundle_release_approval=(
+                deployment_bundle_release_approval
+            ),
             deployment_runtime_activation_receipt=(
                 deployment_runtime_activation_receipt
             ),
@@ -26404,7 +26852,7 @@ def validate_neural_prior_deployment_decision_artifact(
     if (
         not isinstance(payload, dict)
         or payload.get("contract")
-        != "neural-prior-deployment-decision-artifact-v18"
+        != "neural-prior-deployment-decision-artifact-v19"
         or json.dumps(payload, sort_keys=True, separators=(",", ":"))
         != artifact_json
     ):
@@ -26427,6 +26875,9 @@ def validate_neural_prior_deployment_decision_artifact(
     runtime_activation_payload = payload.get(
         "deployment_runtime_activation_receipt"
     )
+    release_approval_payload = payload.get(
+        "deployment_bundle_release_approval"
+    )
     range_partition = payload.get("range_partition_evidence")
     range_geometry = payload.get("range_geometry_contract")
     trust = payload.get("policy_trust_store")
@@ -26441,6 +26892,7 @@ def validate_neural_prior_deployment_decision_artifact(
             operational_publication_payload,
             operational_activation_payload,
             operational_commit_authorization_payload,
+            release_approval_payload,
             runtime_activation_payload,
             range_partition,
             range_geometry,
@@ -26456,6 +26908,7 @@ def validate_neural_prior_deployment_decision_artifact(
     assert isinstance(operational_publication_payload, dict)
     assert isinstance(operational_activation_payload, dict)
     assert isinstance(operational_commit_authorization_payload, dict)
+    assert isinstance(release_approval_payload, dict)
     assert isinstance(runtime_activation_payload, dict)
     assert isinstance(range_partition, dict)
     assert isinstance(range_geometry, dict)
@@ -26491,6 +26944,26 @@ def validate_neural_prior_deployment_decision_artifact(
     authority_trust_store = _load_promotion_deployment_authority_trust_store(
         deployment_certificate_trust_store_path
     )
+    release_approval_values = dict(release_approval_payload)
+    release_approval_digest = release_approval_values.pop(
+        "approval_digest", None
+    )
+    try:
+        release_approval = _deployment_bundle_release_approval_from_payload(
+            release_approval_values
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError("deployment bundle release approval is invalid") from error
+    if release_approval_digest != release_approval.approval_digest:
+        raise ValueError("deployment bundle release approval digest mismatch")
+    _validate_deployment_bundle_release_approval(
+        release_approval,
+        authority_trust_store=authority_trust_store,
+        required_valid_through=datetime.now(timezone.utc)
+        .isoformat()
+        .replace("+00:00", "Z"),
+        require_deployable=require_current_runtime,
+    )
     runtime_activation_values = dict(runtime_activation_payload)
     runtime_activation_digest = runtime_activation_values.pop(
         "receipt_digest", None
@@ -26509,6 +26982,7 @@ def validate_neural_prior_deployment_decision_artifact(
         raise ValueError("deployment runtime activation digest mismatch")
     _validate_deployment_runtime_activation_receipt(
         runtime_activation_receipt,
+        release_approval=release_approval,
         authority_trust_store=authority_trust_store,
         required_valid_through=datetime.now(timezone.utc)
         .isoformat()
@@ -26636,6 +27110,41 @@ def validate_neural_prior_deployment_decision_artifact(
         activation_receipt=operational_activation,
         authority_trust_store=authority_trust_store,
     )
+    if require_current_runtime:
+        expected_index_path = (
+            authority_trust_store.ledger_instance_index_paths.get(
+                operational_certificate.ledger_instance_digest
+            )
+        )
+        ledger_type = getattr(ledger_module, "EpisodeLedger")
+        if type(expected_index_path) is not type(Path()):
+            raise ValueError(
+                "automatic deployment ledger instance has no root-approved index"
+            )
+        committed_ledger = ledger_type._open_existing_index(
+            expected_index_path
+        )
+        (
+            committed_publication,
+            committed_activation,
+            committed_authorization,
+        ) = committed_ledger._validate_committed_operational_decision(
+            operational_certificate,
+            decision_core,
+            expected_index_path=expected_index_path,
+            authority_trust_store_path=deployment_certificate_trust_store_path,
+        )
+        if (
+            committed_publication.receipt_digest
+            != operational_publication.receipt_digest
+            or committed_activation.receipt_digest
+            != operational_activation.receipt_digest
+            or committed_authorization.receipt_digest
+            != operational_authorization.receipt_digest
+        ):
+            raise ValueError(
+                "current deployment artifact disagrees with committed ledger"
+            )
     promotion_evidence = _decode_current_neural_prior_promotion_evidence(
         certificate.promotion_evidence_payload_json
     )
@@ -26976,6 +27485,7 @@ def infer_deployed_neural_prior(
     policy: DeployedNeuralPriorPolicy,
     policy_trust_store_path: str | Path,
     deployment_certificate_trust_store_path: str | Path,
+    deployment_bundle_release_approval: DeploymentBundleReleaseApproval,
     deployment_runtime_activation_receipt: DeploymentRuntimeActivationReceipt,
     operational_decision_client: CommittedOperationalDecisionClient,
     mps_backend_certification: MPSBackendCertificationEvidence | None = None,
@@ -27217,6 +27727,9 @@ def infer_deployed_neural_prior(
         policy_trust_store_path=policy_trust_store_path,
         deployment_certificate_trust_store_path=(
             deployment_certificate_trust_store_path
+        ),
+        deployment_bundle_release_approval=(
+            deployment_bundle_release_approval
         ),
         deployment_runtime_activation_receipt=(
             deployment_runtime_activation_receipt
