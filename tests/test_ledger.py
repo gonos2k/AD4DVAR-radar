@@ -91,6 +91,7 @@ from advar.calibration import (  # noqa: E402
 from advar.sensitivity import (  # noqa: E402
     LearningApprovalEvidence,
     SensitivityConfig,
+    VerificationObservationErrorPlan,
     compute_sensitivity_snapshot,
 )
 
@@ -573,6 +574,23 @@ class EpisodeLedgerTests(unittest.TestCase):
             decision_deadline="2030-01-01T00:02:00Z",
             publication_time="2030-01-01T00:05:00Z",
         )
+        observation_error_plan = VerificationObservationErrorPlan(
+            radar_source_kind="single_site",
+            source_registry_digest="b" * 64,
+            calibration_registry_digest="2" * 64,
+            range_elevation_validity_algorithm_digest="5" * 64,
+            beam_blockage_algorithm_digest="6" * 64,
+            attenuation_qc_digest="3" * 64,
+            censoring_rule_digest="f" * 64,
+            spatial_correlation_block_algorithm_digest="7" * 64,
+            quality_weight_interpretation_digest="8" * 64,
+            quality_weight_algorithm_digest="9" * 64,
+            observation_std_algorithm_digest="a" * 64,
+            observation_error_model_digest="b" * 64,
+            source_assignment_algorithm_digest="c" * 64,
+            minimum_detectable_echo_dbz=-10.0,
+            observation_error_reference_std_dbz=2.0,
+        )
         target_plan = PriorUncertaintyTargetPlan(
             plan_id="uncertainty-clock",
             target_kind="withheld_radar",
@@ -584,6 +602,9 @@ class EpisodeLedgerTests(unittest.TestCase):
             grid_contract_digest="1" * 64,
             feature_exclusion_contract_digest="c" * 64,
             independence_evidence_digest="d" * 64,
+            verification_observation_error_plan_digest=(
+                observation_error_plan.plan_digest
+            ),
             target_valid_time="2030-01-01T01:00:00Z",
             prior_probability_contract_digest="e" * 64,
         )
@@ -598,6 +619,9 @@ class EpisodeLedgerTests(unittest.TestCase):
             grid_contract_digest="1" * 64,
             feature_exclusion_contract_digest="c" * 64,
             independence_evidence_digest="d" * 64,
+            verification_observation_error_plan_digest=(
+                observation_error_plan.plan_digest
+            ),
             target_valid_time=issue,
             state_contract_digest="0" * 64,
             support_threshold_dbz=5.0,
@@ -1248,6 +1272,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             ),
             uncertainty_target_plans=(target_plan,),
             state_calibration_target_plans=(state_target_plan,),
+            verification_observation_error_plans=(observation_error_plan,),
             range_band_contracts=(range_contract,),
             range_geometry_contracts=(range_geometry,),
             operational_issuance_domain_plans=(issuance_domain_plan,),
@@ -2823,6 +2848,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             grid_contract_digest="8" * 64,
             feature_exclusion_contract_digest="9" * 64,
             independence_evidence_digest="0" * 64,
+            verification_observation_error_plan_digest="1" * 64,
             target_valid_time="2026-08-08T01:00:00Z",
             prior_probability_contract_digest="f" * 64,
         )

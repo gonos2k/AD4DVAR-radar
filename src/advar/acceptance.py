@@ -403,13 +403,12 @@ def verify_real_case_acceptance(
                 }
             )
     scenarios = tuple(sorted({item.scenario for item in manifest.cases}))
-    event_count = len({item.physical_event_digest for item in manifest.cases})
-    complete_matrix = set(scenarios) == set(REAL_CASE_ACCEPTANCE_SCENARIOS)
-    sample_size_satisfied = (
-        event_count >= required_event_count
+    declared_event_label_count = len(
+        {item.physical_event_digest for item in manifest.cases}
     )
+    complete_matrix = set(scenarios) == set(REAL_CASE_ACCEPTANCE_SCENARIOS)
     report_payload: dict[str, object] = {
-        "contract": "advar-real-case-acceptance-report-v1",
+        "contract": "advar-real-case-acceptance-report-v2",
         "mode": "REPORT_ONLY",
         "manifest_digest": manifest.manifest_digest,
         "sample_size_preflight_digest": manifest.sample_size_preflight_digest,
@@ -417,13 +416,15 @@ def verify_real_case_acceptance(
         "verified_at": manifest.created_at,
         "verified_files": verified_files,
         "covered_scenarios": list(scenarios),
-        "independent_physical_event_count": event_count,
+        "declared_event_label_count": declared_event_label_count,
+        "independent_physical_event_count": None,
         "required_independent_physical_event_count": (
             required_event_count
         ),
-        "acceptance_matrix_complete": complete_matrix,
-        "sample_size_satisfied": sample_size_satisfied,
-        "eligible_for_live_review": complete_matrix and sample_size_satisfied,
+        "artifact_index_complete": complete_matrix,
+        "semantic_e2e_validated": False,
+        "sample_size_satisfied": False,
+        "eligible_for_scientific_review": False,
         "authorizes_deployment": False,
     }
     return report_payload | {"report_digest": json_digest(report_payload)}

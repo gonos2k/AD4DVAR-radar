@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
+from enum import IntEnum
 import json
 import math
 import os
@@ -199,6 +200,147 @@ def _load_learning_policy_trust_store(
 
 
 @dataclass(frozen=True)
+class VerificationObservationErrorPlan:
+    """Pre-registered policy for deriving verification observation errors."""
+
+    radar_source_kind: Literal["single_site", "mosaic"]
+    source_registry_digest: str
+    calibration_registry_digest: str
+    range_elevation_validity_algorithm_digest: str
+    beam_blockage_algorithm_digest: str
+    attenuation_qc_digest: str
+    censoring_rule_digest: str
+    spatial_correlation_block_algorithm_digest: str
+    quality_weight_interpretation_digest: str
+    quality_weight_algorithm_digest: str
+    observation_std_algorithm_digest: str
+    observation_error_model_digest: str
+    source_assignment_algorithm_digest: str
+    minimum_detectable_echo_dbz: float
+    observation_error_reference_std_dbz: float
+    spatial_correlation_role: Literal["diagnostic_only"] = "diagnostic_only"
+    contract: str = "verification-observation-error-plan-v1"
+    plan_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "verification-observation-error-plan-v1"
+            or self.radar_source_kind not in {"single_site", "mosaic"}
+            or not math.isfinite(self.minimum_detectable_echo_dbz)
+            or not math.isfinite(self.observation_error_reference_std_dbz)
+            or self.observation_error_reference_std_dbz <= 0.0
+            or self.spatial_correlation_role != "diagnostic_only"
+        ):
+            raise ValueError("verification observation-error plan is invalid")
+        for name in (
+            "source_registry_digest",
+            "calibration_registry_digest",
+            "range_elevation_validity_algorithm_digest",
+            "beam_blockage_algorithm_digest",
+            "attenuation_qc_digest",
+            "censoring_rule_digest",
+            "spatial_correlation_block_algorithm_digest",
+            "quality_weight_interpretation_digest",
+            "quality_weight_algorithm_digest",
+            "observation_std_algorithm_digest",
+            "observation_error_model_digest",
+            "source_assignment_algorithm_digest",
+        ):
+            _require_sha256(name, getattr(self, name))
+        object.__setattr__(self, "plan_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "plan_digest"
+        }
+
+
+class VerificationCellState(IntEnum):
+    """Per-cell observation semantics retained for scientific verification."""
+
+    OBSERVED_CLEAR = 0
+    OBSERVED_ECHO = 1
+    SOURCE_MISSING = 2
+    QC_INVALID = 3
+    BEAM_BLOCKED = 4
+    BELOW_DETECTION_CENSORED = 5
+    MOSAIC_SOURCE_UNASSIGNED = 6
+
+
+def _validate_verification_cell_states(
+    *,
+    frames_dbz: Tensor,
+    valid_mask: Tensor,
+    quality_weight: Tensor,
+    observation_std_dbz: Tensor,
+    observation_state_code: Tensor,
+    minimum_detectable_echo_dbz: float,
+    radar_source_kind: Literal["single_site", "mosaic"],
+    source_radar_index_map: Tensor | None,
+) -> None:
+    if (
+        observation_state_code.dtype is not torch.uint8
+        or observation_state_code.shape != frames_dbz.shape
+        or observation_state_code.device != frames_dbz.device
+    ):
+        raise ValueError("verification observation-state tensor is invalid")
+    observed_clear = observation_state_code == VerificationCellState.OBSERVED_CLEAR
+    observed_echo = observation_state_code == VerificationCellState.OBSERVED_ECHO
+    censored = (
+        observation_state_code
+        == VerificationCellState.BELOW_DETECTION_CENSORED
+    )
+    recognized = torch.zeros_like(valid_mask)
+    for state in VerificationCellState:
+        recognized |= observation_state_code == state
+    expected_valid = observed_clear | observed_echo | censored
+    invalid = ~expected_valid
+    mosaic_unassigned = (
+        observation_state_code
+        == VerificationCellState.MOSAIC_SOURCE_UNASSIGNED
+    )
+    if radar_source_kind == "single_site":
+        source_semantics_valid = (
+            source_radar_index_map is None
+            and not bool(torch.any(mosaic_unassigned))
+        )
+    else:
+        source_semantics_valid = (
+            source_radar_index_map is not None
+            and source_radar_index_map.dtype is torch.int64
+            and source_radar_index_map.shape == frames_dbz.shape
+            and source_radar_index_map.device == frames_dbz.device
+            and bool(torch.all(source_radar_index_map >= -1))
+            and bool(
+                torch.equal(
+                    source_radar_index_map == -1,
+                    mosaic_unassigned,
+                )
+            )
+            and bool(
+                torch.all(
+                    source_radar_index_map.masked_select(expected_valid) >= 0
+                )
+            )
+        )
+    if (
+        not source_semantics_valid
+        or not bool(torch.all(recognized))
+        or not bool(torch.equal(valid_mask, expected_valid))
+        or bool(torch.any(observed_clear & (frames_dbz >= minimum_detectable_echo_dbz)))
+        or bool(torch.any(observed_echo & (frames_dbz < minimum_detectable_echo_dbz)))
+        or bool(torch.any(censored & (frames_dbz > minimum_detectable_echo_dbz)))
+        or not bool(torch.all(quality_weight.masked_select(invalid) == 0.0))
+        or not bool(torch.all(observation_std_dbz.masked_select(invalid) == 0.0))
+        or not bool(torch.all(observation_std_dbz.masked_select(expected_valid) > 0.0))
+    ):
+        raise ValueError("verification observation-state semantics are invalid")
+
+
+@dataclass(frozen=True)
 class VerificationObservationErrorContract:
     """Source-aware error semantics and exact weighting tensors for scoring."""
 
@@ -216,7 +358,10 @@ class VerificationObservationErrorContract:
     valid_mask_digest: str
     quality_weight_digest: str
     observation_std_dbz_digest: str
+    observation_state_code_digest: str
+    observation_error_plan_digest: str
     source_radar_index_map_digest: str | None = None
+    spatial_correlation_role: Literal["diagnostic_only"] = "diagnostic_only"
     missing_data_taxonomy: tuple[str, ...] = (
         "observed_clear",
         "observed_echo",
@@ -227,15 +372,16 @@ class VerificationObservationErrorContract:
         "mosaic_source_unassigned",
     )
     metric_weight_rule: str = "quality-times-normalized-inverse-variance-v1"
-    contract: str = "verification-observation-error-contract-v1"
+    contract: str = "verification-observation-error-contract-v3"
     contract_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
         if (
-            self.contract != "verification-observation-error-contract-v1"
+            self.contract != "verification-observation-error-contract-v3"
             or self.radar_source_kind not in {"single_site", "mosaic"}
             or self.metric_weight_rule
             != "quality-times-normalized-inverse-variance-v1"
+            or self.spatial_correlation_role != "diagnostic_only"
             or self.missing_data_taxonomy
             != (
                 "observed_clear",
@@ -267,6 +413,8 @@ class VerificationObservationErrorContract:
             "valid_mask_digest",
             "quality_weight_digest",
             "observation_std_dbz_digest",
+            "observation_state_code_digest",
+            "observation_error_plan_digest",
         ):
             _require_sha256(name, getattr(self, name))
         for source_digest, calibration_epoch_digest in self.source_calibration_epochs:
@@ -290,24 +438,32 @@ class VerificationObservationErrorContract:
     def from_tensors(
         cls,
         *,
+        plan: VerificationObservationErrorPlan,
         valid_mask: Tensor,
         quality_weight: Tensor,
         observation_std_dbz: Tensor,
-        radar_source_kind: Literal["single_site", "mosaic"],
+        frames_dbz: Tensor,
+        observation_state_code: Tensor,
+        source_radar_index_map: Tensor | None,
         source_calibration_epochs: tuple[tuple[str, str], ...],
         range_elevation_validity_domain_digest: str,
         beam_blockage_visibility_mask_digest: str,
-        attenuation_qc_digest: str,
-        censoring_rule_digest: str,
         spatial_correlation_block_digest: str,
-        quality_weight_interpretation_digest: str,
-        observation_error_model_digest: str,
-        minimum_detectable_echo_dbz: float,
-        observation_error_reference_std_dbz: float,
-        source_radar_index_map_digest: str | None = None,
     ) -> VerificationObservationErrorContract:
+        if type(plan) is not VerificationObservationErrorPlan:
+            raise ValueError("verification observation-error plan is invalid")
+        _validate_verification_cell_states(
+            frames_dbz=frames_dbz,
+            valid_mask=valid_mask,
+            quality_weight=quality_weight,
+            observation_std_dbz=observation_std_dbz,
+            observation_state_code=observation_state_code,
+            minimum_detectable_echo_dbz=plan.minimum_detectable_echo_dbz,
+            radar_source_kind=plan.radar_source_kind,
+            source_radar_index_map=source_radar_index_map,
+        )
         return cls(
-            radar_source_kind=radar_source_kind,
+            radar_source_kind=plan.radar_source_kind,
             source_calibration_epochs=tuple(sorted(source_calibration_epochs)),
             range_elevation_validity_domain_digest=(
                 range_elevation_validity_domain_digest
@@ -315,22 +471,56 @@ class VerificationObservationErrorContract:
             beam_blockage_visibility_mask_digest=(
                 beam_blockage_visibility_mask_digest
             ),
-            attenuation_qc_digest=attenuation_qc_digest,
-            censoring_rule_digest=censoring_rule_digest,
+            attenuation_qc_digest=plan.attenuation_qc_digest,
+            censoring_rule_digest=plan.censoring_rule_digest,
             spatial_correlation_block_digest=spatial_correlation_block_digest,
             quality_weight_interpretation_digest=(
-                quality_weight_interpretation_digest
+                plan.quality_weight_interpretation_digest
             ),
-            observation_error_model_digest=observation_error_model_digest,
-            minimum_detectable_echo_dbz=minimum_detectable_echo_dbz,
+            observation_error_model_digest=plan.observation_error_model_digest,
+            minimum_detectable_echo_dbz=plan.minimum_detectable_echo_dbz,
             observation_error_reference_std_dbz=(
-                observation_error_reference_std_dbz
+                plan.observation_error_reference_std_dbz
             ),
             valid_mask_digest=tensor_digest(valid_mask),
             quality_weight_digest=tensor_digest(quality_weight),
             observation_std_dbz_digest=tensor_digest(observation_std_dbz),
-            source_radar_index_map_digest=source_radar_index_map_digest,
+            observation_state_code_digest=tensor_digest(
+                observation_state_code
+            ),
+            observation_error_plan_digest=plan.plan_digest,
+            spatial_correlation_role=plan.spatial_correlation_role,
+            source_radar_index_map_digest=(
+                None
+                if source_radar_index_map is None
+                else tensor_digest(source_radar_index_map)
+            ),
         )
+
+    def validate_against_plan(
+        self,
+        plan: VerificationObservationErrorPlan,
+    ) -> None:
+        if (
+            type(plan) is not VerificationObservationErrorPlan
+            or self.contract_digest != json_digest(self.payload)
+            or self.observation_error_plan_digest != plan.plan_digest
+            or self.radar_source_kind != plan.radar_source_kind
+            or self.attenuation_qc_digest != plan.attenuation_qc_digest
+            or self.censoring_rule_digest != plan.censoring_rule_digest
+            or self.quality_weight_interpretation_digest
+            != plan.quality_weight_interpretation_digest
+            or self.observation_error_model_digest
+            != plan.observation_error_model_digest
+            or self.minimum_detectable_echo_dbz
+            != plan.minimum_detectable_echo_dbz
+            or self.observation_error_reference_std_dbz
+            != plan.observation_error_reference_std_dbz
+            or self.spatial_correlation_role != plan.spatial_correlation_role
+        ):
+            raise ValueError(
+                "verification contract disagrees with its observation-error plan"
+            )
 
     @property
     def payload(self) -> dict[str, object]:
@@ -351,6 +541,7 @@ class VerificationObservationErrorContract:
             "spatial_correlation_block_digest": (
                 self.spatial_correlation_block_digest
             ),
+            "spatial_correlation_role": self.spatial_correlation_role,
             "quality_weight_interpretation_digest": (
                 self.quality_weight_interpretation_digest
             ),
@@ -362,6 +553,12 @@ class VerificationObservationErrorContract:
             "valid_mask_digest": self.valid_mask_digest,
             "quality_weight_digest": self.quality_weight_digest,
             "observation_std_dbz_digest": self.observation_std_dbz_digest,
+            "observation_state_code_digest": (
+                self.observation_state_code_digest
+            ),
+            "observation_error_plan_digest": (
+                self.observation_error_plan_digest
+            ),
             "source_radar_index_map_digest": self.source_radar_index_map_digest,
             "missing_data_taxonomy": list(self.missing_data_taxonomy),
             "metric_weight_rule": self.metric_weight_rule,
@@ -386,6 +583,8 @@ class VerificationBundle:
     floor_representation_contract_digest: str | None = None
     quality_weight: Tensor | None = None
     observation_std_dbz: Tensor | None = None
+    observation_state_code: Tensor | None = None
+    source_radar_index_map: Tensor | None = None
     observation_error_contract: VerificationObservationErrorContract | None = None
     contract: str = "radar-verification-bundle-v1"
     content_digest: str = field(init=False)
@@ -396,6 +595,8 @@ class VerificationBundle:
             "radar-verification-bundle-v2",
             "radar-verification-bundle-v3",
             "radar-verification-bundle-v4",
+            "radar-verification-bundle-v5",
+            "radar-verification-bundle-v6",
         }:
             raise ValueError("unsupported verification bundle contract")
         if self.frames_dbz.ndim != 3 or not self.frames_dbz.is_floating_point():
@@ -477,16 +678,21 @@ class VerificationBundle:
         error_values = (
             self.quality_weight,
             self.observation_std_dbz,
+            self.observation_state_code,
             self.observation_error_contract,
         )
-        if self.contract != "radar-verification-bundle-v4":
-            if any(value is not None for value in error_values):
+        if self.contract != "radar-verification-bundle-v6":
+            if any(value is not None for value in error_values) or (
+                self.source_radar_index_map is not None
+            ):
                 raise ValueError("legacy verification cannot claim observation error")
         else:
             if any(value is None for value in error_values):
                 raise ValueError("verification observation-error lineage is incomplete")
             quality = cast(Tensor, self.quality_weight)
             observation_std = cast(Tensor, self.observation_std_dbz)
+            observation_state = cast(Tensor, self.observation_state_code)
+            source_radar_index_map = self.source_radar_index_map
             error_contract = cast(
                 VerificationObservationErrorContract,
                 self.observation_error_contract,
@@ -511,10 +717,30 @@ class VerificationBundle:
                 or error_contract.quality_weight_digest != tensor_digest(quality)
                 or error_contract.observation_std_dbz_digest
                 != tensor_digest(observation_std)
+                or error_contract.observation_state_code_digest
+                != tensor_digest(observation_state)
+                or error_contract.source_radar_index_map_digest
+                != (
+                    None
+                    if source_radar_index_map is None
+                    else tensor_digest(source_radar_index_map)
+                )
                 or error_contract.attenuation_qc_digest != self.qc_pipeline_digest
                 or error_contract.censoring_rule_digest != self.censor_policy_digest
             ):
                 raise ValueError("verification observation-error tensors are invalid")
+            _validate_verification_cell_states(
+                frames_dbz=self.frames_dbz,
+                valid_mask=self.valid_mask,
+                quality_weight=quality,
+                observation_std_dbz=observation_std,
+                observation_state_code=observation_state,
+                minimum_detectable_echo_dbz=(
+                    error_contract.minimum_detectable_echo_dbz
+                ),
+                radar_source_kind=error_contract.radar_source_kind,
+                source_radar_index_map=source_radar_index_map,
+            )
         frames = self.frames_dbz.detach().clone()
         valid = self.valid_mask.detach().clone()
         object.__setattr__(self, "frames_dbz", frames)
@@ -526,6 +752,18 @@ class VerificationBundle:
                 self,
                 "observation_std_dbz",
                 self.observation_std_dbz.detach().clone(),
+            )
+        if self.observation_state_code is not None:
+            object.__setattr__(
+                self,
+                "observation_state_code",
+                self.observation_state_code.detach().clone(),
+            )
+        if self.source_radar_index_map is not None:
+            object.__setattr__(
+                self,
+                "source_radar_index_map",
+                self.source_radar_index_map.detach().clone(),
             )
         object.__setattr__(self, "valid_times", canonical_times)
         object.__setattr__(
@@ -547,6 +785,8 @@ class VerificationBundle:
                 self.floor_representation_contract_digest,
                 self.quality_weight,
                 self.observation_std_dbz,
+                self.observation_state_code,
+                self.source_radar_index_map,
                 self.observation_error_contract,
             ),
         )
@@ -568,6 +808,8 @@ class VerificationBundle:
             self.floor_representation_contract_digest,
             self.quality_weight,
             self.observation_std_dbz,
+            self.observation_state_code,
+            self.source_radar_index_map,
             self.observation_error_contract,
         )
         if expected != self.content_digest:
@@ -576,7 +818,7 @@ class VerificationBundle:
     @property
     def metric_weight(self) -> Tensor:
         self.validate_integrity()
-        if self.contract != "radar-verification-bundle-v4":
+        if self.contract != "radar-verification-bundle-v6":
             return self.valid_mask.to(self.frames_dbz)
         quality = cast(Tensor, self.quality_weight)
         observation_std = cast(Tensor, self.observation_std_dbz)
@@ -584,6 +826,7 @@ class VerificationBundle:
             VerificationObservationErrorContract,
             self.observation_error_contract,
         )
+        observation_state = cast(Tensor, self.observation_state_code)
         reference = observation_std.new_tensor(
             error_contract.observation_error_reference_std_dbz
         )
@@ -592,7 +835,10 @@ class VerificationBundle:
             (reference / observation_std.clamp_min(torch.finfo(observation_std.dtype).tiny)).square().clamp(max=1.0),
             torch.zeros_like(observation_std),
         )
-        return (quality * inverse_variance).detach().clone()
+        point_observation = observation_state != (
+            VerificationCellState.BELOW_DETECTION_CENSORED
+        )
+        return (quality * inverse_variance * point_observation).detach().clone()
 
 
 VerificationInput = Tensor | VerificationBundle
@@ -3438,6 +3684,8 @@ def _verification_content_digest(
     floor_representation_contract_digest: str | None = None,
     quality_weight: Tensor | None = None,
     observation_std_dbz: Tensor | None = None,
+    observation_state_code: Tensor | None = None,
+    source_radar_index_map: Tensor | None = None,
     observation_error_contract: VerificationObservationErrorContract | None = None,
 ) -> str:
     payload: dict[str, object] = {
@@ -3454,6 +3702,8 @@ def _verification_content_digest(
         "radar-verification-bundle-v2",
         "radar-verification-bundle-v3",
         "radar-verification-bundle-v4",
+        "radar-verification-bundle-v5",
+        "radar-verification-bundle-v6",
     }:
         payload.update(
             {
@@ -3463,7 +3713,15 @@ def _verification_content_digest(
                     else (
                         "verification-bundle-content-v4"
                         if contract == "radar-verification-bundle-v3"
-                        else "verification-bundle-content-v5"
+                        else (
+                            "verification-bundle-content-v5"
+                            if contract == "radar-verification-bundle-v4"
+                            else (
+                                "verification-bundle-content-v6"
+                                if contract == "radar-verification-bundle-v5"
+                                else "verification-bundle-content-v7"
+                            )
+                        )
                     )
                 ),
                 "mask_policy_digest": mask_policy_digest,
@@ -3476,7 +3734,11 @@ def _verification_content_digest(
                 ),
             }
         )
-    if contract == "radar-verification-bundle-v4":
+    if contract in {
+        "radar-verification-bundle-v4",
+        "radar-verification-bundle-v5",
+        "radar-verification-bundle-v6",
+    }:
         payload.update(
             {
                 "quality_weight": (
@@ -3494,6 +3756,17 @@ def _verification_content_digest(
                     | {"contract_digest": observation_error_contract.contract_digest}
                 ),
             }
+        )
+    if contract == "radar-verification-bundle-v6":
+        payload["observation_state_code"] = (
+            None
+            if observation_state_code is None
+            else tensor_digest(observation_state_code)
+        )
+        payload["source_radar_index_map"] = (
+            None
+            if source_radar_index_map is None
+            else tensor_digest(source_radar_index_map)
         )
     return json_digest(payload)
 

@@ -59,6 +59,8 @@ from .runtime_closure import validate_current_runtime_closure
 from .sensitivity import (
     SensitivityConfig,
     VerificationBundle,
+    VerificationCellState,
+    VerificationObservationErrorPlan,
     _ResolvedVerification,
     _forecast_result_content_digest,
     _load_learning_policy_trust_store,
@@ -2850,6 +2852,7 @@ class PriorUncertaintyTargetPlan:
     grid_contract_digest: str
     feature_exclusion_contract_digest: str
     independence_evidence_digest: str
+    verification_observation_error_plan_digest: str
     target_valid_time: str
     prior_probability_contract_digest: str
     support_threshold_dbz: float = 5.0
@@ -2858,12 +2861,12 @@ class PriorUncertaintyTargetPlan:
     threshold_bin_convention: Literal["nearest_rounding_threshold_censor"] = (
         "nearest_rounding_threshold_censor"
     )
-    contract: str = "prior-uncertainty-target-plan-v6"
+    contract: str = "prior-uncertainty-target-plan-v7"
     support_event_digest: str = field(init=False)
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "prior-uncertainty-target-plan-v6":
+        if self.contract != "prior-uncertainty-target-plan-v7":
             raise ValueError("unsupported uncertainty target plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("uncertainty target plan ID must be canonical")
@@ -2883,6 +2886,7 @@ class PriorUncertaintyTargetPlan:
             "grid_contract_digest",
             "feature_exclusion_contract_digest",
             "independence_evidence_digest",
+            "verification_observation_error_plan_digest",
             "prior_probability_contract_digest",
         ):
             _require_digest(name, getattr(self, name))
@@ -2941,6 +2945,9 @@ class PriorUncertaintyTargetPlan:
                 self.feature_exclusion_contract_digest
             ),
             "independence_evidence_digest": self.independence_evidence_digest,
+            "verification_observation_error_plan_digest": (
+                self.verification_observation_error_plan_digest
+            ),
             "target_valid_time": self.target_valid_time,
             "prior_probability_contract_digest": (
                 self.prior_probability_contract_digest
@@ -2967,6 +2974,7 @@ class NeuralPriorStateCalibrationPlan:
     grid_contract_digest: str
     feature_exclusion_contract_digest: str
     independence_evidence_digest: str
+    verification_observation_error_plan_digest: str
     target_valid_time: str
     state_contract_digest: str
     support_threshold_dbz: float
@@ -2975,12 +2983,12 @@ class NeuralPriorStateCalibrationPlan:
     threshold_bin_convention: Literal["nearest_rounding_threshold_censor"] = (
         "nearest_rounding_threshold_censor"
     )
-    contract: str = "neural-prior-state-calibration-plan-v3"
+    contract: str = "neural-prior-state-calibration-plan-v4"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
         if (
-            self.contract != "neural-prior-state-calibration-plan-v3"
+            self.contract != "neural-prior-state-calibration-plan-v4"
             or not self.plan_id
             or self.plan_id.strip() != self.plan_id
             or self.target_kind not in (
@@ -3000,6 +3008,7 @@ class NeuralPriorStateCalibrationPlan:
             "grid_contract_digest",
             "feature_exclusion_contract_digest",
             "independence_evidence_digest",
+            "verification_observation_error_plan_digest",
             "state_contract_digest",
         ):
             _require_digest(name, getattr(self, name))
@@ -9415,6 +9424,27 @@ class LegacyNeuralPriorHoldoutPlanV24Audit:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV25Audit:
+    plan_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-plan-audit-v25"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _validate_generic_legacy_digest_payload(
+            digest=self.plan_digest,
+            payload_json=self.payload_json,
+            digest_field="plan_digest",
+            original_contract="neural-prior-holdout-plan-v25",
+        )
+        object.__setattr__(self, "audit_digest", json_digest({
+            "contract": self.contract,
+            "plan_digest": self.plan_digest,
+            "payload_json": self.payload_json,
+        }))
+
+
+@dataclass(frozen=True)
 class PromotionExperimentTrial:
     """One preregistered candidate/rule/classifier trial in a cohort."""
 
@@ -9580,6 +9610,9 @@ class NeuralPriorHoldoutPlan:
     state_calibration_target_plans: tuple[
         NeuralPriorStateCalibrationPlan, ...
     ]
+    verification_observation_error_plans: tuple[
+        VerificationObservationErrorPlan, ...
+    ]
     range_band_contracts: tuple[RangeBandContract, ...]
     range_geometry_contracts: tuple[
         RangeGeometryContract | MosaicRangeGeometryContract, ...
@@ -9601,11 +9634,11 @@ class NeuralPriorHoldoutPlan:
     mode: Literal["prospective", "sealed_historical"] = "prospective"
     sealed_historical_dataset_digest: str | None = None
     candidate_training_started_at: str | None = None
-    contract: str = "neural-prior-holdout-plan-v25"
+    contract: str = "neural-prior-holdout-plan-v26"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v25":
+        if self.contract != "neural-prior-holdout-plan-v26":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -9744,6 +9777,40 @@ class NeuralPriorHoldoutPlan:
         }
         if set(retained_state_targets) != set(state_target_plans):
             raise ValueError("holdout state-calibration plans are incomplete")
+        retained_observation_error_plans = {
+            item.plan_digest: item
+            for item in self.verification_observation_error_plans
+        }
+        referenced_observation_error_plans = {
+            item.verification_observation_error_plan_digest
+            for item in (
+                *self.uncertainty_target_plans,
+                *self.state_calibration_target_plans,
+            )
+        }
+        if (
+            len(retained_observation_error_plans)
+            != len(self.verification_observation_error_plans)
+            or set(retained_observation_error_plans)
+            != referenced_observation_error_plans
+            or any(
+                retained_observation_error_plans[
+                    item.verification_observation_error_plan_digest
+                ].attenuation_qc_digest
+                != item.qc_pipeline_digest
+                or retained_observation_error_plans[
+                    item.verification_observation_error_plan_digest
+                ].censoring_rule_digest
+                != item.censor_policy_digest
+                for item in (
+                    *self.uncertainty_target_plans,
+                    *self.state_calibration_target_plans,
+                )
+            )
+        ):
+            raise ValueError(
+                "holdout verification observation-error plans are incomplete"
+            )
         retained_range_contracts = {
             item.contract_digest: item for item in self.range_band_contracts
         }
@@ -10247,6 +10314,8 @@ class VerificationTargetIdentityArtifact:
             target.target_plan_digest != plan.plan_digest
             or target.source_digest != target.source_verification_bundle_digest
             or target.support_event_digest != plan.support_event_digest
+            or target.observation_error_plan_digest
+            != plan.verification_observation_error_plan_digest
             or not target.observation_error_contract_digest
         ):
             raise ValueError("verification target disagrees with its plan")
@@ -11297,6 +11366,11 @@ def _holdout_plan_payload(plan: NeuralPriorHoldoutPlan) -> dict[str, object]:
         "state_calibration_target_plans": [
             item.payload for item in plan.state_calibration_target_plans
         ],
+        "verification_observation_error_plans": [
+            item.payload
+            | {"plan_digest": item.plan_digest}
+            for item in plan.verification_observation_error_plans
+        ],
         "range_band_contracts": [
             item.payload for item in plan.range_band_contracts
         ],
@@ -12147,6 +12221,7 @@ class PriorUncertaintyTarget:
     independence_evidence_digest: str
     source_verification_bundle_digest: str
     observation_error_contract_digest: str
+    observation_error_plan_digest: str
     support_event_digest: str
     target_digest: str
 
@@ -12162,9 +12237,12 @@ class PriorUncertaintyTarget:
     ) -> PriorUncertaintyTarget:
         verification.validate_integrity()
         if (
-            plan.contract != "prior-uncertainty-target-plan-v6"
-            or verification.contract != "radar-verification-bundle-v4"
+            plan.contract != "prior-uncertainty-target-plan-v7"
+            or verification.contract != "radar-verification-bundle-v6"
             or verification.observation_error_contract is None
+            or verification.observation_error_contract
+            .observation_error_plan_digest
+            != plan.verification_observation_error_plan_digest
             or verification.mask_policy_digest != plan.mask_policy_digest
             or verification.censor_policy_digest != plan.censor_policy_digest
             or verification.floor_representation_contract_digest
@@ -12211,7 +12289,7 @@ class PriorUncertaintyTarget:
         support = echo_support.detach().clone()
         target_digest = json_digest(
             {
-                "contract": "prior-uncertainty-target-v6",
+                "contract": "prior-uncertainty-target-v7",
                 "target_dbz": tensor_digest(target),
                 "valid_mask": tensor_digest(valid),
                 "quality_weight": tensor_digest(quality),
@@ -12224,6 +12302,9 @@ class PriorUncertaintyTarget:
                 ),
                 "observation_error_contract_digest": (
                     verification.observation_error_contract.contract_digest
+                ),
+                "observation_error_plan_digest": (
+                    plan.verification_observation_error_plan_digest
                 ),
                 "support_threshold_dbz": plan.support_threshold_dbz,
                 "support_event_digest": plan.support_event_digest,
@@ -12249,6 +12330,10 @@ class PriorUncertaintyTarget:
                 "observation_error_contract_digest",
                 verification.observation_error_contract.contract_digest,
             ),
+            (
+                "observation_error_plan_digest",
+                plan.verification_observation_error_plan_digest,
+            ),
             ("support_event_digest", plan.support_event_digest),
             ("target_digest", target_digest),
         ):
@@ -12267,6 +12352,7 @@ class NeuralPriorStateCalibrationTarget:
     target_plan_digest: str
     source_verification_bundle_digest: str
     observation_error_contract_digest: str
+    observation_error_plan_digest: str
     target_digest: str
 
     def __init__(self) -> None:
@@ -12283,8 +12369,11 @@ class NeuralPriorStateCalibrationTarget:
     ) -> NeuralPriorStateCalibrationTarget:
         verification.validate_integrity()
         if (
-            verification.contract != "radar-verification-bundle-v4"
+            verification.contract != "radar-verification-bundle-v6"
             or verification.observation_error_contract is None
+            or verification.observation_error_contract
+            .observation_error_plan_digest
+            != plan.verification_observation_error_plan_digest
             or verification.mask_policy_digest != plan.mask_policy_digest
             or verification.censor_policy_digest != plan.censor_policy_digest
             or verification.floor_representation_contract_digest
@@ -12325,7 +12414,7 @@ class NeuralPriorStateCalibrationTarget:
             raise ValueError("state calibration target tensors are invalid")
         target_digest = json_digest(
             {
-                "contract": "neural-prior-state-calibration-target-v3",
+                "contract": "neural-prior-state-calibration-target-v4",
                 "target_dbz": tensor_digest(target),
                 "valid_mask": tensor_digest(valid),
                 "quality_weight": tensor_digest(quality),
@@ -12334,6 +12423,9 @@ class NeuralPriorStateCalibrationTarget:
                 "source_verification_bundle_digest": verification.content_digest,
                 "observation_error_contract_digest": (
                     verification.observation_error_contract.contract_digest
+                ),
+                "observation_error_plan_digest": (
+                    plan.verification_observation_error_plan_digest
                 ),
             }
         )
@@ -12348,6 +12440,10 @@ class NeuralPriorStateCalibrationTarget:
             (
                 "observation_error_contract_digest",
                 verification.observation_error_contract.contract_digest,
+            ),
+            (
+                "observation_error_plan_digest",
+                plan.verification_observation_error_plan_digest,
             ),
             ("target_digest", target_digest),
         ):
@@ -15104,7 +15200,7 @@ class ScoringReplayCaseArtifact:
         )
         expected_uncertainty_digest = json_digest(
             {
-                "contract": "prior-uncertainty-target-v6",
+                "contract": "prior-uncertainty-target-v7",
                 "target_dbz": tensor_digest(self.uncertainty_target._target_dbz),
                 "valid_mask": tensor_digest(self.uncertainty_target._valid_mask),
                 "quality_weight": tensor_digest(
@@ -15124,6 +15220,9 @@ class ScoringReplayCaseArtifact:
                 "observation_error_contract_digest": (
                     self.uncertainty_target.observation_error_contract_digest
                 ),
+                "observation_error_plan_digest": (
+                    self.uncertainty_target.observation_error_plan_digest
+                ),
                 "support_threshold_dbz": uncertainty_plan.support_threshold_dbz,
                 "support_event_digest": uncertainty_plan.support_event_digest,
                 "prior_probability_contract_digest": (
@@ -15139,7 +15238,7 @@ class ScoringReplayCaseArtifact:
         )
         expected_state_digest = json_digest(
             {
-                "contract": "neural-prior-state-calibration-target-v3",
+                "contract": "neural-prior-state-calibration-target-v4",
                 "target_dbz": tensor_digest(
                     self.state_calibration_target._target_dbz
                 ),
@@ -15159,6 +15258,10 @@ class ScoringReplayCaseArtifact:
                 "observation_error_contract_digest": (
                     self.state_calibration_target
                     .observation_error_contract_digest
+                ),
+                "observation_error_plan_digest": (
+                    self.state_calibration_target
+                    .observation_error_plan_digest
                 ),
             }
         )
@@ -15898,6 +16001,199 @@ def _standard_normal_log_interval_mass(lower: Tensor, upper: Tensor) -> Tensor:
         torch.special.log_ndtr(-upper),
     )
     return torch.where(lower >= 0.0, survival_mass, cdf_mass)
+
+
+@dataclass(frozen=True)
+class ObservationErrorGaussianDiagnostic:
+    """Report-only proper likelihood with explicit observation uncertainty."""
+
+    verification_digest: str
+    observation_error_contract_digest: str
+    forecast_location_digest: str
+    forecast_std_digest: str
+    point_gaussian_nll: float | None
+    censored_gaussian_nll: float | None
+    combined_gaussian_nll: float
+    point_pit_residual_mean_abs: float | None
+    point_sample_count: int
+    censored_sample_count: int
+    effective_quality_weight_sum: float
+    censoring_semantics: str = "observed-y-left-censored-v1"
+    diagnostic_only: bool = True
+    contract: str = "observation-error-gaussian-diagnostic-v1"
+    diagnostic_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        for name in (
+            "verification_digest",
+            "observation_error_contract_digest",
+            "forecast_location_digest",
+            "forecast_std_digest",
+        ):
+            _require_digest(name, getattr(self, name))
+        if (
+            self.contract != "observation-error-gaussian-diagnostic-v1"
+            or self.censoring_semantics != "observed-y-left-censored-v1"
+            or self.diagnostic_only is not True
+            or type(self.point_sample_count) is not int
+            or type(self.censored_sample_count) is not int
+            or self.point_sample_count < 0
+            or self.censored_sample_count < 0
+            or self.point_sample_count + self.censored_sample_count <= 0
+            or not math.isfinite(self.combined_gaussian_nll)
+            or self.combined_gaussian_nll < 0.0
+            or not math.isfinite(self.effective_quality_weight_sum)
+            or self.effective_quality_weight_sum <= 0.0
+            or (self.point_sample_count > 0)
+            != (
+                self.point_gaussian_nll is not None
+                and self.point_pit_residual_mean_abs is not None
+            )
+            or (self.censored_sample_count > 0)
+            != (self.censored_gaussian_nll is not None)
+        ):
+            raise ValueError("observation-error Gaussian diagnostic is invalid")
+        optional_scores = (
+            self.point_gaussian_nll,
+            self.censored_gaussian_nll,
+            self.point_pit_residual_mean_abs,
+        )
+        if any(
+            value is not None and (not math.isfinite(value) or value < 0.0)
+            for value in optional_scores
+        ):
+            raise ValueError("observation-error Gaussian scores are invalid")
+        object.__setattr__(self, "diagnostic_digest", json_digest(self.payload))
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if key != "diagnostic_digest"
+        }
+
+
+def compute_observation_error_gaussian_diagnostic(
+    forecast_location_dbz: Tensor,
+    forecast_std_dbz: Tensor,
+    verification: VerificationBundle,
+) -> ObservationErrorGaussianDiagnostic:
+    """Score observed Y after convolving forecast and observation variance."""
+
+    verification.validate_integrity()
+    state = verification.observation_state_code
+    observation_std = verification.observation_std_dbz
+    error_contract = verification.observation_error_contract
+    quality = verification.quality_weight
+    reflectivity_resolution_dbz = verification.reflectivity_resolution_dbz
+    quantization_origin_dbz = verification.quantization_origin_dbz
+    threshold_bin_convention = verification.threshold_bin_convention
+    if (
+        verification.contract != "radar-verification-bundle-v6"
+        or state is None
+        or observation_std is None
+        or error_contract is None
+        or quality is None
+        or reflectivity_resolution_dbz is None
+        or quantization_origin_dbz is None
+        or threshold_bin_convention is None
+        or forecast_location_dbz.shape != verification.frames_dbz.shape
+        or forecast_std_dbz.shape != verification.frames_dbz.shape
+        or forecast_location_dbz.dtype != verification.frames_dbz.dtype
+        or forecast_std_dbz.dtype != verification.frames_dbz.dtype
+        or forecast_location_dbz.device != verification.frames_dbz.device
+        or forecast_std_dbz.device != verification.frames_dbz.device
+        or not bool(torch.all(torch.isfinite(forecast_location_dbz)))
+        or not bool(torch.all(torch.isfinite(forecast_std_dbz)))
+        or not bool(torch.all(forecast_std_dbz > 0.0))
+    ):
+        raise ValueError("observation-error diagnostic inputs are invalid")
+    positive_quality = quality > 0.0
+    point_mask = positive_quality & (
+        (state == VerificationCellState.OBSERVED_CLEAR)
+        | (state == VerificationCellState.OBSERVED_ECHO)
+    )
+    censored_mask = positive_quality & (
+        state == VerificationCellState.BELOW_DETECTION_CENSORED
+    )
+    if not bool(torch.any(point_mask | censored_mask)):
+        raise ValueError("observation-error diagnostic has no weighted samples")
+    effective_scale = torch.sqrt(
+        forecast_std_dbz.to(torch.float64).square()
+        + observation_std.to(torch.float64).square()
+    )
+
+    def weighted_mean(values: Tensor, weights: Tensor) -> float:
+        resolved = weights.to(torch.float64)
+        return float(
+            torch.sum(values.to(torch.float64) * resolved)
+            .div(resolved.sum())
+            .detach()
+        )
+
+    point_nll: Tensor | None = None
+    point_score: float | None = None
+    point_pit_score: float | None = None
+    if bool(torch.any(point_mask)):
+        point_nll, point_pit = _quantized_gaussian_diagnostics(
+            forecast_location_dbz.masked_select(point_mask),
+            effective_scale.masked_select(point_mask),
+            verification.frames_dbz.masked_select(point_mask),
+            reflectivity_resolution_dbz=reflectivity_resolution_dbz,
+            quantization_origin_dbz=quantization_origin_dbz,
+            support_threshold_dbz=(
+                error_contract.minimum_detectable_echo_dbz
+            ),
+            threshold_bin_convention=threshold_bin_convention,
+        )
+        point_weights = quality.masked_select(point_mask)
+        point_score = weighted_mean(point_nll, point_weights)
+        point_pit_score = weighted_mean(torch.abs(point_pit), point_weights)
+
+    censored_nll: Tensor | None = None
+    censored_score: float | None = None
+    if bool(torch.any(censored_mask)):
+        threshold = torch.as_tensor(
+            error_contract.minimum_detectable_echo_dbz,
+            dtype=torch.float64,
+            device=forecast_location_dbz.device,
+        )
+        censored_z = (
+            threshold - forecast_location_dbz.masked_select(censored_mask)
+        ).to(torch.float64) / effective_scale.masked_select(censored_mask)
+        resolved_censored_nll = -torch.special.log_ndtr(censored_z)
+        censored_nll = resolved_censored_nll
+        censored_score = weighted_mean(
+            resolved_censored_nll,
+            quality.masked_select(censored_mask),
+        )
+    components = tuple(
+        (values, quality.masked_select(mask))
+        for values, mask in (
+            (point_nll, point_mask),
+            (censored_nll, censored_mask),
+        )
+        if values is not None
+    )
+    combined_values = torch.cat(tuple(item[0] for item in components))
+    combined_weights = torch.cat(tuple(item[1] for item in components))
+    return ObservationErrorGaussianDiagnostic(
+        verification_digest=verification.content_digest,
+        observation_error_contract_digest=error_contract.contract_digest,
+        forecast_location_digest=tensor_digest(forecast_location_dbz),
+        forecast_std_digest=tensor_digest(forecast_std_dbz),
+        point_gaussian_nll=point_score,
+        censored_gaussian_nll=censored_score,
+        combined_gaussian_nll=weighted_mean(
+            combined_values,
+            combined_weights,
+        ),
+        point_pit_residual_mean_abs=point_pit_score,
+        point_sample_count=int(torch.count_nonzero(point_mask)),
+        censored_sample_count=int(torch.count_nonzero(censored_mask)),
+        effective_quality_weight_sum=float(combined_weights.sum().detach()),
+    )
 
 
 @dataclass(frozen=True)

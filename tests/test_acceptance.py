@@ -107,9 +107,15 @@ class RealCaseAcceptanceTests(unittest.TestCase):
             decoded = RealCaseAcceptanceManifest.from_json(manifest.json)
             report = verify_real_case_acceptance(decoded, artifact_root=root)
 
-            self.assertTrue(report["acceptance_matrix_complete"])
-            self.assertTrue(report["sample_size_satisfied"])
-            self.assertTrue(report["eligible_for_live_review"])
+            self.assertTrue(report["artifact_index_complete"])
+            self.assertFalse(report["semantic_e2e_validated"])
+            self.assertFalse(report["sample_size_satisfied"])
+            self.assertFalse(report["eligible_for_scientific_review"])
+            self.assertIsNone(report["independent_physical_event_count"])
+            self.assertEqual(
+                report["declared_event_label_count"],
+                len(REAL_CASE_ACCEPTANCE_SCENARIOS),
+            )
             self.assertFalse(report["authorizes_deployment"])
             first = root / decoded.cases[0].artifacts[0].relative_path
             first.chmod(0o600)
@@ -170,6 +176,30 @@ class RealCaseAcceptanceTests(unittest.TestCase):
                     manifest,
                     cases=(manifest.cases[0], duplicate, *manifest.cases[2:]),
                 )
+
+    def test_relabelled_events_never_satisfy_scientific_sample_size(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            manifest = self.fixture(root)
+            relabelled = replace(
+                manifest,
+                cases=tuple(
+                    replace(
+                        case,
+                        physical_event_digest=sha256(
+                            f"attacker-label-{index}".encode()
+                        ).hexdigest(),
+                    )
+                    for index, case in enumerate(manifest.cases)
+                ),
+            )
+            report = verify_real_case_acceptance(
+                relabelled,
+                artifact_root=root,
+            )
+            self.assertFalse(report["semantic_e2e_validated"])
+            self.assertFalse(report["sample_size_satisfied"])
+            self.assertIsNone(report["independent_physical_event_count"])
 
 
 if __name__ == "__main__":
