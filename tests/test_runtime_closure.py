@@ -145,7 +145,7 @@ class RuntimeClosureTests(unittest.TestCase):
             distribution = _FakeDistribution(
                 root,
                 "advar-radar-nowcast",
-                "0.92.0",
+                "0.93.0",
             )
             interpreter = {
                 "contract": "advar-python-interpreter-closure-v1",

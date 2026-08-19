@@ -36,8 +36,9 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v67"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v68"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
+    "forecast-run-v67",
     "forecast-run-v66",
     "forecast-run-v65",
     "forecast-run-v64",
@@ -1500,6 +1501,10 @@ def load_forecast_run(
             elif version == "forecast-run-v66":
                 prior_deployment_lineage_contract = (
                     "neural-prior-deployment-lineage-v17-audit"
+                )
+            elif version == "forecast-run-v67":
+                prior_deployment_lineage_contract = (
+                    "neural-prior-deployment-lineage-v18-audit"
                 )
         elif version in _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS:
             prior_deployment_lineage_contract = (

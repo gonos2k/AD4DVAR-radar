@@ -1392,7 +1392,7 @@ class ForecastRunContract:
     prior_deployment_decision_artifact_digest: str | None = None
     prior_deployment_fallback_reason: str | None = None
     prior_deployment_lineage_contract: str = (
-        "neural-prior-deployment-lineage-v18"
+        "neural-prior-deployment-lineage-v19"
     )
     prior_lineage_contract: str = "neural-prior-run-lineage-v2"
     input_plan_json: str | None = None
@@ -1590,7 +1590,7 @@ class ForecastRunContract:
                 prior_deployment_decision_artifact_digest
             ),
             fallback_reason=prior_deployment_fallback_reason,
-            contract="neural-prior-deployment-lineage-v18",
+            contract="neural-prior-deployment-lineage-v19",
         )
         _validate_input_plan_lineage(input_plan_json, input_plan_digest)
         _validate_analysis_input_derivation_lineage(
@@ -2042,7 +2042,7 @@ class ForecastRunContract:
         )
         if (
             self.prior_deployment_lineage_contract
-            == "neural-prior-deployment-lineage-v18"
+            == "neural-prior-deployment-lineage-v19"
             and self.prior_deployment_decision_artifact_json is not None
             and (
                 self.analysis_input_derivation_artifact_json is None
@@ -2791,7 +2791,8 @@ def _validate_prior_deployment_lineage(
         "neural-prior-deployment-lineage-v14-audit",
         "neural-prior-deployment-lineage-v15-audit",
         "neural-prior-deployment-lineage-v16-audit",
-        "neural-prior-deployment-lineage-v18",
+        "neural-prior-deployment-lineage-v18-audit",
+        "neural-prior-deployment-lineage-v19",
     }:
         raise ValueError("unsupported neural-prior deployment lineage")
     values = (
@@ -2940,6 +2941,7 @@ def _validate_prior_deployment_lineage(
         "neural-prior-deployment-lineage-v14-audit",
         "neural-prior-deployment-lineage-v15-audit",
         "neural-prior-deployment-lineage-v16-audit",
+        "neural-prior-deployment-lineage-v18-audit",
     }:
         if all(value is None for value in values):
             return
@@ -2953,7 +2955,7 @@ def _validate_prior_deployment_lineage(
         ):
             raise ValueError("legacy deployment decision digest mismatch")
         return
-    if contract != "neural-prior-deployment-lineage-v18":
+    if contract != "neural-prior-deployment-lineage-v19":
         raise ValueError("legacy deployment lineage is audit-only")
     if any(value is None for value in values) or prior_role is None:
         raise ValueError("neural-prior deployment lineage must be complete")

@@ -103,7 +103,7 @@ python -I .github/scripts/build_deployment_bundle.py verify \
   --trusted-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.92.0 \
+  --expected-source-ref refs/tags/v0.93.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-signer-id advar-release
@@ -114,7 +114,7 @@ python -I -m pip install --no-index --find-links wheelhouse \
   --require-hashes --only-binary=:all: --no-compile \
   --requirement runtime-py312-linux.lock
 python -I -m pip install --no-index --no-deps --no-compile \
-  advar_radar_nowcast-0.92.0-*.whl
+  advar_radar_nowcast-0.93.0-*.whl
 find <deployment-venv> -type f \
   \( -name '*.pyc' -o -name '*.pyo' -o -name '*.pth' \) -delete
 ```
@@ -124,9 +124,11 @@ distribution, 소유자가 없는 shadow module, `.pth`, `sitecustomize.py`,
 `usercustomize.py`, `.pyc`와 `__pycache__`를 거부한다. Python executable, stdlib,
 extension module이 연결한 native library의 bytes와 ABI도
 `advar-import-runtime-tree-v2`에 결합하며 deployable runtime은 root-owned이고
-group/world-non-writable여야 한다. Release bundle digest, runtime-tree digest,
-interpreter closure, deployment instance, host identity와 activation expiry는 별도의
-`deployment-runtime-activation-receipt-v2`에 host activation key로 서명한다.
+group/world-non-writable여야 한다. Release authority는 검증한 bundle manifest
+전체와 bundle digest를 detached `DeploymentBundleReleaseApproval-v1`으로 먼저
+승인한다. 그 approval digest, runtime-tree digest, interpreter closure,
+deployment instance, host identity, activation predecessor와 expiry는 별도의
+`deployment-runtime-activation-receipt-v3`에 host activation key로 서명한다.
 Runtime snapshot·verify·launch process는 반드시 `python -I -B` 또는 동등한
 격리/bytecode-write 금지 launcher로 시작해야 하며 interpreter closure가 이 상태를
 봉인한다.
@@ -134,19 +136,39 @@ Protected release signer와 activation signer의 private key는 둘 다 bundle �
 보관하며, production에서는 root-owned immutable staging에서만 다음 명령을 실행한다.
 
 ```bash
+python -I .github/scripts/build_deployment_bundle.py approve-release \
+  --bundle /srv/advar/bundles/<digest> \
+  --trusted-bundle-public-key /etc/advar/release-bundle-ed25519.pub \
+  --expected-mode deployable \
+  --expected-repository gonos2k/AD4DVAR-radar \
+  --expected-source-ref refs/tags/v0.93.0 \
+  --expected-source-commit <signed-release-commit> \
+  --expected-workflow-sha <protected-workflow-sha> \
+  --expected-bundle-signer-id advar-release \
+  --expires-at <canonical-utc-expiry> \
+  --release-authority-id advar-release-approval \
+  --release-authority-trust-store-digest <sha256-current-trust-store> \
+  --release-signing-private-key /etc/advar/release-approval.key \
+  --approval /var/lib/advar/bundle-release-approval.json
+
 python -I .github/scripts/build_deployment_bundle.py activate-runtime \
   --bundle /srv/advar/bundles/<digest> \
   --trusted-bundle-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.92.0 \
+  --expected-source-ref refs/tags/v0.93.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-bundle-signer-id advar-release \
   --deployment-instance-digest <sha256-host-slot-identity> \
   --host-identity-digest <sha256-host-identity> \
   --activation-sequence-number <monotonic-sequence> \
+  --previous-activation-receipt-digest <current-head-or-genesis-digest> \
   --expires-at <canonical-utc-expiry> \
+  --release-approval /var/lib/advar/bundle-release-approval.json \
+  --trusted-release-public-key /etc/advar/release-approval-ed25519.pub \
+  --expected-release-authority-id advar-release-approval \
+  --expected-release-authority-trust-store-digest <sha256-current-trust-store> \
   --activation-authority-id advar-runtime-activation \
   --activation-authority-trust-store-digest <sha256-current-trust-store> \
   --activation-signing-private-key /etc/advar/runtime-activation.key \
@@ -154,17 +176,18 @@ python -I .github/scripts/build_deployment_bundle.py activate-runtime \
 ```
 
 제품은 receipt 파일을 수동 dictionary로 변환하지 않는다.
+`load_deployment_bundle_release_approval()`과
 `load_deployment_runtime_activation_receipt()`가 root-owned/non-writable,
 `O_NOFOLLOW` 단일-FD snapshot과 current authority trust를 검증한 typed receipt만
 반환한다. `EpisodeLedger.issue_operational_deployment_decision()`은 이 receipt를
-필수로 받아 activation table, issuance state, operational certificate와 decision row의
-네 위치에 같은 digest를 기록한다. Committed client와 durable forecast loader는 현재
+release approval과 함께 필수로 받아 approval table, activation head, issuance state,
+operational certificate와 decision row에 같은 digest를 기록한다. Committed client와 durable forecast loader는 현재
 trust, expiry, bundle/runtime/interpreter/host identity 및 receipt signature를 다시
 검증한다. 이때 `candidate-smoke` receipt는 operational 경로에서 거부되고,
 `snapshot_current_runtime()`이 실행 중인 process의 import roots, interpreter, stdlib와
 native library를 다시 해시해 receipt의 deployable closure와 exact 비교한다. 따라서
 다른 venv/process에서 유효한 receipt만 재사용하거나 activation 뒤 runtime bytes를
-바꾼 경우 decision issuance와 `forecast-run-v67` restart가 모두 fail-close한다.
+바꾼 경우 decision issuance와 `forecast-run-v68` restart가 모두 fail-close한다.
 
 Python API:
 
@@ -1766,13 +1789,13 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v73`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v67`
+- `output_contract_version`: 현재 `nowcast-npz-v74`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v68`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
 
-`forecast-run-v67`은 typed verification-target identity와 target-source current trust를
+`forecast-run-v68`은 typed verification-target identity와 target-source current trust를
 결합한 five-channel CPU-only scoring generation v10, two-phase raw observation slot과
 canonical raw-volume identity 단위의 전역
 sampling reservation, 같은 family의 rolling-window membership, source-registry와
@@ -1784,16 +1807,17 @@ terminal activation receipt와 writer-lock-bound commit authorization receipt를
 검증한다. QC-invalid 관측은 registered finite fill/zero/sentinel로 canonicalize되어
 classifier와 learned prior에 유입되지 않으며, signed
 `AnalysisInputDerivationArtifact-v5`의 canonical JSON과 digest도 NPZ에 보존된다.
-`forecast-run-v66` 이하는
+`forecast-run-v67` 이하는
 audit-only다.
 
-`forecast-run-v67`은 원자적 ledger sequence를 가진 promotion deployment
-certificate v6, deployment-decision artifact v18,
-`OperationalDeploymentDecisionCertificate-v7`과
-`neural-prior-deployment-lineage-v18`을 current 의미로 결합한다. Decision
+`forecast-run-v68`은 원자적 ledger sequence를 가진 promotion deployment
+certificate v6, deployment-decision artifact v19,
+`OperationalDeploymentDecisionCertificate-v8`과
+`neural-prior-deployment-lineage-v19`를 current 의미로 결합한다. Decision
 artifact와 operational certificate는 exact
-`DeploymentRuntimeActivationReceipt-v2`를 보존하며, runtime authority의 current
-validity/revocation과 receipt expiry가 publication 및 restart 시각을 덮지 못하면
+`DeploymentBundleReleaseApproval-v1`과
+`DeploymentRuntimeActivationReceipt-v3`를 보존하며, release/runtime authority의
+current validity/revocation과 approval/receipt expiry가 publication 및 restart 시각을 덮지 못하면
 fail-close한다. Decision
 artifact는 unsigned promotion subset을 보존하지 않고 certificate 안의 완전한
 `NeuralPriorPromotionEvidence-v31`만 typed decode한다. 이전
@@ -1808,11 +1832,11 @@ exported prior/classifier와 전체 metric engine을 인증하지 않으므로 m
 certificate 세대가 도입되기 전까지 MPS scoring과 operational MPS deployment는
 fail-close한다. Current deployment는 EpisodeLedger가 발급한 root-signed
 promotion deployment certificate와 외부 authority, learning-policy 및 current
-raw-ingestor trust store를 함께 요구한다. Authority trust-store v3는 승인된 ledger-instance digest마다
+raw-ingestor trust store를 함께 요구한다. Authority trust-store v4는 승인된 ledger-instance digest마다
 유일한 canonical `index.sqlite` 절대경로도 root-owned 설정으로 고정하므로,
 Python 객체를 위조해 공격자 DB로 verifier를 재지정할 수 없다. 저장되는 operational
 selection 전체도 별도의 authority-signed
-`OperationalDeploymentDecisionCertificate-v7`와 먼저 durable commit된 ledger decision
+`OperationalDeploymentDecisionCertificate-v8`와 먼저 durable commit된 ledger decision
 receipt, final certificate row의 commit 뒤 ledger signer가 발급한
 `OperationalDecisionPublicationReceipt-v3`, 최종 `published/usable` 상태와
 publication payload commit 및 activation authorization 시각을 봉인한
@@ -1835,10 +1859,10 @@ root-owned store 양쪽에서 attestation 시각의 key validity/revocation을 �
 Current store의 content digest는 replay-v12 manifest, scoring-v12 artifact, scheduler가
 봉인한 completion output, promotion evidence v31, promotion deployment certificate v6와
 operational decision certificate에 연속 결합된다. Certificate/publication 서명 전후와
-activation 직전·직후에도 store를 다시 읽고, durable `forecast-run-v67` load에서도 외부
+activation 직전·직후에도 store를 다시 읽고, durable `forecast-run-v68` load에서도 외부
 store와 대조하므로 이후 revocation view가 달라지면 기존 certificate를 automatic
 deployment에 재사용할 수 없다.
-Index schema 41은 runtime activation receipt, replay, scoring completion, promotion evidence와 promotion
+Index schema 42는 release approval, monotonic runtime activation head, replay, scoring completion, promotion evidence와 promotion
 certificate를 immutable payload와 별도의 raw-trust activation row로 기록한다. 각
 payload는 처음에는 `usable=0`이며 current store 재검증을 거친 activation만
 `usable=1`로 소비된다. Activation 직후 store 변경은 `usable=0`으로 fail-close된다.
@@ -1884,7 +1908,7 @@ effective weight가 없는 target는 거부되고 product-owned loss는 정확�
 identity/time/event/object는 plan에 별도로 고정된 `TrainingTargetSourceReceipt-v2`와
 root-signed `TrainingTargetSourceTrustStore-v1`의 유효 key epoch, source-contract 및
 radar/product scope가 없으면 사용할 수 없다. Current trust는 dataset seal, training
-start/completion, promotion, deployment issuance 및 `forecast-run-v67` durable load의
+start/completion, promotion, deployment issuance 및 `forecast-run-v68` durable load의
 시작/종료에서 다시 대조된다. Target는 nonempty·finite이어야 하고
 valid time이 등록된 training-window union 안에 있어야 한다. Tensor/QC 표현이 달라도
 holdout verification target와 source identity/valid time이 같으면 재사용으로 거부된다.

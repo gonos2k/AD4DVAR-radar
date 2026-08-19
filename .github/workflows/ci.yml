@@ -216,8 +216,8 @@ jobs:
 
           path = Path(os.environ["RUNNER_TEMP"]) / "forecast.npz"
           with np.load(path, allow_pickle=False) as result:
-              assert result["output_contract_version"].item() == "nowcast-npz-v73"
-              assert result["forecast_run_artifact_version"].item() == "forecast-run-v67"
+              assert result["output_contract_version"].item() == "nowcast-npz-v74"
+              assert result["forecast_run_artifact_version"].item() == "forecast-run-v68"
               assert result["operational_runtime_profile_digest"].item() == ""
               assert not result["operational_calibration_manifest_present"].item()
               assert result["operational_calibration_manifest_json"].item() == ""
@@ -313,6 +313,35 @@ jobs:
             --expected-signer-id ci-candidate-smoke \
             --verify-installation
 
+      - name: Issue the detached candidate-smoke release approval
+        working-directory: ${{ runner.temp }}
+        env:
+          ADVAR_SOURCE_COMMIT: ${{ github.sha }}
+          ADVAR_REPOSITORY: ${{ github.repository }}
+          ADVAR_SOURCE_REF: ${{ github.ref }}
+          ADVAR_WORKFLOW_SHA: ${{ github.workflow_sha }}
+          ADVAR_WORKSPACE: ${{ github.workspace }}
+        run: |
+          "$ADVAR_WORKSPACE/.wheel-venv/bin/python" -I -B \
+            "$ADVAR_WORKSPACE/.github/scripts/build_deployment_bundle.py" \
+            approve-release \
+            --bundle advar-linux-cpu-candidate-smoke \
+            --trusted-bundle-public-key \
+              candidate-smoke-bundle-public-key.hex \
+            --expected-mode candidate-smoke \
+            --expected-repository "$ADVAR_REPOSITORY" \
+            --expected-source-ref "$ADVAR_SOURCE_REF" \
+            --expected-source-commit "$ADVAR_SOURCE_COMMIT" \
+            --expected-workflow-sha "$ADVAR_WORKFLOW_SHA" \
+            --expected-bundle-signer-id ci-candidate-smoke \
+            --expires-at 2030-01-01T00:00:00Z \
+            --release-authority-id ci-release-approval \
+            --release-authority-trust-store-digest \
+              dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd \
+            --release-signing-private-key \
+              candidate-smoke-bundle-key.raw \
+            --approval bundle-release-approval.json
+
       - name: Reproduce the runtime tree in a second offline environment
         working-directory: ${{ runner.temp }}
         env:
@@ -375,7 +404,15 @@ jobs:
             --host-identity-digest \
               bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
             --activation-sequence-number 1 \
+            --previous-activation-receipt-digest \
+              bdddcff96fe062cccd967be7714751ada78dcb796b02c9f28cdff34925b796c3 \
             --expires-at 2030-01-01T00:00:00Z \
+            --release-approval bundle-release-approval.json \
+            --trusted-release-public-key \
+              candidate-smoke-bundle-public-key.hex \
+            --expected-release-authority-id ci-release-approval \
+            --expected-release-authority-trust-store-digest \
+              dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd \
             --activation-authority-id ci-runtime-activation \
             --activation-authority-trust-store-digest \
               cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc \
@@ -402,6 +439,9 @@ jobs:
             "$ADVAR_WORKSPACE/.github/scripts/build_deployment_bundle.py" \
             verify-runtime-activation \
             --receipt runtime-activation-receipt.json \
+            --release-approval bundle-release-approval.json \
+            --trusted-release-public-key \
+              candidate-smoke-bundle-public-key.hex \
             --trusted-activation-public-key \
               candidate-smoke-runtime-activation-public-key.hex \
             --expected-mode candidate-smoke \
@@ -413,6 +453,11 @@ jobs:
             --expected-host-identity-digest \
               bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
             --expected-activation-sequence-number 1 \
+            --expected-previous-activation-receipt-digest \
+              bdddcff96fe062cccd967be7714751ada78dcb796b02c9f28cdff34925b796c3 \
+            --expected-release-authority-id ci-release-approval \
+            --expected-release-authority-trust-store-digest \
+              dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd \
             --expected-activation-authority-id ci-runtime-activation \
             --expected-activation-authority-trust-store-digest \
               cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -423,6 +468,7 @@ jobs:
           name: advar-linux-cpu-candidate-smoke-${{ github.sha }}
           path: |
             ${{ runner.temp }}/advar-linux-cpu-candidate-smoke
+            ${{ runner.temp }}/bundle-release-approval.json
             ${{ runner.temp }}/runtime-activation-receipt.json
           if-no-files-found: error
           retention-days: 30

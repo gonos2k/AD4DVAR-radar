@@ -85,6 +85,8 @@ from .intervention import (
 )
 from .promotion import (
     DeployedNeuralPriorPolicy,
+    DeploymentBundleReleaseApproval,
+    load_deployment_bundle_release_approval,
     DeploymentRuntimeActivationReceipt,
     load_deployment_runtime_activation_receipt,
     DeploymentAuthoritySigner,
@@ -525,6 +527,8 @@ __all__ = [
     "MetricTaylorThreshold",
     "NeuralPriorPromotionEvidence",
     "DeployedNeuralPriorPolicy",
+    "DeploymentBundleReleaseApproval",
+    "load_deployment_bundle_release_approval",
     "DeploymentRuntimeActivationReceipt",
     "load_deployment_runtime_activation_receipt",
     "snapshot_current_runtime",

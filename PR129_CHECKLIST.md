@@ -1,4 +1,4 @@
-# PR #129 dROADi review closure checklist
+# AD4DVAR-radar review closure checklist — PR #129
 
 ## Authority snapshot
 
@@ -11,26 +11,35 @@
   has PR head `fc69650290eae3dbb10e0d07b13f6cb45db752e3` as its second parent;
   the reviewed tree is reachable from `origin/main`.
 - Working branch: `agent/pr129-runtime-ledger-semantic-acceptance`.
-- Verified PR/head/tree: no PR #129 or candidate commit yet.
+- Pre-delivery snapshot: no PR #129 or candidate commit existed when this
+  checklist was opened.
 - Worktree before editing: tracked files clean; user-owned `.omx/` remains
   untracked and out of scope.
-- CI snapshot: PR #128 required run
+- Initial CI snapshot: PR #128 required run
   [32109448015](https://github.com/gonos2k/AD4DVAR-radar/actions/runs/32109448015)
   succeeded; merge-push run
   [32116507805](https://github.com/gonos2k/AD4DVAR-radar/actions/runs/32116507805)
-  is in progress and is infrastructure evidence, not a substitute for PR #129 tests.
+  was in progress and was infrastructure evidence, not a substitute for PR #129 tests.
+- Post-merge evidence (GitHub API revalidated 2026-08-19 JST): PR
+  [#129](https://github.com/gonos2k/AD4DVAR-radar/pull/129) final head
+  `0b53e2ab5ca2c39f5cb9a70dc6af9a1bede00d40` was merged as
+  `94c39db1106b7d59e7c10eb662803ada6975ef3f`.
+- Final-head required run
+  [32144868593](https://github.com/gonos2k/AD4DVAR-radar/actions/runs/32144868593)
+  completed successfully: Python 3.10 CPU, Python 3.12 CPU, and Wheel/CLI
+  smoke all reported `SUCCESS`.
 
 ## Adversarial findings
 
 | ID | Priority | Claim | Boundary | Current-tree result | Classification | Minimal action | Acceptance test | Implementation | Local tests | PR/CI |
 |---|---|---|---|---|---|---|---|---|---|---|
-| R129-001 | P1-HIGH | Runtime-tree v1 hashes only expected distribution-owned files and excludes executable `.pyc`; unowned import hooks, shadow modules, unexpected distributions, interpreter/stdlib identity, and permissions are outside the closure. | installed bundle → executing process | REPRODUCED | repository-actionable | Introduce runtime-tree v2 with exhaustive active-root census, forbidden import-hook/bytecode policy, exact distribution inventory, interpreter/stdlib/extension identity, and deployable permission checks. | Unowned `sitecustomize.py`, executable `.pth`, `.pyc`, extra distribution, shadow package, writable runtime, and changed interpreter/stdlib identity fail. | ☑ | ☑ | ☐ |
-| R129-002 | P1-HIGH | Runtime activation receipt is an external script artifact and is not a mandatory typed ledger relation for operational decisions or restart loads. | verified host runtime → ledger decision authority | REPRODUCED | repository-actionable | Add typed runtime activation/trust contracts, ledger activation table, decision/certificate/run binding, expiry/revocation, and launch-time tree revalidation. | A decision without a current exact runtime activation, with an expired/revoked receipt, or after runtime mutation fails issuance and restart. | ☑ | ☑ | ☐ |
+| R129-001 | P1-HIGH | Runtime-tree v1 hashes only expected distribution-owned files and excludes executable `.pyc`; unowned import hooks, shadow modules, unexpected distributions, interpreter/stdlib identity, and permissions are outside the closure. | installed bundle → executing process | REPRODUCED | repository-actionable | Introduce runtime-tree v2 with exhaustive active-root census, forbidden import-hook/bytecode policy, exact distribution inventory, interpreter/stdlib/extension identity, and deployable permission checks. | Unowned `sitecustomize.py`, executable `.pth`, `.pyc`, extra distribution, shadow package, writable runtime, and changed interpreter/stdlib identity fail. | ☑ | ☑ | ☑ final-head CI |
+| R129-002 | P1-HIGH | Runtime activation receipt is an external script artifact and is not a mandatory typed ledger relation for operational decisions or restart loads. | verified host runtime → ledger decision authority | REPRODUCED | repository-actionable | Add typed runtime activation/trust contracts, ledger activation table, decision/certificate/run binding, expiry/revocation, and launch-time tree revalidation. | A decision without a current exact runtime activation, with an expired/revoked receipt, or after runtime mutation fails issuance and restart. | ☑ | ☑ | ☑ final-head CI |
 | R129-003 | P1-HIGH | Real-case harness accepts 13 generic self-declared JSON artifacts rather than current typed product artifacts and cross-stage semantics. | evidence files → acceptance eligibility | REPRODUCED | repository-actionable | Replace generic digest inspection with a 14-stage current-contract validator registry, including runtime activation, signature/trust checks, and exact cross-stage edge graph. | Minimal fake JSON, legacy/audit contracts, broken edge digests, invalid signatures, and omitted runtime activation fail before eligibility. | ☐ | ☐ | ☐ |
 | R129-004 | P1-HIGH | Independent physical-event count uses caller-supplied labels and is not derived from the native/target/track closure or exact preflight cohorts. | acceptance manifest → sample-size eligibility | REPRODUCED | repository-actionable | Derive typed event identity from physical track, native acquisition closure, target source/time, interval, and spatial domain; verify global closure uniqueness and exact preflight cohort/cell membership. | Relabeled identical closures, reused native/target sources, split tracks, and out-of-cohort cases do not increase the independent count. | ☐ | ☐ | ☐ |
 | R129-005 | P1 | Observation-error bytes are lineage-bound but the generator, parameters, registries, censoring, source assignment, and correlation policy are not preregistered before scoring. | holdout plan → verification weights | REPRODUCED | repository-actionable | Add a typed preregistered observation-error plan and require deterministic derivation equality in target/scoring/promotion paths. | Post-forecast quality/reference-std/registry/censor/source-policy changes fail; deterministic replay is byte-identical. | ☐ | ☐ | ☐ |
 | R129-006 | P1/P2 | Missing-state taxonomy and spatial-correlation digest are declarative metadata without a per-cell state tensor or cluster-level statistical use. | verification observation → metric/statistical inference | REPRODUCED | repository-actionable | Add typed per-cell observation states with exact validity/weight/source invariants and either consume typed block membership in clustered inference or mark it diagnostic-only. | Each state enforces its physical mask/weight rule; censored cells use the registered policy; declared statistical block evidence must be consumed. | ☐ | ☐ | ☐ |
-| R129-007 | P2 | Candidate CI uses the same Ed25519 key for bundle and runtime activation roles; deployable role/key separation is not enforced by the receipt contract. | release approval → host activation | REPRODUCED | repository-actionable | Bind signer roles and require distinct release, host-activation, and operational-decision authorities for deployable mode. | Same public key or role reused across deployable stages fails. | ☑ | ☑ | ☐ |
+| R129-007 | P2 | Candidate CI uses the same Ed25519 key for bundle and runtime activation roles; deployable role/key separation is not enforced by the receipt contract. | release approval → host activation | REPRODUCED | repository-actionable | Bind signer roles and require distinct release, host-activation, and operational-decision authorities for deployable mode. | Same public key or role reused across deployable stages fails. | ☑ | ☑ | ☑ final-head CI |
 | R129-008 | P2 | Acceptance evidence may remain owner-writable, so its guarantee is point-in-time hash equality rather than immutable certification evidence. | report-only artifact store → external certification | REPRODUCED | repository-actionable with external deployment policy | Preserve owner-writable REPORT_ONLY inputs, but require immutable/root-owned staging and signed acceptance authority for certification mode. | REPORT_ONLY accepts controlled owner-write; certification rejects writable file/ancestry and mutation after snapshot. | ☐ | ☐ | ☐ |
 | R129-009 | P2 | Report `verified_at` copies submitter `created_at`; validator observation and independent review authorization chronology are absent. | submitter evidence → review chronology | REPRODUCED | repository-actionable | Separate `evidence_created_at`, trusted `validator_observed_at`, and signed `review_authorized_at`; sign the report with an acceptance authority. | Backdated submitter time cannot become validator time; signature and chronology mutations fail. | ☐ | ☐ | ☐ |
 
@@ -59,10 +68,11 @@
 - [x] PR #129A schema, receipt, certificate, decision, lineage, run, and output generations are synchronized locally.
 - [x] PR #129A bundle/runtime manifests and distribution documents are synchronized locally.
 - [x] PR #129 base/head refs were verified at delivery.
-- [ ] CI failures are classified as code or external infrastructure/policy.
+- [x] Final-head CI completed without an unclassified failure.
 - [x] Research, suppressed shadow, canary, LIVE, and external publication have separate decisions.
 - [x] External actions remain visible with owner and required action.
-- [x] Merge remains HOLD unless explicitly authorized.
+- [x] The pre-merge HOLD was preserved until explicit merge authorization;
+  final merge evidence is recorded separately above.
 
 ## Final decision
 
@@ -74,7 +84,7 @@
 | State-advancing LIVE | HOLD | Runtime activation is ledger-enforced in PR #129A; R129-003 through R129-006, R129-008, R129-009, X129-001, and X129-002 remain open. |
 | External publication | HOLD | Requires signed semantic acceptance evidence and protected authorities. |
 | MPS automatic scoring/deployment | NO-GO | Current operational contract remains CPU-only. |
-| PR merge | HOLD | PR #129 is open; implementation commit `be135add0ac7098989102beca5ff0768911fbe6a` is delivered, while final-head required CI and explicit merge authorization are pending. |
+| PR merge | MERGED | Final head `0b53e2ab5ca2c39f5cb9a70dc6af9a1bede00d40`; required run `32144868593` succeeded; merge commit `94c39db1106b7d59e7c10eb662803ada6975ef3f`. |
 
 ## PR #129A local evidence
 
@@ -95,6 +105,8 @@
   completed in ordered segments with every collected node passing; basedpyright
   0 errors; YAML/actionlint, lock synchronization, diff check, and secret-pattern
   scan passed.
-- Full repository CPU suite: 772 passed, 410 subtests passed, 18 warnings in
-  2,110.13 seconds. Final-head GitHub CI remains pending. LIVE, canary,
-  suppressed shadow, and external publication remain HOLD.
+- The earlier local full-suite snapshot was 772 passed, 410 subtests, and 18
+  warnings in 2,110.13 seconds. The final PR report additionally recorded 776
+  local passes; final-head GitHub Python 3.10/3.12 jobs each recorded 774
+  passed, 2 skipped, and 410 subtests. LIVE, canary, suppressed shadow, and
+  external publication remain HOLD.

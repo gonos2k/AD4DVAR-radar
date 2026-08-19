@@ -32,7 +32,13 @@ from advar.runtime_closure import (
 
 BUNDLE_CONTRACT = "advar-linux-cpu-deployment-bundle-v4"
 SIGNATURE_DOMAIN = b"advar-linux-cpu-deployment-bundle-v4\x00"
-ACTIVATION_SIGNATURE_DOMAIN = b"ADVAR_DEPLOYMENT_RUNTIME_ACTIVATION_V2\x00"
+RELEASE_APPROVAL_SIGNATURE_DOMAIN = (
+    b"ADVAR_DEPLOYMENT_BUNDLE_RELEASE_APPROVAL_V1\x00"
+)
+ACTIVATION_SIGNATURE_DOMAIN = b"ADVAR_DEPLOYMENT_RUNTIME_ACTIVATION_V3\x00"
+RUNTIME_ACTIVATION_GENESIS_DIGEST = hashlib.sha256(
+    b"ADVAR_DEPLOYMENT_RUNTIME_ACTIVATION_GENESIS_V1\x00"
+).hexdigest()
 BundleMode = Literal["candidate-smoke", "deployable"]
 
 
@@ -742,6 +748,14 @@ def _activation_signature_preimage(unsigned_receipt: dict[str, object]) -> bytes
     return ACTIVATION_SIGNATURE_DOMAIN + _canonical_bytes(unsigned_receipt)
 
 
+def _release_approval_signature_preimage(
+    unsigned_approval: dict[str, object],
+) -> bytes:
+    return RELEASE_APPROVAL_SIGNATURE_DOMAIN + _canonical_bytes(
+        unsigned_approval
+    )
+
+
 def _require_root_owned_nonwritable_ancestry(path: Path) -> None:
     for retained in (path, *path.parents):
         metadata = retained.lstat()
@@ -1119,6 +1133,175 @@ def verify_bundle(
     return bundle_digest
 
 
+def issue_bundle_release_approval(
+    bundle: Path,
+    *,
+    trusted_bundle_public_key_hex: str,
+    expected_mode: BundleMode,
+    expected_repository: str,
+    expected_source_ref: str,
+    expected_source_commit: str,
+    expected_workflow_sha: str,
+    expected_bundle_signer_id: str,
+    approved_at: str,
+    expires_at: str,
+    release_authority_id: str,
+    release_authority_trust_store_digest: str,
+    release_signing_key: Ed25519PrivateKey,
+) -> dict[str, object]:
+    """Approve one verified bundle with a detached release-authority proof."""
+
+    deployment_bundle_digest = verify_bundle(
+        bundle,
+        trusted_public_key_hex=trusted_bundle_public_key_hex,
+        expected_mode=expected_mode,
+        expected_repository=expected_repository,
+        expected_source_ref=expected_source_ref,
+        expected_source_commit=expected_source_commit,
+        expected_workflow_sha=expected_workflow_sha,
+        expected_signer_id=expected_bundle_signer_id,
+    )
+    manifest_value: Any = json.loads(
+        (bundle / "manifest.json").read_text(encoding="utf-8")
+    )
+    if not isinstance(manifest_value, dict):
+        raise ValueError("deployment bundle manifest is invalid")
+    canonical_approved_at = _canonical_utc(approved_at)
+    canonical_expires_at = _canonical_utc(expires_at)
+    approved = datetime.fromisoformat(
+        canonical_approved_at.replace("Z", "+00:00")
+    )
+    expiry = datetime.fromisoformat(
+        canonical_expires_at.replace("Z", "+00:00")
+    )
+    if (
+        re.fullmatch(
+            r"[0-9a-f]{64}", release_authority_trust_store_digest
+        )
+        is None
+        or not release_authority_id
+        or release_authority_id.strip() != release_authority_id
+        or approved >= expiry
+        or approved > datetime.now(timezone.utc)
+    ):
+        raise ValueError("deployment bundle release approval is invalid")
+    unsigned: dict[str, object] = {
+        "deployment_bundle_digest": deployment_bundle_digest,
+        "bundle_manifest_digest": _json_digest(manifest_value),
+        "source_commit": expected_source_commit,
+        "repository": expected_repository,
+        "source_ref": expected_source_ref,
+        "platform": str(manifest_value.get("platform", "")),
+        "runtime_mode": expected_mode,
+        "approved_at": canonical_approved_at,
+        "expires_at": canonical_expires_at,
+        "authority_id": release_authority_id,
+        "authority_public_key_hex": (
+            release_signing_key.public_key().public_bytes_raw().hex()
+        ),
+        "authority_trust_store_digest": (
+            release_authority_trust_store_digest
+        ),
+        "contract": "deployment-bundle-release-approval-v1",
+    }
+    payload = unsigned | {
+        "authority_signature_hex": release_signing_key.sign(
+            _release_approval_signature_preimage(unsigned)
+        ).hex(),
+    }
+    return payload | {"approval_digest": _json_digest(payload)}
+
+
+def verify_bundle_release_approval(
+    approval: object,
+    *,
+    trusted_release_public_key_hex: str,
+    expected_deployment_bundle_digest: str,
+    expected_bundle_manifest_digest: str,
+    expected_repository: str,
+    expected_source_ref: str,
+    expected_source_commit: str,
+    expected_platform: str,
+    expected_mode: BundleMode,
+    expected_release_authority_id: str,
+    expected_release_authority_trust_store_digest: str,
+    required_valid_through: str,
+) -> str:
+    """Verify the detached release proof and its exact bundle identity."""
+
+    if not isinstance(approval, dict):
+        raise ValueError("deployment bundle release approval is invalid")
+    payload = dict(approval)
+    approval_digest = payload.pop("approval_digest", None)
+    signature_hex = payload.get("authority_signature_hex")
+    unsigned = dict(payload)
+    unsigned.pop("authority_signature_hex", None)
+    expected_keys = {
+        "deployment_bundle_digest",
+        "bundle_manifest_digest",
+        "source_commit",
+        "repository",
+        "source_ref",
+        "platform",
+        "runtime_mode",
+        "approved_at",
+        "expires_at",
+        "authority_id",
+        "authority_public_key_hex",
+        "authority_trust_store_digest",
+        "contract",
+    }
+    approved_at = unsigned.get("approved_at")
+    expires_at = unsigned.get("expires_at")
+    required = _canonical_utc(required_valid_through)
+    if (
+        set(unsigned) != expected_keys
+        or unsigned.get("contract")
+        != "deployment-bundle-release-approval-v1"
+        or unsigned.get("deployment_bundle_digest")
+        != expected_deployment_bundle_digest
+        or unsigned.get("bundle_manifest_digest")
+        != expected_bundle_manifest_digest
+        or unsigned.get("source_commit") != expected_source_commit
+        or unsigned.get("repository") != expected_repository
+        or unsigned.get("source_ref") != expected_source_ref
+        or unsigned.get("platform") != expected_platform
+        or unsigned.get("runtime_mode") != expected_mode
+        or unsigned.get("authority_id") != expected_release_authority_id
+        or unsigned.get("authority_public_key_hex")
+        != trusted_release_public_key_hex
+        or unsigned.get("authority_trust_store_digest")
+        != expected_release_authority_trust_store_digest
+        or not isinstance(approved_at, str)
+        or _canonical_utc(approved_at) != approved_at
+        or not isinstance(expires_at, str)
+        or _canonical_utc(expires_at) != expires_at
+        or datetime.fromisoformat(approved_at.replace("Z", "+00:00"))
+        >= datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+        or datetime.fromisoformat(approved_at.replace("Z", "+00:00"))
+        > datetime.now(timezone.utc)
+        or datetime.fromisoformat(approved_at.replace("Z", "+00:00"))
+        > datetime.fromisoformat(required.replace("Z", "+00:00"))
+        or datetime.fromisoformat(required.replace("Z", "+00:00"))
+        > datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+        or approval_digest != _json_digest(payload)
+        or not isinstance(signature_hex, str)
+    ):
+        raise ValueError("deployment bundle release approval identity is invalid")
+    try:
+        Ed25519PublicKey.from_public_bytes(
+            bytes.fromhex(trusted_release_public_key_hex)
+        ).verify(
+            bytes.fromhex(signature_hex),
+            _release_approval_signature_preimage(unsigned),
+        )
+    except (InvalidSignature, TypeError, ValueError) as error:
+        raise ValueError(
+            "deployment bundle release approval signature is untrusted"
+        ) from error
+    return str(approval_digest)
+
+
 def verify_current_installation(bundle: Path) -> str:
     manifest: Any = json.loads(
         (bundle / "manifest.json").read_text(encoding="utf-8")
@@ -1198,7 +1381,9 @@ def verify_current_installation(bundle: Path) -> str:
 def issue_runtime_activation_receipt(
     bundle: Path,
     *,
+    release_approval: object,
     trusted_bundle_public_key_hex: str,
+    trusted_release_public_key_hex: str,
     expected_mode: BundleMode,
     expected_repository: str,
     expected_source_ref: str,
@@ -1208,8 +1393,12 @@ def issue_runtime_activation_receipt(
     deployment_instance_digest: str,
     host_identity_digest: str,
     activation_sequence_number: int,
+    previous_activation_receipt_digest: str,
+    rollback_reason_digest: str | None,
     activated_at: str,
     expires_at: str,
+    expected_release_authority_id: str,
+    expected_release_authority_trust_store_digest: str,
     activation_authority_id: str,
     activation_authority_trust_store_digest: str,
     activation_signing_key: Ed25519PrivateKey,
@@ -1225,6 +1414,14 @@ def issue_runtime_activation_receipt(
         is None
         or isinstance(activation_sequence_number, bool)
         or activation_sequence_number <= 0
+        or re.fullmatch(
+            r"[0-9a-f]{64}", previous_activation_receipt_digest
+        )
+        is None
+        or (
+            rollback_reason_digest is not None
+            and re.fullmatch(r"[0-9a-f]{64}", rollback_reason_digest) is None
+        )
         or not activation_authority_id
         or activation_authority_id.strip() != activation_authority_id
     ):
@@ -1232,12 +1429,9 @@ def issue_runtime_activation_receipt(
     activation_public_key_hex = (
         activation_signing_key.public_key().public_bytes_raw().hex()
     )
-    if (
-        expected_mode == "deployable"
-        and activation_public_key_hex == trusted_bundle_public_key_hex
-    ):
+    if activation_public_key_hex == trusted_release_public_key_hex:
         raise ValueError(
-            "release signing and runtime activation require separate keys"
+            "release approval and runtime activation require separate keys"
         )
     bundle_digest = verify_bundle(
         bundle,
@@ -1253,9 +1447,12 @@ def issue_runtime_activation_receipt(
     runtime_tree: Any = json.loads(
         (bundle / "runtime-tree.json").read_text(encoding="utf-8")
     )
+    manifest_value: Any = json.loads(
+        (bundle / "manifest.json").read_text(encoding="utf-8")
+    )
     if not isinstance(runtime_tree, dict) or not isinstance(
         runtime_tree.get("interpreter_closure"), dict
-    ):
+    ) or not isinstance(manifest_value, dict):
         raise ValueError("runtime interpreter closure is invalid")
     activated = _canonical_utc(activated_at)
     expiry = _canonical_utc(expires_at)
@@ -1267,11 +1464,42 @@ def issue_runtime_activation_receipt(
             expiry.replace("Z", "+00:00")
         )
         or activated_datetime > datetime.now(timezone.utc)
+        or (
+            activation_sequence_number == 1
+            and previous_activation_receipt_digest
+            != RUNTIME_ACTIVATION_GENESIS_DIGEST
+        )
+        or (
+            activation_sequence_number > 1
+            and previous_activation_receipt_digest
+            == RUNTIME_ACTIVATION_GENESIS_DIGEST
+        )
     ):
         raise ValueError("runtime activation expiry is invalid")
+    release_approval_digest = verify_bundle_release_approval(
+        release_approval,
+        trusted_release_public_key_hex=trusted_release_public_key_hex,
+        expected_deployment_bundle_digest=bundle_digest,
+        expected_bundle_manifest_digest=_json_digest(manifest_value),
+        expected_repository=expected_repository,
+        expected_source_ref=expected_source_ref,
+        expected_source_commit=expected_source_commit,
+        expected_platform=str(manifest_value.get("platform", "")),
+        expected_mode=expected_mode,
+        expected_release_authority_id=expected_release_authority_id,
+        expected_release_authority_trust_store_digest=(
+            expected_release_authority_trust_store_digest
+        ),
+        required_valid_through=expiry,
+    )
+    assert isinstance(release_approval, dict)
+    if datetime.fromisoformat(
+        str(release_approval["approved_at"]).replace("Z", "+00:00")
+    ) > activated_datetime:
+        raise ValueError("runtime activation chronology is invalid")
     unsigned: dict[str, object] = {
-        "contract": "deployment-runtime-activation-receipt-v2",
         "deployment_bundle_digest": bundle_digest,
+        "release_approval_digest": release_approval_digest,
         "runtime_tree_digest": runtime_tree_digest,
         "interpreter_closure_digest": runtime_tree[
             "interpreter_closure"
@@ -1283,6 +1511,10 @@ def issue_runtime_activation_receipt(
         "host_identity_digest": host_identity_digest,
         "runtime_mode": expected_mode,
         "activation_sequence_number": activation_sequence_number,
+        "previous_activation_receipt_digest": (
+            previous_activation_receipt_digest
+        ),
+        "rollback_reason_digest": rollback_reason_digest,
         "activated_at": activated,
         "expires_at": expiry,
         "authority_id": activation_authority_id,
@@ -1290,6 +1522,7 @@ def issue_runtime_activation_receipt(
         "authority_trust_store_digest": (
             activation_authority_trust_store_digest
         ),
+        "contract": "deployment-runtime-activation-receipt-v3",
     }
     payload = unsigned | {
         "authority_signature_hex": activation_signing_key.sign(
@@ -1302,14 +1535,21 @@ def issue_runtime_activation_receipt(
 def verify_runtime_activation_receipt(
     receipt: object,
     *,
+    release_approval: object,
+    trusted_release_public_key_hex: str,
     trusted_activation_public_key_hex: str,
     expected_deployment_bundle_digest: str,
+    expected_bundle_manifest_digest: str,
     expected_runtime_tree_digest: str,
     expected_interpreter_closure_digest: str,
     expected_deployment_instance_digest: str,
     expected_host_identity_digest: str,
     expected_mode: BundleMode,
     expected_activation_sequence_number: int,
+    expected_previous_activation_receipt_digest: str,
+    expected_rollback_reason_digest: str | None,
+    expected_release_authority_id: str,
+    expected_release_authority_trust_store_digest: str,
     expected_activation_authority_id: str,
     expected_activation_authority_trust_store_digest: str,
 ) -> str:
@@ -1323,6 +1563,7 @@ def verify_runtime_activation_receipt(
     expected_keys = {
         "contract",
         "deployment_bundle_digest",
+        "release_approval_digest",
         "runtime_tree_digest",
         "interpreter_closure_digest",
         "installation_attestation_sha256",
@@ -1330,6 +1571,8 @@ def verify_runtime_activation_receipt(
         "host_identity_digest",
         "runtime_mode",
         "activation_sequence_number",
+        "previous_activation_receipt_digest",
+        "rollback_reason_digest",
         "activated_at",
         "expires_at",
         "authority_id",
@@ -1339,7 +1582,7 @@ def verify_runtime_activation_receipt(
     if (
         set(unsigned) != expected_keys
         or unsigned.get("contract")
-        != "deployment-runtime-activation-receipt-v2"
+        != "deployment-runtime-activation-receipt-v3"
         or unsigned.get("deployment_bundle_digest")
         != expected_deployment_bundle_digest
         or unsigned.get("runtime_tree_digest") != expected_runtime_tree_digest
@@ -1352,6 +1595,10 @@ def verify_runtime_activation_receipt(
         or unsigned.get("runtime_mode") != expected_mode
         or unsigned.get("activation_sequence_number")
         != expected_activation_sequence_number
+        or unsigned.get("previous_activation_receipt_digest")
+        != expected_previous_activation_receipt_digest
+        or unsigned.get("rollback_reason_digest")
+        != expected_rollback_reason_digest
         or unsigned.get("authority_id")
         != expected_activation_authority_id
         or unsigned.get("authority_public_key_hex")
@@ -1374,6 +1621,16 @@ def verify_runtime_activation_receipt(
             str(unsigned["activated_at"]).replace("Z", "+00:00")
         )
         > datetime.now(timezone.utc)
+        or (
+            expected_activation_sequence_number == 1
+            and expected_previous_activation_receipt_digest
+            != RUNTIME_ACTIVATION_GENESIS_DIGEST
+        )
+        or (
+            expected_activation_sequence_number > 1
+            and expected_previous_activation_receipt_digest
+            == RUNTIME_ACTIVATION_GENESIS_DIGEST
+        )
         or re.fullmatch(
             r"[0-9a-f]{64}",
             str(unsigned.get("installation_attestation_sha256")),
@@ -1383,6 +1640,52 @@ def verify_runtime_activation_receipt(
         or not isinstance(signature_hex, str)
     ):
         raise ValueError("runtime activation receipt identity is invalid")
+    release_approval_digest = verify_bundle_release_approval(
+        release_approval,
+        trusted_release_public_key_hex=trusted_release_public_key_hex,
+        expected_deployment_bundle_digest=expected_deployment_bundle_digest,
+        expected_bundle_manifest_digest=expected_bundle_manifest_digest,
+        expected_repository=str(
+            release_approval.get("repository", "")
+            if isinstance(release_approval, dict)
+            else ""
+        ),
+        expected_source_ref=str(
+            release_approval.get("source_ref", "")
+            if isinstance(release_approval, dict)
+            else ""
+        ),
+        expected_source_commit=str(
+            release_approval.get("source_commit", "")
+            if isinstance(release_approval, dict)
+            else ""
+        ),
+        expected_platform=str(
+            release_approval.get("platform", "")
+            if isinstance(release_approval, dict)
+            else ""
+        ),
+        expected_mode=expected_mode,
+        expected_release_authority_id=expected_release_authority_id,
+        expected_release_authority_trust_store_digest=(
+            expected_release_authority_trust_store_digest
+        ),
+        required_valid_through=str(unsigned.get("expires_at", "")),
+    )
+    if unsigned.get("release_approval_digest") != release_approval_digest:
+        raise ValueError("runtime activation release approval is invalid")
+    assert isinstance(release_approval, dict)
+    if (
+        trusted_activation_public_key_hex == trusted_release_public_key_hex
+        or expected_activation_authority_id == expected_release_authority_id
+        or datetime.fromisoformat(
+            str(release_approval["approved_at"]).replace("Z", "+00:00")
+        )
+        > datetime.fromisoformat(
+            str(unsigned["activated_at"]).replace("Z", "+00:00")
+        )
+    ):
+        raise ValueError("runtime activation authority or chronology is invalid")
     try:
         Ed25519PublicKey.from_public_bytes(
             bytes.fromhex(trusted_activation_public_key_hex)
@@ -1459,6 +1762,31 @@ def main() -> int:
     )
     build.add_argument("--signer-id", required=True)
     build.add_argument("--signing-private-key", type=Path, required=True)
+    approve_release = subparsers.add_parser("approve-release")
+    approve_release.add_argument("--bundle", type=Path, required=True)
+    approve_release.add_argument(
+        "--trusted-bundle-public-key", type=Path, required=True
+    )
+    approve_release.add_argument(
+        "--expected-mode",
+        choices=("candidate-smoke", "deployable"),
+        required=True,
+    )
+    approve_release.add_argument("--expected-repository", required=True)
+    approve_release.add_argument("--expected-source-ref", required=True)
+    approve_release.add_argument("--expected-source-commit", required=True)
+    approve_release.add_argument("--expected-workflow-sha", required=True)
+    approve_release.add_argument("--expected-bundle-signer-id", required=True)
+    approve_release.add_argument("--approved-at")
+    approve_release.add_argument("--expires-at", required=True)
+    approve_release.add_argument("--release-authority-id", required=True)
+    approve_release.add_argument(
+        "--release-authority-trust-store-digest", required=True
+    )
+    approve_release.add_argument(
+        "--release-signing-private-key", type=Path, required=True
+    )
+    approve_release.add_argument("--approval", type=Path, required=True)
     verify = subparsers.add_parser("verify")
     verify.add_argument("--bundle", type=Path, required=True)
     verify.add_argument("--trusted-public-key", type=Path, required=True)
@@ -1489,8 +1817,20 @@ def main() -> int:
     activate.add_argument("--deployment-instance-digest", required=True)
     activate.add_argument("--host-identity-digest", required=True)
     activate.add_argument("--activation-sequence-number", type=int, required=True)
+    activate.add_argument(
+        "--previous-activation-receipt-digest", required=True
+    )
+    activate.add_argument("--rollback-reason-digest")
     activate.add_argument("--activated-at")
     activate.add_argument("--expires-at", required=True)
+    activate.add_argument("--release-approval", type=Path, required=True)
+    activate.add_argument(
+        "--trusted-release-public-key", type=Path, required=True
+    )
+    activate.add_argument("--expected-release-authority-id", required=True)
+    activate.add_argument(
+        "--expected-release-authority-trust-store-digest", required=True
+    )
     activate.add_argument("--activation-authority-id", required=True)
     activate.add_argument(
         "--activation-authority-trust-store-digest", required=True
@@ -1501,6 +1841,10 @@ def main() -> int:
     activate.add_argument("--receipt", type=Path, required=True)
     verify_activation = subparsers.add_parser("verify-runtime-activation")
     verify_activation.add_argument("--receipt", type=Path, required=True)
+    verify_activation.add_argument("--release-approval", type=Path, required=True)
+    verify_activation.add_argument(
+        "--trusted-release-public-key", type=Path, required=True
+    )
     verify_activation.add_argument(
         "--trusted-activation-public-key", type=Path, required=True
     )
@@ -1522,6 +1866,16 @@ def main() -> int:
     verify_activation.add_argument("--expected-host-identity-digest", required=True)
     verify_activation.add_argument(
         "--expected-activation-sequence-number", type=int, required=True
+    )
+    verify_activation.add_argument(
+        "--expected-previous-activation-receipt-digest", required=True
+    )
+    verify_activation.add_argument("--expected-rollback-reason-digest")
+    verify_activation.add_argument(
+        "--expected-release-authority-id", required=True
+    )
+    verify_activation.add_argument(
+        "--expected-release-authority-trust-store-digest", required=True
     )
     verify_activation.add_argument(
         "--expected-activation-authority-id", required=True
@@ -1548,6 +1902,37 @@ def main() -> int:
                     arguments.signing_private_key.absolute()
                 ),
             )
+        elif arguments.command == "approve-release":
+            bundle_public_key = _load_trusted_public_key(
+                arguments.trusted_bundle_public_key.absolute(),
+                deployable=arguments.expected_mode == "deployable",
+            )
+            approved_at = arguments.approved_at or (
+                datetime.now(timezone.utc)
+                .isoformat(timespec="microseconds")
+                .replace("+00:00", "Z")
+            )
+            approval = issue_bundle_release_approval(
+                arguments.bundle.absolute(),
+                trusted_bundle_public_key_hex=bundle_public_key,
+                expected_mode=arguments.expected_mode,
+                expected_repository=arguments.expected_repository,
+                expected_source_ref=arguments.expected_source_ref,
+                expected_source_commit=arguments.expected_source_commit,
+                expected_workflow_sha=arguments.expected_workflow_sha,
+                expected_bundle_signer_id=arguments.expected_bundle_signer_id,
+                approved_at=approved_at,
+                expires_at=arguments.expires_at,
+                release_authority_id=arguments.release_authority_id,
+                release_authority_trust_store_digest=(
+                    arguments.release_authority_trust_store_digest
+                ),
+                release_signing_key=_load_private_key(
+                    arguments.release_signing_private_key.absolute()
+                ),
+            )
+            _canonical_json(arguments.approval.absolute(), approval)
+            print(approval["approval_digest"])
         elif arguments.command == "verify":
             public_key_hex = _load_trusted_public_key(
                 arguments.trusted_public_key.absolute(),
@@ -1577,9 +1962,18 @@ def main() -> int:
                 .isoformat(timespec="microseconds")
                 .replace("+00:00", "Z")
             )
+            release_public_key = _load_trusted_public_key(
+                arguments.trusted_release_public_key.absolute(),
+                deployable=arguments.expected_mode == "deployable",
+            )
+            release_approval: Any = json.loads(
+                arguments.release_approval.read_text(encoding="utf-8")
+            )
             receipt = issue_runtime_activation_receipt(
                 arguments.bundle.absolute(),
+                release_approval=release_approval,
                 trusted_bundle_public_key_hex=bundle_public_key,
+                trusted_release_public_key_hex=release_public_key,
                 expected_mode=arguments.expected_mode,
                 expected_repository=arguments.expected_repository,
                 expected_source_ref=arguments.expected_source_ref,
@@ -1595,8 +1989,18 @@ def main() -> int:
                 activation_sequence_number=(
                     arguments.activation_sequence_number
                 ),
+                previous_activation_receipt_digest=(
+                    arguments.previous_activation_receipt_digest
+                ),
+                rollback_reason_digest=arguments.rollback_reason_digest,
                 activated_at=activated_at,
                 expires_at=arguments.expires_at,
+                expected_release_authority_id=(
+                    arguments.expected_release_authority_id
+                ),
+                expected_release_authority_trust_store_digest=(
+                    arguments.expected_release_authority_trust_store_digest
+                ),
                 activation_authority_id=arguments.activation_authority_id,
                 activation_authority_trust_store_digest=(
                     arguments.activation_authority_trust_store_digest
@@ -1608,6 +2012,10 @@ def main() -> int:
             _canonical_json(arguments.receipt.absolute(), receipt)
             print(receipt["receipt_digest"])
         else:
+            release_public_key = _load_trusted_public_key(
+                arguments.trusted_release_public_key.absolute(),
+                deployable=arguments.expected_mode == "deployable",
+            )
             activation_public_key = _load_trusted_public_key(
                 arguments.trusted_activation_public_key.absolute(),
                 deployable=arguments.expected_mode == "deployable",
@@ -1615,12 +2023,22 @@ def main() -> int:
             receipt_value: Any = json.loads(
                 arguments.receipt.read_text(encoding="utf-8")
             )
+            release_approval_value: Any = json.loads(
+                arguments.release_approval.read_text(encoding="utf-8")
+            )
             print(
                 verify_runtime_activation_receipt(
                     receipt_value,
+                    release_approval=release_approval_value,
+                    trusted_release_public_key_hex=release_public_key,
                     trusted_activation_public_key_hex=activation_public_key,
                     expected_deployment_bundle_digest=(
                         arguments.expected_deployment_bundle_digest
+                    ),
+                    expected_bundle_manifest_digest=str(
+                        release_approval_value.get("bundle_manifest_digest", "")
+                        if isinstance(release_approval_value, dict)
+                        else ""
                     ),
                     expected_runtime_tree_digest=(
                         arguments.expected_runtime_tree_digest
@@ -1637,6 +2055,20 @@ def main() -> int:
                     expected_mode=arguments.expected_mode,
                     expected_activation_sequence_number=(
                         arguments.expected_activation_sequence_number
+                    ),
+                    expected_previous_activation_receipt_digest=(
+                        arguments
+                        .expected_previous_activation_receipt_digest
+                    ),
+                    expected_rollback_reason_digest=(
+                        arguments.expected_rollback_reason_digest
+                    ),
+                    expected_release_authority_id=(
+                        arguments.expected_release_authority_id
+                    ),
+                    expected_release_authority_trust_store_digest=(
+                        arguments
+                        .expected_release_authority_trust_store_digest
                     ),
                     expected_activation_authority_id=(
                         arguments.expected_activation_authority_id
