@@ -236,16 +236,16 @@ TRAINING_NORMALIZATION_MASK_WEIGHT_POLICY_DIGEST = json_digest(
 
 
 SEMANTIC_SCORING_REPLAY_CONTRACT = (
-    "neural-prior-scoring-replay-bundle-v12"
+    "neural-prior-scoring-replay-bundle-v13"
 )
 SEMANTIC_SCORING_REPLAY_METHOD = (
-    "builtin-semantic-scoring-recomputation-v12"
+    "builtin-semantic-scoring-recomputation-v13"
 )
 SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD: dict[str, str] = {
-    "contract": "neural-prior-semantic-scoring-generation-v10",
+    "contract": "neural-prior-semantic-scoring-generation-v11",
     "replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
     "replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
-    "case_contract": "neural-prior-semantic-scoring-case-v11",
+    "case_contract": "neural-prior-semantic-scoring-case-v12",
     "product_type_policy": "exact-shipped-product-types-v1",
     "forecast_integrity": "forecast-result-raw-content-validation-v1",
     "prior_integrity": "runner-reproduced-prior-application-v1",
@@ -15771,7 +15771,7 @@ class ScoringReplayCaseArtifact:
     ) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-semantic-scoring-case-v11",
+                "contract": "neural-prior-semantic-scoring-case-v12",
                 "semantic_replay_generation_digest": (
                     SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
                 ),
@@ -17106,7 +17106,7 @@ class HoldoutScoringArtifact:
     parent_forecast_digests: tuple[str, ...]
     verification_digests: tuple[str, ...]
     metric_contract_digests: tuple[str, ...]
-    contract: str = "neural-prior-holdout-scoring-artifact-v12"
+    contract: str = "neural-prior-holdout-scoring-artifact-v13"
     artifact_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -17218,7 +17218,7 @@ class HoldoutScoringArtifact:
             "metric_contract_digests": tuple(
                 item.metric_contract_digest for item in ordered
             ),
-            "contract": "neural-prior-holdout-scoring-artifact-v12",
+            "contract": "neural-prior-holdout-scoring-artifact-v13",
         }
         artifact = _new_holdout_scoring_artifact(**values)
         validate_holdout_scoring_artifact(
@@ -17289,6 +17289,35 @@ class LegacyHoldoutScoringArtifactAuditV11:
         )
 
 
+@dataclass(frozen=True)
+class LegacyHoldoutScoringArtifactAuditV12:
+    """Pre-source-specific observation scoring retained for audit only."""
+
+    artifact_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-scoring-artifact-audit-v12"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _validate_generic_legacy_digest_payload(
+            digest=self.artifact_digest,
+            payload_json=self.payload_json,
+            digest_field="artifact_digest",
+            original_contract="neural-prior-holdout-scoring-artifact-v12",
+        )
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "artifact_digest": self.artifact_digest,
+                    "payload_json": self.payload_json,
+                }
+            ),
+        )
+
+
 def _new_holdout_scoring_artifact(**values: object) -> HoldoutScoringArtifact:
     artifact = object.__new__(HoldoutScoringArtifact)
     for name, value in values.items():
@@ -17330,7 +17359,7 @@ def validate_holdout_scoring_artifact(
     ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
     start = manifest.candidate_scoring_start_receipt
     if (
-        artifact.contract != "neural-prior-holdout-scoring-artifact-v12"
+        artifact.contract != "neural-prior-holdout-scoring-artifact-v13"
         or artifact.artifact_digest != json_digest(artifact.payload)
         or artifact.holdout_plan_digest != plan.plan_digest
         or artifact.candidate_manifest_digest != manifest.manifest_digest

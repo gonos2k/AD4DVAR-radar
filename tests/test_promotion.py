@@ -243,6 +243,7 @@ def _verification_bundle_v4(
         grid_contract_digest=grid_contract_digest,
         radar_product_digest=radar_product_digest,
         native_verification_source_identity_digest=upstream_digest,
+        source_registry=registry,
         source_authority_id="synthetic-verification-source",
         source_authority_private_key=_verification_source_private_key(),
         source_observed_at=valid_times[-1],
@@ -253,10 +254,12 @@ def _verification_bundle_v4(
             dtype=torch.bool,
             device=frames_dbz.device,
         ),
-        range_km=torch.zeros_like(frames_dbz),
-        elevation_deg=torch.zeros_like(frames_dbz),
-        beam_blockage_fraction=torch.zeros_like(frames_dbz),
-        attenuation_qc_score=valid_mask.to(frames_dbz),
+        range_km_by_source=torch.zeros_like(scores),
+        elevation_deg_by_source=torch.zeros_like(scores),
+        beam_blockage_fraction_by_source=torch.zeros_like(scores),
+        attenuation_qc_score_by_source=(
+            valid_mask.to(frames_dbz).unsqueeze(0).expand_as(scores).clone()
+        ),
         below_detection_reported=torch.zeros_like(valid_mask),
         range_elevation_validity_domain_digest="5" * 64,
         beam_blockage_visibility_mask_digest="6" * 64,
@@ -523,7 +526,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
         self.assertEqual(
             scoring.contract,
-            "neural-prior-holdout-scoring-artifact-v12",
+            "neural-prior-holdout-scoring-artifact-v13",
         )
         self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v31")
         self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v17")
@@ -4885,6 +4888,100 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertIsInstance(
             decoded,
             ledger_module.LegacyScoringReplayBundleManifestAuditV2,
+        )
+
+    def test_pre_source_specific_replay_generation_is_audit_only(self) -> None:
+        case_id = "case-1"
+        records = tuple(
+            ledger_module.ScoringReplayTensorRecord(
+                case_id=case_id,
+                role=role,
+                archive_member=f"case_000000__{role}",
+                dtype="float32",
+                shape=(1, 2, 2),
+                tensor_digest="1" * 64,
+            )
+            for role in sorted(ledger_module.SCORING_REPLAY_REQUIRED_TENSOR_ROLES)
+        )
+        legacy_manifest = (
+            ledger_module.LegacyScoringReplayBundleManifestAuditV12(
+                scoring_input_artifact_digest="2" * 64,
+                ordered_case_ids=(case_id,),
+                ordered_evaluation_digests=("3" * 64,),
+                semantic_case_digests=("4" * 64,),
+                dynamic_source_case_ids=(),
+                background_case_ids=(),
+                algorithm_source_manifest_digest="5" * 64,
+                runtime_compatibility_digest="6" * 64,
+                runtime_exact_digest="7" * 64,
+                scoring_backend_certification_policy_digest=None,
+                scoring_backend_certification_evidence_digest=None,
+                tensor_records=records,
+                tensor_archive_sha256="8" * 64,
+                evaluation_payload_sha256="9" * 64,
+                raw_provenance_payload_sha256="a" * 64,
+                raw_ingestor_trust_store_digest="b" * 64,
+            )
+        )
+        decoded_manifest = ledger_module._decode_scoring_replay_bundle_manifest(
+            json.dumps(
+                legacy_manifest.payload
+                | {"bundle_digest": legacy_manifest.bundle_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            expected_digest=legacy_manifest.bundle_digest,
+        )
+        self.assertIs(
+            type(decoded_manifest),
+            ledger_module.LegacyScoringReplayBundleManifestAuditV12,
+        )
+
+        scoring = self.scoring_artifact(
+            (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
+        )
+        legacy_generation_digest = promotion_module.json_digest(
+            {
+                "contract": "neural-prior-semantic-scoring-generation-v10",
+                "replay_contract": "neural-prior-scoring-replay-bundle-v12",
+                "replay_method": "builtin-semantic-scoring-recomputation-v12",
+                "case_contract": "neural-prior-semantic-scoring-case-v11",
+                "product_type_policy": "exact-shipped-product-types-v1",
+                "forecast_integrity": "forecast-result-raw-content-validation-v1",
+                "prior_integrity": "runner-reproduced-prior-application-v1",
+                "classifier_integrity": "exported-classifier-reexecution-v1",
+                "snapshot_policy": "single-frozen-tensor-snapshot-v1",
+                "backend_policy": "single-device-cpu-only-scoring-v1",
+                "learned_input_feature_contract": (
+                    "learned-radar-input-features-v1"
+                ),
+            }
+        )
+        legacy_artifact_payload = scoring.payload | {
+            "contract": "neural-prior-holdout-scoring-artifact-v12",
+            "scoring_replay_contract": (
+                "neural-prior-scoring-replay-bundle-v12"
+            ),
+            "scoring_replay_method": (
+                "builtin-semantic-scoring-recomputation-v12"
+            ),
+            "semantic_replay_generation_digest": legacy_generation_digest,
+        }
+        legacy_artifact_digest = promotion_module.json_digest(
+            legacy_artifact_payload
+        )
+        decoded_artifact = ledger_module._decode_holdout_scoring_artifact(
+            json.dumps(
+                legacy_artifact_payload
+                | {"artifact_digest": legacy_artifact_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            expected_digest=legacy_artifact_digest,
+        )
+        self.assertIs(
+            type(decoded_artifact),
+            promotion_module.LegacyHoldoutScoringArtifactAuditV12,
         )
 
     def scoring_completion_receipt(self, evaluations, *, manifest=None, plan=None):
@@ -14573,19 +14670,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def test_cpu_only_scoring_generation_has_a_stable_backend_contract(self) -> None:
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_CONTRACT,
-            "neural-prior-scoring-replay-bundle-v12",
+            "neural-prior-scoring-replay-bundle-v13",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_METHOD,
-            "builtin-semantic-scoring-recomputation-v12",
+            "builtin-semantic-scoring-recomputation-v13",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD,
             {
-                "contract": "neural-prior-semantic-scoring-generation-v10",
-                "replay_contract": "neural-prior-scoring-replay-bundle-v12",
-                "replay_method": "builtin-semantic-scoring-recomputation-v12",
-                "case_contract": "neural-prior-semantic-scoring-case-v11",
+                "contract": "neural-prior-semantic-scoring-generation-v11",
+                "replay_contract": "neural-prior-scoring-replay-bundle-v13",
+                "replay_method": "builtin-semantic-scoring-recomputation-v13",
+                "case_contract": "neural-prior-semantic-scoring-case-v12",
                 "product_type_policy": "exact-shipped-product-types-v1",
                 "forecast_integrity": "forecast-result-raw-content-validation-v1",
                 "prior_integrity": "runner-reproduced-prior-application-v1",
