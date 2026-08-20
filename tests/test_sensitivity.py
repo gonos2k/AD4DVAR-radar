@@ -2907,6 +2907,7 @@ class VariationalFSOTests(unittest.TestCase):
             "grid_contract_digest": "a" * 64,
             "radar_product_digest": "b" * 64,
             "native_verification_source_identity_digest": "c" * 64,
+            "source_registry": registry,
             "source_authority_id": "verification-source-a",
             "source_authority_private_key": source_private_key,
             "source_observed_at": "2026-08-05T00:30:00Z",
@@ -2915,13 +2916,29 @@ class VariationalFSOTests(unittest.TestCase):
             "source_availability_by_time": torch.ones(
                 (2, 1), dtype=torch.bool
             ),
-            "range_km": torch.tensor([[[10.0, 10.0, 200.0, 10.0, 10.0]]]),
-            "elevation_deg": torch.ones_like(frames),
-            "beam_blockage_fraction": torch.tensor(
-                [[[0.0, 0.0, 0.0, 0.8, 0.0]]]
+            "range_km_by_source": torch.tensor(
+                [
+                    [[[10.0, 10.0, 200.0, 290.0, 290.0]]],
+                    [[[290.0, 290.0, 290.0, 10.0, 10.0]]],
+                ]
             ),
-            "attenuation_qc_score": torch.tensor(
-                [[[1.0, 1.0, 1.0, 1.0, 0.2]]]
+            "elevation_deg_by_source": torch.tensor(
+                [
+                    [[[1.0, 1.0, 1.0, 1.0, 1.0]]],
+                    [[[2.0, 2.0, 2.0, 2.0, 2.0]]],
+                ]
+            ),
+            "beam_blockage_fraction_by_source": torch.tensor(
+                [
+                    [[[0.0, 0.0, 0.0, 0.0, 0.0]]],
+                    [[[0.0, 0.0, 0.0, 0.8, 0.0]]],
+                ]
+            ),
+            "attenuation_qc_score_by_source": torch.tensor(
+                [
+                    [[[1.0, 1.0, 1.0, 1.0, 1.0]]],
+                    [[[1.0, 1.0, 1.0, 1.0, 0.2]]],
+                ]
             ),
             "below_detection_reported": torch.tensor(
                 [[[False, True, False, False, False]]]
@@ -3014,9 +3031,18 @@ class VariationalFSOTests(unittest.TestCase):
             "source_availability_by_time": torch.zeros(
                 (2, 1), dtype=torch.bool
             ),
-            "range_km": torch.zeros_like(frames),
-            "beam_blockage_fraction": torch.zeros_like(frames),
-            "attenuation_qc_score": torch.zeros_like(frames),
+            "range_km_by_source": torch.flip(
+                common_evidence["range_km_by_source"], dims=(0,)
+            ),
+            "elevation_deg_by_source": torch.flip(
+                common_evidence["elevation_deg_by_source"], dims=(0,)
+            ),
+            "beam_blockage_fraction_by_source": torch.flip(
+                common_evidence["beam_blockage_fraction_by_source"], dims=(0,)
+            ),
+            "attenuation_qc_score_by_source": torch.flip(
+                common_evidence["attenuation_qc_score_by_source"], dims=(0,)
+            ),
             "below_detection_reported": torch.zeros_like(frames, dtype=torch.bool),
             "source_assignment_scores": torch.flip(scores, dims=(0,)),
         }
@@ -3028,7 +3054,7 @@ class VariationalFSOTests(unittest.TestCase):
                 ):
                     replace(evidence, **{field_name: value})
         attacked = VerificationObservationMaskEvidence.issue(**common_evidence)
-        attacked.attenuation_qc_score.data[0, 0, 0] = 0.0
+        attacked.attenuation_qc_score_by_source.data[0, 0, 0, 0] = 0.0
         with self.assertRaisesRegex(ValueError, "evidence mismatch"):
             mask_derivation = derive_verification_observation_masks(
                 plan=plan,
@@ -3036,6 +3062,16 @@ class VariationalFSOTests(unittest.TestCase):
                 source_registry=registry,
             )
             mask_derivation.validate_replay()
+        reordered_registry = MosaicObservationSourceRegistry(
+            radar_source_kind="mosaic",
+            ordered_sources=tuple(reversed(registry.ordered_sources)),
+        )
+        with self.assertRaisesRegex(ValueError, "disagrees with its plan"):
+            derive_verification_observation_masks(
+                plan=plan,
+                raw_evidence=evidence,
+                source_registry=reordered_registry,
+            )
         for output_name in (
             "_source_present_mask",
             "_range_elevation_valid_mask",

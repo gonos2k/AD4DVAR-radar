@@ -109,7 +109,7 @@ python -I .github/scripts/build_deployment_bundle.py verify \
   --trusted-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.96.0 \
+  --expected-source-ref refs/tags/v0.97.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-signer-id advar-release
@@ -120,7 +120,7 @@ python -I -m pip install --no-index --find-links wheelhouse \
   --require-hashes --only-binary=:all: --no-compile \
   --requirement runtime-py312-linux.lock
 python -I -m pip install --no-index --no-deps --no-compile \
-  advar_radar_nowcast-0.96.0-*.whl
+  advar_radar_nowcast-0.97.0-*.whl
 find <deployment-venv> -type f \
   \( -name '*.pyc' -o -name '*.pyo' -o -name '*.pth' \) -delete
 ```
@@ -147,7 +147,7 @@ python -I .github/scripts/build_deployment_bundle.py approve-release \
   --trusted-bundle-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.96.0 \
+  --expected-source-ref refs/tags/v0.97.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-bundle-signer-id advar-release \
@@ -162,7 +162,7 @@ python -I .github/scripts/build_deployment_bundle.py activate-runtime \
   --trusted-bundle-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.96.0 \
+  --expected-source-ref refs/tags/v0.97.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-bundle-signer-id advar-release \
@@ -1097,7 +1097,7 @@ target, classifier와 operational-domain artifact는 각각 제품 validator와 
 reproduction을 통과해야 하며, factory가 한 번 동결한 tensor snapshot과 completion 시점의
 live product bytes가 다르면 거부된다. Replay v12 contract와 v12 method, typed
 verification-target identity를 포함한 five-channel CPU-only generation v10 digest는
-`HoldoutScoringArtifact-v12`, promotion evidence v31,
+`HoldoutScoringArtifact-v13`, promotion evidence v31,
 `DeployedNeuralPriorPolicy-v17`과 deployment-decision artifact v17까지
 직접 전파된다.
 각 holdout case의 `VerificationTargetIdentityArtifact-v2`는 실제 scoring에 사용되는
@@ -1118,9 +1118,11 @@ source authority key를 사전등록한다.
 `MosaicObservationSourceRegistry-v1`은 source-map index를 ordered radar-site,
 calibration epoch, source-specific quality와 observation standard deviation에 결합한다.
 `VerificationObservationMaskEvidence-v1`은 valid/acquisition time, grid, radar product,
-native source identity와 range/elevation, beam-blockage fraction, attenuation-QC score,
-censoring evidence 및 radar별 assignment-score bytes를 source authority signature로
-봉인한다. `VerificationObservationMaskDerivationArtifact-v1`은 이 raw evidence에서
+native source identity와 radar별 `[source,time,y,x]` range/elevation,
+beam-blockage fraction, attenuation-QC score, censoring evidence 및 assignment-score
+bytes를 source authority signature로 봉인한다. Source dimension은 ordered registry의
+exact source digest 순서에 결합된다. `VerificationObservationMaskDerivationArtifact-v1`은
+선택된 source index에서 네 spatial field를 gather한 뒤 이 raw evidence에서
 source-present, range/elevation-valid, blockage, attenuation-QC, censoring mask와 source
 index map을 다시 계산한다. Caller가 mask를 직접 선택하는 v1 input은 confirmatory
 경로에서 소비하지 않는다.
@@ -1167,6 +1169,9 @@ Audit load는 저장된 typed evaluation을 볼 수 있지만, 자동 completion
 동일한 typed replay case를 다시 제공해 semantic replay까지 통과해야 한다. 배포
 certificate 발급 시에도 typed case에서 제품 scorer를 다시 실행하며, checksum-only
 archive는 certificate를 받을 수 없다. Ledger는
+current replay bundle/method v13, semantic generation v11과 scoring case v12만 재실행하며,
+이전 replay bundle v12와 holdout scoring artifact v12는 typed audit-only object로만
+decode한다.
 scoring start가 선행했는지 확인하고 archive/file/Tensor/evaluation digest를 append,
 completion, promotion load 시마다 다시 계산한다.
 입력 QC mask와 quality weight, optional background는 모두 실제
@@ -1912,7 +1917,7 @@ signer 또는 final activation이 실패하면 동일 cycle은 이미 durable한
 Raw ingestor trust-store v2는 plan에 고정된 snapshot과 provenance commit, scoring
 replay/completion, promotion, certificate 발급 및 operational decision 시점의 current
 root-owned store 양쪽에서 attestation 시각의 key validity/revocation을 대조한다.
-Current store의 content digest는 replay-v12 manifest, scoring-v12 artifact, scheduler가
+Current store의 content digest는 replay-v13 manifest, scoring-v13 artifact, scheduler가
 봉인한 completion output, promotion evidence v31, promotion deployment certificate v6와
 operational decision certificate에 연속 결합된다. Certificate/publication 서명 전후와
 activation 직전·직후에도 store를 다시 읽고, durable `forecast-run-v68` load에서도 외부

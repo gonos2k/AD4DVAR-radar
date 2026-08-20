@@ -886,13 +886,15 @@ def _verification_observation_upstream_artifact_digest(
     grid_contract_digest: str,
     radar_product_digest: str,
     native_verification_source_identity_digest: str,
+    source_registry_artifact_digest: str,
+    ordered_source_digests: tuple[str, ...],
     frames_dbz: Tensor,
     source_assignment_scores: Tensor,
     source_availability_by_time: Tensor,
-    range_km: Tensor,
-    elevation_deg: Tensor,
-    beam_blockage_fraction: Tensor,
-    attenuation_qc_score: Tensor,
+    range_km_by_source: Tensor,
+    elevation_deg_by_source: Tensor,
+    beam_blockage_fraction_by_source: Tensor,
+    attenuation_qc_score_by_source: Tensor,
     below_detection_reported: Tensor,
     range_elevation_validity_domain_digest: str,
     beam_blockage_visibility_mask_digest: str,
@@ -908,6 +910,10 @@ def _verification_observation_upstream_artifact_digest(
             "native_verification_source_identity_digest": (
                 native_verification_source_identity_digest
             ),
+            "source_registry_artifact_digest": (
+                source_registry_artifact_digest
+            ),
+            "ordered_source_digests": list(ordered_source_digests),
             "frames_dbz_digest": tensor_digest(frames_dbz),
             "source_assignment_scores_digest": tensor_digest(
                 source_assignment_scores
@@ -915,13 +921,17 @@ def _verification_observation_upstream_artifact_digest(
             "source_availability_by_time_digest": tensor_digest(
                 source_availability_by_time
             ),
-            "range_km_digest": tensor_digest(range_km),
-            "elevation_deg_digest": tensor_digest(elevation_deg),
-            "beam_blockage_fraction_digest": tensor_digest(
-                beam_blockage_fraction
+            "range_km_by_source_digest": tensor_digest(
+                range_km_by_source
             ),
-            "attenuation_qc_score_digest": tensor_digest(
-                attenuation_qc_score
+            "elevation_deg_by_source_digest": tensor_digest(
+                elevation_deg_by_source
+            ),
+            "beam_blockage_fraction_by_source_digest": tensor_digest(
+                beam_blockage_fraction_by_source
+            ),
+            "attenuation_qc_score_by_source_digest": tensor_digest(
+                attenuation_qc_score_by_source
             ),
             "below_detection_reported_digest": tensor_digest(
                 below_detection_reported
@@ -944,13 +954,15 @@ class VerificationObservationMaskEvidence:
     """Exact raw fields from which product-owned mask algorithms replay."""
 
     source_identity: VerificationObservationSourceIdentity
+    source_registry_artifact_digest: str
+    ordered_source_digests: tuple[str, ...]
     frames_dbz: Tensor
     source_assignment_scores: Tensor
     source_availability_by_time: Tensor
-    range_km: Tensor
-    elevation_deg: Tensor
-    beam_blockage_fraction: Tensor
-    attenuation_qc_score: Tensor
+    range_km_by_source: Tensor
+    elevation_deg_by_source: Tensor
+    beam_blockage_fraction_by_source: Tensor
+    attenuation_qc_score_by_source: Tensor
     below_detection_reported: Tensor
     range_elevation_validity_domain_digest: str
     beam_blockage_visibility_mask_digest: str
@@ -978,16 +990,24 @@ class VerificationObservationMaskEvidence:
             or self.source_availability_by_time.shape
             != torch.Size((score_shape[0], frame_shape[0]))
             or self.source_availability_by_time.device != self.frames_dbz.device
+            or len(self.ordered_source_digests) != score_shape[0]
+            or len(set(self.ordered_source_digests)) != score_shape[0]
         ):
             raise ValueError("verification observation mask evidence is invalid")
+        _require_sha256(
+            "mosaic observation source registry artifact",
+            self.source_registry_artifact_digest,
+        )
+        for source_digest in self.ordered_source_digests:
+            _require_sha256("ordered observation source", source_digest)
         for tensor in (
-            self.range_km,
-            self.elevation_deg,
-            self.beam_blockage_fraction,
-            self.attenuation_qc_score,
+            self.range_km_by_source,
+            self.elevation_deg_by_source,
+            self.beam_blockage_fraction_by_source,
+            self.attenuation_qc_score_by_source,
         ):
             if (
-                tensor.shape != frame_shape
+                tensor.shape != score_shape
                 or not tensor.is_floating_point()
                 or tensor.dtype != self.frames_dbz.dtype
                 or tensor.device != self.frames_dbz.device
@@ -995,17 +1015,17 @@ class VerificationObservationMaskEvidence:
             ):
                 raise ValueError("verification observation mask evidence is invalid")
         if (
-            not bool(torch.all(self.range_km >= 0.0))
+            not bool(torch.all(self.range_km_by_source >= 0.0))
             or not bool(
                 torch.all(
-                    (self.beam_blockage_fraction >= 0.0)
-                    & (self.beam_blockage_fraction <= 1.0)
+                    (self.beam_blockage_fraction_by_source >= 0.0)
+                    & (self.beam_blockage_fraction_by_source <= 1.0)
                 )
             )
             or not bool(
                 torch.all(
-                    (self.attenuation_qc_score >= 0.0)
-                    & (self.attenuation_qc_score <= 1.0)
+                    (self.attenuation_qc_score_by_source >= 0.0)
+                    & (self.attenuation_qc_score_by_source <= 1.0)
                 )
             )
             or self.below_detection_reported.dtype is not torch.bool
@@ -1028,13 +1048,21 @@ class VerificationObservationMaskEvidence:
             native_verification_source_identity_digest=(
                 self.source_identity.native_verification_source_identity_digest
             ),
+            source_registry_artifact_digest=(
+                self.source_registry_artifact_digest
+            ),
+            ordered_source_digests=self.ordered_source_digests,
             frames_dbz=self.frames_dbz,
             source_assignment_scores=self.source_assignment_scores,
             source_availability_by_time=self.source_availability_by_time,
-            range_km=self.range_km,
-            elevation_deg=self.elevation_deg,
-            beam_blockage_fraction=self.beam_blockage_fraction,
-            attenuation_qc_score=self.attenuation_qc_score,
+            range_km_by_source=self.range_km_by_source,
+            elevation_deg_by_source=self.elevation_deg_by_source,
+            beam_blockage_fraction_by_source=(
+                self.beam_blockage_fraction_by_source
+            ),
+            attenuation_qc_score_by_source=(
+                self.attenuation_qc_score_by_source
+            ),
             below_detection_reported=self.below_detection_reported,
             range_elevation_validity_domain_digest=(
                 self.range_elevation_validity_domain_digest
@@ -1055,10 +1083,10 @@ class VerificationObservationMaskEvidence:
             "frames_dbz",
             "source_assignment_scores",
             "source_availability_by_time",
-            "range_km",
-            "elevation_deg",
-            "beam_blockage_fraction",
-            "attenuation_qc_score",
+            "range_km_by_source",
+            "elevation_deg_by_source",
+            "beam_blockage_fraction_by_source",
+            "attenuation_qc_score_by_source",
             "below_detection_reported",
         ):
             object.__setattr__(self, name, getattr(self, name).detach().clone())
@@ -1074,13 +1102,21 @@ class VerificationObservationMaskEvidence:
             native_verification_source_identity_digest=(
                 self.source_identity.native_verification_source_identity_digest
             ),
+            source_registry_artifact_digest=(
+                self.source_registry_artifact_digest
+            ),
+            ordered_source_digests=self.ordered_source_digests,
             frames_dbz=self.frames_dbz,
             source_assignment_scores=self.source_assignment_scores,
             source_availability_by_time=self.source_availability_by_time,
-            range_km=self.range_km,
-            elevation_deg=self.elevation_deg,
-            beam_blockage_fraction=self.beam_blockage_fraction,
-            attenuation_qc_score=self.attenuation_qc_score,
+            range_km_by_source=self.range_km_by_source,
+            elevation_deg_by_source=self.elevation_deg_by_source,
+            beam_blockage_fraction_by_source=(
+                self.beam_blockage_fraction_by_source
+            ),
+            attenuation_qc_score_by_source=(
+                self.attenuation_qc_score_by_source
+            ),
             below_detection_reported=self.below_detection_reported,
             range_elevation_validity_domain_digest=(
                 self.range_elevation_validity_domain_digest
@@ -1104,6 +1140,10 @@ class VerificationObservationMaskEvidence:
         return {
             "contract": self.contract,
             "source_identity_digest": self.source_identity.identity_digest,
+            "source_registry_artifact_digest": (
+                self.source_registry_artifact_digest
+            ),
+            "ordered_source_digests": list(self.ordered_source_digests),
             "frames_dbz_digest": tensor_digest(self.frames_dbz),
             "source_assignment_scores_digest": tensor_digest(
                 self.source_assignment_scores
@@ -1111,13 +1151,17 @@ class VerificationObservationMaskEvidence:
             "source_availability_by_time_digest": tensor_digest(
                 self.source_availability_by_time
             ),
-            "range_km_digest": tensor_digest(self.range_km),
-            "elevation_deg_digest": tensor_digest(self.elevation_deg),
-            "beam_blockage_fraction_digest": tensor_digest(
-                self.beam_blockage_fraction
+            "range_km_by_source_digest": tensor_digest(
+                self.range_km_by_source
             ),
-            "attenuation_qc_score_digest": tensor_digest(
-                self.attenuation_qc_score
+            "elevation_deg_by_source_digest": tensor_digest(
+                self.elevation_deg_by_source
+            ),
+            "beam_blockage_fraction_by_source_digest": tensor_digest(
+                self.beam_blockage_fraction_by_source
+            ),
+            "attenuation_qc_score_by_source_digest": tensor_digest(
+                self.attenuation_qc_score_by_source
             ),
             "below_detection_reported_digest": tensor_digest(
                 self.below_detection_reported
@@ -1142,16 +1186,17 @@ class VerificationObservationMaskEvidence:
         grid_contract_digest: str,
         radar_product_digest: str,
         native_verification_source_identity_digest: str,
+        source_registry: MosaicObservationSourceRegistry,
         source_authority_id: str,
         source_authority_private_key: Ed25519PrivateKey,
         source_observed_at: str,
         frames_dbz: Tensor,
         source_assignment_scores: Tensor,
         source_availability_by_time: Tensor,
-        range_km: Tensor,
-        elevation_deg: Tensor,
-        beam_blockage_fraction: Tensor,
-        attenuation_qc_score: Tensor,
+        range_km_by_source: Tensor,
+        elevation_deg_by_source: Tensor,
+        beam_blockage_fraction_by_source: Tensor,
+        attenuation_qc_score_by_source: Tensor,
         below_detection_reported: Tensor,
         range_elevation_validity_domain_digest: str,
         beam_blockage_visibility_mask_digest: str,
@@ -1164,6 +1209,12 @@ class VerificationObservationMaskEvidence:
             _canonical_verification_time(value)
             for value in acquisition_valid_times
         )
+        if type(source_registry) is not MosaicObservationSourceRegistry:
+            raise ValueError("mosaic observation source registry is required")
+        source_registry.validate_integrity()
+        ordered_source_digests = tuple(
+            source.source_digest for source in source_registry.ordered_sources
+        )
         upstream_digest = _verification_observation_upstream_artifact_digest(
             valid_times=canonical_valid_times,
             acquisition_valid_times=canonical_acquisition_times,
@@ -1172,13 +1223,19 @@ class VerificationObservationMaskEvidence:
             native_verification_source_identity_digest=(
                 native_verification_source_identity_digest
             ),
+            source_registry_artifact_digest=source_registry.registry_digest,
+            ordered_source_digests=ordered_source_digests,
             frames_dbz=frames_dbz,
             source_assignment_scores=source_assignment_scores,
             source_availability_by_time=source_availability_by_time,
-            range_km=range_km,
-            elevation_deg=elevation_deg,
-            beam_blockage_fraction=beam_blockage_fraction,
-            attenuation_qc_score=attenuation_qc_score,
+            range_km_by_source=range_km_by_source,
+            elevation_deg_by_source=elevation_deg_by_source,
+            beam_blockage_fraction_by_source=(
+                beam_blockage_fraction_by_source
+            ),
+            attenuation_qc_score_by_source=(
+                attenuation_qc_score_by_source
+            ),
             below_detection_reported=below_detection_reported,
             range_elevation_validity_domain_digest=(
                 range_elevation_validity_domain_digest
@@ -1203,13 +1260,19 @@ class VerificationObservationMaskEvidence:
         )
         return cls(
             source_identity=source_identity,
+            source_registry_artifact_digest=source_registry.registry_digest,
+            ordered_source_digests=ordered_source_digests,
             frames_dbz=frames_dbz,
             source_assignment_scores=source_assignment_scores,
             source_availability_by_time=source_availability_by_time,
-            range_km=range_km,
-            elevation_deg=elevation_deg,
-            beam_blockage_fraction=beam_blockage_fraction,
-            attenuation_qc_score=attenuation_qc_score,
+            range_km_by_source=range_km_by_source,
+            elevation_deg_by_source=elevation_deg_by_source,
+            beam_blockage_fraction_by_source=(
+                beam_blockage_fraction_by_source
+            ),
+            attenuation_qc_score_by_source=(
+                attenuation_qc_score_by_source
+            ),
             below_detection_reported=below_detection_reported,
             range_elevation_validity_domain_digest=(
                 range_elevation_validity_domain_digest
@@ -1219,6 +1282,31 @@ class VerificationObservationMaskEvidence:
             ),
             spatial_correlation_block_digest=spatial_correlation_block_digest,
         )
+
+
+def _selected_verification_spatial_evidence(
+    raw_evidence: VerificationObservationMaskEvidence,
+) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
+    maximum_scores, selected_indices = torch.max(
+        raw_evidence.source_assignment_scores,
+        dim=0,
+    )
+
+    def selected(values: Tensor) -> Tensor:
+        return torch.gather(
+            values,
+            0,
+            selected_indices.unsqueeze(0),
+        ).squeeze(0)
+
+    return (
+        maximum_scores,
+        selected_indices,
+        selected(raw_evidence.range_km_by_source),
+        selected(raw_evidence.elevation_deg_by_source),
+        selected(raw_evidence.beam_blockage_fraction_by_source),
+        selected(raw_evidence.attenuation_qc_score_by_source),
+    )
 
 
 def _derive_verification_observation_masks(
@@ -1246,10 +1334,22 @@ def _derive_verification_observation_masks(
         != plan.verification_source_authority_public_key_hex
         or raw_evidence.source_assignment_scores.shape[0]
         != len(source_registry.ordered_sources)
+        or raw_evidence.source_registry_artifact_digest
+        != source_registry.registry_digest
+        or raw_evidence.ordered_source_digests
+        != tuple(
+            source.source_digest for source in source_registry.ordered_sources
+        )
     ):
         raise ValueError("observation source-assignment evidence disagrees with registry")
-    scores = raw_evidence.source_assignment_scores
-    maximum_scores, selected_indices = torch.max(scores, dim=0)
+    (
+        maximum_scores,
+        selected_indices,
+        selected_range_km,
+        selected_elevation_deg,
+        selected_beam_blockage_fraction,
+        selected_attenuation_qc_score,
+    ) = _selected_verification_spatial_evidence(raw_evidence)
     assigned = maximum_scores > 0.0
     source_map = torch.where(
         assigned,
@@ -1257,7 +1357,9 @@ def _derive_verification_observation_masks(
         torch.full_like(selected_indices, -1),
     )
     availability = raw_evidence.source_availability_by_time[:, :, None, None]
-    availability = availability.expand_as(scores)
+    availability = availability.expand_as(
+        raw_evidence.source_assignment_scores
+    )
     selected_available = torch.gather(
         availability,
         0,
@@ -1265,22 +1367,22 @@ def _derive_verification_observation_masks(
     ).squeeze(0)
     source_present = assigned & selected_available
     range_elevation_valid = (
-        (raw_evidence.range_km <= cast(float, plan.maximum_range_km))
+        (selected_range_km <= cast(float, plan.maximum_range_km))
         & (
-            raw_evidence.elevation_deg
+            selected_elevation_deg
             >= cast(float, plan.minimum_elevation_deg)
         )
         & (
-            raw_evidence.elevation_deg
+            selected_elevation_deg
             <= cast(float, plan.maximum_elevation_deg)
         )
     )
     beam_blocked = (
-        raw_evidence.beam_blockage_fraction
+        selected_beam_blockage_fraction
         > cast(float, plan.maximum_beam_blockage_fraction)
     )
     attenuation_qc_valid = (
-        raw_evidence.attenuation_qc_score
+        selected_attenuation_qc_score
         >= cast(float, plan.minimum_attenuation_qc_score)
     )
     if bool(
@@ -2350,8 +2452,16 @@ def _derive_verification_observation_error_tensors(
             raw_inputs.mask_derivation,
         )
         evidence = mask_derivation.raw_evidence
+        (
+            _,
+            _,
+            selected_range_km,
+            selected_elevation_deg,
+            selected_beam_blockage_fraction,
+            selected_attenuation_qc_score,
+        ) = _selected_verification_spatial_evidence(evidence)
         range_fraction = (
-            evidence.range_km / cast(float, plan.maximum_range_km)
+            selected_range_km / cast(float, plan.maximum_range_km)
         ).clamp(min=0.0, max=1.0)
         elevation_scale = max(
             abs(cast(float, plan.minimum_elevation_deg)),
@@ -2359,16 +2469,16 @@ def _derive_verification_observation_error_tensors(
             torch.finfo(frames.dtype).eps,
         )
         elevation_fraction = (
-            evidence.elevation_deg.abs() / elevation_scale
+            selected_elevation_deg.abs() / elevation_scale
         ).clamp(max=1.0)
-        blockage_fraction = evidence.beam_blockage_fraction
-        attenuation_penalty = 1.0 - evidence.attenuation_qc_score
+        blockage_fraction = selected_beam_blockage_fraction
+        attenuation_penalty = 1.0 - selected_attenuation_qc_score
         range_reliability = (1.0 - 0.5 * range_fraction).clamp(
             min=0.5,
             max=1.0,
         )
         spatial_quality = (
-            evidence.attenuation_qc_score
+            selected_attenuation_qc_score
             * (1.0 - blockage_fraction)
             * range_reliability
         ).clamp(min=0.0, max=1.0)
