@@ -17,6 +17,12 @@ from typing import Literal, cast
 import torch
 import torch.nn.functional as F
 from torch import Tensor
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+    Ed25519PrivateKey,
+    Ed25519PublicKey,
+)
 
 from ._digest import dataclass_digest, json_digest, tensor_digest
 from .calibration import OperationalCalibrationManifest, OperationalDataIdentity
@@ -218,6 +224,43 @@ OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST = json_digest(
         "observation_std_rule": "registry-std-on-valid-cells-v1",
     }
 )
+OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST = json_digest(
+    {
+        "contract": "verification-observation-error-spatial-derivation-v2",
+        "state_precedence": [
+            "mosaic_source_unassigned",
+            "source_missing",
+            "beam_blocked",
+            "qc_invalid",
+            "below_detection_censored",
+            "observed_echo",
+            "observed_clear",
+        ],
+        "quality_rule": (
+            "registry-quality-times-attenuation-times-unblocked-times-"
+            "range-reliability-v1"
+        ),
+        "observation_std_rule": (
+            "registry-std-times-one-plus-range-elevation-blockage-"
+            "attenuation-penalties-v1"
+        ),
+    }
+)
+
+OBSERVATION_MASK_DERIVATION_ALGORITHM_CONTRACT = (
+    "verification-observation-mask-deterministic-derivation-v1"
+)
+OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST = json_digest(
+    {
+        "contract": OBSERVATION_MASK_DERIVATION_ALGORITHM_CONTRACT,
+        "source_assignment_rule": "highest-positive-score-first-index-v1",
+        "source_presence_rule": "assigned-source-availability-v1",
+        "range_elevation_rule": "inclusive-plan-bounds-v1",
+        "beam_blockage_rule": "fraction-above-plan-maximum-v1",
+        "attenuation_qc_rule": "score-at-least-plan-minimum-v1",
+        "censoring_rule": "reported-and-at-or-below-detection-limit-v1",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -240,6 +283,14 @@ class VerificationObservationErrorPlan:
     minimum_detectable_echo_dbz: float
     observation_error_reference_std_dbz: float
     derivation_algorithm_digest: str | None = None
+    mask_derivation_algorithm_digest: str | None = None
+    maximum_range_km: float | None = None
+    minimum_elevation_deg: float | None = None
+    maximum_elevation_deg: float | None = None
+    maximum_beam_blockage_fraction: float | None = None
+    minimum_attenuation_qc_score: float | None = None
+    verification_source_authority_id: str | None = None
+    verification_source_authority_public_key_hex: str | None = None
     spatial_correlation_role: Literal["diagnostic_only"] = "diagnostic_only"
     contract: str = "verification-observation-error-plan-v1"
     plan_digest: str = field(init=False)
@@ -249,6 +300,7 @@ class VerificationObservationErrorPlan:
             self.contract not in {
                 "verification-observation-error-plan-v1",
                 "verification-observation-error-plan-v2",
+                "verification-observation-error-plan-v3",
             }
             or self.radar_source_kind not in {"single_site", "mosaic"}
             or not math.isfinite(self.minimum_detectable_echo_dbz)
@@ -258,28 +310,109 @@ class VerificationObservationErrorPlan:
         ):
             raise ValueError("verification observation-error plan is invalid")
         if self.contract == "verification-observation-error-plan-v1":
-            if self.derivation_algorithm_digest is not None:
+            if any(
+                value is not None
+                for value in (
+                    self.derivation_algorithm_digest,
+                    self.mask_derivation_algorithm_digest,
+                    self.maximum_range_km,
+                    self.minimum_elevation_deg,
+                    self.maximum_elevation_deg,
+                    self.maximum_beam_blockage_fraction,
+                    self.minimum_attenuation_qc_score,
+                    self.verification_source_authority_id,
+                    self.verification_source_authority_public_key_hex,
+                )
+            ):
                 raise ValueError(
                     "legacy observation-error plans cannot claim replay"
                 )
-        elif (
-            self.derivation_algorithm_digest
-            != OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
-            or any(
-                getattr(self, name)
+        elif self.contract == "verification-observation-error-plan-v2":
+            if (
+                self.derivation_algorithm_digest
                 != OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
-                for name in (
-                    "range_elevation_validity_algorithm_digest",
-                    "beam_blockage_algorithm_digest",
-                    "quality_weight_algorithm_digest",
-                    "observation_std_algorithm_digest",
-                    "source_assignment_algorithm_digest",
+                or self.mask_derivation_algorithm_digest is not None
+                or any(
+                    value is not None
+                    for value in (
+                        self.maximum_range_km,
+                        self.minimum_elevation_deg,
+                        self.maximum_elevation_deg,
+                        self.maximum_beam_blockage_fraction,
+                        self.minimum_attenuation_qc_score,
+                        self.verification_source_authority_id,
+                        self.verification_source_authority_public_key_hex,
+                    )
                 )
+                or any(
+                    getattr(self, name)
+                    != OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+                    for name in (
+                        "range_elevation_validity_algorithm_digest",
+                        "beam_blockage_algorithm_digest",
+                        "quality_weight_algorithm_digest",
+                        "observation_std_algorithm_digest",
+                        "source_assignment_algorithm_digest",
+                    )
+                )
+            ):
+                raise ValueError(
+                    "deterministic observation-error derivation is unsupported"
+                )
+        else:
+            scalar_values = (
+                self.maximum_range_km,
+                self.minimum_elevation_deg,
+                self.maximum_elevation_deg,
+                self.maximum_beam_blockage_fraction,
+                self.minimum_attenuation_qc_score,
             )
-        ):
-            raise ValueError(
-                "deterministic observation-error derivation is unsupported"
-            )
+            if (
+                self.derivation_algorithm_digest
+                != OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+                or self.mask_derivation_algorithm_digest
+                != OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
+                or any(value is None or not math.isfinite(value) for value in scalar_values)
+                or cast(float, self.maximum_range_km) <= 0.0
+                or cast(float, self.minimum_elevation_deg)
+                > cast(float, self.maximum_elevation_deg)
+                or not 0.0
+                <= cast(float, self.maximum_beam_blockage_fraction)
+                <= 1.0
+                or not 0.0 <= cast(float, self.minimum_attenuation_qc_score) <= 1.0
+                or self.range_elevation_validity_algorithm_digest
+                != OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
+                or self.beam_blockage_algorithm_digest
+                != OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
+                or self.source_assignment_algorithm_digest
+                != OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
+                or self.quality_weight_algorithm_digest
+                != OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+                or self.observation_std_algorithm_digest
+                != OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+                or not isinstance(self.verification_source_authority_id, str)
+                or not self.verification_source_authority_id
+                or self.verification_source_authority_id.strip()
+                != self.verification_source_authority_id
+                or not isinstance(
+                    self.verification_source_authority_public_key_hex,
+                    str,
+                )
+            ):
+                raise ValueError(
+                    "deterministic observation-mask derivation is unsupported"
+                )
+            try:
+                source_authority_key = bytes.fromhex(
+                    cast(str, self.verification_source_authority_public_key_hex)
+                )
+                Ed25519PublicKey.from_public_bytes(source_authority_key)
+            except (TypeError, ValueError) as error:
+                raise ValueError(
+                    "verification source authority key is invalid"
+                ) from error
+            if len(source_authority_key) != 32:
+                raise ValueError("verification source authority key is invalid")
         for name in (
             "source_registry_digest",
             "calibration_registry_digest",
@@ -304,8 +437,25 @@ class VerificationObservationErrorPlan:
             for key, value in self.__dict__.items()
             if key != "plan_digest"
             and not (
-                key == "derivation_algorithm_digest"
-                and self.contract == "verification-observation-error-plan-v1"
+                key
+                in {
+                    "derivation_algorithm_digest",
+                    "mask_derivation_algorithm_digest",
+                    "maximum_range_km",
+                    "minimum_elevation_deg",
+                    "maximum_elevation_deg",
+                    "maximum_beam_blockage_fraction",
+                    "minimum_attenuation_qc_score",
+                    "verification_source_authority_id",
+                    "verification_source_authority_public_key_hex",
+                }
+                and (
+                    self.contract == "verification-observation-error-plan-v1"
+                    or (
+                        self.contract == "verification-observation-error-plan-v2"
+                        and key != "derivation_algorithm_digest"
+                    )
+                )
             )
         }
 
@@ -497,6 +647,838 @@ class MosaicObservationSourceRegistry:
 
 
 @dataclass(frozen=True)
+class VerificationObservationSourceIdentity:
+    """Typed time/grid/product identity of future verification evidence."""
+
+    valid_times: tuple[str, ...]
+    acquisition_valid_times: tuple[str, ...]
+    grid_contract_digest: str
+    radar_product_digest: str
+    native_verification_source_identity_digest: str
+    upstream_verification_artifact_digest: str
+    source_authority_id: str
+    source_authority_public_key_hex: str
+    source_observed_at: str
+    source_signature_hex: str
+    contract: str = "verification-observation-source-identity-v1"
+    source_acquisition_time_identity_digest: str = field(init=False)
+    identity_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "verification-observation-source-identity-v1"
+            or not self.valid_times
+            or len(self.valid_times) != len(self.acquisition_valid_times)
+        ):
+            raise ValueError("verification observation source identity is invalid")
+        valid_times = tuple(
+            _canonical_verification_time(value) for value in self.valid_times
+        )
+        acquisition_times = tuple(
+            _canonical_verification_time(value)
+            for value in self.acquisition_valid_times
+        )
+        valid_datetimes = tuple(
+            datetime.fromisoformat(value.replace("Z", "+00:00"))
+            for value in valid_times
+        )
+        acquisition_datetimes = tuple(
+            datetime.fromisoformat(value.replace("Z", "+00:00"))
+            for value in acquisition_times
+        )
+        if (
+            any(
+                later <= earlier
+                for earlier, later in zip(
+                    valid_datetimes,
+                    valid_datetimes[1:],
+                )
+            )
+            or any(
+                acquisition > valid
+                for acquisition, valid in zip(
+                    acquisition_datetimes,
+                    valid_datetimes,
+                )
+            )
+        ):
+            raise ValueError("verification observation source chronology is invalid")
+        for name in (
+            "grid_contract_digest",
+            "radar_product_digest",
+            "native_verification_source_identity_digest",
+            "upstream_verification_artifact_digest",
+        ):
+            _require_sha256(name, getattr(self, name))
+        observed_at = _canonical_verification_time(self.source_observed_at)
+        observed_datetime = datetime.fromisoformat(
+            observed_at.replace("Z", "+00:00")
+        )
+        if (
+            not self.source_authority_id
+            or self.source_authority_id.strip() != self.source_authority_id
+            or any(observed_datetime < value for value in acquisition_datetimes)
+        ):
+            raise ValueError("verification source authority identity is invalid")
+        object.__setattr__(self, "valid_times", valid_times)
+        object.__setattr__(self, "acquisition_valid_times", acquisition_times)
+        object.__setattr__(self, "source_observed_at", observed_at)
+        object.__setattr__(
+            self,
+            "source_acquisition_time_identity_digest",
+            json_digest(
+                {
+                    "contract": "verification-source-acquisition-times-v1",
+                    "native_verification_source_identity_digest": (
+                        self.native_verification_source_identity_digest
+                    ),
+                    "acquisition_valid_times": list(acquisition_times),
+                }
+            ),
+        )
+        try:
+            source_public_key = bytes.fromhex(
+                self.source_authority_public_key_hex
+            )
+            Ed25519PublicKey.from_public_bytes(source_public_key).verify(
+                bytes.fromhex(self.source_signature_hex),
+                json_digest(self.unsigned_payload).encode("ascii"),
+            )
+        except (InvalidSignature, TypeError, ValueError) as error:
+            raise ValueError("verification source signature is invalid") from error
+        if len(source_public_key) != 32:
+            raise ValueError("verification source authority key is invalid")
+        object.__setattr__(self, "identity_digest", json_digest(self.payload))
+
+    def validate_integrity(self) -> None:
+        expected_acquisition_digest = json_digest(
+            {
+                "contract": "verification-source-acquisition-times-v1",
+                "native_verification_source_identity_digest": (
+                    self.native_verification_source_identity_digest
+                ),
+                "acquisition_valid_times": list(self.acquisition_valid_times),
+            }
+        )
+        if (
+            self.source_acquisition_time_identity_digest
+            != expected_acquisition_digest
+            or self.identity_digest != json_digest(self.payload)
+        ):
+            raise ValueError("verification observation source identity mismatch")
+        try:
+            Ed25519PublicKey.from_public_bytes(
+                bytes.fromhex(self.source_authority_public_key_hex)
+            ).verify(
+                bytes.fromhex(self.source_signature_hex),
+                json_digest(self.unsigned_payload).encode("ascii"),
+            )
+        except (InvalidSignature, TypeError, ValueError) as error:
+            raise ValueError("verification source signature is invalid") from error
+
+    @property
+    def unsigned_payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "valid_times": list(self.valid_times),
+            "acquisition_valid_times": list(self.acquisition_valid_times),
+            "grid_contract_digest": self.grid_contract_digest,
+            "radar_product_digest": self.radar_product_digest,
+            "native_verification_source_identity_digest": (
+                self.native_verification_source_identity_digest
+            ),
+            "upstream_verification_artifact_digest": (
+                self.upstream_verification_artifact_digest
+            ),
+            "source_acquisition_time_identity_digest": (
+                self.source_acquisition_time_identity_digest
+            ),
+            "source_authority_id": self.source_authority_id,
+            "source_authority_public_key_hex": (
+                self.source_authority_public_key_hex
+            ),
+            "source_observed_at": self.source_observed_at,
+        }
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return self.unsigned_payload | {
+            "source_signature_hex": self.source_signature_hex,
+        }
+
+    @classmethod
+    def issue(
+        cls,
+        *,
+        valid_times: tuple[str, ...],
+        acquisition_valid_times: tuple[str, ...],
+        grid_contract_digest: str,
+        radar_product_digest: str,
+        native_verification_source_identity_digest: str,
+        upstream_verification_artifact_digest: str,
+        source_authority_id: str,
+        source_authority_private_key: Ed25519PrivateKey,
+        source_observed_at: str,
+    ) -> VerificationObservationSourceIdentity:
+        public_key_hex = source_authority_private_key.public_key().public_bytes(
+            serialization.Encoding.Raw,
+            serialization.PublicFormat.Raw,
+        ).hex()
+        canonical_valid_times = tuple(
+            _canonical_verification_time(value) for value in valid_times
+        )
+        canonical_acquisition_times = tuple(
+            _canonical_verification_time(value)
+            for value in acquisition_valid_times
+        )
+        acquisition_digest = json_digest(
+            {
+                "contract": "verification-source-acquisition-times-v1",
+                "native_verification_source_identity_digest": (
+                    native_verification_source_identity_digest
+                ),
+                "acquisition_valid_times": list(canonical_acquisition_times),
+            }
+        )
+        unsigned = {
+            "contract": "verification-observation-source-identity-v1",
+            "valid_times": list(canonical_valid_times),
+            "acquisition_valid_times": list(canonical_acquisition_times),
+            "grid_contract_digest": grid_contract_digest,
+            "radar_product_digest": radar_product_digest,
+            "native_verification_source_identity_digest": (
+                native_verification_source_identity_digest
+            ),
+            "upstream_verification_artifact_digest": (
+                upstream_verification_artifact_digest
+            ),
+            "source_acquisition_time_identity_digest": acquisition_digest,
+            "source_authority_id": source_authority_id,
+            "source_authority_public_key_hex": public_key_hex,
+            "source_observed_at": _canonical_verification_time(
+                source_observed_at
+            ),
+        }
+        return cls(
+            valid_times=canonical_valid_times,
+            acquisition_valid_times=canonical_acquisition_times,
+            grid_contract_digest=grid_contract_digest,
+            radar_product_digest=radar_product_digest,
+            native_verification_source_identity_digest=(
+                native_verification_source_identity_digest
+            ),
+            upstream_verification_artifact_digest=(
+                upstream_verification_artifact_digest
+            ),
+            source_authority_id=source_authority_id,
+            source_authority_public_key_hex=public_key_hex,
+            source_observed_at=_canonical_verification_time(source_observed_at),
+            source_signature_hex=source_authority_private_key.sign(
+                json_digest(unsigned).encode("ascii")
+            ).hex(),
+        )
+
+
+def _verification_observation_upstream_artifact_digest(
+    *,
+    valid_times: tuple[str, ...],
+    acquisition_valid_times: tuple[str, ...],
+    grid_contract_digest: str,
+    radar_product_digest: str,
+    native_verification_source_identity_digest: str,
+    frames_dbz: Tensor,
+    source_assignment_scores: Tensor,
+    source_availability_by_time: Tensor,
+    range_km: Tensor,
+    elevation_deg: Tensor,
+    beam_blockage_fraction: Tensor,
+    attenuation_qc_score: Tensor,
+    below_detection_reported: Tensor,
+    range_elevation_validity_domain_digest: str,
+    beam_blockage_visibility_mask_digest: str,
+    spatial_correlation_block_digest: str,
+) -> str:
+    return json_digest(
+        {
+            "contract": "typed-upstream-verification-observation-v1",
+            "valid_times": list(valid_times),
+            "acquisition_valid_times": list(acquisition_valid_times),
+            "grid_contract_digest": grid_contract_digest,
+            "radar_product_digest": radar_product_digest,
+            "native_verification_source_identity_digest": (
+                native_verification_source_identity_digest
+            ),
+            "frames_dbz_digest": tensor_digest(frames_dbz),
+            "source_assignment_scores_digest": tensor_digest(
+                source_assignment_scores
+            ),
+            "source_availability_by_time_digest": tensor_digest(
+                source_availability_by_time
+            ),
+            "range_km_digest": tensor_digest(range_km),
+            "elevation_deg_digest": tensor_digest(elevation_deg),
+            "beam_blockage_fraction_digest": tensor_digest(
+                beam_blockage_fraction
+            ),
+            "attenuation_qc_score_digest": tensor_digest(
+                attenuation_qc_score
+            ),
+            "below_detection_reported_digest": tensor_digest(
+                below_detection_reported
+            ),
+            "range_elevation_validity_domain_digest": (
+                range_elevation_validity_domain_digest
+            ),
+            "beam_blockage_visibility_mask_digest": (
+                beam_blockage_visibility_mask_digest
+            ),
+            "spatial_correlation_block_digest": (
+                spatial_correlation_block_digest
+            ),
+        }
+    )
+
+
+@dataclass(frozen=True)
+class VerificationObservationMaskEvidence:
+    """Exact raw fields from which product-owned mask algorithms replay."""
+
+    source_identity: VerificationObservationSourceIdentity
+    frames_dbz: Tensor
+    source_assignment_scores: Tensor
+    source_availability_by_time: Tensor
+    range_km: Tensor
+    elevation_deg: Tensor
+    beam_blockage_fraction: Tensor
+    attenuation_qc_score: Tensor
+    below_detection_reported: Tensor
+    range_elevation_validity_domain_digest: str
+    beam_blockage_visibility_mask_digest: str
+    spatial_correlation_block_digest: str
+    contract: str = "verification-observation-mask-evidence-v1"
+    evidence_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        frame_shape = self.frames_dbz.shape
+        score_shape = self.source_assignment_scores.shape
+        if (
+            self.contract != "verification-observation-mask-evidence-v1"
+            or type(self.source_identity) is not VerificationObservationSourceIdentity
+            or self.frames_dbz.ndim != 3
+            or len(self.source_identity.valid_times) != self.frames_dbz.shape[0]
+            or not self.frames_dbz.is_floating_point()
+            or not bool(torch.all(torch.isfinite(self.frames_dbz)))
+            or self.source_assignment_scores.ndim != 4
+            or score_shape[1:] != frame_shape
+            or not self.source_assignment_scores.is_floating_point()
+            or self.source_assignment_scores.device != self.frames_dbz.device
+            or not bool(torch.all(torch.isfinite(self.source_assignment_scores)))
+            or not bool(torch.all(self.source_assignment_scores >= 0.0))
+            or self.source_availability_by_time.dtype is not torch.bool
+            or self.source_availability_by_time.shape
+            != torch.Size((score_shape[0], frame_shape[0]))
+            or self.source_availability_by_time.device != self.frames_dbz.device
+        ):
+            raise ValueError("verification observation mask evidence is invalid")
+        for tensor in (
+            self.range_km,
+            self.elevation_deg,
+            self.beam_blockage_fraction,
+            self.attenuation_qc_score,
+        ):
+            if (
+                tensor.shape != frame_shape
+                or not tensor.is_floating_point()
+                or tensor.dtype != self.frames_dbz.dtype
+                or tensor.device != self.frames_dbz.device
+                or not bool(torch.all(torch.isfinite(tensor)))
+            ):
+                raise ValueError("verification observation mask evidence is invalid")
+        if (
+            not bool(torch.all(self.range_km >= 0.0))
+            or not bool(
+                torch.all(
+                    (self.beam_blockage_fraction >= 0.0)
+                    & (self.beam_blockage_fraction <= 1.0)
+                )
+            )
+            or not bool(
+                torch.all(
+                    (self.attenuation_qc_score >= 0.0)
+                    & (self.attenuation_qc_score <= 1.0)
+                )
+            )
+            or self.below_detection_reported.dtype is not torch.bool
+            or self.below_detection_reported.shape != frame_shape
+            or self.below_detection_reported.device != self.frames_dbz.device
+        ):
+            raise ValueError("verification observation mask evidence is invalid")
+        for name in (
+            "range_elevation_validity_domain_digest",
+            "beam_blockage_visibility_mask_digest",
+            "spatial_correlation_block_digest",
+        ):
+            _require_sha256(name, getattr(self, name))
+        self.source_identity.validate_integrity()
+        expected_upstream_digest = _verification_observation_upstream_artifact_digest(
+            valid_times=self.source_identity.valid_times,
+            acquisition_valid_times=self.source_identity.acquisition_valid_times,
+            grid_contract_digest=self.source_identity.grid_contract_digest,
+            radar_product_digest=self.source_identity.radar_product_digest,
+            native_verification_source_identity_digest=(
+                self.source_identity.native_verification_source_identity_digest
+            ),
+            frames_dbz=self.frames_dbz,
+            source_assignment_scores=self.source_assignment_scores,
+            source_availability_by_time=self.source_availability_by_time,
+            range_km=self.range_km,
+            elevation_deg=self.elevation_deg,
+            beam_blockage_fraction=self.beam_blockage_fraction,
+            attenuation_qc_score=self.attenuation_qc_score,
+            below_detection_reported=self.below_detection_reported,
+            range_elevation_validity_domain_digest=(
+                self.range_elevation_validity_domain_digest
+            ),
+            beam_blockage_visibility_mask_digest=(
+                self.beam_blockage_visibility_mask_digest
+            ),
+            spatial_correlation_block_digest=(
+                self.spatial_correlation_block_digest
+            ),
+        )
+        if (
+            self.source_identity.upstream_verification_artifact_digest
+            != expected_upstream_digest
+        ):
+            raise ValueError("verification source does not attest raw mask evidence")
+        for name in (
+            "frames_dbz",
+            "source_assignment_scores",
+            "source_availability_by_time",
+            "range_km",
+            "elevation_deg",
+            "beam_blockage_fraction",
+            "attenuation_qc_score",
+            "below_detection_reported",
+        ):
+            object.__setattr__(self, name, getattr(self, name).detach().clone())
+        object.__setattr__(self, "evidence_digest", json_digest(self.payload))
+
+    def validate_integrity(self) -> None:
+        self.source_identity.validate_integrity()
+        expected_upstream_digest = _verification_observation_upstream_artifact_digest(
+            valid_times=self.source_identity.valid_times,
+            acquisition_valid_times=self.source_identity.acquisition_valid_times,
+            grid_contract_digest=self.source_identity.grid_contract_digest,
+            radar_product_digest=self.source_identity.radar_product_digest,
+            native_verification_source_identity_digest=(
+                self.source_identity.native_verification_source_identity_digest
+            ),
+            frames_dbz=self.frames_dbz,
+            source_assignment_scores=self.source_assignment_scores,
+            source_availability_by_time=self.source_availability_by_time,
+            range_km=self.range_km,
+            elevation_deg=self.elevation_deg,
+            beam_blockage_fraction=self.beam_blockage_fraction,
+            attenuation_qc_score=self.attenuation_qc_score,
+            below_detection_reported=self.below_detection_reported,
+            range_elevation_validity_domain_digest=(
+                self.range_elevation_validity_domain_digest
+            ),
+            beam_blockage_visibility_mask_digest=(
+                self.beam_blockage_visibility_mask_digest
+            ),
+            spatial_correlation_block_digest=(
+                self.spatial_correlation_block_digest
+            ),
+        )
+        if (
+            self.source_identity.upstream_verification_artifact_digest
+            != expected_upstream_digest
+            or self.evidence_digest != json_digest(self.payload)
+        ):
+            raise ValueError("verification observation mask evidence mismatch")
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "source_identity_digest": self.source_identity.identity_digest,
+            "frames_dbz_digest": tensor_digest(self.frames_dbz),
+            "source_assignment_scores_digest": tensor_digest(
+                self.source_assignment_scores
+            ),
+            "source_availability_by_time_digest": tensor_digest(
+                self.source_availability_by_time
+            ),
+            "range_km_digest": tensor_digest(self.range_km),
+            "elevation_deg_digest": tensor_digest(self.elevation_deg),
+            "beam_blockage_fraction_digest": tensor_digest(
+                self.beam_blockage_fraction
+            ),
+            "attenuation_qc_score_digest": tensor_digest(
+                self.attenuation_qc_score
+            ),
+            "below_detection_reported_digest": tensor_digest(
+                self.below_detection_reported
+            ),
+            "range_elevation_validity_domain_digest": (
+                self.range_elevation_validity_domain_digest
+            ),
+            "beam_blockage_visibility_mask_digest": (
+                self.beam_blockage_visibility_mask_digest
+            ),
+            "spatial_correlation_block_digest": (
+                self.spatial_correlation_block_digest
+            ),
+        }
+
+    @classmethod
+    def issue(
+        cls,
+        *,
+        valid_times: tuple[str, ...],
+        acquisition_valid_times: tuple[str, ...],
+        grid_contract_digest: str,
+        radar_product_digest: str,
+        native_verification_source_identity_digest: str,
+        source_authority_id: str,
+        source_authority_private_key: Ed25519PrivateKey,
+        source_observed_at: str,
+        frames_dbz: Tensor,
+        source_assignment_scores: Tensor,
+        source_availability_by_time: Tensor,
+        range_km: Tensor,
+        elevation_deg: Tensor,
+        beam_blockage_fraction: Tensor,
+        attenuation_qc_score: Tensor,
+        below_detection_reported: Tensor,
+        range_elevation_validity_domain_digest: str,
+        beam_blockage_visibility_mask_digest: str,
+        spatial_correlation_block_digest: str,
+    ) -> VerificationObservationMaskEvidence:
+        canonical_valid_times = tuple(
+            _canonical_verification_time(value) for value in valid_times
+        )
+        canonical_acquisition_times = tuple(
+            _canonical_verification_time(value)
+            for value in acquisition_valid_times
+        )
+        upstream_digest = _verification_observation_upstream_artifact_digest(
+            valid_times=canonical_valid_times,
+            acquisition_valid_times=canonical_acquisition_times,
+            grid_contract_digest=grid_contract_digest,
+            radar_product_digest=radar_product_digest,
+            native_verification_source_identity_digest=(
+                native_verification_source_identity_digest
+            ),
+            frames_dbz=frames_dbz,
+            source_assignment_scores=source_assignment_scores,
+            source_availability_by_time=source_availability_by_time,
+            range_km=range_km,
+            elevation_deg=elevation_deg,
+            beam_blockage_fraction=beam_blockage_fraction,
+            attenuation_qc_score=attenuation_qc_score,
+            below_detection_reported=below_detection_reported,
+            range_elevation_validity_domain_digest=(
+                range_elevation_validity_domain_digest
+            ),
+            beam_blockage_visibility_mask_digest=(
+                beam_blockage_visibility_mask_digest
+            ),
+            spatial_correlation_block_digest=spatial_correlation_block_digest,
+        )
+        source_identity = VerificationObservationSourceIdentity.issue(
+            valid_times=canonical_valid_times,
+            acquisition_valid_times=canonical_acquisition_times,
+            grid_contract_digest=grid_contract_digest,
+            radar_product_digest=radar_product_digest,
+            native_verification_source_identity_digest=(
+                native_verification_source_identity_digest
+            ),
+            upstream_verification_artifact_digest=upstream_digest,
+            source_authority_id=source_authority_id,
+            source_authority_private_key=source_authority_private_key,
+            source_observed_at=source_observed_at,
+        )
+        return cls(
+            source_identity=source_identity,
+            frames_dbz=frames_dbz,
+            source_assignment_scores=source_assignment_scores,
+            source_availability_by_time=source_availability_by_time,
+            range_km=range_km,
+            elevation_deg=elevation_deg,
+            beam_blockage_fraction=beam_blockage_fraction,
+            attenuation_qc_score=attenuation_qc_score,
+            below_detection_reported=below_detection_reported,
+            range_elevation_validity_domain_digest=(
+                range_elevation_validity_domain_digest
+            ),
+            beam_blockage_visibility_mask_digest=(
+                beam_blockage_visibility_mask_digest
+            ),
+            spatial_correlation_block_digest=spatial_correlation_block_digest,
+        )
+
+
+def _derive_verification_observation_masks(
+    *,
+    plan: VerificationObservationErrorPlan,
+    raw_evidence: VerificationObservationMaskEvidence,
+    source_registry: MosaicObservationSourceRegistry,
+) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor | None]:
+    if (
+        type(plan) is not VerificationObservationErrorPlan
+        or plan.contract != "verification-observation-error-plan-v3"
+        or plan.mask_derivation_algorithm_digest
+        != OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
+        or type(raw_evidence) is not VerificationObservationMaskEvidence
+        or type(source_registry) is not MosaicObservationSourceRegistry
+    ):
+        raise ValueError("deterministic observation-mask derivation is invalid")
+    plan.validate_integrity()
+    raw_evidence.validate_integrity()
+    source_registry.validate_against_plan(plan)
+    if (
+        raw_evidence.source_identity.source_authority_id
+        != plan.verification_source_authority_id
+        or raw_evidence.source_identity.source_authority_public_key_hex
+        != plan.verification_source_authority_public_key_hex
+        or raw_evidence.source_assignment_scores.shape[0]
+        != len(source_registry.ordered_sources)
+    ):
+        raise ValueError("observation source-assignment evidence disagrees with registry")
+    scores = raw_evidence.source_assignment_scores
+    maximum_scores, selected_indices = torch.max(scores, dim=0)
+    assigned = maximum_scores > 0.0
+    source_map = torch.where(
+        assigned,
+        selected_indices,
+        torch.full_like(selected_indices, -1),
+    )
+    availability = raw_evidence.source_availability_by_time[:, :, None, None]
+    availability = availability.expand_as(scores)
+    selected_available = torch.gather(
+        availability,
+        0,
+        selected_indices.unsqueeze(0),
+    ).squeeze(0)
+    source_present = assigned & selected_available
+    range_elevation_valid = (
+        (raw_evidence.range_km <= cast(float, plan.maximum_range_km))
+        & (
+            raw_evidence.elevation_deg
+            >= cast(float, plan.minimum_elevation_deg)
+        )
+        & (
+            raw_evidence.elevation_deg
+            <= cast(float, plan.maximum_elevation_deg)
+        )
+    )
+    beam_blocked = (
+        raw_evidence.beam_blockage_fraction
+        > cast(float, plan.maximum_beam_blockage_fraction)
+    )
+    attenuation_qc_valid = (
+        raw_evidence.attenuation_qc_score
+        >= cast(float, plan.minimum_attenuation_qc_score)
+    )
+    if bool(
+        torch.any(
+            raw_evidence.below_detection_reported
+            & (
+                raw_evidence.frames_dbz
+                > plan.minimum_detectable_echo_dbz
+            )
+        )
+    ):
+        raise ValueError("below-detection evidence exceeds the registered limit")
+    below_detection_censored = raw_evidence.below_detection_reported.clone()
+    exported_source_map = (
+        None
+        if plan.radar_source_kind == "single_site"
+        else source_map.detach().clone()
+    )
+    return (
+        source_present,
+        range_elevation_valid,
+        beam_blocked,
+        attenuation_qc_valid,
+        below_detection_censored,
+        exported_source_map,
+    )
+
+
+@dataclass(frozen=True)
+class VerificationObservationMaskDerivationArtifact:
+    """Replayable raw-evidence-to-mask artifact for confirmatory research."""
+
+    plan: VerificationObservationErrorPlan
+    raw_evidence: VerificationObservationMaskEvidence
+    source_registry: MosaicObservationSourceRegistry
+    _source_present_mask: Tensor = field(repr=False)
+    _range_elevation_valid_mask: Tensor = field(repr=False)
+    _beam_blocked_mask: Tensor = field(repr=False)
+    _attenuation_qc_valid_mask: Tensor = field(repr=False)
+    _below_detection_censored_mask: Tensor = field(repr=False)
+    _source_radar_index_map: Tensor | None = field(repr=False)
+    contract: str = "verification-observation-mask-derivation-artifact-v1"
+    artifact_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.contract != "verification-observation-mask-derivation-artifact-v1":
+            raise ValueError("verification observation mask artifact is invalid")
+        expected = _derive_verification_observation_masks(
+            plan=self.plan,
+            raw_evidence=self.raw_evidence,
+            source_registry=self.source_registry,
+        )
+        actual = self._output_tensors
+        if any(
+            (left is None) != (right is None)
+            or (
+                left is not None
+                and right is not None
+                and not bool(torch.equal(left, right))
+            )
+            for left, right in zip(expected, actual)
+        ):
+            raise ValueError("verification observation mask replay mismatch")
+        for name in (
+            "_source_present_mask",
+            "_range_elevation_valid_mask",
+            "_beam_blocked_mask",
+            "_attenuation_qc_valid_mask",
+            "_below_detection_censored_mask",
+        ):
+            object.__setattr__(self, name, getattr(self, name).detach().clone())
+        if self._source_radar_index_map is not None:
+            object.__setattr__(
+                self,
+                "_source_radar_index_map",
+                self._source_radar_index_map.detach().clone(),
+            )
+        object.__setattr__(self, "artifact_digest", json_digest(self.payload))
+
+    @property
+    def _output_tensors(
+        self,
+    ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor | None]:
+        return (
+            self._source_present_mask,
+            self._range_elevation_valid_mask,
+            self._beam_blocked_mask,
+            self._attenuation_qc_valid_mask,
+            self._below_detection_censored_mask,
+            self._source_radar_index_map,
+        )
+
+    def validate_replay(self) -> None:
+        expected = _derive_verification_observation_masks(
+            plan=self.plan,
+            raw_evidence=self.raw_evidence,
+            source_registry=self.source_registry,
+        )
+        if (
+            self.artifact_digest != json_digest(self.payload)
+            or any(
+                (left is None) != (right is None)
+                or (
+                    left is not None
+                    and right is not None
+                    and not bool(torch.equal(left, right))
+                )
+                for left, right in zip(expected, self._output_tensors)
+            )
+        ):
+            raise ValueError("verification observation mask replay mismatch")
+
+    def _snapshot(self, value: Tensor | None) -> Tensor | None:
+        self.validate_replay()
+        return None if value is None else value.detach().clone()
+
+    @property
+    def source_present_mask(self) -> Tensor:
+        return cast(Tensor, self._snapshot(self._source_present_mask))
+
+    @property
+    def range_elevation_valid_mask(self) -> Tensor:
+        return cast(Tensor, self._snapshot(self._range_elevation_valid_mask))
+
+    @property
+    def beam_blocked_mask(self) -> Tensor:
+        return cast(Tensor, self._snapshot(self._beam_blocked_mask))
+
+    @property
+    def attenuation_qc_valid_mask(self) -> Tensor:
+        return cast(Tensor, self._snapshot(self._attenuation_qc_valid_mask))
+
+    @property
+    def below_detection_censored_mask(self) -> Tensor:
+        return cast(Tensor, self._snapshot(self._below_detection_censored_mask))
+
+    @property
+    def source_radar_index_map(self) -> Tensor | None:
+        return self._snapshot(self._source_radar_index_map)
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "plan_digest": self.plan.plan_digest,
+            "raw_evidence_digest": self.raw_evidence.evidence_digest,
+            "source_registry_digest": self.source_registry.registry_digest,
+            "mask_derivation_algorithm_digest": (
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
+            ),
+            "source_present_mask_digest": tensor_digest(
+                self._source_present_mask
+            ),
+            "range_elevation_valid_mask_digest": tensor_digest(
+                self._range_elevation_valid_mask
+            ),
+            "beam_blocked_mask_digest": tensor_digest(self._beam_blocked_mask),
+            "attenuation_qc_valid_mask_digest": tensor_digest(
+                self._attenuation_qc_valid_mask
+            ),
+            "below_detection_censored_mask_digest": tensor_digest(
+                self._below_detection_censored_mask
+            ),
+            "source_radar_index_map_digest": (
+                None
+                if self._source_radar_index_map is None
+                else tensor_digest(self._source_radar_index_map)
+            ),
+        }
+
+
+def derive_verification_observation_masks(
+    *,
+    plan: VerificationObservationErrorPlan,
+    raw_evidence: VerificationObservationMaskEvidence,
+    source_registry: MosaicObservationSourceRegistry,
+) -> VerificationObservationMaskDerivationArtifact:
+    """Derive and seal product-owned observation masks from raw evidence."""
+
+    derived = _derive_verification_observation_masks(
+        plan=plan,
+        raw_evidence=raw_evidence,
+        source_registry=source_registry,
+    )
+    return VerificationObservationMaskDerivationArtifact(
+        plan=plan,
+        raw_evidence=raw_evidence,
+        source_registry=source_registry,
+        _source_present_mask=derived[0],
+        _range_elevation_valid_mask=derived[1],
+        _beam_blocked_mask=derived[2],
+        _attenuation_qc_valid_mask=derived[3],
+        _below_detection_censored_mask=derived[4],
+        _source_radar_index_map=derived[5],
+    )
+
+
+@dataclass(frozen=True)
 class VerificationObservationDerivationInputs:
     """Typed raw inputs consumed by the deterministic scientific derivation."""
 
@@ -511,6 +1493,8 @@ class VerificationObservationDerivationInputs:
     beam_blockage_visibility_mask_digest: str
     spatial_correlation_block_digest: str
     source_radar_index_map: Tensor | None = None
+    source_identity: VerificationObservationSourceIdentity | None = None
+    mask_derivation: VerificationObservationMaskDerivationArtifact | None = None
     contract: str = "verification-observation-derivation-inputs-v1"
     raw_verification_identity_digest: str = field(init=False)
     content_digest: str = field(init=False)
@@ -524,7 +1508,11 @@ class VerificationObservationDerivationInputs:
             self.below_detection_censored_mask,
         )
         if (
-            self.contract != "verification-observation-derivation-inputs-v1"
+            self.contract
+            not in {
+                "verification-observation-derivation-inputs-v1",
+                "verification-observation-derivation-inputs-v2",
+            }
             or self.frames_dbz.ndim != 3
             or not self.frames_dbz.is_floating_point()
             or not bool(torch.all(torch.isfinite(self.frames_dbz)))
@@ -544,6 +1532,64 @@ class VerificationObservationDerivationInputs:
             )
         ):
             raise ValueError("verification observation derivation inputs are invalid")
+        if self.contract == "verification-observation-derivation-inputs-v1":
+            if self.source_identity is not None or self.mask_derivation is not None:
+                raise ValueError("legacy derivation inputs cannot claim mask replay")
+        else:
+            if (
+                type(self.source_identity) is not VerificationObservationSourceIdentity
+                or type(self.mask_derivation)
+                is not VerificationObservationMaskDerivationArtifact
+            ):
+                raise ValueError("mask derivation evidence is required")
+            source_identity = cast(
+                VerificationObservationSourceIdentity,
+                self.source_identity,
+            )
+            mask_derivation = cast(
+                VerificationObservationMaskDerivationArtifact,
+                self.mask_derivation,
+            )
+            source_identity.validate_integrity()
+            mask_derivation.validate_replay()
+            raw_evidence = mask_derivation.raw_evidence
+            derived_values = (
+                mask_derivation.source_present_mask,
+                mask_derivation.range_elevation_valid_mask,
+                mask_derivation.beam_blocked_mask,
+                mask_derivation.attenuation_qc_valid_mask,
+                mask_derivation.below_detection_censored_mask,
+                mask_derivation.source_radar_index_map,
+            )
+            supplied_values = masks + (self.source_radar_index_map,)
+            if (
+                source_identity.identity_digest
+                != raw_evidence.source_identity.identity_digest
+                or not bool(torch.equal(self.frames_dbz, raw_evidence.frames_dbz))
+                or self.upstream_verification_artifact_digest
+                != source_identity.upstream_verification_artifact_digest
+                or self.range_elevation_validity_domain_digest
+                != raw_evidence.range_elevation_validity_domain_digest
+                or self.beam_blockage_visibility_mask_digest
+                != raw_evidence.beam_blockage_visibility_mask_digest
+                or self.spatial_correlation_block_digest
+                != raw_evidence.spatial_correlation_block_digest
+                or any(
+                    (expected is None) != (actual is None)
+                    or (
+                        expected is not None
+                        and actual is not None
+                        and not bool(torch.equal(expected, actual))
+                    )
+                    for expected, actual in zip(
+                        derived_values,
+                        supplied_values,
+                    )
+                )
+            ):
+                raise ValueError(
+                    "verification derivation inputs disagree with mask replay"
+                )
         for name in (
             "upstream_verification_artifact_digest",
             "range_elevation_validity_domain_digest",
@@ -575,6 +1621,41 @@ class VerificationObservationDerivationInputs:
         object.__setattr__(self, "content_digest", json_digest(self.payload))
 
     def validate_integrity(self) -> None:
+        if self.contract == "verification-observation-derivation-inputs-v2":
+            if (
+                type(self.source_identity) is not VerificationObservationSourceIdentity
+                or type(self.mask_derivation)
+                is not VerificationObservationMaskDerivationArtifact
+            ):
+                raise ValueError("verification observation derivation input mismatch")
+            self.source_identity.validate_integrity()
+            self.mask_derivation.validate_replay()
+            expected_values = (
+                self.mask_derivation.source_present_mask,
+                self.mask_derivation.range_elevation_valid_mask,
+                self.mask_derivation.beam_blocked_mask,
+                self.mask_derivation.attenuation_qc_valid_mask,
+                self.mask_derivation.below_detection_censored_mask,
+                self.mask_derivation.source_radar_index_map,
+            )
+            actual_values = (
+                self.source_present_mask,
+                self.range_elevation_valid_mask,
+                self.beam_blocked_mask,
+                self.attenuation_qc_valid_mask,
+                self.below_detection_censored_mask,
+                self.source_radar_index_map,
+            )
+            if any(
+                (expected is None) != (actual is None)
+                or (
+                    expected is not None
+                    and actual is not None
+                    and not bool(torch.equal(expected, actual))
+                )
+                for expected, actual in zip(expected_values, actual_values)
+            ):
+                raise ValueError("verification observation derivation input mismatch")
         if (
             self.raw_verification_identity_digest
             != json_digest(self.identity_payload)
@@ -584,7 +1665,7 @@ class VerificationObservationDerivationInputs:
 
     @property
     def identity_payload(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "contract": "typed-verification-observation-source-v1",
             "frames_dbz_digest": tensor_digest(self.frames_dbz),
             "source_present_mask_digest": tensor_digest(self.source_present_mask),
@@ -616,15 +1697,102 @@ class VerificationObservationDerivationInputs:
                 self.spatial_correlation_block_digest
             ),
         }
+        if self.contract == "verification-observation-derivation-inputs-v2":
+            source_identity = cast(
+                VerificationObservationSourceIdentity,
+                self.source_identity,
+            )
+            mask_derivation = cast(
+                VerificationObservationMaskDerivationArtifact,
+                self.mask_derivation,
+            )
+            payload.update(
+                {
+                    "contract": "typed-verification-observation-source-v2",
+                    "verification_source_identity_digest": (
+                        source_identity.identity_digest
+                    ),
+                    "valid_times": list(source_identity.valid_times),
+                    "grid_contract_digest": source_identity.grid_contract_digest,
+                    "radar_product_digest": source_identity.radar_product_digest,
+                    "native_verification_source_identity_digest": (
+                        source_identity.native_verification_source_identity_digest
+                    ),
+                    "source_acquisition_time_identity_digest": (
+                        source_identity.source_acquisition_time_identity_digest
+                    ),
+                    "mask_derivation_artifact_digest": (
+                        mask_derivation.artifact_digest
+                    ),
+                }
+            )
+        return payload
 
     @property
     def payload(self) -> dict[str, object]:
-        return self.identity_payload | {
+        payload = self.identity_payload | {
             "contract": self.contract,
             "raw_verification_identity_digest": (
                 self.raw_verification_identity_digest
             ),
         }
+        if self.contract == "verification-observation-derivation-inputs-v2":
+            source_identity = cast(
+                VerificationObservationSourceIdentity,
+                self.source_identity,
+            )
+            mask_derivation = cast(
+                VerificationObservationMaskDerivationArtifact,
+                self.mask_derivation,
+            )
+            payload.update(
+                {
+                    "source_identity": source_identity.payload
+                    | {"identity_digest": source_identity.identity_digest},
+                    "mask_derivation_artifact_digest": (
+                        mask_derivation.artifact_digest
+                    ),
+                }
+            )
+        return payload
+
+    @classmethod
+    def from_mask_derivation(
+        cls,
+        artifact: VerificationObservationMaskDerivationArtifact,
+    ) -> VerificationObservationDerivationInputs:
+        """Create v2 inputs only from a successfully replayed mask artifact."""
+
+        if type(artifact) is not VerificationObservationMaskDerivationArtifact:
+            raise ValueError("mask derivation artifact is required")
+        artifact.validate_replay()
+        raw_evidence = artifact.raw_evidence
+        return cls(
+            frames_dbz=raw_evidence.frames_dbz,
+            source_present_mask=artifact.source_present_mask,
+            range_elevation_valid_mask=artifact.range_elevation_valid_mask,
+            beam_blocked_mask=artifact.beam_blocked_mask,
+            attenuation_qc_valid_mask=artifact.attenuation_qc_valid_mask,
+            below_detection_censored_mask=(
+                artifact.below_detection_censored_mask
+            ),
+            source_radar_index_map=artifact.source_radar_index_map,
+            upstream_verification_artifact_digest=(
+                raw_evidence.source_identity.upstream_verification_artifact_digest
+            ),
+            range_elevation_validity_domain_digest=(
+                raw_evidence.range_elevation_validity_domain_digest
+            ),
+            beam_blockage_visibility_mask_digest=(
+                raw_evidence.beam_blockage_visibility_mask_digest
+            ),
+            spatial_correlation_block_digest=(
+                raw_evidence.spatial_correlation_block_digest
+            ),
+            source_identity=raw_evidence.source_identity,
+            mask_derivation=artifact,
+            contract="verification-observation-derivation-inputs-v2",
+        )
 
 
 class VerificationCellState(IntEnum):
@@ -733,6 +1901,9 @@ class VerificationObservationErrorContract:
     source_registry_digest: str | None = None
     calibration_registry_digest: str | None = None
     observation_error_derivation_digest: str | None = None
+    observation_mask_derivation_digest: str | None = None
+    verification_source_identity_digest: str | None = None
+    source_acquisition_time_identity_digest: str | None = None
     spatial_correlation_role: Literal["diagnostic_only"] = "diagnostic_only"
     missing_data_taxonomy: tuple[str, ...] = (
         "observed_clear",
@@ -752,6 +1923,7 @@ class VerificationObservationErrorContract:
             self.contract not in {
                 "verification-observation-error-contract-v3",
                 "verification-observation-error-contract-v4",
+                "verification-observation-error-contract-v5",
             }
             or self.radar_source_kind not in {"single_site", "mosaic"}
             or self.metric_weight_rule
@@ -782,11 +1954,14 @@ class VerificationObservationErrorContract:
                 or self.source_registry_digest is not None
                 or self.calibration_registry_digest is not None
                 or self.observation_error_derivation_digest is not None
+                or self.observation_mask_derivation_digest is not None
+                or self.verification_source_identity_digest is not None
+                or self.source_acquisition_time_identity_digest is not None
             ):
                 raise ValueError(
                     "exploratory observation-error contract is invalid"
                 )
-        else:
+        elif self.contract == "verification-observation-error-contract-v4":
             for name in (
                 "source_registry_digest",
                 "calibration_registry_digest",
@@ -796,6 +1971,30 @@ class VerificationObservationErrorContract:
                 if value is None:
                     raise ValueError(
                         "deterministic observation-error lineage is incomplete"
+                    )
+                _require_sha256(name, value)
+            if any(
+                value is not None
+                for value in (
+                    self.observation_mask_derivation_digest,
+                    self.verification_source_identity_digest,
+                    self.source_acquisition_time_identity_digest,
+                )
+            ):
+                raise ValueError("v4 observation-error lineage is invalid")
+        else:
+            for name in (
+                "source_registry_digest",
+                "calibration_registry_digest",
+                "observation_error_derivation_digest",
+                "observation_mask_derivation_digest",
+                "verification_source_identity_digest",
+                "source_acquisition_time_identity_digest",
+            ):
+                value = getattr(self, name)
+                if value is None:
+                    raise ValueError(
+                        "confirmatory observation-error lineage is incomplete"
                     )
                 _require_sha256(name, value)
         for name in (
@@ -912,6 +2111,16 @@ class VerificationObservationErrorContract:
                     != plan.calibration_registry_digest
                 )
             )
+            or (
+                self.contract == "verification-observation-error-contract-v5"
+                and (
+                    plan.contract != "verification-observation-error-plan-v3"
+                    or self.source_registry_digest
+                    != plan.source_registry_digest
+                    or self.calibration_registry_digest
+                    != plan.calibration_registry_digest
+                )
+            )
             or self.radar_source_kind != plan.radar_source_kind
             or self.attenuation_qc_digest != plan.attenuation_qc_digest
             or self.censoring_rule_digest != plan.censoring_rule_digest
@@ -933,7 +2142,10 @@ class VerificationObservationErrorContract:
     def scientific_evidence_mode(
         self,
     ) -> Literal["exploratory_only", "deterministic_replay"]:
-        if self.contract == "verification-observation-error-contract-v4":
+        if self.contract in {
+            "verification-observation-error-contract-v4",
+            "verification-observation-error-contract-v5",
+        }:
             return "deterministic_replay"
         return "exploratory_only"
 
@@ -978,7 +2190,10 @@ class VerificationObservationErrorContract:
             "missing_data_taxonomy": list(self.missing_data_taxonomy),
             "metric_weight_rule": self.metric_weight_rule,
         }
-        if self.contract == "verification-observation-error-contract-v4":
+        if self.contract in {
+            "verification-observation-error-contract-v4",
+            "verification-observation-error-contract-v5",
+        }:
             payload.update(
                 {
                     "source_registry_digest": self.source_registry_digest,
@@ -989,6 +2204,20 @@ class VerificationObservationErrorContract:
                         self.observation_error_derivation_digest
                     ),
                     "scientific_evidence_mode": self.scientific_evidence_mode,
+                }
+            )
+        if self.contract == "verification-observation-error-contract-v5":
+            payload.update(
+                {
+                    "observation_mask_derivation_digest": (
+                        self.observation_mask_derivation_digest
+                    ),
+                    "verification_source_identity_digest": (
+                        self.verification_source_identity_digest
+                    ),
+                    "source_acquisition_time_identity_digest": (
+                        self.source_acquisition_time_identity_digest
+                    ),
                 }
             )
         return payload
@@ -1002,9 +2231,23 @@ def _derive_verification_observation_error_tensors(
 ) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor | None]:
     if (
         type(plan) is not VerificationObservationErrorPlan
-        or plan.contract != "verification-observation-error-plan-v2"
+        or (plan.contract, raw_inputs.contract)
+        not in {
+            (
+                "verification-observation-error-plan-v2",
+                "verification-observation-derivation-inputs-v1",
+            ),
+            (
+                "verification-observation-error-plan-v3",
+                "verification-observation-derivation-inputs-v2",
+            ),
+        }
         or plan.derivation_algorithm_digest
-        != OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+        != (
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+            if plan.contract == "verification-observation-error-plan-v3"
+            else OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+        )
         or type(raw_inputs) is not VerificationObservationDerivationInputs
         or type(source_registry) is not MosaicObservationSourceRegistry
     ):
@@ -1099,14 +2342,53 @@ def _derive_verification_observation_error_tensors(
             for source in source_registry.ordered_sources
         ]
     )
+    baseline_quality = quality_lookup[lookup_indices]
+    baseline_std = observation_std_lookup[lookup_indices]
+    if raw_inputs.contract == "verification-observation-derivation-inputs-v2":
+        mask_derivation = cast(
+            VerificationObservationMaskDerivationArtifact,
+            raw_inputs.mask_derivation,
+        )
+        evidence = mask_derivation.raw_evidence
+        range_fraction = (
+            evidence.range_km / cast(float, plan.maximum_range_km)
+        ).clamp(min=0.0, max=1.0)
+        elevation_scale = max(
+            abs(cast(float, plan.minimum_elevation_deg)),
+            abs(cast(float, plan.maximum_elevation_deg)),
+            torch.finfo(frames.dtype).eps,
+        )
+        elevation_fraction = (
+            evidence.elevation_deg.abs() / elevation_scale
+        ).clamp(max=1.0)
+        blockage_fraction = evidence.beam_blockage_fraction
+        attenuation_penalty = 1.0 - evidence.attenuation_qc_score
+        range_reliability = (1.0 - 0.5 * range_fraction).clamp(
+            min=0.5,
+            max=1.0,
+        )
+        spatial_quality = (
+            evidence.attenuation_qc_score
+            * (1.0 - blockage_fraction)
+            * range_reliability
+        ).clamp(min=0.0, max=1.0)
+        spatial_std_multiplier = (
+            1.0
+            + range_fraction
+            + elevation_fraction
+            + blockage_fraction
+            + attenuation_penalty
+        )
+        baseline_quality = baseline_quality * spatial_quality
+        baseline_std = baseline_std * spatial_std_multiplier
     quality_weight = torch.where(
         valid_mask,
-        quality_lookup[lookup_indices],
+        baseline_quality,
         torch.zeros_like(frames),
     )
     observation_std_dbz = torch.where(
         valid_mask,
-        observation_std_lookup[lookup_indices],
+        baseline_std,
         torch.zeros_like(frames),
     )
     _validate_verification_cell_states(
@@ -1144,8 +2426,22 @@ class ObservationErrorDerivationArtifact:
     artifact_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "observation-error-derivation-artifact-v1":
+        if self.contract not in {
+            "observation-error-derivation-artifact-v1",
+            "observation-error-derivation-artifact-v2",
+        }:
             raise ValueError("observation-error derivation artifact is invalid")
+        expected_contract = (
+            "observation-error-derivation-artifact-v2"
+            if (
+                self.plan.contract == "verification-observation-error-plan-v3"
+                and self.raw_inputs.contract
+                == "verification-observation-derivation-inputs-v2"
+            )
+            else "observation-error-derivation-artifact-v1"
+        )
+        if self.contract != expected_contract:
+            raise ValueError("observation-error derivation generation is invalid")
         derived = _derive_verification_observation_error_tensors(
             plan=self.plan,
             raw_inputs=self.raw_inputs,
@@ -1240,6 +2536,15 @@ class ObservationErrorDerivationArtifact:
     @property
     def observation_error_contract(self) -> VerificationObservationErrorContract:
         self.validate_replay()
+        source_identity = self.raw_inputs.source_identity
+        mask_derivation = self.raw_inputs.mask_derivation
+        is_confirmatory = self.contract == "observation-error-derivation-artifact-v2"
+        if is_confirmatory and (
+            type(source_identity) is not VerificationObservationSourceIdentity
+            or type(mask_derivation)
+            is not VerificationObservationMaskDerivationArtifact
+        ):
+            raise ValueError("confirmatory observation-error lineage is incomplete")
         return VerificationObservationErrorContract(
             radar_source_kind=self.plan.radar_source_kind,
             source_calibration_epochs=(
@@ -1287,13 +2592,41 @@ class ObservationErrorDerivationArtifact:
                 self.source_registry.calibration_registry_digest
             ),
             observation_error_derivation_digest=self.artifact_digest,
+            observation_mask_derivation_digest=(
+                None
+                if not is_confirmatory
+                else cast(
+                    VerificationObservationMaskDerivationArtifact,
+                    mask_derivation,
+                ).artifact_digest
+            ),
+            verification_source_identity_digest=(
+                None
+                if not is_confirmatory
+                else cast(
+                    VerificationObservationSourceIdentity,
+                    source_identity,
+                ).identity_digest
+            ),
+            source_acquisition_time_identity_digest=(
+                None
+                if not is_confirmatory
+                else cast(
+                    VerificationObservationSourceIdentity,
+                    source_identity,
+                ).source_acquisition_time_identity_digest
+            ),
             spatial_correlation_role=self.plan.spatial_correlation_role,
-            contract="verification-observation-error-contract-v4",
+            contract=(
+                "verification-observation-error-contract-v5"
+                if is_confirmatory
+                else "verification-observation-error-contract-v4"
+            ),
         )
 
     @property
     def payload(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "contract": self.contract,
             "plan_digest": self.plan.plan_digest,
             "raw_input_digest": self.raw_inputs.content_digest,
@@ -1302,7 +2635,7 @@ class ObservationErrorDerivationArtifact:
             ),
             "source_registry_digest": self.source_registry.registry_digest,
             "derivation_algorithm_digest": (
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+                self.plan.derivation_algorithm_digest
             ),
             "valid_mask_digest": tensor_digest(self._valid_mask),
             "quality_weight_digest": tensor_digest(self._quality_weight),
@@ -1318,6 +2651,29 @@ class ObservationErrorDerivationArtifact:
                 else tensor_digest(self._source_radar_index_map)
             ),
         }
+        if self.contract == "observation-error-derivation-artifact-v2":
+            source_identity = cast(
+                VerificationObservationSourceIdentity,
+                self.raw_inputs.source_identity,
+            )
+            mask_derivation = cast(
+                VerificationObservationMaskDerivationArtifact,
+                self.raw_inputs.mask_derivation,
+            )
+            payload.update(
+                {
+                    "verification_source_identity_digest": (
+                        source_identity.identity_digest
+                    ),
+                    "source_acquisition_time_identity_digest": (
+                        source_identity.source_acquisition_time_identity_digest
+                    ),
+                    "observation_mask_derivation_digest": (
+                        mask_derivation.artifact_digest
+                    ),
+                }
+            )
+        return payload
 
 
 def derive_verification_observation_error(
@@ -1342,6 +2698,12 @@ def derive_verification_observation_error(
         _observation_std_dbz=derived[2],
         _observation_state_code=derived[3],
         _source_radar_index_map=derived[4],
+        contract=(
+            "observation-error-derivation-artifact-v2"
+            if raw_verification_source.contract
+            == "verification-observation-derivation-inputs-v2"
+            else "observation-error-derivation-artifact-v1"
+        ),
     )
 
 
@@ -1379,6 +2741,7 @@ class VerificationBundle:
             "radar-verification-bundle-v5",
             "radar-verification-bundle-v6",
             "radar-verification-bundle-v7",
+            "radar-verification-bundle-v8",
         }:
             raise ValueError("unsupported verification bundle contract")
         if self.frames_dbz.ndim != 3 or not self.frames_dbz.is_floating_point():
@@ -1466,6 +2829,7 @@ class VerificationBundle:
         if self.contract not in {
             "radar-verification-bundle-v6",
             "radar-verification-bundle-v7",
+            "radar-verification-bundle-v8",
         }:
             if any(value is not None for value in error_values) or (
                 self.source_radar_index_map is not None
@@ -1524,7 +2888,7 @@ class VerificationBundle:
                     raise ValueError(
                         "v6 verification is exploratory observation evidence"
                     )
-            else:
+            elif self.contract == "radar-verification-bundle-v7":
                 if type(derivation) is not ObservationErrorDerivationArtifact:
                     raise ValueError(
                         "deterministic observation-error derivation is required"
@@ -1562,6 +2926,71 @@ class VerificationBundle:
                 ):
                     raise ValueError(
                         "verification disagrees with observation-error replay"
+                    )
+                if (
+                    derivation.contract
+                    != "observation-error-derivation-artifact-v1"
+                    or error_contract.contract
+                    != "verification-observation-error-contract-v4"
+                ):
+                    raise ValueError("v7 observation-error generation is invalid")
+            else:
+                if (
+                    type(derivation) is not ObservationErrorDerivationArtifact
+                    or derivation.contract
+                    != "observation-error-derivation-artifact-v2"
+                    or error_contract.contract
+                    != "verification-observation-error-contract-v5"
+                    or type(derivation.raw_inputs.source_identity)
+                    is not VerificationObservationSourceIdentity
+                ):
+                    raise ValueError(
+                        "confirmatory observation-error derivation is required"
+                    )
+                derivation.validate_replay()
+                source_identity = cast(
+                    VerificationObservationSourceIdentity,
+                    derivation.raw_inputs.source_identity,
+                )
+                derived_contract = derivation.observation_error_contract
+                derived_source_map = derivation.source_radar_index_map
+                if (
+                    error_contract.scientific_evidence_mode
+                    != "deterministic_replay"
+                    or error_contract.contract_digest
+                    != derived_contract.contract_digest
+                    or error_contract.observation_error_derivation_digest
+                    != derivation.artifact_digest
+                    or error_contract.verification_source_identity_digest
+                    != source_identity.identity_digest
+                    or self.valid_times != source_identity.valid_times
+                    or self.grid_contract_digest
+                    != source_identity.grid_contract_digest
+                    or self.radar_product_digest
+                    != source_identity.radar_product_digest
+                    or tensor_digest(self.frames_dbz)
+                    != tensor_digest(derivation.raw_inputs.frames_dbz)
+                    or tensor_digest(self.valid_mask)
+                    != tensor_digest(derivation.valid_mask)
+                    or tensor_digest(quality)
+                    != tensor_digest(derivation.quality_weight)
+                    or tensor_digest(observation_std)
+                    != tensor_digest(derivation.observation_std_dbz)
+                    or tensor_digest(observation_state)
+                    != tensor_digest(derivation.observation_state_code)
+                    or (
+                        None
+                        if source_radar_index_map is None
+                        else tensor_digest(source_radar_index_map)
+                    )
+                    != (
+                        None
+                        if derived_source_map is None
+                        else tensor_digest(derived_source_map)
+                    )
+                ):
+                    raise ValueError(
+                        "verification disagrees with confirmatory source replay"
                     )
             _validate_verification_cell_states(
                 frames_dbz=self.frames_dbz,
@@ -1659,6 +3088,7 @@ class VerificationBundle:
         if self.contract not in {
             "radar-verification-bundle-v6",
             "radar-verification-bundle-v7",
+            "radar-verification-bundle-v8",
         }:
             return self.valid_mask.to(self.frames_dbz)
         quality = cast(Tensor, self.quality_weight)
@@ -4547,6 +5977,7 @@ def _verification_content_digest(
         "radar-verification-bundle-v5",
         "radar-verification-bundle-v6",
         "radar-verification-bundle-v7",
+        "radar-verification-bundle-v8",
     }:
         payload.update(
             {
@@ -4565,7 +5996,11 @@ def _verification_content_digest(
                                 else (
                                     "verification-bundle-content-v7"
                                     if contract == "radar-verification-bundle-v6"
-                                    else "verification-bundle-content-v8"
+                                    else (
+                                        "verification-bundle-content-v8"
+                                        if contract == "radar-verification-bundle-v7"
+                                        else "verification-bundle-content-v9"
+                                    )
                                 )
                             )
                         )
@@ -4586,6 +6021,7 @@ def _verification_content_digest(
         "radar-verification-bundle-v5",
         "radar-verification-bundle-v6",
         "radar-verification-bundle-v7",
+        "radar-verification-bundle-v8",
     }:
         payload.update(
             {
@@ -4608,6 +6044,7 @@ def _verification_content_digest(
     if contract in {
         "radar-verification-bundle-v6",
         "radar-verification-bundle-v7",
+        "radar-verification-bundle-v8",
     }:
         payload["observation_state_code"] = (
             None
@@ -4619,7 +6056,10 @@ def _verification_content_digest(
             if source_radar_index_map is None
             else tensor_digest(source_radar_index_map)
         )
-    if contract == "radar-verification-bundle-v7":
+    if contract in {
+        "radar-verification-bundle-v7",
+        "radar-verification-bundle-v8",
+    }:
         payload["observation_error_derivation_digest"] = (
             None
             if observation_error_derivation is None

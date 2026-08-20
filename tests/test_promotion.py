@@ -43,6 +43,8 @@ from advar import (
     NowcastConfig,
     OperationalCalibrationManifest,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST,
     MosaicObservationSourceRegistry,
     NeuralPriorCandidateManifest,
     NeuralPriorHoldoutCase,
@@ -67,9 +69,12 @@ from advar import (
     VerificationObservationErrorContract,
     VerificationObservationErrorPlan,
     VerificationObservationDerivationInputs,
+    VerificationObservationMaskEvidence,
+    VerificationObservationSourceIdentity,
     algorithm_bundle_digest,
     compute_neural_prior_promotion,
     derive_verification_observation_error,
+    derive_verification_observation_masks,
     validate_neural_prior_candidate_manifest,
     validate_neural_prior_promotion,
     validate_neural_prior_promotion_applicability,
@@ -120,6 +125,10 @@ def _observation_source_registry(
     )
 
 
+def _verification_source_private_key() -> Ed25519PrivateKey:
+    return Ed25519PrivateKey.from_private_bytes(b"\x13" * 32)
+
+
 def _verification_observation_error_plan(
     *,
     radar_product_digest: str,
@@ -131,36 +140,48 @@ def _verification_observation_error_plan(
         radar_product_digest=radar_product_digest,
         radar_source_kind=radar_source_kind,
     )
+    source_private_key = _verification_source_private_key()
+    source_public_key_hex = source_private_key.public_key().public_bytes_raw().hex()
     return VerificationObservationErrorPlan(
         radar_source_kind=cast(Any, radar_source_kind),
         source_registry_digest=registry.source_registry_digest,
         calibration_registry_digest=registry.calibration_registry_digest,
         range_elevation_validity_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
         ),
         beam_blockage_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
         ),
         attenuation_qc_digest=qc_pipeline_digest,
         censoring_rule_digest=censor_policy_digest,
         spatial_correlation_block_algorithm_digest="7" * 64,
         quality_weight_interpretation_digest="8" * 64,
         quality_weight_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
         ),
         observation_std_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
         ),
         observation_error_model_digest="9" * 64,
         source_assignment_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
         ),
         minimum_detectable_echo_dbz=-10.0,
         observation_error_reference_std_dbz=2.0,
         derivation_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
         ),
-        contract="verification-observation-error-plan-v2",
+        mask_derivation_algorithm_digest=(
+            OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
+        ),
+        maximum_range_km=300.0,
+        minimum_elevation_deg=-1.0,
+        maximum_elevation_deg=90.0,
+        maximum_beam_blockage_fraction=0.5,
+        minimum_attenuation_qc_score=0.5,
+        verification_source_authority_id="synthetic-verification-source",
+        verification_source_authority_public_key_hex=source_public_key_hex,
+        contract="verification-observation-error-plan-v3",
     )
 
 
@@ -198,23 +219,56 @@ def _verification_bundle_v4(
             .expand(frames_dbz.shape[0], -1, -1)
             .clone()
         )
-    raw_inputs = VerificationObservationDerivationInputs(
+    upstream_digest = hashlib.sha256(
+        (
+            promotion_module.tensor_digest(frames_dbz)
+            + promotion_module.tensor_digest(valid_mask)
+        ).encode("ascii")
+    ).hexdigest()
+    scores = torch.zeros(
+        (len(registry.ordered_sources), *frames_dbz.shape),
+        dtype=frames_dbz.dtype,
+        device=frames_dbz.device,
+    )
+    if resolved_source_map is None:
+        scores[0] = 1.0
+    else:
+        for source_index in range(len(registry.ordered_sources)):
+            scores[source_index] = (
+                resolved_source_map == source_index
+            ).to(frames_dbz)
+    mask_evidence = VerificationObservationMaskEvidence.issue(
+        valid_times=valid_times,
+        acquisition_valid_times=valid_times,
+        grid_contract_digest=grid_contract_digest,
+        radar_product_digest=radar_product_digest,
+        native_verification_source_identity_digest=upstream_digest,
+        source_authority_id="synthetic-verification-source",
+        source_authority_private_key=_verification_source_private_key(),
+        source_observed_at=valid_times[-1],
         frames_dbz=frames_dbz,
-        source_present_mask=torch.ones_like(valid_mask),
-        range_elevation_valid_mask=torch.ones_like(valid_mask),
-        beam_blocked_mask=torch.zeros_like(valid_mask),
-        attenuation_qc_valid_mask=valid_mask,
-        below_detection_censored_mask=torch.zeros_like(valid_mask),
-        source_radar_index_map=resolved_source_map,
-        upstream_verification_artifact_digest=hashlib.sha256(
-            (
-                promotion_module.tensor_digest(frames_dbz)
-                + promotion_module.tensor_digest(valid_mask)
-            ).encode("ascii")
-        ).hexdigest(),
+        source_assignment_scores=scores,
+        source_availability_by_time=torch.ones(
+            (len(registry.ordered_sources), frames_dbz.shape[0]),
+            dtype=torch.bool,
+            device=frames_dbz.device,
+        ),
+        range_km=torch.zeros_like(frames_dbz),
+        elevation_deg=torch.zeros_like(frames_dbz),
+        beam_blockage_fraction=torch.zeros_like(frames_dbz),
+        attenuation_qc_score=valid_mask.to(frames_dbz),
+        below_detection_reported=torch.zeros_like(valid_mask),
         range_elevation_validity_domain_digest="5" * 64,
         beam_blockage_visibility_mask_digest="6" * 64,
         spatial_correlation_block_digest="7" * 64,
+    )
+    mask_derivation = derive_verification_observation_masks(
+        plan=error_plan,
+        raw_evidence=mask_evidence,
+        source_registry=registry,
+    )
+    raw_inputs = VerificationObservationDerivationInputs.from_mask_derivation(
+        mask_derivation
     )
     derivation = derive_verification_observation_error(
         plan=error_plan,
@@ -246,7 +300,7 @@ def _verification_bundle_v4(
         source_radar_index_map=resolved_source_map,
         observation_error_contract=error_contract,
         observation_error_derivation=derivation,
-        contract="radar-verification-bundle-v7",
+        contract="radar-verification-bundle-v8",
     )
 
 

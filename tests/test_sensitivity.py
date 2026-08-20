@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 import numpy as np
 import torch
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -59,6 +60,8 @@ from advar.physics import (  # noqa: E402
 )
 from advar.sensitivity import (  # noqa: E402
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST,
     AutomatedLearningPolicy,
     MetricTaylorThreshold,
     ObservationRemovalConfig,
@@ -79,6 +82,8 @@ from advar.sensitivity import (  # noqa: E402
     VerificationObservationErrorContract,
     VerificationObservationErrorPlan,
     VerificationObservationDerivationInputs,
+    VerificationObservationMaskEvidence,
+    VerificationObservationSourceIdentity,
     VariationalAdjointConfig,
     VariationalObservationPerturbation,
     compute_sensitivity_snapshot,
@@ -86,6 +91,7 @@ from advar.sensitivity import (  # noqa: E402
     compute_variational_fsoi,
     compute_variational_observation_removal_impact,
     derive_verification_observation_error,
+    derive_verification_observation_masks,
     compute_variational_fsoi_for_learning,
     score_candidate_perturbations,
     validate_top_k_learning_impacts,
@@ -2820,6 +2826,256 @@ class VariationalFSOTests(unittest.TestCase):
         attacked_source.raw_inputs.source_radar_index_map.data[0, 0, 0] = 999
         with self.assertRaisesRegex(ValueError, "input mismatch"):
             attacked_source.validate_replay()
+
+    def test_confirmatory_observation_masks_and_source_identity_replay(
+        self,
+    ) -> None:
+        source_private_key = Ed25519PrivateKey.from_private_bytes(b"\x27" * 32)
+        source_public_key_hex = (
+            source_private_key.public_key().public_bytes_raw().hex()
+        )
+        registry = MosaicObservationSourceRegistry(
+            radar_source_kind="mosaic",
+            ordered_sources=(
+                ObservationRadarSource(
+                    radar_site_digest="1" * 64,
+                    calibration_epoch_digest="2" * 64,
+                    quality_weight=1.0,
+                    observation_std_dbz=2.0,
+                ),
+                ObservationRadarSource(
+                    radar_site_digest="3" * 64,
+                    calibration_epoch_digest="4" * 64,
+                    quality_weight=0.5,
+                    observation_std_dbz=4.0,
+                ),
+            ),
+        )
+        plan = VerificationObservationErrorPlan(
+            radar_source_kind="mosaic",
+            source_registry_digest=registry.source_registry_digest,
+            calibration_registry_digest=registry.calibration_registry_digest,
+            range_elevation_validity_algorithm_digest=(
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
+            ),
+            beam_blockage_algorithm_digest=(
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
+            ),
+            attenuation_qc_digest="5" * 64,
+            censoring_rule_digest="6" * 64,
+            spatial_correlation_block_algorithm_digest="7" * 64,
+            quality_weight_interpretation_digest="8" * 64,
+            quality_weight_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+            ),
+            observation_std_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+            ),
+            observation_error_model_digest="9" * 64,
+            source_assignment_algorithm_digest=(
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
+            ),
+            minimum_detectable_echo_dbz=-10.0,
+            observation_error_reference_std_dbz=2.0,
+            derivation_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+            ),
+            mask_derivation_algorithm_digest=(
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
+            ),
+            maximum_range_km=300.0,
+            minimum_elevation_deg=0.0,
+            maximum_elevation_deg=20.0,
+            maximum_beam_blockage_fraction=0.5,
+            minimum_attenuation_qc_score=0.5,
+            verification_source_authority_id="verification-source-a",
+            verification_source_authority_public_key_hex=(
+                source_public_key_hex
+            ),
+            contract="verification-observation-error-plan-v3",
+        )
+        frames = torch.tensor([[[12.0, -12.0, 0.0, 5.0, 6.0]]])
+        scores = torch.tensor(
+            [
+                [[[1.0, 1.0, 1.0, 0.0, 0.0]]],
+                [[[0.0, 0.0, 0.0, 1.0, 1.0]]],
+            ]
+        )
+        common_evidence = {
+            "valid_times": ("2026-08-05T00:30:00Z",),
+            "acquisition_valid_times": ("2026-08-05T00:30:00Z",),
+            "grid_contract_digest": "a" * 64,
+            "radar_product_digest": "b" * 64,
+            "native_verification_source_identity_digest": "c" * 64,
+            "source_authority_id": "verification-source-a",
+            "source_authority_private_key": source_private_key,
+            "source_observed_at": "2026-08-05T00:30:00Z",
+            "frames_dbz": frames,
+            "source_assignment_scores": scores,
+            "source_availability_by_time": torch.ones(
+                (2, 1), dtype=torch.bool
+            ),
+            "range_km": torch.tensor([[[10.0, 10.0, 200.0, 10.0, 10.0]]]),
+            "elevation_deg": torch.ones_like(frames),
+            "beam_blockage_fraction": torch.tensor(
+                [[[0.0, 0.0, 0.0, 0.8, 0.0]]]
+            ),
+            "attenuation_qc_score": torch.tensor(
+                [[[1.0, 1.0, 1.0, 1.0, 0.2]]]
+            ),
+            "below_detection_reported": torch.tensor(
+                [[[False, True, False, False, False]]]
+            ),
+            "range_elevation_validity_domain_digest": "d" * 64,
+            "beam_blockage_visibility_mask_digest": "e" * 64,
+            "spatial_correlation_block_digest": "7" * 64,
+        }
+        evidence = VerificationObservationMaskEvidence.issue(**common_evidence)
+        mask_derivation = derive_verification_observation_masks(
+            plan=plan,
+            raw_evidence=evidence,
+            source_registry=registry,
+        )
+        raw_inputs = VerificationObservationDerivationInputs.from_mask_derivation(
+            mask_derivation
+        )
+        derivation = derive_verification_observation_error(
+            plan=plan,
+            raw_verification_source=raw_inputs,
+            source_registry=registry,
+        )
+        self.assertEqual(
+            derivation.observation_state_code.tolist(),
+            [[[
+                int(VerificationCellState.OBSERVED_ECHO),
+                int(VerificationCellState.BELOW_DETECTION_CENSORED),
+                int(VerificationCellState.OBSERVED_ECHO),
+                int(VerificationCellState.BEAM_BLOCKED),
+                int(VerificationCellState.QC_INVALID),
+            ]]],
+        )
+        self.assertNotEqual(
+            float(derivation.quality_weight[0, 0, 0]),
+            float(derivation.quality_weight[0, 0, 2]),
+        )
+        self.assertNotEqual(
+            float(derivation.observation_std_dbz[0, 0, 0]),
+            float(derivation.observation_std_dbz[0, 0, 2]),
+        )
+        contract = derivation.observation_error_contract
+        self.assertEqual(
+            contract.contract,
+            "verification-observation-error-contract-v5",
+        )
+        bundle = VerificationBundle(
+            frames_dbz=frames,
+            valid_mask=derivation.valid_mask,
+            valid_times=("2026-08-05T00:30:00Z",),
+            grid_contract_digest="a" * 64,
+            radar_product_digest="b" * 64,
+            qc_pipeline_digest="5" * 64,
+            mask_policy_digest="f" * 64,
+            censor_policy_digest="6" * 64,
+            reflectivity_resolution_dbz=0.5,
+            quantization_origin_dbz=-10.0,
+            threshold_bin_convention="nearest_rounding_threshold_censor",
+            floor_representation_contract_digest="0" * 64,
+            quality_weight=derivation.quality_weight,
+            observation_std_dbz=derivation.observation_std_dbz,
+            observation_state_code=derivation.observation_state_code,
+            source_radar_index_map=derivation.source_radar_index_map,
+            observation_error_contract=contract,
+            observation_error_derivation=derivation,
+            contract="radar-verification-bundle-v8",
+        )
+        bundle.validate_integrity()
+        for field_name, value in (
+            ("valid_times", ("2026-08-05T01:30:00Z",)),
+            ("grid_contract_digest", "1" * 64),
+            ("radar_product_digest", "2" * 64),
+        ):
+            with self.subTest(relabel=field_name):
+                with self.assertRaisesRegex(ValueError, "source replay"):
+                    replace(bundle, **{field_name: value})
+        for field_name, value in (
+            (
+                "acquisition_valid_times",
+                ("2026-08-05T00:20:00Z",),
+            ),
+            ("native_verification_source_identity_digest", "3" * 64),
+        ):
+            with self.subTest(source_relabel=field_name):
+                with self.assertRaisesRegex(ValueError, "source signature"):
+                    replace(
+                        evidence.source_identity,
+                        **{field_name: value},
+                    )
+        raw_mutations = {
+            "source_availability_by_time": torch.zeros(
+                (2, 1), dtype=torch.bool
+            ),
+            "range_km": torch.zeros_like(frames),
+            "beam_blockage_fraction": torch.zeros_like(frames),
+            "attenuation_qc_score": torch.zeros_like(frames),
+            "below_detection_reported": torch.zeros_like(frames, dtype=torch.bool),
+            "source_assignment_scores": torch.flip(scores, dims=(0,)),
+        }
+        for field_name, value in raw_mutations.items():
+            with self.subTest(raw_rewrite=field_name):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "does not attest raw mask evidence",
+                ):
+                    replace(evidence, **{field_name: value})
+        attacked = VerificationObservationMaskEvidence.issue(**common_evidence)
+        attacked.attenuation_qc_score.data[0, 0, 0] = 0.0
+        with self.assertRaisesRegex(ValueError, "evidence mismatch"):
+            mask_derivation = derive_verification_observation_masks(
+                plan=plan,
+                raw_evidence=attacked,
+                source_registry=registry,
+            )
+            mask_derivation.validate_replay()
+        for output_name in (
+            "_source_present_mask",
+            "_range_elevation_valid_mask",
+            "_beam_blocked_mask",
+            "_attenuation_qc_valid_mask",
+            "_below_detection_censored_mask",
+            "_source_radar_index_map",
+        ):
+            attacked_mask = derive_verification_observation_masks(
+                plan=plan,
+                raw_evidence=VerificationObservationMaskEvidence.issue(
+                    **common_evidence
+                ),
+                source_registry=registry,
+            )
+            output = getattr(attacked_mask, output_name)
+            assert output is not None
+            if output.dtype is torch.bool:
+                output.data[0, 0, 0] = ~output.data[0, 0, 0]
+            else:
+                output.data[0, 0, 0] = 1
+            with self.subTest(mask_output_mutation=output_name):
+                with self.assertRaisesRegex(ValueError, "mask replay mismatch"):
+                    attacked_mask.validate_replay()
+        other_key_evidence = VerificationObservationMaskEvidence.issue(
+            **(
+                common_evidence
+                | {
+                    "source_authority_private_key": (
+                        Ed25519PrivateKey.from_private_bytes(b"\x28" * 32)
+                    )
+                }
+            )
+        )
+        with self.assertRaisesRegex(ValueError, "disagrees with registry"):
+            derive_verification_observation_masks(
+                plan=plan,
+                raw_evidence=other_key_evidence,
+                source_registry=registry,
+            )
 
     def test_observation_error_gaussian_diagnostic_is_proper_and_report_only(
         self,
