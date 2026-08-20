@@ -12238,7 +12238,7 @@ class PriorUncertaintyTarget:
         verification.validate_integrity()
         if (
             plan.contract != "prior-uncertainty-target-plan-v7"
-            or verification.contract != "radar-verification-bundle-v6"
+            or verification.contract != "radar-verification-bundle-v8"
             or verification.observation_error_contract is None
             or verification.observation_error_contract
             .observation_error_plan_digest
@@ -12369,7 +12369,7 @@ class NeuralPriorStateCalibrationTarget:
     ) -> NeuralPriorStateCalibrationTarget:
         verification.validate_integrity()
         if (
-            verification.contract != "radar-verification-bundle-v6"
+            verification.contract != "radar-verification-bundle-v8"
             or verification.observation_error_contract is None
             or verification.observation_error_contract
             .observation_error_plan_digest
@@ -16090,7 +16090,12 @@ def compute_observation_error_gaussian_diagnostic(
     quantization_origin_dbz = verification.quantization_origin_dbz
     threshold_bin_convention = verification.threshold_bin_convention
     if (
-        verification.contract != "radar-verification-bundle-v6"
+        verification.contract
+        not in {
+            "radar-verification-bundle-v6",
+            "radar-verification-bundle-v7",
+            "radar-verification-bundle-v8",
+        }
         or state is None
         or observation_std is None
         or error_contract is None

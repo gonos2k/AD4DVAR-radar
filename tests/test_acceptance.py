@@ -108,6 +108,7 @@ class RealCaseAcceptanceTests(unittest.TestCase):
             report = verify_real_case_acceptance(decoded, artifact_root=root)
 
             self.assertTrue(report["artifact_index_complete"])
+            self.assertFalse(report["observation_error_derivation_replayed"])
             self.assertFalse(report["semantic_e2e_validated"])
             self.assertFalse(report["sample_size_satisfied"])
             self.assertFalse(report["eligible_for_scientific_review"])

@@ -422,6 +422,7 @@ def verify_real_case_acceptance(
             required_event_count
         ),
         "artifact_index_complete": complete_matrix,
+        "observation_error_derivation_replayed": False,
         "semantic_e2e_validated": False,
         "sample_size_satisfied": False,
         "eligible_for_scientific_review": False,

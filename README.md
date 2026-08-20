@@ -109,7 +109,7 @@ python -I .github/scripts/build_deployment_bundle.py verify \
   --trusted-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.94.0 \
+  --expected-source-ref refs/tags/v0.96.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-signer-id advar-release
@@ -120,7 +120,7 @@ python -I -m pip install --no-index --find-links wheelhouse \
   --require-hashes --only-binary=:all: --no-compile \
   --requirement runtime-py312-linux.lock
 python -I -m pip install --no-index --no-deps --no-compile \
-  advar_radar_nowcast-0.94.0-*.whl
+  advar_radar_nowcast-0.96.0-*.whl
 find <deployment-venv> -type f \
   \( -name '*.pyc' -o -name '*.pyo' -o -name '*.pth' \) -delete
 ```
@@ -147,7 +147,7 @@ python -I .github/scripts/build_deployment_bundle.py approve-release \
   --trusted-bundle-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.94.0 \
+  --expected-source-ref refs/tags/v0.96.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-bundle-signer-id advar-release \
@@ -162,7 +162,7 @@ python -I .github/scripts/build_deployment_bundle.py activate-runtime \
   --trusted-bundle-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.94.0 \
+  --expected-source-ref refs/tags/v0.96.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-bundle-signer-id advar-release \
@@ -913,12 +913,12 @@ withheld radar/time/mask), QC·mask·censor·floor measurement contract,
 feature-exclusion 및 independence evidence를
 사전등록하며 plan payload 자체가 holdout digest에 포함된다. 실제 target은 임의
 Tensor로 만들 수 없고, plan에 고정된 radar product·QC·grid·valid time과 일치하는
-content-addressed `radar-verification-bundle-v6`에서만 생성한다.
+content-addressed `radar-verification-bundle-v8`에서만 생성한다.
 P1 state head에는 별도의 `NeuralPriorStateCalibrationPlan`을 사전등록한다. State target은
 state product·QC·mask·censor·floor policy, dBZ resolution·quantization origin과 prior output
 valid time에 결합되고 feature에서 withhold됐음을 검증한다. Target은 이 측정계보를 실제
 자료와 함께 observation-error contract를 attestation한
-`radar-verification-bundle-v6`에서만 생성된다. Candidate와
+`radar-verification-bundle-v8`에서만 생성된다. Candidate와
 parent의 state interval-Gaussian NLL·PIT,
 support Brier·pixel/object miss·false-support 및 validity Brier를 같은 target에서 paired
 평가한다. 절대 calibration과 cluster max-statistic 비열화 상한을 모두 통과하지 못하면
@@ -1110,18 +1110,42 @@ typed identity를 사용하므로 outer manifest digest를 다시 계산해도 s
 다른 source/time/value/mask/quality로 재라벨링할 수 없다.
 따라서 이전 replay 세대의 promotion evidence는 audit-only이며 배포 selector가
 소비할 수 없다.
-`VerificationObservationErrorPlan-v1`은 forecast scoring 전에 source/calibration
+`VerificationObservationErrorPlan-v3`는 forecast scoring 전에 source/calibration
 registry, range/elevation·beam-blockage·QC·censoring·mosaic source-assignment
 algorithm, quality/std 생성규칙, spatial-block 생성규칙과 reference observation
-standard deviation을 사전등록한다. `VerificationObservationErrorContract-v3`는 그
-plan digest와 실제 radar calibration epoch, validity/visibility, source map 및 exact
-valid/quality/observation-std tensor digest에 per-cell `VerificationCellState`를
+standard deviation, product-owned mask/error derivation identity와 독립 verification
+source authority key를 사전등록한다.
+`MosaicObservationSourceRegistry-v1`은 source-map index를 ordered radar-site,
+calibration epoch, source-specific quality와 observation standard deviation에 결합한다.
+`VerificationObservationMaskEvidence-v1`은 valid/acquisition time, grid, radar product,
+native source identity와 range/elevation, beam-blockage fraction, attenuation-QC score,
+censoring evidence 및 radar별 assignment-score bytes를 source authority signature로
+봉인한다. `VerificationObservationMaskDerivationArtifact-v1`은 이 raw evidence에서
+source-present, range/elevation-valid, blockage, attenuation-QC, censoring mask와 source
+index map을 다시 계산한다. Caller가 mask를 직접 선택하는 v1 input은 confirmatory
+경로에서 소비하지 않는다.
+`derive_verification_observation_error()`는 derivation-input v2와 ordered registry에서
+valid/quality/std/state tensor를 계산한다. 같은 radar 안에서도 range, elevation,
+blockage와 attenuation evidence에 따라 quality/std가 공간적으로 변한다.
+`ObservationErrorDerivationArtifact-v2`는 동일 입력으로 그 결과를 다시 생성해
+`torch.equal`과 content digest를 모두 확인한다.
+`VerificationObservationErrorContract-v5`는 plan, signed raw input, mask derivation,
+ordered registry와 exact
+valid/quality/observation-std/state/source-map tensor digest를 derivation artifact에
 결합한다. 이 상태 tensor는 clear, echo, source missing, QC invalid, beam blockage,
 below-detection censoring과 mosaic source 미할당을 서로 다른 과학적 의미로 보존한다.
+직접 `from_tensors()`로 만든 v3 contract와 `radar-verification-bundle-v6`는
+`exploratory_only`이며 proper-score diagnostic에는 사용할 수 있지만 confirmatory
+target 또는 scientific-review eligibility를 만들 수 없다.
+Output tensor만 재생하는 v4 contract와 `radar-verification-bundle-v7`은 audit
+compatibility 세대이며 current confirmatory target을 만들 수 없다.
 Holdout plan v26은 모든
 uncertainty/state target이 참조하는 observation-error plan payload의 정확한 집합을
-보존하고, current target는 `radar-verification-bundle-v6`만 허용한다. 따라서 결과를
-본 뒤 weighting policy를 바꾸면 기존 holdout plan과 일치하지 않는다. 현재 scoring
+보존하고, current target는 deterministic replay를 포함한
+`radar-verification-bundle-v8`만 허용한다. v8은 bundle valid time, grid, radar product를
+signed source identity와 exact 비교한다. 따라서 결과를 본 뒤 mask, source time,
+source index ordering, calibration mapping 또는 realized tensor를 바꾸면 source
+signature, derivation replay와 holdout plan 중 적어도 하나가 실패한다. 현재 scoring
 measure는
 `quality * min(1, (reference_std / observation_std)^2)`이다. Invalid·unobserved
 cell은 weight 0이어야 하고 low-quality 영역의 apparent gain은 promotion score에
