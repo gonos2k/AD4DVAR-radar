@@ -58,6 +58,7 @@ from advar.physics import (  # noqa: E402
     freeze_remap_cell,
 )
 from advar.sensitivity import (  # noqa: E402
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST,
     AutomatedLearningPolicy,
     MetricTaylorThreshold,
     ObservationRemovalConfig,
@@ -71,16 +72,20 @@ from advar.sensitivity import (  # noqa: E402
     _remap_fraction_margin,
     SensitivityConfig,
     SparseRadarPerturbation,
+    MosaicObservationSourceRegistry,
+    ObservationRadarSource,
     VerificationBundle,
     VerificationCellState,
     VerificationObservationErrorContract,
     VerificationObservationErrorPlan,
+    VerificationObservationDerivationInputs,
     VariationalAdjointConfig,
     VariationalObservationPerturbation,
     compute_sensitivity_snapshot,
     compute_variational_fso,
     compute_variational_fsoi,
     compute_variational_observation_removal_impact,
+    derive_verification_observation_error,
     compute_variational_fsoi_for_learning,
     score_candidate_perturbations,
     validate_top_k_learning_impacts,
@@ -2296,16 +2301,26 @@ class VariationalFSOTests(unittest.TestCase):
             radar_source_kind="single_site",
             source_registry_digest="0" * 64,
             calibration_registry_digest="1" * 64,
-            range_elevation_validity_algorithm_digest="2" * 64,
-            beam_blockage_algorithm_digest="3" * 64,
+            range_elevation_validity_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
+            beam_blockage_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
             attenuation_qc_digest="5" * 64,
             censoring_rule_digest="6" * 64,
             spatial_correlation_block_algorithm_digest="7" * 64,
             quality_weight_interpretation_digest="8" * 64,
-            quality_weight_algorithm_digest="a" * 64,
-            observation_std_algorithm_digest="b" * 64,
+            quality_weight_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
+            observation_std_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
             observation_error_model_digest="9" * 64,
-            source_assignment_algorithm_digest="c" * 64,
+            source_assignment_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
             minimum_detectable_echo_dbz=-10.0,
             observation_error_reference_std_dbz=2.0,
         )
@@ -2516,6 +2531,295 @@ class VariationalFSOTests(unittest.TestCase):
                 beam_blockage_visibility_mask_digest="4" * 64,
                 spatial_correlation_block_digest="7" * 64,
             )
+
+    def test_mosaic_observation_registry_bounds_and_binds_source_indices(
+        self,
+    ) -> None:
+        source_a = ObservationRadarSource(
+            radar_site_digest="1" * 64,
+            calibration_epoch_digest="2" * 64,
+            quality_weight=1.0,
+            observation_std_dbz=2.0,
+        )
+        source_b = ObservationRadarSource(
+            radar_site_digest="3" * 64,
+            calibration_epoch_digest="4" * 64,
+            quality_weight=0.75,
+            observation_std_dbz=3.0,
+        )
+        registry = MosaicObservationSourceRegistry(
+            radar_source_kind="mosaic",
+            ordered_sources=(source_a, source_b),
+        )
+        plan = VerificationObservationErrorPlan(
+            radar_source_kind="mosaic",
+            source_registry_digest=registry.source_registry_digest,
+            calibration_registry_digest=registry.calibration_registry_digest,
+            range_elevation_validity_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
+            beam_blockage_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
+            attenuation_qc_digest="5" * 64,
+            censoring_rule_digest="6" * 64,
+            spatial_correlation_block_algorithm_digest="7" * 64,
+            quality_weight_interpretation_digest="8" * 64,
+            quality_weight_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
+            observation_std_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
+            observation_error_model_digest="9" * 64,
+            source_assignment_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
+            minimum_detectable_echo_dbz=-10.0,
+            observation_error_reference_std_dbz=2.0,
+        )
+        registry.validate_against_plan(plan)
+        registry.validate_source_map(
+            torch.tensor([[[0, 1, -1]]], dtype=torch.int64),
+            expected_shape=torch.Size((1, 1, 3)),
+            expected_device=torch.device("cpu"),
+        )
+        for invalid_index in (2, 999):
+            with self.subTest(invalid_index=invalid_index):
+                with self.assertRaisesRegex(ValueError, "outside its registry"):
+                    registry.validate_source_map(
+                        torch.tensor([[[invalid_index]]], dtype=torch.int64),
+                        expected_shape=torch.Size((1, 1, 1)),
+                        expected_device=torch.device("cpu"),
+                    )
+        reordered = MosaicObservationSourceRegistry(
+            radar_source_kind="mosaic",
+            ordered_sources=(source_b, source_a),
+        )
+        with self.assertRaisesRegex(ValueError, "disagrees with its plan"):
+            reordered.validate_against_plan(plan)
+        wrong_calibration = MosaicObservationSourceRegistry(
+            radar_source_kind="mosaic",
+            ordered_sources=(
+                replace(
+                    source_a,
+                    calibration_epoch_digest=source_b.calibration_epoch_digest,
+                ),
+                replace(
+                    source_b,
+                    calibration_epoch_digest=source_a.calibration_epoch_digest,
+                ),
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "disagrees with its plan"):
+            wrong_calibration.validate_against_plan(plan)
+
+    def test_observation_error_derivation_replays_exact_registry_tensors(
+        self,
+    ) -> None:
+        registry = MosaicObservationSourceRegistry(
+            radar_source_kind="mosaic",
+            ordered_sources=(
+                ObservationRadarSource(
+                    radar_site_digest="1" * 64,
+                    calibration_epoch_digest="2" * 64,
+                    quality_weight=1.0,
+                    observation_std_dbz=2.0,
+                ),
+                ObservationRadarSource(
+                    radar_site_digest="3" * 64,
+                    calibration_epoch_digest="4" * 64,
+                    quality_weight=0.5,
+                    observation_std_dbz=4.0,
+                ),
+            ),
+        )
+        plan = VerificationObservationErrorPlan(
+            radar_source_kind="mosaic",
+            source_registry_digest=registry.source_registry_digest,
+            calibration_registry_digest=registry.calibration_registry_digest,
+            range_elevation_validity_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
+            beam_blockage_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
+            attenuation_qc_digest="5" * 64,
+            censoring_rule_digest="6" * 64,
+            spatial_correlation_block_algorithm_digest="7" * 64,
+            quality_weight_interpretation_digest="8" * 64,
+            quality_weight_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
+            observation_std_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
+            observation_error_model_digest="9" * 64,
+            source_assignment_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
+            minimum_detectable_echo_dbz=-10.0,
+            observation_error_reference_std_dbz=2.0,
+            derivation_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
+            ),
+            contract="verification-observation-error-plan-v2",
+        )
+        frames = torch.tensor([[[12.0, -12.0, 0.0]]])
+        source_map = torch.tensor([[[0, 1, -1]]], dtype=torch.int64)
+        raw_inputs = VerificationObservationDerivationInputs(
+            frames_dbz=frames,
+            source_present_mask=torch.ones_like(frames, dtype=torch.bool),
+            range_elevation_valid_mask=torch.ones_like(
+                frames,
+                dtype=torch.bool,
+            ),
+            beam_blocked_mask=torch.zeros_like(frames, dtype=torch.bool),
+            attenuation_qc_valid_mask=torch.ones_like(
+                frames,
+                dtype=torch.bool,
+            ),
+            below_detection_censored_mask=torch.zeros_like(
+                frames,
+                dtype=torch.bool,
+            ),
+            source_radar_index_map=source_map,
+            upstream_verification_artifact_digest="d" * 64,
+            range_elevation_validity_domain_digest="3" * 64,
+            beam_blockage_visibility_mask_digest="4" * 64,
+            spatial_correlation_block_digest="7" * 64,
+        )
+        derivation = derive_verification_observation_error(
+            plan=plan,
+            raw_verification_source=raw_inputs,
+            source_registry=registry,
+        )
+        derivation.validate_replay()
+        repeated = derive_verification_observation_error(
+            plan=plan,
+            raw_verification_source=raw_inputs,
+            source_registry=registry,
+        )
+        self.assertEqual(repeated.artifact_digest, derivation.artifact_digest)
+        self.assertEqual(
+            repeated.raw_inputs.raw_verification_identity_digest,
+            derivation.raw_inputs.raw_verification_identity_digest,
+        )
+        with self.assertRaisesRegex(ValueError, "derivation is unsupported"):
+            replace(plan, quality_weight_algorithm_digest="f" * 64)
+        self.assertTrue(
+            torch.equal(
+                derivation.valid_mask,
+                torch.tensor([[[True, True, False]]]),
+            )
+        )
+        self.assertTrue(
+            torch.equal(
+                derivation.quality_weight,
+                torch.tensor([[[1.0, 0.5, 0.0]]]),
+            )
+        )
+        self.assertTrue(
+            torch.equal(
+                derivation.observation_std_dbz,
+                torch.tensor([[[2.0, 4.0, 0.0]]]),
+            )
+        )
+        contract = derivation.observation_error_contract
+        self.assertEqual(contract.scientific_evidence_mode, "deterministic_replay")
+        bundle = VerificationBundle(
+            frames_dbz=frames,
+            valid_mask=derivation.valid_mask,
+            valid_times=("2026-08-05T00:30:00Z",),
+            grid_contract_digest="a" * 64,
+            radar_product_digest="b" * 64,
+            qc_pipeline_digest="5" * 64,
+            mask_policy_digest="c" * 64,
+            censor_policy_digest="6" * 64,
+            reflectivity_resolution_dbz=0.5,
+            quantization_origin_dbz=-10.0,
+            threshold_bin_convention="nearest_rounding_threshold_censor",
+            floor_representation_contract_digest="e" * 64,
+            quality_weight=derivation.quality_weight,
+            observation_std_dbz=derivation.observation_std_dbz,
+            observation_state_code=derivation.observation_state_code,
+            source_radar_index_map=derivation.source_radar_index_map,
+            observation_error_contract=contract,
+            observation_error_derivation=derivation,
+            contract="radar-verification-bundle-v7",
+        )
+        bundle.validate_integrity()
+        exploratory = VerificationObservationErrorContract.from_tensors(
+            plan=plan,
+            frames_dbz=frames,
+            valid_mask=derivation.valid_mask,
+            quality_weight=derivation.quality_weight,
+            observation_std_dbz=derivation.observation_std_dbz,
+            observation_state_code=derivation.observation_state_code,
+            source_radar_index_map=derivation.source_radar_index_map,
+            source_calibration_epochs=registry.source_calibration_epochs,
+            range_elevation_validity_domain_digest="3" * 64,
+            beam_blockage_visibility_mask_digest="4" * 64,
+            spatial_correlation_block_digest="7" * 64,
+        )
+        self.assertEqual(exploratory.scientific_evidence_mode, "exploratory_only")
+        with self.assertRaisesRegex(ValueError, "disagrees with observation-error replay"):
+            replace(bundle, observation_error_contract=exploratory)
+        for tensor_name in (
+            "_quality_weight",
+            "_observation_std_dbz",
+            "_observation_state_code",
+        ):
+            attacked = derive_verification_observation_error(
+                plan=plan,
+                raw_verification_source=raw_inputs,
+                source_registry=registry,
+            )
+            tensor = getattr(attacked, tensor_name)
+            tensor.data[0, 0, 0] = 0
+            with self.subTest(tensor_name=tensor_name):
+                with self.assertRaisesRegex(ValueError, "replay mismatch"):
+                    attacked.validate_replay()
+        attacked_plan = replace(plan)
+        attacked_plan_derivation = derive_verification_observation_error(
+            plan=attacked_plan,
+            raw_verification_source=raw_inputs,
+            source_registry=registry,
+        )
+        object.__setattr__(
+            attacked_plan,
+            "minimum_detectable_echo_dbz",
+            -20.0,
+        )
+        with self.assertRaisesRegex(ValueError, "plan digest mismatch"):
+            attacked_plan_derivation.validate_replay()
+        attacked_registry = MosaicObservationSourceRegistry(
+            radar_source_kind="mosaic",
+            ordered_sources=tuple(
+                replace(source) for source in registry.ordered_sources
+            ),
+        )
+        attacked_registry_derivation = derive_verification_observation_error(
+            plan=plan,
+            raw_verification_source=raw_inputs,
+            source_registry=attacked_registry,
+        )
+        object.__setattr__(
+            attacked_registry.ordered_sources[0],
+            "quality_weight",
+            0.25,
+        )
+        with self.assertRaisesRegex(ValueError, "source digest mismatch"):
+            attacked_registry_derivation.validate_replay()
+        attacked_source = derive_verification_observation_error(
+            plan=plan,
+            raw_verification_source=raw_inputs,
+            source_registry=registry,
+        )
+        assert attacked_source.raw_inputs.source_radar_index_map is not None
+        attacked_source.raw_inputs.source_radar_index_map.data[0, 0, 0] = 999
+        with self.assertRaisesRegex(ValueError, "input mismatch"):
+            attacked_source.validate_replay()
 
     def test_observation_error_gaussian_diagnostic_is_proper_and_report_only(
         self,
