@@ -14,10 +14,10 @@
 
 | ID | Priority | Claim | Boundary | Current-tree result | Classification | Minimal action | Acceptance test | Implementation | Local tests | PR/CI |
 |---|---|---|---|---|---|---|---|---|---|---|
-| R134-001 | P1-HIGH | Source-specific gather changed mask/error semantics without changing the preregistered algorithm identities or nested observation contract generations. | Preregistered scientific algorithm identity and current/audit generation boundary | REPRODUCED | repository-actionable | Introduce explicit source-specific mask/error algorithm generations, cascade current observation contracts, and decode prior generations as audit-only. | Old plan/evidence cannot enter current recomputation; current plan/evidence succeeds; changing current semantics without identity change fails a pinned-identity regression. | ✅ | ✅ targeted | ☐ PR/CI |
-| R134-002 | P1-MEDIUM | The scoring replay archive does not independently preserve the verification observation plan, registry, source identity, source-specific evidence, mask derivation, and error derivation needed for cold-start semantic recomputation. | Durable scientific replay bundle | REPRODUCED | repository-actionable | Add content-addressed verification provenance JSON/tensor members and reconstruct the current verification provenance chain from bundle bytes when caller cases are absent. | Delete original Python objects and reopen from bundle bytes only; require identical source/mask/error/v9 bundle digests with `verification_semantic_replay_verified=True`. Full forecast/model scoring remains separately gated by typed cases and `semantic_replay_verified`. | ✅ | ✅ targeted | ☐ PR/CI |
-| R134-003 | P1-SCIENTIFIC | Source-specific spatial QC is bound, but reflectivity, acquisition time, censor state, and detection limit remain mosaic-wide rather than selected-source derived. | Real-radar mosaic observation semantics | REPRODUCED | repository-actionable for the typed contract; real-data validation remains external | Introduce source-specific observation value/time/detection evidence or a signed mosaic-composition artifact and gather the selected source deterministically. | Swapping source-specific values/times/limits while holding the source map fixed is rejected; selected fields equal the selected source row. | ✅ | ✅ targeted | ☐ PR/CI |
-| R134-004 | P2 | Highest-scoring unavailable source does not fall back to the next available source, but the intended scientific policy needs an explicit regression and documentation. | Source assignment policy | REPRODUCED | repository-actionable design lock | Preserve the fail-closed upstream-assignment interpretation and pin it with a direct test and documentation. | Highest score unavailable while a lower score is available yields `SOURCE_MISSING` and never silently selects the lower-ranked source. | ✅ | ✅ targeted | ☐ PR/CI |
+| R134-001 | P1-HIGH | Source-specific gather changed mask/error semantics without changing the preregistered algorithm identities or nested observation contract generations. | Preregistered scientific algorithm identity and current/audit generation boundary | REPRODUCED | repository-actionable | Introduce explicit source-specific mask/error algorithm generations, cascade current observation contracts, and decode prior generations as audit-only. | Old plan/evidence cannot enter current recomputation; current plan/evidence succeeds; changing current semantics without identity change fails a pinned-identity regression. | ✅ | ✅ targeted | ✅ exact-head CI |
+| R134-002 | P1-MEDIUM | The scoring replay archive does not independently preserve the verification observation plan, registry, source identity, source-specific evidence, mask derivation, and error derivation needed for cold-start semantic recomputation. | Durable scientific replay bundle | REPRODUCED | repository-actionable | Add content-addressed verification provenance JSON/tensor members and reconstruct the current verification provenance chain from bundle bytes when caller cases are absent. | Delete original Python objects and reopen from bundle bytes only; require identical source/mask/error/v9 bundle digests with `verification_semantic_replay_verified=True`. Full forecast/model scoring remains separately gated by typed cases and `semantic_replay_verified`. | ✅ | ✅ targeted | ✅ exact-head CI |
+| R134-003 | P1-SCIENTIFIC | Source-specific spatial QC is bound, but reflectivity, acquisition time, censor state, and detection limit remain mosaic-wide rather than selected-source derived. | Real-radar mosaic observation semantics | REPRODUCED | repository-actionable for the typed contract; real-data validation remains external | Introduce source-specific observation value/time/detection evidence or a signed mosaic-composition artifact and gather the selected source deterministically. | Swapping source-specific values/times/limits while holding the source map fixed is rejected; selected fields equal the selected source row. | ✅ | ✅ targeted | ✅ exact-head CI |
+| R134-004 | P2 | Highest-scoring unavailable source does not fall back to the next available source, but the intended scientific policy needs an explicit regression and documentation. | Source assignment policy | REPRODUCED | repository-actionable design lock | Preserve the fail-closed upstream-assignment interpretation and pin it with a direct test and documentation. | Highest score unavailable while a lower score is available yields `SOURCE_MISSING` and never silently selects the lower-ranked source. | ✅ | ✅ targeted | ✅ exact-head CI |
 
 ## Friendly findings and strengths to preserve
 
@@ -41,8 +41,8 @@
 - [x] Adjacent and broad suites pass.
 - [x] Every changed schema, attested source, digest preimage, and required nested field has regenerated producer and consumer evidence.
 - [x] Evidence/manifests/distribution documents are synchronized when affected.
-- [ ] PR head equals the reported pushed commit.
-- [ ] CI failures are classified as code or external infrastructure/policy.
+- [x] PR head equals the reported pushed commit.
+- [x] CI failures are classified as code or external infrastructure/policy.
 - [x] Offline research, real-radar confirmatory claims, external publication, and operational deployment have separate decisions.
 - [x] External scientific evidence remains visible with owner and required action.
 - [x] Merge remains HOLD unless explicitly authorized.
@@ -58,6 +58,18 @@
 - sdist/wheel build: `advar_radar_nowcast-0.98.0` artifacts built successfully.
 - Built-wheel target import and CLI help smoke: pass; exact hash-locked offline closure remains a required remote CI check.
 
+## PR delivery evidence
+
+- PR: `#134` — <https://github.com/gonos2k/AD4DVAR-radar/pull/134>
+- Base: `main@a246966c68f2dcbaea89cc6905b9b1a58ef2e18c`
+- Implementation head: `fd1e9b00193b6f5dacb5ccad5b0da1f0a43ff2eb`
+- Exact-head CI run: `32402454698` — SUCCESS.
+- Python 3.10 CPU: SUCCESS, `786 passed`, `2 skipped`, `439 subtests passed`, `1h8m28s`.
+- Python 3.12 CPU: SUCCESS, `786 passed`, `2 skipped`, `439 subtests passed`, basedpyright `0 errors`, `1h8m4s`.
+- Wheel and CLI smoke: SUCCESS, `4m20s`; hash-locked offline installation and bundle/runtime checks passed.
+- Nonblocking infrastructure annotation: `actions/upload-artifact` Node.js 20 deprecation.
+- PR remains OPEN and unmerged pending independent review and explicit merge authorization.
+
 ## Final decision
 
 | Scope | Decision | Evidence/condition |
@@ -67,4 +79,4 @@
 | Confirmatory real-radar scientific claim | HOLD | Requires repository closure plus X134-001 independent evidence. |
 | External publication | HOLD | Requires confirmatory protocol and independent cohort evidence. |
 | Operational deployment | NO-GO / out of scope | Project is explicitly centered on scientific validation, not operational deployment. |
-| PR #134 merge | HOLD | No PR exists yet; exact-head CI and independent review are required. |
+| PR #134 merge | HOLD | PR is OPEN with green implementation-head CI; independent review and explicit merge authorization are still required. |
