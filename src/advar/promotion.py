@@ -57,10 +57,14 @@ from .range_geometry import (
 )
 from .runtime_closure import validate_current_runtime_closure
 from .sensitivity import (
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V3_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V2_DIGEST,
     SensitivityConfig,
+    ObservationErrorDerivationArtifact,
     VerificationBundle,
     VerificationCellState,
     VerificationObservationErrorPlan,
+    VerificationObservationMaskDerivationArtifact,
     _ResolvedVerification,
     _forecast_result_content_digest,
     _load_learning_policy_trust_store,
@@ -236,16 +240,23 @@ TRAINING_NORMALIZATION_MASK_WEIGHT_POLICY_DIGEST = json_digest(
 
 
 SEMANTIC_SCORING_REPLAY_CONTRACT = (
-    "neural-prior-scoring-replay-bundle-v13"
+    "neural-prior-scoring-replay-bundle-v14"
 )
 SEMANTIC_SCORING_REPLAY_METHOD = (
-    "builtin-semantic-scoring-recomputation-v13"
+    "builtin-semantic-scoring-recomputation-v14"
 )
 SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD: dict[str, str] = {
-    "contract": "neural-prior-semantic-scoring-generation-v11",
+    "contract": "neural-prior-semantic-scoring-generation-v12",
     "replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
     "replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
-    "case_contract": "neural-prior-semantic-scoring-case-v12",
+    "case_contract": "neural-prior-semantic-scoring-case-v13",
+    "observation_mask_algorithm_digest": (
+        OBSERVATION_MASK_DERIVATION_ALGORITHM_V2_DIGEST
+    ),
+    "observation_error_algorithm_digest": (
+        OBSERVATION_ERROR_DERIVATION_ALGORITHM_V3_DIGEST
+    ),
+    "verification_bundle_contract": "radar-verification-bundle-v9",
     "product_type_policy": "exact-shipped-product-types-v1",
     "forecast_integrity": "forecast-result-raw-content-validation-v1",
     "prior_integrity": "runner-reproduced-prior-application-v1",
@@ -9788,6 +9799,13 @@ class NeuralPriorHoldoutPlan:
                 *self.state_calibration_target_plans,
             )
         }
+        if any(
+            item.contract != "verification-observation-error-plan-v4"
+            for item in self.verification_observation_error_plans
+        ):
+            raise ValueError(
+                "current holdout requires observation-error plan v4"
+            )
         if (
             len(retained_observation_error_plans)
             != len(self.verification_observation_error_plans)
@@ -12238,7 +12256,7 @@ class PriorUncertaintyTarget:
         verification.validate_integrity()
         if (
             plan.contract != "prior-uncertainty-target-plan-v7"
-            or verification.contract != "radar-verification-bundle-v8"
+            or verification.contract != "radar-verification-bundle-v9"
             or verification.observation_error_contract is None
             or verification.observation_error_contract
             .observation_error_plan_digest
@@ -12369,7 +12387,7 @@ class NeuralPriorStateCalibrationTarget:
     ) -> NeuralPriorStateCalibrationTarget:
         verification.validate_integrity()
         if (
-            verification.contract != "radar-verification-bundle-v8"
+            verification.contract != "radar-verification-bundle-v9"
             or verification.observation_error_contract is None
             or verification.observation_error_contract
             .observation_error_plan_digest
@@ -15163,6 +15181,11 @@ class ScoringReplayCaseArtifact:
             raise ValueError("semantic scoring replay case is invalid")
         ForecastResult.validate_issuance(self.candidate_forecast)
         ForecastResult.validate_issuance(self.parent_forecast)
+        if self.verification.contract != "radar-verification-bundle-v9":
+            raise ValueError(
+                "semantic scoring replay requires current source-composed "
+                "verification"
+            )
         VerificationBundle.validate_integrity(self.verification)
         NeuralPriorApplication.validate_integrity(
             self.candidate_prior_application
@@ -15654,6 +15677,28 @@ class ScoringReplayCaseArtifact:
             ),
             "verification_frames_dbz": self.verification.frames_dbz,
             "verification_valid_mask": self.verification.valid_mask,
+            "verification_quality_weight": cast(
+                Tensor, self.verification.quality_weight
+            ),
+            "verification_observation_std_dbz": cast(
+                Tensor, self.verification.observation_std_dbz
+            ),
+            "verification_observation_state_code": cast(
+                Tensor, self.verification.observation_state_code
+            ),
+            "verification_source_radar_index_map": (
+                torch.zeros_like(
+                    self.verification.frames_dbz, dtype=torch.int64
+                )
+                if self.verification.source_radar_index_map is None
+                else self.verification.source_radar_index_map
+            ),
+            "verification_detection_limit_dbz": cast(
+                Tensor, self.verification.detection_limit_dbz
+            ),
+            "verification_acquisition_time_offset_seconds": cast(
+                Tensor, self.verification.acquisition_time_offset_seconds
+            ),
             "candidate_state_background_dbz": candidate.state_background_dbz,
             "candidate_state_std_dbz": candidate.state_std_dbz,
             "candidate_state_valid_mask": candidate.state_valid_mask,
@@ -15708,6 +15753,65 @@ class ScoringReplayCaseArtifact:
                 dtype=torch.int32,
             ),
         }
+        error_derivation = cast(
+            ObservationErrorDerivationArtifact,
+            self.verification.observation_error_derivation,
+        )
+        mask_derivation = cast(
+            VerificationObservationMaskDerivationArtifact,
+            error_derivation.raw_inputs.mask_derivation,
+        )
+        raw_verification = mask_derivation.raw_evidence
+        result.update(
+            {
+                "verification_source_reflectivity_dbz": (
+                    raw_verification.reflectivity_dbz_by_source
+                ),
+                "verification_source_detection_limit_dbz": (
+                    raw_verification.detection_limit_dbz_by_source
+                ),
+                "verification_source_acquisition_time_offset_seconds": (
+                    raw_verification
+                    .acquisition_time_offset_seconds_by_source
+                ),
+                "verification_source_below_detection_reported": (
+                    raw_verification.below_detection_reported_by_source
+                ),
+                "verification_source_assignment_scores": (
+                    raw_verification.source_assignment_scores
+                ),
+                "verification_source_availability_by_time": (
+                    raw_verification.source_availability_by_time
+                ),
+                "verification_source_range_km": (
+                    raw_verification.range_km_by_source
+                ),
+                "verification_source_elevation_deg": (
+                    raw_verification.elevation_deg_by_source
+                ),
+                "verification_source_beam_blockage_fraction": (
+                    raw_verification.beam_blockage_fraction_by_source
+                ),
+                "verification_source_attenuation_qc_score": (
+                    raw_verification.attenuation_qc_score_by_source
+                ),
+                "verification_source_present_mask": (
+                    mask_derivation.source_present_mask
+                ),
+                "verification_range_elevation_valid_mask": (
+                    mask_derivation.range_elevation_valid_mask
+                ),
+                "verification_beam_blocked_mask": (
+                    mask_derivation.beam_blocked_mask
+                ),
+                "verification_attenuation_qc_valid_mask": (
+                    mask_derivation.attenuation_qc_valid_mask
+                ),
+                "verification_below_detection_censored_mask": (
+                    mask_derivation.below_detection_censored_mask
+                ),
+            }
+        )
         if self.background_frames_dbz is not None:
             result["background_frames_dbz"] = self.background_frames_dbz
         if self.resolved_source_coverage is not None:
@@ -15771,7 +15875,7 @@ class ScoringReplayCaseArtifact:
     ) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-semantic-scoring-case-v12",
+                "contract": "neural-prior-semantic-scoring-case-v13",
                 "semantic_replay_generation_digest": (
                     SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
                 ),
@@ -16095,6 +16199,7 @@ def compute_observation_error_gaussian_diagnostic(
             "radar-verification-bundle-v6",
             "radar-verification-bundle-v7",
             "radar-verification-bundle-v8",
+            "radar-verification-bundle-v9",
         }
         or state is None
         or observation_std is None
@@ -16159,14 +16264,18 @@ def compute_observation_error_gaussian_diagnostic(
     censored_nll: Tensor | None = None
     censored_score: float | None = None
     if bool(torch.any(censored_mask)):
-        threshold = torch.as_tensor(
-            error_contract.minimum_detectable_echo_dbz,
-            dtype=torch.float64,
-            device=forecast_location_dbz.device,
-        )
+        threshold = (
+            verification.detection_limit_dbz.masked_select(censored_mask)
+            if verification.detection_limit_dbz is not None
+            else torch.full_like(
+                forecast_location_dbz.masked_select(censored_mask),
+                error_contract.minimum_detectable_echo_dbz,
+            )
+        ).to(torch.float64)
         censored_z = (
-            threshold - forecast_location_dbz.masked_select(censored_mask)
-        ).to(torch.float64) / effective_scale.masked_select(censored_mask)
+            threshold
+            - forecast_location_dbz.masked_select(censored_mask).to(torch.float64)
+        ) / effective_scale.masked_select(censored_mask)
         resolved_censored_nll = -torch.special.log_ndtr(censored_z)
         censored_nll = resolved_censored_nll
         censored_score = weighted_mean(
@@ -17106,7 +17215,7 @@ class HoldoutScoringArtifact:
     parent_forecast_digests: tuple[str, ...]
     verification_digests: tuple[str, ...]
     metric_contract_digests: tuple[str, ...]
-    contract: str = "neural-prior-holdout-scoring-artifact-v13"
+    contract: str = "neural-prior-holdout-scoring-artifact-v14"
     artifact_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -17218,7 +17327,7 @@ class HoldoutScoringArtifact:
             "metric_contract_digests": tuple(
                 item.metric_contract_digest for item in ordered
             ),
-            "contract": "neural-prior-holdout-scoring-artifact-v13",
+            "contract": "neural-prior-holdout-scoring-artifact-v14",
         }
         artifact = _new_holdout_scoring_artifact(**values)
         validate_holdout_scoring_artifact(
@@ -17318,6 +17427,35 @@ class LegacyHoldoutScoringArtifactAuditV12:
         )
 
 
+@dataclass(frozen=True)
+class LegacyHoldoutScoringArtifactAuditV13:
+    """Pre-source-composition scoring output retained for audit only."""
+
+    artifact_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-scoring-artifact-audit-v13"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _validate_generic_legacy_digest_payload(
+            digest=self.artifact_digest,
+            payload_json=self.payload_json,
+            digest_field="artifact_digest",
+            original_contract="neural-prior-holdout-scoring-artifact-v13",
+        )
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "artifact_digest": self.artifact_digest,
+                    "payload_json": self.payload_json,
+                }
+            ),
+        )
+
+
 def _new_holdout_scoring_artifact(**values: object) -> HoldoutScoringArtifact:
     artifact = object.__new__(HoldoutScoringArtifact)
     for name, value in values.items():
@@ -17359,7 +17497,7 @@ def validate_holdout_scoring_artifact(
     ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
     start = manifest.candidate_scoring_start_receipt
     if (
-        artifact.contract != "neural-prior-holdout-scoring-artifact-v13"
+        artifact.contract != "neural-prior-holdout-scoring-artifact-v14"
         or artifact.artifact_digest != json_digest(artifact.payload)
         or artifact.holdout_plan_digest != plan.plan_digest
         or artifact.candidate_manifest_digest != manifest.manifest_digest

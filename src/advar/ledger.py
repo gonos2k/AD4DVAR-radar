@@ -64,7 +64,17 @@ from .sensitivity import (
     LearningApprovalEvidence,
     SensitivitySnapshot,
     VariationalLearningImpact,
+    MosaicObservationSourceRegistry,
+    ObservationRadarSource,
+    ObservationErrorDerivationArtifact,
+    VerificationBundle,
+    VerificationObservationDerivationInputs,
     VerificationObservationErrorPlan,
+    VerificationObservationMaskDerivationArtifact,
+    VerificationObservationMaskEvidence,
+    VerificationObservationSourceIdentity,
+    derive_verification_observation_error,
+    derive_verification_observation_masks,
     _load_learning_policy_trust_store,
     validate_variational_learning_impact,
 )
@@ -266,6 +276,7 @@ from .promotion import (
     LegacyHoldoutScoringArtifactAuditV10,
     LegacyHoldoutScoringArtifactAuditV11,
     LegacyHoldoutScoringArtifactAuditV12,
+    LegacyHoldoutScoringArtifactAuditV13,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     ScoringReplayCaseArtifact,
@@ -1334,12 +1345,40 @@ LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V8 = (
     LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V6
     | SCORING_REPLAY_RAW_PRODUCT_TENSOR_ROLES
 )
-SCORING_REPLAY_REQUIRED_TENSOR_ROLES = (
+LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V13 = (
     LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V8
     | frozenset(
         {
             "input_observation_std_dbz",
             "input_source_available_mask",
+        }
+    )
+)
+SCORING_REPLAY_REQUIRED_TENSOR_ROLES = (
+    LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V13
+    | frozenset(
+        {
+            "verification_quality_weight",
+            "verification_observation_std_dbz",
+            "verification_observation_state_code",
+            "verification_source_radar_index_map",
+            "verification_detection_limit_dbz",
+            "verification_acquisition_time_offset_seconds",
+            "verification_source_reflectivity_dbz",
+            "verification_source_detection_limit_dbz",
+            "verification_source_acquisition_time_offset_seconds",
+            "verification_source_below_detection_reported",
+            "verification_source_assignment_scores",
+            "verification_source_availability_by_time",
+            "verification_source_range_km",
+            "verification_source_elevation_deg",
+            "verification_source_beam_blockage_fraction",
+            "verification_source_attenuation_qc_score",
+            "verification_source_present_mask",
+            "verification_range_elevation_valid_mask",
+            "verification_beam_blocked_mask",
+            "verification_attenuation_qc_valid_mask",
+            "verification_below_detection_censored_mask",
         }
     )
 )
@@ -1423,6 +1462,7 @@ class ScoringReplayBundleManifest:
     tensor_archive_sha256: str
     evaluation_payload_sha256: str
     raw_provenance_payload_sha256: str
+    verification_provenance_payload_sha256: str | None = None
     raw_ingestor_trust_store_digest: str | None = None
     replay_method: str = SEMANTIC_SCORING_REPLAY_METHOD
     contract: str = SEMANTIC_SCORING_REPLAY_CONTRACT
@@ -1475,7 +1515,13 @@ class ScoringReplayBundleManifest:
         if any(value is not None for value in certification_digests):
             raise ValueError("current scoring replay is CPU-only")
         if (
-            self.raw_ingestor_trust_store_digest is None
+            self.verification_provenance_payload_sha256 is None
+            or re.fullmatch(
+                r"[0-9a-f]{64}",
+                self.verification_provenance_payload_sha256,
+            )
+            is None
+            or self.raw_ingestor_trust_store_digest is None
             or re.fullmatch(
                 r"[0-9a-f]{64}", self.raw_ingestor_trust_store_digest
             )
@@ -1555,6 +1601,10 @@ class ScoringReplayBundleManifest:
             ),
             "replay_method": self.replay_method,
         }
+        if self.verification_provenance_payload_sha256 is not None:
+            payload["verification_provenance_payload_sha256"] = (
+                self.verification_provenance_payload_sha256
+            )
         if self.raw_ingestor_trust_store_digest is not None:
             payload["raw_ingestor_trust_store_digest"] = (
                 self.raw_ingestor_trust_store_digest
@@ -2208,7 +2258,7 @@ class LegacyScoringReplayBundleManifestAuditV9(ScoringReplayBundleManifest):
             (case_id, role)
             for case_id in self.ordered_case_ids
             for role in (
-                SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V13
                 | (
                     SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
                     if case_id in self.dynamic_source_case_ids
@@ -2279,7 +2329,7 @@ class LegacyScoringReplayBundleManifestAuditV11(ScoringReplayBundleManifest):
             (case_id, role)
             for case_id in self.ordered_case_ids
             for role in (
-                SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V13
                 | (
                     SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
                     if case_id in self.dynamic_source_case_ids
@@ -2350,7 +2400,7 @@ class LegacyScoringReplayBundleManifestAuditV12(ScoringReplayBundleManifest):
             (case_id, role)
             for case_id in self.ordered_case_ids
             for role in (
-                SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V13
                 | (
                     SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
                     if case_id in self.dynamic_source_case_ids
@@ -2370,6 +2420,77 @@ class LegacyScoringReplayBundleManifestAuditV12(ScoringReplayBundleManifest):
 
 
 @dataclass(frozen=True)
+class LegacyScoringReplayBundleManifestAuditV13(ScoringReplayBundleManifest):
+    """Pre-source-composition v13 replay retained for byte audit only."""
+
+    replay_method: str = "builtin-semantic-scoring-recomputation-v13"
+    contract: str = "neural-prior-scoring-replay-bundle-v13"
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-scoring-replay-bundle-v13"
+            or self.replay_method
+            != "builtin-semantic-scoring-recomputation-v13"
+            or not self.ordered_case_ids
+            or len(set(self.ordered_case_ids)) != len(self.ordered_case_ids)
+            or len(self.ordered_case_ids)
+            != len(self.ordered_evaluation_digests)
+            or len(self.semantic_case_digests) != len(self.ordered_case_ids)
+            or any(
+                case_id not in self.ordered_case_ids
+                for case_id in (
+                    *self.dynamic_source_case_ids,
+                    *self.background_case_ids,
+                )
+            )
+            or any(
+                value is not None
+                for value in (
+                    self.scoring_backend_certification_policy_digest,
+                    self.scoring_backend_certification_evidence_digest,
+                )
+            )
+            or self.raw_ingestor_trust_store_digest is None
+        ):
+            raise ValueError("legacy v13 semantic replay manifest is invalid")
+        for value in (
+            self.scoring_input_artifact_digest,
+            *self.ordered_evaluation_digests,
+            *self.semantic_case_digests,
+            self.algorithm_source_manifest_digest,
+            self.runtime_compatibility_digest,
+            self.runtime_exact_digest,
+            self.tensor_archive_sha256,
+            self.evaluation_payload_sha256,
+            self.raw_provenance_payload_sha256,
+            self.raw_ingestor_trust_store_digest,
+        ):
+            if re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError("legacy v13 semantic replay digest is invalid")
+        expected = {
+            (case_id, role)
+            for case_id in self.ordered_case_ids
+            for role in (
+                LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V13
+                | (
+                    SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
+                    if case_id in self.dynamic_source_case_ids
+                    else frozenset()
+                )
+                | (
+                    SCORING_REPLAY_BACKGROUND_TENSOR_ROLES
+                    if case_id in self.background_case_ids
+                    else frozenset()
+                )
+            )
+        }
+        actual = {(item.case_id, item.role) for item in self.tensor_records}
+        if actual != expected or len(actual) != len(self.tensor_records):
+            raise ValueError("legacy v13 semantic replay tensor set is incomplete")
+        object.__setattr__(self, "bundle_digest", _json_digest(self.payload))
+
+
+@dataclass(frozen=True)
 class LoadedScoringReplayBundle:
     manifest: (
         ScoringReplayBundleManifest
@@ -2384,9 +2505,11 @@ class LoadedScoringReplayBundle:
         | LegacyScoringReplayBundleManifestAuditV9
         | LegacyScoringReplayBundleManifestAuditV11
         | LegacyScoringReplayBundleManifestAuditV12
+        | LegacyScoringReplayBundleManifestAuditV13
     )
     evaluations: tuple[PriorHoldoutEvaluation, ...]
     tensors: dict[tuple[str, str], Tensor]
+    verification_semantic_replay_verified: bool
     semantic_replay_verified: bool
 
 
@@ -2411,6 +2534,13 @@ _REPLAY_BOOLEAN_ROLES = frozenset(
         "nominal_source_coverage_mask",
         "resolved_source_coverage_mask",
         "raw_source_qc_flags",
+        "verification_source_below_detection_reported",
+        "verification_source_availability_by_time",
+        "verification_source_present_mask",
+        "verification_range_elevation_valid_mask",
+        "verification_beam_blocked_mask",
+        "verification_attenuation_qc_valid_mask",
+        "verification_below_detection_censored_mask",
     }
 )
 _REPLAY_INTEGER_ROLES = frozenset(
@@ -2420,6 +2550,8 @@ _REPLAY_INTEGER_ROLES = frozenset(
         "raw_source_reflectivity_bits",
         "raw_source_quality_bits",
         "raw_source_observation_std_bits",
+        "verification_observation_state_code",
+        "verification_source_radar_index_map",
     }
 )
 _REPLAY_VECTOR_ROLES = frozenset(
@@ -2482,6 +2614,7 @@ def _validate_scoring_replay_case_tensors(
         if role in _REPLAY_BOOLEAN_ROLES and tensor.dtype is not torch.bool:
             raise ValueError(f"scoring replay {role} must be boolean")
         if role in _REPLAY_INTEGER_ROLES and tensor.dtype not in (
+            torch.uint8,
             torch.int8,
             torch.int16,
             torch.int32,
@@ -2519,17 +2652,38 @@ def _validate_scoring_replay_case_tensors(
             "parent_background_fallback_mask",
             "parent_forecast_confidence",
             "verification_frames_dbz",
-                "verification_valid_mask",
-                "operational_issuance_mask",
-                "input_history_source_radar_index_map",
-                "raw_source_reflectivity_bits",
-                "raw_source_qc_flags",
-                "raw_source_quality_bits",
-                "raw_source_observation_std_bits",
-                "nominal_source_coverage_mask",
-                "resolved_source_coverage_mask",
-                "effective_horizontal_range_m",
-            }
+            "verification_valid_mask",
+            "verification_quality_weight",
+            "verification_observation_std_dbz",
+            "verification_observation_state_code",
+            "verification_source_radar_index_map",
+            "verification_detection_limit_dbz",
+            "verification_acquisition_time_offset_seconds",
+            "verification_source_reflectivity_dbz",
+            "verification_source_detection_limit_dbz",
+            "verification_source_acquisition_time_offset_seconds",
+            "verification_source_below_detection_reported",
+            "verification_source_assignment_scores",
+            "verification_source_availability_by_time",
+            "verification_source_range_km",
+            "verification_source_elevation_deg",
+            "verification_source_beam_blockage_fraction",
+            "verification_source_attenuation_qc_score",
+            "verification_source_present_mask",
+            "verification_range_elevation_valid_mask",
+            "verification_beam_blocked_mask",
+            "verification_attenuation_qc_valid_mask",
+            "verification_below_detection_censored_mask",
+            "operational_issuance_mask",
+            "input_history_source_radar_index_map",
+            "raw_source_reflectivity_bits",
+            "raw_source_qc_flags",
+            "raw_source_quality_bits",
+            "raw_source_observation_std_bits",
+            "nominal_source_coverage_mask",
+            "resolved_source_coverage_mask",
+            "effective_horizontal_range_m",
+        }
     }
     if any(tensors[role].shape != spatial_shape for role in two_dimensional):
         raise ValueError("scoring replay spatial tensor shape is invalid")
@@ -2560,6 +2714,42 @@ def _validate_scoring_replay_case_tensors(
                 raise ValueError("scoring replay issuance tensor shape is invalid")
     if tensors["operational_issuance_mask"].ndim != 3:
         raise ValueError("scoring replay issuance domain must be [lead,H,W]")
+    verification_shape = verification.shape
+    selected_roles = (
+        "verification_valid_mask",
+        "verification_quality_weight",
+        "verification_observation_std_dbz",
+        "verification_observation_state_code",
+        "verification_source_radar_index_map",
+        "verification_detection_limit_dbz",
+        "verification_acquisition_time_offset_seconds",
+        "verification_source_present_mask",
+        "verification_range_elevation_valid_mask",
+        "verification_beam_blocked_mask",
+        "verification_attenuation_qc_valid_mask",
+        "verification_below_detection_censored_mask",
+    )
+    source_cube_roles = (
+        "verification_source_reflectivity_dbz",
+        "verification_source_detection_limit_dbz",
+        "verification_source_acquisition_time_offset_seconds",
+        "verification_source_below_detection_reported",
+        "verification_source_assignment_scores",
+        "verification_source_range_km",
+        "verification_source_elevation_deg",
+        "verification_source_beam_blockage_fraction",
+        "verification_source_attenuation_qc_score",
+    )
+    source_shape = tensors[source_cube_roles[0]].shape
+    if (
+        any(tensors[role].shape != verification_shape for role in selected_roles)
+        or len(source_shape) != 4
+        or source_shape[1:] != verification_shape
+        or any(tensors[role].shape != source_shape for role in source_cube_roles)
+        or tensors["verification_source_availability_by_time"].shape
+        != source_shape[:2]
+    ):
+        raise ValueError("scoring replay verification provenance shape is invalid")
     if dynamic_source and (
         tensors["nominal_source_coverage_mask"].ndim != 3
         or tensors["resolved_source_coverage_mask"].shape
@@ -2584,6 +2774,365 @@ def _scoring_replay_range_geometry(
         for item in case.plan.range_geometry_contracts
         if item.contract_digest == range_band.range_geometry_contract_digest
     )
+
+
+def _current_verification_provenance_payload(
+    case: ScoringReplayCaseArtifact,
+) -> dict[str, object]:
+    """Serialize the non-tensor half of one current verification chain."""
+
+    verification = case.verification
+    if (
+        verification.contract != "radar-verification-bundle-v9"
+        or type(verification.observation_error_derivation)
+        is not ObservationErrorDerivationArtifact
+    ):
+        raise ValueError("current replay requires source-composed verification")
+    derivation = cast(
+        ObservationErrorDerivationArtifact,
+        verification.observation_error_derivation,
+    )
+    raw_inputs = derivation.raw_inputs
+    if (
+        raw_inputs.contract != "verification-observation-derivation-inputs-v3"
+        or type(raw_inputs.mask_derivation)
+        is not VerificationObservationMaskDerivationArtifact
+        or type(raw_inputs.source_identity)
+        is not VerificationObservationSourceIdentity
+    ):
+        raise ValueError("current verification provenance is incomplete")
+    mask_derivation = cast(
+        VerificationObservationMaskDerivationArtifact,
+        raw_inputs.mask_derivation,
+    )
+    evidence = mask_derivation.raw_evidence
+    registry = derivation.source_registry
+    plan = derivation.plan
+    error_contract = derivation.observation_error_contract
+    return {
+        "case_id": case.case_id,
+        "plan": plan.payload | {"plan_digest": plan.plan_digest},
+        "source_registry": registry.payload
+        | {
+            "registry_digest": registry.registry_digest,
+            "ordered_sources": [
+                source.payload | {"source_digest": source.source_digest}
+                for source in registry.ordered_sources
+            ],
+        },
+        "source_identity": cast(
+            VerificationObservationSourceIdentity,
+            raw_inputs.source_identity,
+        ).payload
+        | {
+            "identity_digest": cast(
+                VerificationObservationSourceIdentity,
+                raw_inputs.source_identity,
+            ).identity_digest
+        },
+        "mask_evidence": evidence.payload
+        | {"evidence_digest": evidence.evidence_digest},
+        "mask_derivation": mask_derivation.payload
+        | {"artifact_digest": mask_derivation.artifact_digest},
+        "derivation_inputs": raw_inputs.payload
+        | {"content_digest": raw_inputs.content_digest},
+        "error_derivation": derivation.payload
+        | {"artifact_digest": derivation.artifact_digest},
+        "error_contract": error_contract.payload
+        | {"contract_digest": error_contract.contract_digest},
+        "verification_bundle": {
+            "contract": verification.contract,
+            "valid_times": list(verification.valid_times),
+            "grid_contract_digest": verification.grid_contract_digest,
+            "radar_product_digest": verification.radar_product_digest,
+            "qc_pipeline_digest": verification.qc_pipeline_digest,
+            "mask_policy_digest": verification.mask_policy_digest,
+            "censor_policy_digest": verification.censor_policy_digest,
+            "reflectivity_resolution_dbz": (
+                verification.reflectivity_resolution_dbz
+            ),
+            "quantization_origin_dbz": verification.quantization_origin_dbz,
+            "threshold_bin_convention": verification.threshold_bin_convention,
+            "floor_representation_contract_digest": (
+                verification.floor_representation_contract_digest
+            ),
+            "content_digest": verification.content_digest,
+        },
+    }
+
+
+def _validate_current_verification_provenance_payload(
+    payload_text: str,
+    *,
+    manifest: ScoringReplayBundleManifest,
+    tensors: Mapping[tuple[str, str], Tensor],
+) -> None:
+    """Cold-start the current source-composed verification chain from bytes."""
+
+    try:
+        payload = json.loads(payload_text)
+    except json.JSONDecodeError as error:
+        raise ValueError("scoring replay verification provenance is invalid") from error
+    if (
+        not isinstance(payload, list)
+        or payload_text
+        != json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        or tuple(item.get("case_id") for item in payload if isinstance(item, dict))
+        != manifest.ordered_case_ids
+    ):
+        raise ValueError("scoring replay verification provenance is invalid")
+
+    for retained in payload:
+        if not isinstance(retained, dict):
+            raise ValueError("scoring replay verification provenance is invalid")
+        case_id = cast(str, retained["case_id"])
+        case_tensors = {
+            role: value
+            for (retained_case, role), value in tensors.items()
+            if retained_case == case_id
+        }
+
+        plan_payload = dict(cast(dict[str, object], retained["plan"]))
+        plan_digest = plan_payload.pop("plan_digest", None)
+        plan = VerificationObservationErrorPlan(**cast(Any, plan_payload))
+        if plan.plan_digest != plan_digest:
+            raise ValueError("verification replay plan digest mismatch")
+
+        registry_payload = dict(
+            cast(dict[str, object], retained["source_registry"])
+        )
+        source_payloads = registry_payload.pop("ordered_sources", None)
+        registry_digest = registry_payload.pop("registry_digest", None)
+        if not isinstance(source_payloads, list):
+            raise ValueError("verification replay source registry is invalid")
+        sources: list[ObservationRadarSource] = []
+        for source_payload_value in source_payloads:
+            source_payload = dict(cast(dict[str, object], source_payload_value))
+            source_digest = source_payload.pop("source_digest", None)
+            source = ObservationRadarSource(**cast(Any, source_payload))
+            if source.source_digest != source_digest:
+                raise ValueError("verification replay source digest mismatch")
+            sources.append(source)
+        registry = MosaicObservationSourceRegistry(
+            radar_source_kind=cast(Any, registry_payload["radar_source_kind"]),
+            ordered_sources=tuple(sources),
+            contract=cast(str, registry_payload["contract"]),
+        )
+        if (
+            registry.registry_digest != registry_digest
+            or registry.payload != registry_payload
+        ):
+            raise ValueError("verification replay registry digest mismatch")
+        registry.validate_against_plan(plan)
+
+        identity_payload = dict(
+            cast(dict[str, object], retained["source_identity"])
+        )
+        identity_digest = identity_payload.pop("identity_digest", None)
+        identity_payload.pop("source_acquisition_time_identity_digest", None)
+        valid_times_value = identity_payload["valid_times"]
+        acquisition_times_value = identity_payload["acquisition_valid_times"]
+        if not isinstance(valid_times_value, list) or not all(
+            isinstance(value, str) for value in valid_times_value
+        ):
+            raise ValueError("verification replay valid times are invalid")
+        if not isinstance(acquisition_times_value, list) or not all(
+            isinstance(value, str) for value in acquisition_times_value
+        ):
+            raise ValueError(
+                "verification replay acquisition valid times are invalid"
+            )
+        identity_payload["valid_times"] = tuple(valid_times_value)
+        identity_payload["acquisition_valid_times"] = tuple(
+            acquisition_times_value
+        )
+        source_identity = VerificationObservationSourceIdentity(
+            **cast(Any, identity_payload)
+        )
+        if source_identity.identity_digest != identity_digest:
+            raise ValueError("verification replay source identity mismatch")
+
+        evidence_payload = dict(
+            cast(dict[str, object], retained["mask_evidence"])
+        )
+        evidence_digest = evidence_payload.pop("evidence_digest", None)
+        evidence = VerificationObservationMaskEvidence(
+            source_identity=source_identity,
+            source_registry_artifact_digest=cast(
+                str, evidence_payload["source_registry_artifact_digest"]
+            ),
+            ordered_source_digests=tuple(
+                cast(list[str], evidence_payload["ordered_source_digests"])
+            ),
+            reflectivity_dbz_by_source=case_tensors[
+                "verification_source_reflectivity_dbz"
+            ],
+            detection_limit_dbz_by_source=case_tensors[
+                "verification_source_detection_limit_dbz"
+            ],
+            acquisition_time_offset_seconds_by_source=case_tensors[
+                "verification_source_acquisition_time_offset_seconds"
+            ],
+            below_detection_reported_by_source=case_tensors[
+                "verification_source_below_detection_reported"
+            ],
+            source_assignment_scores=case_tensors[
+                "verification_source_assignment_scores"
+            ],
+            source_availability_by_time=case_tensors[
+                "verification_source_availability_by_time"
+            ],
+            range_km_by_source=case_tensors["verification_source_range_km"],
+            elevation_deg_by_source=case_tensors[
+                "verification_source_elevation_deg"
+            ],
+            beam_blockage_fraction_by_source=case_tensors[
+                "verification_source_beam_blockage_fraction"
+            ],
+            attenuation_qc_score_by_source=case_tensors[
+                "verification_source_attenuation_qc_score"
+            ],
+            range_elevation_validity_domain_digest=cast(
+                str,
+                evidence_payload["range_elevation_validity_domain_digest"],
+            ),
+            beam_blockage_visibility_mask_digest=cast(
+                str,
+                evidence_payload["beam_blockage_visibility_mask_digest"],
+            ),
+            spatial_correlation_block_digest=cast(
+                str, evidence_payload["spatial_correlation_block_digest"]
+            ),
+            contract=cast(str, evidence_payload["contract"]),
+        )
+        if evidence.evidence_digest != evidence_digest:
+            raise ValueError("verification replay evidence digest mismatch")
+
+        mask_derivation = derive_verification_observation_masks(
+            plan=plan,
+            raw_evidence=evidence,
+            source_registry=registry,
+        )
+        retained_mask = cast(dict[str, object], retained["mask_derivation"])
+        if (
+            mask_derivation.artifact_digest
+            != retained_mask.get("artifact_digest")
+            or mask_derivation.payload
+            != {key: value for key, value in retained_mask.items() if key != "artifact_digest"}
+        ):
+            raise ValueError("verification replay mask derivation mismatch")
+        expected_mask_tensors = {
+            "verification_frames_dbz": mask_derivation.selected_frames_dbz,
+            "verification_detection_limit_dbz": (
+                mask_derivation.selected_detection_limit_dbz
+            ),
+            "verification_acquisition_time_offset_seconds": (
+                mask_derivation.selected_acquisition_time_offset_seconds
+            ),
+            "verification_source_present_mask": mask_derivation.source_present_mask,
+            "verification_range_elevation_valid_mask": (
+                mask_derivation.range_elevation_valid_mask
+            ),
+            "verification_beam_blocked_mask": mask_derivation.beam_blocked_mask,
+            "verification_attenuation_qc_valid_mask": (
+                mask_derivation.attenuation_qc_valid_mask
+            ),
+            "verification_below_detection_censored_mask": (
+                mask_derivation.below_detection_censored_mask
+            ),
+        }
+        if any(
+            not bool(torch.equal(case_tensors[role], value))
+            for role, value in expected_mask_tensors.items()
+        ):
+            raise ValueError("verification replay mask tensor mismatch")
+
+        raw_inputs = VerificationObservationDerivationInputs.from_mask_derivation(
+            mask_derivation
+        )
+        retained_inputs = cast(dict[str, object], retained["derivation_inputs"])
+        if (
+            raw_inputs.content_digest != retained_inputs.get("content_digest")
+            or raw_inputs.payload
+            != {key: value for key, value in retained_inputs.items() if key != "content_digest"}
+        ):
+            raise ValueError("verification replay input digest mismatch")
+        derivation = derive_verification_observation_error(
+            plan=plan,
+            raw_verification_source=raw_inputs,
+            source_registry=registry,
+        )
+        retained_derivation = cast(
+            dict[str, object], retained["error_derivation"]
+        )
+        if (
+            derivation.artifact_digest
+            != retained_derivation.get("artifact_digest")
+            or derivation.payload
+            != {
+                key: value
+                for key, value in retained_derivation.items()
+                if key != "artifact_digest"
+            }
+        ):
+            raise ValueError("verification replay error derivation mismatch")
+        error_contract = derivation.observation_error_contract
+        retained_contract = cast(dict[str, object], retained["error_contract"])
+        if (
+            error_contract.contract_digest
+            != retained_contract.get("contract_digest")
+            or error_contract.payload
+            != {
+                key: value
+                for key, value in retained_contract.items()
+                if key != "contract_digest"
+            }
+        ):
+            raise ValueError("verification replay error contract mismatch")
+        source_map = (
+            None
+            if registry.radar_source_kind == "single_site"
+            else case_tensors["verification_source_radar_index_map"]
+        )
+        if registry.radar_source_kind == "single_site" and bool(
+            torch.any(case_tensors["verification_source_radar_index_map"] != 0)
+        ):
+            raise ValueError(
+                "single-site verification replay source map is not canonical"
+            )
+        bundle_payload = dict(
+            cast(dict[str, object], retained["verification_bundle"])
+        )
+        content_digest = bundle_payload.pop("content_digest", None)
+        bundle_valid_times = bundle_payload["valid_times"]
+        if not isinstance(bundle_valid_times, list) or not all(
+            isinstance(value, str) for value in bundle_valid_times
+        ):
+            raise ValueError("verification replay bundle valid times are invalid")
+        bundle_payload["valid_times"] = tuple(bundle_valid_times)
+        verification = VerificationBundle(
+            **cast(Any, bundle_payload),
+            frames_dbz=case_tensors["verification_frames_dbz"],
+            valid_mask=case_tensors["verification_valid_mask"],
+            quality_weight=case_tensors["verification_quality_weight"],
+            observation_std_dbz=case_tensors[
+                "verification_observation_std_dbz"
+            ],
+            observation_state_code=case_tensors[
+                "verification_observation_state_code"
+            ],
+            source_radar_index_map=source_map,
+            detection_limit_dbz=case_tensors[
+                "verification_detection_limit_dbz"
+            ],
+            acquisition_time_offset_seconds=case_tensors[
+                "verification_acquisition_time_offset_seconds"
+            ],
+            observation_error_contract=error_contract,
+            observation_error_derivation=derivation,
+        )
+        if verification.content_digest != content_digest:
+            raise ValueError("verification replay bundle digest mismatch")
 
 
 def _validate_current_raw_provenance_payload(
@@ -9845,6 +10394,20 @@ class EpisodeLedger:
                 ),
                 encoding="utf-8",
             )
+            verification_provenance_path = (
+                temporary / "verification_provenance.json"
+            )
+            verification_provenance_path.write_text(
+                json.dumps(
+                    [
+                        _current_verification_provenance_payload(item)
+                        for item in ordered_cases
+                    ],
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+                encoding="utf-8",
+            )
             manifest = ScoringReplayBundleManifest(
                 scoring_input_artifact_digest=(
                     scoring_input_artifact.artifact_digest
@@ -9874,6 +10437,9 @@ class EpisodeLedger:
                 evaluation_payload_sha256=_file_digest(evaluation_path),
                 raw_provenance_payload_sha256=(
                     _file_digest(raw_provenance_path)
+                ),
+                verification_provenance_payload_sha256=(
+                    _file_digest(verification_provenance_path)
                 ),
                 raw_ingestor_trust_store_digest=(
                     current_scoring_raw_trust.content_digest
@@ -10091,6 +10657,7 @@ class EpisodeLedger:
                         archive_path,
                         evaluation_path,
                         raw_provenance_path,
+                        verification_provenance_path,
                         manifest_path,
                     ),
                     parent=self.scoring_replays_dir,
@@ -10192,6 +10759,7 @@ class EpisodeLedger:
         }
         if current_bundle:
             expected_artifact_members.add("raw_provenance.json")
+            expected_artifact_members.add("verification_provenance.json")
         validate_artifact_directory(
             target,
             expected_members=frozenset(expected_artifact_members),
@@ -10211,6 +10779,7 @@ class EpisodeLedger:
         archive_path = target / "replay_arrays.npz"
         evaluation_path = target / "evaluations.json"
         raw_provenance_path = target / "raw_provenance.json"
+        verification_provenance_path = target / "verification_provenance.json"
         if (
             _file_digest(archive_path) != manifest.tensor_archive_sha256
             or _file_digest(evaluation_path)
@@ -10219,6 +10788,11 @@ class EpisodeLedger:
                 isinstance(manifest, ScoringReplayBundleManifest)
                 and _file_digest(raw_provenance_path)
                 != manifest.raw_provenance_payload_sha256
+            )
+            or (
+                isinstance(manifest, ScoringReplayBundleManifest)
+                and _file_digest(verification_provenance_path)
+                != manifest.verification_provenance_payload_sha256
             )
         ):
             raise ValueError("scoring replay bundle member checksum mismatch")
@@ -10260,6 +10834,11 @@ class EpisodeLedger:
                 )
             _validate_current_raw_provenance_payload(
                 raw_provenance_path.read_text("utf-8"),
+                manifest=manifest,
+                tensors=tensors,
+            )
+            _validate_current_verification_provenance_payload(
+                verification_provenance_path.read_text("utf-8"),
                 manifest=manifest,
                 tensors=tensors,
             )
@@ -10321,6 +10900,9 @@ class EpisodeLedger:
             manifest=manifest,
             evaluations=retained,
             tensors=tensors,
+            verification_semantic_replay_verified=(
+                type(manifest) is ScoringReplayBundleManifest
+            ),
             semantic_replay_verified=semantic_replay_verified,
         )
 
@@ -18149,6 +18731,7 @@ def _decode_holdout_scoring_artifact(
     | LegacyHoldoutScoringArtifactAuditV10
     | LegacyHoldoutScoringArtifactAuditV11
     | LegacyHoldoutScoringArtifactAuditV12
+    | LegacyHoldoutScoringArtifactAuditV13
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -18176,7 +18759,14 @@ def _decode_holdout_scoring_artifact(
             artifact_digest=expected_digest,
             payload_json=json.dumps(value, sort_keys=True, separators=(",", ":")),
         )
-    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v13":
+    if values.get("contract") == "neural-prior-holdout-scoring-artifact-v13":
+        if stored_digest != expected_digest:
+            raise ValueError("holdout scoring artifact digest mismatch")
+        return LegacyHoldoutScoringArtifactAuditV13(
+            artifact_digest=expected_digest,
+            payload_json=json.dumps(value, sort_keys=True, separators=(",", ":")),
+        )
+    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v14":
         raise ValueError("legacy holdout scoring artifacts are audit-only")
     for name in (
         "ordered_case_ids",
@@ -18210,6 +18800,7 @@ def _decode_scoring_replay_bundle_manifest(
     | LegacyScoringReplayBundleManifestAuditV9
     | LegacyScoringReplayBundleManifestAuditV11
     | LegacyScoringReplayBundleManifestAuditV12
+    | LegacyScoringReplayBundleManifestAuditV13
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -18251,6 +18842,7 @@ def _decode_scoring_replay_bundle_manifest(
             | LegacyScoringReplayBundleManifestAuditV9
             | LegacyScoringReplayBundleManifestAuditV11
             | LegacyScoringReplayBundleManifestAuditV12
+            | LegacyScoringReplayBundleManifestAuditV13
         ) = LegacyScoringReplayBundleManifestAuditV1(
             **cast(Any, values)
         )
@@ -18302,6 +18894,10 @@ def _decode_scoring_replay_bundle_manifest(
             )
         elif values.get("contract") == "neural-prior-scoring-replay-bundle-v12":
             manifest = LegacyScoringReplayBundleManifestAuditV12(
+                **cast(Any, values)
+            )
+        elif values.get("contract") == "neural-prior-scoring-replay-bundle-v13":
+            manifest = LegacyScoringReplayBundleManifestAuditV13(
                 **cast(Any, values)
             )
         else:

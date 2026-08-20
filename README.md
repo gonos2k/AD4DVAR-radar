@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.94
+# ADVAR 3-frame radar nowcast v0.98
 
 ADVAR는 운영 배포 시스템이 아니라 레이더 기반 변분 nowcast의 **과학적 실증과
 재현 가능한 offline 연구**를 위한 구현이다. 핵심 산출물은 수치 안정성, 입력·target
@@ -109,7 +109,7 @@ python -I .github/scripts/build_deployment_bundle.py verify \
   --trusted-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.97.0 \
+  --expected-source-ref refs/tags/v0.98.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-signer-id advar-release
@@ -120,7 +120,7 @@ python -I -m pip install --no-index --find-links wheelhouse \
   --require-hashes --only-binary=:all: --no-compile \
   --requirement runtime-py312-linux.lock
 python -I -m pip install --no-index --no-deps --no-compile \
-  advar_radar_nowcast-0.97.0-*.whl
+  advar_radar_nowcast-0.98.0-*.whl
 find <deployment-venv> -type f \
   \( -name '*.pyc' -o -name '*.pyo' -o -name '*.pth' \) -delete
 ```
@@ -147,7 +147,7 @@ python -I .github/scripts/build_deployment_bundle.py approve-release \
   --trusted-bundle-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.97.0 \
+  --expected-source-ref refs/tags/v0.98.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-bundle-signer-id advar-release \
@@ -162,7 +162,7 @@ python -I .github/scripts/build_deployment_bundle.py activate-runtime \
   --trusted-bundle-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.97.0 \
+  --expected-source-ref refs/tags/v0.98.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-bundle-signer-id advar-release \
@@ -913,12 +913,12 @@ withheld radar/time/mask), QC·mask·censor·floor measurement contract,
 feature-exclusion 및 independence evidence를
 사전등록하며 plan payload 자체가 holdout digest에 포함된다. 실제 target은 임의
 Tensor로 만들 수 없고, plan에 고정된 radar product·QC·grid·valid time과 일치하는
-content-addressed `radar-verification-bundle-v8`에서만 생성한다.
+content-addressed `radar-verification-bundle-v9`에서만 생성한다.
 P1 state head에는 별도의 `NeuralPriorStateCalibrationPlan`을 사전등록한다. State target은
 state product·QC·mask·censor·floor policy, dBZ resolution·quantization origin과 prior output
 valid time에 결합되고 feature에서 withhold됐음을 검증한다. Target은 이 측정계보를 실제
 자료와 함께 observation-error contract를 attestation한
-`radar-verification-bundle-v8`에서만 생성된다. Candidate와
+`radar-verification-bundle-v9`에서만 생성된다. Candidate와
 parent의 state interval-Gaussian NLL·PIT,
 support Brier·pixel/object miss·false-support 및 validity Brier를 같은 target에서 paired
 평가한다. 절대 calibration과 cluster max-statistic 비열화 상한을 모두 통과하지 못하면
@@ -1095,9 +1095,9 @@ evaluation JSON에 무관한 임의 tensor를 붙인 snapshot은 자동승격 �
 Forecast, prior application, inference runner, verification, metric config, calibration
 target, classifier와 operational-domain artifact는 각각 제품 validator와 runner
 reproduction을 통과해야 하며, factory가 한 번 동결한 tensor snapshot과 completion 시점의
-live product bytes가 다르면 거부된다. Replay v12 contract와 v12 method, typed
-verification-target identity를 포함한 five-channel CPU-only generation v10 digest는
-`HoldoutScoringArtifact-v13`, promotion evidence v31,
+live product bytes가 다르면 거부된다. Replay v14 contract와 v14 method, typed
+verification-target identity와 source-composition algorithms를 포함한 CPU-only
+generation v12 digest는 `HoldoutScoringArtifact-v14`, promotion evidence v31,
 `DeployedNeuralPriorPolicy-v17`과 deployment-decision artifact v17까지
 직접 전파된다.
 각 holdout case의 `VerificationTargetIdentityArtifact-v2`는 실제 scoring에 사용되는
@@ -1110,28 +1110,30 @@ typed identity를 사용하므로 outer manifest digest를 다시 계산해도 s
 다른 source/time/value/mask/quality로 재라벨링할 수 없다.
 따라서 이전 replay 세대의 promotion evidence는 audit-only이며 배포 selector가
 소비할 수 없다.
-`VerificationObservationErrorPlan-v3`는 forecast scoring 전에 source/calibration
+`VerificationObservationErrorPlan-v4`는 forecast scoring 전에 source/calibration
 registry, range/elevation·beam-blockage·QC·censoring·mosaic source-assignment
 algorithm, quality/std 생성규칙, spatial-block 생성규칙과 reference observation
 standard deviation, product-owned mask/error derivation identity와 독립 verification
 source authority key를 사전등록한다.
 `MosaicObservationSourceRegistry-v1`은 source-map index를 ordered radar-site,
 calibration epoch, source-specific quality와 observation standard deviation에 결합한다.
-`VerificationObservationMaskEvidence-v1`은 valid/acquisition time, grid, radar product,
+`VerificationObservationMaskEvidence-v2`는 valid/acquisition time, grid, radar product,
 native source identity와 radar별 `[source,time,y,x]` range/elevation,
-beam-blockage fraction, attenuation-QC score, censoring evidence 및 assignment-score
+beam-blockage fraction, attenuation-QC score, reflectivity, detection limit,
+acquisition-time offset, censoring evidence 및 assignment-score
 bytes를 source authority signature로 봉인한다. Source dimension은 ordered registry의
-exact source digest 순서에 결합된다. `VerificationObservationMaskDerivationArtifact-v1`은
-선택된 source index에서 네 spatial field를 gather한 뒤 이 raw evidence에서
+exact source digest 순서에 결합된다. `VerificationObservationMaskDerivationArtifact-v2`는
+선택된 source index에서 observation value/time/limit와 네 spatial field를 gather한 뒤
+이 raw evidence에서
 source-present, range/elevation-valid, blockage, attenuation-QC, censoring mask와 source
 index map을 다시 계산한다. Caller가 mask를 직접 선택하는 v1 input은 confirmatory
 경로에서 소비하지 않는다.
-`derive_verification_observation_error()`는 derivation-input v2와 ordered registry에서
+`derive_verification_observation_error()`는 derivation-input v3와 ordered registry에서
 valid/quality/std/state tensor를 계산한다. 같은 radar 안에서도 range, elevation,
 blockage와 attenuation evidence에 따라 quality/std가 공간적으로 변한다.
-`ObservationErrorDerivationArtifact-v2`는 동일 입력으로 그 결과를 다시 생성해
+`ObservationErrorDerivationArtifact-v3`는 동일 입력으로 그 결과를 다시 생성해
 `torch.equal`과 content digest를 모두 확인한다.
-`VerificationObservationErrorContract-v5`는 plan, signed raw input, mask derivation,
+`VerificationObservationErrorContract-v6`는 plan, signed raw input, mask derivation,
 ordered registry와 exact
 valid/quality/observation-std/state/source-map tensor digest를 derivation artifact에
 결합한다. 이 상태 tensor는 clear, echo, source missing, QC invalid, beam blockage,
@@ -1144,9 +1146,10 @@ compatibility 세대이며 current confirmatory target을 만들 수 없다.
 Holdout plan v26은 모든
 uncertainty/state target이 참조하는 observation-error plan payload의 정확한 집합을
 보존하고, current target는 deterministic replay를 포함한
-`radar-verification-bundle-v8`만 허용한다. v8은 bundle valid time, grid, radar product를
+`radar-verification-bundle-v9`만 허용한다. v9은 bundle valid time, grid, radar product를
 signed source identity와 exact 비교한다. 따라서 결과를 본 뒤 mask, source time,
-source index ordering, calibration mapping 또는 realized tensor를 바꾸면 source
+source index ordering, calibration mapping, selected-source value/time/detection limit
+또는 realized tensor를 바꾸면 source
 signature, derivation replay와 holdout plan 중 적어도 하나가 실패한다. 현재 scoring
 measure는
 `quality * min(1, (reference_std / observation_std)^2)`이다. Invalid·unobserved
@@ -1157,21 +1160,30 @@ metric weight는 0으로 둔다. 이는 proper censored likelihood가 도입되�
 `compute_observation_error_gaussian_diagnostic()`은 promotion gate와 독립된 report-only
 artifact로 `sqrt(forecast_std**2 + observation_std**2)` predictive scale의 quantized
 Gaussian NLL/PIT를 계산한다. `BELOW_DETECTION_CENSORED` cell은 point value 대신
-`P(Y <= minimum_detectable_echo_dbz)`의 left-censored likelihood로 평가한다. 관측오차는
+cell별 selected-source detection limit의 left-censored likelihood로 평가한다. 관측오차는
 이미 predictive variance에 포함되므로 이 진단의 aggregation에는 quality만 사용하고
 inverse-variance를 다시 곱하지 않는다. 결과는 항상 `diagnostic_only=True`이며,
 사전등록된 과학 protocol 없이 promotion을 승인하지 않는다.
 Spatial-correlation block identity도 observation-error plan과 realized contract에
-`spatial_correlation_role="diagnostic_only"`로 고정한다. Current confirmatory
+`spatial_correlation_role="diagnostic_only"`로 고정한다. Source assignment는 upstream
+mosaic의 highest-score 결정을 검증하는 fail-closed 정책이다. 최고점 source가
+unavailable이어도 차순위 available source로 조용히 fallback하지 않고
+`SOURCE_MISSING`으로 보존한다. 가용 source 중 재선택하는 실험은 별도 사전등록
+알고리즘 세대를 사용해야 한다. Current confirmatory
 confidence bound는 pixel block이 아니라 independent physical-event cluster를 사용하며,
 spatial block metadata가 추론에 사용됐다고 주장하지 않는다.
 Audit load는 저장된 typed evaluation을 볼 수 있지만, 자동 completion과 promotion은
 동일한 typed replay case를 다시 제공해 semantic replay까지 통과해야 한다. 배포
 certificate 발급 시에도 typed case에서 제품 scorer를 다시 실행하며, checksum-only
 archive는 certificate를 받을 수 없다. Ledger는
-current replay bundle/method v13, semantic generation v11과 scoring case v12만 재실행하며,
-이전 replay bundle v12와 holdout scoring artifact v12는 typed audit-only object로만
-decode한다.
+current replay bundle/method v14, semantic generation v12와 scoring case v13만
+재실행하며, 이전 replay bundle v13과 holdout scoring artifact v13은 typed audit-only
+object로만 decode한다. Current bundle은 `verification_provenance.json`과 source-specific
+verification tensors를 보존한다. 원래 Python case object가 없어도 source signature,
+ordered registry, mask derivation, observation-error derivation과 v9 bundle digest를
+cold-start 재검증하고 `verification_semantic_replay_verified=True`를 보고한다. Model
+runner와 forecast products까지 다시 실행하는 full scoring replay는 exact typed case가
+제공될 때만 `semantic_replay_verified=True`이며 두 주장을 혼동하지 않는다.
 scoring start가 선행했는지 확인하고 archive/file/Tensor/evaluation digest를 append,
 completion, promotion load 시마다 다시 계산한다.
 입력 QC mask와 quality weight, optional background는 모두 실제
@@ -1917,7 +1929,7 @@ signer 또는 final activation이 실패하면 동일 cycle은 이미 durable한
 Raw ingestor trust-store v2는 plan에 고정된 snapshot과 provenance commit, scoring
 replay/completion, promotion, certificate 발급 및 operational decision 시점의 current
 root-owned store 양쪽에서 attestation 시각의 key validity/revocation을 대조한다.
-Current store의 content digest는 replay-v13 manifest, scoring-v13 artifact, scheduler가
+Current store의 content digest는 replay-v14 manifest, scoring-v14 artifact, scheduler가
 봉인한 completion output, promotion evidence v31, promotion deployment certificate v6와
 operational decision certificate에 연속 결합된다. Certificate/publication 서명 전후와
 activation 직전·직후에도 store를 다시 읽고, durable `forecast-run-v68` load에서도 외부
