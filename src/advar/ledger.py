@@ -330,6 +330,8 @@ _PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST = (
 _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
 _MAXIMUM_ACTION_ARTIFACT_FILE_BYTES = 2 * 1024**3
 _MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES = 8 * 1024**3
+_MAXIMUM_SCORING_REPLAY_SHARDS = 4096
+_MAXIMUM_SCORING_REPLAY_TOTAL_EXPANDED_BYTES = 64 * 1024**3
 _MAXIMUM_ACTION_GENERATOR_BYTES = 512 * 1024**2
 _MAXIMUM_RAW_INGESTOR_TRUST_STORE_BYTES = 1024 * 1024
 _MAXIMUM_TRAINING_TARGET_SOURCE_TRUST_STORE_BYTES = 1024 * 1024
@@ -1422,6 +1424,18 @@ SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES = (
         }
     )
 )
+_SCORING_REPLAY_DTYPE_BYTES = {
+    "bool": 1,
+    "uint8": 1,
+    "int8": 1,
+    "int16": 2,
+    "int32": 4,
+    "int64": 8,
+    "float16": 2,
+    "bfloat16": 2,
+    "float32": 4,
+    "float64": 8,
+}
 
 
 @dataclass(frozen=True)
@@ -1432,10 +1446,11 @@ class ScoringReplayTensorRecord:
     dtype: str
     shape: tuple[int, ...]
     tensor_digest: str
+    archive_sha256: str | None = None
 
     @property
     def payload(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "case_id": self.case_id,
             "role": self.role,
             "archive_member": self.archive_member,
@@ -1443,6 +1458,9 @@ class ScoringReplayTensorRecord:
             "shape": list(self.shape),
             "tensor_digest": self.tensor_digest,
         }
+        if self.archive_sha256 is not None:
+            payload["archive_sha256"] = self.archive_sha256
+        return payload
 
 
 @dataclass(frozen=True)
@@ -1464,6 +1482,7 @@ class ScoringReplayBundleManifest:
     raw_provenance_payload_sha256: str
     verification_provenance_payload_sha256: str | None = None
     raw_ingestor_trust_store_digest: str | None = None
+    tensor_shard_sha256s: tuple[str, ...] = ()
     replay_method: str = SEMANTIC_SCORING_REPLAY_METHOD
     contract: str = SEMANTIC_SCORING_REPLAY_CONTRACT
     bundle_digest: str = field(init=False)
@@ -1530,6 +1549,24 @@ class ScoringReplayBundleManifest:
             raise ValueError(
                 "current scoring replay requires raw-ingestor trust lineage"
             )
+        if (
+            not self.tensor_shard_sha256s
+            or len(self.tensor_shard_sha256s) > _MAXIMUM_SCORING_REPLAY_SHARDS
+            or tuple(sorted(set(self.tensor_shard_sha256s)))
+            != self.tensor_shard_sha256s
+            or any(
+                re.fullmatch(r"[0-9a-f]{64}", value) is None
+                for value in self.tensor_shard_sha256s
+            )
+            or self.tensor_archive_sha256
+            != _json_digest(
+                {
+                    "contract": "neural-prior-scoring-replay-shard-set-v1",
+                    "ordered_shard_sha256s": list(self.tensor_shard_sha256s),
+                }
+            )
+        ):
+            raise ValueError("current scoring replay tensor shard set is invalid")
         expected = {
             (case_id, role)
             for case_id in self.ordered_case_ids
@@ -1566,8 +1603,29 @@ class ScoringReplayBundleManifest:
                 )
                 or any(type(value) is not int or value <= 0 for value in record.shape)
                 or re.fullmatch(r"[0-9a-f]{64}", record.tensor_digest) is None
+                or record.archive_sha256 not in self.tensor_shard_sha256s
+                or record.archive_member != "tensor"
+                or record.dtype not in _SCORING_REPLAY_DTYPE_BYTES
             ):
                 raise ValueError("scoring replay tensor record is invalid")
+        shard_layouts: dict[str, tuple[str, tuple[int, ...], str]] = {}
+        total_expanded_bytes = 0
+        for record in self.tensor_records:
+            assert record.archive_sha256 is not None
+            layout = (record.dtype, record.shape, record.tensor_digest)
+            retained_layout = shard_layouts.setdefault(
+                record.archive_sha256,
+                layout,
+            )
+            if retained_layout != layout:
+                raise ValueError("scoring replay tensor shard layout equivocated")
+            if retained_layout is layout:
+                total_expanded_bytes += (
+                    math.prod(record.shape or (1,))
+                    * _SCORING_REPLAY_DTYPE_BYTES[record.dtype]
+                )
+        if total_expanded_bytes > _MAXIMUM_SCORING_REPLAY_TOTAL_EXPANDED_BYTES:
+            raise ValueError("scoring replay tensor shard set exceeds budget")
         object.__setattr__(self, "bundle_digest", _json_digest(self.payload))
 
     @property
@@ -1608,6 +1666,10 @@ class ScoringReplayBundleManifest:
         if self.raw_ingestor_trust_store_digest is not None:
             payload["raw_ingestor_trust_store_digest"] = (
                 self.raw_ingestor_trust_store_digest
+            )
+        if self.tensor_shard_sha256s:
+            payload["tensor_shard_sha256s"] = list(
+                self.tensor_shard_sha256s
             )
         return payload
 
@@ -2491,6 +2553,84 @@ class LegacyScoringReplayBundleManifestAuditV13(ScoringReplayBundleManifest):
 
 
 @dataclass(frozen=True)
+class LegacyScoringReplayBundleManifestAuditV14(ScoringReplayBundleManifest):
+    """Pre-sharded v14 replay retained for durable byte audit only."""
+
+    replay_method: str = "builtin-semantic-scoring-recomputation-v14"
+    contract: str = "neural-prior-scoring-replay-bundle-v14"
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-scoring-replay-bundle-v14"
+            or self.replay_method
+            != "builtin-semantic-scoring-recomputation-v14"
+            or not self.ordered_case_ids
+            or len(set(self.ordered_case_ids)) != len(self.ordered_case_ids)
+            or len(self.ordered_case_ids)
+            != len(self.ordered_evaluation_digests)
+            or len(self.semantic_case_digests) != len(self.ordered_case_ids)
+            or any(
+                case_id not in self.ordered_case_ids
+                for case_id in (
+                    *self.dynamic_source_case_ids,
+                    *self.background_case_ids,
+                )
+            )
+            or any(
+                value is not None
+                for value in (
+                    self.scoring_backend_certification_policy_digest,
+                    self.scoring_backend_certification_evidence_digest,
+                )
+            )
+            or self.raw_ingestor_trust_store_digest is None
+            or self.verification_provenance_payload_sha256 is None
+            or self.tensor_shard_sha256s
+        ):
+            raise ValueError("legacy v14 semantic replay manifest is invalid")
+        for value in (
+            self.scoring_input_artifact_digest,
+            *self.ordered_evaluation_digests,
+            *self.semantic_case_digests,
+            self.algorithm_source_manifest_digest,
+            self.runtime_compatibility_digest,
+            self.runtime_exact_digest,
+            self.tensor_archive_sha256,
+            self.evaluation_payload_sha256,
+            self.raw_provenance_payload_sha256,
+            self.verification_provenance_payload_sha256,
+            self.raw_ingestor_trust_store_digest,
+        ):
+            if re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError("legacy v14 semantic replay digest is invalid")
+        expected = {
+            (case_id, role)
+            for case_id in self.ordered_case_ids
+            for role in (
+                SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                | (
+                    SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
+                    if case_id in self.dynamic_source_case_ids
+                    else frozenset()
+                )
+                | (
+                    SCORING_REPLAY_BACKGROUND_TENSOR_ROLES
+                    if case_id in self.background_case_ids
+                    else frozenset()
+                )
+            )
+        }
+        actual = {(item.case_id, item.role) for item in self.tensor_records}
+        if (
+            actual != expected
+            or len(actual) != len(self.tensor_records)
+            or any(item.archive_sha256 is not None for item in self.tensor_records)
+        ):
+            raise ValueError("legacy v14 semantic replay tensor set is incomplete")
+        object.__setattr__(self, "bundle_digest", _json_digest(self.payload))
+
+
+@dataclass(frozen=True)
 class LoadedScoringReplayBundle:
     manifest: (
         ScoringReplayBundleManifest
@@ -2506,11 +2646,61 @@ class LoadedScoringReplayBundle:
         | LegacyScoringReplayBundleManifestAuditV11
         | LegacyScoringReplayBundleManifestAuditV12
         | LegacyScoringReplayBundleManifestAuditV13
+        | LegacyScoringReplayBundleManifestAuditV14
     )
     evaluations: tuple[PriorHoldoutEvaluation, ...]
-    tensors: dict[tuple[str, str], Tensor]
+    tensors: Mapping[tuple[str, str], Tensor]
+    verification_bytes_verified: bool
+    verification_reconstructed: bool
     verification_semantic_replay_verified: bool
     semantic_replay_verified: bool
+
+
+class _ScoringReplayTensorShardStore(
+    Mapping[tuple[str, str], Tensor]
+):
+    """Open and verify one content-addressed replay tensor at a time."""
+
+    def __init__(
+        self,
+        root: Path,
+        records: tuple[ScoringReplayTensorRecord, ...],
+    ) -> None:
+        self._root = root
+        self._records = {
+            (record.case_id, record.role): record for record in records
+        }
+        if len(self._records) != len(records):
+            raise ValueError("scoring replay tensor records are duplicated")
+
+    def __getitem__(self, key: tuple[str, str]) -> Tensor:
+        record = self._records[key]
+        if record.archive_sha256 is None:
+            raise ValueError("scoring replay tensor shard identity is missing")
+        archive_path = self._root / f"tensor_{record.archive_sha256}.npz"
+        if _file_digest(archive_path) != record.archive_sha256:
+            raise ValueError("scoring replay tensor shard checksum mismatch")
+        preflight_npz_archive(
+            archive_path,
+            expected_members=frozenset({record.archive_member}),
+            maximum_members=1,
+            maximum_expanded_bytes=_MAXIMUM_ACTION_ARTIFACT_FILE_BYTES,
+        )
+        with np.load(archive_path, allow_pickle=False) as archive:
+            tensor = torch.from_numpy(archive[record.archive_member].copy())
+        if (
+            str(tensor.dtype).removeprefix("torch.") != record.dtype
+            or tuple(tensor.shape) != record.shape
+            or tensor_digest(tensor) != record.tensor_digest
+        ):
+            raise ValueError("scoring replay tensor digest mismatch")
+        return tensor
+
+    def __iter__(self):  # type: ignore[no-untyped-def]
+        return iter(self._records)
+
+    def __len__(self) -> int:
+        return len(self._records)
 
 
 _REPLAY_BOOLEAN_ROLES = frozenset(
@@ -2783,7 +2973,7 @@ def _current_verification_provenance_payload(
 
     verification = case.verification
     if (
-        verification.contract != "radar-verification-bundle-v9"
+        verification.contract != "radar-verification-bundle-v10"
         or type(verification.observation_error_derivation)
         is not ObservationErrorDerivationArtifact
     ):
@@ -2794,7 +2984,7 @@ def _current_verification_provenance_payload(
     )
     raw_inputs = derivation.raw_inputs
     if (
-        raw_inputs.contract != "verification-observation-derivation-inputs-v3"
+        raw_inputs.contract != "verification-observation-derivation-inputs-v4"
         or type(raw_inputs.mask_derivation)
         is not VerificationObservationMaskDerivationArtifact
         or type(raw_inputs.source_identity)
@@ -2887,9 +3077,9 @@ def _validate_current_verification_provenance_payload(
             raise ValueError("scoring replay verification provenance is invalid")
         case_id = cast(str, retained["case_id"])
         case_tensors = {
-            role: value
-            for (retained_case, role), value in tensors.items()
-            if retained_case == case_id
+            record.role: tensors[(record.case_id, record.role)]
+            for record in manifest.tensor_records
+            if record.case_id == case_id
         }
 
         plan_payload = dict(cast(dict[str, object], retained["plan"]))
@@ -10247,16 +10437,16 @@ class EpisodeLedger:
         )
         available_disk_bytes = shutil.disk_usage(self.scoring_replays_dir).free
         active_runtime = numerical_runtime_manifest(execution_device)
+        current_algorithm_source_manifest_digest = algorithm_bundle_digest()
         if (
             scoring_input_artifact.artifact_digest
             != _json_digest(scoring_input_artifact.payload)
             or case_ids != scoring_input_artifact.ordered_case_ids
-            or total_expanded_bytes > _MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES
+            or total_expanded_bytes
+            > _MAXIMUM_SCORING_REPLAY_TOTAL_EXPANDED_BYTES
             or available_disk_bytes < total_expanded_bytes * 2
-            or re.fullmatch(
-                r"[0-9a-f]{64}", algorithm_source_manifest_digest
-            )
-            is None
+            or algorithm_source_manifest_digest
+            != current_algorithm_source_manifest_digest
         ):
             raise ValueError("scoring replay inputs are incomplete")
         temporary = Path(
@@ -10266,8 +10456,8 @@ class EpisodeLedger:
         registered = False
         target: Path | None = None
         try:
-            arrays: dict[str, NDArray[Any]] = {}
             records: list[ScoringReplayTensorRecord] = []
+            shard_paths: dict[str, Path] = {}
             for case_index, case_id in enumerate(case_ids):
                 for role, source_tensor in sorted(case_tensors[case_id].items()):
                     tensor = source_tensor.detach().cpu().contiguous()
@@ -10279,8 +10469,26 @@ class EpisodeLedger:
                         raise ValueError(
                             "scoring replay tensor dtype is unsupported"
                         ) from error
-                    member = f"case_{case_index:06d}__{role}"
-                    arrays[member] = array
+                    if array.nbytes > _MAXIMUM_ACTION_ARTIFACT_FILE_BYTES:
+                        raise ValueError("scoring replay tensor exceeds shard budget")
+                    member = "tensor"
+                    candidate_path = (
+                        temporary / f".tensor-{case_index:06d}-{role}.npz"
+                    )
+                    np.savez_compressed(
+                        candidate_path,
+                        **cast(dict[str, Any], {member: array}),
+                    )
+                    archive_sha256 = _file_digest(candidate_path)
+                    shard_path = (
+                        temporary / f"tensor_{archive_sha256}.npz"
+                    )
+                    retained_path = shard_paths.get(archive_sha256)
+                    if retained_path is None:
+                        os.replace(candidate_path, shard_path)
+                        shard_paths[archive_sha256] = shard_path
+                    else:
+                        candidate_path.unlink()
                     records.append(
                         ScoringReplayTensorRecord(
                             case_id=case_id,
@@ -10289,12 +10497,17 @@ class EpisodeLedger:
                             dtype=str(tensor.dtype).removeprefix("torch."),
                             shape=tuple(int(value) for value in tensor.shape),
                             tensor_digest=tensor_digest(tensor),
+                            archive_sha256=archive_sha256,
                         )
                     )
-            archive_path = temporary / "replay_arrays.npz"
-            np.savez_compressed(
-                archive_path,
-                **cast(dict[str, Any], arrays),
+            shard_sha256s = tuple(sorted(shard_paths))
+            if len(shard_sha256s) > _MAXIMUM_SCORING_REPLAY_SHARDS:
+                raise ValueError("scoring replay exceeds shard-count budget")
+            shard_set_digest = _json_digest(
+                {
+                    "contract": "neural-prior-scoring-replay-shard-set-v1",
+                    "ordered_shard_sha256s": list(shard_sha256s),
+                }
             )
             evaluation_path = temporary / "evaluations.json"
             evaluation_path.write_text(
@@ -10433,7 +10646,7 @@ class EpisodeLedger:
                     scoring_certification_evidence_digest
                 ),
                 tensor_records=tuple(records),
-                tensor_archive_sha256=_file_digest(archive_path),
+                tensor_archive_sha256=shard_set_digest,
                 evaluation_payload_sha256=_file_digest(evaluation_path),
                 raw_provenance_payload_sha256=(
                     _file_digest(raw_provenance_path)
@@ -10444,6 +10657,7 @@ class EpisodeLedger:
                 raw_ingestor_trust_store_digest=(
                     current_scoring_raw_trust.content_digest
                 ),
+                tensor_shard_sha256s=shard_sha256s,
             )
             manifest_path = temporary / "manifest.json"
             manifest_path.write_text(
@@ -10654,7 +10868,7 @@ class EpisodeLedger:
                     temporary=temporary,
                     target=target,
                     durable_files=(
-                        archive_path,
+                        *tuple(shard_paths[value] for value in shard_sha256s),
                         evaluation_path,
                         raw_provenance_path,
                         verification_provenance_path,
@@ -10752,13 +10966,43 @@ class EpisodeLedger:
                     artifact_digest=bundle_digest,
                     raw_ingestor_trust_store_digest=retained_raw_trust_digest,
                 )
-        expected_artifact_members = {
-            "manifest.json",
-            "evaluations.json",
-            "replay_arrays.npz",
+        retained_contract = retained_manifest_payload.get("contract")
+        raw_provenance_contracts = {
+            "neural-prior-scoring-replay-bundle-v9",
+            "neural-prior-scoring-replay-bundle-v11",
+            "neural-prior-scoring-replay-bundle-v12",
+            "neural-prior-scoring-replay-bundle-v13",
+            "neural-prior-scoring-replay-bundle-v14",
+            SEMANTIC_SCORING_REPLAY_CONTRACT,
         }
+        expected_artifact_members = {"manifest.json", "evaluations.json"}
+        retained_shards = retained_manifest_payload.get(
+            "tensor_shard_sha256s", []
+        )
         if current_bundle:
+            if (
+                not isinstance(retained_shards, list)
+                or not retained_shards
+                or len(retained_shards) > _MAXIMUM_SCORING_REPLAY_SHARDS
+                or any(
+                    not isinstance(value, str)
+                    or re.fullmatch(r"[0-9a-f]{64}", value) is None
+                    for value in retained_shards
+                )
+                or retained_shards != sorted(set(retained_shards))
+            ):
+                raise ValueError("current scoring replay shard set is invalid")
+            expected_artifact_members.update(
+                f"tensor_{value}.npz" for value in retained_shards
+            )
+        else:
+            expected_artifact_members.add("replay_arrays.npz")
+        if retained_contract in raw_provenance_contracts:
             expected_artifact_members.add("raw_provenance.json")
+        if retained_contract in {
+            "neural-prior-scoring-replay-bundle-v14",
+            SEMANTIC_SCORING_REPLAY_CONTRACT,
+        }:
             expected_artifact_members.add("verification_provenance.json")
         validate_artifact_directory(
             target,
@@ -10780,68 +11024,106 @@ class EpisodeLedger:
         evaluation_path = target / "evaluations.json"
         raw_provenance_path = target / "raw_provenance.json"
         verification_provenance_path = target / "verification_provenance.json"
+        manifest_type = type(manifest)
+        has_raw_provenance = manifest_type in {
+            ScoringReplayBundleManifest,
+            LegacyScoringReplayBundleManifestAuditV9,
+            LegacyScoringReplayBundleManifestAuditV11,
+            LegacyScoringReplayBundleManifestAuditV12,
+            LegacyScoringReplayBundleManifestAuditV13,
+            LegacyScoringReplayBundleManifestAuditV14,
+        }
+        has_verification_provenance = manifest_type in {
+            ScoringReplayBundleManifest,
+            LegacyScoringReplayBundleManifestAuditV14,
+        }
+        raw_provenance_checksum_mismatch = False
+        if has_raw_provenance:
+            raw_manifest = cast(ScoringReplayBundleManifest, manifest)
+            raw_provenance_checksum_mismatch = (
+                _file_digest(raw_provenance_path)
+                != raw_manifest.raw_provenance_payload_sha256
+            )
+        verification_provenance_checksum_mismatch = False
+        if has_verification_provenance:
+            verification_manifest = cast(
+                ScoringReplayBundleManifest,
+                manifest,
+            )
+            verification_provenance_checksum_mismatch = (
+                _file_digest(verification_provenance_path)
+                != verification_manifest.verification_provenance_payload_sha256
+            )
         if (
-            _file_digest(archive_path) != manifest.tensor_archive_sha256
-            or _file_digest(evaluation_path)
+            _file_digest(evaluation_path)
             != manifest.evaluation_payload_sha256
-            or (
-                isinstance(manifest, ScoringReplayBundleManifest)
-                and _file_digest(raw_provenance_path)
-                != manifest.raw_provenance_payload_sha256
-            )
-            or (
-                isinstance(manifest, ScoringReplayBundleManifest)
-                and _file_digest(verification_provenance_path)
-                != manifest.verification_provenance_payload_sha256
-            )
+            or raw_provenance_checksum_mismatch
+            or verification_provenance_checksum_mismatch
         ):
             raise ValueError("scoring replay bundle member checksum mismatch")
-        expected_members = frozenset(
-            record.archive_member for record in manifest.tensor_records
-        )
-        preflight_npz_archive(
-            archive_path,
-            expected_members=expected_members,
-            maximum_members=len(expected_members),
-            maximum_expanded_bytes=_MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES,
-        )
-        tensors: dict[tuple[str, str], Tensor] = {}
-        with np.load(archive_path, allow_pickle=False) as archive:
-            for record in manifest.tensor_records:
-                array = archive[record.archive_member].copy()
-                tensor = torch.from_numpy(array)
-                if (
-                    str(tensor.dtype).removeprefix("torch.") != record.dtype
-                    or tuple(tensor.shape) != record.shape
-                    or tensor_digest(tensor) != record.tensor_digest
-                ):
-                    raise ValueError("scoring replay tensor digest mismatch")
-                tensors[(record.case_id, record.role)] = tensor
-        if type(manifest) is ScoringReplayBundleManifest:
-            for case_id in manifest.ordered_case_ids:
+        if manifest_type is ScoringReplayBundleManifest:
+            current_manifest = cast(ScoringReplayBundleManifest, manifest)
+            tensors: Mapping[tuple[str, str], Tensor] = (
+                _ScoringReplayTensorShardStore(
+                    target,
+                    current_manifest.tensor_records,
+                )
+            )
+            for key in tensors:
+                tensors[key]
+        else:
+            if _file_digest(archive_path) != manifest.tensor_archive_sha256:
+                raise ValueError("scoring replay bundle member checksum mismatch")
+            expected_members = frozenset(
+                record.archive_member for record in manifest.tensor_records
+            )
+            preflight_npz_archive(
+                archive_path,
+                expected_members=expected_members,
+                maximum_members=len(expected_members),
+                maximum_expanded_bytes=_MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES,
+            )
+            loaded_tensors: dict[tuple[str, str], Tensor] = {}
+            with np.load(archive_path, allow_pickle=False) as archive:
+                for record in manifest.tensor_records:
+                    array = archive[record.archive_member].copy()
+                    tensor = torch.from_numpy(array)
+                    if (
+                        str(tensor.dtype).removeprefix("torch.") != record.dtype
+                        or tuple(tensor.shape) != record.shape
+                        or tensor_digest(tensor) != record.tensor_digest
+                    ):
+                        raise ValueError("scoring replay tensor digest mismatch")
+                    loaded_tensors[(record.case_id, record.role)] = tensor
+            tensors = loaded_tensors
+        verification_reconstructed = False
+        if manifest_type is ScoringReplayBundleManifest:
+            current_manifest = cast(ScoringReplayBundleManifest, manifest)
+            for case_id in current_manifest.ordered_case_ids:
                 _validate_scoring_replay_case_tensors(
                     {
-                        role: value
-                        for (retained_case, role), value in tensors.items()
-                        if retained_case == case_id
+                        record.role: tensors[(record.case_id, record.role)]
+                        for record in current_manifest.tensor_records
+                        if record.case_id == case_id
                     },
                     dynamic_source=(
-                        case_id in manifest.dynamic_source_case_ids
+                        case_id in current_manifest.dynamic_source_case_ids
                     ),
                     background_present=(
-                        case_id in manifest.background_case_ids
+                        case_id in current_manifest.background_case_ids
                     ),
                 )
             _validate_current_raw_provenance_payload(
                 raw_provenance_path.read_text("utf-8"),
-                manifest=manifest,
+                manifest=current_manifest,
                 tensors=tensors,
             )
             _validate_current_verification_provenance_payload(
                 verification_provenance_path.read_text("utf-8"),
-                manifest=manifest,
+                manifest=current_manifest,
                 tensors=tensors,
             )
+            verification_reconstructed = True
         raw_evaluations = json.loads(evaluation_path.read_text("utf-8"))
         evaluations = _decode_evaluation_audit_payloads(raw_evaluations)
         if any(
@@ -10877,9 +11159,9 @@ class EpisodeLedger:
             for item in ordered_cases:
                 expected_tensors = item.replay_tensors()
                 stored_tensors = {
-                    role: value
-                    for (case_id, role), value in tensors.items()
-                    if case_id == item.case_id
+                    record.role: tensors[(record.case_id, record.role)]
+                    for record in manifest.tensor_records
+                    if record.case_id == item.case_id
                 }
                 if set(expected_tensors) != set(stored_tensors) or any(
                     tensor_digest(expected_tensors[role])
@@ -10896,12 +11178,24 @@ class EpisodeLedger:
             ):
                 raise ValueError("semantic scoring replay recomputation disagrees")
             semantic_replay_verified = True
+        current_runtime = numerical_runtime_manifest(torch.device("cpu"))
+        exact_scientific_runtime = (
+            manifest_type is ScoringReplayBundleManifest
+            and manifest.algorithm_source_manifest_digest
+            == algorithm_bundle_digest()
+            and manifest.runtime_exact_digest == current_runtime.exact_digest
+        )
+        semantic_replay_verified = (
+            semantic_replay_verified and exact_scientific_runtime
+        )
         return LoadedScoringReplayBundle(
             manifest=manifest,
             evaluations=retained,
             tensors=tensors,
+            verification_bytes_verified=True,
+            verification_reconstructed=verification_reconstructed,
             verification_semantic_replay_verified=(
-                type(manifest) is ScoringReplayBundleManifest
+                verification_reconstructed and exact_scientific_runtime
             ),
             semantic_replay_verified=semantic_replay_verified,
         )
@@ -18801,6 +19095,7 @@ def _decode_scoring_replay_bundle_manifest(
     | LegacyScoringReplayBundleManifestAuditV11
     | LegacyScoringReplayBundleManifestAuditV12
     | LegacyScoringReplayBundleManifestAuditV13
+    | LegacyScoringReplayBundleManifestAuditV14
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -18820,6 +19115,11 @@ def _decode_scoring_replay_bundle_manifest(
             dtype=str(item["dtype"]),
             shape=tuple(int(entry) for entry in item["shape"]),
             tensor_digest=str(item["tensor_digest"]),
+            archive_sha256=(
+                None
+                if item.get("archive_sha256") is None
+                else str(item["archive_sha256"])
+            ),
         )
         for item in raw_records
     )
@@ -18828,6 +19128,10 @@ def _decode_scoring_replay_bundle_manifest(
         values["ordered_evaluation_digests"]
     )
     values["tensor_records"] = records
+    if "tensor_shard_sha256s" in values:
+        values["tensor_shard_sha256s"] = tuple(
+            values["tensor_shard_sha256s"]
+        )
     if values.get("contract") == "neural-prior-scoring-replay-bundle-v1":
         manifest: (
             ScoringReplayBundleManifest
@@ -18843,6 +19147,7 @@ def _decode_scoring_replay_bundle_manifest(
             | LegacyScoringReplayBundleManifestAuditV11
             | LegacyScoringReplayBundleManifestAuditV12
             | LegacyScoringReplayBundleManifestAuditV13
+            | LegacyScoringReplayBundleManifestAuditV14
         ) = LegacyScoringReplayBundleManifestAuditV1(
             **cast(Any, values)
         )
@@ -18898,6 +19203,10 @@ def _decode_scoring_replay_bundle_manifest(
             )
         elif values.get("contract") == "neural-prior-scoring-replay-bundle-v13":
             manifest = LegacyScoringReplayBundleManifestAuditV13(
+                **cast(Any, values)
+            )
+        elif values.get("contract") == "neural-prior-scoring-replay-bundle-v14":
+            manifest = LegacyScoringReplayBundleManifestAuditV14(
                 **cast(Any, values)
             )
         else:
