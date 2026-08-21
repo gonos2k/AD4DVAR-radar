@@ -2,19 +2,19 @@
 
 ADVAR는 운영 배포 시스템이 아니라 레이더 기반 변분 nowcast의 **과학적 실증과
 재현 가능한 offline 연구**를 위한 구현이다. 핵심 산출물은 수치 안정성, 입력·target
-provenance, 독립 physical-event 평가와 사전등록된 통계 계약이다. 저장소의 bundle 및
-activation 도구는 연구 환경 재현성과 candidate-smoke를 검사하기 위한 비권위적
-engineering scaffold이며, shadow·canary·state-advancing LIVE를 승인하지 않는다.
+provenance, 독립 physical-event 평가와 사전등록된 통계 계약이다. 저장소에 남아 있는
+bundle 및 activation 도구는 과거 artifact를 읽기 위한 비권위적 engineering
+scaffold이며 required PR CI나 과학적 claim의 근거가 아니다. Shadow·canary·
+state-advancing LIVE는 승인하지 않는다.
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
 검사한다. 별도 package job은 sdist와 wheel을 빌드한 뒤 격리 환경에 wheel을
-설치하여 `advar-nowcast` CLI와 NPZ 출력계약을 smoke-test한다. 성공한 package
-job은 wheel, 해당 Python/Linux CPU hash lock, strict vulnerability audit,
-CycloneDX SBOM, 설치 attestation과 전체 file-hash manifest를 하나의 signed
-dependency wheelhouse와 설치 runtime tree까지 signed
-`advar-linux-cpu-deployment-bundle-v4`로 묶는다. 일반 PR/push CI가 업로드하는
-artifact는 ephemeral key의 `candidate-smoke`이며 배포 권한이 없다.
+설치하여 `advar-nowcast` CLI와 NPZ 출력계약을 smoke-test한다. Required package
+job은 hash-locked Linux CPU dependency wheelhouse의 offline 설치와 CLI 결과 확인에서
+끝난다. Signed deployment bundle, release approval, host runtime activation과
+deployment artifact upload는 과학적 실증에 필요하지 않으므로 required PR CI에서
+실행하지 않는다.
 
 10분 간격 레이더 dBZ 3장으로 다음 3시간을 10분 간격으로 예측하는
 작고 해석 가능한 matrix-free 변분 구현이다. 기존 FFT 기준예측은 항상
@@ -69,7 +69,7 @@ python3 -m pip install -e .
 python3 -m unittest discover -s tests -v
 ```
 
-배포·필수 CI는 일반 resolver 설치를 사용하지 않는다. Linux x86-64 CPU용
+재현 가능한 연구 패키지와 필수 CI는 일반 resolver 설치를 사용하지 않는다. Linux x86-64 CPU용
 Python 3.10/3.12 runtime closure와 test/build closure를 각각
 `requirements/*-linux.lock`에 exact version과 distribution SHA-256으로 보존한다.
 검증된 direct runtime version은 `requirements/runtime.in`에 고정한다.
@@ -90,7 +90,14 @@ canary로 확인한다. Lock checker는 runtime과 CI closure의 version뿐 아�
 set이 같은지, direct numerical/security pin이 Python 세대 사이에서 같은지,
 `nvidia-*`·`triton`이 없는 CPU-only closure인지도 검증한다.
 
-승인된 Linux CPU 배포는 bundle의 detached Ed25519 signature를 배포 host에
+### 비필수 legacy deployment engineering reference
+
+아래 bundle·activation 절차는 과거 artifact audit와 별도 engineering 실험을 위한
+참고자료다. Required PR CI에서 실행하지 않으며, scientific review eligibility나
+confirmatory skill claim을 만들지 않는다. 현재 프로젝트는 이 절차의 운영 인증이나
+LIVE 사용을 목표로 하지 않는다.
+
+과거 Linux CPU deployment scaffold는 bundle의 detached Ed25519 signature를 host에
 out-of-band로 고정한 공개키로 검증하고, `mode=deployable`, repository/ref/commit,
 workflow SHA와 signer identity가 승인값과 exact 일치하는지 확인한다. Private key는
 protected release environment에서만 공급하며 bundle이나 저장소에 넣지 않는다.

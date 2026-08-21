@@ -28,6 +28,7 @@
 - Scientific baseline: acquisition age gates validity and deterministically decays quality/inflates standard error; detection limit and censor state are product-derived from the preregistered ordered radar registry.
 - Storage: current replay tensors are content-addressed, deduplicated NPZ shards with per-shard and 64 GiB total expanded-byte budgets and lazy one-shard loading.
 - Project boundary: development/offline numerical and synthetic research remain GO; exploratory real-radar work is conditional; confirmatory claims and external publication remain HOLD pending X134-001; operational deployment remains NO-GO/out of scope.
+- Required CI boundary: CPU numerical/scientific regressions, source typing, hash-locked offline wheel installation, and CLI/output-contract smoke remain required. Signed deployment bundles, release approval, host activation, second-runtime closure, and deployment artifact upload are intentionally excluded.
 - Evidence rule: a committed checklist can record its parent implementation head and completed run. The final PR head and its check rollup are verified externally from GitHub because a commit cannot self-contain its own SHA or a future CI run ID.
 
 ## Second-review local evidence
@@ -43,6 +44,15 @@
 - sdist/wheel build: `advar_radar_nowcast-0.99.0` artifacts built successfully with the CI-equivalent `python -I -m build --no-isolation` command.
 - Built-wheel target import, both public CLI help paths, and a real three-frame `advar-nowcast` smoke pass; the output remains `nowcast-npz-v74` / `forecast-run-v68`.
 - Exact hash-locked Linux CPU wheelhouse installation remains an exact-head CI requirement rather than a macOS local claim.
+
+## Scientific CI scope decision
+
+- Decision date: 2026-08-21 / Asia-Tokyo.
+- Purpose: keep required PR evidence proportional to reproducible offline scientific validation rather than operational deployment certification.
+- Required: Python 3.10/3.12 CPU suites, Python 3.12 source typing, dependency-lock validation/audit, sdist/wheel build, offline hash-locked CPU install, and installed CLI/output-contract smoke.
+- Not required: ephemeral deployment authorities, signed candidate-smoke bundle construction, detached release approval, second-host runtime-tree closure, activation receipt, or deployment artifact upload.
+- Retained low-cost audit regressions: `tests/test_deployment_bundle.py` (`6 passed`, `4 subtests`, `1.25s`) and `tests/test_runtime_closure.py` (`6 passed`, `1.20s`) remain in the CPU suite to prevent historical decoder rot; they do not certify deployment.
+- Existing deployment code and historical artifact decoders remain non-authoritative legacy engineering scaffolding; their presence does not expand project scope or authorize LIVE use.
 
 ## Second-review delivery evidence
 
