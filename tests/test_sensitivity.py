@@ -61,7 +61,15 @@ from advar.physics import (  # noqa: E402
 from advar.sensitivity import (  # noqa: E402
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V3_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST,
+    OBSERVATION_TEMPORAL_QUALITY_DECAY_ALGORITHM_V1_DIGEST,
+    OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST,
+    OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST,
+    OBSERVATION_CENSOR_STATE_ALGORITHM_V1_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V1_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V2_DIGEST,
     AutomatedLearningPolicy,
     MetricTaylorThreshold,
     ObservationRemovalConfig,
@@ -2637,6 +2645,7 @@ class VariationalFSOTests(unittest.TestCase):
                     calibration_epoch_digest="4" * 64,
                     quality_weight=0.5,
                     observation_std_dbz=4.0,
+                    detection_limit_dbz=-5.0,
                 ),
             ),
         )
@@ -2848,6 +2857,7 @@ class VariationalFSOTests(unittest.TestCase):
                     calibration_epoch_digest="4" * 64,
                     quality_weight=0.5,
                     observation_std_dbz=4.0,
+                    detection_limit_dbz=-5.0,
                 ),
             ),
         )
@@ -2866,10 +2876,10 @@ class VariationalFSOTests(unittest.TestCase):
             spatial_correlation_block_algorithm_digest="7" * 64,
             quality_weight_interpretation_digest="8" * 64,
             quality_weight_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
             ),
             observation_std_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
             ),
             observation_error_model_digest="9" * 64,
             source_assignment_algorithm_digest=(
@@ -2878,7 +2888,7 @@ class VariationalFSOTests(unittest.TestCase):
             minimum_detectable_echo_dbz=-10.0,
             observation_error_reference_std_dbz=2.0,
             derivation_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
             ),
             mask_derivation_algorithm_digest=(
                 OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
@@ -2892,7 +2902,23 @@ class VariationalFSOTests(unittest.TestCase):
             verification_source_authority_public_key_hex=(
                 source_public_key_hex
             ),
-            contract="verification-observation-error-plan-v3",
+            maximum_acquisition_age_seconds=300.0,
+            temporal_quality_decay_scale_seconds=120.0,
+            temporal_quality_decay_power=2.0,
+            temporal_error_growth_dbz_per_second=0.01,
+            temporal_quality_decay_algorithm_digest=(
+                OBSERVATION_TEMPORAL_QUALITY_DECAY_ALGORITHM_V1_DIGEST
+            ),
+            temporal_error_algorithm_digest=(
+                OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST
+            ),
+            detection_limit_derivation_algorithm_digest=(
+                OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST
+            ),
+            censor_state_derivation_algorithm_digest=(
+                OBSERVATION_CENSOR_STATE_ALGORITHM_V1_DIGEST
+            ),
+            contract="verification-observation-error-plan-v5",
         )
         frames = torch.tensor([[[12.0, -12.0, 0.0, 5.0, 6.0]]])
         scores = torch.tensor(
@@ -2911,7 +2937,30 @@ class VariationalFSOTests(unittest.TestCase):
             "source_authority_id": "verification-source-a",
             "source_authority_private_key": source_private_key,
             "source_observed_at": "2026-08-05T00:30:00Z",
-            "frames_dbz": frames,
+            "reflectivity_dbz_by_source": torch.tensor(
+                [
+                    [[[12.0, -12.0, 0.0, 50.0, 60.0]]],
+                    [[[22.0, -22.0, 10.0, 5.0, 6.0]]],
+                ]
+            ),
+            "detection_limit_dbz_by_source": torch.tensor(
+                [
+                    [[[-10.0, -10.0, -10.0, -10.0, -10.0]]],
+                    [[[-5.0, -5.0, -5.0, -5.0, -5.0]]],
+                ]
+            ),
+            "acquisition_time_offset_seconds_by_source": torch.tensor(
+                [
+                    [[[0.0, 0.0, 0.0, 0.0, 0.0]]],
+                    [[[-60.0, -60.0, -60.0, -60.0, -60.0]]],
+                ]
+            ),
+            "below_detection_reported_by_source": torch.tensor(
+                [
+                    [[[False, True, False, False, False]]],
+                    [[[False, True, False, False, False]]],
+                ]
+            ),
             "source_assignment_scores": scores,
             "source_availability_by_time": torch.ones(
                 (2, 1), dtype=torch.bool
@@ -2939,9 +2988,6 @@ class VariationalFSOTests(unittest.TestCase):
                     [[[1.0, 1.0, 1.0, 1.0, 1.0]]],
                     [[[1.0, 1.0, 1.0, 1.0, 0.2]]],
                 ]
-            ),
-            "below_detection_reported": torch.tensor(
-                [[[False, True, False, False, False]]]
             ),
             "range_elevation_validity_domain_digest": "d" * 64,
             "beam_blockage_visibility_mask_digest": "e" * 64,
@@ -2979,13 +3025,69 @@ class VariationalFSOTests(unittest.TestCase):
             float(derivation.observation_std_dbz[0, 0, 0]),
             float(derivation.observation_std_dbz[0, 0, 2]),
         )
+        aged_offsets = common_evidence[
+            "acquisition_time_offset_seconds_by_source"
+        ].clone()
+        aged_offsets[0] = -60.0
+        aged_evidence = VerificationObservationMaskEvidence.issue(
+            **(
+                common_evidence
+                | {"acquisition_time_offset_seconds_by_source": aged_offsets}
+            )
+        )
+        aged_mask = derive_verification_observation_masks(
+            plan=plan,
+            raw_evidence=aged_evidence,
+            source_registry=registry,
+        )
+        aged_derivation = derive_verification_observation_error(
+            plan=plan,
+            raw_verification_source=(
+                VerificationObservationDerivationInputs.from_mask_derivation(
+                    aged_mask
+                )
+            ),
+            source_registry=registry,
+        )
+        self.assertLess(
+            float(aged_derivation.quality_weight[0, 0, 0]),
+            float(derivation.quality_weight[0, 0, 0]),
+        )
+        self.assertGreater(
+            float(aged_derivation.observation_std_dbz[0, 0, 0]),
+            float(derivation.observation_std_dbz[0, 0, 0]),
+        )
+        stale_offsets = aged_offsets.clone()
+        stale_offsets[0] = -600.0
+        stale_evidence = VerificationObservationMaskEvidence.issue(
+            **(
+                common_evidence
+                | {"acquisition_time_offset_seconds_by_source": stale_offsets}
+            )
+        )
+        stale_mask = derive_verification_observation_masks(
+            plan=plan,
+            raw_evidence=stale_evidence,
+            source_registry=registry,
+        )
+        stale_derivation = derive_verification_observation_error(
+            plan=plan,
+            raw_verification_source=(
+                VerificationObservationDerivationInputs.from_mask_derivation(
+                    stale_mask
+                )
+            ),
+            source_registry=registry,
+        )
+        self.assertFalse(bool(stale_derivation.valid_mask[0, 0, 0]))
         contract = derivation.observation_error_contract
         self.assertEqual(
             contract.contract,
-            "verification-observation-error-contract-v5",
+            "verification-observation-error-contract-v7",
         )
+
         bundle = VerificationBundle(
-            frames_dbz=frames,
+            frames_dbz=mask_derivation.selected_frames_dbz,
             valid_mask=derivation.valid_mask,
             valid_times=("2026-08-05T00:30:00Z",),
             grid_contract_digest="a" * 64,
@@ -3001,9 +3103,15 @@ class VariationalFSOTests(unittest.TestCase):
             observation_std_dbz=derivation.observation_std_dbz,
             observation_state_code=derivation.observation_state_code,
             source_radar_index_map=derivation.source_radar_index_map,
+            detection_limit_dbz=(
+                mask_derivation.selected_detection_limit_dbz
+            ),
+            acquisition_time_offset_seconds=(
+                mask_derivation.selected_acquisition_time_offset_seconds
+            ),
             observation_error_contract=contract,
             observation_error_derivation=derivation,
-            contract="radar-verification-bundle-v8",
+            contract="radar-verification-bundle-v10",
         )
         bundle.validate_integrity()
         for field_name, value in (
@@ -3012,7 +3120,9 @@ class VariationalFSOTests(unittest.TestCase):
             ("radar_product_digest", "2" * 64),
         ):
             with self.subTest(relabel=field_name):
-                with self.assertRaisesRegex(ValueError, "source replay"):
+                with self.assertRaisesRegex(
+                    ValueError, "preregistered temporal replay"
+                ):
                     replace(bundle, **{field_name: value})
         for field_name, value in (
             (
@@ -3028,6 +3138,20 @@ class VariationalFSOTests(unittest.TestCase):
                         **{field_name: value},
                     )
         raw_mutations = {
+            "reflectivity_dbz_by_source": torch.flip(
+                common_evidence["reflectivity_dbz_by_source"], dims=(0,)
+            ),
+            "detection_limit_dbz_by_source": torch.flip(
+                common_evidence["detection_limit_dbz_by_source"], dims=(0,)
+            ),
+            "acquisition_time_offset_seconds_by_source": torch.flip(
+                common_evidence["acquisition_time_offset_seconds_by_source"],
+                dims=(0,),
+            ),
+            "below_detection_reported_by_source": torch.flip(
+                common_evidence["below_detection_reported_by_source"],
+                dims=(0,),
+            ),
             "source_availability_by_time": torch.zeros(
                 (2, 1), dtype=torch.bool
             ),
@@ -3043,14 +3167,18 @@ class VariationalFSOTests(unittest.TestCase):
             "attenuation_qc_score_by_source": torch.flip(
                 common_evidence["attenuation_qc_score_by_source"], dims=(0,)
             ),
-            "below_detection_reported": torch.zeros_like(frames, dtype=torch.bool),
             "source_assignment_scores": torch.flip(scores, dims=(0,)),
         }
+        censor_mutation = common_evidence[
+            "below_detection_reported_by_source"
+        ].clone()
+        censor_mutation[0, 0, 0, 0] = True
+        raw_mutations["below_detection_reported_by_source"] = censor_mutation
         for field_name, value in raw_mutations.items():
             with self.subTest(raw_rewrite=field_name):
                 with self.assertRaisesRegex(
                     ValueError,
-                    "does not attest raw mask evidence",
+                    "does not attest raw mask evidence|mask evidence is invalid",
                 ):
                     replace(evidence, **{field_name: value})
         attacked = VerificationObservationMaskEvidence.issue(**common_evidence)
@@ -3073,6 +3201,9 @@ class VariationalFSOTests(unittest.TestCase):
                 source_registry=reordered_registry,
             )
         for output_name in (
+            "_selected_frames_dbz",
+            "_selected_detection_limit_dbz",
+            "_selected_acquisition_time_offset_seconds",
             "_source_present_mask",
             "_range_elevation_valid_mask",
             "_beam_blocked_mask",
@@ -3111,6 +3242,117 @@ class VariationalFSOTests(unittest.TestCase):
                 plan=plan,
                 raw_evidence=other_key_evidence,
                 source_registry=registry,
+            )
+        legacy_plan = replace(
+            plan,
+            range_elevation_validity_algorithm_digest=(
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V1_DIGEST
+            ),
+            beam_blockage_algorithm_digest=(
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V1_DIGEST
+            ),
+            quality_weight_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+            ),
+            observation_std_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+            ),
+            source_assignment_algorithm_digest=(
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V1_DIGEST
+            ),
+            derivation_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+            ),
+            mask_derivation_algorithm_digest=(
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V1_DIGEST
+            ),
+            maximum_acquisition_age_seconds=None,
+            temporal_quality_decay_scale_seconds=None,
+            temporal_quality_decay_power=None,
+            temporal_error_growth_dbz_per_second=None,
+            temporal_quality_decay_algorithm_digest=None,
+            temporal_error_algorithm_digest=None,
+            detection_limit_derivation_algorithm_digest=None,
+            censor_state_derivation_algorithm_digest=None,
+            contract="verification-observation-error-plan-v3",
+        )
+        self.assertNotEqual(
+            OBSERVATION_MASK_DERIVATION_ALGORITHM_V1_DIGEST,
+            OBSERVATION_MASK_DERIVATION_ALGORITHM_V2_DIGEST,
+        )
+        self.assertNotEqual(
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST,
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V3_DIGEST,
+        )
+        self.assertNotIn(
+            "maximum_acquisition_age_seconds",
+            legacy_plan.payload,
+        )
+        self.assertNotIn(
+            "detection_limit_derivation_algorithm_digest",
+            legacy_plan.payload,
+        )
+        legacy_source = replace(
+            registry.ordered_sources[0],
+            detection_limit_dbz=-10.0,
+            contract="observation-radar-source-v1",
+        )
+        self.assertNotIn("detection_limit_dbz", legacy_source.payload)
+        with self.assertRaisesRegex(
+            ValueError, "deterministic observation-mask derivation"
+        ):
+            derive_verification_observation_masks(
+                plan=legacy_plan,
+                raw_evidence=evidence,
+                source_registry=registry,
+            )
+        unavailable_top = VerificationObservationMaskEvidence.issue(
+            **(
+                common_evidence
+                | {
+                    "source_availability_by_time": torch.tensor(
+                        [[False], [True]], dtype=torch.bool
+                    )
+                }
+            )
+        )
+        unavailable_derivation = derive_verification_observation_masks(
+            plan=plan,
+            raw_evidence=unavailable_top,
+            source_registry=registry,
+        )
+        self.assertEqual(
+            int(unavailable_derivation.source_radar_index_map[0, 0, 0]),
+            0,
+        )
+        self.assertFalse(
+            bool(unavailable_derivation.source_present_mask[0, 0, 0])
+        )
+
+    def test_v2_observation_derivation_inputs_are_audit_only(self) -> None:
+        frames = torch.ones((1, 2, 2))
+        with self.assertRaisesRegex(ValueError, "audit-only"):
+            VerificationObservationDerivationInputs(
+                frames_dbz=frames,
+                source_present_mask=torch.ones_like(frames, dtype=torch.bool),
+                range_elevation_valid_mask=torch.ones_like(
+                    frames, dtype=torch.bool
+                ),
+                beam_blocked_mask=torch.zeros_like(frames, dtype=torch.bool),
+                attenuation_qc_valid_mask=torch.ones_like(
+                    frames, dtype=torch.bool
+                ),
+                below_detection_censored_mask=torch.zeros_like(
+                    frames, dtype=torch.bool
+                ),
+                source_radar_index_map=torch.zeros_like(
+                    frames, dtype=torch.int64
+                ),
+                upstream_verification_artifact_digest="1" * 64,
+                range_elevation_validity_domain_digest="2" * 64,
+                beam_blockage_visibility_mask_digest="3" * 64,
+                spatial_correlation_block_digest="4" * 64,
+                contract="verification-observation-derivation-inputs-v2",
             )
 
     def test_observation_error_gaussian_diagnostic_is_proper_and_report_only(

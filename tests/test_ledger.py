@@ -90,6 +90,14 @@ from advar.calibration import (  # noqa: E402
 )
 from advar.sensitivity import (  # noqa: E402
     LearningApprovalEvidence,
+    MosaicObservationSourceRegistry,
+    OBSERVATION_CENSOR_STATE_ALGORITHM_V1_DIGEST,
+    OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST,
+    OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST,
+    OBSERVATION_TEMPORAL_QUALITY_DECAY_ALGORITHM_V1_DIGEST,
+    ObservationRadarSource,
     SensitivityConfig,
     VerificationObservationErrorPlan,
     compute_sensitivity_snapshot,
@@ -574,22 +582,82 @@ class EpisodeLedgerTests(unittest.TestCase):
             decision_deadline="2030-01-01T00:02:00Z",
             publication_time="2030-01-01T00:05:00Z",
         )
+        verification_source_key = Ed25519PrivateKey.from_private_bytes(
+            b"\x2c" * 32
+        )
+        observation_source_registry = MosaicObservationSourceRegistry(
+            radar_source_kind="single_site",
+            ordered_sources=(
+                ObservationRadarSource(
+                    radar_site_digest="2" * 64,
+                    calibration_epoch_digest="2" * 64,
+                    quality_weight=1.0,
+                    observation_std_dbz=2.0,
+                ),
+            ),
+        )
         observation_error_plan = VerificationObservationErrorPlan(
             radar_source_kind="single_site",
-            source_registry_digest="b" * 64,
-            calibration_registry_digest="2" * 64,
-            range_elevation_validity_algorithm_digest="5" * 64,
-            beam_blockage_algorithm_digest="6" * 64,
+            source_registry_digest=(
+                observation_source_registry.source_registry_digest
+            ),
+            calibration_registry_digest=(
+                observation_source_registry.calibration_registry_digest
+            ),
+            range_elevation_validity_algorithm_digest=(
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST
+            ),
+            beam_blockage_algorithm_digest=(
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST
+            ),
             attenuation_qc_digest="3" * 64,
             censoring_rule_digest="f" * 64,
             spatial_correlation_block_algorithm_digest="7" * 64,
             quality_weight_interpretation_digest="8" * 64,
-            quality_weight_algorithm_digest="9" * 64,
-            observation_std_algorithm_digest="a" * 64,
+            quality_weight_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
+            ),
+            observation_std_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
+            ),
             observation_error_model_digest="b" * 64,
-            source_assignment_algorithm_digest="c" * 64,
+            source_assignment_algorithm_digest=(
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST
+            ),
             minimum_detectable_echo_dbz=-10.0,
             observation_error_reference_std_dbz=2.0,
+            derivation_algorithm_digest=(
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
+            ),
+            mask_derivation_algorithm_digest=(
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST
+            ),
+            maximum_range_km=300.0,
+            minimum_elevation_deg=-1.0,
+            maximum_elevation_deg=90.0,
+            maximum_beam_blockage_fraction=0.5,
+            minimum_attenuation_qc_score=0.5,
+            verification_source_authority_id="clock-verification-source",
+            verification_source_authority_public_key_hex=(
+                verification_source_key.public_key().public_bytes_raw().hex()
+            ),
+            maximum_acquisition_age_seconds=300.0,
+            temporal_quality_decay_scale_seconds=120.0,
+            temporal_quality_decay_power=2.0,
+            temporal_error_growth_dbz_per_second=0.01,
+            temporal_quality_decay_algorithm_digest=(
+                OBSERVATION_TEMPORAL_QUALITY_DECAY_ALGORITHM_V1_DIGEST
+            ),
+            temporal_error_algorithm_digest=(
+                OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST
+            ),
+            detection_limit_derivation_algorithm_digest=(
+                OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST
+            ),
+            censor_state_derivation_algorithm_digest=(
+                OBSERVATION_CENSOR_STATE_ALGORITHM_V1_DIGEST
+            ),
+            contract="verification-observation-error-plan-v5",
         )
         target_plan = PriorUncertaintyTargetPlan(
             plan_id="uncertainty-clock",
