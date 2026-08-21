@@ -93,8 +93,12 @@ from advar.sensitivity import (  # noqa: E402
     MosaicObservationSourceRegistry,
     OBSERVATION_CENSOR_STATE_ALGORITHM_V1_DIGEST,
     OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST,
+    OBSERVATION_DETECTION_LIMIT_ALGORITHM_V2_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST,
+    OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST,
     OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST,
     OBSERVATION_TEMPORAL_QUALITY_DECAY_ALGORITHM_V1_DIGEST,
     ObservationRadarSource,
@@ -605,32 +609,32 @@ class EpisodeLedgerTests(unittest.TestCase):
                 observation_source_registry.calibration_registry_digest
             ),
             range_elevation_validity_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST
             ),
             beam_blockage_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST
             ),
             attenuation_qc_digest="3" * 64,
             censoring_rule_digest="f" * 64,
             spatial_correlation_block_algorithm_digest="7" * 64,
             quality_weight_interpretation_digest="8" * 64,
             quality_weight_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST
             ),
             observation_std_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST
             ),
             observation_error_model_digest="b" * 64,
             source_assignment_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST
             ),
             minimum_detectable_echo_dbz=-10.0,
             observation_error_reference_std_dbz=2.0,
             derivation_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST
             ),
             mask_derivation_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST
             ),
             maximum_range_km=300.0,
             minimum_elevation_deg=-1.0,
@@ -652,12 +656,12 @@ class EpisodeLedgerTests(unittest.TestCase):
                 OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST
             ),
             detection_limit_derivation_algorithm_digest=(
-                OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST
+                OBSERVATION_DETECTION_LIMIT_ALGORITHM_V2_DIGEST
             ),
             censor_state_derivation_algorithm_digest=(
-                OBSERVATION_CENSOR_STATE_ALGORITHM_V1_DIGEST
+                OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST
             ),
-            contract="verification-observation-error-plan-v5",
+            contract="verification-observation-error-plan-v6",
         )
         target_plan = PriorUncertaintyTargetPlan(
             plan_id="uncertainty-clock",

@@ -46,10 +46,13 @@ from advar import (
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V3_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST,
     OBSERVATION_TEMPORAL_QUALITY_DECAY_ALGORITHM_V1_DIGEST,
     OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST,
     OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST,
+    OBSERVATION_DETECTION_LIMIT_ALGORITHM_V2_DIGEST,
     OBSERVATION_CENSOR_STATE_ALGORITHM_V1_DIGEST,
+    OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V1_DIGEST,
     MosaicObservationSourceRegistry,
@@ -77,6 +80,7 @@ from advar import (
     VerificationObservationErrorPlan,
     VerificationObservationDerivationInputs,
     VerificationObservationMaskEvidence,
+    VerificationObservationReportKind,
     VerificationObservationSourceIdentity,
     algorithm_bundle_digest,
     compute_neural_prior_promotion,
@@ -164,10 +168,10 @@ def _verification_observation_error_plan(
         spatial_correlation_block_algorithm_digest="7" * 64,
         quality_weight_interpretation_digest="8" * 64,
         quality_weight_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST
         ),
         observation_std_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST
         ),
         observation_error_model_digest="9" * 64,
         source_assignment_algorithm_digest=(
@@ -176,7 +180,7 @@ def _verification_observation_error_plan(
         minimum_detectable_echo_dbz=-10.0,
         observation_error_reference_std_dbz=2.0,
         derivation_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST
         ),
         mask_derivation_algorithm_digest=(
             OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
@@ -199,12 +203,12 @@ def _verification_observation_error_plan(
             OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST
         ),
         detection_limit_derivation_algorithm_digest=(
-            OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST
+            OBSERVATION_DETECTION_LIMIT_ALGORITHM_V2_DIGEST
         ),
         censor_state_derivation_algorithm_digest=(
-            OBSERVATION_CENSOR_STATE_ALGORITHM_V1_DIGEST
+            OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST
         ),
-        contract="verification-observation-error-plan-v5",
+        contract="verification-observation-error-plan-v6",
     )
 
 
@@ -262,7 +266,9 @@ def _verification_bundle_v4(
             ).to(frames_dbz)
     mask_evidence = VerificationObservationMaskEvidence.issue(
         valid_times=valid_times,
-        acquisition_valid_times=valid_times,
+        acquisition_valid_times_by_source=tuple(
+            valid_times for _ in registry.ordered_sources
+        ),
         grid_contract_digest=grid_contract_digest,
         radar_product_digest=radar_product_digest,
         native_verification_source_identity_digest=upstream_digest,
@@ -273,10 +279,21 @@ def _verification_bundle_v4(
         reflectivity_dbz_by_source=(
             frames_dbz.unsqueeze(0).expand_as(scores).clone()
         ),
-        detection_limit_dbz_by_source=torch.full_like(scores, -10.0),
         acquisition_time_offset_seconds_by_source=torch.zeros_like(scores),
-        below_detection_reported_by_source=(
-            frames_dbz.unsqueeze(0).expand_as(scores).clone() <= -10.0
+        observation_report_kind_by_source=torch.where(
+            frames_dbz.unsqueeze(0).expand_as(scores).clone() <= -10.0,
+            torch.full_like(
+                scores,
+                int(
+                    VerificationObservationReportKind.BELOW_DETECTION_CENSORED
+                ),
+                dtype=torch.uint8,
+            ),
+            torch.full_like(
+                scores,
+                int(VerificationObservationReportKind.DETECTED_ECHO),
+                dtype=torch.uint8,
+            ),
         ),
         source_assignment_scores=scores,
         source_availability_by_time=torch.ones(
@@ -334,9 +351,12 @@ def _verification_bundle_v4(
         acquisition_time_offset_seconds=(
             mask_derivation.selected_acquisition_time_offset_seconds
         ),
+        acquisition_age_seconds=(
+            mask_derivation.selected_acquisition_age_seconds
+        ),
         observation_error_contract=error_contract,
         observation_error_derivation=derivation,
-        contract="radar-verification-bundle-v10",
+        contract="radar-verification-bundle-v11",
     )
 
 
@@ -571,7 +591,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             censor_state_derivation_algorithm_digest=None,
             contract="verification-observation-error-plan-v3",
         )
-        with self.assertRaisesRegex(ValueError, "requires observation-error plan v5"):
+        with self.assertRaisesRegex(ValueError, "requires observation-error plan v6"):
             replace(
                 plan,
                 verification_observation_error_plans=(
@@ -5225,7 +5245,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
         v14_arrays: dict[str, Any] = {}
         v14_records: list[ledger_module.ScoringReplayTensorRecord] = []
-        for role in sorted(ledger_module.SCORING_REPLAY_REQUIRED_TENSOR_ROLES):
+        for role in sorted(
+            ledger_module.LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V15
+        ):
             member = f"case_000000__{role}"
             v14_arrays[member] = tensor.numpy().copy()
             v14_records.append(
@@ -5338,6 +5360,140 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "audit-only"):
                 ledger.load_neural_prior_scoring_replay_bundle(
                     v14_manifest.bundle_digest,
+                    cases=self.scoring_replay_cases((evaluation,)),
+                    _require_raw_trust_activation=False,
+                )
+
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            staging = Path(directory) / "v15-staging"
+            staging.mkdir()
+            pending_shard = staging / "pending.npz"
+            np.savez_compressed(pending_shard, tensor=tensor.numpy().copy())
+            shard_sha256 = ledger_module._file_digest(pending_shard)
+            shard_path = staging / f"tensor_{shard_sha256}.npz"
+            pending_shard.rename(shard_path)
+            v15_records = tuple(
+                ledger_module.ScoringReplayTensorRecord(
+                    case_id=case_id,
+                    role=role,
+                    archive_member="tensor",
+                    dtype="float32",
+                    shape=(1, 2, 2),
+                    tensor_digest=promotion_module.tensor_digest(tensor),
+                    archive_sha256=shard_sha256,
+                )
+                for role in sorted(
+                    ledger_module
+                    .LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V15
+                )
+            )
+            evaluations_path = staging / "evaluations.json"
+            evaluations_path.write_text(
+                json.dumps(
+                    [ledger_module._evaluation_audit_payload(evaluation)],
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+                encoding="utf-8",
+            )
+            raw_provenance_path = staging / "raw_provenance.json"
+            raw_provenance_path.write_text("[]", encoding="utf-8")
+            verification_provenance_path = (
+                staging / "verification_provenance.json"
+            )
+            verification_provenance_path.write_text("[]", encoding="utf-8")
+            shard_set = (shard_sha256,)
+            v15_manifest = (
+                ledger_module.LegacyScoringReplayBundleManifestAuditV15(
+                    scoring_input_artifact_digest="2" * 64,
+                    ordered_case_ids=(case_id,),
+                    ordered_evaluation_digests=(
+                        evaluation.evaluation_digest,
+                    ),
+                    semantic_case_digests=("4" * 64,),
+                    dynamic_source_case_ids=(),
+                    background_case_ids=(),
+                    algorithm_source_manifest_digest="5" * 64,
+                    runtime_compatibility_digest="6" * 64,
+                    runtime_exact_digest="7" * 64,
+                    scoring_backend_certification_policy_digest=None,
+                    scoring_backend_certification_evidence_digest=None,
+                    tensor_records=v15_records,
+                    tensor_archive_sha256=ledger_module._json_digest(
+                        {
+                            "contract": (
+                                "neural-prior-scoring-replay-shard-set-v1"
+                            ),
+                            "ordered_shard_sha256s": list(shard_set),
+                        }
+                    ),
+                    evaluation_payload_sha256=ledger_module._file_digest(
+                        evaluations_path
+                    ),
+                    raw_provenance_payload_sha256=ledger_module._file_digest(
+                        raw_provenance_path
+                    ),
+                    verification_provenance_payload_sha256=(
+                        ledger_module._file_digest(
+                            verification_provenance_path
+                        )
+                    ),
+                    raw_ingestor_trust_store_digest="b" * 64,
+                    tensor_shard_sha256s=shard_set,
+                )
+            )
+            manifest_path = staging / "manifest.json"
+            manifest_json = json.dumps(
+                v15_manifest.payload
+                | {"bundle_digest": v15_manifest.bundle_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            manifest_path.write_text(manifest_json, encoding="utf-8")
+            target = ledger.scoring_replays_dir / v15_manifest.bundle_digest
+            staging.rename(target)
+            with ledger._connect() as connection:
+                connection.execute(
+                    "INSERT INTO neural_prior_holdout_scoring_input_artifacts "
+                    "(artifact_digest, holdout_plan_digest, payload_json, created_at) "
+                    "VALUES (?, ?, ?, ?)",
+                    (
+                        "2" * 64,
+                        "3" * 64,
+                        "{}",
+                        "2026-08-21T00:00:00+00:00",
+                    ),
+                )
+                connection.execute(
+                    "INSERT INTO neural_prior_scoring_replay_bundles "
+                    "(bundle_digest, scoring_input_artifact_digest, manifest_json, "
+                    "path, created_at) VALUES (?, ?, ?, ?, ?)",
+                    (
+                        v15_manifest.bundle_digest,
+                        "2" * 64,
+                        manifest_json,
+                        str(target.relative_to(ledger.root)),
+                        "2026-08-21T00:00:00+00:00",
+                    ),
+                )
+            loaded_v15 = ledger.load_neural_prior_scoring_replay_bundle(
+                v15_manifest.bundle_digest,
+                _require_raw_trust_activation=False,
+            )
+            self.assertIs(
+                type(loaded_v15.manifest),
+                ledger_module.LegacyScoringReplayBundleManifestAuditV15,
+            )
+            self.assertTrue(loaded_v15.verification_bytes_verified)
+            self.assertFalse(loaded_v15.verification_reconstructed)
+            self.assertFalse(
+                loaded_v15.verification_semantic_replay_verified
+            )
+            self.assertFalse(loaded_v15.semantic_replay_verified)
+            with self.assertRaisesRegex(ValueError, "audit-only"):
+                ledger.load_neural_prior_scoring_replay_bundle(
+                    v15_manifest.bundle_digest,
                     cases=self.scoring_replay_cases((evaluation,)),
                     _require_raw_trust_activation=False,
                 )
@@ -8680,6 +8836,39 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
                 self.assertFalse((replay_directory / "replay_arrays.npz").exists())
                 self.assertGreater(len(replay_manifest.tensor_shard_sha256s), 1)
+                self.assertLess(
+                    len(replay_manifest.tensor_shard_sha256s),
+                    len(replay_manifest.tensor_records),
+                )
+                extra_shard_digest = "0" * 64
+                if extra_shard_digest in replay_manifest.tensor_shard_sha256s:
+                    extra_shard_digest = "f" * 64
+                forged_shard_set = tuple(
+                    sorted(
+                        (
+                            *replay_manifest.tensor_shard_sha256s,
+                            extra_shard_digest,
+                        )
+                    )
+                )
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "shard manifest is not exact",
+                ):
+                    replace(
+                        replay_manifest,
+                        tensor_shard_sha256s=forged_shard_set,
+                        tensor_archive_sha256=ledger_module._json_digest(
+                            {
+                                "contract": (
+                                    "neural-prior-scoring-replay-shard-set-v1"
+                                ),
+                                "ordered_shard_sha256s": list(
+                                    forged_shard_set
+                                ),
+                            }
+                        ),
+                    )
                 verification_provenance = (
                     replay_directory
                     / "verification_provenance.json"
@@ -15191,27 +15380,27 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def test_cpu_only_scoring_generation_has_a_stable_backend_contract(self) -> None:
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_CONTRACT,
-            "neural-prior-scoring-replay-bundle-v15",
+            "neural-prior-scoring-replay-bundle-v16",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_METHOD,
-            "builtin-semantic-scoring-recomputation-v15",
+            "builtin-semantic-scoring-recomputation-v16",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD,
             {
-                "contract": "neural-prior-semantic-scoring-generation-v13",
-                "replay_contract": "neural-prior-scoring-replay-bundle-v15",
-                "replay_method": "builtin-semantic-scoring-recomputation-v15",
-                "case_contract": "neural-prior-semantic-scoring-case-v14",
+                "contract": "neural-prior-semantic-scoring-generation-v14",
+                "replay_contract": "neural-prior-scoring-replay-bundle-v16",
+                "replay_method": "builtin-semantic-scoring-recomputation-v16",
+                "case_contract": "neural-prior-semantic-scoring-case-v15",
                 "observation_mask_algorithm_digest": (
                     OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
                 ),
                 "observation_error_algorithm_digest": (
-                    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
+                    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST
                 ),
                 "verification_bundle_contract": (
-                    "radar-verification-bundle-v10"
+                    "radar-verification-bundle-v11"
                 ),
                 "product_type_policy": "exact-shipped-product-types-v1",
                 "forecast_integrity": "forecast-result-raw-content-validation-v1",
