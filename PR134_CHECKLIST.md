@@ -57,9 +57,11 @@
 ## Second-review delivery evidence
 
 - Implementation commit: `ed69feda946399834c2867ad2ff222dee1a4eeb8` (`fix: close scientific replay audit gaps`).
+- Scientific CI scope commit: `4dd44f8dd6fdb1104084b18b667c6dd0dedde632` (`ci: focus required checks on scientific validation`).
 - Implementation parent/base: `2d64599ee7491b58ca36e9bcf799ea578d9d6866`; merge base remains `origin/main@a246966c68f2dcbaea89cc6905b9b1a58ef2e18c`.
 - Final documentation head: pending this evidence commit and push.
 - Exact-final-head GitHub CI: pending; prior head run `32408967808` is historical evidence only and is not reused for this implementation.
+- Superseded run `32449701646` was cancelled after the package job succeeded and while both CPU jobs were still running; it is not final evidence.
 - Merge remains HOLD pending exact-final-head CI, independent review, and explicit merge authorization.
 
 ## Authority snapshot
