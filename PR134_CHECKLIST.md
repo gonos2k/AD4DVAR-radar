@@ -44,6 +44,14 @@
 - Built-wheel target import, both public CLI help paths, and a real three-frame `advar-nowcast` smoke pass; the output remains `nowcast-npz-v74` / `forecast-run-v68`.
 - Exact hash-locked Linux CPU wheelhouse installation remains an exact-head CI requirement rather than a macOS local claim.
 
+## Second-review delivery evidence
+
+- Implementation commit: `ed69feda946399834c2867ad2ff222dee1a4eeb8` (`fix: close scientific replay audit gaps`).
+- Implementation parent/base: `2d64599ee7491b58ca36e9bcf799ea578d9d6866`; merge base remains `origin/main@a246966c68f2dcbaea89cc6905b9b1a58ef2e18c`.
+- Final documentation head: pending this evidence commit and push.
+- Exact-final-head GitHub CI: pending; prior head run `32408967808` is historical evidence only and is not reused for this implementation.
+- Merge remains HOLD pending exact-final-head CI, independent review, and explicit merge authorization.
+
 ## Authority snapshot
 
 - Review source: user-pasted additional review of merged PR #133
