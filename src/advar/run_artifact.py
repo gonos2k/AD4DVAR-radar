@@ -524,7 +524,7 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
             ""
             if grid_time_contract is None
             else json.dumps(
-                asdict(grid_time_contract),
+                grid_time_contract.payload,
                 sort_keys=True,
                 separators=(",", ":"),
                 allow_nan=False,
@@ -2142,7 +2142,7 @@ def _grid_time_contract(
         raise ValueError("invalid grid_time_contract_json") from error
     if not isinstance(value, dict):
         raise ValueError("grid_time_contract_json must contain an object")
-    expected = {
+    legacy_expected = {
         "valid_times",
         "dx_m",
         "dy_m",
@@ -2151,7 +2151,18 @@ def _grid_time_contract(
         "background_valid_times",
         "pixel_to_projected_matrix_m",
     }
-    if set(value) != expected:
+    scientific_expected = legacy_expected | {
+        "spatial_grid_contract",
+        "grid_shape_yx",
+        "projected_crs_digest",
+        "cell_center_origin_xy_m",
+        "grid_coordinate_dtype",
+        "cell_center_convention",
+    }
+    if frozenset(value) not in {
+        frozenset(legacy_expected),
+        frozenset(scientific_expected),
+    }:
         raise ValueError("grid_time_contract_json has invalid fields")
     background_times = value["background_valid_times"]
     matrix = value["pixel_to_projected_matrix_m"]
@@ -2177,6 +2188,23 @@ def _grid_time_contract(
                 if background_times is None
                 else tuple(background_times)
             ),
+            spatial_grid_contract=value.get(
+                "spatial_grid_contract",
+                "radar-spatial-grid-identity-v1",
+            ),
+            grid_shape_yx=(
+                None
+                if "grid_shape_yx" not in value
+                else tuple(value["grid_shape_yx"])
+            ),
+            projected_crs_digest=value.get("projected_crs_digest"),
+            cell_center_origin_xy_m=(
+                None
+                if "cell_center_origin_xy_m" not in value
+                else tuple(value["cell_center_origin_xy_m"])
+            ),
+            grid_coordinate_dtype=value.get("grid_coordinate_dtype"),
+            cell_center_convention=value.get("cell_center_convention"),
         )
     except (TypeError, ValueError) as error:
         raise ValueError("invalid grid_time_contract_json") from error

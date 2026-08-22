@@ -32,6 +32,8 @@ from advar import (  # noqa: E402
     NeuralPriorStateContract,
     NowcastConfig,
     OperationalCalibrationManifest,
+    RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION,
+    RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
     RadarGridTimeContract,
     SensitivityConfig,
     TendencyPairSelection,
@@ -44,6 +46,7 @@ from advar import (  # noqa: E402
     variational_nowcast,
     operational_runtime_profile_digest,
     algorithm_bundle_digest,
+    radar_projected_crs_digest,
 )
 from advar.variational import (  # noqa: E402
     _new_neural_prior_deployment_selection,
@@ -1839,6 +1842,43 @@ class ForecastRunArtifactTests(unittest.TestCase):
             context["projected_speed_mps"],
             torch.linalg.vector_norm(loaded.projected_velocity_mps_xy),
         )
+
+    def test_round_trip_preserves_scientific_projected_grid_identity(
+        self,
+    ) -> None:
+        contract = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=500.0,
+            dy_m=750.0,
+            projection="EPSG:5179",
+            grid_hash="c" * 64,
+            pixel_to_projected_matrix_m=((0.0, -750.0), (500.0, 0.0)),
+            spatial_grid_contract="radar-spatial-grid-identity-v2",
+            grid_shape_yx=tuple(self.frames().shape[-2:]),
+            projected_crs_digest=radar_projected_crs_digest("EPSG:5179"),
+            cell_center_origin_xy_m=(500_000.0, 4_000_000.0),
+            grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            cell_center_convention=(
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+        )
+        result = nowcast(self.frames(), grid_time_contract=contract)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "run.npz"
+            save_forecast_run(result, path)
+            loaded = load_forecast_run(path)
+
+        self.assertEqual(loaded.run.grid_time_contract, contract)
+        self.assertEqual(
+            loaded.run.grid_time_contract.spatial_grid_digest,
+            contract.spatial_grid_digest,
+        )
+        self.assertEqual(loaded.forecast_run_digest, result.forecast_run_digest)
 
     def test_load_rejects_tampered_grid_time_contract(self) -> None:
         contract = RadarGridTimeContract(

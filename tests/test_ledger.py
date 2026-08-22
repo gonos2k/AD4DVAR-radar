@@ -98,10 +98,12 @@ from advar.sensitivity import (  # noqa: E402
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V5_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V7_DIGEST,
     OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST,
@@ -602,6 +604,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             grid_x_m=torch.tensor([[0.0, 1000.0]]),
             grid_y_m=torch.zeros((1, 2)),
             grid_spacing_m=1000.0,
+            contract="radar-observation-geometry-v2",
         )
         observation_source_registry = MosaicObservationSourceRegistry(
             radar_source_kind="single_site",
@@ -632,20 +635,20 @@ class EpisodeLedgerTests(unittest.TestCase):
                 observation_source_registry.calibration_registry_digest
             ),
             range_elevation_validity_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V7_DIGEST
             ),
             beam_blockage_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V7_DIGEST
             ),
             attenuation_qc_digest="3" * 64,
             censoring_rule_digest="f" * 64,
             spatial_correlation_block_algorithm_digest="7" * 64,
             quality_weight_interpretation_digest="8" * 64,
             quality_weight_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST
             ),
             observation_std_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST
             ),
             observation_error_model_digest="b" * 64,
             source_assignment_algorithm_digest=(
@@ -654,10 +657,10 @@ class EpisodeLedgerTests(unittest.TestCase):
             minimum_detectable_echo_dbz=-10.0,
             observation_error_reference_std_dbz=2.0,
             derivation_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST
             ),
             mask_derivation_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V7_DIGEST
             ),
             maximum_range_km=300.0,
             minimum_elevation_deg=-1.0,
@@ -691,7 +694,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             spatial_age_gate_algorithm_digest=(
                 OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST
             ),
-            contract="verification-observation-error-plan-v8",
+            contract="verification-observation-error-plan-v9",
         )
         target_plan = PriorUncertaintyTargetPlan(
             plan_id="uncertainty-clock",
