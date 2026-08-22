@@ -60,8 +60,10 @@ from .sensitivity import (
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V5_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST,
     SensitivityConfig,
     ObservationErrorDerivationArtifact,
     VerificationBundle,
@@ -244,23 +246,23 @@ TRAINING_NORMALIZATION_MASK_WEIGHT_POLICY_DIGEST = json_digest(
 
 
 SEMANTIC_SCORING_REPLAY_CONTRACT = (
-    "neural-prior-scoring-replay-bundle-v17"
+    "neural-prior-scoring-replay-bundle-v18"
 )
 SEMANTIC_SCORING_REPLAY_METHOD = (
-    "builtin-semantic-scoring-recomputation-v17"
+    "builtin-semantic-scoring-recomputation-v18"
 )
 SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD: dict[str, str] = {
-    "contract": "neural-prior-semantic-scoring-generation-v15",
+    "contract": "neural-prior-semantic-scoring-generation-v16",
     "replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
     "replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
-    "case_contract": "neural-prior-semantic-scoring-case-v16",
+    "case_contract": "neural-prior-semantic-scoring-case-v17",
     "observation_mask_algorithm_digest": (
-        OBSERVATION_MASK_DERIVATION_ALGORITHM_V5_DIGEST
+        OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST
     ),
     "observation_error_algorithm_digest": (
-        OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
+        OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
     ),
-    "verification_bundle_contract": "radar-verification-bundle-v12",
+    "verification_bundle_contract": "radar-verification-bundle-v13",
     "product_type_policy": "exact-shipped-product-types-v1",
     "forecast_integrity": "forecast-result-raw-content-validation-v1",
     "prior_integrity": "runner-reproduced-prior-application-v1",
@@ -9481,6 +9483,29 @@ class LegacyNeuralPriorHoldoutPlanV26Audit:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV27Audit:
+    """Pre-geometry-closure v27 plan retained for audit only."""
+
+    plan_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-plan-audit-v27"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _validate_generic_legacy_digest_payload(
+            digest=self.plan_digest,
+            payload_json=self.payload_json,
+            digest_field="plan_digest",
+            original_contract="neural-prior-holdout-plan-v27",
+        )
+        object.__setattr__(self, "audit_digest", json_digest({
+            "contract": self.contract,
+            "plan_digest": self.plan_digest,
+            "payload_json": self.payload_json,
+        }))
+
+
+@dataclass(frozen=True)
 class PromotionExperimentTrial:
     """One preregistered candidate/rule/classifier trial in a cohort."""
 
@@ -9670,11 +9695,11 @@ class NeuralPriorHoldoutPlan:
     mode: Literal["prospective", "sealed_historical"] = "prospective"
     sealed_historical_dataset_digest: str | None = None
     candidate_training_started_at: str | None = None
-    contract: str = "neural-prior-holdout-plan-v27"
+    contract: str = "neural-prior-holdout-plan-v28"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v27":
+        if self.contract != "neural-prior-holdout-plan-v28":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -9825,11 +9850,11 @@ class NeuralPriorHoldoutPlan:
             )
         }
         if any(
-            item.contract != "verification-observation-error-plan-v7"
+            item.contract != "verification-observation-error-plan-v8"
             for item in self.verification_observation_error_plans
         ):
             raise ValueError(
-                "current holdout requires observation-error plan v7"
+                "current holdout requires observation-error plan v8"
             )
         if (
             len(retained_observation_error_plans)
@@ -12281,7 +12306,7 @@ class PriorUncertaintyTarget:
         verification.validate_integrity()
         if (
             plan.contract != "prior-uncertainty-target-plan-v7"
-            or verification.contract != "radar-verification-bundle-v12"
+            or verification.contract != "radar-verification-bundle-v13"
             or verification.observation_error_contract is None
             or verification.observation_error_contract
             .observation_error_plan_digest
@@ -12412,7 +12437,7 @@ class NeuralPriorStateCalibrationTarget:
     ) -> NeuralPriorStateCalibrationTarget:
         verification.validate_integrity()
         if (
-            verification.contract != "radar-verification-bundle-v12"
+            verification.contract != "radar-verification-bundle-v13"
             or verification.observation_error_contract is None
             or verification.observation_error_contract
             .observation_error_plan_digest
@@ -15206,7 +15231,7 @@ class ScoringReplayCaseArtifact:
             raise ValueError("semantic scoring replay case is invalid")
         ForecastResult.validate_issuance(self.candidate_forecast)
         ForecastResult.validate_issuance(self.parent_forecast)
-        if self.verification.contract != "radar-verification-bundle-v12":
+        if self.verification.contract != "radar-verification-bundle-v13":
             raise ValueError(
                 "semantic scoring replay requires current source-composed "
                 "verification"
@@ -15918,7 +15943,7 @@ class ScoringReplayCaseArtifact:
     ) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-semantic-scoring-case-v16",
+                "contract": "neural-prior-semantic-scoring-case-v17",
                 "semantic_replay_generation_digest": (
                     SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
                 ),
@@ -16260,6 +16285,7 @@ def compute_observation_error_gaussian_diagnostic(
             "radar-verification-bundle-v10",
             "radar-verification-bundle-v11",
             "radar-verification-bundle-v12",
+            "radar-verification-bundle-v13",
         }
         or state is None
         or observation_std is None
