@@ -42,6 +42,12 @@ _OPERATIONAL_RUNTIME_PROFILE_VERSION = "operational-runtime-profile-v2"
 
 _MINIMUM_GRID_AXIS_SINE = 0.01
 _MAXIMUM_GRID_AFFINE_CONDITION_NUMBER = 1000.0
+RADAR_PROJECTED_GRID_COORDINATE_DTYPE = "float64"
+RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION = (
+    "row0-column0-is-first-cell-center-v1"
+)
+RADAR_GRID_AFFINE_RELATIVE_TOLERANCE = 1.0e-9
+RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M = 1.0e-9
 
 
 @dataclass(frozen=True)
@@ -379,6 +385,23 @@ def _canonical_time_tuple(
     return canonical[0], canonical[1], canonical[2]
 
 
+def radar_projected_crs_digest(projection: str) -> str:
+    """Return the product-owned identity of one canonical projected CRS."""
+
+    if (
+        not isinstance(projection, str)
+        or not projection
+        or projection.strip() != projection
+    ):
+        raise ValueError("projection must be a non-empty canonical string")
+    return json_digest(
+        {
+            "contract": "radar-projected-crs-identity-v1",
+            "canonical_projection": projection,
+        }
+    )
+
+
 @dataclass(frozen=True)
 class RadarSpatialGridIdentity:
     """Time-independent identity of one affine radar analysis grid."""
@@ -390,10 +413,18 @@ class RadarSpatialGridIdentity:
     pixel_to_projected_matrix_m: tuple[
         tuple[float, float], tuple[float, float]
     ]
+    shape_yx: tuple[int, int] | None = None
+    projected_crs_digest: str | None = None
+    cell_center_origin_xy_m: tuple[float, float] | None = None
+    grid_coordinate_dtype: str | None = None
+    cell_center_convention: str | None = None
     contract: str = "radar-spatial-grid-identity-v1"
 
     def __post_init__(self) -> None:
-        if self.contract != "radar-spatial-grid-identity-v1":
+        if self.contract not in {
+            "radar-spatial-grid-identity-v1",
+            "radar-spatial-grid-identity-v2",
+        }:
             raise ValueError("unsupported radar spatial-grid identity")
         if (
             not isinstance(self.dx_m, (int, float))
@@ -436,22 +467,118 @@ class RadarSpatialGridIdentity:
             or not math.isclose(
                 column_spacing,
                 float(self.dx_m),
-                rel_tol=1.0e-9,
-                abs_tol=1.0e-9,
+                rel_tol=RADAR_GRID_AFFINE_RELATIVE_TOLERANCE,
+                abs_tol=RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M,
             )
             or not math.isclose(
                 row_spacing,
                 float(self.dy_m),
-                rel_tol=1.0e-9,
-                abs_tol=1.0e-9,
+                rel_tol=RADAR_GRID_AFFINE_RELATIVE_TOLERANCE,
+                abs_tol=RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M,
             )
         ):
             raise ValueError("radar spatial-grid affine matrix disagrees")
         object.__setattr__(self, "pixel_to_projected_matrix_m", canonical)
+        scientific_fields = (
+            self.shape_yx,
+            self.projected_crs_digest,
+            self.cell_center_origin_xy_m,
+            self.grid_coordinate_dtype,
+            self.cell_center_convention,
+        )
+        if self.contract == "radar-spatial-grid-identity-v1":
+            if any(value is not None for value in scientific_fields):
+                raise ValueError(
+                    "legacy radar spatial-grid identity cannot claim coordinates"
+                )
+            return
+        shape = self.shape_yx
+        origin = self.cell_center_origin_xy_m
+        if (
+            not isinstance(shape, tuple)
+            or len(shape) != 2
+            or any(type(value) is not int or value <= 0 for value in shape)
+            or not isinstance(origin, tuple)
+            or len(origin) != 2
+            or any(
+                not isinstance(value, (int, float))
+                or isinstance(value, bool)
+                or not math.isfinite(value)
+                for value in origin
+            )
+            or self.grid_coordinate_dtype
+            != RADAR_PROJECTED_GRID_COORDINATE_DTYPE
+            or self.cell_center_convention
+            != RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            or self.projected_crs_digest
+            != radar_projected_crs_digest(self.projection)
+        ):
+            raise ValueError("scientific radar projected-grid identity is invalid")
+        projected_crs_digest = self.projected_crs_digest
+        if not isinstance(projected_crs_digest, str):
+            raise ValueError("scientific radar projected-grid CRS is invalid")
+        _validate_sha256_digest(
+            "projected_crs_digest",
+            projected_crs_digest,
+        )
+        object.__setattr__(
+            self,
+            "cell_center_origin_xy_m",
+            (float(origin[0]), float(origin[1])),
+        )
+
+    @property
+    def payload(self) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "dx_m": self.dx_m,
+            "dy_m": self.dy_m,
+            "projection": self.projection,
+            "grid_hash": self.grid_hash,
+            "pixel_to_projected_matrix_m": self.pixel_to_projected_matrix_m,
+            "contract": self.contract,
+        }
+        if self.contract == "radar-spatial-grid-identity-v2":
+            payload.update(
+                {
+                    "shape_yx": self.shape_yx,
+                    "projected_crs_digest": self.projected_crs_digest,
+                    "cell_center_origin_xy_m": self.cell_center_origin_xy_m,
+                    "grid_coordinate_dtype": self.grid_coordinate_dtype,
+                    "cell_center_convention": self.cell_center_convention,
+                }
+            )
+        return payload
 
     @property
     def digest(self) -> str:
-        return dataclass_digest(self)
+        return json_digest(self.payload)
+
+    @property
+    def minimum_axis_spacing_m(self) -> float:
+        return min(float(self.dx_m), float(self.dy_m))
+
+    def projected_cell_center_coordinates(
+        self,
+        *,
+        device: torch.device | str | None = None,
+    ) -> tuple[Tensor, Tensor]:
+        """Generate exact float64 cell-center coordinates from the v2 affine."""
+
+        if self.contract != "radar-spatial-grid-identity-v2":
+            raise ValueError("projected coordinates require spatial-grid v2")
+        assert self.shape_yx is not None
+        assert self.cell_center_origin_xy_m is not None
+        rows, columns = self.shape_yx
+        row_index, column_index = torch.meshgrid(
+            torch.arange(rows, dtype=torch.float64, device=device),
+            torch.arange(columns, dtype=torch.float64, device=device),
+            indexing="ij",
+        )
+        (xx, xr), (yx, yr) = self.pixel_to_projected_matrix_m
+        origin_x, origin_y = self.cell_center_origin_xy_m
+        grid_x_m = origin_x + xx * column_index + xr * row_index
+        grid_y_m = origin_y + yx * column_index + yr * row_index
+        return grid_x_m, grid_y_m
 
 
 @dataclass(frozen=True)
@@ -465,6 +592,12 @@ class RadarGridTimeContract:
     pixel_to_projected_matrix_m: (
         tuple[tuple[float, float], tuple[float, float]] | None
     ) = None
+    spatial_grid_contract: str = "radar-spatial-grid-identity-v1"
+    grid_shape_yx: tuple[int, int] | None = None
+    projected_crs_digest: str | None = None
+    cell_center_origin_xy_m: tuple[float, float] | None = None
+    grid_coordinate_dtype: str | None = None
+    cell_center_convention: str | None = None
 
     def __post_init__(self) -> None:
         valid_times = _canonical_time_tuple("valid_times", self.valid_times)
@@ -533,13 +666,13 @@ class RadarGridTimeContract:
         if not math.isclose(
             column_spacing,
             float(self.dx_m),
-            rel_tol=1.0e-9,
-            abs_tol=1.0e-9,
+            rel_tol=RADAR_GRID_AFFINE_RELATIVE_TOLERANCE,
+            abs_tol=RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M,
         ) or not math.isclose(
             row_spacing,
             float(self.dy_m),
-            rel_tol=1.0e-9,
-            abs_tol=1.0e-9,
+            rel_tol=RADAR_GRID_AFFINE_RELATIVE_TOLERANCE,
+            abs_tol=RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M,
         ):
             raise ValueError(
                 "pixel_to_projected_matrix_m must agree with dx_m and dy_m"
@@ -578,10 +711,35 @@ class RadarGridTimeContract:
         ):
             raise ValueError("projection must be a non-empty canonical string")
         _validate_sha256_digest("grid_hash", self.grid_hash)
+        self.spatial_grid_identity
+
+    @property
+    def payload(self) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "valid_times": self.valid_times,
+            "dx_m": self.dx_m,
+            "dy_m": self.dy_m,
+            "projection": self.projection,
+            "grid_hash": self.grid_hash,
+            "background_valid_times": self.background_valid_times,
+            "pixel_to_projected_matrix_m": self.pixel_to_projected_matrix_m,
+        }
+        if self.spatial_grid_contract == "radar-spatial-grid-identity-v2":
+            payload.update(
+                {
+                    "spatial_grid_contract": self.spatial_grid_contract,
+                    "grid_shape_yx": self.grid_shape_yx,
+                    "projected_crs_digest": self.projected_crs_digest,
+                    "cell_center_origin_xy_m": self.cell_center_origin_xy_m,
+                    "grid_coordinate_dtype": self.grid_coordinate_dtype,
+                    "cell_center_convention": self.cell_center_convention,
+                }
+            )
+        return payload
 
     @property
     def digest(self) -> str:
-        return dataclass_digest(self)
+        return json_digest(self.payload)
 
     @property
     def spatial_grid_identity(self) -> RadarSpatialGridIdentity:
@@ -592,6 +750,12 @@ class RadarGridTimeContract:
             projection=self.projection,
             grid_hash=self.grid_hash,
             pixel_to_projected_matrix_m=self.pixel_to_projected_matrix_m,
+            shape_yx=self.grid_shape_yx,
+            projected_crs_digest=self.projected_crs_digest,
+            cell_center_origin_xy_m=self.cell_center_origin_xy_m,
+            grid_coordinate_dtype=self.grid_coordinate_dtype,
+            cell_center_convention=self.cell_center_convention,
+            contract=self.spatial_grid_contract,
         )
 
     @property

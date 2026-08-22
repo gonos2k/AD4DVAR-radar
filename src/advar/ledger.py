@@ -47,6 +47,7 @@ from .action_artifacts import (
 from .action_contracts import canonicalize_action_frames
 from .nowcast import (
     ForecastRunContract,
+    RadarSpatialGridIdentity,
     _forecast_fixed_input_context_digest,
     _forecast_full_analysis_input_digest,
     _forecast_input_bundle_digest,
@@ -148,6 +149,7 @@ from .promotion import (
     LegacyNeuralPriorHoldoutPlanV25Audit,
     LegacyNeuralPriorHoldoutPlanV26Audit,
     LegacyNeuralPriorHoldoutPlanV27Audit,
+    LegacyNeuralPriorHoldoutPlanV28Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
@@ -1398,9 +1400,18 @@ LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V16 = (
         }
     )
 )
-SCORING_REPLAY_REQUIRED_TENSOR_ROLES = (
+LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V18 = (
     LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V16
     | frozenset({"verification_spatial_metric_valid_mask"})
+)
+SCORING_REPLAY_REQUIRED_TENSOR_ROLES = (
+    LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V18
+    | frozenset(
+        {
+            "verification_geometry_grid_x_m",
+            "verification_geometry_grid_y_m",
+        }
+    )
 )
 SCORING_REPLAY_BACKGROUND_TENSOR_ROLES = frozenset(
     {"background_frames_dbz"}
@@ -2862,7 +2873,7 @@ class LegacyScoringReplayBundleManifestAuditV17(ScoringReplayBundleManifest):
             (case_id, role)
             for case_id in self.ordered_case_ids
             for role in (
-                SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V18
                 | (
                     SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
                     if case_id in self.dynamic_source_case_ids
@@ -2899,6 +2910,86 @@ class LegacyScoringReplayBundleManifestAuditV17(ScoringReplayBundleManifest):
 
 
 @dataclass(frozen=True)
+class LegacyScoringReplayBundleManifestAuditV18(ScoringReplayBundleManifest):
+    """Pre-shared-affine-grid v18 replay retained for byte audit."""
+
+    replay_method: str = "builtin-semantic-scoring-recomputation-v18"
+    contract: str = "neural-prior-scoring-replay-bundle-v18"
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-scoring-replay-bundle-v18"
+            or self.replay_method
+            != "builtin-semantic-scoring-recomputation-v18"
+            or not self.ordered_case_ids
+            or len(set(self.ordered_case_ids)) != len(self.ordered_case_ids)
+            or len(self.ordered_case_ids)
+            != len(self.ordered_evaluation_digests)
+            or len(self.semantic_case_digests) != len(self.ordered_case_ids)
+            or self.verification_provenance_payload_sha256 is None
+            or self.raw_ingestor_trust_store_digest is None
+            or not self.tensor_shard_sha256s
+            or tuple(sorted(set(self.tensor_shard_sha256s)))
+            != self.tensor_shard_sha256s
+        ):
+            raise ValueError("legacy v18 semantic replay manifest is invalid")
+        for value in (
+            self.scoring_input_artifact_digest,
+            *self.ordered_evaluation_digests,
+            *self.semantic_case_digests,
+            self.algorithm_source_manifest_digest,
+            self.runtime_compatibility_digest,
+            self.runtime_exact_digest,
+            self.tensor_archive_sha256,
+            self.evaluation_payload_sha256,
+            self.raw_provenance_payload_sha256,
+            self.verification_provenance_payload_sha256,
+            self.raw_ingestor_trust_store_digest,
+            *self.tensor_shard_sha256s,
+        ):
+            if re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError("legacy v18 semantic replay digest is invalid")
+        expected = {
+            (case_id, role)
+            for case_id in self.ordered_case_ids
+            for role in (
+                LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V18
+                | (
+                    SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
+                    if case_id in self.dynamic_source_case_ids
+                    else frozenset()
+                )
+                | (
+                    SCORING_REPLAY_BACKGROUND_TENSOR_ROLES
+                    if case_id in self.background_case_ids
+                    else frozenset()
+                )
+            )
+        }
+        actual = {(item.case_id, item.role) for item in self.tensor_records}
+        referenced = tuple(
+            sorted(
+                {
+                    cast(str, item.archive_sha256)
+                    for item in self.tensor_records
+                }
+            )
+        )
+        if (
+            actual != expected
+            or len(actual) != len(self.tensor_records)
+            or referenced != self.tensor_shard_sha256s
+            or any(
+                item.archive_sha256 is None
+                or item.archive_member != "tensor"
+                for item in self.tensor_records
+            )
+        ):
+            raise ValueError("legacy v18 semantic replay tensor set is incomplete")
+        object.__setattr__(self, "bundle_digest", _json_digest(self.payload))
+
+
+@dataclass(frozen=True)
 class LoadedScoringReplayBundle:
     manifest: (
         ScoringReplayBundleManifest
@@ -2918,6 +3009,7 @@ class LoadedScoringReplayBundle:
         | LegacyScoringReplayBundleManifestAuditV15
         | LegacyScoringReplayBundleManifestAuditV16
         | LegacyScoringReplayBundleManifestAuditV17
+        | LegacyScoringReplayBundleManifestAuditV18
     )
     evaluations: tuple[PriorHoldoutEvaluation, ...]
     tensors: Mapping[tuple[str, str], Tensor]
@@ -3144,6 +3236,8 @@ def _validate_scoring_replay_case_tensors(
             "verification_attenuation_qc_valid_mask",
             "verification_confirmed_clear_mask",
             "verification_below_detection_censored_mask",
+            "verification_geometry_grid_x_m",
+            "verification_geometry_grid_y_m",
             "operational_issuance_mask",
             "input_history_source_radar_index_map",
             "raw_source_reflectivity_bits",
@@ -3223,6 +3317,12 @@ def _validate_scoring_replay_case_tensors(
         or any(tensors[role].shape != source_shape for role in source_cube_roles)
         or tensors["verification_source_availability_by_time"].shape
         != source_shape[:2]
+        or tensors["verification_geometry_grid_x_m"].shape
+        != verification_shape[-2:]
+        or tensors["verification_geometry_grid_y_m"].shape
+        != verification_shape[-2:]
+        or tensors["verification_geometry_grid_x_m"].dtype is not torch.float64
+        or tensors["verification_geometry_grid_y_m"].dtype is not torch.float64
     ):
         raise ValueError("scoring replay verification provenance shape is invalid")
     if dynamic_source and (
@@ -3258,7 +3358,7 @@ def _current_verification_provenance_payload(
 
     verification = case.verification
     if (
-        verification.contract != "radar-verification-bundle-v13"
+        verification.contract != "radar-verification-bundle-v14"
         or type(verification.observation_error_derivation)
         is not ObservationErrorDerivationArtifact
     ):
@@ -3269,7 +3369,7 @@ def _current_verification_provenance_payload(
     )
     raw_inputs = derivation.raw_inputs
     if (
-        raw_inputs.contract != "verification-observation-derivation-inputs-v7"
+        raw_inputs.contract != "verification-observation-derivation-inputs-v8"
         or type(raw_inputs.mask_derivation)
         is not VerificationObservationMaskDerivationArtifact
         or type(raw_inputs.source_identity)
@@ -3379,21 +3479,64 @@ def _validate_current_verification_provenance_payload(
         retained_geometry = dict(
             cast(dict[str, object], retained["geometry"])
         )
+        retained_geometry_digest = retained_geometry.get(
+            "geometry_digest"
+        )
+        retained_geometry_payload = {
+            key: value
+            for key, value in retained_geometry.items()
+            if key != "geometry_digest"
+        }
+        geometry_values = dict(retained_geometry)
+        projected_grid_payload = dict(
+            cast(
+                dict[str, object],
+                geometry_values.pop("projected_grid_identity"),
+            )
+        )
+        projected_grid_digest = geometry_values.pop(
+            "projected_grid_identity_digest",
+            None,
+        )
+        projected_grid_payload["pixel_to_projected_matrix_m"] = tuple(
+            tuple(cast(list[float], row))
+            for row in cast(
+                list[list[float]],
+                projected_grid_payload["pixel_to_projected_matrix_m"],
+            )
+        )
+        projected_grid_payload["shape_yx"] = tuple(
+            cast(list[int], projected_grid_payload["shape_yx"])
+        )
+        projected_grid_payload["cell_center_origin_xy_m"] = tuple(
+            cast(
+                list[float],
+                projected_grid_payload["cell_center_origin_xy_m"],
+            )
+        )
+        projected_grid = RadarSpatialGridIdentity(
+            **cast(Any, projected_grid_payload)
+        )
+        if projected_grid.digest != projected_grid_digest:
+            raise ValueError("verification replay projected-grid digest mismatch")
         geometry = RadarObservationGeometryContract(
             grid_contract_digest=cast(
-                str, retained_geometry["grid_contract_digest"]
+                str, geometry_values["grid_contract_digest"]
             ),
             projected_crs_digest=cast(
-                str, retained_geometry["projected_crs_digest"]
+                str, geometry_values["projected_crs_digest"]
             ),
-            grid_x_m=case_tensors["range_grid_x_m"],
-            grid_y_m=case_tensors["range_grid_y_m"],
-            grid_spacing_m=cast(float, retained_geometry["grid_spacing_m"]),
-            contract=cast(str, retained_geometry["contract"]),
+            grid_x_m=case_tensors["verification_geometry_grid_x_m"],
+            grid_y_m=case_tensors["verification_geometry_grid_y_m"],
+            grid_spacing_m=cast(float, geometry_values["grid_spacing_m"]),
+            projected_grid_identity=projected_grid,
+            contract=cast(str, geometry_values["contract"]),
         )
-        if retained_geometry != geometry.payload | {
-            "geometry_digest": geometry.geometry_digest,
-        }:
+        if (
+            retained_geometry_digest != geometry.geometry_digest
+            or _json_text(retained_geometry_payload)
+            != _json_text(geometry.payload)
+        ):
             raise ValueError("verification replay geometry digest mismatch")
 
         registry_payload = dict(
@@ -6221,6 +6364,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanV25Audit
         | LegacyNeuralPriorHoldoutPlanV26Audit
         | LegacyNeuralPriorHoldoutPlanV27Audit
+        | LegacyNeuralPriorHoldoutPlanV28Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -6395,6 +6539,13 @@ class EpisodeLedger:
             )
         if value.get("contract") == "neural-prior-holdout-plan-v27":
             return LegacyNeuralPriorHoldoutPlanV27Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v28":
+            return LegacyNeuralPriorHoldoutPlanV28Audit(
                 plan_digest=plan_digest,
                 payload_json=json.dumps(
                     value, sort_keys=True, separators=(",", ":")
@@ -11338,6 +11489,7 @@ class EpisodeLedger:
             "neural-prior-scoring-replay-bundle-v15",
             "neural-prior-scoring-replay-bundle-v16",
             "neural-prior-scoring-replay-bundle-v17",
+            "neural-prior-scoring-replay-bundle-v18",
             SEMANTIC_SCORING_REPLAY_CONTRACT,
         }
         expected_artifact_members = {"manifest.json", "evaluations.json"}
@@ -11348,6 +11500,7 @@ class EpisodeLedger:
             "neural-prior-scoring-replay-bundle-v15",
             "neural-prior-scoring-replay-bundle-v16",
             "neural-prior-scoring-replay-bundle-v17",
+            "neural-prior-scoring-replay-bundle-v18",
             SEMANTIC_SCORING_REPLAY_CONTRACT,
         }
         if sharded_bundle:
@@ -11375,6 +11528,7 @@ class EpisodeLedger:
             "neural-prior-scoring-replay-bundle-v15",
             "neural-prior-scoring-replay-bundle-v16",
             "neural-prior-scoring-replay-bundle-v17",
+            "neural-prior-scoring-replay-bundle-v18",
             SEMANTIC_SCORING_REPLAY_CONTRACT,
         }:
             expected_artifact_members.add("verification_provenance.json")
@@ -11409,6 +11563,7 @@ class EpisodeLedger:
             LegacyScoringReplayBundleManifestAuditV15,
             LegacyScoringReplayBundleManifestAuditV16,
             LegacyScoringReplayBundleManifestAuditV17,
+            LegacyScoringReplayBundleManifestAuditV18,
         }
         has_verification_provenance = manifest_type in {
             ScoringReplayBundleManifest,
@@ -11416,6 +11571,7 @@ class EpisodeLedger:
             LegacyScoringReplayBundleManifestAuditV15,
             LegacyScoringReplayBundleManifestAuditV16,
             LegacyScoringReplayBundleManifestAuditV17,
+            LegacyScoringReplayBundleManifestAuditV18,
         }
         raw_provenance_checksum_mismatch = False
         if has_raw_provenance:
@@ -11446,6 +11602,7 @@ class EpisodeLedger:
             LegacyScoringReplayBundleManifestAuditV15,
             LegacyScoringReplayBundleManifestAuditV16,
             LegacyScoringReplayBundleManifestAuditV17,
+            LegacyScoringReplayBundleManifestAuditV18,
         }:
             current_manifest = cast(ScoringReplayBundleManifest, manifest)
             tensors: Mapping[tuple[str, str], Tensor] = (
@@ -19484,6 +19641,7 @@ def _decode_scoring_replay_bundle_manifest(
     | LegacyScoringReplayBundleManifestAuditV15
     | LegacyScoringReplayBundleManifestAuditV16
     | LegacyScoringReplayBundleManifestAuditV17
+    | LegacyScoringReplayBundleManifestAuditV18
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -19539,6 +19697,7 @@ def _decode_scoring_replay_bundle_manifest(
             | LegacyScoringReplayBundleManifestAuditV15
             | LegacyScoringReplayBundleManifestAuditV16
             | LegacyScoringReplayBundleManifestAuditV17
+            | LegacyScoringReplayBundleManifestAuditV18
         ) = LegacyScoringReplayBundleManifestAuditV1(
             **cast(Any, values)
         )
@@ -19610,6 +19769,10 @@ def _decode_scoring_replay_bundle_manifest(
             )
         elif values.get("contract") == "neural-prior-scoring-replay-bundle-v17":
             manifest = LegacyScoringReplayBundleManifestAuditV17(
+                **cast(Any, values)
+            )
+        elif values.get("contract") == "neural-prior-scoring-replay-bundle-v18":
+            manifest = LegacyScoringReplayBundleManifestAuditV18(
                 **cast(Any, values)
             )
         else:
