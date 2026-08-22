@@ -59,8 +59,9 @@ from .runtime_closure import validate_current_runtime_closure
 from .sensitivity import (
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST,
-    OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V5_DIGEST,
     SensitivityConfig,
     ObservationErrorDerivationArtifact,
     VerificationBundle,
@@ -243,23 +244,23 @@ TRAINING_NORMALIZATION_MASK_WEIGHT_POLICY_DIGEST = json_digest(
 
 
 SEMANTIC_SCORING_REPLAY_CONTRACT = (
-    "neural-prior-scoring-replay-bundle-v16"
+    "neural-prior-scoring-replay-bundle-v17"
 )
 SEMANTIC_SCORING_REPLAY_METHOD = (
-    "builtin-semantic-scoring-recomputation-v16"
+    "builtin-semantic-scoring-recomputation-v17"
 )
 SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD: dict[str, str] = {
-    "contract": "neural-prior-semantic-scoring-generation-v14",
+    "contract": "neural-prior-semantic-scoring-generation-v15",
     "replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
     "replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
-    "case_contract": "neural-prior-semantic-scoring-case-v15",
+    "case_contract": "neural-prior-semantic-scoring-case-v16",
     "observation_mask_algorithm_digest": (
-        OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST
+        OBSERVATION_MASK_DERIVATION_ALGORITHM_V5_DIGEST
     ),
     "observation_error_algorithm_digest": (
-        OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST
+        OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
     ),
-    "verification_bundle_contract": "radar-verification-bundle-v11",
+    "verification_bundle_contract": "radar-verification-bundle-v12",
     "product_type_policy": "exact-shipped-product-types-v1",
     "forecast_integrity": "forecast-result-raw-content-validation-v1",
     "prior_integrity": "runner-reproduced-prior-application-v1",
@@ -9459,6 +9460,27 @@ class LegacyNeuralPriorHoldoutPlanV25Audit:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV26Audit:
+    plan_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-plan-audit-v26"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _validate_generic_legacy_digest_payload(
+            digest=self.plan_digest,
+            payload_json=self.payload_json,
+            digest_field="plan_digest",
+            original_contract="neural-prior-holdout-plan-v26",
+        )
+        object.__setattr__(self, "audit_digest", json_digest({
+            "contract": self.contract,
+            "plan_digest": self.plan_digest,
+            "payload_json": self.payload_json,
+        }))
+
+
+@dataclass(frozen=True)
 class PromotionExperimentTrial:
     """One preregistered candidate/rule/classifier trial in a cohort."""
 
@@ -9648,11 +9670,11 @@ class NeuralPriorHoldoutPlan:
     mode: Literal["prospective", "sealed_historical"] = "prospective"
     sealed_historical_dataset_digest: str | None = None
     candidate_training_started_at: str | None = None
-    contract: str = "neural-prior-holdout-plan-v26"
+    contract: str = "neural-prior-holdout-plan-v27"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v26":
+        if self.contract != "neural-prior-holdout-plan-v27":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -9803,7 +9825,7 @@ class NeuralPriorHoldoutPlan:
             )
         }
         if any(
-            item.contract != "verification-observation-error-plan-v6"
+            item.contract != "verification-observation-error-plan-v7"
             for item in self.verification_observation_error_plans
         ):
             raise ValueError(
@@ -12259,7 +12281,7 @@ class PriorUncertaintyTarget:
         verification.validate_integrity()
         if (
             plan.contract != "prior-uncertainty-target-plan-v7"
-            or verification.contract != "radar-verification-bundle-v11"
+            or verification.contract != "radar-verification-bundle-v12"
             or verification.observation_error_contract is None
             or verification.observation_error_contract
             .observation_error_plan_digest
@@ -12390,7 +12412,7 @@ class NeuralPriorStateCalibrationTarget:
     ) -> NeuralPriorStateCalibrationTarget:
         verification.validate_integrity()
         if (
-            verification.contract != "radar-verification-bundle-v11"
+            verification.contract != "radar-verification-bundle-v12"
             or verification.observation_error_contract is None
             or verification.observation_error_contract
             .observation_error_plan_digest
@@ -15184,7 +15206,7 @@ class ScoringReplayCaseArtifact:
             raise ValueError("semantic scoring replay case is invalid")
         ForecastResult.validate_issuance(self.candidate_forecast)
         ForecastResult.validate_issuance(self.parent_forecast)
-        if self.verification.contract != "radar-verification-bundle-v11":
+        if self.verification.contract != "radar-verification-bundle-v12":
             raise ValueError(
                 "semantic scoring replay requires current source-composed "
                 "verification"
@@ -15702,9 +15724,12 @@ class ScoringReplayCaseArtifact:
             "verification_acquisition_time_offset_seconds": cast(
                 Tensor, self.verification.acquisition_time_offset_seconds
             ),
-            "verification_acquisition_age_seconds": cast(
-                Tensor, self.verification.acquisition_age_seconds
-            ),
+                "verification_acquisition_age_seconds": cast(
+                    Tensor, self.verification.acquisition_age_seconds
+                ),
+                "verification_spatial_metric_valid_mask": cast(
+                    Tensor, self.verification.spatial_metric_valid_mask
+                ),
             "candidate_state_background_dbz": candidate.state_background_dbz,
             "candidate_state_std_dbz": candidate.state_std_dbz,
             "candidate_state_valid_mask": candidate.state_valid_mask,
@@ -15893,7 +15918,7 @@ class ScoringReplayCaseArtifact:
     ) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-semantic-scoring-case-v15",
+                "contract": "neural-prior-semantic-scoring-case-v16",
                 "semantic_replay_generation_digest": (
                     SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
                 ),
@@ -15989,7 +16014,7 @@ def _quantized_bin_bounds(
     *,
     reflectivity_resolution_dbz: float,
     quantization_origin_dbz: float,
-    support_threshold_dbz: float,
+    support_threshold_dbz: float | Tensor,
     threshold_bin_convention: str,
 ) -> tuple[Tensor, Tensor]:
     """Return disjoint latent intervals for quantized, threshold-censored dBZ."""
@@ -16000,7 +16025,6 @@ def _quantized_bin_bounds(
         or not math.isfinite(reflectivity_resolution_dbz)
         or reflectivity_resolution_dbz <= 0.0
         or not math.isfinite(quantization_origin_dbz)
-        or not math.isfinite(support_threshold_dbz)
         or threshold_bin_convention != "nearest_rounding_threshold_censor"
     ):
         raise ValueError("quantized dBZ bin contract is invalid")
@@ -16010,11 +16034,25 @@ def _quantized_bin_bounds(
         dtype=torch.float64,
         device=reference.device,
     )
-    threshold = torch.as_tensor(
-        support_threshold_dbz,
-        dtype=torch.float64,
-        device=reference.device,
-    )
+    threshold_is_tensor = isinstance(support_threshold_dbz, Tensor)
+    if threshold_is_tensor:
+        supplied_threshold = cast(Tensor, support_threshold_dbz)
+        if (
+            supplied_threshold.shape != reference_dbz.shape
+            or not supplied_threshold.is_floating_point()
+            or supplied_threshold.device != reference_dbz.device
+            or not bool(torch.all(torch.isfinite(supplied_threshold)))
+        ):
+            raise ValueError("quantized dBZ threshold tensor is invalid")
+        threshold = supplied_threshold.to(torch.float64)
+    else:
+        if not math.isfinite(cast(float, support_threshold_dbz)):
+            raise ValueError("quantized dBZ bin contract is invalid")
+        threshold = torch.as_tensor(
+            support_threshold_dbz,
+            dtype=torch.float64,
+            device=reference.device,
+        )
     origin = torch.as_tensor(
         quantization_origin_dbz,
         dtype=torch.float64,
@@ -16022,14 +16060,22 @@ def _quantized_bin_bounds(
     )
     threshold_index = torch.round((threshold - origin) / width)
     threshold_lattice_value = origin + threshold_index * width
-    threshold_tolerance = max(
-        1.0e-7,
-        math.ulp(1.0)
-        * max(abs(float(threshold)), abs(float(threshold_lattice_value)), 1.0)
-        * 32.0,
-    )
-    if abs(float(threshold - threshold_lattice_value)) > threshold_tolerance:
-        raise ValueError("support threshold is off its declared dBZ lattice")
+    if not threshold_is_tensor:
+        threshold_tolerance = max(
+            1.0e-7,
+            math.ulp(1.0)
+            * max(
+                abs(float(threshold)),
+                abs(float(threshold_lattice_value)),
+                1.0,
+            )
+            * 32.0,
+        )
+        if (
+            abs(float(threshold - threshold_lattice_value))
+            > threshold_tolerance
+        ):
+            raise ValueError("support threshold is off its declared dBZ lattice")
     lattice_index = torch.round((reference - origin) / width)
     lattice_value = origin + lattice_index * width
     source_epsilon = torch.finfo(reference_dbz.dtype).eps
@@ -16041,17 +16087,10 @@ def _quantized_bin_bounds(
     )
     if bool(torch.any(torch.abs(reference - lattice_value) > tolerance)):
         raise ValueError("quantized dBZ value is off its declared lattice")
-    is_threshold_bin = torch.abs(reference - threshold) <= tolerance
-    bin_lower = torch.where(
-        is_threshold_bin,
-        threshold,
-        lattice_value - 0.5 * width,
-    )
-    bin_upper = torch.where(
-        is_threshold_bin,
-        threshold + 0.5 * width,
-        lattice_value + 0.5 * width,
-    )
+    bin_lower = torch.maximum(lattice_value - 0.5 * width, threshold)
+    bin_upper = lattice_value + 0.5 * width
+    if bool(torch.any(bin_upper <= bin_lower)):
+        raise ValueError("quantized dBZ value is outside detected support")
     return bin_lower, bin_upper
 
 
@@ -16062,7 +16101,7 @@ def _quantized_gaussian_diagnostics(
     *,
     reflectivity_resolution_dbz: float,
     quantization_origin_dbz: float,
-    support_threshold_dbz: float,
+    support_threshold_dbz: float | Tensor,
     threshold_bin_convention: str,
 ) -> tuple[Tensor, Tensor]:
     """Gaussian interval NLL and midpoint PIT for quantized state dBZ."""
@@ -16220,6 +16259,7 @@ def compute_observation_error_gaussian_diagnostic(
             "radar-verification-bundle-v9",
             "radar-verification-bundle-v10",
             "radar-verification-bundle-v11",
+            "radar-verification-bundle-v12",
         }
         or state is None
         or observation_std is None
@@ -16241,8 +16281,7 @@ def compute_observation_error_gaussian_diagnostic(
         raise ValueError("observation-error diagnostic inputs are invalid")
     positive_quality = quality > 0.0
     point_mask = positive_quality & (
-        (state == VerificationCellState.OBSERVED_CLEAR)
-        | (state == VerificationCellState.OBSERVED_ECHO)
+        state == VerificationCellState.OBSERVED_ECHO
     )
     censored_mask = positive_quality & (
         state == VerificationCellState.BELOW_DETECTION_CENSORED
@@ -16273,7 +16312,9 @@ def compute_observation_error_gaussian_diagnostic(
             reflectivity_resolution_dbz=reflectivity_resolution_dbz,
             quantization_origin_dbz=quantization_origin_dbz,
             support_threshold_dbz=(
-                error_contract.minimum_detectable_echo_dbz
+                verification.detection_limit_dbz.masked_select(point_mask)
+                if verification.detection_limit_dbz is not None
+                else error_contract.minimum_detectable_echo_dbz
             ),
             threshold_bin_convention=threshold_bin_convention,
         )
@@ -16362,17 +16403,23 @@ def _state_calibration_scores(
         or float(evaluation_weight.masked_select(evaluation_mask).sum()) <= 0.0
     ):
         raise ValueError("state calibration weights are invalid")
-    selected_weight = evaluation_weight.masked_select(evaluation_mask).to(
-        torch.float64
-    )
-
     def weighted_mean(values: Tensor, weights: Tensor) -> Tensor:
         normalized = weights / weights.sum()
         return torch.sum(values.to(torch.float64) * normalized)
 
-    state_reference = reference_dbz.masked_select(evaluation_mask)
-    state_location = application.state_background_dbz.masked_select(evaluation_mask)
-    state_scale = application.state_std_dbz.masked_select(evaluation_mask)
+    echo_mask = evaluation_mask & support_target.to(evaluation_mask)
+    clear_mask = evaluation_mask & ~support_target.to(evaluation_mask)
+    echo_count = int(torch.count_nonzero(echo_mask))
+    clear_count = int(torch.count_nonzero(clear_mask))
+    if echo_count == 0:
+        raise ValueError("state calibration has no echo intensity samples")
+    echo_weight = evaluation_weight.masked_select(echo_mask).to(torch.float64)
+    selected_weight = evaluation_weight.masked_select(evaluation_mask).to(
+        torch.float64
+    )
+    state_reference = reference_dbz.masked_select(echo_mask)
+    state_location = application.state_background_dbz.masked_select(echo_mask)
+    state_scale = application.state_std_dbz.masked_select(echo_mask)
     nll, pit = _quantized_gaussian_diagnostics(
         state_location,
         state_scale,
@@ -16389,20 +16436,16 @@ def _state_calibration_scores(
     target = support_target.to(application.state_support_probability)
     support = application.state_support_probability.masked_select(evaluation_mask)
     target_values = target.masked_select(evaluation_mask)
-    echo_mask = evaluation_mask & support_target.to(evaluation_mask)
-    clear_mask = evaluation_mask & ~support_target.to(evaluation_mask)
-    echo_count = int(torch.count_nonzero(echo_mask))
-    clear_count = int(torch.count_nonzero(clear_mask))
     valid_probability = application.state_valid_probability.masked_select(
         evaluation_mask
     )
     return _StateCalibrationScores(
-        gaussian_nll=float(weighted_mean(nll, selected_weight).detach()),
+        gaussian_nll=float(weighted_mean(nll, echo_weight).detach()),
         pit_residual_mean_abs=float(
-            weighted_mean(absolute, selected_weight).detach()
+            weighted_mean(absolute, echo_weight).detach()
         ),
         underdispersion_fraction=float(
-            weighted_mean((absolute > 2.0).to(absolute), selected_weight).detach()
+            weighted_mean((absolute > 2.0).to(absolute), echo_weight).detach()
         ),
         support_brier_score=float(
             weighted_mean(

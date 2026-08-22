@@ -47,6 +47,7 @@ from advar import (
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V3_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST,
     OBSERVATION_TEMPORAL_QUALITY_DECAY_ALGORITHM_V1_DIGEST,
     OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST,
     OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST,
@@ -55,6 +56,8 @@ from advar import (
     OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V1_DIGEST,
+    OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST,
+    OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST,
     MosaicObservationSourceRegistry,
     NeuralPriorCandidateManifest,
     NeuralPriorHoldoutCase,
@@ -69,6 +72,7 @@ from advar import (
     PriorUncertaintyTarget,
     PriorUncertaintyTargetPlan,
     ObservationRadarSource,
+    RadarObservationGeometryContract,
     PromotionMetricScale,
     ProspectiveInterventionDecision,
     RealizedInterventionReceipt,
@@ -112,12 +116,22 @@ def _observation_source_registry(
                 calibration_epoch_digest="2" * 64,
                 quality_weight=1.0,
                 observation_std_dbz=2.0,
+                projected_x_m=0.0,
+                projected_y_m=0.0,
+                radar_altitude_m=100.0,
+                representative_scan_elevation_deg=1.0,
+                contract="observation-radar-source-v4",
             ),
             ObservationRadarSource(
                 radar_site_digest="3" * 64,
                 calibration_epoch_digest="4" * 64,
                 quality_weight=1.0,
                 observation_std_dbz=2.0,
+                projected_x_m=1000.0,
+                projected_y_m=0.0,
+                radar_altitude_m=100.0,
+                representative_scan_elevation_deg=1.0,
+                contract="observation-radar-source-v4",
             ),
         )
         if radar_source_kind == "mosaic"
@@ -127,12 +141,39 @@ def _observation_source_registry(
                 calibration_epoch_digest="2" * 64,
                 quality_weight=1.0,
                 observation_std_dbz=2.0,
+                projected_x_m=0.0,
+                projected_y_m=0.0,
+                radar_altitude_m=100.0,
+                representative_scan_elevation_deg=1.0,
+                contract="observation-radar-source-v4",
             ),
         )
     )
     return MosaicObservationSourceRegistry(
         radar_source_kind=cast(Any, radar_source_kind),
         ordered_sources=sources,
+        contract="mosaic-observation-source-registry-v4",
+    )
+
+
+def _observation_geometry(
+    *,
+    grid_contract_digest: str = "0" * 64,
+    height: int,
+    width: int,
+    dtype: torch.dtype = torch.float32,
+) -> RadarObservationGeometryContract:
+    grid_y, grid_x = torch.meshgrid(
+        torch.arange(height, dtype=dtype),
+        torch.arange(width, dtype=dtype),
+        indexing="ij",
+    )
+    return RadarObservationGeometryContract(
+        grid_contract_digest=grid_contract_digest,
+        projected_crs_digest="f" * 64,
+        grid_x_m=grid_x * 1000.0,
+        grid_y_m=grid_y * 1000.0,
+        grid_spacing_m=1000.0,
     )
 
 
@@ -145,6 +186,9 @@ def _verification_observation_error_plan(
     radar_product_digest: str,
     qc_pipeline_digest: str,
     censor_policy_digest: str,
+    grid_contract_digest: str = "0" * 64,
+    height: int = 2,
+    width: int = 2,
     radar_source_kind: str = "single_site",
 ) -> VerificationObservationErrorPlan:
     registry = _observation_source_registry(
@@ -153,6 +197,11 @@ def _verification_observation_error_plan(
     )
     source_private_key = _verification_source_private_key()
     source_public_key_hex = source_private_key.public_key().public_bytes_raw().hex()
+    geometry = _observation_geometry(
+        grid_contract_digest=grid_contract_digest,
+        height=height,
+        width=width,
+    )
     return VerificationObservationErrorPlan(
         radar_source_kind=cast(Any, radar_source_kind),
         source_registry_digest=registry.source_registry_digest,
@@ -168,19 +217,19 @@ def _verification_observation_error_plan(
         spatial_correlation_block_algorithm_digest="7" * 64,
         quality_weight_interpretation_digest="8" * 64,
         quality_weight_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
         ),
         observation_std_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
         ),
         observation_error_model_digest="9" * 64,
         source_assignment_algorithm_digest=(
-            OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
+            OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST
         ),
         minimum_detectable_echo_dbz=-10.0,
         observation_error_reference_std_dbz=2.0,
         derivation_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
         ),
         mask_derivation_algorithm_digest=(
             OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
@@ -208,7 +257,14 @@ def _verification_observation_error_plan(
         censor_state_derivation_algorithm_digest=(
             OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST
         ),
-        contract="verification-observation-error-plan-v6",
+        geometry_contract_digest=geometry.geometry_digest,
+        acquisition_timestamp_reference="volume_end",
+        spatial_metric_reference_speed_mps=20.0,
+        spatial_metric_maximum_displacement_fraction_cells=1.0,
+        spatial_age_gate_algorithm_digest=(
+            OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST
+        ),
+        contract="verification-observation-error-plan-v7",
     )
 
 
@@ -237,7 +293,16 @@ def _verification_bundle_v4(
         radar_product_digest=radar_product_digest,
         qc_pipeline_digest=qc_pipeline_digest,
         censor_policy_digest=censor_policy_digest,
+        grid_contract_digest=grid_contract_digest,
+        height=frames_dbz.shape[-2],
+        width=frames_dbz.shape[-1],
         radar_source_kind=radar_source_kind,
+    )
+    geometry = _observation_geometry(
+        grid_contract_digest=grid_contract_digest,
+        height=frames_dbz.shape[-2],
+        width=frames_dbz.shape[-1],
+        dtype=frames_dbz.dtype,
     )
     resolved_source_map = source_radar_index_map
     if resolved_source_map is not None and resolved_source_map.ndim == 2:
@@ -265,6 +330,8 @@ def _verification_bundle_v4(
                 resolved_source_map == source_index
             ).to(frames_dbz)
     mask_evidence = VerificationObservationMaskEvidence.issue(
+        plan=error_plan,
+        geometry=geometry,
         valid_times=valid_times,
         acquisition_valid_times_by_source=tuple(
             valid_times for _ in registry.ordered_sources
@@ -295,14 +362,11 @@ def _verification_bundle_v4(
                 dtype=torch.uint8,
             ),
         ),
-        source_assignment_scores=scores,
         source_availability_by_time=torch.ones(
             (len(registry.ordered_sources), frames_dbz.shape[0]),
             dtype=torch.bool,
             device=frames_dbz.device,
         ),
-        range_km_by_source=torch.zeros_like(scores),
-        elevation_deg_by_source=torch.zeros_like(scores),
         beam_blockage_fraction_by_source=torch.zeros_like(scores),
         attenuation_qc_score_by_source=(
             valid_mask.to(frames_dbz).unsqueeze(0).expand_as(scores).clone()
@@ -315,7 +379,13 @@ def _verification_bundle_v4(
         plan=error_plan,
         raw_evidence=mask_evidence,
         source_registry=registry,
+        geometry=geometry,
     )
+    if resolved_source_map is not None and not torch.equal(
+        cast(torch.Tensor, mask_derivation.source_radar_index_map),
+        resolved_source_map,
+    ):
+        raise ValueError("fixture source map disagrees with product selection")
     raw_inputs = VerificationObservationDerivationInputs.from_mask_derivation(
         mask_derivation
     )
@@ -354,9 +424,10 @@ def _verification_bundle_v4(
         acquisition_age_seconds=(
             mask_derivation.selected_acquisition_age_seconds
         ),
+        spatial_metric_valid_mask=mask_derivation.spatial_metric_valid_mask,
         observation_error_contract=error_contract,
         observation_error_derivation=derivation,
-        contract="radar-verification-bundle-v11",
+        contract="radar-verification-bundle-v12",
     )
 
 
@@ -517,7 +588,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         evaluation = self.evaluation(1, -1.0)
         policy = self.policy()
 
-        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v26")
+        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v27")
         self.assertTrue(
             all(
                 item.contract == "neural-prior-range-band-contract-v3"
@@ -5045,6 +5116,63 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertIs(
             type(decoded_manifest),
             ledger_module.LegacyScoringReplayBundleManifestAuditV12,
+        )
+
+        v16_records = tuple(
+            ledger_module.ScoringReplayTensorRecord(
+                case_id=case_id,
+                role=role,
+                archive_member="tensor",
+                dtype="float32",
+                shape=(1, 2, 2),
+                tensor_digest="1" * 64,
+                archive_sha256=f"{index:064x}",
+            )
+            for index, role in enumerate(
+                sorted(
+                    ledger_module
+                    .LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V16
+                ),
+                start=1,
+            )
+        )
+        v16_manifest = ledger_module.LegacyScoringReplayBundleManifestAuditV16(
+            scoring_input_artifact_digest="2" * 64,
+            ordered_case_ids=(case_id,),
+            ordered_evaluation_digests=("3" * 64,),
+            semantic_case_digests=("4" * 64,),
+            dynamic_source_case_ids=(),
+            background_case_ids=(),
+            algorithm_source_manifest_digest="5" * 64,
+            runtime_compatibility_digest="6" * 64,
+            runtime_exact_digest="7" * 64,
+            scoring_backend_certification_policy_digest=None,
+            scoring_backend_certification_evidence_digest=None,
+            tensor_records=v16_records,
+            tensor_archive_sha256="8" * 64,
+            evaluation_payload_sha256="9" * 64,
+            raw_provenance_payload_sha256="a" * 64,
+            verification_provenance_payload_sha256="b" * 64,
+            raw_ingestor_trust_store_digest="c" * 64,
+            tensor_shard_sha256s=tuple(
+                sorted(
+                    cast(str, record.archive_sha256)
+                    for record in v16_records
+                )
+            ),
+        )
+        decoded_v16 = ledger_module._decode_scoring_replay_bundle_manifest(
+            json.dumps(
+                v16_manifest.payload
+                | {"bundle_digest": v16_manifest.bundle_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            expected_digest=v16_manifest.bundle_digest,
+        )
+        self.assertIs(
+            type(decoded_v16),
+            ledger_module.LegacyScoringReplayBundleManifestAuditV16,
         )
 
         scoring = self.scoring_artifact(
@@ -9934,6 +10062,24 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertEqual(float(lower[0]), 5.0)
         self.assertEqual(float(upper[0]), float(lower[1]))
         self.assertEqual(float(upper[1]), 5.75)
+
+    def test_quantized_point_diagnostic_uses_local_detection_limit(self) -> None:
+        location = torch.tensor([5.5, 5.5], dtype=torch.float64)
+        scale = torch.ones_like(location)
+        reference = torch.tensor([5.5, 5.5], dtype=torch.float64)
+        nll, _ = promotion_module._quantized_gaussian_diagnostics(
+            location,
+            scale,
+            reference,
+            reflectivity_resolution_dbz=0.5,
+            quantization_origin_dbz=-10.0,
+            support_threshold_dbz=torch.tensor(
+                [-5.0, 5.4], dtype=torch.float64
+            ),
+            threshold_bin_convention="nearest_rounding_threshold_censor",
+        )
+
+        self.assertNotEqual(float(nll[0]), float(nll[1]))
 
     def test_float32_value_on_decimal_lattice_is_accepted(self) -> None:
         nll, pit = promotion_module._quantized_gaussian_diagnostics(
@@ -15380,27 +15526,27 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def test_cpu_only_scoring_generation_has_a_stable_backend_contract(self) -> None:
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_CONTRACT,
-            "neural-prior-scoring-replay-bundle-v16",
+            "neural-prior-scoring-replay-bundle-v17",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_METHOD,
-            "builtin-semantic-scoring-recomputation-v16",
+            "builtin-semantic-scoring-recomputation-v17",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD,
             {
-                "contract": "neural-prior-semantic-scoring-generation-v14",
-                "replay_contract": "neural-prior-scoring-replay-bundle-v16",
-                "replay_method": "builtin-semantic-scoring-recomputation-v16",
-                "case_contract": "neural-prior-semantic-scoring-case-v15",
+                "contract": "neural-prior-semantic-scoring-generation-v15",
+                "replay_contract": "neural-prior-scoring-replay-bundle-v17",
+                "replay_method": "builtin-semantic-scoring-recomputation-v17",
+                "case_contract": "neural-prior-semantic-scoring-case-v16",
                 "observation_mask_algorithm_digest": (
                     OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
                 ),
                 "observation_error_algorithm_digest": (
-                    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST
+                    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
                 ),
                 "verification_bundle_contract": (
-                    "radar-verification-bundle-v11"
+                    "radar-verification-bundle-v12"
                 ),
                 "product_type_policy": "exact-shipped-product-types-v1",
                 "forecast_integrity": "forecast-result-raw-content-validation-v1",

@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.100
+# ADVAR 3-frame radar nowcast v0.101
 
 ADVAR는 운영 배포 시스템이 아니라 레이더 기반 변분 nowcast의 **과학적 실증과
 재현 가능한 offline 연구**를 위한 구현이다. 핵심 산출물은 수치 안정성, 입력·target
@@ -116,7 +116,7 @@ python -I .github/scripts/build_deployment_bundle.py verify \
   --trusted-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.100.0 \
+  --expected-source-ref refs/tags/v0.101.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-signer-id advar-release
@@ -127,7 +127,7 @@ python -I -m pip install --no-index --find-links wheelhouse \
   --require-hashes --only-binary=:all: --no-compile \
   --requirement runtime-py312-linux.lock
 python -I -m pip install --no-index --no-deps --no-compile \
-  advar_radar_nowcast-0.100.0-*.whl
+  advar_radar_nowcast-0.101.0-*.whl
 find <deployment-venv> -type f \
   \( -name '*.pyc' -o -name '*.pyo' -o -name '*.pth' \) -delete
 ```
@@ -154,7 +154,7 @@ python -I .github/scripts/build_deployment_bundle.py approve-release \
   --trusted-bundle-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.100.0 \
+  --expected-source-ref refs/tags/v0.101.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-bundle-signer-id advar-release \
@@ -169,7 +169,7 @@ python -I .github/scripts/build_deployment_bundle.py activate-runtime \
   --trusted-bundle-public-key /etc/advar/release-bundle-ed25519.pub \
   --expected-mode deployable \
   --expected-repository gonos2k/AD4DVAR-radar \
-  --expected-source-ref refs/tags/v0.100.0 \
+  --expected-source-ref refs/tags/v0.101.0 \
   --expected-source-commit <signed-release-commit> \
   --expected-workflow-sha <protected-workflow-sha> \
   --expected-bundle-signer-id advar-release \
@@ -920,12 +920,12 @@ withheld radar/time/mask), QC·mask·censor·floor measurement contract,
 feature-exclusion 및 independence evidence를
 사전등록하며 plan payload 자체가 holdout digest에 포함된다. 실제 target은 임의
 Tensor로 만들 수 없고, plan에 고정된 radar product·QC·grid·valid time과 일치하는
-content-addressed `radar-verification-bundle-v11`에서만 생성한다.
+content-addressed `radar-verification-bundle-v12`에서만 생성한다.
 P1 state head에는 별도의 `NeuralPriorStateCalibrationPlan`을 사전등록한다. State target은
 state product·QC·mask·censor·floor policy, dBZ resolution·quantization origin과 prior output
 valid time에 결합되고 feature에서 withhold됐음을 검증한다. Target은 이 측정계보를 실제
 자료와 함께 observation-error contract를 attestation한
-`radar-verification-bundle-v11`에서만 생성된다. Candidate와
+`radar-verification-bundle-v12`에서만 생성된다. Candidate와
 parent의 state interval-Gaussian NLL·PIT,
 support Brier·pixel/object miss·false-support 및 validity Brier를 같은 target에서 paired
 평가한다. 절대 calibration과 cluster max-statistic 비열화 상한을 모두 통과하지 못하면
@@ -1138,14 +1138,14 @@ detection limit, local offset, absolute age와 네 spatial field를 gather한 �
 range/elevation-valid, blockage, acquisition-time-valid, attenuation-QC, confirmed-clear,
 censoring mask와 source index map을 다시 계산한다. Caller가 mask를 직접 선택하는 legacy
 input은 confirmatory 경로에서 소비하지 않는다.
-`derive_verification_observation_error()`는 derivation-input v5와 ordered registry에서
+`derive_verification_observation_error()`는 derivation-input v6와 ordered registry에서
 valid/quality/std/state tensor를 계산한다. 같은 radar 안에서도 range, elevation,
 blockage와 attenuation evidence에 따라 quality/std가 공간적으로 변한다. 사전등록된
 maximum acquisition age를 넘은 cell은 `STALE_ACQUISITION`으로 분리되며, 나이가 증가하면
 temporal quality가 단조 감소하고 temporal representativeness variance가 standard
-deviation에 추가된다. `ObservationErrorDerivationArtifact-v5`는 동일 입력으로 그 결과를
+deviation에 추가된다. `ObservationErrorDerivationArtifact-v6`는 동일 입력으로 그 결과를
 다시 생성해 `torch.equal`과 content digest를 모두 확인한다.
-`VerificationObservationErrorContract-v8`는 plan, signed raw input, mask derivation,
+`VerificationObservationErrorContract-v9`는 plan, signed raw input, mask derivation,
 ordered registry와 exact
 valid/quality/observation-std/state/source-map 및 absolute acquisition-age tensor digest를
 derivation artifact에 결합한다. 이 상태 tensor는 clear, echo, source missing, QC invalid,
@@ -1156,10 +1156,10 @@ beam blockage, stale acquisition, below-detection censoring과 mosaic source 미
 target 또는 scientific-review eligibility를 만들 수 없다.
 Output tensor만 재생하는 v4 contract와 `radar-verification-bundle-v7`은 audit
 compatibility 세대이며 current confirmatory target을 만들 수 없다.
-Holdout plan v26은 모든
+Holdout plan v27은 모든
 uncertainty/state target이 참조하는 observation-error plan payload의 정확한 집합을
 보존하고, current target는 deterministic replay를 포함한
-`radar-verification-bundle-v11`만 허용한다. v11은 bundle valid time, grid, radar product를
+`radar-verification-bundle-v12`만 허용한다. v12는 bundle valid time, grid, radar product를
 signed source identity와 exact 비교한다. 따라서 결과를 본 뒤 mask, source time,
 source index ordering, calibration mapping, selected-source value/time/detection limit
 또는 realized tensor를 바꾸면 source
@@ -1177,27 +1177,32 @@ cell별 selected-source detection limit의 left-censored likelihood로 평가한
 이미 predictive variance에 포함되므로 이 진단의 aggregation에는 quality만 사용하고
 inverse-variance를 다시 곱하지 않는다. 결과는 항상 `diagnostic_only=True`이며,
 사전등록된 과학 protocol 없이 promotion을 승인하지 않는다.
-Current scientific replay는 `neural-prior-scoring-replay-bundle-v16`이며 source-specific
-report kind, absolute acquisition age, temporal-valid mask와 confirmed-clear mask를
-content-addressed shard에 보존한다. 직전 v15는 byte audit만 가능하고 current semantic
+Current scientific replay는 `neural-prior-scoring-replay-bundle-v17`이며 source-specific
+report kind, absolute acquisition age, temporal-valid mask, spatial-metric age support와
+confirmed-clear mask를 content-addressed shard에 보존한다. 직전 v16은 byte audit만 가능하고 current semantic
 replay나 confirmatory claim으로 승격할 수 없다.
+Confirmed clear는 quantitative dBZ point가 아니라 categorical no-echo evidence로
+평가한다. 따라서 intensity Gaussian/FSO point metric에서는 제외하지만 echo-support
+Brier와 false-support score에는 남아 representation floor와 무관하게 false echo를
+벌점화한다. Threshold equality는 `echo: Z > L`, `censored: Z <= L`로 단일화한다.
 Spatial-correlation block identity도 observation-error plan과 realized contract에
-`spatial_correlation_role="diagnostic_only"`로 고정한다. Source assignment는 upstream
-mosaic의 highest-score 결정을 검증하는 fail-closed 정책이다. 최고점 source가
-unavailable이어도 차순위 available source로 조용히 fallback하지 않고
-`SOURCE_MISSING`으로 보존한다. 가용 source 중 재선택하는 실험은 별도 사전등록
-알고리즘 세대를 사용해야 한다. Current confirmatory
+`spatial_correlation_role="diagnostic_only"`로 고정한다. Source assignment는
+사전등록된 product-owned eligibility/score 함수로 range, elevation, acquisition age,
+beam blockage와 attenuation QC를 결합한다. Invalid source는 score 후보에서 먼저
+제외하므로 최상위 nominal source가 stale일 때 유효한 차순위 source로 결정적으로
+fallback한다. 동점은 ordered registry의 첫 source로 고정된다. Current confirmatory
 confidence bound는 pixel block이 아니라 independent physical-event cluster를 사용하며,
 spatial block metadata가 추론에 사용됐다고 주장하지 않는다.
 Audit load는 저장된 typed evaluation을 볼 수 있지만, 자동 completion과 promotion은
 동일한 typed replay case를 다시 제공해 semantic replay까지 통과해야 한다. 배포
 certificate 발급 시에도 typed case에서 제품 scorer를 다시 실행하며, checksum-only
 archive는 certificate를 받을 수 없다. Ledger는
-current replay bundle/method v15, semantic generation v13과 scoring case v14만
-재실행하며, 이전 replay bundle v14와 그 이전 세대는 typed audit-only
+current replay bundle/method v17, semantic generation v15와 scoring case v16만
+재실행하며, 이전 replay bundle v16과 그 이전 세대는 typed audit-only
 object로만 decode한다. Current bundle은 `verification_provenance.json`과 source-specific
 verification tensors를 보존한다. 원래 Python case object가 없어도 source signature,
-ordered registry, mask derivation, observation-error derivation과 v10 bundle digest를
+ordered registry, product-owned radar geometry/source selection, mask derivation,
+observation-error derivation과 v12 bundle digest를
 cold-start 재검증하고 `verification_semantic_replay_verified=True`를 보고한다. Model
 runner와 forecast products까지 다시 실행하는 full scoring replay는 exact typed case가
 제공될 때만 `semantic_replay_verified=True`이며 두 주장을 혼동하지 않는다.
