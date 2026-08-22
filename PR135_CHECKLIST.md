@@ -12,16 +12,22 @@
 - Scope boundary: reproducible offline scientific validation only; operational deployment remains NO-GO/out of scope.
 - Merge authority: HOLD; no merge is authorized by this checklist.
 
+## Post-merge authority reconciliation
+
+- PR #135 is **MERGED**; final head `5b04f57977a600c1b43c442e264c1a459d98784e`, merge commit `71d222b66d4d3d689ac2581383e2bac29afe01ce`, merged at `2026-08-21T23:55:24Z`.
+- Exact-head CI run `32490139996` completed SUCCESS for Python 3.10 CPU, Python 3.12 CPU, and Wheel/CLI smoke.
+- The pre-merge HOLD above records the authority available while this checklist was active; it is not the current GitHub state and did not itself authorize the later merge.
+
 ## Adversarial findings
 
 | ID | Priority | Claim | Boundary | Current-tree result | Classification | Minimal action | Acceptance test | Implementation | Local tests | PR/CI |
 |---|---|---|---|---|---|---|---|---|---|---|
-| R134-012 | P1-SCIENTIFIC | Absolute acquisition timestamps and cell offset tensors are not linked, so temporal age can disagree with signed chronology. | Asynchronous mosaic observation time | CLOSED | repository-actionable | Bind per-source nominal acquisition times and define cell time/age algebra in the current signed source/evidence contract; recompute age product-side. | 600-second absolute age plus zero local offset yields age 600; zero absolute age plus -60-second local offset yields age 60; timestamp-only and offset-only relabeling fail. | ☑ | ☑ | pending |
-| R134-013 | P1-SCIENTIFIC | Product-derived censoring makes `OBSERVED_CLEAR` unreachable in the current taxonomy. | Clear/no-echo/censored estimand | CLOSED | repository-actionable | Encode signed native report-kind evidence that distinguishes detected echo, confirmed clear, and below-detection censoring. | Confirmed-clear and censored inputs reach distinct states and impose their intended false-alarm/censored penalties; impossible combinations fail. | ☑ | ☑ | pending |
-| R134-014 | P2-PROVENANCE | Cold replay may validate detection/censor policy only for selected source rows. | Canonical source-cube provenance | CLOSED | repository-actionable | Add one full-cube `validate_against_registry()` path and call it from issue, mask derivation, and cold reconstruction. | Re-signed mutation of a never-selected source limit/censor row fails in producer, derivation, and cold replay. | ☑ | ☑ | pending |
-| R134-015 | P2-INTEGRITY | A current manifest may declare a valid but unreferenced tensor shard. | Durable replay exact byte closure | CLOSED | repository-actionable | Require exact equality between declared and referenced shard digest sets and hash every declared member before byte verification. | Unreferenced NPZ, arbitrary extra file, and manifest-only shard digest fail; shared content shard remains allowed. | ☑ | ☑ | pending |
-| R134-016 | P2-SCIENTIFIC | Stale acquisition is collapsed into attenuation/QC invalidity. | Missingness and exclusion diagnosis | CLOSED | repository-actionable | Preserve temporal-valid and attenuation-QC masks separately and emit a distinct stale-acquisition state/reason. | Stale, attenuation-invalid, beam-blocked, and source-missing cells remain distinguishable after durable replay. | ☑ | ☑ | pending |
-| R134-017 | P2-SCIENTIFIC | Detection limit is one scalar per radar and lacks range/elevation/time dependence. | Real-radar censor threshold model | CLOSED for preregistered baseline; empirical calibration remains OPEN as X135-002 | repository-actionable baseline model; empirical calibration remains external | Preregister a deterministic low-dimensional source-specific detection-limit function and derive the full field product-side without double-counting attenuation uncertainty. | Limit varies deterministically with registered range/elevation parameters; coefficient or evidence relabeling fails; scalar legacy inputs are audit-only. | ☑ | ☑ | pending |
+| R134-012 | P1-SCIENTIFIC | Absolute acquisition timestamps and cell offset tensors are not linked, so temporal age can disagree with signed chronology. | Asynchronous mosaic observation time | CLOSED | repository-actionable | Bind per-source nominal acquisition times and define cell time/age algebra in the current signed source/evidence contract; recompute age product-side. | 600-second absolute age plus zero local offset yields age 600; zero absolute age plus -60-second local offset yields age 60; timestamp-only and offset-only relabeling fail. | ☑ | ☑ | exact-head CI SUCCESS |
+| R134-013 | P1-SCIENTIFIC | Product-derived censoring makes `OBSERVED_CLEAR` unreachable in the current taxonomy. | Clear/no-echo/censored estimand | CLOSED | repository-actionable | Encode signed native report-kind evidence that distinguishes detected echo, confirmed clear, and below-detection censoring. | Confirmed-clear and censored inputs reach distinct states and impose their intended false-alarm/censored penalties; impossible combinations fail. | ☑ | ☑ | exact-head CI SUCCESS |
+| R134-014 | P2-PROVENANCE | Cold replay may validate detection/censor policy only for selected source rows. | Canonical source-cube provenance | CLOSED | repository-actionable | Add one full-cube `validate_against_registry()` path and call it from issue, mask derivation, and cold reconstruction. | Re-signed mutation of a never-selected source limit/censor row fails in producer, derivation, and cold reconstruction. | ☑ | ☑ | exact-head CI SUCCESS |
+| R134-015 | P2-INTEGRITY | A current manifest may declare a valid but unreferenced tensor shard. | Durable replay exact byte closure | CLOSED | repository-actionable | Require exact equality between declared and referenced shard digest sets and hash every declared member before byte verification. | Unreferenced NPZ, arbitrary extra file, and manifest-only shard digest fail; shared content shard remains allowed. | ☑ | ☑ | exact-head CI SUCCESS |
+| R134-016 | P2-SCIENTIFIC | Stale acquisition is collapsed into attenuation/QC invalidity. | Missingness and exclusion diagnosis | CLOSED | repository-actionable | Preserve temporal-valid and attenuation-QC masks separately and emit a distinct stale-acquisition state/reason. | Stale, attenuation-invalid, beam-blocked, and source-missing cells remain distinguishable after durable replay. | ☑ | ☑ | exact-head CI SUCCESS |
+| R134-017 | P2-SCIENTIFIC | Detection limit is one scalar per radar and lacks range/elevation/time dependence. | Real-radar censor threshold model | CLOSED for preregistered baseline; empirical calibration remains OPEN as X135-002 | repository-actionable baseline model; empirical calibration remains external | Preregister a deterministic low-dimensional source-specific detection-limit function and derive the full field product-side without double-counting attenuation uncertainty. | Limit varies deterministically with registered range/elevation parameters; coefficient or evidence relabeling fails; scalar legacy inputs are audit-only. | ☑ | ☑ | exact-head CI SUCCESS |
 | R134-018 | P2-GOVERNANCE | PR #134 body still says merge HOLD after the PR was merged. | Review authority record | CLOSED | repository-actionable external metadata | Synchronize the merged head, merge commit, exact-head run, and three successful jobs in PR #134 metadata and the follow-up checklist. | GitHub PR state/body and repository evidence report the same merged head, merge commit, and CI run. | ☑ | ☑ | external metadata complete |
 
 ## Friendly findings and strengths to preserve
@@ -59,8 +65,8 @@
 - [x] Adjacent and broad non-deployment scientific suites pass.
 - [x] Every changed schema, attested source, digest preimage, and required nested field has regenerated producer and consumer evidence.
 - [x] Evidence/manifests/distribution documents are synchronized when affected.
-- [ ] PR head equals the reported pushed commit.
-- [ ] CI failures are classified as code or external infrastructure/policy.
+- [x] PR head equals the reported pushed commit.
+- [x] Exact-head CI completed SUCCESS; no failure classification was required.
 - [x] Offline research, real-radar confirmatory claims, external publication, and operational deployment have separate decisions.
 - [x] External scientific evidence remains visible with owner and required action.
 - [x] Merge remains HOLD unless explicitly authorized.
@@ -74,4 +80,4 @@
 | Confirmatory real-radar scientific claim | HOLD | Repository contracts are closed; X135-001/002 independent cohort and empirical parameter evidence remain open. |
 | External publication | HOLD | Requires repository closure plus independent cohort and parameter evidence. |
 | Operational deployment | NO-GO / out of scope | Project is explicitly centered on scientific validation. |
-| PR #135 merge | HOLD | No merge authorization; implementation is complete and exact-head CI is pending. |
+| PR #135 merge | MERGED | Final head `5b04f579…`, merge commit `71d222b…`, exact-head CI run `32490139996` SUCCESS. |
