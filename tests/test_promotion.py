@@ -660,9 +660,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             temporal_error_algorithm_digest=None,
             detection_limit_derivation_algorithm_digest=None,
             censor_state_derivation_algorithm_digest=None,
+            geometry_contract_digest=None,
+            acquisition_timestamp_reference=None,
+            spatial_metric_reference_speed_mps=None,
+            spatial_metric_maximum_displacement_fraction_cells=None,
+            spatial_age_gate_algorithm_digest=None,
             contract="verification-observation-error-plan-v3",
         )
-        with self.assertRaisesRegex(ValueError, "requires observation-error plan v6"):
+        with self.assertRaisesRegex(ValueError, "requires observation-error plan v7"):
             replace(
                 plan,
                 verification_observation_error_plans=(

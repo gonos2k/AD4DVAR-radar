@@ -9829,7 +9829,7 @@ class NeuralPriorHoldoutPlan:
             for item in self.verification_observation_error_plans
         ):
             raise ValueError(
-                "current holdout requires observation-error plan v6"
+                "current holdout requires observation-error plan v7"
             )
         if (
             len(retained_observation_error_plans)
