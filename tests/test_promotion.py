@@ -48,6 +48,7 @@ from advar import (
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST,
     OBSERVATION_TEMPORAL_QUALITY_DECAY_ALGORITHM_V1_DIGEST,
     OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST,
     OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST,
@@ -56,6 +57,7 @@ from advar import (
     OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V1_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST,
     MosaicObservationSourceRegistry,
@@ -152,7 +154,10 @@ def _observation_source_registry(
     return MosaicObservationSourceRegistry(
         radar_source_kind=cast(Any, radar_source_kind),
         ordered_sources=sources,
-        contract="mosaic-observation-source-registry-v4",
+        projected_crs_digest="f" * 64,
+        geometry_model="projected-horizontal-representative-tilt-v1",
+        radar_altitude_role="provenance_only",
+        contract="mosaic-observation-source-registry-v5",
     )
 
 
@@ -217,10 +222,10 @@ def _verification_observation_error_plan(
         spatial_correlation_block_algorithm_digest="7" * 64,
         quality_weight_interpretation_digest="8" * 64,
         quality_weight_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
         ),
         observation_std_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
         ),
         observation_error_model_digest="9" * 64,
         source_assignment_algorithm_digest=(
@@ -229,7 +234,7 @@ def _verification_observation_error_plan(
         minimum_detectable_echo_dbz=-10.0,
         observation_error_reference_std_dbz=2.0,
         derivation_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
         ),
         mask_derivation_algorithm_digest=(
             OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
@@ -264,7 +269,7 @@ def _verification_observation_error_plan(
         spatial_age_gate_algorithm_digest=(
             OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST
         ),
-        contract="verification-observation-error-plan-v7",
+        contract="verification-observation-error-plan-v8",
     )
 
 
@@ -427,7 +432,7 @@ def _verification_bundle_v4(
         spatial_metric_valid_mask=mask_derivation.spatial_metric_valid_mask,
         observation_error_contract=error_contract,
         observation_error_derivation=derivation,
-        contract="radar-verification-bundle-v12",
+        contract="radar-verification-bundle-v13",
     )
 
 
@@ -588,7 +593,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         evaluation = self.evaluation(1, -1.0)
         policy = self.policy()
 
-        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v27")
+        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v28")
         self.assertTrue(
             all(
                 item.contract == "neural-prior-range-band-contract-v3"
@@ -667,7 +672,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             spatial_age_gate_algorithm_digest=None,
             contract="verification-observation-error-plan-v3",
         )
-        with self.assertRaisesRegex(ValueError, "requires observation-error plan v7"):
+        with self.assertRaisesRegex(ValueError, "requires observation-error plan v8"):
             replace(
                 plan,
                 verification_observation_error_plans=(
@@ -1846,21 +1851,27 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
             for input_plan in input_plans
         )
-        uncertainty_observation_error_plan = (
+        uncertainty_observation_error_plans = tuple(
             _verification_observation_error_plan(
                 radar_product_digest="6" * 64,
                 qc_pipeline_digest="9" * 64,
                 censor_policy_digest=(
                     self.state_contract().state_censor_policy_digest
                 ),
+                grid_contract_digest=input_plan.grid_contract_digest,
             )
+            for input_plan in input_plans
         )
-        state_observation_error_plan = _verification_observation_error_plan(
-            radar_product_digest="a" * 64,
-            qc_pipeline_digest="9" * 64,
-            censor_policy_digest=(
-                self.state_contract().state_censor_policy_digest
-            ),
+        state_observation_error_plans = tuple(
+            _verification_observation_error_plan(
+                radar_product_digest="a" * 64,
+                qc_pipeline_digest="9" * 64,
+                censor_policy_digest=(
+                    self.state_contract().state_censor_policy_digest
+                ),
+                grid_contract_digest=input_plan.grid_contract_digest,
+            )
+            for input_plan in input_plans
         )
         target_plans = tuple(
             PriorUncertaintyTargetPlan(
@@ -1875,7 +1886,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 feature_exclusion_contract_digest="5" * 64,
                 independence_evidence_digest="8" * 64,
                 verification_observation_error_plan_digest=(
-                    uncertainty_observation_error_plan.plan_digest
+                    uncertainty_observation_error_plans[index - 1].plan_digest
                 ),
                 target_valid_time=valid_time,
                 prior_probability_contract_digest=(
@@ -1900,7 +1911,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 feature_exclusion_contract_digest="5" * 64,
                 independence_evidence_digest="8" * 64,
                 verification_observation_error_plan_digest=(
-                    state_observation_error_plan.plan_digest
+                    state_observation_error_plans[index - 1].plan_digest
                 ),
                 target_valid_time=valid_time,
                 state_contract_digest=self.state_contract().contract_digest,
@@ -2120,8 +2131,8 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             uncertainty_target_plans=target_plans,
             state_calibration_target_plans=state_target_plans,
             verification_observation_error_plans=(
-                uncertainty_observation_error_plan,
-                state_observation_error_plan,
+                uncertainty_observation_error_plans
+                + state_observation_error_plans
             ),
             range_band_contracts=range_contracts,
             range_geometry_contracts=range_geometries,
@@ -3605,6 +3616,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     censor_policy_digest=(
                         self.state_contract().state_censor_policy_digest
                     ),
+                    grid_contract_digest=grid.digest,
                 ).plan_digest
             ),
             target_valid_time=target_time,
@@ -3632,6 +3644,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     censor_policy_digest=(
                         self.state_contract().state_censor_policy_digest
                     ),
+                    grid_contract_digest=grid.digest,
                 ).plan_digest
             ),
             target_valid_time=target_time,
@@ -4086,6 +4099,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     censor_policy_digest=(
                         self.state_contract().state_censor_policy_digest
                     ),
+                    grid_contract_digest=grid.digest,
                 ),
                 _verification_observation_error_plan(
                     radar_product_digest="a" * 64,
@@ -4093,6 +4107,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     censor_policy_digest=(
                         self.state_contract().state_censor_policy_digest
                     ),
+                    grid_contract_digest=grid.digest,
                 ),
             ),
             range_band_contracts=(range_contract,),
@@ -5178,6 +5193,60 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertIs(
             type(decoded_v16),
             ledger_module.LegacyScoringReplayBundleManifestAuditV16,
+        )
+
+        v17_records = tuple(
+            ledger_module.ScoringReplayTensorRecord(
+                case_id=case_id,
+                role=role,
+                archive_member="tensor",
+                dtype="float32",
+                shape=(1, 2, 2),
+                tensor_digest="1" * 64,
+                archive_sha256=f"{index:064x}",
+            )
+            for index, role in enumerate(
+                sorted(ledger_module.SCORING_REPLAY_REQUIRED_TENSOR_ROLES),
+                start=1,
+            )
+        )
+        v17_manifest = ledger_module.LegacyScoringReplayBundleManifestAuditV17(
+            scoring_input_artifact_digest="2" * 64,
+            ordered_case_ids=(case_id,),
+            ordered_evaluation_digests=("3" * 64,),
+            semantic_case_digests=("4" * 64,),
+            dynamic_source_case_ids=(),
+            background_case_ids=(),
+            algorithm_source_manifest_digest="5" * 64,
+            runtime_compatibility_digest="6" * 64,
+            runtime_exact_digest="7" * 64,
+            scoring_backend_certification_policy_digest=None,
+            scoring_backend_certification_evidence_digest=None,
+            tensor_records=v17_records,
+            tensor_archive_sha256="8" * 64,
+            evaluation_payload_sha256="9" * 64,
+            raw_provenance_payload_sha256="a" * 64,
+            verification_provenance_payload_sha256="b" * 64,
+            raw_ingestor_trust_store_digest="c" * 64,
+            tensor_shard_sha256s=tuple(
+                sorted(
+                    cast(str, record.archive_sha256)
+                    for record in v17_records
+                )
+            ),
+        )
+        decoded_v17 = ledger_module._decode_scoring_replay_bundle_manifest(
+            json.dumps(
+                v17_manifest.payload
+                | {"bundle_digest": v17_manifest.bundle_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            expected_digest=v17_manifest.bundle_digest,
+        )
+        self.assertIs(
+            type(decoded_v17),
+            ledger_module.LegacyScoringReplayBundleManifestAuditV17,
         )
 
         scoring = self.scoring_artifact(
@@ -15531,27 +15600,27 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def test_cpu_only_scoring_generation_has_a_stable_backend_contract(self) -> None:
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_CONTRACT,
-            "neural-prior-scoring-replay-bundle-v17",
+            "neural-prior-scoring-replay-bundle-v18",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_METHOD,
-            "builtin-semantic-scoring-recomputation-v17",
+            "builtin-semantic-scoring-recomputation-v18",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD,
             {
-                "contract": "neural-prior-semantic-scoring-generation-v15",
-                "replay_contract": "neural-prior-scoring-replay-bundle-v17",
-                "replay_method": "builtin-semantic-scoring-recomputation-v17",
-                "case_contract": "neural-prior-semantic-scoring-case-v16",
+                "contract": "neural-prior-semantic-scoring-generation-v16",
+                "replay_contract": "neural-prior-scoring-replay-bundle-v18",
+                "replay_method": "builtin-semantic-scoring-recomputation-v18",
+                "case_contract": "neural-prior-semantic-scoring-case-v17",
                 "observation_mask_algorithm_digest": (
                     OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
                 ),
                 "observation_error_algorithm_digest": (
-                    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
+                    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
                 ),
                 "verification_bundle_contract": (
-                    "radar-verification-bundle-v12"
+                    "radar-verification-bundle-v13"
                 ),
                 "product_type_policy": "exact-shipped-product-types-v1",
                 "forecast_integrity": "forecast-result-raw-content-validation-v1",

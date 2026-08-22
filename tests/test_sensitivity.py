@@ -69,6 +69,7 @@ from advar.sensitivity import (  # noqa: E402
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST,
     OBSERVATION_TEMPORAL_QUALITY_DECAY_ALGORITHM_V1_DIGEST,
     OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST,
     OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST,
@@ -79,6 +80,7 @@ from advar.sensitivity import (  # noqa: E402
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V1_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V2_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST,
     AutomatedLearningPolicy,
@@ -334,7 +336,10 @@ def _current_verification_bundle(
                 contract="observation-radar-source-v4",
             ),
         ),
-        contract="mosaic-observation-source-registry-v4",
+        projected_crs_digest="3" * 64,
+        geometry_model="projected-horizontal-representative-tilt-v1",
+        radar_altitude_role="provenance_only",
+        contract="mosaic-observation-source-registry-v5",
     )
     height, width = frames_dbz.shape[-2:]
     grid_y, grid_x = torch.meshgrid(
@@ -364,10 +369,10 @@ def _current_verification_bundle(
         spatial_correlation_block_algorithm_digest="8" * 64,
         quality_weight_interpretation_digest="9" * 64,
         quality_weight_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
         ),
         observation_std_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
         ),
         observation_error_model_digest="a" * 64,
         source_assignment_algorithm_digest=(
@@ -376,7 +381,7 @@ def _current_verification_bundle(
         minimum_detectable_echo_dbz=-20.0,
         observation_error_reference_std_dbz=2.0,
         derivation_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
         ),
         mask_derivation_algorithm_digest=(
             OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
@@ -411,7 +416,7 @@ def _current_verification_bundle(
         spatial_age_gate_algorithm_digest=(
             OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST
         ),
-        contract="verification-observation-error-plan-v7",
+        contract="verification-observation-error-plan-v8",
     )
     finite = torch.isfinite(frames_dbz)
     source_frames = torch.nan_to_num(frames_dbz, nan=-30.0).unsqueeze(0)
@@ -499,7 +504,7 @@ def _current_verification_bundle(
         spatial_metric_valid_mask=mask_derivation.spatial_metric_valid_mask,
         observation_error_contract=derivation.observation_error_contract,
         observation_error_derivation=derivation,
-        contract="radar-verification-bundle-v12",
+        contract="radar-verification-bundle-v13",
     )
 
 
@@ -2439,7 +2444,7 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertEqual(fso.contract, CURRENT_VARIATIONAL_FSO_CONTRACT)
         self.assertEqual(
             fso.verification_contract,
-            "radar-verification-bundle-v12",
+            "radar-verification-bundle-v13",
         )
         self.assertEqual(fso.verification_bundle_digest, bundle.content_digest)
         self.assertEqual(fso.verification_valid_times, bundle.valid_times)
@@ -3067,6 +3072,128 @@ class VariationalFSOTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "input mismatch"):
             attacked_source.validate_replay()
 
+    def test_current_geometry_binds_grid_identity_and_derived_spacing(
+        self,
+    ) -> None:
+        grid_x_m = torch.tensor(
+            [[0.0, 1000.0, 2000.0], [0.0, 1000.0, 2000.0]]
+        )
+        grid_y_m = torch.tensor(
+            [[0.0, 0.0, 0.0], [1000.0, 1000.0, 1000.0]]
+        )
+        geometry = RadarObservationGeometryContract(
+            grid_contract_digest="1" * 64,
+            projected_crs_digest="2" * 64,
+            grid_x_m=grid_x_m,
+            grid_y_m=grid_y_m,
+            grid_spacing_m=1000.0,
+        )
+        changed_grid_identity = RadarObservationGeometryContract(
+            grid_contract_digest="3" * 64,
+            projected_crs_digest="2" * 64,
+            grid_x_m=grid_x_m,
+            grid_y_m=grid_y_m,
+            grid_spacing_m=1000.0,
+        )
+        self.assertNotEqual(
+            geometry.geometry_digest,
+            changed_grid_identity.geometry_digest,
+        )
+        self.assertEqual(geometry.grid_spacing_m, 1000.0)
+        self.assertEqual(
+            geometry.payload["grid_contract_digest"],
+            "1" * 64,
+        )
+
+        with self.assertRaisesRegex(ValueError, "spacing disagrees"):
+            RadarObservationGeometryContract(
+                grid_contract_digest="1" * 64,
+                projected_crs_digest="2" * 64,
+                grid_x_m=grid_x_m,
+                grid_y_m=grid_y_m,
+                grid_spacing_m=10_000.0,
+            )
+
+        nonuniform_x_m = grid_x_m.clone()
+        nonuniform_x_m[:, 1:] = nonuniform_x_m[:, [2, 1]]
+        with self.assertRaisesRegex(ValueError, "uniformly rectilinear"):
+            RadarObservationGeometryContract(
+                grid_contract_digest="1" * 64,
+                projected_crs_digest="2" * 64,
+                grid_x_m=nonuniform_x_m,
+                grid_y_m=grid_y_m,
+                grid_spacing_m=1000.0,
+            )
+
+    def test_current_geometry_binds_registry_crs_and_model_scope(self) -> None:
+        source = ObservationRadarSource(
+            radar_site_digest="1" * 64,
+            calibration_epoch_digest="2" * 64,
+            quality_weight=1.0,
+            observation_std_dbz=2.0,
+            projected_x_m=0.0,
+            projected_y_m=0.0,
+            radar_altitude_m=100.0,
+            representative_scan_elevation_deg=1.0,
+            contract="observation-radar-source-v4",
+        )
+        registry = MosaicObservationSourceRegistry(
+            radar_source_kind="single_site",
+            ordered_sources=(source,),
+            projected_crs_digest="3" * 64,
+            geometry_model="projected-horizontal-representative-tilt-v1",
+            radar_altitude_role="provenance_only",
+            contract="mosaic-observation-source-registry-v5",
+        )
+        other_crs_registry = MosaicObservationSourceRegistry(
+            radar_source_kind="single_site",
+            ordered_sources=(source,),
+            projected_crs_digest="4" * 64,
+            geometry_model="projected-horizontal-representative-tilt-v1",
+            radar_altitude_role="provenance_only",
+            contract="mosaic-observation-source-registry-v5",
+        )
+        self.assertNotEqual(
+            registry.source_registry_digest,
+            other_crs_registry.source_registry_digest,
+        )
+        self.assertEqual(
+            registry.payload["geometry_model"],
+            "projected-horizontal-representative-tilt-v1",
+        )
+        self.assertEqual(registry.payload["radar_altitude_role"], "provenance_only")
+
+        grid_x_m = torch.tensor([[0.0, 1000.0]])
+        grid_y_m = torch.zeros_like(grid_x_m)
+        mismatched_geometry = RadarObservationGeometryContract(
+            grid_contract_digest="5" * 64,
+            projected_crs_digest="4" * 64,
+            grid_x_m=grid_x_m,
+            grid_y_m=grid_y_m,
+            grid_spacing_m=1000.0,
+        )
+        with self.assertRaisesRegex(ValueError, "registered radar geometry"):
+            sensitivity_module._registered_observation_geometry_fields(
+                source_registry=registry,
+                geometry=mismatched_geometry,
+                time_count=1,
+            )
+
+        legacy_geometry = RadarObservationGeometryContract(
+            grid_contract_digest="5" * 64,
+            projected_crs_digest="3" * 64,
+            grid_x_m=grid_x_m,
+            grid_y_m=grid_y_m,
+            grid_spacing_m=1000.0,
+            contract="radar-observation-geometry-v1",
+        )
+        with self.assertRaisesRegex(ValueError, "registered radar geometry"):
+            sensitivity_module._registered_observation_geometry_fields(
+                source_registry=registry,
+                geometry=legacy_geometry,
+                time_count=1,
+            )
+
     def test_confirmatory_observation_masks_and_source_identity_replay(
         self,
     ) -> None:
@@ -3104,7 +3231,10 @@ class VariationalFSOTests(unittest.TestCase):
         registry = MosaicObservationSourceRegistry(
             radar_source_kind="mosaic",
             ordered_sources=sources,
-            contract="mosaic-observation-source-registry-v4",
+            projected_crs_digest="0" * 64,
+            geometry_model="projected-horizontal-representative-tilt-v1",
+            radar_altitude_role="provenance_only",
+            contract="mosaic-observation-source-registry-v5",
         )
         geometry = RadarObservationGeometryContract(
             grid_contract_digest="a" * 64,
@@ -3128,10 +3258,10 @@ class VariationalFSOTests(unittest.TestCase):
             spatial_correlation_block_algorithm_digest="7" * 64,
             quality_weight_interpretation_digest="8" * 64,
             quality_weight_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
             ),
             observation_std_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
             ),
             observation_error_model_digest="9" * 64,
             source_assignment_algorithm_digest=(
@@ -3140,7 +3270,7 @@ class VariationalFSOTests(unittest.TestCase):
             minimum_detectable_echo_dbz=-10.0,
             observation_error_reference_std_dbz=2.0,
             derivation_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
             ),
             mask_derivation_algorithm_digest=(
                 OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
@@ -3175,7 +3305,7 @@ class VariationalFSOTests(unittest.TestCase):
             spatial_age_gate_algorithm_digest=(
                 OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST
             ),
-            contract="verification-observation-error-plan-v7",
+            contract="verification-observation-error-plan-v8",
         )
         common_evidence = {
             "plan": plan,
@@ -3270,7 +3400,7 @@ class VariationalFSOTests(unittest.TestCase):
         )
         self.assertEqual(
             derivation.observation_error_contract.contract,
-            "verification-observation-error-contract-v9",
+            "verification-observation-error-contract-v10",
         )
         bundle = VerificationBundle(
             frames_dbz=mask_derivation.selected_frames_dbz,
@@ -3301,7 +3431,7 @@ class VariationalFSOTests(unittest.TestCase):
             ),
             observation_error_contract=derivation.observation_error_contract,
             observation_error_derivation=derivation,
-            contract="radar-verification-bundle-v12",
+            contract="radar-verification-bundle-v13",
         )
         bundle.validate_integrity()
         self.assertEqual(
@@ -3397,7 +3527,10 @@ class VariationalFSOTests(unittest.TestCase):
         reordered_registry = MosaicObservationSourceRegistry(
             radar_source_kind="mosaic",
             ordered_sources=tuple(reversed(sources)),
-            contract="mosaic-observation-source-registry-v4",
+            projected_crs_digest="0" * 64,
+            geometry_model="projected-horizontal-representative-tilt-v1",
+            radar_altitude_role="provenance_only",
+            contract="mosaic-observation-source-registry-v5",
         )
         with self.assertRaisesRegex(
             ValueError,
