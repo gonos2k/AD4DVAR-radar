@@ -20,6 +20,17 @@ shadow, canary, LIVE operation, or an external scientific claim.
 - Verified PR #136 CI: run `32555563042`; Python 3.10 CPU, Python 3.12 CPU,
   and Wheel/CLI smoke all successful
 
+## Post-merge evidence
+
+- PR head: `6b2152e52c9ba05509b3f0636f477438921696a0`
+- Merge commit: `612598e623ee735690a42224c5dbbf67ec800fe5`
+- Merged at: `2026-08-22T14:20:21Z`
+- Exact-head CI run: `32573374484`
+- CI result: `SUCCESS`
+- Required jobs: Python 3.10 CPU, Python 3.12 CPU, Wheel/CLI smoke — all `SUCCESS`
+- Scientific status remains separate: multi-radar confirmatory claim and external
+  publication remain `HOLD`; operational deployment remains out of scope.
+
 ## Adversarial findings
 
 | ID | Priority | Claim | Boundary | Current-tree result | Classification | Minimal action | Acceptance test | Implementation | Local tests | PR/CI |
@@ -72,11 +83,11 @@ confirmatory derivation or FSO computation.
   in `3423.83s` on the local Python 3.10 CPU environment.
 - [x] Every changed digest preimage and nested scientific generation is synchronized.
 - [x] Package exports and durable replay reconstruction are synchronized.
-- [ ] PR head equals the reported pushed commit.
-- [ ] CI failures are classified as code or external infrastructure/policy.
+- [x] PR head equals the reported pushed commit.
+- [x] Exact-head CI succeeded; no failure classification was required.
 - [x] Research, suppressed shadow, canary, LIVE, and external publication have separate decisions.
 - [x] External scientific evidence requirements remain visible.
-- [x] Merge remains HOLD unless explicitly authorized.
+- [x] Post-merge evidence is recorded without changing scientific HOLD gates.
 
 ## Local validation evidence
 
@@ -113,4 +124,4 @@ Repository CI wrapper in the local, non-locked environment:
 | Canary | NO-GO / out of scope | Project is not developed for deployment |
 | State-advancing LIVE | NO-GO / out of scope | Project is not developed for deployment |
 | External publication | HOLD | Independent cohort and scientific calibration required |
-| PR merge | HOLD | Review and exact-head CI required |
+| PR merge | MERGED / PASS | Exact PR head and required CI succeeded |
