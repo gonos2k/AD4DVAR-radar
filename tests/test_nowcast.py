@@ -16,6 +16,7 @@ from advar.diagnostics import (  # noqa: E402
     validate_physical_echo,
 )
 from advar.nowcast import (  # noqa: E402
+    CURRENT_RADAR_METRIC_DOMAIN,
     DataStatus,
     DynamicsSource,
     ForecastMetadata,
@@ -5024,7 +5025,8 @@ class NowcastTests(unittest.TestCase):
             "projected_crs_digest": radar_projected_crs_semantic_digest(
                 "EPSG:5179"
             ),
-            "cell_center_origin_xy_m": (500_000.0, 4_000_000.0),
+            "metric_domain_digest": CURRENT_RADAR_METRIC_DOMAIN.digest,
+            "cell_center_origin_xy_m": (1_000_000.0, 2_000_000.0),
             "grid_coordinate_dtype": RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             "cell_center_convention": (
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
@@ -5035,7 +5037,7 @@ class NowcastTests(unittest.TestCase):
             RadarSpatialGridIdentity(
                 **common,
                 **scientific,
-                contract="radar-spatial-grid-identity-v4",
+                contract="radar-spatial-grid-identity-v5",
             )
         with self.assertRaisesRegex(ValueError, "well-conditioned"):
             RadarGridTimeContract(
@@ -5047,11 +5049,14 @@ class NowcastTests(unittest.TestCase):
                 **common,
                 **{
                     "spatial_grid_contract": (
-                        "radar-spatial-grid-identity-v4"
+                        "radar-spatial-grid-identity-v5"
                     ),
                     "grid_shape_yx": scientific["shape_yx"],
                     "projected_crs_digest": scientific[
                         "projected_crs_digest"
+                    ],
+                    "metric_domain_digest": scientific[
+                        "metric_domain_digest"
                     ],
                     "cell_center_origin_xy_m": scientific[
                         "cell_center_origin_xy_m"
@@ -5078,12 +5083,13 @@ class NowcastTests(unittest.TestCase):
             projected_crs_digest=radar_projected_crs_semantic_digest(
                 "EPSG:5179"
             ),
-            cell_center_origin_xy_m=(500_000.0, 4_000_000.0),
+            metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
             ),
-            contract="radar-spatial-grid-identity-v4",
+            contract="radar-spatial-grid-identity-v5",
         )
 
         self.assertEqual(identity.minimum_axis_spacing_m, 1000.0)
@@ -5110,12 +5116,13 @@ class NowcastTests(unittest.TestCase):
             "projected_crs_digest": radar_projected_crs_semantic_digest(
                 "EPSG:5179"
             ),
-            "cell_center_origin_xy_m": (500_000.0, 4_000_000.0),
+            "metric_domain_digest": CURRENT_RADAR_METRIC_DOMAIN.digest,
+            "cell_center_origin_xy_m": (1_000_000.0, 2_000_000.0),
             "grid_coordinate_dtype": RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             "cell_center_convention": (
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
             ),
-            "contract": "radar-spatial-grid-identity-v4",
+            "contract": "radar-spatial-grid-identity-v5",
         }
         cases = (
             ((1.0e308, 1.0e308), (1.0e308, 1.0e308)),
@@ -5134,15 +5141,21 @@ class NowcastTests(unittest.TestCase):
                         **common,
                     )
 
-        large_but_representable = RadarSpatialGridIdentity(
-            dx_m=1.0e154,
-            dy_m=1.0e154,
-            pixel_to_projected_matrix_m=((1.0e154, 0.0), (0.0, -1.0e154)),
-            **common,
-        )
-        self.assertTrue(
-            math.isfinite(large_but_representable.spatial_metric_spacing_m)
-        )
+        for spacing in (1.0e-200, 1.0e154):
+            with self.subTest(spacing=spacing):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "scientific radar affine spacing|scientific spacing",
+                ):
+                    RadarSpatialGridIdentity(
+                        dx_m=spacing,
+                        dy_m=spacing,
+                        pixel_to_projected_matrix_m=(
+                            (spacing, 0.0),
+                            (0.0, -spacing),
+                        ),
+                        **common,
+                    )
 
     def test_current_grid_identity_uses_only_active_degenerate_axis(self) -> None:
         common = {
@@ -5155,12 +5168,13 @@ class NowcastTests(unittest.TestCase):
             "projected_crs_digest": radar_projected_crs_semantic_digest(
                 "EPSG:5179"
             ),
-            "cell_center_origin_xy_m": (500_000.0, 4_000_000.0),
+            "metric_domain_digest": CURRENT_RADAR_METRIC_DOMAIN.digest,
+            "cell_center_origin_xy_m": (1_000_000.0, 2_000_000.0),
             "grid_coordinate_dtype": RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             "cell_center_convention": (
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
             ),
-            "contract": "radar-spatial-grid-identity-v4",
+            "contract": "radar-spatial-grid-identity-v5",
         }
         row = RadarSpatialGridIdentity(
             dx_m=1000.0,
@@ -5186,6 +5200,54 @@ class NowcastTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "at least two grid cells"):
             _ = point.spatial_metric_spacing_m
 
+    def test_current_metric_domain_binds_grid_corners_and_identity(self) -> None:
+        domain = CURRENT_RADAR_METRIC_DOMAIN
+        self.assertEqual(domain.canonical_projection, "EPSG:5179")
+        self.assertLess(domain.maximum_linear_scale_error, 0.01)
+
+        valid = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="b" * 64,
+            spatial_grid_contract="radar-spatial-grid-identity-v5",
+            grid_shape_yx=(2, 2),
+            projected_crs_digest=radar_projected_crs_semantic_digest(
+                "EPSG:5179"
+            ),
+            metric_domain_digest=domain.digest,
+            cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
+            grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            cell_center_convention=(
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+        )
+        self.assertEqual(
+            valid.spatial_grid_identity.metric_domain_digest,
+            domain.digest,
+        )
+
+        with self.assertRaisesRegex(ValueError, "outside the metric domain"):
+            replace(valid, cell_center_origin_xy_m=(0.0, 0.0))
+        with self.assertRaisesRegex(ValueError, "outside the metric domain"):
+            replace(
+                valid,
+                cell_center_origin_xy_m=(
+                    domain.maximum_easting_m - 500.0,
+                    domain.maximum_northing_m - 500.0,
+                ),
+            )
+        with self.assertRaisesRegex(ValueError, "projected-grid identity"):
+            replace(valid, metric_domain_digest="0" * 64)
+
+        with self.assertRaisesRegex(ValueError, "unsupported radar metric-domain"):
+            replace(domain, maximum_linear_scale_error=0.01)
+
     def test_current_grid_rejects_non_projected_crs_and_wrong_shape(
         self,
     ) -> None:
@@ -5204,12 +5266,13 @@ class NowcastTests(unittest.TestCase):
             dy_m=1000.0,
             projection="EPSG:5179",
             grid_hash="f" * 64,
-            spatial_grid_contract="radar-spatial-grid-identity-v4",
+            spatial_grid_contract="radar-spatial-grid-identity-v5",
             grid_shape_yx=(2, 2),
             projected_crs_digest=radar_projected_crs_semantic_digest(
                 "EPSG:5179"
             ),
-            cell_center_origin_xy_m=(500_000.0, 4_000_000.0),
+            metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION

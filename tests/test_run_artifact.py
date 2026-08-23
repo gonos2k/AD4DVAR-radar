@@ -23,6 +23,7 @@ from advar import (  # noqa: E402
     AnalysisConfig,
     CalibrationMetric,
     CalibrationRegime,
+    CURRENT_RADAR_METRIC_DOMAIN,
     DeployedNeuralPriorPolicy,
     DynamicsSource,
     ForecastRunContract,
@@ -1858,12 +1859,13 @@ class ForecastRunArtifactTests(unittest.TestCase):
             projection="EPSG:5179",
             grid_hash="c" * 64,
             pixel_to_projected_matrix_m=((0.0, -750.0), (500.0, 0.0)),
-            spatial_grid_contract="radar-spatial-grid-identity-v4",
+            spatial_grid_contract="radar-spatial-grid-identity-v5",
             grid_shape_yx=tuple(self.frames().shape[-2:]),
             projected_crs_digest=radar_projected_crs_semantic_digest(
                 "EPSG:5179"
             ),
-            cell_center_origin_xy_m=(500_000.0, 4_000_000.0),
+            metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION

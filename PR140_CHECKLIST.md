@@ -9,16 +9,20 @@
 - Verified PR/head/tree: PR #139 `MERGED`; merge commit reachable from `origin/main`; exact-head CI run `32610382798` succeeded
 - Worktree state: branch `agent/pr140-metric-crs-affine-hardening`; user-owned untracked `.omx/` preserved
 - CI snapshot: PR #139 Python 3.10 CPU, Python 3.12 CPU, and Wheel/CLI smoke all `SUCCESS`
+- Final PR #140 head: `27b7f60a3f824e58a29e5ea2ec01d42ac6853b4c`
+- Merge commit/time: `cf114ebd8b7ee6fb9eb72d09672bbf0aad12f211` / `2026-08-23T10:19:21Z`
+- Exact-head CI: run `32629076703`, all required jobs `SUCCESS`
+- PR status: `MERGED / PASS`
 - Project boundary: reproducible offline scientific validation; operational deployment is out of scope
 
 ## Adversarial findings
 
 | ID | Priority | Claim | Boundary | Current-tree result | Classification | Minimal action | Acceptance test | Implementation | Local tests | PR/CI |
 |---|---|---|---|---|---|---|---|---|---|---|
-| R140-001 | P1-SCIENTIFIC | EPSG:3857 projected metres are accepted as physical ground-distance metres in current verification/FSO. | CRS semantics → radar range/source selection/detection limit/spatial age | REPRODUCED: `radar_projected_crs_semantic_digest("EPSG:3857")` returns a current identity. | repository-actionable | Restrict the current metric scientific CRS authority to EPSG:5179; retain historical CRS identities as audit-only. | EPSG:5179 current identity passes; EPSG:3857, EPSG:4326, and unknown labels fail current construction. | ✅ current CRS v3 permits EPSG:5179 only | ✅ targeted + full CPU PASS | ☐ |
-| R140-002 | P1-NUMERICAL/CONTRACT | Finite extreme affine entries can overflow derived determinant/SVD metrics to NaN/Inf and bypass comparison-based conditioning checks. | affine input → derived metrics → spatial identity/grid-time acceptance | REPRODUCED: the finite `1e308` cancellation matrix is accepted and both exposed displacement spacings are `NaN`. | repository-actionable | Normalize before affine metric calculations, require every derived metric finite, and reject unrepresentable physical scales. | Cancellation/overflow matrices fail; ordinary 500 m–10 km affine metrics remain unchanged; explicitly supported large finite diagonal behaves deterministically. | ✅ scaled affine metrics and finite-result gate | ✅ targeted + full CPU PASS | ☐ |
-| R140-003 | P2-SCIENTIFIC | A missing axis in 1×N/N×1 grids still contributes to minimum-singular-value spatial-age spacing. | grid shape → physical cell displacement → spatial metric age support | REPRODUCED: a 1×100 grid with 1000 m columns and an unused 100 m row vector reports 100 m spatial spacing. | repository-actionable | Derive active-axis spacing from shape; make 1×1 spatial metrics explicitly unsupported. | 1×N uses column spacing, N×1 uses row spacing, 2-D uses minimum singular spacing, and 1×1 rejects spatial metric use. | ✅ shape-aware spatial spacing and age algorithm v3 | ✅ targeted + full CPU PASS | ☐ |
-| R140-004 | P2-GOVERNANCE | PR #139 checklist still records pre-merge HOLD/pending evidence after merge. | post-merge scientific audit record | REPRODUCED from committed checklist and GitHub metadata | repository-actionable | Record exact PR head, merge commit/time, exact-head CI success, and merged status while retaining scientific HOLD gates. | Documentation matches GitHub metadata and does not claim confirmatory/publication/deployment GO. | ✅ PR #139 post-merge evidence synchronized | ✅ documentation review PASS | ☐ |
+| R140-001 | P1-SCIENTIFIC | EPSG:3857 projected metres are accepted as physical ground-distance metres in current verification/FSO. | CRS semantics → radar range/source selection/detection limit/spatial age | REPRODUCED: `radar_projected_crs_semantic_digest("EPSG:3857")` returns a current identity. | repository-actionable | Restrict the current metric scientific CRS authority to EPSG:5179; retain historical CRS identities as audit-only. | EPSG:5179 current identity passes; EPSG:3857, EPSG:4326, and unknown labels fail current construction. | ✅ current CRS v3 permits EPSG:5179 only | ✅ targeted + full CPU PASS | ✅ merged / exact-head CI PASS |
+| R140-002 | P1-NUMERICAL/CONTRACT | Finite extreme affine entries can overflow derived determinant/SVD metrics to NaN/Inf and bypass comparison-based conditioning checks. | affine input → derived metrics → spatial identity/grid-time acceptance | REPRODUCED: the finite `1e308` cancellation matrix is accepted and both exposed displacement spacings are `NaN`. | repository-actionable | Normalize before affine metric calculations, require every derived metric finite, and reject unrepresentable physical scales. | Cancellation/overflow matrices fail; ordinary 500 m–10 km affine metrics remain unchanged; explicitly supported large finite diagonal behaves deterministically. | ✅ scaled affine metrics and finite-result gate | ✅ targeted + full CPU PASS | ✅ merged / exact-head CI PASS |
+| R140-003 | P2-SCIENTIFIC | A missing axis in 1×N/N×1 grids still contributes to minimum-singular-value spatial-age spacing. | grid shape → physical cell displacement → spatial metric age support | REPRODUCED: a 1×100 grid with 1000 m columns and an unused 100 m row vector reports 100 m spatial spacing. | repository-actionable | Derive active-axis spacing from shape; make 1×1 spatial metrics explicitly unsupported. | 1×N uses column spacing, N×1 uses row spacing, 2-D uses minimum singular spacing, and 1×1 rejects spatial metric use. | ✅ shape-aware spatial spacing and age algorithm v3 | ✅ targeted + full CPU PASS | ✅ merged / exact-head CI PASS |
+| R140-004 | P2-GOVERNANCE | PR #139 checklist still records pre-merge HOLD/pending evidence after merge. | post-merge scientific audit record | REPRODUCED from committed checklist and GitHub metadata | repository-actionable | Record exact PR head, merge commit/time, exact-head CI success, and merged status while retaining scientific HOLD gates. | Documentation matches GitHub metadata and does not claim confirmatory/publication/deployment GO. | ✅ PR #139 post-merge evidence synchronized | ✅ documentation review PASS | ✅ merged / exact-head CI PASS |
 
 ## Friendly findings and strengths to preserve
 
@@ -44,11 +48,11 @@
 - [x] Changed scientific digest preimages and generations have synchronized producers and consumers.
 - [x] Historical audit identities remain stable.
 - [x] PR #139 post-merge evidence is synchronized.
-- [ ] PR #140 head equals the reported pushed commit.
-- [ ] Exact-head CI failures, if any, are classified as code or infrastructure/policy.
+- [x] PR #140 head equals `27b7f60a3f824e58a29e5ea2ec01d42ac6853b4c`.
+- [x] Exact-head CI run `32629076703` passed all required jobs.
 - [x] Offline research, confirmatory claims, publication, and deployment remain separate decisions.
 - [x] External scientific evidence items remain visible with owner and required action.
-- [x] Merge remains HOLD unless explicitly authorized.
+- [x] PR #140 is merged; scientific claim gates remain separately HOLD.
 
 ## Final decision
 
@@ -59,7 +63,7 @@
 | Multi-radar confirmatory claim | HOLD | Repository findings plus X140 independent evidence must close. |
 | External publication | HOLD | Independent cohort and projection sensitivity evidence are required. |
 | Operational deployment | NO-GO / OUT OF SCOPE | This project is optimized for scientific validation, not deployment authorization. |
-| PR #140 merge | HOLD | Independent review and exact-head CI required. |
+| PR #140 merge | MERGED / PASS | Exact head and required CI are recorded above. |
 
 ## Implemented scientific generation boundary
 

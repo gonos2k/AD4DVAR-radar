@@ -75,11 +75,15 @@ from advar.promotion import (  # noqa: E402
 )
 import advar.promotion as promotion_module  # noqa: E402
 from advar.nowcast import (  # noqa: E402
+    CURRENT_RADAR_METRIC_DOMAIN,
     ForecastRunContract,
     NowcastConfig,
+    RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION,
+    RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
     RadarGridTimeContract,
     nowcast,
     operational_runtime_profile_digest,
+    radar_projected_crs_semantic_digest,
 )
 from advar.calibration import (  # noqa: E402
     CalibrationMetric,
@@ -100,12 +104,14 @@ from advar.sensitivity import (  # noqa: E402
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V10_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V5_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V7_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V9_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST,
     OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST,
@@ -534,6 +540,93 @@ def _operator_approval(
 
 
 class EpisodeLedgerTests(unittest.TestCase):
+    def test_pr140_generations_load_as_audit_only(self) -> None:
+        plan_payload = {
+            "contract": "neural-prior-holdout-plan-v31",
+            "plan_id": "pr140-audit-plan",
+        }
+        plan_digest = json_digest(plan_payload)
+        stored_plan = plan_payload | {"plan_digest": plan_digest}
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            with sqlite3.connect(ledger.index_path) as connection:
+                connection.execute(
+                    "INSERT INTO neural_prior_holdout_plans "
+                    "(plan_digest, plan_id, plan_json, policy_digest, "
+                    "trust_store_digest, registered_at, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        plan_digest,
+                        "pr140-audit-plan",
+                        json.dumps(
+                            stored_plan,
+                            sort_keys=True,
+                            separators=(",", ":"),
+                        ),
+                        "1" * 64,
+                        "2" * 64,
+                        "2026-08-23T00:00:00Z",
+                        "2026-08-23T00:00:00Z",
+                    ),
+                )
+            loaded = ledger.load_neural_prior_holdout_plan(plan_digest)
+        self.assertIsInstance(
+            loaded,
+            promotion_module.LegacyNeuralPriorHoldoutPlanV31Audit,
+        )
+        self.assertFalse(hasattr(loaded, "cases"))
+
+        shard_digest = "3" * 64
+        tensor_records = tuple(
+            ledger_module.ScoringReplayTensorRecord(
+                case_id="case-a",
+                role=role,
+                archive_member="tensor",
+                dtype="float32",
+                shape=(1,),
+                tensor_digest="4" * 64,
+                archive_sha256=shard_digest,
+            )
+            for role in sorted(
+                ledger_module.SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+            )
+        )
+        legacy_manifest = (
+            ledger_module.LegacyScoringReplayBundleManifestAuditV21(
+                scoring_input_artifact_digest="5" * 64,
+                ordered_case_ids=("case-a",),
+                ordered_evaluation_digests=("6" * 64,),
+                semantic_case_digests=("7" * 64,),
+                dynamic_source_case_ids=(),
+                background_case_ids=(),
+                algorithm_source_manifest_digest="8" * 64,
+                runtime_compatibility_digest="9" * 64,
+                runtime_exact_digest="a" * 64,
+                scoring_backend_certification_policy_digest=None,
+                scoring_backend_certification_evidence_digest=None,
+                tensor_records=tensor_records,
+                tensor_archive_sha256="b" * 64,
+                evaluation_payload_sha256="c" * 64,
+                raw_provenance_payload_sha256="d" * 64,
+                verification_provenance_payload_sha256="e" * 64,
+                raw_ingestor_trust_store_digest="f" * 64,
+                tensor_shard_sha256s=(shard_digest,),
+            )
+        )
+        decoded = ledger_module._decode_scoring_replay_bundle_manifest(
+            json.dumps(
+                legacy_manifest.payload
+                | {"bundle_digest": legacy_manifest.bundle_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            expected_digest=legacy_manifest.bundle_digest,
+        )
+        self.assertIs(
+            type(decoded),
+            ledger_module.LegacyScoringReplayBundleManifestAuditV21,
+        )
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.snapshot = _computed_snapshot()
@@ -586,9 +679,31 @@ class EpisodeLedgerTests(unittest.TestCase):
 
     def test_holdout_plan_rechecks_clock_before_commit(self) -> None:
         issue = "2030-01-01T00:00:00Z"
+        metric_grid = RadarGridTimeContract(
+            valid_times=(
+                "2029-12-31T23:40:00Z",
+                "2029-12-31T23:50:00Z",
+                issue,
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="1" * 64,
+            spatial_grid_contract="radar-spatial-grid-identity-v5",
+            grid_shape_yx=(1, 2),
+            projected_crs_digest=radar_projected_crs_semantic_digest(
+                "EPSG:5179"
+            ),
+            metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
+            grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            cell_center_convention=(
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+        )
         input_plan = NeuralPriorInputPlan(
             valid_times=(issue,),
-            grid_contract_digest="1" * 64,
+            grid_contract_digest=metric_grid.digest,
             radar_product_digest="2" * 64,
             qc_pipeline_digest="3" * 64,
             background_cycle_rule_digest="4" * 64,
@@ -601,13 +716,10 @@ class EpisodeLedgerTests(unittest.TestCase):
         verification_source_key = Ed25519PrivateKey.from_private_bytes(
             b"\x2c" * 32
         )
-        observation_geometry = RadarObservationGeometryContract(
-            grid_contract_digest="1" * 64,
-            projected_crs_digest="0" * 64,
-            grid_x_m=torch.tensor([[0.0, 1000.0]]),
-            grid_y_m=torch.zeros((1, 2)),
-            grid_spacing_m=1000.0,
-            contract="radar-observation-geometry-v2",
+        observation_geometry = (
+            RadarObservationGeometryContract.from_grid_time_contract(
+                metric_grid
+            )
         )
         observation_source_registry = MosaicObservationSourceRegistry(
             radar_source_kind="single_site",
@@ -617,17 +729,20 @@ class EpisodeLedgerTests(unittest.TestCase):
                     calibration_epoch_digest="2" * 64,
                     quality_weight=1.0,
                     observation_std_dbz=2.0,
-                    projected_x_m=0.0,
-                    projected_y_m=0.0,
+                    projected_x_m=1_000_000.0,
+                    projected_y_m=2_000_000.0,
                     radar_altitude_m=100.0,
                     representative_scan_elevation_deg=1.0,
                     contract="observation-radar-source-v4",
                 ),
             ),
-            projected_crs_digest="0" * 64,
+            projected_crs_digest=(
+                observation_geometry.projected_crs_digest
+            ),
+            metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
             geometry_model="projected-horizontal-representative-tilt-v1",
             radar_altitude_role="provenance_only",
-            contract="mosaic-observation-source-registry-v5",
+            contract="mosaic-observation-source-registry-v6",
         )
         observation_error_plan = VerificationObservationErrorPlan(
             radar_source_kind="single_site",
@@ -638,20 +753,20 @@ class EpisodeLedgerTests(unittest.TestCase):
                 observation_source_registry.calibration_registry_digest
             ),
             range_elevation_validity_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V9_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST
             ),
             beam_blockage_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V9_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST
             ),
             attenuation_qc_digest="3" * 64,
             censoring_rule_digest="f" * 64,
             spatial_correlation_block_algorithm_digest="7" * 64,
             quality_weight_interpretation_digest="8" * 64,
             quality_weight_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V10_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST
             ),
             observation_std_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V10_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST
             ),
             observation_error_model_digest="b" * 64,
             source_assignment_algorithm_digest=(
@@ -660,10 +775,10 @@ class EpisodeLedgerTests(unittest.TestCase):
             minimum_detectable_echo_dbz=-10.0,
             observation_error_reference_std_dbz=2.0,
             derivation_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V10_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST
             ),
             mask_derivation_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V9_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST
             ),
             maximum_range_km=300.0,
             minimum_elevation_deg=-1.0,
@@ -697,7 +812,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             spatial_age_gate_algorithm_digest=(
                 OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V3_DIGEST
             ),
-            contract="verification-observation-error-plan-v11",
+            contract="verification-observation-error-plan-v12",
         )
         target_plan = PriorUncertaintyTargetPlan(
             plan_id="uncertainty-clock",
@@ -707,7 +822,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             mask_policy_digest="5" * 64,
             censor_policy_digest="f" * 64,
             floor_representation_contract_digest="a" * 64,
-            grid_contract_digest="1" * 64,
+            grid_contract_digest=metric_grid.digest,
             feature_exclusion_contract_digest="c" * 64,
             independence_evidence_digest="d" * 64,
             verification_observation_error_plan_digest=(
@@ -724,7 +839,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             mask_policy_digest="5" * 64,
             censor_policy_digest="f" * 64,
             floor_representation_contract_digest="a" * 64,
-            grid_contract_digest="1" * 64,
+            grid_contract_digest=metric_grid.digest,
             feature_exclusion_contract_digest="c" * 64,
             independence_evidence_digest="d" * 64,
             verification_observation_error_plan_digest=(
@@ -738,7 +853,7 @@ class EpisodeLedgerTests(unittest.TestCase):
         range_geometry = promotion_module.RangeGeometryContract(
             radar_site_digest="7" * 64,
             radar_site_location_digest="7" * 64,
-            grid_contract_digest="1" * 64,
+            grid_contract_digest=metric_grid.digest,
             radar_x_m=0.0,
             radar_y_m=0.0,
             range_regime_labels=("near_range",),
@@ -754,12 +869,12 @@ class EpisodeLedgerTests(unittest.TestCase):
                 tensor_digest(torch.ones((2, 2), dtype=torch.bool)),
             ),
             reference_active_range_regimes=("near_range",),
-            grid_contract_digest="1" * 64,
+            grid_contract_digest=metric_grid.digest,
             range_geometry_contract_digest=range_geometry.contract_digest,
         )
         issuance_domain_plan = promotion_module.OperationalIssuanceDomainPlan(
             case_id="case-clock",
-            grid_contract_digest="1" * 64,
+            grid_contract_digest=metric_grid.digest,
             radar_source_contract_digest="2" * 64,
             lead_minutes=(60,),
             publication_policy_digest="3" * 64,
