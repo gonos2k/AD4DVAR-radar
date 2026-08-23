@@ -128,7 +128,7 @@ class CliTests(unittest.TestCase):
             ),
             dx_m=1000.0,
             dy_m=1000.0,
-            projection="EPSG:3857",
+            projection="EPSG:5179",
             grid_hash="0" * 64,
         )
         profile_digest = operational_runtime_profile_digest(
@@ -203,7 +203,7 @@ class CliTests(unittest.TestCase):
             "--dy-m",
             "1000",
             "--projection",
-            "EPSG:3857",
+            "EPSG:5179",
             "--grid-hash",
             "0" * 64,
             "--maximum-motion-speed-mps",

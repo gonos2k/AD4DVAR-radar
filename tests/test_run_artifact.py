@@ -511,7 +511,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             ),
             dx_m=1_000.0,
             dy_m=1_000.0,
-            projection="EPSG:3857",
+            projection="EPSG:5179",
             grid_hash="d" * 64,
         )
         input_plan = promotion_module.NeuralPriorInputPlan(
@@ -1858,7 +1858,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             projection="EPSG:5179",
             grid_hash="c" * 64,
             pixel_to_projected_matrix_m=((0.0, -750.0), (500.0, 0.0)),
-            spatial_grid_contract="radar-spatial-grid-identity-v3",
+            spatial_grid_contract="radar-spatial-grid-identity-v4",
             grid_shape_yx=tuple(self.frames().shape[-2:]),
             projected_crs_digest=radar_projected_crs_semantic_digest(
                 "EPSG:5179"

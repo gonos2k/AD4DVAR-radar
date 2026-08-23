@@ -151,6 +151,7 @@ from .promotion import (
     LegacyNeuralPriorHoldoutPlanV27Audit,
     LegacyNeuralPriorHoldoutPlanV28Audit,
     LegacyNeuralPriorHoldoutPlanV29Audit,
+    LegacyNeuralPriorHoldoutPlanV30Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
@@ -3071,6 +3072,86 @@ class LegacyScoringReplayBundleManifestAuditV19(ScoringReplayBundleManifest):
 
 
 @dataclass(frozen=True)
+class LegacyScoringReplayBundleManifestAuditV20(ScoringReplayBundleManifest):
+    """Pre-metric-CRS-closure v20 replay retained for byte audit."""
+
+    replay_method: str = "builtin-semantic-scoring-recomputation-v20"
+    contract: str = "neural-prior-scoring-replay-bundle-v20"
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-scoring-replay-bundle-v20"
+            or self.replay_method
+            != "builtin-semantic-scoring-recomputation-v20"
+            or not self.ordered_case_ids
+            or len(set(self.ordered_case_ids)) != len(self.ordered_case_ids)
+            or len(self.ordered_case_ids)
+            != len(self.ordered_evaluation_digests)
+            or len(self.semantic_case_digests) != len(self.ordered_case_ids)
+            or self.verification_provenance_payload_sha256 is None
+            or self.raw_ingestor_trust_store_digest is None
+            or not self.tensor_shard_sha256s
+            or tuple(sorted(set(self.tensor_shard_sha256s)))
+            != self.tensor_shard_sha256s
+        ):
+            raise ValueError("legacy v20 semantic replay manifest is invalid")
+        for value in (
+            self.scoring_input_artifact_digest,
+            *self.ordered_evaluation_digests,
+            *self.semantic_case_digests,
+            self.algorithm_source_manifest_digest,
+            self.runtime_compatibility_digest,
+            self.runtime_exact_digest,
+            self.tensor_archive_sha256,
+            self.evaluation_payload_sha256,
+            self.raw_provenance_payload_sha256,
+            self.verification_provenance_payload_sha256,
+            self.raw_ingestor_trust_store_digest,
+            *self.tensor_shard_sha256s,
+        ):
+            if re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError("legacy v20 semantic replay digest is invalid")
+        expected = {
+            (case_id, role)
+            for case_id in self.ordered_case_ids
+            for role in (
+                SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                | (
+                    SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
+                    if case_id in self.dynamic_source_case_ids
+                    else frozenset()
+                )
+                | (
+                    SCORING_REPLAY_BACKGROUND_TENSOR_ROLES
+                    if case_id in self.background_case_ids
+                    else frozenset()
+                )
+            )
+        }
+        actual = {(item.case_id, item.role) for item in self.tensor_records}
+        referenced = tuple(
+            sorted(
+                {
+                    cast(str, item.archive_sha256)
+                    for item in self.tensor_records
+                }
+            )
+        )
+        if (
+            actual != expected
+            or len(actual) != len(self.tensor_records)
+            or referenced != self.tensor_shard_sha256s
+            or any(
+                item.archive_sha256 is None
+                or item.archive_member != "tensor"
+                for item in self.tensor_records
+            )
+        ):
+            raise ValueError("legacy v20 semantic replay tensor set is incomplete")
+        object.__setattr__(self, "bundle_digest", _json_digest(self.payload))
+
+
+@dataclass(frozen=True)
 class LoadedScoringReplayBundle:
     manifest: (
         ScoringReplayBundleManifest
@@ -3092,6 +3173,7 @@ class LoadedScoringReplayBundle:
         | LegacyScoringReplayBundleManifestAuditV17
         | LegacyScoringReplayBundleManifestAuditV18
         | LegacyScoringReplayBundleManifestAuditV19
+        | LegacyScoringReplayBundleManifestAuditV20
     )
     evaluations: tuple[PriorHoldoutEvaluation, ...]
     tensors: Mapping[tuple[str, str], Tensor]
@@ -3440,7 +3522,7 @@ def _current_verification_provenance_payload(
 
     verification = case.verification
     if (
-        verification.contract != "radar-verification-bundle-v15"
+        verification.contract != "radar-verification-bundle-v16"
         or type(verification.observation_error_derivation)
         is not ObservationErrorDerivationArtifact
     ):
@@ -3451,7 +3533,7 @@ def _current_verification_provenance_payload(
     )
     raw_inputs = derivation.raw_inputs
     if (
-        raw_inputs.contract != "verification-observation-derivation-inputs-v9"
+        raw_inputs.contract != "verification-observation-derivation-inputs-v10"
         or type(raw_inputs.mask_derivation)
         is not VerificationObservationMaskDerivationArtifact
         or type(raw_inputs.source_identity)
@@ -6448,6 +6530,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanV27Audit
         | LegacyNeuralPriorHoldoutPlanV28Audit
         | LegacyNeuralPriorHoldoutPlanV29Audit
+        | LegacyNeuralPriorHoldoutPlanV30Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -6636,6 +6719,13 @@ class EpisodeLedger:
             )
         if value.get("contract") == "neural-prior-holdout-plan-v29":
             return LegacyNeuralPriorHoldoutPlanV29Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v30":
+            return LegacyNeuralPriorHoldoutPlanV30Audit(
                 plan_digest=plan_digest,
                 payload_json=json.dumps(
                     value, sort_keys=True, separators=(",", ":")
@@ -11581,6 +11671,7 @@ class EpisodeLedger:
             "neural-prior-scoring-replay-bundle-v17",
             "neural-prior-scoring-replay-bundle-v18",
             "neural-prior-scoring-replay-bundle-v19",
+            "neural-prior-scoring-replay-bundle-v20",
             SEMANTIC_SCORING_REPLAY_CONTRACT,
         }
         expected_artifact_members = {"manifest.json", "evaluations.json"}
@@ -11593,6 +11684,7 @@ class EpisodeLedger:
             "neural-prior-scoring-replay-bundle-v17",
             "neural-prior-scoring-replay-bundle-v18",
             "neural-prior-scoring-replay-bundle-v19",
+            "neural-prior-scoring-replay-bundle-v20",
             SEMANTIC_SCORING_REPLAY_CONTRACT,
         }
         if sharded_bundle:
@@ -11622,6 +11714,7 @@ class EpisodeLedger:
             "neural-prior-scoring-replay-bundle-v17",
             "neural-prior-scoring-replay-bundle-v18",
             "neural-prior-scoring-replay-bundle-v19",
+            "neural-prior-scoring-replay-bundle-v20",
             SEMANTIC_SCORING_REPLAY_CONTRACT,
         }:
             expected_artifact_members.add("verification_provenance.json")
@@ -11658,6 +11751,7 @@ class EpisodeLedger:
             LegacyScoringReplayBundleManifestAuditV17,
             LegacyScoringReplayBundleManifestAuditV18,
             LegacyScoringReplayBundleManifestAuditV19,
+            LegacyScoringReplayBundleManifestAuditV20,
         }
         has_verification_provenance = manifest_type in {
             ScoringReplayBundleManifest,
@@ -11667,6 +11761,7 @@ class EpisodeLedger:
             LegacyScoringReplayBundleManifestAuditV17,
             LegacyScoringReplayBundleManifestAuditV18,
             LegacyScoringReplayBundleManifestAuditV19,
+            LegacyScoringReplayBundleManifestAuditV20,
         }
         raw_provenance_checksum_mismatch = False
         if has_raw_provenance:
@@ -11699,6 +11794,7 @@ class EpisodeLedger:
             LegacyScoringReplayBundleManifestAuditV17,
             LegacyScoringReplayBundleManifestAuditV18,
             LegacyScoringReplayBundleManifestAuditV19,
+            LegacyScoringReplayBundleManifestAuditV20,
         }:
             current_manifest = cast(ScoringReplayBundleManifest, manifest)
             tensors: Mapping[tuple[str, str], Tensor] = (
@@ -19739,6 +19835,7 @@ def _decode_scoring_replay_bundle_manifest(
     | LegacyScoringReplayBundleManifestAuditV17
     | LegacyScoringReplayBundleManifestAuditV18
     | LegacyScoringReplayBundleManifestAuditV19
+    | LegacyScoringReplayBundleManifestAuditV20
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -19796,6 +19893,7 @@ def _decode_scoring_replay_bundle_manifest(
             | LegacyScoringReplayBundleManifestAuditV17
             | LegacyScoringReplayBundleManifestAuditV18
             | LegacyScoringReplayBundleManifestAuditV19
+            | LegacyScoringReplayBundleManifestAuditV20
         ) = LegacyScoringReplayBundleManifestAuditV1(
             **cast(Any, values)
         )
@@ -19875,6 +19973,10 @@ def _decode_scoring_replay_bundle_manifest(
             )
         elif values.get("contract") == "neural-prior-scoring-replay-bundle-v19":
             manifest = LegacyScoringReplayBundleManifestAuditV19(
+                **cast(Any, values)
+            )
+        elif values.get("contract") == "neural-prior-scoring-replay-bundle-v20":
+            manifest = LegacyScoringReplayBundleManifestAuditV20(
                 **cast(Any, values)
             )
         else:

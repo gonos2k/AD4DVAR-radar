@@ -91,7 +91,7 @@ class OperationalCalibrationManifestTests(unittest.TestCase):
             ),
             dx_m=1000.0,
             dy_m=1000.0,
-            projection="EPSG:3857",
+            projection="EPSG:5179",
             grid_hash="0" * 64,
         )
 

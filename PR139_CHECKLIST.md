@@ -11,16 +11,25 @@
 - CI snapshot: PR #138 Python 3.10 CPU, Python 3.12 CPU, and Wheel/CLI smoke all `SUCCESS`
 - Project boundary: reproducible offline scientific validation; operational deployment is out of scope
 
+## Post-merge evidence
+
+- PR head: `ad11cd819581cd6425edbf4faa1bcdefb6c4847b`
+- Merge commit: `74f198361e666e8ac54c68d5d8227359dc2443ef`
+- Merged at: `2026-08-23T06:53:25Z`
+- Exact-head CI run: `32610382798`
+- Required jobs: Python 3.10 CPU `SUCCESS`; Python 3.12 CPU `SUCCESS`; Wheel/CLI smoke `SUCCESS`
+- PR status: `MERGED / PASS`
+
 ## Adversarial findings
 
 | ID | Priority | Claim | Boundary | Current-tree result | Classification | Minimal action | Acceptance test | Implementation | Local tests | PR/CI |
 |---|---|---|---|---|---|---|---|---|---|---|
-| R139-001 | P1-SCIENTIFIC | Spatial-age gating uses the minimum affine column norm even when shear makes the minimum physical cell displacement smaller. | projected-grid affine → geometry spacing → spatial FSO eligibility | REPRODUCED: reviewer shear has 1000 m minimum axis norm but 447.2136 m minimum singular displacement; the plan uses the former. | repository-actionable | Centralize affine metrics and define `fraction_cells` by the L2 index norm, using the minimum singular value for supported shear. | Rotated/anisotropic orthogonal grids retain their result; supported shears use the contracted minimum displacement; equal axis norms with different shear produce different gates. | ✅ minimum-singular-value spacing and spatial-age algorithm v2 | ✅ targeted + full CPU PASS | pending |
-| R139-002 | P1-CONTRACT | Direct `RadarSpatialGridIdentity` construction bypasses the condition-number and normalized-determinant policy enforced by `RadarGridTimeContract`. | spatial identity constructor → geometry/evidence production | REPRODUCED: one nearly parallel affine is accepted by direct identity construction and rejected by the grid/time constructor as ill-conditioned. | repository-actionable | Use one affine validation/measurement function in both constructors and bind its thresholds to the current algorithm identity. | An ill-conditioned affine is rejected identically by both constructors; valid affine metrics are identical. | ✅ shared strict affine validator and metrics | ✅ targeted + full CPU PASS | pending |
-| R139-003 | P1-PROVENANCE | `grid_shape_yx` is not bound to forecast radar tensor dimensions when the run is created or reloaded. | forecast tensors → grid-time contract → serialized run identity | REPRODUCED: a 4×4 forecast frame with a valid 2×2 current projected-grid identity is accepted by `ForecastRunContract.from_inputs()`. | repository-actionable | Add exact spatial-shape validation to current grid contracts and invoke it on creation and durable integrity validation. | H+1/W+1/swapped/degenerate/tampered shapes fail before nowcast; correct shapes retain byte-identical output. | ✅ creation/load shape binding | ✅ targeted + full CPU PASS | pending |
-| R139-004 | P2-PROVENANCE | Any trimmed string, including geographic or invalid CRS labels, is accepted as a projected metre CRS authority. | projection string → CRS digest → grid/registry/geometry identity | REPRODUCED: `EPSG:4326` and `not-a-crs` both receive valid-looking projected CRS digests. | repository-actionable | Add a small explicit projected-metre CRS registry and canonical semantic payload; reject unsupported/geographic labels. | EPSG:5179 passes; EPSG:4326, unknown strings, non-metre/axis-order mismatches fail. | ✅ current v3 semantic projected-CRS allowlist | ✅ targeted + full CPU PASS | pending |
-| R139-005 | P2-NUMERICAL | Float64 geometry is cast to any reflectivity floating dtype, allowing half/bfloat16 spatial selection and threshold calculations. | product-derived geometry → source evidence dtype → selection/detection/error | REPRODUCED: product-owned geometry emits float16 and bfloat16 range fields when requested, and current evidence validation accepts every floating dtype. | repository-actionable | Restrict current scientific source evidence to float32/float64 and retain geometry/source-score calculations in an explicitly contracted dtype. | float16/bfloat16 fail; float32/float64 preserve deterministic selection near range boundaries. | ✅ current evidence restricted to float32/float64 | ✅ targeted + full CPU PASS | pending |
-| R139-006 | P2-GOVERNANCE | PR #138 checklist still records pre-merge HOLD and pending exact-head evidence after merge. | post-merge scientific audit record | REPRODUCED | repository-actionable | Record exact PR head, merge commit/time, CI run/result, and merged status while retaining scientific HOLD gates. | Documentation matches GitHub metadata without claiming confirmatory/publication GO. | ✅ exact post-merge record synchronized | ✅ documentation review PASS | pending |
+| R139-001 | P1-SCIENTIFIC | Spatial-age gating uses the minimum affine column norm even when shear makes the minimum physical cell displacement smaller. | projected-grid affine → geometry spacing → spatial FSO eligibility | REPRODUCED: reviewer shear has 1000 m minimum axis norm but 447.2136 m minimum singular displacement; the plan uses the former. | repository-actionable | Centralize affine metrics and define `fraction_cells` by the L2 index norm, using the minimum singular value for supported shear. | Rotated/anisotropic orthogonal grids retain their result; supported shears use the contracted minimum displacement; equal axis norms with different shear produce different gates. | ✅ minimum-singular-value spacing and spatial-age algorithm v2 | ✅ targeted + full CPU PASS | ✅ exact-head CI PASS |
+| R139-002 | P1-CONTRACT | Direct `RadarSpatialGridIdentity` construction bypasses the condition-number and normalized-determinant policy enforced by `RadarGridTimeContract`. | spatial identity constructor → geometry/evidence production | REPRODUCED: one nearly parallel affine is accepted by direct identity construction and rejected by the grid/time constructor as ill-conditioned. | repository-actionable | Use one affine validation/measurement function in both constructors and bind its thresholds to the current algorithm identity. | An ill-conditioned affine is rejected identically by both constructors; valid affine metrics are identical. | ✅ shared strict affine validator and metrics | ✅ targeted + full CPU PASS | ✅ exact-head CI PASS |
+| R139-003 | P1-PROVENANCE | `grid_shape_yx` is not bound to forecast radar tensor dimensions when the run is created or reloaded. | forecast tensors → grid-time contract → serialized run identity | REPRODUCED: a 4×4 forecast frame with a valid 2×2 current projected-grid identity is accepted by `ForecastRunContract.from_inputs()`. | repository-actionable | Add exact spatial-shape validation to current grid contracts and invoke it on creation and durable integrity validation. | H+1/W+1/swapped/degenerate/tampered shapes fail before nowcast; correct shapes retain byte-identical output. | ✅ creation/load shape binding | ✅ targeted + full CPU PASS | ✅ exact-head CI PASS |
+| R139-004 | P2-PROVENANCE | Any trimmed string, including geographic or invalid CRS labels, is accepted as a projected metre CRS authority. | projection string → CRS digest → grid/registry/geometry identity | REPRODUCED: `EPSG:4326` and `not-a-crs` both receive valid-looking projected CRS digests. | repository-actionable | Add a small explicit projected-metre CRS registry and canonical semantic payload; reject unsupported/geographic labels. | EPSG:5179 passes; EPSG:4326, unknown strings, non-metre/axis-order mismatches fail. | ✅ current v3 semantic projected-CRS allowlist | ✅ targeted + full CPU PASS | ✅ exact-head CI PASS |
+| R139-005 | P2-NUMERICAL | Float64 geometry is cast to any reflectivity floating dtype, allowing half/bfloat16 spatial selection and threshold calculations. | product-derived geometry → source evidence dtype → selection/detection/error | REPRODUCED: product-owned geometry emits float16 and bfloat16 range fields when requested, and current evidence validation accepts every floating dtype. | repository-actionable | Restrict current scientific source evidence to float32/float64 and retain geometry/source-score calculations in an explicitly contracted dtype. | float16/bfloat16 fail; float32/float64 preserve deterministic selection near range boundaries. | ✅ current evidence restricted to float32/float64 | ✅ targeted + full CPU PASS | ✅ exact-head CI PASS |
+| R139-006 | P2-GOVERNANCE | PR #138 checklist still records pre-merge HOLD and pending exact-head evidence after merge. | post-merge scientific audit record | REPRODUCED | repository-actionable | Record exact PR head, merge commit/time, CI run/result, and merged status while retaining scientific HOLD gates. | Documentation matches GitHub metadata without claiming confirmatory/publication GO. | ✅ exact post-merge record synchronized | ✅ documentation review PASS | ✅ exact-head CI PASS |
 
 ## Friendly findings and strengths to preserve
 
@@ -47,11 +56,11 @@
 - [x] Every changed digest preimage and generation has synchronized producers and consumers.
 - [x] Historical audit identities remain stable.
 - [x] PR #138 post-merge evidence is synchronized.
-- [ ] PR #139 head equals the reported pushed commit.
-- [ ] Exact-head CI failures, if any, are classified as code or infrastructure/policy.
+- [x] PR #139 head equals the reported pushed commit.
+- [x] Exact-head CI failures, if any, are classified as code or infrastructure/policy.
 - [x] Offline research, confirmatory claims, publication, and deployment remain separate decisions.
 - [x] External scientific evidence items remain visible with owner and required action.
-- [x] Merge remains HOLD unless explicitly authorized.
+- [x] PR #139 merge status is recorded separately from scientific HOLD gates.
 
 ## Final decision
 
@@ -63,7 +72,7 @@
 | Multi-radar confirmatory claim | HOLD | Repository findings and X139 independent evidence must close. |
 | External publication | HOLD | Independent cohort and empirical geometry evidence are required. |
 | Operational deployment | NO-GO / OUT OF SCOPE | This project is optimized for scientific validation, not deployment authorization. |
-| PR #139 merge | HOLD | Independent review and exact-head CI required. |
+| PR #139 merge | MERGED / PASS | Exact head `ad11cd8…`; merge `74f1983…`; CI `32610382798` succeeded. |
 
 ## Implemented scientific generation boundary
 
