@@ -5035,7 +5035,7 @@ class NowcastTests(unittest.TestCase):
             RadarSpatialGridIdentity(
                 **common,
                 **scientific,
-                contract="radar-spatial-grid-identity-v3",
+                contract="radar-spatial-grid-identity-v4",
             )
         with self.assertRaisesRegex(ValueError, "well-conditioned"):
             RadarGridTimeContract(
@@ -5047,7 +5047,7 @@ class NowcastTests(unittest.TestCase):
                 **common,
                 **{
                     "spatial_grid_contract": (
-                        "radar-spatial-grid-identity-v3"
+                        "radar-spatial-grid-identity-v4"
                     ),
                     "grid_shape_yx": scientific["shape_yx"],
                     "projected_crs_digest": scientific[
@@ -5083,7 +5083,7 @@ class NowcastTests(unittest.TestCase):
             cell_center_convention=(
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
             ),
-            contract="radar-spatial-grid-identity-v3",
+            contract="radar-spatial-grid-identity-v4",
         )
 
         self.assertEqual(identity.minimum_axis_spacing_m, 1000.0)
@@ -5095,11 +5095,101 @@ class NowcastTests(unittest.TestCase):
             identity.linf_cell_displacement_spacing_m,
             600.0,
         )
+        self.assertAlmostEqual(
+            identity.spatial_metric_spacing_m,
+            447.2135954999579,
+        )
+
+    def test_current_grid_identity_rejects_nonfinite_derived_affine_metrics(
+        self,
+    ) -> None:
+        common = {
+            "projection": "EPSG:5179",
+            "grid_hash": "f" * 64,
+            "shape_yx": (2, 2),
+            "projected_crs_digest": radar_projected_crs_semantic_digest(
+                "EPSG:5179"
+            ),
+            "cell_center_origin_xy_m": (500_000.0, 4_000_000.0),
+            "grid_coordinate_dtype": RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            "cell_center_convention": (
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+            "contract": "radar-spatial-grid-identity-v4",
+        }
+        cases = (
+            ((1.0e308, 1.0e308), (1.0e308, 1.0e308)),
+            ((1.0e308, 0.0), (0.0, 1.0e308)),
+        )
+        for matrix in cases:
+            with self.subTest(matrix=matrix):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "invertible|derived metrics must be finite",
+                ):
+                    RadarSpatialGridIdentity(
+                        dx_m=1.0e308,
+                        dy_m=1.0e308,
+                        pixel_to_projected_matrix_m=matrix,
+                        **common,
+                    )
+
+        large_but_representable = RadarSpatialGridIdentity(
+            dx_m=1.0e154,
+            dy_m=1.0e154,
+            pixel_to_projected_matrix_m=((1.0e154, 0.0), (0.0, -1.0e154)),
+            **common,
+        )
+        self.assertTrue(
+            math.isfinite(large_but_representable.spatial_metric_spacing_m)
+        )
+
+    def test_current_grid_identity_uses_only_active_degenerate_axis(self) -> None:
+        common = {
+            "projection": "EPSG:5179",
+            "grid_hash": "a" * 64,
+            "pixel_to_projected_matrix_m": (
+                (1000.0, 0.0),
+                (0.0, -100.0),
+            ),
+            "projected_crs_digest": radar_projected_crs_semantic_digest(
+                "EPSG:5179"
+            ),
+            "cell_center_origin_xy_m": (500_000.0, 4_000_000.0),
+            "grid_coordinate_dtype": RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            "cell_center_convention": (
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+            "contract": "radar-spatial-grid-identity-v4",
+        }
+        row = RadarSpatialGridIdentity(
+            dx_m=1000.0,
+            dy_m=100.0,
+            shape_yx=(1, 100),
+            **common,
+        )
+        column = RadarSpatialGridIdentity(
+            dx_m=1000.0,
+            dy_m=100.0,
+            shape_yx=(100, 1),
+            **common,
+        )
+        point = RadarSpatialGridIdentity(
+            dx_m=1000.0,
+            dy_m=100.0,
+            shape_yx=(1, 1),
+            **common,
+        )
+
+        self.assertEqual(row.spatial_metric_spacing_m, 1000.0)
+        self.assertEqual(column.spatial_metric_spacing_m, 100.0)
+        with self.assertRaisesRegex(ValueError, "at least two grid cells"):
+            _ = point.spatial_metric_spacing_m
 
     def test_current_grid_rejects_non_projected_crs_and_wrong_shape(
         self,
     ) -> None:
-        for projection in ("EPSG:4326", "not-a-crs"):
+        for projection in ("EPSG:3857", "EPSG:4326", "not-a-crs"):
             with self.subTest(projection=projection):
                 with self.assertRaisesRegex(ValueError, "projected-metre"):
                     radar_projected_crs_semantic_digest(projection)
@@ -5114,7 +5204,7 @@ class NowcastTests(unittest.TestCase):
             dy_m=1000.0,
             projection="EPSG:5179",
             grid_hash="f" * 64,
-            spatial_grid_contract="radar-spatial-grid-identity-v3",
+            spatial_grid_contract="radar-spatial-grid-identity-v4",
             grid_shape_yx=(2, 2),
             projected_crs_digest=radar_projected_crs_semantic_digest(
                 "EPSG:5179"
