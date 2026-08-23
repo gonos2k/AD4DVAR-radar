@@ -2159,9 +2159,11 @@ def _grid_time_contract(
         "grid_coordinate_dtype",
         "cell_center_convention",
     }
+    metric_domain_expected = scientific_expected | {"metric_domain_digest"}
     if frozenset(value) not in {
         frozenset(legacy_expected),
         frozenset(scientific_expected),
+        frozenset(metric_domain_expected),
     }:
         raise ValueError("grid_time_contract_json has invalid fields")
     background_times = value["background_valid_times"]
@@ -2205,6 +2207,7 @@ def _grid_time_contract(
             ),
             grid_coordinate_dtype=value.get("grid_coordinate_dtype"),
             cell_center_convention=value.get("cell_center_convention"),
+            metric_domain_digest=value.get("metric_domain_digest"),
         )
     except (TypeError, ValueError) as error:
         raise ValueError("invalid grid_time_contract_json") from error

@@ -48,6 +48,14 @@ RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION = (
 )
 RADAR_GRID_AFFINE_RELATIVE_TOLERANCE = 1.0e-9
 RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M = 1.0e-9
+RADAR_SCIENTIFIC_MINIMUM_AXIS_SPACING_M = 1.0
+RADAR_SCIENTIFIC_MAXIMUM_AXIS_SPACING_M = 100_000.0
+
+_EPSG_5179_MINIMUM_EASTING_M = 531_371.84
+_EPSG_5179_MAXIMUM_EASTING_M = 1_663_741.90
+_EPSG_5179_MINIMUM_NORTHING_M = 957_856.66
+_EPSG_5179_MAXIMUM_NORTHING_M = 2_274_021.31
+_EPSG_5179_MAXIMUM_LINEAR_SCALE_ERROR = 0.006
 
 _LEGACY_RADAR_PROJECTED_CRS_V2: dict[
     str,
@@ -94,6 +102,7 @@ def _validate_and_measure_radar_grid_affine(
     dx_m: float,
     dy_m: float,
     require_scientific_conditioning: bool,
+    require_representable_scientific_spacing: bool = False,
 ) -> _RadarGridAffineMetrics:
     """Validate one affine and return the shared physical grid metrics."""
 
@@ -204,6 +213,17 @@ def _validate_and_measure_radar_grid_affine(
     ):
         raise ValueError(
             "pixel_to_projected_matrix_m must be well-conditioned"
+        )
+    if require_representable_scientific_spacing and (
+        determinant == 0.0
+        or column_spacing < RADAR_SCIENTIFIC_MINIMUM_AXIS_SPACING_M
+        or row_spacing < RADAR_SCIENTIFIC_MINIMUM_AXIS_SPACING_M
+        or column_spacing > RADAR_SCIENTIFIC_MAXIMUM_AXIS_SPACING_M
+        or row_spacing > RADAR_SCIENTIFIC_MAXIMUM_AXIS_SPACING_M
+    ):
+        raise ValueError(
+            "scientific radar affine spacing or cell area is not "
+            "representable"
         )
     return _RadarGridAffineMetrics(
         matrix=canonical,
@@ -611,8 +631,8 @@ def _radar_projected_crs_semantic_digest_v2(projection: str) -> str:
     )
 
 
-def radar_projected_crs_semantic_digest(projection: str) -> str:
-    """Return the current ground-metric projected CRS identity."""
+def _radar_projected_crs_semantic_digest_v3(projection: str) -> str:
+    """Return the historical bounded-ground-metre claim retained for audit."""
 
     authority, code, unit, x_axis, y_axis, datum = (
         _radar_projected_crs_semantics(
@@ -637,6 +657,171 @@ def radar_projected_crs_semantic_digest(projection: str) -> str:
 
 
 @dataclass(frozen=True)
+class RadarMetricDomainContract:
+    """Registered coordinate envelope and scale-error budget for radar metrics."""
+
+    canonical_projection: str = "EPSG:5179"
+    projected_crs_base_digest: str = field(
+        default_factory=lambda: _radar_projected_crs_semantic_digest_v2(
+            "EPSG:5179"
+        )
+    )
+    allowed_domain_polygon_digest: str = field(
+        default_factory=lambda: json_digest(
+            {
+                "contract": "epsg5179-area-of-use-projected-bbox-v1",
+                "minimum_easting_m": _EPSG_5179_MINIMUM_EASTING_M,
+                "maximum_easting_m": _EPSG_5179_MAXIMUM_EASTING_M,
+                "minimum_northing_m": _EPSG_5179_MINIMUM_NORTHING_M,
+                "maximum_northing_m": _EPSG_5179_MAXIMUM_NORTHING_M,
+            }
+        )
+    )
+    minimum_easting_m: float = _EPSG_5179_MINIMUM_EASTING_M
+    maximum_easting_m: float = _EPSG_5179_MAXIMUM_EASTING_M
+    minimum_northing_m: float = _EPSG_5179_MINIMUM_NORTHING_M
+    maximum_northing_m: float = _EPSG_5179_MAXIMUM_NORTHING_M
+    maximum_linear_scale_error: float = (
+        _EPSG_5179_MAXIMUM_LINEAR_SCALE_ERROR
+    )
+    scale_error_algorithm_digest: str = field(
+        default_factory=lambda: json_digest(
+            {
+                "contract": "epsg5179-proj-factors-bbox-envelope-v1",
+                "factor": "maximum-absolute-meridional-or-parallel-scale-error",
+                "registered_upper_bound": (
+                    _EPSG_5179_MAXIMUM_LINEAR_SCALE_ERROR
+                ),
+                "sampling_scope": "epsg-area-of-use-bbox-v1",
+                "independent_geodetic_revalidation_required": True,
+            }
+        )
+    )
+    contract: str = "radar-metric-domain-v1"
+
+    def __post_init__(self) -> None:
+        expected_base_digest = _radar_projected_crs_semantic_digest_v2(
+            "EPSG:5179"
+        )
+        expected_polygon_digest = json_digest(
+            {
+                "contract": "epsg5179-area-of-use-projected-bbox-v1",
+                "minimum_easting_m": _EPSG_5179_MINIMUM_EASTING_M,
+                "maximum_easting_m": _EPSG_5179_MAXIMUM_EASTING_M,
+                "minimum_northing_m": _EPSG_5179_MINIMUM_NORTHING_M,
+                "maximum_northing_m": _EPSG_5179_MAXIMUM_NORTHING_M,
+            }
+        )
+        expected_scale_digest = json_digest(
+            {
+                "contract": "epsg5179-proj-factors-bbox-envelope-v1",
+                "factor": "maximum-absolute-meridional-or-parallel-scale-error",
+                "registered_upper_bound": (
+                    _EPSG_5179_MAXIMUM_LINEAR_SCALE_ERROR
+                ),
+                "sampling_scope": "epsg-area-of-use-bbox-v1",
+                "independent_geodetic_revalidation_required": True,
+            }
+        )
+        if (
+            self.contract != "radar-metric-domain-v1"
+            or self.canonical_projection != "EPSG:5179"
+            or self.projected_crs_base_digest != expected_base_digest
+            or self.allowed_domain_polygon_digest != expected_polygon_digest
+            or self.minimum_easting_m != _EPSG_5179_MINIMUM_EASTING_M
+            or self.maximum_easting_m != _EPSG_5179_MAXIMUM_EASTING_M
+            or self.minimum_northing_m != _EPSG_5179_MINIMUM_NORTHING_M
+            or self.maximum_northing_m != _EPSG_5179_MAXIMUM_NORTHING_M
+            or self.maximum_linear_scale_error
+            != _EPSG_5179_MAXIMUM_LINEAR_SCALE_ERROR
+            or self.scale_error_algorithm_digest != expected_scale_digest
+        ):
+            raise ValueError("unsupported radar metric-domain contract")
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "contract": self.contract,
+            "canonical_projection": self.canonical_projection,
+            "projected_crs_base_digest": self.projected_crs_base_digest,
+            "allowed_domain_polygon_digest": (
+                self.allowed_domain_polygon_digest
+            ),
+            "minimum_easting_m": self.minimum_easting_m,
+            "maximum_easting_m": self.maximum_easting_m,
+            "minimum_northing_m": self.minimum_northing_m,
+            "maximum_northing_m": self.maximum_northing_m,
+            "maximum_linear_scale_error": self.maximum_linear_scale_error,
+            "scale_error_algorithm_digest": self.scale_error_algorithm_digest,
+            "coordinate_membership": "all-cell-centers-and-radar-sites-v1",
+            "scale_error_status": "registered-envelope-requires-independent-check-v1",
+        }
+
+    @property
+    def digest(self) -> str:
+        return json_digest(self.payload)
+
+    def validate_projected_point(self, x_m: float, y_m: float) -> None:
+        if (
+            not math.isfinite(x_m)
+            or not math.isfinite(y_m)
+            or not self.minimum_easting_m <= x_m <= self.maximum_easting_m
+            or not self.minimum_northing_m <= y_m <= self.maximum_northing_m
+        ):
+            raise ValueError("projected radar coordinate is outside the metric domain")
+
+    def validate_grid_cell_centers(
+        self,
+        *,
+        shape_yx: tuple[int, int],
+        origin_xy_m: tuple[float, float],
+        matrix_m: tuple[tuple[float, float], tuple[float, float]],
+    ) -> None:
+        rows, columns = shape_yx
+        (xx, xr), (yx, yr) = matrix_m
+        origin_x, origin_y = origin_xy_m
+        for row, column in (
+            (0, 0),
+            (0, columns - 1),
+            (rows - 1, 0),
+            (rows - 1, columns - 1),
+        ):
+            self.validate_projected_point(
+                origin_x + xx * column + xr * row,
+                origin_y + yx * column + yr * row,
+            )
+
+
+CURRENT_RADAR_METRIC_DOMAIN = RadarMetricDomainContract()
+
+
+def radar_projected_crs_semantic_digest(projection: str) -> str:
+    """Return the current bounded ground-metric projected CRS identity."""
+
+    authority, code, unit, x_axis, y_axis, datum = (
+        _radar_projected_crs_semantics(
+            projection,
+            registry=_CURRENT_METRIC_RADAR_PROJECTED_CRS_V3,
+        )
+    )
+    return json_digest(
+        {
+            "contract": "radar-projected-crs-identity-v4",
+            "canonical_projection": projection,
+            "authority": authority,
+            "code": code,
+            "horizontal_unit": unit,
+            "application_x_axis": x_axis,
+            "application_y_axis": y_axis,
+            "datum": datum,
+            "distance_semantics": "projected-euclidean-ground-metre-v1",
+            "scientific_scope": "registered-epsg5179-metric-domain-v1",
+            "metric_domain_digest": CURRENT_RADAR_METRIC_DOMAIN.digest,
+        }
+    )
+
+
+@dataclass(frozen=True)
 class RadarSpatialGridIdentity:
     """Time-independent identity of one affine radar analysis grid."""
 
@@ -649,6 +834,7 @@ class RadarSpatialGridIdentity:
     ]
     shape_yx: tuple[int, int] | None = None
     projected_crs_digest: str | None = None
+    metric_domain_digest: str | None = None
     cell_center_origin_xy_m: tuple[float, float] | None = None
     grid_coordinate_dtype: str | None = None
     cell_center_convention: str | None = None
@@ -660,6 +846,7 @@ class RadarSpatialGridIdentity:
             "radar-spatial-grid-identity-v2",
             "radar-spatial-grid-identity-v3",
             "radar-spatial-grid-identity-v4",
+            "radar-spatial-grid-identity-v5",
         }:
             raise ValueError("unsupported radar spatial-grid identity")
         if (
@@ -686,7 +873,11 @@ class RadarSpatialGridIdentity:
                 in {
                     "radar-spatial-grid-identity-v3",
                     "radar-spatial-grid-identity-v4",
+                    "radar-spatial-grid-identity-v5",
                 }
+            ),
+            require_representable_scientific_spacing=(
+                self.contract == "radar-spatial-grid-identity-v5"
             ),
         )
         object.__setattr__(
@@ -697,6 +888,7 @@ class RadarSpatialGridIdentity:
         scientific_fields = (
             self.shape_yx,
             self.projected_crs_digest,
+            self.metric_domain_digest,
             self.cell_center_origin_xy_m,
             self.grid_coordinate_dtype,
             self.cell_center_convention,
@@ -728,11 +920,23 @@ class RadarSpatialGridIdentity:
             or self.projected_crs_digest
             != (
                 radar_projected_crs_semantic_digest(self.projection)
-                if self.contract == "radar-spatial-grid-identity-v4"
+                if self.contract == "radar-spatial-grid-identity-v5"
                 else (
-                    _radar_projected_crs_semantic_digest_v2(self.projection)
-                    if self.contract == "radar-spatial-grid-identity-v3"
-                    else radar_projected_crs_digest(self.projection)
+                    _radar_projected_crs_semantic_digest_v3(self.projection)
+                    if self.contract == "radar-spatial-grid-identity-v4"
+                    else (
+                        _radar_projected_crs_semantic_digest_v2(self.projection)
+                        if self.contract == "radar-spatial-grid-identity-v3"
+                        else radar_projected_crs_digest(self.projection)
+                    )
+                )
+            )
+            or (
+                self.metric_domain_digest
+                != (
+                    CURRENT_RADAR_METRIC_DOMAIN.digest
+                    if self.contract == "radar-spatial-grid-identity-v5"
+                    else None
                 )
             )
         ):
@@ -749,6 +953,12 @@ class RadarSpatialGridIdentity:
             "cell_center_origin_xy_m",
             (float(origin[0]), float(origin[1])),
         )
+        if self.contract == "radar-spatial-grid-identity-v5":
+            CURRENT_RADAR_METRIC_DOMAIN.validate_grid_cell_centers(
+                shape_yx=shape,
+                origin_xy_m=(float(origin[0]), float(origin[1])),
+                matrix_m=metrics.matrix,
+            )
 
     @property
     def payload(self) -> dict[str, object]:
@@ -764,6 +974,7 @@ class RadarSpatialGridIdentity:
             "radar-spatial-grid-identity-v2",
             "radar-spatial-grid-identity-v3",
             "radar-spatial-grid-identity-v4",
+            "radar-spatial-grid-identity-v5",
         }:
             payload.update(
                 {
@@ -774,6 +985,8 @@ class RadarSpatialGridIdentity:
                     "cell_center_convention": self.cell_center_convention,
                 }
             )
+        if self.contract == "radar-spatial-grid-identity-v5":
+            payload["metric_domain_digest"] = self.metric_domain_digest
         return payload
 
     @property
@@ -795,6 +1008,7 @@ class RadarSpatialGridIdentity:
                 in {
                     "radar-spatial-grid-identity-v3",
                     "radar-spatial-grid-identity-v4",
+                    "radar-spatial-grid-identity-v5",
                 }
             ),
         ).minimum_singular_spacing_m
@@ -803,7 +1017,10 @@ class RadarSpatialGridIdentity:
     def spatial_metric_spacing_m(self) -> float:
         """Return the physical spacing of an active spatial index axis."""
 
-        if self.contract != "radar-spatial-grid-identity-v4":
+        if self.contract not in {
+            "radar-spatial-grid-identity-v4",
+            "radar-spatial-grid-identity-v5",
+        }:
             return self.minimum_l2_cell_displacement_m
         assert self.shape_yx is not None
         rows, columns = self.shape_yx
@@ -812,6 +1029,9 @@ class RadarSpatialGridIdentity:
             dx_m=float(self.dx_m),
             dy_m=float(self.dy_m),
             require_scientific_conditioning=True,
+            require_representable_scientific_spacing=(
+                self.contract == "radar-spatial-grid-identity-v5"
+            ),
         )
         if rows == 1 and columns == 1:
             raise ValueError("spatial metrics require at least two grid cells")
@@ -832,6 +1052,7 @@ class RadarSpatialGridIdentity:
                 in {
                     "radar-spatial-grid-identity-v3",
                     "radar-spatial-grid-identity-v4",
+                    "radar-spatial-grid-identity-v5",
                 }
             ),
         ).linf_cell_displacement_spacing_m
@@ -847,6 +1068,7 @@ class RadarSpatialGridIdentity:
             "radar-spatial-grid-identity-v2",
             "radar-spatial-grid-identity-v3",
             "radar-spatial-grid-identity-v4",
+            "radar-spatial-grid-identity-v5",
         }:
             raise ValueError("projected coordinates require a scientific grid")
         assert self.shape_yx is not None
@@ -878,6 +1100,7 @@ class RadarGridTimeContract:
     spatial_grid_contract: str = "radar-spatial-grid-identity-v1"
     grid_shape_yx: tuple[int, int] | None = None
     projected_crs_digest: str | None = None
+    metric_domain_digest: str | None = None
     cell_center_origin_xy_m: tuple[float, float] | None = None
     grid_coordinate_dtype: str | None = None
     cell_center_convention: str | None = None
@@ -917,6 +1140,9 @@ class RadarGridTimeContract:
             dx_m=float(self.dx_m),
             dy_m=float(self.dy_m),
             require_scientific_conditioning=True,
+            require_representable_scientific_spacing=(
+                self.spatial_grid_contract == "radar-spatial-grid-identity-v5"
+            ),
         )
         object.__setattr__(
             self,
@@ -947,6 +1173,7 @@ class RadarGridTimeContract:
             "radar-spatial-grid-identity-v2",
             "radar-spatial-grid-identity-v3",
             "radar-spatial-grid-identity-v4",
+            "radar-spatial-grid-identity-v5",
         }:
             payload.update(
                 {
@@ -958,6 +1185,8 @@ class RadarGridTimeContract:
                     "cell_center_convention": self.cell_center_convention,
                 }
             )
+        if self.spatial_grid_contract == "radar-spatial-grid-identity-v5":
+            payload["metric_domain_digest"] = self.metric_domain_digest
         return payload
 
     @property
@@ -975,6 +1204,7 @@ class RadarGridTimeContract:
             pixel_to_projected_matrix_m=self.pixel_to_projected_matrix_m,
             shape_yx=self.grid_shape_yx,
             projected_crs_digest=self.projected_crs_digest,
+            metric_domain_digest=self.metric_domain_digest,
             cell_center_origin_xy_m=self.cell_center_origin_xy_m,
             grid_coordinate_dtype=self.grid_coordinate_dtype,
             cell_center_convention=self.cell_center_convention,
@@ -1000,6 +1230,7 @@ class RadarGridTimeContract:
                 "radar-spatial-grid-identity-v2",
                 "radar-spatial-grid-identity-v3",
                 "radar-spatial-grid-identity-v4",
+                "radar-spatial-grid-identity-v5",
             }
             and self.grid_shape_yx != shape_yx
         ):
