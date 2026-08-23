@@ -40,14 +40,129 @@ from .physics import (
 _OPERATIONAL_RUNTIME_PROFILE_VERSION = "operational-runtime-profile-v2"
 
 
-_MINIMUM_GRID_AXIS_SINE = 0.01
-_MAXIMUM_GRID_AFFINE_CONDITION_NUMBER = 1000.0
+RADAR_GRID_MINIMUM_AXIS_SINE = 0.01
+RADAR_GRID_MAXIMUM_AFFINE_CONDITION_NUMBER = 1000.0
 RADAR_PROJECTED_GRID_COORDINATE_DTYPE = "float64"
 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION = (
     "row0-column0-is-first-cell-center-v1"
 )
 RADAR_GRID_AFFINE_RELATIVE_TOLERANCE = 1.0e-9
 RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M = 1.0e-9
+
+_SUPPORTED_RADAR_PROJECTED_CRS: dict[
+    str,
+    tuple[str, int, str, str, str, str],
+] = {
+    "EPSG:3857": (
+        "EPSG",
+        3857,
+        "metre",
+        "easting",
+        "northing",
+        "World Geodetic System 1984 ensemble",
+    ),
+    "EPSG:5179": (
+        "EPSG",
+        5179,
+        "metre",
+        "easting",
+        "northing",
+        "Korea 2000",
+    ),
+}
+
+
+@dataclass(frozen=True)
+class _RadarGridAffineMetrics:
+    matrix: tuple[tuple[float, float], tuple[float, float]]
+    determinant: float
+    normalized_determinant: float
+    condition_number: float
+    column_spacing_m: float
+    row_spacing_m: float
+    minimum_singular_spacing_m: float
+    linf_cell_displacement_spacing_m: float
+
+
+def _validate_and_measure_radar_grid_affine(
+    matrix: tuple[tuple[float, float], tuple[float, float]],
+    *,
+    dx_m: float,
+    dy_m: float,
+    require_scientific_conditioning: bool,
+) -> _RadarGridAffineMetrics:
+    """Validate one affine and return the shared physical grid metrics."""
+
+    if (
+        not isinstance(matrix, tuple)
+        or len(matrix) != 2
+        or any(not isinstance(row, tuple) or len(row) != 2 for row in matrix)
+    ):
+        raise ValueError("pixel_to_projected_matrix_m must be a 2x2 tuple")
+    canonical = (
+        (float(matrix[0][0]), float(matrix[0][1])),
+        (float(matrix[1][0]), float(matrix[1][1])),
+    )
+    if not all(math.isfinite(value) for row in canonical for value in row):
+        raise ValueError("pixel_to_projected_matrix_m must be finite")
+    (xx, xr), (yx, yr) = canonical
+    determinant = xx * yr - xr * yx
+    scale = max(abs(value) for row in canonical for value in row)
+    if abs(determinant) <= math.ulp(max(scale * scale, 1.0)):
+        raise ValueError("pixel_to_projected_matrix_m must be invertible")
+    column_spacing = math.hypot(xx, yx)
+    row_spacing = math.hypot(xr, yr)
+    if not math.isclose(
+        column_spacing,
+        float(dx_m),
+        rel_tol=RADAR_GRID_AFFINE_RELATIVE_TOLERANCE,
+        abs_tol=RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M,
+    ) or not math.isclose(
+        row_spacing,
+        float(dy_m),
+        rel_tol=RADAR_GRID_AFFINE_RELATIVE_TOLERANCE,
+        abs_tol=RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M,
+    ):
+        raise ValueError(
+            "pixel_to_projected_matrix_m must agree with dx_m and dy_m"
+        )
+    normalized_determinant = abs(determinant) / (
+        column_spacing * row_spacing
+    )
+    frobenius_squared = sum(
+        value * value for row in canonical for value in row
+    )
+    discriminant = max(
+        frobenius_squared * frobenius_squared
+        - 4.0 * determinant * determinant,
+        0.0,
+    )
+    maximum_singular_value_squared = 0.5 * (
+        frobenius_squared + math.sqrt(discriminant)
+    )
+    maximum_singular_value = math.sqrt(maximum_singular_value_squared)
+    minimum_singular_value = abs(determinant) / maximum_singular_value
+    condition_number = maximum_singular_value / minimum_singular_value
+    inverse_row_zero_norm = math.hypot(yr, -xr) / abs(determinant)
+    inverse_row_one_norm = math.hypot(-yx, xx) / abs(determinant)
+    linf_spacing = 1.0 / max(inverse_row_zero_norm, inverse_row_one_norm)
+    if require_scientific_conditioning and (
+        normalized_determinant < RADAR_GRID_MINIMUM_AXIS_SINE
+        or condition_number > RADAR_GRID_MAXIMUM_AFFINE_CONDITION_NUMBER
+    ):
+        raise ValueError(
+            "pixel_to_projected_matrix_m must be well-conditioned"
+        )
+    return _RadarGridAffineMetrics(
+        matrix=canonical,
+        determinant=determinant,
+        normalized_determinant=normalized_determinant,
+        condition_number=condition_number,
+        column_spacing_m=column_spacing,
+        row_spacing_m=row_spacing,
+        minimum_singular_spacing_m=minimum_singular_value,
+        linf_cell_displacement_spacing_m=linf_spacing,
+    )
 
 
 @dataclass(frozen=True)
@@ -385,8 +500,25 @@ def _canonical_time_tuple(
     return canonical[0], canonical[1], canonical[2]
 
 
+def _radar_projected_crs_semantics(
+    projection: str,
+) -> tuple[str, int, str, str, str, str]:
+    if (
+        not isinstance(projection, str)
+        or not projection
+        or projection.strip() != projection
+    ):
+        raise ValueError("projection must be a non-empty canonical string")
+    try:
+        return _SUPPORTED_RADAR_PROJECTED_CRS[projection]
+    except KeyError as error:
+        raise ValueError(
+            "projection must be a supported projected-metre CRS"
+        ) from error
+
+
 def radar_projected_crs_digest(projection: str) -> str:
-    """Return the product-owned identity of one canonical projected CRS."""
+    """Return the historical v1 string identity retained for byte audit."""
 
     if (
         not isinstance(projection, str)
@@ -398,6 +530,26 @@ def radar_projected_crs_digest(projection: str) -> str:
         {
             "contract": "radar-projected-crs-identity-v1",
             "canonical_projection": projection,
+        }
+    )
+
+
+def radar_projected_crs_semantic_digest(projection: str) -> str:
+    """Return the current metre/unit/axis-aware projected CRS identity."""
+
+    authority, code, unit, x_axis, y_axis, datum = (
+        _radar_projected_crs_semantics(projection)
+    )
+    return json_digest(
+        {
+            "contract": "radar-projected-crs-identity-v2",
+            "canonical_projection": projection,
+            "authority": authority,
+            "code": code,
+            "horizontal_unit": unit,
+            "application_x_axis": x_axis,
+            "application_y_axis": y_axis,
+            "datum": datum,
         }
     )
 
@@ -424,6 +576,7 @@ class RadarSpatialGridIdentity:
         if self.contract not in {
             "radar-spatial-grid-identity-v1",
             "radar-spatial-grid-identity-v2",
+            "radar-spatial-grid-identity-v3",
         }:
             raise ValueError("unsupported radar spatial-grid identity")
         if (
@@ -441,44 +594,19 @@ class RadarSpatialGridIdentity:
         ):
             raise ValueError("radar spatial-grid identity is invalid")
         _validate_sha256_digest("grid_hash", self.grid_hash)
-        matrix = self.pixel_to_projected_matrix_m
-        if (
-            not isinstance(matrix, tuple)
-            or len(matrix) != 2
-            or any(not isinstance(row, tuple) or len(row) != 2 for row in matrix)
-            or any(
-                not math.isfinite(value)
-                for row in matrix
-                for value in row
-            )
-        ):
-            raise ValueError("radar spatial-grid affine matrix is invalid")
-        canonical = (
-            (float(matrix[0][0]), float(matrix[0][1])),
-            (float(matrix[1][0]), float(matrix[1][1])),
+        metrics = _validate_and_measure_radar_grid_affine(
+            self.pixel_to_projected_matrix_m,
+            dx_m=float(self.dx_m),
+            dy_m=float(self.dy_m),
+            require_scientific_conditioning=(
+                self.contract == "radar-spatial-grid-identity-v3"
+            ),
         )
-        determinant = canonical[0][0] * canonical[1][1] - (
-            canonical[0][1] * canonical[1][0]
+        object.__setattr__(
+            self,
+            "pixel_to_projected_matrix_m",
+            metrics.matrix,
         )
-        column_spacing = math.hypot(canonical[0][0], canonical[1][0])
-        row_spacing = math.hypot(canonical[0][1], canonical[1][1])
-        if (
-            determinant == 0.0
-            or not math.isclose(
-                column_spacing,
-                float(self.dx_m),
-                rel_tol=RADAR_GRID_AFFINE_RELATIVE_TOLERANCE,
-                abs_tol=RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M,
-            )
-            or not math.isclose(
-                row_spacing,
-                float(self.dy_m),
-                rel_tol=RADAR_GRID_AFFINE_RELATIVE_TOLERANCE,
-                abs_tol=RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M,
-            )
-        ):
-            raise ValueError("radar spatial-grid affine matrix disagrees")
-        object.__setattr__(self, "pixel_to_projected_matrix_m", canonical)
         scientific_fields = (
             self.shape_yx,
             self.projected_crs_digest,
@@ -511,7 +639,11 @@ class RadarSpatialGridIdentity:
             or self.cell_center_convention
             != RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
             or self.projected_crs_digest
-            != radar_projected_crs_digest(self.projection)
+            != (
+                radar_projected_crs_semantic_digest(self.projection)
+                if self.contract == "radar-spatial-grid-identity-v3"
+                else radar_projected_crs_digest(self.projection)
+            )
         ):
             raise ValueError("scientific radar projected-grid identity is invalid")
         projected_crs_digest = self.projected_crs_digest
@@ -537,7 +669,10 @@ class RadarSpatialGridIdentity:
             "pixel_to_projected_matrix_m": self.pixel_to_projected_matrix_m,
             "contract": self.contract,
         }
-        if self.contract == "radar-spatial-grid-identity-v2":
+        if self.contract in {
+            "radar-spatial-grid-identity-v2",
+            "radar-spatial-grid-identity-v3",
+        }:
             payload.update(
                 {
                     "shape_yx": self.shape_yx,
@@ -557,6 +692,28 @@ class RadarSpatialGridIdentity:
     def minimum_axis_spacing_m(self) -> float:
         return min(float(self.dx_m), float(self.dy_m))
 
+    @property
+    def minimum_l2_cell_displacement_m(self) -> float:
+        return _validate_and_measure_radar_grid_affine(
+            self.pixel_to_projected_matrix_m,
+            dx_m=float(self.dx_m),
+            dy_m=float(self.dy_m),
+            require_scientific_conditioning=(
+                self.contract == "radar-spatial-grid-identity-v3"
+            ),
+        ).minimum_singular_spacing_m
+
+    @property
+    def linf_cell_displacement_spacing_m(self) -> float:
+        return _validate_and_measure_radar_grid_affine(
+            self.pixel_to_projected_matrix_m,
+            dx_m=float(self.dx_m),
+            dy_m=float(self.dy_m),
+            require_scientific_conditioning=(
+                self.contract == "radar-spatial-grid-identity-v3"
+            ),
+        ).linf_cell_displacement_spacing_m
+
     def projected_cell_center_coordinates(
         self,
         *,
@@ -564,8 +721,11 @@ class RadarSpatialGridIdentity:
     ) -> tuple[Tensor, Tensor]:
         """Generate exact float64 cell-center coordinates from the v2 affine."""
 
-        if self.contract != "radar-spatial-grid-identity-v2":
-            raise ValueError("projected coordinates require spatial-grid v2")
+        if self.contract not in {
+            "radar-spatial-grid-identity-v2",
+            "radar-spatial-grid-identity-v3",
+        }:
+            raise ValueError("projected coordinates require a scientific grid")
         assert self.shape_yx is not None
         assert self.cell_center_origin_xy_m is not None
         rows, columns = self.shape_yx
@@ -629,80 +789,16 @@ class RadarGridTimeContract:
         matrix = self.pixel_to_projected_matrix_m
         if matrix is None:
             matrix = ((float(self.dx_m), 0.0), (0.0, -float(self.dy_m)))
-        if (
-            not isinstance(matrix, tuple)
-            or len(matrix) != 2
-            or any(
-                not isinstance(row, tuple) or len(row) != 2
-                for row in matrix
-            )
-        ):
-            raise ValueError(
-                "pixel_to_projected_matrix_m must be a 2x2 tuple"
-            )
-        canonical_matrix = (
-            (float(matrix[0][0]), float(matrix[0][1])),
-            (float(matrix[1][0]), float(matrix[1][1])),
+        metrics = _validate_and_measure_radar_grid_affine(
+            matrix,
+            dx_m=float(self.dx_m),
+            dy_m=float(self.dy_m),
+            require_scientific_conditioning=True,
         )
-        if not all(
-            math.isfinite(value)
-            for row in canonical_matrix
-            for value in row
-        ):
-            raise ValueError("pixel_to_projected_matrix_m must be finite")
-        determinant = (
-            canonical_matrix[0][0] * canonical_matrix[1][1]
-            - canonical_matrix[0][1] * canonical_matrix[1][0]
-        )
-        scale = max(abs(value) for row in canonical_matrix for value in row)
-        if abs(determinant) <= math.ulp(max(scale * scale, 1.0)):
-            raise ValueError("pixel_to_projected_matrix_m must be invertible")
-        column_spacing = math.hypot(
-            canonical_matrix[0][0], canonical_matrix[1][0]
-        )
-        row_spacing = math.hypot(
-            canonical_matrix[0][1], canonical_matrix[1][1]
-        )
-        if not math.isclose(
-            column_spacing,
-            float(self.dx_m),
-            rel_tol=RADAR_GRID_AFFINE_RELATIVE_TOLERANCE,
-            abs_tol=RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M,
-        ) or not math.isclose(
-            row_spacing,
-            float(self.dy_m),
-            rel_tol=RADAR_GRID_AFFINE_RELATIVE_TOLERANCE,
-            abs_tol=RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M,
-        ):
-            raise ValueError(
-                "pixel_to_projected_matrix_m must agree with dx_m and dy_m"
-            )
-        normalized_determinant = abs(determinant) / (
-            column_spacing * row_spacing
-        )
-        frobenius_squared = sum(
-            value * value for row in canonical_matrix for value in row
-        )
-        discriminant = max(
-            frobenius_squared * frobenius_squared
-            - 4.0 * determinant * determinant,
-            0.0,
-        )
-        maximum_singular_value_squared = 0.5 * (
-            frobenius_squared + math.sqrt(discriminant)
-        )
-        condition_number = maximum_singular_value_squared / abs(determinant)
-        if (
-            normalized_determinant < _MINIMUM_GRID_AXIS_SINE
-            or condition_number > _MAXIMUM_GRID_AFFINE_CONDITION_NUMBER
-        ):
-            raise ValueError(
-                "pixel_to_projected_matrix_m must be well-conditioned"
-            )
         object.__setattr__(
             self,
             "pixel_to_projected_matrix_m",
-            canonical_matrix,
+            metrics.matrix,
         )
         if (
             not isinstance(self.projection, str)
@@ -724,7 +820,10 @@ class RadarGridTimeContract:
             "background_valid_times": self.background_valid_times,
             "pixel_to_projected_matrix_m": self.pixel_to_projected_matrix_m,
         }
-        if self.spatial_grid_contract == "radar-spatial-grid-identity-v2":
+        if self.spatial_grid_contract in {
+            "radar-spatial-grid-identity-v2",
+            "radar-spatial-grid-identity-v3",
+        }:
             payload.update(
                 {
                     "spatial_grid_contract": self.spatial_grid_contract,
@@ -761,6 +860,27 @@ class RadarGridTimeContract:
     @property
     def spatial_grid_digest(self) -> str:
         return self.spatial_grid_identity.digest
+
+    def validate_spatial_shape(self, shape_yx: tuple[int, int]) -> None:
+        """Bind a current projected-grid identity to its radar tensor domain."""
+
+        if (
+            not isinstance(shape_yx, tuple)
+            or len(shape_yx) != 2
+            or any(type(value) is not int or value <= 0 for value in shape_yx)
+        ):
+            raise ValueError("radar tensor spatial shape is invalid")
+        if (
+            self.spatial_grid_contract
+            in {
+                "radar-spatial-grid-identity-v2",
+                "radar-spatial-grid-identity-v3",
+            }
+            and self.grid_shape_yx != shape_yx
+        ):
+            raise ValueError(
+                "projected grid shape disagrees with radar tensors"
+            )
 
     @property
     def cell_area_m2(self) -> float:
@@ -1701,6 +1821,12 @@ class ForecastRunContract:
                     "background_frames_dbz must be floating with the frame shape"
                 )
         if grid_time_contract is not None:
+            grid_time_contract.validate_spatial_shape(
+                (
+                    int(frames_dbz.shape[-2]),
+                    int(frames_dbz.shape[-1]),
+                )
+            )
             grid_time_contract.validate_for(
                 config,
                 background_present=background_present,
@@ -2118,6 +2244,12 @@ class ForecastRunContract:
             )
             if self.grid_time_contract.digest != self.grid_time_contract_digest:
                 raise ValueError("grid/time contract digest mismatch")
+            self.grid_time_contract.validate_spatial_shape(
+                (
+                    int(self._latest_frame_dbz.shape[-2]),
+                    int(self._latest_frame_dbz.shape[-1]),
+                )
+            )
             self.grid_time_contract.validate_for(
                 self.config,
                 background_present=self.latest_background_digest is not None,

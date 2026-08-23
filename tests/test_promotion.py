@@ -35,6 +35,7 @@ from advar.nowcast import (
     _validate_input_plan_resolution,
     forecast_from_state as forecast_result_from_state,
     radar_projected_crs_digest,
+    radar_projected_crs_semantic_digest,
 )
 from advar.physics import dbz_to_echo
 from advar import (
@@ -54,6 +55,7 @@ from advar import (
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V9_DIGEST,
     OBSERVATION_TEMPORAL_QUALITY_DECAY_ALGORITHM_V1_DIGEST,
     OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST,
     OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST,
@@ -63,8 +65,10 @@ from advar import (
     OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V1_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V8_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST,
+    OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V2_DIGEST,
     MosaicObservationSourceRegistry,
     NeuralPriorCandidateManifest,
     NeuralPriorHoldoutCase,
@@ -159,7 +163,9 @@ def _observation_source_registry(
     return MosaicObservationSourceRegistry(
         radar_source_kind=cast(Any, radar_source_kind),
         ordered_sources=sources,
-        projected_crs_digest=radar_projected_crs_digest("EPSG:3857"),
+        projected_crs_digest=radar_projected_crs_semantic_digest(
+            "EPSG:3857"
+        ),
         geometry_model="projected-horizontal-representative-tilt-v1",
         radar_altitude_role="provenance_only",
         contract="mosaic-observation-source-registry-v5",
@@ -179,11 +185,13 @@ def _observation_geometry(
         grid_hash="0" * 64,
         pixel_to_projected_matrix_m=((1000.0, 0.0), (0.0, -1000.0)),
         shape_yx=(height, width),
-        projected_crs_digest=radar_projected_crs_digest("EPSG:3857"),
+        projected_crs_digest=radar_projected_crs_semantic_digest(
+            "EPSG:3857"
+        ),
         cell_center_origin_xy_m=(0.0, 0.0),
         grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
         cell_center_convention=RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION,
-        contract="radar-spatial-grid-identity-v2",
+        contract="radar-spatial-grid-identity-v3",
     )
     grid_x_m, grid_y_m = identity.projected_cell_center_coordinates()
     return RadarObservationGeometryContract(
@@ -193,7 +201,7 @@ def _observation_geometry(
         grid_y_m=grid_y_m,
         grid_spacing_m=1000.0,
         projected_grid_identity=identity,
-        contract="radar-observation-geometry-v3",
+        contract="radar-observation-geometry-v4",
     )
 
 
@@ -233,10 +241,10 @@ def _verification_observation_error_plan(
         spatial_correlation_block_algorithm_digest="7" * 64,
         quality_weight_interpretation_digest="8" * 64,
         quality_weight_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V9_DIGEST
         ),
         observation_std_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V9_DIGEST
         ),
         observation_error_model_digest="9" * 64,
         source_assignment_algorithm_digest=(
@@ -245,10 +253,10 @@ def _verification_observation_error_plan(
         minimum_detectable_echo_dbz=-10.0,
         observation_error_reference_std_dbz=2.0,
         derivation_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V9_DIGEST
         ),
         mask_derivation_algorithm_digest=(
-            OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
+            OBSERVATION_MASK_DERIVATION_ALGORITHM_V8_DIGEST
         ),
         maximum_range_km=300.0,
         minimum_elevation_deg=-1.0,
@@ -278,9 +286,9 @@ def _verification_observation_error_plan(
         spatial_metric_reference_speed_mps=20.0,
         spatial_metric_maximum_displacement_fraction_cells=1.0,
         spatial_age_gate_algorithm_digest=(
-            OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST
+            OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V2_DIGEST
         ),
-        contract="verification-observation-error-plan-v9",
+        contract="verification-observation-error-plan-v10",
     )
 
 
@@ -445,7 +453,7 @@ def _verification_bundle_v4(
         spatial_metric_valid_mask=mask_derivation.spatial_metric_valid_mask,
         observation_error_contract=error_contract,
         observation_error_derivation=derivation,
-        contract="radar-verification-bundle-v14",
+        contract="radar-verification-bundle-v15",
     )
 
 
@@ -606,7 +614,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         evaluation = self.evaluation(1, -1.0)
         policy = self.policy()
 
-        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v29")
+        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v30")
         self.assertTrue(
             all(
                 item.contract == "neural-prior-range-band-contract-v3"
@@ -685,7 +693,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             spatial_age_gate_algorithm_digest=None,
             contract="verification-observation-error-plan-v3",
         )
-        with self.assertRaisesRegex(ValueError, "requires observation-error plan v9"):
+        with self.assertRaisesRegex(
+            ValueError,
+            "requires observation-error plan v10",
+        ):
             replace(
                 plan,
                 verification_observation_error_plans=(
@@ -1292,9 +1303,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             dy_m=1_000.0,
             projection="EPSG:3857",
             grid_hash="0" * 64,
-            spatial_grid_contract="radar-spatial-grid-identity-v2",
+            spatial_grid_contract="radar-spatial-grid-identity-v3",
             grid_shape_yx=(2, 2),
-            projected_crs_digest=radar_projected_crs_digest("EPSG:3857"),
+            projected_crs_digest=radar_projected_crs_semantic_digest(
+                "EPSG:3857"
+            ),
             cell_center_origin_xy_m=(0.0, 0.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
@@ -3262,9 +3275,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             dy_m=1_000.0,
             projection="EPSG:3857",
             grid_hash="4" * 64,
-            spatial_grid_contract="radar-spatial-grid-identity-v2",
+            spatial_grid_contract="radar-spatial-grid-identity-v3",
             grid_shape_yx=(2, 2),
-            projected_crs_digest=radar_projected_crs_digest("EPSG:3857"),
+            projected_crs_digest=radar_projected_crs_semantic_digest(
+                "EPSG:3857"
+            ),
             cell_center_origin_xy_m=(0.0, 0.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
@@ -5305,6 +5320,58 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertIs(
             type(decoded_v18),
             ledger_module.LegacyScoringReplayBundleManifestAuditV18,
+        )
+
+        v19_records = tuple(
+            ledger_module.ScoringReplayTensorRecord(
+                case_id=case_id,
+                role=role,
+                archive_member="tensor",
+                dtype="float32",
+                shape=(1, 2, 2),
+                tensor_digest="1" * 64,
+                archive_sha256=f"{index:064x}",
+            )
+            for index, role in enumerate(
+                sorted(ledger_module.SCORING_REPLAY_REQUIRED_TENSOR_ROLES),
+                start=1,
+            )
+        )
+        v19_manifest = ledger_module.LegacyScoringReplayBundleManifestAuditV19(
+            **{
+                key: value
+                for key, value in v18_manifest.__dict__.items()
+                if key
+                not in {
+                    "bundle_digest",
+                    "replay_method",
+                    "contract",
+                    "tensor_records",
+                    "tensor_shard_sha256s",
+                }
+            },
+            tensor_records=v19_records,
+            tensor_shard_sha256s=tuple(
+                sorted(
+                    cast(str, record.archive_sha256)
+                    for record in v19_records
+                )
+            ),
+            replay_method="builtin-semantic-scoring-recomputation-v19",
+            contract="neural-prior-scoring-replay-bundle-v19",
+        )
+        decoded_v19 = ledger_module._decode_scoring_replay_bundle_manifest(
+            json.dumps(
+                v19_manifest.payload
+                | {"bundle_digest": v19_manifest.bundle_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            expected_digest=v19_manifest.bundle_digest,
+        )
+        self.assertIs(
+            type(decoded_v19),
+            ledger_module.LegacyScoringReplayBundleManifestAuditV19,
         )
 
         scoring = self.scoring_artifact(
@@ -15658,27 +15725,27 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def test_cpu_only_scoring_generation_has_a_stable_backend_contract(self) -> None:
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_CONTRACT,
-            "neural-prior-scoring-replay-bundle-v19",
+            "neural-prior-scoring-replay-bundle-v20",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_METHOD,
-            "builtin-semantic-scoring-recomputation-v19",
+            "builtin-semantic-scoring-recomputation-v20",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD,
             {
-                "contract": "neural-prior-semantic-scoring-generation-v17",
-                "replay_contract": "neural-prior-scoring-replay-bundle-v19",
-                "replay_method": "builtin-semantic-scoring-recomputation-v19",
-                "case_contract": "neural-prior-semantic-scoring-case-v18",
+                "contract": "neural-prior-semantic-scoring-generation-v18",
+                "replay_contract": "neural-prior-scoring-replay-bundle-v20",
+                "replay_method": "builtin-semantic-scoring-recomputation-v20",
+                "case_contract": "neural-prior-semantic-scoring-case-v19",
                 "observation_mask_algorithm_digest": (
                     OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST
                 ),
                 "observation_error_algorithm_digest": (
-                    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST
+                    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V9_DIGEST
                 ),
                 "verification_bundle_contract": (
-                    "radar-verification-bundle-v14"
+                    "radar-verification-bundle-v15"
                 ),
                 "product_type_policy": "exact-shipped-product-types-v1",
                 "forecast_integrity": "forecast-result-raw-content-validation-v1",
