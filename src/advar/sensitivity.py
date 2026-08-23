@@ -36,6 +36,8 @@ from .nowcast import (
     NowcastConfig,
     RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M,
     RADAR_GRID_AFFINE_RELATIVE_TOLERANCE,
+    RADAR_GRID_MAXIMUM_AFFINE_CONDITION_NUMBER,
+    RADAR_GRID_MINIMUM_AXIS_SINE,
     RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION,
     RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
     RadarGridTimeContract,
@@ -423,6 +425,14 @@ OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST = json_digest(
         "metric_role": "spatial-skill-domain-only-v1",
     }
 )
+OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V2_DIGEST = json_digest(
+    {
+        "contract": "verification-observation-spatial-age-gate-v2",
+        "rule": "reference-speed-times-age-at-most-l2-index-grid-fraction-v1",
+        "grid_displacement_norm": "minimum-affine-singular-value-v1",
+        "metric_role": "spatial-skill-domain-only-v1",
+    }
+)
 OBSERVATION_MASK_DERIVATION_ALGORITHM_V5_DIGEST = json_digest(
     {
         "contract": "verification-observation-mask-product-selection-v5",
@@ -515,8 +525,46 @@ OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST = json_digest(
         "grid_spacing_rule": "minimum-affine-axis-norm-v1",
     }
 )
+OBSERVATION_MASK_DERIVATION_ALGORITHM_V8_DIGEST = json_digest(
+    {
+        "contract": "verification-observation-mask-affine-domain-v8",
+        "parent_algorithm_digest": OBSERVATION_MASK_DERIVATION_ALGORITHM_V7_DIGEST,
+        "geometry_contract": "radar-observation-geometry-v4",
+        "spatial_grid_contract": "radar-spatial-grid-identity-v3",
+        "projected_crs_contract": "radar-projected-crs-identity-v2",
+        "coordinate_generation_rule": (
+            "origin-plus-affine-column-row-cell-center-v1"
+        ),
+        "coordinate_dtype": RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+        "cell_center_convention": (
+            RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+        ),
+        "coordinate_equality_rule": "exact-torch-equal-v1",
+        "scientific_source_dtype_policy": "float32-or-float64-only-v1",
+        "grid_spacing_rule": "minimum-affine-singular-value-l2-index-v1",
+        "minimum_axis_sine": RADAR_GRID_MINIMUM_AXIS_SINE,
+        "maximum_affine_condition_number": (
+            RADAR_GRID_MAXIMUM_AFFINE_CONDITION_NUMBER
+        ),
+        "affine_relative_tolerance": RADAR_GRID_AFFINE_RELATIVE_TOLERANCE,
+        "affine_absolute_tolerance_m": (
+            RADAR_GRID_AFFINE_ABSOLUTE_TOLERANCE_M
+        ),
+    }
+)
+OBSERVATION_ERROR_DERIVATION_ALGORITHM_V9_DIGEST = json_digest(
+    {
+        "contract": "verification-observation-error-affine-domain-v9",
+        "parent_algorithm_digest": OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST,
+        "mask_algorithm_digest": OBSERVATION_MASK_DERIVATION_ALGORITHM_V8_DIGEST,
+        "geometry_contract": "radar-observation-geometry-v4",
+        "spatial_grid_contract": "radar-spatial-grid-identity-v3",
+        "grid_spacing_rule": "minimum-affine-singular-value-l2-index-v1",
+        "scientific_source_dtype_policy": "float32-or-float64-only-v1",
+    }
+)
 OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST = (
-    OBSERVATION_MASK_DERIVATION_ALGORITHM_V7_DIGEST
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V8_DIGEST
 )
 
 RADAR_GEOMETRY_SPACING_ABSOLUTE_TOLERANCE_M = 1.0e-3
@@ -646,6 +694,7 @@ class VerificationObservationErrorPlan:
                 "verification-observation-error-plan-v7",
                 "verification-observation-error-plan-v8",
                 "verification-observation-error-plan-v9",
+                "verification-observation-error-plan-v10",
             }
             or self.radar_source_kind not in {"single_site", "mosaic"}
             or not math.isfinite(self.minimum_detectable_echo_dbz)
@@ -732,24 +781,28 @@ class VerificationObservationErrorPlan:
                 )
         else:
             expected_error_algorithm = (
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST
-                if self.contract == "verification-observation-error-plan-v9"
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V9_DIGEST
+                if self.contract == "verification-observation-error-plan-v10"
                 else (
-                    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
-                    if self.contract == "verification-observation-error-plan-v8"
+                    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST
+                    if self.contract == "verification-observation-error-plan-v9"
                     else (
-                        OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
-                        if self.contract == "verification-observation-error-plan-v7"
+                        OBSERVATION_ERROR_DERIVATION_ALGORITHM_V7_DIGEST
+                        if self.contract == "verification-observation-error-plan-v8"
                         else (
-                            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST
-                            if self.contract == "verification-observation-error-plan-v6"
+                            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V6_DIGEST
+                            if self.contract == "verification-observation-error-plan-v7"
                             else (
-                                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
-                                if self.contract == "verification-observation-error-plan-v5"
+                                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V5_DIGEST
+                                if self.contract == "verification-observation-error-plan-v6"
                                 else (
-                                    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V3_DIGEST
-                                    if self.contract == "verification-observation-error-plan-v4"
-                                    else OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+                                    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V4_DIGEST
+                                    if self.contract == "verification-observation-error-plan-v5"
+                                    else (
+                                        OBSERVATION_ERROR_DERIVATION_ALGORITHM_V3_DIGEST
+                                        if self.contract == "verification-observation-error-plan-v4"
+                                        else OBSERVATION_ERROR_DERIVATION_ALGORITHM_V2_DIGEST
+                                    )
                                 )
                             )
                         )
@@ -757,24 +810,28 @@ class VerificationObservationErrorPlan:
                 )
             )
             expected_mask_algorithm = (
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V7_DIGEST
-                if self.contract == "verification-observation-error-plan-v9"
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V8_DIGEST
+                if self.contract == "verification-observation-error-plan-v10"
                 else (
-                    OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST
-                    if self.contract == "verification-observation-error-plan-v8"
+                    OBSERVATION_MASK_DERIVATION_ALGORITHM_V7_DIGEST
+                    if self.contract == "verification-observation-error-plan-v9"
                     else (
-                        OBSERVATION_MASK_DERIVATION_ALGORITHM_V5_DIGEST
-                        if self.contract == "verification-observation-error-plan-v7"
+                        OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST
+                        if self.contract == "verification-observation-error-plan-v8"
                         else (
-                            OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST
-                            if self.contract == "verification-observation-error-plan-v6"
+                            OBSERVATION_MASK_DERIVATION_ALGORITHM_V5_DIGEST
+                            if self.contract == "verification-observation-error-plan-v7"
                             else (
-                                OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST
-                                if self.contract == "verification-observation-error-plan-v5"
+                                OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST
+                                if self.contract == "verification-observation-error-plan-v6"
                                 else (
-                                    OBSERVATION_MASK_DERIVATION_ALGORITHM_V2_DIGEST
-                                    if self.contract == "verification-observation-error-plan-v4"
-                                    else OBSERVATION_MASK_DERIVATION_ALGORITHM_V1_DIGEST
+                                    OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST
+                                    if self.contract == "verification-observation-error-plan-v5"
+                                    else (
+                                        OBSERVATION_MASK_DERIVATION_ALGORITHM_V2_DIGEST
+                                        if self.contract == "verification-observation-error-plan-v4"
+                                        else OBSERVATION_MASK_DERIVATION_ALGORITHM_V1_DIGEST
+                                    )
                                 )
                             )
                         )
@@ -812,6 +869,7 @@ class VerificationObservationErrorPlan:
                         "verification-observation-error-plan-v7",
                         "verification-observation-error-plan-v8",
                         "verification-observation-error-plan-v9",
+                        "verification-observation-error-plan-v10",
                     }
                     else expected_mask_algorithm
                 )
@@ -843,6 +901,7 @@ class VerificationObservationErrorPlan:
                 "verification-observation-error-plan-v7",
                 "verification-observation-error-plan-v8",
                 "verification-observation-error-plan-v9",
+                "verification-observation-error-plan-v10",
             }:
                 expected_detection_algorithm = (
                     OBSERVATION_DETECTION_LIMIT_ALGORITHM_V2_DIGEST
@@ -851,6 +910,7 @@ class VerificationObservationErrorPlan:
                         "verification-observation-error-plan-v7",
                         "verification-observation-error-plan-v8",
                         "verification-observation-error-plan-v9",
+                        "verification-observation-error-plan-v10",
                     }
                     else OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST
                 )
@@ -861,6 +921,7 @@ class VerificationObservationErrorPlan:
                         "verification-observation-error-plan-v7",
                         "verification-observation-error-plan-v8",
                         "verification-observation-error-plan-v9",
+                        "verification-observation-error-plan-v10",
                     }
                     else OBSERVATION_CENSOR_STATE_ALGORITHM_V1_DIGEST
                 )
@@ -906,6 +967,7 @@ class VerificationObservationErrorPlan:
                 "verification-observation-error-plan-v7",
                 "verification-observation-error-plan-v8",
                 "verification-observation-error-plan-v9",
+                "verification-observation-error-plan-v10",
             }:
                 if (
                     not isinstance(self.geometry_contract_digest, str)
@@ -922,7 +984,11 @@ class VerificationObservationErrorPlan:
                     < self.spatial_metric_maximum_displacement_fraction_cells
                     <= 1.0
                     or self.spatial_age_gate_algorithm_digest
-                    != OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST
+                    != (
+                        OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V2_DIGEST
+                        if self.contract == "verification-observation-error-plan-v10"
+                        else OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST
+                    )
                 ):
                     raise ValueError(
                         "scientific geometry/time policy is unsupported"
@@ -1062,6 +1128,7 @@ class RadarObservationGeometryContract:
                 "radar-observation-geometry-v1",
                 "radar-observation-geometry-v2",
                 "radar-observation-geometry-v3",
+                "radar-observation-geometry-v4",
             }
             or self.grid_x_m.ndim != 2
             or self.grid_y_m.shape != self.grid_x_m.shape
@@ -1093,16 +1160,34 @@ class RadarObservationGeometryContract:
                     "radar observation spacing disagrees with grid coordinates"
                 )
             object.__setattr__(self, "grid_spacing_m", derived_spacing_m)
-        elif self.contract == "radar-observation-geometry-v3":
+        elif self.contract in {
+            "radar-observation-geometry-v3",
+            "radar-observation-geometry-v4",
+        }:
             identity = self.projected_grid_identity
+            expected_identity_contract = (
+                "radar-spatial-grid-identity-v3"
+                if self.contract == "radar-observation-geometry-v4"
+                else "radar-spatial-grid-identity-v2"
+            )
+            expected_spacing_m = (
+                identity.minimum_l2_cell_displacement_m
+                if type(identity) is RadarSpatialGridIdentity
+                and self.contract == "radar-observation-geometry-v4"
+                else (
+                    identity.minimum_axis_spacing_m
+                    if type(identity) is RadarSpatialGridIdentity
+                    else None
+                )
+            )
             if (
                 type(identity) is not RadarSpatialGridIdentity
-                or identity.contract != "radar-spatial-grid-identity-v2"
+                or identity.contract != expected_identity_contract
                 or identity.shape_yx != tuple(self.grid_x_m.shape)
                 or identity.projected_crs_digest != self.projected_crs_digest
                 or self.grid_x_m.dtype != torch.float64
                 or self.grid_y_m.dtype != torch.float64
-                or self.grid_spacing_m != identity.minimum_axis_spacing_m
+                or self.grid_spacing_m != expected_spacing_m
             ):
                 raise ValueError("scientific radar affine geometry is invalid")
             expected_x_m, expected_y_m = (
@@ -1135,9 +1220,13 @@ class RadarObservationGeometryContract:
         if self.contract in {
             "radar-observation-geometry-v2",
             "radar-observation-geometry-v3",
+            "radar-observation-geometry-v4",
         }:
             payload["grid_contract_digest"] = self.grid_contract_digest
-        if self.contract == "radar-observation-geometry-v3":
+        if self.contract in {
+            "radar-observation-geometry-v3",
+            "radar-observation-geometry-v4",
+        }:
             assert self.projected_grid_identity is not None
             payload.update(
                 {
@@ -1162,13 +1251,13 @@ class RadarObservationGeometryContract:
         *,
         device: torch.device | str | None = None,
     ) -> RadarObservationGeometryContract:
-        """Create v3 geometry only from the forecast's shared grid authority."""
+        """Create current geometry only from the forecast grid authority."""
 
         if type(grid) is not RadarGridTimeContract:
             raise ValueError("radar grid/time contract is required")
         identity = grid.spatial_grid_identity
-        if identity.contract != "radar-spatial-grid-identity-v2":
-            raise ValueError("scientific verification requires projected-grid v2")
+        if identity.contract != "radar-spatial-grid-identity-v3":
+            raise ValueError("scientific verification requires projected-grid v3")
         grid_x_m, grid_y_m = identity.projected_cell_center_coordinates(
             device=device,
         )
@@ -1178,9 +1267,9 @@ class RadarObservationGeometryContract:
             projected_crs_digest=identity.projected_crs_digest,
             grid_x_m=grid_x_m,
             grid_y_m=grid_y_m,
-            grid_spacing_m=identity.minimum_axis_spacing_m,
+            grid_spacing_m=identity.minimum_l2_cell_displacement_m,
             projected_grid_identity=identity,
-            contract="radar-observation-geometry-v3",
+            contract="radar-observation-geometry-v4",
         )
 
 
@@ -1843,6 +1932,7 @@ def _verification_observation_upstream_artifact_digest(
         "typed-upstream-verification-observation-v5",
         "typed-upstream-verification-observation-v6",
         "typed-upstream-verification-observation-v7",
+        "typed-upstream-verification-observation-v8",
     ],
     valid_times: tuple[str, ...],
     acquisition_valid_times_by_source: tuple[tuple[str, ...], ...],
@@ -1925,6 +2015,7 @@ def _verification_observation_upstream_artifact_digest(
         "typed-upstream-verification-observation-v5",
         "typed-upstream-verification-observation-v6",
         "typed-upstream-verification-observation-v7",
+        "typed-upstream-verification-observation-v8",
     }:
         if geometry_contract_digest is None:
             raise ValueError("verification geometry identity is missing")
@@ -1951,7 +2042,7 @@ def _registered_observation_geometry_fields(
 ) -> tuple[Tensor, Tensor]:
     if (
         source_registry.contract != "mosaic-observation-source-registry-v5"
-        or geometry.contract != "radar-observation-geometry-v3"
+        or geometry.contract != "radar-observation-geometry-v4"
         or source_registry.projected_crs_digest
         != geometry.projected_crs_digest
         or source_registry.geometry_model
@@ -1970,8 +2061,10 @@ def _registered_observation_geometry_fields(
             + (geometry.grid_y_m - cast(float, source.projected_y_m)).square()
         ) / 1000.0
         if output_dtype is not None:
-            if not output_dtype.is_floating_point:
-                raise ValueError("registered radar geometry output must be floating")
+            if output_dtype not in {torch.float32, torch.float64}:
+                raise ValueError(
+                    "scientific radar source values require float32 or float64"
+                )
             range_km = range_km.to(dtype=output_dtype)
         ranges.append(range_km.unsqueeze(0).expand(time_count, -1, -1))
         elevations.append(
@@ -2055,7 +2148,7 @@ def _product_owned_source_assignment_scores(
 
     if (
         type(plan) is not VerificationObservationErrorPlan
-        or plan.contract != "verification-observation-error-plan-v9"
+        or plan.contract != "verification-observation-error-plan-v10"
         or plan.source_assignment_algorithm_digest
         != OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST
     ):
@@ -2148,7 +2241,7 @@ class VerificationObservationMaskEvidence:
     beam_blockage_visibility_mask_digest: str
     spatial_correlation_block_digest: str
     geometry_contract_digest: str | None = None
-    contract: str = "verification-observation-mask-evidence-v7"
+    contract: str = "verification-observation-mask-evidence-v8"
     evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
@@ -2160,6 +2253,7 @@ class VerificationObservationMaskEvidence:
                 "verification-observation-mask-evidence-v5",
                 "verification-observation-mask-evidence-v6",
                 "verification-observation-mask-evidence-v7",
+                "verification-observation-mask-evidence-v8",
             }
             or type(self.source_identity) is not VerificationObservationSourceIdentity
             or self.source_identity.contract
@@ -2170,6 +2264,7 @@ class VerificationObservationMaskEvidence:
                     "verification-observation-mask-evidence-v5",
                     "verification-observation-mask-evidence-v6",
                     "verification-observation-mask-evidence-v7",
+                    "verification-observation-mask-evidence-v8",
                 }
                 else "verification-observation-source-identity-v2"
             )
@@ -2193,6 +2288,7 @@ class VerificationObservationMaskEvidence:
             "verification-observation-mask-evidence-v5",
             "verification-observation-mask-evidence-v6",
             "verification-observation-mask-evidence-v7",
+            "verification-observation-mask-evidence-v8",
         }:
             if not isinstance(self.geometry_contract_digest, str):
                 raise ValueError("verification geometry identity is missing")
@@ -2208,6 +2304,14 @@ class VerificationObservationMaskEvidence:
         )
         for source_digest in self.ordered_source_digests:
             _require_sha256("ordered observation source", source_digest)
+        if (
+            self.contract == "verification-observation-mask-evidence-v8"
+            and self.source_assignment_scores.dtype
+            not in {torch.float32, torch.float64}
+        ):
+            raise ValueError(
+                "scientific observation evidence requires float32 or float64"
+            )
         for tensor in (
             self.reflectivity_dbz_by_source,
             self.detection_limit_dbz_by_source,
@@ -2271,12 +2375,16 @@ class VerificationObservationMaskEvidence:
         expected_upstream_digest = _verification_observation_upstream_artifact_digest(
             contract=(
                 (
-                    "typed-upstream-verification-observation-v7"
-                    if self.contract == "verification-observation-mask-evidence-v7"
+                    "typed-upstream-verification-observation-v8"
+                    if self.contract == "verification-observation-mask-evidence-v8"
                     else (
-                        "typed-upstream-verification-observation-v6"
-                        if self.contract == "verification-observation-mask-evidence-v6"
-                        else "typed-upstream-verification-observation-v5"
+                        "typed-upstream-verification-observation-v7"
+                        if self.contract == "verification-observation-mask-evidence-v7"
+                        else (
+                            "typed-upstream-verification-observation-v6"
+                            if self.contract == "verification-observation-mask-evidence-v6"
+                            else "typed-upstream-verification-observation-v5"
+                        )
                     )
                 )
                 if self.contract
@@ -2284,6 +2392,7 @@ class VerificationObservationMaskEvidence:
                     "verification-observation-mask-evidence-v5",
                     "verification-observation-mask-evidence-v6",
                     "verification-observation-mask-evidence-v7",
+                    "verification-observation-mask-evidence-v8",
                 }
                 else "typed-upstream-verification-observation-v4"
             ),
@@ -2354,12 +2463,16 @@ class VerificationObservationMaskEvidence:
         expected_upstream_digest = _verification_observation_upstream_artifact_digest(
             contract=(
                 (
-                    "typed-upstream-verification-observation-v7"
-                    if self.contract == "verification-observation-mask-evidence-v7"
+                    "typed-upstream-verification-observation-v8"
+                    if self.contract == "verification-observation-mask-evidence-v8"
                     else (
-                        "typed-upstream-verification-observation-v6"
-                        if self.contract == "verification-observation-mask-evidence-v6"
-                        else "typed-upstream-verification-observation-v5"
+                        "typed-upstream-verification-observation-v7"
+                        if self.contract == "verification-observation-mask-evidence-v7"
+                        else (
+                            "typed-upstream-verification-observation-v6"
+                            if self.contract == "verification-observation-mask-evidence-v6"
+                            else "typed-upstream-verification-observation-v5"
+                        )
                     )
                 )
                 if self.contract
@@ -2367,6 +2480,7 @@ class VerificationObservationMaskEvidence:
                     "verification-observation-mask-evidence-v5",
                     "verification-observation-mask-evidence-v6",
                     "verification-observation-mask-evidence-v7",
+                    "verification-observation-mask-evidence-v8",
                 }
                 else "typed-upstream-verification-observation-v4"
             ),
@@ -2453,6 +2567,7 @@ class VerificationObservationMaskEvidence:
                     in {
                         "verification-observation-mask-evidence-v6",
                         "verification-observation-mask-evidence-v7",
+                        "verification-observation-mask-evidence-v8",
                     }
                     else "mosaic-observation-source-registry-v4"
                 )
@@ -2461,6 +2576,7 @@ class VerificationObservationMaskEvidence:
                     "verification-observation-mask-evidence-v5",
                     "verification-observation-mask-evidence-v6",
                     "verification-observation-mask-evidence-v7",
+                    "verification-observation-mask-evidence-v8",
                 }
                 else "mosaic-observation-source-registry-v3"
             )
@@ -2493,8 +2609,8 @@ class VerificationObservationMaskEvidence:
         source_registry.validate_against_plan(plan)
         geometry.validate_integrity()
         if (
-            self.contract != "verification-observation-mask-evidence-v7"
-            or plan.contract != "verification-observation-error-plan-v9"
+            self.contract != "verification-observation-mask-evidence-v8"
+            or plan.contract != "verification-observation-error-plan-v10"
             or self.source_identity.contract
             != "verification-observation-source-identity-v3"
             or self.source_identity.acquisition_timestamp_reference
@@ -2604,6 +2720,7 @@ class VerificationObservationMaskEvidence:
                     "verification-observation-mask-evidence-v5",
                     "verification-observation-mask-evidence-v6",
                     "verification-observation-mask-evidence-v7",
+                    "verification-observation-mask-evidence-v8",
                 }
                 else {}
             ),
@@ -2672,7 +2789,7 @@ class VerificationObservationMaskEvidence:
         source_registry.validate_against_plan(plan)
         geometry.validate_integrity()
         if (
-            plan.contract != "verification-observation-error-plan-v9"
+            plan.contract != "verification-observation-error-plan-v10"
             or source_registry.contract
             != "mosaic-observation-source-registry-v5"
             or source_registry.projected_crs_digest
@@ -2715,7 +2832,7 @@ class VerificationObservationMaskEvidence:
             elevation_deg_by_source=elevation_deg_by_source,
         )
         upstream_digest = _verification_observation_upstream_artifact_digest(
-            contract="typed-upstream-verification-observation-v7",
+            contract="typed-upstream-verification-observation-v8",
             valid_times=canonical_valid_times,
             acquisition_valid_times_by_source=(
                 canonical_acquisition_times_by_source
@@ -2875,15 +2992,15 @@ def _derive_verification_observation_masks(
 ]:
     if (
         type(plan) is not VerificationObservationErrorPlan
-        or plan.contract != "verification-observation-error-plan-v9"
+        or plan.contract != "verification-observation-error-plan-v10"
         or plan.mask_derivation_algorithm_digest
-        != OBSERVATION_MASK_DERIVATION_ALGORITHM_V7_DIGEST
+        != OBSERVATION_MASK_DERIVATION_ALGORITHM_V8_DIGEST
         or type(raw_evidence) is not VerificationObservationMaskEvidence
-        or raw_evidence.contract != "verification-observation-mask-evidence-v7"
+        or raw_evidence.contract != "verification-observation-mask-evidence-v8"
         or type(source_registry) is not MosaicObservationSourceRegistry
         or source_registry.contract != "mosaic-observation-source-registry-v5"
         or type(geometry) is not RadarObservationGeometryContract
-        or geometry.contract != "radar-observation-geometry-v3"
+        or geometry.contract != "radar-observation-geometry-v4"
     ):
         raise ValueError("deterministic observation-mask derivation is invalid")
     plan.validate_integrity()
@@ -3037,11 +3154,11 @@ class VerificationObservationMaskDerivationArtifact:
     _confirmed_clear_mask: Tensor = field(repr=False)
     _below_detection_censored_mask: Tensor = field(repr=False)
     _source_radar_index_map: Tensor | None = field(repr=False)
-    contract: str = "verification-observation-mask-derivation-artifact-v7"
+    contract: str = "verification-observation-mask-derivation-artifact-v8"
     artifact_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "verification-observation-mask-derivation-artifact-v7":
+        if self.contract != "verification-observation-mask-derivation-artifact-v8":
             raise ValueError("verification observation mask artifact is invalid")
         expected = _derive_verification_observation_masks(
             plan=self.plan,
@@ -3209,7 +3326,7 @@ class VerificationObservationMaskDerivationArtifact:
             "source_registry_digest": self.source_registry.registry_digest,
             "geometry_contract_digest": self.geometry.geometry_digest,
             "mask_derivation_algorithm_digest": (
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V8_DIGEST
             ),
             "selected_frames_dbz_digest": tensor_digest(
                 self._selected_frames_dbz
@@ -3337,6 +3454,7 @@ class VerificationObservationDerivationInputs:
                 "verification-observation-derivation-inputs-v6",
                 "verification-observation-derivation-inputs-v7",
                 "verification-observation-derivation-inputs-v8",
+                "verification-observation-derivation-inputs-v9",
             }
             or self.frames_dbz.ndim != 3
             or not self.frames_dbz.is_floating_point()
@@ -3383,6 +3501,7 @@ class VerificationObservationDerivationInputs:
             "verification-observation-derivation-inputs-v5",
             "verification-observation-derivation-inputs-v6",
             "verification-observation-derivation-inputs-v7",
+            "verification-observation-derivation-inputs-v8",
         }:
             raise ValueError("legacy observation derivation inputs are audit-only")
         else:
@@ -3391,7 +3510,7 @@ class VerificationObservationDerivationInputs:
                 or type(self.mask_derivation)
                 is not VerificationObservationMaskDerivationArtifact
                 or self.mask_derivation.contract
-                != "verification-observation-mask-derivation-artifact-v7"
+                != "verification-observation-mask-derivation-artifact-v8"
                 or self.detection_limit_dbz is None
                 or self.acquisition_time_offset_seconds is None
                 or self.acquisition_age_seconds is None
@@ -3544,7 +3663,7 @@ class VerificationObservationDerivationInputs:
         object.__setattr__(self, "content_digest", json_digest(self.payload))
 
     def validate_integrity(self) -> None:
-        if self.contract == "verification-observation-derivation-inputs-v8":
+        if self.contract == "verification-observation-derivation-inputs-v9":
             if (
                 type(self.source_identity) is not VerificationObservationSourceIdentity
                 or type(self.mask_derivation)
@@ -3638,7 +3757,7 @@ class VerificationObservationDerivationInputs:
                 self.spatial_correlation_block_digest
             ),
         }
-        if self.contract == "verification-observation-derivation-inputs-v8":
+        if self.contract == "verification-observation-derivation-inputs-v9":
             source_identity = cast(
                 VerificationObservationSourceIdentity,
                 self.source_identity,
@@ -3648,7 +3767,7 @@ class VerificationObservationDerivationInputs:
                 self.mask_derivation,
             )
             generation_payload: dict[str, object] = {
-                    "contract": "typed-verification-observation-source-v8",
+                    "contract": "typed-verification-observation-source-v9",
                     "verification_source_identity_digest": (
                         source_identity.identity_digest
                     ),
@@ -3698,7 +3817,7 @@ class VerificationObservationDerivationInputs:
                 self.raw_verification_identity_digest
             ),
         }
-        if self.contract == "verification-observation-derivation-inputs-v8":
+        if self.contract == "verification-observation-derivation-inputs-v9":
             source_identity = cast(
                 VerificationObservationSourceIdentity,
                 self.source_identity,
@@ -3763,7 +3882,7 @@ class VerificationObservationDerivationInputs:
             ),
             source_identity=raw_evidence.source_identity,
             mask_derivation=artifact,
-            contract="verification-observation-derivation-inputs-v8",
+            contract="verification-observation-derivation-inputs-v9",
         )
 
 
@@ -3920,6 +4039,7 @@ class VerificationObservationErrorContract:
                 "verification-observation-error-contract-v9",
                 "verification-observation-error-contract-v10",
                 "verification-observation-error-contract-v11",
+                "verification-observation-error-contract-v12",
             }
             or self.radar_source_kind not in {"single_site", "mosaic"}
             or self.metric_weight_rule
@@ -3942,6 +4062,7 @@ class VerificationObservationErrorContract:
                     "verification-observation-error-contract-v9",
                     "verification-observation-error-contract-v10",
                     "verification-observation-error-contract-v11",
+                    "verification-observation-error-contract-v12",
                 }
                 else (
                     "observed_clear",
@@ -4018,6 +4139,7 @@ class VerificationObservationErrorContract:
                 "verification-observation-error-contract-v9",
                 "verification-observation-error-contract-v10",
                 "verification-observation-error-contract-v11",
+                "verification-observation-error-contract-v12",
             }:
                 for name in (
                     "detection_limit_dbz_digest",
@@ -4034,6 +4156,7 @@ class VerificationObservationErrorContract:
                     "verification-observation-error-contract-v9",
                     "verification-observation-error-contract-v10",
                     "verification-observation-error-contract-v11",
+                    "verification-observation-error-contract-v12",
                 }:
                     if self.acquisition_age_seconds_digest is None:
                         raise ValueError(
@@ -4049,6 +4172,7 @@ class VerificationObservationErrorContract:
                     "verification-observation-error-contract-v9",
                     "verification-observation-error-contract-v10",
                     "verification-observation-error-contract-v11",
+                    "verification-observation-error-contract-v12",
                 }:
                     if self.spatial_metric_valid_mask_digest is None:
                         raise ValueError("spatial metric lineage is incomplete")
@@ -4220,6 +4344,16 @@ class VerificationObservationErrorContract:
                 )
             )
             or (
+                self.contract == "verification-observation-error-contract-v12"
+                and (
+                    plan.contract != "verification-observation-error-plan-v10"
+                    or self.source_registry_digest
+                    != plan.source_registry_digest
+                    or self.calibration_registry_digest
+                    != plan.calibration_registry_digest
+                )
+            )
+            or (
                 self.contract == "verification-observation-error-contract-v11"
                 and (
                     plan.contract != "verification-observation-error-plan-v9"
@@ -4279,6 +4413,7 @@ class VerificationObservationErrorContract:
             "verification-observation-error-contract-v9",
             "verification-observation-error-contract-v10",
             "verification-observation-error-contract-v11",
+            "verification-observation-error-contract-v12",
         }:
             return "deterministic_replay"
         return "exploratory_only"
@@ -4333,6 +4468,7 @@ class VerificationObservationErrorContract:
             "verification-observation-error-contract-v9",
             "verification-observation-error-contract-v10",
             "verification-observation-error-contract-v11",
+            "verification-observation-error-contract-v12",
         }:
             payload.update(
                 {
@@ -4353,6 +4489,7 @@ class VerificationObservationErrorContract:
             "verification-observation-error-contract-v8",
             "verification-observation-error-contract-v10",
             "verification-observation-error-contract-v11",
+            "verification-observation-error-contract-v12",
         }:
             payload.update(
                 {
@@ -4373,6 +4510,7 @@ class VerificationObservationErrorContract:
             "verification-observation-error-contract-v8",
             "verification-observation-error-contract-v10",
             "verification-observation-error-contract-v11",
+            "verification-observation-error-contract-v12",
         }:
             payload.update(
                 {
@@ -4388,6 +4526,7 @@ class VerificationObservationErrorContract:
                 "verification-observation-error-contract-v8",
                 "verification-observation-error-contract-v10",
                 "verification-observation-error-contract-v11",
+                "verification-observation-error-contract-v12",
             }:
                 payload["acquisition_age_seconds_digest"] = (
                     self.acquisition_age_seconds_digest
@@ -4395,6 +4534,7 @@ class VerificationObservationErrorContract:
             if self.contract in {
                 "verification-observation-error-contract-v10",
                 "verification-observation-error-contract-v11",
+                "verification-observation-error-contract-v12",
             }:
                 payload["spatial_metric_valid_mask_digest"] = (
                     self.spatial_metric_valid_mask_digest
@@ -4417,14 +4557,14 @@ def _derive_verification_observation_error_tensors(
                 "verification-observation-derivation-inputs-v1",
             ),
             (
-                "verification-observation-error-plan-v9",
-                "verification-observation-derivation-inputs-v8",
+                "verification-observation-error-plan-v10",
+                "verification-observation-derivation-inputs-v9",
             ),
         }
         or plan.derivation_algorithm_digest
         != (
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST
-            if plan.contract == "verification-observation-error-plan-v9"
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V9_DIGEST
+            if plan.contract == "verification-observation-error-plan-v10"
             else (
                 OBSERVATION_ERROR_DERIVATION_ALGORITHM_DIGEST
             )
@@ -4444,7 +4584,7 @@ def _derive_verification_observation_error_tensors(
     frames = raw_inputs.frames_dbz
     detection_limit = (
         raw_inputs.detection_limit_dbz
-        if raw_inputs.contract == "verification-observation-derivation-inputs-v8"
+        if raw_inputs.contract == "verification-observation-derivation-inputs-v9"
         else torch.full_like(frames, plan.minimum_detectable_echo_dbz)
     )
     assert detection_limit is not None
@@ -4464,7 +4604,7 @@ def _derive_verification_observation_error_tensors(
         & raw_inputs.beam_blocked_mask
     )
     current_inputs = (
-        raw_inputs.contract == "verification-observation-derivation-inputs-v8"
+        raw_inputs.contract == "verification-observation-derivation-inputs-v9"
     )
     if current_inputs:
         stale_acquisition = (
@@ -4563,7 +4703,7 @@ def _derive_verification_observation_error_tensors(
     )
     baseline_quality = quality_lookup[lookup_indices]
     baseline_std = observation_std_lookup[lookup_indices]
-    if raw_inputs.contract == "verification-observation-derivation-inputs-v8":
+    if raw_inputs.contract == "verification-observation-derivation-inputs-v9":
         mask_derivation = cast(
             VerificationObservationMaskDerivationArtifact,
             raw_inputs.mask_derivation,
@@ -4683,9 +4823,14 @@ class ObservationErrorDerivationArtifact:
             "observation-error-derivation-artifact-v6",
             "observation-error-derivation-artifact-v7",
             "observation-error-derivation-artifact-v8",
+            "observation-error-derivation-artifact-v9",
         }:
             raise ValueError("observation-error derivation artifact is invalid")
         expected_contract = {
+            (
+                "verification-observation-error-plan-v10",
+                "verification-observation-derivation-inputs-v9",
+            ): "observation-error-derivation-artifact-v9",
             (
                 "verification-observation-error-plan-v9",
                 "verification-observation-derivation-inputs-v8",
@@ -4824,6 +4969,7 @@ class ObservationErrorDerivationArtifact:
             "observation-error-derivation-artifact-v6",
             "observation-error-derivation-artifact-v7",
             "observation-error-derivation-artifact-v8",
+            "observation-error-derivation-artifact-v9",
         }
         is_source_composed = (
             self.contract in {
@@ -4833,6 +4979,7 @@ class ObservationErrorDerivationArtifact:
                 "observation-error-derivation-artifact-v6",
                 "observation-error-derivation-artifact-v7",
                 "observation-error-derivation-artifact-v8",
+                "observation-error-derivation-artifact-v9",
             }
         )
         if is_confirmatory and (
@@ -4908,6 +5055,7 @@ class ObservationErrorDerivationArtifact:
                     "observation-error-derivation-artifact-v6",
                     "observation-error-derivation-artifact-v7",
                     "observation-error-derivation-artifact-v8",
+                    "observation-error-derivation-artifact-v9",
                 }
                 else None
             ),
@@ -4920,6 +5068,7 @@ class ObservationErrorDerivationArtifact:
                     "observation-error-derivation-artifact-v6",
                     "observation-error-derivation-artifact-v7",
                     "observation-error-derivation-artifact-v8",
+                    "observation-error-derivation-artifact-v9",
                 }
                 else None
             ),
@@ -4969,6 +5118,7 @@ class ObservationErrorDerivationArtifact:
                     "observation-error-derivation-artifact-v6",
                     "observation-error-derivation-artifact-v7",
                     "observation-error-derivation-artifact-v8",
+                    "observation-error-derivation-artifact-v9",
                 }
                 else (
                     "observed_clear",
@@ -4982,27 +5132,31 @@ class ObservationErrorDerivationArtifact:
             ),
             spatial_correlation_role=self.plan.spatial_correlation_role,
             contract=(
-                "verification-observation-error-contract-v11"
-                if self.contract == "observation-error-derivation-artifact-v8"
+                "verification-observation-error-contract-v12"
+                if self.contract == "observation-error-derivation-artifact-v9"
                 else (
-                    "verification-observation-error-contract-v10"
-                    if self.contract == "observation-error-derivation-artifact-v7"
+                    "verification-observation-error-contract-v11"
+                    if self.contract == "observation-error-derivation-artifact-v8"
                     else (
-                        "verification-observation-error-contract-v9"
-                        if self.contract == "observation-error-derivation-artifact-v6"
+                        "verification-observation-error-contract-v10"
+                        if self.contract == "observation-error-derivation-artifact-v7"
                         else (
-                            "verification-observation-error-contract-v8"
-                            if self.contract == "observation-error-derivation-artifact-v5"
+                            "verification-observation-error-contract-v9"
+                            if self.contract == "observation-error-derivation-artifact-v6"
                             else (
-                                "verification-observation-error-contract-v7"
-                                if self.contract == "observation-error-derivation-artifact-v4"
+                                "verification-observation-error-contract-v8"
+                                if self.contract == "observation-error-derivation-artifact-v5"
                                 else (
-                                    "verification-observation-error-contract-v6"
-                                    if is_source_composed
+                                    "verification-observation-error-contract-v7"
+                                    if self.contract == "observation-error-derivation-artifact-v4"
                                     else (
-                                        "verification-observation-error-contract-v5"
-                                        if is_confirmatory
-                                        else "verification-observation-error-contract-v4"
+                                        "verification-observation-error-contract-v6"
+                                        if is_source_composed
+                                        else (
+                                            "verification-observation-error-contract-v5"
+                                            if is_confirmatory
+                                            else "verification-observation-error-contract-v4"
+                                        )
                                     )
                                 )
                             )
@@ -5047,6 +5201,7 @@ class ObservationErrorDerivationArtifact:
             "observation-error-derivation-artifact-v6",
             "observation-error-derivation-artifact-v7",
             "observation-error-derivation-artifact-v8",
+            "observation-error-derivation-artifact-v9",
         }:
             source_identity = cast(
                 VerificationObservationSourceIdentity,
@@ -5087,6 +5242,7 @@ def derive_verification_observation_error(
         "verification-observation-derivation-inputs-v5",
         "verification-observation-derivation-inputs-v6",
         "verification-observation-derivation-inputs-v7",
+        "verification-observation-derivation-inputs-v8",
     }:
         raise ValueError("legacy observation derivation inputs are audit-only")
 
@@ -5105,9 +5261,9 @@ def derive_verification_observation_error(
         _observation_state_code=derived[3],
         _source_radar_index_map=derived[4],
         contract=(
-            "observation-error-derivation-artifact-v8"
+            "observation-error-derivation-artifact-v9"
             if raw_verification_source.contract
-            == "verification-observation-derivation-inputs-v8"
+            == "verification-observation-derivation-inputs-v9"
             else "observation-error-derivation-artifact-v1"
         ),
     )
@@ -5115,11 +5271,11 @@ def derive_verification_observation_error(
 
 _SUPPORTED_VERIFICATION_BUNDLE_CONTRACTS = frozenset(
     f"radar-verification-bundle-v{generation}"
-    for generation in range(1, 15)
+    for generation in range(1, 16)
 )
 _OBSERVATION_ERROR_VERIFICATION_BUNDLE_CONTRACTS = frozenset(
     f"radar-verification-bundle-v{generation}"
-    for generation in range(6, 15)
+    for generation in range(6, 16)
 )
 
 
@@ -5271,6 +5427,7 @@ class VerificationBundle:
                 "radar-verification-bundle-v12",
                 "radar-verification-bundle-v13",
                 "radar-verification-bundle-v14",
+                "radar-verification-bundle-v15",
             }:
                 source_composition_tensors += (self.acquisition_age_seconds,)
             if self.contract in {
@@ -5280,6 +5437,7 @@ class VerificationBundle:
                 "radar-verification-bundle-v12",
                 "radar-verification-bundle-v13",
                 "radar-verification-bundle-v14",
+                "radar-verification-bundle-v15",
             }:
                 if any(value is None for value in source_composition_tensors):
                     raise ValueError(
@@ -5308,6 +5466,7 @@ class VerificationBundle:
                         "radar-verification-bundle-v12",
                         "radar-verification-bundle-v13",
                         "radar-verification-bundle-v14",
+                        "radar-verification-bundle-v15",
                     }
                     and self.acquisition_age_seconds is not None
                     and bool(torch.any(self.acquisition_age_seconds < 0.0))
@@ -5319,6 +5478,7 @@ class VerificationBundle:
                     "radar-verification-bundle-v12",
                     "radar-verification-bundle-v13",
                     "radar-verification-bundle-v14",
+                    "radar-verification-bundle-v15",
                 }:
                     spatial_mask = self.spatial_metric_valid_mask
                     if (
@@ -5569,6 +5729,7 @@ class VerificationBundle:
                         "radar-verification-bundle-v12",
                         "radar-verification-bundle-v13",
                         "radar-verification-bundle-v14",
+                        "radar-verification-bundle-v15",
                     }
                 )
                 if (
@@ -5581,13 +5742,17 @@ class VerificationBundle:
                             "observation-error-derivation-artifact-v7"
                             if self.contract == "radar-verification-bundle-v13"
                             else (
-                                "observation-error-derivation-artifact-v8"
-                                if self.contract == "radar-verification-bundle-v14"
+                            "observation-error-derivation-artifact-v8"
+                            if self.contract == "radar-verification-bundle-v14"
+                            else (
+                                "observation-error-derivation-artifact-v9"
+                                if self.contract == "radar-verification-bundle-v15"
                                 else (
                                     "observation-error-derivation-artifact-v5"
                                     if current_temporal_generation
                                     else "observation-error-derivation-artifact-v4"
                                 )
+                            )
                             )
                         )
                     )
@@ -5602,9 +5767,13 @@ class VerificationBundle:
                                 "verification-observation-error-contract-v11"
                                 if self.contract == "radar-verification-bundle-v14"
                                 else (
-                                    "verification-observation-error-contract-v8"
-                                    if current_temporal_generation
-                                    else "verification-observation-error-contract-v7"
+                                    "verification-observation-error-contract-v12"
+                                    if self.contract == "radar-verification-bundle-v15"
+                                    else (
+                                        "verification-observation-error-contract-v8"
+                                        if current_temporal_generation
+                                        else "verification-observation-error-contract-v7"
+                                    )
                                 )
                             )
                         )
@@ -5658,6 +5827,7 @@ class VerificationBundle:
                             "radar-verification-bundle-v12",
                             "radar-verification-bundle-v13",
                             "radar-verification-bundle-v14",
+                            "radar-verification-bundle-v15",
                         }
                         and (
                             error_contract.spatial_metric_valid_mask_digest
@@ -5735,7 +5905,11 @@ class VerificationBundle:
                         else tensor_digest(derived_source_map)
                     )
                     or (
-                        self.contract == "radar-verification-bundle-v14"
+                        self.contract
+                        in {
+                            "radar-verification-bundle-v14",
+                            "radar-verification-bundle-v15",
+                        }
                         and (
                             type(derivation.raw_inputs.mask_derivation)
                             is not VerificationObservationMaskDerivationArtifact
@@ -5743,7 +5917,11 @@ class VerificationBundle:
                                 VerificationObservationMaskDerivationArtifact,
                                 derivation.raw_inputs.mask_derivation,
                             ).geometry.contract
-                            != "radar-observation-geometry-v3"
+                            != (
+                                "radar-observation-geometry-v4"
+                                if self.contract == "radar-verification-bundle-v15"
+                                else "radar-observation-geometry-v3"
+                            )
                         )
                     )
                 ):
@@ -5770,6 +5948,7 @@ class VerificationBundle:
                         "radar-verification-bundle-v12",
                         "radar-verification-bundle-v13",
                         "radar-verification-bundle-v14",
+                        "radar-verification-bundle-v15",
                     }
                     else None
                 ),
@@ -5882,6 +6061,7 @@ class VerificationBundle:
             "radar-verification-bundle-v12",
             "radar-verification-bundle-v13",
             "radar-verification-bundle-v14",
+            "radar-verification-bundle-v15",
         }:
             return self.valid_mask.to(self.frames_dbz)
         quality = cast(Tensor, self.quality_weight)
@@ -5914,6 +6094,7 @@ class VerificationBundle:
             "radar-verification-bundle-v12",
             "radar-verification-bundle-v13",
             "radar-verification-bundle-v14",
+            "radar-verification-bundle-v15",
         }:
             return weight
         state = cast(Tensor, self.observation_state_code)
@@ -5932,6 +6113,7 @@ class VerificationBundle:
             "radar-verification-bundle-v12",
             "radar-verification-bundle-v13",
             "radar-verification-bundle-v14",
+            "radar-verification-bundle-v15",
         }:
             return weight
         return torch.where(
@@ -5949,6 +6131,7 @@ class VerificationBundle:
             "radar-verification-bundle-v12",
             "radar-verification-bundle-v13",
             "radar-verification-bundle-v14",
+            "radar-verification-bundle-v15",
         }:
             return weight
         return torch.where(
@@ -6544,16 +6727,16 @@ class VariationalGaussNewtonDiagnostics:
     exact_hessian_products: int
 
 
-CURRENT_VARIATIONAL_FSO_CONTRACT = "p1-variational-fso-v20"
+CURRENT_VARIATIONAL_FSO_CONTRACT = "p1-variational-fso-v21"
 EXPLORATORY_VARIATIONAL_FSO_CONTRACT = (
     "p1-variational-fso-exploratory-v1"
 )
-CURRENT_VARIATIONAL_FSOI_CONTRACT = "p1-linearized-observation-impact-v16"
+CURRENT_VARIATIONAL_FSOI_CONTRACT = "p1-linearized-observation-impact-v17"
 EXPLORATORY_VARIATIONAL_FSOI_CONTRACT = (
     "p1-linearized-observation-impact-exploratory-v1"
 )
 _FSO_VERIFICATION_CONTRACTS = {
-    CURRENT_VARIATIONAL_FSO_CONTRACT: "radar-verification-bundle-v14",
+    CURRENT_VARIATIONAL_FSO_CONTRACT: "radar-verification-bundle-v15",
     EXPLORATORY_VARIATIONAL_FSO_CONTRACT: "legacy-verification-tensor-v1",
 }
 _FSOI_FSO_CONTRACTS = {
@@ -8854,6 +9037,7 @@ def _verification_content_digest(
         "radar-verification-bundle-v12",
         "radar-verification-bundle-v13",
         "radar-verification-bundle-v14",
+        "radar-verification-bundle-v15",
     }:
         payload.update(
             {
@@ -8907,6 +9091,8 @@ def _verification_content_digest(
             payload["version"] = "verification-bundle-content-v14"
         elif contract == "radar-verification-bundle-v14":
             payload["version"] = "verification-bundle-content-v15"
+        elif contract == "radar-verification-bundle-v15":
+            payload["version"] = "verification-bundle-content-v16"
     if contract in {
         "radar-verification-bundle-v4",
         "radar-verification-bundle-v5",
@@ -8919,6 +9105,7 @@ def _verification_content_digest(
         "radar-verification-bundle-v12",
         "radar-verification-bundle-v13",
         "radar-verification-bundle-v14",
+        "radar-verification-bundle-v15",
     }:
         payload.update(
             {
@@ -8948,6 +9135,7 @@ def _verification_content_digest(
         "radar-verification-bundle-v12",
         "radar-verification-bundle-v13",
         "radar-verification-bundle-v14",
+        "radar-verification-bundle-v15",
     }:
         payload["observation_state_code"] = (
             None
@@ -8968,6 +9156,7 @@ def _verification_content_digest(
         "radar-verification-bundle-v12",
         "radar-verification-bundle-v13",
         "radar-verification-bundle-v14",
+        "radar-verification-bundle-v15",
     }:
         payload["observation_error_derivation_digest"] = (
             None
@@ -8981,6 +9170,7 @@ def _verification_content_digest(
         "radar-verification-bundle-v12",
         "radar-verification-bundle-v13",
         "radar-verification-bundle-v14",
+        "radar-verification-bundle-v15",
     }:
         payload.update(
             {
@@ -9001,6 +9191,7 @@ def _verification_content_digest(
             "radar-verification-bundle-v12",
             "radar-verification-bundle-v13",
             "radar-verification-bundle-v14",
+            "radar-verification-bundle-v15",
         }:
             payload["acquisition_age_seconds"] = (
                 None
@@ -9011,6 +9202,7 @@ def _verification_content_digest(
             "radar-verification-bundle-v12",
             "radar-verification-bundle-v13",
             "radar-verification-bundle-v14",
+            "radar-verification-bundle-v15",
         }:
             payload["spatial_metric_valid_mask"] = (
                 None
@@ -9033,7 +9225,7 @@ def _validate_current_verification_projected_grid(
         )
     if verification.grid_contract_digest != result.run.grid_time_contract_digest:
         raise ValueError("verification and forecast grid contracts disagree")
-    if verification.contract != "radar-verification-bundle-v14":
+    if verification.contract != "radar-verification-bundle-v15":
         return
     derivation = verification.observation_error_derivation
     if (
@@ -9047,8 +9239,8 @@ def _validate_current_verification_projected_grid(
         derivation.raw_inputs.mask_derivation,
     ).geometry
     if (
-        grid.spatial_grid_contract != "radar-spatial-grid-identity-v2"
-        or geometry.contract != "radar-observation-geometry-v3"
+        grid.spatial_grid_contract != "radar-spatial-grid-identity-v3"
+        or geometry.contract != "radar-observation-geometry-v4"
         or geometry.grid_contract_digest != grid.digest
         or type(geometry.projected_grid_identity)
         is not RadarSpatialGridIdentity
@@ -9180,7 +9372,7 @@ def _validate_verification_lineage_fields(
         ):
             raise ValueError("incomplete verification cannot claim lineage")
         return
-    if contract != "radar-verification-bundle-v14":
+    if contract != "radar-verification-bundle-v15":
         raise ValueError("complete verification has the wrong contract")
     if valid_times is None or not valid_times:
         raise ValueError("complete verification requires valid times")
@@ -9230,7 +9422,7 @@ def variational_fso_digest(fso: VariationalFSO) -> str:
     )
     return json_digest(
         {
-            "version": "p1-variational-fso-digest-v15",
+            "version": "p1-variational-fso-digest-v16",
             "contract": fso.contract,
             "forecast_run_digest": fso.forecast_run_digest,
             "analysis_input_digest": fso.analysis_input_digest,
@@ -9420,7 +9612,7 @@ def variational_fsoi_digest(fsoi: VariationalFSOI) -> str:
 
     return json_digest(
         {
-            "version": "p1-variational-fsoi-digest-v13",
+            "version": "p1-variational-fsoi-digest-v14",
             "contract": fsoi.contract,
             "variational_fso_digest": fsoi.fso.variational_fso_digest,
             "perturbation_contract": fsoi.perturbation_contract,
@@ -13190,7 +13382,7 @@ def _compute_variational_products(
             frozen_structure_channel if baseline_dynamics_trusted else None
         ),
     )
-    if verification_bundle.contract == "radar-verification-bundle-v14":
+    if verification_bundle.contract == "radar-verification-bundle-v15":
         fso_contract = CURRENT_VARIATIONAL_FSO_CONTRACT
     elif verification_bundle.contract == "legacy-verification-tensor-v1":
         fso_contract = EXPLORATORY_VARIATIONAL_FSO_CONTRACT

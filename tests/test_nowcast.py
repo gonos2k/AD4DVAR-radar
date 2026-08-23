@@ -21,7 +21,10 @@ from advar.nowcast import (  # noqa: E402
     ForecastMetadata,
     ForecastRunContract,
     NowcastConfig,
+    RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION,
+    RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
     RadarGridTimeContract,
+    RadarSpatialGridIdentity,
     RadarState,
     StatePathProvenance,
     TendencyPairSelection,
@@ -31,6 +34,7 @@ from advar.nowcast import (  # noqa: E402
     forecast_from_state as forecast_result_from_state,
     forecast_linear_from_state,
     nowcast,
+    radar_projected_crs_semantic_digest,
 )
 from advar.physics import (  # noqa: E402
     FORECAST_INTEGRATOR_VERSION,
@@ -5001,6 +5005,136 @@ class NowcastTests(unittest.TestCase):
                         **common,
                         pixel_to_projected_matrix_m=matrix,
                     )
+
+    def test_current_grid_identity_uses_shared_affine_condition_policy(
+        self,
+    ) -> None:
+        common = {
+            "dx_m": 1000.0,
+            "dy_m": 1000.0,
+            "projection": "EPSG:5179",
+            "grid_hash": "d" * 64,
+            "pixel_to_projected_matrix_m": (
+                (1000.0, 1000.0),
+                (0.0, 1.0e-6),
+            ),
+        }
+        scientific = {
+            "shape_yx": (4, 4),
+            "projected_crs_digest": radar_projected_crs_semantic_digest(
+                "EPSG:5179"
+            ),
+            "cell_center_origin_xy_m": (500_000.0, 4_000_000.0),
+            "grid_coordinate_dtype": RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            "cell_center_convention": (
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+        }
+
+        with self.assertRaisesRegex(ValueError, "well-conditioned"):
+            RadarSpatialGridIdentity(
+                **common,
+                **scientific,
+                contract="radar-spatial-grid-identity-v3",
+            )
+        with self.assertRaisesRegex(ValueError, "well-conditioned"):
+            RadarGridTimeContract(
+                valid_times=(
+                    "2026-07-31T00:00:00Z",
+                    "2026-07-31T00:10:00Z",
+                    "2026-07-31T00:20:00Z",
+                ),
+                **common,
+                **{
+                    "spatial_grid_contract": (
+                        "radar-spatial-grid-identity-v3"
+                    ),
+                    "grid_shape_yx": scientific["shape_yx"],
+                    "projected_crs_digest": scientific[
+                        "projected_crs_digest"
+                    ],
+                    "cell_center_origin_xy_m": scientific[
+                        "cell_center_origin_xy_m"
+                    ],
+                    "grid_coordinate_dtype": scientific[
+                        "grid_coordinate_dtype"
+                    ],
+                    "cell_center_convention": scientific[
+                        "cell_center_convention"
+                    ],
+                },
+            )
+
+    def test_current_grid_identity_measures_sheared_cell_displacement(
+        self,
+    ) -> None:
+        identity = RadarSpatialGridIdentity(
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="e" * 64,
+            pixel_to_projected_matrix_m=((1000.0, 800.0), (0.0, 600.0)),
+            shape_yx=(4, 4),
+            projected_crs_digest=radar_projected_crs_semantic_digest(
+                "EPSG:5179"
+            ),
+            cell_center_origin_xy_m=(500_000.0, 4_000_000.0),
+            grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            cell_center_convention=(
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+            contract="radar-spatial-grid-identity-v3",
+        )
+
+        self.assertEqual(identity.minimum_axis_spacing_m, 1000.0)
+        self.assertAlmostEqual(
+            identity.minimum_l2_cell_displacement_m,
+            447.2135954999579,
+        )
+        self.assertAlmostEqual(
+            identity.linf_cell_displacement_spacing_m,
+            600.0,
+        )
+
+    def test_current_grid_rejects_non_projected_crs_and_wrong_shape(
+        self,
+    ) -> None:
+        for projection in ("EPSG:4326", "not-a-crs"):
+            with self.subTest(projection=projection):
+                with self.assertRaisesRegex(ValueError, "projected-metre"):
+                    radar_projected_crs_semantic_digest(projection)
+
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="f" * 64,
+            spatial_grid_contract="radar-spatial-grid-identity-v3",
+            grid_shape_yx=(2, 2),
+            projected_crs_digest=radar_projected_crs_semantic_digest(
+                "EPSG:5179"
+            ),
+            cell_center_origin_xy_m=(500_000.0, 4_000_000.0),
+            grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            cell_center_convention=(
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+        )
+        frames = torch.full((3, 4, 4), 20.0, dtype=torch.float64)
+        with self.assertRaisesRegex(ValueError, "shape disagrees"):
+            ForecastRunContract.from_inputs(
+                NowcastConfig(),
+                frames,
+                torch.ones_like(frames, dtype=torch.bool),
+                None,
+                None,
+                grid_time_contract=grid,
+            )
 
     def test_physical_motion_limit_requires_grid_contract(self) -> None:
         frames = torch.full((3, 8, 8), 20.0)

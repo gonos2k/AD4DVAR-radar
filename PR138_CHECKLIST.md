@@ -47,8 +47,8 @@
 - [x] Every changed digest preimage and generation has synchronized producers and consumers.
 - [x] Historical v9/v12 audit identity is preserved by golden evidence.
 - [x] PR #137 post-merge evidence is synchronized.
-- [ ] PR #138 head equals the reported pushed commit.
-- [ ] Exact-head CI failures, if any, are classified as code or infrastructure/policy.
+- [x] PR #138 head equals the reported pushed commit.
+- [x] Exact-head CI run `32588174999` completed successfully.
 - [x] Offline research, confirmatory claims, publication, and deployment remain separate decisions.
 - [x] External scientific evidence items remain visible with owner and required action.
 - [x] Merge remains HOLD unless explicitly authorized.
@@ -126,4 +126,19 @@ radar-verification-bundle-v12
 | Multi-radar confirmatory claim | HOLD | R138 repository items and X138 independent evidence must close. |
 | External publication | HOLD | Independent cohort and empirical geometry evidence are required. |
 | Operational deployment | NO-GO / OUT OF SCOPE | This project is optimized for scientific validation, not deployment authorization. |
-| PR #138 merge | HOLD | Independent review and exact-head CI required. |
+| PR #138 merge | MERGED / PASS | Head `509f50391e87b194735663110c5c936897829a96`; merge `e530e53a797f801078d6a97befc6fc0df21af265`; exact-head CI `32588174999` succeeded. |
+
+## Post-merge evidence
+
+```text
+PR head       509f50391e87b194735663110c5c936897829a96
+merge commit  e530e53a797f801078d6a97befc6fc0df21af265
+merged at     2026-08-22T21:51:26Z
+CI run        32588174999
+CI result     SUCCESS
+PR status     MERGED / PASS
+```
+
+Scientific gates remain independent of the merged engineering record:
+multi-radar confirmatory claims and external publication remain `HOLD`, and
+operational deployment remains `NO-GO / OUT OF SCOPE`.

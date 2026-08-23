@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.103
+# ADVAR 3-frame radar nowcast v0.104
 
 ADVAR는 운영 배포 시스템이 아니라 레이더 기반 변분 nowcast의 **과학적 실증과
 재현 가능한 offline 연구**를 위한 구현이다. 핵심 산출물은 수치 안정성, 입력·target
@@ -920,12 +920,12 @@ withheld radar/time/mask), QC·mask·censor·floor measurement contract,
 feature-exclusion 및 independence evidence를
 사전등록하며 plan payload 자체가 holdout digest에 포함된다. 실제 target은 임의
 Tensor로 만들 수 없고, plan에 고정된 radar product·QC·grid·valid time과 일치하는
-content-addressed `radar-verification-bundle-v14`에서만 생성한다.
+content-addressed `radar-verification-bundle-v15`에서만 생성한다.
 P1 state head에는 별도의 `NeuralPriorStateCalibrationPlan`을 사전등록한다. State target은
 state product·QC·mask·censor·floor policy, dBZ resolution·quantization origin과 prior output
 valid time에 결합되고 feature에서 withhold됐음을 검증한다. Target은 이 측정계보를 실제
 자료와 함께 observation-error contract를 attestation한
-`radar-verification-bundle-v14`에서만 생성된다. Candidate와
+`radar-verification-bundle-v15`에서만 생성된다. Candidate와
 parent의 state interval-Gaussian NLL·PIT,
 support Brier·pixel/object miss·false-support 및 validity Brier를 같은 target에서 paired
 평가한다. 절대 calibration과 cluster max-statistic 비열화 상한을 모두 통과하지 못하면
@@ -1174,10 +1174,10 @@ beam blockage, stale acquisition, below-detection censoring과 mosaic source 미
 target 또는 scientific-review eligibility를 만들 수 없다.
 Output tensor만 재생하는 v4 contract와 `radar-verification-bundle-v7`은 audit
 compatibility 세대이며 current confirmatory target을 만들 수 없다.
-Holdout plan v29는 모든
+Holdout plan v30은 모든
 uncertainty/state target이 참조하는 observation-error plan payload의 정확한 집합을
 보존하고, current target는 deterministic replay를 포함한
-`radar-verification-bundle-v14`만 허용한다. v14는 bundle valid time, shared projected
+`radar-verification-bundle-v15`만 허용한다. v15는 bundle valid time, shared projected
 grid, radar product를
 signed source identity와 exact 비교한다. 따라서 결과를 본 뒤 mask, source time,
 source index ordering, calibration mapping, selected-source value/time/detection limit
@@ -1196,10 +1196,10 @@ cell별 selected-source detection limit의 left-censored likelihood로 평가한
 이미 predictive variance에 포함되므로 이 진단의 aggregation에는 quality만 사용하고
 inverse-variance를 다시 곱하지 않는다. 결과는 항상 `diagnostic_only=True`이며,
 사전등록된 과학 protocol 없이 promotion을 승인하지 않는다.
-Current scientific replay는 `neural-prior-scoring-replay-bundle-v19`이며 source-specific
+Current scientific replay는 `neural-prior-scoring-replay-bundle-v20`이며 source-specific
 report kind, absolute acquisition age, temporal-valid mask, spatial-metric age support와
 confirmed-clear mask, 그리고 product-derived verification geometry의 float64 x/y 좌표를
-content-addressed shard에 보존한다. 직전 v18은 byte audit만 가능하고 current semantic
+content-addressed shard에 보존한다. 직전 v19는 byte audit만 가능하고 current semantic
 replay나 confirmatory claim으로 승격할 수 없다.
 Confirmed clear는 quantitative dBZ point가 아니라 categorical no-echo evidence로
 평가한다. 따라서 intensity Gaussian/FSO point metric에서는 제외하지만 echo-support
