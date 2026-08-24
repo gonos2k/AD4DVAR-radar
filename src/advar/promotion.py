@@ -27186,6 +27186,25 @@ def _validate_operational_deployment_decision_certificate(
         ) from error
 
 
+def _validate_operational_deployment_generation(
+    promotion_evidence: NeuralPriorPromotionEvidence,
+    policy: DeployedNeuralPriorPolicy,
+) -> None:
+    """Keep current scientific evidence outside operational deployment."""
+
+    if (
+        type(promotion_evidence) is not NeuralPriorPromotionEvidence
+        or promotion_evidence.contract
+        != "neural-prior-promotion-evidence-v31"
+        or type(policy) is not DeployedNeuralPriorPolicy
+        or policy.contract != "deployed-neural-prior-policy-v17"
+    ):
+        raise TypeError(
+            "operational deployment does not accept the current scientific "
+            "evidence generation"
+        )
+
+
 def _select_deployed_prior(
     candidate_runner: NeuralPriorInferenceRunner,
     parent_runner: NeuralPriorInferenceRunner,
@@ -27235,17 +27254,7 @@ def _select_deployed_prior(
         != range_partition_evidence.range_regime_labels
     ):
         raise ValueError("range partition disagrees with operational grid")
-    if (
-        type(promotion_evidence) is not NeuralPriorPromotionEvidence
-        or promotion_evidence.contract
-        != "neural-prior-promotion-evidence-v31"
-        or type(policy) is not DeployedNeuralPriorPolicy
-        or policy.contract != "deployed-neural-prior-policy-v17"
-    ):
-        raise TypeError(
-            "operational deployment does not accept the current scientific "
-            "evidence generation"
-        )
+    _validate_operational_deployment_generation(promotion_evidence, policy)
     policy.validate_integrity()
     trust = _load_learning_policy_trust_store(policy_trust_store_path)
     if policy.policy_digest not in trust.approved_policy_digests:

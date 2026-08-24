@@ -42,6 +42,7 @@
 | R142-022 | generator source digest → committed report → required CI; a recorded source hash must be checked against current script bytes | fourth consecutive adversarial review | platform-independent source-only CI check added | exact PROJ regeneration remains a separately recorded local/external action |
 | R142-023 | validation partition counts → reported total; every evidence subtotal must reconcile exactly | fifth consecutive adversarial review | stale `434` subtotal corrected to the executed `435` | no scientific or runtime behavior changed |
 | R142-024 | current scientific generation → README assembly guidance; documentation must not identify audit-only predecessor contracts as current | second five-pass adversarial review | package, plan, grid, registry, geometry, mask, derivation-input, error-artifact/error-contract, and replay-predecessor generations synchronized | runtime exact-generation validators remain unchanged and fail-closed |
+| R142-025 | current scientific evidence → legacy operational selector tests; required CI must preserve the out-of-scope fail-closed boundary instead of expecting deployment success | exact-head CI run 32699008534 | obsolete positive-path deployment tests isolated; direct v32 rejection regression retained | operational selector remains pinned to v31 and current v32 cannot authorize deployment |
 
 ## Adversarial findings
 
@@ -71,6 +72,7 @@
 | R142-022 | P2-PROVENANCE | The report records the generator source SHA, but required CI did not compare it with the current script; source/report drift could pass ordinary package tests. | generator bytes → committed report provenance → required CI | REPRODUCED: only local full-PROJ `--check` exercised the binding. | repository-actionable | Add a PROJ-independent source-only check and run it in the required Wheel/CLI job. | Current script/report pass; one-byte script mutation fails without invoking PROJ. | ✅ `--check-source-only` + required CI step | ✅ current/tampered source regression PASS | ☐ PR/CI |
 | R142-023 | P3-GOVERNANCE | The final validation total was updated to 511 while its nowcast-family subtotal still read 434, producing an internally inconsistent evidence table. | executed test partitions → checklist evidence total | REPRODUCED by arithmetic during the fifth review. | repository-actionable | Correct the stale subtotal and recheck all partitions. | `435 + 6 + 70 = 511`; `366 + 2 + 50 = 418`. | ✅ evidence table reconciled | ✅ executed pytest summaries rechecked | ☐ PR/CI |
 | R142-024 | P2-GOVERNANCE | README described predecessor contracts as current and retained a stale package/replay lineage even though validators require the evidence-bound generations. | researcher guidance → artifact construction → current versus audit-only capability | REPRODUCED: README named package 0.104, plan v11, grid v4, registry/geometry v5, mask evidence/derivation v9, input v8, error artifact v10, error contract v13, and replay predecessor v21 while current code requires 0.107, v12/v5/v6/v10/v11/v11/v14 and predecessor v22. | repository-actionable | Synchronize the current scientific lineage in README without changing runtime contracts. | Every documented current generation and immediate audit predecessor matches its exact issuing/validation boundary; predecessor behavior is unchanged. | ✅ README current lineage synchronized | ✅ source-to-document generation audit PASS | ☐ PR/CI |
+| R142-025 | P1-TEST/BOUNDARY | Exact-head CPU CI still executed six legacy positive-path operational-deployment tests with current scientific promotion evidence v32, while the operational selector intentionally accepts only v31. | current scientific evidence → out-of-scope operational selector → required CI | REPRODUCED identically on Python 3.10 and 3.12: six tests failed at the generation guard; all other 806 tests and 446 subtests passed. | repository-actionable | Keep the selector fail-closed, skip only the six obsolete positive deployment scenarios with an explicit project-boundary reason, and add a direct current-v32 rejection regression. | Required CI reports the legacy deployment scenarios as explicit skips; v32 plus policy v17 raises the exact out-of-scope TypeError before any operational authorization. | ✅ generation guard extracted without semantic change; six legacy positives isolated | ✅ 1 PASS + 6 explicit SKIP | ☐ exact-head CI |
 
 ## Friendly findings and strengths to preserve
 
@@ -206,8 +208,11 @@ Static/syntax evidence:
   git diff --check PASS
   basedpyright --level error on changed source: 0 errors
 
-Broad all-tests discovery:
-  intentionally stopped after 37 minutes in unrelated long promotion tests;
-  no failure had occurred. This follows the project boundary that prioritizes
-  scientific validation and avoids spending the cycle on deployment checks.
+Exact-head full CPU discovery (run 32699008534):
+  Python 3.10: 806 passed, 2 skipped, 446 subtests passed; 6 legacy
+  operational-deployment positive-path tests failed at the intentional v32/v31
+  generation boundary.
+  Python 3.12: identical test/subtest/failure classification.
+  Resolution: preserve the production fail-close, explicitly isolate those six
+  out-of-scope scenarios, and retain a direct current-v32 rejection regression.
 ```
