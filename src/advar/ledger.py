@@ -46,6 +46,7 @@ from .action_artifacts import (
 )
 from .action_contracts import canonicalize_action_frames
 from .nowcast import (
+    CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
     ForecastRunContract,
     RadarSpatialGridIdentity,
     _forecast_fixed_input_context_digest,
@@ -5018,6 +5019,27 @@ class EpisodeLedger:
         generator_bytes = generator.artifact_bytes
         if len(generator_bytes) > _MAXIMUM_ACTION_GENERATOR_BYTES:
             raise ValueError("action generator artifact exceeds its byte budget")
+        before_grid = before_run.grid_time_contract
+        after_grid = after_run.grid_time_contract
+        if (
+            before_grid is None
+            or after_grid is None
+            or before_grid.digest != after_grid.digest
+        ):
+            raise ValueError(
+                "durable scientific intervention requires one unchanged grid"
+            )
+        metric_domain_evidence_digest: str | None = None
+        artifact_contract = "durable-intervention-action-artifact-v5"
+        if (
+            before_grid.spatial_grid_contract
+            == "radar-spatial-grid-identity-v5"
+        ):
+            before_grid.validate_current_metric_domain_evidence()
+            metric_domain_evidence_digest = (
+                before_grid.metric_domain_evidence_digest
+            )
+            artifact_contract = "durable-intervention-action-artifact-v6"
         expanded_bytes = expanded_tensor_bytes((
             before.frames_dbz,
             before.observation_masks,
@@ -5068,7 +5090,7 @@ class EpisodeLedger:
             )
             (temporary / "generator.pt2").write_bytes(generator_bytes)
             manifest: dict[str, object] = {
-                "contract": "durable-intervention-action-artifact-v5",
+                "contract": artifact_contract,
                 "receipt_digest": receipt.receipt_digest,
                 "action_artifact_digest": receipt.action_artifact_digest,
                 "action_payload_digest": receipt.action_payload_digest,
@@ -5109,9 +5131,10 @@ class EpisodeLedger:
                 "minimum_dbz": before.min_dbz,
                 "maximum_dbz": before.max_dbz,
                 "missing_fill_dbz": before.missing_fill_dbz,
-                "cell_area_m2": before_run.grid_time_contract.cell_area_m2
-                if before_run.grid_time_contract is not None
-                else None,
+                "cell_area_m2": before_grid.cell_area_m2,
+                "metric_domain_evidence_digest": (
+                    metric_domain_evidence_digest
+                ),
                 "analysis_config_json": before_run.analysis_config_json,
                 "analysis_config_digest": before_run.analysis_config_digest,
                 "before_input_bundle_digest": before.input_bundle_digest,
@@ -5236,6 +5259,7 @@ class EpisodeLedger:
                 "durable-intervention-action-artifact-v3",
                 "durable-intervention-action-artifact-v4",
                 "durable-intervention-action-artifact-v5",
+                "durable-intervention-action-artifact-v6",
             }
             or manifest.get("receipt_digest") != receipt.receipt_digest
             or manifest.get("action_artifact_digest")
@@ -5392,7 +5416,10 @@ class EpisodeLedger:
                     input_plan_digest=cast(str, manifest["input_plan_digest"]),
                 )
                 if manifest["contract"]
-                == "durable-intervention-action-artifact-v5"
+                in {
+                    "durable-intervention-action-artifact-v5",
+                    "durable-intervention-action-artifact-v6",
+                }
                 else _json_digest(
                     {
                         "contract": "forecast-fixed-input-context-v1",
@@ -5426,6 +5453,7 @@ class EpisodeLedger:
             if manifest["contract"] in {
                 "durable-intervention-action-artifact-v4",
                 "durable-intervention-action-artifact-v5",
+                "durable-intervention-action-artifact-v6",
             }:
                 expected_resolution = _forecast_input_plan_resolution_digest(
                     input_plan_digest=cast(str, manifest["input_plan_digest"]),
@@ -5453,6 +5481,7 @@ class EpisodeLedger:
                         in {
                             "durable-intervention-action-artifact-v4",
                             "durable-intervention-action-artifact-v5",
+                            "durable-intervention-action-artifact-v6",
                         }
                         else "intervention-input-context-v3"
                     ),
@@ -5473,6 +5502,7 @@ class EpisodeLedger:
                         in {
                             "durable-intervention-action-artifact-v4",
                             "durable-intervention-action-artifact-v5",
+                            "durable-intervention-action-artifact-v6",
                         }
                         else {}
                     ),
@@ -5522,6 +5552,7 @@ class EpisodeLedger:
             if manifest["contract"] in {
                 "durable-intervention-action-artifact-v4",
                 "durable-intervention-action-artifact-v5",
+                "durable-intervention-action-artifact-v6",
             }:
                 expected_identity = _json_digest(
                     {
@@ -5589,6 +5620,21 @@ class EpisodeLedger:
                 raise ValueError(
                     "durable prospective action used correlated observation error"
                 )
+        metric_domain_evidence_digest = manifest.get(
+            "metric_domain_evidence_digest"
+        )
+        if manifest["contract"] == "durable-intervention-action-artifact-v6":
+            if (
+                metric_domain_evidence_digest
+                != CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ):
+                raise ValueError(
+                    "durable action metric-domain evidence is not current"
+                )
+        elif metric_domain_evidence_digest is not None:
+            raise ValueError(
+                "legacy durable action cannot claim current metric evidence"
+            )
         diagnostics = _compute_action_safety(
             action,
             _artifact_intervention_context(manifest, tensors, before_background),
@@ -5596,6 +5642,10 @@ class EpisodeLedger:
             minimum_dbz=float(manifest["minimum_dbz"]),
             maximum_dbz=float(manifest["maximum_dbz"]),
             cell_area_m2=float(manifest["cell_area_m2"]),
+            metric_domain_evidence_digest=cast(
+                str | None,
+                metric_domain_evidence_digest,
+            ),
         )
         if diagnostics.diagnostics_digest != receipt.action_safety_diagnostics_digest:
             raise ValueError("durable action safety diagnostics changed")

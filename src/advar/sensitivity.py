@@ -29,6 +29,7 @@ from .calibration import OperationalCalibrationManifest, OperationalDataIdentity
 from .matrix_free import pcg
 from .nowcast import (
     CURRENT_RADAR_METRIC_DOMAIN,
+    CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
     DataStatus,
     DynamicsSource,
     ForecastMetadata,
@@ -629,6 +630,9 @@ OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST = json_digest(
         "projected_crs_contract": "radar-projected-crs-identity-v4",
         "metric_domain_contract": CURRENT_RADAR_METRIC_DOMAIN.contract,
         "metric_domain_digest": CURRENT_RADAR_METRIC_DOMAIN.digest,
+        "metric_domain_evidence_digest": (
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+        ),
         "coordinate_membership": "all-cell-centers-and-radar-sites-v1",
         "maximum_linear_scale_error": (
             CURRENT_RADAR_METRIC_DOMAIN.maximum_linear_scale_error
@@ -667,6 +671,9 @@ OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST = json_digest(
         "geometry_contract": "radar-observation-geometry-v6",
         "spatial_grid_contract": "radar-spatial-grid-identity-v5",
         "metric_domain_digest": CURRENT_RADAR_METRIC_DOMAIN.digest,
+        "metric_domain_evidence_digest": (
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+        ),
         "grid_spacing_rule": "active-axis-or-minimum-singular-value-v1",
         "scientific_source_dtype_policy": "float32-or-float64-only-v1",
         "physical_learning_tile_policy": "orthogonal-grid-only-v1",
@@ -1397,6 +1404,7 @@ class RadarObservationGeometryContract:
         identity = grid.spatial_grid_identity
         if identity.contract != "radar-spatial-grid-identity-v5":
             raise ValueError("scientific verification requires projected-grid v5")
+        identity.validate_current_metric_domain_evidence()
         grid_x_m, grid_y_m = identity.projected_cell_center_coordinates(
             device=device,
         )
@@ -2230,6 +2238,8 @@ def _registered_observation_geometry_fields(
         or geometry.projected_grid_identity is None
         or geometry.projected_grid_identity.metric_domain_digest
         != source_registry.metric_domain_digest
+        or geometry.projected_grid_identity.metric_domain_evidence_digest
+        != CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
         or source_registry.geometry_model
         != "projected-horizontal-representative-tilt-v1"
         or source_registry.radar_altitude_role != "provenance_only"
@@ -9561,6 +9571,7 @@ def _validate_current_verification_projected_grid(
         raise ValueError("verification and forecast grid contracts disagree")
     if verification.contract != "radar-verification-bundle-v17":
         return
+    grid.validate_current_metric_domain_evidence()
     derivation = verification.observation_error_derivation
     if (
         type(derivation) is not ObservationErrorDerivationArtifact
@@ -9579,6 +9590,8 @@ def _validate_current_verification_projected_grid(
         or type(geometry.projected_grid_identity)
         is not RadarSpatialGridIdentity
         or geometry.projected_grid_identity.digest != grid.spatial_grid_digest
+        or geometry.projected_grid_identity.metric_domain_evidence_digest
+        != CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
         or geometry.projected_grid_identity.shape_yx
         != tuple(verification.frames_dbz.shape[-2:])
     ):
@@ -10974,8 +10987,16 @@ def compute_variational_observation_removal_impact(
     if removal.maximum_removed_area_km2 is not None:
         if removed_area_km2 is None:
             raise ValueError("physical removal budget requires a grid contract")
-        if removed_area_km2 > removal.maximum_removed_area_km2:
-            raise ValueError("observation removal exceeds its area budget")
+        try:
+            grid.validate_projected_area_maximum(
+                removed_area_km2,
+                removal.maximum_removed_area_km2,
+            )
+        except ValueError as error:
+            raise ValueError(
+                "observation removal exceeds or is uncertain against its area "
+                "budget"
+            ) from error
 
     original_qc = ~observations.qc_rejected_mask
     changed_qc = original_qc & ~mask
@@ -11554,8 +11575,16 @@ def _candidate_precheck_reason(
         if grid is None:
             return "physical_perturbation_area_requires_grid_contract"
         area_km2 = count * grid.cell_area_m2 / 1.0e6
-        if area_km2 > config.maximum_perturbed_area_km2:
+        area_status = grid.projected_area_maximum_status(
+            area_km2,
+            config.maximum_perturbed_area_km2,
+        )
+        if area_status == "exceeds":
             return "observation_perturbation_exceeds_physical_area_budget"
+        if area_status == "uncertain":
+            return (
+                "observation_perturbation_area_budget_is_geodetically_uncertain"
+            )
     if observations.common_bias_mode_weights is None:
         quality = observations.quality_weight.reshape(-1).index_select(0, indices)
         std = observations.std_dbz.reshape(-1).index_select(0, indices)
@@ -14711,10 +14740,16 @@ def _perturbation_diagnostics(
             raise ValueError(
                 "physical perturbation area requires a grid contract"
             )
-        if area_km2 > config.maximum_perturbed_area_km2:
-            raise ValueError(
-                "observation perturbation exceeds its physical area budget"
+        try:
+            grid.validate_projected_area_maximum(
+                area_km2,
+                config.maximum_perturbed_area_km2,
             )
+        except ValueError as error:
+            raise ValueError(
+                "observation perturbation exceeds or is uncertain against its "
+                "physical area budget"
+            ) from error
     return VariationalPerturbationDiagnostics(
         perturbed_pixel_count=pixel_count,
         perturbed_fraction=fraction,

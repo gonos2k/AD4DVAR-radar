@@ -200,7 +200,7 @@ trust, expiry, bundle/runtime/interpreter/host identity 및 receipt signature를
 `snapshot_current_runtime()`이 실행 중인 process의 import roots, interpreter, stdlib와
 native library를 다시 해시해 receipt의 deployable closure와 exact 비교한다. 따라서
 다른 venv/process에서 유효한 receipt만 재사용하거나 activation 뒤 runtime bytes를
-바꾼 경우 decision issuance와 `forecast-run-v68` restart가 모두 fail-close한다.
+바꾼 경우 decision issuance와 `forecast-run-v69` restart가 모두 fail-close한다.
 
 Python API:
 
@@ -1143,6 +1143,13 @@ float64로 생성해야 하며 float32 좌표를 사후 변환해 current scient
 사용할 수 없다. Current physical-distance research는 bounded Korean study domain의
 `EPSG:5179`만 허용한다. `EPSG:3857`의 projected metre는 위도에 따라 ground scale이
 달라 current metric CRS로 사용할 수 없으며 historical artifact의 byte audit에만 남는다.
+`RadarMetricDomainEvidence-v1`은 같은 PROJ/EPSG database에서 재생한 17×17 factor
+lattice, PROJJSON digest, 선형·면적 scale error와 report SHA를 보존한다. Current
+grid/run은 이 evidence digest를 정방향으로 포함하며 `forecast-run-v69`와 durable
+intervention action v6은 cold replay에서도 같은 면적 불확실성 정책을 다시 적용한다.
+최대 면적 cap은 ground-area interval 상한, 최소 growth evidence는 interval 하한으로
+판정하며 threshold를 가로지르면 과학적 증거를 fail-close한다. 과거 evidence 없는
+`forecast-run-v68`은 audit-only이다.
 2-D grid의 spatial-age spacing은 affine minimum singular value, 1×N/N×1 grid는 실제로
 존재하는 column/row 축 norm을 사용하고 1×1 grid는 spatial metric을 지원하지 않는다.
 현재 geometry model은
@@ -1913,13 +1920,13 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v74`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v68`
+- `output_contract_version`: 현재 `nowcast-npz-v75`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v69`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
 
-`forecast-run-v68`은 typed verification-target identity와 target-source current trust를
+`forecast-run-v69`은 typed verification-target identity와 target-source current trust를
 결합한 five-channel CPU-only scoring generation v10, two-phase raw observation slot과
 canonical raw-volume identity 단위의 전역
 sampling reservation, 같은 family의 rolling-window membership, source-registry와
@@ -1934,7 +1941,7 @@ classifier와 learned prior에 유입되지 않으며, signed
 `forecast-run-v67` 이하는
 audit-only다.
 
-`forecast-run-v68`은 원자적 ledger sequence를 가진 promotion deployment
+`forecast-run-v69`은 원자적 ledger sequence를 가진 promotion deployment
 certificate v6, deployment-decision artifact v19,
 `OperationalDeploymentDecisionCertificate-v8`과
 `neural-prior-deployment-lineage-v19`를 current 의미로 결합한다. Decision
@@ -1983,7 +1990,7 @@ root-owned store 양쪽에서 attestation 시각의 key validity/revocation을 �
 Current store의 content digest는 replay-v15 manifest, scoring-v14 artifact, scheduler가
 봉인한 completion output, promotion evidence v31, promotion deployment certificate v6와
 operational decision certificate에 연속 결합된다. Certificate/publication 서명 전후와
-activation 직전·직후에도 store를 다시 읽고, durable `forecast-run-v68` load에서도 외부
+activation 직전·직후에도 store를 다시 읽고, durable `forecast-run-v69` load에서도 외부
 store와 대조하므로 이후 revocation view가 달라지면 기존 certificate를 automatic
 deployment에 재사용할 수 없다.
 Index schema 42는 release approval, monotonic runtime activation head, replay, scoring completion, promotion evidence와 promotion
@@ -2032,7 +2039,7 @@ effective weight가 없는 target는 거부되고 product-owned loss는 정확�
 identity/time/event/object는 plan에 별도로 고정된 `TrainingTargetSourceReceipt-v2`와
 root-signed `TrainingTargetSourceTrustStore-v1`의 유효 key epoch, source-contract 및
 radar/product scope가 없으면 사용할 수 없다. Current trust는 dataset seal, training
-start/completion, promotion, deployment issuance 및 `forecast-run-v68` durable load의
+start/completion, promotion, deployment issuance 및 `forecast-run-v69` durable load의
 시작/종료에서 다시 대조된다. Target는 nonempty·finite이어야 하고
 valid time이 등록된 training-window union 안에 있어야 한다. Tensor/QC 표현이 달라도
 holdout verification target와 source identity/valid time이 같으면 재사용으로 거부된다.

@@ -76,6 +76,7 @@ from advar.promotion import (  # noqa: E402
 import advar.promotion as promotion_module  # noqa: E402
 from advar.nowcast import (  # noqa: E402
     CURRENT_RADAR_METRIC_DOMAIN,
+    CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
     ForecastRunContract,
     NowcastConfig,
     RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION,
@@ -435,6 +436,20 @@ def _prospective_run_and_context(
         dy_m=1000.0,
         projection="EPSG:5179",
         grid_hash="1" * 64,
+        spatial_grid_contract="radar-spatial-grid-identity-v5",
+        grid_shape_yx=(int(frames.shape[-2]), int(frames.shape[-1])),
+        projected_crs_digest=radar_projected_crs_semantic_digest(
+            "EPSG:5179"
+        ),
+        metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+        metric_domain_evidence_digest=(
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+        ),
+        cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
+        grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+        cell_center_convention=(
+            RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+        ),
     )
     identity = OperationalDataIdentity(
         radar_class="test-radar",
@@ -695,6 +710,9 @@ class EpisodeLedgerTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
@@ -2367,6 +2385,34 @@ class EpisodeLedgerTests(unittest.TestCase):
             checksums_path = artifact_dir / "checksums.json"
             original_manifest = manifest_path.read_bytes()
             original_checksums = checksums_path.read_bytes()
+            manifest = json.loads(original_manifest)
+            self.assertEqual(
+                manifest["contract"],
+                "durable-intervention-action-artifact-v6",
+            )
+            self.assertEqual(
+                manifest["metric_domain_evidence_digest"],
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest,
+            )
+            manifest["metric_domain_evidence_digest"] = "0" * 64
+            manifest_path.write_text(
+                json.dumps(manifest, sort_keys=True, separators=(",", ":")),
+                encoding="utf-8",
+            )
+            checksums = json.loads(original_checksums)
+            checksums["manifest.json"] = hashlib.sha256(
+                manifest_path.read_bytes()
+            ).hexdigest()
+            checksums_path.write_text(
+                json.dumps(checksums, sort_keys=True, separators=(",", ":")),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "evidence is not current"):
+                self.ledger.load_prospective_intervention(
+                    digest,
+                    executor_trust_store_path="/etc/advar/executors.json",
+                    operator_trust_store_path="/etc/advar/operators.json",
+                )
             manifest = json.loads(original_manifest)
             manifest["before_data_identity_digest"] = "8" * 64
             manifest_path.write_text(

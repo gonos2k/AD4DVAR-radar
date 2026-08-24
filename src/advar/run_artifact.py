@@ -36,8 +36,9 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v68"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v69"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
+    "forecast-run-v68",
     "forecast-run-v67",
     "forecast-run-v66",
     "forecast-run-v65",
@@ -1429,6 +1430,13 @@ def load_forecast_run(
         grid_time_contract, grid_time_contract_digest = (
             _grid_time_contract(loaded_arrays)
         )
+        if (
+            version == FORECAST_RUN_ARTIFACT_VERSION
+            and grid_time_contract is not None
+            and grid_time_contract.spatial_grid_contract
+            == "radar-spatial-grid-identity-v5"
+        ):
+            grid_time_contract.validate_current_metric_domain_evidence()
         if "prior_deployment_lineage_contract" in loaded_arrays:
             prior_deployment_lineage_contract = _string_scalar(
                 loaded_arrays,
@@ -2160,10 +2168,14 @@ def _grid_time_contract(
         "cell_center_convention",
     }
     metric_domain_expected = scientific_expected | {"metric_domain_digest"}
+    metric_evidence_expected = metric_domain_expected | {
+        "metric_domain_evidence_digest"
+    }
     if frozenset(value) not in {
         frozenset(legacy_expected),
         frozenset(scientific_expected),
         frozenset(metric_domain_expected),
+        frozenset(metric_evidence_expected),
     }:
         raise ValueError("grid_time_contract_json has invalid fields")
     background_times = value["background_valid_times"]
@@ -2208,6 +2220,9 @@ def _grid_time_contract(
             grid_coordinate_dtype=value.get("grid_coordinate_dtype"),
             cell_center_convention=value.get("cell_center_convention"),
             metric_domain_digest=value.get("metric_domain_digest"),
+            metric_domain_evidence_digest=value.get(
+                "metric_domain_evidence_digest"
+            ),
         )
     except (TypeError, ValueError) as error:
         raise ValueError("invalid grid_time_contract_json") from error

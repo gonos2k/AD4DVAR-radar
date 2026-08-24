@@ -35,6 +35,7 @@ from advar.ledger import EpisodeLedger  # noqa: E402
 from advar.matrix_free import PCGResult  # noqa: E402
 from advar.nowcast import (  # noqa: E402
     CURRENT_RADAR_METRIC_DOMAIN,
+    CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
     _estimate_source_tendencies,
     _forecast_linear_at_step_core,
     _forecast_run_identity_digest,
@@ -1986,12 +1987,19 @@ class SensitivityTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
             ),
         )
+        with self.assertRaisesRegex(ValueError, "does not bind current"):
+            RadarObservationGeometryContract.from_grid_time_contract(
+                replace(grid, metric_domain_evidence_digest=None)
+            )
         forecast = torch.zeros((5, 5), dtype=torch.float64)
         truth = torch.zeros_like(forecast)
         forecast[2, 1] = 10.0
@@ -2426,6 +2434,9 @@ class VariationalFSOTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
@@ -3221,6 +3232,9 @@ class VariationalFSOTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
@@ -3349,6 +3363,9 @@ class VariationalFSOTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             "metric_domain_digest": CURRENT_RADAR_METRIC_DOMAIN.digest,
+            "metric_domain_evidence_digest": (
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             "cell_center_origin_xy_m": (1_000_000.0, 2_000_000.0),
             "grid_coordinate_dtype": RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             "cell_center_convention": (
@@ -3470,6 +3487,9 @@ class VariationalFSOTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
@@ -3721,6 +3741,9 @@ class VariationalFSOTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
@@ -6479,6 +6502,9 @@ class VariationalFSOTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(

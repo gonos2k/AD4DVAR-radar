@@ -4225,8 +4225,17 @@ def prepare_analysis(
                     else grid_time_contract.cell_area_m2 / 1.0e6
                 )
             )
-            if added_area > neural_prior.maximum_added_area_km2:
-                raise ValueError("neural-prior added area exceeds its budget")
+            if grid_time_contract is not None:
+                try:
+                    grid_time_contract.validate_projected_area_maximum(
+                        added_area,
+                        neural_prior.maximum_added_area_km2,
+                    )
+                except ValueError as error:
+                    raise ValueError(
+                        "neural-prior added area exceeds or is uncertain against "
+                        "its budget"
+                    ) from error
             if added_echo > neural_prior.maximum_added_echo_integral:
                 raise ValueError("neural-prior added echo exceeds its budget")
             initial_support = initial_support | prior_support
