@@ -41,6 +41,7 @@
 | R142-021 | predecessor decoder → real directory/ledger load; outer audit types require more than constructor-only tests | final adversarial test review | v22 directory cold-load and v31 ledger-row fixtures added | predecessor semantic execution remains prohibited |
 | R142-022 | generator source digest → committed report → required CI; a recorded source hash must be checked against current script bytes | fourth consecutive adversarial review | platform-independent source-only CI check added | exact PROJ regeneration remains a separately recorded local/external action |
 | R142-023 | validation partition counts → reported total; every evidence subtotal must reconcile exactly | fifth consecutive adversarial review | stale `434` subtotal corrected to the executed `435` | no scientific or runtime behavior changed |
+| R142-024 | current scientific generation → README assembly guidance; documentation must not identify audit-only predecessor contracts as current | second five-pass adversarial review | package, plan, grid, registry, geometry, mask, derivation-input, error-artifact/error-contract, and replay-predecessor generations synchronized | runtime exact-generation validators remain unchanged and fail-closed |
 
 ## Adversarial findings
 
@@ -69,6 +70,7 @@
 | R142-021 | P2-TEST | Initial predecessor tests decoded v22/v32/v14 constructors only and had no v31 ledger row or v22 directory cold-load. | predecessor durable bytes → audit loader → current rejection | REPRODUCED as a test-coverage gap. | repository-actionable | Add predecessor-shaped sharded directory and indexed promotion fixtures. | v22 directory byte-load succeeds with all semantic flags false and rejects typed cases; v31 ledger row returns exact audit type. | ✅ directory + ledger fixtures | ✅ audit load/current-use rejection PASS | ☐ PR/CI |
 | R142-022 | P2-PROVENANCE | The report records the generator source SHA, but required CI did not compare it with the current script; source/report drift could pass ordinary package tests. | generator bytes → committed report provenance → required CI | REPRODUCED: only local full-PROJ `--check` exercised the binding. | repository-actionable | Add a PROJ-independent source-only check and run it in the required Wheel/CLI job. | Current script/report pass; one-byte script mutation fails without invoking PROJ. | ✅ `--check-source-only` + required CI step | ✅ current/tampered source regression PASS | ☐ PR/CI |
 | R142-023 | P3-GOVERNANCE | The final validation total was updated to 511 while its nowcast-family subtotal still read 434, producing an internally inconsistent evidence table. | executed test partitions → checklist evidence total | REPRODUCED by arithmetic during the fifth review. | repository-actionable | Correct the stale subtotal and recheck all partitions. | `435 + 6 + 70 = 511`; `366 + 2 + 50 = 418`. | ✅ evidence table reconciled | ✅ executed pytest summaries rechecked | ☐ PR/CI |
+| R142-024 | P2-GOVERNANCE | README described predecessor contracts as current and retained a stale package/replay lineage even though validators require the evidence-bound generations. | researcher guidance → artifact construction → current versus audit-only capability | REPRODUCED: README named package 0.104, plan v11, grid v4, registry/geometry v5, mask evidence/derivation v9, input v8, error artifact v10, error contract v13, and replay predecessor v21 while current code requires 0.107, v12/v5/v6/v10/v11/v11/v14 and predecessor v22. | repository-actionable | Synchronize the current scientific lineage in README without changing runtime contracts. | Every documented current generation and immediate audit predecessor matches its exact issuing/validation boundary; predecessor behavior is unchanged. | ✅ README current lineage synchronized | ✅ source-to-document generation audit PASS | ☐ PR/CI |
 
 ## Friendly findings and strengths to preserve
 
@@ -78,6 +80,20 @@
 | S142-002 | Scientific affine spacing and determinant reconstruction fail closed. | 1 m–100 km limits and representability tests | Underflow/overflow/zero-area adversarial tests remain green. |
 | S142-003 | Shear-aware FSS remains supported while metre-based learning tiles fail closed on shear. | current sensitivity tests | New area margins must not disable valid projected-distance FSS. |
 | S142-004 | PR #141 merged without a new P0 or rollback condition. | exact-head required CI success | This cycle is a forward scientific evidence improvement, not a rollback. |
+
+## Second five-pass adversarial review
+
+| Pass | Independent attack surface | Result |
+|---:|---|---|
+| 1 | generator bytes → committed report → required source-only CI | No new P0/P1/P2; canonical JSON and exact generator-source binding remain fail-closed. |
+| 2 | report schema, finite numeric values, lattice ordering, digests, and extrema | No new P0/P1/P2; runtime independently recomputes all scientific reductions used by the typed evidence. |
+| 3 | sampled coverage, affine-grid membership, and maximum/minimum ground-area interval boundaries | No new P0/P1/P2; convex corner coverage and dual uncertainty gates remain conservative. |
+| 4 | v22/v23 durable replay and v31/v32 promotion current/audit boundaries | No new P0/P1/P2; exact types, schemas, and cold-load fixtures keep predecessors audit-only. |
+| 5 | wheel resource, README lineage, checklist arithmetic, PR authority, and CI evidence | R142-024 found and fixed; required CPU CI remains pending at the reviewed pre-documentation head. |
+
+One local verification command initially named a nonexistent pytest class and
+failed during collection.  It made no repository change and was replaced by
+the exact five test nodes, which passed with `5 passed, 13 subtests passed`.
 
 ## External scientific actions
 
