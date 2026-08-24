@@ -39,6 +39,8 @@
 | R142-019 | durable manifest checksum → semantic member set; checksummed but unreferenced JSON keys must fail | final adversarial durable-replay review | exact v5/v6 manifest schemas added | v3/v4 historical decoding remains unchanged |
 | R142-020 | generic numerical tolerance → physical area interval; a dimensionless/numeric tolerance must not relax a km² scientific minimum | final adversarial scientific review | tolerance removed from the area interval gate | support-count tolerance remains unchanged |
 | R142-021 | predecessor decoder → real directory/ledger load; outer audit types require more than constructor-only tests | final adversarial test review | v22 directory cold-load and v31 ledger-row fixtures added | predecessor semantic execution remains prohibited |
+| R142-022 | generator source digest → committed report → required CI; a recorded source hash must be checked against current script bytes | fourth consecutive adversarial review | platform-independent source-only CI check added | exact PROJ regeneration remains a separately recorded local/external action |
+| R142-023 | validation partition counts → reported total; every evidence subtotal must reconcile exactly | fifth consecutive adversarial review | stale `434` subtotal corrected to the executed `435` | no scientific or runtime behavior changed |
 
 ## Adversarial findings
 
@@ -65,6 +67,8 @@
 | R142-019 | P2-INTEGRITY | A durable v5/v6 manifest could contain an unreferenced extra JSON key if its checksum was recomputed. | manifest bytes → logical replay preimage | REPRODUCED: loader validated required values but not exact key equality. | repository-actionable | Define exact v5 and v6 field sets and reject additions/removals before replay. | Extra v6 key and v6-only keys under v5 both fail before tensor replay. | ✅ exact current durable schemas | ✅ extra-key and cross-generation key tests PASS | ☐ PR/CI |
 | R142-020 | P2-SCIENTIFIC | The general `1e-6` tolerance was added to area km² before the minimum interval gate, permitting up to roughly 1 m² shortfall. | projected support area → conservative ground lower bound → minimum evidence | REPRODUCED mathematically and in the call path. | repository-actionable | Remove the generic tolerance from physical-area interval decisions. | A minimum only `5e-7 km²` above the lower bound fails; clearly sufficient area passes. | ✅ strict lower-bound comparison | ✅ near-boundary regression PASS | ☐ PR/CI |
 | R142-021 | P2-TEST | Initial predecessor tests decoded v22/v32/v14 constructors only and had no v31 ledger row or v22 directory cold-load. | predecessor durable bytes → audit loader → current rejection | REPRODUCED as a test-coverage gap. | repository-actionable | Add predecessor-shaped sharded directory and indexed promotion fixtures. | v22 directory byte-load succeeds with all semantic flags false and rejects typed cases; v31 ledger row returns exact audit type. | ✅ directory + ledger fixtures | ✅ audit load/current-use rejection PASS | ☐ PR/CI |
+| R142-022 | P2-PROVENANCE | The report records the generator source SHA, but required CI did not compare it with the current script; source/report drift could pass ordinary package tests. | generator bytes → committed report provenance → required CI | REPRODUCED: only local full-PROJ `--check` exercised the binding. | repository-actionable | Add a PROJ-independent source-only check and run it in the required Wheel/CLI job. | Current script/report pass; one-byte script mutation fails without invoking PROJ. | ✅ `--check-source-only` + required CI step | ✅ current/tampered source regression PASS | ☐ PR/CI |
+| R142-023 | P3-GOVERNANCE | The final validation total was updated to 511 while its nowcast-family subtotal still read 434, producing an internally inconsistent evidence table. | executed test partitions → checklist evidence total | REPRODUCED by arithmetic during the fifth review. | repository-actionable | Correct the stale subtotal and recheck all partitions. | `435 + 6 + 70 = 511`; `366 + 2 + 50 = 418`. | ✅ evidence table reconciled | ✅ executed pytest summaries rechecked | ☐ PR/CI |
 
 ## Friendly findings and strengths to preserve
 
@@ -92,7 +96,7 @@
 - [x] No accepted invariant or regression guard was removed or weakened.
 - [x] Every repository-actionable P1/P2 is fixed or evidence-disproved.
 - [x] Every fix has a targeted regression test or deterministic document check.
-- [x] Adjacent scientific CPU suites pass after adversarial-review corrections (`510 passed`, `418 subtests passed`).
+- [x] Adjacent scientific CPU suites pass after adversarial-review corrections (`511 passed`, `418 subtests passed`).
 - [x] Existing serialized scientific digest preimages remain stable; current scientific artifacts also forward-bind the evidence digest.
 - [x] PR #141 post-merge evidence is synchronized.
 - [ ] PR #142 head equals the reported pushed commit.
@@ -147,23 +151,23 @@ digest. The report SHA remains bound through shipped source and package data.
 
 ```text
 Targeted and adjacent scientific CPU suites:
-  nowcast + sensitivity + variational + ledger           434 PASS
+  nowcast + sensitivity + variational + ledger           435 PASS
     subtests                                              366 PASS
   selected scientific promotion/replay boundaries          6 PASS
     subtests                                                2 PASS
   run artifact + CLI                                      70 PASS
     subtests                                               50 PASS
-  total                                                  510 PASS
+  total                                                  511 PASS
     total subtests                                        418 PASS
 
 Geodetic report regeneration:
   PROJ 9.7.1 / EPSG v12.029 / 17 x 17 lattice
   report SHA-256:
-    d099ec65a7eb6d93e3abe284d807c9b3611a3bde8d4b46cc8c320d418dc6c6dd
+    6eeb22c0665566b69ce6590b7176607492a473e63e03f743178283aca771a098
   typed evidence digest:
-    50ad75a42e3b7191cf4df5130191bd43114c78372ad7080731cb43ef6c665710
+    de36641c6f97178ebfd1a1fda88a33f2b8c333ce46acbadef2a965e4d3e219ad
   generator source SHA-256:
-    1faf31b2aa8edc70d014bd92a0d2a11f78b827ac1d20493e12a954004d84cdcf
+    bdfe670be17f4fa85047f0c0614e56756d95ec2bc30c597c4b13303d646db508
   validated projected coverage digest:
     993053c5ac611186134ea14f07af6202f5ba254c21aa0a1d0c44c8a9d9fa5849
   validated projected coverage (metre):

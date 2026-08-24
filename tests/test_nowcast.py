@@ -3,7 +3,9 @@ from dataclasses import fields, replace
 from pathlib import Path
 from importlib import import_module
 import math
+import subprocess
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -5480,6 +5482,52 @@ class NowcastTests(unittest.TestCase):
         sample["meridional_scale"] = float(sample["meridional_scale"]) + 1e-4
         with self.assertRaisesRegex(ValueError, "reductions disagree"):
             _validate_radar_metric_domain_evidence_report(report)
+
+    def test_metric_domain_generator_source_binding_is_ci_checkable(
+        self,
+    ) -> None:
+        repository = Path(__file__).resolve().parents[1]
+        script = (
+            repository
+            / ".github"
+            / "scripts"
+            / "generate_metric_domain_evidence.py"
+        )
+        report = (
+            repository
+            / "src"
+            / "advar"
+            / "data"
+            / "epsg5179_metric_domain_evidence_v1.json"
+        )
+        command = (
+            sys.executable,
+            str(script),
+            "--output",
+            str(report),
+            "--check-source-only",
+        )
+        completed = subprocess.run(
+            command,
+            cwd=repository,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
+        with tempfile.TemporaryDirectory() as directory:
+            changed_script = Path(directory) / script.name
+            changed_script.write_bytes(script.read_bytes() + b"\n# changed\n")
+            changed = subprocess.run(
+                (sys.executable, str(changed_script), *command[2:]),
+                cwd=repository,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        self.assertNotEqual(changed.returncode, 0)
+        self.assertIn("source binding is invalid", changed.stderr)
 
     def test_current_grid_rejects_non_projected_crs_and_wrong_shape(
         self,

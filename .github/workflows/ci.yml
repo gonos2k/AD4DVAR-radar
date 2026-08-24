@@ -109,6 +109,11 @@ jobs:
             requirements/ci-py312-linux.lock
             requirements/runtime-py312-linux.lock
 
+      - name: Verify geodetic generator source binding
+        run: |
+          python -I .github/scripts/generate_metric_domain_evidence.py \
+            --check-source-only
+
       - name: Install the hashed build closure
         run: |
           python -I -m pip install \

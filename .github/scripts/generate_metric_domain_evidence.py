@@ -55,6 +55,30 @@ def _file_sha256(path: Path) -> str:
     return hasher.hexdigest()
 
 
+def _check_generator_source_binding(output: Path) -> str:
+    """Verify the committed report names these exact generator bytes."""
+
+    if not output.is_file():
+        raise RuntimeError("metric-domain evidence output does not exist")
+    report_bytes = output.read_bytes()
+    try:
+        report = json.loads(report_bytes)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise RuntimeError("metric-domain evidence output is invalid") from error
+    generator = report.get("generator") if isinstance(report, dict) else None
+    if (
+        not isinstance(generator, dict)
+        or generator.get("contract") != GENERATOR_CONTRACT
+        or generator.get("source_sha256")
+        != _file_sha256(Path(__file__).resolve())
+        or report_bytes != _canonical_bytes(report) + b"\n"
+    ):
+        raise RuntimeError(
+            "metric-domain evidence generator source binding is invalid"
+        )
+    return hashlib.sha256(report_bytes).hexdigest()
+
+
 def _run(
     command: list[str],
     *,
@@ -544,12 +568,24 @@ def main() -> int:
         default=shutil.which("projinfo") or "projinfo",
     )
     parser.add_argument("--sample-count-per-axis", type=int, default=17)
-    parser.add_argument(
+    validation = parser.add_mutually_exclusive_group()
+    validation.add_argument(
         "--check",
         action="store_true",
         help="fail unless generated canonical bytes equal the output file",
     )
+    validation.add_argument(
+        "--check-source-only",
+        action="store_true",
+        help=(
+            "verify the committed report names this exact generator source "
+            "without requiring PROJ"
+        ),
+    )
     arguments = parser.parse_args()
+    if arguments.check_source_only:
+        print(_check_generator_source_binding(arguments.output))
+        return 0
     report = _generate_report(
         proj=arguments.proj,
         projinfo=arguments.projinfo,
