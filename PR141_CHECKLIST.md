@@ -9,16 +9,20 @@
 - Verified prior PR/head/tree: PR #140 `MERGED`; merge commit reachable from `origin/main`; exact-head CI run `32629076703` succeeded
 - Worktree state: branch `agent/pr141-metric-domain-hardening`; user-owned untracked `.omx/` preserved
 - CI snapshot: PR #140 Python 3.10 CPU, Python 3.12 CPU, and Wheel/CLI smoke all `SUCCESS`
+- Final PR #141 head: `8a9185d65ba461ec77f8765ef4d9747e65e8a06b`
+- Merge commit/time: `e4e5dc7c3f8c9a709f62cb2a3025d3849c4dc5b3` / `2026-08-23T15:39:55Z`
+- Exact-head CI: run `32639810887`; Python 3.10 CPU, Python 3.12 CPU, and Wheel/CLI smoke all `SUCCESS`
+- PR status: `MERGED / PASS`
 - Project boundary: reproducible offline scientific validation; operational deployment is out of scope
 
 ## Adversarial findings
 
 | ID | Priority | Claim | Boundary | Current-tree result | Classification | Minimal action | Acceptance test | Implementation | Local tests | PR/CI |
 |---|---|---|---|---|---|---|---|---|---|---|
-| R141-001 | P1-SCIENTIFIC | The current EPSG:5179 identity declares bounded Korean ground-metre semantics without binding the grid and radar coordinates to an allowed study domain or scale-error budget. | CRS identity → grid/radar geometry → physical range, source selection, FSS, and spatial-age interpretation | REPRODUCED: current v4 accepts origin `(0,0)` and radar positions outside the EPSG:5179 area-of-use envelope. | repository-actionable | Introduce one content-addressed metric-domain contract that binds the current CRS to explicit projected bounds, radar/grid inclusion, and a preregistered linear-scale-error authority. | An in-domain grid and every radar pass; origin `(0,0)`, out-of-domain corners/radars, wrong domain digest, and excessive scale error fail before scientific verification. | ✅ metric-domain v1, grid v5, geometry/registry v6 | ✅ targeted PASS | ☐ PR/CI |
-| R141-002 | P2-NUMERICAL | An extremely small finite affine can preserve normalized singular metrics while the reconstructed determinant underflows to `0.0`, yielding a valid grid with zero cell area. | affine normalization → physical determinant/cell area → scientific grid identity | REPRODUCED: a `1e-200 m` diagonal v4 grid is accepted with positive spacing and `cell_area_m2 == 0.0`. | repository-actionable | Require the physical determinant and cell area to remain finite and strictly positive, and bind an explicit supported scientific-spacing interval into the current algorithm identity. | `1e-200` diagonal and zero-area reconstruction fail; supported radar spacings pass without changing ordinary affine metrics. | ✅ determinant/area representability plus 1 m–100 km axis range | ✅ targeted PASS | ☐ PR/CI |
-| R141-003 | P2-SCIENTIFIC/LEARNING | Metre-configured automated-learning tiles on a sheared affine are basis-aligned parallelograms, while the current contract can be read as a physically equivalent square-tile guardrail. | affine grid → tile shape → whitened-gradient/perturbation norm → candidate ranking | REPRODUCED: the supported shear returns a `(16,16)` tile for 16 km but its projected area is `153.6 km²`, not `256 km²`. | repository-actionable | Permit metre-based automated-learning tile guardrails only for orthogonal affines while preserving shear-aware FSS. | Rotated orthogonal and anisotropic grids pass; sheared FSS remains valid; sheared metre-based learning tiles fail before learning scores or candidate validation. | ✅ metre learning tiles orthogonal-only; sheared FSS retained | ✅ targeted PASS | ☐ PR/CI |
-| R141-004 | P2-GOVERNANCE | PR #140 checklist still records pre-merge HOLD/pending evidence after merge. | post-merge scientific audit record | REPRODUCED from the committed checklist and GitHub PR/CI metadata. | repository-actionable | Record exact PR head, merge commit/time, exact-head CI success, and merged status while retaining scientific HOLD gates. | Documentation matches GitHub metadata and does not claim multi-radar confirmatory/publication/deployment GO. | ✅ PR #140 post-merge record synchronized | ✅ documentation review PASS | ☐ PR/CI |
+| R141-001 | P1-SCIENTIFIC | The current EPSG:5179 identity declares bounded Korean ground-metre semantics without binding the grid and radar coordinates to an allowed study domain or scale-error budget. | CRS identity → grid/radar geometry → physical range, source selection, FSS, and spatial-age interpretation | REPRODUCED: current v4 accepts origin `(0,0)` and radar positions outside the EPSG:5179 area-of-use envelope. | repository-actionable | Introduce one content-addressed metric-domain contract that binds the current CRS to explicit projected bounds, radar/grid inclusion, and a preregistered linear-scale-error authority. | An in-domain grid and every radar pass; origin `(0,0)`, out-of-domain corners/radars, wrong domain digest, and excessive scale error fail before scientific verification. | ✅ metric-domain v1, grid v5, geometry/registry v6 | ✅ targeted PASS | ✅ exact-head CI |
+| R141-002 | P2-NUMERICAL | An extremely small finite affine can preserve normalized singular metrics while the reconstructed determinant underflows to `0.0`, yielding a valid grid with zero cell area. | affine normalization → physical determinant/cell area → scientific grid identity | REPRODUCED: a `1e-200 m` diagonal v4 grid is accepted with positive spacing and `cell_area_m2 == 0.0`. | repository-actionable | Require the physical determinant and cell area to remain finite and strictly positive, and bind an explicit supported scientific-spacing interval into the current algorithm identity. | `1e-200` diagonal and zero-area reconstruction fail; supported radar spacings pass without changing ordinary affine metrics. | ✅ determinant/area representability plus 1 m–100 km axis range | ✅ targeted PASS | ✅ exact-head CI |
+| R141-003 | P2-SCIENTIFIC/LEARNING | Metre-configured automated-learning tiles on a sheared affine are basis-aligned parallelograms, while the current contract can be read as a physically equivalent square-tile guardrail. | affine grid → tile shape → whitened-gradient/perturbation norm → candidate ranking | REPRODUCED: the supported shear returns a `(16,16)` tile for 16 km but its projected area is `153.6 km²`, not `256 km²`. | repository-actionable | Permit metre-based automated-learning tile guardrails only for orthogonal affines while preserving shear-aware FSS. | Rotated orthogonal and anisotropic grids pass; sheared FSS remains valid; sheared metre-based learning tiles fail before learning scores or candidate validation. | ✅ metre learning tiles orthogonal-only; sheared FSS retained | ✅ targeted PASS | ✅ exact-head CI |
+| R141-004 | P2-GOVERNANCE | PR #140 checklist still records pre-merge HOLD/pending evidence after merge. | post-merge scientific audit record | REPRODUCED from the committed checklist and GitHub PR/CI metadata. | repository-actionable | Record exact PR head, merge commit/time, exact-head CI success, and merged status while retaining scientific HOLD gates. | Documentation matches GitHub metadata and does not claim multi-radar confirmatory/publication/deployment GO. | ✅ PR #140 post-merge record synchronized | ✅ documentation review PASS | ✅ exact-head CI |
 
 ## Friendly findings and strengths to preserve
 
@@ -45,11 +49,11 @@
 - [x] Every changed scientific digest preimage and generation has synchronized producers and consumers.
 - [x] Historical v31 holdout and v21 replay identities load as audit-only.
 - [x] PR #140 post-merge evidence is synchronized.
-- [ ] PR #141 head equals the reported pushed commit.
-- [ ] Exact-head CI failures, if any, are classified as code or infrastructure/policy.
+- [x] PR #141 head equals the reported pushed commit.
+- [x] Exact-head CI run `32639810887` succeeded for every required job.
 - [x] Offline research, confirmatory claims, publication, and deployment remain separate decisions.
 - [x] External scientific evidence items remain visible with owner and required action.
-- [x] Merge remains HOLD unless explicitly authorized.
+- [x] PR #141 merged only after exact-head required CI succeeded.
 
 ## Current decision
 
@@ -63,7 +67,7 @@
 | Multi-radar confirmatory claim | HOLD | Repository closure plus X141 independent evidence are required. |
 | External publication | HOLD | Independent cohort and scale-error evidence are required. |
 | Operational deployment | NO-GO / OUT OF SCOPE | The project is optimized for scientific validation, not deployment authorization. |
-| PR #141 merge | HOLD | Independent review and exact-head CI are required. |
+| PR #141 merge | MERGED / PASS | Head `8a9185d6…`, merge `e4e5dc7c…`, and exact-head CI `32639810887` are recorded; scientific HOLDs remain independent. |
 
 ## Implemented scientific generation boundary
 
@@ -83,7 +87,7 @@ ObservationErrorDerivationArtifact   v10 -> v11
 ObservationErrorContract             v13 -> v14
 VerificationBundle                   v16 -> v17
 Variational FSO                      v22 -> v23
-Variational FSOI                     v18 -> v19
+Variational FSOI                     v17 -> v19
 Semantic scoring replay              v21 -> v22
 Semantic generation                  v19 -> v20
 Scoring case                         v20 -> v21
@@ -94,6 +98,22 @@ Package                            0.105 -> 0.106
 Historical grid v4, verification v16, replay v21, and holdout plan v31 remain
 audit-only. Deployment generations are unchanged because deployment is outside
 this scientific hardening PR.
+
+`p1-linearized-observation-impact-v18` was reserved during development but
+was not a released current generation. The actual merged transition was v17
+to v19; the skipped number therefore does not denote a missing durable
+artifact.
+
+## Post-merge authority record
+
+```text
+PR head       8a9185d65ba461ec77f8765ef4d9747e65e8a06b
+merge commit  e4e5dc7c3f8c9a709f62cb2a3025d3849c4dc5b3
+merged at     2026-08-23T15:39:55Z
+CI run        32639810887
+CI result     SUCCESS
+PR status     MERGED / PASS
+```
 
 ## Local validation evidence
 

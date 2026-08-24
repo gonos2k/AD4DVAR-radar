@@ -46,7 +46,9 @@ from .action_artifacts import (
 )
 from .action_contracts import canonicalize_action_frames
 from .nowcast import (
+    CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
     ForecastRunContract,
+    RadarGridTimeContract,
     RadarSpatialGridIdentity,
     _forecast_fixed_input_context_digest,
     _forecast_full_analysis_input_digest,
@@ -96,6 +98,7 @@ from .intervention import (
     verify_intervention_receipt_signature,
     verify_operator_action_approval_signature,
     _compute_action_safety,
+    _intervention_action_artifact_digest,
     _new_prospective_decision,
     _new_operator_action_approval,
     _new_realized_intervention_receipt,
@@ -153,6 +156,7 @@ from .promotion import (
     LegacyNeuralPriorHoldoutPlanV29Audit,
     LegacyNeuralPriorHoldoutPlanV30Audit,
     LegacyNeuralPriorHoldoutPlanV31Audit,
+    LegacyNeuralPriorHoldoutPlanV32Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
@@ -281,16 +285,19 @@ from .promotion import (
     LegacyNeuralPriorPromotionEvidenceAuditV28,
     LegacyNeuralPriorPromotionEvidenceAuditV29,
     LegacyNeuralPriorPromotionEvidenceAuditV30,
+    LegacyNeuralPriorPromotionEvidenceAuditV31,
     LegacyHoldoutScoringArtifactAuditV10,
     LegacyHoldoutScoringArtifactAuditV11,
     LegacyHoldoutScoringArtifactAuditV12,
     LegacyHoldoutScoringArtifactAuditV13,
+    LegacyHoldoutScoringArtifactAuditV14,
     NeuralPriorPromotionPolicy,
     PriorHoldoutEvaluation,
     ScoringReplayCaseArtifact,
     SEMANTIC_SCORING_REPLAY_CONTRACT,
     SEMANTIC_SCORING_REPLAY_METHOD,
     SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST,
+    scoring_metric_engine_identity_digest,
     recompute_prior_holdout_evaluation_from_bundle,
     compute_neural_prior_promotion,
     validate_neural_prior_promotion,
@@ -338,6 +345,74 @@ _PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST = (
 _MAXIMUM_ACTION_ARTIFACT_MEMBERS = 12
 _MAXIMUM_ACTION_ARTIFACT_FILE_BYTES = 2 * 1024**3
 _MAXIMUM_ACTION_ARTIFACT_EXPANDED_BYTES = 8 * 1024**3
+_DURABLE_INTERVENTION_MANIFEST_BASE_FIELDS = frozenset(
+    {
+        "contract",
+        "receipt_digest",
+        "action_artifact_digest",
+        "action_payload_digest",
+        "generator_digest",
+        "generator_shape",
+        "generator_dtype",
+        "intervention_type",
+        "action_reason",
+        "action_policy_digest",
+        "action_policy_json",
+        "action_safety_diagnostics_digest",
+        "before_context_digest",
+        "after_context_digest",
+        "before_radar_id",
+        "after_radar_id",
+        "before_context_schema_digest",
+        "after_context_schema_digest",
+        "before_applicability_region_digest",
+        "after_applicability_region_digest",
+        "before_applicability_mask_digest",
+        "after_applicability_mask_digest",
+        "before_canonicalization_contract_digest",
+        "after_canonicalization_contract_digest",
+        "minimum_dbz",
+        "maximum_dbz",
+        "missing_fill_dbz",
+        "cell_area_m2",
+        "analysis_config_json",
+        "analysis_config_digest",
+        "before_input_bundle_digest",
+        "after_input_bundle_digest",
+        "before_fixed_input_context_digest",
+        "after_fixed_input_context_digest",
+        "before_full_analysis_input_digest",
+        "after_full_analysis_input_digest",
+        "before_analysis_input_identity_digest",
+        "after_analysis_input_identity_digest",
+        "input_plan_digest",
+        "before_input_plan_resolution_digest",
+        "after_input_plan_resolution_digest",
+        "before_background_present",
+        "after_background_present",
+    }
+) | frozenset(
+    f"{prefix}_{suffix}"
+    for prefix in ("before", "after")
+    for suffix in (
+        "background_age_minutes",
+        "grid_time_contract_digest",
+        "calibration_manifest_digest",
+        "calibration_approval_digest",
+        "data_identity_digest",
+        "source_available_mask_digest",
+        "learned_model_input_features_digest",
+    )
+)
+_DURABLE_INTERVENTION_MANIFEST_V6_FIELDS = (
+    _DURABLE_INTERVENTION_MANIFEST_BASE_FIELDS
+    | frozenset(
+        {
+            "metric_domain_evidence_digest",
+            "grid_time_contract_payload",
+        }
+    )
+)
 _MAXIMUM_SCORING_REPLAY_SHARDS = 4096
 _MAXIMUM_SCORING_REPLAY_TOTAL_EXPANDED_BYTES = 64 * 1024**3
 _MAXIMUM_ACTION_GENERATOR_BYTES = 512 * 1024**2
@@ -3233,6 +3308,86 @@ class LegacyScoringReplayBundleManifestAuditV21(ScoringReplayBundleManifest):
 
 
 @dataclass(frozen=True)
+class LegacyScoringReplayBundleManifestAuditV22(ScoringReplayBundleManifest):
+    """Pre-geodetic-evidence v22 replay retained for byte audit."""
+
+    replay_method: str = "builtin-semantic-scoring-recomputation-v22"
+    contract: str = "neural-prior-scoring-replay-bundle-v22"
+
+    def __post_init__(self) -> None:
+        if (
+            self.contract != "neural-prior-scoring-replay-bundle-v22"
+            or self.replay_method
+            != "builtin-semantic-scoring-recomputation-v22"
+            or not self.ordered_case_ids
+            or len(set(self.ordered_case_ids)) != len(self.ordered_case_ids)
+            or len(self.ordered_case_ids)
+            != len(self.ordered_evaluation_digests)
+            or len(self.semantic_case_digests) != len(self.ordered_case_ids)
+            or self.verification_provenance_payload_sha256 is None
+            or self.raw_ingestor_trust_store_digest is None
+            or not self.tensor_shard_sha256s
+            or tuple(sorted(set(self.tensor_shard_sha256s)))
+            != self.tensor_shard_sha256s
+        ):
+            raise ValueError("legacy v22 semantic replay manifest is invalid")
+        for value in (
+            self.scoring_input_artifact_digest,
+            *self.ordered_evaluation_digests,
+            *self.semantic_case_digests,
+            self.algorithm_source_manifest_digest,
+            self.runtime_compatibility_digest,
+            self.runtime_exact_digest,
+            self.tensor_archive_sha256,
+            self.evaluation_payload_sha256,
+            self.raw_provenance_payload_sha256,
+            self.verification_provenance_payload_sha256,
+            self.raw_ingestor_trust_store_digest,
+            *self.tensor_shard_sha256s,
+        ):
+            if re.fullmatch(r"[0-9a-f]{64}", value) is None:
+                raise ValueError("legacy v22 semantic replay digest is invalid")
+        expected = {
+            (case_id, role)
+            for case_id in self.ordered_case_ids
+            for role in (
+                SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                | (
+                    SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
+                    if case_id in self.dynamic_source_case_ids
+                    else frozenset()
+                )
+                | (
+                    SCORING_REPLAY_BACKGROUND_TENSOR_ROLES
+                    if case_id in self.background_case_ids
+                    else frozenset()
+                )
+            )
+        }
+        actual = {(item.case_id, item.role) for item in self.tensor_records}
+        referenced = tuple(
+            sorted(
+                {
+                    cast(str, item.archive_sha256)
+                    for item in self.tensor_records
+                }
+            )
+        )
+        if (
+            actual != expected
+            or len(actual) != len(self.tensor_records)
+            or referenced != self.tensor_shard_sha256s
+            or any(
+                item.archive_sha256 is None
+                or item.archive_member != "tensor"
+                for item in self.tensor_records
+            )
+        ):
+            raise ValueError("legacy v22 semantic replay tensor set is incomplete")
+        object.__setattr__(self, "bundle_digest", _json_digest(self.payload))
+
+
+@dataclass(frozen=True)
 class LoadedScoringReplayBundle:
     manifest: (
         ScoringReplayBundleManifest
@@ -3256,6 +3411,7 @@ class LoadedScoringReplayBundle:
         | LegacyScoringReplayBundleManifestAuditV19
         | LegacyScoringReplayBundleManifestAuditV20
         | LegacyScoringReplayBundleManifestAuditV21
+        | LegacyScoringReplayBundleManifestAuditV22
     )
     evaluations: tuple[PriorHoldoutEvaluation, ...]
     tensors: Mapping[tuple[str, str], Tensor]
@@ -3604,7 +3760,7 @@ def _current_verification_provenance_payload(
 
     verification = case.verification
     if (
-        verification.contract != "radar-verification-bundle-v17"
+        verification.contract != "radar-verification-bundle-v18"
         or type(verification.observation_error_derivation)
         is not ObservationErrorDerivationArtifact
     ):
@@ -5018,6 +5174,27 @@ class EpisodeLedger:
         generator_bytes = generator.artifact_bytes
         if len(generator_bytes) > _MAXIMUM_ACTION_GENERATOR_BYTES:
             raise ValueError("action generator artifact exceeds its byte budget")
+        before_grid = before_run.grid_time_contract
+        after_grid = after_run.grid_time_contract
+        if (
+            before_grid is None
+            or after_grid is None
+            or before_grid.digest != after_grid.digest
+        ):
+            raise ValueError(
+                "durable scientific intervention requires one unchanged grid"
+            )
+        metric_domain_evidence_digest: str | None = None
+        artifact_contract = "durable-intervention-action-artifact-v5"
+        if (
+            before_grid.spatial_grid_contract
+            == "radar-spatial-grid-identity-v5"
+        ):
+            before_grid.validate_current_metric_domain_evidence()
+            metric_domain_evidence_digest = (
+                before_grid.metric_domain_evidence_digest
+            )
+            artifact_contract = "durable-intervention-action-artifact-v6"
         expanded_bytes = expanded_tensor_bytes((
             before.frames_dbz,
             before.observation_masks,
@@ -5068,7 +5245,7 @@ class EpisodeLedger:
             )
             (temporary / "generator.pt2").write_bytes(generator_bytes)
             manifest: dict[str, object] = {
-                "contract": "durable-intervention-action-artifact-v5",
+                "contract": artifact_contract,
                 "receipt_digest": receipt.receipt_digest,
                 "action_artifact_digest": receipt.action_artifact_digest,
                 "action_payload_digest": receipt.action_payload_digest,
@@ -5109,9 +5286,7 @@ class EpisodeLedger:
                 "minimum_dbz": before.min_dbz,
                 "maximum_dbz": before.max_dbz,
                 "missing_fill_dbz": before.missing_fill_dbz,
-                "cell_area_m2": before_run.grid_time_contract.cell_area_m2
-                if before_run.grid_time_contract is not None
-                else None,
+                "cell_area_m2": before_grid.cell_area_m2,
                 "analysis_config_json": before_run.analysis_config_json,
                 "analysis_config_digest": before_run.analysis_config_digest,
                 "before_input_bundle_digest": before.input_bundle_digest,
@@ -5144,6 +5319,11 @@ class EpisodeLedger:
                 "before_background_present": before_background is not None,
                 "after_background_present": after_background is not None,
             }
+            if artifact_contract == "durable-intervention-action-artifact-v6":
+                manifest["metric_domain_evidence_digest"] = (
+                    metric_domain_evidence_digest
+                )
+                manifest["grid_time_contract_payload"] = before_grid.payload
             for prefix, run in (("before", before_run), ("after", after_run)):
                 manifest[f"{prefix}_background_age_minutes"] = (
                     run.background_age_minutes
@@ -5236,6 +5416,7 @@ class EpisodeLedger:
                 "durable-intervention-action-artifact-v3",
                 "durable-intervention-action-artifact-v4",
                 "durable-intervention-action-artifact-v5",
+                "durable-intervention-action-artifact-v6",
             }
             or manifest.get("receipt_digest") != receipt.receipt_digest
             or manifest.get("action_artifact_digest")
@@ -5257,6 +5438,20 @@ class EpisodeLedger:
             != decision.applicability_mask_digest
         ):
             raise ValueError("durable intervention artifact manifest mismatch")
+        if manifest["contract"] in {
+            "durable-intervention-action-artifact-v5",
+            "durable-intervention-action-artifact-v6",
+        }:
+            expected_manifest_fields = (
+                _DURABLE_INTERVENTION_MANIFEST_V6_FIELDS
+                if manifest["contract"]
+                == "durable-intervention-action-artifact-v6"
+                else _DURABLE_INTERVENTION_MANIFEST_BASE_FIELDS
+            )
+            if set(manifest) != expected_manifest_fields:
+                raise ValueError(
+                    "durable intervention manifest fields are invalid"
+                )
         retained_policy_json = manifest.get("action_policy_json")
         if not isinstance(retained_policy_json, dict):
             raise ValueError("durable intervention policy is invalid")
@@ -5392,7 +5587,10 @@ class EpisodeLedger:
                     input_plan_digest=cast(str, manifest["input_plan_digest"]),
                 )
                 if manifest["contract"]
-                == "durable-intervention-action-artifact-v5"
+                in {
+                    "durable-intervention-action-artifact-v5",
+                    "durable-intervention-action-artifact-v6",
+                }
                 else _json_digest(
                     {
                         "contract": "forecast-fixed-input-context-v1",
@@ -5426,6 +5624,7 @@ class EpisodeLedger:
             if manifest["contract"] in {
                 "durable-intervention-action-artifact-v4",
                 "durable-intervention-action-artifact-v5",
+                "durable-intervention-action-artifact-v6",
             }:
                 expected_resolution = _forecast_input_plan_resolution_digest(
                     input_plan_digest=cast(str, manifest["input_plan_digest"]),
@@ -5453,6 +5652,7 @@ class EpisodeLedger:
                         in {
                             "durable-intervention-action-artifact-v4",
                             "durable-intervention-action-artifact-v5",
+                            "durable-intervention-action-artifact-v6",
                         }
                         else "intervention-input-context-v3"
                     ),
@@ -5473,6 +5673,7 @@ class EpisodeLedger:
                         in {
                             "durable-intervention-action-artifact-v4",
                             "durable-intervention-action-artifact-v5",
+                            "durable-intervention-action-artifact-v6",
                         }
                         else {}
                     ),
@@ -5522,6 +5723,7 @@ class EpisodeLedger:
             if manifest["contract"] in {
                 "durable-intervention-action-artifact-v4",
                 "durable-intervention-action-artifact-v5",
+                "durable-intervention-action-artifact-v6",
             }:
                 expected_identity = _json_digest(
                     {
@@ -5589,6 +5791,64 @@ class EpisodeLedger:
                 raise ValueError(
                     "durable prospective action used correlated observation error"
                 )
+        metric_domain_evidence_digest = manifest.get(
+            "metric_domain_evidence_digest"
+        )
+        if manifest["contract"] == "durable-intervention-action-artifact-v6":
+            grid_payload = manifest.get("grid_time_contract_payload")
+            if (
+                metric_domain_evidence_digest
+                != CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+                or not isinstance(grid_payload, dict)
+            ):
+                raise ValueError(
+                    "durable action metric-domain evidence is not current"
+                )
+            retained_grid = RadarGridTimeContract.from_payload(
+                cast(dict[str, object], grid_payload)
+            )
+            retained_grid.validate_current_metric_domain_evidence()
+            if (
+                retained_grid.digest
+                != manifest.get("before_grid_time_contract_digest")
+                or retained_grid.digest
+                != manifest.get("after_grid_time_contract_digest")
+                or retained_grid.metric_domain_evidence_digest
+                != metric_domain_evidence_digest
+                or retained_grid.cell_area_m2 != float(manifest["cell_area_m2"])
+            ):
+                raise ValueError(
+                    "durable action grid evidence changed"
+                )
+        elif "metric_domain_evidence_digest" in manifest:
+            raise ValueError(
+                "legacy durable action cannot claim current metric evidence"
+            )
+        elif "grid_time_contract_payload" in manifest:
+            raise ValueError("legacy durable action cannot claim a current grid")
+        else:
+            retained_grid = None
+        expected_action_artifact_digest = _intervention_action_artifact_digest(
+            generator_digest=generator.generator_digest,
+            before_context_digest=cast(
+                str, manifest["before_context_digest"]
+            ),
+            after_context_digest=cast(str, manifest["after_context_digest"]),
+            action_payload_digest=action.payload_digest,
+            before_frames_digest=tensor_digest(tensors["before_frames"]),
+            after_frames_digest=tensor_digest(tensors["after_frames"]),
+            before_masks_digest=tensor_digest(tensors["before_masks"]),
+            after_masks_digest=tensor_digest(tensors["after_masks"]),
+            before_quality_weight_digest=tensor_digest(
+                tensors["before_quality"]
+            ),
+            after_quality_weight_digest=tensor_digest(
+                tensors["after_quality"]
+            ),
+            grid_time_contract=retained_grid,
+        )
+        if expected_action_artifact_digest != receipt.action_artifact_digest:
+            raise ValueError("durable action artifact identity changed")
         diagnostics = _compute_action_safety(
             action,
             _artifact_intervention_context(manifest, tensors, before_background),
@@ -5596,6 +5856,10 @@ class EpisodeLedger:
             minimum_dbz=float(manifest["minimum_dbz"]),
             maximum_dbz=float(manifest["maximum_dbz"]),
             cell_area_m2=float(manifest["cell_area_m2"]),
+            metric_domain_evidence_digest=cast(
+                str | None,
+                metric_domain_evidence_digest,
+            ),
         )
         if diagnostics.diagnostics_digest != receipt.action_safety_diagnostics_digest:
             raise ValueError("durable action safety diagnostics changed")
@@ -5624,28 +5888,6 @@ class EpisodeLedger:
         )
         if any(actual != expected for actual, expected in retained_tensor_digests):
             raise ValueError("durable intervention tensors disagree with receipt")
-        replay_digest = _json_digest(
-            {
-                "contract": "intervention-action-artifact-v1",
-                "generator_digest": generator.generator_digest,
-                "before_context_digest": manifest["before_context_digest"],
-                "after_context_digest": manifest["after_context_digest"],
-                "action_payload_digest": action.payload_digest,
-                "before_frames_digest": tensor_digest(tensors["before_frames"]),
-                "after_frames_digest": tensor_digest(tensors["after_frames"]),
-                "before_masks_digest": tensor_digest(tensors["before_masks"]),
-                "after_masks_digest": tensor_digest(tensors["after_masks"]),
-                "before_quality_weight_digest": tensor_digest(
-                    tensors["before_quality"]
-                ),
-                "after_quality_weight_digest": tensor_digest(
-                    tensors["after_quality"]
-                ),
-            }
-        )
-        if replay_digest != receipt.action_artifact_digest:
-            raise ValueError("durable action transition digest mismatch")
-
     def append_prospective_intervention_decision(
         self,
         decision: ProspectiveInterventionDecision,
@@ -6224,6 +6466,14 @@ class EpisodeLedger:
         )
         validate_neural_prior_holdout_plan(plan)
         validate_promotion_decision_rule(promotion_decision_rule)
+        if (
+            plan.scoring_algorithm_digest != algorithm_bundle_digest()
+            or plan.metric_engine_digest
+            != scoring_metric_engine_identity_digest()
+        ):
+            raise ValueError(
+                "holdout scoring implementation is not the installed source"
+            )
         _validate_scheduler_authority(
             plan.physical_event_catalog_plan,
             scheduler_trust,
@@ -6618,6 +6868,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanV29Audit
         | LegacyNeuralPriorHoldoutPlanV30Audit
         | LegacyNeuralPriorHoldoutPlanV31Audit
+        | LegacyNeuralPriorHoldoutPlanV32Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -6820,6 +7071,13 @@ class EpisodeLedger:
             )
         if value.get("contract") == "neural-prior-holdout-plan-v31":
             return LegacyNeuralPriorHoldoutPlanV31Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v32":
+            return LegacyNeuralPriorHoldoutPlanV32Audit(
                 plan_digest=plan_digest,
                 payload_json=json.dumps(
                     value, sort_keys=True, separators=(",", ":")
@@ -11225,6 +11483,12 @@ class EpisodeLedger:
         available_disk_bytes = shutil.disk_usage(self.scoring_replays_dir).free
         active_runtime = numerical_runtime_manifest(execution_device)
         current_algorithm_source_manifest_digest = algorithm_bundle_digest()
+        preregistered_algorithm_source_digests = {
+            item.plan.scoring_algorithm_digest for item in ordered_cases
+        }
+        preregistered_metric_engine_digests = {
+            item.plan.metric_engine_digest for item in ordered_cases
+        }
         if (
             scoring_input_artifact.artifact_digest
             != _json_digest(scoring_input_artifact.payload)
@@ -11234,6 +11498,10 @@ class EpisodeLedger:
             or available_disk_bytes < total_expanded_bytes * 2
             or algorithm_source_manifest_digest
             != current_algorithm_source_manifest_digest
+            or preregistered_algorithm_source_digests
+            != {current_algorithm_source_manifest_digest}
+            or preregistered_metric_engine_digests
+            != {scoring_metric_engine_identity_digest()}
         ):
             raise ValueError("scoring replay inputs are incomplete")
         temporary = Path(
@@ -11767,6 +12035,7 @@ class EpisodeLedger:
             "neural-prior-scoring-replay-bundle-v19",
             "neural-prior-scoring-replay-bundle-v20",
             "neural-prior-scoring-replay-bundle-v21",
+            "neural-prior-scoring-replay-bundle-v22",
             SEMANTIC_SCORING_REPLAY_CONTRACT,
         }
         expected_artifact_members = {"manifest.json", "evaluations.json"}
@@ -11781,6 +12050,7 @@ class EpisodeLedger:
             "neural-prior-scoring-replay-bundle-v19",
             "neural-prior-scoring-replay-bundle-v20",
             "neural-prior-scoring-replay-bundle-v21",
+            "neural-prior-scoring-replay-bundle-v22",
             SEMANTIC_SCORING_REPLAY_CONTRACT,
         }
         if sharded_bundle:
@@ -11812,6 +12082,7 @@ class EpisodeLedger:
             "neural-prior-scoring-replay-bundle-v19",
             "neural-prior-scoring-replay-bundle-v20",
             "neural-prior-scoring-replay-bundle-v21",
+            "neural-prior-scoring-replay-bundle-v22",
             SEMANTIC_SCORING_REPLAY_CONTRACT,
         }:
             expected_artifact_members.add("verification_provenance.json")
@@ -11850,6 +12121,7 @@ class EpisodeLedger:
             LegacyScoringReplayBundleManifestAuditV19,
             LegacyScoringReplayBundleManifestAuditV20,
             LegacyScoringReplayBundleManifestAuditV21,
+            LegacyScoringReplayBundleManifestAuditV22,
         }
         has_verification_provenance = manifest_type in {
             ScoringReplayBundleManifest,
@@ -11861,6 +12133,7 @@ class EpisodeLedger:
             LegacyScoringReplayBundleManifestAuditV19,
             LegacyScoringReplayBundleManifestAuditV20,
             LegacyScoringReplayBundleManifestAuditV21,
+            LegacyScoringReplayBundleManifestAuditV22,
         }
         raw_provenance_checksum_mismatch = False
         if has_raw_provenance:
@@ -11895,6 +12168,7 @@ class EpisodeLedger:
             LegacyScoringReplayBundleManifestAuditV19,
             LegacyScoringReplayBundleManifestAuditV20,
             LegacyScoringReplayBundleManifestAuditV21,
+            LegacyScoringReplayBundleManifestAuditV22,
         }:
             current_manifest = cast(ScoringReplayBundleManifest, manifest)
             tensors: Mapping[tuple[str, str], Tensor] = (
@@ -12072,6 +12346,9 @@ class EpisodeLedger:
                 != (scoring_input_artifact.artifact_digest,)
                 or receipt.process_algorithm_digest
                 != plan.scoring_algorithm_digest
+                or plan.scoring_algorithm_digest != algorithm_bundle_digest()
+                or plan.metric_engine_digest
+                != scoring_metric_engine_identity_digest()
                 or receipt.process_runtime_digest != plan.scoring_runtime_digest
                 or receipt.execution_contract_digest
                 != plan.scoring_execution_contract_digest
@@ -12308,10 +12585,7 @@ class EpisodeLedger:
             )
             if (
                 not replay.semantic_replay_verified
-                or not isinstance(
-                    replay.manifest,
-                    ScoringReplayBundleManifest,
-                )
+                or type(replay.manifest) is not ScoringReplayBundleManifest
                 or replay.manifest.contract != SEMANTIC_SCORING_REPLAY_CONTRACT
                 or replay.manifest.replay_method != SEMANTIC_SCORING_REPLAY_METHOD
                 or scoring_artifact.scoring_replay_contract
@@ -12340,6 +12614,13 @@ class EpisodeLedger:
                 != scoring_certification_evidence_digest
                 or replay.manifest.algorithm_source_manifest_digest
                 != algorithm_bundle_digest()
+                or scoring_artifact.scoring_algorithm_digest
+                != replay.manifest.algorithm_source_manifest_digest
+                or {
+                    item.plan.metric_engine_digest
+                    for item in ordered_replay_cases
+                }
+                != {scoring_metric_engine_identity_digest()}
                 or replay.manifest.raw_ingestor_trust_store_digest
                 != completion_raw_trust.content_digest
                 or scoring_artifact.raw_ingestor_trust_store_digest
@@ -12561,10 +12842,7 @@ class EpisodeLedger:
         )
         if (
             not replay.semantic_replay_verified
-            or not isinstance(
-                replay.manifest,
-                ScoringReplayBundleManifest,
-            )
+            or type(replay.manifest) is not ScoringReplayBundleManifest
             or replay.manifest.scoring_input_artifact_digest
             != scoring_input_artifact.artifact_digest
             or replay.manifest.ordered_evaluation_digests
@@ -13114,7 +13392,7 @@ class EpisodeLedger:
         )
         if (
             not replay.semantic_replay_verified
-            or not isinstance(replay.manifest, ScoringReplayBundleManifest)
+            or type(replay.manifest) is not ScoringReplayBundleManifest
             or replay.manifest.bundle_digest
             != evidence.scoring_replay_bundle_digest
             or tuple(item.evaluation_digest for item in replay.evaluations)
@@ -15960,6 +16238,7 @@ class EpisodeLedger:
         | LegacyNeuralPriorPromotionEvidenceAuditV28
         | LegacyNeuralPriorPromotionEvidenceAuditV29
         | LegacyNeuralPriorPromotionEvidenceAuditV30
+        | LegacyNeuralPriorPromotionEvidenceAuditV31
     ):
         """Load and validate one immutable prior-promotion decision."""
 
@@ -16042,6 +16321,7 @@ class EpisodeLedger:
                 | LegacyNeuralPriorPromotionEvidenceAuditV28
                 | LegacyNeuralPriorPromotionEvidenceAuditV29
                 | LegacyNeuralPriorPromotionEvidenceAuditV30
+                | LegacyNeuralPriorPromotionEvidenceAuditV31
             ) = LegacyNeuralPriorPromotionEvidenceAuditV3(
                 promotion_evidence_digest=promotion_evidence_digest,
                 payload_json=json.dumps(
@@ -16154,7 +16434,9 @@ class EpisodeLedger:
                         "neural-prior-promotion-evidence-v27",
                         "neural-prior-promotion-evidence-v28",
                         "neural-prior-promotion-evidence-v29",
+                        "neural-prior-promotion-evidence-v30",
                         "neural-prior-promotion-evidence-v31",
+                        "neural-prior-promotion-evidence-v32",
                     ):
                         raw_payload = json.loads(row["evidence_payload_json"])
                         if not isinstance(raw_payload, dict):
@@ -16189,7 +16471,9 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v27",
                             "neural-prior-promotion-evidence-v28",
                             "neural-prior-promotion-evidence-v29",
+                            "neural-prior-promotion-evidence-v30",
                             "neural-prior-promotion-evidence-v31",
+                            "neural-prior-promotion-evidence-v32",
                         ):
                             raw_payload["regime_classifier_evidence_digests"] = tuple(
                                 raw_payload["regime_classifier_evidence_digests"]
@@ -16222,7 +16506,9 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v27",
                             "neural-prior-promotion-evidence-v28",
                             "neural-prior-promotion-evidence-v29",
+                            "neural-prior-promotion-evidence-v30",
                             "neural-prior-promotion-evidence-v31",
+                            "neural-prior-promotion-evidence-v32",
                         ):
                             raw_payload["range_band_skill_bounds"] = tuple(
                                 tuple(item)
@@ -16249,7 +16535,9 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v27",
                             "neural-prior-promotion-evidence-v28",
                             "neural-prior-promotion-evidence-v29",
+                            "neural-prior-promotion-evidence-v30",
                             "neural-prior-promotion-evidence-v31",
+                            "neural-prior-promotion-evidence-v32",
                         ):
                             raw_payload[
                                 "range_band_skill_inference_diagnostics"
@@ -16277,7 +16565,9 @@ class EpisodeLedger:
                             "neural-prior-promotion-evidence-v27",
                             "neural-prior-promotion-evidence-v28",
                             "neural-prior-promotion-evidence-v29",
+                            "neural-prior-promotion-evidence-v30",
                             "neural-prior-promotion-evidence-v31",
+                            "neural-prior-promotion-evidence-v32",
                         ):
                             raw_payload[
                                 "certified_range_geometry_contract_digests"
@@ -16559,7 +16849,16 @@ class EpisodeLedger:
                                     separators=(",", ":"),
                                 ),
                             )
-                        else:
+                        elif contract == "neural-prior-promotion-evidence-v31":
+                            evidence = LegacyNeuralPriorPromotionEvidenceAuditV31(
+                                promotion_evidence_digest=promotion_evidence_digest,
+                                payload_json=json.dumps(
+                                    raw_payload,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                ),
+                            )
+                        elif contract == "neural-prior-promotion-evidence-v32":
                             raw_payload["range_metric_cell_bounds"] = tuple(
                                 tuple(item)
                                 for item in raw_payload["range_metric_cell_bounds"]
@@ -16580,6 +16879,10 @@ class EpisodeLedger:
                             )
                             evidence = NeuralPriorPromotionEvidence(
                                 **cast(Any, raw_payload)
+                            )
+                        else:
+                            raise ValueError(
+                                "unsupported neural-prior promotion evidence"
                             )
                     else:
                         raise ValueError(
@@ -19112,7 +19415,7 @@ class EpisodeLedger:
                         str(artifact_digest),
                         _require_raw_trust_activation=False,
                     )
-                    if isinstance(replay.manifest, ScoringReplayBundleManifest):
+                    if type(replay.manifest) is ScoringReplayBundleManifest:
                         retained_trust_digest = (
                             replay.manifest.raw_ingestor_trust_store_digest
                         )
@@ -19208,7 +19511,13 @@ class EpisodeLedger:
             scoring.scoring_replay_bundle_digest
         )
         if (
-            not isinstance(replay.manifest, ScoringReplayBundleManifest)
+            type(replay.manifest) is not ScoringReplayBundleManifest
+            or replay.manifest.bundle_digest
+            != scoring.scoring_replay_bundle_digest
+            or replay.manifest.contract != scoring.scoring_replay_contract
+            or replay.manifest.replay_method != scoring.scoring_replay_method
+            or scoring.semantic_replay_generation_digest
+            != SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
             or replay.manifest.raw_ingestor_trust_store_digest
             != scoring.raw_ingestor_trust_store_digest
         ):
@@ -19860,6 +20169,7 @@ def _decode_holdout_scoring_artifact(
     | LegacyHoldoutScoringArtifactAuditV11
     | LegacyHoldoutScoringArtifactAuditV12
     | LegacyHoldoutScoringArtifactAuditV13
+    | LegacyHoldoutScoringArtifactAuditV14
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -19894,7 +20204,14 @@ def _decode_holdout_scoring_artifact(
             artifact_digest=expected_digest,
             payload_json=json.dumps(value, sort_keys=True, separators=(",", ":")),
         )
-    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v14":
+    if values.get("contract") == "neural-prior-holdout-scoring-artifact-v14":
+        if stored_digest != expected_digest:
+            raise ValueError("holdout scoring artifact digest mismatch")
+        return LegacyHoldoutScoringArtifactAuditV14(
+            artifact_digest=expected_digest,
+            payload_json=json.dumps(value, sort_keys=True, separators=(",", ":")),
+        )
+    if values.get("contract") != "neural-prior-holdout-scoring-artifact-v15":
         raise ValueError("legacy holdout scoring artifacts are audit-only")
     for name in (
         "ordered_case_ids",
@@ -19937,6 +20254,7 @@ def _decode_scoring_replay_bundle_manifest(
     | LegacyScoringReplayBundleManifestAuditV19
     | LegacyScoringReplayBundleManifestAuditV20
     | LegacyScoringReplayBundleManifestAuditV21
+    | LegacyScoringReplayBundleManifestAuditV22
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -19996,6 +20314,7 @@ def _decode_scoring_replay_bundle_manifest(
             | LegacyScoringReplayBundleManifestAuditV19
             | LegacyScoringReplayBundleManifestAuditV20
             | LegacyScoringReplayBundleManifestAuditV21
+            | LegacyScoringReplayBundleManifestAuditV22
         ) = LegacyScoringReplayBundleManifestAuditV1(
             **cast(Any, values)
         )
@@ -20083,6 +20402,10 @@ def _decode_scoring_replay_bundle_manifest(
             )
         elif values.get("contract") == "neural-prior-scoring-replay-bundle-v21":
             manifest = LegacyScoringReplayBundleManifestAuditV21(
+                **cast(Any, values)
+            )
+        elif values.get("contract") == "neural-prior-scoring-replay-bundle-v22":
+            manifest = LegacyScoringReplayBundleManifestAuditV22(
                 **cast(Any, values)
             )
         else:

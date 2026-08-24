@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, field, fields, replace
 from datetime import datetime, timezone
 from enum import Enum
+import hashlib
+from importlib import resources
 import json
 import math
+import re
+from typing import cast
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -56,6 +60,29 @@ _EPSG_5179_MAXIMUM_EASTING_M = 1_663_741.90
 _EPSG_5179_MINIMUM_NORTHING_M = 957_856.66
 _EPSG_5179_MAXIMUM_NORTHING_M = 2_274_021.31
 _EPSG_5179_MAXIMUM_LINEAR_SCALE_ERROR = 0.006
+_EPSG_5179_MAXIMUM_AREA_SCALE_ERROR = 0.012036
+_EPSG_5179_METRIC_EVIDENCE_RESOURCE = (
+    "data/epsg5179_metric_domain_evidence_v1.json"
+)
+_EPSG_5179_METRIC_EVIDENCE_REPORT_SHA256 = (
+    "6eeb22c0665566b69ce6590b7176607492a473e63e03f743178283aca771a098"
+)
+_EPSG_5179_METRIC_EVIDENCE_GENERATOR_SHA256 = (
+    "bdfe670be17f4fa85047f0c0614e56756d95ec2bc30c597c4b13303d646db508"
+)
+_EPSG_5179_EVIDENCE_LONGITUDE_BOUNDS = (122.71, 134.28)
+_EPSG_5179_EVIDENCE_LATITUDE_BOUNDS = (28.60, 40.27)
+_EPSG_5179_EVIDENCE_PROJECTED_COVERAGE_BOUNDS = (
+    592_664.0,
+    1_576_674.0,
+    976_711.0,
+    2_251_910.0,
+)
+_EPSG_5179_EVIDENCE_PROJECTION_DEFINITION = (
+    "+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 "
+    "+y_0=2000000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m "
+    "+no_defs"
+)
 
 _LEGACY_RADAR_PROJECTED_CRS_V2: dict[
     str,
@@ -666,7 +693,7 @@ class RadarMetricDomainContract:
             "EPSG:5179"
         )
     )
-    allowed_domain_polygon_digest: str = field(
+    allowed_domain_bbox_digest: str = field(
         default_factory=lambda: json_digest(
             {
                 "contract": "epsg5179-area-of-use-projected-bbox-v1",
@@ -727,7 +754,7 @@ class RadarMetricDomainContract:
             self.contract != "radar-metric-domain-v1"
             or self.canonical_projection != "EPSG:5179"
             or self.projected_crs_base_digest != expected_base_digest
-            or self.allowed_domain_polygon_digest != expected_polygon_digest
+            or self.allowed_domain_bbox_digest != expected_polygon_digest
             or self.minimum_easting_m != _EPSG_5179_MINIMUM_EASTING_M
             or self.maximum_easting_m != _EPSG_5179_MAXIMUM_EASTING_M
             or self.minimum_northing_m != _EPSG_5179_MINIMUM_NORTHING_M
@@ -744,9 +771,10 @@ class RadarMetricDomainContract:
             "contract": self.contract,
             "canonical_projection": self.canonical_projection,
             "projected_crs_base_digest": self.projected_crs_base_digest,
-            "allowed_domain_polygon_digest": (
-                self.allowed_domain_polygon_digest
-            ),
+            # Historical v1 serialized this bbox under a polygon field name.
+            # Preserve that key so existing grid/domain digests remain stable;
+            # the current API and evidence contract use exact bbox semantics.
+            "allowed_domain_polygon_digest": self.allowed_domain_bbox_digest,
             "minimum_easting_m": self.minimum_easting_m,
             "maximum_easting_m": self.maximum_easting_m,
             "minimum_northing_m": self.minimum_northing_m,
@@ -760,6 +788,66 @@ class RadarMetricDomainContract:
     @property
     def digest(self) -> str:
         return json_digest(self.payload)
+
+    @classmethod
+    def from_payload(
+        cls,
+        payload: Mapping[str, object],
+    ) -> RadarMetricDomainContract:
+        """Decode the stable v1 JSON payload without renaming its old key."""
+
+        expected_fields = {
+            "contract",
+            "canonical_projection",
+            "projected_crs_base_digest",
+            "allowed_domain_polygon_digest",
+            "minimum_easting_m",
+            "maximum_easting_m",
+            "minimum_northing_m",
+            "maximum_northing_m",
+            "maximum_linear_scale_error",
+            "scale_error_algorithm_digest",
+            "coordinate_membership",
+            "scale_error_status",
+        }
+        if set(payload) != expected_fields:
+            raise ValueError("radar metric-domain payload fields are invalid")
+        if (
+            payload["coordinate_membership"]
+            != "all-cell-centers-and-radar-sites-v1"
+            or payload["scale_error_status"]
+            != "registered-envelope-requires-independent-check-v1"
+        ):
+            raise ValueError("radar metric-domain payload semantics are invalid")
+        try:
+            return cls(
+                canonical_projection=cast(
+                    str, payload["canonical_projection"]
+                ),
+                projected_crs_base_digest=cast(
+                    str, payload["projected_crs_base_digest"]
+                ),
+                allowed_domain_bbox_digest=cast(
+                    str, payload["allowed_domain_polygon_digest"]
+                ),
+                minimum_easting_m=cast(float, payload["minimum_easting_m"]),
+                maximum_easting_m=cast(float, payload["maximum_easting_m"]),
+                minimum_northing_m=cast(
+                    float, payload["minimum_northing_m"]
+                ),
+                maximum_northing_m=cast(
+                    float, payload["maximum_northing_m"]
+                ),
+                maximum_linear_scale_error=cast(
+                    float, payload["maximum_linear_scale_error"]
+                ),
+                scale_error_algorithm_digest=cast(
+                    str, payload["scale_error_algorithm_digest"]
+                ),
+                contract=cast(str, payload["contract"]),
+            )
+        except (TypeError, ValueError) as error:
+            raise ValueError("radar metric-domain payload is invalid") from error
 
     def validate_projected_point(self, x_m: float, y_m: float) -> None:
         if (
@@ -793,6 +881,642 @@ class RadarMetricDomainContract:
 
 
 CURRENT_RADAR_METRIC_DOMAIN = RadarMetricDomainContract()
+
+
+def _validate_radar_metric_domain_evidence_report(
+    report: Mapping[str, object],
+) -> dict[str, object]:
+    """Recompute the semantic reductions claimed by a geodetic report."""
+
+    expected_report_fields = {
+        "contract",
+        "generator",
+        "canonical_projection",
+        "projection_definition",
+        "epsg_crs_projjson_digest",
+        "geodetic_engine",
+        "validated_projected_coverage",
+        "sampling",
+        "factor_digests",
+        "observed_maximum_linear_scale_error",
+        "observed_maximum_area_scale_error",
+        "registered_maximum_linear_scale_error",
+        "registered_maximum_area_scale_error",
+        "samples",
+    }
+    expected_generator_fields = {
+        "contract",
+        "source_sha256",
+        "canonical_output",
+    }
+    expected_engine_fields = {
+        "name",
+        "version",
+        "proj_database_version",
+        "epsg_database_version",
+        "epsg_database_date",
+        "proj_data_version",
+        "database_layout_version",
+        "proj_binary_sha256",
+        "projinfo_binary_sha256",
+        "proj_database_sha256",
+    }
+    expected_sampling_fields = {
+        "contract",
+        "minimum_longitude_deg",
+        "maximum_longitude_deg",
+        "minimum_latitude_deg",
+        "maximum_latitude_deg",
+        "longitude_count",
+        "latitude_count",
+        "point_order",
+        "sampled_geographic_points_digest",
+    }
+    expected_factor_fields = {
+        "sampled_projected_points_digest",
+        "meridional_scale_digest",
+        "parallel_scale_digest",
+        "areal_scale_digest",
+    }
+    expected_coverage_fields = {
+        "contract",
+        "boundary_sample_count_per_edge",
+        "inward_rounding",
+        "minimum_easting_m",
+        "maximum_easting_m",
+        "minimum_northing_m",
+        "maximum_northing_m",
+        "source_geographic_boundary_digest",
+        "projected_source_boundary_digest",
+        "inverse_coverage_boundary_digest",
+        "inverse_minimum_longitude_deg",
+        "inverse_maximum_longitude_deg",
+        "inverse_minimum_latitude_deg",
+        "inverse_maximum_latitude_deg",
+    }
+    generator = report.get("generator")
+    engine = report.get("geodetic_engine")
+    coverage = report.get("validated_projected_coverage")
+    sampling = report.get("sampling")
+    factors = report.get("factor_digests")
+    samples = report.get("samples")
+    if (
+        set(report) != expected_report_fields
+        or report.get("contract")
+        != "radar-metric-domain-geodetic-report-v1"
+        or not isinstance(generator, dict)
+        or set(generator) != expected_generator_fields
+        or generator.get("contract")
+        != "generate-metric-domain-evidence-v2"
+        or generator.get("source_sha256")
+        != _EPSG_5179_METRIC_EVIDENCE_GENERATOR_SHA256
+        or generator.get("canonical_output")
+        != "sorted-compact-json-utf8-newline-v1"
+        or report.get("canonical_projection") != "EPSG:5179"
+        or report.get("projection_definition")
+        != _EPSG_5179_EVIDENCE_PROJECTION_DEFINITION
+        or not isinstance(engine, dict)
+        or set(engine) != expected_engine_fields
+        or not isinstance(coverage, dict)
+        or set(coverage) != expected_coverage_fields
+        or coverage.get("contract")
+        != "epsg5179-sampled-inscribed-projected-bbox-v1"
+        or coverage.get("boundary_sample_count_per_edge") != 10_001
+        or coverage.get("inward_rounding")
+        != "integer-metre-ceil-min-floor-max-v1"
+        or not isinstance(sampling, dict)
+        or set(sampling) != expected_sampling_fields
+        or sampling.get("contract")
+        != "epsg5179-area-of-use-geographic-lattice-v1"
+        or not isinstance(factors, dict)
+        or set(factors) != expected_factor_fields
+        or not isinstance(samples, list)
+        or report.get("registered_maximum_linear_scale_error")
+        != _EPSG_5179_MAXIMUM_LINEAR_SCALE_ERROR
+        or report.get("registered_maximum_area_scale_error")
+        != _EPSG_5179_MAXIMUM_AREA_SCALE_ERROR
+    ):
+        raise ValueError("radar metric-domain evidence report is invalid")
+    coverage_bounds = tuple(
+        coverage.get(name)
+        for name in (
+            "minimum_easting_m",
+            "maximum_easting_m",
+            "minimum_northing_m",
+            "maximum_northing_m",
+        )
+    )
+    if coverage_bounds != _EPSG_5179_EVIDENCE_PROJECTED_COVERAGE_BOUNDS:
+        raise ValueError("radar metric-domain projected coverage is invalid")
+    inverse_extrema = tuple(
+        coverage.get(name)
+        for name in (
+            "inverse_minimum_longitude_deg",
+            "inverse_maximum_longitude_deg",
+            "inverse_minimum_latitude_deg",
+            "inverse_maximum_latitude_deg",
+        )
+    )
+    if any(
+        not isinstance(value, (int, float))
+        or isinstance(value, bool)
+        or not math.isfinite(value)
+        for value in inverse_extrema
+    ):
+        raise ValueError("radar metric-domain inverse coverage is invalid")
+    inverse_min_lon, inverse_max_lon, inverse_min_lat, inverse_max_lat = (
+        float(cast(float, value)) for value in inverse_extrema
+    )
+    if (
+        inverse_min_lon < _EPSG_5179_EVIDENCE_LONGITUDE_BOUNDS[0]
+        or inverse_max_lon > _EPSG_5179_EVIDENCE_LONGITUDE_BOUNDS[1]
+        or inverse_min_lat < _EPSG_5179_EVIDENCE_LATITUDE_BOUNDS[0]
+        or inverse_max_lat > _EPSG_5179_EVIDENCE_LATITUDE_BOUNDS[1]
+    ):
+        raise ValueError("radar metric-domain inverse coverage is invalid")
+    for name in (
+        "proj_binary_sha256",
+        "projinfo_binary_sha256",
+        "proj_database_sha256",
+    ):
+        value = engine.get(name)
+        if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value):
+            raise ValueError("radar metric-domain toolchain digest is invalid")
+    for name in (
+        "source_geographic_boundary_digest",
+        "projected_source_boundary_digest",
+        "inverse_coverage_boundary_digest",
+    ):
+        value = coverage.get(name)
+        if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value):
+            raise ValueError("radar metric-domain coverage digest is invalid")
+    longitude_count = sampling.get("longitude_count")
+    latitude_count = sampling.get("latitude_count")
+    if (
+        type(longitude_count) is not int
+        or type(latitude_count) is not int
+        or longitude_count < 2
+        or latitude_count < 2
+        or len(samples) != longitude_count * latitude_count
+        or sampling.get("point_order")
+        != "latitude-major-longitude-minor-v1"
+    ):
+        raise ValueError("radar metric-domain sampling lattice is invalid")
+    sample_fields = {
+        "longitude_deg",
+        "latitude_deg",
+        "projected_easting_m",
+        "projected_northing_m",
+        "meridional_scale",
+        "parallel_scale",
+        "areal_scale",
+    }
+    numeric_samples: list[dict[str, float]] = []
+    for sample in samples:
+        if not isinstance(sample, dict) or set(sample) != sample_fields:
+            raise ValueError("radar metric-domain factor sample is invalid")
+        numeric_sample: dict[str, float] = {}
+        for name in sample_fields:
+            value = sample[name]
+            if (
+                not isinstance(value, (int, float))
+                or isinstance(value, bool)
+                or not math.isfinite(value)
+            ):
+                raise ValueError("radar metric-domain factor is not finite")
+            numeric_sample[name] = float(value)
+        numeric_samples.append(numeric_sample)
+
+    bounds = tuple(
+        sampling.get(name)
+        for name in (
+            "minimum_longitude_deg",
+            "maximum_longitude_deg",
+            "minimum_latitude_deg",
+            "maximum_latitude_deg",
+        )
+    )
+    if any(
+        not isinstance(value, (int, float))
+        or isinstance(value, bool)
+        or not math.isfinite(value)
+        for value in bounds
+    ):
+        raise ValueError("radar metric-domain sampling bounds are invalid")
+    minimum_longitude, maximum_longitude, minimum_latitude, maximum_latitude = (
+        float(cast(float, value)) for value in bounds
+    )
+    if (
+        (minimum_longitude, maximum_longitude)
+        != _EPSG_5179_EVIDENCE_LONGITUDE_BOUNDS
+        or (minimum_latitude, maximum_latitude)
+        != _EPSG_5179_EVIDENCE_LATITUDE_BOUNDS
+    ):
+        raise ValueError("radar metric-domain sampling bounds are invalid")
+    for index, sample in enumerate(numeric_samples):
+        latitude_index, longitude_index = divmod(index, longitude_count)
+        expected_longitude = minimum_longitude + (
+            (maximum_longitude - minimum_longitude)
+            * longitude_index
+            / (longitude_count - 1)
+        )
+        expected_latitude = minimum_latitude + (
+            (maximum_latitude - minimum_latitude)
+            * latitude_index
+            / (latitude_count - 1)
+        )
+        if not math.isclose(
+            sample["longitude_deg"], expected_longitude, rel_tol=0.0, abs_tol=1e-12
+        ) or not math.isclose(
+            sample["latitude_deg"], expected_latitude, rel_tol=0.0, abs_tol=1e-12
+        ):
+            raise ValueError("radar metric-domain sample ordering is invalid")
+
+    geographic_points = [
+        {
+            "longitude_deg": sample["longitude_deg"],
+            "latitude_deg": sample["latitude_deg"],
+        }
+        for sample in numeric_samples
+    ]
+    projected_points = [
+        {
+            "projected_easting_m": sample["projected_easting_m"],
+            "projected_northing_m": sample["projected_northing_m"],
+        }
+        for sample in numeric_samples
+    ]
+    meridional_scales = [
+        sample["meridional_scale"] for sample in numeric_samples
+    ]
+    parallel_scales = [sample["parallel_scale"] for sample in numeric_samples]
+    areal_scales = [sample["areal_scale"] for sample in numeric_samples]
+    computed: dict[str, object] = {
+        "validated_projected_coverage_digest": json_digest(coverage),
+        "sampled_geographic_points_digest": json_digest(geographic_points),
+        "sampled_projected_points_digest": json_digest(projected_points),
+        "meridional_scale_digest": json_digest(meridional_scales),
+        "parallel_scale_digest": json_digest(parallel_scales),
+        "areal_scale_digest": json_digest(areal_scales),
+        "observed_maximum_linear_scale_error": max(
+            *(abs(value - 1.0) for value in meridional_scales),
+            *(abs(value - 1.0) for value in parallel_scales),
+        ),
+        "observed_maximum_area_scale_error": max(
+            abs(value - 1.0) for value in areal_scales
+        ),
+    }
+    if (
+        sampling.get("sampled_geographic_points_digest")
+        != computed["sampled_geographic_points_digest"]
+        or factors.get("sampled_projected_points_digest")
+        != computed["sampled_projected_points_digest"]
+        or factors.get("meridional_scale_digest")
+        != computed["meridional_scale_digest"]
+        or factors.get("parallel_scale_digest")
+        != computed["parallel_scale_digest"]
+        or factors.get("areal_scale_digest")
+        != computed["areal_scale_digest"]
+        or report.get("observed_maximum_linear_scale_error")
+        != computed["observed_maximum_linear_scale_error"]
+        or report.get("observed_maximum_area_scale_error")
+        != computed["observed_maximum_area_scale_error"]
+    ):
+        raise ValueError("radar metric-domain evidence reductions disagree")
+    return computed
+
+
+def _load_radar_metric_domain_evidence_report() -> dict[str, object]:
+    report_bytes = (
+        resources.files("advar")
+        .joinpath(_EPSG_5179_METRIC_EVIDENCE_RESOURCE)
+        .read_bytes()
+    )
+    if (
+        hashlib.sha256(report_bytes).hexdigest()
+        != _EPSG_5179_METRIC_EVIDENCE_REPORT_SHA256
+    ):
+        raise RuntimeError("radar metric-domain evidence report digest mismatch")
+    report = json.loads(report_bytes)
+    if not isinstance(report, dict):
+        raise RuntimeError("radar metric-domain evidence report is invalid")
+    try:
+        _validate_radar_metric_domain_evidence_report(report)
+    except ValueError as error:
+        raise RuntimeError(
+            "radar metric-domain evidence report semantics are invalid"
+        ) from error
+    return report
+
+
+_EPSG_5179_METRIC_EVIDENCE_REPORT = (
+    _load_radar_metric_domain_evidence_report()
+)
+
+
+@dataclass(frozen=True)
+class RadarMetricDomainEvidence:
+    """Content-addressed geodetic sampling evidence for one metric domain."""
+
+    metric_domain_digest: str = CURRENT_RADAR_METRIC_DOMAIN.digest
+    allowed_domain_bbox_digest: str = (
+        CURRENT_RADAR_METRIC_DOMAIN.allowed_domain_bbox_digest
+    )
+    report_resource: str = _EPSG_5179_METRIC_EVIDENCE_RESOURCE
+    verification_report_sha256: str = (
+        _EPSG_5179_METRIC_EVIDENCE_REPORT_SHA256
+    )
+    generator_contract: str = "generate-metric-domain-evidence-v2"
+    generator_source_sha256: str = (
+        _EPSG_5179_METRIC_EVIDENCE_GENERATOR_SHA256
+    )
+    generator_output_contract: str = (
+        "sorted-compact-json-utf8-newline-v1"
+    )
+    geodetic_engine: str = "PROJ"
+    geodetic_engine_version: str = "9.7.1"
+    proj_binary_sha256: str = (
+        "4a9b129a02d633740980293369c4d961e736d9631c45ac653daff7b0a42a653e"
+    )
+    projinfo_binary_sha256: str = (
+        "f10c24d5e812168c883c5e0a7e19835658c5b5c319781cd16d9ace5dc4f66c92"
+    )
+    proj_database_sha256: str = (
+        "ee32e62f0ba707c751b37e1e1451b1c87ecfcfea3856c9878d10c0904b602d6d"
+    )
+    epsg_database_version: str = "v12.029"
+    epsg_database_date: str = "2025-10-03"
+    epsg_crs_projjson_digest: str = (
+        "2b7176e8ed8279b569e1be3fa843225e85f6880c52354ded49c9bef14d81d667"
+    )
+    validated_projected_coverage_digest: str = (
+        "993053c5ac611186134ea14f07af6202f5ba254c21aa0a1d0c44c8a9d9fa5849"
+    )
+    minimum_easting_m: float = 592_664.0
+    maximum_easting_m: float = 1_576_674.0
+    minimum_northing_m: float = 976_711.0
+    maximum_northing_m: float = 2_251_910.0
+    sample_count: int = 289
+    sampled_geographic_points_digest: str = (
+        "92fc6980aa3f9020b82fac3d227dc36135f4e5b6905b7fb3cd6208ef16379285"
+    )
+    sampled_projected_points_digest: str = (
+        "ae634498addda2617a66eb9ffb059405604b6e8416c42415a5853f5093353153"
+    )
+    meridional_scale_digest: str = (
+        "6fa731b09e4ba3c1930d3975e5834b1032bc3a90cad9a73ab0c1712bc8b7129d"
+    )
+    parallel_scale_digest: str = (
+        "6fa731b09e4ba3c1930d3975e5834b1032bc3a90cad9a73ab0c1712bc8b7129d"
+    )
+    areal_scale_digest: str = (
+        "bd2214048df733cfb5da2fa4ee5afabe71e00ac932522a4f538feb7a0bbab332"
+    )
+    maximum_observed_linear_scale_error: float = 0.005039999999999933
+    maximum_observed_area_scale_error: float = 0.010110000000000063
+    maximum_linear_scale_error: float = (
+        _EPSG_5179_MAXIMUM_LINEAR_SCALE_ERROR
+    )
+    maximum_area_scale_error: float = _EPSG_5179_MAXIMUM_AREA_SCALE_ERROR
+    distance_threshold_margin_policy: str = (
+        "registered-linear-scale-budget-report-only-v1"
+    )
+    area_threshold_margin_policy: str = (
+        "fail-closed-if-ground-area-interval-crosses-threshold-v2"
+    )
+    independent_geodetic_revalidation_required: bool = True
+    contract: str = "radar-metric-domain-evidence-v1"
+
+    def __post_init__(self) -> None:
+        report = _EPSG_5179_METRIC_EVIDENCE_REPORT
+        reductions = _validate_radar_metric_domain_evidence_report(report)
+        generator = report.get("generator")
+        engine = report.get("geodetic_engine")
+        sampling = report.get("sampling")
+        factors = report.get("factor_digests")
+        samples = report.get("samples")
+        if (
+            not isinstance(generator, dict)
+            or not isinstance(engine, dict)
+            or not isinstance(sampling, dict)
+            or not isinstance(factors, dict)
+            or not isinstance(samples, list)
+            or self.contract != "radar-metric-domain-evidence-v1"
+            or self.metric_domain_digest != CURRENT_RADAR_METRIC_DOMAIN.digest
+            or self.allowed_domain_bbox_digest
+            != CURRENT_RADAR_METRIC_DOMAIN.allowed_domain_bbox_digest
+            or self.report_resource != _EPSG_5179_METRIC_EVIDENCE_RESOURCE
+            or self.verification_report_sha256
+            != _EPSG_5179_METRIC_EVIDENCE_REPORT_SHA256
+            or self.generator_contract != generator.get("contract")
+            or self.generator_source_sha256
+            != generator.get("source_sha256")
+            or self.generator_output_contract
+            != generator.get("canonical_output")
+            or report.get("contract")
+            != "radar-metric-domain-geodetic-report-v1"
+            or report.get("canonical_projection") != "EPSG:5179"
+            or self.geodetic_engine != engine.get("name")
+            or self.geodetic_engine_version != engine.get("version")
+            or self.proj_binary_sha256
+            != engine.get("proj_binary_sha256")
+            or self.projinfo_binary_sha256
+            != engine.get("projinfo_binary_sha256")
+            or self.proj_database_sha256
+            != engine.get("proj_database_sha256")
+            or self.epsg_database_version != engine.get("epsg_database_version")
+            or self.epsg_database_date != engine.get("epsg_database_date")
+            or self.epsg_crs_projjson_digest
+            != report.get("epsg_crs_projjson_digest")
+            or self.validated_projected_coverage_digest
+            != reductions.get("validated_projected_coverage_digest")
+            or (
+                self.minimum_easting_m,
+                self.maximum_easting_m,
+                self.minimum_northing_m,
+                self.maximum_northing_m,
+            )
+            != _EPSG_5179_EVIDENCE_PROJECTED_COVERAGE_BOUNDS
+            or self.sample_count != len(samples)
+            or self.sampled_geographic_points_digest
+            != reductions.get("sampled_geographic_points_digest")
+            or self.sampled_projected_points_digest
+            != reductions.get("sampled_projected_points_digest")
+            or self.meridional_scale_digest
+            != reductions.get("meridional_scale_digest")
+            or self.parallel_scale_digest
+            != reductions.get("parallel_scale_digest")
+            or self.areal_scale_digest
+            != reductions.get("areal_scale_digest")
+            or self.maximum_observed_linear_scale_error
+            != reductions.get("observed_maximum_linear_scale_error")
+            or self.maximum_observed_area_scale_error
+            != reductions.get("observed_maximum_area_scale_error")
+            or self.maximum_linear_scale_error
+            != report.get("registered_maximum_linear_scale_error")
+            or self.maximum_area_scale_error
+            != report.get("registered_maximum_area_scale_error")
+            or self.maximum_observed_linear_scale_error
+            > self.maximum_linear_scale_error
+            or self.maximum_observed_area_scale_error
+            > self.maximum_area_scale_error
+            or self.distance_threshold_margin_policy
+            != "registered-linear-scale-budget-report-only-v1"
+            or self.area_threshold_margin_policy
+            != "fail-closed-if-ground-area-interval-crosses-threshold-v2"
+            or self.independent_geodetic_revalidation_required is not True
+        ):
+            raise ValueError("unsupported radar metric-domain evidence")
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return asdict(self)
+
+    @property
+    def digest(self) -> str:
+        return json_digest(self.payload)
+
+    def projected_area_interval_km2(
+        self,
+        projected_area_km2: float,
+    ) -> tuple[float, float]:
+        """Return a conservative ground-area interval from areal scale."""
+
+        if (
+            not isinstance(projected_area_km2, (int, float))
+            or isinstance(projected_area_km2, bool)
+            or not math.isfinite(projected_area_km2)
+            or projected_area_km2 < 0.0
+        ):
+            raise ValueError("projected area must be finite and non-negative")
+        error = self.maximum_area_scale_error
+        return (
+            float(projected_area_km2) / (1.0 + error),
+            float(projected_area_km2) / (1.0 - error),
+        )
+
+    def validate_projected_point(self, x_m: float, y_m: float) -> None:
+        """Require one point to lie in the geodetically sampled coverage."""
+
+        if (
+            not math.isfinite(x_m)
+            or not math.isfinite(y_m)
+            or not self.minimum_easting_m <= x_m <= self.maximum_easting_m
+            or not self.minimum_northing_m <= y_m <= self.maximum_northing_m
+        ):
+            raise ValueError(
+                "projected radar coordinate is outside sampled metric evidence"
+            )
+
+    def validate_grid_cell_centers(
+        self,
+        *,
+        shape_yx: tuple[int, int],
+        origin_xy_m: tuple[float, float],
+        matrix_m: tuple[tuple[float, float], tuple[float, float]],
+    ) -> None:
+        """Require every affine cell center to stay in sampled coverage."""
+
+        rows, columns = shape_yx
+        (xx, xr), (yx, yr) = matrix_m
+        origin_x, origin_y = origin_xy_m
+        for row, column in (
+            (0, 0),
+            (0, columns - 1),
+            (rows - 1, 0),
+            (rows - 1, columns - 1),
+        ):
+            self.validate_projected_point(
+                origin_x + xx * column + xr * row,
+                origin_y + yx * column + yr * row,
+            )
+
+    def validate_projected_area_maximum(
+        self,
+        projected_area_km2: float,
+        maximum_ground_area_km2: float,
+    ) -> None:
+        """Require a maximum-area decision stable under scale uncertainty."""
+
+        if (
+            not isinstance(maximum_ground_area_km2, (int, float))
+            or isinstance(maximum_ground_area_km2, bool)
+            or not math.isfinite(maximum_ground_area_km2)
+            or maximum_ground_area_km2 <= 0.0
+        ):
+            raise ValueError("maximum ground area must be finite and positive")
+        lower, upper = self.projected_area_interval_km2(projected_area_km2)
+        if lower > maximum_ground_area_km2:
+            raise ValueError("projected area exceeds its physical area budget")
+        if upper > maximum_ground_area_km2:
+            raise ValueError(
+                "physical area decision crosses the metric-domain uncertainty "
+                "margin"
+            )
+
+    def projected_area_maximum_status(
+        self,
+        projected_area_km2: float,
+        maximum_ground_area_km2: float,
+    ) -> str:
+        """Classify a maximum-area decision without hiding uncertainty."""
+
+        if (
+            not isinstance(maximum_ground_area_km2, (int, float))
+            or isinstance(maximum_ground_area_km2, bool)
+            or not math.isfinite(maximum_ground_area_km2)
+            or maximum_ground_area_km2 <= 0.0
+        ):
+            raise ValueError("maximum ground area must be finite and positive")
+        lower, upper = self.projected_area_interval_km2(projected_area_km2)
+        if lower > maximum_ground_area_km2:
+            return "exceeds"
+        if upper > maximum_ground_area_km2:
+            return "uncertain"
+        return "passes"
+
+    def validate_projected_area_minimum(
+        self,
+        projected_area_km2: float,
+        minimum_ground_area_km2: float,
+    ) -> None:
+        """Require a minimum-area decision stable under scale uncertainty."""
+
+        status = self.projected_area_minimum_status(
+            projected_area_km2,
+            minimum_ground_area_km2,
+        )
+        if status == "insufficient":
+            raise ValueError("projected area is below its physical minimum")
+        if status == "uncertain":
+            raise ValueError(
+                "physical area decision crosses the metric-domain uncertainty "
+                "margin"
+            )
+
+    def projected_area_minimum_status(
+        self,
+        projected_area_km2: float,
+        minimum_ground_area_km2: float,
+    ) -> str:
+        """Classify a minimum-area decision without hiding uncertainty."""
+
+        if (
+            not isinstance(minimum_ground_area_km2, (int, float))
+            or isinstance(minimum_ground_area_km2, bool)
+            or not math.isfinite(minimum_ground_area_km2)
+            or minimum_ground_area_km2 <= 0.0
+        ):
+            raise ValueError("minimum ground area must be finite and positive")
+        lower, upper = self.projected_area_interval_km2(projected_area_km2)
+        if upper < minimum_ground_area_km2:
+            return "insufficient"
+        if lower < minimum_ground_area_km2:
+            return "uncertain"
+        return "passes"
+
+
+CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE = RadarMetricDomainEvidence()
 
 
 def radar_projected_crs_semantic_digest(projection: str) -> str:
@@ -835,6 +1559,7 @@ class RadarSpatialGridIdentity:
     shape_yx: tuple[int, int] | None = None
     projected_crs_digest: str | None = None
     metric_domain_digest: str | None = None
+    metric_domain_evidence_digest: str | None = None
     cell_center_origin_xy_m: tuple[float, float] | None = None
     grid_coordinate_dtype: str | None = None
     cell_center_convention: str | None = None
@@ -889,6 +1614,7 @@ class RadarSpatialGridIdentity:
             self.shape_yx,
             self.projected_crs_digest,
             self.metric_domain_digest,
+            self.metric_domain_evidence_digest,
             self.cell_center_origin_xy_m,
             self.grid_coordinate_dtype,
             self.cell_center_convention,
@@ -939,6 +1665,14 @@ class RadarSpatialGridIdentity:
                     else None
                 )
             )
+            or (
+                self.metric_domain_evidence_digest is not None
+                and (
+                    self.contract != "radar-spatial-grid-identity-v5"
+                    or self.metric_domain_evidence_digest
+                    != CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+                )
+            )
         ):
             raise ValueError("scientific radar projected-grid identity is invalid")
         projected_crs_digest = self.projected_crs_digest
@@ -959,6 +1693,8 @@ class RadarSpatialGridIdentity:
                 origin_xy_m=(float(origin[0]), float(origin[1])),
                 matrix_m=metrics.matrix,
             )
+            if self.metric_domain_evidence_digest is not None:
+                self.validate_current_metric_domain_evidence()
 
     @property
     def payload(self) -> dict[str, object]:
@@ -987,7 +1723,33 @@ class RadarSpatialGridIdentity:
             )
         if self.contract == "radar-spatial-grid-identity-v5":
             payload["metric_domain_digest"] = self.metric_domain_digest
+            if self.metric_domain_evidence_digest is not None:
+                payload["metric_domain_evidence_digest"] = (
+                    self.metric_domain_evidence_digest
+                )
         return payload
+
+    def validate_current_metric_domain_evidence(self) -> None:
+        """Require the current grid to name the exact sampled evidence."""
+
+        if (
+            self.contract != "radar-spatial-grid-identity-v5"
+            or self.metric_domain_digest != CURRENT_RADAR_METRIC_DOMAIN.digest
+            or self.metric_domain_evidence_digest
+            != CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+        ):
+            raise ValueError(
+                "scientific radar grid does not bind current metric evidence"
+            )
+        shape = self.shape_yx
+        origin = self.cell_center_origin_xy_m
+        if shape is None or origin is None:
+            raise ValueError("scientific radar grid evidence geometry is absent")
+        CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.validate_grid_cell_centers(
+            shape_yx=shape,
+            origin_xy_m=origin,
+            matrix_m=self.pixel_to_projected_matrix_m,
+        )
 
     @property
     def digest(self) -> str:
@@ -1101,6 +1863,7 @@ class RadarGridTimeContract:
     grid_shape_yx: tuple[int, int] | None = None
     projected_crs_digest: str | None = None
     metric_domain_digest: str | None = None
+    metric_domain_evidence_digest: str | None = None
     cell_center_origin_xy_m: tuple[float, float] | None = None
     grid_coordinate_dtype: str | None = None
     cell_center_convention: str | None = None
@@ -1187,11 +1950,142 @@ class RadarGridTimeContract:
             )
         if self.spatial_grid_contract == "radar-spatial-grid-identity-v5":
             payload["metric_domain_digest"] = self.metric_domain_digest
+            if self.metric_domain_evidence_digest is not None:
+                payload["metric_domain_evidence_digest"] = (
+                    self.metric_domain_evidence_digest
+                )
         return payload
 
     @property
     def digest(self) -> str:
         return json_digest(self.payload)
+
+    @classmethod
+    def from_payload(
+        cls,
+        payload: Mapping[str, object],
+    ) -> RadarGridTimeContract:
+        """Decode one canonical grid payload with exact generation fields."""
+
+        legacy_fields = {
+            "valid_times",
+            "dx_m",
+            "dy_m",
+            "projection",
+            "grid_hash",
+            "background_valid_times",
+            "pixel_to_projected_matrix_m",
+        }
+        scientific_fields = legacy_fields | {
+            "spatial_grid_contract",
+            "grid_shape_yx",
+            "projected_crs_digest",
+            "cell_center_origin_xy_m",
+            "grid_coordinate_dtype",
+            "cell_center_convention",
+        }
+        accepted_fields = {
+            frozenset(legacy_fields),
+            frozenset(scientific_fields),
+            frozenset(scientific_fields | {"metric_domain_digest"}),
+            frozenset(
+                scientific_fields
+                | {
+                    "metric_domain_digest",
+                    "metric_domain_evidence_digest",
+                }
+            ),
+        }
+        if frozenset(payload) not in accepted_fields:
+            raise ValueError("radar grid/time payload fields are invalid")
+        matrix = payload.get("pixel_to_projected_matrix_m")
+        valid_times = payload.get("valid_times")
+        background_times = payload.get("background_valid_times")
+        shape = payload.get("grid_shape_yx")
+        origin = payload.get("cell_center_origin_xy_m")
+        if (
+            not isinstance(matrix, (list, tuple))
+            or len(matrix) != 2
+            or any(
+                not isinstance(row, (list, tuple)) or len(row) != 2
+                for row in matrix
+            )
+            or not isinstance(valid_times, (list, tuple))
+            or (background_times is not None and not isinstance(
+                background_times, (list, tuple)
+            ))
+            or (shape is not None and not isinstance(shape, (list, tuple)))
+            or (origin is not None and not isinstance(origin, (list, tuple)))
+        ):
+            raise ValueError("radar grid/time payload values are invalid")
+        try:
+            return cls(
+                valid_times=cast(tuple[str, str, str], tuple(valid_times)),
+                dx_m=cast(float, payload["dx_m"]),
+                dy_m=cast(float, payload["dy_m"]),
+                projection=cast(str, payload["projection"]),
+                grid_hash=cast(str, payload["grid_hash"]),
+                background_valid_times=(
+                    None
+                    if background_times is None
+                    else cast(
+                        tuple[str, str, str], tuple(background_times)
+                    )
+                ),
+                pixel_to_projected_matrix_m=(
+                    (
+                        float(
+                            cast(float, cast(Sequence[object], matrix[0])[0])
+                        ),
+                        float(
+                            cast(float, cast(Sequence[object], matrix[0])[1])
+                        ),
+                    ),
+                    (
+                        float(
+                            cast(float, cast(Sequence[object], matrix[1])[0])
+                        ),
+                        float(
+                            cast(float, cast(Sequence[object], matrix[1])[1])
+                        ),
+                    ),
+                ),
+                spatial_grid_contract=cast(
+                    str,
+                    payload.get(
+                        "spatial_grid_contract",
+                        "radar-spatial-grid-identity-v1",
+                    ),
+                ),
+                grid_shape_yx=(
+                    None
+                    if shape is None
+                    else cast(tuple[int, int], tuple(shape))
+                ),
+                projected_crs_digest=cast(
+                    str | None, payload.get("projected_crs_digest")
+                ),
+                metric_domain_digest=cast(
+                    str | None, payload.get("metric_domain_digest")
+                ),
+                metric_domain_evidence_digest=cast(
+                    str | None,
+                    payload.get("metric_domain_evidence_digest"),
+                ),
+                cell_center_origin_xy_m=(
+                    None
+                    if origin is None
+                    else cast(tuple[float, float], tuple(origin))
+                ),
+                grid_coordinate_dtype=cast(
+                    str | None, payload.get("grid_coordinate_dtype")
+                ),
+                cell_center_convention=cast(
+                    str | None, payload.get("cell_center_convention")
+                ),
+            )
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError("radar grid/time payload is invalid") from error
 
     @property
     def spatial_grid_identity(self) -> RadarSpatialGridIdentity:
@@ -1205,6 +2099,9 @@ class RadarGridTimeContract:
             shape_yx=self.grid_shape_yx,
             projected_crs_digest=self.projected_crs_digest,
             metric_domain_digest=self.metric_domain_digest,
+            metric_domain_evidence_digest=(
+                self.metric_domain_evidence_digest
+            ),
             cell_center_origin_xy_m=self.cell_center_origin_xy_m,
             grid_coordinate_dtype=self.grid_coordinate_dtype,
             cell_center_convention=self.cell_center_convention,
@@ -1249,6 +2146,87 @@ class RadarGridTimeContract:
                 require_scientific_conditioning=True,
             ).determinant
         )
+
+    def validate_projected_area_maximum(
+        self,
+        projected_area_km2: float,
+        maximum_ground_area_km2: float,
+    ) -> None:
+        """Fail closed when a physical-area cap is not interval-stable."""
+
+        if self.spatial_grid_contract == "radar-spatial-grid-identity-v5":
+            self.validate_current_metric_domain_evidence()
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.validate_projected_area_maximum(
+                projected_area_km2,
+                maximum_ground_area_km2,
+            )
+        elif projected_area_km2 > maximum_ground_area_km2:
+            raise ValueError("projected area exceeds its physical area budget")
+
+    def projected_area_maximum_status(
+        self,
+        projected_area_km2: float,
+        maximum_ground_area_km2: float,
+    ) -> str:
+        """Return passes/exceeds/uncertain for one projected-area cap."""
+
+        if self.spatial_grid_contract == "radar-spatial-grid-identity-v5":
+            self.validate_current_metric_domain_evidence()
+            return (
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
+                .projected_area_maximum_status(
+                    projected_area_km2,
+                    maximum_ground_area_km2,
+                )
+            )
+        return (
+            "exceeds"
+            if projected_area_km2 > maximum_ground_area_km2
+            else "passes"
+        )
+
+    def validate_projected_area_minimum(
+        self,
+        projected_area_km2: float,
+        minimum_ground_area_km2: float,
+    ) -> None:
+        """Fail closed when a physical-area minimum is not interval-stable."""
+
+        if self.spatial_grid_contract == "radar-spatial-grid-identity-v5":
+            self.validate_current_metric_domain_evidence()
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.validate_projected_area_minimum(
+                projected_area_km2,
+                minimum_ground_area_km2,
+            )
+        elif projected_area_km2 < minimum_ground_area_km2:
+            raise ValueError("projected area is below its physical minimum")
+
+    def projected_area_minimum_status(
+        self,
+        projected_area_km2: float,
+        minimum_ground_area_km2: float,
+    ) -> str:
+        """Return passes/insufficient/uncertain for an area minimum."""
+
+        if self.spatial_grid_contract == "radar-spatial-grid-identity-v5":
+            self.validate_current_metric_domain_evidence()
+            return (
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
+                .projected_area_minimum_status(
+                    projected_area_km2,
+                    minimum_ground_area_km2,
+                )
+            )
+        return (
+            "insufficient"
+            if projected_area_km2 < minimum_ground_area_km2
+            else "passes"
+        )
+
+    def validate_current_metric_domain_evidence(self) -> None:
+        """Require the current grid/time contract to bind sampled evidence."""
+
+        self.spatial_grid_identity.validate_current_metric_domain_evidence()
 
     @property
     def grid_axes_are_orthogonal(self) -> bool:
@@ -1613,7 +2591,7 @@ def _minimum_growth_evidence(
 
 
 _FORECAST_INPUT_BUNDLE_VERSION = "forecast-input-bundle-v5"
-_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v14"
+_FORECAST_RUN_IDENTITY_VERSION = "forecast-run-identity-v15"
 
 
 def _validate_background_age(
@@ -2189,6 +3167,11 @@ class ForecastRunContract:
                     "background_frames_dbz must be floating with the frame shape"
                 )
         if grid_time_contract is not None:
+            if (
+                grid_time_contract.spatial_grid_contract
+                == "radar-spatial-grid-identity-v5"
+            ):
+                grid_time_contract.validate_current_metric_domain_evidence()
             grid_time_contract.validate_spatial_shape(
                 (
                     int(frames_dbz.shape[-2]),
@@ -4475,16 +5458,23 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
                     raise ValueError(
                         "growth overlap area requires a grid/time contract"
                     )
-            elif (
-                not math.isfinite(growth_area)
-                or growth_area <= 0
-                or (
-                    config.minimum_growth_overlap_area_km2 is not None
-                    and growth_area + config.contract_absolute_tolerance
-                    < config.minimum_growth_overlap_area_km2
-                )
-            ):
-                raise ValueError("used growth pairs require valid area evidence")
+            else:
+                grid = result.run.grid_time_contract
+                if (
+                    not math.isfinite(growth_area)
+                    or growth_area <= 0
+                    or (
+                        config.minimum_growth_overlap_area_km2 is not None
+                        and grid.projected_area_minimum_status(
+                            growth_area,
+                            config.minimum_growth_overlap_area_km2,
+                        )
+                        != "passes"
+                    )
+                ):
+                    raise ValueError(
+                        "used growth pairs require valid area evidence"
+                    )
     if not torch.equal(torch.isfinite(forecast), valid):
         raise ValueError("valid_mask must match finite forecast values")
     finite_tensors = (
@@ -7729,15 +8719,16 @@ def _aligned_growth_evidence(
         + config.contract_absolute_tolerance
         >= config.minimum_growth_overlap_support
     )
-    enough_area = (
-        config.minimum_growth_overlap_area_km2 is None
-        or (
+    enough_area = config.minimum_growth_overlap_area_km2 is None
+    if config.minimum_growth_overlap_area_km2 is not None:
+        enough_area = (
             grid_time_contract is not None
-            and float(overlap_area_km2.detach())
-            + config.contract_absolute_tolerance
-            >= config.minimum_growth_overlap_area_km2
+            and grid_time_contract.projected_area_minimum_status(
+                float(overlap_area_km2.detach()),
+                config.minimum_growth_overlap_area_km2,
+            )
+            == "passes"
         )
-    )
     available = (
         enough_support
         and enough_area

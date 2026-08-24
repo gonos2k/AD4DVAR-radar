@@ -41,6 +41,7 @@ from ._runtime import (
 )
 from .calibration import algorithm_bundle_digest, OperationalDataIdentity
 from .nowcast import (
+    CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
     ForecastResult,
     ForecastRunContract,
     _forecast_input_plan_resolution_digest,
@@ -178,6 +179,24 @@ _UncertaintyComponent = Literal[
     "state_valid",
 ]
 
+
+def _projected_area_meets_physical_minimum(
+    projected_area_km2: float,
+    minimum_ground_area_km2: float,
+) -> bool:
+    """Return true only when a minimum-area decision is interval-stable."""
+
+    if minimum_ground_area_km2 == 0.0:
+        return True
+    return (
+        CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
+        .projected_area_minimum_status(
+            projected_area_km2,
+            minimum_ground_area_km2,
+        )
+        == "passes"
+    )
+
 _UNCERTAINTY_COMPONENT_NAMES: tuple[str, ...] = (
     "intensity",
     "pit_residual",
@@ -253,23 +272,23 @@ TRAINING_NORMALIZATION_MASK_WEIGHT_POLICY_DIGEST = json_digest(
 
 
 SEMANTIC_SCORING_REPLAY_CONTRACT = (
-    "neural-prior-scoring-replay-bundle-v22"
+    "neural-prior-scoring-replay-bundle-v23"
 )
 SEMANTIC_SCORING_REPLAY_METHOD = (
-    "builtin-semantic-scoring-recomputation-v22"
+    "builtin-semantic-scoring-recomputation-v23"
 )
 SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD: dict[str, str] = {
-    "contract": "neural-prior-semantic-scoring-generation-v20",
+    "contract": "neural-prior-semantic-scoring-generation-v21",
     "replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
     "replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
-    "case_contract": "neural-prior-semantic-scoring-case-v21",
+    "case_contract": "neural-prior-semantic-scoring-case-v22",
     "observation_mask_algorithm_digest": (
         OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST
     ),
     "observation_error_algorithm_digest": (
         OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST
     ),
-    "verification_bundle_contract": "radar-verification-bundle-v17",
+    "verification_bundle_contract": "radar-verification-bundle-v18",
     "product_type_policy": "exact-shipped-product-types-v1",
     "forecast_integrity": "forecast-result-raw-content-validation-v1",
     "prior_integrity": "runner-reproduced-prior-application-v1",
@@ -9605,6 +9624,29 @@ class LegacyNeuralPriorHoldoutPlanV31Audit:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV32Audit:
+    """Pre-scoring-source-closure v32 plan retained for byte audit only."""
+
+    plan_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-plan-audit-v32"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _validate_generic_legacy_digest_payload(
+            digest=self.plan_digest,
+            payload_json=self.payload_json,
+            digest_field="plan_digest",
+            original_contract="neural-prior-holdout-plan-v32",
+        )
+        object.__setattr__(self, "audit_digest", json_digest({
+            "contract": self.contract,
+            "plan_digest": self.plan_digest,
+            "payload_json": self.payload_json,
+        }))
+
+
+@dataclass(frozen=True)
 class PromotionExperimentTrial:
     """One preregistered candidate/rule/classifier trial in a cohort."""
 
@@ -9794,11 +9836,11 @@ class NeuralPriorHoldoutPlan:
     mode: Literal["prospective", "sealed_historical"] = "prospective"
     sealed_historical_dataset_digest: str | None = None
     candidate_training_started_at: str | None = None
-    contract: str = "neural-prior-holdout-plan-v32"
+    contract: str = "neural-prior-holdout-plan-v33"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v32":
+        if self.contract != "neural-prior-holdout-plan-v33":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -10122,10 +10164,6 @@ class NeuralPriorHoldoutPlan:
             "verification_resolver_digest",
         ):
             _require_digest(name, getattr(self, name))
-        if self.metric_engine_digest != scoring_metric_engine_identity_digest():
-            raise ValueError(
-                "holdout metric engine is not the installed implementation"
-            )
         if set(self.physical_event_catalog_plan.holdout_case_ids) != set(case_ids):
             raise ValueError("physical event-catalog plan cases are incomplete")
         if any(
@@ -12405,7 +12443,7 @@ class PriorUncertaintyTarget:
         verification.validate_integrity()
         if (
             plan.contract != "prior-uncertainty-target-plan-v7"
-            or verification.contract != "radar-verification-bundle-v17"
+            or verification.contract != "radar-verification-bundle-v18"
             or verification.observation_error_contract is None
             or verification.observation_error_contract
             .observation_error_plan_digest
@@ -12536,7 +12574,7 @@ class NeuralPriorStateCalibrationTarget:
     ) -> NeuralPriorStateCalibrationTarget:
         verification.validate_integrity()
         if (
-            verification.contract != "radar-verification-bundle-v17"
+            verification.contract != "radar-verification-bundle-v18"
             or verification.observation_error_contract is None
             or verification.observation_error_contract
             .observation_error_plan_digest
@@ -15330,7 +15368,7 @@ class ScoringReplayCaseArtifact:
             raise ValueError("semantic scoring replay case is invalid")
         ForecastResult.validate_issuance(self.candidate_forecast)
         ForecastResult.validate_issuance(self.parent_forecast)
-        if self.verification.contract != "radar-verification-bundle-v17":
+        if self.verification.contract != "radar-verification-bundle-v18":
             raise ValueError(
                 "semantic scoring replay requires current source-composed "
                 "verification"
@@ -16056,7 +16094,7 @@ class ScoringReplayCaseArtifact:
     ) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-semantic-scoring-case-v21",
+                "contract": "neural-prior-semantic-scoring-case-v22",
                 "semantic_replay_generation_digest": (
                     SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
                 ),
@@ -16402,6 +16440,7 @@ def compute_observation_error_gaussian_diagnostic(
             "radar-verification-bundle-v14",
             "radar-verification-bundle-v16",
             "radar-verification-bundle-v17",
+            "radar-verification-bundle-v18",
         }
         or state is None
         or observation_std is None
@@ -17420,7 +17459,7 @@ class HoldoutScoringArtifact:
     parent_forecast_digests: tuple[str, ...]
     verification_digests: tuple[str, ...]
     metric_contract_digests: tuple[str, ...]
-    contract: str = "neural-prior-holdout-scoring-artifact-v14"
+    contract: str = "neural-prior-holdout-scoring-artifact-v15"
     artifact_digest: str = field(init=False)
 
     def __init__(self) -> None:
@@ -17532,7 +17571,7 @@ class HoldoutScoringArtifact:
             "metric_contract_digests": tuple(
                 item.metric_contract_digest for item in ordered
             ),
-            "contract": "neural-prior-holdout-scoring-artifact-v14",
+            "contract": "neural-prior-holdout-scoring-artifact-v15",
         }
         artifact = _new_holdout_scoring_artifact(**values)
         validate_holdout_scoring_artifact(
@@ -17661,6 +17700,35 @@ class LegacyHoldoutScoringArtifactAuditV13:
         )
 
 
+@dataclass(frozen=True)
+class LegacyHoldoutScoringArtifactAuditV14:
+    """Pre-geodetic-evidence scoring output retained for byte audit only."""
+
+    artifact_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-scoring-artifact-audit-v14"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _validate_generic_legacy_digest_payload(
+            digest=self.artifact_digest,
+            payload_json=self.payload_json,
+            digest_field="artifact_digest",
+            original_contract="neural-prior-holdout-scoring-artifact-v14",
+        )
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "artifact_digest": self.artifact_digest,
+                    "payload_json": self.payload_json,
+                }
+            ),
+        )
+
+
 def _new_holdout_scoring_artifact(**values: object) -> HoldoutScoringArtifact:
     artifact = object.__new__(HoldoutScoringArtifact)
     for name, value in values.items():
@@ -17702,7 +17770,7 @@ def validate_holdout_scoring_artifact(
     ordered = tuple(sorted(evaluations, key=lambda item: item.case_id))
     start = manifest.candidate_scoring_start_receipt
     if (
-        artifact.contract != "neural-prior-holdout-scoring-artifact-v14"
+        artifact.contract != "neural-prior-holdout-scoring-artifact-v15"
         or artifact.artifact_digest != json_digest(artifact.payload)
         or artifact.holdout_plan_digest != plan.plan_digest
         or artifact.candidate_manifest_digest != manifest.manifest_digest
@@ -19562,6 +19630,28 @@ class LegacyNeuralPriorPromotionEvidenceAuditV30:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorPromotionEvidenceAuditV31:
+    """Pre-geodetic-evidence v31 evidence retained for audit only."""
+
+    promotion_evidence_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-promotion-evidence-audit-v31"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "audit_digest",
+            _legacy_promotion_audit_digest(
+                self.promotion_evidence_digest,
+                self.payload_json,
+                original_contract="neural-prior-promotion-evidence-v31",
+                audit_contract=self.contract,
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class NeuralPriorPromotionEvidence:
     candidate_prior_digest: str
     parent_prior_digest: str
@@ -19724,11 +19814,11 @@ class NeuralPriorPromotionEvidence:
     deployment_eligible: bool
     eligible: bool
     rejection_reasons: tuple[PromotionRejectionReason, ...]
-    contract: str = "neural-prior-promotion-evidence-v31"
+    contract: str = "neural-prior-promotion-evidence-v32"
     promotion_evidence_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-promotion-evidence-v31":
+        if self.contract != "neural-prior-promotion-evidence-v32":
             raise ValueError("unsupported neural-prior promotion evidence")
         if self.primary_estimand_contract != "equal_weight_physical_event_v1":
             raise ValueError("unsupported promotion estimand")
@@ -21360,8 +21450,10 @@ def compute_neural_prior_promotion(
             ):
                 reasons.append("insufficient_component_samples")
             if (
-                evaluation.prior_echo_area_km2
-                < policy.minimum_prior_echo_area_km2_per_case
+                not _projected_area_meets_physical_minimum(
+                    evaluation.prior_echo_area_km2,
+                    policy.minimum_prior_echo_area_km2_per_case,
+                )
             ):
                 reasons.append("insufficient_component_area")
             if (
@@ -21381,15 +21473,19 @@ def compute_neural_prior_promotion(
             ):
                 reasons.append("insufficient_component_samples")
             if (
-                evaluation.prior_clear_sky_area_km2
-                < policy.minimum_prior_clear_area_km2_per_case
+                not _projected_area_meets_physical_minimum(
+                    evaluation.prior_clear_sky_area_km2,
+                    policy.minimum_prior_clear_area_km2_per_case,
+                )
             ):
                 reasons.append("insufficient_component_area")
         if (
             evaluation.prior_candidate_valid_fraction
             < policy.minimum_prior_valid_fraction
-            or evaluation.prior_candidate_valid_area_km2
-            < policy.minimum_prior_valid_area_km2
+            or not _projected_area_meets_physical_minimum(
+                evaluation.prior_candidate_valid_area_km2,
+                policy.minimum_prior_valid_area_km2,
+            )
             or evaluation.prior_abstention_increase_vs_parent
             > policy.maximum_abstention_increase_vs_parent
         ):
@@ -22125,18 +22221,28 @@ def compute_neural_prior_promotion(
             and len({cluster for _, _, cluster in band_group})
             >= policy.minimum_range_band_clusters
             and all(
-                band.evaluated_area_km2 >= policy.minimum_range_band_area_km2
+                _projected_area_meets_physical_minimum(
+                    band.evaluated_area_km2,
+                    policy.minimum_range_band_area_km2,
+                )
                 for _, band, _ in band_group
             )
             and all(
                 all(
-                    area >= policy.minimum_range_metric_valid_area_km2
+                    _projected_area_meets_physical_minimum(
+                        area,
+                        policy.minimum_range_metric_valid_area_km2,
+                    )
                     for area in band.metric_valid_area_km2_by_lead
                 )
-                and band.probability_valid_area_km2
-                >= policy.minimum_range_probability_valid_area_km2
-                and band.state_valid_area_km2
-                >= policy.minimum_range_state_valid_area_km2
+                and _projected_area_meets_physical_minimum(
+                    band.probability_valid_area_km2,
+                    policy.minimum_range_probability_valid_area_km2,
+                )
+                and _projected_area_meets_physical_minimum(
+                    band.state_valid_area_km2,
+                    policy.minimum_range_state_valid_area_km2,
+                )
                 for _, band, _ in band_group
             )
             and len(retained_band_scores) >= policy.minimum_range_band_cases
@@ -22171,8 +22277,10 @@ def compute_neural_prior_promotion(
                 except ValueError:
                     continue
                 if (
-                    band.issuance_domain_area_km2_by_lead[lead_index]
-                    < requirement.minimum_operational_area_km2
+                    not _projected_area_meets_physical_minimum(
+                        band.issuance_domain_area_km2_by_lead[lead_index],
+                        requirement.minimum_operational_area_km2,
+                    )
                 ):
                     continue
                 withdrawn_values.append(
@@ -22307,10 +22415,15 @@ def compute_neural_prior_promotion(
                     )
                 if (
                     bool(band.metric_available[lead_index, metric_index])
-                    and float(
-                        band.metric_valid_area_km2[lead_index, metric_index]
+                    and _projected_area_meets_physical_minimum(
+                        float(
+                            band.metric_valid_area_km2[
+                                lead_index,
+                                metric_index,
+                            ]
+                        ),
+                        requirement.minimum_valid_area_km2,
                     )
-                    >= requirement.minimum_valid_area_km2
                 ):
                     qualifying += 1
                     cell_values.append(
@@ -24158,7 +24271,7 @@ def _decode_current_neural_prior_promotion_evidence(
     if (
         not isinstance(raw, dict)
         or set(raw) != expected
-        or raw.get("contract") != "neural-prior-promotion-evidence-v31"
+        or raw.get("contract") != "neural-prior-promotion-evidence-v32"
         or json.dumps(raw, sort_keys=True, separators=(",", ":"))
         != payload_json
     ):
@@ -27073,6 +27186,25 @@ def _validate_operational_deployment_decision_certificate(
         ) from error
 
 
+def _validate_operational_deployment_generation(
+    promotion_evidence: NeuralPriorPromotionEvidence,
+    policy: DeployedNeuralPriorPolicy,
+) -> None:
+    """Keep current scientific evidence outside operational deployment."""
+
+    if (
+        type(promotion_evidence) is not NeuralPriorPromotionEvidence
+        or promotion_evidence.contract
+        != "neural-prior-promotion-evidence-v31"
+        or type(policy) is not DeployedNeuralPriorPolicy
+        or policy.contract != "deployed-neural-prior-policy-v17"
+    ):
+        raise TypeError(
+            "operational deployment does not accept the current scientific "
+            "evidence generation"
+        )
+
+
 def _select_deployed_prior(
     candidate_runner: NeuralPriorInferenceRunner,
     parent_runner: NeuralPriorInferenceRunner,
@@ -27122,14 +27254,7 @@ def _select_deployed_prior(
         != range_partition_evidence.range_regime_labels
     ):
         raise ValueError("range partition disagrees with operational grid")
-    if (
-        type(promotion_evidence) is not NeuralPriorPromotionEvidence
-        or promotion_evidence.contract
-        != "neural-prior-promotion-evidence-v31"
-        or type(policy) is not DeployedNeuralPriorPolicy
-        or policy.contract != "deployed-neural-prior-policy-v17"
-    ):
-        raise TypeError("current replay-generation deployment evidence is required")
+    _validate_operational_deployment_generation(promotion_evidence, policy)
     policy.validate_integrity()
     trust = _load_learning_policy_trust_store(policy_trust_store_path)
     if policy.policy_digest not in trust.approved_policy_digests:

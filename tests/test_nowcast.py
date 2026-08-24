@@ -1,8 +1,11 @@
+from copy import deepcopy
 from dataclasses import fields, replace
 from pathlib import Path
 from importlib import import_module
 import math
+import subprocess
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -17,6 +20,10 @@ from advar.diagnostics import (  # noqa: E402
 )
 from advar.nowcast import (  # noqa: E402
     CURRENT_RADAR_METRIC_DOMAIN,
+    CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
+    _EPSG_5179_METRIC_EVIDENCE_REPORT,
+    _aligned_growth_evidence,
+    _validate_radar_metric_domain_evidence_report,
     DataStatus,
     DynamicsSource,
     ForecastMetadata,
@@ -25,6 +32,8 @@ from advar.nowcast import (  # noqa: E402
     RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION,
     RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
     RadarGridTimeContract,
+    RadarMetricDomainContract,
+    RadarMetricDomainEvidence,
     RadarSpatialGridIdentity,
     RadarState,
     StatePathProvenance,
@@ -4743,6 +4752,81 @@ class NowcastTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "grid/time contract"):
             estimate_state_with_metadata(frames, config)
 
+    def test_growth_minimum_area_fails_closed_at_projection_margin(self) -> None:
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="8" * 64,
+            spatial_grid_contract="radar-spatial-grid-identity-v5",
+            grid_shape_yx=(2, 2),
+            projected_crs_digest=radar_projected_crs_semantic_digest(
+                "EPSG:5179"
+            ),
+            metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
+            cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
+            grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            cell_center_convention=(
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+        )
+        config = NowcastConfig(
+            minimum_growth_overlap_support=1.0,
+            minimum_growth_overlap_area_km2=4.0,
+        )
+        dbz = torch.full((2, 2), 20.0, dtype=torch.float64)
+        echo = dbz_to_linear(dbz, config)
+        mask = torch.ones_like(echo, dtype=torch.bool)
+        evidence = _aligned_growth_evidence(
+            echo,
+            echo,
+            mask,
+            mask,
+            torch.zeros((2,), dtype=torch.float64),
+            config,
+            grid_time_contract=grid,
+        )
+        self.assertEqual(float(evidence.overlap_area_km2), 4.0)
+        self.assertFalse(evidence.available)
+
+        ground_lower, _ = (
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.projected_area_interval_km2(
+                4.0
+            )
+        )
+        near_boundary = _aligned_growth_evidence(
+            echo,
+            echo,
+            mask,
+            mask,
+            torch.zeros((2,), dtype=torch.float64),
+            replace(
+                config,
+                minimum_growth_overlap_area_km2=ground_lower + 5.0e-7,
+            ),
+            grid_time_contract=grid,
+        )
+        self.assertFalse(near_boundary.available)
+
+        stable = _aligned_growth_evidence(
+            echo,
+            echo,
+            mask,
+            mask,
+            torch.zeros((2,), dtype=torch.float64),
+            replace(config, minimum_growth_overlap_area_km2=3.9),
+            grid_time_contract=grid,
+        )
+        self.assertTrue(stable.available)
+
     def test_physical_pair_echo_neighborhood_uses_exact_distance(self) -> None:
         nowcast_module = import_module("advar.nowcast")
         contract = RadarGridTimeContract(
@@ -5026,6 +5110,9 @@ class NowcastTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             "metric_domain_digest": CURRENT_RADAR_METRIC_DOMAIN.digest,
+            "metric_domain_evidence_digest": (
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             "cell_center_origin_xy_m": (1_000_000.0, 2_000_000.0),
             "grid_coordinate_dtype": RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             "cell_center_convention": (
@@ -5058,6 +5145,9 @@ class NowcastTests(unittest.TestCase):
                     "metric_domain_digest": scientific[
                         "metric_domain_digest"
                     ],
+                    "metric_domain_evidence_digest": scientific[
+                        "metric_domain_evidence_digest"
+                    ],
                     "cell_center_origin_xy_m": scientific[
                         "cell_center_origin_xy_m"
                     ],
@@ -5084,6 +5174,9 @@ class NowcastTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
@@ -5117,6 +5210,9 @@ class NowcastTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             "metric_domain_digest": CURRENT_RADAR_METRIC_DOMAIN.digest,
+            "metric_domain_evidence_digest": (
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             "cell_center_origin_xy_m": (1_000_000.0, 2_000_000.0),
             "grid_coordinate_dtype": RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             "cell_center_convention": (
@@ -5169,6 +5265,9 @@ class NowcastTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             "metric_domain_digest": CURRENT_RADAR_METRIC_DOMAIN.digest,
+            "metric_domain_evidence_digest": (
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             "cell_center_origin_xy_m": (1_000_000.0, 2_000_000.0),
             "grid_coordinate_dtype": RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             "cell_center_convention": (
@@ -5204,6 +5303,23 @@ class NowcastTests(unittest.TestCase):
         domain = CURRENT_RADAR_METRIC_DOMAIN
         self.assertEqual(domain.canonical_projection, "EPSG:5179")
         self.assertLess(domain.maximum_linear_scale_error, 0.01)
+        self.assertRegex(domain.allowed_domain_bbox_digest, r"^[0-9a-f]{64}$")
+        self.assertEqual(
+            domain.payload["allowed_domain_polygon_digest"],
+            domain.allowed_domain_bbox_digest,
+        )
+        self.assertEqual(
+            domain.digest,
+            "c3fb6d3ce964863757dac7f1a58c1195723349c3a655f18276a78b71a883865c",
+        )
+        decoded = RadarMetricDomainContract.from_payload(domain.payload)
+        self.assertEqual(decoded, domain)
+        self.assertEqual(decoded.payload, domain.payload)
+        self.assertEqual(decoded.digest, domain.digest)
+        with self.assertRaisesRegex(ValueError, "payload fields"):
+            RadarMetricDomainContract.from_payload(
+                domain.payload | {"allowed_domain_bbox_digest": "0" * 64}
+            )
 
         valid = RadarGridTimeContract(
             valid_times=(
@@ -5221,6 +5337,9 @@ class NowcastTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=domain.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
@@ -5231,9 +5350,22 @@ class NowcastTests(unittest.TestCase):
             valid.spatial_grid_identity.metric_domain_digest,
             domain.digest,
         )
+        self.assertEqual(
+            valid.payload["metric_domain_evidence_digest"],
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest,
+        )
+        valid.validate_current_metric_domain_evidence()
+        valid.validate_projected_area_maximum(0.98, 1.0)
+        with self.assertRaisesRegex(ValueError, "uncertainty margin"):
+            valid.validate_projected_area_maximum(0.995, 1.0)
 
         with self.assertRaisesRegex(ValueError, "outside the metric domain"):
             replace(valid, cell_center_origin_xy_m=(0.0, 0.0))
+        with self.assertRaisesRegex(ValueError, "outside sampled metric evidence"):
+            replace(
+                valid,
+                cell_center_origin_xy_m=(550_000.0, 1_000_000.0),
+            )
         with self.assertRaisesRegex(ValueError, "outside the metric domain"):
             replace(
                 valid,
@@ -5244,9 +5376,158 @@ class NowcastTests(unittest.TestCase):
             )
         with self.assertRaisesRegex(ValueError, "projected-grid identity"):
             replace(valid, metric_domain_digest="0" * 64)
+        with self.assertRaisesRegex(ValueError, "does not bind current"):
+            replace(
+                valid,
+                metric_domain_evidence_digest=None,
+            ).validate_current_metric_domain_evidence()
 
         with self.assertRaisesRegex(ValueError, "unsupported radar metric-domain"):
             replace(domain, maximum_linear_scale_error=0.01)
+
+    def test_metric_domain_evidence_is_content_addressed_and_bounds_area(
+        self,
+    ) -> None:
+        evidence = CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
+        self.assertEqual(evidence.contract, "radar-metric-domain-evidence-v1")
+        self.assertEqual(
+            evidence.metric_domain_digest,
+            CURRENT_RADAR_METRIC_DOMAIN.digest,
+        )
+        self.assertEqual(evidence.sample_count, 17 * 17)
+        self.assertEqual(evidence.geodetic_engine, "PROJ")
+        self.assertEqual(evidence.epsg_database_version, "v12.029")
+        self.assertEqual(
+            evidence.generator_contract,
+            "generate-metric-domain-evidence-v2",
+        )
+        self.assertLessEqual(
+            evidence.maximum_observed_linear_scale_error,
+            evidence.maximum_linear_scale_error,
+        )
+        self.assertLessEqual(
+            evidence.maximum_observed_area_scale_error,
+            evidence.maximum_area_scale_error,
+        )
+
+        for changed in (
+            {"verification_report_sha256": "0" * 64},
+            {"generator_contract": "generate-metric-domain-evidence-v1"},
+            {"generator_source_sha256": "0" * 64},
+            {"generator_output_contract": "noncanonical-json-v1"},
+            {"epsg_crs_projjson_digest": "0" * 64},
+            {"proj_binary_sha256": "0" * 64},
+            {"projinfo_binary_sha256": "0" * 64},
+            {"proj_database_sha256": "0" * 64},
+            {"validated_projected_coverage_digest": "0" * 64},
+            {"sampled_projected_points_digest": "0" * 64},
+            {"meridional_scale_digest": "0" * 64},
+            {"maximum_observed_linear_scale_error": 0.007},
+            {"maximum_observed_area_scale_error": 0.02},
+        ):
+            with self.subTest(changed=changed):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "unsupported radar metric-domain evidence",
+                ):
+                    RadarMetricDomainEvidence(**(evidence.payload | changed))
+
+        self.assertEqual(
+            evidence.projected_area_maximum_status(0.98, 1.0),
+            "passes",
+        )
+        self.assertEqual(
+            evidence.projected_area_maximum_status(0.995, 1.0),
+            "uncertain",
+        )
+        self.assertEqual(
+            evidence.projected_area_maximum_status(1.02, 1.0),
+            "exceeds",
+        )
+        self.assertEqual(
+            evidence.projected_area_minimum_status(1.02, 1.0),
+            "passes",
+        )
+        self.assertEqual(
+            evidence.projected_area_minimum_status(1.0, 1.0),
+            "uncertain",
+        )
+        self.assertEqual(
+            evidence.projected_area_minimum_status(0.98, 1.0),
+            "insufficient",
+        )
+        evidence.validate_projected_area_maximum(0.98, 1.0)
+        with self.assertRaisesRegex(ValueError, "uncertainty margin"):
+            evidence.validate_projected_area_maximum(0.995, 1.0)
+        with self.assertRaisesRegex(ValueError, "exceeds"):
+            evidence.validate_projected_area_maximum(1.02, 1.0)
+        evidence.validate_projected_area_minimum(1.02, 1.0)
+        with self.assertRaisesRegex(ValueError, "uncertainty margin"):
+            evidence.validate_projected_area_minimum(1.0, 1.0)
+        with self.assertRaisesRegex(ValueError, "below"):
+            evidence.validate_projected_area_minimum(0.98, 1.0)
+        evidence.validate_projected_point(1_000_000.0, 2_000_000.0)
+        with self.assertRaisesRegex(ValueError, "outside sampled metric evidence"):
+            evidence.validate_projected_point(550_000.0, 1_000_000.0)
+
+    def test_metric_domain_report_reductions_are_independently_recomputed(
+        self,
+    ) -> None:
+        report = deepcopy(_EPSG_5179_METRIC_EVIDENCE_REPORT)
+        _validate_radar_metric_domain_evidence_report(report)
+        samples = report["samples"]
+        assert isinstance(samples, list)
+        sample = samples[0]
+        assert isinstance(sample, dict)
+        sample["meridional_scale"] = float(sample["meridional_scale"]) + 1e-4
+        with self.assertRaisesRegex(ValueError, "reductions disagree"):
+            _validate_radar_metric_domain_evidence_report(report)
+
+    def test_metric_domain_generator_source_binding_is_ci_checkable(
+        self,
+    ) -> None:
+        repository = Path(__file__).resolve().parents[1]
+        script = (
+            repository
+            / ".github"
+            / "scripts"
+            / "generate_metric_domain_evidence.py"
+        )
+        report = (
+            repository
+            / "src"
+            / "advar"
+            / "data"
+            / "epsg5179_metric_domain_evidence_v1.json"
+        )
+        command = (
+            sys.executable,
+            str(script),
+            "--output",
+            str(report),
+            "--check-source-only",
+        )
+        completed = subprocess.run(
+            command,
+            cwd=repository,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
+        with tempfile.TemporaryDirectory() as directory:
+            changed_script = Path(directory) / script.name
+            changed_script.write_bytes(script.read_bytes() + b"\n# changed\n")
+            changed = subprocess.run(
+                (sys.executable, str(changed_script), *command[2:]),
+                cwd=repository,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+        self.assertNotEqual(changed.returncode, 0)
+        self.assertIn("source binding is invalid", changed.stderr)
 
     def test_current_grid_rejects_non_projected_crs_and_wrong_shape(
         self,
@@ -5272,6 +5553,9 @@ class NowcastTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(

@@ -35,6 +35,7 @@ from advar.ledger import EpisodeLedger  # noqa: E402
 from advar.matrix_free import PCGResult  # noqa: E402
 from advar.nowcast import (  # noqa: E402
     CURRENT_RADAR_METRIC_DOMAIN,
+    CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
     _estimate_source_tendencies,
     _forecast_linear_at_step_core,
     _forecast_run_identity_digest,
@@ -510,7 +511,7 @@ def _current_verification_bundle(
         spatial_metric_valid_mask=mask_derivation.spatial_metric_valid_mask,
         observation_error_contract=derivation.observation_error_contract,
         observation_error_derivation=derivation,
-        contract="radar-verification-bundle-v17",
+        contract="radar-verification-bundle-v18",
     )
 
 
@@ -1986,12 +1987,19 @@ class SensitivityTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
             ),
         )
+        with self.assertRaisesRegex(ValueError, "does not bind current"):
+            RadarObservationGeometryContract.from_grid_time_contract(
+                replace(grid, metric_domain_evidence_digest=None)
+            )
         forecast = torch.zeros((5, 5), dtype=torch.float64)
         truth = torch.zeros_like(forecast)
         forecast[2, 1] = 10.0
@@ -2426,6 +2434,9 @@ class VariationalFSOTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
@@ -2472,7 +2483,7 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertEqual(fso.contract, CURRENT_VARIATIONAL_FSO_CONTRACT)
         self.assertEqual(
             fso.verification_contract,
-            "radar-verification-bundle-v17",
+            "radar-verification-bundle-v18",
         )
         self.assertEqual(fso.verification_bundle_digest, bundle.content_digest)
         self.assertEqual(fso.verification_valid_times, bundle.valid_times)
@@ -3221,6 +3232,9 @@ class VariationalFSOTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
@@ -3349,6 +3363,9 @@ class VariationalFSOTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             "metric_domain_digest": CURRENT_RADAR_METRIC_DOMAIN.digest,
+            "metric_domain_evidence_digest": (
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             "cell_center_origin_xy_m": (1_000_000.0, 2_000_000.0),
             "grid_coordinate_dtype": RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             "cell_center_convention": (
@@ -3470,6 +3487,9 @@ class VariationalFSOTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
@@ -3636,18 +3656,26 @@ class VariationalFSOTests(unittest.TestCase):
         self,
     ) -> None:
         self.assertEqual(
+            OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST,
+            "1cee7232295cab3a0a59451917310f88237a92fef4f11007e0c7179ddfd8ef7f",
+        )
+        self.assertEqual(
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST,
+            "53714c0c8a27cb035181236e3893980788b0f458bc6d4603af04fce9cc44292b",
+        )
+        self.assertEqual(
             CURRENT_VARIATIONAL_FSO_CONTRACT,
-            "p1-variational-fso-v23",
+            "p1-variational-fso-v24",
         )
         self.assertEqual(
             CURRENT_VARIATIONAL_FSOI_CONTRACT,
-            "p1-linearized-observation-impact-v19",
+            "p1-linearized-observation-impact-v20",
         )
         self.assertEqual(
             sensitivity_module._SUPPORTED_VERIFICATION_BUNDLE_CONTRACTS,
             frozenset(
                 f"radar-verification-bundle-v{generation}"
-                for generation in range(1, 18)
+                for generation in range(1, 19)
             ),
         )
         self.assertEqual(
@@ -3655,14 +3683,14 @@ class VariationalFSOTests(unittest.TestCase):
             ._OBSERVATION_ERROR_VERIFICATION_BUNDLE_CONTRACTS,
             frozenset(
                 f"radar-verification-bundle-v{generation}"
-                for generation in range(6, 18)
+                for generation in range(6, 19)
             ),
         )
         self.assertEqual(
             sensitivity_module._FSO_VERIFICATION_CONTRACTS[
                 CURRENT_VARIATIONAL_FSO_CONTRACT
             ],
-            "radar-verification-bundle-v17",
+            "radar-verification-bundle-v18",
         )
         self.assertEqual(
             sensitivity_module._FSOI_FSO_CONTRACTS[
@@ -3721,6 +3749,9 @@ class VariationalFSOTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(
@@ -3739,6 +3770,29 @@ class VariationalFSOTests(unittest.TestCase):
             radar_altitude_role="provenance_only",
             contract="mosaic-observation-source-registry-v6",
         )
+        assert geometry.projected_grid_identity is not None
+        legacy_geometry = replace(
+            geometry,
+            projected_grid_identity=replace(
+                geometry.projected_grid_identity,
+                metric_domain_evidence_digest=None,
+            ),
+        )
+        legacy_range, legacy_elevation = (
+            sensitivity_module._registered_observation_geometry_fields(
+                source_registry=registry,
+                geometry=legacy_geometry,
+                time_count=1,
+                output_dtype=torch.float32,
+            )
+        )
+        self.assertEqual(legacy_range.shape, (2, 1, 1, 5))
+        self.assertEqual(legacy_elevation.shape, (2, 1, 1, 5))
+        with self.assertRaisesRegex(ValueError, "does not bind"):
+            sensitivity_module._validate_current_metric_domain_observation_geometry(
+                source_registry=registry,
+                geometry=legacy_geometry,
+            )
         plan = VerificationObservationErrorPlan(
             radar_source_kind="mosaic",
             source_registry_digest=registry.source_registry_digest,
@@ -3927,7 +3981,7 @@ class VariationalFSOTests(unittest.TestCase):
             ),
             observation_error_contract=derivation.observation_error_contract,
             observation_error_derivation=derivation,
-            contract="radar-verification-bundle-v17",
+            contract="radar-verification-bundle-v18",
         )
         bundle.validate_integrity()
         self.assertEqual(
@@ -6479,6 +6533,9 @@ class VariationalFSOTests(unittest.TestCase):
                 "EPSG:5179"
             ),
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
             cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
             grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
             cell_center_convention=(

@@ -29,6 +29,7 @@ from .calibration import OperationalCalibrationManifest, OperationalDataIdentity
 from .matrix_free import pcg
 from .nowcast import (
     CURRENT_RADAR_METRIC_DOMAIN,
+    CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
     DataStatus,
     DynamicsSource,
     ForecastMetadata,
@@ -1397,6 +1398,7 @@ class RadarObservationGeometryContract:
         identity = grid.spatial_grid_identity
         if identity.contract != "radar-spatial-grid-identity-v5":
             raise ValueError("scientific verification requires projected-grid v5")
+        identity.validate_current_metric_domain_evidence()
         grid_x_m, grid_y_m = identity.projected_cell_center_coordinates(
             device=device,
         )
@@ -2261,6 +2263,32 @@ def _registered_observation_geometry_fields(
     return torch.stack(ranges), torch.stack(elevations)
 
 
+def _validate_current_metric_domain_observation_geometry(
+    *,
+    source_registry: MosaicObservationSourceRegistry,
+    geometry: RadarObservationGeometryContract,
+) -> None:
+    """Require current observation geometry to bind sampled EPSG evidence."""
+
+    projected_grid_identity = geometry.projected_grid_identity
+    if (
+        source_registry.contract != "mosaic-observation-source-registry-v6"
+        or geometry.contract != "radar-observation-geometry-v6"
+        or projected_grid_identity is None
+        or projected_grid_identity.metric_domain_evidence_digest
+        != CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+    ):
+        raise ValueError(
+            "current observation geometry does not bind metric-domain evidence"
+        )
+    projected_grid_identity.validate_current_metric_domain_evidence()
+    for source in source_registry.ordered_sources:
+        CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.validate_projected_point(
+            cast(float, source.projected_x_m),
+            cast(float, source.projected_y_m),
+        )
+
+
 def _registered_detection_limit_field(
     *,
     source_registry: MosaicObservationSourceRegistry,
@@ -3009,6 +3037,10 @@ class VerificationObservationMaskEvidence:
             or geometry.grid_contract_digest != grid_contract_digest
         ):
             raise ValueError("verification geometry disagrees with its plan")
+        _validate_current_metric_domain_observation_geometry(
+            source_registry=source_registry,
+            geometry=geometry,
+        )
         ordered_source_digests = tuple(
             source.source_digest for source in source_registry.ordered_sources
         )
@@ -5563,11 +5595,11 @@ def derive_verification_observation_error(
 
 _SUPPORTED_VERIFICATION_BUNDLE_CONTRACTS = frozenset(
     f"radar-verification-bundle-v{generation}"
-    for generation in range(1, 18)
+    for generation in range(1, 19)
 )
 _OBSERVATION_ERROR_VERIFICATION_BUNDLE_CONTRACTS = frozenset(
     f"radar-verification-bundle-v{generation}"
-    for generation in range(6, 18)
+    for generation in range(6, 19)
 )
 
 
@@ -5721,6 +5753,7 @@ class VerificationBundle:
                 "radar-verification-bundle-v14",
                 "radar-verification-bundle-v16",
                 "radar-verification-bundle-v17",
+                "radar-verification-bundle-v18",
             }:
                 source_composition_tensors += (self.acquisition_age_seconds,)
             if self.contract in {
@@ -5732,6 +5765,7 @@ class VerificationBundle:
                 "radar-verification-bundle-v14",
                 "radar-verification-bundle-v16",
                 "radar-verification-bundle-v17",
+                "radar-verification-bundle-v18",
             }:
                 if any(value is None for value in source_composition_tensors):
                     raise ValueError(
@@ -5762,6 +5796,7 @@ class VerificationBundle:
                         "radar-verification-bundle-v14",
                         "radar-verification-bundle-v16",
                         "radar-verification-bundle-v17",
+                        "radar-verification-bundle-v18",
                     }
                     and self.acquisition_age_seconds is not None
                     and bool(torch.any(self.acquisition_age_seconds < 0.0))
@@ -5775,6 +5810,7 @@ class VerificationBundle:
                     "radar-verification-bundle-v14",
                     "radar-verification-bundle-v16",
                     "radar-verification-bundle-v17",
+                    "radar-verification-bundle-v18",
                 }:
                     spatial_mask = self.spatial_metric_valid_mask
                     if (
@@ -6027,6 +6063,7 @@ class VerificationBundle:
                         "radar-verification-bundle-v14",
                         "radar-verification-bundle-v16",
                         "radar-verification-bundle-v17",
+                        "radar-verification-bundle-v18",
                     }
                 )
                 if (
@@ -6043,7 +6080,11 @@ class VerificationBundle:
                                 if self.contract == "radar-verification-bundle-v14"
                                 else (
                                     "observation-error-derivation-artifact-v11"
-                                    if self.contract == "radar-verification-bundle-v17"
+                                    if self.contract
+                                    in {
+                                        "radar-verification-bundle-v17",
+                                        "radar-verification-bundle-v18",
+                                    }
                                     else (
                                         "observation-error-derivation-artifact-v10"
                                         if self.contract
@@ -6070,7 +6111,11 @@ class VerificationBundle:
                                 if self.contract == "radar-verification-bundle-v14"
                                 else (
                                     "verification-observation-error-contract-v14"
-                                    if self.contract == "radar-verification-bundle-v17"
+                                    if self.contract
+                                    in {
+                                        "radar-verification-bundle-v17",
+                                        "radar-verification-bundle-v18",
+                                    }
                                     else (
                                         "verification-observation-error-contract-v13"
                                         if self.contract == "radar-verification-bundle-v16"
@@ -6135,6 +6180,7 @@ class VerificationBundle:
                             "radar-verification-bundle-v14",
                             "radar-verification-bundle-v16",
                             "radar-verification-bundle-v17",
+                            "radar-verification-bundle-v18",
                         }
                         and (
                             error_contract.spatial_metric_valid_mask_digest
@@ -6217,6 +6263,7 @@ class VerificationBundle:
                             "radar-verification-bundle-v14",
                             "radar-verification-bundle-v16",
                             "radar-verification-bundle-v17",
+                            "radar-verification-bundle-v18",
                         }
                         and (
                             type(derivation.raw_inputs.mask_derivation)
@@ -6227,7 +6274,11 @@ class VerificationBundle:
                             ).geometry.contract
                             != (
                                 "radar-observation-geometry-v6"
-                                if self.contract == "radar-verification-bundle-v17"
+                                if self.contract
+                                in {
+                                    "radar-verification-bundle-v17",
+                                    "radar-verification-bundle-v18",
+                                }
                                 else (
                                     "radar-observation-geometry-v5"
                                     if self.contract == "radar-verification-bundle-v16"
@@ -6239,6 +6290,15 @@ class VerificationBundle:
                 ):
                     raise ValueError(
                         "verification disagrees with preregistered temporal replay"
+                    )
+                if self.contract == "radar-verification-bundle-v18":
+                    current_mask_derivation = cast(
+                        VerificationObservationMaskDerivationArtifact,
+                        derivation.raw_inputs.mask_derivation,
+                    )
+                    _validate_current_metric_domain_observation_geometry(
+                        source_registry=current_mask_derivation.source_registry,
+                        geometry=current_mask_derivation.geometry,
                     )
             _validate_verification_cell_states(
                 frames_dbz=self.frames_dbz,
@@ -6262,6 +6322,7 @@ class VerificationBundle:
                         "radar-verification-bundle-v14",
                         "radar-verification-bundle-v16",
                         "radar-verification-bundle-v17",
+                        "radar-verification-bundle-v18",
                     }
                     else None
                 ),
@@ -6376,6 +6437,7 @@ class VerificationBundle:
             "radar-verification-bundle-v14",
             "radar-verification-bundle-v16",
             "radar-verification-bundle-v17",
+            "radar-verification-bundle-v18",
         }:
             return self.valid_mask.to(self.frames_dbz)
         quality = cast(Tensor, self.quality_weight)
@@ -6410,6 +6472,7 @@ class VerificationBundle:
             "radar-verification-bundle-v14",
             "radar-verification-bundle-v16",
             "radar-verification-bundle-v17",
+            "radar-verification-bundle-v18",
         }:
             return weight
         state = cast(Tensor, self.observation_state_code)
@@ -6430,6 +6493,7 @@ class VerificationBundle:
             "radar-verification-bundle-v14",
             "radar-verification-bundle-v16",
             "radar-verification-bundle-v17",
+            "radar-verification-bundle-v18",
         }:
             return weight
         return torch.where(
@@ -6449,6 +6513,7 @@ class VerificationBundle:
             "radar-verification-bundle-v14",
             "radar-verification-bundle-v16",
             "radar-verification-bundle-v17",
+            "radar-verification-bundle-v18",
         }:
             return weight
         return torch.where(
@@ -7044,16 +7109,16 @@ class VariationalGaussNewtonDiagnostics:
     exact_hessian_products: int
 
 
-CURRENT_VARIATIONAL_FSO_CONTRACT = "p1-variational-fso-v23"
+CURRENT_VARIATIONAL_FSO_CONTRACT = "p1-variational-fso-v24"
 EXPLORATORY_VARIATIONAL_FSO_CONTRACT = (
     "p1-variational-fso-exploratory-v1"
 )
-CURRENT_VARIATIONAL_FSOI_CONTRACT = "p1-linearized-observation-impact-v19"
+CURRENT_VARIATIONAL_FSOI_CONTRACT = "p1-linearized-observation-impact-v20"
 EXPLORATORY_VARIATIONAL_FSOI_CONTRACT = (
     "p1-linearized-observation-impact-exploratory-v1"
 )
 _FSO_VERIFICATION_CONTRACTS = {
-    CURRENT_VARIATIONAL_FSO_CONTRACT: "radar-verification-bundle-v17",
+    CURRENT_VARIATIONAL_FSO_CONTRACT: "radar-verification-bundle-v18",
     EXPLORATORY_VARIATIONAL_FSO_CONTRACT: "legacy-verification-tensor-v1",
 }
 _FSOI_FSO_CONTRACTS = {
@@ -9364,6 +9429,7 @@ def _verification_content_digest(
         "radar-verification-bundle-v14",
         "radar-verification-bundle-v16",
         "radar-verification-bundle-v17",
+        "radar-verification-bundle-v18",
     }:
         payload.update(
             {
@@ -9421,6 +9487,8 @@ def _verification_content_digest(
             payload["version"] = "verification-bundle-content-v16"
         elif contract == "radar-verification-bundle-v17":
             payload["version"] = "verification-bundle-content-v17"
+        elif contract == "radar-verification-bundle-v18":
+            payload["version"] = "verification-bundle-content-v18"
     if contract in {
         "radar-verification-bundle-v4",
         "radar-verification-bundle-v5",
@@ -9435,6 +9503,7 @@ def _verification_content_digest(
         "radar-verification-bundle-v14",
         "radar-verification-bundle-v16",
         "radar-verification-bundle-v17",
+        "radar-verification-bundle-v18",
     }:
         payload.update(
             {
@@ -9466,6 +9535,7 @@ def _verification_content_digest(
         "radar-verification-bundle-v14",
         "radar-verification-bundle-v16",
         "radar-verification-bundle-v17",
+        "radar-verification-bundle-v18",
     }:
         payload["observation_state_code"] = (
             None
@@ -9488,6 +9558,7 @@ def _verification_content_digest(
         "radar-verification-bundle-v14",
         "radar-verification-bundle-v16",
         "radar-verification-bundle-v17",
+        "radar-verification-bundle-v18",
     }:
         payload["observation_error_derivation_digest"] = (
             None
@@ -9503,6 +9574,7 @@ def _verification_content_digest(
         "radar-verification-bundle-v14",
         "radar-verification-bundle-v16",
         "radar-verification-bundle-v17",
+        "radar-verification-bundle-v18",
     }:
         payload.update(
             {
@@ -9525,6 +9597,7 @@ def _verification_content_digest(
             "radar-verification-bundle-v14",
             "radar-verification-bundle-v16",
             "radar-verification-bundle-v17",
+            "radar-verification-bundle-v18",
         }:
             payload["acquisition_age_seconds"] = (
                 None
@@ -9537,6 +9610,7 @@ def _verification_content_digest(
             "radar-verification-bundle-v14",
             "radar-verification-bundle-v16",
             "radar-verification-bundle-v17",
+            "radar-verification-bundle-v18",
         }:
             payload["spatial_metric_valid_mask"] = (
                 None
@@ -9559,8 +9633,9 @@ def _validate_current_verification_projected_grid(
         )
     if verification.grid_contract_digest != result.run.grid_time_contract_digest:
         raise ValueError("verification and forecast grid contracts disagree")
-    if verification.contract != "radar-verification-bundle-v17":
+    if verification.contract != "radar-verification-bundle-v18":
         return
+    grid.validate_current_metric_domain_evidence()
     derivation = verification.observation_error_derivation
     if (
         type(derivation) is not ObservationErrorDerivationArtifact
@@ -9579,6 +9654,8 @@ def _validate_current_verification_projected_grid(
         or type(geometry.projected_grid_identity)
         is not RadarSpatialGridIdentity
         or geometry.projected_grid_identity.digest != grid.spatial_grid_digest
+        or geometry.projected_grid_identity.metric_domain_evidence_digest
+        != CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
         or geometry.projected_grid_identity.shape_yx
         != tuple(verification.frames_dbz.shape[-2:])
     ):
@@ -9706,7 +9783,7 @@ def _validate_verification_lineage_fields(
         ):
             raise ValueError("incomplete verification cannot claim lineage")
         return
-    if contract != "radar-verification-bundle-v17":
+    if contract != "radar-verification-bundle-v18":
         raise ValueError("complete verification has the wrong contract")
     if valid_times is None or not valid_times:
         raise ValueError("complete verification requires valid times")
@@ -10972,10 +11049,18 @@ def compute_variational_observation_removal_impact(
         None if grid is None else union_count * grid.cell_area_m2 / 1.0e6
     )
     if removal.maximum_removed_area_km2 is not None:
-        if removed_area_km2 is None:
+        if grid is None or removed_area_km2 is None:
             raise ValueError("physical removal budget requires a grid contract")
-        if removed_area_km2 > removal.maximum_removed_area_km2:
-            raise ValueError("observation removal exceeds its area budget")
+        try:
+            grid.validate_projected_area_maximum(
+                removed_area_km2,
+                removal.maximum_removed_area_km2,
+            )
+        except ValueError as error:
+            raise ValueError(
+                "observation removal exceeds or is uncertain against its area "
+                "budget"
+            ) from error
 
     original_qc = ~observations.qc_rejected_mask
     changed_qc = original_qc & ~mask
@@ -11554,8 +11639,16 @@ def _candidate_precheck_reason(
         if grid is None:
             return "physical_perturbation_area_requires_grid_contract"
         area_km2 = count * grid.cell_area_m2 / 1.0e6
-        if area_km2 > config.maximum_perturbed_area_km2:
+        area_status = grid.projected_area_maximum_status(
+            area_km2,
+            config.maximum_perturbed_area_km2,
+        )
+        if area_status == "exceeds":
             return "observation_perturbation_exceeds_physical_area_budget"
+        if area_status == "uncertain":
+            return (
+                "observation_perturbation_area_budget_is_geodetically_uncertain"
+            )
     if observations.common_bias_mode_weights is None:
         quality = observations.quality_weight.reshape(-1).index_select(0, indices)
         std = observations.std_dbz.reshape(-1).index_select(0, indices)
@@ -13716,7 +13809,7 @@ def _compute_variational_products(
             frozen_structure_channel if baseline_dynamics_trusted else None
         ),
     )
-    if verification_bundle.contract == "radar-verification-bundle-v17":
+    if verification_bundle.contract == "radar-verification-bundle-v18":
         fso_contract = CURRENT_VARIATIONAL_FSO_CONTRACT
     elif verification_bundle.contract == "legacy-verification-tensor-v1":
         fso_contract = EXPLORATORY_VARIATIONAL_FSO_CONTRACT
@@ -14707,14 +14800,20 @@ def _perturbation_diagnostics(
         if value > limit:
             raise ValueError(f"observation perturbation exceeds its {name}")
     if config.maximum_perturbed_area_km2 is not None:
-        if area_km2 is None:
+        if grid is None or area_km2 is None:
             raise ValueError(
                 "physical perturbation area requires a grid contract"
             )
-        if area_km2 > config.maximum_perturbed_area_km2:
-            raise ValueError(
-                "observation perturbation exceeds its physical area budget"
+        try:
+            grid.validate_projected_area_maximum(
+                area_km2,
+                config.maximum_perturbed_area_km2,
             )
+        except ValueError as error:
+            raise ValueError(
+                "observation perturbation exceeds or is uncertain against its "
+                "physical area budget"
+            ) from error
     return VariationalPerturbationDiagnostics(
         perturbed_pixel_count=pixel_count,
         perturbed_fraction=fraction,

@@ -30,7 +30,12 @@ from .sensitivity import (
     first_order_validation_digest,
     validate_variational_learning_impact,
 )
-from .nowcast import ForecastResult, ForecastRunContract
+from .nowcast import (
+    CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
+    ForecastResult,
+    ForecastRunContract,
+    RadarGridTimeContract,
+)
 from .variational import AnalysisResult, P1LinearizationState
 
 
@@ -1315,7 +1320,7 @@ def _validate_action_safety(
         policy,
         minimum_dbz=run.config.min_dbz,
         maximum_dbz=run.config.max_dbz,
-        cell_area_m2=grid.cell_area_m2,
+        grid=grid,
     )
 
 
@@ -1326,8 +1331,23 @@ def _compute_action_safety(
     *,
     minimum_dbz: float,
     maximum_dbz: float,
-    cell_area_m2: float,
+    grid: RadarGridTimeContract | None = None,
+    cell_area_m2: float | None = None,
+    metric_domain_evidence_digest: str | None = None,
 ) -> ActionSafetyDiagnostics:
+    if (grid is None) == (cell_area_m2 is None):
+        raise ValueError("action safety requires exactly one grid-area authority")
+    if grid is not None:
+        resolved_cell_area_m2 = grid.cell_area_m2
+    else:
+        assert cell_area_m2 is not None
+        resolved_cell_area_m2 = float(cell_area_m2)
+        if (
+            metric_domain_evidence_digest is not None
+            and metric_domain_evidence_digest
+            != CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+        ):
+            raise ValueError("action safety metric-domain evidence is not current")
     expected_contract = _ACTION_CONTRACT_BY_TYPE[action_type(action)]
     if action.contract != expected_contract:
         raise ValueError("intervention type and action contract disagree")
@@ -1340,7 +1360,11 @@ def _compute_action_safety(
     changed_invalid = int(
         torch.count_nonzero(changed & ~context._observation_masks)
     )
-    area_km2 = float(torch.count_nonzero(union)) * cell_area_m2 / 1.0e6
+    area_km2 = (
+        float(torch.count_nonzero(union))
+        * resolved_cell_area_m2
+        / 1.0e6
+    )
     delta = torch.zeros_like(context._frames_dbz)
     quality_precision_delta = torch.zeros_like(context._quality_weight)
     if isinstance(action, DbzCorrectionAction):
@@ -1400,7 +1424,6 @@ def _compute_action_safety(
         (maximum_delta, policy.maximum_absolute_delta_dbz, "per-pixel dBZ"),
         (count, policy.maximum_changed_pixel_count, "changed-pixel"),
         (changed_fraction, policy.maximum_changed_fraction, "changed-fraction"),
-        (area_km2, policy.maximum_changed_area_km2, "changed-area"),
         (
             global_norm,
             policy.maximum_global_diagonal_standardized_l2,
@@ -1425,6 +1448,33 @@ def _compute_action_safety(
     for actual, maximum, name in limits:
         if actual > maximum:
             raise ValueError(f"generated action exceeds its {name} safety limit")
+    if grid is None and metric_domain_evidence_digest is None:
+        if area_km2 > policy.maximum_changed_area_km2:
+            raise ValueError(
+                "generated action exceeds its changed-area safety limit"
+            )
+    elif grid is None:
+        try:
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.validate_projected_area_maximum(
+                area_km2,
+                policy.maximum_changed_area_km2,
+            )
+        except ValueError as error:
+            raise ValueError(
+                "generated action exceeds or is uncertain against its "
+                "changed-area safety limit"
+            ) from error
+    else:
+        try:
+            grid.validate_projected_area_maximum(
+                area_km2,
+                policy.maximum_changed_area_km2,
+            )
+        except ValueError as error:
+            raise ValueError(
+                "generated action exceeds or is uncertain against its "
+                "changed-area safety limit"
+            ) from error
     finite_frames = changed_dbz.masked_select(finite)
     floor_margin = (
         float(torch.amin(finite_frames - minimum_dbz))
@@ -2351,6 +2401,53 @@ class InterventionActionTransition:
     action_artifact_digest: str
 
 
+def _intervention_action_artifact_digest(
+    *,
+    generator_digest: str,
+    before_context_digest: str,
+    after_context_digest: str,
+    action_payload_digest: str,
+    before_frames_digest: str,
+    after_frames_digest: str,
+    before_masks_digest: str,
+    after_masks_digest: str,
+    before_quality_weight_digest: str,
+    after_quality_weight_digest: str,
+    grid_time_contract: RadarGridTimeContract | None,
+) -> str:
+    """Bind a current action transition to its exact physical grid evidence."""
+
+    payload: dict[str, object] = {
+        "contract": "intervention-action-artifact-v1",
+        "generator_digest": generator_digest,
+        "before_context_digest": before_context_digest,
+        "after_context_digest": after_context_digest,
+        "action_payload_digest": action_payload_digest,
+        "before_frames_digest": before_frames_digest,
+        "after_frames_digest": after_frames_digest,
+        "before_masks_digest": before_masks_digest,
+        "after_masks_digest": after_masks_digest,
+        "before_quality_weight_digest": before_quality_weight_digest,
+        "after_quality_weight_digest": after_quality_weight_digest,
+    }
+    if (
+        grid_time_contract is not None
+        and grid_time_contract.spatial_grid_contract
+        == "radar-spatial-grid-identity-v5"
+    ):
+        grid_time_contract.validate_current_metric_domain_evidence()
+        payload.update(
+            {
+                "contract": "intervention-action-artifact-v2",
+                "grid_time_contract_digest": grid_time_contract.digest,
+                "metric_domain_evidence_digest": (
+                    CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+                ),
+            }
+        )
+    return json_digest(payload)
+
+
 def validate_intervention_action_transition(
     decision: ProspectiveInterventionDecision,
     *,
@@ -2509,20 +2606,18 @@ def validate_intervention_action_transition(
         actual_input_after_run.full_analysis_input_digest
     ):
         raise ValueError("receipt did not change its full analysis input")
-    action_artifact_digest = json_digest(
-        {
-            "contract": "intervention-action-artifact-v1",
-            "generator_digest": action_generator.generator_digest,
-            "before_context_digest": actual_input_before_context.context_digest,
-            "after_context_digest": actual_input_after_context.context_digest,
-            "action_payload_digest": action.payload_digest,
-            "before_frames_digest": before_digest,
-            "after_frames_digest": after_digest,
-            "before_masks_digest": tensor_digest(before_masks),
-            "after_masks_digest": tensor_digest(after_masks),
-            "before_quality_weight_digest": tensor_digest(before_quality),
-            "after_quality_weight_digest": tensor_digest(after_quality),
-        }
+    action_artifact_digest = _intervention_action_artifact_digest(
+        generator_digest=action_generator.generator_digest,
+        before_context_digest=actual_input_before_context.context_digest,
+        after_context_digest=actual_input_after_context.context_digest,
+        action_payload_digest=action.payload_digest,
+        before_frames_digest=before_digest,
+        after_frames_digest=after_digest,
+        before_masks_digest=tensor_digest(before_masks),
+        after_masks_digest=tensor_digest(after_masks),
+        before_quality_weight_digest=tensor_digest(before_quality),
+        after_quality_weight_digest=tensor_digest(after_quality),
+        grid_time_contract=actual_input_before_run.grid_time_contract,
     )
     return InterventionActionTransition(
         before_frames_digest=before_digest,
