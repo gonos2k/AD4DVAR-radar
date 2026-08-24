@@ -979,7 +979,7 @@ def _validate_radar_metric_domain_evidence_report(
     ]
     parallel_scales = [sample["parallel_scale"] for sample in numeric_samples]
     areal_scales = [sample["areal_scale"] for sample in numeric_samples]
-    computed = {
+    computed: dict[str, object] = {
         "sampled_geographic_points_digest": json_digest(geographic_points),
         "sampled_projected_points_digest": json_digest(projected_points),
         "meridional_scale_digest": json_digest(meridional_scales),

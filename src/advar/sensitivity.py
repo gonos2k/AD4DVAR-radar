@@ -10985,7 +10985,7 @@ def compute_variational_observation_removal_impact(
         None if grid is None else union_count * grid.cell_area_m2 / 1.0e6
     )
     if removal.maximum_removed_area_km2 is not None:
-        if removed_area_km2 is None:
+        if grid is None or removed_area_km2 is None:
             raise ValueError("physical removal budget requires a grid contract")
         try:
             grid.validate_projected_area_maximum(
@@ -14736,7 +14736,7 @@ def _perturbation_diagnostics(
         if value > limit:
             raise ValueError(f"observation perturbation exceeds its {name}")
     if config.maximum_perturbed_area_km2 is not None:
-        if area_km2 is None:
+        if grid is None or area_km2 is None:
             raise ValueError(
                 "physical perturbation area requires a grid contract"
             )
