@@ -4795,6 +4795,25 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(float(evidence.overlap_area_km2), 4.0)
         self.assertFalse(evidence.available)
 
+        ground_lower, _ = (
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.projected_area_interval_km2(
+                4.0
+            )
+        )
+        near_boundary = _aligned_growth_evidence(
+            echo,
+            echo,
+            mask,
+            mask,
+            torch.zeros((2,), dtype=torch.float64),
+            replace(
+                config,
+                minimum_growth_overlap_area_km2=ground_lower + 5.0e-7,
+            ),
+            grid_time_contract=grid,
+        )
+        self.assertFalse(near_boundary.available)
+
         stable = _aligned_growth_evidence(
             echo,
             echo,
@@ -5340,6 +5359,11 @@ class NowcastTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "outside the metric domain"):
             replace(valid, cell_center_origin_xy_m=(0.0, 0.0))
+        with self.assertRaisesRegex(ValueError, "outside sampled metric evidence"):
+            replace(
+                valid,
+                cell_center_origin_xy_m=(550_000.0, 1_000_000.0),
+            )
         with self.assertRaisesRegex(ValueError, "outside the metric domain"):
             replace(
                 valid,
@@ -5371,6 +5395,10 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(evidence.sample_count, 17 * 17)
         self.assertEqual(evidence.geodetic_engine, "PROJ")
         self.assertEqual(evidence.epsg_database_version, "v12.029")
+        self.assertEqual(
+            evidence.generator_contract,
+            "generate-metric-domain-evidence-v2",
+        )
         self.assertLessEqual(
             evidence.maximum_observed_linear_scale_error,
             evidence.maximum_linear_scale_error,
@@ -5382,7 +5410,14 @@ class NowcastTests(unittest.TestCase):
 
         for changed in (
             {"verification_report_sha256": "0" * 64},
+            {"generator_contract": "generate-metric-domain-evidence-v1"},
+            {"generator_source_sha256": "0" * 64},
+            {"generator_output_contract": "noncanonical-json-v1"},
             {"epsg_crs_projjson_digest": "0" * 64},
+            {"proj_binary_sha256": "0" * 64},
+            {"projinfo_binary_sha256": "0" * 64},
+            {"proj_database_sha256": "0" * 64},
+            {"validated_projected_coverage_digest": "0" * 64},
             {"sampled_projected_points_digest": "0" * 64},
             {"meridional_scale_digest": "0" * 64},
             {"maximum_observed_linear_scale_error": 0.007},
@@ -5429,6 +5464,9 @@ class NowcastTests(unittest.TestCase):
             evidence.validate_projected_area_minimum(1.0, 1.0)
         with self.assertRaisesRegex(ValueError, "below"):
             evidence.validate_projected_area_minimum(0.98, 1.0)
+        evidence.validate_projected_point(1_000_000.0, 2_000_000.0)
+        with self.assertRaisesRegex(ValueError, "outside sampled metric evidence"):
+            evidence.validate_projected_point(550_000.0, 1_000_000.0)
 
     def test_metric_domain_report_reductions_are_independently_recomputed(
         self,

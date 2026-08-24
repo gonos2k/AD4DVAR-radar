@@ -642,6 +642,216 @@ class EpisodeLedgerTests(unittest.TestCase):
             ledger_module.LegacyScoringReplayBundleManifestAuditV21,
         )
 
+    def test_pr141_scientific_generations_load_as_audit_only(self) -> None:
+        plan_payload = {
+            "contract": "neural-prior-holdout-plan-v32",
+            "plan_id": "pr141-audit-plan",
+        }
+        plan_digest = json_digest(plan_payload)
+        stored_plan = plan_payload | {"plan_digest": plan_digest}
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            with sqlite3.connect(ledger.index_path) as connection:
+                connection.execute(
+                    "INSERT INTO neural_prior_holdout_plans "
+                    "(plan_digest, plan_id, plan_json, policy_digest, "
+                    "trust_store_digest, registered_at, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        plan_digest,
+                        "pr141-audit-plan",
+                        json.dumps(
+                            stored_plan,
+                            sort_keys=True,
+                            separators=(",", ":"),
+                        ),
+                        "1" * 64,
+                        "2" * 64,
+                        "2026-08-23T00:00:00Z",
+                        "2026-08-23T00:00:00Z",
+                    ),
+                )
+            loaded = ledger.load_neural_prior_holdout_plan(plan_digest)
+        self.assertIs(
+            type(loaded),
+            promotion_module.LegacyNeuralPriorHoldoutPlanV32Audit,
+        )
+
+        shard_digest = "3" * 64
+        tensor_records = tuple(
+            ledger_module.ScoringReplayTensorRecord(
+                case_id="case-a",
+                role=role,
+                archive_member="tensor",
+                dtype="float32",
+                shape=(1,),
+                tensor_digest="4" * 64,
+                archive_sha256=shard_digest,
+            )
+            for role in sorted(
+                ledger_module.SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+            )
+        )
+        legacy_manifest = ledger_module.LegacyScoringReplayBundleManifestAuditV22(
+            scoring_input_artifact_digest="5" * 64,
+            ordered_case_ids=("case-a",),
+            ordered_evaluation_digests=("6" * 64,),
+            semantic_case_digests=("7" * 64,),
+            dynamic_source_case_ids=(),
+            background_case_ids=(),
+            algorithm_source_manifest_digest="8" * 64,
+            runtime_compatibility_digest="9" * 64,
+            runtime_exact_digest="a" * 64,
+            scoring_backend_certification_policy_digest=None,
+            scoring_backend_certification_evidence_digest=None,
+            tensor_records=tensor_records,
+            tensor_archive_sha256="b" * 64,
+            evaluation_payload_sha256="c" * 64,
+            raw_provenance_payload_sha256="d" * 64,
+            verification_provenance_payload_sha256="e" * 64,
+            raw_ingestor_trust_store_digest="f" * 64,
+            tensor_shard_sha256s=(shard_digest,),
+        )
+        decoded = ledger_module._decode_scoring_replay_bundle_manifest(
+            json.dumps(
+                legacy_manifest.payload
+                | {"bundle_digest": legacy_manifest.bundle_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            expected_digest=legacy_manifest.bundle_digest,
+        )
+        self.assertIs(
+            type(decoded),
+            ledger_module.LegacyScoringReplayBundleManifestAuditV22,
+        )
+
+        scoring_payload = {
+            "contract": "neural-prior-holdout-scoring-artifact-v14",
+            "marker": "pr141-audit",
+        }
+        scoring_digest = json_digest(scoring_payload)
+        decoded_scoring = ledger_module._decode_holdout_scoring_artifact(
+            json.dumps(
+                scoring_payload | {"artifact_digest": scoring_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            scoring_digest,
+        )
+        self.assertIs(
+            type(decoded_scoring),
+            promotion_module.LegacyHoldoutScoringArtifactAuditV14,
+        )
+
+    def test_pr141_promotion_v31_loads_from_the_ledger_as_audit_only(
+        self,
+    ) -> None:
+        candidate_manifest_payload: dict[str, object] = {
+            "contract": "neural-prior-candidate-manifest-v18",
+            "marker": "pr141-promotion-audit",
+        }
+        candidate_manifest_digest = json_digest(candidate_manifest_payload)
+        stored_candidate_manifest = candidate_manifest_payload | {
+            "manifest_digest": candidate_manifest_digest
+        }
+        payload: dict[str, object] = {
+            "candidate_prior_digest": "1" * 64,
+            "parent_prior_digest": "2" * 64,
+            "candidate_manifest_digest": candidate_manifest_digest,
+            "policy_digest": "4" * 64,
+            "trust_store_digest": "5" * 64,
+            "evaluation_digests": (),
+            "holdout_case_count": 0,
+            "material_case_count": 0,
+            "distinct_case_count": 0,
+            "distinct_storm_count": 0,
+            "distinct_day_count": 0,
+            "distinct_radar_count": 0,
+            "distinct_regime_count": 0,
+            "distinct_range_regime_count": 0,
+            "beneficial_fraction": 0.0,
+            "beneficial_fraction_lower_bound": 0.0,
+            "harmful_fraction": 0.0,
+            "harmful_fraction_upper_bound": 0.0,
+            "mean_normalized_improvement": 0.0,
+            "mean_improvement_lower_bound": 0.0,
+            "maximum_normalized_degradation": 0.0,
+            "prior_echo_intensity_nll_increase_upper_bound": 0.0,
+            "prior_support_brier_increase_upper_bound": 0.0,
+            "prior_clear_sky_false_echo_increase_upper_bound": 0.0,
+            "prior_conditional_underdispersion_increase_upper_bound": 0.0,
+            "prior_echo_support_miss_increase_upper_bound": 0.0,
+            "prior_echo_object_miss_increase_upper_bound": 0.0,
+            "prior_echo_component_status": "not_evaluated",
+            "prior_clear_sky_component_status": "not_evaluated",
+            "prior_echo_case_count": 0,
+            "prior_clear_sky_case_count": 0,
+            "prior_echo_cluster_count": 0,
+            "prior_clear_sky_cluster_count": 0,
+            "simultaneous_inference_test_count": 0,
+            "regime_classifier_evidence_digests": (),
+            "certified_applicability_regime_groups": (),
+            "range_band_skill_bounds": (),
+            "range_band_skill_inference_diagnostics": (),
+            "certified_range_geometry_contract_digests": (),
+            "eligible": False,
+            "rejection_reasons": ("no_material_outcome",),
+            "contract": "neural-prior-promotion-evidence-v31",
+        }
+        evidence_digest = json_digest(payload)
+        overrides: dict[str, object] = {
+            "promotion_evidence_digest": evidence_digest,
+            "candidate_manifest_json": json.dumps(
+                stored_candidate_manifest,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            "holdout_plan_digest": "6" * 64,
+            "evaluation_digests_json": "[]",
+            "evaluation_payloads_json": "[]",
+            "intervention_digests_json": "[]",
+            "rejection_reasons_json": json.dumps(["no_material_outcome"]),
+            "evidence_contract": payload["contract"],
+            "evidence_payload_json": json.dumps(payload, sort_keys=True),
+            "created_at": "2026-08-23T00:00:00+00:00",
+        }
+        column_mapping = {
+            "realized_intervention_count": "holdout_case_count",
+            "material_outcome_count": "material_case_count",
+        }
+        with sqlite3.connect(self.ledger.index_path) as connection:
+            schema = connection.execute(
+                "PRAGMA table_info(neural_prior_promotions)"
+            ).fetchall()
+            columns = [str(row[1]) for row in schema]
+            values: list[object] = []
+            for row in schema:
+                name = str(row[1])
+                source = column_mapping.get(name, name)
+                if name in overrides:
+                    values.append(overrides[name])
+                elif source in payload:
+                    values.append(payload[source])
+                elif str(row[2]).upper() == "INTEGER":
+                    values.append(0)
+                elif str(row[2]).upper() == "REAL":
+                    values.append(0.0)
+                else:
+                    values.append("")
+            connection.execute(
+                f"INSERT INTO neural_prior_promotions "
+                f"({','.join(columns)}) VALUES "
+                f"({','.join('?' for _ in columns)})",
+                values,
+            )
+
+        loaded = self.ledger.load_neural_prior_promotion(evidence_digest)
+        self.assertIs(
+            type(loaded),
+            promotion_module.LegacyNeuralPriorPromotionEvidenceAuditV31,
+        )
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.snapshot = _computed_snapshot()
@@ -1523,7 +1733,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             promotion_experiment_family=experiment_family,
             promotion_decision_rule_digest=decision_rule.rule_digest,
             reference_label_contract_digest="e" * 64,
-            scoring_algorithm_digest="1" * 64,
+            scoring_algorithm_digest=promotion_module.algorithm_bundle_digest(),
             scoring_runtime_digest="2" * 64,
             metric_engine_digest=promotion_module.scoring_metric_engine_identity_digest(),
             verification_resolver_digest="4" * 64,
@@ -1576,6 +1786,25 @@ class EpisodeLedgerTests(unittest.TestCase):
             keys={"clock-scheduler": scheduler_key.public_key()},
             content_digest="f" * 64,
         )
+
+        for changed_plan in (
+            replace(plan, scoring_algorithm_digest="0" * 64),
+            replace(plan, metric_engine_digest="1" * 64),
+        ):
+            with self.subTest(plan_digest=changed_plan.plan_digest), patch(
+                "advar.ledger._load_learning_policy_trust_store",
+                return_value=trust,
+            ), patch(
+                "advar.ledger._load_scheduler_trust_store",
+                return_value=scheduler_trust,
+            ), self.assertRaisesRegex(ValueError, "installed source"):
+                self.ledger.append_neural_prior_holdout_plan(
+                    changed_plan,
+                    promotion_decision_rule=decision_rule,
+                    policy=policy,
+                    policy_trust_store_path="/etc/advar/policies.json",
+                    scheduler_trust_store_path="/etc/advar/schedulers.json",
+                )
 
         class _CrossingClock(datetime):
             calls = 0
@@ -2394,6 +2623,26 @@ class EpisodeLedgerTests(unittest.TestCase):
                 manifest["metric_domain_evidence_digest"],
                 CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest,
             )
+            manifest["unreferenced_payload"] = "ignored-without-exact-schema"
+            manifest_path.write_text(
+                json.dumps(manifest, sort_keys=True, separators=(",", ":")),
+                encoding="utf-8",
+            )
+            checksums = json.loads(original_checksums)
+            checksums["manifest.json"] = hashlib.sha256(
+                manifest_path.read_bytes()
+            ).hexdigest()
+            checksums_path.write_text(
+                json.dumps(checksums, sort_keys=True, separators=(",", ":")),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "manifest fields"):
+                self.ledger.load_prospective_intervention(
+                    digest,
+                    executor_trust_store_path="/etc/advar/executors.json",
+                    operator_trust_store_path="/etc/advar/operators.json",
+                )
+            manifest = json.loads(original_manifest)
             manifest["metric_domain_evidence_digest"] = "0" * 64
             manifest_path.write_text(
                 json.dumps(manifest, sort_keys=True, separators=(",", ":")),
@@ -2408,6 +2657,26 @@ class EpisodeLedgerTests(unittest.TestCase):
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ValueError, "evidence is not current"):
+                self.ledger.load_prospective_intervention(
+                    digest,
+                    executor_trust_store_path="/etc/advar/executors.json",
+                    operator_trust_store_path="/etc/advar/operators.json",
+                )
+            manifest = json.loads(original_manifest)
+            manifest["contract"] = "durable-intervention-action-artifact-v5"
+            manifest_path.write_text(
+                json.dumps(manifest, sort_keys=True, separators=(",", ":")),
+                encoding="utf-8",
+            )
+            checksums = json.loads(original_checksums)
+            checksums["manifest.json"] = hashlib.sha256(
+                manifest_path.read_bytes()
+            ).hexdigest()
+            checksums_path.write_text(
+                json.dumps(checksums, sort_keys=True, separators=(",", ":")),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "manifest fields"):
                 self.ledger.load_prospective_intervention(
                     digest,
                     executor_trust_store_path="/etc/advar/executors.json",

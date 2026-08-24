@@ -13,6 +13,7 @@ import argparse
 from decimal import Decimal
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -29,6 +30,8 @@ MINIMUM_LATITUDE_DEG = Decimal("28.60")
 MAXIMUM_LATITUDE_DEG = Decimal("40.27")
 REGISTERED_MAXIMUM_LINEAR_SCALE_ERROR = Decimal("0.006")
 REGISTERED_MAXIMUM_AREA_SCALE_ERROR = Decimal("0.012036")
+COVERAGE_BOUNDARY_SAMPLE_COUNT_PER_EDGE = 10_001
+GENERATOR_CONTRACT = "generate-metric-domain-evidence-v2"
 
 
 def _canonical_bytes(value: Any) -> bytes:
@@ -42,6 +45,14 @@ def _canonical_bytes(value: Any) -> bytes:
 
 def _digest(value: Any) -> str:
     return hashlib.sha256(_canonical_bytes(value)).hexdigest()
+
+
+def _file_sha256(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            hasher.update(block)
+    return hasher.hexdigest()
 
 
 def _run(
@@ -172,17 +183,27 @@ def _validate_toolchain_identity(
     database_path: Path,
     engine_version: str,
     database_version: str,
-) -> None:
+) -> dict[str, str]:
     proj_path = Path(proj).resolve()
     projinfo_path = Path(projinfo).resolve()
     if (
         proj_path.parent != projinfo_path.parent
         or database_path.parents[2] != proj_path.parent.parent
+        or not proj_path.is_file()
+        or not projinfo_path.is_file()
+        or not os.access(proj_path, os.X_OK)
+        or not os.access(projinfo_path, os.X_OK)
+        or not database_path.is_file()
         or engine_version != database_version
     ):
         raise RuntimeError(
             "PROJ binaries and database do not form one exact toolchain"
         )
+    return {
+        "proj_binary_sha256": _file_sha256(proj_path),
+        "projinfo_binary_sha256": _file_sha256(projinfo_path),
+        "proj_database_sha256": _file_sha256(database_path),
+    }
 
 
 def _lattice_values(
@@ -196,6 +217,166 @@ def _lattice_values(
     return tuple(minimum + step * index for index in range(count))
 
 
+def _project_points(
+    *,
+    proj: str,
+    projection_definition: str,
+    points: tuple[tuple[Decimal, Decimal], ...],
+    inverse: bool = False,
+) -> tuple[tuple[float, float], ...]:
+    input_text = "".join(
+        f"{first:.12f} {second:.12f}\n" for first, second in points
+    )
+    command = [proj]
+    if inverse:
+        command.append("-I")
+    command.extend(
+        ["-f", "%.12f", *projection_definition.split()]
+    )
+    completed = _run(command, input_text=input_text)
+    rows = completed.stdout.splitlines()
+    if len(rows) != len(points):
+        raise RuntimeError("PROJ returned the wrong number of coordinate rows")
+    result: list[tuple[float, float]] = []
+    for row in rows:
+        fields = row.split()
+        if len(fields) < 2:
+            raise RuntimeError("PROJ returned an invalid coordinate row")
+        first, second = float(fields[0]), float(fields[1])
+        if not math.isfinite(first) or not math.isfinite(second):
+            raise RuntimeError("PROJ returned a non-finite coordinate")
+        result.append((first, second))
+    return tuple(result)
+
+
+def _validated_projected_coverage(
+    *,
+    proj: str,
+    projection_definition: str,
+) -> dict[str, Any]:
+    """Derive an inward-rounded projected bbox inside the EPSG area of use."""
+
+    longitudes = _lattice_values(
+        MINIMUM_LONGITUDE_DEG,
+        MAXIMUM_LONGITUDE_DEG,
+        COVERAGE_BOUNDARY_SAMPLE_COUNT_PER_EDGE,
+    )
+    latitudes = _lattice_values(
+        MINIMUM_LATITUDE_DEG,
+        MAXIMUM_LATITUDE_DEG,
+        COVERAGE_BOUNDARY_SAMPLE_COUNT_PER_EDGE,
+    )
+    bottom = tuple((longitude, MINIMUM_LATITUDE_DEG) for longitude in longitudes)
+    top = tuple((longitude, MAXIMUM_LATITUDE_DEG) for longitude in longitudes)
+    left = tuple((MINIMUM_LONGITUDE_DEG, latitude) for latitude in latitudes)
+    right = tuple((MAXIMUM_LONGITUDE_DEG, latitude) for latitude in latitudes)
+    geographic_boundary = bottom + top + left + right
+    projected_boundary = _project_points(
+        proj=proj,
+        projection_definition=projection_definition,
+        points=geographic_boundary,
+    )
+    edge_count = COVERAGE_BOUNDARY_SAMPLE_COUNT_PER_EDGE
+    projected_bottom = projected_boundary[:edge_count]
+    projected_top = projected_boundary[edge_count : 2 * edge_count]
+    projected_left = projected_boundary[2 * edge_count : 3 * edge_count]
+    projected_right = projected_boundary[3 * edge_count :]
+    minimum_easting_m = float(
+        math.ceil(max(easting for easting, _ in projected_left))
+    )
+    maximum_easting_m = float(
+        math.floor(min(easting for easting, _ in projected_right))
+    )
+    minimum_northing_m = float(
+        math.ceil(max(northing for _, northing in projected_bottom))
+    )
+    maximum_northing_m = float(
+        math.floor(min(northing for _, northing in projected_top))
+    )
+    if (
+        minimum_easting_m >= maximum_easting_m
+        or minimum_northing_m >= maximum_northing_m
+    ):
+        raise RuntimeError("projected evidence coverage is empty")
+
+    coverage_eastings = _lattice_values(
+        Decimal(str(minimum_easting_m)),
+        Decimal(str(maximum_easting_m)),
+        edge_count,
+    )
+    coverage_northings = _lattice_values(
+        Decimal(str(minimum_northing_m)),
+        Decimal(str(maximum_northing_m)),
+        edge_count,
+    )
+    coverage_boundary = (
+        tuple(
+            (easting, Decimal(str(minimum_northing_m)))
+            for easting in coverage_eastings
+        )
+        + tuple(
+            (easting, Decimal(str(maximum_northing_m)))
+            for easting in coverage_eastings
+        )
+        + tuple(
+            (Decimal(str(minimum_easting_m)), northing)
+            for northing in coverage_northings
+        )
+        + tuple(
+            (Decimal(str(maximum_easting_m)), northing)
+            for northing in coverage_northings
+        )
+    )
+    inverse_boundary = _project_points(
+        proj=proj,
+        projection_definition=projection_definition,
+        points=coverage_boundary,
+        inverse=True,
+    )
+    inverse_longitudes = tuple(value[0] for value in inverse_boundary)
+    inverse_latitudes = tuple(value[1] for value in inverse_boundary)
+    if (
+        min(inverse_longitudes) < float(MINIMUM_LONGITUDE_DEG)
+        or max(inverse_longitudes) > float(MAXIMUM_LONGITUDE_DEG)
+        or min(inverse_latitudes) < float(MINIMUM_LATITUDE_DEG)
+        or max(inverse_latitudes) > float(MAXIMUM_LATITUDE_DEG)
+    ):
+        raise RuntimeError(
+            "projected evidence coverage escapes the EPSG area of use"
+        )
+    return {
+        "contract": "epsg5179-sampled-inscribed-projected-bbox-v1",
+        "boundary_sample_count_per_edge": edge_count,
+        "inward_rounding": "integer-metre-ceil-min-floor-max-v1",
+        "minimum_easting_m": minimum_easting_m,
+        "maximum_easting_m": maximum_easting_m,
+        "minimum_northing_m": minimum_northing_m,
+        "maximum_northing_m": maximum_northing_m,
+        "source_geographic_boundary_digest": _digest(
+            [
+                {"longitude_deg": float(longitude), "latitude_deg": float(latitude)}
+                for longitude, latitude in geographic_boundary
+            ]
+        ),
+        "projected_source_boundary_digest": _digest(
+            [
+                {"projected_easting_m": easting, "projected_northing_m": northing}
+                for easting, northing in projected_boundary
+            ]
+        ),
+        "inverse_coverage_boundary_digest": _digest(
+            [
+                {"longitude_deg": longitude, "latitude_deg": latitude}
+                for longitude, latitude in inverse_boundary
+            ]
+        ),
+        "inverse_minimum_longitude_deg": min(inverse_longitudes),
+        "inverse_maximum_longitude_deg": max(inverse_longitudes),
+        "inverse_minimum_latitude_deg": min(inverse_latitudes),
+        "inverse_maximum_latitude_deg": max(inverse_latitudes),
+    }
+
+
 def _generate_report(
     *,
     proj: str,
@@ -204,7 +385,7 @@ def _generate_report(
 ) -> dict[str, Any]:
     database, database_path = _proj_database_metadata(projinfo)
     engine_version = _proj_version(proj)
-    _validate_toolchain_identity(
+    toolchain_hashes = _validate_toolchain_identity(
         proj=proj,
         projinfo=projinfo,
         database_path=database_path,
@@ -213,6 +394,10 @@ def _generate_report(
     )
     projection_definition, projjson_digest = _epsg_projection_definition(
         projinfo
+    )
+    projected_coverage = _validated_projected_coverage(
+        proj=proj,
+        projection_definition=projection_definition,
     )
     longitudes = _lattice_values(
         MINIMUM_LONGITUDE_DEG,
@@ -293,6 +478,11 @@ def _generate_report(
 
     return {
         "contract": "radar-metric-domain-geodetic-report-v1",
+        "generator": {
+            "contract": GENERATOR_CONTRACT,
+            "source_sha256": _file_sha256(Path(__file__).resolve()),
+            "canonical_output": "sorted-compact-json-utf8-newline-v1",
+        },
         "canonical_projection": PROJECTION,
         "projection_definition": projection_definition,
         "epsg_crs_projjson_digest": projjson_digest,
@@ -307,7 +497,9 @@ def _generate_report(
                 f"{database['DATABASE.LAYOUT.VERSION.MAJOR']}."
                 f"{database['DATABASE.LAYOUT.VERSION.MINOR']}"
             ),
+            **toolchain_hashes,
         },
+        "validated_projected_coverage": projected_coverage,
         "sampling": {
             "contract": "epsg5179-area-of-use-geographic-lattice-v1",
             "minimum_longitude_deg": float(MINIMUM_LONGITUDE_DEG),
@@ -352,15 +544,27 @@ def main() -> int:
         default=shutil.which("projinfo") or "projinfo",
     )
     parser.add_argument("--sample-count-per-axis", type=int, default=17)
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="fail unless generated canonical bytes equal the output file",
+    )
     arguments = parser.parse_args()
     report = _generate_report(
         proj=arguments.proj,
         projinfo=arguments.projinfo,
         sample_count_per_axis=arguments.sample_count_per_axis,
     )
-    arguments.output.parent.mkdir(parents=True, exist_ok=True)
-    arguments.output.write_bytes(_canonical_bytes(report) + b"\n")
-    print(hashlib.sha256(arguments.output.read_bytes()).hexdigest())
+    generated = _canonical_bytes(report) + b"\n"
+    if arguments.check:
+        if not arguments.output.is_file():
+            raise RuntimeError("metric-domain evidence output does not exist")
+        if arguments.output.read_bytes() != generated:
+            raise RuntimeError("metric-domain evidence output is not reproducible")
+    else:
+        arguments.output.parent.mkdir(parents=True, exist_ok=True)
+        arguments.output.write_bytes(generated)
+    print(hashlib.sha256(generated).hexdigest())
     return 0
 
 

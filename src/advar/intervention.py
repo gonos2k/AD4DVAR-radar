@@ -2401,6 +2401,53 @@ class InterventionActionTransition:
     action_artifact_digest: str
 
 
+def _intervention_action_artifact_digest(
+    *,
+    generator_digest: str,
+    before_context_digest: str,
+    after_context_digest: str,
+    action_payload_digest: str,
+    before_frames_digest: str,
+    after_frames_digest: str,
+    before_masks_digest: str,
+    after_masks_digest: str,
+    before_quality_weight_digest: str,
+    after_quality_weight_digest: str,
+    grid_time_contract: RadarGridTimeContract | None,
+) -> str:
+    """Bind a current action transition to its exact physical grid evidence."""
+
+    payload: dict[str, object] = {
+        "contract": "intervention-action-artifact-v1",
+        "generator_digest": generator_digest,
+        "before_context_digest": before_context_digest,
+        "after_context_digest": after_context_digest,
+        "action_payload_digest": action_payload_digest,
+        "before_frames_digest": before_frames_digest,
+        "after_frames_digest": after_frames_digest,
+        "before_masks_digest": before_masks_digest,
+        "after_masks_digest": after_masks_digest,
+        "before_quality_weight_digest": before_quality_weight_digest,
+        "after_quality_weight_digest": after_quality_weight_digest,
+    }
+    if (
+        grid_time_contract is not None
+        and grid_time_contract.spatial_grid_contract
+        == "radar-spatial-grid-identity-v5"
+    ):
+        grid_time_contract.validate_current_metric_domain_evidence()
+        payload.update(
+            {
+                "contract": "intervention-action-artifact-v2",
+                "grid_time_contract_digest": grid_time_contract.digest,
+                "metric_domain_evidence_digest": (
+                    CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+                ),
+            }
+        )
+    return json_digest(payload)
+
+
 def validate_intervention_action_transition(
     decision: ProspectiveInterventionDecision,
     *,
@@ -2559,20 +2606,18 @@ def validate_intervention_action_transition(
         actual_input_after_run.full_analysis_input_digest
     ):
         raise ValueError("receipt did not change its full analysis input")
-    action_artifact_digest = json_digest(
-        {
-            "contract": "intervention-action-artifact-v1",
-            "generator_digest": action_generator.generator_digest,
-            "before_context_digest": actual_input_before_context.context_digest,
-            "after_context_digest": actual_input_after_context.context_digest,
-            "action_payload_digest": action.payload_digest,
-            "before_frames_digest": before_digest,
-            "after_frames_digest": after_digest,
-            "before_masks_digest": tensor_digest(before_masks),
-            "after_masks_digest": tensor_digest(after_masks),
-            "before_quality_weight_digest": tensor_digest(before_quality),
-            "after_quality_weight_digest": tensor_digest(after_quality),
-        }
+    action_artifact_digest = _intervention_action_artifact_digest(
+        generator_digest=action_generator.generator_digest,
+        before_context_digest=actual_input_before_context.context_digest,
+        after_context_digest=actual_input_after_context.context_digest,
+        action_payload_digest=action.payload_digest,
+        before_frames_digest=before_digest,
+        after_frames_digest=after_digest,
+        before_masks_digest=tensor_digest(before_masks),
+        after_masks_digest=tensor_digest(after_masks),
+        before_quality_weight_digest=tensor_digest(before_quality),
+        after_quality_weight_digest=tensor_digest(after_quality),
+        grid_time_contract=actual_input_before_run.grid_time_contract,
     )
     return InterventionActionTransition(
         before_frames_digest=before_digest,

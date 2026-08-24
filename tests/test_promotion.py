@@ -462,7 +462,7 @@ def _verification_bundle_v4(
         spatial_metric_valid_mask=mask_derivation.spatial_metric_valid_mask,
         observation_error_contract=error_contract,
         observation_error_derivation=derivation,
-        contract="radar-verification-bundle-v17",
+        contract="radar-verification-bundle-v18",
     )
 
 
@@ -623,7 +623,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         evaluation = self.evaluation(1, -1.0)
         policy = self.policy()
 
-        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v32")
+        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v33")
         self.assertTrue(
             all(
                 item.contract == "neural-prior-range-band-contract-v3"
@@ -738,9 +738,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
         self.assertEqual(
             scoring.contract,
-            "neural-prior-holdout-scoring-artifact-v14",
+            "neural-prior-holdout-scoring-artifact-v15",
         )
-        self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v31")
+        self.assertEqual(evidence.contract, "neural-prior-promotion-evidence-v32")
         self.assertEqual(deployment.contract, "deployed-neural-prior-policy-v17")
         self.assertEqual(
             evidence.semantic_replay_generation_digest,
@@ -1051,7 +1051,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         stored_plan = plan_payload | {"plan_digest": plan_digest}
         with tempfile.TemporaryDirectory() as directory:
             ledger = EpisodeLedger(Path(directory))
-            with sqlite3.connect(ledger.index_path) as connection:
+            with ledger._connect() as connection:
                 connection.execute(
                     "INSERT INTO neural_prior_holdout_plans "
                     "(plan_digest, plan_id, plan_json, policy_digest, "
@@ -2190,7 +2190,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_decision_rule_digest=decision_rule_digest,
             reference_label_contract_digest="7" * 64,
             physical_event_catalog_plan=self.event_catalog_plan(),
-            scoring_algorithm_digest="9" * 64,
+            scoring_algorithm_digest=promotion_module.algorithm_bundle_digest(),
             scoring_runtime_digest=(
                 promotion_module.numerical_runtime_identity_digest("cpu")
             ),
@@ -2851,7 +2851,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             catalog_result_digest=result.result_digest,
             process_kind="candidate_scoring",
             subject_digests=subject_digests,
-            process_algorithm_digest="9" * 64,
+            process_algorithm_digest=self.plan().scoring_algorithm_digest,
             process_runtime_digest=self.plan().scoring_runtime_digest,
             execution_contract_digest=(
                 self.plan().scoring_execution_contract_digest
@@ -4183,7 +4183,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             promotion_decision_rule_digest=decision_rule.rule_digest,
             reference_label_contract_digest="7" * 64,
             physical_event_catalog_plan=catalog_plan,
-            scoring_algorithm_digest="9" * 64,
+            scoring_algorithm_digest=promotion_module.algorithm_bundle_digest(),
             scoring_runtime_digest=candidate_runner.numerical_runtime_digest,
             metric_engine_digest=(
                 promotion_module.scoring_metric_engine_identity_digest()
@@ -4838,6 +4838,100 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 replayed.evaluations[0].evaluation_digest,
                 evaluation.evaluation_digest,
             )
+            legacy_manifest = (
+                ledger_module.LegacyScoringReplayBundleManifestAuditV22(
+                    scoring_input_artifact_digest=(
+                        replay_manifest.scoring_input_artifact_digest
+                    ),
+                    ordered_case_ids=replay_manifest.ordered_case_ids,
+                    ordered_evaluation_digests=(
+                        replay_manifest.ordered_evaluation_digests
+                    ),
+                    semantic_case_digests=(
+                        replay_manifest.semantic_case_digests
+                    ),
+                    dynamic_source_case_ids=(
+                        replay_manifest.dynamic_source_case_ids
+                    ),
+                    background_case_ids=replay_manifest.background_case_ids,
+                    algorithm_source_manifest_digest=(
+                        replay_manifest.algorithm_source_manifest_digest
+                    ),
+                    runtime_compatibility_digest=(
+                        replay_manifest.runtime_compatibility_digest
+                    ),
+                    runtime_exact_digest=replay_manifest.runtime_exact_digest,
+                    scoring_backend_certification_policy_digest=None,
+                    scoring_backend_certification_evidence_digest=None,
+                    tensor_records=replay_manifest.tensor_records,
+                    tensor_archive_sha256=(
+                        replay_manifest.tensor_archive_sha256
+                    ),
+                    evaluation_payload_sha256=(
+                        replay_manifest.evaluation_payload_sha256
+                    ),
+                    raw_provenance_payload_sha256=(
+                        replay_manifest.raw_provenance_payload_sha256
+                    ),
+                    verification_provenance_payload_sha256=(
+                        replay_manifest.verification_provenance_payload_sha256
+                    ),
+                    raw_ingestor_trust_store_digest=(
+                        replay_manifest.raw_ingestor_trust_store_digest
+                    ),
+                    tensor_shard_sha256s=(
+                        replay_manifest.tensor_shard_sha256s
+                    ),
+                )
+            )
+            current_directory = (
+                ledger.scoring_replays_dir / replay_manifest.bundle_digest
+            )
+            legacy_directory = (
+                ledger.scoring_replays_dir / legacy_manifest.bundle_digest
+            )
+            shutil.copytree(current_directory, legacy_directory)
+            legacy_manifest_json = json.dumps(
+                legacy_manifest.payload
+                | {"bundle_digest": legacy_manifest.bundle_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            (legacy_directory / "manifest.json").write_text(
+                legacy_manifest_json,
+                encoding="utf-8",
+            )
+            with sqlite3.connect(ledger.index_path) as connection:
+                connection.execute(
+                    "INSERT INTO neural_prior_scoring_replay_bundles "
+                    "(bundle_digest,scoring_input_artifact_digest,manifest_json,"
+                    "path,created_at) VALUES (?,?,?,?,?)",
+                    (
+                        legacy_manifest.bundle_digest,
+                        "f" * 64,
+                        legacy_manifest_json,
+                        str(legacy_directory.relative_to(ledger.root)),
+                        "2026-08-09T02:35:00+00:00",
+                    ),
+                )
+            legacy_loaded = ledger.load_neural_prior_scoring_replay_bundle(
+                legacy_manifest.bundle_digest,
+            )
+            self.assertIs(
+                type(legacy_loaded.manifest),
+                ledger_module.LegacyScoringReplayBundleManifestAuditV22,
+            )
+            self.assertTrue(legacy_loaded.verification_bytes_verified)
+            self.assertFalse(legacy_loaded.verification_reconstructed)
+            self.assertFalse(
+                legacy_loaded.verification_semantic_replay_verified
+            )
+            self.assertFalse(legacy_loaded.semantic_replay_verified)
+            with self.assertRaisesRegex(ValueError, "audit-only"):
+                ledger.load_neural_prior_scoring_replay_bundle(
+                    legacy_manifest.bundle_digest,
+                    cases=(replay_case,),
+                )
         scoring_artifact = promotion_module.HoldoutScoringArtifact.from_evaluations(
             manifest,
             plan,
@@ -9438,7 +9532,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 )
             loaded = ledger.load_neural_prior_promotion(stored)
             self.assertEqual(loaded.promotion_evidence_digest, stored)
-            self.assertEqual(loaded.contract, "neural-prior-promotion-evidence-v31")
+            self.assertEqual(
+                loaded.contract,
+                "neural-prior-promotion-evidence-v32",
+            )
             self.assertTrue(loaded.deployment_eligible)
             ledger_authority_key = Ed25519PrivateKey.from_private_bytes(
                 b"\x03" * 32
@@ -15765,19 +15862,19 @@ class NeuralPriorPromotionTests(unittest.TestCase):
     def test_cpu_only_scoring_generation_has_a_stable_backend_contract(self) -> None:
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_CONTRACT,
-            "neural-prior-scoring-replay-bundle-v22",
+            "neural-prior-scoring-replay-bundle-v23",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_METHOD,
-            "builtin-semantic-scoring-recomputation-v22",
+            "builtin-semantic-scoring-recomputation-v23",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD,
             {
-                "contract": "neural-prior-semantic-scoring-generation-v20",
-                "replay_contract": "neural-prior-scoring-replay-bundle-v22",
-                "replay_method": "builtin-semantic-scoring-recomputation-v22",
-                "case_contract": "neural-prior-semantic-scoring-case-v21",
+                "contract": "neural-prior-semantic-scoring-generation-v21",
+                "replay_contract": "neural-prior-scoring-replay-bundle-v23",
+                "replay_method": "builtin-semantic-scoring-recomputation-v23",
+                "case_contract": "neural-prior-semantic-scoring-case-v22",
                 "observation_mask_algorithm_digest": (
                     OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST
                 ),
@@ -15785,7 +15882,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST
                 ),
                 "verification_bundle_contract": (
-                    "radar-verification-bundle-v17"
+                    "radar-verification-bundle-v18"
                 ),
                 "product_type_policy": "exact-shipped-product-types-v1",
                 "forecast_integrity": "forecast-result-raw-content-validation-v1",
@@ -21736,6 +21833,28 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
     def test_scoring_algorithm_must_match_the_preregistered_plan(self) -> None:
         plan = self.plan()
+        retained_for_audit = replace(
+            plan,
+            scoring_algorithm_digest="0" * 64,
+        )
+        promotion_module.validate_neural_prior_holdout_plan(
+            retained_for_audit
+        )
+        self.assertNotEqual(
+            retained_for_audit.plan_digest,
+            plan.plan_digest,
+        )
+        retained_metric_for_audit = replace(
+            plan,
+            metric_engine_digest="1" * 64,
+        )
+        promotion_module.validate_neural_prior_holdout_plan(
+            retained_metric_for_audit
+        )
+        self.assertNotEqual(
+            retained_metric_for_audit.plan_digest,
+            plan.plan_digest,
+        )
         result = self.event_catalog_result()
         bad_start = promotion_module.TrustedProcessStartReceipt.from_plan(
             plan.physical_event_catalog_plan,
