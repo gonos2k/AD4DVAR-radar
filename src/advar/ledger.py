@@ -3760,7 +3760,7 @@ def _current_verification_provenance_payload(
 
     verification = case.verification
     if (
-        verification.contract != "radar-verification-bundle-v18"
+        verification.contract != "radar-verification-bundle-v19"
         or type(verification.observation_error_derivation)
         is not ObservationErrorDerivationArtifact
     ):
@@ -3771,7 +3771,7 @@ def _current_verification_provenance_payload(
     )
     raw_inputs = derivation.raw_inputs
     if (
-        raw_inputs.contract != "verification-observation-derivation-inputs-v11"
+        raw_inputs.contract != "verification-observation-derivation-inputs-v12"
         or type(raw_inputs.mask_derivation)
         is not VerificationObservationMaskDerivationArtifact
         or type(raw_inputs.source_identity)
@@ -3965,6 +3965,10 @@ def _validate_current_verification_provenance_payload(
             metric_domain_digest=cast(
                 str | None,
                 registry_payload.get("metric_domain_digest"),
+            ),
+            metric_domain_evidence_digest=cast(
+                str | None,
+                registry_payload.get("metric_domain_evidence_digest"),
             ),
             geometry_model=cast(Any, registry_payload["geometry_model"]),
             radar_altitude_role=cast(
@@ -5188,13 +5192,13 @@ class EpisodeLedger:
         artifact_contract = "durable-intervention-action-artifact-v5"
         if (
             before_grid.spatial_grid_contract
-            == "radar-spatial-grid-identity-v5"
+            == "radar-spatial-grid-identity-v6"
         ):
             before_grid.validate_current_metric_domain_evidence()
             metric_domain_evidence_digest = (
                 before_grid.metric_domain_evidence_digest
             )
-            artifact_contract = "durable-intervention-action-artifact-v6"
+            artifact_contract = "durable-intervention-action-artifact-v7"
         expanded_bytes = expanded_tensor_bytes((
             before.frames_dbz,
             before.observation_masks,
@@ -5319,7 +5323,7 @@ class EpisodeLedger:
                 "before_background_present": before_background is not None,
                 "after_background_present": after_background is not None,
             }
-            if artifact_contract == "durable-intervention-action-artifact-v6":
+            if artifact_contract == "durable-intervention-action-artifact-v7":
                 manifest["metric_domain_evidence_digest"] = (
                     metric_domain_evidence_digest
                 )
@@ -5417,6 +5421,7 @@ class EpisodeLedger:
                 "durable-intervention-action-artifact-v4",
                 "durable-intervention-action-artifact-v5",
                 "durable-intervention-action-artifact-v6",
+                "durable-intervention-action-artifact-v7",
             }
             or manifest.get("receipt_digest") != receipt.receipt_digest
             or manifest.get("action_artifact_digest")
@@ -5441,11 +5446,15 @@ class EpisodeLedger:
         if manifest["contract"] in {
             "durable-intervention-action-artifact-v5",
             "durable-intervention-action-artifact-v6",
+            "durable-intervention-action-artifact-v7",
         }:
             expected_manifest_fields = (
                 _DURABLE_INTERVENTION_MANIFEST_V6_FIELDS
                 if manifest["contract"]
-                == "durable-intervention-action-artifact-v6"
+                in {
+                    "durable-intervention-action-artifact-v6",
+                    "durable-intervention-action-artifact-v7",
+                }
                 else _DURABLE_INTERVENTION_MANIFEST_BASE_FIELDS
             )
             if set(manifest) != expected_manifest_fields:
@@ -5590,6 +5599,7 @@ class EpisodeLedger:
                 in {
                     "durable-intervention-action-artifact-v5",
                     "durable-intervention-action-artifact-v6",
+                    "durable-intervention-action-artifact-v7",
                 }
                 else _json_digest(
                     {
@@ -5625,6 +5635,7 @@ class EpisodeLedger:
                 "durable-intervention-action-artifact-v4",
                 "durable-intervention-action-artifact-v5",
                 "durable-intervention-action-artifact-v6",
+                "durable-intervention-action-artifact-v7",
             }:
                 expected_resolution = _forecast_input_plan_resolution_digest(
                     input_plan_digest=cast(str, manifest["input_plan_digest"]),
@@ -5653,6 +5664,7 @@ class EpisodeLedger:
                             "durable-intervention-action-artifact-v4",
                             "durable-intervention-action-artifact-v5",
                             "durable-intervention-action-artifact-v6",
+                            "durable-intervention-action-artifact-v7",
                         }
                         else "intervention-input-context-v3"
                     ),
@@ -5674,6 +5686,7 @@ class EpisodeLedger:
                             "durable-intervention-action-artifact-v4",
                             "durable-intervention-action-artifact-v5",
                             "durable-intervention-action-artifact-v6",
+                            "durable-intervention-action-artifact-v7",
                         }
                         else {}
                     ),
@@ -5724,6 +5737,7 @@ class EpisodeLedger:
                 "durable-intervention-action-artifact-v4",
                 "durable-intervention-action-artifact-v5",
                 "durable-intervention-action-artifact-v6",
+                "durable-intervention-action-artifact-v7",
             }:
                 expected_identity = _json_digest(
                     {
@@ -5794,11 +5808,18 @@ class EpisodeLedger:
         metric_domain_evidence_digest = manifest.get(
             "metric_domain_evidence_digest"
         )
-        if manifest["contract"] == "durable-intervention-action-artifact-v6":
+        if manifest["contract"] in {
+            "durable-intervention-action-artifact-v6",
+            "durable-intervention-action-artifact-v7",
+        }:
             grid_payload = manifest.get("grid_time_contract_payload")
             if (
-                metric_domain_evidence_digest
-                != CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+                (
+                    manifest["contract"]
+                    == "durable-intervention-action-artifact-v7"
+                    and metric_domain_evidence_digest
+                    != CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+                )
                 or not isinstance(grid_payload, dict)
             ):
                 raise ValueError(
@@ -5807,7 +5828,8 @@ class EpisodeLedger:
             retained_grid = RadarGridTimeContract.from_payload(
                 cast(dict[str, object], grid_payload)
             )
-            retained_grid.validate_current_metric_domain_evidence()
+            if manifest["contract"] == "durable-intervention-action-artifact-v7":
+                retained_grid.validate_current_metric_domain_evidence()
             if (
                 retained_grid.digest
                 != manifest.get("before_grid_time_contract_digest")

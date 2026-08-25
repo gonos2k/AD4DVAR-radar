@@ -106,6 +106,7 @@ from advar.sensitivity import (  # noqa: E402
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V10_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V12_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V5_DIGEST,
@@ -113,10 +114,13 @@ from advar.sensitivity import (  # noqa: E402
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V7_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V9_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V11_DIGEST,
     OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST,
+    OBSERVATION_SOURCE_SELECTION_ALGORITHM_V2_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V3_DIGEST,
+    OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST,
     OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST,
     OBSERVATION_TEMPORAL_QUALITY_DECAY_ALGORITHM_V1_DIGEST,
     ObservationRadarSource,
@@ -436,7 +440,7 @@ def _prospective_run_and_context(
         dy_m=1000.0,
         projection="EPSG:5179",
         grid_hash="1" * 64,
-        spatial_grid_contract="radar-spatial-grid-identity-v5",
+        spatial_grid_contract="radar-spatial-grid-identity-v6",
         grid_shape_yx=(int(frames.shape[-2]), int(frames.shape[-1])),
         projected_crs_digest=radar_projected_crs_semantic_digest(
             "EPSG:5179"
@@ -914,7 +918,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             dy_m=1000.0,
             projection="EPSG:5179",
             grid_hash="1" * 64,
-            spatial_grid_contract="radar-spatial-grid-identity-v5",
+            spatial_grid_contract="radar-spatial-grid-identity-v6",
             grid_shape_yx=(1, 2),
             projected_crs_digest=radar_projected_crs_semantic_digest(
                 "EPSG:5179"
@@ -970,7 +974,10 @@ class EpisodeLedgerTests(unittest.TestCase):
             metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
             geometry_model="projected-horizontal-representative-tilt-v1",
             radar_altitude_role="provenance_only",
-            contract="mosaic-observation-source-registry-v6",
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
+            contract="mosaic-observation-source-registry-v7",
         )
         observation_error_plan = VerificationObservationErrorPlan(
             radar_source_kind="single_site",
@@ -981,32 +988,32 @@ class EpisodeLedgerTests(unittest.TestCase):
                 observation_source_registry.calibration_registry_digest
             ),
             range_elevation_validity_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V11_DIGEST
             ),
             beam_blockage_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V11_DIGEST
             ),
             attenuation_qc_digest="3" * 64,
             censoring_rule_digest="f" * 64,
             spatial_correlation_block_algorithm_digest="7" * 64,
             quality_weight_interpretation_digest="8" * 64,
             quality_weight_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V12_DIGEST
             ),
             observation_std_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V12_DIGEST
             ),
             observation_error_model_digest="b" * 64,
             source_assignment_algorithm_digest=(
-                OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST
+                OBSERVATION_SOURCE_SELECTION_ALGORITHM_V2_DIGEST
             ),
             minimum_detectable_echo_dbz=-10.0,
             observation_error_reference_std_dbz=2.0,
             derivation_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V12_DIGEST
             ),
             mask_derivation_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V11_DIGEST
             ),
             maximum_range_km=300.0,
             minimum_elevation_deg=-1.0,
@@ -1038,9 +1045,9 @@ class EpisodeLedgerTests(unittest.TestCase):
             spatial_metric_reference_speed_mps=20.0,
             spatial_metric_maximum_displacement_fraction_cells=1.0,
             spatial_age_gate_algorithm_digest=(
-                OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V3_DIGEST
+                OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST
             ),
-            contract="verification-observation-error-plan-v12",
+            contract="verification-observation-error-plan-v13",
         )
         target_plan = PriorUncertaintyTargetPlan(
             plan_id="uncertainty-clock",
@@ -2617,7 +2624,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             manifest = json.loads(original_manifest)
             self.assertEqual(
                 manifest["contract"],
-                "durable-intervention-action-artifact-v6",
+                "durable-intervention-action-artifact-v7",
             )
             self.assertEqual(
                 manifest["metric_domain_evidence_digest"],

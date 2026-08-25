@@ -1,4 +1,5 @@
 from dataclasses import fields
+import ast
 from pathlib import Path
 import sys
 import unittest
@@ -54,6 +55,41 @@ class ContractRegistryTests(unittest.TestCase):
         self.assertFalse(metric.operationally_accepted)
         self.assertFalse(promotion.operationally_accepted)
         self.assertFalse(policy.operationally_accepted)
+
+    def test_every_declared_lifecycle_probe_is_discoverable_and_not_skipped(
+        self,
+    ) -> None:
+        repository = Path(__file__).resolve().parents[1]
+        parsed_files: dict[Path, ast.Module] = {}
+        for capabilities in CONTRACT_CAPABILITIES.values():
+            path_text, class_name, method_name = (
+                capabilities.lifecycle_probe.split("::")
+            )
+            path = repository / path_text
+            tree = parsed_files.setdefault(
+                path,
+                ast.parse(path.read_text(encoding="utf-8"), filename=str(path)),
+            )
+            classes = {
+                node.name: node
+                for node in tree.body
+                if isinstance(node, ast.ClassDef)
+            }
+            self.assertIn(class_name, classes)
+            methods = {
+                node.name: node
+                for node in classes[class_name].body
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            }
+            self.assertIn(method_name, methods)
+            decorators = {
+                ast.unparse(decorator)
+                for decorator in methods[method_name].decorator_list
+            }
+            self.assertFalse(
+                any("skip" in decorator.lower() for decorator in decorators),
+                capabilities.lifecycle_probe,
+            )
 
     def test_readme_capability_table_is_generated_from_registry(self) -> None:
         repository = Path(__file__).resolve().parents[1]

@@ -2433,12 +2433,12 @@ def _intervention_action_artifact_digest(
     if (
         grid_time_contract is not None
         and grid_time_contract.spatial_grid_contract
-        == "radar-spatial-grid-identity-v5"
+        == "radar-spatial-grid-identity-v6"
     ):
         grid_time_contract.validate_current_metric_domain_evidence()
         payload.update(
             {
-                "contract": "intervention-action-artifact-v2",
+                "contract": "intervention-action-artifact-v3",
                 "grid_time_contract_digest": grid_time_contract.digest,
                 "metric_domain_evidence_digest": (
                     CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest

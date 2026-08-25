@@ -35,7 +35,7 @@ from .variational import (
 )
 
 
-OUTPUT_CONTRACT_VERSION = "nowcast-npz-v75"
+OUTPUT_CONTRACT_VERSION = "nowcast-npz-v76"
 
 
 def main() -> None:

@@ -5888,7 +5888,7 @@ class VariationalAnalysisTests(unittest.TestCase):
             dy_m=1000.0,
             projection="EPSG:5179",
             grid_hash="9" * 64,
-            spatial_grid_contract="radar-spatial-grid-identity-v5",
+            spatial_grid_contract="radar-spatial-grid-identity-v6",
             grid_shape_yx=(3, 3),
             projected_crs_digest=radar_projected_crs_semantic_digest(
                 "EPSG:5179"
