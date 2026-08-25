@@ -15620,7 +15620,7 @@ def _affine_footprint_average(
     """Average over the exact projected-distance footprint of one grid."""
 
     radius_y, radius_x = grid.pixel_radius_yx(radius_m)
-    offsets = grid.pixel_offsets_within_distance(
+    offsets = grid.pixel_offsets_certainly_within_ground_distance(
         radius_m,
         maximum_radius_yx=(radius_y, radius_x),
     )

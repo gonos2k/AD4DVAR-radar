@@ -2042,6 +2042,43 @@ class SensitivityTests(unittest.TestCase):
         self.assertTrue(torch.isfinite(physical))
         self.assertGreater(abs(float(physical - pixels)), 1.0e-9)
 
+    def test_current_metric_uncertainty_reaches_soft_fss_footprint(self) -> None:
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-05T00:00:00Z",
+                "2026-08-05T00:10:00Z",
+                "2026-08-05T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="8" * 64,
+            spatial_grid_contract="radar-spatial-grid-identity-v5",
+            grid_shape_yx=(3, 3),
+            projected_crs_digest=radar_projected_crs_semantic_digest(
+                "EPSG:5179"
+            ),
+            metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
+            cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
+            grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            cell_center_convention=(
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+        )
+        impulse = torch.zeros((3, 3), dtype=torch.float64)
+        impulse[1, 1] = 1.0
+
+        averaged = sensitivity_module._affine_footprint_average(
+            impulse,
+            grid,
+            1000.0,
+        )
+
+        torch.testing.assert_close(averaged, impulse, rtol=0.0, atol=0.0)
+
     def test_physical_fss_uses_exact_anisotropic_affine_footprint(self) -> None:
         grid = RadarGridTimeContract(
             valid_times=(

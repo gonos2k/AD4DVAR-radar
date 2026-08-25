@@ -29,16 +29,21 @@ from advar.linearization_artifact import (  # noqa: E402
     save_p1_linearization,
 )
 from advar.nowcast import (  # noqa: E402
+    CURRENT_RADAR_METRIC_DOMAIN,
+    CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
     DataStatus,
     DynamicsSource,
     ForecastRunContract,
     NowcastConfig,
+    RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION,
+    RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
     RadarGridTimeContract,
     RadarState,
     TendencyPairSelection,
     TendencySource,
     forecast_from_state,
     forecast_linear_at_step,
+    radar_projected_crs_semantic_digest,
 )
 from advar.physics import (  # noqa: E402
     RemapCell,
@@ -5867,6 +5872,56 @@ class VariationalAnalysisTests(unittest.TestCase):
         torch.testing.assert_close(
             frozen.motion_limits_yx,
             torch.tensor((12.0, 6.0), dtype=frames.dtype),
+        )
+
+    def test_current_metric_uncertainty_reaches_causal_and_amplitude_support(
+        self,
+    ) -> None:
+        frames = torch.full((3, 3, 3), 20.0, dtype=torch.float64)
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="9" * 64,
+            spatial_grid_contract="radar-spatial-grid-identity-v5",
+            grid_shape_yx=(3, 3),
+            projected_crs_digest=radar_projected_crs_semantic_digest(
+                "EPSG:5179"
+            ),
+            metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
+            cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
+            grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            cell_center_convention=(
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+        )
+        original = variational_module._causal_control_and_seed_support
+        with patch.object(
+            variational_module,
+            "_causal_control_and_seed_support",
+            wraps=original,
+        ) as causal:
+            _, frozen = prepare_analysis(
+                frames,
+                analysis_config=AnalysisConfig(
+                    causal_support_uncertainty_m=1000.0,
+                    amplitude_displacement_tolerance_m=1000.0,
+                ),
+                grid_time_contract=grid,
+            )
+
+        self.assertEqual(causal.call_args.args[-1], ((0, 0),))
+        self.assertEqual(
+            frozen.amplitude_displacement_offsets_yx,
+            ((0, 0),),
         )
 
     def test_exact_physical_footprint_excludes_diagonal_causal_anchor(

@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.107
+# ADVAR 3-frame radar nowcast v0.108
 
 ADVAR는 운영 배포 시스템이 아니라 레이더 기반 변분 nowcast의 **과학적 실증과
 재현 가능한 offline 연구**를 위한 구현이다. 핵심 산출물은 수치 안정성, 입력·target
@@ -6,6 +6,20 @@ provenance, 독립 physical-event 평가와 사전등록된 통계 계약이다.
 bundle 및 activation 도구는 과거 artifact를 읽기 위한 비권위적 engineering
 scaffold이며 required PR CI나 과학적 claim의 근거가 아니다. Shadow·canary·
 state-advancing LIVE는 승인하지 않는다.
+
+### 현재 계약 capability
+
+아래 표는 `src/advar/_contract_registry.py`에서 생성·검증된다. `∅`는 해당
+세대가 없다는 명시적 계약이며, 특히 scientific promotion evidence는 운영 권한으로
+해석되지 않는다.
+
+<!-- CONTRACT_CAPABILITY_TABLE:START -->
+| Contract family | Current | Predecessor | Issuable | Audit-readable | Scientific | Operational |
+|---|---|---|---|---|---|---|
+| radar_metric_domain_evidence | radar-metric-domain-evidence-v2 | radar-metric-domain-evidence-v1 | radar-metric-domain-evidence-v2 | radar-metric-domain-evidence-v1, radar-metric-domain-evidence-v2 | radar-metric-domain-evidence-v2 | ∅ |
+| neural_prior_promotion_evidence | neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v31 | neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v31, neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v32 | ∅ |
+| deployed_neural_prior_policy | deployed-neural-prior-policy-v17 | — | deployed-neural-prior-policy-v17 | deployed-neural-prior-policy-v17 | ∅ | ∅ |
+<!-- CONTRACT_CAPABILITY_TABLE:END -->
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
 시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
@@ -1107,8 +1121,9 @@ reproduction을 통과해야 하며, factory가 한 번 동결한 tensor snapsho
 live product bytes가 다르면 거부된다. Replay v23 contract와 v23 method, typed
 verification-target identity와 source-composition algorithms를 포함한 CPU-only
 generation v21 digest는 `HoldoutScoringArtifact-v15`와 scientific promotion evidence
-v32까지 직접 전파된다. Operational selector는 이 current scientific generation을
-승인하지 않으며 deployment authorization은 프로젝트 범위 밖이다.
+v32까지 직접 전파된다. Current package에는 운영 selector의 양성 경로가 없으며
+`infer_deployed_neural_prior()`는 전용 `OperationalDeploymentUnsupportedError`를
+발생시킨다. Deployment authorization은 프로젝트 범위 밖이다.
 각 holdout case의 `VerificationTargetIdentityArtifact-v2`는 실제 scoring에 사용되는
 target plan에서 source identity와 UTC valid time을 가져오고, exact target value,
 valid-mask, quality, QC/censor policy, observation-error contract 및 verification
@@ -1143,10 +1158,13 @@ float64로 생성해야 하며 float32 좌표를 사후 변환해 current scient
 사용할 수 없다. Current physical-distance research는 bounded Korean study domain의
 `EPSG:5179`만 허용한다. `EPSG:3857`의 projected metre는 위도에 따라 ground scale이
 달라 current metric CRS로 사용할 수 없으며 historical artifact의 byte audit에만 남는다.
-`RadarMetricDomainEvidence-v1`은 같은 PROJ/EPSG database에서 재생한 17×17 factor
+`RadarMetricDomainEvidence-v2`는 같은 PROJ/EPSG database에서 재생한 17×17 factor
 lattice, PROJ·`projinfo` binary 및 `proj.db` SHA-256, PROJJSON digest, 선형·면적
-scale error와 report SHA를 보존한다. 생성 스크립트 SHA-256과 canonical output contract도
-report에 포함되므로 `--check`는 현재 generator source와 committed bytes를 함께 검증한다.
+scale error와 report SHA를 보존한다. 생성 스크립트 SHA-256과 canonical output contract,
+강제된 `LC_ALL=C`·`LANG=C`·`TZ=UTC`·`PROJ_NETWORK=OFF`, platform/ABI/libc/SQLite 및
+실제로 해석된 dynamic-library closure도 report에 포함한다. Loader override가 있으면
+생성을 거부하며 `--check`는 sealed host에서 generator source와 committed bytes를 함께
+검증한다. 이전 v1 report는 raw JSON bytes와 원래 SHA-256만 검증하는 audit-only 타입이다.
 Report가 실제로 표본화한 projected coverage
 (`592664≤E≤1576674`, `976711≤N≤2251910` metre) 밖의 grid 또는 radar site는 broad
 historical bbox 안에 있더라도 current scientific evidence를 만들 수 없다. 이 표본 report는
@@ -1155,7 +1173,10 @@ geodetic 인증은 아니다. Current
 grid/run은 이 evidence digest를 정방향으로 포함하며 `forecast-run-v69`와 durable
 intervention action v6은 cold replay에서도 같은 면적 불확실성 정책을 다시 적용한다.
 최대 면적 cap은 ground-area interval 상한, 최소 growth evidence는 interval 하한으로
-판정하며 threshold를 가로지르면 과학적 증거를 fail-close한다. 과거 evidence 없는
+판정하며 threshold를 가로지르면 과학적 증거를 fail-close한다. 거리·반경·속도도 같은
+원칙을 사용한다. 최대 ground-distance footprint는 확실히 내부인 offset만 포함하고,
+최소 sidelobe 반경은 확실히 외부인 표본만 사용하며, motion speed·pair disagreement·
+saturation·posterior eligibility는 ground-speed interval 상한으로 판정한다. 과거 evidence 없는
 `forecast-run-v68`은 audit-only이다. `radar-spatial-grid-identity-v5` 자체는 역사적
 evidence-absent payload도 byte audit을 위해 표현할 수 있으므로 contract 문자열만으로
 current capability를 판단하지 않는다. Current run/verification/replay의 outer validator가
@@ -1359,7 +1380,8 @@ weather/range OOD와 Brier-valid event subset을 각각 확인한다.
 holdout scoring artifact는 v15, holdout evaluation은 v24, promotion policy는 v30,
 metric support는 v3이다. 직전 v31/v32/v14 세대는 typed audit-only이며 current source와
 metric-engine identity를 다시 확인하는 자동 과학 경로에 들어갈 수 없다. 운영 selector는
-current scientific v32 evidence를 승인하지 않으며 deployment는 이 프로젝트의 범위 밖이다.
+current package에 노출되지 않고 v32의 operational capability는 명시적으로 비어 있다.
+Deployment는 이 프로젝트의 범위 밖이다.
 Training lineage는 case별 feature/target/mask/quality member, split, weight,
 augmentation seed와 normalization bytes를 포함하는
 `TrainingFeatureDatasetArtifact-v5`와 `TrainingDatasetDerivationArtifact-v7`을

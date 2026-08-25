@@ -16,10 +16,12 @@ import json
 import math
 import os
 from pathlib import Path
+import platform
 import re
 import shutil
 import sqlite3
 import subprocess
+import sys
 from typing import Any
 
 
@@ -31,7 +33,21 @@ MAXIMUM_LATITUDE_DEG = Decimal("40.27")
 REGISTERED_MAXIMUM_LINEAR_SCALE_ERROR = Decimal("0.006")
 REGISTERED_MAXIMUM_AREA_SCALE_ERROR = Decimal("0.012036")
 COVERAGE_BOUNDARY_SAMPLE_COUNT_PER_EDGE = 10_001
-GENERATOR_CONTRACT = "generate-metric-domain-evidence-v2"
+GENERATOR_CONTRACT = "generate-metric-domain-evidence-v3"
+REPORT_CONTRACT = "radar-metric-domain-geodetic-report-v2"
+_LOADER_OVERRIDE_ENVIRONMENT_VARIABLES = (
+    "LD_LIBRARY_PATH",
+    "LD_PRELOAD",
+    "DYLD_LIBRARY_PATH",
+    "DYLD_FALLBACK_LIBRARY_PATH",
+    "DYLD_INSERT_LIBRARIES",
+)
+_CANONICAL_EXECUTION_ENVIRONMENT = {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PROJ_NETWORK": "OFF",
+    "TZ": "UTC",
+}
 
 
 def _canonical_bytes(value: Any) -> bytes:
@@ -84,34 +100,213 @@ def _run(
     *,
     input_text: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
-    environment = dict(os.environ)
-    # Foreign data paths can silently pair a binary with an incompatible DB.
-    environment.pop("PROJ_LIB", None)
-    environment.pop("PROJ_DATA", None)
     return subprocess.run(
         command,
         check=True,
         capture_output=True,
-        env=environment,
+        env=_canonical_environment(),
         input=input_text,
         text=True,
     )
 
 
 def _proj_version(proj: str) -> str:
-    environment = dict(os.environ)
-    environment.pop("PROJ_LIB", None)
-    environment.pop("PROJ_DATA", None)
     completed = subprocess.run(
         [proj],
         capture_output=True,
-        env=environment,
+        env=_canonical_environment(),
         text=True,
     )
     match = re.search(r"Rel\.\s+([0-9.]+)", completed.stderr)
     if match is None:
         raise RuntimeError("could not determine the PROJ engine version")
     return match.group(1)
+
+
+def _reject_loader_overrides() -> None:
+    unexpected = tuple(
+        name
+        for name in _LOADER_OVERRIDE_ENVIRONMENT_VARIABLES
+        if os.environ.get(name)
+    )
+    if unexpected:
+        raise RuntimeError(
+            "metric-domain evidence generation rejects loader overrides: "
+            + ", ".join(unexpected)
+        )
+
+
+def _canonical_environment() -> dict[str, str]:
+    environment = dict(os.environ)
+    for name in (
+        "PROJ_LIB",
+        "PROJ_DATA",
+        *_LOADER_OVERRIDE_ENVIRONMENT_VARIABLES,
+    ):
+        environment.pop(name, None)
+    environment.update(_CANONICAL_EXECUTION_ENVIRONMENT)
+    return environment
+
+
+def _darwin_rpaths(image: Path) -> tuple[Path, ...]:
+    output = _run(["otool", "-l", str(image)]).stdout.splitlines()
+    rpaths: list[Path] = []
+    for index, line in enumerate(output[:-2]):
+        if line.strip() != "cmd LC_RPATH":
+            continue
+        match = re.match(r"\s*path\s+(\S+)\s+\(offset", output[index + 2])
+        if match is None:
+            raise RuntimeError("could not decode a Mach-O LC_RPATH")
+        value = match.group(1).replace("@loader_path", str(image.parent))
+        rpaths.append(Path(value).resolve())
+    return tuple(rpaths)
+
+
+def _darwin_dependency_names(image: Path) -> tuple[str, ...]:
+    lines = _run(["otool", "-L", str(image)]).stdout.splitlines()[1:]
+    return tuple(
+        line.strip().split(" (compatibility version", 1)[0]
+        for line in lines
+        if line.strip()
+    )
+
+
+def _resolve_darwin_dependency(
+    dependency: str,
+    *,
+    image: Path,
+    executable_directory: Path,
+) -> Path | None:
+    if dependency.startswith("/usr/lib/") or dependency.startswith("/System/"):
+        return None
+    if dependency.startswith("@loader_path/"):
+        candidate = image.parent / dependency.removeprefix("@loader_path/")
+        return candidate.resolve() if candidate.is_file() else None
+    if dependency.startswith("@executable_path/"):
+        candidate = executable_directory / dependency.removeprefix(
+            "@executable_path/"
+        )
+        return candidate.resolve() if candidate.is_file() else None
+    if dependency.startswith("@rpath/"):
+        suffix = dependency.removeprefix("@rpath/")
+        for rpath in _darwin_rpaths(image):
+            candidate = rpath / suffix
+            if candidate.is_file():
+                return candidate.resolve()
+        return None
+    candidate = Path(dependency)
+    return candidate.resolve() if candidate.is_file() else None
+
+
+def _darwin_dynamic_library_closure(
+    executables: tuple[Path, ...],
+) -> list[dict[str, object]]:
+    queue = list(executables)
+    visited: set[Path] = set()
+    entries: dict[tuple[str, str], dict[str, object]] = {}
+    executable_directory = executables[0].parent
+    while queue:
+        image = queue.pop(0).resolve()
+        if image in visited:
+            continue
+        visited.add(image)
+        for dependency in _darwin_dependency_names(image):
+            resolved = _resolve_darwin_dependency(
+                dependency,
+                image=image,
+                executable_directory=executable_directory,
+            )
+            if resolved is None:
+                if not (
+                    dependency.startswith("/usr/lib/")
+                    or dependency.startswith("/System/")
+                ):
+                    raise RuntimeError(
+                        f"could not resolve Mach-O dependency {dependency!r}"
+                    )
+                entry = {
+                    "file_sha256": None,
+                    "install_name": dependency,
+                    "kind": "darwin-system-loader-cache-v1",
+                    "resolved_path": dependency,
+                }
+            else:
+                entry = {
+                    "file_sha256": _file_sha256(resolved),
+                    "install_name": dependency,
+                    "kind": "hashed-dynamic-library-v1",
+                    "resolved_path": str(resolved),
+                }
+                queue.append(resolved)
+            entries[(dependency, str(entry["resolved_path"]))] = entry
+    return [entries[key] for key in sorted(entries)]
+
+
+def _linux_dynamic_library_closure(
+    executables: tuple[Path, ...],
+) -> list[dict[str, object]]:
+    entries: dict[tuple[str, str], dict[str, object]] = {}
+    for executable in executables:
+        for raw_line in _run(["ldd", str(executable)]).stdout.splitlines():
+            line = raw_line.strip()
+            if (
+                not line
+                or "statically linked" in line
+                or line.startswith("linux-vdso")
+            ):
+                continue
+            if "=>" in line:
+                install_name, remainder = line.split("=>", 1)
+                resolved_text = remainder.strip().split(" ", 1)[0]
+            else:
+                install_name = line.split(" ", 1)[0]
+                resolved_text = install_name
+            resolved = Path(resolved_text)
+            if not resolved.is_file():
+                raise RuntimeError(
+                    f"could not resolve ELF dependency {install_name!r}"
+                )
+            resolved = resolved.resolve()
+            entry = {
+                "file_sha256": _file_sha256(resolved),
+                "install_name": install_name.strip(),
+                "kind": "hashed-dynamic-library-v1",
+                "resolved_path": str(resolved),
+            }
+            entries[(entry["install_name"], entry["resolved_path"])] = entry
+    return [entries[key] for key in sorted(entries)]
+
+
+def _execution_environment(
+    *,
+    proj: str,
+    projinfo: str,
+) -> dict[str, object]:
+    executables = (Path(proj).resolve(), Path(projinfo).resolve())
+    system = platform.system()
+    if system == "Darwin":
+        closure = _darwin_dynamic_library_closure(executables)
+    elif system == "Linux":
+        closure = _linux_dynamic_library_closure(executables)
+    else:
+        raise RuntimeError("unsupported geodetic generator platform")
+    libc_name, libc_version = platform.libc_ver()
+    return {
+        "contract": "metric-domain-generator-execution-environment-v1",
+        "canonical_environment": dict(_CANONICAL_EXECUTION_ENVIRONMENT),
+        "dynamic_library_closure": closure,
+        "dynamic_library_closure_digest": _digest(closure),
+        "loader_override_policy": "reject-nonempty-loader-overrides-v1",
+        "machine": platform.machine(),
+        "operating_system": system,
+        "operating_system_release": platform.release(),
+        "python_implementation": platform.python_implementation(),
+        "python_version": platform.python_version(),
+        "python_cache_tag": sys.implementation.cache_tag,
+        "libc_name": libc_name,
+        "libc_version": libc_version,
+        "sqlite_runtime_version": sqlite3.sqlite_version,
+    }
 
 
 def _proj_database_metadata(projinfo: str) -> tuple[dict[str, str], Path]:
@@ -416,6 +611,10 @@ def _generate_report(
         engine_version=engine_version,
         database_version=database["PROJ.VERSION"],
     )
+    execution_environment = _execution_environment(
+        proj=proj,
+        projinfo=projinfo,
+    )
     projection_definition, projjson_digest = _epsg_projection_definition(
         projinfo
     )
@@ -501,7 +700,7 @@ def _generate_report(
         raise RuntimeError("observed area scale error exceeds its budget")
 
     return {
-        "contract": "radar-metric-domain-geodetic-report-v1",
+        "contract": REPORT_CONTRACT,
         "generator": {
             "contract": GENERATOR_CONTRACT,
             "source_sha256": _file_sha256(Path(__file__).resolve()),
@@ -523,6 +722,7 @@ def _generate_report(
             ),
             **toolchain_hashes,
         },
+        "execution_environment": execution_environment,
         "validated_projected_coverage": projected_coverage,
         "sampling": {
             "contract": "epsg5179-area-of-use-geographic-lattice-v1",
@@ -560,7 +760,7 @@ def main() -> int:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("src/advar/data/epsg5179_metric_domain_evidence_v1.json"),
+        default=Path("src/advar/data/epsg5179_metric_domain_evidence_v2.json"),
     )
     parser.add_argument("--proj", default=shutil.which("proj") or "proj")
     parser.add_argument(
@@ -586,6 +786,7 @@ def main() -> int:
     if arguments.check_source_only:
         print(_check_generator_source_binding(arguments.output))
         return 0
+    _reject_loader_overrides()
     report = _generate_report(
         proj=arguments.proj,
         projinfo=arguments.projinfo,
