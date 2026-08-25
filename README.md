@@ -1,4 +1,4 @@
-# ADVAR 3-frame radar nowcast v0.108
+# ADVAR 3-frame radar nowcast v0.109
 
 ADVAR는 운영 배포 시스템이 아니라 레이더 기반 변분 nowcast의 **과학적 실증과
 재현 가능한 offline 연구**를 위한 구현이다. 핵심 산출물은 수치 안정성, 입력·target
@@ -16,9 +16,18 @@ state-advancing LIVE는 승인하지 않는다.
 <!-- CONTRACT_CAPABILITY_TABLE:START -->
 | Contract family | Current | Predecessor | Issuable | Audit-readable | Scientific | Operational |
 |---|---|---|---|---|---|---|
-| radar_metric_domain_evidence | radar-metric-domain-evidence-v2 | radar-metric-domain-evidence-v1 | radar-metric-domain-evidence-v2 | radar-metric-domain-evidence-v1, radar-metric-domain-evidence-v2 | radar-metric-domain-evidence-v2 | ∅ |
+| radar_metric_domain_evidence | radar-metric-domain-evidence-v3 | radar-metric-domain-evidence-v2 | radar-metric-domain-evidence-v3 | radar-metric-domain-evidence-v1, radar-metric-domain-evidence-v2, radar-metric-domain-evidence-v3 | radar-metric-domain-evidence-v3 | ∅ |
 | neural_prior_promotion_evidence | neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v31 | neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v31, neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v32 | ∅ |
 | deployed_neural_prior_policy | deployed-neural-prior-policy-v17 | — | deployed-neural-prior-policy-v17 | deployed-neural-prior-policy-v17 | ∅ | ∅ |
+| neural_prior_deployment_lineage | neural-prior-deployment-lineage-v19 | neural-prior-deployment-lineage-v18-audit | neural-prior-deployment-lineage-v19 | neural-prior-deployment-lineage-v18-audit, neural-prior-deployment-lineage-v19, neural-prior-deployment-lineage-v19-audit | ∅ | ∅ |
+| radar_spatial_grid_identity | radar-spatial-grid-identity-v6 | radar-spatial-grid-identity-v5 | radar-spatial-grid-identity-v6 | radar-spatial-grid-identity-v5, radar-spatial-grid-identity-v6 | radar-spatial-grid-identity-v6 | ∅ |
+| mosaic_observation_source_registry | mosaic-observation-source-registry-v7 | mosaic-observation-source-registry-v6 | mosaic-observation-source-registry-v7 | mosaic-observation-source-registry-v6, mosaic-observation-source-registry-v7 | mosaic-observation-source-registry-v7 | ∅ |
+| radar_observation_geometry | radar-observation-geometry-v7 | radar-observation-geometry-v6 | radar-observation-geometry-v7 | radar-observation-geometry-v6, radar-observation-geometry-v7 | radar-observation-geometry-v7 | ∅ |
+| verification_observation_error_plan | verification-observation-error-plan-v13 | verification-observation-error-plan-v12 | verification-observation-error-plan-v13 | verification-observation-error-plan-v12, verification-observation-error-plan-v13 | verification-observation-error-plan-v13 | ∅ |
+| verification_bundle | radar-verification-bundle-v19 | radar-verification-bundle-v18 | radar-verification-bundle-v19 | radar-verification-bundle-v18, radar-verification-bundle-v19 | radar-verification-bundle-v19 | ∅ |
+| variational_fso | p1-variational-fso-v25 | p1-variational-fso-v24 | p1-variational-fso-v25 | p1-variational-fso-v24, p1-variational-fso-v25 | p1-variational-fso-v25 | ∅ |
+| variational_fsoi | p1-linearized-observation-impact-v21 | p1-linearized-observation-impact-v20 | p1-linearized-observation-impact-v21 | p1-linearized-observation-impact-v20, p1-linearized-observation-impact-v21 | p1-linearized-observation-impact-v21 | ∅ |
+| semantic_scoring_replay | neural-prior-scoring-replay-bundle-v24 | neural-prior-scoring-replay-bundle-v23 | neural-prior-scoring-replay-bundle-v24 | neural-prior-scoring-replay-bundle-v23, neural-prior-scoring-replay-bundle-v24 | neural-prior-scoring-replay-bundle-v24 | ∅ |
 <!-- CONTRACT_CAPABILITY_TABLE:END -->
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
@@ -214,7 +223,7 @@ trust, expiry, bundle/runtime/interpreter/host identity 및 receipt signature를
 `snapshot_current_runtime()`이 실행 중인 process의 import roots, interpreter, stdlib와
 native library를 다시 해시해 receipt의 deployable closure와 exact 비교한다. 따라서
 다른 venv/process에서 유효한 receipt만 재사용하거나 activation 뒤 runtime bytes를
-바꾼 경우 decision issuance와 `forecast-run-v69` restart가 모두 fail-close한다.
+바꾼 경우 scientific decision issuance와 `forecast-run-v70` restart가 모두 fail-close한다.
 
 Python API:
 
@@ -459,7 +468,7 @@ legacy Tensor를 거부한다. raw Tensor 입력은 연구 호환용으로 계�
 결과와 M0 원장에 `verification_lineage_complete=False`로 기록되므로 지연 자동
 학습의 완전한 검증자료로 승격할 수 없다.
 
-`compute_variational_fso()`의 current `p1-variational-fso-v24` 결과는 영향값이 아니라
+`compute_variational_fso()`의 current `p1-variational-fso-v25` 결과는 영향값이 아니라
 다음 관측 parameter와 frozen 초기배경 경로에 대한 미분이다.
 
 Radar-dependent neural prior는 mean과 spatial `log(std_dbz)` JVP/VJP를 모두
@@ -936,12 +945,12 @@ withheld radar/time/mask), QC·mask·censor·floor measurement contract,
 feature-exclusion 및 independence evidence를
 사전등록하며 plan payload 자체가 holdout digest에 포함된다. 실제 target은 임의
 Tensor로 만들 수 없고, plan에 고정된 radar product·QC·grid·valid time과 일치하는
-content-addressed `radar-verification-bundle-v18`에서만 생성한다.
+content-addressed `radar-verification-bundle-v19`에서만 생성한다.
 P1 state head에는 별도의 `NeuralPriorStateCalibrationPlan`을 사전등록한다. State target은
 state product·QC·mask·censor·floor policy, dBZ resolution·quantization origin과 prior output
 valid time에 결합되고 feature에서 withhold됐음을 검증한다. Target은 이 측정계보를 실제
 자료와 함께 observation-error contract를 attestation한
-`radar-verification-bundle-v18`에서만 생성된다. Candidate와
+`radar-verification-bundle-v19`에서만 생성된다. Candidate와
 parent의 state interval-Gaussian NLL·PIT,
 support Brier·pixel/object miss·false-support 및 validity Brier를 같은 target에서 paired
 평가한다. 절대 calibration과 cluster max-statistic 비열화 상한을 모두 통과하지 못하면
@@ -1118,9 +1127,9 @@ evaluation JSON에 무관한 임의 tensor를 붙인 snapshot은 자동승격 �
 Forecast, prior application, inference runner, verification, metric config, calibration
 target, classifier와 operational-domain artifact는 각각 제품 validator와 runner
 reproduction을 통과해야 하며, factory가 한 번 동결한 tensor snapshot과 completion 시점의
-live product bytes가 다르면 거부된다. Replay v23 contract와 v23 method, typed
+live product bytes가 다르면 거부된다. Replay v24 contract와 v24 method, typed
 verification-target identity와 source-composition algorithms를 포함한 CPU-only
-generation v21 digest는 `HoldoutScoringArtifact-v15`와 scientific promotion evidence
+generation v22 digest는 `HoldoutScoringArtifact-v15`와 scientific promotion evidence
 v32까지 직접 전파된다. Current package에는 운영 selector의 양성 경로가 없으며
 `infer_deployed_neural_prior()`는 전용 `OperationalDeploymentUnsupportedError`를
 발생시킨다. Deployment authorization은 프로젝트 범위 밖이다.
@@ -1158,26 +1167,31 @@ float64로 생성해야 하며 float32 좌표를 사후 변환해 current scient
 사용할 수 없다. Current physical-distance research는 bounded Korean study domain의
 `EPSG:5179`만 허용한다. `EPSG:3857`의 projected metre는 위도에 따라 ground scale이
 달라 current metric CRS로 사용할 수 없으며 historical artifact의 byte audit에만 남는다.
-`RadarMetricDomainEvidence-v2`는 같은 PROJ/EPSG database에서 재생한 17×17 factor
+`RadarMetricDomainEvidence-v3`는 같은 PROJ/EPSG database에서 재생한 17×17 factor
 lattice, PROJ·`projinfo` binary 및 `proj.db` SHA-256, PROJJSON digest, 선형·면적
 scale error와 report SHA를 보존한다. 생성 스크립트 SHA-256과 canonical output contract,
 강제된 `LC_ALL=C`·`LANG=C`·`TZ=UTC`·`PROJ_NETWORK=OFF`, platform/ABI/libc/SQLite 및
+dependency inspector, Python executable, `_sqlite3`·`_decimal` native extension과
 실제로 해석된 dynamic-library closure도 report에 포함한다. Loader override가 있으면
 생성을 거부하며 `--check`는 sealed host에서 generator source와 committed bytes를 함께
-검증한다. 이전 v1 report는 raw JSON bytes와 원래 SHA-256만 검증하는 audit-only 타입이다.
+검증한다. Darwin shared cache처럼 파일 byte identity를 얻지 못한 closure는 보고서에
+명시하며 독립 sealed environment가 여전히 필요하다고 fail-close한다. 이전 v1/v2 report는
+raw JSON bytes와 원래 SHA-256만 검증하는 audit-only 타입이다.
 Report가 실제로 표본화한 projected coverage
 (`592664≤E≤1576674`, `976711≤N≤2251910` metre) 밖의 grid 또는 radar site는 broad
 historical bbox 안에 있더라도 current scientific evidence를 만들 수 없다. 이 표본 report는
 등록된 scale budget을 재현하는 repository evidence이며 ground-distance 정확성의 독립적인
 geodetic 인증은 아니다. Current
-grid/run은 이 evidence digest를 정방향으로 포함하며 `forecast-run-v69`와 durable
-intervention action v6은 cold replay에서도 같은 면적 불확실성 정책을 다시 적용한다.
+grid/run은 이 evidence digest를 정방향으로 포함하며 `forecast-run-v70`과 durable
+intervention action v7은 cold replay에서도 같은 면적 불확실성 정책을 다시 적용한다.
 최대 면적 cap은 ground-area interval 상한, 최소 growth evidence는 interval 하한으로
 판정하며 threshold를 가로지르면 과학적 증거를 fail-close한다. 거리·반경·속도도 같은
-원칙을 사용한다. 최대 ground-distance footprint는 확실히 내부인 offset만 포함하고,
-최소 sidelobe 반경은 확실히 외부인 표본만 사용하며, motion speed·pair disagreement·
+원칙을 사용한다. 물리반경 footprint는 확실한 내부, 불확실 annulus, 가능한 내부를
+별도로 보존한다. Positive support는 확실한 내부만 사용하지만 neighborhood completeness는
+가능한 내부 전체를 검사한다. PSR과 metre-based FSS처럼 집합 변화에 비단조인 통계는
+annulus가 비어 있을 때만 current scientific metric으로 제공한다. Motion speed·pair disagreement·
 saturation·posterior eligibility는 ground-speed interval 상한으로 판정한다. 과거 evidence 없는
-`forecast-run-v68`은 audit-only이다. `radar-spatial-grid-identity-v5` 자체는 역사적
+`forecast-run-v69`는 audit-only이다. `radar-spatial-grid-identity-v5` 자체는 역사적
 evidence-absent payload도 byte audit을 위해 표현할 수 있으므로 contract 문자열만으로
 current capability를 판단하지 않는다. Current run/verification/replay의 outer validator가
 exact evidence digest의 존재와 sampled coverage를 반드시 다시 검사한다.
@@ -1187,7 +1201,7 @@ exact evidence digest의 존재와 sampled coverage를 반드시 다시 검사�
 `projected-horizontal-representative-tilt-v1`이고 radar altitude는
 `provenance_only`이다. 따라서 이 계약은 beam height, Earth curvature 또는 refractivity를
 재현하는 full 3-D beam model이라고 주장하지 않는다.
-`VerificationObservationMaskEvidence-v10`은 source별 nominal acquisition
+`VerificationObservationMaskEvidence-v11`은 source별 nominal acquisition
 time과 cell-local time offset, grid, radar product, native source identity 및 radar별
 `[source,time,y,x]` spatial/QC/value bytes를 source authority signature로 봉인한다.
 Cell 관측 나이는 `verification valid time - source nominal acquisition time - local offset`으로
@@ -1196,19 +1210,19 @@ below-detection censored를 구분하며 값·threshold와 불가능한 조합�
 Detection limit field는 ordered registry의 source별 base/range/elevation 계수에서 제품 코드가
 재계산하고 attenuation 불확실성은 threshold에 중복 가산하지 않는다. Source dimension은
 ordered registry의 exact source digest 순서에 결합된다.
-`VerificationObservationMaskDerivationArtifact-v10`은 선택된 source index에서 value,
+`VerificationObservationMaskDerivationArtifact-v11`은 선택된 source index에서 value,
 detection limit, local offset, absolute age와 네 spatial field를 gather한 뒤 source-present,
 range/elevation-valid, blockage, acquisition-time-valid, attenuation-QC, confirmed-clear,
 censoring mask와 source index map을 다시 계산한다. Caller가 mask를 직접 선택하는 legacy
 input은 confirmatory 경로에서 소비하지 않는다.
-`derive_verification_observation_error()`는 derivation-input v11과 ordered registry에서
+`derive_verification_observation_error()`는 derivation-input v12와 ordered registry에서
 valid/quality/std/state tensor를 계산한다. 같은 radar 안에서도 range, elevation,
 blockage와 attenuation evidence에 따라 quality/std가 공간적으로 변한다. 사전등록된
 maximum acquisition age를 넘은 cell은 `STALE_ACQUISITION`으로 분리되며, 나이가 증가하면
 temporal quality가 단조 감소하고 temporal representativeness variance가 standard
-deviation에 추가된다. `ObservationErrorDerivationArtifact-v11`은 동일 입력으로 그 결과를
+deviation에 추가된다. `ObservationErrorDerivationArtifact-v12`는 동일 입력으로 그 결과를
 다시 생성해 `torch.equal`과 content digest를 모두 확인한다.
-`VerificationObservationErrorContract-v14`는 plan, signed raw input, mask derivation,
+`VerificationObservationErrorContract-v15`는 plan, signed raw input, mask derivation,
 ordered registry와 exact
 valid/quality/observation-std/state/source-map 및 absolute acquisition-age tensor digest를
 derivation artifact에 결합한다. 이 상태 tensor는 clear, echo, source missing, QC invalid,
@@ -1219,10 +1233,10 @@ beam blockage, stale acquisition, below-detection censoring과 mosaic source 미
 target 또는 scientific-review eligibility를 만들 수 없다.
 Output tensor만 재생하는 v4 contract와 `radar-verification-bundle-v7`은 audit
 compatibility 세대이며 current confirmatory target을 만들 수 없다.
-Holdout plan v33은 모든
+Holdout plan v34는 모든
 uncertainty/state target이 참조하는 observation-error plan payload의 정확한 집합을
 보존하고, current target는 deterministic replay를 포함한
-`radar-verification-bundle-v18`만 허용한다. v18은 bundle valid time, shared projected
+`radar-verification-bundle-v19`만 허용한다. v19는 bundle valid time, shared projected
 grid, radar product를
 signed source identity와 exact 비교한다. 따라서 결과를 본 뒤 mask, source time,
 source index ordering, calibration mapping, selected-source value/time/detection limit
@@ -1241,10 +1255,10 @@ cell별 selected-source detection limit의 left-censored likelihood로 평가한
 이미 predictive variance에 포함되므로 이 진단의 aggregation에는 quality만 사용하고
 inverse-variance를 다시 곱하지 않는다. 결과는 항상 `diagnostic_only=True`이며,
 사전등록된 과학 protocol 없이 promotion을 승인하지 않는다.
-Current scientific replay는 `neural-prior-scoring-replay-bundle-v23`이며 source-specific
+Current scientific replay는 `neural-prior-scoring-replay-bundle-v24`이며 source-specific
 report kind, absolute acquisition age, temporal-valid mask, spatial-metric age support와
 confirmed-clear mask, 그리고 product-derived verification geometry의 float64 x/y 좌표를
-content-addressed shard에 보존한다. 직전 v22는 byte audit만 가능하고 current semantic
+content-addressed shard에 보존한다. 직전 v23은 byte audit만 가능하고 current semantic
 replay나 confirmatory claim으로 승격할 수 없다.
 Confirmed clear는 quantitative dBZ point가 아니라 categorical no-echo evidence로
 평가한다. 따라서 intensity Gaussian/FSO point metric에서는 제외하지만 echo-support
@@ -1262,12 +1276,12 @@ Audit load는 저장된 typed evaluation을 볼 수 있지만, 자동 completion
 동일한 typed replay case를 다시 제공해 semantic replay까지 통과해야 한다. 배포
 certificate 발급 시에도 typed case에서 제품 scorer를 다시 실행하며, checksum-only
 archive는 certificate를 받을 수 없다. Ledger는
-current replay bundle/method v23, semantic generation v21과 scoring case v22만
-재실행하며, 이전 replay bundle v22와 그 이전 세대는 typed audit-only
+current replay bundle/method v24, semantic generation v22와 scoring case v23만
+재실행하며, 이전 replay bundle v23과 그 이전 세대는 typed audit-only
 object로만 decode한다. Current bundle은 `verification_provenance.json`과 source-specific
 verification tensors를 보존한다. 원래 Python case object가 없어도 source signature,
 ordered registry, product-owned radar geometry/source selection, mask derivation,
-observation-error derivation과 v18 verification bundle digest를
+observation-error derivation과 v19 verification bundle digest를
 cold-start 재검증하고 `verification_semantic_replay_verified=True`를 보고한다. Model
 runner와 forecast products까지 다시 실행하는 full scoring replay는 exact typed case가
 제공될 때만 `semantic_replay_verified=True`이며 두 주장을 혼동하지 않는다.
@@ -1352,11 +1366,12 @@ bytes를 다른 product/grid metadata로 재라벨링할 수 없다.
 identity와 holdout raw identity도 겹칠 수 없다. Candidate와 classifier는 plan 등록 전에
 global registry에 commit된 하나의 family-wide signed training-raw receipt를 공유하며,
 ledger는 그 canonical payload preimage를 저장하고 scoring에서 다시 검증한다.
-선택 digest뿐 아니라 classifier probability, 활성 band, policy, certified group,
-horizontal range-geometry payload, operational radar source와 trust-store snapshot을 포함한
-canonical deployment-decision payload도 forecast run identity 및 current v66 artifact에 남는다.
-적재 시 physical partition과 current-run grid/shape/site를 포함한 selector를 다시 실행해
-저장된 candidate/parent 선택과 exact 비교한다. v54 run은 source-aware selection 이전
+과거 deployment 실험에서 생성된 선택 digest, classifier probability, 활성 band, policy,
+certified group, horizontal range-geometry payload, radar source와 trust-store snapshot은
+historical forecast artifact에 audit bytes로만 남는다. Current `forecast-run-v70`은 이러한
+nonempty deployment lineage를 받아들이지 않는다. Legacy 적재는 저장된 canonical payload와
+digest의 내부 일관성만 감사하며 current selector나 operational action을 실행하지 않는다.
+v54 run은 source-aware selection 이전
 계약을 `neural-prior-deployment-lineage-v5-audit`로만 읽고, v53 run은 current-grid binding과 durable geometry
 payload 이전 계약을 `neural-prior-deployment-lineage-v4-audit`로만 읽고, v52 run은 physical range deployment 이전 계약을
 `neural-prior-deployment-lineage-v3-audit`로만 읽는다. v51 run은 durable decision 이전 계약을 audit-only로 읽고, v50 run은 policy 승인
@@ -1376,7 +1391,7 @@ probability의 binary Brier를 physical event 동일가중 UCB로 판정한다. 
 surrogate와 ECE는 diagnostic-only다. Sample-size preflight도 known weather/range,
 weather/range OOD와 Brier-valid event subset을 각각 확인한다.
 
-현재 scientific promotion evidence는 v32, candidate manifest는 v19, holdout plan은 v33,
+현재 scientific promotion evidence는 v32, candidate manifest는 v19, holdout plan은 v34,
 holdout scoring artifact는 v15, holdout evaluation은 v24, promotion policy는 v30,
 metric support는 v3이다. 직전 v31/v32/v14 세대는 typed audit-only이며 current source와
 metric-engine identity를 다시 확인하는 자동 과학 경로에 들어갈 수 없다. 운영 selector는
@@ -1955,13 +1970,13 @@ manifest에 보정된 data identity와 다르면 fail-close한다.
 
 출력 `forecast.npz`에는 다음 항목이 들어간다.
 
-- `output_contract_version`: 현재 `nowcast-npz-v75`
-- `forecast_run_artifact_version`: 현재 `forecast-run-v69`
+- `output_contract_version`: 현재 `nowcast-npz-v76`
+- `forecast_run_artifact_version`: 현재 `forecast-run-v70`
 - `forecast_run_digest`, `input_bundle_digest`
 - `grid_time_contract_json`, `grid_time_contract_digest`
 - `run_background_age_minutes`: 실제 입력계약의 배경 age
 
-`forecast-run-v69`은 typed verification-target identity와 target-source current trust를
+`forecast-run-v70`은 typed verification-target identity와 target-source current trust를
 결합한 five-channel CPU-only scoring generation v10, two-phase raw observation slot과
 canonical raw-volume identity 단위의 전역
 sampling reservation, 같은 family의 rolling-window membership, source-registry와
@@ -1973,32 +1988,25 @@ terminal activation receipt와 writer-lock-bound commit authorization receipt를
 검증한다. QC-invalid 관측은 registered finite fill/zero/sentinel로 canonicalize되어
 classifier와 learned prior에 유입되지 않으며, signed
 `AnalysisInputDerivationArtifact-v5`의 canonical JSON과 digest도 NPZ에 보존된다.
-`forecast-run-v67` 이하는
-audit-only다.
+`forecast-run-v69` 이하는 audit-only다.
 
-`forecast-run-v69`은 원자적 ledger sequence를 가진 promotion deployment
-certificate v6, deployment-decision artifact v19,
-`OperationalDeploymentDecisionCertificate-v8`과
-`neural-prior-deployment-lineage-v19`를 current 의미로 결합한다. Decision
-artifact와 operational certificate는 exact
-`DeploymentBundleReleaseApproval-v1`과
-`DeploymentRuntimeActivationReceipt-v3`를 보존하며, release/runtime authority의
-current validity/revocation과 approval/receipt expiry가 publication 및 restart 시각을 덮지 못하면
-fail-close한다. Decision
-artifact는 unsigned promotion subset을 보존하지 않고 certificate 안의 완전한
-`NeuralPriorPromotionEvidence-v31`만 typed decode한다. 이전
-`forecast-run-v66`, `forecast-run-v65`, `forecast-run-v64`, `forecast-run-v63`, `forecast-run-v62`, `forecast-run-v61`, `forecast-run-v60`, `forecast-run-v59`, `forecast-run-v58`, `forecast-run-v57`, `forecast-run-v56`은
-각 세대의 decision artifact를 보존하는 audit lineage로만
-적재되며 current operational deployment replay에는 사용할 수 없다.
+Current `forecast-run-v70`은 nonempty
+`neural-prior-deployment-lineage-v19`를 전용 비지원 예외로 거부한다. 과거
+deployment certificate, decision artifact와 activation receipt는 typed audit
+lineage로만 적재되며 current scientific run 생성, 모델 선택 또는 운영 action에 사용할
+수 없다. 내부적으로 canonical JSON, digest와 caller-generated signature가 모두 일치해도
+운영 capability 집합이 비어 있는 동안 이 경계는 열리지 않는다.
 
 Semantic holdout scoring은 모든 case와 tensor role이 하나의 execution
 device/runtime을 사용해야 한다. CPU scoring에는 MPS 인증을 붙일 수 없고,
 automatic promotion scoring은 현재 CPU-only다. Generic MPS backend evidence는
 exported prior/classifier와 전체 metric engine을 인증하지 않으므로 model-scoring
 certificate 세대가 도입되기 전까지 MPS scoring과 operational MPS deployment는
-fail-close한다. Current deployment는 EpisodeLedger가 발급한 root-signed
-promotion deployment certificate와 외부 authority, learning-policy 및 current
-raw-ingestor trust store를 함께 요구한다. Authority trust-store v4는 승인된 ledger-instance digest마다
+fail-close한다. 아래 certificate·receipt·state-machine 설명은 과거 deployment engineering의
+audit scaffold이며 current scientific package에서 발급·선택·활성화할 수 없다. Historical
+scaffold는 EpisodeLedger가 발급한 root-signed promotion deployment certificate와 외부
+authority, learning-policy 및 당시 raw-ingestor trust store를 함께 요구했다. Authority
+trust-store v4는 승인된 ledger-instance digest마다
 유일한 canonical `index.sqlite` 절대경로도 root-owned 설정으로 고정하므로,
 Python 객체를 위조해 공격자 DB로 verifier를 재지정할 수 없다. 저장되는 operational
 selection 전체도 별도의 authority-signed
@@ -2013,7 +2021,8 @@ policy threshold 또는 selected prior를 재해시해 바꾸는 경로가 차�
 이 authorization은 SQLite의 물리 fsync 완료시각을 주장하지 않는다. Finalizer는
 non-waiting `BEGIN IMMEDIATE`로 writer lock을 먼저 획득하고 signed guard interval
 안에서 authorization receipt, `published`, `usable`을 한 transaction으로 기록한다.
-Operational issuance는 cycle-id 기반 state machine으로 재개되며 terminal
+아래 issuance state machine은 historical audit scaffold이며 current package에서
+operational action으로 도달할 수 없다. Historical issuance는 cycle-id 기반 state machine으로 재개되며 terminal
 `published` row만 선택 가능하다. Activation receipt는 먼저 `usable=0` 상태로 durable하게
 staging되고, commit authorization receipt의 INSERT와 `published/usable` 전환이 하나의
 transaction에서 수행된다. Certificate signer, decision-row transaction, publication
@@ -2025,7 +2034,7 @@ root-owned store 양쪽에서 attestation 시각의 key validity/revocation을 �
 Current store의 content digest는 replay-v15 manifest, scoring-v14 artifact, scheduler가
 봉인한 completion output, promotion evidence v31, promotion deployment certificate v6와
 operational decision certificate에 연속 결합된다. Certificate/publication 서명 전후와
-activation 직전·직후에도 store를 다시 읽고, durable `forecast-run-v69` load에서도 외부
+activation 직전·직후에도 store를 다시 읽고, historical `forecast-run-v69` audit load에서도 외부
 store와 대조하므로 이후 revocation view가 달라지면 기존 certificate를 automatic
 deployment에 재사용할 수 없다.
 Index schema 42는 release approval, monotonic runtime activation head, replay, scoring completion, promotion evidence와 promotion
@@ -2074,7 +2083,9 @@ effective weight가 없는 target는 거부되고 product-owned loss는 정확�
 identity/time/event/object는 plan에 별도로 고정된 `TrainingTargetSourceReceipt-v2`와
 root-signed `TrainingTargetSourceTrustStore-v1`의 유효 key epoch, source-contract 및
 radar/product scope가 없으면 사용할 수 없다. Current trust는 dataset seal, training
-start/completion, promotion, deployment issuance 및 `forecast-run-v69` durable load의
+start/completion과 scientific promotion에서 다시 대조된다. Historical deployment
+issuance 및 `forecast-run-v69` audit load도 저장된 trust snapshot을 검증하지만 current
+operational action에는 도달하지 않는다. 각 검증의
 시작/종료에서 다시 대조된다. Target는 nonempty·finite이어야 하고
 valid time이 등록된 training-window union 안에 있어야 한다. Tensor/QC 표현이 달라도
 holdout verification target와 source identity/valid time이 같으면 재사용으로 거부된다.

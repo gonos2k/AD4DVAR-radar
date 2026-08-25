@@ -10,6 +10,8 @@ be verified at runtime without installing PROJ.
 from __future__ import annotations
 
 import argparse
+import _decimal
+import _sqlite3
 from decimal import Decimal
 import hashlib
 import json
@@ -33,8 +35,8 @@ MAXIMUM_LATITUDE_DEG = Decimal("40.27")
 REGISTERED_MAXIMUM_LINEAR_SCALE_ERROR = Decimal("0.006")
 REGISTERED_MAXIMUM_AREA_SCALE_ERROR = Decimal("0.012036")
 COVERAGE_BOUNDARY_SAMPLE_COUNT_PER_EDGE = 10_001
-GENERATOR_CONTRACT = "generate-metric-domain-evidence-v3"
-REPORT_CONTRACT = "radar-metric-domain-geodetic-report-v2"
+GENERATOR_CONTRACT = "generate-metric-domain-evidence-v4"
+REPORT_CONTRACT = "radar-metric-domain-geodetic-report-v3"
 _LOADER_OVERRIDE_ENVIRONMENT_VARIABLES = (
     "LD_LIBRARY_PATH",
     "LD_PRELOAD",
@@ -163,11 +165,13 @@ def _darwin_rpaths(image: Path) -> tuple[Path, ...]:
 
 
 def _darwin_dependency_names(image: Path) -> tuple[str, ...]:
-    lines = _run(["otool", "-L", str(image)]).stdout.splitlines()[1:]
+    lines = _run(["otool", "-L", str(image)]).stdout.splitlines()
     return tuple(
         line.strip().split(" (compatibility version", 1)[0]
         for line in lines
-        if line.strip()
+        # Universal Mach-O output repeats one unindented image header per
+        # architecture.  Actual dependency records are indented by otool.
+        if line[:1].isspace() and line.strip()
     )
 
 
@@ -282,20 +286,58 @@ def _execution_environment(
     proj: str,
     projinfo: str,
 ) -> dict[str, object]:
-    executables = (Path(proj).resolve(), Path(projinfo).resolve())
     system = platform.system()
+    inspector_name = "otool" if system == "Darwin" else "ldd"
+    inspector_text = shutil.which(inspector_name)
+    if inspector_text is None:
+        raise RuntimeError("dynamic dependency inspection tool is unavailable")
+    inspector = Path(inspector_text).resolve()
+    python_executable = Path(sys.executable).resolve()
+    native_extensions = tuple(
+        sorted(
+            {
+                Path(module.__file__).resolve()
+                for module in (_sqlite3, _decimal)
+                if isinstance(module.__file__, str)
+            }
+        )
+    )
+    closure_roots = (
+        Path(proj).resolve(),
+        Path(projinfo).resolve(),
+        python_executable,
+        inspector,
+        *native_extensions,
+    )
     if system == "Darwin":
-        closure = _darwin_dynamic_library_closure(executables)
+        closure = _darwin_dynamic_library_closure(closure_roots)
     elif system == "Linux":
-        closure = _linux_dynamic_library_closure(executables)
+        closure = _linux_dynamic_library_closure(closure_roots)
     else:
         raise RuntimeError("unsupported geodetic generator platform")
     libc_name, libc_version = platform.libc_ver()
     return {
-        "contract": "metric-domain-generator-execution-environment-v1",
+        "contract": "metric-domain-generator-execution-environment-v2",
         "canonical_environment": dict(_CANONICAL_EXECUTION_ENVIRONMENT),
+        "dependency_inspector": {
+            "name": inspector_name,
+            "resolved_path": str(inspector),
+            "file_sha256": _file_sha256(inspector),
+        },
         "dynamic_library_closure": closure,
         "dynamic_library_closure_digest": _digest(closure),
+        "dynamic_library_closure_roots": [
+            {
+                "resolved_path": str(path),
+                "file_sha256": _file_sha256(path),
+            }
+            for path in closure_roots
+        ],
+        "closure_completeness": (
+            "file-backed-dependencies-hashed-v1"
+            if all(entry["file_sha256"] is not None for entry in closure)
+            else "darwin-system-shared-cache-not-byte-addressed-v1"
+        ),
         "loader_override_policy": "reject-nonempty-loader-overrides-v1",
         "machine": platform.machine(),
         "operating_system": system,
@@ -303,9 +345,23 @@ def _execution_environment(
         "python_implementation": platform.python_implementation(),
         "python_version": platform.python_version(),
         "python_cache_tag": sys.implementation.cache_tag,
+        "python_executable": {
+            "resolved_path": str(python_executable),
+            "file_sha256": _file_sha256(python_executable),
+        },
+        "python_native_extensions": [
+            {
+                "resolved_path": str(path),
+                "file_sha256": _file_sha256(path),
+            }
+            for path in native_extensions
+        ],
         "libc_name": libc_name,
         "libc_version": libc_version,
         "sqlite_runtime_version": sqlite3.sqlite_version,
+        "sealed_environment_identity": None,
+        "system_shared_cache_identity": None,
+        "independent_sealed_environment_required": True,
     }
 
 
@@ -760,7 +816,7 @@ def main() -> int:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("src/advar/data/epsg5179_metric_domain_evidence_v2.json"),
+        default=Path("src/advar/data/epsg5179_metric_domain_evidence_v3.json"),
     )
     parser.add_argument("--proj", default=shutil.which("proj") or "proj")
     parser.add_argument(

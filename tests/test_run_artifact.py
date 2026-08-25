@@ -1,5 +1,6 @@
 from collections import Counter
 from dataclasses import asdict, replace
+import importlib
 import io
 import json
 import math
@@ -33,6 +34,7 @@ from advar import (  # noqa: E402
     NeuralPriorProbabilityContract,
     NeuralPriorStateContract,
     NowcastConfig,
+    OperationalDeploymentUnsupportedError,
     OperationalCalibrationManifest,
     RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION,
     RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
@@ -64,6 +66,8 @@ import advar.promotion as promotion_module  # noqa: E402
 import advar.ledger as ledger_module  # noqa: E402
 from advar.run_artifact import seal_forecast_run_arrays  # noqa: E402
 import test_promotion as promotion_test_module  # noqa: E402
+
+nowcast_module = importlib.import_module("advar.nowcast")
 
 
 class ForecastRunArtifactTests(unittest.TestCase):
@@ -710,6 +714,43 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 input_run.analysis_input_derivation_artifact_digest
             ),
         )
+
+    @staticmethod
+    def _legacy_deployment_fixture_from_current_run(
+        frames: torch.Tensor,
+        prior: NeuralPriorApplication,
+        input_run: ForecastRunContract,
+    ):
+        """Manufacture predecessor bytes; never authorize current action."""
+
+        with patch.object(
+            nowcast_module,
+            "_validate_prior_deployment_lineage",
+        ):
+            result, analysis = (
+                ForecastRunArtifactTests._variational_from_current_run(
+                    frames,
+                    prior,
+                    input_run,
+                )
+            )
+        audit_run = replace(
+            result.run,
+            prior_deployment_lineage_contract=(
+                "neural-prior-deployment-lineage-v19-audit"
+            ),
+        )
+        audit_result = replace(
+            result,
+            run=audit_run,
+            forecast_run_digest=nowcast_module._forecast_run_identity_digest(
+                audit_run,
+                result.state_metadata_digest,
+                result.forecast_dbz_digest,
+                result.valid_mask_digest,
+            ),
+        )
+        return audit_result, analysis
 
     def _range_geometry_artifact(
         self,
@@ -1860,7 +1901,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             projection="EPSG:5179",
             grid_hash="c" * 64,
             pixel_to_projected_matrix_m=((0.0, -750.0), (500.0, 0.0)),
-            spatial_grid_contract="radar-spatial-grid-identity-v5",
+            spatial_grid_contract="radar-spatial-grid-identity-v6",
             grid_shape_yx=tuple(self.frames().shape[-2:]),
             projected_crs_digest=radar_projected_crs_semantic_digest(
                 "EPSG:5179"
@@ -2065,14 +2106,9 @@ class ForecastRunArtifactTests(unittest.TestCase):
             prior.state_background_dbz.masked_select(active_prior),
         )
 
-    def test_deployment_selection_lineage_round_trips_with_the_run(self) -> None:
+    def test_current_run_rejects_deployment_selection_lineage(self) -> None:
         frames = self.frames()
-        input_run = ForecastRunContract.from_inputs(
-            NowcastConfig(),
-            frames,
-            torch.ones_like(frames, dtype=torch.bool),
-            None,
-        )
+        input_run = self._current_provenance_run(frames)
         runner = NeuralPriorInferenceRunner(
             self._Prior().eval(),
             lambda value: value[0, -1],
@@ -2091,559 +2127,6 @@ class ForecastRunArtifactTests(unittest.TestCase):
             allow_constant_uncertainty=True,
             dependency="radar_dependent",
         )
-        input_run = self._current_provenance_run(frames)
-        assert input_run.full_analysis_input_digest is not None
-        classifier_digest = "6" * 64
-        classifier_manifest_digest = "a" * 64
-        assert input_run.grid_time_contract_digest is not None
-        range_geometry = self._range_geometry_artifact(
-            frames,
-            grid_contract_digest=input_run.grid_time_contract_digest,
-        )
-        range_geometry_digest = str(range_geometry["contract_digest"])
-        range_partition = {
-            "contract": "radar-range-partition-evidence-v4",
-            "range_geometry_contract_digest": range_geometry_digest,
-            "grid_contract_digest": input_run.grid_time_contract_digest,
-            "range_regime_labels": ["near_range"],
-            "range_band_mask_digests": [
-                tensor_digest(torch.ones(frames.shape[1:], dtype=torch.bool))
-            ],
-            "valid_range_domain_mask_digest": tensor_digest(
-                torch.ones(frames.shape[1:], dtype=torch.bool)
-            ),
-            "active_range_regimes": ["near_range"],
-            "grid_shape": list(frames.shape[1:]),
-        }
-        range_partition_digest = json_digest(range_partition)
-        regime_payload = {
-            "contract": "neural-prior-regime-classification-evidence-v4",
-            "full_analysis_input_digest": input_run.full_analysis_input_digest,
-            "input_frames_digest": tensor_digest(frames),
-            "classifier_digest": classifier_digest,
-            "regime": "convective",
-            "range_regime": "near_range",
-            "active_range_regimes": ["near_range"],
-            "regime_confidence": 1.0,
-            "range_regime_confidence": 1.0,
-            "regime_labels": ["convective", "unknown"],
-            "range_regime_labels": ["near_range"],
-            "range_probability_contract": (
-                "conditionally-independent-bernoulli-range-heads-v1"
-            ),
-            "range_presence_probability_threshold": 0.8,
-            "regime_probabilities": [1.0, 0.0],
-            "range_regime_probabilities": [1.0],
-            "regime_entropy": 0.0,
-            "is_ood": False,
-            "numerical_runtime_digest": "9" * 64,
-            "input_dtype": str(frames.dtype),
-            "input_device": str(frames.device),
-            "weather_top1_top2_gap": 1.0,
-            "minimum_range_presence_margin": 0.2,
-        }
-        regime_evidence_digest = json_digest(regime_payload)
-        promotion_evidence = self._promotion_evidence(
-            candidate_prior_digest="f" * 64,
-            parent_prior_digest=runner.neural_prior_digest,
-            classifier_digest=classifier_digest,
-            classifier_manifest_digest=classifier_manifest_digest,
-            range_geometry_digest=range_geometry_digest,
-        )
-        certificate = self._deployment_certificate_artifact(
-            promotion_evidence=promotion_evidence,
-        )
-        promotion_evidence_digest = str(
-            certificate["promotion_evidence_digest"]
-        )
-        policy = DeployedNeuralPriorPolicy(
-            candidate_prior_digest="f" * 64,
-            parent_prior_digest=runner.neural_prior_digest,
-            promotion_evidence_digest=promotion_evidence_digest,
-            promotion_deployment_certificate_digest=str(
-                certificate["certificate_digest"]
-            ),
-            promotion_deployment_authority_trust_store_digest=str(
-                certificate["authority_trust_store_digest"]
-            ),
-            regime_classifier_digest=classifier_digest,
-            regime_classifier_manifest_digest=classifier_manifest_digest,
-            range_geometry_contract_digest=range_geometry_digest,
-        )
-        trust_payload = {
-            "contract": "advar-learning-policy-trust-store-v1",
-            "approved_policy_digests": [policy.policy_digest],
-        }
-        artifact_payload = {
-            "contract": "neural-prior-deployment-decision-artifact-v19",
-            "routing_semantic_replay_verified": False,
-            "full_analysis_input_digest": input_run.full_analysis_input_digest,
-            "analysis_input_derivation_artifact_digest": (
-                input_run.analysis_input_derivation_artifact_digest
-            ),
-            "global_raw_resolution_receipt_digest": "4" * 64,
-            "resolved_raw_volume_identity_set_digest": json_digest(
-                {
-                    "contract": "resolved-raw-volume-identity-set-v1",
-                    "identity_digests": ["3" * 64],
-                }
-            ),
-            "analysis_processor_trust_store_digest": "7" * 64,
-            "raw_ingestor_trust_store_digest": (
-                promotion_evidence.raw_ingestor_trust_store_digest
-            ),
-            "training_target_source_trust_store_digest": (
-                promotion_evidence.training_target_source_trust_store_digest
-            ),
-            "input_plan_digest": input_run.input_plan_digest,
-            "operational_grid_contract_digest": (
-                input_run.grid_time_contract_digest
-            ),
-            "operational_frame_shape": list(frames.shape[1:]),
-            "operational_radar_source_kind": None,
-            "operational_radar_site_digest": None,
-            "operational_radar_site_location_digest": None,
-            "regime_classification_evidence": regime_payload
-            | {"evidence_digest": regime_evidence_digest},
-            "deployment_policy": policy.payload
-            | {"policy_digest": policy.policy_digest},
-            "range_partition_evidence": range_partition
-            | {"evidence_digest": range_partition_digest},
-            "range_geometry_contract": range_geometry,
-            "promotion_deployment_certificate": certificate,
-            "policy_trust_store": trust_payload
-            | {"content_digest": json_digest(trust_payload)},
-            "selection": {
-                "selected_prior_digest": runner.neural_prior_digest,
-                "selected_role": "parent",
-                "fallback_reason": "unverified_routing_evidence",
-                "deployment_confidence_margin": 0.0,
-            },
-        }
-        retained_input_plan = json.loads(cast(str, input_run.input_plan_json))
-        for name in (
-            "observation_valid_time",
-            "input_available_time",
-            "decision_deadline",
-            "publication_time",
-        ):
-            artifact_payload[name] = retained_input_plan[name]
-        artifact_payload["analysis_input_provenance_commitment_digest"] = (
-            json_digest(
-                {
-                    "contract": (
-                        "operational-analysis-input-provenance-commitment-v2"
-                    ),
-                    "analysis_input_derivation_artifact_digest": (
-                        artifact_payload[
-                            "analysis_input_derivation_artifact_digest"
-                        ]
-                    ),
-                    "global_raw_resolution_receipt_digest": artifact_payload[
-                        "global_raw_resolution_receipt_digest"
-                    ],
-                    "resolved_raw_volume_identity_set_digest": artifact_payload[
-                        "resolved_raw_volume_identity_set_digest"
-                    ],
-                    "analysis_processor_trust_store_digest": artifact_payload[
-                        "analysis_processor_trust_store_digest"
-                    ],
-                    "raw_ingestor_trust_store_digest": artifact_payload[
-                        "raw_ingestor_trust_store_digest"
-                    ],
-                }
-            )
-        )
-        artifact_payload = self._authorize_operational_decision(
-            artifact_payload,
-            promotion_evidence=promotion_evidence,
-            policy=policy,
-            promotion_certificate_payload=certificate,
-        )
-        artifact_json = json.dumps(
-            artifact_payload, sort_keys=True, separators=(",", ":")
-        )
-        publication_values = dict(
-            cast(
-                dict[str, object],
-                artifact_payload["operational_decision_publication_receipt"],
-            )
-        )
-        publication_values.pop("receipt_digest")
-        committed_publication = (
-            promotion_module._operational_decision_publication_receipt_from_payload(
-                publication_values
-            )
-        )
-        activation_values = dict(
-            cast(
-                dict[str, object],
-                artifact_payload["operational_decision_activation_receipt"],
-            )
-        )
-        activation_values.pop("receipt_digest")
-        committed_activation = (
-            promotion_module._operational_decision_activation_receipt_from_payload(
-                activation_values
-            )
-        )
-        authorization_values = dict(
-            cast(
-                dict[str, object],
-                artifact_payload[
-                    "operational_decision_commit_authorization_receipt"
-                ],
-            )
-        )
-        authorization_values.pop("receipt_digest")
-        committed_authorization = (
-            promotion_module._operational_decision_commit_authorization_receipt_from_payload(
-                authorization_values
-            )
-        )
-        committed_ledger = SimpleNamespace(
-            _validate_committed_operational_decision=unittest.mock.Mock(
-                return_value=(
-                    committed_publication,
-                    committed_activation,
-                    committed_authorization,
-                )
-            )
-        )
-        selection = _new_neural_prior_deployment_selection(
-            selected_prior_digest=runner.neural_prior_digest,
-            selected_role="parent",
-            full_analysis_input_digest=input_run.full_analysis_input_digest,
-            promotion_evidence_digest=promotion_evidence_digest,
-            promotion_deployment_certificate_digest=str(
-                certificate["certificate_digest"]
-            ),
-            regime_classification_evidence_digest=regime_evidence_digest,
-            deployment_policy_digest=policy.policy_digest,
-            deployment_policy_trust_store_digest=json_digest(trust_payload),
-            range_geometry_contract_digest=range_geometry_digest,
-            range_partition_evidence_digest=range_partition_digest,
-            classifier_numerical_runtime_digest="9" * 64,
-            classifier_input_dtype=str(frames.dtype),
-            classifier_input_device=str(frames.device),
-            weather_top1_top2_gap=1.0,
-            minimum_range_presence_margin=0.2,
-            deployment_confidence_margin=0.0,
-            deployment_decision_artifact_json=artifact_json,
-            deployment_decision_artifact_digest=json_digest(artifact_payload),
-            fallback_reason="unverified_routing_evidence",
-        )
-        prior = runner._infer_deployed(
-            frames,
-            input_run=input_run,
-            deployment_selection=selection,
-            qc_valid_mask=torch.ones_like(frames, dtype=torch.bool),
-            quality_weight=torch.ones_like(frames),
-            observation_std_dbz=torch.full_like(frames, 2.0),
-            source_available_mask=torch.ones_like(frames, dtype=torch.bool),
-        )
-        result, _ = self._variational_from_current_run(
-            frames, prior, input_run
-        )
-        with tempfile.TemporaryDirectory() as temporary:
-            path = Path(temporary) / "run.npz"
-            save_forecast_run(result, path)
-            with self.assertRaisesRegex(ValueError, "external deployment authority"):
-                load_forecast_run(path)
-            with patch.object(
-                promotion_module,
-                "_load_promotion_deployment_authority_trust_store",
-                return_value=self._deployment_certificate_trust(),
-            ), patch.object(
-                ledger_module.EpisodeLedger,
-                "_open_existing_index",
-                return_value=committed_ledger,
-            ), patch.object(
-                promotion_module,
-                "validate_current_runtime_closure",
-            ), patch.object(
-                promotion_module,
-                "_load_learning_policy_trust_store",
-                return_value=self._deployment_policy_trust(
-                    selection.deployment_decision_artifact_json
-                ),
-            ), patch.object(
-                ledger_module,
-                "_load_raw_ingestor_trust_store",
-                return_value=SimpleNamespace(content_digest="9" * 64),
-            ):
-                with self.assertRaisesRegex(
-                    ValueError, "external raw-ingestor trust store"
-                ):
-                    load_forecast_run(
-                        path,
-                        deployment_certificate_trust_store_path=(
-                            "/etc/advar/deployment-authorities.json"
-                        ),
-                        deployment_policy_trust_store_path=(
-                            "/etc/advar/deployment-policies.json"
-                        ),
-                    )
-                with self.assertRaisesRegex(
-                    ValueError, "external training-target-source trust store"
-                ):
-                    load_forecast_run(
-                        path,
-                        deployment_certificate_trust_store_path=(
-                            "/etc/advar/deployment-authorities.json"
-                        ),
-                        deployment_policy_trust_store_path=(
-                            "/etc/advar/deployment-policies.json"
-                        ),
-                        raw_ingestor_trust_store_path=(
-                            "/etc/advar/raw-ingestors.json"
-                        ),
-                    )
-                loaded = load_forecast_run(
-                    path,
-                    deployment_certificate_trust_store_path=(
-                        "/etc/advar/deployment-authorities.json"
-                    ),
-                    deployment_policy_trust_store_path=(
-                        "/etc/advar/deployment-policies.json"
-                    ),
-                    raw_ingestor_trust_store_path=(
-                        "/etc/advar/raw-ingestors.json"
-                    ),
-                    training_target_source_trust_store_path=(
-                        "/etc/advar/training-target-sources.json"
-                    ),
-                )
-                deployment_trust = self._deployment_certificate_trust()
-                deployment_revocations = dict(deployment_trust.revoked_at)
-                deployment_revocations[
-                    "test-runtime-activation"
-                ] = "2026-08-10T00:00:00Z"
-                with patch.object(
-                    promotion_module,
-                    "_load_promotion_deployment_authority_trust_store",
-                    return_value=replace(
-                        deployment_trust,
-                        revoked_at=deployment_revocations,
-                    ),
-                ), self.assertRaisesRegex(
-                    ValueError, "runtime_activation authority"
-                ):
-                    load_forecast_run(
-                        path,
-                        deployment_certificate_trust_store_path=(
-                            "/etc/advar/deployment-authorities.json"
-                        ),
-                        deployment_policy_trust_store_path=(
-                            "/etc/advar/deployment-policies.json"
-                        ),
-                        raw_ingestor_trust_store_path=(
-                            "/etc/advar/raw-ingestors.json"
-                        ),
-                        training_target_source_trust_store_path=(
-                            "/etc/advar/training-target-sources.json"
-                        ),
-                    )
-                with patch.object(
-                    ledger_module,
-                    "_load_raw_ingestor_trust_store",
-                    return_value=SimpleNamespace(content_digest="8" * 64),
-                ), self.assertRaisesRegex(ValueError, "no longer current"):
-                    load_forecast_run(
-                        path,
-                        deployment_certificate_trust_store_path=(
-                            "/etc/advar/deployment-authorities.json"
-                        ),
-                        deployment_policy_trust_store_path=(
-                            "/etc/advar/deployment-policies.json"
-                        ),
-                        raw_ingestor_trust_store_path=(
-                            "/etc/advar/raw-ingestors.json"
-                        ),
-                        training_target_source_trust_store_path=(
-                            "/etc/advar/training-target-sources.json"
-                        ),
-                    )
-                revoked_target_trust = (
-                    promotion_test_module.NeuralPriorPromotionTests()
-                    .target_source_trust_store(
-                        revoked_at="2026-08-09T00:00:00Z"
-                    )
-                )
-                with patch.object(
-                    ledger_module,
-                    "_load_training_target_source_trust_store",
-                    return_value=revoked_target_trust,
-                ), self.assertRaisesRegex(ValueError, "no longer current"):
-                    load_forecast_run(
-                        path,
-                        deployment_certificate_trust_store_path=(
-                            "/etc/advar/deployment-authorities.json"
-                        ),
-                        deployment_policy_trust_store_path=(
-                            "/etc/advar/deployment-policies.json"
-                        ),
-                        raw_ingestor_trust_store_path=(
-                            "/etc/advar/raw-ingestors.json"
-                        ),
-                        training_target_source_trust_store_path=(
-                            "/etc/advar/training-target-sources.json"
-                        ),
-                    )
-                with patch.object(
-                    ledger_module,
-                    "_load_training_target_source_trust_store",
-                    side_effect=(
-                        self._training_target_source_trust(),
-                        revoked_target_trust,
-                    ),
-                ), self.assertRaisesRegex(ValueError, "changed during"):
-                    load_forecast_run(
-                        path,
-                        deployment_certificate_trust_store_path=(
-                            "/etc/advar/deployment-authorities.json"
-                        ),
-                        deployment_policy_trust_store_path=(
-                            "/etc/advar/deployment-policies.json"
-                        ),
-                        raw_ingestor_trust_store_path=(
-                            "/etc/advar/raw-ingestors.json"
-                        ),
-                        training_target_source_trust_store_path=(
-                            "/etc/advar/training-target-sources.json"
-                        ),
-                    )
-            with np.load(path, allow_pickle=False) as archive:
-                legacy_arrays = {
-                    name: np.array(archive[name], copy=True)
-                    for name in archive.files
-                    if name != "forecast_run_artifact_digest"
-                }
-            legacy_arrays["forecast_run_artifact_version"] = np.asarray(
-                "forecast-run-v55"
-            )
-            legacy_path = Path(temporary) / "legacy-v55.npz"
-            self._save_arrays(legacy_path, legacy_arrays)
-            legacy = load_forecast_run(legacy_path)
-            v60_arrays = dict(legacy_arrays)
-            v60_arrays["forecast_run_artifact_version"] = np.asarray(
-                "forecast-run-v60"
-            )
-            v60_path = Path(temporary) / "legacy-v60.npz"
-            self._save_arrays(v60_path, v60_arrays)
-            legacy_v60 = load_forecast_run(v60_path)
-            v61_arrays = dict(legacy_arrays)
-            v61_arrays["forecast_run_artifact_version"] = np.asarray(
-                "forecast-run-v61"
-            )
-            v61_path = Path(temporary) / "legacy-v61.npz"
-            self._save_arrays(v61_path, v61_arrays)
-            legacy_v61 = load_forecast_run(v61_path)
-            v63_arrays = dict(legacy_arrays)
-            v63_arrays["forecast_run_artifact_version"] = np.asarray(
-                "forecast-run-v63"
-            )
-            v63_path = Path(temporary) / "legacy-v63.npz"
-            self._save_arrays(v63_path, v63_arrays)
-            legacy_v63 = load_forecast_run(v63_path)
-            v64_arrays = dict(legacy_arrays)
-            v64_arrays["forecast_run_artifact_version"] = np.asarray(
-                "forecast-run-v64"
-            )
-            v64_path = Path(temporary) / "legacy-v64.npz"
-            self._save_arrays(v64_path, v64_arrays)
-            legacy_v64 = load_forecast_run(v64_path)
-
-        self.assertEqual(
-            loaded.run.prior_promotion_evidence_digest,
-            selection.promotion_evidence_digest,
-        )
-        self.assertEqual(
-            loaded.run.prior_regime_classification_evidence_digest,
-            selection.regime_classification_evidence_digest,
-        )
-        self.assertEqual(
-            loaded.run.prior_deployment_selection_digest,
-            selection.selection_digest,
-        )
-        self.assertEqual(
-            loaded.run.prior_deployment_policy_digest,
-            selection.deployment_policy_digest,
-        )
-        self.assertEqual(
-            loaded.run.prior_deployment_fallback_reason,
-            "unverified_routing_evidence",
-        )
-        self.assertEqual(
-            legacy.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v6-audit",
-        )
-        self.assertEqual(
-            legacy.run.prior_deployment_fallback_reason,
-            "unverified_routing_evidence",
-        )
-        self.assertEqual(
-            legacy_v60.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v11-audit",
-        )
-        self.assertEqual(
-            legacy_v60.run.prior_deployment_fallback_reason,
-            "unverified_routing_evidence",
-        )
-        self.assertEqual(
-            legacy_v61.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v12-audit",
-        )
-        self.assertEqual(
-            legacy_v61.run.prior_deployment_fallback_reason,
-            "unverified_routing_evidence",
-        )
-        self.assertEqual(
-            legacy_v63.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v14-audit",
-        )
-        self.assertEqual(
-            legacy_v63.run.prior_deployment_fallback_reason,
-            "unverified_routing_evidence",
-        )
-        self.assertEqual(
-            legacy_v64.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v15-audit",
-        )
-        self.assertEqual(
-            legacy_v64.run.prior_deployment_fallback_reason,
-            "unverified_routing_evidence",
-        )
-
-    def test_load_replays_deployment_selection_instead_of_trusting_digests(
-        self,
-    ) -> None:
-        frames = self.frames()
-        input_run = ForecastRunContract.from_inputs(
-            NowcastConfig(),
-            frames,
-            torch.ones_like(frames, dtype=torch.bool),
-            None,
-        )
-        runner = NeuralPriorInferenceRunner(
-            self._Prior().eval(),
-            lambda value: value[0, -1],
-            example_frames=frames,
-            example_qc_valid_mask=torch.ones_like(frames, dtype=torch.bool),
-            example_quality_weight=torch.ones_like(frames),
-            example_observation_std_dbz=torch.full_like(frames, 2.0),
-            example_source_available_mask=torch.ones_like(
-                frames, dtype=torch.bool
-            ),
-            state_contract=self._state_contract(),
-            probability_contract=self._probability_contract(),
-            model_contract_digest="2" * 64,
-            feature_schema_digest="3" * 64,
-            training_manifest_digest="4" * 64,
-            allow_constant_uncertainty=True,
-            dependency="radar_dependent",
-        )
-        input_run = self._current_provenance_run(frames)
         selection = self._deployment_selection(runner, input_run, frames)
         prior = runner._infer_deployed(
             frames,
@@ -2654,64 +2137,12 @@ class ForecastRunArtifactTests(unittest.TestCase):
             observation_std_dbz=torch.full_like(frames, 2.0),
             source_available_mask=torch.ones_like(frames, dtype=torch.bool),
         )
-        result, _ = self._variational_from_current_run(
-            frames, prior, input_run
-        )
-        with tempfile.TemporaryDirectory() as temporary:
-            path = Path(temporary) / "tampered-deployment.npz"
-            save_forecast_run(result, path)
-            with np.load(path, allow_pickle=False) as archive:
-                arrays = {
-                    name: np.array(archive[name], copy=True)
-                    for name in archive.files
-                }
-            artifact = json.loads(
-                str(arrays["prior_deployment_decision_artifact_json"].item())
-            )
-            artifact["selection"]["selected_role"] = "candidate"
-            artifact_json = json.dumps(
-                artifact,
-                sort_keys=True,
-                separators=(",", ":"),
-            )
-            arrays["prior_deployment_decision_artifact_json"] = np.asarray(
-                artifact_json
-            )
-            arrays["prior_deployment_decision_artifact_digest"] = np.asarray(
-                json_digest(artifact)
-            )
-            self._save_arrays(path, arrays)
 
-            with patch.object(
-                promotion_module,
-                "_load_promotion_deployment_authority_trust_store",
-                return_value=self._deployment_certificate_trust(),
-            ), patch.object(
-                promotion_module,
-                "_load_learning_policy_trust_store",
-                return_value=self._deployment_policy_trust(
-                    selection.deployment_decision_artifact_json
-                ),
-            ), patch.object(
-                ledger_module,
-                "_load_raw_ingestor_trust_store",
-                return_value=SimpleNamespace(content_digest="9" * 64),
-            ), self.assertRaisesRegex(ValueError, "decision certificate"):
-                load_forecast_run(
-                    path,
-                    deployment_certificate_trust_store_path=(
-                        "/etc/advar/deployment-authorities.json"
-                    ),
-                    deployment_policy_trust_store_path=(
-                        "/etc/advar/deployment-policies.json"
-                    ),
-                    raw_ingestor_trust_store_path=(
-                        "/etc/advar/raw-ingestors.json"
-                    ),
-                    training_target_source_trust_store_path=(
-                        "/etc/advar/training-target-sources.json"
-                    ),
-                )
+        with self.assertRaisesRegex(
+            OperationalDeploymentUnsupportedError,
+            "cannot claim operational neural-prior deployment lineage",
+        ):
+            self._variational_from_current_run(frames, prior, input_run)
 
     def test_v49_candidate_run_loads_as_deployment_audit(self) -> None:
         frames = self.frames()
@@ -2734,7 +2165,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             dependency="radar_dependent",
         )
         prior = runner.infer(frames, input_run=input_run, role="candidate")
-        result, _ = self._variational_from_current_run(
+        result, _ = self._legacy_deployment_fixture_from_current_run(
             frames, prior, input_run
         )
         with tempfile.TemporaryDirectory() as temporary:
@@ -2804,7 +2235,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             observation_std_dbz=torch.full_like(frames, 2.0),
             source_available_mask=torch.ones_like(frames, dtype=torch.bool),
         )
-        result, _ = self._variational_from_current_run(
+        result, _ = self._legacy_deployment_fixture_from_current_run(
             frames, prior, input_run
         )
         with tempfile.TemporaryDirectory() as temporary:
@@ -2875,7 +2306,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             observation_std_dbz=torch.full_like(frames, 2.0),
             source_available_mask=torch.ones_like(frames, dtype=torch.bool),
         )
-        result, _ = self._variational_from_current_run(
+        result, _ = self._legacy_deployment_fixture_from_current_run(
             frames, prior, input_run
         )
         with tempfile.TemporaryDirectory() as temporary:
@@ -2963,7 +2394,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             observation_std_dbz=torch.full_like(frames, 2.0),
             source_available_mask=torch.ones_like(frames, dtype=torch.bool),
         )
-        result, _ = self._variational_from_current_run(
+        result, _ = self._legacy_deployment_fixture_from_current_run(
             frames, prior, input_run
         )
         with tempfile.TemporaryDirectory() as temporary:
@@ -2974,6 +2405,20 @@ class ForecastRunArtifactTests(unittest.TestCase):
                     name: np.array(archive[name], copy=True)
                     for name in archive.files
                 }
+            v69_arrays = dict(arrays)
+            v69_arrays["forecast_run_artifact_version"] = np.asarray(
+                "forecast-run-v69"
+            )
+            v69_path = Path(temporary) / "legacy-v69.npz"
+            self._save_arrays(v69_path, v69_arrays)
+            loaded_v69 = load_forecast_run(v69_path)
+            v66_arrays = dict(arrays)
+            v66_arrays["forecast_run_artifact_version"] = np.asarray(
+                "forecast-run-v66"
+            )
+            v66_path = Path(temporary) / "legacy-v66.npz"
+            self._save_arrays(v66_path, v66_arrays)
+            loaded_v66 = load_forecast_run(v66_path)
             arrays["forecast_run_artifact_version"] = np.asarray(
                 "forecast-run-v52"
             )
@@ -2984,6 +2429,14 @@ class ForecastRunArtifactTests(unittest.TestCase):
         self.assertEqual(
             loaded.run.prior_deployment_lineage_contract,
             "neural-prior-deployment-lineage-v3-audit",
+        )
+        self.assertEqual(
+            loaded_v69.run.prior_deployment_lineage_contract,
+            "neural-prior-deployment-lineage-v19-audit",
+        )
+        self.assertEqual(
+            loaded_v66.run.prior_deployment_lineage_contract,
+            "neural-prior-deployment-lineage-v17-audit",
         )
 
     def test_neural_prior_lineage_is_all_or_none(self) -> None:

@@ -23,7 +23,13 @@ from advar.diagnostics import (  # noqa: E402
 from advar.nowcast import (  # noqa: E402
     CURRENT_RADAR_METRIC_DOMAIN,
     CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
+    DistanceInterval,
+    GeodeticMetricUncertaintyError,
+    GroundDistanceFootprint,
     LegacyRadarMetricDomainEvidenceAuditV1,
+    LegacyRadarMetricDomainEvidenceAuditV2,
+    SpeedInterval,
+    ThresholdDecision,
     ThresholdRelation,
     _EPSG_5179_METRIC_EVIDENCE_REPORT,
     _aligned_growth_evidence,
@@ -33,6 +39,7 @@ from advar.nowcast import (  # noqa: E402
     ForecastMetadata,
     ForecastRunContract,
     NowcastConfig,
+    OperationalDeploymentUnsupportedError,
     RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION,
     RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
     RadarGridTimeContract,
@@ -4769,7 +4776,7 @@ class NowcastTests(unittest.TestCase):
             dy_m=1000.0,
             projection="EPSG:5179",
             grid_hash="8" * 64,
-            spatial_grid_contract="radar-spatial-grid-identity-v5",
+            spatial_grid_contract="radar-spatial-grid-identity-v6",
             grid_shape_yx=(2, 2),
             projected_crs_digest=radar_projected_crs_semantic_digest(
                 "EPSG:5179"
@@ -5130,7 +5137,7 @@ class NowcastTests(unittest.TestCase):
             RadarSpatialGridIdentity(
                 **common,
                 **scientific,
-                contract="radar-spatial-grid-identity-v5",
+                contract="radar-spatial-grid-identity-v6",
             )
         with self.assertRaisesRegex(ValueError, "well-conditioned"):
             RadarGridTimeContract(
@@ -5142,7 +5149,7 @@ class NowcastTests(unittest.TestCase):
                 **common,
                 **{
                     "spatial_grid_contract": (
-                        "radar-spatial-grid-identity-v5"
+                        "radar-spatial-grid-identity-v6"
                     ),
                     "grid_shape_yx": scientific["shape_yx"],
                     "projected_crs_digest": scientific[
@@ -5188,7 +5195,7 @@ class NowcastTests(unittest.TestCase):
             cell_center_convention=(
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
             ),
-            contract="radar-spatial-grid-identity-v5",
+            contract="radar-spatial-grid-identity-v6",
         )
 
         self.assertEqual(identity.minimum_axis_spacing_m, 1000.0)
@@ -5224,7 +5231,7 @@ class NowcastTests(unittest.TestCase):
             "cell_center_convention": (
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
             ),
-            "contract": "radar-spatial-grid-identity-v5",
+            "contract": "radar-spatial-grid-identity-v6",
         }
         cases = (
             ((1.0e308, 1.0e308), (1.0e308, 1.0e308)),
@@ -5279,7 +5286,7 @@ class NowcastTests(unittest.TestCase):
             "cell_center_convention": (
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
             ),
-            "contract": "radar-spatial-grid-identity-v5",
+            "contract": "radar-spatial-grid-identity-v6",
         }
         row = RadarSpatialGridIdentity(
             dx_m=1000.0,
@@ -5337,7 +5344,7 @@ class NowcastTests(unittest.TestCase):
             dy_m=1000.0,
             projection="EPSG:5179",
             grid_hash="b" * 64,
-            spatial_grid_contract="radar-spatial-grid-identity-v5",
+            spatial_grid_contract="radar-spatial-grid-identity-v6",
             grid_shape_yx=(2, 2),
             projected_crs_digest=radar_projected_crs_semantic_digest(
                 "EPSG:5179"
@@ -5400,7 +5407,10 @@ class NowcastTests(unittest.TestCase):
             )
         with self.assertRaisesRegex(ValueError, "projected-grid identity"):
             replace(valid, metric_domain_digest="0" * 64)
-        with self.assertRaisesRegex(ValueError, "does not bind current"):
+        with self.assertRaisesRegex(
+            ValueError,
+            "projected-grid identity|does not bind current",
+        ):
             replace(
                 valid,
                 metric_domain_evidence_digest=None,
@@ -5413,7 +5423,7 @@ class NowcastTests(unittest.TestCase):
         self,
     ) -> None:
         evidence = CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
-        self.assertEqual(evidence.contract, "radar-metric-domain-evidence-v2")
+        self.assertEqual(evidence.contract, "radar-metric-domain-evidence-v3")
         self.assertEqual(
             evidence.metric_domain_digest,
             CURRENT_RADAR_METRIC_DOMAIN.digest,
@@ -5423,7 +5433,7 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(evidence.epsg_database_version, "v12.029")
         self.assertEqual(
             evidence.generator_contract,
-            "generate-metric-domain-evidence-v3",
+            "generate-metric-domain-evidence-v4",
         )
         self.assertLessEqual(
             evidence.maximum_observed_linear_scale_error,
@@ -5432,6 +5442,23 @@ class NowcastTests(unittest.TestCase):
         self.assertLessEqual(
             evidence.maximum_observed_area_scale_error,
             evidence.maximum_area_scale_error,
+        )
+        execution_environment = _EPSG_5179_METRIC_EVIDENCE_REPORT[
+            "execution_environment"
+        ]
+        self.assertEqual(
+            execution_environment["contract"],
+            "metric-domain-generator-execution-environment-v2",
+        )
+        self.assertTrue(
+            execution_environment["independent_sealed_environment_required"]
+        )
+        self.assertIsNone(
+            execution_environment["sealed_environment_identity"]
+        )
+        self.assertRegex(
+            execution_environment["dynamic_library_closure_digest"],
+            r"^[0-9a-f]{64}$",
         )
 
         for changed in (
@@ -5516,6 +5543,33 @@ class NowcastTests(unittest.TestCase):
             speed.relation_to_maximum(10.0),
             ThresholdRelation.CERTAINLY_WITHIN,
         )
+        self.assertIs(
+            speed.decision_for_maximum(10.0),
+            ThresholdDecision.CERTAINLY_SATISFIES,
+        )
+
+        invalid_intervals = (
+            (DistanceInterval, (float("nan"), 1.0)),
+            (DistanceInterval, (0.0, float("inf"))),
+            (DistanceInterval, (-1.0, 1.0)),
+            (DistanceInterval, (2.0, 1.0)),
+            (DistanceInterval, (False, 1.0)),
+            (SpeedInterval, (float("nan"), 1.0)),
+            (SpeedInterval, (0.0, float("inf"))),
+            (SpeedInterval, (-1.0, 1.0)),
+            (SpeedInterval, (2.0, 1.0)),
+            (SpeedInterval, (False, 1.0)),
+        )
+        for interval_type, values in invalid_intervals:
+            with self.subTest(interval_type=interval_type, values=values):
+                with self.assertRaisesRegex(ValueError, "invalid"):
+                    interval_type(*values)
+        with self.assertRaisesRegex(ValueError, "partition"):
+            GroundDistanceFootprint(
+                certainly_inside=((0, 0),),
+                uncertain=((0, 1),),
+                possibly_inside=((0, 0),),
+            )
 
     def test_legacy_metric_domain_report_is_audit_only(self) -> None:
         repository = Path(__file__).resolve().parents[1]
@@ -5536,6 +5590,18 @@ class NowcastTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "legacy metric-domain"):
             replace(audit, verification_report_sha256="0" * 64)
 
+        report_path_v2 = report_path.with_name(
+            "epsg5179_metric_domain_evidence_v2.json"
+        )
+        report_bytes_v2 = report_path_v2.read_bytes()
+        audit_v2 = LegacyRadarMetricDomainEvidenceAuditV2(
+            report_json=report_bytes_v2.decode("utf-8").removesuffix("\n"),
+            verification_report_sha256=(
+                hashlib.sha256(report_bytes_v2).hexdigest()
+            ),
+        )
+        self.assertRegex(audit_v2.audit_digest, r"^[0-9a-f]{64}$")
+
     def test_current_metric_uncertainty_reaches_pair_psr_and_speed_gates(
         self,
     ) -> None:
@@ -5550,7 +5616,7 @@ class NowcastTests(unittest.TestCase):
             dy_m=1005.0,
             projection="EPSG:5179",
             grid_hash="c" * 64,
-            spatial_grid_contract="radar-spatial-grid-identity-v5",
+            spatial_grid_contract="radar-spatial-grid-identity-v6",
             grid_shape_yx=(3, 3),
             projected_crs_digest=radar_projected_crs_semantic_digest(
                 "EPSG:5179"
@@ -5583,14 +5649,44 @@ class NowcastTests(unittest.TestCase):
             ),
             dtype=torch.float64,
         )
-        psr = nowcast_module._peak_to_sidelobe_ratio(
-            correlation,
-            1,
-            1,
-            config,
-            grid,
+        footprint = grid.pixel_offsets_ground_distance_footprint(
+            1000.0,
+            maximum_radius_yx=(1, 1),
         )
-        self.assertAlmostEqual(float(psr), 6.0 / math.sqrt(5.0))
+        self.assertEqual(footprint.certainly_inside, ((0, 0),))
+        self.assertEqual(
+            frozenset(footprint.uncertain),
+            frozenset({(-1, 0), (0, -1), (0, 1), (1, 0)}),
+        )
+        self.assertEqual(
+            frozenset(footprint.possibly_inside),
+            frozenset({(0, 0), (-1, 0), (0, -1), (0, 1), (1, 0)}),
+        )
+        with self.assertRaisesRegex(
+            GeodeticMetricUncertaintyError,
+            "uncertain sidelobe annulus",
+        ):
+            nowcast_module._peak_to_sidelobe_ratio(
+                correlation,
+                1,
+                1,
+                config,
+                grid,
+            )
+
+        previous = torch.full((3, 3), -10.0, dtype=torch.float64)
+        previous[1, 1] = 20.0
+        common = torch.ones((3, 3), dtype=torch.bool)
+        common[1, 2] = False
+        self.assertFalse(
+            nowcast_module._has_complete_echo_neighborhood(
+                previous,
+                previous,
+                common,
+                config,
+                grid,
+            )
+        )
 
         projected_speed_mps = 9.95
         displacement = torch.tensor(
@@ -5613,6 +5709,22 @@ class NowcastTests(unittest.TestCase):
                 ),
                 config,
                 grid,
+            )
+
+    def test_current_run_rejects_any_operational_deployment_claim(self) -> None:
+        frames = torch.full((3, 2, 2), 20.0, dtype=torch.float64)
+        masks = torch.ones_like(frames, dtype=torch.bool)
+
+        with self.assertRaisesRegex(
+            OperationalDeploymentUnsupportedError,
+            "cannot claim operational neural-prior deployment lineage",
+        ):
+            ForecastRunContract.from_inputs(
+                NowcastConfig(),
+                frames,
+                masks,
+                None,
+                prior_deployment_policy_digest="1" * 64,
             )
 
     def test_metric_domain_report_reductions_are_independently_recomputed(
@@ -5643,7 +5755,7 @@ class NowcastTests(unittest.TestCase):
             / "src"
             / "advar"
             / "data"
-            / "epsg5179_metric_domain_evidence_v2.json"
+            / "epsg5179_metric_domain_evidence_v3.json"
         )
         command = (
             sys.executable,
@@ -5711,7 +5823,7 @@ class NowcastTests(unittest.TestCase):
             dy_m=1000.0,
             projection="EPSG:5179",
             grid_hash="f" * 64,
-            spatial_grid_contract="radar-spatial-grid-identity-v5",
+            spatial_grid_contract="radar-spatial-grid-identity-v6",
             grid_shape_yx=(2, 2),
             projected_crs_digest=radar_projected_crs_semantic_digest(
                 "EPSG:5179"

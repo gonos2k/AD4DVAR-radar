@@ -36,6 +36,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 from ._contract_registry import (
     CURRENT_DEPLOYED_NEURAL_PRIOR_POLICY_CONTRACT,
     CURRENT_NEURAL_PRIOR_PROMOTION_EVIDENCE_CONTRACT,
+    OperationalDeploymentUnsupportedError,
 )
 from ._digest import json_digest, tensor_digest
 from ._runtime import (
@@ -69,12 +70,14 @@ from .sensitivity import (
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V10_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V12_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V5_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V7_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V9_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V11_DIGEST,
     SensitivityConfig,
     ObservationErrorDerivationArtifact,
     VerificationBundle,
@@ -276,23 +279,23 @@ TRAINING_NORMALIZATION_MASK_WEIGHT_POLICY_DIGEST = json_digest(
 
 
 SEMANTIC_SCORING_REPLAY_CONTRACT = (
-    "neural-prior-scoring-replay-bundle-v23"
+    "neural-prior-scoring-replay-bundle-v24"
 )
 SEMANTIC_SCORING_REPLAY_METHOD = (
-    "builtin-semantic-scoring-recomputation-v23"
+    "builtin-semantic-scoring-recomputation-v24"
 )
 SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD: dict[str, str] = {
-    "contract": "neural-prior-semantic-scoring-generation-v21",
+    "contract": "neural-prior-semantic-scoring-generation-v22",
     "replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
     "replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
-    "case_contract": "neural-prior-semantic-scoring-case-v22",
+    "case_contract": "neural-prior-semantic-scoring-case-v23",
     "observation_mask_algorithm_digest": (
-        OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST
+        OBSERVATION_MASK_DERIVATION_ALGORITHM_V11_DIGEST
     ),
     "observation_error_algorithm_digest": (
-        OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST
+        OBSERVATION_ERROR_DERIVATION_ALGORITHM_V12_DIGEST
     ),
-    "verification_bundle_contract": "radar-verification-bundle-v18",
+    "verification_bundle_contract": "radar-verification-bundle-v19",
     "product_type_policy": "exact-shipped-product-types-v1",
     "forecast_integrity": "forecast-result-raw-content-validation-v1",
     "prior_integrity": "runner-reproduced-prior-application-v1",
@@ -9840,11 +9843,11 @@ class NeuralPriorHoldoutPlan:
     mode: Literal["prospective", "sealed_historical"] = "prospective"
     sealed_historical_dataset_digest: str | None = None
     candidate_training_started_at: str | None = None
-    contract: str = "neural-prior-holdout-plan-v33"
+    contract: str = "neural-prior-holdout-plan-v34"
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.contract != "neural-prior-holdout-plan-v33":
+        if self.contract != "neural-prior-holdout-plan-v34":
             raise ValueError("unsupported neural-prior holdout plan")
         if not self.plan_id or self.plan_id.strip() != self.plan_id:
             raise ValueError("holdout plan ID must be canonical")
@@ -9995,11 +9998,11 @@ class NeuralPriorHoldoutPlan:
             )
         }
         if any(
-            item.contract != "verification-observation-error-plan-v12"
+            item.contract != "verification-observation-error-plan-v13"
             for item in self.verification_observation_error_plans
         ):
             raise ValueError(
-                "current holdout requires observation-error plan v12"
+                "current holdout requires observation-error plan v13"
             )
         if (
             len(retained_observation_error_plans)
@@ -12447,7 +12450,7 @@ class PriorUncertaintyTarget:
         verification.validate_integrity()
         if (
             plan.contract != "prior-uncertainty-target-plan-v7"
-            or verification.contract != "radar-verification-bundle-v18"
+            or verification.contract != "radar-verification-bundle-v19"
             or verification.observation_error_contract is None
             or verification.observation_error_contract
             .observation_error_plan_digest
@@ -12578,7 +12581,7 @@ class NeuralPriorStateCalibrationTarget:
     ) -> NeuralPriorStateCalibrationTarget:
         verification.validate_integrity()
         if (
-            verification.contract != "radar-verification-bundle-v18"
+            verification.contract != "radar-verification-bundle-v19"
             or verification.observation_error_contract is None
             or verification.observation_error_contract
             .observation_error_plan_digest
@@ -15372,7 +15375,7 @@ class ScoringReplayCaseArtifact:
             raise ValueError("semantic scoring replay case is invalid")
         ForecastResult.validate_issuance(self.candidate_forecast)
         ForecastResult.validate_issuance(self.parent_forecast)
-        if self.verification.contract != "radar-verification-bundle-v18":
+        if self.verification.contract != "radar-verification-bundle-v19":
             raise ValueError(
                 "semantic scoring replay requires current source-composed "
                 "verification"
@@ -16098,7 +16101,7 @@ class ScoringReplayCaseArtifact:
     ) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-semantic-scoring-case-v22",
+                "contract": "neural-prior-semantic-scoring-case-v23",
                 "semantic_replay_generation_digest": (
                     SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
                 ),
@@ -16444,7 +16447,7 @@ def compute_observation_error_gaussian_diagnostic(
             "radar-verification-bundle-v14",
             "radar-verification-bundle-v16",
             "radar-verification-bundle-v17",
-            "radar-verification-bundle-v18",
+            "radar-verification-bundle-v19",
         }
         or state is None
         or observation_std is None
@@ -16592,6 +16595,9 @@ def _state_calibration_scores(
         normalized = weights / weights.sum()
         return torch.sum(values.to(torch.float64) * normalized)
 
+    def unit_interval_weighted_mean(values: Tensor, weights: Tensor) -> float:
+        return float(weighted_mean(values, weights).clamp(0.0, 1.0).detach())
+
     echo_mask = evaluation_mask & support_target.to(evaluation_mask)
     clear_mask = evaluation_mask & ~support_target.to(evaluation_mask)
     echo_count = int(torch.count_nonzero(echo_mask))
@@ -16629,19 +16635,18 @@ def _state_calibration_scores(
         pit_residual_mean_abs=float(
             weighted_mean(absolute, echo_weight).detach()
         ),
-        underdispersion_fraction=float(
-            weighted_mean((absolute > 2.0).to(absolute), echo_weight).detach()
+        underdispersion_fraction=unit_interval_weighted_mean(
+            (absolute > 2.0).to(absolute),
+            echo_weight,
         ),
-        support_brier_score=float(
-            weighted_mean(
-                (support - target_values).square(), selected_weight
-            ).detach()
+        support_brier_score=unit_interval_weighted_mean(
+            (support - target_values).square(),
+            selected_weight,
         ),
         echo_support_miss_score=(
             None
             if echo_count == 0
-            else float(
-                weighted_mean(
+            else unit_interval_weighted_mean(
                     (
                         1.0
                         - application.state_support_probability.masked_select(
@@ -16649,25 +16654,21 @@ def _state_calibration_scores(
                         )
                     ).square(),
                     evaluation_weight.masked_select(echo_mask),
-                ).detach()
             )
         ),
         false_support_score=(
             None
             if clear_count == 0
-            else float(
-                weighted_mean(
-                    application.state_support_probability.masked_select(
-                        clear_mask
-                    ).square(),
-                    evaluation_weight.masked_select(clear_mask),
-                ).detach()
+            else unit_interval_weighted_mean(
+                application.state_support_probability.masked_select(
+                    clear_mask
+                ).square(),
+                evaluation_weight.masked_select(clear_mask),
             )
         ),
-        valid_brier_score=float(
-            weighted_mean(
-                (1.0 - valid_probability).square(), selected_weight
-            ).detach()
+        valid_brier_score=unit_interval_weighted_mean(
+            (1.0 - valid_probability).square(),
+            selected_weight,
         ),
         sample_count=int(torch.count_nonzero(evaluation_mask)),
         echo_sample_count=echo_count,
@@ -27188,10 +27189,6 @@ def _validate_operational_deployment_decision_certificate(
         raise ValueError(
             "operational decision certificate signature is invalid"
         ) from error
-
-
-class OperationalDeploymentUnsupportedError(RuntimeError):
-    """Raised because scientific evidence never authorizes deployment."""
 
 
 def _validate_operational_deployment_generation(

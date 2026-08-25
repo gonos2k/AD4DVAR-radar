@@ -36,8 +36,9 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v69"
+FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v70"
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
+    "forecast-run-v69",
     "forecast-run-v68",
     "forecast-run-v67",
     "forecast-run-v66",
@@ -1434,7 +1435,7 @@ def load_forecast_run(
             version == FORECAST_RUN_ARTIFACT_VERSION
             and grid_time_contract is not None
             and grid_time_contract.spatial_grid_contract
-            == "radar-spatial-grid-identity-v5"
+            == "radar-spatial-grid-identity-v6"
         ):
             grid_time_contract.validate_current_metric_domain_evidence()
         if "prior_deployment_lineage_contract" in loaded_arrays:
@@ -1513,6 +1514,10 @@ def load_forecast_run(
             elif version == "forecast-run-v67":
                 prior_deployment_lineage_contract = (
                     "neural-prior-deployment-lineage-v18-audit"
+                )
+            elif version == "forecast-run-v69":
+                prior_deployment_lineage_contract = (
+                    "neural-prior-deployment-lineage-v19-audit"
                 )
         elif version in _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS:
             prior_deployment_lineage_contract = (

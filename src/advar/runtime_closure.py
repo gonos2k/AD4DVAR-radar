@@ -323,7 +323,11 @@ def _installed_distributions(
     retained: dict[str, str] = {}
     for root in roots:
         for distribution in importlib.metadata.distributions(path=[str(root)]):
-            raw_name = distribution.metadata.get("Name")
+            raw_name = (
+                distribution.metadata["Name"]
+                if "Name" in distribution.metadata
+                else None
+            )
             if not raw_name:
                 continue
             name = _normalized_distribution_name(raw_name)

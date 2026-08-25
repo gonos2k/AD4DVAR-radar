@@ -17,7 +17,9 @@ import torch
 from torch import Tensor
 
 from ._contract_registry import (
+    CONTRACT_CAPABILITIES,
     CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE_CONTRACT,
+    OperationalDeploymentUnsupportedError,
 )
 from ._digest import dataclass_digest, json_digest, tensor_digest
 from ._learned_input import learned_radar_input_features
@@ -65,19 +67,22 @@ _EPSG_5179_MAXIMUM_NORTHING_M = 2_274_021.31
 _EPSG_5179_MAXIMUM_LINEAR_SCALE_ERROR = 0.006
 _EPSG_5179_MAXIMUM_AREA_SCALE_ERROR = 0.012036
 _EPSG_5179_METRIC_EVIDENCE_RESOURCE = (
-    "data/epsg5179_metric_domain_evidence_v2.json"
+    "data/epsg5179_metric_domain_evidence_v3.json"
 )
 _EPSG_5179_METRIC_EVIDENCE_REPORT_SHA256 = (
-    "5ace1126287511bc6742d989b283b8b3194767d307294e11483d0747ac5f6e60"
+    "9658c906cf04f7aa2481c93f87408e803fefe37855b4670704f7ebbb7fb71bcf"
 )
 _EPSG_5179_METRIC_EVIDENCE_GENERATOR_SHA256 = (
-    "a792d56a344eea7219e099747497ea20774e319d474ce28a2bee53eb1824fa1e"
+    "b035fa579390b02c690ca8296fcc2beaf38ce87031cc2bf33b7e615c5324652a"
 )
 _EPSG_5179_EXECUTION_ENVIRONMENT_DIGEST = (
-    "258179e74205429c1ec9cb60bd5ee48169ce87e8eeb87bb566f43006c1fdd105"
+    "521d3fd52ed4a9b4afdc0c5ce51fc636206285e93e56d6ddffbd2c629a71b58f"
 )
 _EPSG_5179_DYNAMIC_LIBRARY_CLOSURE_DIGEST = (
-    "18392dfba56c88db289c74867b54244427790c3230b094d42bc614892dcf3c5b"
+    "bcd47d51aa9a42501cd42b51876ea9cb8818c2c4378d256cd5a409f92f5e2fb4"
+)
+_LEGACY_RADAR_METRIC_DOMAIN_EVIDENCE_V2_DIGEST = (
+    "93244a5f047908819159098ab47ad6aa0140c2f5f2c6ec021161ad5e7be063eb"
 )
 _EPSG_5179_EVIDENCE_LONGITUDE_BOUNDS = (122.71, 134.28)
 _EPSG_5179_EVIDENCE_LATITUDE_BOUNDS = (28.60, 40.27)
@@ -934,8 +939,11 @@ def _validate_radar_metric_domain_evidence_report(
     expected_execution_environment_fields = {
         "contract",
         "canonical_environment",
+        "dependency_inspector",
         "dynamic_library_closure",
         "dynamic_library_closure_digest",
+        "dynamic_library_closure_roots",
+        "closure_completeness",
         "loader_override_policy",
         "machine",
         "operating_system",
@@ -943,9 +951,14 @@ def _validate_radar_metric_domain_evidence_report(
         "python_implementation",
         "python_version",
         "python_cache_tag",
+        "python_executable",
+        "python_native_extensions",
         "libc_name",
         "libc_version",
         "sqlite_runtime_version",
+        "sealed_environment_identity",
+        "system_shared_cache_identity",
+        "independent_sealed_environment_required",
     }
     expected_sampling_fields = {
         "contract",
@@ -990,11 +1003,11 @@ def _validate_radar_metric_domain_evidence_report(
     if (
         set(report) != expected_report_fields
         or report.get("contract")
-        != "radar-metric-domain-geodetic-report-v2"
+        != "radar-metric-domain-geodetic-report-v3"
         or not isinstance(generator, dict)
         or set(generator) != expected_generator_fields
         or generator.get("contract")
-        != "generate-metric-domain-evidence-v3"
+        != "generate-metric-domain-evidence-v4"
         or generator.get("source_sha256")
         != _EPSG_5179_METRIC_EVIDENCE_GENERATOR_SHA256
         or generator.get("canonical_output")
@@ -1030,12 +1043,22 @@ def _validate_radar_metric_domain_evidence_report(
     dynamic_library_closure = execution_environment.get(
         "dynamic_library_closure"
     )
+    dynamic_library_closure_roots = execution_environment.get(
+        "dynamic_library_closure_roots"
+    )
+    dependency_inspector = execution_environment.get(
+        "dependency_inspector"
+    )
+    python_executable = execution_environment.get("python_executable")
+    python_native_extensions = execution_environment.get(
+        "python_native_extensions"
+    )
     canonical_environment = execution_environment.get(
         "canonical_environment"
     )
     if (
         execution_environment.get("contract")
-        != "metric-domain-generator-execution-environment-v1"
+        != "metric-domain-generator-execution-environment-v2"
         or canonical_environment
         != {
             "LANG": "C",
@@ -1049,8 +1072,27 @@ def _validate_radar_metric_domain_evidence_report(
         not in {"Darwin", "Linux"}
         or not isinstance(dynamic_library_closure, list)
         or not dynamic_library_closure
+        or not isinstance(dynamic_library_closure_roots, list)
+        or not dynamic_library_closure_roots
+        or not isinstance(dependency_inspector, dict)
+        or not isinstance(python_executable, dict)
+        or not isinstance(python_native_extensions, list)
+        or not python_native_extensions
         or execution_environment.get("dynamic_library_closure_digest")
         != json_digest(dynamic_library_closure)
+        or execution_environment.get("closure_completeness")
+        not in {
+            "file-backed-dependencies-hashed-v1",
+            "darwin-system-shared-cache-not-byte-addressed-v1",
+        }
+        or execution_environment.get("sealed_environment_identity")
+        is not None
+        or execution_environment.get("system_shared_cache_identity")
+        is not None
+        or execution_environment.get(
+            "independent_sealed_environment_required"
+        )
+        is not True
     ):
         raise ValueError(
             "radar metric-domain execution environment is invalid"
@@ -1099,6 +1141,62 @@ def _validate_radar_metric_domain_evidence_report(
     ):
         raise ValueError(
             "radar metric-domain dynamic-library closure is not canonical"
+        )
+    expected_closure_completeness = (
+        "file-backed-dependencies-hashed-v1"
+        if all(entry.get("file_sha256") is not None for entry in dynamic_library_closure)
+        else "darwin-system-shared-cache-not-byte-addressed-v1"
+    )
+    if (
+        execution_environment.get("closure_completeness")
+        != expected_closure_completeness
+    ):
+        raise ValueError(
+            "radar metric-domain dynamic-library closure status is invalid"
+        )
+    file_identity_fields = {"resolved_path", "file_sha256"}
+    for identity in (
+        dependency_inspector,
+        python_executable,
+        *dynamic_library_closure_roots,
+        *python_native_extensions,
+    ):
+        if (
+            not isinstance(identity, dict)
+            or not file_identity_fields <= set(identity)
+            or not isinstance(identity.get("resolved_path"), str)
+            or not identity.get("resolved_path")
+            or not isinstance(identity.get("file_sha256"), str)
+            or re.fullmatch(
+                r"[0-9a-f]{64}", cast(str, identity.get("file_sha256"))
+            )
+            is None
+        ):
+            raise ValueError(
+                "radar metric-domain execution file identity is invalid"
+            )
+    if (
+        set(cast(dict[str, object], dependency_inspector))
+        != {"name", "resolved_path", "file_sha256"}
+        or dependency_inspector.get("name") not in {"ldd", "otool"}
+        or dependency_inspector.get("name")
+        != (
+            "otool"
+            if execution_environment.get("operating_system") == "Darwin"
+            else "ldd"
+        )
+        or set(cast(dict[str, object], python_executable))
+        != file_identity_fields
+        or any(
+            set(cast(dict[str, object], identity)) != file_identity_fields
+            for identity in (
+                *dynamic_library_closure_roots,
+                *python_native_extensions,
+            )
+        )
+    ):
+        raise ValueError(
+            "radar metric-domain execution file identity is invalid"
         )
     for name in (
         "machine",
@@ -1343,6 +1441,46 @@ class ThresholdRelation(str, Enum):
     CERTAINLY_EXCEEDS = "certainly-exceeds"
 
 
+class ThresholdDecision(str, Enum):
+    """Whether an interval certainly satisfies one named threshold rule."""
+
+    CERTAINLY_SATISFIES = "certainly-satisfies"
+    UNCERTAIN = "uncertain"
+    CERTAINLY_VIOLATES = "certainly-violates"
+
+
+class FootprintUse(str, Enum):
+    """Consumer-owned policy for a set-valued physical-radius footprint."""
+
+    CERTAIN_SUPPORT = "certain-support"
+    COMPLETENESS_ENVELOPE = "completeness-envelope"
+    NONMONOTONE_METRIC = "nonmonotone-metric"
+
+
+class GeodeticMetricUncertaintyError(ValueError):
+    """A non-monotone metric cannot be certified for this radius footprint."""
+
+
+def _validate_nonnegative_interval(
+    lower: float,
+    upper: float,
+    *,
+    name: str,
+) -> None:
+    if (
+        isinstance(lower, bool)
+        or isinstance(upper, bool)
+        or not isinstance(lower, (int, float))
+        or not isinstance(upper, (int, float))
+        or not math.isfinite(lower)
+        or not math.isfinite(upper)
+        or lower < 0.0
+        or upper < 0.0
+        or lower > upper
+    ):
+        raise ValueError(f"invalid {name} interval")
+
+
 @dataclass(frozen=True)
 class DistanceInterval:
     """Conservative ground-distance interval corresponding to a projection."""
@@ -1350,8 +1488,36 @@ class DistanceInterval:
     lower_m: float
     upper_m: float
 
+    def __post_init__(self) -> None:
+        _validate_nonnegative_interval(
+            self.lower_m,
+            self.upper_m,
+            name="ground-distance",
+        )
+
+    def decision_for_maximum(self, maximum_m: float) -> ThresholdDecision:
+        relation = self.relation_to_maximum(maximum_m)
+        if relation is ThresholdRelation.CERTAINLY_WITHIN:
+            return ThresholdDecision.CERTAINLY_SATISFIES
+        if relation is ThresholdRelation.CERTAINLY_EXCEEDS:
+            return ThresholdDecision.CERTAINLY_VIOLATES
+        return ThresholdDecision.UNCERTAIN
+
+    def decision_for_minimum(self, minimum_m: float) -> ThresholdDecision:
+        relation = self.relation_to_minimum(minimum_m)
+        if relation is ThresholdRelation.CERTAINLY_EXCEEDS:
+            return ThresholdDecision.CERTAINLY_SATISFIES
+        if relation is ThresholdRelation.CERTAINLY_WITHIN:
+            return ThresholdDecision.CERTAINLY_VIOLATES
+        return ThresholdDecision.UNCERTAIN
+
     def relation_to_maximum(self, maximum_m: float) -> ThresholdRelation:
-        if not math.isfinite(maximum_m) or maximum_m < 0.0:
+        if (
+            isinstance(maximum_m, bool)
+            or not isinstance(maximum_m, (int, float))
+            or not math.isfinite(maximum_m)
+            or maximum_m < 0.0
+        ):
             raise ValueError("maximum distance must be finite and non-negative")
         if self.upper_m <= maximum_m:
             return ThresholdRelation.CERTAINLY_WITHIN
@@ -1360,7 +1526,12 @@ class DistanceInterval:
         return ThresholdRelation.UNCERTAIN
 
     def relation_to_minimum(self, minimum_m: float) -> ThresholdRelation:
-        if not math.isfinite(minimum_m) or minimum_m < 0.0:
+        if (
+            isinstance(minimum_m, bool)
+            or not isinstance(minimum_m, (int, float))
+            or not math.isfinite(minimum_m)
+            or minimum_m < 0.0
+        ):
             raise ValueError("minimum distance must be finite and non-negative")
         if self.lower_m >= minimum_m:
             return ThresholdRelation.CERTAINLY_EXCEEDS
@@ -1376,8 +1547,36 @@ class SpeedInterval:
     lower_mps: float
     upper_mps: float
 
+    def __post_init__(self) -> None:
+        _validate_nonnegative_interval(
+            self.lower_mps,
+            self.upper_mps,
+            name="ground-speed",
+        )
+
+    def decision_for_maximum(self, maximum_mps: float) -> ThresholdDecision:
+        relation = self.relation_to_maximum(maximum_mps)
+        if relation is ThresholdRelation.CERTAINLY_WITHIN:
+            return ThresholdDecision.CERTAINLY_SATISFIES
+        if relation is ThresholdRelation.CERTAINLY_EXCEEDS:
+            return ThresholdDecision.CERTAINLY_VIOLATES
+        return ThresholdDecision.UNCERTAIN
+
+    def decision_for_minimum(self, minimum_mps: float) -> ThresholdDecision:
+        relation = self.relation_to_minimum(minimum_mps)
+        if relation is ThresholdRelation.CERTAINLY_EXCEEDS:
+            return ThresholdDecision.CERTAINLY_SATISFIES
+        if relation is ThresholdRelation.CERTAINLY_WITHIN:
+            return ThresholdDecision.CERTAINLY_VIOLATES
+        return ThresholdDecision.UNCERTAIN
+
     def relation_to_maximum(self, maximum_mps: float) -> ThresholdRelation:
-        if not math.isfinite(maximum_mps) or maximum_mps < 0.0:
+        if (
+            isinstance(maximum_mps, bool)
+            or not isinstance(maximum_mps, (int, float))
+            or not math.isfinite(maximum_mps)
+            or maximum_mps < 0.0
+        ):
             raise ValueError("maximum speed must be finite and non-negative")
         if self.upper_mps <= maximum_mps:
             return ThresholdRelation.CERTAINLY_WITHIN
@@ -1386,7 +1585,12 @@ class SpeedInterval:
         return ThresholdRelation.UNCERTAIN
 
     def relation_to_minimum(self, minimum_mps: float) -> ThresholdRelation:
-        if not math.isfinite(minimum_mps) or minimum_mps < 0.0:
+        if (
+            isinstance(minimum_mps, bool)
+            or not isinstance(minimum_mps, (int, float))
+            or not math.isfinite(minimum_mps)
+            or minimum_mps < 0.0
+        ):
             raise ValueError("minimum speed must be finite and non-negative")
         if self.lower_mps >= minimum_mps:
             return ThresholdRelation.CERTAINLY_EXCEEDS
@@ -1437,6 +1641,59 @@ def projected_ground_speed_interval(
 
 
 @dataclass(frozen=True)
+class GroundDistanceFootprint:
+    """Partition grid offsets by physical-radius certainty."""
+
+    certainly_inside: tuple[tuple[int, int], ...]
+    uncertain: tuple[tuple[int, int], ...]
+    possibly_inside: tuple[tuple[int, int], ...]
+    contract: str = "ground-distance-footprint-v1"
+
+    def __post_init__(self) -> None:
+        sequences = (
+            self.certainly_inside,
+            self.uncertain,
+            self.possibly_inside,
+        )
+        certain = frozenset(self.certainly_inside)
+        uncertain = frozenset(self.uncertain)
+        possible = frozenset(self.possibly_inside)
+        if (
+            self.contract != "ground-distance-footprint-v1"
+            or any(
+                not isinstance(sequence, tuple)
+                or any(
+                    not isinstance(offset, tuple)
+                    or len(offset) != 2
+                    or any(type(index) is not int for index in offset)
+                    for offset in sequence
+                )
+                for sequence in sequences
+            )
+            or len(certain) != len(self.certainly_inside)
+            or len(uncertain) != len(self.uncertain)
+            or len(possible) != len(self.possibly_inside)
+            or certain & uncertain
+            or certain | uncertain != possible
+            or (0, 0) not in certain
+        ):
+            raise ValueError("ground-distance footprint partition is invalid")
+
+    def offsets_for(self, use: FootprintUse) -> tuple[tuple[int, int], ...]:
+        if use is FootprintUse.CERTAIN_SUPPORT:
+            return self.certainly_inside
+        if use is FootprintUse.COMPLETENESS_ENVELOPE:
+            return self.possibly_inside
+        if use is FootprintUse.NONMONOTONE_METRIC:
+            if self.uncertain:
+                raise GeodeticMetricUncertaintyError(
+                    "physical-radius metric has an uncertain grid annulus"
+                )
+            return self.certainly_inside
+        raise ValueError("unsupported footprint consumer policy")
+
+
+@dataclass(frozen=True)
 class LegacyRadarMetricDomainEvidenceAuditV1:
     """Decode the historical v1 report as immutable audit bytes only."""
 
@@ -1481,6 +1738,50 @@ class LegacyRadarMetricDomainEvidenceAuditV1:
 
 
 @dataclass(frozen=True)
+class LegacyRadarMetricDomainEvidenceAuditV2:
+    """Decode the historical v2 report as immutable audit bytes only."""
+
+    report_json: str
+    verification_report_sha256: str
+    contract: str = "legacy-radar-metric-domain-evidence-audit-v2"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        try:
+            report = json.loads(self.report_json)
+        except json.JSONDecodeError as error:
+            raise ValueError("legacy metric-domain report is invalid") from error
+        canonical = json.dumps(
+            report,
+            allow_nan=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        if (
+            not isinstance(report, dict)
+            or report.get("contract")
+            != "radar-metric-domain-geodetic-report-v2"
+            or self.report_json != canonical
+            or hashlib.sha256((canonical + "\n").encode()).hexdigest()
+            != self.verification_report_sha256
+        ):
+            raise ValueError("legacy metric-domain report is invalid")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "original_contract": (
+                        "radar-metric-domain-evidence-v2"
+                    ),
+                    "report_sha256": self.verification_report_sha256,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class RadarMetricDomainEvidence:
     """Content-addressed geodetic sampling evidence for one metric domain."""
 
@@ -1492,7 +1793,7 @@ class RadarMetricDomainEvidence:
     verification_report_sha256: str = (
         _EPSG_5179_METRIC_EVIDENCE_REPORT_SHA256
     )
-    generator_contract: str = "generate-metric-domain-evidence-v3"
+    generator_contract: str = "generate-metric-domain-evidence-v4"
     generator_source_sha256: str = (
         _EPSG_5179_METRIC_EVIDENCE_GENERATOR_SHA256
     )
@@ -1590,7 +1891,7 @@ class RadarMetricDomainEvidence:
             or self.generator_output_contract
             != generator.get("canonical_output")
             or report.get("contract")
-            != "radar-metric-domain-geodetic-report-v2"
+            != "radar-metric-domain-geodetic-report-v3"
             or report.get("canonical_projection") != "EPSG:5179"
             or self.geodetic_engine != engine.get("name")
             or self.geodetic_engine_version != engine.get("version")
@@ -1915,6 +2216,7 @@ class RadarSpatialGridIdentity:
             "radar-spatial-grid-identity-v3",
             "radar-spatial-grid-identity-v4",
             "radar-spatial-grid-identity-v5",
+            "radar-spatial-grid-identity-v6",
         }:
             raise ValueError("unsupported radar spatial-grid identity")
         if (
@@ -1942,10 +2244,15 @@ class RadarSpatialGridIdentity:
                     "radar-spatial-grid-identity-v3",
                     "radar-spatial-grid-identity-v4",
                     "radar-spatial-grid-identity-v5",
+                    "radar-spatial-grid-identity-v6",
                 }
             ),
             require_representable_scientific_spacing=(
-                self.contract == "radar-spatial-grid-identity-v5"
+                self.contract
+                in {
+                    "radar-spatial-grid-identity-v5",
+                    "radar-spatial-grid-identity-v6",
+                }
             ),
         )
         object.__setattr__(
@@ -1989,7 +2296,11 @@ class RadarSpatialGridIdentity:
             or self.projected_crs_digest
             != (
                 radar_projected_crs_semantic_digest(self.projection)
-                if self.contract == "radar-spatial-grid-identity-v5"
+                if self.contract
+                in {
+                    "radar-spatial-grid-identity-v5",
+                    "radar-spatial-grid-identity-v6",
+                }
                 else (
                     _radar_projected_crs_semantic_digest_v3(self.projection)
                     if self.contract == "radar-spatial-grid-identity-v4"
@@ -2004,17 +2315,34 @@ class RadarSpatialGridIdentity:
                 self.metric_domain_digest
                 != (
                     CURRENT_RADAR_METRIC_DOMAIN.digest
-                    if self.contract == "radar-spatial-grid-identity-v5"
+                    if self.contract
+                    in {
+                        "radar-spatial-grid-identity-v5",
+                        "radar-spatial-grid-identity-v6",
+                    }
                     else None
                 )
             )
             or (
                 self.metric_domain_evidence_digest is not None
                 and (
-                    self.contract != "radar-spatial-grid-identity-v5"
+                    self.contract
+                    not in {
+                        "radar-spatial-grid-identity-v5",
+                        "radar-spatial-grid-identity-v6",
+                    }
                     or self.metric_domain_evidence_digest
-                    != CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+                    != (
+                        CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+                        if self.contract == "radar-spatial-grid-identity-v6"
+                        else _LEGACY_RADAR_METRIC_DOMAIN_EVIDENCE_V2_DIGEST
+                    )
                 )
+            )
+            or (
+                self.contract == "radar-spatial-grid-identity-v6"
+                and self.metric_domain_evidence_digest
+                != CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
             )
         ):
             raise ValueError("scientific radar projected-grid identity is invalid")
@@ -2030,7 +2358,10 @@ class RadarSpatialGridIdentity:
             "cell_center_origin_xy_m",
             (float(origin[0]), float(origin[1])),
         )
-        if self.contract == "radar-spatial-grid-identity-v5":
+        if self.contract in {
+            "radar-spatial-grid-identity-v5",
+            "radar-spatial-grid-identity-v6",
+        }:
             CURRENT_RADAR_METRIC_DOMAIN.validate_grid_cell_centers(
                 shape_yx=shape,
                 origin_xy_m=(float(origin[0]), float(origin[1])),
@@ -2054,6 +2385,7 @@ class RadarSpatialGridIdentity:
             "radar-spatial-grid-identity-v3",
             "radar-spatial-grid-identity-v4",
             "radar-spatial-grid-identity-v5",
+            "radar-spatial-grid-identity-v6",
         }:
             payload.update(
                 {
@@ -2064,7 +2396,10 @@ class RadarSpatialGridIdentity:
                     "cell_center_convention": self.cell_center_convention,
                 }
             )
-        if self.contract == "radar-spatial-grid-identity-v5":
+        if self.contract in {
+            "radar-spatial-grid-identity-v5",
+            "radar-spatial-grid-identity-v6",
+        }:
             payload["metric_domain_digest"] = self.metric_domain_digest
             if self.metric_domain_evidence_digest is not None:
                 payload["metric_domain_evidence_digest"] = (
@@ -2076,7 +2411,7 @@ class RadarSpatialGridIdentity:
         """Require the current grid to name the exact sampled evidence."""
 
         if (
-            self.contract != "radar-spatial-grid-identity-v5"
+            self.contract != "radar-spatial-grid-identity-v6"
             or self.metric_domain_digest != CURRENT_RADAR_METRIC_DOMAIN.digest
             or self.metric_domain_evidence_digest
             != CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
@@ -2114,6 +2449,7 @@ class RadarSpatialGridIdentity:
                     "radar-spatial-grid-identity-v3",
                     "radar-spatial-grid-identity-v4",
                     "radar-spatial-grid-identity-v5",
+                    "radar-spatial-grid-identity-v6",
                 }
             ),
         ).minimum_singular_spacing_m
@@ -2125,6 +2461,7 @@ class RadarSpatialGridIdentity:
         if self.contract not in {
             "radar-spatial-grid-identity-v4",
             "radar-spatial-grid-identity-v5",
+            "radar-spatial-grid-identity-v6",
         }:
             return self.minimum_l2_cell_displacement_m
         assert self.shape_yx is not None
@@ -2135,7 +2472,11 @@ class RadarSpatialGridIdentity:
             dy_m=float(self.dy_m),
             require_scientific_conditioning=True,
             require_representable_scientific_spacing=(
-                self.contract == "radar-spatial-grid-identity-v5"
+                self.contract
+                in {
+                    "radar-spatial-grid-identity-v5",
+                    "radar-spatial-grid-identity-v6",
+                }
             ),
         )
         if rows == 1 and columns == 1:
@@ -2158,6 +2499,7 @@ class RadarSpatialGridIdentity:
                     "radar-spatial-grid-identity-v3",
                     "radar-spatial-grid-identity-v4",
                     "radar-spatial-grid-identity-v5",
+                    "radar-spatial-grid-identity-v6",
                 }
             ),
         ).linf_cell_displacement_spacing_m
@@ -2174,6 +2516,7 @@ class RadarSpatialGridIdentity:
             "radar-spatial-grid-identity-v3",
             "radar-spatial-grid-identity-v4",
             "radar-spatial-grid-identity-v5",
+            "radar-spatial-grid-identity-v6",
         }:
             raise ValueError("projected coordinates require a scientific grid")
         assert self.shape_yx is not None
@@ -2247,7 +2590,11 @@ class RadarGridTimeContract:
             dy_m=float(self.dy_m),
             require_scientific_conditioning=True,
             require_representable_scientific_spacing=(
-                self.spatial_grid_contract == "radar-spatial-grid-identity-v5"
+                self.spatial_grid_contract
+                in {
+                    "radar-spatial-grid-identity-v5",
+                    "radar-spatial-grid-identity-v6",
+                }
             ),
         )
         object.__setattr__(
@@ -2280,6 +2627,7 @@ class RadarGridTimeContract:
             "radar-spatial-grid-identity-v3",
             "radar-spatial-grid-identity-v4",
             "radar-spatial-grid-identity-v5",
+            "radar-spatial-grid-identity-v6",
         }:
             payload.update(
                 {
@@ -2291,7 +2639,10 @@ class RadarGridTimeContract:
                     "cell_center_convention": self.cell_center_convention,
                 }
             )
-        if self.spatial_grid_contract == "radar-spatial-grid-identity-v5":
+        if self.spatial_grid_contract in {
+            "radar-spatial-grid-identity-v5",
+            "radar-spatial-grid-identity-v6",
+        }:
             payload["metric_domain_digest"] = self.metric_domain_digest
             if self.metric_domain_evidence_digest is not None:
                 payload["metric_domain_evidence_digest"] = (
@@ -2471,6 +2822,7 @@ class RadarGridTimeContract:
                 "radar-spatial-grid-identity-v3",
                 "radar-spatial-grid-identity-v4",
                 "radar-spatial-grid-identity-v5",
+                "radar-spatial-grid-identity-v6",
             }
             and self.grid_shape_yx != shape_yx
         ):
@@ -2497,7 +2849,7 @@ class RadarGridTimeContract:
     ) -> None:
         """Fail closed when a physical-area cap is not interval-stable."""
 
-        if self.spatial_grid_contract == "radar-spatial-grid-identity-v5":
+        if self.spatial_grid_contract == "radar-spatial-grid-identity-v6":
             self.validate_current_metric_domain_evidence()
             CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.validate_projected_area_maximum(
                 projected_area_km2,
@@ -2513,7 +2865,7 @@ class RadarGridTimeContract:
     ) -> str:
         """Return passes/exceeds/uncertain for one projected-area cap."""
 
-        if self.spatial_grid_contract == "radar-spatial-grid-identity-v5":
+        if self.spatial_grid_contract == "radar-spatial-grid-identity-v6":
             self.validate_current_metric_domain_evidence()
             return (
                 CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
@@ -2535,7 +2887,7 @@ class RadarGridTimeContract:
     ) -> None:
         """Fail closed when a physical-area minimum is not interval-stable."""
 
-        if self.spatial_grid_contract == "radar-spatial-grid-identity-v5":
+        if self.spatial_grid_contract == "radar-spatial-grid-identity-v6":
             self.validate_current_metric_domain_evidence()
             CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.validate_projected_area_minimum(
                 projected_area_km2,
@@ -2551,7 +2903,7 @@ class RadarGridTimeContract:
     ) -> str:
         """Return passes/insufficient/uncertain for an area minimum."""
 
-        if self.spatial_grid_contract == "radar-spatial-grid-identity-v5":
+        if self.spatial_grid_contract == "radar-spatial-grid-identity-v6":
             self.validate_current_metric_domain_evidence()
             return (
                 CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
@@ -2641,7 +2993,7 @@ class RadarGridTimeContract:
         if type(interval_minutes) is not int or interval_minutes <= 0:
             raise ValueError("interval_minutes must be positive")
         radius_m = maximum_speed_mps * interval_minutes * 60.0
-        if self.spatial_grid_contract == "radar-spatial-grid-identity-v5":
+        if self.spatial_grid_contract == "radar-spatial-grid-identity-v6":
             self.validate_current_metric_domain_evidence()
             radius_m = (
                 CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
@@ -2655,7 +3007,7 @@ class RadarGridTimeContract:
     ) -> Tensor:
         """Return a fail-closed ground-speed upper bound for current grids."""
 
-        if self.spatial_grid_contract != "radar-spatial-grid-identity-v5":
+        if self.spatial_grid_contract != "radar-spatial-grid-identity-v6":
             return projected_speed_mps
         self.validate_current_metric_domain_evidence()
         return projected_speed_mps / (
@@ -2674,7 +3026,7 @@ class RadarGridTimeContract:
             or maximum_ground_speed_mps <= 0.0
         ):
             raise ValueError("maximum ground speed must be positive")
-        if self.spatial_grid_contract != "radar-spatial-grid-identity-v5":
+        if self.spatial_grid_contract != "radar-spatial-grid-identity-v6":
             return maximum_ground_speed_mps
         self.validate_current_metric_domain_evidence()
         return (
@@ -2688,12 +3040,26 @@ class RadarGridTimeContract:
     ) -> float:
         """Return a projected boundary safely beyond a ground minimum."""
 
-        if self.spatial_grid_contract != "radar-spatial-grid-identity-v5":
+        if self.spatial_grid_contract != "radar-spatial-grid-identity-v6":
             return minimum_ground_distance_m
         self.validate_current_metric_domain_evidence()
         return (
             CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
             .certainly_exceeds_projected_radius_m(minimum_ground_distance_m)
+        )
+
+    def projected_radius_certainly_within_ground_maximum_m(
+        self,
+        maximum_ground_distance_m: float,
+    ) -> float:
+        """Return a projected boundary safely inside a ground maximum."""
+
+        if self.spatial_grid_contract != "radar-spatial-grid-identity-v6":
+            return maximum_ground_distance_m
+        self.validate_current_metric_domain_evidence()
+        return (
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
+            .certainly_within_projected_radius_m(maximum_ground_distance_m)
         )
 
     def _maximum_index_displacement_yx(
@@ -2775,18 +3141,69 @@ class RadarGridTimeContract:
     ) -> tuple[tuple[int, int], ...]:
         """Return offsets guaranteed inside a physical ground-distance cap."""
 
-        projected_radius = maximum_ground_distance_m
-        if self.spatial_grid_contract == "radar-spatial-grid-identity-v5":
+        return self.pixel_offsets_ground_distance_footprint(
+            maximum_ground_distance_m,
+            maximum_radius_yx=maximum_radius_yx,
+        ).certainly_inside
+
+    def pixel_offsets_possibly_within_ground_distance(
+        self,
+        maximum_ground_distance_m: float,
+        *,
+        maximum_radius_yx: tuple[int, int],
+    ) -> tuple[tuple[int, int], ...]:
+        """Return offsets that may lie inside a physical ground-distance cap."""
+
+        return self.pixel_offsets_ground_distance_footprint(
+            maximum_ground_distance_m,
+            maximum_radius_yx=maximum_radius_yx,
+        ).possibly_inside
+
+    def pixel_offsets_ground_distance_footprint(
+        self,
+        maximum_ground_distance_m: float,
+        *,
+        maximum_radius_yx: tuple[int, int],
+    ) -> GroundDistanceFootprint:
+        """Classify grid offsets as certain, uncertain, or possible."""
+
+        if (
+            isinstance(maximum_ground_distance_m, bool)
+            or not isinstance(maximum_ground_distance_m, (int, float))
+            or not math.isfinite(maximum_ground_distance_m)
+            or maximum_ground_distance_m < 0.0
+        ):
+            raise ValueError("ground-distance radius must be nonnegative")
+        certain_radius = float(maximum_ground_distance_m)
+        possible_radius = float(maximum_ground_distance_m)
+        if self.spatial_grid_contract == "radar-spatial-grid-identity-v6":
             self.validate_current_metric_domain_evidence()
-            projected_radius = (
+            certain_radius = (
                 CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
                 .certainly_within_projected_radius_m(
                     maximum_ground_distance_m
                 )
             )
-        return self.pixel_offsets_within_distance(
-            projected_radius,
+            possible_radius = (
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
+                .certainly_exceeds_projected_radius_m(
+                    maximum_ground_distance_m
+                )
+            )
+        certain = self.pixel_offsets_within_distance(
+            certain_radius,
             maximum_radius_yx=maximum_radius_yx,
+        )
+        possible = self.pixel_offsets_within_distance(
+            possible_radius,
+            maximum_radius_yx=maximum_radius_yx,
+        )
+        certain_set = frozenset(certain)
+        uncertain = tuple(offset for offset in possible if offset not in certain_set)
+        return GroundDistanceFootprint(
+            certainly_inside=certain,
+            uncertain=uncertain,
+            possibly_inside=possible,
         )
 
     def validate_for(
@@ -3590,7 +4007,7 @@ class ForecastRunContract:
         if grid_time_contract is not None:
             if (
                 grid_time_contract.spatial_grid_contract
-                == "radar-spatial-grid-identity-v5"
+                == "radar-spatial-grid-identity-v6"
             ):
                 grid_time_contract.validate_current_metric_domain_evidence()
             grid_time_contract.validate_spatial_shape(
@@ -3838,7 +4255,7 @@ class ForecastRunContract:
 
     @property
     def analysis_input_identity(self) -> AnalysisInputIdentity | None:
-        """Return the current v2 data/plan identity, or None for legacy runs."""
+        """Return the current v3 data/plan identity, or None for legacy runs."""
 
         if (
             self.fixed_input_context_digest is None
@@ -4859,7 +5276,9 @@ def _validate_prior_deployment_lineage(
         "neural-prior-deployment-lineage-v14-audit",
         "neural-prior-deployment-lineage-v15-audit",
         "neural-prior-deployment-lineage-v16-audit",
+        "neural-prior-deployment-lineage-v17-audit",
         "neural-prior-deployment-lineage-v18-audit",
+        "neural-prior-deployment-lineage-v19-audit",
         "neural-prior-deployment-lineage-v19",
     }:
         raise ValueError("unsupported neural-prior deployment lineage")
@@ -4873,6 +5292,22 @@ def _validate_prior_deployment_lineage(
         deployment_decision_artifact_digest,
         fallback_reason,
     )
+    if (
+        contract == "neural-prior-deployment-lineage-v19"
+        and any(value is not None for value in values)
+        and (
+            not CONTRACT_CAPABILITIES[
+                "neural_prior_promotion_evidence"
+            ].operationally_accepted
+            or not CONTRACT_CAPABILITIES[
+                "deployed_neural_prior_policy"
+            ].operationally_accepted
+        )
+    ):
+        raise OperationalDeploymentUnsupportedError(
+            "Current scientific runs cannot claim operational neural-prior "
+            "deployment lineage."
+        )
     if contract == "neural-prior-deployment-lineage-v0-audit":
         if any(value is not None for value in values):
             raise ValueError("legacy deployment lineage cannot claim evidence")
@@ -5009,7 +5444,9 @@ def _validate_prior_deployment_lineage(
         "neural-prior-deployment-lineage-v14-audit",
         "neural-prior-deployment-lineage-v15-audit",
         "neural-prior-deployment-lineage-v16-audit",
+        "neural-prior-deployment-lineage-v17-audit",
         "neural-prior-deployment-lineage-v18-audit",
+        "neural-prior-deployment-lineage-v19-audit",
     }:
         if all(value is None for value in values):
             return
@@ -7665,6 +8102,7 @@ def _has_complete_echo_neighborhood(
         active_echo.shape,
         config,
         grid_time_contract,
+        use=FootprintUse.COMPLETENESS_ENVELOPE,
     )
     near_echo = _dilate_mask(active_echo, offsets)
 
@@ -8218,19 +8656,19 @@ def _pair_echo_offsets(
     shape: torch.Size,
     config: NowcastConfig,
     grid_time_contract: RadarGridTimeContract | None,
+    *,
+    use: FootprintUse = FootprintUse.CERTAIN_SUPPORT,
 ) -> tuple[tuple[int, int], ...]:
     if config.pair_echo_dilation_m is not None:
         if grid_time_contract is None:
             raise ValueError(
                 "pair_echo_dilation_m requires a grid/time contract"
             )
-        return (
-            grid_time_contract
-            .pixel_offsets_certainly_within_ground_distance(
-                config.pair_echo_dilation_m,
-                maximum_radius_yx=(shape[0] - 1, shape[1] - 1),
-            )
+        footprint = grid_time_contract.pixel_offsets_ground_distance_footprint(
+            config.pair_echo_dilation_m,
+            maximum_radius_yx=(shape[0] - 1, shape[1] - 1),
         )
+        return footprint.offsets_for(use)
     radius = config.pair_echo_dilation_px
     return tuple(
         (row, column)
@@ -9264,13 +9702,20 @@ def _phase_correlation_details(
     peak_index = int(torch.argmax(correlation).item())
     correlation_height, correlation_width = correlation.shape
     peak_y, peak_x = divmod(peak_index, correlation_width)
-    psr = _peak_to_sidelobe_ratio(
-        correlation,
-        peak_y,
-        peak_x,
-        config,
-        grid_time_contract,
-    )
+    try:
+        psr = _peak_to_sidelobe_ratio(
+            correlation,
+            peak_y,
+            peak_x,
+            config,
+            grid_time_contract,
+        )
+        psr_is_geodetically_certified = True
+    except GeodeticMetricUncertaintyError:
+        # PSR is not monotone in its sidelobe set.  An uncertain annulus
+        # therefore cannot be converted into a conservative scalar PSR.
+        psr = correlation.new_full((), torch.nan)
+        psr_is_geodetically_certified = False
     offset_y = _parabolic_peak_offset(correlation[:, peak_x], peak_y, config)
     offset_x = _parabolic_peak_offset(correlation[peak_y, :], peak_x, config)
 
@@ -9330,7 +9775,11 @@ def _phase_correlation_details(
     return (
         shift,
         psr,
-        inside_limits and away_from_search_boundary,
+        (
+            psr_is_geodetically_certified
+            and inside_limits
+            and away_from_search_boundary
+        ),
         (int(peak_shift_y), int(peak_shift_x)),
     )
 
@@ -9381,12 +9830,26 @@ def _peak_to_sidelobe_ratio(
             (a * column + b * row).square()
             + (c * column + d * row).square()
         )
+        certainly_inside_radius = (
+            grid_time_contract
+            .projected_radius_certainly_within_ground_maximum_m(
+                config.phase_correlation_sidelobe_radius_m
+            )
+        )
         certainly_outside_radius = (
             grid_time_contract
             .projected_radius_certainly_beyond_ground_minimum_m(
                 config.phase_correlation_sidelobe_radius_m
             )
         )
+        uncertain_annulus = (distance > certainly_inside_radius) & (
+            distance <= certainly_outside_radius
+        )
+        if bool(torch.any(uncertain_annulus)):
+            raise GeodeticMetricUncertaintyError(
+                "physical PSR exclusion radius has a geodetically "
+                "uncertain sidelobe annulus"
+            )
         sidelobe_mask = distance > certainly_outside_radius
     sidelobe = correlation[sidelobe_mask]
     if sidelobe.numel() < 2:
