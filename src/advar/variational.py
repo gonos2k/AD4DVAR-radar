@@ -3967,9 +3967,12 @@ def prepare_analysis(
             raise ValueError(
                 "causal_support_uncertainty_m requires a grid/time contract"
             )
-        causal_dilation_offsets = grid_time_contract.pixel_offsets_within_distance(
-            analysis_config.causal_support_uncertainty_m,
-            maximum_radius_yx=maximum_radius_yx,
+        causal_dilation_offsets = (
+            grid_time_contract
+            .pixel_offsets_certainly_within_ground_distance(
+                analysis_config.causal_support_uncertainty_m,
+                maximum_radius_yx=maximum_radius_yx,
+            )
         )
     else:
         causal_dilation_offsets = _rectangular_offsets_yx(
@@ -3982,7 +3985,7 @@ def prepare_analysis(
                 "amplitude_displacement_tolerance_m requires a grid/time contract"
             )
         amplitude_tolerance_offsets = (
-            grid_time_contract.pixel_offsets_within_distance(
+            grid_time_contract.pixel_offsets_certainly_within_ground_distance(
                 analysis_config.amplitude_displacement_tolerance_m,
                 maximum_radius_yx=maximum_radius_yx,
             )
@@ -5963,8 +5966,16 @@ def _posterior_physical_dynamics_uncertainty(
         or float(growth_variance) < -negative_tolerance
     ):
         return unavailable, unavailable.clone()
+    projected_velocity_uncertainty = torch.sqrt(
+        velocity_variance.clamp_min(0.0)
+    )
+    ground_velocity_uncertainty = (
+        grid_time_contract.projected_ground_speed_upper_bound(
+            projected_velocity_uncertainty
+        )
+    )
     return (
-        torch.sqrt(velocity_variance.clamp_min(0.0)),
+        ground_velocity_uncertainty,
         torch.sqrt(growth_variance.clamp_min(0.0)),
     )
 
@@ -8618,9 +8629,10 @@ def _motion_speed_saturation_margin(
     if maximum_speed is None or contract is None:
         return None
     projected = contract.projected_displacement_xy(displacement_yx)
-    speed = torch.linalg.vector_norm(projected) / (
+    projected_speed = torch.linalg.vector_norm(projected) / (
         frozen.nowcast_config.interval_minutes * 60.0
     )
+    speed = contract.projected_ground_speed_upper_bound(projected_speed)
     return maximum_speed - float(speed.detach())
 
 
@@ -8808,11 +8820,21 @@ def _decode_dynamics(
             baseline.displacement_yx,
             nowcast.interval_minutes,
         )
+        projected_speed_limit = (
+            grid_time_contract.conservative_projected_speed_limit_mps(
+                nowcast.maximum_motion_speed_mps
+            )
+        )
+        projected_increment_scale = (
+            grid_time_contract.conservative_projected_speed_limit_mps(
+                config.motion_increment_scale_mps
+            )
+        )
         projected_velocity = _bounded_vector_update(
             baseline_velocity,
             dynamics_control[:2],
-            config.motion_increment_scale_mps,
-            nowcast.maximum_motion_speed_mps,
+            projected_increment_scale,
+            projected_speed_limit,
         )
         displacement = (
             grid_time_contract.displacement_yx_from_projected_velocity(

@@ -1,8 +1,10 @@
 from copy import deepcopy
 from dataclasses import fields, replace
+import hashlib
 from pathlib import Path
 from importlib import import_module
 import math
+import os
 import subprocess
 import sys
 import tempfile
@@ -21,6 +23,8 @@ from advar.diagnostics import (  # noqa: E402
 from advar.nowcast import (  # noqa: E402
     CURRENT_RADAR_METRIC_DOMAIN,
     CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
+    LegacyRadarMetricDomainEvidenceAuditV1,
+    ThresholdRelation,
     _EPSG_5179_METRIC_EVIDENCE_REPORT,
     _aligned_growth_evidence,
     _validate_radar_metric_domain_evidence_report,
@@ -45,6 +49,8 @@ from advar.nowcast import (  # noqa: E402
     forecast_linear_from_state,
     nowcast,
     radar_projected_crs_semantic_digest,
+    projected_ground_distance_interval,
+    projected_ground_speed_interval,
 )
 from advar.physics import (  # noqa: E402
     FORECAST_INTEGRATOR_VERSION,
@@ -5358,6 +5364,24 @@ class NowcastTests(unittest.TestCase):
         valid.validate_projected_area_maximum(0.98, 1.0)
         with self.assertRaisesRegex(ValueError, "uncertainty margin"):
             valid.validate_projected_area_maximum(0.995, 1.0)
+        self.assertIn(
+            (0, 1),
+            valid.pixel_offsets_within_distance(
+                1_000.0,
+                maximum_radius_yx=(1, 1),
+            ),
+        )
+        self.assertEqual(
+            valid.pixel_offsets_certainly_within_ground_distance(
+                1_000.0,
+                maximum_radius_yx=(1, 1),
+            ),
+            ((0, 0),),
+        )
+        self.assertAlmostEqual(
+            valid.conservative_projected_speed_limit_mps(10.0),
+            9.94,
+        )
 
         with self.assertRaisesRegex(ValueError, "outside the metric domain"):
             replace(valid, cell_center_origin_xy_m=(0.0, 0.0))
@@ -5389,7 +5413,7 @@ class NowcastTests(unittest.TestCase):
         self,
     ) -> None:
         evidence = CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
-        self.assertEqual(evidence.contract, "radar-metric-domain-evidence-v1")
+        self.assertEqual(evidence.contract, "radar-metric-domain-evidence-v2")
         self.assertEqual(
             evidence.metric_domain_digest,
             CURRENT_RADAR_METRIC_DOMAIN.digest,
@@ -5399,7 +5423,7 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(evidence.epsg_database_version, "v12.029")
         self.assertEqual(
             evidence.generator_contract,
-            "generate-metric-domain-evidence-v2",
+            "generate-metric-domain-evidence-v3",
         )
         self.assertLessEqual(
             evidence.maximum_observed_linear_scale_error,
@@ -5419,6 +5443,8 @@ class NowcastTests(unittest.TestCase):
             {"proj_binary_sha256": "0" * 64},
             {"projinfo_binary_sha256": "0" * 64},
             {"proj_database_sha256": "0" * 64},
+            {"execution_environment_digest": "0" * 64},
+            {"dynamic_library_closure_digest": "0" * 64},
             {"validated_projected_coverage_digest": "0" * 64},
             {"sampled_projected_points_digest": "0" * 64},
             {"meridional_scale_digest": "0" * 64},
@@ -5470,6 +5496,125 @@ class NowcastTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "outside sampled metric evidence"):
             evidence.validate_projected_point(550_000.0, 1_000_000.0)
 
+        within = projected_ground_distance_interval(993.999, 0.006)
+        uncertain = projected_ground_distance_interval(1_000.0, 0.006)
+        exceeds = projected_ground_distance_interval(1_006.001, 0.006)
+        self.assertIs(
+            within.relation_to_maximum(1_000.0),
+            ThresholdRelation.CERTAINLY_WITHIN,
+        )
+        self.assertIs(
+            uncertain.relation_to_maximum(1_000.0),
+            ThresholdRelation.UNCERTAIN,
+        )
+        self.assertIs(
+            exceeds.relation_to_maximum(1_000.0),
+            ThresholdRelation.CERTAINLY_EXCEEDS,
+        )
+        speed = projected_ground_speed_interval(9.94, 0.006)
+        self.assertIs(
+            speed.relation_to_maximum(10.0),
+            ThresholdRelation.CERTAINLY_WITHIN,
+        )
+
+    def test_legacy_metric_domain_report_is_audit_only(self) -> None:
+        repository = Path(__file__).resolve().parents[1]
+        report_path = (
+            repository
+            / "src"
+            / "advar"
+            / "data"
+            / "epsg5179_metric_domain_evidence_v1.json"
+        )
+        report_bytes = report_path.read_bytes()
+        report_json = report_bytes.decode("utf-8").removesuffix("\n")
+        audit = LegacyRadarMetricDomainEvidenceAuditV1(
+            report_json=report_json,
+            verification_report_sha256=hashlib.sha256(report_bytes).hexdigest(),
+        )
+        self.assertRegex(audit.audit_digest, r"^[0-9a-f]{64}$")
+        with self.assertRaisesRegex(ValueError, "legacy metric-domain"):
+            replace(audit, verification_report_sha256="0" * 64)
+
+    def test_current_metric_uncertainty_reaches_pair_psr_and_speed_gates(
+        self,
+    ) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-07-31T00:00:00Z",
+                "2026-07-31T00:10:00Z",
+                "2026-07-31T00:20:00Z",
+            ),
+            dx_m=1005.0,
+            dy_m=1005.0,
+            projection="EPSG:5179",
+            grid_hash="c" * 64,
+            spatial_grid_contract="radar-spatial-grid-identity-v5",
+            grid_shape_yx=(3, 3),
+            projected_crs_digest=radar_projected_crs_semantic_digest(
+                "EPSG:5179"
+            ),
+            metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
+            cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
+            grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            cell_center_convention=(
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+        )
+        config = NowcastConfig(
+            pair_echo_dilation_m=1000.0,
+            phase_correlation_sidelobe_radius_m=1000.0,
+            maximum_motion_speed_mps=10.0,
+        )
+
+        self.assertEqual(
+            nowcast_module._pair_echo_offsets(torch.Size((3, 3)), config, grid),
+            ((0, 0),),
+        )
+        correlation = torch.tensor(
+            (
+                (1.0, 100.0, 3.0),
+                (100.0, 10.0, 100.0),
+                (5.0, 100.0, 7.0),
+            ),
+            dtype=torch.float64,
+        )
+        psr = nowcast_module._peak_to_sidelobe_ratio(
+            correlation,
+            1,
+            1,
+            config,
+            grid,
+        )
+        self.assertAlmostEqual(float(psr), 6.0 / math.sqrt(5.0))
+
+        projected_speed_mps = 9.95
+        displacement = torch.tensor(
+            (0.0, projected_speed_mps * 600.0 / 1005.0),
+            dtype=torch.float64,
+        )
+        disagreement = nowcast_module._motion_disagreement_mps(
+            torch.zeros(2, dtype=torch.float64),
+            displacement,
+            config,
+            grid,
+        )
+        self.assertGreater(float(disagreement), 10.0)
+        with self.assertRaisesRegex(ValueError, "motion exceeds"):
+            nowcast_module._validate_state_dynamics(
+                RadarState(
+                    echo_linear=torch.ones((3, 3), dtype=torch.float64),
+                    displacement_yx=displacement,
+                    log_growth_per_step=torch.zeros((), dtype=torch.float64),
+                ),
+                config,
+                grid,
+            )
+
     def test_metric_domain_report_reductions_are_independently_recomputed(
         self,
     ) -> None:
@@ -5498,7 +5643,7 @@ class NowcastTests(unittest.TestCase):
             / "src"
             / "advar"
             / "data"
-            / "epsg5179_metric_domain_evidence_v1.json"
+            / "epsg5179_metric_domain_evidence_v2.json"
         )
         command = (
             sys.executable,
@@ -5515,6 +5660,25 @@ class NowcastTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
+
+        with tempfile.TemporaryDirectory() as directory:
+            environment = dict(os.environ)
+            environment["LD_LIBRARY_PATH"] = "/tmp/advar-injected-loader"
+            rejected = subprocess.run(
+                (
+                    sys.executable,
+                    str(script),
+                    "--output",
+                    str(Path(directory) / "report.json"),
+                ),
+                cwd=repository,
+                env=environment,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(rejected.returncode, 0)
+            self.assertIn("rejects loader overrides", rejected.stderr)
 
         with tempfile.TemporaryDirectory() as directory:
             changed_script = Path(directory) / script.name
