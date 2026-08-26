@@ -137,3 +137,23 @@ contract is operationally accepted, and no operational selector or activation is
 5. **Documentation/scope audit — PASS after forward fix.** Removed stale “current
    v66 deployment” wording, marked the certificate state machine historical/audit-only,
    synchronized current generations and retained all external HOLD/NO-GO boundaries.
+
+## Post-merge authority record (append-only)
+
+This section records repository state after the historical pre-merge decisions
+above. It does not retroactively rewrite their timing or scientific scope.
+
+| Field | Final evidence |
+|---|---|
+| PR status | MERGED / PASS |
+| PR head | `fb555b3fea945f4e90794d672ce7b69a702a5436` |
+| Merge commit | `cc6a70361eb311729575cfe21d7ca1d88361abbd` |
+| PR-head tree | `6ec30dd1744473e4b984d58caa987ce8f1a5f57c` |
+| Merge tree | `6ec30dd1744473e4b984d58caa987ce8f1a5f57c` |
+| Tree identity | SAME |
+| Merged at | `2026-08-25T22:57:27Z` |
+| PR-head CI | run `32872167216` — SUCCESS |
+| Main push CI | run `32908578267` — SUCCESS |
+| Required jobs | Python 3.10 CPU, Python 3.12 CPU, Wheel and CLI smoke — SUCCESS |
+| Scientific external gates | HOLD — X144-001/X144-002/X144-003 remain open |
+| Operational deployment | NO-GO / explicitly out of scope |

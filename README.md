@@ -16,18 +16,18 @@ state-advancing LIVE는 승인하지 않는다.
 <!-- CONTRACT_CAPABILITY_TABLE:START -->
 | Contract family | Current | Predecessor | Issuable | Audit-readable | Scientific | Operational |
 |---|---|---|---|---|---|---|
-| radar_metric_domain_evidence | radar-metric-domain-evidence-v3 | radar-metric-domain-evidence-v2 | radar-metric-domain-evidence-v3 | radar-metric-domain-evidence-v1, radar-metric-domain-evidence-v2, radar-metric-domain-evidence-v3 | radar-metric-domain-evidence-v3 | ∅ |
+| radar_metric_domain_evidence | radar-metric-domain-evidence-v4 | radar-metric-domain-evidence-v3 | radar-metric-domain-evidence-v4 | radar-metric-domain-evidence-v1, radar-metric-domain-evidence-v2, radar-metric-domain-evidence-v3, radar-metric-domain-evidence-v4 | radar-metric-domain-evidence-v4 | ∅ |
 | neural_prior_promotion_evidence | neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v31 | neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v31, neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v32 | ∅ |
 | deployed_neural_prior_policy | deployed-neural-prior-policy-v17 | — | deployed-neural-prior-policy-v17 | deployed-neural-prior-policy-v17 | ∅ | ∅ |
 | neural_prior_deployment_lineage | neural-prior-deployment-lineage-v19 | neural-prior-deployment-lineage-v18-audit | neural-prior-deployment-lineage-v19 | neural-prior-deployment-lineage-v18-audit, neural-prior-deployment-lineage-v19, neural-prior-deployment-lineage-v19-audit | ∅ | ∅ |
 | radar_spatial_grid_identity | radar-spatial-grid-identity-v6 | radar-spatial-grid-identity-v5 | radar-spatial-grid-identity-v6 | radar-spatial-grid-identity-v5, radar-spatial-grid-identity-v6 | radar-spatial-grid-identity-v6 | ∅ |
 | mosaic_observation_source_registry | mosaic-observation-source-registry-v7 | mosaic-observation-source-registry-v6 | mosaic-observation-source-registry-v7 | mosaic-observation-source-registry-v6, mosaic-observation-source-registry-v7 | mosaic-observation-source-registry-v7 | ∅ |
 | radar_observation_geometry | radar-observation-geometry-v7 | radar-observation-geometry-v6 | radar-observation-geometry-v7 | radar-observation-geometry-v6, radar-observation-geometry-v7 | radar-observation-geometry-v7 | ∅ |
-| verification_observation_error_plan | verification-observation-error-plan-v13 | verification-observation-error-plan-v12 | verification-observation-error-plan-v13 | verification-observation-error-plan-v12, verification-observation-error-plan-v13 | verification-observation-error-plan-v13 | ∅ |
-| verification_bundle | radar-verification-bundle-v19 | radar-verification-bundle-v18 | radar-verification-bundle-v19 | radar-verification-bundle-v18, radar-verification-bundle-v19 | radar-verification-bundle-v19 | ∅ |
-| variational_fso | p1-variational-fso-v25 | p1-variational-fso-v24 | p1-variational-fso-v25 | p1-variational-fso-v24, p1-variational-fso-v25 | p1-variational-fso-v25 | ∅ |
-| variational_fsoi | p1-linearized-observation-impact-v21 | p1-linearized-observation-impact-v20 | p1-linearized-observation-impact-v21 | p1-linearized-observation-impact-v20, p1-linearized-observation-impact-v21 | p1-linearized-observation-impact-v21 | ∅ |
-| semantic_scoring_replay | neural-prior-scoring-replay-bundle-v24 | neural-prior-scoring-replay-bundle-v23 | neural-prior-scoring-replay-bundle-v24 | neural-prior-scoring-replay-bundle-v23, neural-prior-scoring-replay-bundle-v24 | neural-prior-scoring-replay-bundle-v24 | ∅ |
+| verification_observation_error_plan | verification-observation-error-plan-v14 | verification-observation-error-plan-v13 | verification-observation-error-plan-v14 | verification-observation-error-plan-v13, verification-observation-error-plan-v14 | verification-observation-error-plan-v14 | ∅ |
+| verification_bundle | radar-verification-bundle-v20 | radar-verification-bundle-v19 | radar-verification-bundle-v20 | radar-verification-bundle-v19, radar-verification-bundle-v20 | radar-verification-bundle-v20 | ∅ |
+| variational_fso | p1-variational-fso-v26 | p1-variational-fso-v25 | p1-variational-fso-v26 | p1-variational-fso-v25, p1-variational-fso-v26 | p1-variational-fso-v26 | ∅ |
+| variational_fsoi | p1-linearized-observation-impact-v22 | p1-linearized-observation-impact-v21 | p1-linearized-observation-impact-v22 | p1-linearized-observation-impact-v21, p1-linearized-observation-impact-v22 | p1-linearized-observation-impact-v22 | ∅ |
+| semantic_scoring_replay | neural-prior-scoring-replay-bundle-v25 | neural-prior-scoring-replay-bundle-v24 | neural-prior-scoring-replay-bundle-v25 | neural-prior-scoring-replay-bundle-v24, neural-prior-scoring-replay-bundle-v25 | neural-prior-scoring-replay-bundle-v25 | ∅ |
 <!-- CONTRACT_CAPABILITY_TABLE:END -->
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
@@ -468,7 +468,7 @@ legacy Tensor를 거부한다. raw Tensor 입력은 연구 호환용으로 계�
 결과와 M0 원장에 `verification_lineage_complete=False`로 기록되므로 지연 자동
 학습의 완전한 검증자료로 승격할 수 없다.
 
-`compute_variational_fso()`의 current `p1-variational-fso-v25` 결과는 영향값이 아니라
+`compute_variational_fso()`의 current `p1-variational-fso-v26` 결과는 영향값이 아니라
 다음 관측 parameter와 frozen 초기배경 경로에 대한 미분이다.
 
 Radar-dependent neural prior는 mean과 spatial `log(std_dbz)` JVP/VJP를 모두
@@ -945,12 +945,12 @@ withheld radar/time/mask), QC·mask·censor·floor measurement contract,
 feature-exclusion 및 independence evidence를
 사전등록하며 plan payload 자체가 holdout digest에 포함된다. 실제 target은 임의
 Tensor로 만들 수 없고, plan에 고정된 radar product·QC·grid·valid time과 일치하는
-content-addressed `radar-verification-bundle-v19`에서만 생성한다.
+content-addressed `radar-verification-bundle-v20`에서만 생성한다.
 P1 state head에는 별도의 `NeuralPriorStateCalibrationPlan`을 사전등록한다. State target은
 state product·QC·mask·censor·floor policy, dBZ resolution·quantization origin과 prior output
 valid time에 결합되고 feature에서 withhold됐음을 검증한다. Target은 이 측정계보를 실제
 자료와 함께 observation-error contract를 attestation한
-`radar-verification-bundle-v19`에서만 생성된다. Candidate와
+`radar-verification-bundle-v20`에서만 생성된다. Candidate와
 parent의 state interval-Gaussian NLL·PIT,
 support Brier·pixel/object miss·false-support 및 validity Brier를 같은 target에서 paired
 평가한다. 절대 calibration과 cluster max-statistic 비열화 상한을 모두 통과하지 못하면
@@ -1236,7 +1236,7 @@ compatibility 세대이며 current confirmatory target을 만들 수 없다.
 Holdout plan v34는 모든
 uncertainty/state target이 참조하는 observation-error plan payload의 정확한 집합을
 보존하고, current target는 deterministic replay를 포함한
-`radar-verification-bundle-v19`만 허용한다. v19는 bundle valid time, shared projected
+`radar-verification-bundle-v20`만 허용한다. v19는 bundle valid time, shared projected
 grid, radar product를
 signed source identity와 exact 비교한다. 따라서 결과를 본 뒤 mask, source time,
 source index ordering, calibration mapping, selected-source value/time/detection limit
@@ -1255,7 +1255,7 @@ cell별 selected-source detection limit의 left-censored likelihood로 평가한
 이미 predictive variance에 포함되므로 이 진단의 aggregation에는 quality만 사용하고
 inverse-variance를 다시 곱하지 않는다. 결과는 항상 `diagnostic_only=True`이며,
 사전등록된 과학 protocol 없이 promotion을 승인하지 않는다.
-Current scientific replay는 `neural-prior-scoring-replay-bundle-v24`이며 source-specific
+Current scientific replay는 `neural-prior-scoring-replay-bundle-v25`이며 source-specific
 report kind, absolute acquisition age, temporal-valid mask, spatial-metric age support와
 confirmed-clear mask, 그리고 product-derived verification geometry의 float64 x/y 좌표를
 content-addressed shard에 보존한다. 직전 v23은 byte audit만 가능하고 current semantic
@@ -1276,12 +1276,12 @@ Audit load는 저장된 typed evaluation을 볼 수 있지만, 자동 completion
 동일한 typed replay case를 다시 제공해 semantic replay까지 통과해야 한다. 배포
 certificate 발급 시에도 typed case에서 제품 scorer를 다시 실행하며, checksum-only
 archive는 certificate를 받을 수 없다. Ledger는
-current replay bundle/method v24, semantic generation v22와 scoring case v23만
-재실행하며, 이전 replay bundle v23과 그 이전 세대는 typed audit-only
+current replay bundle/method v25, semantic generation v23과 scoring case v24만
+재실행하며, 이전 replay bundle v24와 그 이전 세대는 typed audit-only
 object로만 decode한다. Current bundle은 `verification_provenance.json`과 source-specific
 verification tensors를 보존한다. 원래 Python case object가 없어도 source signature,
 ordered registry, product-owned radar geometry/source selection, mask derivation,
-observation-error derivation과 v19 verification bundle digest를
+observation-error derivation과 v20 verification bundle digest를
 cold-start 재검증하고 `verification_semantic_replay_verified=True`를 보고한다. Model
 runner와 forecast products까지 다시 실행하는 full scoring replay는 exact typed case가
 제공될 때만 `semantic_replay_verified=True`이며 두 주장을 혼동하지 않는다.
@@ -1391,9 +1391,9 @@ probability의 binary Brier를 physical event 동일가중 UCB로 판정한다. 
 surrogate와 ECE는 diagnostic-only다. Sample-size preflight도 known weather/range,
 weather/range OOD와 Brier-valid event subset을 각각 확인한다.
 
-현재 scientific promotion evidence는 v32, candidate manifest는 v19, holdout plan은 v34,
+현재 scientific promotion evidence는 v32, candidate manifest는 v19, holdout plan은 v35,
 holdout scoring artifact는 v15, holdout evaluation은 v24, promotion policy는 v30,
-metric support는 v3이다. 직전 v31/v32/v14 세대는 typed audit-only이며 current source와
+metric support는 v3이다. 각 predecessor generation은 typed audit-only이며 current source와
 metric-engine identity를 다시 확인하는 자동 과학 경로에 들어갈 수 없다. 운영 selector는
 current package에 노출되지 않고 v32의 operational capability는 명시적으로 비어 있다.
 Deployment는 이 프로젝트의 범위 밖이다.

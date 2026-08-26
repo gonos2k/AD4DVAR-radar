@@ -28,6 +28,7 @@ from advar.nowcast import (  # noqa: E402
     GroundDistanceFootprint,
     LegacyRadarMetricDomainEvidenceAuditV1,
     LegacyRadarMetricDomainEvidenceAuditV2,
+    LegacyRadarMetricDomainEvidenceAuditV3,
     SpeedInterval,
     ThresholdDecision,
     ThresholdRelation,
@@ -5423,7 +5424,7 @@ class NowcastTests(unittest.TestCase):
         self,
     ) -> None:
         evidence = CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
-        self.assertEqual(evidence.contract, "radar-metric-domain-evidence-v3")
+        self.assertEqual(evidence.contract, "radar-metric-domain-evidence-v4")
         self.assertEqual(
             evidence.metric_domain_digest,
             CURRENT_RADAR_METRIC_DOMAIN.digest,
@@ -5433,7 +5434,7 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(evidence.epsg_database_version, "v12.029")
         self.assertEqual(
             evidence.generator_contract,
-            "generate-metric-domain-evidence-v4",
+            "generate-metric-domain-evidence-v5",
         )
         self.assertLessEqual(
             evidence.maximum_observed_linear_scale_error,
@@ -5448,7 +5449,7 @@ class NowcastTests(unittest.TestCase):
         ]
         self.assertEqual(
             execution_environment["contract"],
-            "metric-domain-generator-execution-environment-v2",
+            "metric-domain-generator-execution-environment-v3",
         )
         self.assertTrue(
             execution_environment["independent_sealed_environment_required"]
@@ -5538,7 +5539,7 @@ class NowcastTests(unittest.TestCase):
             exceeds.relation_to_maximum(1_000.0),
             ThresholdRelation.CERTAINLY_EXCEEDS,
         )
-        speed = projected_ground_speed_interval(9.94, 0.006)
+        speed = projected_ground_speed_interval(9.939999, 0.006)
         self.assertIs(
             speed.relation_to_maximum(10.0),
             ThresholdRelation.CERTAINLY_WITHIN,
@@ -5602,6 +5603,18 @@ class NowcastTests(unittest.TestCase):
         )
         self.assertRegex(audit_v2.audit_digest, r"^[0-9a-f]{64}$")
 
+        report_path_v3 = report_path.with_name(
+            "epsg5179_metric_domain_evidence_v3.json"
+        )
+        report_bytes_v3 = report_path_v3.read_bytes()
+        audit_v3 = LegacyRadarMetricDomainEvidenceAuditV3(
+            report_json=report_bytes_v3.decode("utf-8").removesuffix("\n"),
+            verification_report_sha256=(
+                hashlib.sha256(report_bytes_v3).hexdigest()
+            ),
+        )
+        self.assertRegex(audit_v3.audit_digest, r"^[0-9a-f]{64}$")
+
     def test_current_metric_uncertainty_reaches_pair_psr_and_speed_gates(
         self,
     ) -> None:
@@ -5662,6 +5675,30 @@ class NowcastTests(unittest.TestCase):
             frozenset(footprint.possibly_inside),
             frozenset({(0, 0), (-1, 0), (0, -1), (0, 1), (1, 0)}),
         )
+
+        certain_boundary = 1000.0 * (1.0 - 0.006)
+        ulp_grid = replace(
+            grid,
+            dx_m=certain_boundary + 32.0 * math.ulp(certain_boundary),
+            dy_m=certain_boundary + 32.0 * math.ulp(certain_boundary),
+            pixel_to_projected_matrix_m=(
+                (
+                    certain_boundary + 32.0 * math.ulp(certain_boundary),
+                    0.0,
+                ),
+                (
+                    0.0,
+                    -(certain_boundary + 32.0 * math.ulp(certain_boundary)),
+                ),
+            ),
+        )
+        ulp_footprint = ulp_grid.pixel_offsets_ground_distance_footprint(
+            1000.0,
+            maximum_radius_yx=(1, 1),
+        )
+        self.assertNotIn((0, 1), ulp_footprint.certainly_inside)
+        self.assertIn((0, 1), ulp_footprint.uncertain)
+        self.assertIn((0, 1), ulp_footprint.possibly_inside)
         with self.assertRaisesRegex(
             GeodeticMetricUncertaintyError,
             "uncertain sidelobe annulus",
@@ -5705,6 +5742,25 @@ class NowcastTests(unittest.TestCase):
                 RadarState(
                     echo_linear=torch.ones((3, 3), dtype=torch.float64),
                     displacement_yx=displacement,
+                    log_growth_per_step=torch.zeros((), dtype=torch.float64),
+                ),
+                config,
+                grid,
+            )
+
+        barely_excessive_projected_speed = 10.0000005 * (1.0 - 0.006)
+        barely_excessive_displacement = torch.tensor(
+            (
+                0.0,
+                barely_excessive_projected_speed * 600.0 / 1005.0,
+            ),
+            dtype=torch.float64,
+        )
+        with self.assertRaisesRegex(ValueError, "motion exceeds"):
+            nowcast_module._validate_state_dynamics(
+                RadarState(
+                    echo_linear=torch.ones((3, 3), dtype=torch.float64),
+                    displacement_yx=barely_excessive_displacement,
                     log_growth_per_step=torch.zeros((), dtype=torch.float64),
                 ),
                 config,
@@ -5755,7 +5811,7 @@ class NowcastTests(unittest.TestCase):
             / "src"
             / "advar"
             / "data"
-            / "epsg5179_metric_domain_evidence_v3.json"
+            / "epsg5179_metric_domain_evidence_v4.json"
         )
         command = (
             sys.executable,

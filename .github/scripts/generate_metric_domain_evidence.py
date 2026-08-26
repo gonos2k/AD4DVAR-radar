@@ -14,12 +14,14 @@ import _decimal
 import _sqlite3
 from decimal import Decimal
 import hashlib
+from importlib.machinery import EXTENSION_SUFFIXES
 import json
 import math
 import os
 from pathlib import Path
 import platform
 import re
+import shlex
 import shutil
 import sqlite3
 import subprocess
@@ -35,8 +37,8 @@ MAXIMUM_LATITUDE_DEG = Decimal("40.27")
 REGISTERED_MAXIMUM_LINEAR_SCALE_ERROR = Decimal("0.006")
 REGISTERED_MAXIMUM_AREA_SCALE_ERROR = Decimal("0.012036")
 COVERAGE_BOUNDARY_SAMPLE_COUNT_PER_EDGE = 10_001
-GENERATOR_CONTRACT = "generate-metric-domain-evidence-v4"
-REPORT_CONTRACT = "radar-metric-domain-geodetic-report-v3"
+GENERATOR_CONTRACT = "generate-metric-domain-evidence-v5"
+REPORT_CONTRACT = "radar-metric-domain-geodetic-report-v4"
 _LOADER_OVERRIDE_ENVIRONMENT_VARIABLES = (
     "LD_LIBRARY_PATH",
     "LD_PRELOAD",
@@ -251,6 +253,10 @@ def _linux_dynamic_library_closure(
 ) -> list[dict[str, object]]:
     entries: dict[tuple[str, str], dict[str, object]] = {}
     for executable in executables:
+        if not _is_elf(executable):
+            raise RuntimeError(
+                f"ELF dependency root is not an ELF image: {executable}"
+            )
         for raw_line in _run(["ldd", str(executable)]).stdout.splitlines():
             line = raw_line.strip()
             if (
@@ -281,6 +287,70 @@ def _linux_dynamic_library_closure(
     return [entries[key] for key in sorted(entries)]
 
 
+def _is_elf(path: Path) -> bool:
+    try:
+        with path.open("rb") as stream:
+            return stream.read(4) == b"\x7fELF"
+    except OSError:
+        return False
+
+
+def _is_macho(path: Path) -> bool:
+    try:
+        with path.open("rb") as stream:
+            magic = stream.read(4)
+    except OSError:
+        return False
+    return magic in {
+        b"\xca\xfe\xba\xbe",
+        b"\xbe\xba\xfe\xca",
+        b"\xcf\xfa\xed\xfe",
+        b"\xce\xfa\xed\xfe",
+        b"\xfe\xed\xfa\xcf",
+        b"\xfe\xed\xfa\xce",
+    }
+
+
+def _loaded_python_native_extensions() -> tuple[Path, ...]:
+    """Return every currently imported file-backed Python extension image."""
+
+    paths = {
+        Path(module_file).resolve()
+        for module in tuple(sys.modules.values())
+        if isinstance((module_file := getattr(module, "__file__", None)), str)
+        and any(module_file.endswith(suffix) for suffix in EXTENSION_SUFFIXES)
+    }
+    return tuple(sorted(paths))
+
+
+def _inspector_interpreter_chain(inspector: Path) -> tuple[Path, ...]:
+    """Resolve the file-backed launcher chain of a script inspector."""
+
+    try:
+        first_line = inspector.read_bytes().splitlines()[0].decode("utf-8")
+    except (IndexError, OSError, UnicodeDecodeError):
+        return ()
+    if not first_line.startswith("#!"):
+        return ()
+    fields = shlex.split(first_line[2:].strip())
+    if not fields:
+        raise RuntimeError("dynamic dependency inspector shebang is invalid")
+    launcher = Path(fields[0]).resolve()
+    chain = [launcher]
+    if launcher.name == "env" and len(fields) > 1:
+        command = shutil.which(fields[1], path=_canonical_environment().get("PATH"))
+        if command is None:
+            raise RuntimeError("could not resolve inspector shebang command")
+        chain.append(Path(command).resolve())
+    if any(not path.is_file() for path in chain):
+        raise RuntimeError("inspector interpreter chain is not file-backed")
+    return tuple(chain)
+
+
+def _unique_paths(paths: tuple[Path, ...]) -> tuple[Path, ...]:
+    return tuple(dict.fromkeys(path.resolve() for path in paths))
+
+
 def _execution_environment(
     *,
     proj: str,
@@ -293,36 +363,47 @@ def _execution_environment(
         raise RuntimeError("dynamic dependency inspection tool is unavailable")
     inspector = Path(inspector_text).resolve()
     python_executable = Path(sys.executable).resolve()
-    native_extensions = tuple(
-        sorted(
-            {
-                Path(module.__file__).resolve()
-                for module in (_sqlite3, _decimal)
-                if isinstance(module.__file__, str)
-            }
-        )
-    )
-    closure_roots = (
+    native_extensions = _loaded_python_native_extensions()
+    interpreter_chain = _inspector_interpreter_chain(inspector)
+    base_roots = _unique_paths((
         Path(proj).resolve(),
         Path(projinfo).resolve(),
         python_executable,
-        inspector,
         *native_extensions,
-    )
+    ))
     if system == "Darwin":
+        closure_roots = _unique_paths(
+            (
+                *base_roots,
+                *interpreter_chain,
+                *((inspector,) if _is_macho(inspector) else ()),
+            )
+        )
+        if any(not _is_macho(path) for path in closure_roots):
+            raise RuntimeError("Darwin dynamic closure roots must all be Mach-O")
         closure = _darwin_dynamic_library_closure(closure_roots)
     elif system == "Linux":
+        closure_roots = _unique_paths((*base_roots, *interpreter_chain))
+        if any(not _is_elf(path) for path in closure_roots):
+            raise RuntimeError("Linux dynamic closure roots must all be ELF")
         closure = _linux_dynamic_library_closure(closure_roots)
     else:
         raise RuntimeError("unsupported geodetic generator platform")
     libc_name, libc_version = platform.libc_ver()
     return {
-        "contract": "metric-domain-generator-execution-environment-v2",
+        "contract": "metric-domain-generator-execution-environment-v3",
         "canonical_environment": dict(_CANONICAL_EXECUTION_ENVIRONMENT),
         "dependency_inspector": {
             "name": inspector_name,
             "resolved_path": str(inspector),
             "file_sha256": _file_sha256(inspector),
+            "interpreter_chain": [
+                {
+                    "resolved_path": str(path),
+                    "file_sha256": _file_sha256(path),
+                }
+                for path in interpreter_chain
+            ],
         },
         "dynamic_library_closure": closure,
         "dynamic_library_closure_digest": _digest(closure),
@@ -334,9 +415,9 @@ def _execution_environment(
             for path in closure_roots
         ],
         "closure_completeness": (
-            "file-backed-dependencies-hashed-v1"
+            "enumerated-file-backed-runtime-roots-v1"
             if all(entry["file_sha256"] is not None for entry in closure)
-            else "darwin-system-shared-cache-not-byte-addressed-v1"
+            else "enumerated-roots-with-darwin-shared-cache-gap-v1"
         ),
         "loader_override_policy": "reject-nonempty-loader-overrides-v1",
         "machine": platform.machine(),
@@ -816,7 +897,7 @@ def main() -> int:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("src/advar/data/epsg5179_metric_domain_evidence_v3.json"),
+        default=Path("src/advar/data/epsg5179_metric_domain_evidence_v4.json"),
     )
     parser.add_argument("--proj", default=shutil.which("proj") or "proj")
     parser.add_argument(
@@ -838,11 +919,26 @@ def main() -> int:
             "without requiring PROJ"
         ),
     )
+    validation.add_argument(
+        "--self-test-execution-environment",
+        action="store_true",
+        help=(
+            "exercise dependency-inspector and loaded-extension closure "
+            "discovery without requiring PROJ"
+        ),
+    )
     arguments = parser.parse_args()
     if arguments.check_source_only:
         print(_check_generator_source_binding(arguments.output))
         return 0
     _reject_loader_overrides()
+    if arguments.self_test_execution_environment:
+        environment = _execution_environment(
+            proj=sys.executable,
+            projinfo=sys.executable,
+        )
+        print(_digest(environment))
+        return 0
     report = _generate_report(
         proj=arguments.proj,
         projinfo=arguments.projinfo,

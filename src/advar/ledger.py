@@ -1488,6 +1488,9 @@ SCORING_REPLAY_REQUIRED_TENSOR_ROLES = (
         {
             "verification_geometry_grid_x_m",
             "verification_geometry_grid_y_m",
+            "verification_source_detection_limit_lower_dbz",
+            "verification_source_detection_limit_upper_dbz",
+            "verification_source_detection_classification_uncertain",
         }
     )
 )
@@ -3499,6 +3502,7 @@ _REPLAY_BOOLEAN_ROLES = frozenset(
         "verification_attenuation_qc_valid_mask",
         "verification_below_detection_censored_mask",
         "verification_confirmed_clear_mask",
+        "verification_source_detection_classification_uncertain",
     }
 )
 _REPLAY_INTEGER_ROLES = frozenset(
@@ -3621,6 +3625,9 @@ def _validate_scoring_replay_case_tensors(
             "verification_acquisition_age_seconds",
             "verification_source_reflectivity_dbz",
             "verification_source_detection_limit_dbz",
+            "verification_source_detection_limit_lower_dbz",
+            "verification_source_detection_limit_upper_dbz",
+            "verification_source_detection_classification_uncertain",
             "verification_source_acquisition_time_offset_seconds",
             "verification_source_below_detection_reported",
             "verification_source_observation_report_kind",
@@ -3702,6 +3709,9 @@ def _validate_scoring_replay_case_tensors(
     source_cube_roles = (
         "verification_source_reflectivity_dbz",
         "verification_source_detection_limit_dbz",
+        "verification_source_detection_limit_lower_dbz",
+        "verification_source_detection_limit_upper_dbz",
+        "verification_source_detection_classification_uncertain",
         "verification_source_acquisition_time_offset_seconds",
         "verification_source_below_detection_reported",
         "verification_source_observation_report_kind",
@@ -3760,7 +3770,7 @@ def _current_verification_provenance_payload(
 
     verification = case.verification
     if (
-        verification.contract != "radar-verification-bundle-v19"
+        verification.contract != "radar-verification-bundle-v20"
         or type(verification.observation_error_derivation)
         is not ObservationErrorDerivationArtifact
     ):
@@ -3771,7 +3781,7 @@ def _current_verification_provenance_payload(
     )
     raw_inputs = derivation.raw_inputs
     if (
-        raw_inputs.contract != "verification-observation-derivation-inputs-v12"
+        raw_inputs.contract != "verification-observation-derivation-inputs-v13"
         or type(raw_inputs.mask_derivation)
         is not VerificationObservationMaskDerivationArtifact
         or type(raw_inputs.source_identity)
@@ -4031,6 +4041,15 @@ def _validate_current_verification_provenance_payload(
             ],
             detection_limit_dbz_by_source=case_tensors[
                 "verification_source_detection_limit_dbz"
+            ],
+            detection_limit_lower_dbz_by_source=case_tensors[
+                "verification_source_detection_limit_lower_dbz"
+            ],
+            detection_limit_upper_dbz_by_source=case_tensors[
+                "verification_source_detection_limit_upper_dbz"
+            ],
+            detection_classification_uncertain_by_source=case_tensors[
+                "verification_source_detection_classification_uncertain"
             ],
             acquisition_time_offset_seconds_by_source=case_tensors[
                 "verification_source_acquisition_time_offset_seconds"

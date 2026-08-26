@@ -71,17 +71,18 @@ class OperationalDeploymentUnsupportedError(RuntimeError):
 
 CONTRACT_CAPABILITIES: dict[str, ContractCapabilities] = {
     "radar_metric_domain_evidence": ContractCapabilities(
-        current="radar-metric-domain-evidence-v3",
-        predecessor="radar-metric-domain-evidence-v2",
-        issuable=frozenset({"radar-metric-domain-evidence-v3"}),
+        current="radar-metric-domain-evidence-v4",
+        predecessor="radar-metric-domain-evidence-v3",
+        issuable=frozenset({"radar-metric-domain-evidence-v4"}),
         audit_readable=frozenset(
             {
                 "radar-metric-domain-evidence-v1",
                 "radar-metric-domain-evidence-v2",
                 "radar-metric-domain-evidence-v3",
+                "radar-metric-domain-evidence-v4",
             }
         ),
-        scientific_eligible=frozenset({"radar-metric-domain-evidence-v3"}),
+        scientific_eligible=frozenset({"radar-metric-domain-evidence-v4"}),
         operationally_accepted=frozenset(),
         lifecycle_probe=_METRIC_EVIDENCE_LIFECYCLE_PROBE,
     ),
@@ -162,71 +163,71 @@ CONTRACT_CAPABILITIES: dict[str, ContractCapabilities] = {
         lifecycle_probe=_VERIFICATION_FSO_LIFECYCLE_PROBE,
     ),
     "verification_observation_error_plan": ContractCapabilities(
-        current="verification-observation-error-plan-v13",
-        predecessor="verification-observation-error-plan-v12",
-        issuable=frozenset({"verification-observation-error-plan-v13"}),
+        current="verification-observation-error-plan-v14",
+        predecessor="verification-observation-error-plan-v13",
+        issuable=frozenset({"verification-observation-error-plan-v14"}),
         audit_readable=frozenset(
             {
-                "verification-observation-error-plan-v12",
                 "verification-observation-error-plan-v13",
+                "verification-observation-error-plan-v14",
             }
         ),
         scientific_eligible=frozenset(
-            {"verification-observation-error-plan-v13"}
+            {"verification-observation-error-plan-v14"}
         ),
         operationally_accepted=frozenset(),
         lifecycle_probe=_VERIFICATION_FSO_LIFECYCLE_PROBE,
     ),
     "verification_bundle": ContractCapabilities(
-        current="radar-verification-bundle-v19",
-        predecessor="radar-verification-bundle-v18",
-        issuable=frozenset({"radar-verification-bundle-v19"}),
+        current="radar-verification-bundle-v20",
+        predecessor="radar-verification-bundle-v19",
+        issuable=frozenset({"radar-verification-bundle-v20"}),
         audit_readable=frozenset(
-            {"radar-verification-bundle-v18", "radar-verification-bundle-v19"}
+            {"radar-verification-bundle-v19", "radar-verification-bundle-v20"}
         ),
-        scientific_eligible=frozenset({"radar-verification-bundle-v19"}),
+        scientific_eligible=frozenset({"radar-verification-bundle-v20"}),
         operationally_accepted=frozenset(),
         lifecycle_probe=_VERIFICATION_FSO_LIFECYCLE_PROBE,
     ),
     "variational_fso": ContractCapabilities(
-        current="p1-variational-fso-v25",
-        predecessor="p1-variational-fso-v24",
-        issuable=frozenset({"p1-variational-fso-v25"}),
+        current="p1-variational-fso-v26",
+        predecessor="p1-variational-fso-v25",
+        issuable=frozenset({"p1-variational-fso-v26"}),
         audit_readable=frozenset(
-            {"p1-variational-fso-v24", "p1-variational-fso-v25"}
+            {"p1-variational-fso-v25", "p1-variational-fso-v26"}
         ),
-        scientific_eligible=frozenset({"p1-variational-fso-v25"}),
+        scientific_eligible=frozenset({"p1-variational-fso-v26"}),
         operationally_accepted=frozenset(),
         lifecycle_probe=_VERIFICATION_FSO_LIFECYCLE_PROBE,
     ),
     "variational_fsoi": ContractCapabilities(
-        current="p1-linearized-observation-impact-v21",
-        predecessor="p1-linearized-observation-impact-v20",
-        issuable=frozenset({"p1-linearized-observation-impact-v21"}),
+        current="p1-linearized-observation-impact-v22",
+        predecessor="p1-linearized-observation-impact-v21",
+        issuable=frozenset({"p1-linearized-observation-impact-v22"}),
         audit_readable=frozenset(
             {
-                "p1-linearized-observation-impact-v20",
                 "p1-linearized-observation-impact-v21",
+                "p1-linearized-observation-impact-v22",
             }
         ),
         scientific_eligible=frozenset(
-            {"p1-linearized-observation-impact-v21"}
+            {"p1-linearized-observation-impact-v22"}
         ),
         operationally_accepted=frozenset(),
         lifecycle_probe=_VERIFICATION_FSO_LIFECYCLE_PROBE,
     ),
     "semantic_scoring_replay": ContractCapabilities(
-        current="neural-prior-scoring-replay-bundle-v24",
-        predecessor="neural-prior-scoring-replay-bundle-v23",
-        issuable=frozenset({"neural-prior-scoring-replay-bundle-v24"}),
+        current="neural-prior-scoring-replay-bundle-v25",
+        predecessor="neural-prior-scoring-replay-bundle-v24",
+        issuable=frozenset({"neural-prior-scoring-replay-bundle-v25"}),
         audit_readable=frozenset(
             {
-                "neural-prior-scoring-replay-bundle-v23",
                 "neural-prior-scoring-replay-bundle-v24",
+                "neural-prior-scoring-replay-bundle-v25",
             }
         ),
         scientific_eligible=frozenset(
-            {"neural-prior-scoring-replay-bundle-v24"}
+            {"neural-prior-scoring-replay-bundle-v25"}
         ),
         operationally_accepted=frozenset(),
         lifecycle_probe=_SEMANTIC_REPLAY_LIFECYCLE_PROBE,
@@ -238,15 +239,44 @@ for _capabilities in CONTRACT_CAPABILITIES.values():
     _capabilities.validate()
 
 
-CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE_CONTRACT = CONTRACT_CAPABILITIES[
+def current_contract(family: str) -> str:
+    """Return the single registered current generation for one family."""
+
+    try:
+        return CONTRACT_CAPABILITIES[family].current
+    except KeyError as error:
+        raise ValueError(f"unknown contract family: {family}") from error
+
+
+CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE_CONTRACT = current_contract(
     "radar_metric_domain_evidence"
-].current
-CURRENT_NEURAL_PRIOR_PROMOTION_EVIDENCE_CONTRACT = CONTRACT_CAPABILITIES[
+)
+CURRENT_NEURAL_PRIOR_PROMOTION_EVIDENCE_CONTRACT = current_contract(
     "neural_prior_promotion_evidence"
-].current
-CURRENT_DEPLOYED_NEURAL_PRIOR_POLICY_CONTRACT = CONTRACT_CAPABILITIES[
+)
+CURRENT_DEPLOYED_NEURAL_PRIOR_POLICY_CONTRACT = current_contract(
     "deployed_neural_prior_policy"
-].current
+)
+CURRENT_RADAR_SPATIAL_GRID_IDENTITY_CONTRACT = current_contract(
+    "radar_spatial_grid_identity"
+)
+CURRENT_MOSAIC_OBSERVATION_SOURCE_REGISTRY_CONTRACT = current_contract(
+    "mosaic_observation_source_registry"
+)
+CURRENT_RADAR_OBSERVATION_GEOMETRY_CONTRACT = current_contract(
+    "radar_observation_geometry"
+)
+CURRENT_VERIFICATION_OBSERVATION_ERROR_PLAN_CONTRACT = current_contract(
+    "verification_observation_error_plan"
+)
+CURRENT_VERIFICATION_BUNDLE_CONTRACT = current_contract(
+    "verification_bundle"
+)
+CURRENT_VARIATIONAL_FSO_CONTRACT = current_contract("variational_fso")
+CURRENT_VARIATIONAL_FSOI_CONTRACT = current_contract("variational_fsoi")
+CURRENT_SEMANTIC_SCORING_REPLAY_CONTRACT = current_contract(
+    "semantic_scoring_replay"
+)
 
 
 def render_contract_capability_table() -> str:

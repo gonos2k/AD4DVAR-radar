@@ -80,11 +80,11 @@ from advar.sensitivity import (  # noqa: E402
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V8_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V10_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST,
-    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V12_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST,
     OBSERVATION_TEMPORAL_QUALITY_DECAY_ALGORITHM_V1_DIGEST,
     OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST,
     OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST,
-    OBSERVATION_DETECTION_LIMIT_ALGORITHM_V2_DIGEST,
+    OBSERVATION_DETECTION_LIMIT_ALGORITHM_V3_DIGEST,
     OBSERVATION_CENSOR_STATE_ALGORITHM_V1_DIGEST,
     OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_DIGEST,
@@ -94,9 +94,9 @@ from advar.sensitivity import (  # noqa: E402
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V9_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST,
-    OBSERVATION_MASK_DERIVATION_ALGORITHM_V11_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V12_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST,
-    OBSERVATION_SOURCE_SELECTION_ALGORITHM_V2_DIGEST,
+    OBSERVATION_SOURCE_SELECTION_ALGORITHM_V3_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V3_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST,
@@ -383,22 +383,22 @@ def _current_verification_bundle(
         spatial_correlation_block_algorithm_digest="8" * 64,
         quality_weight_interpretation_digest="9" * 64,
         quality_weight_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V12_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
         ),
         observation_std_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V12_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
         ),
         observation_error_model_digest="a" * 64,
         source_assignment_algorithm_digest=(
-            OBSERVATION_SOURCE_SELECTION_ALGORITHM_V2_DIGEST
+            OBSERVATION_SOURCE_SELECTION_ALGORITHM_V3_DIGEST
         ),
         minimum_detectable_echo_dbz=-20.0,
         observation_error_reference_std_dbz=2.0,
         derivation_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V12_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
         ),
         mask_derivation_algorithm_digest=(
-            OBSERVATION_MASK_DERIVATION_ALGORITHM_V11_DIGEST
+            OBSERVATION_MASK_DERIVATION_ALGORITHM_V12_DIGEST
         ),
         maximum_range_km=300.0,
         minimum_elevation_deg=0.0,
@@ -418,7 +418,7 @@ def _current_verification_bundle(
             OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST
         ),
         detection_limit_derivation_algorithm_digest=(
-            OBSERVATION_DETECTION_LIMIT_ALGORITHM_V2_DIGEST
+            OBSERVATION_DETECTION_LIMIT_ALGORITHM_V3_DIGEST
         ),
         censor_state_derivation_algorithm_digest=(
             OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST
@@ -430,7 +430,7 @@ def _current_verification_bundle(
         spatial_age_gate_algorithm_digest=(
             OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST
         ),
-        contract="verification-observation-error-plan-v13",
+        contract="verification-observation-error-plan-v14",
     )
     finite = torch.isfinite(frames_dbz)
     source_frames = torch.nan_to_num(frames_dbz, nan=-30.0).unsqueeze(0)
@@ -519,7 +519,7 @@ def _current_verification_bundle(
         spatial_metric_valid_mask=mask_derivation.spatial_metric_valid_mask,
         observation_error_contract=derivation.observation_error_contract,
         observation_error_derivation=derivation,
-        contract="radar-verification-bundle-v19",
+        contract="radar-verification-bundle-v20",
     )
 
 
@@ -2533,7 +2533,7 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertEqual(fso.contract, CURRENT_VARIATIONAL_FSO_CONTRACT)
         self.assertEqual(
             fso.verification_contract,
-            "radar-verification-bundle-v19",
+            "radar-verification-bundle-v20",
         )
         self.assertEqual(fso.verification_bundle_digest, bundle.content_digest)
         self.assertEqual(fso.verification_valid_times, bundle.valid_times)
@@ -3721,17 +3721,17 @@ class VariationalFSOTests(unittest.TestCase):
         )
         self.assertEqual(
             CURRENT_VARIATIONAL_FSO_CONTRACT,
-            "p1-variational-fso-v25",
+            "p1-variational-fso-v26",
         )
         self.assertEqual(
             CURRENT_VARIATIONAL_FSOI_CONTRACT,
-            "p1-linearized-observation-impact-v21",
+            "p1-linearized-observation-impact-v22",
         )
         self.assertEqual(
             sensitivity_module._SUPPORTED_VERIFICATION_BUNDLE_CONTRACTS,
             frozenset(
                 f"radar-verification-bundle-v{generation}"
-                for generation in range(1, 20)
+                for generation in range(1, 21)
             ),
         )
         self.assertEqual(
@@ -3739,14 +3739,14 @@ class VariationalFSOTests(unittest.TestCase):
             ._OBSERVATION_ERROR_VERIFICATION_BUNDLE_CONTRACTS,
             frozenset(
                 f"radar-verification-bundle-v{generation}"
-                for generation in range(6, 20)
+                for generation in range(6, 21)
             ),
         )
         self.assertEqual(
             sensitivity_module._FSO_VERIFICATION_CONTRACTS[
                 CURRENT_VARIATIONAL_FSO_CONTRACT
             ],
-            "radar-verification-bundle-v19",
+            "radar-verification-bundle-v20",
         )
         self.assertEqual(
             sensitivity_module._FSOI_FSO_CONTRACTS[
@@ -3869,22 +3869,22 @@ class VariationalFSOTests(unittest.TestCase):
             spatial_correlation_block_algorithm_digest="7" * 64,
             quality_weight_interpretation_digest="8" * 64,
             quality_weight_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V12_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
             ),
             observation_std_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V12_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
             ),
             observation_error_model_digest="9" * 64,
             source_assignment_algorithm_digest=(
-                OBSERVATION_SOURCE_SELECTION_ALGORITHM_V2_DIGEST
+                OBSERVATION_SOURCE_SELECTION_ALGORITHM_V3_DIGEST
             ),
             minimum_detectable_echo_dbz=-10.0,
             observation_error_reference_std_dbz=2.0,
             derivation_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V12_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
             ),
             mask_derivation_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V11_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V12_DIGEST
             ),
             maximum_range_km=300.0,
             minimum_elevation_deg=0.0,
@@ -3904,7 +3904,7 @@ class VariationalFSOTests(unittest.TestCase):
                 OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST
             ),
             detection_limit_derivation_algorithm_digest=(
-                OBSERVATION_DETECTION_LIMIT_ALGORITHM_V2_DIGEST
+                OBSERVATION_DETECTION_LIMIT_ALGORITHM_V3_DIGEST
             ),
             censor_state_derivation_algorithm_digest=(
                 OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST
@@ -3916,7 +3916,7 @@ class VariationalFSOTests(unittest.TestCase):
             spatial_age_gate_algorithm_digest=(
                 OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST
             ),
-            contract="verification-observation-error-plan-v13",
+            contract="verification-observation-error-plan-v14",
         )
         common_evidence = {
             "plan": plan,
@@ -4011,7 +4011,7 @@ class VariationalFSOTests(unittest.TestCase):
         )
         self.assertEqual(
             derivation.observation_error_contract.contract,
-            "verification-observation-error-contract-v15",
+            "verification-observation-error-contract-v16",
         )
         bundle = VerificationBundle(
             frames_dbz=mask_derivation.selected_frames_dbz,
@@ -4042,7 +4042,7 @@ class VariationalFSOTests(unittest.TestCase):
             ),
             observation_error_contract=derivation.observation_error_contract,
             observation_error_derivation=derivation,
-            contract="radar-verification-bundle-v19",
+            contract="radar-verification-bundle-v20",
         )
         bundle.validate_integrity()
         self.assertEqual(
@@ -4061,11 +4061,7 @@ class VariationalFSOTests(unittest.TestCase):
 
         equality_frames = common_evidence["reflectivity_dbz_by_source"].clone()
         equality_frames[0, 0, 0, 0] = -10.0
-        for report_kind, accepted in (
-            (VerificationObservationReportKind.DETECTED_ECHO, False),
-            (VerificationObservationReportKind.CONFIRMED_CLEAR, False),
-            (VerificationObservationReportKind.BELOW_DETECTION_CENSORED, True),
-        ):
+        for report_kind in VerificationObservationReportKind:
             equality_kinds = common_evidence[
                 "observation_report_kind_by_source"
             ].clone()
@@ -4080,11 +4076,18 @@ class VariationalFSOTests(unittest.TestCase):
                         }
                     )
                 )
-                if accepted:
-                    call()
-                else:
-                    with self.assertRaisesRegex(ValueError, "preregistered registry"):
-                        call()
+                equality_evidence = call()
+                self.assertTrue(
+                    bool(
+                        equality_evidence.detection_classification_uncertain_by_source[
+                            0, 0, 0, 0
+                        ]
+                    )
+                )
+                self.assertEqual(
+                    float(equality_evidence.source_assignment_scores[0, 0, 0, 0]),
+                    0.0,
+                )
 
         fallback_evidence = VerificationObservationMaskEvidence.issue(
             **(
@@ -4282,6 +4285,7 @@ class VariationalFSOTests(unittest.TestCase):
 
         source = replace(
             derivation.source_registry.ordered_sources[0],
+            detection_limit_dbz=-10.0,
             detection_limit_range_quadratic_dbz_per_km2=0.001,
         )
         registry = replace(
@@ -4308,6 +4312,20 @@ class VariationalFSOTests(unittest.TestCase):
             float(conservative_limit.item()),
             float(nominal_limit.item()),
         )
+        limit_interval = sensitivity_module._registered_detection_limit_interval(
+            source_registry=registry,
+            range_km_by_source=projected_range,
+            elevation_deg_by_source=torch.ones_like(projected_range),
+        )
+        lower_limit = float(limit_interval.lower_dbz.item())
+        upper_limit = float(limit_interval.upper_dbz.item())
+        self.assertAlmostEqual(lower_limit, -0.118927, places=5)
+        self.assertAlmostEqual(upper_limit, 0.121087, places=5)
+        self.assertLess(lower_limit, 0.0)
+        self.assertGreater(upper_limit, 0.0)
+        self.assertFalse(0.0 > upper_limit)
+        self.assertFalse(0.0 < lower_limit)
+        self.assertFalse(0.0 <= lower_limit)
 
     def test_v2_observation_derivation_inputs_are_audit_only(self) -> None:
         frames = torch.ones((1, 2, 2))
