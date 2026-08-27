@@ -96,3 +96,4 @@
 - sdist/wheel build for package `0.111.0`: **PASS**
 - geodetic source binding and execution-environment self-test with loader override removed: **PASS**
 - `git diff --check`: **PASS**
+- Initial pushed-head CI run `33093603999`: Wheel/CLI build, install and CLI execution passed; the final validation exposed a stale workflow expectation (`forecast-run-v70` instead of current `v71`). The required assertion was synchronized before the replacement exact-head run.
