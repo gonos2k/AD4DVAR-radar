@@ -1630,8 +1630,12 @@ def projected_ground_distance_interval(
         raise ValueError("invalid projected-distance interval input")
     projected = float(projected_distance_m)
     error = float(maximum_linear_scale_error)
-    raw_lower = projected / (1.0 + error)
-    raw_upper = projected / (1.0 - error)
+    if projected == 0.0 or error == 0.0:
+        return DistanceInterval(lower_m=projected, upper_m=projected)
+    lower_denominator = math.nextafter(1.0 + error, math.inf)
+    upper_denominator = math.nextafter(1.0 - error, -math.inf)
+    raw_lower = projected / lower_denominator
+    raw_upper = projected / upper_denominator
     return DistanceInterval(
         lower_m=max(0.0, math.nextafter(raw_lower, -math.inf)),
         upper_m=math.nextafter(raw_upper, math.inf),
@@ -2031,10 +2035,24 @@ class RadarMetricDomainEvidence:
             or projected_area_km2 < 0.0
         ):
             raise ValueError("projected area must be finite and non-negative")
+        projected = float(projected_area_km2)
         error = self.maximum_area_scale_error
+        if projected == 0.0 or error == 0.0:
+            return (projected, projected)
+        lower_denominator = math.nextafter(1.0 + error, math.inf)
+        upper_denominator = math.nextafter(1.0 - error, -math.inf)
         return (
-            float(projected_area_km2) / (1.0 + error),
-            float(projected_area_km2) / (1.0 - error),
+            max(
+                0.0,
+                math.nextafter(
+                    projected / lower_denominator,
+                    -math.inf,
+                ),
+            ),
+            math.nextafter(
+                projected / upper_denominator,
+                math.inf,
+            ),
         )
 
     def projected_distance_interval_m(
@@ -2074,8 +2092,16 @@ class RadarMetricDomainEvidence:
             raise ValueError(
                 "maximum ground distance must be finite and non-negative"
             )
-        return float(maximum_ground_distance_m) * (
-            1.0 - self.maximum_linear_scale_error
+        maximum = float(maximum_ground_distance_m)
+        if maximum == 0.0:
+            return 0.0
+        factor = math.nextafter(
+            1.0 - self.maximum_linear_scale_error,
+            -math.inf,
+        )
+        return max(
+            0.0,
+            math.nextafter(maximum * factor, -math.inf),
         )
 
     def certainly_exceeds_projected_radius_m(
@@ -2093,9 +2119,14 @@ class RadarMetricDomainEvidence:
             raise ValueError(
                 "minimum ground distance must be finite and non-negative"
             )
-        return float(minimum_ground_distance_m) * (
-            1.0 + self.maximum_linear_scale_error
+        minimum = float(minimum_ground_distance_m)
+        if minimum == 0.0:
+            return 0.0
+        factor = math.nextafter(
+            1.0 + self.maximum_linear_scale_error,
+            math.inf,
         )
+        return math.nextafter(minimum * factor, math.inf)
 
     def validate_projected_point(self, x_m: float, y_m: float) -> None:
         """Require one point to lie in the geodetically sampled coverage."""
@@ -3068,13 +3099,36 @@ class RadarGridTimeContract:
         if self.spatial_grid_contract != "radar-spatial-grid-identity-v6":
             return projected_speed_mps
         self.validate_current_metric_domain_evidence()
-        raw_upper = projected_speed_mps / (
-            1.0
-            - CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.maximum_linear_scale_error
+        error = (
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.maximum_linear_scale_error
         )
-        return torch.nextafter(
-            raw_upper,
-            torch.full_like(raw_upper, torch.inf),
+        denominator = math.nextafter(1.0 - error, -math.inf)
+        projected_float64 = projected_speed_mps.to(dtype=torch.float64)
+        raw_upper_float64 = projected_float64 / denominator
+        upper_float64 = torch.nextafter(
+            raw_upper_float64,
+            torch.full_like(raw_upper_float64, torch.inf),
+        )
+        if projected_speed_mps.dtype is torch.float64:
+            rounded_upper = upper_float64
+        elif projected_speed_mps.dtype is torch.float32:
+            rounded_upper = upper_float64.to(dtype=torch.float32)
+            rounded_upper = torch.where(
+                rounded_upper.to(dtype=torch.float64) < upper_float64,
+                torch.nextafter(
+                    rounded_upper,
+                    torch.full_like(rounded_upper, torch.inf),
+                ),
+                rounded_upper,
+            )
+        else:
+            raise ValueError(
+                "scientific projected speed must be float32 or float64"
+            )
+        return torch.where(
+            projected_speed_mps == 0.0,
+            torch.zeros_like(rounded_upper),
+            rounded_upper,
         )
 
     def conservative_projected_speed_limit_mps(

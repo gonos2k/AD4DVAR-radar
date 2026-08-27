@@ -1,5 +1,6 @@
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
+from fractions import Fraction
 from pathlib import Path
 from types import SimpleNamespace
 import json
@@ -4326,6 +4327,152 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertFalse(0.0 > upper_limit)
         self.assertFalse(0.0 < lower_limit)
         self.assertFalse(0.0 <= lower_limit)
+
+        counter_source = replace(
+            derivation.source_registry.ordered_sources[0],
+            detection_limit_dbz=-30.928499221801758,
+            detection_limit_range_quadratic_dbz_per_km2=(
+                2.4236200601990276e-7
+            ),
+            detection_limit_elevation_excess_dbz_per_degree=(
+                6.632991790771484
+            ),
+            detection_limit_reference_elevation_deg=5.87116003036499,
+        )
+        counter_registry = replace(
+            derivation.source_registry,
+            ordered_sources=(counter_source,),
+        )
+        counter_range = torch.tensor(
+            [[[[224.26649475097656]]]],
+            dtype=torch.float32,
+        )
+        counter_elevation = torch.tensor(
+            [[[[9.581335067749023]]]],
+            dtype=torch.float32,
+        )
+        counter_interval = (
+            sensitivity_module._registered_detection_limit_interval(
+                source_registry=counter_registry,
+                range_km_by_source=counter_range,
+                elevation_deg_by_source=counter_elevation,
+            )
+        )
+        projected = Fraction.from_float(float(counter_range.item()))
+        scale_error = Fraction.from_float(
+            CURRENT_RADAR_METRIC_DOMAIN.maximum_linear_scale_error
+        )
+        ground_lower = projected / (Fraction(1) + scale_error)
+        ground_upper = projected / (Fraction(1) - scale_error)
+        base = Fraction.from_float(counter_source.detection_limit_dbz)
+        range_coefficient = Fraction.from_float(
+            counter_source.detection_limit_range_quadratic_dbz_per_km2
+        )
+        elevation_coefficient = Fraction.from_float(
+            counter_source.detection_limit_elevation_excess_dbz_per_degree
+        )
+        elevation_excess = max(
+            Fraction(0),
+            Fraction.from_float(float(counter_elevation.item()))
+            - Fraction.from_float(
+                counter_source.detection_limit_reference_elevation_deg
+            ),
+        )
+        exact_lower = (
+            base
+            + range_coefficient * ground_lower * ground_lower
+            + elevation_coefficient * elevation_excess
+        )
+        exact_upper = (
+            base
+            + range_coefficient * ground_upper * ground_upper
+            + elevation_coefficient * elevation_excess
+        )
+        self.assertLessEqual(
+            Fraction.from_float(float(counter_interval.lower_dbz.item())),
+            exact_lower,
+        )
+        self.assertGreaterEqual(
+            Fraction.from_float(float(counter_interval.upper_dbz.item())),
+            exact_upper,
+        )
+        next_above_upper = torch.nextafter(
+            counter_interval.upper_dbz,
+            torch.full_like(counter_interval.upper_dbz, torch.inf),
+        )
+        self.assertGreater(
+            Fraction.from_float(float(next_above_upper.item())),
+            exact_upper,
+        )
+
+        adversarial_scores = (
+            sensitivity_module._product_owned_source_assignment_scores(
+                plan=replace(
+                    plan,
+                    radar_source_kind="mosaic",
+                    maximum_range_km=400.0,
+                    maximum_beam_blockage_fraction=0.9,
+                    minimum_attenuation_qc_score=0.1,
+                ),
+                valid_times=("2026-08-05T00:30:00Z",),
+                acquisition_valid_times_by_source=(
+                    ("2026-08-05T00:30:00Z",),
+                    ("2026-08-05T00:30:00Z",),
+                ),
+                acquisition_time_offset_seconds_by_source=torch.zeros(
+                    two_source_shape,
+                    dtype=torch.float32,
+                ),
+                source_availability_by_time=torch.ones(
+                    (2, 1), dtype=torch.bool
+                ),
+                range_km_by_source=torch.tensor(
+                    [[[[212.0695037841797]]], [[[299.5369873046875]]]],
+                    dtype=torch.float32,
+                ),
+                elevation_deg_by_source=torch.full(
+                    two_source_shape,
+                    0.5
+                    * (
+                        float(plan.minimum_elevation_deg)
+                        + float(plan.maximum_elevation_deg)
+                    ),
+                    dtype=torch.float32,
+                ),
+                beam_blockage_fraction_by_source=torch.tensor(
+                    [[[[0.4808613061904907]]], [[[0.47117313742637634]]]],
+                    dtype=torch.float32,
+                ),
+                attenuation_qc_score_by_source=torch.tensor(
+                    [[[[0.25443780422210693]]], [[[0.24606764316558838]]]],
+                    dtype=torch.float32,
+                ),
+            )
+        )
+        self.assertTrue(bool(torch.all(adversarial_scores == 0.0)))
+
+        mask_derivation = derivation.raw_inputs.mask_derivation
+        assert mask_derivation is not None
+        maximum_spatial_age = (
+            sensitivity_module._spatial_metric_maximum_age_seconds(
+                plan=plan,
+                geometry=mask_derivation.geometry,
+            )
+        )
+        exact_spacing_lower = Fraction.from_float(
+            mask_derivation.geometry.grid_spacing_m
+        ) / (Fraction(1) + scale_error)
+        exact_maximum_age = (
+            Fraction.from_float(
+                float(plan.spatial_metric_maximum_displacement_fraction_cells)
+            )
+            * exact_spacing_lower
+            / Fraction.from_float(float(plan.spatial_metric_reference_speed_mps))
+        )
+        self.assertLessEqual(
+            Fraction.from_float(maximum_spatial_age),
+            exact_maximum_age,
+        )
 
     def test_v2_observation_derivation_inputs_are_audit_only(self) -> None:
         frames = torch.ones((1, 2, 2))

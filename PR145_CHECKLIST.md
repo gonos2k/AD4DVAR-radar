@@ -100,3 +100,45 @@
 | State-advancing LIVE | NO-GO / OUT OF SCOPE | Operational deployment is unsupported. |
 | External publication | HOLD | X145-001/X145-002/X145-003 and repository P1 closure required. |
 | PR #145 merge | HOLD | Implementation, local verification, five adversarial reviews and exact-head CI are complete; explicit merge authorization remains required. |
+
+## Post-CI independent adversarial review — reopened closure cycle
+
+The implementation-head review above remains an immutable record of what was
+known at `e244d850...`.  A subsequent independent review of the exact PR tree
+identified six additional repository-actionable numerical and replay-boundary
+findings.  They reopen the PR closure cycle without changing the external
+science or deployment gates.
+
+### Follow-up deduplication and non-regression ledger
+
+| Finding ID | Semantic fingerprint (`boundary + invariant + acceptance intent`) | Prior finding/status | Current disposition | Existing guard to preserve |
+|---|---|---|---|---|
+| R145-007 | durable replay manifest generation → historical tensor-role/file-set identity → v19–v24 remain byte-auditable after current roles grow | R145-005 closed only for current registry reachability; new historical-generation counterexample | new repository P1 | current v25 requires all three detection-interval tensors; legacy semantic action remains prohibited |
+| R145-008 | source range/elevation → detection-limit arithmetic → lower/upper tensors enclose the exact category threshold | R145-001 closed at nominal examples; compositional-rounding counterexample | refined repository P1 | detected uses upper; clear/censored use lower; ambiguous cells receive zero source score |
+| R145-009 | source evidence → score interval → strict dominance cannot be created by intermediate float32 rounding | R145-002/S145-003 closed only at endpoint rounding; compositional-score counterexample | refined repository P1 | unique strict lower-over-all-upper winner; overlap remains unassigned |
+| R145-010 | zero projected distance/speed → outward interval → exact origin remains in a zero-radius footprint | R145-002 closed at positive radii; new zero-boundary counterexample | refined repository P1 | positive-distance outward enclosure and footprint partition |
+| R145-011 | physical radius helper → projected boundary → helper and interval decisions agree at exact endpoints | R145-002 closed at sampled ULP case; new helper contradiction | refined repository P1 | PSR/FSS uncertain-annulus fail-close |
+| R145-012 | scalar area/spatial-age arithmetic → directed physical bound → threshold decisions never use a narrowed interval | R145-002 closed for distance/speed; new adjacent directed-rounding gaps | refined repository P2 | existing area fail-close and spatial-age mask semantics |
+
+### Follow-up adversarial findings
+
+| ID | Priority | Claim | Boundary | Current-tree result | Classification | Minimal action | Acceptance test | Implementation | Local tests | PR/CI |
+|---|---|---|---|---|---|---|---|---|---|---|
+| R145-007 | P1-HIGH | Legacy v19–v22 manifests use the live current tensor-role set, and v23/v24 lack typed durable-load generations and correct file-set routing. | historical manifest → decoder → directory members/shards → audit load | REPRODUCED: an origin/main-format role set is rejected by every v19–v22 constructor; v24 has no exact decoder/file-set branch. | repository-actionable | Freeze the historical v19–v24 role set, add v23/v24 audit manifest types, and route their sharded raw+verification directories explicitly. | A PR #144-format v24 bundle directory loads as audit-only; v19–v22 accept only their frozen role set; current-only roles remain forbidden. | CLOSED: frozen v19 role set, typed v23/v24 audit manifests, exact generation/file routing | PASS: six-generation role matrix, current-role rejection, real sharded v24 directory cold-load, executable lifecycle probe | PENDING new exact-head CI |
+| R145-008 | P1-SCIENTIFIC | One final `nextafter` does not enclose intermediate rounding in the distance-dependent detection-limit polynomial. | projected range interval → range/elevation terms → category certification | REPRODUCED by the supplied float32 coefficients: the next float above the stored upper can still be below the exact-real threshold. | repository-actionable | Compute the monotone polynomial with compositional directed bounds in canonical float64 and outward-cast to the source dtype. | Exact rational/binary-float oracle is enclosed for the supplied counterexample in float32 and representative float64 cases. | CLOSED: canonical float64 compositional range-square/coefficient/elevation/sum bounds with outward dtype cast | PASS: exact `Fraction` oracle and category/source replay regression | PENDING new exact-head CI |
+| R145-009 | P1-SCIENTIFIC | Final endpoint widening of a float32 score cannot prevent a false strict-dominance winner created by rounded intermediate terms. | source evidence → score interval → strict-dominance selection | REPRODUCED by the supplied A/B pair: code selects A although exact score intervals overlap. | repository-actionable | Compute score bounds compositionally in canonical float64, widen every primitive (including temporal quality), and certify only non-overlapping intervals. | Supplied A/B pair remains unassigned in float32; a clearly separated pair selects deterministically in float32/float64. | CLOSED: canonical float64 score interval, directed primitive bounds and strict interval dominance | PASS: supplied float32 overlap remains unassigned; separated source behavior preserved | PENDING new exact-head CI |
+| R145-010 | P1-FUNCTIONAL | Unconditional upward rounding maps exact zero distance to `5e-324`, excluding the origin from a zero-radius footprint. | zero distance/speed → interval → footprint consumers | REPRODUCED: `projected_ground_distance_interval(0, 0.006)` returns `[0, 5e-324]`. | repository-actionable | Preserve exact `[0,0]` for zero projected distance/speed while retaining outward rounding for positive values. | Public zero interval and current-grid zero-radius footprint include exactly the origin. | CLOSED: distance and speed preserve exact zero intervals | PASS: zero public intervals and zero-radius footprint contain only the origin | PENDING new exact-head CI |
+| R145-011 | P1-NUMERICAL | Projected-radius helper endpoints use nearest rounding and contradict the authoritative interval decision at 994/1006 m. | metric evidence helper → PSR/search radius → physical threshold | REPRODUCED: helper `inside=994` has ground upper greater than 1000; helper `outside=1006` has ground lower below 1000. | repository-actionable | Round the certain-inside projected radius inward and the certainly-exceeds radius outward. | Helper outputs classify consistently through `projected_ground_distance_interval()` at both boundaries. | CLOSED: certain radius rounds inward and exceed radius rounds outward | PASS: both helper endpoints agree with authoritative interval decisions | PENDING new exact-head CI |
+| R145-012 | P2-NUMERICAL | Area interval and spatial-age lower-bound arithmetic still use nearest-rounded intermediate denominators/products. | projected area/grid spacing → physical interval/age gate | REPRODUCED analytically for the supplied area and 1000 m spacing examples. | repository-actionable | Apply directed denominator, division, multiplication and final cast rules to area and spatial-age calculations. | Exact rational oracle lies inside area bounds; spatial maximum age is never above the exact lower-bound value. | CLOSED: directed area denominator/division and scalar spatial-age lower arithmetic | PASS: exact rational area enclosure and conservative spatial-age oracle | PENDING new exact-head CI |
+
+### Follow-up acceptance summary
+
+- [x] Every new review statement is represented once with a stable fingerprint.
+- [x] R145-007/R145-010/R145-011 are directly reproduced on PR head `7630ff935188a7336a2e45e1675d80a3247a3b47`; R145-008/R145-009/R145-012 are reproduced by the supplied exact counterexamples and current arithmetic trace.
+- [x] Every repository-actionable follow-up P1/P2 is fixed.
+- [x] Every follow-up fix has an adversarial regression.
+- [x] Focused and adjacent suites pass; a stable broad run reached `438 passed`, `247 subtests passed`, failure-free before manual interruption at 35 minutes. Full Python 3.10/3.12 CPU completion is delegated to exact-head CI.
+- [x] basedpyright reports `0 errors`; geodetic source binding, compileall, diff check, sdist and wheel build pass.
+- [ ] The pushed PR head and exact-head CI are terminal green.
+- [x] External X145-001/X145-002/X145-003 and operational NO-GO remain unchanged.
+- [x] Merge remains HOLD.

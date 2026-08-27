@@ -4853,6 +4853,24 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 replayed.evaluations[0].evaluation_digest,
                 evaluation.evaluation_digest,
             )
+            legacy_roles = (
+                ledger_module.LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V19
+                | ledger_module.SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
+                | ledger_module.SCORING_REPLAY_BACKGROUND_TENSOR_ROLES
+            )
+            legacy_records = tuple(
+                record
+                for record in replay_manifest.tensor_records
+                if record.role in legacy_roles
+            )
+            legacy_shards = tuple(
+                sorted(
+                    {
+                        cast(str, record.archive_sha256)
+                        for record in legacy_records
+                    }
+                )
+            )
             legacy_manifest = (
                 ledger_module.LegacyScoringReplayBundleManifestAuditV22(
                     scoring_input_artifact_digest=(
@@ -4878,9 +4896,14 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     runtime_exact_digest=replay_manifest.runtime_exact_digest,
                     scoring_backend_certification_policy_digest=None,
                     scoring_backend_certification_evidence_digest=None,
-                    tensor_records=replay_manifest.tensor_records,
-                    tensor_archive_sha256=(
-                        replay_manifest.tensor_archive_sha256
+                    tensor_records=legacy_records,
+                    tensor_archive_sha256=ledger_module._json_digest(
+                        {
+                            "contract": (
+                                "neural-prior-scoring-replay-shard-set-v1"
+                            ),
+                            "ordered_shard_sha256s": list(legacy_shards),
+                        }
                     ),
                     evaluation_payload_sha256=(
                         replay_manifest.evaluation_payload_sha256
@@ -4894,9 +4917,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                     raw_ingestor_trust_store_digest=(
                         replay_manifest.raw_ingestor_trust_store_digest
                     ),
-                    tensor_shard_sha256s=(
-                        replay_manifest.tensor_shard_sha256s
-                    ),
+                    tensor_shard_sha256s=legacy_shards,
                 )
             )
             current_directory = (
@@ -4906,6 +4927,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ledger.scoring_replays_dir / legacy_manifest.bundle_digest
             )
             shutil.copytree(current_directory, legacy_directory)
+            for shard_path in legacy_directory.glob("tensor_*.npz"):
+                if shard_path.stem.removeprefix("tensor_") not in legacy_shards:
+                    shard_path.unlink()
             legacy_manifest_json = json.dumps(
                 legacy_manifest.payload
                 | {"bundle_digest": legacy_manifest.bundle_digest},
@@ -5459,7 +5483,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 archive_sha256=f"{index:064x}",
             )
             for index, role in enumerate(
-                sorted(ledger_module.SCORING_REPLAY_REQUIRED_TENSOR_ROLES),
+                sorted(
+                    ledger_module
+                    .LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V19
+                ),
                 start=1,
             )
         )
@@ -5522,6 +5549,35 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             type(decoded_v20),
             ledger_module.LegacyScoringReplayBundleManifestAuditV20,
         )
+        previous_manifest = v20_manifest
+        for generation, manifest_type in (
+            (21, ledger_module.LegacyScoringReplayBundleManifestAuditV21),
+            (22, ledger_module.LegacyScoringReplayBundleManifestAuditV22),
+            (23, ledger_module.LegacyScoringReplayBundleManifestAuditV23),
+            (24, ledger_module.LegacyScoringReplayBundleManifestAuditV24),
+        ):
+            with self.subTest(replay_generation=generation):
+                manifest = manifest_type(
+                    **{
+                        key: value
+                        for key, value in previous_manifest.__dict__.items()
+                        if key not in {"bundle_digest", "replay_method", "contract"}
+                    },
+                    replay_method=(
+                        f"builtin-semantic-scoring-recomputation-v{generation}"
+                    ),
+                    contract=f"neural-prior-scoring-replay-bundle-v{generation}",
+                )
+                decoded = ledger_module._decode_scoring_replay_bundle_manifest(
+                    json.dumps(
+                        manifest.payload | {"bundle_digest": manifest.bundle_digest},
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                    expected_digest=manifest.bundle_digest,
+                )
+                self.assertIs(type(decoded), manifest_type)
+                previous_manifest = manifest
 
         scoring = self.scoring_artifact(
             (self.evaluation(1, -0.2), self.evaluation(2, -0.3))
@@ -6017,6 +6073,135 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             type(decoded_v13_artifact),
             promotion_module.LegacyHoldoutScoringArtifactAuditV13,
         )
+
+    def test_pr144_v24_durable_replay_loads_as_audit_only(self) -> None:
+        evaluation = self.evaluation(1, -0.2)
+        tensor = torch.ones((1, 2, 2), dtype=torch.float32)
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            staging = Path(directory) / "v24-staging"
+            staging.mkdir()
+            pending_shard = staging / "pending.npz"
+            np.savez_compressed(pending_shard, tensor=tensor.numpy().copy())
+            shard_sha256 = ledger_module._file_digest(pending_shard)
+            pending_shard.rename(
+                staging / f"tensor_{shard_sha256}.npz"
+            )
+            records = tuple(
+                ledger_module.ScoringReplayTensorRecord(
+                    case_id=evaluation.case_id,
+                    role=role,
+                    archive_member="tensor",
+                    dtype="float32",
+                    shape=(1, 2, 2),
+                    tensor_digest=promotion_module.tensor_digest(tensor),
+                    archive_sha256=shard_sha256,
+                )
+                for role in sorted(
+                    ledger_module
+                    .LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V19
+                )
+            )
+            evaluations_path = staging / "evaluations.json"
+            evaluations_path.write_text(
+                json.dumps(
+                    [ledger_module._evaluation_audit_payload(evaluation)],
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+                encoding="utf-8",
+            )
+            raw_provenance_path = staging / "raw_provenance.json"
+            raw_provenance_path.write_text("[]", encoding="utf-8")
+            verification_provenance_path = (
+                staging / "verification_provenance.json"
+            )
+            verification_provenance_path.write_text("[]", encoding="utf-8")
+            shard_set = (shard_sha256,)
+            manifest = ledger_module.LegacyScoringReplayBundleManifestAuditV24(
+                scoring_input_artifact_digest="2" * 64,
+                ordered_case_ids=(evaluation.case_id,),
+                ordered_evaluation_digests=(evaluation.evaluation_digest,),
+                semantic_case_digests=("4" * 64,),
+                dynamic_source_case_ids=(),
+                background_case_ids=(),
+                algorithm_source_manifest_digest="5" * 64,
+                runtime_compatibility_digest="6" * 64,
+                runtime_exact_digest="7" * 64,
+                scoring_backend_certification_policy_digest=None,
+                scoring_backend_certification_evidence_digest=None,
+                tensor_records=records,
+                tensor_archive_sha256=ledger_module._json_digest(
+                    {
+                        "contract": "neural-prior-scoring-replay-shard-set-v1",
+                        "ordered_shard_sha256s": list(shard_set),
+                    }
+                ),
+                evaluation_payload_sha256=ledger_module._file_digest(
+                    evaluations_path
+                ),
+                raw_provenance_payload_sha256=ledger_module._file_digest(
+                    raw_provenance_path
+                ),
+                verification_provenance_payload_sha256=(
+                    ledger_module._file_digest(verification_provenance_path)
+                ),
+                raw_ingestor_trust_store_digest="b" * 64,
+                tensor_shard_sha256s=shard_set,
+            )
+            manifest_json = json.dumps(
+                manifest.payload | {"bundle_digest": manifest.bundle_digest},
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            (staging / "manifest.json").write_text(
+                manifest_json,
+                encoding="utf-8",
+            )
+            target = ledger.scoring_replays_dir / manifest.bundle_digest
+            staging.rename(target)
+            with ledger._connect() as connection:
+                connection.execute(
+                    "INSERT INTO neural_prior_holdout_scoring_input_artifacts "
+                    "(artifact_digest, holdout_plan_digest, payload_json, created_at) "
+                    "VALUES (?, ?, ?, ?)",
+                    (
+                        "2" * 64,
+                        "3" * 64,
+                        "{}",
+                        "2026-08-24T00:00:00+00:00",
+                    ),
+                )
+                connection.execute(
+                    "INSERT INTO neural_prior_scoring_replay_bundles "
+                    "(bundle_digest, scoring_input_artifact_digest, manifest_json, "
+                    "path, created_at) VALUES (?, ?, ?, ?, ?)",
+                    (
+                        manifest.bundle_digest,
+                        "2" * 64,
+                        manifest_json,
+                        str(target.relative_to(ledger.root)),
+                        "2026-08-24T00:00:00+00:00",
+                    ),
+                )
+            loaded = ledger.load_neural_prior_scoring_replay_bundle(
+                manifest.bundle_digest,
+                _require_raw_trust_activation=False,
+            )
+            self.assertIs(
+                type(loaded.manifest),
+                ledger_module.LegacyScoringReplayBundleManifestAuditV24,
+            )
+            self.assertTrue(loaded.verification_bytes_verified)
+            self.assertFalse(loaded.verification_reconstructed)
+            self.assertFalse(loaded.verification_semantic_replay_verified)
+            self.assertFalse(loaded.semantic_replay_verified)
+            with self.assertRaisesRegex(ValueError, "audit-only"):
+                ledger.load_neural_prior_scoring_replay_bundle(
+                    manifest.bundle_digest,
+                    cases=(),
+                    _require_raw_trust_activation=False,
+                )
 
     def scoring_completion_receipt(self, evaluations, *, manifest=None, plan=None):
         retained = self.manifest() if manifest is None else manifest

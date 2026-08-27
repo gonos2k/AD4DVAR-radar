@@ -62,6 +62,7 @@ from .nowcast import (
     forecast_from_state,
     forecast_linear_at_step,
     motion_displacement_limits_yx,
+    projected_ground_distance_interval,
 )
 from .physics import RemapCell, dbz_to_echo, echo_to_dbz, freeze_remap_cell
 from .variational import (
@@ -331,8 +332,10 @@ OBSERVATION_DETECTION_LIMIT_ALGORITHM_V3_DIGEST = json_digest(
         "parent_algorithm_digest": (
             OBSERVATION_DETECTION_LIMIT_ALGORITHM_V2_DIGEST
         ),
-        "range_interval_rule": "outward-rounded-ground-range-endpoints-v1",
-        "threshold_interval_rule": "monotone-range-threshold-endpoints-v1",
+        "range_interval_rule": "compositional-float64-directed-endpoints-v2",
+        "threshold_interval_rule": (
+            "compositional-float64-monotone-polynomial-outward-cast-v2"
+        ),
         "detected_rule": "strictly-above-threshold-upper-v1",
         "confirmed_clear_rule": "strictly-below-threshold-lower-v1",
         "censored_rule": "at-or-below-threshold-lower-v1",
@@ -462,7 +465,8 @@ OBSERVATION_SOURCE_SELECTION_ALGORITHM_V3_DIGEST = json_digest(
         "parent_algorithm_digest": (
             OBSERVATION_SOURCE_SELECTION_ALGORITHM_V2_DIGEST
         ),
-        "interval_rounding": "outward-nextafter-v1",
+        "interval_rounding": "compositional-float64-outward-nextafter-v2",
+        "transcendental_enclosure_ulps": 4,
         "detection_certainty_rule": "classification-uncertain-is-ineligible-v1",
         "selection_rule": "strict-lower-over-all-competing-uppers-v1",
         "ambiguous_rule": "mosaic-source-unassigned-v1",
@@ -503,6 +507,7 @@ OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST = json_digest(
         "rule": "reference-speed-times-age-at-most-ground-spacing-lower-v1",
         "projected_spacing_rule": "active-axis-or-minimum-singular-value-v1",
         "ground_spacing_rule": "projected-divided-by-one-plus-scale-error-v1",
+        "arithmetic_rule": "compositional-scalar-directed-lower-bound-v2",
         "single_cell_policy": "spatial-metric-unsupported-v1",
         "metric_role": "spatial-skill-domain-only-v1",
     }
@@ -779,7 +784,9 @@ OBSERVATION_MASK_DERIVATION_ALGORITHM_V12_DIGEST = json_digest(
         "detection_limit_algorithm_digest": (
             OBSERVATION_DETECTION_LIMIT_ALGORITHM_V3_DIGEST
         ),
-        "ground_range_interval_rule": "outward-nextafter-v1",
+        "ground_range_interval_rule": (
+            "compositional-float64-outward-nextafter-v2"
+        ),
         "detection_category_rule": "report-kind-directed-threshold-bound-v1",
         "uncertain_classification_rule": "source-ineligible-explicit-mask-v1",
     }
@@ -2558,8 +2565,11 @@ def _registered_detection_limit_field(
 ) -> Tensor:
     effective_range_km = range_km_by_source
     if conservative_ground_range:
-        _, effective_range_km = _ground_range_interval_km(
-            range_km_by_source
+        error = CURRENT_RADAR_METRIC_DOMAIN.maximum_linear_scale_error
+        legacy_upper_raw = range_km_by_source / (1.0 - error)
+        effective_range_km = torch.nextafter(
+            legacy_upper_raw,
+            torch.full_like(legacy_upper_raw, torch.inf),
         )
     sources = source_registry.ordered_sources
     base = range_km_by_source.new_tensor(
@@ -2585,6 +2595,71 @@ def _registered_detection_limit_field(
         + range_coefficient * effective_range_km.square()
         + elevation_coefficient
         * torch.clamp(elevation_deg_by_source - reference_elevation, min=0.0)
+    )
+
+
+def _nextafter_steps(value: Tensor, *, upward: bool, steps: int = 1) -> Tensor:
+    """Move a float tensor by a fixed number of representable values."""
+
+    direction = torch.full_like(value, torch.inf if upward else -torch.inf)
+    result = value
+    for _ in range(steps):
+        result = torch.nextafter(result, direction)
+    return result
+
+
+def _cast_float64_interval_outward(
+    lower: Tensor,
+    upper: Tensor,
+    *,
+    dtype: torch.dtype,
+) -> tuple[Tensor, Tensor]:
+    """Cast float64 bounds without narrowing their represented interval."""
+
+    if lower.dtype is not torch.float64 or upper.dtype is not torch.float64:
+        raise ValueError("canonical interval bounds must be float64")
+    if dtype is torch.float64:
+        return lower, upper
+    if dtype is not torch.float32:
+        raise ValueError("scientific interval output must be float32 or float64")
+    lower_cast = lower.to(dtype=dtype)
+    upper_cast = upper.to(dtype=dtype)
+    lower_cast = torch.where(
+        lower_cast.to(dtype=torch.float64) > lower,
+        _nextafter_steps(lower_cast, upward=False),
+        lower_cast,
+    )
+    upper_cast = torch.where(
+        upper_cast.to(dtype=torch.float64) < upper,
+        _nextafter_steps(upper_cast, upward=True),
+        upper_cast,
+    )
+    return lower_cast, upper_cast
+
+
+def _ground_range_interval_km_float64(
+    projected_range_km: Tensor,
+) -> tuple[Tensor, Tensor]:
+    """Return canonical float64 ground-range bounds with directed arithmetic."""
+
+    projected = projected_range_km.to(dtype=torch.float64)
+    error = CURRENT_RADAR_METRIC_DOMAIN.maximum_linear_scale_error
+    if error == 0.0:
+        return projected, projected
+    lower_denominator = math.nextafter(1.0 + error, math.inf)
+    upper_denominator = math.nextafter(1.0 - error, -math.inf)
+    lower = _nextafter_steps(
+        projected / lower_denominator,
+        upward=False,
+    ).clamp_min(0.0)
+    upper = _nextafter_steps(
+        projected / upper_denominator,
+        upward=True,
+    )
+    zeros = projected == 0.0
+    return (
+        torch.where(zeros, torch.zeros_like(lower), lower),
+        torch.where(zeros, torch.zeros_like(upper), upper),
     )
 
 
@@ -2616,26 +2691,85 @@ def _registered_detection_limit_interval(
 ) -> DetectionLimitInterval:
     """Return outward-rounded lower/upper registered detection limits."""
 
-    range_lower, range_upper = _ground_range_interval_km(
+    range_lower, range_upper = _ground_range_interval_km_float64(
         range_km_by_source
     )
-    lower_raw = _registered_detection_limit_field(
-        source_registry=source_registry,
-        range_km_by_source=range_lower,
-        elevation_deg_by_source=elevation_deg_by_source,
+    device = range_lower.device
+    sources = source_registry.ordered_sources
+    base = torch.tensor(
+        [source.detection_limit_dbz for source in sources],
+        dtype=torch.float64,
+        device=device,
+    )[:, None, None, None]
+    range_coefficient = torch.tensor(
+        [
+            source.detection_limit_range_quadratic_dbz_per_km2
+            for source in sources
+        ],
+        dtype=torch.float64,
+        device=device,
+    )[:, None, None, None]
+    elevation_coefficient = torch.tensor(
+        [
+            source.detection_limit_elevation_excess_dbz_per_degree
+            for source in sources
+        ],
+        dtype=torch.float64,
+        device=device,
+    )[:, None, None, None]
+    reference_elevation = torch.tensor(
+        [source.detection_limit_reference_elevation_deg for source in sources],
+        dtype=torch.float64,
+        device=device,
+    )[:, None, None, None]
+    elevation = elevation_deg_by_source.to(dtype=torch.float64)
+
+    range_square_lower = _nextafter_steps(
+        range_lower * range_lower,
+        upward=False,
     )
-    upper_raw = _registered_detection_limit_field(
-        source_registry=source_registry,
-        range_km_by_source=range_upper,
-        elevation_deg_by_source=elevation_deg_by_source,
+    range_square_upper = _nextafter_steps(
+        range_upper * range_upper,
+        upward=True,
     )
-    lower = torch.nextafter(
-        lower_raw,
-        torch.full_like(lower_raw, -torch.inf),
+    range_term_lower = _nextafter_steps(
+        range_coefficient * range_square_lower,
+        upward=False,
     )
-    upper = torch.nextafter(
-        upper_raw,
-        torch.full_like(upper_raw, torch.inf),
+    range_term_upper = _nextafter_steps(
+        range_coefficient * range_square_upper,
+        upward=True,
+    )
+    elevation_excess_lower = _nextafter_steps(
+        elevation - reference_elevation,
+        upward=False,
+    ).clamp_min(0.0)
+    elevation_excess_upper = _nextafter_steps(
+        elevation - reference_elevation,
+        upward=True,
+    ).clamp_min(0.0)
+    elevation_term_lower = _nextafter_steps(
+        elevation_coefficient * elevation_excess_lower,
+        upward=False,
+    )
+    elevation_term_upper = _nextafter_steps(
+        elevation_coefficient * elevation_excess_upper,
+        upward=True,
+    )
+    lower_float64 = _nextafter_steps(
+        _nextafter_steps(base + range_term_lower, upward=False)
+        + elevation_term_lower,
+        upward=False,
+    )
+    upper_float64 = _nextafter_steps(
+        _nextafter_steps(base + range_term_upper, upward=True)
+        + elevation_term_upper,
+        upward=True,
+    )
+    lower, upper = _cast_float64_interval_outward(
+        lower_float64,
+        upper_float64,
+        dtype=range_km_by_source.dtype,
     )
     return DetectionLimitInterval(lower_dbz=lower, upper_dbz=upper)
 
@@ -2645,18 +2779,14 @@ def _ground_range_interval_km(
 ) -> tuple[Tensor, Tensor]:
     """Return conservative ground-range bounds for current metric evidence."""
 
-    error = CURRENT_RADAR_METRIC_DOMAIN.maximum_linear_scale_error
-    lower_raw = projected_range_km / (1.0 + error)
-    upper_raw = projected_range_km / (1.0 - error)
-    lower = torch.nextafter(
-        lower_raw,
-        torch.full_like(lower_raw, -torch.inf),
-    ).clamp_min(0.0)
-    upper = torch.nextafter(
-        upper_raw,
-        torch.full_like(upper_raw, torch.inf),
+    lower_float64, upper_float64 = _ground_range_interval_km_float64(
+        projected_range_km
     )
-    return lower, upper
+    return _cast_float64_interval_outward(
+        lower_float64,
+        upper_float64,
+        dtype=projected_range_km.dtype,
+    )
 
 
 def _verification_acquisition_age_seconds_by_source(
@@ -2680,6 +2810,29 @@ def _verification_acquisition_age_seconds_by_source(
         ]
     )[:, :, None, None]
     return nominal_ages - acquisition_time_offset_seconds_by_source
+
+
+def _spatial_metric_maximum_age_seconds(
+    *,
+    plan: VerificationObservationErrorPlan,
+    geometry: RadarObservationGeometryContract,
+) -> float:
+    """Return a directed lower bound on the admissible spatial-metric age."""
+
+    ground_spacing_lower_m = projected_ground_distance_interval(
+        geometry.grid_spacing_m,
+        CURRENT_RADAR_METRIC_DOMAIN.maximum_linear_scale_error,
+    ).lower_m
+    allowed_ground_displacement_m = math.nextafter(
+        cast(float, plan.spatial_metric_maximum_displacement_fraction_cells)
+        * ground_spacing_lower_m,
+        -math.inf,
+    )
+    return math.nextafter(
+        allowed_ground_displacement_m
+        / cast(float, plan.spatial_metric_reference_speed_mps),
+        -math.inf,
+    )
 
 
 def _product_owned_source_assignment_scores(
@@ -2708,7 +2861,7 @@ def _product_owned_source_assignment_scores(
         datetime.fromisoformat(value.replace("Z", "+00:00"))
         for value in valid_times
     )
-    nominal_ages = acquisition_time_offset_seconds_by_source.new_tensor(
+    nominal_ages = torch.tensor(
         [
             [
                 (
@@ -2718,9 +2871,25 @@ def _product_owned_source_assignment_scores(
                 for index, value in enumerate(row)
             ]
             for row in acquisition_valid_times_by_source
-        ]
+        ],
+        dtype=torch.float64,
+        device=acquisition_time_offset_seconds_by_source.device,
     )[:, :, None, None]
-    ages = nominal_ages - acquisition_time_offset_seconds_by_source
+    offsets = acquisition_time_offset_seconds_by_source.to(dtype=torch.float64)
+    raw_ages = nominal_ages - offsets
+    age_lower = _nextafter_steps(raw_ages, upward=False)
+    age_upper = _nextafter_steps(raw_ages, upward=True)
+    exact_zero_age = raw_ages == 0.0
+    age_lower = torch.where(
+        exact_zero_age,
+        torch.zeros_like(age_lower),
+        age_lower,
+    )
+    age_upper = torch.where(
+        exact_zero_age,
+        torch.zeros_like(age_upper),
+        age_upper,
+    )
     availability = source_availability_by_time[:, :, None, None].expand_as(
         range_km_by_source
     )
@@ -2730,18 +2899,21 @@ def _product_owned_source_assignment_scores(
     maximum_age = cast(float, plan.maximum_acquisition_age_seconds)
     maximum_blockage = cast(float, plan.maximum_beam_blockage_fraction)
     minimum_attenuation = cast(float, plan.minimum_attenuation_qc_score)
-    lower_range_km, upper_range_km = _ground_range_interval_km(
+    lower_range_km, upper_range_km = _ground_range_interval_km_float64(
         range_km_by_source
     )
+    elevation = elevation_deg_by_source.to(dtype=torch.float64)
+    blockage = beam_blockage_fraction_by_source.to(dtype=torch.float64)
+    attenuation = attenuation_qc_score_by_source.to(dtype=torch.float64)
     eligible = (
         availability
-        & (ages >= 0.0)
-        & (ages <= maximum_age)
+        & (age_lower >= 0.0)
+        & (age_upper <= maximum_age)
         & (upper_range_km <= maximum_range)
-        & (elevation_deg_by_source >= minimum_elevation)
-        & (elevation_deg_by_source <= maximum_elevation)
-        & (beam_blockage_fraction_by_source <= maximum_blockage)
-        & (attenuation_qc_score_by_source >= minimum_attenuation)
+        & (elevation >= minimum_elevation)
+        & (elevation <= maximum_elevation)
+        & (blockage <= maximum_blockage)
+        & (attenuation >= minimum_attenuation)
     )
     if detection_classification_certain_by_source is not None:
         if (
@@ -2753,63 +2925,164 @@ def _product_owned_source_assignment_scores(
         ):
             raise ValueError("detection classification certainty is invalid")
         eligible = eligible & detection_classification_certain_by_source
-    range_quality_lower = 1.0 / (1.0 + upper_range_km)
-    range_quality_upper = 1.0 / (1.0 + lower_range_km)
+    range_denominator_lower = _nextafter_steps(
+        1.0 + lower_range_km,
+        upward=False,
+    )
+    range_denominator_upper = _nextafter_steps(
+        1.0 + upper_range_km,
+        upward=True,
+    )
+    range_quality_lower = _nextafter_steps(
+        1.0 / range_denominator_upper,
+        upward=False,
+    ).clamp_min(0.0)
+    range_quality_upper = _nextafter_steps(
+        1.0 / range_denominator_lower,
+        upward=True,
+    ).clamp_max(1.0)
     elevation_span = maximum_elevation - minimum_elevation
     if elevation_span > 0.0:
-        elevation_midpoint = 0.5 * (minimum_elevation + maximum_elevation)
-        elevation_quality = torch.clamp(
-            1.0
-            - 2.0
-            * torch.abs(elevation_deg_by_source - elevation_midpoint)
-            / elevation_span,
-            min=0.0,
-            max=1.0,
+        midpoint_lower = math.nextafter(
+            math.nextafter(
+                minimum_elevation + maximum_elevation,
+                -math.inf,
+            )
+            * 0.5,
+            -math.inf,
         )
+        midpoint_upper = math.nextafter(
+            math.nextafter(
+                minimum_elevation + maximum_elevation,
+                math.inf,
+            )
+            * 0.5,
+            math.inf,
+        )
+        delta_lower = _nextafter_steps(
+            elevation - midpoint_upper,
+            upward=False,
+        )
+        delta_upper = _nextafter_steps(
+            elevation - midpoint_lower,
+            upward=True,
+        )
+        absolute_lower = torch.where(
+            (delta_lower <= 0.0) & (delta_upper >= 0.0),
+            torch.zeros_like(delta_lower),
+            torch.minimum(torch.abs(delta_lower), torch.abs(delta_upper)),
+        )
+        absolute_upper = torch.maximum(
+            torch.abs(delta_lower),
+            torch.abs(delta_upper),
+        )
+        span_lower = math.nextafter(elevation_span, -math.inf)
+        span_upper = math.nextafter(elevation_span, math.inf)
+        penalty_lower = _nextafter_steps(
+            _nextafter_steps(2.0 * absolute_lower, upward=False)
+            / span_upper,
+            upward=False,
+        )
+        penalty_upper = _nextafter_steps(
+            _nextafter_steps(2.0 * absolute_upper, upward=True)
+            / span_lower,
+            upward=True,
+        )
+        elevation_quality_lower = _nextafter_steps(
+            1.0 - penalty_upper,
+            upward=False,
+        ).clamp(min=0.0, max=1.0)
+        elevation_quality_upper = _nextafter_steps(
+            1.0 - penalty_lower,
+            upward=True,
+        ).clamp(min=0.0, max=1.0)
     else:
-        elevation_quality = torch.ones_like(elevation_deg_by_source)
-    time_quality = torch.exp(
-        -torch.pow(
-            ages / cast(float, plan.temporal_quality_decay_scale_seconds),
-            cast(float, plan.temporal_quality_decay_power),
+        elevation_quality_lower = torch.ones_like(elevation)
+        elevation_quality_upper = torch.ones_like(elevation)
+
+    time_scale = cast(float, plan.temporal_quality_decay_scale_seconds)
+    time_power = cast(float, plan.temporal_quality_decay_power)
+    age_ratio_lower = _nextafter_steps(
+        age_lower.clamp_min(0.0) / math.nextafter(time_scale, math.inf),
+        upward=False,
+    ).clamp_min(0.0)
+    age_ratio_upper = _nextafter_steps(
+        age_upper.clamp_min(0.0) / math.nextafter(time_scale, -math.inf),
+        upward=True,
+    ).clamp_min(0.0)
+    powered_lower = _nextafter_steps(
+        torch.pow(age_ratio_lower, time_power),
+        upward=False,
+        steps=4,
+    ).clamp_min(0.0)
+    powered_upper = _nextafter_steps(
+        torch.pow(age_ratio_upper, time_power),
+        upward=True,
+        steps=4,
+    ).clamp_min(0.0)
+    time_quality_lower = _nextafter_steps(
+        torch.exp(-powered_upper),
+        upward=False,
+        steps=4,
+    ).clamp(min=0.0, max=1.0)
+    time_quality_upper = _nextafter_steps(
+        torch.exp(-powered_lower),
+        upward=True,
+        steps=4,
+    ).clamp(min=0.0, max=1.0)
+    unblocked_lower = _nextafter_steps(1.0 - blockage, upward=False)
+    unblocked_upper = _nextafter_steps(1.0 - blockage, upward=True)
+
+    score_lower_float64 = torch.ones_like(lower_range_km)
+    score_upper_float64 = torch.ones_like(upper_range_km)
+    for lower_term, upper_term in (
+        (range_quality_lower, range_quality_upper),
+        (elevation_quality_lower, elevation_quality_upper),
+        (time_quality_lower, time_quality_upper),
+        (unblocked_lower, unblocked_upper),
+        (attenuation, attenuation),
+    ):
+        score_lower_float64 = _nextafter_steps(
+            score_lower_float64 + lower_term,
+            upward=False,
         )
-    )
-    fixed_score = (
-        1.0
-        + elevation_quality
-        + time_quality
-        + (1.0 - beam_blockage_fraction_by_source)
-        + attenuation_qc_score_by_source
-    )
-    raw_score_lower = fixed_score + range_quality_lower
-    raw_score_upper = fixed_score + range_quality_upper
-    score_lower = torch.where(
+        score_upper_float64 = _nextafter_steps(
+            score_upper_float64 + upper_term,
+            upward=True,
+        )
+
+    score_lower_float64 = torch.where(
         eligible,
-        torch.nextafter(
-            raw_score_lower,
-            torch.full_like(raw_score_lower, -torch.inf),
-        ).clamp_min(0.0),
-        torch.zeros_like(fixed_score),
+        score_lower_float64.clamp_min(0.0),
+        torch.zeros_like(score_lower_float64),
     )
-    score_upper = torch.where(
+    score_upper_float64 = torch.where(
         eligible,
-        torch.nextafter(
-            raw_score_upper,
-            torch.full_like(raw_score_upper, torch.inf),
-        ),
-        torch.zeros_like(fixed_score),
+        score_upper_float64,
+        torch.zeros_like(score_upper_float64),
     )
-    if score_lower.shape[0] == 1:
-        competing_upper = torch.zeros_like(score_lower)
+    if score_lower_float64.shape[0] == 1:
+        competing_upper = torch.zeros_like(score_lower_float64)
     else:
         competing_upper = torch.stack(
             tuple(
-                torch.cat((score_upper[:index], score_upper[index + 1 :]), dim=0)
+                torch.cat(
+                    (
+                        score_upper_float64[:index],
+                        score_upper_float64[index + 1 :],
+                    ),
+                    dim=0,
+                )
                 .amax(dim=0)
-                for index in range(score_upper.shape[0])
+                for index in range(score_upper_float64.shape[0])
             )
         )
-    certified_winner = eligible & (score_lower > competing_upper)
+    certified_winner = eligible & (score_lower_float64 > competing_upper)
+    score_lower, _ = _cast_float64_interval_outward(
+        score_lower_float64,
+        score_upper_float64,
+        dtype=range_km_by_source.dtype,
+    )
     return torch.where(
         certified_winner,
         score_lower,
@@ -3926,13 +4199,9 @@ def _derive_verification_observation_masks(
     acquisition_time_valid = selected_age_seconds <= cast(
         float, plan.maximum_acquisition_age_seconds
     )
-    ground_spacing_lower_m = geometry.grid_spacing_m / (
-        1.0 + CURRENT_RADAR_METRIC_DOMAIN.maximum_linear_scale_error
-    )
-    spatial_metric_maximum_age_seconds = (
-        cast(float, plan.spatial_metric_maximum_displacement_fraction_cells)
-        * ground_spacing_lower_m
-        / cast(float, plan.spatial_metric_reference_speed_mps)
+    spatial_metric_maximum_age_seconds = _spatial_metric_maximum_age_seconds(
+        plan=plan,
+        geometry=geometry,
     )
     spatial_metric_valid = (
         selected_age_seconds <= spatial_metric_maximum_age_seconds

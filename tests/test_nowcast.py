@@ -1,5 +1,6 @@
 from copy import deepcopy
 from dataclasses import fields, replace
+from fractions import Fraction
 import hashlib
 from pathlib import Path
 from importlib import import_module
@@ -5548,6 +5549,42 @@ class NowcastTests(unittest.TestCase):
             speed.decision_for_maximum(10.0),
             ThresholdDecision.CERTAINLY_SATISFIES,
         )
+        zero_distance = projected_ground_distance_interval(0.0, 0.006)
+        zero_speed = projected_ground_speed_interval(0.0, 0.006)
+        self.assertEqual((zero_distance.lower_m, zero_distance.upper_m), (0.0, 0.0))
+        self.assertEqual((zero_speed.lower_mps, zero_speed.upper_mps), (0.0, 0.0))
+
+        certain_projected = evidence.certainly_within_projected_radius_m(
+            1_000.0
+        )
+        beyond_projected = evidence.certainly_exceeds_projected_radius_m(
+            1_000.0
+        )
+        self.assertIs(
+            projected_ground_distance_interval(
+                certain_projected,
+                evidence.maximum_linear_scale_error,
+            ).relation_to_maximum(1_000.0),
+            ThresholdRelation.CERTAINLY_WITHIN,
+        )
+        self.assertIs(
+            projected_ground_distance_interval(
+                beyond_projected,
+                evidence.maximum_linear_scale_error,
+            ).relation_to_minimum(1_000.0),
+            ThresholdRelation.CERTAINLY_EXCEEDS,
+        )
+
+        projected_area = 24_474.48420579254
+        area_lower, area_upper = evidence.projected_area_interval_km2(
+            projected_area
+        )
+        area = Fraction.from_float(projected_area)
+        area_error = Fraction.from_float(evidence.maximum_area_scale_error)
+        exact_area_lower = area / (Fraction(1) + area_error)
+        exact_area_upper = area / (Fraction(1) - area_error)
+        self.assertLessEqual(Fraction.from_float(area_lower), exact_area_lower)
+        self.assertGreaterEqual(Fraction.from_float(area_upper), exact_area_upper)
 
         invalid_intervals = (
             (DistanceInterval, (float("nan"), 1.0)),
@@ -5674,6 +5711,21 @@ class NowcastTests(unittest.TestCase):
         self.assertEqual(
             frozenset(footprint.possibly_inside),
             frozenset({(0, 0), (-1, 0), (0, -1), (0, 1), (1, 0)}),
+        )
+        zero_footprint = grid.pixel_offsets_ground_distance_footprint(
+            0.0,
+            maximum_radius_yx=(1, 1),
+        )
+        self.assertEqual(zero_footprint.certainly_inside, ((0, 0),))
+        self.assertEqual(zero_footprint.uncertain, ())
+        self.assertEqual(zero_footprint.possibly_inside, ((0, 0),))
+        self.assertEqual(
+            nowcast_module._pair_echo_offsets(
+                torch.Size((3, 3)),
+                replace(config, pair_echo_dilation_m=0.0),
+                grid,
+            ),
+            ((0, 0),),
         )
 
         certain_boundary = 1000.0 * (1.0 - 0.006)

@@ -607,7 +607,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 archive_sha256=shard_digest,
             )
             for role in sorted(
-                ledger_module.SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                ledger_module.LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V19
             )
         )
         legacy_manifest = (
@@ -693,7 +693,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                 archive_sha256=shard_digest,
             )
             for role in sorted(
-                ledger_module.SCORING_REPLAY_REQUIRED_TENSOR_ROLES
+                ledger_module.LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V19
             )
         )
         legacy_manifest = ledger_module.LegacyScoringReplayBundleManifestAuditV22(
@@ -747,6 +747,80 @@ class EpisodeLedgerTests(unittest.TestCase):
             type(decoded_scoring),
             promotion_module.LegacyHoldoutScoringArtifactAuditV14,
         )
+
+    def test_replay_v19_through_v24_preserve_frozen_tensor_roles(self) -> None:
+        shard_digest = "3" * 64
+        records = tuple(
+            ledger_module.ScoringReplayTensorRecord(
+                case_id="case-a",
+                role=role,
+                archive_member="tensor",
+                dtype="float32",
+                shape=(1,),
+                tensor_digest="4" * 64,
+                archive_sha256=shard_digest,
+            )
+            for role in sorted(
+                ledger_module.LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V19
+            )
+        )
+        current_only_records = tuple(
+            ledger_module.ScoringReplayTensorRecord(
+                case_id="case-a",
+                role=role,
+                archive_member="tensor",
+                dtype="float32",
+                shape=(1,),
+                tensor_digest="4" * 64,
+                archive_sha256=shard_digest,
+            )
+            for role in sorted(ledger_module.SCORING_REPLAY_REQUIRED_TENSOR_ROLES)
+        )
+        common = {
+            "scoring_input_artifact_digest": "5" * 64,
+            "ordered_case_ids": ("case-a",),
+            "ordered_evaluation_digests": ("6" * 64,),
+            "semantic_case_digests": ("7" * 64,),
+            "dynamic_source_case_ids": (),
+            "background_case_ids": (),
+            "algorithm_source_manifest_digest": "8" * 64,
+            "runtime_compatibility_digest": "9" * 64,
+            "runtime_exact_digest": "a" * 64,
+            "scoring_backend_certification_policy_digest": None,
+            "scoring_backend_certification_evidence_digest": None,
+            "tensor_archive_sha256": "b" * 64,
+            "evaluation_payload_sha256": "c" * 64,
+            "raw_provenance_payload_sha256": "d" * 64,
+            "verification_provenance_payload_sha256": "e" * 64,
+            "raw_ingestor_trust_store_digest": "f" * 64,
+            "tensor_shard_sha256s": (shard_digest,),
+        }
+        generations = (
+            (19, ledger_module.LegacyScoringReplayBundleManifestAuditV19),
+            (20, ledger_module.LegacyScoringReplayBundleManifestAuditV20),
+            (21, ledger_module.LegacyScoringReplayBundleManifestAuditV21),
+            (22, ledger_module.LegacyScoringReplayBundleManifestAuditV22),
+            (23, ledger_module.LegacyScoringReplayBundleManifestAuditV23),
+            (24, ledger_module.LegacyScoringReplayBundleManifestAuditV24),
+        )
+        for generation, manifest_type in generations:
+            with self.subTest(generation=generation):
+                manifest = manifest_type(**common, tensor_records=records)
+                decoded = ledger_module._decode_scoring_replay_bundle_manifest(
+                    json.dumps(
+                        manifest.payload
+                        | {"bundle_digest": manifest.bundle_digest},
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    ),
+                    expected_digest=manifest.bundle_digest,
+                )
+                self.assertIs(type(decoded), manifest_type)
+                with self.assertRaisesRegex(ValueError, "tensor set"):
+                    manifest_type(
+                        **common,
+                        tensor_records=current_only_records,
+                    )
 
     def test_pr141_promotion_v31_loads_from_the_ledger_as_audit_only(
         self,
