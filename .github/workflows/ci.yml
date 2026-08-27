@@ -114,6 +114,12 @@ jobs:
           python -I .github/scripts/generate_metric_domain_evidence.py \
             --check-source-only
 
+      - name: Exercise Linux geodetic execution-environment closure
+        run: |
+          env -u LD_LIBRARY_PATH \
+            python -I .github/scripts/generate_metric_domain_evidence.py \
+              --self-test-execution-environment
+
       - name: Install the hashed build closure
         run: |
           python -I -m pip install \

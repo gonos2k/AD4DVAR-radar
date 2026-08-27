@@ -67,19 +67,19 @@ _EPSG_5179_MAXIMUM_NORTHING_M = 2_274_021.31
 _EPSG_5179_MAXIMUM_LINEAR_SCALE_ERROR = 0.006
 _EPSG_5179_MAXIMUM_AREA_SCALE_ERROR = 0.012036
 _EPSG_5179_METRIC_EVIDENCE_RESOURCE = (
-    "data/epsg5179_metric_domain_evidence_v3.json"
+    "data/epsg5179_metric_domain_evidence_v4.json"
 )
 _EPSG_5179_METRIC_EVIDENCE_REPORT_SHA256 = (
-    "9658c906cf04f7aa2481c93f87408e803fefe37855b4670704f7ebbb7fb71bcf"
+    "ceed652ab406b18b5f8550d2213ca0840ae224babe434d4ca1e1fec9ee7a0e62"
 )
 _EPSG_5179_METRIC_EVIDENCE_GENERATOR_SHA256 = (
-    "b035fa579390b02c690ca8296fcc2beaf38ce87031cc2bf33b7e615c5324652a"
+    "b66cbc33b0be20ec9dca8891024e3a30051b174b7a9347555687d972cc045cc7"
 )
 _EPSG_5179_EXECUTION_ENVIRONMENT_DIGEST = (
-    "521d3fd52ed4a9b4afdc0c5ce51fc636206285e93e56d6ddffbd2c629a71b58f"
+    "d6646af98ab2e1b3c1469e8d6d5dd89f99e3c72cddd6d029ea6569657eb0d693"
 )
 _EPSG_5179_DYNAMIC_LIBRARY_CLOSURE_DIGEST = (
-    "bcd47d51aa9a42501cd42b51876ea9cb8818c2c4378d256cd5a409f92f5e2fb4"
+    "c11759b9d74d536288589d4d1da9f51c759c4f0d8edfc9f3dd24c8ad143c5ef2"
 )
 _LEGACY_RADAR_METRIC_DOMAIN_EVIDENCE_V2_DIGEST = (
     "93244a5f047908819159098ab47ad6aa0140c2f5f2c6ec021161ad5e7be063eb"
@@ -1003,11 +1003,11 @@ def _validate_radar_metric_domain_evidence_report(
     if (
         set(report) != expected_report_fields
         or report.get("contract")
-        != "radar-metric-domain-geodetic-report-v3"
+        != "radar-metric-domain-geodetic-report-v4"
         or not isinstance(generator, dict)
         or set(generator) != expected_generator_fields
         or generator.get("contract")
-        != "generate-metric-domain-evidence-v4"
+        != "generate-metric-domain-evidence-v5"
         or generator.get("source_sha256")
         != _EPSG_5179_METRIC_EVIDENCE_GENERATOR_SHA256
         or generator.get("canonical_output")
@@ -1058,7 +1058,7 @@ def _validate_radar_metric_domain_evidence_report(
     )
     if (
         execution_environment.get("contract")
-        != "metric-domain-generator-execution-environment-v2"
+        != "metric-domain-generator-execution-environment-v3"
         or canonical_environment
         != {
             "LANG": "C",
@@ -1082,8 +1082,8 @@ def _validate_radar_metric_domain_evidence_report(
         != json_digest(dynamic_library_closure)
         or execution_environment.get("closure_completeness")
         not in {
-            "file-backed-dependencies-hashed-v1",
-            "darwin-system-shared-cache-not-byte-addressed-v1",
+            "enumerated-file-backed-runtime-roots-v1",
+            "enumerated-roots-with-darwin-shared-cache-gap-v1",
         }
         or execution_environment.get("sealed_environment_identity")
         is not None
@@ -1143,9 +1143,9 @@ def _validate_radar_metric_domain_evidence_report(
             "radar metric-domain dynamic-library closure is not canonical"
         )
     expected_closure_completeness = (
-        "file-backed-dependencies-hashed-v1"
+        "enumerated-file-backed-runtime-roots-v1"
         if all(entry.get("file_sha256") is not None for entry in dynamic_library_closure)
-        else "darwin-system-shared-cache-not-byte-addressed-v1"
+        else "enumerated-roots-with-darwin-shared-cache-gap-v1"
     )
     if (
         execution_environment.get("closure_completeness")
@@ -1155,9 +1155,14 @@ def _validate_radar_metric_domain_evidence_report(
             "radar metric-domain dynamic-library closure status is invalid"
         )
     file_identity_fields = {"resolved_path", "file_sha256"}
+    interpreter_chain = dependency_inspector.get("interpreter_chain")
+    if not isinstance(interpreter_chain, list):
+        raise ValueError(
+            "radar metric-domain inspector interpreter chain is invalid"
+        )
     for identity in (
-        dependency_inspector,
         python_executable,
+        *interpreter_chain,
         *dynamic_library_closure_roots,
         *python_native_extensions,
     ):
@@ -1177,7 +1182,7 @@ def _validate_radar_metric_domain_evidence_report(
             )
     if (
         set(cast(dict[str, object], dependency_inspector))
-        != {"name", "resolved_path", "file_sha256"}
+        != {"name", "resolved_path", "file_sha256", "interpreter_chain"}
         or dependency_inspector.get("name") not in {"ldd", "otool"}
         or dependency_inspector.get("name")
         != (
@@ -1187,6 +1192,13 @@ def _validate_radar_metric_domain_evidence_report(
         )
         or set(cast(dict[str, object], python_executable))
         != file_identity_fields
+        or not isinstance(dependency_inspector.get("resolved_path"), str)
+        or not isinstance(dependency_inspector.get("file_sha256"), str)
+        or re.fullmatch(
+            r"[0-9a-f]{64}",
+            cast(str, dependency_inspector.get("file_sha256")),
+        )
+        is None
         or any(
             set(cast(dict[str, object], identity)) != file_identity_fields
             for identity in (
@@ -1618,9 +1630,15 @@ def projected_ground_distance_interval(
         raise ValueError("invalid projected-distance interval input")
     projected = float(projected_distance_m)
     error = float(maximum_linear_scale_error)
+    if projected == 0.0 or error == 0.0:
+        return DistanceInterval(lower_m=projected, upper_m=projected)
+    lower_denominator = math.nextafter(1.0 + error, math.inf)
+    upper_denominator = math.nextafter(1.0 - error, -math.inf)
+    raw_lower = projected / lower_denominator
+    raw_upper = projected / upper_denominator
     return DistanceInterval(
-        lower_m=projected / (1.0 + error),
-        upper_m=projected / (1.0 - error),
+        lower_m=max(0.0, math.nextafter(raw_lower, -math.inf)),
+        upper_m=math.nextafter(raw_upper, math.inf),
     )
 
 
@@ -1782,6 +1800,50 @@ class LegacyRadarMetricDomainEvidenceAuditV2:
 
 
 @dataclass(frozen=True)
+class LegacyRadarMetricDomainEvidenceAuditV3:
+    """Decode the historical v3 report as immutable audit bytes only."""
+
+    report_json: str
+    verification_report_sha256: str
+    contract: str = "legacy-radar-metric-domain-evidence-audit-v3"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        try:
+            report = json.loads(self.report_json)
+        except json.JSONDecodeError as error:
+            raise ValueError("legacy metric-domain report is invalid") from error
+        canonical = json.dumps(
+            report,
+            allow_nan=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        if (
+            not isinstance(report, dict)
+            or report.get("contract")
+            != "radar-metric-domain-geodetic-report-v3"
+            or self.report_json != canonical
+            or hashlib.sha256((canonical + "\n").encode()).hexdigest()
+            != self.verification_report_sha256
+        ):
+            raise ValueError("legacy metric-domain report is invalid")
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "original_contract": (
+                        "radar-metric-domain-evidence-v3"
+                    ),
+                    "report_sha256": self.verification_report_sha256,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class RadarMetricDomainEvidence:
     """Content-addressed geodetic sampling evidence for one metric domain."""
 
@@ -1793,7 +1855,7 @@ class RadarMetricDomainEvidence:
     verification_report_sha256: str = (
         _EPSG_5179_METRIC_EVIDENCE_REPORT_SHA256
     )
-    generator_contract: str = "generate-metric-domain-evidence-v4"
+    generator_contract: str = "generate-metric-domain-evidence-v5"
     generator_source_sha256: str = (
         _EPSG_5179_METRIC_EVIDENCE_GENERATOR_SHA256
     )
@@ -1891,7 +1953,7 @@ class RadarMetricDomainEvidence:
             or self.generator_output_contract
             != generator.get("canonical_output")
             or report.get("contract")
-            != "radar-metric-domain-geodetic-report-v3"
+            != "radar-metric-domain-geodetic-report-v4"
             or report.get("canonical_projection") != "EPSG:5179"
             or self.geodetic_engine != engine.get("name")
             or self.geodetic_engine_version != engine.get("version")
@@ -1973,10 +2035,24 @@ class RadarMetricDomainEvidence:
             or projected_area_km2 < 0.0
         ):
             raise ValueError("projected area must be finite and non-negative")
+        projected = float(projected_area_km2)
         error = self.maximum_area_scale_error
+        if projected == 0.0 or error == 0.0:
+            return (projected, projected)
+        lower_denominator = math.nextafter(1.0 + error, math.inf)
+        upper_denominator = math.nextafter(1.0 - error, -math.inf)
         return (
-            float(projected_area_km2) / (1.0 + error),
-            float(projected_area_km2) / (1.0 - error),
+            max(
+                0.0,
+                math.nextafter(
+                    projected / lower_denominator,
+                    -math.inf,
+                ),
+            ),
+            math.nextafter(
+                projected / upper_denominator,
+                math.inf,
+            ),
         )
 
     def projected_distance_interval_m(
@@ -2016,8 +2092,16 @@ class RadarMetricDomainEvidence:
             raise ValueError(
                 "maximum ground distance must be finite and non-negative"
             )
-        return float(maximum_ground_distance_m) * (
-            1.0 - self.maximum_linear_scale_error
+        maximum = float(maximum_ground_distance_m)
+        if maximum == 0.0:
+            return 0.0
+        factor = math.nextafter(
+            1.0 - self.maximum_linear_scale_error,
+            -math.inf,
+        )
+        return max(
+            0.0,
+            math.nextafter(maximum * factor, -math.inf),
         )
 
     def certainly_exceeds_projected_radius_m(
@@ -2035,9 +2119,14 @@ class RadarMetricDomainEvidence:
             raise ValueError(
                 "minimum ground distance must be finite and non-negative"
             )
-        return float(minimum_ground_distance_m) * (
-            1.0 + self.maximum_linear_scale_error
+        minimum = float(minimum_ground_distance_m)
+        if minimum == 0.0:
+            return 0.0
+        factor = math.nextafter(
+            1.0 + self.maximum_linear_scale_error,
+            math.inf,
         )
+        return math.nextafter(minimum * factor, math.inf)
 
     def validate_projected_point(self, x_m: float, y_m: float) -> None:
         """Require one point to lie in the geodetically sampled coverage."""
@@ -3010,9 +3099,36 @@ class RadarGridTimeContract:
         if self.spatial_grid_contract != "radar-spatial-grid-identity-v6":
             return projected_speed_mps
         self.validate_current_metric_domain_evidence()
-        return projected_speed_mps / (
-            1.0
-            - CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.maximum_linear_scale_error
+        error = (
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.maximum_linear_scale_error
+        )
+        denominator = math.nextafter(1.0 - error, -math.inf)
+        projected_float64 = projected_speed_mps.to(dtype=torch.float64)
+        raw_upper_float64 = projected_float64 / denominator
+        upper_float64 = torch.nextafter(
+            raw_upper_float64,
+            torch.full_like(raw_upper_float64, torch.inf),
+        )
+        if projected_speed_mps.dtype is torch.float64:
+            rounded_upper = upper_float64
+        elif projected_speed_mps.dtype is torch.float32:
+            rounded_upper = upper_float64.to(dtype=torch.float32)
+            rounded_upper = torch.where(
+                rounded_upper.to(dtype=torch.float64) < upper_float64,
+                torch.nextafter(
+                    rounded_upper,
+                    torch.full_like(rounded_upper, torch.inf),
+                ),
+                rounded_upper,
+            )
+        else:
+            raise ValueError(
+                "scientific projected speed must be float32 or float64"
+            )
+        return torch.where(
+            projected_speed_mps == 0.0,
+            torch.zeros_like(rounded_upper),
+            rounded_upper,
         )
 
     def conservative_projected_speed_limit_mps(
@@ -3174,30 +3290,52 @@ class RadarGridTimeContract:
             or maximum_ground_distance_m < 0.0
         ):
             raise ValueError("ground-distance radius must be nonnegative")
-        certain_radius = float(maximum_ground_distance_m)
-        possible_radius = float(maximum_ground_distance_m)
-        if self.spatial_grid_contract == "radar-spatial-grid-identity-v6":
-            self.validate_current_metric_domain_evidence()
-            certain_radius = (
-                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
-                .certainly_within_projected_radius_m(
-                    maximum_ground_distance_m
-                )
+        if self.spatial_grid_contract != "radar-spatial-grid-identity-v6":
+            projected = self.pixel_offsets_within_distance(
+                float(maximum_ground_distance_m),
+                maximum_radius_yx=maximum_radius_yx,
             )
-            possible_radius = (
-                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
-                .certainly_exceeds_projected_radius_m(
-                    maximum_ground_distance_m
-                )
+            return GroundDistanceFootprint(
+                certainly_inside=projected,
+                uncertain=(),
+                possibly_inside=projected,
             )
-        certain = self.pixel_offsets_within_distance(
-            certain_radius,
-            maximum_radius_yx=maximum_radius_yx,
+
+        self.validate_current_metric_domain_evidence()
+        possible_radius = (
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
+            .certainly_exceeds_projected_radius_m(
+                maximum_ground_distance_m
+            )
         )
-        possible = self.pixel_offsets_within_distance(
-            possible_radius,
-            maximum_radius_yx=maximum_radius_yx,
-        )
+        radius_y, radius_x = self.pixel_radius_yx(possible_radius)
+        if radius_y > maximum_radius_yx[0] or radius_x > maximum_radius_yx[1]:
+            raise ValueError(
+                "physical distance requires a grid radius larger than the "
+                "analysis grid"
+            )
+        assert self.pixel_to_projected_matrix_m is not None
+        (a, b), (c, d) = self.pixel_to_projected_matrix_m
+        certain_values: list[tuple[int, int]] = []
+        possible_values: list[tuple[int, int]] = []
+        for row in range(-radius_y, radius_y + 1):
+            for column in range(-radius_x, radius_x + 1):
+                projected_distance = math.hypot(
+                    a * column + b * row,
+                    c * column + d * row,
+                )
+                interval = projected_ground_distance_interval(
+                    projected_distance,
+                    CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.maximum_linear_scale_error,
+                )
+                if interval.upper_m <= maximum_ground_distance_m:
+                    certain_values.append((row, column))
+                if interval.lower_m <= maximum_ground_distance_m:
+                    possible_values.append((row, column))
+        certain = tuple(certain_values)
+        possible = tuple(possible_values)
+        if (0, 0) not in certain or (0, 0) not in possible:
+            raise RuntimeError("ground-distance footprint must contain its origin")
         certain_set = frozenset(certain)
         uncertain = tuple(offset for offset in possible if offset not in certain_set)
         return GroundDistanceFootprint(
@@ -3495,11 +3633,7 @@ def _validate_state_dynamics(
         speed = grid_time_contract.projected_ground_speed_upper_bound(
             projected_speed
         )
-        motion_within_limit = bool(
-            speed
-            <= config.maximum_motion_speed_mps
-            + config.contract_absolute_tolerance
-        )
+        motion_within_limit = bool(speed <= config.maximum_motion_speed_mps)
     if not motion_within_limit:
         raise ValueError("state motion exceeds the configured limit")
     if bool(
@@ -8062,10 +8196,7 @@ def _estimate_available_pair(
         speed = grid_time_contract.projected_ground_speed_upper_bound(
             projected_speed
         )
-        if float(speed.detach()) > (
-            config.maximum_motion_speed_mps
-            + config.contract_absolute_tolerance
-        ):
+        if float(speed.detach()) > config.maximum_motion_speed_mps:
             return None
     per_step_motion = total_motion / step_span
     growth = _growth_evidence_aligned_with_motion(
@@ -9760,12 +9891,7 @@ def _phase_correlation_details(
         requested_limits,
         correlation.new_tensor((height - 1, width - 1)),
     )
-    inside_limits = bool(
-        torch.all(
-            torch.abs(shift)
-            <= limits + config.contract_absolute_tolerance
-        )
-    )
+    inside_limits = bool(torch.all(torch.abs(shift) <= limits))
     interior_bin_limit = (limits - 0.5).clamp_min(
         config.contract_absolute_tolerance
     )
