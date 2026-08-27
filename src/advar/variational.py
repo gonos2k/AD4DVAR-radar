@@ -4211,12 +4211,11 @@ def prepare_analysis(
                 raise ValueError(
                     "expanded neural-prior support requires a grid contract"
                 )
+            added_count = int(torch.count_nonzero(added_support))
             added_area = (
                 0.0
                 if grid_time_contract is None
-                else int(torch.count_nonzero(added_support))
-                * grid_time_contract.cell_area_m2
-                / 1.0e6
+                else added_count * grid_time_contract.cell_area_m2 / 1.0e6
             )
             added_echo = float(
                 torch.sum(
@@ -4230,10 +4229,11 @@ def prepare_analysis(
             )
             if grid_time_contract is not None:
                 try:
-                    grid_time_contract.validate_projected_area_maximum(
-                        added_area,
+                    if grid_time_contract.cell_count_area_maximum_status(
+                        added_count,
                         neural_prior.maximum_added_area_km2,
-                    )
+                    ) != "passes":
+                        raise ValueError("cell-derived added area is not certified")
                 except ValueError as error:
                     raise ValueError(
                         "neural-prior added area exceeds or is uncertain against "
@@ -8628,11 +8628,10 @@ def _motion_speed_saturation_margin(
     contract = frozen.grid_time_contract
     if maximum_speed is None or contract is None:
         return None
-    projected = contract.projected_displacement_xy(displacement_yx)
-    projected_speed = torch.linalg.vector_norm(projected) / (
-        frozen.nowcast_config.interval_minutes * 60.0
+    speed = contract.projected_ground_speed_upper_from_displacement(
+        displacement_yx,
+        frozen.nowcast_config.interval_minutes * 60.0,
     )
-    speed = contract.projected_ground_speed_upper_bound(projected_speed)
     return maximum_speed - float(speed.detach())
 
 

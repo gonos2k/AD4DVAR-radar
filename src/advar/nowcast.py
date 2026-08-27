@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass, field, fields, replace
 from datetime import datetime, timezone
+from decimal import Decimal, localcontext
 from enum import Enum
 import hashlib
 from importlib import resources
@@ -1642,6 +1643,180 @@ def projected_ground_distance_interval(
     )
 
 
+def _directed_point_product(left: float, right: float) -> tuple[float, float]:
+    """Enclose one binary64 product without treating its rounded value as exact."""
+
+    product = left * right
+    if not math.isfinite(product):
+        raise ValueError("directed affine product must be finite")
+    if product == 0.0 and (left == 0.0 or right == 0.0):
+        return (0.0, 0.0)
+    return (
+        math.nextafter(product, -math.inf),
+        math.nextafter(product, math.inf),
+    )
+
+
+def _directed_interval_sum(
+    left: tuple[float, float],
+    right: tuple[float, float],
+) -> tuple[float, float]:
+    if left == (0.0, 0.0) and right == (0.0, 0.0):
+        return (0.0, 0.0)
+    lower = left[0] + right[0]
+    upper = left[1] + right[1]
+    if not math.isfinite(lower) or not math.isfinite(upper):
+        raise ValueError("directed affine sum must be finite")
+    return (
+        math.nextafter(lower, -math.inf),
+        math.nextafter(upper, math.inf),
+    )
+
+
+def _directed_interval_difference(
+    left: tuple[float, float],
+    right: tuple[float, float],
+) -> tuple[float, float]:
+    lower = left[0] - right[1]
+    upper = left[1] - right[0]
+    if not math.isfinite(lower) or not math.isfinite(upper):
+        raise ValueError("directed affine difference must be finite")
+    return (
+        math.nextafter(lower, -math.inf),
+        math.nextafter(upper, math.inf),
+    )
+
+
+def _directed_square_interval(
+    interval: tuple[float, float],
+) -> tuple[float, float]:
+    lower, upper = interval
+    lower_square = _directed_point_product(lower, lower)
+    upper_square = _directed_point_product(upper, upper)
+    minimum = (
+        0.0
+        if lower <= 0.0 <= upper
+        else min(lower_square[0], upper_square[0])
+    )
+    return (minimum, max(lower_square[1], upper_square[1]))
+
+
+def _directed_sqrt_interval(
+    interval: tuple[float, float],
+) -> tuple[float, float]:
+    lower, upper = interval
+    if lower < 0.0 or upper < lower:
+        raise ValueError("directed square-root interval is invalid")
+    raw_lower = math.sqrt(lower)
+    raw_upper = math.sqrt(upper)
+    return (
+        0.0 if raw_lower == 0.0 else math.nextafter(raw_lower, -math.inf),
+        0.0 if raw_upper == 0.0 else math.nextafter(raw_upper, math.inf),
+    )
+
+
+def _affine_displacement_norm_interval_float64(
+    matrix: tuple[tuple[float, float], tuple[float, float]],
+    displacement_yx: tuple[float, float],
+) -> tuple[float, float]:
+    """Enclose ``|M @ [column, row]|`` from binary64 inputs."""
+
+    row, column = (float(displacement_yx[0]), float(displacement_yx[1]))
+    (xx, xr), (yx, yr) = matrix
+    projected_x = _directed_interval_sum(
+        _directed_point_product(float(xx), column),
+        _directed_point_product(float(xr), row),
+    )
+    projected_y = _directed_interval_sum(
+        _directed_point_product(float(yx), column),
+        _directed_point_product(float(yr), row),
+    )
+    squared_norm = _directed_interval_sum(
+        _directed_square_interval(projected_x),
+        _directed_square_interval(projected_y),
+    )
+    return _directed_sqrt_interval(
+        (max(0.0, squared_norm[0]), squared_norm[1])
+    )
+
+
+def _affine_offset_norm_interval_float64(
+    matrix: tuple[tuple[float, float], tuple[float, float]],
+    offset_yx: tuple[int, int],
+) -> tuple[float, float]:
+    """Integer-offset specialization used by physical-radius footprints."""
+
+    if any(type(value) is not int for value in offset_yx):
+        raise ValueError("affine offset must contain integers")
+    return _affine_displacement_norm_interval_float64(
+        matrix,
+        (float(offset_yx[0]), float(offset_yx[1])),
+    )
+
+
+def _affine_cell_area_interval_float64(
+    matrix: tuple[tuple[float, float], tuple[float, float]],
+) -> tuple[float, float]:
+    """Enclose the absolute binary64 determinant of one grid affine."""
+
+    (xx, xr), (yx, yr) = matrix
+    signed = _directed_interval_difference(
+        _directed_point_product(float(xx), float(yr)),
+        _directed_point_product(float(xr), float(yx)),
+    )
+    lower, upper = signed
+    if lower <= 0.0 <= upper:
+        absolute = (0.0, max(-lower, upper))
+    elif upper < 0.0:
+        absolute = (-upper, -lower)
+    else:
+        absolute = signed
+    if absolute[0] <= 0.0 or not all(
+        math.isfinite(value) for value in absolute
+    ):
+        raise ValueError("radar affine cell-area interval must be positive")
+    return absolute
+
+
+def _projected_ground_distance_interval_from_bounds(
+    projected_lower_m: float,
+    projected_upper_m: float,
+    maximum_linear_scale_error: float,
+) -> DistanceInterval:
+    """Propagate a projected primitive interval through the scale budget."""
+
+    _validate_nonnegative_interval(
+        projected_lower_m,
+        projected_upper_m,
+        name="projected-distance",
+    )
+    if not 0.0 <= maximum_linear_scale_error < 1.0:
+        raise ValueError("invalid projected-distance scale error")
+    if projected_lower_m == 0.0 and projected_upper_m == 0.0:
+        return DistanceInterval(0.0, 0.0)
+    lower_denominator = math.nextafter(
+        1.0 + maximum_linear_scale_error,
+        math.inf,
+    )
+    upper_denominator = math.nextafter(
+        1.0 - maximum_linear_scale_error,
+        -math.inf,
+    )
+    return DistanceInterval(
+        max(
+            0.0,
+            math.nextafter(
+                projected_lower_m / lower_denominator,
+                -math.inf,
+            ),
+        ),
+        math.nextafter(
+            projected_upper_m / upper_denominator,
+            math.inf,
+        ),
+    )
+
+
 def projected_ground_speed_interval(
     projected_speed_mps: float,
     maximum_linear_scale_error: float,
@@ -2051,6 +2226,37 @@ class RadarMetricDomainEvidence:
             ),
             math.nextafter(
                 projected / upper_denominator,
+                math.inf,
+            ),
+        )
+
+    def projected_area_interval_from_bounds_km2(
+        self,
+        projected_lower_km2: float,
+        projected_upper_km2: float,
+    ) -> tuple[float, float]:
+        """Propagate an already-enclosed projected area without narrowing it."""
+
+        _validate_nonnegative_interval(
+            projected_lower_km2,
+            projected_upper_km2,
+            name="projected-area",
+        )
+        error = self.maximum_area_scale_error
+        if projected_lower_km2 == 0.0 and projected_upper_km2 == 0.0:
+            return (0.0, 0.0)
+        lower_denominator = math.nextafter(1.0 + error, math.inf)
+        upper_denominator = math.nextafter(1.0 - error, -math.inf)
+        return (
+            max(
+                0.0,
+                math.nextafter(
+                    projected_lower_km2 / lower_denominator,
+                    -math.inf,
+                ),
+            ),
+            math.nextafter(
+                projected_upper_km2 / upper_denominator,
                 math.inf,
             ),
         )
@@ -2577,6 +2783,36 @@ class RadarSpatialGridIdentity:
         return metrics.minimum_singular_spacing_m
 
     @property
+    def spatial_metric_spacing_lower_m(self) -> float:
+        """Return a directed lower bound for an active cell displacement."""
+
+        if self.contract != "radar-spatial-grid-identity-v6":
+            return self.spatial_metric_spacing_m
+        assert self.shape_yx is not None
+        rows, columns = self.shape_yx
+        if rows == 1 and columns == 1:
+            raise ValueError("spatial metrics require at least two grid cells")
+        matrix = self.pixel_to_projected_matrix_m
+        if rows == 1:
+            return _affine_offset_norm_interval_float64(matrix, (0, 1))[0]
+        if columns == 1:
+            return _affine_offset_norm_interval_float64(matrix, (1, 0))[0]
+        determinant_lower, _ = _affine_cell_area_interval_float64(matrix)
+        squared_terms = tuple(
+            _directed_square_interval((float(value), float(value)))
+            for row in matrix
+            for value in row
+        )
+        squared_sum = (0.0, 0.0)
+        for term in squared_terms:
+            squared_sum = _directed_interval_sum(squared_sum, term)
+        frobenius_upper = _directed_sqrt_interval(
+            (max(0.0, squared_sum[0]), squared_sum[1])
+        )[1]
+        lower = determinant_lower / frobenius_upper
+        return math.nextafter(lower, -math.inf)
+
+    @property
     def linf_cell_displacement_spacing_m(self) -> float:
         return _validate_and_measure_radar_grid_affine(
             self.pixel_to_projected_matrix_m,
@@ -2931,6 +3167,105 @@ class RadarGridTimeContract:
             ).determinant
         )
 
+    @property
+    def cell_area_interval_m2(self) -> tuple[float, float]:
+        """Return the directed binary64 determinant interval for one cell."""
+
+        assert self.pixel_to_projected_matrix_m is not None
+        if self.spatial_grid_contract != "radar-spatial-grid-identity-v6":
+            nominal = self.cell_area_m2
+            return (nominal, nominal)
+        return _affine_cell_area_interval_float64(
+            self.pixel_to_projected_matrix_m
+        )
+
+    def projected_cell_count_area_interval_km2(
+        self,
+        cell_equivalent_count: float,
+    ) -> tuple[float, float]:
+        """Enclose projected area derived from a possibly fractional cell count."""
+
+        if (
+            isinstance(cell_equivalent_count, bool)
+            or not isinstance(cell_equivalent_count, (int, float))
+            or not math.isfinite(cell_equivalent_count)
+            or cell_equivalent_count < 0.0
+        ):
+            raise ValueError("cell-equivalent count must be finite and non-negative")
+        lower_area, upper_area = self.cell_area_interval_m2
+        lower_product = _directed_point_product(
+            float(cell_equivalent_count),
+            lower_area,
+        )[0]
+        upper_product = _directed_point_product(
+            float(cell_equivalent_count),
+            upper_area,
+        )[1]
+        return (
+            max(0.0, math.nextafter(lower_product / 1.0e6, -math.inf)),
+            math.nextafter(upper_product / 1.0e6, math.inf),
+        )
+
+    def cell_count_area_maximum_status(
+        self,
+        cell_equivalent_count: float,
+        maximum_ground_area_km2: float,
+    ) -> str:
+        """Classify a cell-derived maximum using determinant and scale intervals."""
+
+        projected_lower, projected_upper = (
+            self.projected_cell_count_area_interval_km2(cell_equivalent_count)
+        )
+        if self.spatial_grid_contract != "radar-spatial-grid-identity-v6":
+            return (
+                "exceeds"
+                if projected_lower > maximum_ground_area_km2
+                else "passes"
+            )
+        self.validate_current_metric_domain_evidence()
+        lower, upper = (
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
+            .projected_area_interval_from_bounds_km2(
+                projected_lower,
+                projected_upper,
+            )
+        )
+        if lower > maximum_ground_area_km2:
+            return "exceeds"
+        if upper > maximum_ground_area_km2:
+            return "uncertain"
+        return "passes"
+
+    def cell_count_area_minimum_status(
+        self,
+        cell_equivalent_count: float,
+        minimum_ground_area_km2: float,
+    ) -> str:
+        """Classify a cell-derived minimum using determinant and scale intervals."""
+
+        projected_lower, projected_upper = (
+            self.projected_cell_count_area_interval_km2(cell_equivalent_count)
+        )
+        if self.spatial_grid_contract != "radar-spatial-grid-identity-v6":
+            return (
+                "insufficient"
+                if projected_upper < minimum_ground_area_km2
+                else "passes"
+            )
+        self.validate_current_metric_domain_evidence()
+        lower, upper = (
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE
+            .projected_area_interval_from_bounds_km2(
+                projected_lower,
+                projected_upper,
+            )
+        )
+        if upper < minimum_ground_area_km2:
+            return "insufficient"
+        if lower < minimum_ground_area_km2:
+            return "uncertain"
+        return "passes"
+
     def validate_projected_area_maximum(
         self,
         projected_area_km2: float,
@@ -3033,9 +3368,81 @@ class RadarGridTimeContract:
         if displacement_yx.shape != (2,):
             raise ValueError("displacement_yx must have shape [2]")
         assert self.pixel_to_projected_matrix_m is not None
-        matrix = displacement_yx.new_tensor(self.pixel_to_projected_matrix_m)
-        column_row = torch.stack((displacement_yx[1], displacement_yx[0]))
+        dtype = (
+            torch.float64
+            if self.spatial_grid_contract == "radar-spatial-grid-identity-v6"
+            else displacement_yx.dtype
+        )
+        matrix = torch.tensor(
+            self.pixel_to_projected_matrix_m,
+            dtype=dtype,
+            device=displacement_yx.device,
+        )
+        column_row = torch.stack(
+            (displacement_yx[1], displacement_yx[0])
+        ).to(dtype=dtype)
         return matrix @ column_row
+
+    def projected_ground_speed_interval_from_displacement(
+        self,
+        displacement_yx: Tensor,
+        interval_seconds: float,
+    ) -> SpeedInterval:
+        """Enclose ground speed directly from the authoritative affine."""
+
+        if (
+            displacement_yx.shape != (2,)
+            or displacement_yx.dtype not in {torch.float32, torch.float64}
+            or not bool(torch.all(torch.isfinite(displacement_yx)))
+            or not math.isfinite(interval_seconds)
+            or interval_seconds <= 0.0
+        ):
+            raise ValueError("physical displacement speed input is invalid")
+        assert self.pixel_to_projected_matrix_m is not None
+        projected_lower, projected_upper = (
+            _affine_displacement_norm_interval_float64(
+                self.pixel_to_projected_matrix_m,
+                (
+                    float(displacement_yx[0].detach()),
+                    float(displacement_yx[1].detach()),
+                ),
+            )
+        )
+        projected_speed_lower = max(
+            0.0,
+            math.nextafter(projected_lower / interval_seconds, -math.inf),
+        )
+        projected_speed_upper = math.nextafter(
+            projected_upper / interval_seconds,
+            math.inf,
+        )
+        if self.spatial_grid_contract != "radar-spatial-grid-identity-v6":
+            return SpeedInterval(projected_speed_lower, projected_speed_upper)
+        self.validate_current_metric_domain_evidence()
+        ground = _projected_ground_distance_interval_from_bounds(
+            projected_speed_lower,
+            projected_speed_upper,
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.maximum_linear_scale_error,
+        )
+        return SpeedInterval(ground.lower_m, ground.upper_m)
+
+    def projected_ground_speed_upper_from_displacement(
+        self,
+        displacement_yx: Tensor,
+        interval_seconds: float,
+    ) -> Tensor:
+        if self.spatial_grid_contract != "radar-spatial-grid-identity-v6":
+            projected = self.projected_displacement_xy(displacement_yx)
+            return torch.linalg.vector_norm(projected) / interval_seconds
+        interval = self.projected_ground_speed_interval_from_displacement(
+            displacement_yx,
+            interval_seconds,
+        )
+        return torch.tensor(
+            interval.upper_mps,
+            dtype=torch.float64,
+            device=displacement_yx.device,
+        )
 
     def displacement_yx_from_projected_xy(
         self,
@@ -3184,14 +3591,29 @@ class RadarGridTimeContract:
     ) -> tuple[float, float]:
         assert self.pixel_to_projected_matrix_m is not None
         (a, b), (c, d) = self.pixel_to_projected_matrix_m
-        determinant = a * d - b * c
-        inverse = (
-            (d / determinant, -b / determinant),
-            (-c / determinant, a / determinant),
-        )
-        maximum_col = radius_m * math.hypot(*inverse[0])
-        maximum_row = radius_m * math.hypot(*inverse[1])
-        return maximum_row, maximum_col
+        with localcontext() as context:
+            context.prec = 100
+            da, db, dc, dd = (
+                Decimal.from_float(value) for value in (a, b, c, d)
+            )
+            determinant = da * dd - db * dc
+            if determinant == 0:
+                raise ValueError("pixel affine must be invertible")
+            radius = Decimal.from_float(float(radius_m))
+            maximum_col_exact = radius * (
+                (dd / determinant) ** 2 + (-db / determinant) ** 2
+            ).sqrt()
+            maximum_row_exact = radius * (
+                (-dc / determinant) ** 2 + (da / determinant) ** 2
+            ).sqrt()
+
+        def inward(exact: Decimal) -> float:
+            value = float(exact)
+            if Decimal.from_float(value) > exact:
+                value = math.nextafter(value, -math.inf)
+            return value
+
+        return inward(maximum_row_exact), inward(maximum_col_exact)
 
     def pixel_radius_yx(self, distance_m: float) -> tuple[int, int]:
         if not math.isfinite(distance_m) or distance_m < 0:
@@ -3315,17 +3737,19 @@ class RadarGridTimeContract:
                 "analysis grid"
             )
         assert self.pixel_to_projected_matrix_m is not None
-        (a, b), (c, d) = self.pixel_to_projected_matrix_m
         certain_values: list[tuple[int, int]] = []
         possible_values: list[tuple[int, int]] = []
         for row in range(-radius_y, radius_y + 1):
             for column in range(-radius_x, radius_x + 1):
-                projected_distance = math.hypot(
-                    a * column + b * row,
-                    c * column + d * row,
+                projected_lower, projected_upper = (
+                    _affine_offset_norm_interval_float64(
+                        self.pixel_to_projected_matrix_m,
+                        (row, column),
+                    )
                 )
-                interval = projected_ground_distance_interval(
-                    projected_distance,
+                interval = _projected_ground_distance_interval_from_bounds(
+                    projected_lower,
+                    projected_upper,
                     CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.maximum_linear_scale_error,
                 )
                 if interval.upper_m <= maximum_ground_distance_m:
@@ -3445,7 +3869,24 @@ def motion_displacement_limits_yx(
         config.maximum_motion_speed_mps,
         config.interval_minutes,
     )
-    return reference.new_tensor(limits)
+    limits_float64 = torch.tensor(
+        limits,
+        dtype=torch.float64,
+        device=reference.device,
+    )
+    if reference.dtype is torch.float64:
+        return limits_float64
+    if reference.dtype is not torch.float32:
+        raise ValueError("scientific motion limits require float32 or float64")
+    cast_limits = limits_float64.to(dtype=torch.float32)
+    return torch.where(
+        cast_limits.to(dtype=torch.float64) > limits_float64,
+        torch.nextafter(
+            cast_limits,
+            torch.full_like(cast_limits, -torch.inf),
+        ),
+        cast_limits,
+    )
 
 
 class DataStatus(str, Enum):
@@ -3624,14 +4065,9 @@ def _validate_state_dynamics(
             raise ValueError(
                 "physical state motion requires a grid/time contract"
             )
-        projected_speed = torch.linalg.vector_norm(
-            grid_time_contract.projected_velocity_xy(
-                displacement,
-                config.interval_minutes,
-            )
-        )
-        speed = grid_time_contract.projected_ground_speed_upper_bound(
-            projected_speed
+        speed = grid_time_contract.projected_ground_speed_upper_from_displacement(
+            displacement,
+            config.interval_minutes * 60.0,
         )
         motion_within_limit = bool(speed <= config.maximum_motion_speed_mps)
     if not motion_within_limit:
@@ -6457,8 +6893,8 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
                     or growth_area <= 0
                     or (
                         config.minimum_growth_overlap_area_km2 is not None
-                        and grid.projected_area_minimum_status(
-                            growth_area,
+                        and grid.cell_count_area_minimum_status(
+                            growth_support,
                             config.minimum_growth_overlap_area_km2,
                         )
                         != "passes"
@@ -7886,14 +8322,9 @@ def _motion_disagreement_mps(
 ) -> Tensor:
     if grid_time_contract is None:
         return first_motion.new_full((), torch.nan)
-    projected = grid_time_contract.projected_displacement_xy(
-        second_motion - first_motion
-    )
-    projected_speed = torch.linalg.vector_norm(projected) / (
-        config.interval_minutes * 60.0
-    )
-    return grid_time_contract.projected_ground_speed_upper_bound(
-        projected_speed
+    return grid_time_contract.projected_ground_speed_upper_from_displacement(
+        second_motion - first_motion,
+        config.interval_minutes * 60.0,
     )
 
 
@@ -8190,11 +8621,10 @@ def _estimate_available_pair(
         config.maximum_motion_speed_mps is not None
         and grid_time_contract is not None
     ):
-        projected = grid_time_contract.projected_displacement_xy(total_motion)
         seconds = step_span * config.interval_minutes * 60.0
-        projected_speed = torch.linalg.vector_norm(projected) / seconds
-        speed = grid_time_contract.projected_ground_speed_upper_bound(
-            projected_speed
+        speed = grid_time_contract.projected_ground_speed_upper_from_displacement(
+            total_motion,
+            seconds,
         )
         if float(speed.detach()) > config.maximum_motion_speed_mps:
             return None
@@ -9722,8 +10152,8 @@ def _aligned_growth_evidence(
     if config.minimum_growth_overlap_area_km2 is not None:
         enough_area = (
             grid_time_contract is not None
-            and grid_time_contract.projected_area_minimum_status(
-                float(overlap_area_km2.detach()),
+            and grid_time_contract.cell_count_area_minimum_status(
+                float(overlap_support.detach()),
                 config.minimum_growth_overlap_area_km2,
             )
             == "passes"

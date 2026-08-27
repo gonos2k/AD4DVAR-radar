@@ -19,6 +19,7 @@ from advar._contract_registry import (  # noqa: E402
     render_contract_capability_table,
 )
 from advar import promotion as promotion_module  # noqa: E402
+import advar as advar_module  # noqa: E402
 from advar.nowcast import RadarMetricDomainEvidence  # noqa: E402
 from advar.promotion import (  # noqa: E402
     DeployedNeuralPriorPolicy,
@@ -58,6 +59,22 @@ def _execute_named_lifecycle_probe(probe: str) -> unittest.TestResult:
     result = unittest.TestResult()
     suite.run(result)
     return result
+
+
+def _declared_contract_probes() -> tuple[str, ...]:
+    return tuple(
+        dict.fromkeys(
+            probe
+            for capabilities in CONTRACT_CAPABILITIES.values()
+            for probe in (
+                capabilities.lifecycle_probe,
+                *(
+                    audit_probe
+                    for _, audit_probe in capabilities.audit_generation_probes
+                ),
+            )
+        )
+    )
 
 
 class ContractRegistryTests(unittest.TestCase):
@@ -101,10 +118,8 @@ class ContractRegistryTests(unittest.TestCase):
     ) -> None:
         repository = Path(__file__).resolve().parents[1]
         parsed_files: dict[Path, ast.Module] = {}
-        for capabilities in CONTRACT_CAPABILITIES.values():
-            path_text, class_name, method_name = (
-                capabilities.lifecycle_probe.split("::")
-            )
+        for probe in _declared_contract_probes():
+            path_text, class_name, method_name = probe.split("::")
             path = repository / path_text
             tree = parsed_files.setdefault(
                 path,
@@ -128,7 +143,7 @@ class ContractRegistryTests(unittest.TestCase):
             }
             self.assertFalse(
                 any("skip" in decorator.lower() for decorator in decorators),
-                capabilities.lifecycle_probe,
+                probe,
             )
 
     def test_declared_lifecycle_probes_execute_without_skip_or_failure(
@@ -137,6 +152,8 @@ class ContractRegistryTests(unittest.TestCase):
         grouped: dict[str, list[str]] = {}
         for family, capabilities in CONTRACT_CAPABILITIES.items():
             grouped.setdefault(capabilities.lifecycle_probe, []).append(family)
+            for contract, probe in capabilities.audit_generation_probes:
+                grouped.setdefault(probe, []).append(f"{family}:{contract}")
         cases = tuple(
             LifecycleCase(
                 families=tuple(families),
@@ -151,6 +168,20 @@ class ContractRegistryTests(unittest.TestCase):
                 self.assertFalse(result.skipped)
                 self.assertFalse(result.failures)
                 self.assertFalse(result.errors)
+
+    def test_every_audit_only_generation_has_an_executable_cold_probe(
+        self,
+    ) -> None:
+        for family, capabilities in CONTRACT_CAPABILITIES.items():
+            declared = {
+                contract
+                for contract, _ in capabilities.audit_generation_probes
+            }
+            self.assertEqual(
+                declared,
+                capabilities.audit_readable - capabilities.issuable,
+                family,
+            )
 
     def test_runtime_current_generations_are_registry_derived(self) -> None:
         self.assertEqual(
@@ -189,6 +220,24 @@ class ContractRegistryTests(unittest.TestCase):
             "not an operational deployment authorization contract",
         ):
             promotion_module.infer_deployed_neural_prior()
+
+    def test_public_audit_exports_cover_every_supported_recent_wrapper(
+        self,
+    ) -> None:
+        for generation in range(21, 26):
+            self.assertTrue(
+                hasattr(
+                    advar_module,
+                    f"LegacyScoringReplayBundleManifestAuditV{generation}",
+                )
+            )
+        for generation in range(32, 36):
+            self.assertTrue(
+                hasattr(
+                    advar_module,
+                    f"LegacyNeuralPriorHoldoutPlanV{generation}Audit",
+                )
+            )
 
 
 if __name__ == "__main__":

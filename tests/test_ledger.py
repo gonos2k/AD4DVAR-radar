@@ -107,6 +107,7 @@ from advar.sensitivity import (  # noqa: E402
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V10_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V5_DIGEST,
@@ -115,9 +116,11 @@ from advar.sensitivity import (  # noqa: E402
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V9_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V12_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST,
     OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V3_DIGEST,
+    OBSERVATION_SOURCE_SELECTION_ALGORITHM_V4_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V3_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST,
@@ -748,7 +751,54 @@ class EpisodeLedgerTests(unittest.TestCase):
             promotion_module.LegacyHoldoutScoringArtifactAuditV14,
         )
 
-    def test_replay_v19_through_v24_preserve_frozen_tensor_roles(self) -> None:
+    def test_holdout_plans_v33_through_v35_load_as_cold_audit_fixtures(
+        self,
+    ) -> None:
+        expected_types = {
+            33: promotion_module.LegacyNeuralPriorHoldoutPlanV33Audit,
+            34: promotion_module.LegacyNeuralPriorHoldoutPlanV34Audit,
+            35: promotion_module.LegacyNeuralPriorHoldoutPlanV35Audit,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            ledger = EpisodeLedger(Path(directory))
+            for generation, expected_type in expected_types.items():
+                plan_payload = {
+                    "contract": f"neural-prior-holdout-plan-v{generation}",
+                    "plan_id": f"cold-audit-v{generation}",
+                    "verification_plan_digest": "1" * 64,
+                    "promotion_rule_digest": "2" * 64,
+                }
+                plan_digest = json_digest(plan_payload)
+                stored_plan = plan_payload | {"plan_digest": plan_digest}
+                with sqlite3.connect(ledger.index_path) as connection:
+                    connection.execute(
+                        "INSERT INTO neural_prior_holdout_plans "
+                        "(plan_digest, plan_id, plan_json, policy_digest, "
+                        "trust_store_digest, registered_at, created_at) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (
+                            plan_digest,
+                            plan_payload["plan_id"],
+                            json.dumps(
+                                stored_plan,
+                                sort_keys=True,
+                                separators=(",", ":"),
+                            ),
+                            "3" * 64,
+                            "4" * 64,
+                            "2026-08-26T00:00:00Z",
+                            "2026-08-26T00:00:00Z",
+                        ),
+                    )
+                loaded = ledger.load_neural_prior_holdout_plan(plan_digest)
+                with self.subTest(generation=generation):
+                    self.assertIs(type(loaded), expected_type)
+                    self.assertEqual(loaded.plan_digest, plan_digest)
+                    self.assertEqual(json.loads(loaded.payload_json), stored_plan)
+                    with self.assertRaisesRegex(ValueError, "legacy artifact"):
+                        replace(loaded, plan_digest="0" * 64)
+
+    def test_replay_v19_through_v25_preserve_frozen_tensor_roles(self) -> None:
         shard_digest = "3" * 64
         records = tuple(
             ledger_module.ScoringReplayTensorRecord(
@@ -776,6 +826,20 @@ class EpisodeLedgerTests(unittest.TestCase):
             )
             for role in sorted(ledger_module.SCORING_REPLAY_REQUIRED_TENSOR_ROLES)
         )
+        v25_records = tuple(
+            ledger_module.ScoringReplayTensorRecord(
+                case_id="case-a",
+                role=role,
+                archive_member="tensor",
+                dtype="float32",
+                shape=(1,),
+                tensor_digest="4" * 64,
+                archive_sha256=shard_digest,
+            )
+            for role in sorted(
+                ledger_module.LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V25
+            )
+        )
         common = {
             "scoring_input_artifact_digest": "5" * 64,
             "ordered_case_ids": ("case-a",),
@@ -802,10 +866,15 @@ class EpisodeLedgerTests(unittest.TestCase):
             (22, ledger_module.LegacyScoringReplayBundleManifestAuditV22),
             (23, ledger_module.LegacyScoringReplayBundleManifestAuditV23),
             (24, ledger_module.LegacyScoringReplayBundleManifestAuditV24),
+            (25, ledger_module.LegacyScoringReplayBundleManifestAuditV25),
         )
         for generation, manifest_type in generations:
             with self.subTest(generation=generation):
-                manifest = manifest_type(**common, tensor_records=records)
+                frozen_records = v25_records if generation == 25 else records
+                manifest = manifest_type(
+                    **common,
+                    tensor_records=frozen_records,
+                )
                 decoded = ledger_module._decode_scoring_replay_bundle_manifest(
                     json.dumps(
                         manifest.payload
@@ -1062,32 +1131,32 @@ class EpisodeLedgerTests(unittest.TestCase):
                 observation_source_registry.calibration_registry_digest
             ),
             range_elevation_validity_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V12_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST
             ),
             beam_blockage_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V12_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST
             ),
             attenuation_qc_digest="3" * 64,
             censoring_rule_digest="f" * 64,
             spatial_correlation_block_algorithm_digest="7" * 64,
             quality_weight_interpretation_digest="8" * 64,
             quality_weight_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
             ),
             observation_std_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
             ),
             observation_error_model_digest="b" * 64,
             source_assignment_algorithm_digest=(
-                OBSERVATION_SOURCE_SELECTION_ALGORITHM_V3_DIGEST
+                OBSERVATION_SOURCE_SELECTION_ALGORITHM_V4_DIGEST
             ),
             minimum_detectable_echo_dbz=-10.0,
             observation_error_reference_std_dbz=2.0,
             derivation_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
             ),
             mask_derivation_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V12_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST
             ),
             maximum_range_km=300.0,
             minimum_elevation_deg=-1.0,
@@ -1121,7 +1190,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             spatial_age_gate_algorithm_digest=(
                 OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST
             ),
-            contract="verification-observation-error-plan-v14",
+            contract="verification-observation-error-plan-v15",
         )
         target_plan = PriorUncertaintyTargetPlan(
             plan_id="uncertainty-clock",

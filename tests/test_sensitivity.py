@@ -19,6 +19,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar._digest import tensor_digest  # noqa: E402
+from advar._contract_registry import CONTRACT_CAPABILITIES  # noqa: E402
 import advar.sensitivity as sensitivity_module  # noqa: E402
 import advar.promotion as promotion_module  # noqa: E402
 import advar.linearization_artifact as linearization_artifact_module  # noqa: E402
@@ -82,6 +83,7 @@ from advar.sensitivity import (  # noqa: E402
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V10_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST,
     OBSERVATION_TEMPORAL_QUALITY_DECAY_ALGORITHM_V1_DIGEST,
     OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST,
     OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST,
@@ -96,8 +98,10 @@ from advar.sensitivity import (  # noqa: E402
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V9_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V12_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V3_DIGEST,
+    OBSERVATION_SOURCE_SELECTION_ALGORITHM_V4_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V3_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST,
@@ -332,6 +336,8 @@ def _current_verification_bundle(
     radar_product_digest: str = "5" * 64,
     qc_pipeline_digest: str = "6" * 64,
     acquisition_time_offset_seconds: float = 0.0,
+    radar_range_m: float = 10_000.0,
+    representative_scan_elevation_deg: float = 1.0,
 ) -> VerificationBundle:
     """Build one complete current scientific verification lineage."""
 
@@ -353,10 +359,12 @@ def _current_verification_bundle(
                 quality_weight=1.0,
                 observation_std_dbz=2.0,
                 detection_limit_dbz=-20.0,
-                projected_x_m=float(grid_origin[0]) - 10_000.0,
+                projected_x_m=float(grid_origin[0]) - radar_range_m,
                 projected_y_m=float(grid_origin[1]),
                 radar_altitude_m=100.0,
-                representative_scan_elevation_deg=1.0,
+                representative_scan_elevation_deg=(
+                    representative_scan_elevation_deg
+                ),
                 contract="observation-radar-source-v4",
             ),
         ),
@@ -384,22 +392,22 @@ def _current_verification_bundle(
         spatial_correlation_block_algorithm_digest="8" * 64,
         quality_weight_interpretation_digest="9" * 64,
         quality_weight_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
         ),
         observation_std_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
         ),
         observation_error_model_digest="a" * 64,
         source_assignment_algorithm_digest=(
-            OBSERVATION_SOURCE_SELECTION_ALGORITHM_V3_DIGEST
+            OBSERVATION_SOURCE_SELECTION_ALGORITHM_V4_DIGEST
         ),
         minimum_detectable_echo_dbz=-20.0,
         observation_error_reference_std_dbz=2.0,
         derivation_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
         ),
         mask_derivation_algorithm_digest=(
-            OBSERVATION_MASK_DERIVATION_ALGORITHM_V12_DIGEST
+            OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST
         ),
         maximum_range_km=300.0,
         minimum_elevation_deg=0.0,
@@ -431,7 +439,7 @@ def _current_verification_bundle(
         spatial_age_gate_algorithm_digest=(
             OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST
         ),
-        contract="verification-observation-error-plan-v14",
+        contract="verification-observation-error-plan-v15",
     )
     finite = torch.isfinite(frames_dbz)
     source_frames = torch.nan_to_num(frames_dbz, nan=-30.0).unsqueeze(0)
@@ -520,7 +528,7 @@ def _current_verification_bundle(
         spatial_metric_valid_mask=mask_derivation.spatial_metric_valid_mask,
         observation_error_contract=derivation.observation_error_contract,
         observation_error_derivation=derivation,
-        contract="radar-verification-bundle-v20",
+        contract="radar-verification-bundle-v21",
     )
 
 
@@ -2534,7 +2542,7 @@ class VariationalFSOTests(unittest.TestCase):
         self.assertEqual(fso.contract, CURRENT_VARIATIONAL_FSO_CONTRACT)
         self.assertEqual(
             fso.verification_contract,
-            "radar-verification-bundle-v20",
+            "radar-verification-bundle-v21",
         )
         self.assertEqual(fso.verification_bundle_digest, bundle.content_digest)
         self.assertEqual(fso.verification_valid_times, bundle.valid_times)
@@ -3722,17 +3730,17 @@ class VariationalFSOTests(unittest.TestCase):
         )
         self.assertEqual(
             CURRENT_VARIATIONAL_FSO_CONTRACT,
-            "p1-variational-fso-v26",
+            "p1-variational-fso-v27",
         )
         self.assertEqual(
             CURRENT_VARIATIONAL_FSOI_CONTRACT,
-            "p1-linearized-observation-impact-v22",
+            "p1-linearized-observation-impact-v23",
         )
         self.assertEqual(
             sensitivity_module._SUPPORTED_VERIFICATION_BUNDLE_CONTRACTS,
             frozenset(
                 f"radar-verification-bundle-v{generation}"
-                for generation in range(1, 21)
+                for generation in range(1, 22)
             ),
         )
         self.assertEqual(
@@ -3740,20 +3748,48 @@ class VariationalFSOTests(unittest.TestCase):
             ._OBSERVATION_ERROR_VERIFICATION_BUNDLE_CONTRACTS,
             frozenset(
                 f"radar-verification-bundle-v{generation}"
-                for generation in range(6, 21)
+                for generation in range(6, 22)
             ),
         )
         self.assertEqual(
             sensitivity_module._FSO_VERIFICATION_CONTRACTS[
                 CURRENT_VARIATIONAL_FSO_CONTRACT
             ],
-            "radar-verification-bundle-v20",
+            "radar-verification-bundle-v21",
         )
         self.assertEqual(
             sensitivity_module._FSOI_FSO_CONTRACTS[
                 CURRENT_VARIATIONAL_FSOI_CONTRACT
             ],
             CURRENT_VARIATIONAL_FSO_CONTRACT,
+        )
+        expected_predecessors = {
+            "radar_spatial_grid_identity": "radar-spatial-grid-identity-v5",
+            "mosaic_observation_source_registry": (
+                "mosaic-observation-source-registry-v6"
+            ),
+            "radar_observation_geometry": "radar-observation-geometry-v6",
+            "verification_observation_error_plan": (
+                "verification-observation-error-plan-v14"
+            ),
+            "verification_bundle": "radar-verification-bundle-v20",
+            "variational_fso": "p1-variational-fso-v26",
+            "variational_fsoi": "p1-linearized-observation-impact-v22",
+        }
+        for family, predecessor in expected_predecessors.items():
+            with self.subTest(family=family):
+                capabilities = CONTRACT_CAPABILITIES[family]
+                self.assertEqual(capabilities.predecessor, predecessor)
+                self.assertIn(predecessor, capabilities.audit_readable)
+                self.assertNotIn(predecessor, capabilities.issuable)
+                self.assertNotIn(predecessor, capabilities.scientific_eligible)
+        self.assertNotIn(
+            "p1-variational-fso-v26",
+            sensitivity_module._FSO_VERIFICATION_CONTRACTS,
+        )
+        self.assertNotIn(
+            "p1-linearized-observation-impact-v22",
+            sensitivity_module._FSOI_FSO_CONTRACTS,
         )
 
     def test_confirmatory_observation_masks_and_source_identity_replay(
@@ -3848,7 +3884,6 @@ class VariationalFSOTests(unittest.TestCase):
                 source_registry=registry,
                 geometry=legacy_geometry,
                 time_count=1,
-                output_dtype=torch.float32,
             )
         with self.assertRaisesRegex(ValueError, "does not bind"):
             sensitivity_module._validate_current_metric_domain_observation_geometry(
@@ -3870,22 +3905,22 @@ class VariationalFSOTests(unittest.TestCase):
             spatial_correlation_block_algorithm_digest="7" * 64,
             quality_weight_interpretation_digest="8" * 64,
             quality_weight_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
             ),
             observation_std_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
             ),
             observation_error_model_digest="9" * 64,
             source_assignment_algorithm_digest=(
-                OBSERVATION_SOURCE_SELECTION_ALGORITHM_V3_DIGEST
+                OBSERVATION_SOURCE_SELECTION_ALGORITHM_V4_DIGEST
             ),
             minimum_detectable_echo_dbz=-10.0,
             observation_error_reference_std_dbz=2.0,
             derivation_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
             ),
             mask_derivation_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V12_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST
             ),
             maximum_range_km=300.0,
             minimum_elevation_deg=0.0,
@@ -3917,7 +3952,7 @@ class VariationalFSOTests(unittest.TestCase):
             spatial_age_gate_algorithm_digest=(
                 OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST
             ),
-            contract="verification-observation-error-plan-v14",
+            contract="verification-observation-error-plan-v15",
         )
         common_evidence = {
             "plan": plan,
@@ -4012,7 +4047,7 @@ class VariationalFSOTests(unittest.TestCase):
         )
         self.assertEqual(
             derivation.observation_error_contract.contract,
-            "verification-observation-error-contract-v16",
+            "verification-observation-error-contract-v17",
         )
         bundle = VerificationBundle(
             frames_dbz=mask_derivation.selected_frames_dbz,
@@ -4043,7 +4078,7 @@ class VariationalFSOTests(unittest.TestCase):
             ),
             observation_error_contract=derivation.observation_error_contract,
             observation_error_derivation=derivation,
-            contract="radar-verification-bundle-v20",
+            contract="radar-verification-bundle-v21",
         )
         bundle.validate_integrity()
         self.assertEqual(
@@ -4473,6 +4508,120 @@ class VariationalFSOTests(unittest.TestCase):
             Fraction.from_float(maximum_spatial_age),
             exact_maximum_age,
         )
+
+    def test_fp32_reflectivity_does_not_downcast_observation_geometry(
+        self,
+    ) -> None:
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-26T00:00:00Z",
+                "2026-08-26T00:10:00Z",
+                "2026-08-26T00:20:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="1" * 64,
+            spatial_grid_contract="radar-spatial-grid-identity-v6",
+            grid_shape_yx=(1, 2),
+            projected_crs_digest=radar_projected_crs_semantic_digest(
+                "EPSG:5179"
+            ),
+            metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
+            cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
+            grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            cell_center_convention=(
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+        )
+        bundle = _current_verification_bundle(
+            torch.tensor([[[20.0, 20.0]]], dtype=torch.float32),
+            valid_times=("2026-08-26T00:20:00Z",),
+            grid_time_contract=grid,
+            radar_range_m=100_000.003,
+            representative_scan_elevation_deg=20.0000005,
+        )
+        derivation = bundle.observation_error_derivation
+        assert derivation is not None
+        mask_derivation = derivation.raw_inputs.mask_derivation
+        assert mask_derivation is not None
+        evidence = mask_derivation.raw_evidence
+        self.assertIs(evidence.reflectivity_dbz_by_source.dtype, torch.float32)
+        for value in (
+            evidence.range_km_by_source,
+            evidence.elevation_deg_by_source,
+            evidence.source_assignment_scores,
+            evidence.projected_range_lower_km_by_source,
+            evidence.projected_range_upper_km_by_source,
+            evidence.ground_range_lower_km_by_source,
+            evidence.ground_range_upper_km_by_source,
+        ):
+            assert value is not None
+            self.assertIs(value.dtype, torch.float64)
+        self.assertNotEqual(float(evidence.range_km_by_source[0, 0, 0, 0]), 100.0)
+        self.assertEqual(
+            float(evidence.elevation_deg_by_source[0, 0, 0, 0]),
+            20.0000005,
+        )
+        ground_upper = evidence.ground_range_upper_km_by_source
+        assert ground_upper is not None
+        authoritative_upper = (
+            Fraction.from_float(100_000.003)
+            / 1000
+            / (
+                Fraction(1)
+                - Fraction.from_float(
+                    CURRENT_RADAR_METRIC_DOMAIN.maximum_linear_scale_error
+                )
+            )
+        )
+        self.assertGreaterEqual(
+            Fraction.from_float(float(ground_upper[0, 0, 0, 0])),
+            authoritative_upper,
+        )
+
+    def test_top2_source_dominance_matches_quadratic_oracle(self) -> None:
+        generator = torch.Generator().manual_seed(146)
+        lower = torch.rand((7, 2, 3, 4), generator=generator, dtype=torch.float64)
+        width = torch.rand(lower.shape, generator=generator, dtype=torch.float64)
+        upper = lower + width
+        eligible = torch.rand(
+            lower.shape,
+            generator=generator,
+            dtype=torch.float64,
+        ) > 0.2
+        lower = torch.where(eligible, lower, torch.zeros_like(lower))
+        upper = torch.where(eligible, upper, torch.zeros_like(upper))
+        upper[0, 0, 0, 0] = 2.0
+        upper[1, 0, 0, 0] = 2.0
+        lower[0, 0, 0, 0] = 1.5
+        lower[1, 0, 0, 0] = 1.5
+
+        expected_rows = []
+        for index in range(lower.shape[0]):
+            competitor = torch.cat(
+                (upper[:index], upper[index + 1 :]),
+                dim=0,
+            ).amax(dim=0)
+            expected_rows.append(
+                torch.where(
+                    eligible[index] & (lower[index] > competitor),
+                    lower[index],
+                    torch.zeros_like(lower[index]),
+                )
+            )
+        expected = torch.stack(expected_rows)
+        actual = sensitivity_module._strictly_dominating_source_scores(
+            score_lower=lower,
+            score_upper=upper,
+            eligible=eligible,
+        )
+        self.assertTrue(torch.equal(actual, expected))
+        self.assertEqual(float(actual[0, 0, 0, 0]), 0.0)
+        self.assertEqual(float(actual[1, 0, 0, 0]), 0.0)
 
     def test_v2_observation_derivation_inputs_are_audit_only(self) -> None:
         frames = torch.ones((1, 2, 2))

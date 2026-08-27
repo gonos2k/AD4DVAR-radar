@@ -2405,13 +2405,26 @@ class ForecastRunArtifactTests(unittest.TestCase):
                     name: np.array(archive[name], copy=True)
                     for name in archive.files
                 }
-            v69_arrays = dict(arrays)
-            v69_arrays["forecast_run_artifact_version"] = np.asarray(
-                "forecast-run-v69"
+            loaded_v19_audit = {}
+            for version in (
+                "forecast-run-v68",
+                "forecast-run-v69",
+                "forecast-run-v70",
+            ):
+                legacy_arrays = dict(arrays)
+                legacy_arrays["forecast_run_artifact_version"] = np.asarray(
+                    version
+                )
+                legacy_path = Path(temporary) / f"legacy-{version}.npz"
+                self._save_arrays(legacy_path, legacy_arrays)
+                loaded_v19_audit[version] = load_forecast_run(legacy_path)
+            v67_arrays = dict(arrays)
+            v67_arrays["forecast_run_artifact_version"] = np.asarray(
+                "forecast-run-v67"
             )
-            v69_path = Path(temporary) / "legacy-v69.npz"
-            self._save_arrays(v69_path, v69_arrays)
-            loaded_v69 = load_forecast_run(v69_path)
+            v67_path = Path(temporary) / "legacy-v67.npz"
+            self._save_arrays(v67_path, v67_arrays)
+            loaded_v67 = load_forecast_run(v67_path)
             v66_arrays = dict(arrays)
             v66_arrays["forecast_run_artifact_version"] = np.asarray(
                 "forecast-run-v66"
@@ -2430,9 +2443,19 @@ class ForecastRunArtifactTests(unittest.TestCase):
             loaded.run.prior_deployment_lineage_contract,
             "neural-prior-deployment-lineage-v3-audit",
         )
+        for version, historical in loaded_v19_audit.items():
+            with self.subTest(version=version):
+                self.assertEqual(
+                    historical.run.prior_deployment_lineage_contract,
+                    "neural-prior-deployment-lineage-v19-audit",
+                )
+                self.assertEqual(
+                    historical.run.prior_deployment_decision_artifact_digest,
+                    result.run.prior_deployment_decision_artifact_digest,
+                )
         self.assertEqual(
-            loaded_v69.run.prior_deployment_lineage_contract,
-            "neural-prior-deployment-lineage-v19-audit",
+            loaded_v67.run.prior_deployment_lineage_contract,
+            "neural-prior-deployment-lineage-v18-audit",
         )
         self.assertEqual(
             loaded_v66.run.prior_deployment_lineage_contract,

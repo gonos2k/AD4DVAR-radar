@@ -142,3 +142,19 @@ science or deployment gates.
 - [ ] The pushed PR head and exact-head CI are terminal green.
 - [x] External X145-001/X145-002/X145-003 and operational NO-GO remain unchanged.
 - [x] Merge remains HOLD.
+
+## Final post-merge authority — append-only record
+
+This section supersedes only the pre-merge GitHub status in the follow-up
+record above.  It does not change any external scientific or operational gate.
+
+| Authority field | Final value |
+|---|---|
+| PR status | `MERGED` |
+| Final PR head | `d71986a4796c7a8167292790541e57652b3d02a2` |
+| Merge commit | `0b1ad558dbcf9b7a7f88b1d6eb0516127f387f9d` |
+| Head/merge tree identity | identical |
+| Exact-head CI | run `33040384491`, `SUCCESS` |
+| Merged at | `2026-08-27` |
+| External scientific gates | `HOLD`, unchanged |
+| Operational deployment | `NO-GO / OUT OF SCOPE`, unchanged |
