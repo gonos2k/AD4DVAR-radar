@@ -17,6 +17,7 @@ from numpy.typing import NDArray
 import torch
 from torch import Tensor
 
+from ._contract_registry import CURRENT_FORECAST_RUN_ARTIFACT_VERSION
 from ._digest import json_digest
 from .calibration import OperationalDataIdentity
 from .nowcast import (
@@ -36,8 +37,9 @@ from .nowcast import (
 )
 
 
-FORECAST_RUN_ARTIFACT_VERSION = "forecast-run-v70"
+FORECAST_RUN_ARTIFACT_VERSION = CURRENT_FORECAST_RUN_ARTIFACT_VERSION
 _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS = {
+    "forecast-run-v70",
     "forecast-run-v69",
     "forecast-run-v68",
     "forecast-run-v67",
@@ -1515,7 +1517,11 @@ def load_forecast_run(
                 prior_deployment_lineage_contract = (
                     "neural-prior-deployment-lineage-v18-audit"
                 )
-            elif version == "forecast-run-v69":
+            elif version in {
+                "forecast-run-v68",
+                "forecast-run-v69",
+                "forecast-run-v70",
+            }:
                 prior_deployment_lineage_contract = (
                     "neural-prior-deployment-lineage-v19-audit"
                 )

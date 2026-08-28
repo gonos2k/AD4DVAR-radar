@@ -157,6 +157,9 @@ from .promotion import (
     LegacyNeuralPriorHoldoutPlanV30Audit,
     LegacyNeuralPriorHoldoutPlanV31Audit,
     LegacyNeuralPriorHoldoutPlanV32Audit,
+    LegacyNeuralPriorHoldoutPlanV33Audit,
+    LegacyNeuralPriorHoldoutPlanV34Audit,
+    LegacyNeuralPriorHoldoutPlanV35Audit,
     NeuralPriorHoldoutCase,
     NeuralPriorHoldoutPlan,
     NeuralPriorHoldoutPlanCase,
@@ -1491,13 +1494,24 @@ LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V19 = (
         }
     )
 )
-SCORING_REPLAY_REQUIRED_TENSOR_ROLES = (
+LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V25 = (
     LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V19
     | frozenset(
         {
             "verification_source_detection_limit_lower_dbz",
             "verification_source_detection_limit_upper_dbz",
             "verification_source_detection_classification_uncertain",
+        }
+    )
+)
+SCORING_REPLAY_REQUIRED_TENSOR_ROLES = (
+    LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V25
+    | frozenset(
+        {
+            "verification_source_projected_range_lower_km",
+            "verification_source_projected_range_upper_km",
+            "verification_source_ground_range_lower_km",
+            "verification_source_ground_range_upper_km",
         }
     )
 )
@@ -3446,7 +3460,11 @@ def _finalize_legacy_scoring_replay_manifest_v19_plus(
         (case_id, role)
         for case_id in manifest.ordered_case_ids
         for role in (
-            LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V19
+            (
+                LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V25
+                if generation == 25
+                else LEGACY_SCORING_REPLAY_REQUIRED_TENSOR_ROLES_V19
+            )
             | (
                 SCORING_REPLAY_DYNAMIC_SOURCE_TENSOR_ROLES
                 if case_id in manifest.dynamic_source_case_ids
@@ -3512,6 +3530,20 @@ class LegacyScoringReplayBundleManifestAuditV24(ScoringReplayBundleManifest):
 
 
 @dataclass(frozen=True)
+class LegacyScoringReplayBundleManifestAuditV25(ScoringReplayBundleManifest):
+    """PR #145 v25 replay retained with its exact historical tensor set."""
+
+    replay_method: str = "builtin-semantic-scoring-recomputation-v25"
+    contract: str = "neural-prior-scoring-replay-bundle-v25"
+
+    def __post_init__(self) -> None:
+        _finalize_legacy_scoring_replay_manifest_v19_plus(
+            self,
+            generation=25,
+        )
+
+
+@dataclass(frozen=True)
 class LoadedScoringReplayBundle:
     manifest: (
         ScoringReplayBundleManifest
@@ -3538,6 +3570,7 @@ class LoadedScoringReplayBundle:
         | LegacyScoringReplayBundleManifestAuditV22
         | LegacyScoringReplayBundleManifestAuditV23
         | LegacyScoringReplayBundleManifestAuditV24
+        | LegacyScoringReplayBundleManifestAuditV25
     )
     evaluations: tuple[PriorHoldoutEvaluation, ...]
     tensors: Mapping[tuple[str, str], Tensor]
@@ -3757,6 +3790,10 @@ def _validate_scoring_replay_case_tensors(
             "verification_source_assignment_scores",
             "verification_source_availability_by_time",
             "verification_source_range_km",
+            "verification_source_projected_range_lower_km",
+            "verification_source_projected_range_upper_km",
+            "verification_source_ground_range_lower_km",
+            "verification_source_ground_range_upper_km",
             "verification_source_elevation_deg",
             "verification_source_beam_blockage_fraction",
             "verification_source_attenuation_qc_score",
@@ -3840,6 +3877,10 @@ def _validate_scoring_replay_case_tensors(
         "verification_source_observation_report_kind",
         "verification_source_assignment_scores",
         "verification_source_range_km",
+        "verification_source_projected_range_lower_km",
+        "verification_source_projected_range_upper_km",
+        "verification_source_ground_range_lower_km",
+        "verification_source_ground_range_upper_km",
         "verification_source_elevation_deg",
         "verification_source_beam_blockage_fraction",
         "verification_source_attenuation_qc_score",
@@ -3858,6 +3899,20 @@ def _validate_scoring_replay_case_tensors(
         != verification_shape[-2:]
         or tensors["verification_geometry_grid_x_m"].dtype is not torch.float64
         or tensors["verification_geometry_grid_y_m"].dtype is not torch.float64
+        or any(
+            tensors[role].dtype is not torch.float64
+            for role in (
+                "verification_source_assignment_scores",
+                "verification_source_range_km",
+                "verification_source_elevation_deg",
+                "verification_source_detection_limit_lower_dbz",
+                "verification_source_detection_limit_upper_dbz",
+                "verification_source_projected_range_lower_km",
+                "verification_source_projected_range_upper_km",
+                "verification_source_ground_range_lower_km",
+                "verification_source_ground_range_upper_km",
+            )
+        )
     ):
         raise ValueError("scoring replay verification provenance shape is invalid")
     if dynamic_source and (
@@ -3893,7 +3948,7 @@ def _current_verification_provenance_payload(
 
     verification = case.verification
     if (
-        verification.contract != "radar-verification-bundle-v20"
+        verification.contract != "radar-verification-bundle-v21"
         or type(verification.observation_error_derivation)
         is not ObservationErrorDerivationArtifact
     ):
@@ -3904,7 +3959,7 @@ def _current_verification_provenance_payload(
     )
     raw_inputs = derivation.raw_inputs
     if (
-        raw_inputs.contract != "verification-observation-derivation-inputs-v13"
+        raw_inputs.contract != "verification-observation-derivation-inputs-v14"
         or type(raw_inputs.mask_derivation)
         is not VerificationObservationMaskDerivationArtifact
         or type(raw_inputs.source_identity)
@@ -4187,6 +4242,18 @@ def _validate_current_verification_provenance_payload(
                 "verification_source_availability_by_time"
             ],
             range_km_by_source=case_tensors["verification_source_range_km"],
+            projected_range_lower_km_by_source=case_tensors[
+                "verification_source_projected_range_lower_km"
+            ],
+            projected_range_upper_km_by_source=case_tensors[
+                "verification_source_projected_range_upper_km"
+            ],
+            ground_range_lower_km_by_source=case_tensors[
+                "verification_source_ground_range_lower_km"
+            ],
+            ground_range_upper_km_by_source=case_tensors[
+                "verification_source_ground_range_upper_km"
+            ],
             elevation_deg_by_source=case_tensors[
                 "verification_source_elevation_deg"
             ],
@@ -7033,6 +7100,9 @@ class EpisodeLedger:
         | LegacyNeuralPriorHoldoutPlanV30Audit
         | LegacyNeuralPriorHoldoutPlanV31Audit
         | LegacyNeuralPriorHoldoutPlanV32Audit
+        | LegacyNeuralPriorHoldoutPlanV33Audit
+        | LegacyNeuralPriorHoldoutPlanV34Audit
+        | LegacyNeuralPriorHoldoutPlanV35Audit
     ):
         """Load and verify one immutable pre-registered holdout plan."""
 
@@ -7242,6 +7312,27 @@ class EpisodeLedger:
             )
         if value.get("contract") == "neural-prior-holdout-plan-v32":
             return LegacyNeuralPriorHoldoutPlanV32Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v33":
+            return LegacyNeuralPriorHoldoutPlanV33Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v34":
+            return LegacyNeuralPriorHoldoutPlanV34Audit(
+                plan_digest=plan_digest,
+                payload_json=json.dumps(
+                    value, sort_keys=True, separators=(",", ":")
+                ),
+            )
+        if value.get("contract") == "neural-prior-holdout-plan-v35":
+            return LegacyNeuralPriorHoldoutPlanV35Audit(
                 plan_digest=plan_digest,
                 payload_json=json.dumps(
                     value, sort_keys=True, separators=(",", ":")
@@ -12202,6 +12293,7 @@ class EpisodeLedger:
             "neural-prior-scoring-replay-bundle-v22",
             "neural-prior-scoring-replay-bundle-v23",
             "neural-prior-scoring-replay-bundle-v24",
+            "neural-prior-scoring-replay-bundle-v25",
             SEMANTIC_SCORING_REPLAY_CONTRACT,
         }
         expected_artifact_members = {"manifest.json", "evaluations.json"}
@@ -12219,6 +12311,7 @@ class EpisodeLedger:
             "neural-prior-scoring-replay-bundle-v22",
             "neural-prior-scoring-replay-bundle-v23",
             "neural-prior-scoring-replay-bundle-v24",
+            "neural-prior-scoring-replay-bundle-v25",
             SEMANTIC_SCORING_REPLAY_CONTRACT,
         }
         if sharded_bundle:
@@ -12253,6 +12346,7 @@ class EpisodeLedger:
             "neural-prior-scoring-replay-bundle-v22",
             "neural-prior-scoring-replay-bundle-v23",
             "neural-prior-scoring-replay-bundle-v24",
+            "neural-prior-scoring-replay-bundle-v25",
             SEMANTIC_SCORING_REPLAY_CONTRACT,
         }:
             expected_artifact_members.add("verification_provenance.json")
@@ -12294,6 +12388,7 @@ class EpisodeLedger:
             LegacyScoringReplayBundleManifestAuditV22,
             LegacyScoringReplayBundleManifestAuditV23,
             LegacyScoringReplayBundleManifestAuditV24,
+            LegacyScoringReplayBundleManifestAuditV25,
         }
         has_verification_provenance = manifest_type in {
             ScoringReplayBundleManifest,
@@ -12308,6 +12403,7 @@ class EpisodeLedger:
             LegacyScoringReplayBundleManifestAuditV22,
             LegacyScoringReplayBundleManifestAuditV23,
             LegacyScoringReplayBundleManifestAuditV24,
+            LegacyScoringReplayBundleManifestAuditV25,
         }
         raw_provenance_checksum_mismatch = False
         if has_raw_provenance:
@@ -12345,6 +12441,7 @@ class EpisodeLedger:
             LegacyScoringReplayBundleManifestAuditV22,
             LegacyScoringReplayBundleManifestAuditV23,
             LegacyScoringReplayBundleManifestAuditV24,
+            LegacyScoringReplayBundleManifestAuditV25,
         }:
             current_manifest = cast(ScoringReplayBundleManifest, manifest)
             tensors: Mapping[tuple[str, str], Tensor] = (
@@ -20433,6 +20530,7 @@ def _decode_scoring_replay_bundle_manifest(
     | LegacyScoringReplayBundleManifestAuditV22
     | LegacyScoringReplayBundleManifestAuditV23
     | LegacyScoringReplayBundleManifestAuditV24
+    | LegacyScoringReplayBundleManifestAuditV25
 ):
     value = json.loads(text)
     if not isinstance(value, dict):
@@ -20495,6 +20593,7 @@ def _decode_scoring_replay_bundle_manifest(
             | LegacyScoringReplayBundleManifestAuditV22
             | LegacyScoringReplayBundleManifestAuditV23
             | LegacyScoringReplayBundleManifestAuditV24
+            | LegacyScoringReplayBundleManifestAuditV25
         ) = LegacyScoringReplayBundleManifestAuditV1(
             **cast(Any, values)
         )
@@ -20594,6 +20693,10 @@ def _decode_scoring_replay_bundle_manifest(
             )
         elif values.get("contract") == "neural-prior-scoring-replay-bundle-v24":
             manifest = LegacyScoringReplayBundleManifestAuditV24(
+                **cast(Any, values)
+            )
+        elif values.get("contract") == "neural-prior-scoring-replay-bundle-v25":
+            manifest = LegacyScoringReplayBundleManifestAuditV25(
                 **cast(Any, values)
             )
         else:

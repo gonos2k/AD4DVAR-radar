@@ -1,5 +1,6 @@
 from copy import deepcopy
 from dataclasses import fields, replace
+from decimal import Decimal, localcontext
 from fractions import Fraction
 import hashlib
 from pathlib import Path
@@ -5818,6 +5819,155 @@ class NowcastTests(unittest.TestCase):
                 config,
                 grid,
             )
+
+    def test_affine_hard_gates_enclose_each_authoritative_float_operation(
+        self,
+    ) -> None:
+        metric_error = Fraction.from_float(
+            CURRENT_RADAR_METRIC_DOMAIN.maximum_linear_scale_error
+        )
+        motion_grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-26T00:00:00Z",
+                "2026-08-26T00:10:00Z",
+                "2026-08-26T00:20:00Z",
+            ),
+            dx_m=1000.00002,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="1" * 64,
+            spatial_grid_contract="radar-spatial-grid-identity-v6",
+            grid_shape_yx=(2, 2),
+            projected_crs_digest=radar_projected_crs_semantic_digest(
+                "EPSG:5179"
+            ),
+            metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
+            cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
+            pixel_to_projected_matrix_m=((1000.00002, 0.0), (0.0, 1000.0)),
+            grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            cell_center_convention=(
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+        )
+        displacement = torch.tensor((0.0, 1.0), dtype=torch.float32)
+        speed = motion_grid.projected_ground_speed_interval_from_displacement(
+            displacement,
+            600.0,
+        )
+        exact_speed_upper = (
+            Fraction.from_float(1000.00002)
+            / Fraction.from_float(600.0)
+            / (Fraction(1) - metric_error)
+        )
+        self.assertGreaterEqual(
+            Fraction.from_float(speed.upper_mps),
+            exact_speed_upper,
+        )
+        self.assertIs(
+            speed.decision_for_maximum(1.676727056503296),
+            ThresholdDecision.UNCERTAIN,
+        )
+        search_limit = import_module("advar.nowcast").motion_displacement_limits_yx(
+            NowcastConfig(maximum_motion_speed_mps=1.676727056503296),
+            motion_grid,
+            displacement,
+        )
+        self.assertLess(float(search_limit[1]), 1.0)
+
+        footprint_matrix = (
+            (-9130.766000913765, -4441.41887230327),
+            (1369.1120628275603, 1638.2719203686768),
+        )
+        footprint_grid = replace(
+            motion_grid,
+            dx_m=math.hypot(footprint_matrix[0][0], footprint_matrix[1][0]),
+            dy_m=math.hypot(footprint_matrix[0][1], footprint_matrix[1][1]),
+            grid_shape_yx=(98, 51),
+            cell_center_origin_xy_m=(1_500_000.0, 1_000_000.0),
+            pixel_to_projected_matrix_m=footprint_matrix,
+        )
+        offset_yx = (-73, 43)
+        projected_x = (
+            Fraction.from_float(footprint_matrix[0][0]) * offset_yx[1]
+            + Fraction.from_float(footprint_matrix[0][1]) * offset_yx[0]
+        )
+        projected_y = (
+            Fraction.from_float(footprint_matrix[1][0]) * offset_yx[1]
+            + Fraction.from_float(footprint_matrix[1][1]) * offset_yx[0]
+        )
+        with localcontext() as context:
+            context.prec = 90
+            exact_projected = (
+                (Decimal(projected_x.numerator) / projected_x.denominator) ** 2
+                + (Decimal(projected_y.numerator) / projected_y.denominator) ** 2
+            ).sqrt()
+            exact_ground_upper = exact_projected / (
+                Decimal(1)
+                - Decimal(metric_error.numerator) / metric_error.denominator
+            )
+        rounded_projected = math.hypot(
+            footprint_matrix[0][0] * offset_yx[1]
+            + footprint_matrix[0][1] * offset_yx[0],
+            footprint_matrix[1][0] * offset_yx[1]
+            + footprint_matrix[1][1] * offset_yx[0],
+        )
+        legacy_radius = projected_ground_distance_interval(
+            rounded_projected,
+            float(metric_error),
+        ).upper_m
+        self.assertGreater(exact_ground_upper, Decimal.from_float(legacy_radius))
+        footprint = footprint_grid.pixel_offsets_ground_distance_footprint(
+            legacy_radius,
+            maximum_radius_yx=(97, 50),
+        )
+        self.assertNotIn(offset_yx, footprint.certainly_inside)
+        self.assertIn(offset_yx, footprint.uncertain)
+
+        area_matrix = (
+            (146.0497048921407, 126.89902826922378),
+            (138.59023106728628, 65.22989053269922),
+        )
+        area_grid = replace(
+            motion_grid,
+            dx_m=math.hypot(area_matrix[0][0], area_matrix[1][0]),
+            dy_m=math.hypot(area_matrix[0][1], area_matrix[1][1]),
+            grid_shape_yx=(331, 480),
+            cell_center_origin_xy_m=(700_000.0, 1_000_000.0),
+            pixel_to_projected_matrix_m=area_matrix,
+        )
+        selected_cell_count = 47_101
+        determinant_exact = abs(
+            Fraction.from_float(area_matrix[0][0])
+            * Fraction.from_float(area_matrix[1][1])
+            - Fraction.from_float(area_matrix[0][1])
+            * Fraction.from_float(area_matrix[1][0])
+        )
+        projected_area_exact = selected_cell_count * determinant_exact / 1_000_000
+        exact_area_upper = projected_area_exact / (
+            Fraction(1)
+            - Fraction.from_float(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.maximum_area_scale_error
+            )
+        )
+        rounded_projected_area = (
+            selected_cell_count * area_grid.cell_area_m2 / 1_000_000.0
+        )
+        legacy_area_limit = (
+            CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.projected_area_interval_km2(
+                rounded_projected_area
+            )[1]
+        )
+        self.assertGreater(exact_area_upper, Fraction.from_float(legacy_area_limit))
+        self.assertNotEqual(
+            area_grid.cell_count_area_maximum_status(
+                selected_cell_count,
+                legacy_area_limit,
+            ),
+            "passes",
+        )
 
     def test_current_run_rejects_any_operational_deployment_claim(self) -> None:
         frames = torch.full((3, 2, 2), 20.0, dtype=torch.float64)

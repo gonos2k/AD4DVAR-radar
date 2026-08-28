@@ -1360,11 +1360,8 @@ def _compute_action_safety(
     changed_invalid = int(
         torch.count_nonzero(changed & ~context._observation_masks)
     )
-    area_km2 = (
-        float(torch.count_nonzero(union))
-        * resolved_cell_area_m2
-        / 1.0e6
-    )
+    union_count = int(torch.count_nonzero(union))
+    area_km2 = union_count * resolved_cell_area_m2 / 1.0e6
     delta = torch.zeros_like(context._frames_dbz)
     quality_precision_delta = torch.zeros_like(context._quality_weight)
     if isinstance(action, DbzCorrectionAction):
@@ -1466,10 +1463,11 @@ def _compute_action_safety(
             ) from error
     else:
         try:
-            grid.validate_projected_area_maximum(
-                area_km2,
+            if grid.cell_count_area_maximum_status(
+                union_count,
                 policy.maximum_changed_area_km2,
-            )
+            ) != "passes":
+                raise ValueError("cell-derived changed area is not certified")
         except ValueError as error:
             raise ValueError(
                 "generated action exceeds or is uncertain against its "

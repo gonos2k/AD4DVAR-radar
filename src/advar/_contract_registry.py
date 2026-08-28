@@ -25,6 +25,38 @@ _SEMANTIC_REPLAY_LIFECYCLE_PROBE = (
     "tests/test_promotion.py::NeuralPriorPromotionTests::"
     "test_full_product_semantic_replay_reaches_promotion_without_scorer_patch"
 )
+_METRIC_EVIDENCE_AUDIT_PROBE = (
+    "tests/test_nowcast.py::NowcastTests::"
+    "test_legacy_metric_domain_report_is_audit_only"
+)
+_PROMOTION_AUDIT_PROBE = (
+    "tests/test_ledger.py::EpisodeLedgerTests::"
+    "test_pr141_promotion_v31_loads_from_the_ledger_as_audit_only"
+)
+_DEPLOYMENT_LINEAGE_AUDIT_PROBE = (
+    "tests/test_run_artifact.py::ForecastRunArtifactTests::"
+    "test_v52_deployment_geometry_loads_as_audit_only"
+)
+_VERIFICATION_FSO_AUDIT_PROBE = (
+    "tests/test_sensitivity.py::VariationalFSOTests::"
+    "test_verification_bundle_capabilities_have_one_current_generation"
+)
+_SEMANTIC_REPLAY_AUDIT_PROBE = (
+    "tests/test_ledger.py::EpisodeLedgerTests::"
+    "test_replay_v19_through_v25_preserve_frozen_tensor_roles"
+)
+_FORECAST_RUN_AUDIT_PROBE = (
+    "tests/test_run_artifact.py::ForecastRunArtifactTests::"
+    "test_v52_deployment_geometry_loads_as_audit_only"
+)
+_HOLDOUT_PLAN_LIFECYCLE_PROBE = (
+    "tests/test_promotion.py::NeuralPriorPromotionTests::"
+    "test_physical_applicability_contract_versions_are_new_generations"
+)
+_HOLDOUT_PLAN_AUDIT_PROBE = (
+    "tests/test_ledger.py::EpisodeLedgerTests::"
+    "test_holdout_plans_v33_through_v35_load_as_cold_audit_fixtures"
+)
 
 
 @dataclass(frozen=True)
@@ -38,6 +70,7 @@ class ContractCapabilities:
     scientific_eligible: frozenset[str]
     operationally_accepted: frozenset[str]
     lifecycle_probe: str
+    audit_generation_probes: tuple[tuple[str, str], ...] = ()
 
     def validate(self) -> None:
         if self.current not in self.issuable:
@@ -63,6 +96,27 @@ class ContractCapabilities:
             or any(not part for part in probe_parts)
         ):
             raise ValueError("contract lifecycle probe must be named")
+        audit_probe_contracts = tuple(
+            contract for contract, _ in self.audit_generation_probes
+        )
+        if (
+            len(audit_probe_contracts) != len(set(audit_probe_contracts))
+            or set(audit_probe_contracts) != (self.audit_readable - self.issuable)
+        ):
+            raise ValueError(
+                "every audit-only generation must have one executable probe"
+            )
+        for contract, probe in self.audit_generation_probes:
+            if not contract or not probe:
+                raise ValueError("audit-generation probe is invalid")
+            probe_parts = probe.split("::")
+            if (
+                len(probe_parts) != 3
+                or not probe_parts[0].startswith("tests/test_")
+                or not probe_parts[0].endswith(".py")
+                or any(not part for part in probe_parts)
+            ):
+                raise ValueError("audit-generation probe must be named")
 
 
 class OperationalDeploymentUnsupportedError(RuntimeError):
@@ -85,6 +139,14 @@ CONTRACT_CAPABILITIES: dict[str, ContractCapabilities] = {
         scientific_eligible=frozenset({"radar-metric-domain-evidence-v4"}),
         operationally_accepted=frozenset(),
         lifecycle_probe=_METRIC_EVIDENCE_LIFECYCLE_PROBE,
+        audit_generation_probes=tuple(
+            (generation, _METRIC_EVIDENCE_AUDIT_PROBE)
+            for generation in (
+                "radar-metric-domain-evidence-v1",
+                "radar-metric-domain-evidence-v2",
+                "radar-metric-domain-evidence-v3",
+            )
+        ),
     ),
     "neural_prior_promotion_evidence": ContractCapabilities(
         current="neural-prior-promotion-evidence-v32",
@@ -99,6 +161,10 @@ CONTRACT_CAPABILITIES: dict[str, ContractCapabilities] = {
         scientific_eligible=frozenset({"neural-prior-promotion-evidence-v32"}),
         operationally_accepted=frozenset(),
         lifecycle_probe=_PROMOTION_LIFECYCLE_PROBE,
+        audit_generation_probes=((
+            "neural-prior-promotion-evidence-v31",
+            _PROMOTION_AUDIT_PROBE,
+        ),),
     ),
     "deployed_neural_prior_policy": ContractCapabilities(
         current="deployed-neural-prior-policy-v17",
@@ -123,6 +189,16 @@ CONTRACT_CAPABILITIES: dict[str, ContractCapabilities] = {
         scientific_eligible=frozenset(),
         operationally_accepted=frozenset(),
         lifecycle_probe=_DEPLOYMENT_LINEAGE_LIFECYCLE_PROBE,
+        audit_generation_probes=(
+            (
+                "neural-prior-deployment-lineage-v18-audit",
+                _DEPLOYMENT_LINEAGE_AUDIT_PROBE,
+            ),
+            (
+                "neural-prior-deployment-lineage-v19-audit",
+                _DEPLOYMENT_LINEAGE_AUDIT_PROBE,
+            ),
+        ),
     ),
     "radar_spatial_grid_identity": ContractCapabilities(
         current="radar-spatial-grid-identity-v6",
@@ -134,6 +210,10 @@ CONTRACT_CAPABILITIES: dict[str, ContractCapabilities] = {
         scientific_eligible=frozenset({"radar-spatial-grid-identity-v6"}),
         operationally_accepted=frozenset(),
         lifecycle_probe=_VERIFICATION_FSO_LIFECYCLE_PROBE,
+        audit_generation_probes=((
+            "radar-spatial-grid-identity-v5",
+            _VERIFICATION_FSO_AUDIT_PROBE,
+        ),),
     ),
     "mosaic_observation_source_registry": ContractCapabilities(
         current="mosaic-observation-source-registry-v7",
@@ -150,6 +230,10 @@ CONTRACT_CAPABILITIES: dict[str, ContractCapabilities] = {
         ),
         operationally_accepted=frozenset(),
         lifecycle_probe=_VERIFICATION_FSO_LIFECYCLE_PROBE,
+        audit_generation_probes=((
+            "mosaic-observation-source-registry-v6",
+            _VERIFICATION_FSO_AUDIT_PROBE,
+        ),),
     ),
     "radar_observation_geometry": ContractCapabilities(
         current="radar-observation-geometry-v7",
@@ -161,76 +245,148 @@ CONTRACT_CAPABILITIES: dict[str, ContractCapabilities] = {
         scientific_eligible=frozenset({"radar-observation-geometry-v7"}),
         operationally_accepted=frozenset(),
         lifecycle_probe=_VERIFICATION_FSO_LIFECYCLE_PROBE,
+        audit_generation_probes=((
+            "radar-observation-geometry-v6",
+            _VERIFICATION_FSO_AUDIT_PROBE,
+        ),),
     ),
     "verification_observation_error_plan": ContractCapabilities(
-        current="verification-observation-error-plan-v14",
-        predecessor="verification-observation-error-plan-v13",
-        issuable=frozenset({"verification-observation-error-plan-v14"}),
+        current="verification-observation-error-plan-v15",
+        predecessor="verification-observation-error-plan-v14",
+        issuable=frozenset({"verification-observation-error-plan-v15"}),
         audit_readable=frozenset(
             {
-                "verification-observation-error-plan-v13",
                 "verification-observation-error-plan-v14",
+                "verification-observation-error-plan-v15",
             }
         ),
         scientific_eligible=frozenset(
-            {"verification-observation-error-plan-v14"}
+            {"verification-observation-error-plan-v15"}
         ),
         operationally_accepted=frozenset(),
         lifecycle_probe=_VERIFICATION_FSO_LIFECYCLE_PROBE,
+        audit_generation_probes=((
+            "verification-observation-error-plan-v14",
+            _VERIFICATION_FSO_AUDIT_PROBE,
+        ),),
     ),
     "verification_bundle": ContractCapabilities(
-        current="radar-verification-bundle-v20",
-        predecessor="radar-verification-bundle-v19",
-        issuable=frozenset({"radar-verification-bundle-v20"}),
+        current="radar-verification-bundle-v21",
+        predecessor="radar-verification-bundle-v20",
+        issuable=frozenset({"radar-verification-bundle-v21"}),
         audit_readable=frozenset(
-            {"radar-verification-bundle-v19", "radar-verification-bundle-v20"}
+            {"radar-verification-bundle-v20", "radar-verification-bundle-v21"}
         ),
-        scientific_eligible=frozenset({"radar-verification-bundle-v20"}),
+        scientific_eligible=frozenset({"radar-verification-bundle-v21"}),
         operationally_accepted=frozenset(),
         lifecycle_probe=_VERIFICATION_FSO_LIFECYCLE_PROBE,
+        audit_generation_probes=((
+            "radar-verification-bundle-v20",
+            _VERIFICATION_FSO_AUDIT_PROBE,
+        ),),
     ),
     "variational_fso": ContractCapabilities(
-        current="p1-variational-fso-v26",
-        predecessor="p1-variational-fso-v25",
-        issuable=frozenset({"p1-variational-fso-v26"}),
+        current="p1-variational-fso-v27",
+        predecessor="p1-variational-fso-v26",
+        issuable=frozenset({"p1-variational-fso-v27"}),
         audit_readable=frozenset(
-            {"p1-variational-fso-v25", "p1-variational-fso-v26"}
+            {"p1-variational-fso-v26", "p1-variational-fso-v27"}
         ),
-        scientific_eligible=frozenset({"p1-variational-fso-v26"}),
+        scientific_eligible=frozenset({"p1-variational-fso-v27"}),
         operationally_accepted=frozenset(),
         lifecycle_probe=_VERIFICATION_FSO_LIFECYCLE_PROBE,
+        audit_generation_probes=((
+            "p1-variational-fso-v26",
+            _VERIFICATION_FSO_AUDIT_PROBE,
+        ),),
     ),
     "variational_fsoi": ContractCapabilities(
-        current="p1-linearized-observation-impact-v22",
-        predecessor="p1-linearized-observation-impact-v21",
-        issuable=frozenset({"p1-linearized-observation-impact-v22"}),
+        current="p1-linearized-observation-impact-v23",
+        predecessor="p1-linearized-observation-impact-v22",
+        issuable=frozenset({"p1-linearized-observation-impact-v23"}),
         audit_readable=frozenset(
             {
-                "p1-linearized-observation-impact-v21",
                 "p1-linearized-observation-impact-v22",
+                "p1-linearized-observation-impact-v23",
             }
         ),
         scientific_eligible=frozenset(
-            {"p1-linearized-observation-impact-v22"}
+            {"p1-linearized-observation-impact-v23"}
         ),
         operationally_accepted=frozenset(),
         lifecycle_probe=_VERIFICATION_FSO_LIFECYCLE_PROBE,
+        audit_generation_probes=((
+            "p1-linearized-observation-impact-v22",
+            _VERIFICATION_FSO_AUDIT_PROBE,
+        ),),
     ),
     "semantic_scoring_replay": ContractCapabilities(
-        current="neural-prior-scoring-replay-bundle-v25",
-        predecessor="neural-prior-scoring-replay-bundle-v24",
-        issuable=frozenset({"neural-prior-scoring-replay-bundle-v25"}),
+        current="neural-prior-scoring-replay-bundle-v26",
+        predecessor="neural-prior-scoring-replay-bundle-v25",
+        issuable=frozenset({"neural-prior-scoring-replay-bundle-v26"}),
         audit_readable=frozenset(
             {
-                "neural-prior-scoring-replay-bundle-v24",
                 "neural-prior-scoring-replay-bundle-v25",
+                "neural-prior-scoring-replay-bundle-v26",
             }
         ),
         scientific_eligible=frozenset(
-            {"neural-prior-scoring-replay-bundle-v25"}
+            {"neural-prior-scoring-replay-bundle-v26"}
         ),
         operationally_accepted=frozenset(),
         lifecycle_probe=_SEMANTIC_REPLAY_LIFECYCLE_PROBE,
+        audit_generation_probes=((
+            "neural-prior-scoring-replay-bundle-v25",
+            _SEMANTIC_REPLAY_AUDIT_PROBE,
+        ),),
+    ),
+    "forecast_run_artifact": ContractCapabilities(
+        current="forecast-run-v71",
+        predecessor="forecast-run-v70",
+        issuable=frozenset({"forecast-run-v71"}),
+        audit_readable=frozenset(
+            {
+                "forecast-run-v68",
+                "forecast-run-v69",
+                "forecast-run-v70",
+                "forecast-run-v71",
+            }
+        ),
+        scientific_eligible=frozenset({"forecast-run-v71"}),
+        operationally_accepted=frozenset(),
+        lifecycle_probe=_DEPLOYMENT_LINEAGE_LIFECYCLE_PROBE,
+        audit_generation_probes=tuple(
+            (generation, _FORECAST_RUN_AUDIT_PROBE)
+            for generation in (
+                "forecast-run-v68",
+                "forecast-run-v69",
+                "forecast-run-v70",
+            )
+        ),
+    ),
+    "neural_prior_holdout_plan": ContractCapabilities(
+        current="neural-prior-holdout-plan-v36",
+        predecessor="neural-prior-holdout-plan-v35",
+        issuable=frozenset({"neural-prior-holdout-plan-v36"}),
+        audit_readable=frozenset(
+            {
+                "neural-prior-holdout-plan-v33",
+                "neural-prior-holdout-plan-v34",
+                "neural-prior-holdout-plan-v35",
+                "neural-prior-holdout-plan-v36",
+            }
+        ),
+        scientific_eligible=frozenset({"neural-prior-holdout-plan-v36"}),
+        operationally_accepted=frozenset(),
+        lifecycle_probe=_HOLDOUT_PLAN_LIFECYCLE_PROBE,
+        audit_generation_probes=tuple(
+            (generation, _HOLDOUT_PLAN_AUDIT_PROBE)
+            for generation in (
+                "neural-prior-holdout-plan-v33",
+                "neural-prior-holdout-plan-v34",
+                "neural-prior-holdout-plan-v35",
+            )
+        ),
     ),
 }
 
@@ -276,6 +432,12 @@ CURRENT_VARIATIONAL_FSO_CONTRACT = current_contract("variational_fso")
 CURRENT_VARIATIONAL_FSOI_CONTRACT = current_contract("variational_fsoi")
 CURRENT_SEMANTIC_SCORING_REPLAY_CONTRACT = current_contract(
     "semantic_scoring_replay"
+)
+CURRENT_FORECAST_RUN_ARTIFACT_VERSION = current_contract(
+    "forecast_run_artifact"
+)
+CURRENT_NEURAL_PRIOR_HOLDOUT_PLAN_CONTRACT = current_contract(
+    "neural_prior_holdout_plan"
 )
 
 
