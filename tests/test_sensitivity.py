@@ -1,6 +1,7 @@
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from fractions import Fraction
+from importlib import import_module
 from pathlib import Path
 from types import SimpleNamespace
 import json
@@ -4754,6 +4755,139 @@ class VariationalFSOTests(unittest.TestCase):
             ground_range_upper_km_by_source=ones * 10.1,
         )
         self.assertEqual(int(torch.count_nonzero(scores)), 0)
+
+    @unittest.skipUnless(
+        getattr(torch.backends, "mps", None) is not None
+        and torch.backends.mps.is_available(),
+        "MPS backend is unavailable",
+    )
+    def test_current_source_selection_declares_cpu_binary64_boundary(
+        self,
+    ) -> None:
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-05T00:10:00Z",
+                "2026-08-05T00:20:00Z",
+                "2026-08-05T00:30:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="2" * 64,
+            spatial_grid_contract="radar-spatial-grid-identity-v6",
+            grid_shape_yx=(1, 2),
+            projected_crs_digest=radar_projected_crs_semantic_digest("EPSG:5179"),
+            metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest),
+            cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
+            grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            cell_center_convention=(RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION),
+        )
+        derivation = _current_verification_bundle(
+            torch.tensor([[[20.0, 20.0]]]),
+            valid_times=("2026-08-05T00:30:00Z",),
+            grid_time_contract=grid,
+        ).observation_error_derivation
+        assert derivation is not None
+        shape = (1, 1, 1, 1)
+        with self.assertRaisesRegex(RuntimeError, "CPU binary64"):
+            sensitivity_module._product_owned_source_assignment_scores(
+                plan=derivation.plan,
+                valid_times=("2026-08-05T00:30:00Z",),
+                acquisition_valid_times_by_source=(("2026-08-05T00:30:00Z",),),
+                acquisition_time_offset_seconds_by_source=torch.zeros(
+                    shape, device="mps"
+                ),
+                source_availability_by_time=torch.ones(
+                    (1, 1), dtype=torch.bool, device="mps"
+                ),
+                range_km_by_source=torch.ones(shape, device="mps"),
+                elevation_deg_by_source=torch.ones(shape, device="mps"),
+                beam_blockage_fraction_by_source=torch.zeros(
+                    shape, device="mps"
+                ),
+                attenuation_qc_score_by_source=torch.ones(shape, device="mps"),
+            )
+
+    @unittest.skipUnless(
+        getattr(torch.backends, "mps", None) is not None
+        and torch.backends.mps.is_available(),
+        "MPS backend is unavailable",
+    )
+    def test_current_v6_mps_physical_psr_fss_and_centroid_paths(
+        self,
+    ) -> None:
+        nowcast_module = import_module("advar.nowcast")
+        grid = RadarGridTimeContract(
+            valid_times=(
+                "2026-08-05T00:10:00Z",
+                "2026-08-05T00:20:00Z",
+                "2026-08-05T00:30:00Z",
+            ),
+            dx_m=1000.0,
+            dy_m=1000.0,
+            projection="EPSG:5179",
+            grid_hash="4" * 64,
+            spatial_grid_contract="radar-spatial-grid-identity-v6",
+            grid_shape_yx=(4, 4),
+            projected_crs_digest=radar_projected_crs_semantic_digest(
+                "EPSG:5179"
+            ),
+            metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
+            metric_domain_evidence_digest=(
+                CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.digest
+            ),
+            cell_center_origin_xy_m=(1_000_000.0, 2_000_000.0),
+            grid_coordinate_dtype=RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
+            cell_center_convention=(
+                RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
+            ),
+        )
+        correlation = torch.arange(
+            16, dtype=torch.float32, device="mps"
+        ).reshape(4, 4)
+        correlation[0, 0] = 30.0
+        psr = nowcast_module._peak_to_sidelobe_ratio(
+            correlation,
+            0,
+            0,
+            NowcastConfig(phase_correlation_sidelobe_radius_m=1_500.0),
+            grid,
+        )
+        self.assertEqual(psr.device.type, "mps")
+        self.assertTrue(bool(torch.isfinite(psr)))
+
+        forecast = torch.arange(
+            1, 17, dtype=torch.float32, device="mps"
+        ).reshape(4, 4).requires_grad_()
+        truth = torch.roll(forecast.detach(), shifts=1, dims=1)
+        valid = torch.ones((4, 4), dtype=torch.bool, device="mps")
+        metric_config = SensitivityConfig(
+            metric_names=("soft_fss_error_35", "centroid_error_m2"),
+            soft_fss_window_m=3_000.0,
+        )
+        fss = forecast_metric(
+            "soft_fss_error_35",
+            forecast,
+            truth,
+            valid,
+            NowcastConfig(),
+            metric_config,
+            grid,
+        )
+        centroid = forecast_metric(
+            "centroid_error_m2",
+            forecast,
+            truth,
+            valid,
+            NowcastConfig(),
+            metric_config,
+            grid,
+        )
+        self.assertEqual(fss.device.type, "mps")
+        self.assertEqual(centroid.device.type, "mps")
+        (fss + centroid).backward()
+        self.assertIsNotNone(forecast.grad)
 
     def test_v2_observation_derivation_inputs_are_audit_only(self) -> None:
         frames = torch.ones((1, 2, 2))

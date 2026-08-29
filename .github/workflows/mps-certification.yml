@@ -24,6 +24,16 @@ jobs:
           python -c
           "import torch; assert torch.backends.mps.is_available();
           assert torch.backends.mps.is_built()"
+      - name: Run native MPS regression oracles
+        env:
+          PYTORCH_ENABLE_MPS_FALLBACK: "0"
+        run: >-
+          python -m pytest -q
+          tests/test_pcg.py::PCGTests::test_mps_solve_does_not_require_float64
+          tests/test_pcg.py::PCGTests::test_mps_nontrivial_spd_matches_cpu_float64_oracle
+          tests/test_nowcast.py::NowcastTests::test_current_v6_mps_uses_nominal_fp32_and_cpu_directed_gate
+          tests/test_sensitivity.py::VariationalFSOTests::test_current_v6_mps_physical_psr_fss_and_centroid_paths
+          tests/test_sensitivity.py::VariationalFSOTests::test_current_source_selection_declares_cpu_binary64_boundary
       - name: Run measured CPU and MPS certification
         env:
           ADVAR_MPS_CERTIFICATION_PRIVATE_KEY_HEX: ${{ secrets.ADVAR_MPS_CERTIFICATION_PRIVATE_KEY_HEX }}
@@ -32,13 +42,6 @@ jobs:
           advar-mps-certify
           --output-dir mps-certification-artifact
           --runner-id "${{ runner.name }}"
-      - name: Run native MPS regression oracles
-        env:
-          PYTORCH_ENABLE_MPS_FALLBACK: "0"
-        run: >-
-          python -m pytest -q
-          tests/test_pcg.py::PCGTests::test_mps_solve_does_not_require_float64
-          tests/test_pcg.py::PCGTests::test_mps_nontrivial_spd_matches_cpu_float64_oracle
       - name: Upload signed certification evidence
         id: upload
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

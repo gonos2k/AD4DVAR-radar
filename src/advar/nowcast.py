@@ -1474,6 +1474,10 @@ class GeodeticMetricUncertaintyError(ValueError):
     """A non-monotone metric cannot be certified for this radius footprint."""
 
 
+class ScientificVerificationCPUOnlyError(RuntimeError):
+    """Current typed verification requires CPU binary64 tensor evidence."""
+
+
 def _validate_nonnegative_interval(
     lower: float,
     upper: float,
@@ -2989,7 +2993,12 @@ class RadarSpatialGridIdentity:
         *,
         device: torch.device | str | None = None,
     ) -> tuple[Tensor, Tensor]:
-        """Generate exact float64 cell-center coordinates from the v2 affine."""
+        """Generate nominal cell centers on-device, binary64 on CPU.
+
+        Hard physical gates never consume these nominal coordinates; they use
+        the scalar directed affine authority.  MPS does not implement double
+        tensors, so its visualization/metric coordinates use float32.
+        """
 
         if self.contract not in {
             "radar-spatial-grid-identity-v2",
@@ -3002,9 +3011,15 @@ class RadarSpatialGridIdentity:
         assert self.shape_yx is not None
         assert self.cell_center_origin_xy_m is not None
         rows, columns = self.shape_yx
+        target_device = torch.device(device) if device is not None else None
+        dtype = (
+            torch.float32
+            if target_device is not None and target_device.type == "mps"
+            else torch.float64
+        )
         row_index, column_index = torch.meshgrid(
-            torch.arange(rows, dtype=torch.float64, device=device),
-            torch.arange(columns, dtype=torch.float64, device=device),
+            torch.arange(rows, dtype=dtype, device=device),
+            torch.arange(columns, dtype=dtype, device=device),
             indexing="ij",
         )
         (xx, xr), (yx, yr) = self.pixel_to_projected_matrix_m
@@ -3533,9 +3548,13 @@ class RadarGridTimeContract:
             raise ValueError("displacement_yx must have shape [2]")
         assert self.pixel_to_projected_matrix_m is not None
         dtype = (
-            torch.float64
-            if self.spatial_grid_contract == "radar-spatial-grid-identity-v6"
-            else displacement_yx.dtype
+            displacement_yx.dtype
+            if displacement_yx.device.type == "mps"
+            else (
+                torch.float64
+                if self.spatial_grid_contract == "radar-spatial-grid-identity-v6"
+                else displacement_yx.dtype
+            )
         )
         matrix = torch.tensor(
             self.pixel_to_projected_matrix_m,
@@ -3655,7 +3674,11 @@ class RadarGridTimeContract:
         return torch.tensor(
             interval.upper_mps,
             dtype=torch.float64,
-            device=displacement_yx.device,
+            device=(
+                torch.device("cpu")
+                if displacement_yx.device.type == "mps"
+                else displacement_yx.device
+            ),
         )
 
     def displacement_yx_from_projected_xy(
@@ -3666,9 +3689,13 @@ class RadarGridTimeContract:
             raise ValueError("projected_displacement_xy must have shape [2]")
         assert self.pixel_to_projected_matrix_m is not None
         dtype = (
-            torch.float64
-            if self.spatial_grid_contract == "radar-spatial-grid-identity-v6"
-            else projected_displacement_xy.dtype
+            projected_displacement_xy.dtype
+            if projected_displacement_xy.device.type == "mps"
+            else (
+                torch.float64
+                if self.spatial_grid_contract == "radar-spatial-grid-identity-v6"
+                else projected_displacement_xy.dtype
+            )
         )
         matrix = torch.tensor(
             self.pixel_to_projected_matrix_m,
@@ -3734,15 +3761,21 @@ class RadarGridTimeContract:
             CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE.maximum_linear_scale_error
         )
         denominator = math.nextafter(1.0 - error, -math.inf)
-        projected_float64 = projected_speed_mps.to(dtype=torch.float64)
+        from_mps = projected_speed_mps.device.type == "mps"
+        authority_speed = (
+            projected_speed_mps.detach().to(device="cpu")
+            if from_mps
+            else projected_speed_mps
+        )
+        projected_float64 = authority_speed.to(dtype=torch.float64)
         raw_upper_float64 = projected_float64 / denominator
         upper_float64 = torch.nextafter(
             raw_upper_float64,
             torch.full_like(raw_upper_float64, torch.inf),
         )
-        if projected_speed_mps.dtype is torch.float64:
+        if from_mps or authority_speed.dtype is torch.float64:
             rounded_upper = upper_float64
-        elif projected_speed_mps.dtype is torch.float32:
+        elif authority_speed.dtype is torch.float32:
             rounded_upper = upper_float64.to(dtype=torch.float32)
             rounded_upper = torch.where(
                 rounded_upper.to(dtype=torch.float64) < upper_float64,
@@ -3757,7 +3790,7 @@ class RadarGridTimeContract:
                 "scientific projected speed must be float32 or float64"
             )
         return torch.where(
-            projected_speed_mps == 0.0,
+            authority_speed == 0.0,
             torch.zeros_like(rounded_upper),
             rounded_upper,
         )
@@ -4088,17 +4121,22 @@ def motion_displacement_limits_yx(
         config.maximum_motion_speed_mps,
         config.interval_minutes,
     )
+    authority_device = (
+        torch.device("cpu")
+        if reference.device.type == "mps"
+        else reference.device
+    )
     limits_float64 = torch.tensor(
         limits,
         dtype=torch.float64,
-        device=reference.device,
+        device=authority_device,
     )
     if reference.dtype is torch.float64:
-        return limits_float64
+        return limits_float64.to(device=reference.device)
     if reference.dtype is not torch.float32:
         raise ValueError("scientific motion limits require float32 or float64")
     cast_limits = limits_float64.to(dtype=torch.float32)
-    return torch.where(
+    inward_limits = torch.where(
         cast_limits.to(dtype=torch.float64) > limits_float64,
         torch.nextafter(
             cast_limits,
@@ -4106,6 +4144,7 @@ def motion_displacement_limits_yx(
         ),
         cast_limits,
     )
+    return inward_limits.to(device=reference.device)
 
 
 class DataStatus(str, Enum):
@@ -7441,7 +7480,9 @@ def prepare_input(
         )
     observed_count = int(observed.sum())
     observation_count = observed.numel()
-    coverage_by_frame = observed.to(torch.float64).mean(dim=(1, 2))
+    coverage_by_frame = (
+        observed.detach().to(device="cpu").to(dtype=torch.float64).mean(dim=(1, 2))
+    )
     if observed_count == 0:
         status = (
             DataStatus.STALE_BACKGROUND

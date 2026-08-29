@@ -55,6 +55,7 @@ from .nowcast import (
     RadarGridTimeContract,
     RadarSpatialGridIdentity,
     RadarState,
+    ScientificVerificationCPUOnlyError,
     TendencyPairSelection,
     TendencySource,
     _estimate_available_pair,
@@ -1698,6 +1699,10 @@ class RadarObservationGeometryContract:
 
         if type(grid) is not RadarGridTimeContract:
             raise ValueError("radar grid/time contract is required")
+        if device is not None and torch.device(device).type != "cpu":
+            raise ScientificVerificationCPUOnlyError(
+                "current typed verification geometry requires CPU binary64 evidence"
+            )
         identity = grid.spatial_grid_identity
         if identity.contract != "radar-spatial-grid-identity-v6":
             raise ValueError("scientific verification requires projected-grid v6")
@@ -3212,6 +3217,33 @@ def _product_owned_source_assignment_scores(
 ) -> Tensor:
     """Derive deterministic eligible-first mosaic source scores."""
 
+    tensor_inputs = (
+        acquisition_time_offset_seconds_by_source,
+        source_availability_by_time,
+        range_km_by_source,
+        elevation_deg_by_source,
+        beam_blockage_fraction_by_source,
+        attenuation_qc_score_by_source,
+        *(
+            ()
+            if detection_classification_certain_by_source is None
+            else (detection_classification_certain_by_source,)
+        ),
+        *(
+            ()
+            if ground_range_lower_km_by_source is None
+            else (ground_range_lower_km_by_source,)
+        ),
+        *(
+            ()
+            if ground_range_upper_km_by_source is None
+            else (ground_range_upper_km_by_source,)
+        ),
+    )
+    if any(value.device.type != "cpu" for value in tensor_inputs):
+        raise ScientificVerificationCPUOnlyError(
+            "current source-selection certification requires CPU binary64 evidence"
+        )
     if (
         type(plan) is not VerificationObservationErrorPlan
         or plan.contract != "verification-observation-error-plan-v16"

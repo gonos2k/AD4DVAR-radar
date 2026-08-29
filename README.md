@@ -9,27 +9,28 @@ state-advancing LIVE는 승인하지 않는다.
 
 ### 현재 계약 capability
 
-아래 표는 `src/advar/_contract_registry.py`에서 생성·검증된다. `∅`는 해당
-세대가 없다는 명시적 계약이며, 특히 scientific promotion evidence는 운영 권한으로
-해석되지 않는다.
+아래 표는 `src/advar/_contract_registry.py`에서 생성·검증된다. Runtime registry는
+현재 세대와 직전 migration/read 세대만 다루며 장기 archive 전체를 대표하지 않는다.
+`∅`는 해당 세대가 없다는 명시적 계약이며, 특히 scientific promotion evidence는
+운영 권한으로 해석되지 않는다.
 
 <!-- CONTRACT_CAPABILITY_TABLE:START -->
 | Contract family | Current | Predecessor | Issuable | Audit-readable | Scientific | Operational |
 |---|---|---|---|---|---|---|
-| radar_metric_domain_evidence | radar-metric-domain-evidence-v4 | radar-metric-domain-evidence-v3 | radar-metric-domain-evidence-v4 | radar-metric-domain-evidence-v1, radar-metric-domain-evidence-v2, radar-metric-domain-evidence-v3, radar-metric-domain-evidence-v4 | radar-metric-domain-evidence-v4 | ∅ |
+| radar_metric_domain_evidence | radar-metric-domain-evidence-v4 | radar-metric-domain-evidence-v3 | radar-metric-domain-evidence-v4 | radar-metric-domain-evidence-v3, radar-metric-domain-evidence-v4 | radar-metric-domain-evidence-v4 | ∅ |
 | neural_prior_promotion_evidence | neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v31 | neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v31, neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v32 | ∅ |
 | deployed_neural_prior_policy | deployed-neural-prior-policy-v17 | — | deployed-neural-prior-policy-v17 | deployed-neural-prior-policy-v17 | ∅ | ∅ |
-| neural_prior_deployment_lineage | neural-prior-deployment-lineage-v19 | neural-prior-deployment-lineage-v18-audit | neural-prior-deployment-lineage-v19 | neural-prior-deployment-lineage-v18-audit, neural-prior-deployment-lineage-v19, neural-prior-deployment-lineage-v19-audit | ∅ | ∅ |
+| neural_prior_deployment_lineage | neural-prior-deployment-lineage-v19 | neural-prior-deployment-lineage-v18-audit | neural-prior-deployment-lineage-v19 | neural-prior-deployment-lineage-v18-audit, neural-prior-deployment-lineage-v19 | ∅ | ∅ |
 | radar_spatial_grid_identity | radar-spatial-grid-identity-v6 | radar-spatial-grid-identity-v5 | radar-spatial-grid-identity-v6 | radar-spatial-grid-identity-v5, radar-spatial-grid-identity-v6 | radar-spatial-grid-identity-v6 | ∅ |
 | mosaic_observation_source_registry | mosaic-observation-source-registry-v7 | mosaic-observation-source-registry-v6 | mosaic-observation-source-registry-v7 | mosaic-observation-source-registry-v6, mosaic-observation-source-registry-v7 | mosaic-observation-source-registry-v7 | ∅ |
 | radar_observation_geometry | radar-observation-geometry-v7 | radar-observation-geometry-v6 | radar-observation-geometry-v7 | radar-observation-geometry-v6, radar-observation-geometry-v7 | radar-observation-geometry-v7 | ∅ |
-| verification_observation_error_plan | verification-observation-error-plan-v16 | verification-observation-error-plan-v15 | verification-observation-error-plan-v16 | verification-observation-error-plan-v14, verification-observation-error-plan-v15, verification-observation-error-plan-v16 | verification-observation-error-plan-v16 | ∅ |
-| verification_bundle | radar-verification-bundle-v22 | radar-verification-bundle-v21 | radar-verification-bundle-v22 | radar-verification-bundle-v20, radar-verification-bundle-v21, radar-verification-bundle-v22 | radar-verification-bundle-v22 | ∅ |
-| variational_fso | p1-variational-fso-v28 | p1-variational-fso-v27 | p1-variational-fso-v28 | p1-variational-fso-v26, p1-variational-fso-v27, p1-variational-fso-v28 | p1-variational-fso-v28 | ∅ |
-| variational_fsoi | p1-linearized-observation-impact-v24 | p1-linearized-observation-impact-v23 | p1-linearized-observation-impact-v24 | p1-linearized-observation-impact-v22, p1-linearized-observation-impact-v23, p1-linearized-observation-impact-v24 | p1-linearized-observation-impact-v24 | ∅ |
-| semantic_scoring_replay | neural-prior-scoring-replay-bundle-v27 | neural-prior-scoring-replay-bundle-v26 | neural-prior-scoring-replay-bundle-v27 | neural-prior-scoring-replay-bundle-v25, neural-prior-scoring-replay-bundle-v26, neural-prior-scoring-replay-bundle-v27 | neural-prior-scoring-replay-bundle-v27 | ∅ |
-| forecast_run_artifact | forecast-run-v72 | forecast-run-v71 | forecast-run-v72 | forecast-run-v68, forecast-run-v69, forecast-run-v70, forecast-run-v71, forecast-run-v72 | forecast-run-v72 | ∅ |
-| neural_prior_holdout_plan | neural-prior-holdout-plan-v37 | neural-prior-holdout-plan-v36 | neural-prior-holdout-plan-v37 | neural-prior-holdout-plan-v33, neural-prior-holdout-plan-v34, neural-prior-holdout-plan-v35, neural-prior-holdout-plan-v36, neural-prior-holdout-plan-v37 | neural-prior-holdout-plan-v37 | ∅ |
+| verification_observation_error_plan | verification-observation-error-plan-v16 | verification-observation-error-plan-v15 | verification-observation-error-plan-v16 | verification-observation-error-plan-v15, verification-observation-error-plan-v16 | verification-observation-error-plan-v16 | ∅ |
+| verification_bundle | radar-verification-bundle-v22 | radar-verification-bundle-v21 | radar-verification-bundle-v22 | radar-verification-bundle-v21, radar-verification-bundle-v22 | radar-verification-bundle-v22 | ∅ |
+| variational_fso | p1-variational-fso-v28 | p1-variational-fso-v27 | p1-variational-fso-v28 | p1-variational-fso-v27, p1-variational-fso-v28 | p1-variational-fso-v28 | ∅ |
+| variational_fsoi | p1-linearized-observation-impact-v24 | p1-linearized-observation-impact-v23 | p1-linearized-observation-impact-v24 | p1-linearized-observation-impact-v23, p1-linearized-observation-impact-v24 | p1-linearized-observation-impact-v24 | ∅ |
+| semantic_scoring_replay | neural-prior-scoring-replay-bundle-v27 | neural-prior-scoring-replay-bundle-v26 | neural-prior-scoring-replay-bundle-v27 | neural-prior-scoring-replay-bundle-v26, neural-prior-scoring-replay-bundle-v27 | neural-prior-scoring-replay-bundle-v27 | ∅ |
+| forecast_run_artifact | forecast-run-v72 | forecast-run-v71 | forecast-run-v72 | forecast-run-v71, forecast-run-v72 | forecast-run-v72 | ∅ |
+| neural_prior_holdout_plan | neural-prior-holdout-plan-v37 | neural-prior-holdout-plan-v36 | neural-prior-holdout-plan-v37 | neural-prior-holdout-plan-v36, neural-prior-holdout-plan-v37 | neural-prior-holdout-plan-v37 | ∅ |
 <!-- CONTRACT_CAPABILITY_TABLE:END -->
 
 `main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
@@ -1279,8 +1280,14 @@ backend `pow`/`exp` 결과를 radar 우열의 권위값으로 사용하지 않�
 정확히 0인 source의 시간 품질 구간은 `[1, 1]`, 그 밖의 source는 해석적 codomain
 `[0, 1]`로 두며, 한 source의 score 하한이 모든 경쟁 source의 score 상한보다 엄격히
 클 때만 선택한다. Invalid source는 먼저 제외하지만, score 구간이 겹치거나 동점이면
-ordered-registry 순서로 임의 결정하지 않고 cell을 unassigned로 남긴다. Current
-confirmatory confidence bound는 pixel block이 아니라 independent physical-event
+ordered-registry 순서로 임의 결정하지 않고 cell을 unassigned로 남긴다. 이 정책은
+false winner를 막지만 multi-radar overlap coverage를 보장하지 않는다. 실제 radar
+cohort에서 assigned/eligible 비율과 differential loss를 측정하기 전에는 이 결과를
+confirmatory source selection으로 승격하지 않는다. 그 미측정 한계를 별도의 100%
+coverage wrapper로 감추거나 전체 실행을 막지는 않는다. Current typed verification
+geometry와 source-selection certification은 CPU binary64-only이며 MPS에서
+전용 비지원 오류로 fail-close한다. Current confirmatory confidence bound는 pixel
+block이 아니라 independent physical-event
 cluster를 사용하며, spatial block metadata가 추론에 사용됐다고 주장하지 않는다.
 Audit load는 저장된 typed evaluation을 볼 수 있지만, 자동 completion과 promotion은
 동일한 typed replay case를 다시 제공해 semantic replay까지 통과해야 한다. 배포
@@ -1636,14 +1643,19 @@ metric score와 decision statistic처럼 단위가 다른 허용오차를 분리
 일치해야 한다.
 
 `.github/workflows/mps-certification.yml`은 `PYTORCH_ENABLE_MPS_FALLBACK=0`인 self-hosted
-Apple Silicon runner에서 비대각 SPD PCG, P1 analysis/stationarity/forecast, score와
-decision statistic, nonfinite fallback, deterministic repeat를 실제 CPU/MPS로
+Apple Silicon runner에서 비대각 SPD PCG, current projected-grid v6의 FP32 nominal
+forward/inverse affine와 CPU binary64 directed speed authority, P1
+analysis/stationarity/forecast, score와 decision statistic, nonfinite fallback,
+deterministic repeat를 실제 CPU/MPS로
 실행한다. 성공한 실행은 policy, signed evidence, raw scalar JSON, tensor NPZ와 파일
 checksum manifest를 GitHub artifact로 업로드한다. Workflow artifact가 생성됐다는
 사실만으로 배포가 승인되지는 않으며, 운영 `DeployedNeuralPriorPolicy`가 검토한 두
 digest를 명시해야 MPS 진입점이 열린다. Self-hosted runner에는 raw Ed25519 private
 key를 담은 `ADVAR_MPS_CERTIFICATION_PRIVATE_KEY_HEX` secret이 필요하며, MPS fallback은
 비활성화된다.
+Current verification/FSO scoring은 tensor-level float64 evidence contract 때문에 계속
+CPU-only다. MPS workflow는 이 경계를 숨기지 않고 current source-selection 요청이
+전용 CPU-only 오류로 거부되는지도 검사한다.
 
 실제 격자에서는 `AnalysisConfig(causal_support_uncertainty_m=...,
 amplitude_displacement_tolerance_m=...)`로 causal envelope와 진폭 위치허용을
@@ -2000,12 +2012,12 @@ classifier와 learned prior에 유입되지 않으며, signed
 `AnalysisInputDerivationArtifact-v5`의 canonical JSON과 digest도 NPZ에 보존된다.
 `forecast-run-v71` 이하는 audit-only다.
 
-Registry의 모든 audit-only generation은 `tests/fixtures/audit_generations/`의 서로 다른
-canonical cold fixture와 정확히 일대일 대응한다. Meta-test는 fixture contract 집합과
-각 family의 `audit_readable - issuable` 합집합이 정확히 같은지, payload digest와
-expected type/probe binding, 한 byte tamper 거부, scientific/operational action 거부를
-전수 검사한다. 세대를 추가하면서 fixture를 누락하거나 stale fixture를 남기면 CI가
-fail-close한다.
+Contract registry는 current generation 상수와 선언된 capability 표만 제공한다.
+test 이름, 최소 metadata envelope 또는 caller 제공 action flag를 historical replay의
+대리물로 사용하지 않는다. 장기 cold replay는 실제 보존된 artifact bytes를 해당
+family loader가 직접 복원하고 원래 digest를 재현하는 시험이 있는 세대에만 주장한다.
+원본 archive가 없는 세대는 decoder 코드가 남아 있더라도 cold-replay-certified로
+간주하지 않는다.
 
 Current `forecast-run-v72`은 nonempty
 `neural-prior-deployment-lineage-v19`를 전용 비지원 예외로 거부한다. 과거
