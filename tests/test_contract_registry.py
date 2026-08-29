@@ -1,8 +1,8 @@
 from collections.abc import Callable
 from dataclasses import dataclass, fields
 import ast
-import importlib.util
 from pathlib import Path
+import subprocess
 import sys
 import unittest
 
@@ -10,11 +10,14 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from advar._contract_registry import (  # noqa: E402
+    AUDIT_GENERATION_FIXTURES,
+    AuditGenerationFixture,
     CONTRACT_CAPABILITIES,
     CURRENT_SEMANTIC_SCORING_REPLAY_CONTRACT,
     CURRENT_VARIATIONAL_FSO_CONTRACT,
     CURRENT_VARIATIONAL_FSOI_CONTRACT,
     CURRENT_VERIFICATION_BUNDLE_CONTRACT,
+    FrozenAuditGeneration,
     current_contract,
     render_contract_capability_table,
 )
@@ -33,48 +36,42 @@ class LifecycleCase:
     """One executable construct/round-trip/action probe for contract families."""
 
     families: tuple[str, ...]
-    execute: Callable[[], unittest.TestResult]
+    execute: Callable[[], subprocess.CompletedProcess[str]]
 
 
-def _execute_named_lifecycle_probe(probe: str) -> unittest.TestResult:
-    path_text, class_name, method_name = probe.split("::")
-    path = Path(__file__).resolve().parents[1] / path_text
-    module_name = f"_advar_lifecycle_{path.stem}"
-    module = sys.modules.get(module_name)
-    if module is None:
-        spec = importlib.util.spec_from_file_location(module_name, path)
-        if spec is None or spec.loader is None:
-            raise RuntimeError(f"cannot load lifecycle probe module: {path}")
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[module_name] = module
-        try:
-            spec.loader.exec_module(module)
-        except BaseException:
-            sys.modules.pop(module_name, None)
-            raise
-    suite = unittest.defaultTestLoader.loadTestsFromName(
-        f"{class_name}.{method_name}",
-        module,
+def _execute_named_lifecycle_probe(
+    probe: str,
+) -> subprocess.CompletedProcess[str]:
+    """Run one lifecycle in a fresh interpreter so its fixtures cannot leak."""
+
+    repository = Path(__file__).resolve().parents[1]
+    return subprocess.run(
+        (
+            sys.executable,
+            "-I",
+            "-m",
+            "pytest",
+            "-q",
+            probe,
+        ),
+        cwd=repository,
+        check=False,
+        capture_output=True,
+        text=True,
     )
-    result = unittest.TestResult()
-    suite.run(result)
-    return result
 
 
 def _declared_contract_probes() -> tuple[str, ...]:
-    return tuple(
-        dict.fromkeys(
-            probe
-            for capabilities in CONTRACT_CAPABILITIES.values()
-            for probe in (
-                capabilities.lifecycle_probe,
-                *(
-                    audit_probe
-                    for _, audit_probe in capabilities.audit_generation_probes
-                ),
-            )
+    probes = [
+        probe
+        for capabilities in CONTRACT_CAPABILITIES.values()
+        for probe in (
+            capabilities.lifecycle_probe,
+            *(audit_probe for _, audit_probe in capabilities.audit_generation_probes),
         )
-    )
+    ]
+    probes.extend(fixture.decoder_probe for fixture in AUDIT_GENERATION_FIXTURES)
+    return tuple(dict.fromkeys(probes))
 
 
 class ContractRegistryTests(unittest.TestCase):
@@ -164,10 +161,13 @@ class ContractRegistryTests(unittest.TestCase):
         for case in cases:
             with self.subTest(families=case.families):
                 result = case.execute()
-                self.assertEqual(result.testsRun, 1)
-                self.assertFalse(result.skipped)
-                self.assertFalse(result.failures)
-                self.assertFalse(result.errors)
+                self.assertEqual(
+                    result.returncode,
+                    0,
+                    result.stdout + result.stderr,
+                )
+                self.assertIn("1 passed", result.stdout)
+                self.assertNotIn("skipped", result.stdout.lower())
 
     def test_every_audit_only_generation_has_an_executable_cold_probe(
         self,
@@ -182,6 +182,77 @@ class ContractRegistryTests(unittest.TestCase):
                 capabilities.audit_readable - capabilities.issuable,
                 family,
             )
+
+    def test_frozen_audit_fixture_matrix_exactly_covers_registry(self) -> None:
+        repository = Path(__file__).resolve().parents[1]
+        registered = {
+            (family, contract)
+            for family, capabilities in CONTRACT_CAPABILITIES.items()
+            for contract in capabilities.audit_readable
+        }
+        declared = {
+            (fixture.family, fixture.contract) for fixture in AUDIT_GENERATION_FIXTURES
+        }
+        self.assertEqual(declared, registered)
+        self.assertEqual(len(declared), len(AUDIT_GENERATION_FIXTURES))
+        fixture_directory = repository / "tests/fixtures/audit_generations"
+        self.assertEqual(
+            {
+                path.relative_to(repository).as_posix()
+                for path in fixture_directory.glob("*.json")
+            },
+            {fixture.fixture_path for fixture in AUDIT_GENERATION_FIXTURES},
+        )
+
+        for metadata in AUDIT_GENERATION_FIXTURES:
+            with self.subTest(
+                family=metadata.family,
+                contract=metadata.contract,
+            ):
+                self.assertIsInstance(metadata, AuditGenerationFixture)
+                path = repository / metadata.fixture_path
+                frozen = FrozenAuditGeneration.from_bytes(
+                    path.read_bytes(),
+                    metadata,
+                )
+                self.assertEqual(frozen.family, metadata.family)
+                self.assertEqual(frozen.contract, metadata.contract)
+                self.assertEqual(frozen.expected_type, metadata.expected_type)
+                self.assertEqual(frozen.decoder_probe, metadata.decoder_probe)
+                capabilities = CONTRACT_CAPABILITIES[metadata.family]
+                self.assertEqual(
+                    frozen.scientific_action_allowed,
+                    metadata.contract in capabilities.scientific_eligible,
+                )
+                self.assertEqual(
+                    frozen.operational_action_allowed,
+                    metadata.contract in capabilities.operationally_accepted,
+                )
+                self.assertEqual(
+                    frozen.payload["fixture_origin"],
+                    "registry-cold-audit-minimum-v1",
+                )
+                if frozen.scientific_action_allowed:
+                    frozen.require_scientific_action()
+                else:
+                    with self.assertRaisesRegex(ValueError, "scientifically"):
+                        frozen.require_scientific_action()
+                if frozen.operational_action_allowed:
+                    frozen.require_operational_action()
+                else:
+                    with self.assertRaisesRegex(RuntimeError, "operationally"):
+                        frozen.require_operational_action()
+
+                raw = path.read_bytes()
+                marker = b"registry-cold-audit-minimum-v1"
+                self.assertIn(marker, raw)
+                tampered = raw.replace(
+                    marker,
+                    b"registry-cold-audit-minimum-v2",
+                    1,
+                )
+                with self.assertRaisesRegex(ValueError, "digest"):
+                    FrozenAuditGeneration.from_bytes(tampered, metadata)
 
     def test_runtime_current_generations_are_registry_derived(self) -> None:
         self.assertEqual(
@@ -224,14 +295,14 @@ class ContractRegistryTests(unittest.TestCase):
     def test_public_audit_exports_cover_every_supported_recent_wrapper(
         self,
     ) -> None:
-        for generation in range(21, 26):
+        for generation in range(21, 27):
             self.assertTrue(
                 hasattr(
                     advar_module,
                     f"LegacyScoringReplayBundleManifestAuditV{generation}",
                 )
             )
-        for generation in range(32, 36):
+        for generation in range(32, 37):
             self.assertTrue(
                 hasattr(
                     advar_module,

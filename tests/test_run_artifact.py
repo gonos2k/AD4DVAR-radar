@@ -2410,6 +2410,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
                 "forecast-run-v68",
                 "forecast-run-v69",
                 "forecast-run-v70",
+                "forecast-run-v71",
             ):
                 legacy_arrays = dict(arrays)
                 legacy_arrays["forecast_run_artifact_version"] = np.asarray(

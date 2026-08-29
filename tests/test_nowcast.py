@@ -5823,6 +5823,7 @@ class NowcastTests(unittest.TestCase):
     def test_affine_hard_gates_enclose_each_authoritative_float_operation(
         self,
     ) -> None:
+        nowcast_module = import_module("advar.nowcast")
         metric_error = Fraction.from_float(
             CURRENT_RADAR_METRIC_DOMAIN.maximum_linear_scale_error
         )
@@ -5857,6 +5858,13 @@ class NowcastTests(unittest.TestCase):
             displacement,
             600.0,
         )
+        speed_value = motion_grid.projected_ground_speed_value_from_displacement(
+            displacement,
+            600.0,
+        )
+        self.assertEqual(speed_value.interval, (speed.lower_mps, speed.upper_mps))
+        self.assertLessEqual(speed_value.lower, speed_value.nominal)
+        self.assertGreaterEqual(speed_value.upper, speed_value.nominal)
         exact_speed_upper = (
             Fraction.from_float(1000.00002)
             / Fraction.from_float(600.0)
@@ -5923,8 +5931,26 @@ class NowcastTests(unittest.TestCase):
             legacy_radius,
             maximum_radius_yx=(97, 50),
         )
+        offset_value = footprint_grid.projected_offset_norm_value(offset_yx)
+        self.assertEqual(offset_value.nominal, rounded_projected)
+        self.assertLessEqual(offset_value.lower, offset_value.nominal)
+        self.assertGreaterEqual(offset_value.upper, offset_value.nominal)
         self.assertNotIn(offset_yx, footprint.certainly_inside)
         self.assertIn(offset_yx, footprint.uncertain)
+        with self.assertRaisesRegex(
+            GeodeticMetricUncertaintyError,
+            "uncertain sidelobe annulus",
+        ):
+            nowcast_module._peak_to_sidelobe_ratio(
+                torch.zeros((193, 99), dtype=torch.float64),
+                96,
+                49,
+                replace(
+                    NowcastConfig(),
+                    phase_correlation_sidelobe_radius_m=legacy_radius,
+                ),
+                footprint_grid,
+            )
 
         area_matrix = (
             (146.0497048921407, 126.89902826922378),
@@ -5960,6 +5986,11 @@ class NowcastTests(unittest.TestCase):
                 rounded_projected_area
             )[1]
         )
+        area_value = area_grid.cell_area_value_m2
+        self.assertEqual(area_value.nominal, area_grid.cell_area_m2)
+        self.assertEqual(area_value.interval, area_grid.cell_area_interval_m2)
+        self.assertLessEqual(area_value.lower, area_value.nominal)
+        self.assertGreaterEqual(area_value.upper, area_value.nominal)
         self.assertGreater(exact_area_upper, Fraction.from_float(legacy_area_limit))
         self.assertNotEqual(
             area_grid.cell_count_area_maximum_status(

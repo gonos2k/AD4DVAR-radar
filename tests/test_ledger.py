@@ -108,6 +108,7 @@ from advar.sensitivity import (  # noqa: E402
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V15_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V4_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V5_DIGEST,
@@ -117,10 +118,12 @@ from advar.sensitivity import (  # noqa: E402
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V12_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V14_DIGEST,
     OBSERVATION_REPORT_KIND_ALGORITHM_V1_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V3_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V4_DIGEST,
+    OBSERVATION_SOURCE_SELECTION_ALGORITHM_V5_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V3_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST,
@@ -751,13 +754,14 @@ class EpisodeLedgerTests(unittest.TestCase):
             promotion_module.LegacyHoldoutScoringArtifactAuditV14,
         )
 
-    def test_holdout_plans_v33_through_v35_load_as_cold_audit_fixtures(
+    def test_holdout_plans_v33_through_v36_load_as_cold_audit_fixtures(
         self,
     ) -> None:
         expected_types = {
             33: promotion_module.LegacyNeuralPriorHoldoutPlanV33Audit,
             34: promotion_module.LegacyNeuralPriorHoldoutPlanV34Audit,
             35: promotion_module.LegacyNeuralPriorHoldoutPlanV35Audit,
+            36: promotion_module.LegacyNeuralPriorHoldoutPlanV36Audit,
         }
         with tempfile.TemporaryDirectory() as directory:
             ledger = EpisodeLedger(Path(directory))
@@ -798,7 +802,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, "legacy artifact"):
                         replace(loaded, plan_digest="0" * 64)
 
-    def test_replay_v19_through_v25_preserve_frozen_tensor_roles(self) -> None:
+    def test_replay_v19_through_v26_preserve_frozen_tensor_roles(self) -> None:
         shard_digest = "3" * 64
         records = tuple(
             ledger_module.ScoringReplayTensorRecord(
@@ -867,10 +871,11 @@ class EpisodeLedgerTests(unittest.TestCase):
             (23, ledger_module.LegacyScoringReplayBundleManifestAuditV23),
             (24, ledger_module.LegacyScoringReplayBundleManifestAuditV24),
             (25, ledger_module.LegacyScoringReplayBundleManifestAuditV25),
+            (26, ledger_module.LegacyScoringReplayBundleManifestAuditV26),
         )
         for generation, manifest_type in generations:
             with self.subTest(generation=generation):
-                frozen_records = v25_records if generation == 25 else records
+                frozen_records = v25_records if generation >= 25 else records
                 manifest = manifest_type(
                     **common,
                     tensor_records=frozen_records,
@@ -1131,32 +1136,32 @@ class EpisodeLedgerTests(unittest.TestCase):
                 observation_source_registry.calibration_registry_digest
             ),
             range_elevation_validity_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V14_DIGEST
             ),
             beam_blockage_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V14_DIGEST
             ),
             attenuation_qc_digest="3" * 64,
             censoring_rule_digest="f" * 64,
             spatial_correlation_block_algorithm_digest="7" * 64,
             quality_weight_interpretation_digest="8" * 64,
             quality_weight_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V15_DIGEST
             ),
             observation_std_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V15_DIGEST
             ),
             observation_error_model_digest="b" * 64,
             source_assignment_algorithm_digest=(
-                OBSERVATION_SOURCE_SELECTION_ALGORITHM_V4_DIGEST
+                OBSERVATION_SOURCE_SELECTION_ALGORITHM_V5_DIGEST
             ),
             minimum_detectable_echo_dbz=-10.0,
             observation_error_reference_std_dbz=2.0,
             derivation_algorithm_digest=(
-                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
+                OBSERVATION_ERROR_DERIVATION_ALGORITHM_V15_DIGEST
             ),
             mask_derivation_algorithm_digest=(
-                OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST
+                OBSERVATION_MASK_DERIVATION_ALGORITHM_V14_DIGEST
             ),
             maximum_range_km=300.0,
             minimum_elevation_deg=-1.0,
@@ -1190,7 +1195,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             spatial_age_gate_algorithm_digest=(
                 OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST
             ),
-            contract="verification-observation-error-plan-v15",
+            contract="verification-observation-error-plan-v16",
         )
         target_plan = PriorUncertaintyTargetPlan(
             plan_id="uncertainty-clock",
@@ -1754,8 +1759,8 @@ class EpisodeLedgerTests(unittest.TestCase):
         raw_ingestor_key = (
             promotion_module.Ed25519PrivateKey.from_private_bytes(b"\x23" * 32)
         )
-        processor_key = (
-            promotion_module.Ed25519PrivateKey.from_private_bytes(b"\x25" * 32)
+        processor_key = promotion_module.Ed25519PrivateKey.from_private_bytes(
+            b"\x25" * 32
         )
         raw_slot = promotion_module.RawObservationSlotPlan(
             radar_site_digest=range_geometry.radar_site_digest,

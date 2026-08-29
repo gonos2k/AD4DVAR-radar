@@ -1338,7 +1338,7 @@ def _compute_action_safety(
     if (grid is None) == (cell_area_m2 is None):
         raise ValueError("action safety requires exactly one grid-area authority")
     if grid is not None:
-        resolved_cell_area_m2 = grid.cell_area_m2
+        resolved_cell_area_m2 = grid.cell_area_value_m2.nominal
     else:
         assert cell_area_m2 is not None
         resolved_cell_area_m2 = float(cell_area_m2)

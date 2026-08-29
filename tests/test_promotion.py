@@ -27,6 +27,7 @@ from advar.nowcast import (
     CURRENT_RADAR_METRIC_DOMAIN,
     CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
     DataStatus,
+    DirectedPhysicalValue,
     ForecastMetadata,
     RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION,
     RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
@@ -61,6 +62,7 @@ from advar import (
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V11_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V15_DIGEST,
     OBSERVATION_TEMPORAL_QUALITY_DECAY_ALGORITHM_V1_DIGEST,
     OBSERVATION_TEMPORAL_ERROR_ALGORITHM_V1_DIGEST,
     OBSERVATION_DETECTION_LIMIT_ALGORITHM_V1_DIGEST,
@@ -74,9 +76,11 @@ from advar import (
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V10_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V12_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V14_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V1_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V3_DIGEST,
     OBSERVATION_SOURCE_SELECTION_ALGORITHM_V4_DIGEST,
+    OBSERVATION_SOURCE_SELECTION_ALGORITHM_V5_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V1_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V3_DIGEST,
     OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST,
@@ -260,22 +264,20 @@ def _verification_observation_error_plan(
         spatial_correlation_block_algorithm_digest="7" * 64,
         quality_weight_interpretation_digest="8" * 64,
         quality_weight_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V15_DIGEST
         ),
         observation_std_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
+            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V15_DIGEST
         ),
         observation_error_model_digest="9" * 64,
         source_assignment_algorithm_digest=(
-            OBSERVATION_SOURCE_SELECTION_ALGORITHM_V4_DIGEST
+            OBSERVATION_SOURCE_SELECTION_ALGORITHM_V5_DIGEST
         ),
         minimum_detectable_echo_dbz=-10.0,
         observation_error_reference_std_dbz=2.0,
-        derivation_algorithm_digest=(
-            OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
-        ),
+        derivation_algorithm_digest=(OBSERVATION_ERROR_DERIVATION_ALGORITHM_V15_DIGEST),
         mask_derivation_algorithm_digest=(
-            OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST
+            OBSERVATION_MASK_DERIVATION_ALGORITHM_V14_DIGEST
         ),
         maximum_range_km=300.0,
         minimum_elevation_deg=-1.0,
@@ -307,7 +309,7 @@ def _verification_observation_error_plan(
         spatial_age_gate_algorithm_digest=(
             OBSERVATION_SPATIAL_AGE_GATE_ALGORITHM_V4_DIGEST
         ),
-        contract="verification-observation-error-plan-v15",
+        contract="verification-observation-error-plan-v16",
     )
 
 
@@ -472,7 +474,7 @@ def _verification_bundle_v4(
         spatial_metric_valid_mask=mask_derivation.spatial_metric_valid_mask,
         observation_error_contract=error_contract,
         observation_error_derivation=derivation,
-        contract="radar-verification-bundle-v21",
+        contract="radar-verification-bundle-v22",
     )
 
 
@@ -633,7 +635,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         evaluation = self.evaluation(1, -1.0)
         policy = self.policy()
 
-        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v36")
+        self.assertEqual(plan.contract, "neural-prior-holdout-plan-v37")
         self.assertTrue(
             all(
                 item.contract == "neural-prior-range-band-contract-v3"
@@ -671,7 +673,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 ),
             )
 
-    def test_current_holdout_rejects_legacy_observation_error_plan(self) -> None:
+    def test_current_holdout_rejects_legacy_observation_error_plan(
+        self,
+    ) -> None:
         plan = self.plan()
         current = plan.verification_observation_error_plans[0]
         legacy = replace(
@@ -714,7 +718,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(
             ValueError,
-            "requires observation-error plan v15",
+            "requires observation-error plan v16",
         ):
             replace(
                 plan,
@@ -13989,7 +13993,9 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "invalid|digest mismatch"):
             validate_neural_prior_candidate_manifest(manifest)
 
-    def test_holdout_factory_uses_common_domain_and_inference_evidence(self) -> None:
+    def test_holdout_factory_uses_common_domain_and_inference_evidence(
+        self,
+    ) -> None:
         manifest = self.manifest()
         case = manifest.holdout_cases[0]
         plan = self.plan()
@@ -14004,6 +14010,20 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             digest=planned_input.grid_contract_digest,
             spatial_grid_digest=planned_input.grid_contract_digest,
             projected_displacement_xy=lambda value: value * 1000.0,
+            projected_offset_norm_value=lambda offset: DirectedPhysicalValue(
+                nominal=(
+                    (float(offset[0]) * 1000.0) ** 2 + (float(offset[1]) * 1000.0) ** 2
+                )
+                ** 0.5,
+                lower=(
+                    (float(offset[0]) * 1000.0) ** 2 + (float(offset[1]) * 1000.0) ** 2
+                )
+                ** 0.5,
+                upper=(
+                    (float(offset[0]) * 1000.0) ** 2 + (float(offset[1]) * 1000.0) ** 2
+                )
+                ** 0.5,
+            ),
         )
         data_identity = promotion_module.OperationalDataIdentity(
             radar_class="test",
@@ -14511,14 +14531,17 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             "observation_quality_weight_digest",
             "0" * 64,
         )
-        with patch.object(
-            promotion_module,
-            "_forecast_result_content_digest",
-            side_effect=(
-                case.candidate_forecast_digest,
-                case.parent_forecast_digest,
+        with (
+            patch.object(
+                promotion_module,
+                "_forecast_result_content_digest",
+                side_effect=(
+                    case.candidate_forecast_digest,
+                    case.parent_forecast_digest,
+                ),
             ),
-        ), self.assertRaisesRegex(ValueError, "holdout inputs disagree"):
+            self.assertRaisesRegex(ValueError, "holdout inputs disagree"),
+        ):
             promotion_module.PriorHoldoutEvaluation.from_forecasts(
                 manifest,
                 plan,
@@ -14550,14 +14573,17 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             "observation_std_dbz_digest",
             "0" * 64,
         )
-        with patch.object(
-            promotion_module,
-            "_forecast_result_content_digest",
-            side_effect=(
-                case.candidate_forecast_digest,
-                case.parent_forecast_digest,
+        with (
+            patch.object(
+                promotion_module,
+                "_forecast_result_content_digest",
+                side_effect=(
+                    case.candidate_forecast_digest,
+                    case.parent_forecast_digest,
+                ),
             ),
-        ), self.assertRaisesRegex(ValueError, "holdout inputs disagree"):
+            self.assertRaisesRegex(ValueError, "holdout inputs disagree"),
+        ):
             promotion_module.PriorHoldoutEvaluation.from_forecasts(
                 manifest,
                 plan,
@@ -14732,31 +14758,31 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 geometry,
             )
 
-    def test_cpu_only_scoring_generation_has_a_stable_backend_contract(self) -> None:
+    def test_cpu_only_scoring_generation_has_a_stable_backend_contract(
+        self,
+    ) -> None:
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_CONTRACT,
-            "neural-prior-scoring-replay-bundle-v26",
+            "neural-prior-scoring-replay-bundle-v27",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_METHOD,
-            "builtin-semantic-scoring-recomputation-v26",
+            "builtin-semantic-scoring-recomputation-v27",
         )
         self.assertEqual(
             promotion_module.SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD,
             {
-                "contract": "neural-prior-semantic-scoring-generation-v24",
-                "replay_contract": "neural-prior-scoring-replay-bundle-v26",
-                "replay_method": "builtin-semantic-scoring-recomputation-v26",
-                "case_contract": "neural-prior-semantic-scoring-case-v25",
+                "contract": "neural-prior-semantic-scoring-generation-v25",
+                "replay_contract": "neural-prior-scoring-replay-bundle-v27",
+                "replay_method": "builtin-semantic-scoring-recomputation-v27",
+                "case_contract": "neural-prior-semantic-scoring-case-v26",
                 "observation_mask_algorithm_digest": (
-                    OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST
+                    OBSERVATION_MASK_DERIVATION_ALGORITHM_V14_DIGEST
                 ),
                 "observation_error_algorithm_digest": (
-                    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
+                    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V15_DIGEST
                 ),
-                "verification_bundle_contract": (
-                    "radar-verification-bundle-v21"
-                ),
+                "verification_bundle_contract": ("radar-verification-bundle-v22"),
                 "product_type_policy": "exact-shipped-product-types-v1",
                 "forecast_integrity": "forecast-result-raw-content-validation-v1",
                 "prior_integrity": "runner-reproduced-prior-application-v1",
