@@ -4215,7 +4215,9 @@ def prepare_analysis(
             added_area = (
                 0.0
                 if grid_time_contract is None
-                else added_count * grid_time_contract.cell_area_m2 / 1.0e6
+                else added_count
+                * grid_time_contract.cell_area_value_m2.nominal
+                / 1.0e6
             )
             added_echo = float(
                 torch.sum(
@@ -4224,7 +4226,7 @@ def prepare_analysis(
                 * (
                     1.0
                     if grid_time_contract is None
-                    else grid_time_contract.cell_area_m2 / 1.0e6
+                    else grid_time_contract.cell_area_value_m2.upper / 1.0e6
                 )
             )
             if grid_time_contract is not None:
@@ -4404,13 +4406,11 @@ def _active_smoothness_graph(
     if grid_time_contract is None:
         physical_weight = reference.new_ones(left.numel())
     else:
-        assert grid_time_contract.pixel_to_projected_matrix_m is not None
-        (xx, xr), (yx, yr) = (
-            grid_time_contract.pixel_to_projected_matrix_m
-        )
-        cell_area = grid_time_contract.cell_area_m2
-        column_length_squared = xx * xx + yx * yx
-        row_length_squared = xr * xr + yr * yr
+        cell_area = grid_time_contract.cell_area_value_m2.nominal
+        column_length = grid_time_contract.projected_offset_norm_value((0, 1))
+        row_length = grid_time_contract.projected_offset_norm_value((1, 0))
+        column_length_squared = column_length.nominal**2
+        row_length_squared = row_length.nominal**2
         vertical_weight = column_length_squared / cell_area
         horizontal_weight = row_length_squared / cell_area
         physical_weight = torch.cat(

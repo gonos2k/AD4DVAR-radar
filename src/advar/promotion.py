@@ -76,6 +76,7 @@ from .sensitivity import (
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V12_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V13_DIGEST,
     OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST,
+    OBSERVATION_ERROR_DERIVATION_ALGORITHM_V15_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V3_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V5_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V6_DIGEST,
@@ -85,6 +86,7 @@ from .sensitivity import (
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V11_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V12_DIGEST,
     OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST,
+    OBSERVATION_MASK_DERIVATION_ALGORITHM_V14_DIGEST,
     SensitivityConfig,
     ObservationErrorDerivationArtifact,
     VerificationBundle,
@@ -286,19 +288,17 @@ TRAINING_NORMALIZATION_MASK_WEIGHT_POLICY_DIGEST = json_digest(
 
 
 SEMANTIC_SCORING_REPLAY_CONTRACT = CURRENT_SEMANTIC_SCORING_REPLAY_CONTRACT
-SEMANTIC_SCORING_REPLAY_METHOD = (
-    "builtin-semantic-scoring-recomputation-v26"
-)
+SEMANTIC_SCORING_REPLAY_METHOD = "builtin-semantic-scoring-recomputation-v27"
 SEMANTIC_SCORING_REPLAY_GENERATION_PAYLOAD: dict[str, str] = {
-    "contract": "neural-prior-semantic-scoring-generation-v24",
+    "contract": "neural-prior-semantic-scoring-generation-v25",
     "replay_contract": SEMANTIC_SCORING_REPLAY_CONTRACT,
     "replay_method": SEMANTIC_SCORING_REPLAY_METHOD,
-    "case_contract": "neural-prior-semantic-scoring-case-v25",
+    "case_contract": "neural-prior-semantic-scoring-case-v26",
     "observation_mask_algorithm_digest": (
-        OBSERVATION_MASK_DERIVATION_ALGORITHM_V13_DIGEST
+        OBSERVATION_MASK_DERIVATION_ALGORITHM_V14_DIGEST
     ),
     "observation_error_algorithm_digest": (
-        OBSERVATION_ERROR_DERIVATION_ALGORITHM_V14_DIGEST
+        OBSERVATION_ERROR_DERIVATION_ALGORITHM_V15_DIGEST
     ),
     "verification_bundle_contract": CURRENT_VERIFICATION_BUNDLE_CONTRACT,
     "product_type_policy": "exact-shipped-product-types-v1",
@@ -9728,6 +9728,35 @@ class LegacyNeuralPriorHoldoutPlanV35Audit:
 
 
 @dataclass(frozen=True)
+class LegacyNeuralPriorHoldoutPlanV36Audit:
+    """Pre-transcendental-safe v36 plan retained for byte audit only."""
+
+    plan_digest: str
+    payload_json: str
+    contract: str = "legacy-neural-prior-holdout-plan-audit-v36"
+    audit_digest: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        _validate_generic_legacy_digest_payload(
+            digest=self.plan_digest,
+            payload_json=self.payload_json,
+            digest_field="plan_digest",
+            original_contract="neural-prior-holdout-plan-v36",
+        )
+        object.__setattr__(
+            self,
+            "audit_digest",
+            json_digest(
+                {
+                    "contract": self.contract,
+                    "plan_digest": self.plan_digest,
+                    "payload_json": self.payload_json,
+                }
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class PromotionExperimentTrial:
     """One preregistered candidate/rule/classifier trial in a cohort."""
 
@@ -10072,12 +10101,10 @@ class NeuralPriorHoldoutPlan:
             )
         }
         if any(
-            item.contract != "verification-observation-error-plan-v15"
+            item.contract != "verification-observation-error-plan-v16"
             for item in self.verification_observation_error_plans
         ):
-            raise ValueError(
-                "current holdout requires observation-error plan v15"
-            )
+            raise ValueError("current holdout requires observation-error plan v16")
         if (
             len(retained_observation_error_plans)
             != len(self.verification_observation_error_plans)
@@ -16203,7 +16230,7 @@ class ScoringReplayCaseArtifact:
     ) -> str:
         return json_digest(
             {
-                "contract": "neural-prior-semantic-scoring-case-v25",
+                "contract": "neural-prior-semantic-scoring-case-v26",
                 "semantic_replay_generation_digest": (
                     SEMANTIC_SCORING_REPLAY_GENERATION_DIGEST
                 ),
@@ -18064,22 +18091,22 @@ class MetricSupportContract:
         ):
             raise ValueError("metric support requires the exact forecast grid")
         height, width = grid_shape
-        corner_indices = torch.tensor(
-            (
-                (0.0, 0.0),
-                (0.0, float(width - 1)),
-                (float(height - 1), 0.0),
-                (float(height - 1), float(width - 1)),
-            ),
-            dtype=torch.float64,
+        corner_indices = (
+            (0, 0),
+            (0, width - 1),
+            (height - 1, 0),
+            (height - 1, width - 1),
         )
-        projected_corners = torch.stack(
-            tuple(
-                grid.projected_displacement_xy(corner)
-                for corner in corner_indices
-            )
+        diagonal = max(
+            grid.projected_offset_norm_value(
+                (
+                    right[0] - left[0],
+                    right[1] - left[1],
+                )
+            ).upper
+            for left in corner_indices
+            for right in corner_indices
         )
-        diagonal = float(torch.max(torch.cdist(projected_corners, projected_corners)))
         return cls.for_metric(
             metric_name,
             minimum_dbz=run.config.min_dbz,
