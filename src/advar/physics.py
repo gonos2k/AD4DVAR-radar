@@ -154,11 +154,10 @@ def remap_fractions(
     displacement_yx: Tensor,
     cell: RemapCell,
 ) -> tuple[Tensor, Tensor]:
-    base = echo.new_tensor((cell.y, cell.x))
-    fractions = (
-        displacement_yx.to(dtype=echo.dtype, device=echo.device) - base
-    ).clamp(0.0, 1.0)
-    return fractions[0], fractions[1]
+    displacement = displacement_yx.to(dtype=echo.dtype, device=echo.device)
+    fraction_y = (displacement[0] - cell.y).clamp(0.0, 1.0)
+    fraction_x = (displacement[1] - cell.x).clamp(0.0, 1.0)
+    return fraction_y, fraction_x
 
 
 def shift_zero(echo: Tensor, dy: int, dx: int) -> Tensor:

@@ -99,3 +99,12 @@ or copied into the workspace.
 | State-advancing LIVE | NO-GO / OUT OF SCOPE | Operational capability remains intentionally empty. |
 | External publication | HOLD | External polygon/geodesy/beam/cohort evidence remains open. |
 | PR #147 merge | HOLD | PR #147 is OPEN and mergeable; local verification is complete, exact-head CI is pending, and merge is not authorized. |
+
+## 2026-08-30 supersession note
+
+PR #147은 실제로 merge commit
+`f44e7ef036e3a0eb5526944f2b32fbb79f3b856d`로 병합됐고 main push CI
+`33252793248`도 성공했다. 다만 위의 41/41 frozen-envelope closure는 실제
+historical artifact cold replay가 아니라 self-consistent metadata/probe coverage였다.
+PR #148은 그 보증 주장을 철회하고 fixture matrix, action wrapper와 lifecycle
+subprocess를 삭제한다. 이 기록은 당시 판정을 보존하지만 현재 권위로 사용하지 않는다.
