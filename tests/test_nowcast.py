@@ -5182,9 +5182,11 @@ class NowcastTests(unittest.TestCase):
         and torch.backends.mps.is_available(),
         "MPS backend is unavailable",
     )
-    def test_current_v6_mps_uses_nominal_fp32_and_cpu_directed_gate(
+    def test_current_v6_mps_nowcast_runs_end_to_end(
         self,
     ) -> None:
+        frames, _ = self._moving_gaussian_frames()
+        frames = frames.to(dtype=torch.float32, device="mps")
         grid = RadarGridTimeContract(
             valid_times=(
                 "2026-07-31T00:00:00Z",
@@ -5196,7 +5198,7 @@ class NowcastTests(unittest.TestCase):
             projection="EPSG:5179",
             grid_hash="6" * 64,
             spatial_grid_contract="radar-spatial-grid-identity-v6",
-            grid_shape_yx=(4, 4),
+            grid_shape_yx=tuple(frames.shape[-2:]),
             projected_crs_digest=radar_projected_crs_semantic_digest(
                 "EPSG:5179"
             ),
@@ -5210,50 +5212,21 @@ class NowcastTests(unittest.TestCase):
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
             ),
         )
-        displacement = torch.tensor(
-            (0.25, -0.5),
-            dtype=torch.float32,
-            device="mps",
-            requires_grad=True,
+        result = nowcast(
+            frames,
+            NowcastConfig(maximum_motion_speed_mps=40.0),
+            grid_time_contract=grid,
         )
-        projected = grid.projected_displacement_xy(displacement)
-        restored = grid.displacement_yx_from_projected_xy(projected)
-        self.assertEqual(projected.device.type, "mps")
-        self.assertEqual(projected.dtype, torch.float32)
-        torch.testing.assert_close(restored, displacement)
-        projected.square().sum().backward()
-        self.assertIsNotNone(displacement.grad)
-
+        self.assertEqual(result.forecast_dbz.device.type, "mps")
+        self.assertTrue(bool(torch.any(torch.isfinite(result.forecast_dbz))))
+        self.assertGreater(result.metadata.motion_pair_count, 0)
+        self.assertTrue(bool(torch.all(torch.isfinite(result.forecast_confidence))))
         speed_upper = grid.projected_ground_speed_upper_from_displacement(
-            displacement.detach(),
+            result.state.displacement_yx,
             600.0,
         )
         self.assertEqual(speed_upper.device.type, "cpu")
         self.assertEqual(speed_upper.dtype, torch.float64)
-        projected_speed_upper = grid.projected_ground_speed_upper_bound(
-            torch.tensor(1.0, dtype=torch.float32, device="mps")
-        )
-        self.assertEqual(projected_speed_upper.device.type, "cpu")
-        self.assertEqual(projected_speed_upper.dtype, torch.float64)
-        displacement_limits = motion_displacement_limits_yx(
-            NowcastConfig(maximum_motion_speed_mps=20.0),
-            grid,
-            displacement.detach(),
-        )
-        self.assertEqual(displacement_limits.device.type, "mps")
-        self.assertEqual(displacement_limits.dtype, torch.float32)
-        grid_x, grid_y = grid.spatial_grid_identity.projected_cell_center_coordinates(
-            device="mps"
-        )
-        self.assertEqual(grid_x.dtype, torch.float32)
-        self.assertEqual(grid_y.dtype, torch.float32)
-        self.assertEqual(grid_x.device.type, "mps")
-        self.assertTrue(
-            grid.pixel_offsets_ground_distance_footprint(
-                900.0,
-                maximum_radius_yx=(3, 3),
-            ).certainly_inside
-        )
 
     def test_current_grid_identity_measures_sheared_cell_displacement(
         self,

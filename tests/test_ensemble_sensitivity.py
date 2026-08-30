@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import torch
 
-from advar import (
+from advar.ensemble_sensitivity import (
     EnsembleFSOStatistics,
     PrecisionOperatorArtifact,
     PrecisionWeightedInnovationEvidence,

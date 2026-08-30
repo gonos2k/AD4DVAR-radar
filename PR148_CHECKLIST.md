@@ -1,5 +1,9 @@
 # PR #148 — 실행 경로 우선 단순화 체크리스트
 
+Historical pre-merge checklist only. Final authority: PR #148 metadata,
+merge commit `21c7b64f6bc093757056523e6af5fe1e46d80362`, and exact-head CI
+`33261435655`.
+
 ## 권위
 
 - 기준 main/merge: `f44e7ef036e3a0eb5526944f2b32fbb79f3b856d`
