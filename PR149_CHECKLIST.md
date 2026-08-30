@@ -67,7 +67,7 @@
 | 범위 | 판정 |
 |---|---|
 | CPU P0/P1 offline path | 기존 가정 아래 GO |
-| MPS current-v6 P0 | end-to-end native 실행 전 EVIDENCE-HOLD |
+| MPS current-v6 P0 | native end-to-end CODE/RUN PASS |
 | MPS full P1 | NO-GO |
 | Multi-radar confirmatory verification/FSO/FSOI | HOLD — 실제 cohort 필요 |
 | External publication | HOLD |
