@@ -31,7 +31,7 @@ jobs:
           python -m pytest -q
           tests/test_pcg.py::PCGTests::test_mps_solve_does_not_require_float64
           tests/test_pcg.py::PCGTests::test_mps_nontrivial_spd_matches_cpu_float64_oracle
-          tests/test_nowcast.py::NowcastTests::test_current_v6_mps_uses_nominal_fp32_and_cpu_directed_gate
+          tests/test_nowcast.py::NowcastTests::test_current_v6_mps_nowcast_runs_end_to_end
           tests/test_sensitivity.py::VariationalFSOTests::test_current_v6_mps_physical_psr_fss_and_centroid_paths
           tests/test_sensitivity.py::VariationalFSOTests::test_current_source_selection_declares_cpu_binary64_boundary
       - name: Run measured CPU and MPS certification

@@ -10088,9 +10088,29 @@ def _forecast_velocity_uncertainty_mps(
     )
     disagreement = metadata.motion_disagreement_mps
     if bool(torch.isfinite(disagreement)):
+        disagreement_upper = (
+            0.5
+            * disagreement.detach().to(
+                device="cpu",
+                dtype=torch.float64,
+            ).clamp_min(0.0)
+        )
+        if uncertainty.dtype is torch.float32:
+            cast_upper = disagreement_upper.to(dtype=torch.float32)
+            disagreement_upper = torch.where(
+                cast_upper.to(dtype=torch.float64) < disagreement_upper,
+                torch.nextafter(
+                    cast_upper,
+                    torch.full_like(cast_upper, torch.inf),
+                ),
+                cast_upper,
+            )
         uncertainty = torch.maximum(
             uncertainty,
-            0.5 * disagreement.clamp_min(0.0),
+            disagreement_upper.to(
+                dtype=uncertainty.dtype,
+                device=uncertainty.device,
+            ),
         )
     return uncertainty * _dynamics_evidence_uncertainty_multiplier(
         state,

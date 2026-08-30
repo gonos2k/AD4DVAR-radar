@@ -15,7 +15,7 @@ from advar._contract_registry import (  # noqa: E402
     current_contract,
     render_contract_capability_table,
 )
-from advar import promotion as promotion_module  # noqa: E402
+import advar.promotion as promotion_module  # noqa: E402
 from advar.nowcast import RadarMetricDomainEvidence  # noqa: E402
 from advar.promotion import (  # noqa: E402
     DeployedNeuralPriorPolicy,

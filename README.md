@@ -13,9 +13,11 @@ state-advancing LIVE는 승인하지 않는다.
 현재 세대와 직전 migration/read 세대만 다루며 장기 archive 전체를 대표하지 않는다.
 `∅`는 해당 세대가 없다는 명시적 계약이며, 특히 scientific promotion evidence는
 운영 권한으로 해석되지 않는다.
+`Code-supported scientific path`는 현재 코드가 해당 타입·세대를 구성하고 읽을 수
+있다는 뜻만 가지며 confirmatory, publication 또는 외부 과학 승인 권한을 뜻하지 않는다.
 
 <!-- CONTRACT_CAPABILITY_TABLE:START -->
-| Contract family | Current | Predecessor | Issuable | Audit-readable | Scientific | Operational |
+| Contract family | Current | Predecessor | Issuable | Audit-readable | Code-supported scientific path | Operational |
 |---|---|---|---|---|---|---|
 | radar_metric_domain_evidence | radar-metric-domain-evidence-v4 | radar-metric-domain-evidence-v3 | radar-metric-domain-evidence-v4 | radar-metric-domain-evidence-v3, radar-metric-domain-evidence-v4 | radar-metric-domain-evidence-v4 | ∅ |
 | neural_prior_promotion_evidence | neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v31 | neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v31, neural-prior-promotion-evidence-v32 | neural-prior-promotion-evidence-v32 | ∅ |
@@ -290,11 +292,11 @@ condition number가 `1000`보다 크면 거의 평행하거나 지나치게 왜�
 forecast-run artifact를 저장한다.
 
 ```python
-from advar import (
-    compute_sensitivity_snapshot_from_run,
+from advar.run_artifact import (
     load_forecast_run,
     save_forecast_run,
 )
+from advar.sensitivity import compute_sensitivity_snapshot_from_run
 
 save_forecast_run(result, "forecast-run.npz")
 
@@ -408,7 +410,7 @@ canonicalize한다. 따라서 같은 below-detection 사건을 -10 dBZ 또는 4.
 화소의 배경 coverage를 요구하며 탐지한계 바로 아래로 상한을 둔다.
 
 ```python
-from advar import (
+from advar.sensitivity import (
     SensitivityConfig,
     VerificationBundle,
     compute_variational_fso,
@@ -532,7 +534,7 @@ confidence를 재계산하지 않고 발행된 값을 상수로 고정한다. �
 digest, lead별 합과 격자면적 대비 유효분율은 FSO 결과에 보존된다.
 
 ```python
-from advar import (
+from advar.sensitivity import (
     VariationalObservationPerturbation,
     compute_variational_fsoi,
 )
@@ -588,7 +590,7 @@ support, common-bias whitener, robust P1, posterior와 발행 forecast를 모두
 계산한다.
 
 ```python
-from advar import (
+from advar.sensitivity import (
     ObservationRemovalConfig,
     compute_variational_observation_removal_impact,
 )
@@ -619,7 +621,7 @@ Root-owned trust store는 재사용 가능한 승인 토큰이 아니라 정확�
 `operator_digest`를 `approved_operator_digests`에 기록한다.
 
 ```python
-from advar import (
+from advar.ensemble_sensitivity import (
     EnsembleFSOStatistics,
     PrecisionOperatorArtifact,
     compute_ensemble_fso,
@@ -668,7 +670,7 @@ operator가 필요하며 현재 dense 경로는 예산 안의 연구규모에만
 대격자 delayed adjoint는 분석 solver 설정과 분리된 실행계약으로 제한한다.
 
 ```python
-from advar import VariationalAdjointConfig
+from advar.sensitivity import VariationalAdjointConfig
 
 fso = compute_variational_fso(
     forecast,
@@ -726,7 +728,7 @@ verification으로 만든 결과를 과거 행동처럼 기록할 수 없으며,
 deadline 전에 결정과 실행 receipt가 각각 append-only ledger에 기록돼야 한다.
 
 ```python
-from advar import (
+from advar.intervention import (
     InterventionActionGenerator,
     InterventionInputContext,
     OperatorActionApproval,
@@ -875,7 +877,7 @@ candidate/parent paired forecast로 평가한다. 서로 단위가 다른 foreca
 단일악화를 모두 통과해야 한다.
 
 ```python
-from advar import (
+from advar.promotion import (
     NeuralPriorHoldoutPlanPolicy,
     NeuralPriorPromotionPolicy,
     PromotionMetricScale,
@@ -1447,7 +1449,7 @@ read-only audit 타입으로만 적재된다. Migration 때 추가된 UCB 컬럼
 valid mask까지 다시 만든 발행영역 변화는 별도 연구 진단으로 확인한다.
 
 ```python
-from advar import validate_variational_fsoi_issuance_impact
+from advar.sensitivity import validate_variational_fsoi_issuance_impact
 
 issuance = validate_variational_fsoi_issuance_impact(
     forecast,
@@ -1605,7 +1607,10 @@ product·결과 byte budget도 같은 실행에서 검사하며, grid shape와 �
 최종 선형화는 안전한 NPZ artifact로 보존할 수 있다.
 
 ```python
-from advar import load_p1_linearization, save_p1_linearization
+from advar.linearization_artifact import (
+    load_p1_linearization,
+    save_p1_linearization,
+)
 
 save_p1_linearization(analysis, "p1-linearization.npz")
 restarted_analysis = load_p1_linearization("p1-linearization.npz")
@@ -1643,8 +1648,8 @@ metric score와 decision statistic처럼 단위가 다른 허용오차를 분리
 일치해야 한다.
 
 `.github/workflows/mps-certification.yml`은 `PYTORCH_ENABLE_MPS_FALLBACK=0`인 self-hosted
-Apple Silicon runner에서 비대각 SPD PCG, current projected-grid v6의 FP32 nominal
-forward/inverse affine와 CPU binary64 directed speed authority, P1
+Apple Silicon runner에서 비대각 SPD PCG, current projected-grid v6의 3-frame P0
+end-to-end nowcast와 CPU binary64 directed speed authority, P1
 analysis/stationarity/forecast, score와 decision statistic, nonfinite fallback,
 deterministic repeat를 실제 CPU/MPS로
 실행한다. 성공한 실행은 policy, signed evidence, raw scalar JSON, tensor NPZ와 파일
@@ -1811,7 +1816,7 @@ map을 전달한다. `-1`은 common-bias mode에서 제외되고 0 이상의 같
 임의의 label 재번호화는 같은 digest를 만든다.
 
 ```python
-from advar import (
+from advar.variational import (
     AnalysisConfig,
     observation_common_bias_group_map_digest,
     variational_nowcast,
@@ -1845,7 +1850,7 @@ artifact에 포함된다. CLI에서는
 국지 marginal 상한으로 유지된다. 최대 mode 수는 64다.
 
 ```python
-from advar import observation_common_bias_mode_weights_digest
+from advar.variational import observation_common_bias_mode_weights_digest
 
 mode_digest = observation_common_bias_mode_weights_digest(mode_weights)
 forecast, analysis = variational_nowcast(
@@ -1872,7 +1877,7 @@ weights와 작은 correction matrix만 보존한다. `[K,H,W]` 입력도 세 시
 
 ```python
 import torch
-from advar import estimate_common_bias_resources
+from advar.variational import estimate_common_bias_resources
 
 estimate = estimate_common_bias_resources(
     (64, 2048, 2048),
@@ -2415,13 +2420,13 @@ metric, grid와 baseline model/run digest를 묶는 계약이 추가되기 전�
 ```python
 from datetime import datetime, timezone
 
-from advar import (
+from advar.ledger import (
     EpisodeLedger,
     ModelContract,
     SensitivityEpisode,
-    compute_sensitivity_snapshot,
-    nowcast,
 )
+from advar.nowcast import nowcast
+from advar.sensitivity import compute_sensitivity_snapshot
 from advar.physics import FORECAST_INTEGRATOR_VERSION
 
 result = nowcast(

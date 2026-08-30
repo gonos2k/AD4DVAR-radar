@@ -12,14 +12,14 @@ import time
 import numpy as np
 import torch
 
-from advar import (
+from advar.sensitivity import (
     SensitivityConfig,
     VariationalAdjointConfig,
     compute_variational_fso,
-    load_forecast_run,
-    load_p1_linearization,
 )
 from advar._digest import json_digest
+from advar.linearization_artifact import load_p1_linearization
+from advar.run_artifact import load_forecast_run
 
 
 def _positive_minutes(value: str) -> tuple[int, ...]:

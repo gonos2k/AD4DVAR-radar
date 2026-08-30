@@ -173,7 +173,7 @@ def render_contract_capability_table() -> str:
 
     header = (
         "| Contract family | Current | Predecessor | Issuable | Audit-readable "
-        "| Scientific | Operational |\n"
+        "| Code-supported scientific path | Operational |\n"
         "|---|---|---|---|---|---|---|"
     )
     rows = []

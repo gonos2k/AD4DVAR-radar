@@ -13,8 +13,8 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from advar import cli  # noqa: E402
-from advar import load_forecast_run  # noqa: E402
+import advar.cli as cli  # noqa: E402
+from advar.run_artifact import load_forecast_run  # noqa: E402
 from advar.calibration import (  # noqa: E402
     CalibrationMetric,
     CalibrationRegime,
