@@ -4,11 +4,11 @@
 
 ## 상태
 
-- [ ] R150-001 P2-PROVENANCE — exact-SHA native MPS workflow 실행과 run ID 기록
-  - run `33444541302`, source `758b7f5008f1776738520ea47a83a5d80bc658ce`
-  - ephemeral `advar-mps` runner로 실행했으나 `actions/setup-python`이
-    요구하는 `/Users/runner/hostedtoolcache` 권한 부재로 pytest 전 실패
-  - 완료 증거: current-v6 pytest step 성공과 artifact digest까지 확인
+- [x] R150-001 P2-PROVENANCE — exact-SHA native MPS workflow 실행과 run ID 기록
+  - run `33452644964`, source `d19ab241e3e8d994e133e30ff59499f928221cb3`
+  - `Run native MPS regression oracles`: SUCCESS
+  - signed artifact: 없음. 별도 measured P1 certification은 deterministic MPS
+    연산 미지원으로 실패했으며 기존 `MPS full P1: NO-GO` 판정을 유지한다.
 - [x] R150-002 P2-NUMERICAL — 기존 MPS E2E 시험의 수치 assertion 보강
   - 완료 증거: 알려진 displacement, CPU parity, valid domain, growth path,
     directed cast 경계가 기존 테스트에서 검증됨
@@ -19,8 +19,8 @@
 
 | 항목 | 상태 | 증거 |
 | --- | --- | --- |
-| R150-001 | IN PROGRESS | project-local `.venv` workflow 수정 완료; exact-SHA 재실행 대기 |
-| R150-002 | CODE-DONE | `tests.test_nowcast`, 167개 PASS; native MPS 실행은 R150-001에서 확인 |
+| R150-001 | P0 DONE / P1 HOLD | exact-SHA native MPS pytest SUCCESS; P1 artifact 없음 |
+| R150-002 | DONE | `tests.test_nowcast`, 167개 PASS; native MPS 실행은 R150-001에서 확인 |
 | R150-003 | DONE | README `0.114 import migration` 추가 |
 
 ## 로컬 검증
