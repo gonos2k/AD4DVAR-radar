@@ -12,7 +12,7 @@
 - [x] R150-002 P2-NUMERICAL — 기존 MPS E2E 시험의 수치 assertion 보강
   - 완료 증거: 알려진 displacement, CPU parity, valid domain, growth path,
     directed cast 경계가 기존 테스트에서 검증됨
-- [ ] R150-003 P3-DISTRIBUTION — `0.114.0` import migration README 안내
+- [x] R150-003 P3-DISTRIBUTION — `0.114.0` import migration README 안내
   - 완료 증거: package root API와 owning module import 예시가 README에 명시됨
 
 ## 판정 기록

@@ -2880,21 +2880,16 @@ class NowcastTests(unittest.TestCase):
             observed_metadata(state),
             motion_disagreement_mps=2.0 * exact_upper,
         )
-        latest = linear_to_dbz(state.echo_linear, config)
-        result = forecast_result_from_state(
+        uncertainty = import_module(
+            "advar.nowcast"
+        )._forecast_velocity_uncertainty_mps(
             state,
             metadata,
             config,
-            run=ForecastRunContract.from_inputs(
-                config,
-                torch.stack((latest, latest, latest)),
-                torch.ones(3, 8, 8, dtype=torch.bool),
-                None,
-            ),
         )
 
         self.assertGreaterEqual(
-            float(result.forecast_velocity_uncertainty_mps),
+            float(uncertainty),
             float(exact_upper),
         )
 
@@ -5245,57 +5240,67 @@ class NowcastTests(unittest.TestCase):
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
             ),
         )
+        config = NowcastConfig(maximum_motion_speed_mps=40.0)
         cpu_result = nowcast(
             frames_cpu.to(dtype=torch.float32),
-            NowcastConfig(maximum_motion_speed_mps=40.0),
+            config,
             grid_time_contract=grid,
         )
-        result = nowcast(
+        mps_result = nowcast(
             frames_cpu.to(dtype=torch.float32, device="mps"),
-            NowcastConfig(maximum_motion_speed_mps=40.0),
+            config,
             grid_time_contract=grid,
         )
-        self.assertEqual(result.forecast_dbz.device.type, "mps")
-        self.assertTrue(bool(torch.any(torch.isfinite(result.forecast_dbz))))
-        self.assertGreater(result.metadata.motion_pair_count, 0)
-        self.assertGreater(result.metadata.growth_pair_count, 0)
-        self.assertFalse(result.metadata.motion_pair_conflict)
-        self.assertFalse(result.metadata.growth_pair_conflict)
+        self.assertEqual(mps_result.forecast_dbz.device.type, "mps")
+        self.assertGreater(mps_result.metadata.motion_pair_count, 0)
+        self.assertGreater(mps_result.metadata.growth_pair_count, 0)
+        self.assertEqual(
+            mps_result.metadata.motion_pair_selection,
+            cpu_result.metadata.motion_pair_selection,
+        )
+        self.assertEqual(
+            mps_result.metadata.growth_pair_selection,
+            cpu_result.metadata.growth_pair_selection,
+        )
+        self.assertFalse(mps_result.metadata.motion_pair_conflict)
+        self.assertFalse(mps_result.metadata.growth_pair_conflict)
         torch.testing.assert_close(
-            result.state.displacement_yx.cpu(),
+            mps_result.state.displacement_yx.cpu(),
             expected_displacement.to(torch.float32),
             atol=0.2,
             rtol=0.0,
         )
         torch.testing.assert_close(
-            result.state.log_growth_per_step.cpu(),
+            mps_result.state.log_growth_per_step.cpu(),
             torch.zeros((), dtype=torch.float32),
             atol=1.0e-3,
             rtol=0.0,
         )
         torch.testing.assert_close(
-            result.state.displacement_yx.cpu(),
+            mps_result.state.displacement_yx.cpu(),
             cpu_result.state.displacement_yx,
             atol=0.05,
             rtol=0.0,
         )
-        torch.testing.assert_close(
-            result.valid_mask.cpu(),
-            cpu_result.valid_mask,
-            atol=0,
-            rtol=0,
+        self.assertTrue(
+            torch.equal(mps_result.valid_mask.cpu(), cpu_result.valid_mask)
         )
-        self.assertTrue(bool(torch.all(torch.isfinite(result.forecast_confidence))))
-        valid = result.valid_mask.cpu()
+        torch.testing.assert_close(
+            mps_result.forecast_confidence.cpu(),
+            cpu_result.forecast_confidence,
+            atol=2.0e-4,
+            rtol=5.0e-4,
+        )
+        valid = cpu_result.valid_mask
         for lead in (0, 2, -1):
             torch.testing.assert_close(
-                result.forecast_dbz[lead].cpu()[valid[lead]],
+                mps_result.forecast_dbz[lead].cpu()[valid[lead]],
                 cpu_result.forecast_dbz[lead][valid[lead]],
                 atol=5.0e-3,
                 rtol=1.0e-4,
             )
         speed_upper = grid.projected_ground_speed_upper_from_displacement(
-            result.state.displacement_yx,
+            mps_result.state.displacement_yx,
             600.0,
         )
         self.assertEqual(speed_upper.device.type, "cpu")
