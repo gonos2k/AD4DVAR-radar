@@ -2864,6 +2864,40 @@ class NowcastTests(unittest.TestCase):
             state.echo_linear.new_tensor([1800.0]),
         )
 
+    def test_float32_velocity_uncertainty_rounds_outward(self) -> None:
+        config = replace(
+            self.config,
+            horizon_minutes=10,
+            forecast_velocity_uncertainty_mps=1.0e-12,
+        )
+        state = RadarState(
+            echo_linear=torch.ones(8, 8, dtype=torch.float32),
+            displacement_yx=torch.zeros(2, dtype=torch.float32),
+            log_growth_per_step=torch.zeros((), dtype=torch.float32),
+        )
+        exact_upper = torch.tensor(0.50000001, dtype=torch.float64)
+        metadata = replace(
+            observed_metadata(state),
+            motion_disagreement_mps=2.0 * exact_upper,
+        )
+        latest = linear_to_dbz(state.echo_linear, config)
+        result = forecast_result_from_state(
+            state,
+            metadata,
+            config,
+            run=ForecastRunContract.from_inputs(
+                config,
+                torch.stack((latest, latest, latest)),
+                torch.ones(3, 8, 8, dtype=torch.bool),
+                None,
+            ),
+        )
+
+        self.assertGreaterEqual(
+            float(result.forecast_velocity_uncertainty_mps),
+            float(exact_upper),
+        )
+
     def test_growth_disagreement_raises_live_growth_uncertainty(self) -> None:
         config = replace(
             self.config,
@@ -5185,8 +5219,7 @@ class NowcastTests(unittest.TestCase):
     def test_current_v6_mps_nowcast_runs_end_to_end(
         self,
     ) -> None:
-        frames, _ = self._moving_gaussian_frames()
-        frames = frames.to(dtype=torch.float32, device="mps")
+        frames_cpu, expected_displacement = self._moving_gaussian_frames()
         grid = RadarGridTimeContract(
             valid_times=(
                 "2026-07-31T00:00:00Z",
@@ -5198,7 +5231,7 @@ class NowcastTests(unittest.TestCase):
             projection="EPSG:5179",
             grid_hash="6" * 64,
             spatial_grid_contract="radar-spatial-grid-identity-v6",
-            grid_shape_yx=tuple(frames.shape[-2:]),
+            grid_shape_yx=tuple(frames_cpu.shape[-2:]),
             projected_crs_digest=radar_projected_crs_semantic_digest(
                 "EPSG:5179"
             ),
@@ -5212,15 +5245,55 @@ class NowcastTests(unittest.TestCase):
                 RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION
             ),
         )
+        cpu_result = nowcast(
+            frames_cpu.to(dtype=torch.float32),
+            NowcastConfig(maximum_motion_speed_mps=40.0),
+            grid_time_contract=grid,
+        )
         result = nowcast(
-            frames,
+            frames_cpu.to(dtype=torch.float32, device="mps"),
             NowcastConfig(maximum_motion_speed_mps=40.0),
             grid_time_contract=grid,
         )
         self.assertEqual(result.forecast_dbz.device.type, "mps")
         self.assertTrue(bool(torch.any(torch.isfinite(result.forecast_dbz))))
         self.assertGreater(result.metadata.motion_pair_count, 0)
+        self.assertGreater(result.metadata.growth_pair_count, 0)
+        self.assertFalse(result.metadata.motion_pair_conflict)
+        self.assertFalse(result.metadata.growth_pair_conflict)
+        torch.testing.assert_close(
+            result.state.displacement_yx.cpu(),
+            expected_displacement.to(torch.float32),
+            atol=0.2,
+            rtol=0.0,
+        )
+        torch.testing.assert_close(
+            result.state.log_growth_per_step.cpu(),
+            torch.zeros((), dtype=torch.float32),
+            atol=1.0e-3,
+            rtol=0.0,
+        )
+        torch.testing.assert_close(
+            result.state.displacement_yx.cpu(),
+            cpu_result.state.displacement_yx,
+            atol=0.05,
+            rtol=0.0,
+        )
+        torch.testing.assert_close(
+            result.valid_mask.cpu(),
+            cpu_result.valid_mask,
+            atol=0,
+            rtol=0,
+        )
         self.assertTrue(bool(torch.all(torch.isfinite(result.forecast_confidence))))
+        valid = result.valid_mask.cpu()
+        for lead in (0, 2, -1):
+            torch.testing.assert_close(
+                result.forecast_dbz[lead].cpu()[valid[lead]],
+                cpu_result.forecast_dbz[lead][valid[lead]],
+                atol=5.0e-3,
+                rtol=1.0e-4,
+            )
         speed_upper = grid.projected_ground_speed_upper_from_displacement(
             result.state.displacement_yx,
             600.0,

@@ -12,23 +12,22 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
-        with:
-          python-version: "3.12"
       - name: Install source
-        run: python -m pip install -e . pytest==9.1.1
+        run: |
+          python3.12 -m venv --clear .venv
+          .venv/bin/python -m pip install -e . pytest==9.1.1
       - name: Verify native MPS availability
         env:
           PYTORCH_ENABLE_MPS_FALLBACK: "0"
         run: >-
-          python -c
+          .venv/bin/python -c
           "import torch; assert torch.backends.mps.is_available();
           assert torch.backends.mps.is_built()"
       - name: Run native MPS regression oracles
         env:
           PYTORCH_ENABLE_MPS_FALLBACK: "0"
         run: >-
-          python -m pytest -q
+          .venv/bin/python -m pytest -q
           tests/test_pcg.py::PCGTests::test_mps_solve_does_not_require_float64
           tests/test_pcg.py::PCGTests::test_mps_nontrivial_spd_matches_cpu_float64_oracle
           tests/test_nowcast.py::NowcastTests::test_current_v6_mps_nowcast_runs_end_to_end
@@ -39,7 +38,7 @@ jobs:
           ADVAR_MPS_CERTIFICATION_PRIVATE_KEY_HEX: ${{ secrets.ADVAR_MPS_CERTIFICATION_PRIVATE_KEY_HEX }}
           PYTORCH_ENABLE_MPS_FALLBACK: "0"
         run: >-
-          advar-mps-certify
+          .venv/bin/advar-mps-certify
           --output-dir mps-certification-artifact
           --runner-id "${{ runner.name }}"
       - name: Upload signed certification evidence
@@ -52,5 +51,5 @@ jobs:
           retention-days: 90
       - name: Report certification artifact
         run: |
-          echo "MPS evidence digest: $(python -c 'import json; print(json.load(open("mps-certification-artifact/evidence.json"))["evidence_digest"])')" >> "$GITHUB_STEP_SUMMARY"
+          echo "MPS evidence digest: $(.venv/bin/python -c 'import json; print(json.load(open("mps-certification-artifact/evidence.json"))["evidence_digest"])')" >> "$GITHUB_STEP_SUMMARY"
           echo "GitHub artifact digest: ${{ steps.upload.outputs.artifact-digest }}" >> "$GITHUB_STEP_SUMMARY"
