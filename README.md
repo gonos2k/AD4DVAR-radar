@@ -97,6 +97,17 @@ python3 -m pip install -e .
 python3 -m unittest discover -s tests -v
 ```
 
+### 0.114 import migration
+
+Package root는 P0/P1 핵심 API만 공개한다. `SensitivityConfig`와
+`VerificationBundle` 같은 sensitivity 타입, replay·ledger·promotion·deployment
+타입은 각 `advar.<owning_module>`에서 직접 import해야 한다.
+
+```python
+from advar.sensitivity import SensitivityConfig, VerificationBundle
+from advar.run_artifact import load_forecast_run
+```
+
 재현 가능한 연구 패키지와 필수 CI는 일반 resolver 설치를 사용하지 않는다. Linux x86-64 CPU용
 Python 3.10/3.12 runtime closure와 test/build closure를 각각
 `requirements/*-linux.lock`에 exact version과 distribution SHA-256으로 보존한다.
