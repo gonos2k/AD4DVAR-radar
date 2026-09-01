@@ -5250,27 +5250,18 @@ class NowcastTests(unittest.TestCase):
             config,
             grid_time_contract=grid,
         )
-        cpu_metadata = cpu_result.metadata
         mps_metadata = mps_result.metadata
 
         self.assertEqual(mps_result.forecast_dbz.device.type, "mps")
-        self.assertGreater(mps_metadata.motion_pair_count, 0)
-        self.assertGreater(mps_metadata.growth_pair_count, 0)
-        self.assertEqual(
-            mps_metadata.motion_pair_count,
-            cpu_metadata.motion_pair_count,
-        )
-        self.assertEqual(
-            mps_metadata.growth_pair_count,
-            cpu_metadata.growth_pair_count,
-        )
+        self.assertEqual(mps_metadata.motion_pair_count, 2)
+        self.assertEqual(mps_metadata.growth_pair_count, 2)
         self.assertEqual(
             mps_metadata.motion_pair_selection,
-            cpu_metadata.motion_pair_selection,
+            TendencyPairSelection.BLENDED,
         )
         self.assertEqual(
             mps_metadata.growth_pair_selection,
-            cpu_metadata.growth_pair_selection,
+            TendencyPairSelection.BLENDED,
         )
         self.assertFalse(mps_metadata.motion_pair_conflict)
         self.assertFalse(mps_metadata.growth_pair_conflict)
