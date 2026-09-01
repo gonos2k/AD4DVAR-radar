@@ -1,7 +1,7 @@
 # PR150 follow-up checklist
 
 - [x] R150-001 P2-PROVENANCE — exact-SHA native MPS workflow 실행과 run ID 기록
-  - run `33453174306`, source `f095a497fa2b41bdf2f4d43a8c1bb8d3fb106472`
+  - run `33453510576`, source `2ba005843564d5f497b3949e58e27b5dc854024e`
   - `Run native MPS regression oracles`: SUCCESS
   - signed artifact: 없음. 별도 measured P1 certification은 deterministic MPS
     연산 미지원으로 실패했으며 기존 `MPS full P1: NO-GO` 판정을 유지한다.
