@@ -1658,17 +1658,13 @@ metric score와 decision statistic처럼 단위가 다른 허용오차를 분리
 보존하며, active source·runner·exact MPS runtime 및 Ed25519 runner signature가 모두
 일치해야 한다.
 
-`.github/workflows/mps-certification.yml`은 `PYTORCH_ENABLE_MPS_FALLBACK=0`인 self-hosted
-Apple Silicon runner에서 비대각 SPD PCG, current projected-grid v6의 3-frame P0
-end-to-end nowcast와 CPU binary64 directed speed authority, P1
-analysis/stationarity/forecast, score와 decision statistic, nonfinite fallback,
-deterministic repeat를 실제 CPU/MPS로
-실행한다. 성공한 실행은 policy, signed evidence, raw scalar JSON, tensor NPZ와 파일
-checksum manifest를 GitHub artifact로 업로드한다. Workflow artifact가 생성됐다는
-사실만으로 배포가 승인되지는 않으며, 운영 `DeployedNeuralPriorPolicy`가 검토한 두
-digest를 명시해야 MPS 진입점이 열린다. Self-hosted runner에는 raw Ed25519 private
-key를 담은 `ADVAR_MPS_CERTIFICATION_PRIVATE_KEY_HEX` secret이 필요하며, MPS fallback은
-비활성화된다.
+`.github/workflows/mps-certification.yml`의 `MPS P0 regression`은
+`PYTORCH_ENABLE_MPS_FALLBACK=0`인 self-hosted Apple Silicon runner에서 native MPS
+availability와 다섯 regression oracle을 실행한다. 여기에는 비대각 SPD PCG,
+current projected-grid v6의 3-frame P0 end-to-end nowcast, CPU binary64 speed
+authority 및 current source-selection 경계 검사가 포함된다. 이 workflow는 P1
+인증·서명·artifact를 생성하지 않으며 signing secret을 요구하지 않는다. Full P1
+MPS는 계속 NO-GO다.
 Current verification/FSO scoring은 tensor-level float64 evidence contract 때문에 계속
 CPU-only다. MPS workflow는 이 경계를 숨기지 않고 current source-selection 요청이
 전용 CPU-only 오류로 거부되는지도 검사한다.

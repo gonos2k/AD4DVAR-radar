@@ -2879,6 +2879,11 @@ class NowcastTests(unittest.TestCase):
         metadata = replace(
             observed_metadata(state),
             motion_disagreement_mps=2.0 * exact_upper,
+            motion_pair_count=2,
+            minimum_phase_correlation_psr=torch.tensor(
+                32.0,
+                dtype=torch.float32,
+            ),
         )
         nowcast_module = import_module("advar.nowcast")
         uncertainty = nowcast_module._forecast_velocity_uncertainty_mps(
@@ -2887,10 +2892,11 @@ class NowcastTests(unittest.TestCase):
             config,
         )
 
-        self.assertGreaterEqual(
-            float(uncertainty),
-            float(exact_upper),
+        expected = torch.nextafter(
+            torch.tensor(0.5, dtype=torch.float32),
+            torch.tensor(torch.inf, dtype=torch.float32),
         )
+        self.assertEqual(uncertainty, expected)
 
     def test_growth_disagreement_raises_live_growth_uncertainty(self) -> None:
         config = replace(
@@ -5294,6 +5300,7 @@ class NowcastTests(unittest.TestCase):
         )
         valid = cpu_result.valid_mask
         for lead in (0, 2, -1):
+            self.assertGreater(int(torch.count_nonzero(valid[lead])), 0)
             torch.testing.assert_close(
                 mps_result.forecast_dbz[lead].cpu()[valid[lead]],
                 cpu_result.forecast_dbz[lead][valid[lead]],

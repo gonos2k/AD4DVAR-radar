@@ -1,4 +1,4 @@
-name: MPS numerical certification
+name: MPS P0 regression
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  certify-mps:
+  test-mps:
     runs-on: [self-hosted, macOS, ARM64, advar-mps]
     timeout-minutes: 60
     steps:
@@ -33,23 +33,3 @@ jobs:
           tests/test_nowcast.py::NowcastTests::test_current_v6_mps_nowcast_runs_end_to_end
           tests/test_sensitivity.py::VariationalFSOTests::test_current_v6_mps_physical_psr_fss_and_centroid_paths
           tests/test_sensitivity.py::VariationalFSOTests::test_current_source_selection_declares_cpu_binary64_boundary
-      - name: Run measured CPU and MPS certification
-        env:
-          ADVAR_MPS_CERTIFICATION_PRIVATE_KEY_HEX: ${{ secrets.ADVAR_MPS_CERTIFICATION_PRIVATE_KEY_HEX }}
-          PYTORCH_ENABLE_MPS_FALLBACK: "0"
-        run: >-
-          .venv/bin/advar-mps-certify
-          --output-dir mps-certification-artifact
-          --runner-id "${{ runner.name }}"
-      - name: Upload signed certification evidence
-        id: upload
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: advar-mps-certification-${{ github.sha }}-${{ github.run_id }}
-          path: mps-certification-artifact
-          if-no-files-found: error
-          retention-days: 90
-      - name: Report certification artifact
-        run: |
-          echo "MPS evidence digest: $(.venv/bin/python -c 'import json; print(json.load(open("mps-certification-artifact/evidence.json"))["evidence_digest"])')" >> "$GITHUB_STEP_SUMMARY"
-          echo "GitHub artifact digest: ${{ steps.upload.outputs.artifact-digest }}" >> "$GITHUB_STEP_SUMMARY"
