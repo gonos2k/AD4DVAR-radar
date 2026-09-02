@@ -1650,21 +1650,16 @@ hot path에서는 object identity와 in-place version만 확인하고, FSO/P1 �
 model/index, CUDA driver·compute capability, cuDNN/TF32/matmul 설정, thread 수,
 PyTorch·NumPy build configuration, OS release 및 설치 distribution/source manifest가
 들어간다. Algorithm source manifest도 package 최상위만이 아니라 모든 하위 Python
-module의 canonical relative path와 bytes를 재귀적으로 주소화한다. MPS 후보 배포는
-root-approved deployment policy에 certification policy와 signed evidence digest가
-함께 명시돼야 한다. Policy는 PCG, frozen/robust stationarity, analysis/forecast dBZ,
-metric score와 decision statistic처럼 단위가 다른 허용오차를 분리한다. Evidence는
-허용오차나 caller Boolean을 보존하지 않고 CPU/MPS raw-result digest와 측정값만
-보존하며, active source·runner·exact MPS runtime 및 Ed25519 runner signature가 모두
-일치해야 한다.
+module의 canonical relative path와 bytes를 재귀적으로 주소화한다.
 
 `.github/workflows/mps-certification.yml`의 `MPS P0 regression`은
 `PYTORCH_ENABLE_MPS_FALLBACK=0`인 self-hosted Apple Silicon runner에서 native MPS
 availability와 다섯 regression oracle을 실행한다. 여기에는 비대각 SPD PCG,
 current projected-grid v6의 3-frame P0 end-to-end nowcast, CPU binary64 speed
 authority 및 current source-selection 경계 검사가 포함된다. 이 workflow는 P1
-인증·서명·artifact를 생성하지 않으며 signing secret을 요구하지 않는다. Full P1
-MPS는 계속 NO-GO다.
+인증·서명·artifact를 생성하지 않는다. 설치 package의 console command는
+`advar-nowcast` 하나다.
+MPS P0 regression은 지원하지만 full MPS P1은 NO-GO이고 운영 deployment는 범위 밖이다.
 Current verification/FSO scoring은 tensor-level float64 evidence contract 때문에 계속
 CPU-only다. MPS workflow는 이 경계를 숨기지 않고 current source-selection 요청이
 전용 CPU-only 오류로 거부되는지도 검사한다.

@@ -6,7 +6,6 @@ from unittest.mock import patch
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-import torch
 
 from advar._digest import json_digest
 from advar._runtime import (
@@ -15,10 +14,6 @@ from advar._runtime import (
     numerical_runtime_manifest,
     validate_mps_backend_certification,
     validate_mps_backend_certification_evidence,
-)
-from advar.mps_certification import (
-    _run_pcg_fixture,
-    create_mps_backend_certification_policy,
 )
 
 
@@ -210,32 +205,6 @@ class NumericalRuntimeManifestTest(unittest.TestCase):
                 active_algorithm_source_manifest_digest="2" * 64,
                 active_certification_runner_digest="3" * 64,
             )
-
-    def test_nontrivial_pcg_fixture_uses_multiple_krylov_iterations(self) -> None:
-        solution, relative_error, true_residual, iterations = _run_pcg_fixture(
-            torch.device("cpu")
-        )
-
-        self.assertGreaterEqual(iterations, 10)
-        self.assertLess(relative_error, 5.0e-4)
-        self.assertLess(true_residual, 5.0e-5)
-        self.assertTrue(bool(torch.all(torch.isfinite(solution))))
-
-    def test_certification_policy_requires_strict_deterministic_runtime(self) -> None:
-        private_key = Ed25519PrivateKey.from_private_bytes(b"\x08" * 32)
-
-        with (
-            patch(
-                "advar.mps_certification.torch.are_deterministic_algorithms_enabled",
-                return_value=False,
-            ),
-            self.assertRaisesRegex(RuntimeError, "deterministic"),
-        ):
-            create_mps_backend_certification_policy(
-                runner_id="self-hosted-mac-1",
-                runner_private_key=private_key,
-            )
-
 
 if __name__ == "__main__":
     unittest.main()
