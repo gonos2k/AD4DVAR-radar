@@ -3257,25 +3257,15 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                 {case.case_id: tensors},
             )
 
-    def test_scoring_backend_certification_is_device_specific(self) -> None:
+    def test_scoring_backend_is_cpu_only(self) -> None:
+        self.assertIsNone(
+            ledger_module._validate_scoring_backend(torch.device("cpu"))
+        )
         with self.assertRaisesRegex(
             ValueError,
-            "CPU scoring cannot claim MPS certification",
+            "automatic promotion scoring requires the CPU backend",
         ):
-            ledger_module._validate_scoring_backend_certification(
-                torch.device("cpu"),
-                Mock(),
-                Mock(),
-            )
-        with self.assertRaisesRegex(
-            ValueError,
-            "automatic promotion scoring requires the certified CPU backend",
-        ):
-            ledger_module._validate_scoring_backend_certification(
-                torch.device("mps"),
-                None,
-                None,
-            )
+            ledger_module._validate_scoring_backend(torch.device("mps"))
 
     def test_full_product_semantic_replay_reaches_promotion_without_scorer_patch(
         self,
