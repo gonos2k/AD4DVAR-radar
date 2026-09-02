@@ -2034,11 +2034,10 @@ lineage로만 적재되며 current scientific run 생성, 모델 선택 또는 �
 운영 capability 집합이 비어 있는 동안 이 경계는 열리지 않는다.
 
 Semantic holdout scoring은 모든 case와 tensor role이 하나의 execution
-device/runtime을 사용해야 한다. CPU scoring에는 MPS 인증을 붙일 수 없고,
-automatic promotion scoring은 현재 CPU-only다. Generic MPS backend evidence는
-exported prior/classifier와 전체 metric engine을 인증하지 않으므로 model-scoring
-certificate 세대가 도입되기 전까지 MPS scoring과 operational MPS deployment는
-fail-close한다. 아래 certificate·receipt·state-machine 설명은 과거 deployment engineering의
+device/runtime을 사용해야 하며 automatic promotion scoring은 CPU-only다. Current
+archive의 과거 certification digest 필드는 항상 `null`이고, 이를 생성하거나 현재
+scoring authority로 전환하는 policy/evidence 실행 경로는 없다. 아래
+certificate·receipt·state-machine 설명은 과거 deployment engineering의
 audit scaffold이며 current scientific package에서 발급·선택·활성화할 수 없다. Historical
 scaffold는 EpisodeLedger가 발급한 root-signed promotion deployment certificate와 외부
 authority, learning-policy 및 당시 raw-ingestor trust store를 함께 요구했다. Authority

@@ -32,11 +32,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 )
 
 from ._digest import tensor_digest
-from ._runtime import (
-    MPSBackendCertificationEvidence,
-    MPSBackendCertificationPolicy,
-    numerical_runtime_manifest,
-)
+from ._runtime import numerical_runtime_manifest
 from ._learned_input import learned_radar_input_features
 from .calibration import algorithm_bundle_digest, OperationalDataIdentity
 from .action_artifacts import (
@@ -456,28 +452,11 @@ def _semantic_replay_execution_device(
     return device
 
 
-def _validate_scoring_backend_certification(
-    execution_device: torch.device,
-    policy: MPSBackendCertificationPolicy | None,
-    evidence: MPSBackendCertificationEvidence | None,
-) -> tuple[str | None, str | None]:
-    """Keep automatic promotion scoring on the certified CPU path.
-
-    The generic MPS certificate covers the numerical backend, but it does not
-    yet cover the exported prior/classifier graphs and the complete holdout
-    metric engine.  Accepting it here would therefore overstate the scope of
-    the certificate.  The policy/evidence parameters remain in the API so a
-    future model-scoring certificate can be introduced without silently
-    changing the archive format.
-    """
+def _validate_scoring_backend(execution_device: torch.device) -> None:
+    """Keep automatic promotion scoring on the CPU path."""
 
     if execution_device.type != "cpu":
-        raise ValueError(
-            "automatic promotion scoring requires the certified CPU backend"
-        )
-    if policy is not None or evidence is not None:
-        raise ValueError("CPU scoring cannot claim MPS certification")
-    return None, None
+        raise ValueError("automatic promotion scoring requires the CPU backend")
 
 
 @dataclass(frozen=True)
@@ -11631,12 +11610,6 @@ class EpisodeLedger:
         algorithm_source_manifest_digest: str,
         raw_ingestor_trust_store_path: str | Path,
         analysis_processor_trust_store_path: str | Path,
-        mps_backend_certification_policy: (
-            MPSBackendCertificationPolicy | None
-        ) = None,
-        mps_backend_certification: (
-            MPSBackendCertificationEvidence | None
-        ) = None,
     ) -> ScoringReplayBundleManifest:
         """Recompute scores in product code, then durably retain exact inputs."""
 
@@ -11720,14 +11693,7 @@ class EpisodeLedger:
             ordered_cases,
             case_tensors,
         )
-        (
-            scoring_certification_policy_digest,
-            scoring_certification_evidence_digest,
-        ) = _validate_scoring_backend_certification(
-            execution_device,
-            mps_backend_certification_policy,
-            mps_backend_certification,
-        )
+        _validate_scoring_backend(execution_device)
         semantic_case_digests = tuple(
             item.semantic_input_digest for item in ordered_cases
         )
@@ -11971,12 +11937,8 @@ class EpisodeLedger:
                     active_runtime.compatibility_digest
                 ),
                 runtime_exact_digest=active_runtime.exact_digest,
-                scoring_backend_certification_policy_digest=(
-                    scoring_certification_policy_digest
-                ),
-                scoring_backend_certification_evidence_digest=(
-                    scoring_certification_evidence_digest
-                ),
+                scoring_backend_certification_policy_digest=None,
+                scoring_backend_certification_evidence_digest=None,
                 tensor_records=tuple(records),
                 tensor_archive_sha256=shard_set_digest,
                 evaluation_payload_sha256=_file_digest(evaluation_path),
@@ -12815,12 +12777,6 @@ class EpisodeLedger:
         raw_ingestor_trust_store_path: str | Path | None = None,
         training_dataset_derivation: TrainingDatasetDerivationArtifact | None = None,
         training_target_source_trust_store_path: str | Path | None = None,
-        mps_backend_certification_policy: (
-            MPSBackendCertificationPolicy | None
-        ) = None,
-        mps_backend_certification: (
-            MPSBackendCertificationEvidence | None
-        ) = None,
     ) -> str:
         """Append the immutable output and log produced by one trusted launch."""
 
@@ -12876,14 +12832,7 @@ class EpisodeLedger:
                 ordered_replay_cases,
                 replay_case_tensors,
             )
-            (
-                scoring_certification_policy_digest,
-                scoring_certification_evidence_digest,
-            ) = _validate_scoring_backend_certification(
-                execution_device,
-                mps_backend_certification_policy,
-                mps_backend_certification,
-            )
+            _validate_scoring_backend(execution_device)
             if (
                 not replay.semantic_replay_verified
                 or type(replay.manifest) is not ScoringReplayBundleManifest
@@ -12906,13 +12855,13 @@ class EpisodeLedger:
                 or replay.manifest.runtime_exact_digest
                 != numerical_runtime_manifest(execution_device).exact_digest
                 or replay.manifest.scoring_backend_certification_policy_digest
-                != scoring_certification_policy_digest
+                is not None
                 or replay.manifest.scoring_backend_certification_evidence_digest
-                != scoring_certification_evidence_digest
+                is not None
                 or scoring_artifact.scoring_backend_certification_policy_digest
-                != scoring_certification_policy_digest
+                is not None
                 or scoring_artifact.scoring_backend_certification_evidence_digest
-                != scoring_certification_evidence_digest
+                is not None
                 or replay.manifest.algorithm_source_manifest_digest
                 != algorithm_bundle_digest()
                 or scoring_artifact.scoring_algorithm_digest
@@ -12933,8 +12882,6 @@ class EpisodeLedger:
         elif (
             scoring_artifact is not None
             or raw_ingestor_trust_store_path is not None
-            or mps_backend_certification_policy is not None
-            or mps_backend_certification is not None
         ):
             raise ValueError("training completion cannot seal scoring evidence")
         scheduler_trust = _load_scheduler_trust_store(

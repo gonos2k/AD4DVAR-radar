@@ -42,11 +42,7 @@ from ._contract_registry import (
     OperationalDeploymentUnsupportedError,
 )
 from ._digest import json_digest, tensor_digest
-from ._runtime import (
-    MPSBackendCertificationEvidence,
-    MPSBackendCertificationPolicy,
-    numerical_runtime_identity_digest,
-)
+from ._runtime import numerical_runtime_identity_digest
 from .calibration import algorithm_bundle_digest, OperationalDataIdentity
 from .nowcast import (
     CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
