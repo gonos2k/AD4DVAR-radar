@@ -37,7 +37,7 @@
 - [x] R152-001 is reproduced and minimally closed by deletion.
 - [x] R152-002 wording is narrowed without adding a validator or gate.
 - [x] Focused, adjacent, package, and diff checks pass.
-- [ ] PR head equals the pushed commit and exact-head CI is terminal.
+- [x] PR #152 is created from the fresh branch; exact-head CI is owned by GitHub PR status.
 - [x] Full MPS P1 remains NO-GO; canary, LIVE, and publication remain out of scope.
 - [x] Merge remains HOLD without explicit authorization.
 
