@@ -16461,15 +16461,15 @@ def _standard_normal_log_interval_mass(lower: Tensor, upper: Tensor) -> Tensor:
 
     if lower.shape != upper.shape or bool(torch.any(upper <= lower)):
         raise ValueError("normal interval bounds are invalid")
-    cdf_mass = _logdiffexp(
-        torch.special.log_ndtr(upper),
-        torch.special.log_ndtr(lower),
+    # Reflect right-tail intervals before evaluating either log-CDF. Selecting
+    # after logdiffexp would leave log(0) in the unused autograd branch.
+    right_tail = lower >= 0.0
+    cdf_upper = torch.where(right_tail, -lower, upper)
+    cdf_lower = torch.where(right_tail, -upper, lower)
+    return _logdiffexp(
+        torch.special.log_ndtr(cdf_upper),
+        torch.special.log_ndtr(cdf_lower),
     )
-    survival_mass = _logdiffexp(
-        torch.special.log_ndtr(-lower),
-        torch.special.log_ndtr(-upper),
-    )
-    return torch.where(lower >= 0.0, survival_mass, cdf_mass)
 
 
 @dataclass(frozen=True)
@@ -16845,11 +16845,9 @@ def _truncated_gaussian_diagnostics(
     log_survival_truncation = torch.special.log_ndtr(-truncation)
     log_survival_lower = torch.special.log_ndtr(-standardized_lower)
     log_survival_upper = torch.special.log_ndtr(-standardized_upper)
-    log_ratio = torch.minimum(
-        log_survival_upper - log_survival_lower,
-        torch.zeros((), dtype=torch.float64, device=location.device),
+    log_interval_mass = _standard_normal_log_interval_mass(
+        standardized_lower, standardized_upper
     )
-    log_interval_mass = log_survival_lower + torch.log(-torch.expm1(log_ratio))
     nll = -(log_interval_mass - log_survival_truncation)
     lower_tail = torch.exp(
         torch.minimum(

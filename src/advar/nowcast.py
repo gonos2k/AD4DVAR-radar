@@ -1894,7 +1894,11 @@ def _affine_cell_area_value_float64(
                 require_representable_scientific_spacing=True,
             ).determinant
         )
-    return DirectedPhysicalValue(nominal, absolute[0], absolute[1])
+    # The historical normalized evaluation may round outside the direct
+    # determinant enclosure. Include it without narrowing the exact bounds.
+    return DirectedPhysicalValue(
+        nominal, min(nominal, absolute[0]), max(nominal, absolute[1])
+    )
 
 
 def _affine_cell_area_interval_float64(
