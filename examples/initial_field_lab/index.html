@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ADVAR 초기장 실험실</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="masthead">
+        <div>
+          <p class="project-name">ADVAR 3-frame radar nowcast</p>
+          <h1>초기장을 바꾸면<br>예측은 어디서 달라질까?</h1>
+        </div>
+        <div class="scope-note">
+          <span class="status-dot" aria-hidden="true"></span>
+          <div>
+            <strong>고정 사례 · P0 연구 모드</strong>
+            <p>실시간 연결과 운영 판정은 포함하지 않습니다.</p>
+          </div>
+        </div>
+      </header>
+
+      <section class="workbench" aria-labelledby="lab-title">
+        <aside class="controls">
+          <div class="section-heading">
+            <h2 id="lab-title">초기장 조작</h2>
+            <p>관측과 정답은 그대로 두고 배경장만 바꿉니다.</p>
+          </div>
+
+          <form id="experiment-form">
+            <label class="switch-row">
+              <span>
+                <strong>배경장 사용</strong>
+                <small>결측 관측을 이전주기 장으로 보완</small>
+              </span>
+              <input id="use-background" name="use_background" type="checkbox" checked>
+            </label>
+
+            <label class="control-row" for="background-age">
+              <span>배경장 나이</span>
+              <output id="background-age-value">10분</output>
+              <input id="background-age" name="background_age_minutes" type="range" min="0" max="60" step="10" value="10">
+            </label>
+
+            <label class="control-row" for="shift-y">
+              <span>남북 위치 편향</span>
+              <output id="shift-y-value">0 px</output>
+              <input id="shift-y" name="shift_y" type="range" min="-6" max="6" step="1" value="0">
+            </label>
+
+            <label class="control-row" for="shift-x">
+              <span>동서 위치 편향</span>
+              <output id="shift-x-value">0 px</output>
+              <input id="shift-x" name="shift_x" type="range" min="-6" max="6" step="1" value="0">
+            </label>
+
+            <label class="control-row" for="intensity-bias">
+              <span>강도 편향</span>
+              <output id="intensity-bias-value">0 dBZ</output>
+              <input id="intensity-bias" name="intensity_bias_dbz" type="range" min="-12" max="12" step="1" value="0">
+            </label>
+
+            <label class="control-row" for="coverage">
+              <span>배경장 공간 범위</span>
+              <output id="coverage-value">100%</output>
+              <input id="coverage" name="coverage_percent" type="range" min="25" max="100" step="25" value="100">
+            </label>
+
+            <label class="control-row" for="lead-minutes">
+              <span>확인할 선행시간</span>
+              <output id="lead-minutes-value">+30분</output>
+              <input id="lead-minutes" name="lead_minutes" type="range" min="10" max="180" step="10" value="30">
+            </label>
+
+            <button class="run-button" type="submit">이 초기장으로 계산</button>
+            <p id="run-status" class="run-status" role="status" aria-live="polite">기본 실험을 불러오는 중입니다.</p>
+          </form>
+        </aside>
+
+        <div class="instrument-stage">
+          <div class="case-strip">
+            <div>
+              <span>고정 사례</span>
+              <strong id="case-name">—</strong>
+            </div>
+            <p id="case-description">사례 정보를 불러오는 중입니다.</p>
+          </div>
+
+          <div id="radar-deck" class="radar-deck" aria-busy="true">
+            <figure class="radar-panel">
+              <figcaption>
+                <span>최신 관측</span>
+                <strong>t = 0</strong>
+              </figcaption>
+              <canvas id="observation-canvas" aria-label="최신 관측 반사도"></canvas>
+            </figure>
+            <figure class="radar-panel">
+              <figcaption>
+                <span>초기장</span>
+                <strong id="background-caption">age 10분</strong>
+              </figcaption>
+              <canvas id="background-canvas" aria-label="변형된 배경 초기장"></canvas>
+            </figure>
+            <figure class="radar-panel forecast-panel">
+              <figcaption>
+                <span>ADVAR 예측</span>
+                <strong id="forecast-caption">+30분</strong>
+              </figcaption>
+              <canvas id="forecast-canvas" aria-label="ADVAR 반사도 예측"></canvas>
+            </figure>
+            <figure class="radar-panel">
+              <figcaption>
+                <span>고정 정답</span>
+                <strong id="truth-caption">+30분</strong>
+              </figcaption>
+              <canvas id="truth-canvas" aria-label="합성 정답 반사도"></canvas>
+            </figure>
+            <div class="scan-line" aria-hidden="true"></div>
+          </div>
+
+          <div class="legend" aria-label="반사도 색상 범례">
+            <span>−10</span>
+            <div class="legend-bar"></div>
+            <span>55 dBZ</span>
+            <span class="missing-key"><i></i>결측</span>
+          </div>
+
+          <ol id="process-list" class="process-list" aria-label="ADVAR 계산 단계"></ol>
+
+          <dl class="metrics" aria-label="예측 성능 요약">
+            <div>
+              <dt>ADVAR MAE</dt>
+              <dd id="forecast-mae">—</dd>
+            </div>
+            <div>
+              <dt>Persistence MAE</dt>
+              <dd id="persistence-mae">—</dd>
+            </div>
+            <div>
+              <dt>개선량</dt>
+              <dd id="skill">—</dd>
+            </div>
+            <div>
+              <dt>예측 유효영역</dt>
+              <dd id="valid-fraction">—</dd>
+            </div>
+            <div>
+              <dt>평균 confidence</dt>
+              <dd id="mean-confidence">—</dd>
+            </div>
+            <div>
+              <dt>배경 기여율</dt>
+              <dd id="background-fraction">—</dd>
+            </div>
+          </dl>
+
+          <footer class="method-note">
+            MAE는 ADVAR와 persistence가 모두 유효한 같은 화소에서 계산합니다.
+            이 페이지는 초기장 민감도 탐색용이며 실제 레이더 검증이나 배포 승인을 만들지 않습니다.
+          </footer>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
