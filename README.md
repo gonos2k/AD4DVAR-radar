@@ -97,6 +97,19 @@ python3 -m pip install -e .
 python3 -m unittest discover -s tests -v
 ```
 
+### 초기장 실험 홈페이지
+
+고정된 합성 사례에서 관측과 정답은 그대로 두고, 배경 초기장의 나이·위치·강도·
+공간 범위만 바꿔 P0 예측 변화를 비교할 수 있다. 화면은 실제 `advar.nowcast()`를
+호출하며 실시간 자료 연결이나 운영 판정을 수행하지 않는다.
+
+```bash
+python examples/initial_field_lab/server.py
+```
+
+브라우저에서 `http://127.0.0.1:8765`를 연다. 결과 MAE와 persistence MAE는
+두 예측이 모두 유효한 같은 화소에서 계산하며, 유효영역 비율은 별도로 표시한다.
+
 ### 0.114 import migration
 
 Package root는 P0/P1 핵심 API만 공개한다. `SensitivityConfig`와
