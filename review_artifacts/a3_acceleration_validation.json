@@ -1,0 +1,100 @@
+{
+  "base_commit": "3d75242b67421bb3341c7ae3ebc83d8f94702bdd",
+  "scope": "A3-01 subsecond acceleration regression; no product source changes",
+  "python": "3.12.13",
+  "torch": "2.13.0",
+  "device": "cpu",
+  "source_sha256": {
+    "src/advar/promotion.py": "6e34eb388ee712e640c5bb70cc36a031ce86c997d59bee2ae6a88c118dd7b3c8",
+    "tests/test_review_promotion_contracts.py": "37271582a2affff88d59db1e331310a5dbc3006d790d78dfda519870064fd85e"
+  },
+  "unique_passing_scoped_tests": 26,
+  "junit_summaries": {
+    "scoped": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "26",
+        "time": "64.791",
+        "timestamp": "2026-09-05T21:58:16.727804+09:00",
+        "hostname": "Yongui-MacBookPro.local"
+      }
+    ],
+    "final": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "21",
+        "time": "1.478",
+        "timestamp": "2026-09-05T22:01:30.582519+09:00",
+        "hostname": "Yongui-MacBookPro.local"
+      }
+    ],
+    "constructor_mutation": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "1",
+        "skipped": "0",
+        "tests": "21",
+        "time": "0.336",
+        "timestamp": "2026-09-05T22:01:33.341879+09:00",
+        "hostname": "Yongui-MacBookPro.local"
+      }
+    ],
+    "validator_mutation": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "1",
+        "skipped": "0",
+        "tests": "21",
+        "time": "0.365",
+        "timestamp": "2026-09-05T22:01:34.869854+09:00",
+        "hostname": "Yongui-MacBookPro.local"
+      }
+    ]
+  },
+  "mutation_results": [
+    {
+      "mutation": "constructor",
+      "returncode": 1,
+      "expected_test_failed": "test_physical_event_track_rejects_subsecond_acceleration_in_constructor",
+      "reason": "DID NOT RAISE"
+    },
+    {
+      "mutation": "validator",
+      "returncode": 1,
+      "expected_test_failed": "test_physical_event_track_validator_rejects_rehashed_acceleration_tamper",
+      "reason": "DID NOT RAISE"
+    }
+  ],
+  "style": "ruff 0.16.6 and git diff --check passed",
+  "peer_review": "gpt-5.6-luna / xhigh: theory, precision, and rejection isolation reviewed",
+  "base_ci_run": 33963828991,
+  "base_ci_status_at_creation": "in_progress",
+  "new_pr_ci_status_at_creation": "not_started",
+  "limitations": [
+    "No repeated full local baseline",
+    "No CUDA or full MPS P1",
+    "No real radar data validation",
+    "P0 rejection is not automatic-learning efficacy"
+  ],
+  "evidence_sha256": {
+    "scoped.log": "61998773d2c1fbcbf55bd0bf4694f346cb6617018fe0a6cdbe8fa4399e06c871",
+    "scoped.xml": "4e51f6ae6daea731c67d4ff5fa937bee78b6b545382b2a03351556196732e750",
+    "final.log": "7d068fc907ba2a41802569567aa5a3132db0439ca55b0047139b80e0b5f352e4",
+    "final.xml": "17e586398f1463dea50517dc7101e5af2514bc15037f7f0cea98cff581aa0a98",
+    "constructor_mutation.log": "a58a371fef2d80a57ed9ecdb45fc5d64e63fc38def1f586f4ec1a3811318f8a2",
+    "constructor_mutation.xml": "0b195db27933a175a1d98479cc7fcf1f9c6b505f3f1bfb4df2c29f66aa04aa4c",
+    "validator_mutation.log": "33bd5dcb39d819c3f043d9ce3da4cc82a291798a227145faff0321ccf55aa146",
+    "validator_mutation.xml": "33630d251a0cf6f5a1c7bab2fba580e3290c337c521c2a4ef7d61ee230a16fa1",
+    "mutation_check.py": "60ca40864bc8619e8e3faa51e99af2e457745343e1573dd45595b0344cd1aa0c",
+    "mutation_results.json": "1f3561271020bbcfdefd1ab1c71eb1c33049b1c99ba09e3f4275c144ed468651",
+    "run_pytest.py": "f6d775cf9abe08241c87202c8b95f39a186bbb1d0280a3a729e72b84cf689231"
+  }
+}
