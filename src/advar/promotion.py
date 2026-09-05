@@ -2816,6 +2816,8 @@ class NeuralPriorInputPlan:
     plan_digest: str = field(init=False)
 
     def __post_init__(self) -> None:
+        if self.contract != "neural-prior-input-plan-v2":
+            raise ValueError("unsupported neural-prior input plan")
         for name in (
             "grid_contract_digest",
             "radar_product_digest",
@@ -2829,8 +2831,15 @@ class NeuralPriorInputPlan:
         available = _canonical_time(self.input_available_time)
         deadline = _canonical_time(self.decision_deadline)
         publication = _canonical_time(self.publication_time)
-        if not times or times[-1] != valid:
-            raise ValueError("input plan must end at its observation valid time")
+        if (
+            len(times) != 3
+            or times[-1] != valid
+            or any(
+                _canonical_datetime(first) >= _canonical_datetime(second)
+                for first, second in zip(times, times[1:])
+            )
+        ):
+            raise ValueError("input plan needs three increasing times ending at observation time")
         if not (
             _canonical_datetime(valid)
             <= _canonical_datetime(available)
@@ -3258,6 +3267,7 @@ class OperationalIssuanceDomainPlan:
                 "operational-issuance-domain-plan-v1",
                 "operational-issuance-domain-plan-v2",
             }
+            or self.radar_source_kind not in {"single_site", "mosaic"}
             or not self.case_id
             or self.case_id.strip() != self.case_id
             or not self.lead_minutes
@@ -6909,6 +6919,12 @@ def validate_regime_reference_evidence(
     evidence: RegimeReferenceEvidence,
     plan: RegimeReferencePlan,
 ) -> None:
+    for name in ("full_analysis_input_digest", "verification_bundle_digest"):
+        _require_digest(name, getattr(evidence, name))
+    for name in ("observed_regime", "observed_storm_id"):
+        value = getattr(evidence, name)
+        if not isinstance(value, str) or not value or value.strip() != value:
+            raise ValueError(f"{name} must be canonical")
     if (
         evidence.contract != "neural-prior-regime-reference-evidence-v1"
         or evidence.reference_plan_digest != plan.plan_digest
@@ -7408,13 +7424,7 @@ class PhysicalEventTrackArtifact:
                 second[0] - first[0],
                 second[1] - first[1],
             )
-            / max(
-                1.0,
-                (
-                    parsed[index + 2] - parsed[index]
-                ).total_seconds()
-                / 2.0,
-            )
+            / ((parsed[index + 2] - parsed[index]).total_seconds() / 2.0)
             > 0.25
             for index, (first, second) in enumerate(
                 zip(segment_velocities, segment_velocities[1:])
@@ -7506,10 +7516,7 @@ def validate_physical_event_track_artifact(
             raise ValueError("physical event track segment speed exceeds 40 m/s")
         if any(
             math.hypot(second[0] - first[0], second[1] - first[1])
-            / max(
-                1.0,
-                (parsed[index + 2] - parsed[index]).total_seconds() / 2.0,
-            )
+            / ((parsed[index + 2] - parsed[index]).total_seconds() / 2.0)
             > 0.25
             for index, (first, second) in enumerate(
                 zip(segment_velocities, segment_velocities[1:])
@@ -13031,6 +13038,38 @@ class RangeBandEvaluation:
             )
         ):
             raise ValueError("range-band uncertainty evidence is invalid")
+        # Withdrawal and new issuance are the two disjoint set differences.
+        for index, domain_count in enumerate(self.issuance_domain_cell_count_by_lead):
+            parent = self.parent_issued_count_by_lead[index]
+            candidate = self.candidate_issued_count_by_lead[index]
+            withdrawn_count = self.withdrawn_count_by_lead[index]
+            new_count = self.newly_issued_count_by_lead[index]
+            if (
+                parent > domain_count
+                or candidate > domain_count
+                or withdrawn_count > parent
+                or new_count > candidate
+                or parent + new_count > domain_count
+                or candidate != parent - withdrawn_count + new_count
+                or self.parent_fallback_count_by_lead[index] > domain_count
+                or self.candidate_fallback_count_by_lead[index] > domain_count
+            ):
+                raise ValueError("range-band issuance counts violate subset relations")
+            domain_area = self.issuance_domain_area_km2_by_lead[index]
+            for area in (
+                self.parent_confidence_weighted_issued_area_by_lead[index],
+                self.candidate_confidence_weighted_issued_area_by_lead[index],
+            ):
+                if area > domain_area and not math.isclose(
+                    area, domain_area, rel_tol=1.0e-9, abs_tol=0.0
+                ):
+                    raise ValueError("range-band confidence area exceeds issuance domain")
+        common_area = metric_valid_area.new_tensor(
+            self.metric_valid_area_km2_by_lead
+        ).unsqueeze(-1)
+        area_tolerance = 8.0 * torch.finfo(metric_valid_area.dtype).eps
+        if bool(torch.any(metric_valid_area > common_area * (1.0 + area_tolerance))):
+            raise ValueError("range-band metric area exceeds common area")
         object.__setattr__(self, "metric_change", change)
         object.__setattr__(self, "end_to_end_metric_change", end_to_end)
         object.__setattr__(self, "metric_available", available)
@@ -16461,15 +16500,40 @@ def _standard_normal_log_interval_mass(lower: Tensor, upper: Tensor) -> Tensor:
 
     if lower.shape != upper.shape or bool(torch.any(upper <= lower)):
         raise ValueError("normal interval bounds are invalid")
+    width = upper - lower
+    midpoint = 0.5 * lower + 0.5 * upper
+    narrow = torch.isfinite(midpoint) & (
+        width <= 2.0e-3 / (1.0 + midpoint.abs())
+    )
+    local_midpoint = torch.where(narrow, midpoint, torch.zeros_like(midpoint))
+    local_width = torch.where(narrow, width, torch.ones_like(width))
+    half_width = 0.5 * local_width
+    midpoint_half_width = local_midpoint * half_width
+    # Integrate phi(m+t)/phi(m) symmetrically through order h^4.
+    # Here h and |m*h| <= 1e-3, so omitted terms are below FP64 precision.
+    mh2, h2 = midpoint_half_width.square(), half_width.square()
+    correction = (mh2 - h2) / 6.0 + (
+        mh2.square() - 6.0 * mh2 * h2 + 3.0 * h2.square()
+    ) / 120.0
+    local_mass = (
+        torch.log(local_width)
+        - (0.5 * local_midpoint) * local_midpoint
+        - 0.5 * math.log(2.0 * math.pi)
+        + torch.log1p(correction)
+    )
+    # Replace inputs before evaluating an unused CDF difference with zero mass.
+    lower = torch.where(narrow, -torch.ones_like(lower), lower)
+    upper = torch.where(narrow, torch.ones_like(upper), upper)
     # Reflect right-tail intervals before evaluating either log-CDF. Selecting
     # after logdiffexp would leave log(0) in the unused autograd branch.
     right_tail = lower >= 0.0
     cdf_upper = torch.where(right_tail, -lower, upper)
     cdf_lower = torch.where(right_tail, -upper, lower)
-    return _logdiffexp(
+    tail_mass = _logdiffexp(
         torch.special.log_ndtr(cdf_upper),
         torch.special.log_ndtr(cdf_lower),
     )
+    return torch.where(narrow, local_mass, tail_mass)
 
 
 @dataclass(frozen=True)
@@ -16849,19 +16913,19 @@ def _truncated_gaussian_diagnostics(
         standardized_lower, standardized_upper
     )
     nll = -(log_interval_mass - log_survival_truncation)
-    lower_tail = torch.exp(
+    lower_cdf = -torch.expm1(
         torch.minimum(
             log_survival_lower - log_survival_truncation,
             torch.zeros((), dtype=torch.float64, device=location.device),
         )
     )
-    upper_tail = torch.exp(
+    upper_cdf = -torch.expm1(
         torch.minimum(
             log_survival_upper - log_survival_truncation,
             torch.zeros((), dtype=torch.float64, device=location.device),
         )
     )
-    conditional_cdf = 1.0 - 0.5 * (lower_tail + upper_tail)
+    conditional_cdf = 0.5 * (lower_cdf + upper_cdf)
     epsilon = torch.finfo(torch.float64).eps
     conditional_cdf = conditional_cdf.clamp(epsilon, 1.0 - epsilon)
     pit_residual = torch.special.ndtri(conditional_cdf)
@@ -22269,10 +22333,6 @@ def compute_neural_prior_promotion(
         family_size=metric_cell_family_size,
         enforce=False,
     )
-    metric_cell_tail_ok = (
-        metric_cell_bootstrap_diagnostics[1]
-        >= policy.minimum_bootstrap_tail_replicates
-    )
     for group in groups:
         band_group = tuple(
             (item, band, cluster)
@@ -22591,7 +22651,6 @@ def compute_neural_prior_promotion(
                     policy.minimum_deployment_metric_cell_events,
                     policy.minimum_continuous_metric_cell_events,
                 )
-                or not metric_cell_tail_ok
             ):
                 band_metric_completeness_ok = False
                 continue
@@ -25093,6 +25152,7 @@ def load_deployment_bundle_release_approval(
             )
             if not block:
                 break
+            retained.extend(block)
         after = os.fstat(descriptor)
         if (
             len(retained) != metadata.st_size
@@ -25255,7 +25315,7 @@ def _issue_deployment_runtime_activation_receipt(
         issued_at=activated_at,
     )
     if (
-        isinstance(activation_sequence_number, bool)
+        type(activation_sequence_number) is not int
         or activation_sequence_number <= 0
         or runtime_mode not in {"candidate-smoke", "deployable"}
         or runtime_mode != release_approval.runtime_mode
@@ -25362,7 +25422,7 @@ def _validate_deployment_runtime_activation_receipt(
         != release_approval.deployment_bundle_digest
         or receipt.authority_trust_store_digest
         != authority_trust_store.content_digest
-        or isinstance(receipt.activation_sequence_number, bool)
+        or type(receipt.activation_sequence_number) is not int
         or receipt.activation_sequence_number <= 0
         or receipt.runtime_mode not in {"candidate-smoke", "deployable"}
         or receipt.runtime_mode != release_approval.runtime_mode
@@ -25472,6 +25532,7 @@ def load_deployment_runtime_activation_receipt(
             )
             if not block:
                 break
+            retained.extend(block)
         after = os.fstat(descriptor)
         if (
             len(retained) != metadata.st_size
@@ -26771,10 +26832,10 @@ def _replay_operational_deployment_selection(
         reason = "no_certified_regime"
     elif regime.get("is_ood"):
         reason = "ood_or_abstained"
-    elif not branch_stable:
-        reason = "ambiguous_classifier_branch"
     elif confidence < policy.minimum_regime_confidence:
         reason = "low_regime_confidence"
+    elif not branch_stable:
+        reason = "ambiguous_classifier_branch"
     elif policy.range_geometry_contract_digest not in set(
         promotion_evidence.certified_range_geometry_contract_digests
     ):

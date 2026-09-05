@@ -21830,8 +21830,12 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         ),
     }
     _validate_verification_manifest(verification_manifest)
-    if not math.isfinite(snapshot.trust_score):
-        raise ValueError("trust_score must be finite")
+    if (
+        isinstance(snapshot.trust_score, bool)
+        or not math.isfinite(snapshot.trust_score)
+        or not 0.0 <= snapshot.trust_score <= 1.0
+    ):
+        raise ValueError("trust_score must be in [0, 1]")
     if snapshot.baseline_scores is not None or snapshot.reward_available:
         raise ValueError(
             "normalized reward requires a verified baseline lineage contract"
@@ -22008,6 +22012,8 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         snapshot.background_verified_evidence_by_metric,
     )
     for value in evidence_values:
+        if bool(torch.any(torch.isinf(value))):
+            raise ValueError("metric evidence must be finite or unavailable NaN")
         finite = torch.isfinite(value)
         if not bool(torch.all((value[finite] >= 0) & (value[finite] <= 1))):
             raise ValueError("metric evidence must be in [0, 1]")
@@ -22158,10 +22164,12 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
     elif snapshot.direct.tile_impact is not None:
         raise ValueError("tile impact cannot exist without direct impact")
     if any(
-        not math.isfinite(value)
+        isinstance(value, bool)
+        or not math.isfinite(value)
+        or not 0.0 <= value <= 1.0
         for value in snapshot.trust_components.values()
     ):
-        raise ValueError("trust components must be finite")
+        raise ValueError("trust components must be in [0, 1]")
     if set(snapshot.trust_components) != _TRUST_COMPONENTS_V16:
         raise ValueError("trust component contract is invalid")
     expected_trust = math.prod(snapshot.trust_components.values())

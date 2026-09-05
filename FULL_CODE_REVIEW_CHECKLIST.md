@@ -2,9 +2,9 @@
 
 ## 판정과 범위
 
-**CPU에서 확인한 수송·고정 선형화·PCG의 핵심 구조는 유지할 근거가 있다. 다만 평가·입력·저장 계약의 P2 결함은 후속 수정이 필요하다.** MPS P1은 README가 이미 NO-GO로 명시한 범위이며, 이번 실패 재현을 지원 기능의 신규 회귀로 세지 않는다. 이번 작업은 코드 조사와 재현이다. 아래 미해결 항목을 수정했다고 주장하지 않는다.
+**CPU 수치 코어의 구조를 유지하면서, 확정한 R02–R11을 수정하고 영향 범위의 회귀시험을 통과했다.** R01인 full MPS P1은 기존 NO-GO를 유지한다. 아래 원인·재현은 최초 조사 시점의 기록이며, 이번 수정 결과는 별도 표에 연결했다. 추가 근거가 필요한 후보까지 해결했다고 주장하지 않는다.
 
-- 기준: `5097dbfd1ddf51483578bef5889ebc809ff024f0`, 2026-09-05. 이후 문서 커밋에도 조사 대상 코드는 동일하다.
+- 기준: `5097dbfd1ddf51483578bef5889ebc809ff024f0`, 2026-09-05. 최초 전수 검토의 기준이며, 이번 후속 수정 이후의 전수 재검토를 뜻하지 않는다.
 - 모델: `gpt-5.6-luna` 서브에이전트 33개. 수학·공학·수치해석·기상학의 GREEN / RED 리드 8개와 미검토 구간 담당 25개. 주 에이전트가 중복·반례·호출 경로를 대조하고 주요 재현을 다시 실행했다.
 - 전수 읽기: 추적 소스·테스트·도구·UI·설정 **60개 파일, 162,670행**의 실제 읽기 기록 합집합에 미검토 구간이 없다. 각 행을 두 팀 모두 또는 네 분야 모두가 독립 검토했다는 뜻은 아니다.
 - 문서·잠금 파일·내장 JSON 자료는 관련 의미와 파서·해시·계약을 확인했다. 그 전체 내용을 수작업으로 읽었다는 주장은 위 집계에 포함하지 않는다.
@@ -23,7 +23,7 @@
 - [x] 주요 결함의 작은 재현, 수정 방향 및 완료 조건 기록.
 - [x] 검토 자료 보존 및 세션 말 KG 코드 그래프 갱신.
 
-완료 표시는 **조사 완료**를 뜻한다. 아래 수정 체크박스는 모두 미해결이며, 패치와 해당 회귀시험의 근거가 생긴 뒤에만 완료로 바꾼다.
+위 완료 표시는 **조사 완료**를 뜻한다. 아래 R02–R11의 완료 표시는 이번 패치와 명시한 회귀시험에 근거한다. 위치 링크와 원래 재현 수치는 최초 기준 커밋에 고정했다.
 
 ## 유지할 GREEN 근거
 
@@ -31,7 +31,7 @@
 | --- | --- | --- |
 | 수학 | 비음수 가중치의 정수 이동 결합, 경계 유출을 제외한 에코 적분 보존 | 보존량은 정의된 에코량이다. 수분 질량·강수량 보존을 뜻하지 않는다. |
 | 수학·수치해석 | 고정 잔차 선형화의 `JᵀJ + λI`, 양의 damping, 실제 잔차로 PCG 수렴 재확인 | 고정 연산자의 SPD와 비선형 전역 최적성은 별개다. |
-| 수치해석 | 원점 Taylor 분기, 작은 잔차 pseudo-Huber, Gaussian 꼬리 반사, 경계 띠 유출 합산 | 극단 척도와 장치별 AD 지원까지 자동 보장하지 않는다. R01·R09가 남아 있다. |
+| 수치해석 | 원점 Taylor 분기, 작은 잔차 pseudo-Huber, Gaussian 꼬리 반사, 경계 띠 유출 합산 | R09의 극단 척도 계산을 보강했다. 장치별 AD 지원까지 자동 보장하지 않으며 R01은 별도 지원 경계다. |
 | 공학 | 결측·탐지·미탐지 분리, 입력 출처 기록, 불변 snapshot과 현재 계약 검증 | 개별 해시의 형식 검사는 필드 사이의 정합성 검사를 대신하지 않는다. |
 | 기상학 | 각 선행시간을 현재장에서 직접 수송하고 성장 누적에 감쇠 적용 | 전역 이동·성장 모형이다. 회전·변형·독립적인 새 대류 발생을 일반적으로 표현하지 않는다. |
 | 실험 | 배경 age 메타데이터 설명, 고정 A 기준·영역, 평가 화소 수 표시 | 해당 비교의 질문에 맞는 점수다. 독립 실제 사례에서의 예측 skill을 대신하지 않는다. |
@@ -44,85 +44,85 @@ P2는 구체적인 계산·검증 결함, P3는 극단 입력·진단·문서 �
 
 ### R01 · 기존 지원 경계 · MPS P1 NO-GO의 구체적인 실패 경로
 
-- 위치: [variational.py:8749](src/advar/variational.py#L8749), 호출 [variational.py:8861](src/advar/variational.py#L8861).
+- 위치: [variational.py:8749](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/variational.py#L8749), 호출 [variational.py:8861](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/variational.py#L8861).
 - 재현: 16×16 이동 Gaussian 에코의 3시각 입력, `maximum_outer_iterations=1`. CPU는 잔차 JVP가 유한하고 fallback 없이 목적함수 `80.623207 → 13.899658`로 감소한다. 같은 MPS 입력은 순전파가 유한하지만 `_bounded_update()`의 `scale * control`에서 `TypeError`가 발생하고 `solve_analysis()`도 같은 경로에서 실패한다.
 - 국소 대조: MPS 0차원 dual과 Python 실수의 곱셈에서도 재현된다. 배경을 미분 대상으로 삼는 별도 helper 시험에서는 `background.new_tensor(1.0)`의 장치 dispatch 오류도 발생했다. 벡터 속도 제한 함수에 대한 이전 MPS 미분 통과와 구분해야 한다.
-- 영향: 현재 환경의 P1 MPS 분석 경로가 실행되지 않는 구체적 호환성 문제다. [README:1717](README.md#L1717)은 이미 full MPS P1을 NO-GO로 명시한다. 따라서 지원 기능의 신규 회귀나 긴급 수치 코어 결함으로 세지 않는다. MPS P0와 Gauss–Newton 수식 자체의 오류도 아니다.
+- 영향: 현재 환경의 P1 MPS 분석 경로가 실행되지 않는 구체적 호환성 문제다. [README:1717](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/README.md#L1717)은 이미 full MPS P1을 NO-GO로 명시한다. 따라서 지원 기능의 신규 회귀나 긴급 수치 코어 결함으로 세지 않는다. MPS P0와 Gauss–Newton 수식 자체의 오류도 아니다.
 - 근거: `root_mps_p1.py`, `root_mps_p1.json`, `root_mps_scalar.json`.
 - [ ] **향후 MPS P1 지원을 확대할 경우:** 스칼라 상수·연산의 dtype/device와 실제 P1 JVP 호출 경로를 함께 보강한다. 원점 극한과 도함수를 유지하고 위 CPU/MPS 분석 사례를 회귀시험으로 통과시킨다. 현재는 NO-GO 경계를 유지하며, 상수 한 개만 바꾼 것으로 전체 경로 해결을 선언하지 않는다.
 
 ### R02 · P2 · QC 개입에서 승인하지 않은 활성 화소 표준편차 변경 수용
 
-- 위치: [intervention.py:2535](src/advar/intervention.py#L2535)의 QC 전이 검증.
+- 위치: [intervention.py:2535](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/intervention.py#L2535)의 QC 전이 검증.
 - 재현: 마스크·quality 변경으로 선언한 QC action에서 계속 유효한 화소의 관측 표준편차를 `2 → 9`로 바꾸어도 `RealizedInterventionReceipt.from_decision()`이 수용한다.
 - 중요한 반례: 새로 QC 제외된 화소는 표준편차가 내부 값 `1`로 정규화될 수 있다. 이 정당한 전이도 전체 std digest를 바꾸므로, **무조건 digest 동일 조건을 추가하면 잘못된 패치**가 된다.
 - 근거: `gap_20_probes.py`, `gap_20_probes.stdout`. 실제 action·run·receipt 전이에서 활성 std 변경과 정상 마스킹 정규화를 각각 재현했다.
-- [ ] QC 후 활성 영역의 std가 승인한 입력에서 유지되는지, 제외된 영역은 기존 정규화 규칙과 일치하는지 확인한다. 두 사례를 함께 회귀시험으로 고정한다.
+- [x] QC 후 활성 영역의 std가 승인한 입력에서 유지되는지, 제외된 영역은 기존 정규화 규칙과 일치하는지 확인한다. 두 사례를 함께 회귀시험으로 고정한다.
 
 ### R03 · P2 · 자동 bounded UCB에 무관한 bootstrap 해상도 조건 적용
 
-- 위치: [promotion.py:22261](src/advar/promotion.py#L22261), [promotion.py:22586](src/advar/promotion.py#L22586).
+- 위치: [promotion.py:22261](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/promotion.py#L22261), [promotion.py:22586](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/promotion.py#L22586).
 - 원인: 자동 metric-cell 경로는 bounded empirical-Bernstein UCB를 계산하지만, 그 전에 `metric_cell_tail_ok`를 요구한다. 이 UCB는 bootstrap 반복 수를 사용하지 않는다.
 - 재현: 현재 typed policy/plan fixture, family size 16, 최소 꼬리 반복 20에서 bootstrap 1,024회는 꼬리 반복 1.6으로 거부된다. 동일한 1,000개 독립 event 값 `−0.5`에 대해 1,024회와 16,384회가 **같은 음의 UCB**를 계산하지만 꼬리 gate만 실패/통과로 바뀐다.
 - 영향: 통계 방법과 무관한 보수적 거부 조건이다. 전체 서명·plan·holdout을 갖춘 promotion의 최종 false negative를 종단 간 재실행한 것은 아니다. 안전하지 않은 후보 승격을 입증한 것도 아니다.
 - 근거: `gap_10_probes.py`, `gap_10_probes.stdout.json`, 독립 호출 경로 대조 `cross_stats.md`.
-- [ ] 선택된 추론 방법에 필요한 해상도 조건만 적용한다. 자동 bounded 경로에서 bootstrap 횟수에 대한 판정 불변성을 확인하고, 실제 bootstrap 경로의 해상도 조건은 보존한다.
+- [x] 선택된 추론 방법에 필요한 해상도 조건만 적용한다. 자동 bounded 경로에서 bootstrap 횟수에 대한 판정 불변성을 확인하고, 실제 bootstrap 경로의 해상도 조건은 보존한다.
 
 ### R04 · P2 · 1초 미만 간격의 물리적 가속도를 과소 계산
 
-- 위치: [promotion.py:7406](src/advar/promotion.py#L7406), 중복 검증 [promotion.py:7507](src/advar/promotion.py#L7507).
+- 위치: [promotion.py:7406](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/promotion.py#L7406), 중복 검증 [promotion.py:7507](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/promotion.py#L7507).
 - 원인: 인접 구간 속도의 차이를 실제 중점 시간차 대신 `max(1.0, midpoint_dt)`로 나눈다. 현재 계약은 시각 증가를 확인하지만 최소 1초 간격을 요구하지 않는다.
 - 재현: 시각 `(0, 0.1, 0.2) s`, x 위치 `(0, 0, 0.01) m`. 속도 차이 `0.1 m/s`, 실제 가속도 `1 m/s²`지만 코드 값은 `0.1 m/s²`여서 상한 `0.25`를 통과한다.
 - 영향: 허용된 짧은 간격에서 물리 제약이 느슨해진다. 통상 10분 간격 레이더 예측의 실패를 보여준 사례는 아니다.
 - 근거: `gap_07_probes.py`, `gap_07_probes_stdout.json`; 별도 `gap_16.md` 대조.
-- [ ] 실제 구간 중점의 시간차로 나누거나 최소 시간 해상도를 입력 계약으로 명시한다. 두 검증 경로에 같은 물리식을 적용하고 단위 기반 반례를 시험한다.
+- [x] 실제 구간 중점의 시간차로 나누거나 최소 시간 해상도를 입력 계약으로 명시한다. 두 검증 경로에 같은 물리식을 적용하고 단위 기반 반례를 시험한다.
 
 ### R05 · P2 · ledger가 범위 밖 trust와 무한 evidence를 저장·복원
 
-- 위치: [ledger.py:22004](src/advar/ledger.py#L22004), [ledger.py:22160](src/advar/ledger.py#L22160).
+- 위치: [ledger.py:22004](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/ledger.py#L22004), [ledger.py:22160](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/ledger.py#L22160).
 - 재현: caller snapshot의 trust 성분과 곱을 `2.0`으로 설정하면 append → verify → load 후에도 `trust_score=2.0`이 남는다. `path_evidence_by_metric[0,0]=inf` 역시 NPZ 저장·검증·복원을 통과한다.
 - 원인: 정상 생산자는 trust 성분을 `[0,1]`에 두지만 저장 경계는 유한성과 곱의 일치만 확인한다. evidence 범위 검사는 유한값만 추려 검사하므로 Inf가 검사 대상에서 빠진다.
 - 범위: 비정상 caller snapshot 수용을 실제 왕복 재현했다. 정상 생산자가 이 값을 만든다는 주장은 아니다. evidence의 의도된 unavailable `NaN`까지 일괄 거부해서는 안 된다.
 - 근거: `gap_05_probes.py`, `gap_05_probes.stdout.json`; 중복 후보 `gap_13.md`.
-- [ ] 기존 trust 성분·결과의 codomain과 evidence의 availability/유한성 관계를 저장 경계에서 확인한다. 정상 unavailable NaN은 유지하면서 Inf와 범위 밖 trust를 거부하는 왕복 시험을 추가한다.
+- [x] 기존 trust 성분·결과의 codomain과 evidence의 availability/유한성 관계를 저장 경계에서 확인한다. 정상 unavailable NaN은 유지하면서 Inf와 범위 밖 trust를 거부하는 왕복 시험을 추가한다.
 
 ### R06 · P2 · 실행 입력 identity의 필드 간 정합성 누락
 
-- 위치: [nowcast.py:5154](src/advar/nowcast.py#L5154), canonical bundle 계산 [nowcast.py:5508](src/advar/nowcast.py#L5508).
+- 위치: [nowcast.py:5154](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/nowcast.py#L5154), canonical bundle 계산 [nowcast.py:5508](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/nowcast.py#L5508).
 - 재현 A: 정상 `ForecastRunContract`의 `input_bundle_digest`만 64개의 `0`으로 바꾸어도 `validate_integrity()`가 수용한다. 이미 저장된 구성 digest들로 canonical bundle을 다시 계산할 수 있다.
 - 재현 B: 배경이 실제 사용된 현재 결과에서 `background_frames_digest`를 제거하고 관련 실행 digest를 재계산해도 `ForecastResult.validate_issuance()`가 수용한다. 재현 결과는 `background_used=True`, 배경 사용 비율 `0.5`다.
 - 경계: A는 개별 run 검증 결함이며, 이전 result identity를 그대로 둔 전체 결과 검증은 별도로 오류를 잡을 수 있다. B의 수정도 현재 full-context digest가 있는 실행에 적용해야 한다. 전체 배경 digest가 없던 legacy v42 audit 복원은 의도된 호환성이다.
 - 근거: `root_numeric_edges.py`, `gap_21.md`, `gap_24_probes.py`, `gap_24_probes.stdout`.
-- [ ] 현재 run에서 canonical bundle을 재구성해 비교한다. 현재 full-context 실행의 배경 필드 공존 조건을 검증하고 legacy audit 복원을 별도 회귀시험으로 보존한다. 새 registry나 중복 identity 타입을 만들 필요는 없다.
+- [x] 현재 run에서 canonical bundle을 재구성해 비교한다. 현재 full-context 실행의 배경 필드 공존 조건을 검증하고 legacy audit 복원을 별도 회귀시험으로 보존한다. 새 registry나 중복 identity 타입을 만들 필요는 없다.
 
 ### R07 · P2 · 현재 입력 plan이 잘못된 schema·시각·source kind를 수용
 
-- 위치: [promotion.py:2818](src/advar/promotion.py#L2818), [promotion.py:3255](src/advar/promotion.py#L3255).
+- 위치: [promotion.py:2818](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/promotion.py#L2818), [promotion.py:3255](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/promotion.py#L3255).
 - 재현: `NeuralPriorInputPlan`은 임의 또는 v1 contract와 1개·역순·중복 시각을 수용한다. v1 payload는 generic lineage 검증도 통과한 뒤 현재 resolver에서 `KeyError('issue_time')`가 난다.
 - 별도 재현: `radar_source_kind='bogus'`가 plan을 통과하고 `OperationalIssuanceDomainArtifact.from_masks()`에서 non-mosaic 분기로 처리된다.
 - 영향: 현재 typed 생성자/해석 경계의 결함이다. 정상 v2 plan으로 잘못된 예측을 생성하거나 전체 승격을 우회했다는 주장은 아니다.
 - 근거: `gap_06_probes.py`, `gap_06_probes.stdout.txt`, 독립 `gap_18.md`.
-- [ ] 현재 plan의 schema, 지원 시각 개수·엄격한 시간 순서, 마지막 관측시각, 허용 source kind를 경계에서 검증한다. 역사적 payload 해석은 현재 입력과 명확히 구분한다.
+- [x] 현재 plan의 schema, 지원 시각 개수·엄격한 시간 순서, 마지막 관측시각, 허용 source kind를 경계에서 검증한다. 역사적 payload 해석은 현재 입력과 명확히 구분한다.
 
 ### R08 · P2 · range 평가 artifact의 화소 수·면적 모순 수용
 
-- 위치: [promotion.py:12806](src/advar/promotion.py#L12806)의 `RangeBandEvaluation`.
+- 위치: [promotion.py:12806](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/promotion.py#L12806)의 `RangeBandEvaluation`.
 - 재현: 발행 가능 영역 1화소/면적 1보다 parent·candidate 발행 영역 2화소/면적 2가 큰 자료, 또는 metric 면적 2가 전체 공통 면적 1보다 큰 자료를 생성자가 수용한다.
 - 범위: 정상 producer의 부분집합 관계는 확인했다. 모순된 typed/serialized 필드 수용이 입증됐으며, 완전한 서명·replay 검증의 우회가 입증된 것은 아니다.
 - 근거: `gap_08_probes.py`, `gap_08_probes.stdout.json`.
-- [ ] 기존 필드 사이의 부분집합 수·면적 관계를 검증한다. 정상 producer와 모순 artifact를 각각 시험하며 새로운 평가 계층은 추가하지 않는다.
+- [x] 기존 필드 사이의 부분집합 수·면적 관계를 검증한다. 정상 producer와 모순 artifact를 각각 시험하며 새로운 평가 계층은 추가하지 않는다.
 
 ### R09 · P3 · 극단 척도에서 표현 가능한 목적함수·오차·확률 계산 실패
 
 | 경로 | 현재 결과와 수학적 기대 | 근거 |
 | --- | --- | --- |
-| [matrix_free.py:182](src/advar/matrix_free.py#L182) | FP32 잔차 4개가 각각 `1e19`이면 `0.5 * sum(r²)`가 Inf. FP64 대조값 약 `2.0e38`은 FP32 범위 안이고 gradient도 유한하다. | `root_numeric_edges.py` |
-| [metrics.py:13](src/advar/metrics.py#L13), [metrics.py:20](src/advar/metrics.py#L20) | `±1e20`의 RMSE와 `±finfo.max`의 MAE가 Inf. 각각 참값은 `1e20`, `finfo.max`다. | `root_numeric_edges.py` |
-| [promotion.py:16449](src/advar/promotion.py#L16449), [promotion.py:16817](src/advar/promotion.py#L16817) | location 0, scale `1e16`, reference 5, threshold 0, 분해능 0.5에서 양의 구간 확률이 로그 CDF 차의 반올림 때문에 0으로 계산되어 score가 거부된다. | `gap_09.md`, `root_numeric_edges.py` |
+| [matrix_free.py:182](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/matrix_free.py#L182) | FP32 잔차 4개가 각각 `1e19`이면 `0.5 * sum(r²)`가 Inf. FP64 대조값 약 `2.0e38`은 FP32 범위 안이고 gradient도 유한하다. | `root_numeric_edges.py` |
+| [metrics.py:13](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/metrics.py#L13), [metrics.py:20](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/metrics.py#L20) | `±1e20`의 RMSE와 `±finfo.max`의 MAE가 Inf. 각각 참값은 `1e20`, `finfo.max`다. | `root_numeric_edges.py` |
+| [promotion.py:16449](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/promotion.py#L16449), [promotion.py:16817](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/promotion.py#L16817) | location 0, scale `1e16`, reference 5, threshold 0, 분해능 0.5에서 양의 구간 확률이 로그 CDF 차의 반올림 때문에 0으로 계산되어 score가 거부된다. | `gap_09.md`, `root_numeric_edges.py` |
 
 모두 수학적 경계 결함이지만 정상 레이더 값에서의 실패를 확인한 사례는 아니다. Gaussian scale은 현재 finite-positive 계약이 수용하므로 입력 허용 범위와 계산 가능 범위가 어긋난다. 이전의 location 45 / scale 1 / reference 5 꼬리 문제는 기준 커밋에서 NLL `794.6334302644476`으로 정상이며 새 결함으로 세지 않는다.
 
-- [ ] 합산·제곱 순서의 중간 overflow를 피하고, 확률 head에는 정당한 수치/물리 범위 또는 안정적인 좁은 구간 계산을 적용한다. 유한 출력 확인에 더해 높은 정밀도의 독립값과 비교한다. NaN/Inf를 0으로 바꾸거나 NLL을 임의 clamp하는 패치로 숨기지 않는다.
+- [x] 합산·제곱 순서의 중간 overflow를 피하고, 확률 head에는 정당한 수치/물리 범위 또는 안정적인 좁은 구간 계산을 적용한다. 유한 출력 확인에 더해 높은 정밀도의 독립값과 비교한다. NaN/Inf를 0으로 바꾸거나 NLL을 임의 clamp하는 패치로 숨기지 않는다.
 
 PyTorch도 유한한 최종값과 중간 연산의 overflow를 구분한다. [수치 정확도 문서](https://docs.pytorch.org/docs/2.14/notes/numerical_accuracy.html#extremal-values)는 원리 설명에 사용했으며, 위 수치는 설치된 2.13.0에서 직접 확인한 결과다.
 
@@ -138,16 +138,37 @@ PyTorch도 유한한 최종값과 중간 연산의 overflow를 구분한다. [�
 
 근거: `root_numeric_edges.py`, `green_numerics_probes.py`, `red_engineering.md`, `gap_22_fp16_probe.py`, `gap_21.md`, `gap_25.md`.
 
-- [ ] 위 입력 경계와 문서 항목을 각각 작은 변경으로 처리하고, 정상 지원 입력의 동작을 유지한다.
+- [x] 위 입력 경계와 문서 항목을 각각 작은 변경으로 처리하고, 정상 지원 입력의 동작을 유지한다.
 
 ### R11 · P2/P3 · 비권위적 legacy 배포 도구의 오류
 
-- **P2, 두 파일 loader:** [promotion.py:25088](src/advar/promotion.py#L25088), [promotion.py:25467](src/advar/promotion.py#L25467). 읽은 `block`을 `retained`에 추가하지 않아 비어 있지 않은 파일도 크기 변경으로 거부한다. 안정적인 descriptor metadata와 비어 있지 않은 read block을 사용하는 제한된 I/O 모의 재현 및 실제 코드 누락을 확인했다. 현재 수치 예측 경로의 장애를 뜻하지 않는다.
-- **P3, sequence:** [promotion.py:25365](src/advar/promotion.py#L25365)의 독립 validator는 서명된 activation sequence `1.5`를 수용한다. 정상 ledger의 정수 head 비교는 별도 방어다.
-- **P3, fallback 이유:** [promotion.py:26763](src/advar/promotion.py#L26763)의 선행 branch 때문에 낮은 confidence가 `ambiguous_classifier_branch`로 기록된다. 선택 결과는 여전히 parent이므로 위험한 candidate 선택을 입증한 것은 아니다.
+- **P2, 두 파일 loader:** [promotion.py:25088](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/promotion.py#L25088), [promotion.py:25467](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/promotion.py#L25467). 읽은 `block`을 `retained`에 추가하지 않아 비어 있지 않은 파일도 크기 변경으로 거부한다. 안정적인 descriptor metadata와 비어 있지 않은 read block을 사용하는 제한된 I/O 모의 재현 및 실제 코드 누락을 확인했다. 현재 수치 예측 경로의 장애를 뜻하지 않는다.
+- **P3, sequence:** [promotion.py:25365](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/promotion.py#L25365)의 독립 validator는 서명된 activation sequence `1.5`를 수용한다. 정상 ledger의 정수 head 비교는 별도 방어다.
+- **P3, fallback 이유:** [promotion.py:26763](https://github.com/gonos2k/AD4DVAR-radar/blob/5097dbfd1ddf51483578bef5889ebc809ff024f0/src/advar/promotion.py#L26763)의 선행 branch 때문에 낮은 confidence가 `ambiguous_classifier_branch`로 기록된다. 선택 결과는 여전히 parent이므로 위험한 candidate 선택을 입증한 것은 아니다.
 - **P3, 독립 signed reference 형식:** malformed digest/빈 label을 decoder helper와 standalone validator가 수용한다. 완전한 typed promotion 우회는 재현하지 않았다.
 - 근거: `gap_11_probes.py`, `gap_11_probes.stdout.txt`, `gap_07_probes.py`.
-- [ ] 비권위적 legacy 범위를 유지하면서 read 누락, 정수 sequence, fallback 설명과 입력 형식을 보강한다. 이 작업을 수치 코어의 새 인증 계층으로 확대하지 않는다.
+- [x] 비권위적 legacy 범위를 유지하면서 read 누락, 정수 sequence, fallback 설명과 입력 형식을 보강한다. 이 작업을 수치 코어의 새 인증 계층으로 확대하지 않는다.
+
+## 반영한 개선과 회귀시험
+
+2026-09-05 후속 수정. **새 시험 48개와 영향받는 기존 시험 55개, 고유 시험 합계 103개가 통과했다.** 중복 재실행과 subtest는 합산하지 않는다. 소스 전체 basedpyright는 오류 0이며, 마지막 Boolean 검사 수정 후 해당 ledger 모듈도 오류 0을 확인했다. 정확한 선택자·환경·소스 해시는 [검증 기록](review_artifacts/followup_validation.json)에 보존했다.
+
+| 항목 | 실제 반영 | 직접 검증 |
+| --- | --- | --- |
+| R02 | QC 후 활성 화소의 std는 유지하고 제외 화소의 기존 값 1 정규화는 허용 | [QC 회귀시험](tests/test_review_intervention.py), 3개 |
+| R03 | analytic bounded metric-cell UCB에서만 bootstrap 해상도 gate 제거; 진단 metadata와 실제 bootstrap 경로 유지 | [통계 회귀시험](tests/test_review_promotion_statistics.py), 1개. 두 독립 manifest case로 실제 promotion 계산을 호출해 1,024/16,384회에서 동일한 bound 확인 |
+| R04 | 생성자와 독립 validator 모두 실제 구간 중점 시간차로 가속도 계산 | [promotion 계약 시험](tests/test_review_promotion_contracts.py)에 정상 속도와 재해시한 짧은 간격 반례 포함 |
+| R05 | trust 성분·점수의 [0,1] 범위와 Boolean 거부; evidence Inf 거부, unavailable NaN 유지 | [ledger 회귀시험](tests/test_review_ledger.py), 4개. NaN 왕복, 네 evidence 채널, 작은 범위 초과와 Boolean 포함 |
+| R06 | 기존 canonical payload를 공유하는 digest helper로 bundle 재검증; current full-context의 배경 digest 공존 확인 | [입력 identity 시험](tests/test_review_run_identity.py), 6개 중 identity·v42 복원 사례와 기존 artifact 4개 선택 시험 |
+| R07 | 현재 v2 plan, 3개 엄격 증가 시각, 마지막 관측시각과 source kind 검증 | R04/R08과 함께 promotion 계약 시험 19개 |
+| R08 | 발행·철회·신규 화소의 집합 관계, domain 대비 면적, 공통 영역 대비 metric 면적 확인 | 정상 집합 차와 모순 화소 수·면적을 함께 검증. fallback은 입증된 domain 상한만 적용 |
+| R09 | GN의 1/2을 합산 전에 적용; MAE/RMSE 오차를 안전하게 정규화; Gaussian 좁은 구간 적분 급수와 `expm1` 적용 | [수치 회귀시험](tests/test_review_numerics.py), 11개 중 높은 정밀도 독립값·1/2차 미분·영점·극단 척도, 기존 수치 시험 41개 |
+| R10 | CSI threshold 유한성, precision/관측 FP32·64 및 관측 companion device 검사, 정수 affine 변위 거부; archive 기본 상한 256 문서화 | 수치·입력 identity 시험의 정상 입력 및 거부 사례, 기존 nowcast/precision 5개 |
+| R11 | 두 legacy loader의 읽은 block 보존, 양의 정수 sequence, 낮은 confidence 이유와 signed reference 형식 검증 | [legacy 회귀시험](tests/test_review_legacy_loaders.py), 4개. 실제 signed payload 파일 왕복; 소유권·trust-store load·runtime closure만 모의 |
+
+수치 수정 후 Luna 검토자가 R09의 값·미분과 R06의 현재/legacy 경계를 독립 대조했다. RED 재검토가 발견한 Boolean trust 수용도 마지막 패치·회귀시험에 포함했다. 좁은 구간 AD 시험은 구간 폭에 맞는 유한차분 간격과 cotangent 척도로 검증하며, artifact 변조 시험은 더 일찍 발생하는 `input bundle digest mismatch`를 기대하도록 갱신했다.
+
+이 검증은 CPU 중심의 선택 시험이다. 관측 companion device 경계 시험은 MPS가 있는 환경에서 실행했지만, **전체 MPS P1·CUDA·전체 baseline·실제 레이더 성능·실제 브라우저 렌더링 통과를 의미하지 않는다.** MPS P1 NO-GO, 기존 결측 의미, 구형 audit 복원 및 핵심 수송·PCG 구조를 유지한다. 원보고서 ZIP은 최초 조사 자료로 보존했으며 수정된 소스의 결과로 바꿔 쓰지 않았다.
 
 ## 추가 근거가 필요한 후보
 
@@ -175,12 +196,12 @@ PyTorch도 유한한 최종값과 중간 연산의 overflow를 구분한다. [�
 - P1 탐지 경계와 검증기의 strict threshold, no-event CSI=1은 서로의 계약을 먼저 확인해야 한다. 기호 차이나 관례만으로 기상학적 버그를 단정하지 않는다.
 - scoring input의 plan binding 의심은 start receipt 및 promotion/load의 재검증을 확인한 뒤 철회했다.
 
-## 검증 기록과 사용 순서
+## 최초 조사 검증 기록과 후속 사용 순서
 
 1. 현재 코어의 선택 시험은 `pytest_core.stdout.txt`의 41개, 계약 44개, variational subset 27개, sensitivity subset 19개 등이 통과했다. 다른 검토자 실행과 중복되므로 합산하여 고유 테스트 총수로 보고하지 않는다.
 2. 일부 초반 module 실행은 범위 제한 전에 시작되었다. promotion 실행 하나는 20개 통과 후 696초에서 중단했으며, 별도 fixture 대기 실행도 중단했다. 완료되지 않은 실행은 성공으로 세지 않는다. 전체 baseline은 완료 실행하지 않았다.
 3. MPS는 R01의 작은 실제 P1 경로에서 실패가 확인됐다. CPU 통과를 MPS/CUDA 통과로 바꾸어 보고하지 않는다. UI 근거는 Node 제어 시험·HTTP·정적 검토이며 실제 브라우저 렌더링이 아니다.
 4. 재현 묶음의 `README.md`, `SHA256SUMS`, `manifest.json`, `coverage_union.json`으로 환경·파일·읽기 범위를 확인한다. 프로브는 기준 커밋의 소스를 `PYTHONPATH=src:tests`로 실행한다. 전체 probe를 CI 시험처럼 일괄 실행하는 묶음은 아니다.
-5. 후속 수정은 **R02/R03/R04 → R05–R08 → R09–R11** 순서가 적절하다. R01은 향후 지원 확대 시 별도로 처리한다. 수학적 적용 범위를 먼저 확정하고 기존 함수·계약의 작은 변경으로 해결한다. 새 registry나 인증 계층을 추가하지 않는다.
+5. R02–R11은 위 개선 표의 패치와 선택 시험으로 해소했다. 다음 조사는 추가 근거가 필요한 후보의 실제 호출 경로를 확인하는 데서 이어간다. R01은 향후 MPS P1 지원 확대 시 별도로 처리한다. 새 registry나 인증 계층을 추가하지 않았다.
 
-KG는 기존 코드 그래프를 갱신한다. graph-only 저장소이므로 이 문서의 의미가 자동으로 지식 노드에 추출됐다고 주장하지 않는다. 세션의 판단·반례는 이 추적 문서와 재현 묶음에 보존하며, 다음 검토는 여기서 미해결 체크박스를 이어간다.
+KG는 기존 코드 그래프를 갱신한다. graph-only 저장소이므로 이 문서의 의미가 자동으로 지식 노드에 추출됐다고 주장하지 않는다. 세션의 판단·반례는 이 추적 문서와 재현 묶음에 보존하며, 다음 검토는 지원 경계와 보류 후보를 구분해 이어간다.

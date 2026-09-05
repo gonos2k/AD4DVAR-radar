@@ -2905,7 +2905,7 @@ class ForecastRunArtifactTests(unittest.TestCase):
             arrays["input_bundle_digest"] = np.asarray("0" * 64)
             self._save_arrays(path, arrays)
 
-            with self.assertRaisesRegex(ValueError, "run identity"):
+            with self.assertRaisesRegex(ValueError, "input bundle digest mismatch"):
                 load_forecast_run(path)
 
     def test_load_rejects_unknown_archive_member(self) -> None:

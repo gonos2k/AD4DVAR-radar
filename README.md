@@ -404,7 +404,7 @@ Prior가 새 echo support를 만들 때는 기존 causal support로 clip하거�
 echo-integral budget 안에서 control domain을 명시적으로 확장해야 한다.
 재적재 전 ZIP member 수·개별/전체 압축해제 크기·이름, NPY header의
 dtype·shape·선언 payload를 검사하고 알 수 없는 member와 object dtype을
-거부한다. 기본 한도는 160개, member당 1 GiB, 전체 2 GiB이며 API 인자로
+거부한다. 기본 한도는 256개, member당 1 GiB, 전체 2 GiB이며 API 인자로
 더 낮출 수 있다. 재적재 시 모든 member를 묶는 artifact digest와
 tensor/config/state/metadata digest를 독립적으로 재계산한다. 각 member는
 archive에서 한 번만 materialize하며 같은 NumPy storage를 digest

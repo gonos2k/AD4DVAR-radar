@@ -2577,6 +2577,15 @@ def validate_intervention_action_transition(
         after_quality_weight=after_quality,
     )
     if isinstance(action, QcMaskAction):
+        expected_std = torch.where(
+            after_masks,
+            actual_input_before_context._observation_std_dbz,
+            torch.ones_like(actual_input_before_context._observation_std_dbz),
+        )
+        if not torch.equal(
+            actual_input_after_context._observation_std_dbz, expected_std
+        ):
+            raise ValueError("QC receipt changed observation standard deviation")
         if (
             tensor_digest(before_masks) == tensor_digest(after_masks)
             and tensor_digest(before_quality) == tensor_digest(after_quality)

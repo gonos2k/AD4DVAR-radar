@@ -3553,8 +3553,11 @@ class RadarGridTimeContract:
         self,
         displacement_yx: Tensor,
     ) -> Tensor:
-        if displacement_yx.shape != (2,):
-            raise ValueError("displacement_yx must have shape [2]")
+        if (
+            displacement_yx.shape != (2,)
+            or displacement_yx.dtype not in {torch.float32, torch.float64}
+        ):
+            raise ValueError("displacement_yx must be float32/float64 with shape [2]")
         assert self.pixel_to_projected_matrix_m is not None
         dtype = (
             displacement_yx.dtype
@@ -3694,8 +3697,11 @@ class RadarGridTimeContract:
         self,
         projected_displacement_xy: Tensor,
     ) -> Tensor:
-        if projected_displacement_xy.shape != (2,):
-            raise ValueError("projected_displacement_xy must have shape [2]")
+        if (
+            projected_displacement_xy.shape != (2,)
+            or projected_displacement_xy.dtype not in {torch.float32, torch.float64}
+        ):
+            raise ValueError("projected displacement must be float32/float64 with shape [2]")
         assert self.pixel_to_projected_matrix_m is not None
         dtype = (
             projected_displacement_xy.dtype
@@ -4756,6 +4762,7 @@ class ForecastRunContract:
         if (
             observation_masks.shape != frames_dbz.shape
             or observation_masks.dtype != torch.bool
+            or observation_masks.device != frames_dbz.device
         ):
             raise ValueError(
                 "observation_masks must be boolean with the frame shape"
@@ -4790,6 +4797,7 @@ class ForecastRunContract:
             if (
                 value.shape != frames_dbz.shape
                 or value.dtype != frames_dbz.dtype
+                or value.device != frames_dbz.device
                 or not bool(torch.all(torch.isfinite(value)))
             ):
                 raise ValueError(f"{name} must be finite and match the frames")
@@ -5432,6 +5440,22 @@ class ForecastRunContract:
         if self.observation_masks_digest is not None:
             assert self.observation_quality_weight_digest is not None
             assert self.observation_std_dbz_digest is not None
+            if (self.background_frames_digest is not None) != (
+                self.latest_background_digest is not None
+            ):
+                raise ValueError("background frame digest presence mismatch")
+            expected_bundle = _forecast_input_bundle_digest_from_digests(
+                input_frames_digest=self.input_frames_digest,
+                observation_masks_digest=self.observation_masks_digest,
+                background_frames_digest=self.background_frames_digest,
+                background_age_minutes=self.background_age_minutes,
+                grid_time_contract_digest=self.grid_time_contract_digest,
+                operational_calibration_manifest_digest=self.operational_calibration_manifest_digest,
+                operational_calibration_approval_digest=self.operational_calibration_approval_digest,
+                operational_data_identity_digest=self.operational_data_identity_digest,
+            )
+            if self.input_bundle_digest != expected_bundle:
+                raise ValueError("input bundle digest mismatch")
             expected_fixed_context = _forecast_fixed_input_context_digest(
                 observation_masks_digest=self.observation_masks_digest,
                 observation_quality_weight_digest=(
@@ -5505,18 +5529,39 @@ def _forecast_input_bundle_digest(
         if grid_time_contract is None
         else grid_time_contract.digest
     )
+    return _forecast_input_bundle_digest_from_digests(
+        input_frames_digest=tensor_digest(frames_dbz),
+        observation_masks_digest=tensor_digest(observation_masks),
+        background_frames_digest=(
+            None if background_frames_dbz is None else tensor_digest(background_frames_dbz)
+        ),
+        background_age_minutes=background_age_minutes,
+        grid_time_contract_digest=resolved_grid_digest,
+        operational_calibration_manifest_digest=operational_calibration_manifest_digest,
+        operational_calibration_approval_digest=operational_calibration_approval_digest,
+        operational_data_identity_digest=operational_data_identity_digest,
+    )
+
+
+def _forecast_input_bundle_digest_from_digests(
+    *,
+    input_frames_digest: str,
+    observation_masks_digest: str,
+    background_frames_digest: str | None,
+    background_age_minutes: float | None,
+    grid_time_contract_digest: str | None,
+    operational_calibration_manifest_digest: str | None,
+    operational_calibration_approval_digest: str | None,
+    operational_data_identity_digest: str | None,
+) -> str:
     return json_digest(
         {
             "version": _FORECAST_INPUT_BUNDLE_VERSION,
-            "frames_dbz": tensor_digest(frames_dbz),
-            "observation_masks": tensor_digest(observation_masks),
-            "background_frames_dbz": (
-                None
-                if background_frames_dbz is None
-                else tensor_digest(background_frames_dbz)
-            ),
+            "frames_dbz": input_frames_digest,
+            "observation_masks": observation_masks_digest,
+            "background_frames_dbz": background_frames_digest,
             "background_age_minutes": background_age_minutes,
-            "grid_time_contract_digest": resolved_grid_digest,
+            "grid_time_contract_digest": grid_time_contract_digest,
             "operational_calibration_manifest_digest": (
                 operational_calibration_manifest_digest
             ),
@@ -10192,8 +10237,8 @@ def _validate_frames(frames: Tensor) -> None:
         raise ValueError("frames_dbz must have shape [3, height, width]")
     if frames.shape[1] < 2 or frames.shape[2] < 2:
         raise ValueError("frame height and width must both be at least 2")
-    if not frames.is_floating_point():
-        raise TypeError("frames_dbz must be a floating-point tensor")
+    if frames.dtype not in {torch.float32, torch.float64}:
+        raise TypeError("frames_dbz must be a float32 or float64 tensor")
 
 
 def _aligned_growth_evidence(

@@ -165,6 +165,8 @@ class PrecisionOperatorArtifact:
             _require_digest(name, getattr(self, name))
         precision = _owned_float_tensor("precision", self.precision)
         covariance = _owned_float_tensor("covariance", self.covariance)
+        if precision.dtype not in {torch.float32, torch.float64}:
+            raise TypeError("precision operators must use float32 or float64")
         if (
             precision.ndim != 2
             or precision.shape[0] != precision.shape[1]

@@ -179,7 +179,7 @@ def gauss_newton_value_and_gradient(
     )
     _check_real_tensor("residual_fn(point)", residual)
 
-    value = 0.5 * _inner(residual, residual)
+    value = _inner(0.5 * residual, residual)
     gradient = pullback(residual)[0]
     _check_like("gradient", gradient, point)
     return value, gradient
