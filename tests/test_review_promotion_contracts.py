@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from datetime import datetime
+from itertools import pairwise
 
 import pytest
 import torch
@@ -8,12 +10,16 @@ import torch
 import advar.promotion as promotion_module
 from advar._digest import json_digest
 
-
 DIGEST = "1" * 64
 TIMES = (
     "2026-08-09T00:00:00Z",
     "2026-08-09T00:10:00Z",
     "2026-08-09T00:20:00Z",
+)
+SUBSECOND_TRACK_TIMES = (
+    "2026-08-09T00:00:00Z",
+    "2026-08-09T00:00:00.1Z",
+    "2026-08-09T00:00:00.2Z",
 )
 
 
@@ -81,13 +87,17 @@ def test_operational_issuance_domain_rejects_bogus_source_kind() -> None:
         _issuance_plan(radar_source_kind="bogus")
 
 
-def _track(*, centroids: tuple[tuple[float, float], ...]) -> promotion_module.PhysicalEventTrackArtifact:
+def _track(
+    *,
+    centroids: tuple[tuple[float, float], ...],
+    timestamps: tuple[str, ...] = (
+        "2026-08-09T00:00:00Z",
+        "2026-08-09T00:00:01Z",
+        "2026-08-09T00:00:02Z",
+    ),
+) -> promotion_module.PhysicalEventTrackArtifact:
     return promotion_module.PhysicalEventTrackArtifact(
-        timestamps=(
-            "2026-08-09T00:00:00Z",
-            "2026-08-09T00:00:01Z",
-            "2026-08-09T00:00:02Z",
-        ),
+        timestamps=timestamps,
         centroid_xy_m=centroids,
         object_mask_digests=("a" * 64,) * 3,
         source_radar_ids=("radar-1",) * 3,
@@ -101,17 +111,52 @@ def test_physical_event_track_allows_valid_constant_velocity() -> None:
     promotion_module.validate_physical_event_track_artifact(track)
 
 
+@pytest.mark.parametrize(
+    "centroids",
+    [
+        ((0.0, 0.0), (0.01, 0.0), (0.02, 0.0)),
+        ((0.0, 0.0), (0.0, 0.0), (0.001, 0.0)),
+    ],
+    ids=("constant-velocity", "acceleration-below-limit"),
+)
+def test_physical_event_track_preserves_subsecond_intervals(
+    centroids: tuple[tuple[float, float], ...],
+) -> None:
+    track = _track(centroids=centroids, timestamps=SUBSECOND_TRACK_TIMES)
+    assert track.timestamps == (
+        "2026-08-09T00:00:00Z",
+        "2026-08-09T00:00:00.100000Z",
+        "2026-08-09T00:00:00.200000Z",
+    )
+    parsed = tuple(
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        for value in track.timestamps
+    )
+    assert tuple(
+        (second - first).total_seconds()
+        for first, second in pairwise(parsed)
+    ) == pytest.approx((0.1, 0.1))
+    promotion_module.validate_physical_event_track_artifact(track)
+
+
 def test_physical_event_track_rejects_subsecond_acceleration_in_constructor() -> None:
+    # Velocities 0 and 0.1 m/s are 0.1 s apart: a=1, not the old a=0.1.
     with pytest.raises(ValueError, match="acceleration"):
-        _track(centroids=((0.0, 0.0), (0.1, 0.0), (1.0, 0.0)))
+        _track(
+            centroids=((0.0, 0.0), (0.0, 0.0), (0.01, 0.0)),
+            timestamps=SUBSECOND_TRACK_TIMES,
+        )
 
 
 def test_physical_event_track_validator_rejects_rehashed_acceleration_tamper() -> None:
-    track = _track(centroids=((0.0, 0.0), (0.1, 0.0), (0.2, 0.0)))
+    track = _track(
+        centroids=((0.0, 0.0), (0.01, 0.0), (0.02, 0.0)),
+        timestamps=SUBSECOND_TRACK_TIMES,
+    )
     object.__setattr__(
         track,
         "centroid_xy_m",
-        ((0.0, 0.0), (0.1, 0.0), (1.0, 0.0)),
+        ((0.0, 0.0), (0.0, 0.0), (0.01, 0.0)),
     )
     object.__setattr__(track, "artifact_digest", json_digest(track.payload))
     with pytest.raises(ValueError, match="physical event track artifact is invalid"):
