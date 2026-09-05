@@ -342,6 +342,9 @@ def _current_verification_bundle(
     acquisition_time_offset_seconds: float = 0.0,
     radar_range_m: float = 10_000.0,
     representative_scan_elevation_deg: float = 1.0,
+    attenuation_qc_score: torch.Tensor | None = None,
+    source_quality_weights: tuple[float, ...] = (1.0,),
+    beam_blockage_fraction_by_source: torch.Tensor | None = None,
 ) -> VerificationBundle:
     """Build one complete current scientific verification lineage."""
 
@@ -355,12 +358,14 @@ def _current_verification_bundle(
     grid_origin = grid_time_contract.cell_center_origin_xy_m
     assert grid_origin is not None
     registry = MosaicObservationSourceRegistry(
-        radar_source_kind="single_site",
-        ordered_sources=(
+        radar_source_kind=(
+            "single_site" if len(source_quality_weights) == 1 else "mosaic"
+        ),
+        ordered_sources=tuple(
             ObservationRadarSource(
-                radar_site_digest="1" * 64,
-                calibration_epoch_digest="2" * 64,
-                quality_weight=1.0,
+                radar_site_digest=str(2 * index + 1) * 64,
+                calibration_epoch_digest=str(2 * index + 2) * 64,
+                quality_weight=quality,
                 observation_std_dbz=2.0,
                 detection_limit_dbz=-20.0,
                 projected_x_m=float(grid_origin[0]) - radar_range_m,
@@ -370,7 +375,8 @@ def _current_verification_bundle(
                     representative_scan_elevation_deg
                 ),
                 contract="observation-radar-source-v4",
-            ),
+            )
+            for index, quality in enumerate(source_quality_weights)
         ),
         projected_crs_digest=geometry.projected_crs_digest,
         metric_domain_digest=CURRENT_RADAR_METRIC_DOMAIN.digest,
@@ -382,7 +388,7 @@ def _current_verification_bundle(
         contract="mosaic-observation-source-registry-v7",
     )
     plan = VerificationObservationErrorPlan(
-        radar_source_kind="single_site",
+        radar_source_kind=registry.radar_source_kind,
         source_registry_digest=registry.source_registry_digest,
         calibration_registry_digest=registry.calibration_registry_digest,
         range_elevation_validity_algorithm_digest=(
@@ -460,12 +466,15 @@ def _current_verification_bundle(
             dtype=torch.uint8,
         ),
     ).unsqueeze(0)
-    source_shape = source_frames.shape
+    source_frames = source_frames.repeat(len(source_quality_weights), 1, 1, 1)
+    report_kind = report_kind.repeat(len(source_quality_weights), 1, 1, 1)
     evidence = VerificationObservationMaskEvidence.issue(
         plan=plan,
         geometry=geometry,
         valid_times=valid_times,
-        acquisition_valid_times_by_source=(valid_times,),
+        acquisition_valid_times_by_source=tuple(
+            valid_times for _ in source_quality_weights
+        ),
         grid_contract_digest=grid_time_contract.digest,
         radar_product_digest=radar_product_digest,
         native_verification_source_identity_digest="b" * 64,
@@ -480,10 +489,18 @@ def _current_verification_bundle(
         ),
         observation_report_kind_by_source=report_kind,
         source_availability_by_time=torch.ones(
-            (1, len(valid_times)), dtype=torch.bool
+            (len(source_quality_weights), len(valid_times)), dtype=torch.bool
         ),
-        beam_blockage_fraction_by_source=torch.zeros_like(source_frames),
-        attenuation_qc_score_by_source=torch.ones_like(source_frames),
+        beam_blockage_fraction_by_source=(
+            torch.zeros_like(source_frames)
+            if beam_blockage_fraction_by_source is None
+            else beam_blockage_fraction_by_source
+        ),
+        attenuation_qc_score_by_source=(
+            torch.ones_like(source_frames)
+            if attenuation_qc_score is None
+            else attenuation_qc_score.unsqueeze(0).expand_as(source_frames)
+        ),
         range_elevation_validity_domain_digest="c" * 64,
         beam_blockage_visibility_mask_digest="d" * 64,
         spatial_correlation_block_digest="e" * 64,

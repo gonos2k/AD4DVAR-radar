@@ -12625,6 +12625,7 @@ def compute_sensitivity_snapshot(
     selected_position = {
         index: position for position, index in enumerate(full_map_indices)
     }
+    metric_weights: list[Tensor] = []
 
     for lead_index in range(lead_count):
         truth = truth_linear[lead_index]
@@ -12637,6 +12638,7 @@ def compute_sensitivity_snapshot(
                 lead_index
             ],
         )
+        metric_weights.append(valid)
         lead_cell = freeze_remap_cell(
             (lead_index + 1) * state.displacement_yx
         )
@@ -12804,6 +12806,7 @@ def compute_sensitivity_snapshot(
         echo,
         truth_linear,
         verification_valid,
+        tuple(metric_weights),
         control_sensitivity,
         metric_available,
         all_cap_masks,
@@ -17915,7 +17918,8 @@ def _trust_components(
     control: Tensor,
     echo: Tensor,
     truth: Tensor,
-    valid: Tensor,
+    verification_valid: Tensor,
+    metric_weights: tuple[Tensor, ...],
     gradients: Tensor,
     metric_available: Tensor,
     cap_masks: Tensor,
@@ -17924,7 +17928,7 @@ def _trust_components(
     sensitivity_config: SensitivityConfig,
     grid_time_contract: RadarGridTimeContract | None,
 ) -> dict[str, float]:
-    verification_quality = valid.to(echo.dtype).mean().clamp(0.0, 1.0)
+    verification_quality = verification_valid.to(echo.dtype).mean().clamp(0.0, 1.0)
     support_quality = metric_available.to(echo.dtype).mean()
     conflict_count = int(metadata.motion_pair_conflict) + int(
         metadata.growth_pair_conflict
@@ -17985,7 +17989,7 @@ def _trust_components(
                         name,
                         forecast,
                         truth[lead_index],
-                        valid[lead_index],
+                        metric_weights[lead_index],
                         nowcast_config,
                         sensitivity_config,
                         grid_time_contract,

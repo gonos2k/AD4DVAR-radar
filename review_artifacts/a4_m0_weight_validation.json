@@ -1,0 +1,237 @@
+{
+  "base_commit": "2398e5fd24a0027219c01d826bf41c80f1d9e894",
+  "scope": "M0 fixed metric weights in linearity diagnostics; public snapshot API with synthetic current v22 verification bundles",
+  "sources": {
+    "src/advar/sensitivity.py": {
+      "sha256": "dfdfa79f8b9866107d185223e98b36de84d297cfd3f68cbdd7f51b53a2733da0",
+      "git_blob": "08d8ff76ceeaa8fb22d4ef93bacb1c45a1d08819"
+    },
+    "tests/test_sensitivity.py": {
+      "sha256": "47a518c202421a744af6eb3d7aa9e310a1d8a780c353683b8aa63ffde277b859",
+      "git_blob": "a2f9c84298f129f199c046ceeb32de1c8a608b96"
+    },
+    "tests/test_m0_linearity_weights.py": {
+      "sha256": "a7ab046eea2c75979778893d04a90597621a628ba456b762b31edf0cabafaed2",
+      "git_blob": "d80b65fd5f55c8967e694e0bfc8f94c7f38410f1"
+    }
+  },
+  "environments": {
+    "py312": "Python3.12.13 / PyTorch2.13.0 CPU / macOS",
+    "py310": "Python3.10.11 / PyTorch2.13.0 CPU / macOS"
+  },
+  "tests": {
+    "scoped-py312": {
+      "summary": "61 passed, 18 warnings, 43 subtests passed in 22.20s",
+      "failed_cases": []
+    },
+    "scoped-py310": {
+      "summary": "61 passed, 18 warnings, 43 subtests passed in 23.20s",
+      "failed_cases": []
+    },
+    "former-py312": {
+      "summary": "9 failed, 9 passed in 12.75s",
+      "failed_cases": [
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-nonuniform-0.001]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-nonuniform-0.0001]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-nonuniform-1e-05]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[confidence_weighted-unit-0.001]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[confidence_weighted-unit-0.0001]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[confidence_weighted-unit-1e-05]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[radar_dynamics_anchored-unit-0.001]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[radar_dynamics_anchored-unit-0.0001]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[radar_dynamics_anchored-unit-1e-05]"
+      ]
+    },
+    "former-py310": {
+      "summary": "9 failed, 9 passed in 12.96s",
+      "failed_cases": [
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-nonuniform-0.001]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-nonuniform-0.0001]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[issued-nonuniform-1e-05]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[confidence_weighted-unit-0.001]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[confidence_weighted-unit-0.0001]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[confidence_weighted-unit-1e-05]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[radar_dynamics_anchored-unit-0.001]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[radar_dynamics_anchored-unit-0.0001]",
+        "test_m0_linearity_uses_score_weights_and_boolean_coverage[radar_dynamics_anchored-unit-1e-05]"
+      ]
+    }
+  },
+  "snapshot_comparison": {
+    "cases": 18,
+    "all_other_fields_bitwise_identical": true,
+    "non_linearity_trust_components_identical": true
+  },
+  "linearity_results": [
+    {
+      "domain": "issued",
+      "verification_case": "nonuniform",
+      "delta": 0.001,
+      "former_linearity": 0.12010921365404786,
+      "current_linearity": 0.9984078952781381,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "issued",
+      "verification_case": "nonuniform",
+      "delta": 0.0001,
+      "former_linearity": 0.12114925125324333,
+      "current_linearity": 0.9998409922146159,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "issued",
+      "verification_case": "nonuniform",
+      "delta": 1e-05,
+      "former_linearity": 0.12756005384635483,
+      "current_linearity": 0.999984353455157,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "confidence_weighted",
+      "verification_case": "unit",
+      "delta": 0.001,
+      "former_linearity": 0.018328012395090954,
+      "current_linearity": 0.9991319596320392,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "confidence_weighted",
+      "verification_case": "unit",
+      "delta": 0.0001,
+      "former_linearity": 0.01843952037231197,
+      "current_linearity": 0.9999132220547905,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "confidence_weighted",
+      "verification_case": "unit",
+      "delta": 1e-05,
+      "former_linearity": 0.019573082015243555,
+      "current_linearity": 0.9999913978953348,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "radar_dynamics_anchored",
+      "verification_case": "unit",
+      "delta": 0.001,
+      "former_linearity": 0.018349255253302412,
+      "current_linearity": 0.9967069047961946,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "radar_dynamics_anchored",
+      "verification_case": "unit",
+      "delta": 0.0001,
+      "former_linearity": 0.01865287956917034,
+      "current_linearity": 0.9996710666465569,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "radar_dynamics_anchored",
+      "verification_case": "unit",
+      "delta": 1e-05,
+      "former_linearity": 0.0218237315170894,
+      "current_linearity": 0.9999681697299296,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "issued",
+      "verification_case": "unit",
+      "delta": 0.001,
+      "former_linearity": 0.9948311785411497,
+      "current_linearity": 0.9948311785411497,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "issued",
+      "verification_case": "unit",
+      "delta": 0.0001,
+      "former_linearity": 0.9994852406489275,
+      "current_linearity": 0.9994852406489275,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "issued",
+      "verification_case": "unit",
+      "delta": 1e-05,
+      "former_linearity": 0.9999510934356854,
+      "current_linearity": 0.9999510934356854,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "issued",
+      "verification_case": "uniform",
+      "delta": 0.001,
+      "former_linearity": 0.9948311785411497,
+      "current_linearity": 0.9948311785411497,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "issued",
+      "verification_case": "uniform",
+      "delta": 0.0001,
+      "former_linearity": 0.9994852406489275,
+      "current_linearity": 0.9994852406489275,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "issued",
+      "verification_case": "uniform",
+      "delta": 1e-05,
+      "former_linearity": 0.9999510934356854,
+      "current_linearity": 0.9999510934356854,
+      "verification_coverage": 1.0
+    },
+    {
+      "domain": "issued",
+      "verification_case": "missing",
+      "delta": 0.001,
+      "former_linearity": 0.9948311785411497,
+      "current_linearity": 0.9948311785411497,
+      "verification_coverage": 0.96875
+    },
+    {
+      "domain": "issued",
+      "verification_case": "missing",
+      "delta": 0.0001,
+      "former_linearity": 0.9994852406489275,
+      "current_linearity": 0.9994852406489275,
+      "verification_coverage": 0.96875
+    },
+    {
+      "domain": "issued",
+      "verification_case": "missing",
+      "delta": 1e-05,
+      "former_linearity": 0.9999510934356854,
+      "current_linearity": 0.9999510934356854,
+      "verification_coverage": 0.96875
+    }
+  ],
+  "checks": {
+    "source_typecheck": "0 errors (--level error; this does not count suppressed warnings)",
+    "new_test_ruff": "pass",
+    "source_ruff": "19 existing diagnostics before and after; no new diagnostic",
+    "git_diff_check": "pass"
+  },
+  "limits": [
+    "No local full baseline rerun",
+    "No new MPS or CUDA test",
+    "No real radar performance evaluation",
+    "P0 analysis branch certification and training behavior unchanged",
+    "Remote CI status is tracked separately in PR and KG"
+  ],
+  "review": {
+    "model": "gpt-5.6-luna",
+    "reasoning": "xhigh",
+    "verdict": "GREEN",
+    "scope": "independent read-only mathematical/engineering/numerical/meteorological review of the weight fix and regression"
+  },
+  "environment_recovery": {
+    "cause": "review agent uv run --python3.10 recreated shared .venv",
+    "restoration": "Python3.12.13 with existing uv.lock: PyTorch2.13.0; pytest9.1.1",
+    "validation": "61 passed,18 warnings,43 subtests passed",
+    "uv_lock_unchanged": true,
+    "note": "The initial environment did not have a complete package manifest; the project dependency closure was restored from its existing lock."
+  }
+}
