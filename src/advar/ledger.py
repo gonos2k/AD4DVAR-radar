@@ -6402,7 +6402,6 @@ class EpisodeLedger:
             ):
                 raise ValueError("executor receipt sequence must increase")
             target = self.interventions_dir / receipt.receipt_digest
-            target_existed_before_write = target.exists()
             published_by_this_call = False
             try:
                 published_by_this_call = self._write_intervention_action_artifact(
@@ -6435,13 +6434,23 @@ class EpisodeLedger:
             except Exception:
                 connection.rollback()
                 if published_by_this_call and target.exists():
-                    indexed = connection.execute(
-                        "SELECT 1 FROM realized_intervention_receipts "
-                        "WHERE receipt_digest = ?",
-                        (receipt.receipt_digest,),
-                    ).fetchone()
-                    if indexed is None:
-                        shutil.rmtree(target)
+                    # A retry may publish and index this digest as soon as the
+                    # failed transaction releases its lock. Reacquire the
+                    # writer lock before deciding whether these bytes are ours.
+                    connection.execute("BEGIN IMMEDIATE")
+                    try:
+                        indexed = connection.execute(
+                            "SELECT 1 FROM realized_intervention_receipts "
+                            "WHERE receipt_digest = ?",
+                            (receipt.receipt_digest,),
+                        ).fetchone()
+                        if indexed is None and target.exists():
+                            shutil.rmtree(target)
+                            _fsync_directory(self.interventions_dir)
+                        connection.commit()
+                    except Exception:
+                        connection.rollback()
+                        raise
                 raise
         return receipt.receipt_digest
 
