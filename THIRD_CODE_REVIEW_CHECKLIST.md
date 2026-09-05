@@ -10,7 +10,7 @@
   생성자와 재검증 시험에는 별도의 `0, 0.1, 0.2 s` 시각과 `0, 0, 0.01 m`
   위치를 적용했다. 속도는 `0, 0.1 m/s`, 실제 가속도는 `1 m/s²`이며 과거 식은
   `0.1 m/s²`를 반환한다. `0.25 m/s²` 제한의 서로 반대편에 있는 사례다.
-- [x] **소수초 보존과 정상 입력.** 공개 생성자가 `.1Z`, `.2Z`를 각각
+- [x] **소수초 보존과 정상 입력.** 공개 생성자가 `.100Z`, `.200Z`를 각각
   `.100000Z`, `.200000Z`로 정규화하고 두 간격을 `0.1 s`로 보존함을 확인한다.
   일정 속도와 제한 아래 가속도 `0.1 m/s²`는 생성과 재검증 모두 통과한다.
   기존 1초 간격의 일정 속도 시험도 유지한다.
@@ -24,10 +24,19 @@
   속도 제한·시각 중복·digest 검사 때문에 우연히 거부되지 않는다는 검토를 받았다.
 - [x] **국소 검증.** 변경 파일과 인접 A2 promotion 시험 26개 통과. import 정리
   후 변경 파일의 21개와 두 과거 식 복원 시험을 다시 확인했다. Ruff와 diff 검사 통과.
-- [ ] **A3-02 — 병합 커밋 전체 CI.** 실행
+- [x] **A3-02 — 병합 커밋 전체 CI.** 실행
   [33963828991](https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33963828991)은
-  이 문서 작성 시점에 CPU 작업 진행 중이다. 이전 PR 커밋 `04f7b58`의 CI 성공과
-  구분한다. 이후 결과는 후속 PR 본문과 로컬 KG 기록에 정확한 커밋별로 기록한다.
+  전체 성공했다. Python 3.10·3.12 각각 936 passed, 10 skipped,
+  647 subtests passed다. 이전 PR 커밋 `04f7b58`의 CI 성공과 구분한다.
+  타입 오류 0개, 경고 7,577개이며 pytest에는 각각 deprecated 경고 18개가 있다.
+- [x] **Python 3.10 호환성 보정.** 최초 후속 커밋 `44a5c24`의
+  [CI 33967843269](https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33967843269)는
+  3.12에서 938개 통과, 3.10에서 4개 실패했다. 3.10이 한 자리 소수초 `.1Z`를
+  파싱하지 못해 가속도 검사 전에 실패했다. 모든 지원 버전이 읽는 세 자리
+  `.100Z`·`.200Z` 입력으로 보정한다. 두 경우 모두 실제 간격은 0.1초다.
+  [Python 3.10의 fromisoformat 지원 형식](https://docs.python.org/3.10/library/datetime.html#datetime.datetime.fromisoformat)을
+  확인하고 Python 3.10.11과 3.12.13에서 직접 패키지 시험을 다시 수행했다.
+  최종 PR CI는 PR 본문과 KG에 정확한 커밋별로 기록한다.
 - [ ] **A3-03 — 실제 레이더 사례 비교.** 사용할 관측·정답·격자/시각 자료와
   대상 기간이 필요하다. 이번 작업에서 실제 사례 성능을 판정하지 않는다.
   실자료 평가 시 고정 평가영역, 평가·결측 화소 비율, P0/P1 선택과 학습 거부 사유를
@@ -36,11 +45,16 @@
 ## 근거와 범위
 
 시험은 [test_review_promotion_contracts.py](tests/test_review_promotion_contracts.py)에
-있다. 로컬 환경은 Python 3.12.13, PyTorch 2.13.0 CPU다.
-[검증 JSON](review_artifacts/a3_acceleration_validation.json)과
-[로그·JUnit·과거 식 복원 스크립트](review_artifacts/a3_acceleration_validation.zip)에
-소스·시험 해시와 성공·예상 실패를 함께 보존한다. 26개는 고유 국소 시험 수이며,
-다시 실행한 21개와 의도적으로 실패시킨 시험을 더하지 않는다.
+있다. 최초 Python 3.12.13의 [검증 JSON](review_artifacts/a3_acceleration_validation.json)과
+[재현 기록](review_artifacts/a3_acceleration_validation.zip)은 `44a5c24` 당시 기록이다.
+26개는 당시 고유 국소 시험 수이며 반복 실행을 더하지 않는다.
+
+호환성 보정 후에는 Python 3.10.11·3.12.13, PyTorch 2.13.0 CPU에서 각각
+21개가 통과했다. 두 버전에서 생성자·재검증의 과거 식 복원도 각각 해당 시험만
+1개 실패했다. [후속 JSON](review_artifacts/a3_py310_compatibility_validation.json)과
+[후속 재현 기록](review_artifacts/a3_py310_compatibility_validation.zip)에 최종 시험 해시,
+두 버전의 결과와 최초 CI 실패 로그를 함께 보존한다. 이 결과는 최초의 버전
+호환성 누락을 보정한 것이며 Linux CI 환경을 로컬에서 복제했다는 뜻은 아니다.
 
 사용자가 제공한 Python 3.13.5 / PyTorch 2.10.0 독립 수치 검토와 이번 패키지
 시험을 구분한다. 전체 로컬 baseline, CUDA, 전체 MPS P1 및 실자료 자동학습은
