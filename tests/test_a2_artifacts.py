@@ -1,5 +1,6 @@
 """Focused regressions for current artifact admission and legacy loading."""
 
+from dataclasses import replace
 import json
 
 import numpy as np
@@ -9,10 +10,15 @@ import torch
 from advar.nowcast import (
     CURRENT_RADAR_METRIC_DOMAIN,
     CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE,
+    ForecastRunContract,
     RADAR_PROJECTED_GRID_CELL_CENTER_CONVENTION,
     RADAR_PROJECTED_GRID_COORDINATE_DTYPE,
     NowcastConfig,
     RadarGridTimeContract,
+    _forecast_fixed_input_context_digest,
+    _forecast_full_analysis_input_digest,
+    _forecast_input_bundle_digest_from_digests,
+    _forecast_run_identity_digest,
     estimate_state,
     nowcast,
     radar_projected_crs_semantic_digest,
@@ -75,6 +81,139 @@ def test_v5_grid_is_research_usable_but_rejected_by_current_nowcast() -> None:
         match="current forecast issuance requires radar-spatial-grid-identity-v6",
     ):
         nowcast(_frames(), grid_time_contract=grid)
+
+
+def test_current_run_from_inputs_rejects_v5_grid_before_forecast_issuance() -> None:
+    grid = _scientific_grid("radar-spatial-grid-identity-v5")
+
+    with pytest.raises(
+        ValueError,
+        match="current forecast issuance requires radar-spatial-grid-identity-v6",
+    ):
+        ForecastRunContract.from_inputs(
+            NowcastConfig(),
+            _frames(),
+            torch.ones_like(_frames(), dtype=torch.bool),
+            None,
+            grid_time_contract=grid,
+        )
+
+
+def _legacy_v5_archive(
+    arrays: dict[str, np.ndarray],
+    result,
+    grid: RadarGridTimeContract,
+) -> dict[str, np.ndarray]:
+    """Re-address a current archive as an immutable historical v5 run."""
+
+    run = result.run
+    assert run.observation_masks_digest is not None
+    assert run.observation_quality_weight_digest is not None
+    assert run.observation_std_dbz_digest is not None
+    assert run.source_available_mask_digest is not None
+    assert run.learned_model_input_features_digest is not None
+    assert run.fixed_input_context_digest is not None
+    assert run.full_analysis_input_digest is not None
+    input_bundle_digest = _forecast_input_bundle_digest_from_digests(
+        input_frames_digest=run.input_frames_digest,
+        observation_masks_digest=run.observation_masks_digest,
+        background_frames_digest=run.background_frames_digest,
+        background_age_minutes=run.background_age_minutes,
+        grid_time_contract_digest=grid.digest,
+        operational_calibration_manifest_digest=(
+            run.operational_calibration_manifest_digest
+        ),
+        operational_calibration_approval_digest=(
+            run.operational_calibration_approval_digest
+        ),
+        operational_data_identity_digest=run.operational_data_identity_digest,
+    )
+    fixed_input_context_digest = _forecast_fixed_input_context_digest(
+        observation_masks_digest=run.observation_masks_digest,
+        observation_quality_weight_digest=run.observation_quality_weight_digest,
+        observation_std_dbz_digest=run.observation_std_dbz_digest,
+        source_available_mask_digest=run.source_available_mask_digest,
+        learned_model_input_features_digest=(
+            run.learned_model_input_features_digest
+        ),
+        background_frames_digest=run.background_frames_digest,
+        background_age_minutes=run.background_age_minutes,
+        grid_time_contract_digest=grid.digest,
+        operational_calibration_manifest_digest=(
+            run.operational_calibration_manifest_digest
+        ),
+        operational_calibration_approval_digest=(
+            run.operational_calibration_approval_digest
+        ),
+        operational_data_identity_digest=run.operational_data_identity_digest,
+        input_plan_digest=run.input_plan_digest,
+    )
+    full_analysis_input_digest = _forecast_full_analysis_input_digest(
+        input_frames_digest=run.input_frames_digest,
+        fixed_input_context_digest=fixed_input_context_digest,
+    )
+    historical_run = replace(
+        run,
+        input_bundle_digest=input_bundle_digest,
+        fixed_input_context_digest=fixed_input_context_digest,
+        full_analysis_input_digest=full_analysis_input_digest,
+        grid_time_contract=grid,
+        grid_time_contract_digest=grid.digest,
+    )
+    historical = dict(arrays)
+    historical["forecast_run_artifact_version"] = np.asarray(
+        "forecast-run-v42"
+    )
+    historical["input_bundle_digest"] = np.asarray(input_bundle_digest)
+    historical["fixed_input_context_digest"] = np.asarray(
+        fixed_input_context_digest
+    )
+    historical["full_analysis_input_digest"] = np.asarray(
+        full_analysis_input_digest
+    )
+    historical["grid_time_contract_json"] = np.asarray(
+        json.dumps(grid.payload, sort_keys=True, separators=(",", ":"))
+    )
+    historical["grid_time_contract_digest"] = np.asarray(grid.digest)
+    historical["forecast_run_digest"] = np.asarray(
+        _forecast_run_identity_digest(
+            historical_run,
+            result.state_metadata_digest,
+            result.forecast_dbz_digest,
+            result.valid_mask_digest,
+        )
+    )
+    return seal_forecast_run_arrays(historical)
+
+
+def test_legacy_v5_grid_artifact_migrates_without_current_issuance_gate(
+    tmp_path,
+) -> None:
+    current_grid = _scientific_grid("radar-spatial-grid-identity-v6")
+    result = nowcast(_frames(), grid_time_contract=current_grid)
+    current_path = tmp_path / "current.npz"
+    legacy_path = tmp_path / "legacy-v5.npz"
+    save_forecast_run(result, current_path)
+    with np.load(current_path, allow_pickle=False) as archive:
+        arrays = {
+            name: np.array(archive[name], copy=True)
+            for name in archive.files
+        }
+
+    legacy_grid = _scientific_grid("radar-spatial-grid-identity-v5")
+    np.savez_compressed(
+        legacy_path,
+        **_legacy_v5_archive(arrays, result, legacy_grid),
+    )
+
+    loaded = load_forecast_run(legacy_path)
+    assert loaded.run.grid_time_contract == legacy_grid
+    torch.testing.assert_close(
+        loaded.forecast_dbz,
+        result.forecast_dbz,
+        equal_nan=True,
+    )
+    assert torch.equal(loaded.valid_mask, result.valid_mask)
 
 
 def test_current_v72_artifact_rejects_v5_grid_but_legacy_version_is_not_gated(

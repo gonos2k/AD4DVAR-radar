@@ -4774,6 +4774,7 @@ class ForecastRunContract:
         analysis_input_derivation_artifact_digest: str | None = None,
     ) -> ForecastRunContract:
         _validate_frames(frames_dbz)
+        _validate_current_radar_grid_issuance(grid_time_contract)
         latest_frame = frames_dbz[-1]
         if (
             observation_masks.shape != frames_dbz.shape
