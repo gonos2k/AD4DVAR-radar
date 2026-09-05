@@ -133,7 +133,16 @@ def validate_remap_cell(
 ) -> None:
     _validate_displacement(displacement_yx)
     detached = displacement_yx.detach()
-    fractions = detached - detached.new_tensor((cell.y, cell.x))
+    # Convert the frozen integer through Python float before constructing a
+    # tensor.  Tensor scalar arithmetic otherwise attempts to represent large
+    # Python integers in the tensor dtype and can overflow for finite motion.
+    cell_tensor = torch.stack(
+        (
+            detached.new_zeros(()) + float(cell.y),
+            detached.new_zeros(()) + float(cell.x),
+        )
+    )
+    fractions = detached - cell_tensor
     tolerance = 32.0 * min(
         torch.finfo(detached.dtype).eps,
         torch.finfo(torch.float32).eps,
@@ -155,8 +164,17 @@ def remap_fractions(
     cell: RemapCell,
 ) -> tuple[Tensor, Tensor]:
     displacement = displacement_yx.to(dtype=echo.dtype, device=echo.device)
-    fraction_y = (displacement[0] - cell.y).clamp(0.0, 1.0)
-    fraction_x = (displacement[1] - cell.x).clamp(0.0, 1.0)
+    # Keep the displacement as the differentiable operand.  The cell is a
+    # frozen branch coordinate; converting it through float avoids an
+    # overflowing Python-int-to-tensor conversion for finite extreme shifts.
+    cell_tensor = torch.stack(
+        (
+            displacement.new_zeros(()) + float(cell.y),
+            displacement.new_zeros(()) + float(cell.x),
+        )
+    )
+    fractions = (displacement - cell_tensor).clamp(0.0, 1.0)
+    fraction_y, fraction_x = fractions.unbind()
     return fraction_y, fraction_x
 
 

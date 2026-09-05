@@ -8971,6 +8971,8 @@ def _validate_frames(frames: Tensor) -> None:
 
 def _validate_observations(observations: AnalysisObservations) -> None:
     _validate_frames(observations.dbz)
+    if not bool(torch.all(torch.isfinite(observations.dbz))):
+        raise ValueError("dbz must be finite canonical observations")
     shape = observations.dbz.shape
     if observations.std_dbz.shape != shape:
         raise ValueError("std_dbz must have the observation shape")
@@ -9746,6 +9748,10 @@ def validate_analysis_linearization_content(
         != linearization.linearization_digest
     ):
         raise ValueError("P1 linearization content digest mismatch")
+    if not _analysis_remap_cells_match(control, linearization.frozen):
+        raise ValueError(
+            "P1 linearization remap cells disagree with the retained control"
+        )
     if require_current_environment:
         if linearization.algorithm_bundle_digest != algorithm_bundle_digest():
             raise ValueError("P1 linearization algorithm bundle mismatch")

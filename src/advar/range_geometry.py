@@ -357,6 +357,10 @@ class RangePartitionEvidence:
             self.contract != "radar-range-partition-evidence-v4"
             or not masks
             or len(masks) != len(self.range_regime_labels)
+            or not self.range_regime_labels
+            or len(set(self.range_regime_labels))
+            != len(self.range_regime_labels)
+            or any(not label for label in self.range_regime_labels)
             or len(self.range_band_mask_digests) != len(masks)
             or any(mask.ndim != 2 or mask.dtype is not torch.bool for mask in masks)
             or any(mask.shape != masks[0].shape for mask in masks[1:])
