@@ -4162,6 +4162,21 @@ def motion_displacement_limits_yx(
     return inward_limits.to(device=reference.device)
 
 
+def _validate_current_radar_grid_issuance(
+    grid_time_contract: RadarGridTimeContract | None,
+) -> None:
+    """Reject the audit-only projected grid from current forecast issuance."""
+
+    if grid_time_contract is None:
+        return
+    capabilities = CONTRACT_CAPABILITIES["radar_spatial_grid_identity"]
+    if grid_time_contract.spatial_grid_contract == capabilities.predecessor:
+        raise ValueError(
+            "current forecast issuance requires "
+            f"{capabilities.current}"
+        )
+
+
 class DataStatus(str, Enum):
     OBSERVED = "OBSERVED"
     PARTIAL = "PARTIAL"
@@ -4286,13 +4301,13 @@ def _validate_background_age(
     *,
     background_present: bool,
     background_age_minutes: float | None,
-) -> None:
+) -> float | None:
     if not background_present:
         if background_age_minutes is not None:
             raise ValueError(
                 "background_age_minutes requires background_frames_dbz"
             )
-        return
+        return None
     if background_age_minutes is None:
         raise ValueError(
             "background_age_minutes is required with background_frames_dbz"
@@ -4303,6 +4318,7 @@ def _validate_background_age(
         )
     if background_age_minutes > config.maximum_background_age_minutes:
         raise ValueError("background exceeds maximum_background_age_minutes")
+    return float(background_age_minutes)
 
 
 @dataclass(frozen=True)
@@ -4836,7 +4852,7 @@ class ForecastRunContract:
             torch.full_like(frames_dbz, -10.0),
         )
         background_present = background_frames_dbz is not None
-        _validate_background_age(
+        background_age_minutes = _validate_background_age(
             config,
             background_present=background_present,
             background_age_minutes=background_age_minutes,
@@ -7322,7 +7338,7 @@ def prepare_input(
     )
     background_frames = torch.full_like(frames_dbz, config.min_dbz)
     background_mask = torch.zeros_like(observed)
-    _validate_background_age(
+    background_age_minutes = _validate_background_age(
         config,
         background_present=background_frames_dbz is not None,
         background_age_minutes=background_age_minutes,
@@ -9841,6 +9857,12 @@ def nowcast(
     audit: bool = False,
 ) -> ForecastResult:
     config = config or NowcastConfig()
+    _validate_current_radar_grid_issuance(grid_time_contract)
+    background_age_minutes = _validate_background_age(
+        config,
+        background_present=background_frames_dbz is not None,
+        background_age_minutes=background_age_minutes,
+    )
     motion_displacement_limits_yx(config, grid_time_contract, frames_dbz)
     if grid_time_contract is not None:
         grid_time_contract.validate_for(
