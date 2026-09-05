@@ -362,6 +362,84 @@ class LedgerIORegressionTests(TestCase):
                     ("active", 1),
                 )
 
+    def test_operational_provenance_fsync_failure_removes_only_new_directory(
+        self,
+    ) -> None:
+        """A post-rename fsync fault must not leak an unindexed directory."""
+
+        test_promotion = importlib.import_module("test_promotion")
+        public_case = test_promotion.NeuralPriorPromotionTests("runTest")
+        original_append = EpisodeLedger.append_operational_analysis_input_provenance
+        original_fsync = ledger_module._fsync_directory
+        state: dict[str, object] = {"fault_raised": False, "calls": []}
+
+        class InjectedDirectoryFsyncError(RuntimeError):
+            pass
+
+        def fail_after_publish(path: Path) -> None:
+            original_fsync(path)
+            ledger = state.get("ledger")
+            target = state.get("target")
+            if (
+                not state["fault_raised"]
+                and isinstance(ledger, EpisodeLedger)
+                and isinstance(target, Path)
+                and path == ledger.analysis_input_provenance_dir
+                and target.is_dir()
+            ):
+                state["fault_raised"] = True
+                raise InjectedDirectoryFsyncError("injected provenance fsync")
+
+        def append_then_retry(
+            ledger: EpisodeLedger,
+            *args: object,
+            **kwargs: object,
+        ) -> str:
+            derivation = kwargs["derivation"]
+            target = ledger.analysis_input_provenance_dir / derivation.artifact_digest
+            state["ledger"] = ledger
+            state["target"] = target
+            cast_calls = state["calls"]
+            assert isinstance(cast_calls, list)
+            call = {"target": target, "before": target.exists()}
+            cast_calls.append(call)
+            try:
+                result = original_append(ledger, *args, **kwargs)
+                call["after"] = target.is_dir()
+                return result
+            except InjectedDirectoryFsyncError:
+                state["failed_target_exists"] = target.exists()
+                with sqlite3.connect(ledger.index_path) as connection:
+                    state["failed_row"] = connection.execute(
+                        "SELECT 1 FROM analysis_input_provenance_commits "
+                        "WHERE artifact_digest = ?",
+                        (derivation.artifact_digest,),
+                    ).fetchone()
+                # The public fixture continues through recovery and its
+                # valid pre-existing orphan copy after this injected failure.
+                result = original_append(ledger, *args, **kwargs)
+                call["after"] = target.is_dir()
+                return result
+
+        with (
+            patch.object(ledger_module, "_fsync_directory", fail_after_publish),
+            patch.object(
+                EpisodeLedger,
+                "append_operational_analysis_input_provenance",
+                append_then_retry,
+            ),
+        ):
+            public_case.test_future_operational_provenance_does_not_require_holdout()
+
+        self.assertTrue(state["fault_raised"])
+        self.assertFalse(state["failed_target_exists"])
+        self.assertIsNone(state["failed_row"])
+        calls = state["calls"]
+        assert isinstance(calls, list)
+        self.assertTrue(
+            any(call["before"] and call["after"] for call in calls)
+        )
+
 
 if __name__ == "__main__":
     import unittest
