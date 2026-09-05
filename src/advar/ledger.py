@@ -5372,13 +5372,13 @@ class EpisodeLedger:
         before_run: ForecastRunContract,
         after: InterventionInputContext,
         after_run: ForecastRunContract,
-    ) -> None:
+    ) -> bool:
         target = self.interventions_dir / receipt.receipt_digest
         if target.exists():
             self._replay_intervention_action_artifact(
                 decision, receipt, action_policy
             )
-            return
+            return False
         generator_bytes = generator.artifact_bytes
         if len(generator_bytes) > _MAXIMUM_ACTION_GENERATOR_BYTES:
             raise ValueError("action generator artifact exceeds its byte budget")
@@ -5425,6 +5425,7 @@ class EpisodeLedger:
                 dir=self.interventions_dir,
             )
         )
+        published = False
         try:
             before_background = before.background_frames_dbz
             after_background = after.background_frames_dbz
@@ -5576,10 +5577,16 @@ class EpisodeLedger:
                 _fsync_file(temporary / name)
             _fsync_directory(temporary)
             os.rename(temporary, target)
+            published = True
             _fsync_directory(self.interventions_dir)
+        except Exception:
+            if published and target.exists():
+                shutil.rmtree(target)
+            raise
         finally:
             if temporary.exists():
                 shutil.rmtree(temporary)
+        return published
 
     def _replay_intervention_action_artifact(
         self,
@@ -6337,6 +6344,23 @@ class EpisodeLedger:
                 raise ValueError("recorded prospective decision changed")
             if not recorded[1] or not recorded[2]:
                 raise ValueError("realized receipt requires operator approval")
+            duplicate = connection.execute(
+                "SELECT receipt_digest FROM realized_intervention_receipts "
+                "WHERE decision_digest = ? OR receipt_digest = ?",
+                (decision.decision_digest, receipt.receipt_digest),
+            ).fetchone()
+            if duplicate is not None:
+                # Keep the database duplicate contract, but discover it while
+                # the write lock is held so a retry cannot publish new bytes.
+                column = (
+                    "decision_digest"
+                    if duplicate[0] != receipt.receipt_digest
+                    else "receipt_digest"
+                )
+                raise sqlite3.IntegrityError(
+                    "UNIQUE constraint failed: "
+                    f"realized_intervention_receipts.{column}"
+                )
             approval_values = json.loads(recorded[2])
             retained_approval_digest = approval_values.pop(
                 "approval_digest",
@@ -6377,32 +6401,48 @@ class EpisodeLedger:
                 receipt.executor_sequence_number <= previous_sequence
             ):
                 raise ValueError("executor receipt sequence must increase")
-            self._write_intervention_action_artifact(
-                decision,
-                receipt,
-                action_policy,
-                action_generator,
-                actual_input_before_context,
-                actual_input_before_run,
-                actual_input_after_context,
-                actual_input_after_run,
-            )
-            connection.execute(
-                "INSERT INTO realized_intervention_receipts "
-                "(receipt_digest, decision_digest, executor_key_id, "
-                "executor_sequence_number, receipt_json, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
-                (
-                    receipt.receipt_digest,
-                    receipt.decision_digest,
-                    receipt.executor_key_id,
-                    receipt.executor_sequence_number,
-                    json.dumps(asdict(receipt), sort_keys=True),
-                    now.isoformat(),
-                ),
-            )
-            if datetime.now(timezone.utc) >= publication:
-                raise ValueError("realized receipt crossed publication time")
+            target = self.interventions_dir / receipt.receipt_digest
+            target_existed_before_write = target.exists()
+            published_by_this_call = False
+            try:
+                published_by_this_call = self._write_intervention_action_artifact(
+                    decision,
+                    receipt,
+                    action_policy,
+                    action_generator,
+                    actual_input_before_context,
+                    actual_input_before_run,
+                    actual_input_after_context,
+                    actual_input_after_run,
+                )
+                connection.execute(
+                    "INSERT INTO realized_intervention_receipts "
+                    "(receipt_digest, decision_digest, executor_key_id, "
+                    "executor_sequence_number, receipt_json, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        receipt.receipt_digest,
+                        receipt.decision_digest,
+                        receipt.executor_key_id,
+                        receipt.executor_sequence_number,
+                        json.dumps(asdict(receipt), sort_keys=True),
+                        now.isoformat(),
+                    ),
+                )
+                if datetime.now(timezone.utc) >= publication:
+                    raise ValueError("realized receipt crossed publication time")
+                connection.commit()
+            except Exception:
+                connection.rollback()
+                if published_by_this_call and target.exists():
+                    indexed = connection.execute(
+                        "SELECT 1 FROM realized_intervention_receipts "
+                        "WHERE receipt_digest = ?",
+                        (receipt.receipt_digest,),
+                    ).fetchone()
+                    if indexed is None:
+                        shutil.rmtree(target)
+                raise
         return receipt.receipt_digest
 
     def load_prospective_intervention(
@@ -7834,6 +7874,10 @@ class EpisodeLedger:
         if not resolved_at <= now <= deadline:
             raise ValueError("resolved source coverage was not appended pre-issue")
         with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            transaction_now = datetime.now(timezone.utc)
+            if not resolved_at <= transaction_now <= deadline:
+                raise ValueError("resolved source coverage was not appended pre-issue")
             try:
                 connection.execute(
                     "INSERT INTO neural_prior_resolved_source_coverage_artifacts "
@@ -7857,6 +7901,11 @@ class EpisodeLedger:
                         now.isoformat(),
                     ),
                 )
+                if datetime.now(timezone.utc) > deadline:
+                    raise ValueError(
+                        "resolved source coverage was not appended pre-issue"
+                    )
+                connection.commit()
             except sqlite3.IntegrityError as error:
                 raise FileExistsError(
                     "resolved source coverage is already registered"
@@ -10186,16 +10235,16 @@ class EpisodeLedger:
 
         if not re.fullmatch(r"[0-9a-f]{64}", artifact_digest):
             raise ValueError("analysis provenance digest is invalid")
+        recovery_query = (
+            "SELECT provenance_kind,payload_json,arrays_sha256,"
+            "metadata_sha256,path,raw_ingestor_trust_store_digest,"
+            "payload_committed_at,status,usable,provenance_plan_digest,"
+            "case_id,input_plan_digest,raw_resolution_receipt_digest,"
+            "preparation_receipt_json,preparation_receipt_digest FROM "
+            "analysis_input_provenance_commits WHERE artifact_digest = ?"
+        )
         with self._connect() as connection:
-            row = connection.execute(
-                "SELECT provenance_kind,payload_json,arrays_sha256,"
-                "metadata_sha256,path,raw_ingestor_trust_store_digest,"
-                "payload_committed_at,status,usable,provenance_plan_digest,"
-                "case_id,input_plan_digest,raw_resolution_receipt_digest,"
-                "preparation_receipt_json,preparation_receipt_digest FROM "
-                "analysis_input_provenance_commits WHERE artifact_digest = ?",
-                (artifact_digest,),
-            ).fetchone()
+            row = connection.execute(recovery_query, (artifact_digest,)).fetchone()
         if row is None:
             raise KeyError(f"unknown analysis provenance: {artifact_digest}")
         provenance_kind = str(row[0])
@@ -10205,6 +10254,78 @@ class EpisodeLedger:
             or (status == "prepared" and int(row[8]) == 0)
         ):
             raise ValueError("analysis provenance is not recoverable")
+
+        immutable_indexes = (0, 1, 2, 3, 4, 5, 6, 9, 10, 11, 12)
+        immutable_identity = tuple(row[index] for index in immutable_indexes)
+
+        def read_same_commit_row(connection: sqlite3.Connection) -> Any:
+            candidate = connection.execute(
+                recovery_query, (artifact_digest,)
+            ).fetchone()
+            if candidate is None:
+                raise ValueError("analysis provenance disappeared during recovery")
+            if tuple(candidate[index] for index in immutable_indexes) != (
+                immutable_identity
+            ):
+                raise ValueError("analysis provenance immutable identity changed")
+            return candidate
+
+        def read_same_holdout_row(connection: sqlite3.Connection) -> Any:
+            if provenance_kind != "holdout":
+                return None
+            candidate = connection.execute(
+                "SELECT holdout_plan_digest,case_id,input_plan_digest,"
+                "global_resolution_receipt_digest,payload_json,arrays_sha256,"
+                "metadata_sha256,path,raw_ingestor_trust_store_digest,"
+                "committed_at,status,usable,payload_committed_at,"
+                "preparation_receipt_json,preparation_receipt_digest FROM "
+                "neural_prior_analysis_input_provenance "
+                "WHERE artifact_digest = ?",
+                (artifact_digest,),
+            ).fetchone()
+            expected = (
+                str(row[9]),
+                str(row[10]),
+                str(row[11]),
+                str(row[12]),
+                str(row[1]),
+                str(row[2]),
+                str(row[3]),
+                str(row[4]),
+                str(row[5]),
+                str(row[6]),
+                str(row[6]),
+            )
+            if candidate is None or tuple(
+                candidate[index] for index in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12)
+            ) != expected:
+                raise ValueError("holdout provenance immutable identity changed")
+            return candidate
+
+        def require_same_state(
+            connection: sqlite3.Connection,
+            candidate: Any,
+            *,
+            expected_status: str,
+            expected_usable: int,
+            expected_receipt_json: str | None,
+            expected_receipt_digest: str | None,
+        ) -> None:
+            if (
+                str(candidate[7]) != expected_status
+                or int(candidate[8]) != expected_usable
+                or candidate[13] != expected_receipt_json
+                or candidate[14] != expected_receipt_digest
+            ):
+                raise ValueError("analysis provenance recovery state changed")
+            holdout = read_same_holdout_row(connection)
+            if holdout is not None and (
+                str(holdout[10]) != expected_status
+                or int(holdout[11]) != expected_usable
+                or holdout[13] != expected_receipt_json
+                or holdout[14] != expected_receipt_digest
+            ):
+                raise ValueError("holdout provenance recovery state changed")
         _, arrays_bytes, metadata_text = (
             self._snapshot_analysis_input_provenance_directory(
                 artifact_digest=artifact_digest,
@@ -10338,6 +10459,7 @@ class EpisodeLedger:
             )
             with self._connect() as connection:
                 connection.execute("BEGIN IMMEDIATE")
+                read_same_commit_row(connection)
                 updated = connection.execute(
                     "UPDATE analysis_input_provenance_commits SET "
                     "preparation_receipt_json=?,preparation_receipt_digest=? "
@@ -10350,26 +10472,49 @@ class EpisodeLedger:
                         artifact_digest,
                     ),
                 )
-                if updated.rowcount != 1:
-                    raise ValueError("provenance preparation receipt raced")
-                if provenance_kind == "holdout":
-                    updated_holdout = connection.execute(
-                        "UPDATE neural_prior_analysis_input_provenance SET "
-                        "preparation_receipt_json=?,"
-                        "preparation_receipt_digest=? WHERE artifact_digest=? "
-                        "AND status='prepared' AND "
-                        "preparation_receipt_json IS NULL AND "
-                        "preparation_receipt_digest IS NULL",
-                        (
-                            preparation_receipt_json,
-                            preparation_receipt_digest,
-                            artifact_digest,
-                        ),
-                    )
-                    if updated_holdout.rowcount != 1:
-                        raise ValueError(
-                            "holdout provenance preparation receipt raced"
+                if updated.rowcount == 1:
+                    if provenance_kind == "holdout":
+                        updated_holdout = connection.execute(
+                            "UPDATE neural_prior_analysis_input_provenance SET "
+                            "preparation_receipt_json=?,"
+                            "preparation_receipt_digest=? WHERE artifact_digest=? "
+                            "AND status='prepared' AND "
+                            "preparation_receipt_json IS NULL AND "
+                            "preparation_receipt_digest IS NULL",
+                            (
+                                preparation_receipt_json,
+                                preparation_receipt_digest,
+                                artifact_digest,
+                            ),
                         )
+                        if updated_holdout.rowcount != 1:
+                            raise ValueError(
+                                "holdout provenance preparation receipt raced"
+                            )
+                    status = "prepared"
+                else:
+                    winner = read_same_commit_row(connection)
+                    if (
+                        str(winner[7]) not in {"prepared", "active"}
+                        or int(winner[8]) != (1 if winner[7] == "active" else 0)
+                        or winner[13] is None
+                        or winner[14] is None
+                    ):
+                        raise ValueError("provenance preparation receipt raced")
+                    holdout = read_same_holdout_row(connection)
+                    if holdout is not None and (
+                        holdout[13] is None
+                        or holdout[14] is None
+                        or holdout[10] != winner[7]
+                        or int(holdout[11]) != int(winner[8])
+                        or holdout[13] != winner[13]
+                        or holdout[14] != winner[14]
+                    ):
+                        raise ValueError("holdout provenance preparation receipt raced")
+                    preparation_receipt_json = str(winner[13])
+                    preparation_receipt_digest = str(winner[14])
+                    status = str(winner[7])
+                connection.commit()
         self._validate_analysis_provenance_preparation_receipt(
             preparation_receipt_json,
             preparation_receipt_digest,
@@ -10409,6 +10554,16 @@ class EpisodeLedger:
         if payload_commit > _canonical_utc_datetime(prepared_at, "prepared_at"):
             raise ValueError("prepared provenance receipt predates its payload")
         if status == "active":
+            with self._connect() as connection:
+                candidate = read_same_commit_row(connection)
+                require_same_state(
+                    connection,
+                    candidate,
+                    expected_status="active",
+                    expected_usable=1,
+                    expected_receipt_json=preparation_receipt_json,
+                    expected_receipt_digest=preparation_receipt_digest,
+                )
             return artifact_digest
         activated_at = datetime.now(timezone.utc).isoformat()
         with self._connect() as connection:
@@ -10425,19 +10580,29 @@ class EpisodeLedger:
                 "WHERE artifact_digest = ? AND status = 'prepared' AND usable = 0",
                 (activated_at, activated_at, artifact_digest),
             )
-            if updated.rowcount != 1:
-                raise ValueError("prepared provenance activation raced")
-            if provenance_kind == "holdout":
-                updated_holdout = connection.execute(
-                    "UPDATE neural_prior_analysis_input_provenance SET "
-                    "status = 'active',usable = 1,"
-                    "raw_trust_validated_at = ?,activated_at = ? "
-                    "WHERE artifact_digest = ? AND status = 'prepared' "
-                    "AND usable = 0",
-                    (activated_at, activated_at, artifact_digest),
+            if updated.rowcount == 1:
+                if provenance_kind == "holdout":
+                    updated_holdout = connection.execute(
+                        "UPDATE neural_prior_analysis_input_provenance SET "
+                        "status = 'active',usable = 1,"
+                        "raw_trust_validated_at = ?,activated_at = ? "
+                        "WHERE artifact_digest = ? AND status = 'prepared' "
+                        "AND usable = 0",
+                        (activated_at, activated_at, artifact_digest),
+                    )
+                    if updated_holdout.rowcount != 1:
+                        raise ValueError("holdout provenance activation raced")
+            else:
+                winner = read_same_commit_row(connection)
+                require_same_state(
+                    connection,
+                    winner,
+                    expected_status="active",
+                    expected_usable=1,
+                    expected_receipt_json=preparation_receipt_json,
+                    expected_receipt_digest=preparation_receipt_digest,
                 )
-                if updated_holdout.rowcount != 1:
-                    raise ValueError("holdout provenance activation raced")
+            connection.commit()
         post_trust = _load_raw_ingestor_trust_store(
             raw_ingestor_trust_store_path
         )
