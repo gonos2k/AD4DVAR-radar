@@ -754,7 +754,7 @@ class EnsembleFSOStatistics:
 
 def _require_centered_members(name: str, value: Tensor) -> None:
     mean = torch.mean(value, dim=0)
-    scale = torch.amax(torch.abs(value)).clamp_min(1.0)
+    scale = torch.amax(torch.abs(value), dim=0).clamp_min(1.0)
     tolerance = 128.0 * torch.finfo(value.dtype).eps * scale
     if bool(torch.any(torch.abs(mean) > tolerance)):
         raise ValueError(f"{name} must be centered across members")

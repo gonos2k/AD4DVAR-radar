@@ -10,7 +10,6 @@ from .physics import (
     freeze_remap_cell,
     remap,
     remap_fractions,
-    shift_zero,
     validate_remap_cell,
 )
 
@@ -105,12 +104,28 @@ def audit_transport(
         ((cell.y, cell.x + 1), (1.0 - fraction_y) * fraction_x),
         ((cell.y + 1, cell.x + 1), fraction_y * fraction_x),
     )
-    before = echo.sum()
-    after = moved.sum()
-    outflow = echo.new_zeros(())
+    # Audits are scalar diagnostics, so accumulate on CPU in binary64 even
+    # when the forecast uses float32/MPS.
+    audit_echo = echo.detach().to(device="cpu", dtype=torch.float64)
+    before = audit_echo.sum()
+    after = moved.detach().to(device="cpu", dtype=torch.float64).sum()
+    outflow = before.new_zeros(())
+    height, width = echo.shape[-2:]
     for (dy, dx), weight in branches:
-        retained = shift_zero(echo, dy, dx).sum()
-        outflow = outflow + weight * (before - retained)
+        y_start = min(height, max(0, -dy))
+        y_stop = max(0, min(height, height - dy))
+        x_start = min(width, max(0, -dx))
+        x_stop = max(0, min(width, width - dx))
+        # Disjoint strips count corner losses once, without subtracting
+        # nearly equal whole-domain integrals.
+        lost = (
+            audit_echo[:y_start, :].sum()
+            + audit_echo[y_stop:, :].sum()
+            + audit_echo[y_start:y_stop, :x_start].sum()
+            + audit_echo[y_start:y_stop, x_stop:].sum()
+        )
+        audit_weight = weight.detach().to(device="cpu", dtype=torch.float64)
+        outflow = outflow + audit_weight * lost
     budget_error = before - after - outflow
     return TransportAudit(
         echo_integral_before=float(before.detach()),
