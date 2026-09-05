@@ -2,6 +2,10 @@ const form = document.querySelector("#experiment-form");
 const deck = document.querySelector("#radar-deck");
 const runButton = form.querySelector("button[type='submit']");
 const runStatus = document.querySelector("#run-status");
+const pinButton = document.querySelector("#pin-reference");
+const clearButton = document.querySelector("#clear-reference");
+let lastResult = null;
+let referenceSettings = null;
 
 const controls = {
   use_background: document.querySelector("#use-background"),
@@ -31,7 +35,19 @@ for (const [input, selector, format] of labels) {
 controls.use_background.addEventListener("change", updateBackgroundControls);
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  await run("/api/run", settings());
+  await run("/api/run", { ...settings(), reference: referenceSettings });
+});
+
+pinButton.addEventListener("click", async () => {
+  const reference = { ...lastResult.settings };
+  await run("/api/run", { ...lastResult.settings, reference });
+});
+
+clearButton.addEventListener("click", () => {
+  referenceSettings = null;
+  clearButton.disabled = true;
+  document.querySelector("#reference-description").textContent = "저장된 A가 없습니다.";
+  document.querySelector("#comparison-results").hidden = true;
 });
 
 function signed(value) {
@@ -84,7 +100,9 @@ async function run(path, payload) {
       throw new Error(result.error || `HTTP ${response.status}`);
     }
     render(result);
-    runStatus.textContent = "계산이 끝났습니다. 초기장만 바꿔 다시 비교할 수 있습니다.";
+    lastResult = result;
+    referenceSettings = result.comparison?.settings ?? null;
+    runStatus.textContent = "계산이 끝났습니다. 초기장 설정을 바꿔 다시 비교할 수 있습니다.";
     runStatus.classList.remove("error");
   } catch (error) {
     runStatus.textContent = `계산 실패: ${error.message}`;
@@ -98,6 +116,8 @@ function setRunning(running) {
   deck.classList.toggle("running", running);
   deck.setAttribute("aria-busy", String(running));
   runButton.disabled = running;
+  pinButton.disabled = running || !lastResult;
+  clearButton.disabled = running || !referenceSettings;
   if (running) {
     runStatus.textContent = "ADVAR가 고정 사례를 다시 계산하고 있습니다.";
   }
@@ -107,7 +127,7 @@ function render(result) {
   document.querySelector("#case-name").textContent = result.case.name;
   document.querySelector("#case-description").textContent = result.case.description;
   document.querySelector("#background-caption").textContent = result.state.background_used
-    ? `age ${result.settings.background_age_minutes}분`
+    ? `메타데이터 ${result.settings.background_age_minutes}분`
     : "사용 안 함";
   document.querySelector("#forecast-caption").textContent = `+${result.case.lead_minutes}분`;
   document.querySelector("#truth-caption").textContent = `+${result.case.lead_minutes}분`;
@@ -124,8 +144,11 @@ function render(result) {
   skill.classList.toggle("positive", result.metrics.skill_dbz > 0);
   skill.classList.toggle("negative", result.metrics.skill_dbz < 0);
   percent("#valid-fraction", result.metrics.valid_fraction);
-  percent("#mean-confidence", result.metrics.mean_confidence);
+  metric("#mean-confidence", result.metrics.mean_confidence, " / 1");
   percent("#background-fraction", result.metrics.background_contribution_fraction);
+  document.querySelector("#scored-pixels").textContent = `${result.metrics.scored_pixels}화소`;
+  percent("#scored-fraction", result.metrics.scored_fraction);
+  renderComparison(result.comparison);
 
   const processList = document.querySelector("#process-list");
   processList.replaceChildren(
@@ -141,10 +164,31 @@ function render(result) {
   );
 }
 
+function renderComparison(comparison) {
+  document.querySelector("#comparison-results").hidden = !comparison;
+  if (!comparison) return;
+  const a = comparison.settings;
+  document.querySelector("#reference-description").textContent =
+    `A: +${a.lead_minutes}분 · 배경 ${a.use_background ? "사용" : "미사용"} · ` +
+    `나이 메타데이터 ${a.background_age_minutes}분 · 위치 (${a.shift_y}, ${a.shift_x}) px · ` +
+    `강도 ${signed(a.intensity_bias_dbz)} dBZ · 범위 ${a.coverage_percent}%`;
+  metric("#reference-mae", comparison.reference.forecast_mae_dbz, " dBZ");
+  metric("#candidate-mae", comparison.candidate.forecast_mae_dbz, " dBZ");
+  metric("#fixed-persistence-mae", comparison.reference.persistence_mae_dbz, " dBZ");
+  metric("#comparison-improvement", comparison.improvement_dbz, " dBZ", true);
+  const missing = comparison.candidate.missing_pixels;
+  document.querySelector("#comparison-domain").textContent =
+    `고정 평가영역 ${comparison.domain_pixels}화소 (${(comparison.domain_fraction * 100).toFixed(1)}%). ` +
+    (missing
+      ? `B가 ${missing}화소를 덮지 못해 비교 점수를 계산하지 않습니다.`
+      : comparison.domain_pixels ? "A와 B를 동일한 화소에서 비교했습니다. 양수이면 B의 MAE가 작습니다."
+      : "A에 평가할 화소가 없습니다.");
+}
+
 function metric(selector, value, suffix, showSign = false) {
   const element = document.querySelector(selector);
   if (value === null) {
-    element.textContent = "유효영역 없음";
+    element.textContent = "계산 불가";
     return;
   }
   const prefix = showSign && value > 0 ? "+" : "";

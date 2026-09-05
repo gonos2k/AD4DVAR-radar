@@ -15,6 +15,7 @@ from urllib.parse import urlparse
 import torch
 
 from advar import NowcastConfig, nowcast
+from advar.nowcast import ForecastResult
 
 
 ASSET_ROOT = Path(__file__).resolve().parent
@@ -223,7 +224,9 @@ def _finite_mean(values: torch.Tensor) -> float | None:
     return round(float(finite.mean()), 4)
 
 
-def run_experiment(settings: ExperimentSettings) -> dict[str, object]:
+def _run_case(
+    settings: ExperimentSettings,
+) -> tuple[ForecastResult, torch.Tensor, torch.Tensor, torch.Tensor]:
     frames, source, truth = _fixed_case()
     background = _initial_field(source, settings)
     result = nowcast(
@@ -236,35 +239,117 @@ def run_experiment(settings: ExperimentSettings) -> dict[str, object]:
     )
 
     lead_index = settings.lead_minutes // FORECAST_STEP_MINUTES - 1
-    forecast = result.forecast_dbz[lead_index].detach().cpu()
-    target = truth[lead_index]
     latest_observation = frames[-1]
     latest_background = (
         torch.full_like(latest_observation, torch.nan)
         if background is None
         else background[-1]
     )
-    persistence = torch.where(
-        torch.isfinite(latest_observation),
-        latest_observation,
-        latest_background,
-    )
-    common = (
-        result.valid_mask[lead_index].detach().cpu()
-        & torch.isfinite(forecast)
+    return result, latest_observation, latest_background, truth[lead_index]
+
+
+def _persistence(observation: torch.Tensor, background: torch.Tensor) -> torch.Tensor:
+    return torch.where(torch.isfinite(observation), observation, background)
+
+
+def _score_forecast(
+    forecast: torch.Tensor,
+    persistence: torch.Tensor,
+    target: torch.Tensor,
+    domain: torch.Tensor,
+) -> dict[str, int | float | None]:
+    """Score exactly the supplied domain; never silently drop missing pixels."""
+    scored_pixels = int(domain.sum())
+    missing = domain & ~(
+        torch.isfinite(forecast)
         & torch.isfinite(persistence)
         & torch.isfinite(target)
     )
-    if bool(torch.any(common)):
-        forecast_mae = float(torch.mean(torch.abs(forecast[common] - target[common])))
-        persistence_mae = float(
-            torch.mean(torch.abs(persistence[common] - target[common]))
-        )
+    missing_pixels = int(missing.sum())
+    forecast_mae = persistence_mae = skill = math.nan
+    if scored_pixels and not missing_pixels:
+        forecast_mae = float((forecast[domain] - target[domain]).abs().mean())
+        persistence_mae = float((persistence[domain] - target[domain]).abs().mean())
         skill = persistence_mae - forecast_mae
-    else:
-        forecast_mae = math.nan
-        persistence_mae = math.nan
-        skill = math.nan
+    return {
+        "forecast_mae_dbz": _round_or_none(forecast_mae),
+        "persistence_mae_dbz": _round_or_none(persistence_mae),
+        "skill_dbz": _round_or_none(skill),
+        "scored_pixels": scored_pixels if not missing_pixels else 0,
+        "scored_fraction": (
+            round(float(domain.float().mean()), 4) if not missing_pixels else 0.0
+        ),
+        "missing_pixels": missing_pixels,
+    }
+
+
+def _compare_forecasts(
+    reference: torch.Tensor,
+    candidate: torch.Tensor,
+    persistence: torch.Tensor,
+    target: torch.Tensor,
+) -> dict[str, object]:
+    # A fixes the domain and persistence. Missing B values cannot shrink it.
+    domain = (
+        torch.isfinite(reference)
+        & torch.isfinite(persistence)
+        & torch.isfinite(target)
+    )
+    reference_scores = _score_forecast(reference, persistence, target, domain)
+    candidate_scores = _score_forecast(candidate, persistence, target, domain)
+    improvement = math.nan
+    if int(domain.sum()) and not candidate_scores["missing_pixels"]:
+        improvement = float(
+            (
+                (reference[domain] - target[domain]).abs()
+                - (candidate[domain] - target[domain]).abs()
+            ).mean()
+        )
+    return {
+        "reference": reference_scores,
+        "candidate": candidate_scores,
+        "improvement_dbz": _round_or_none(improvement),
+        "domain_pixels": int(domain.sum()),
+        "domain_fraction": round(float(domain.float().mean()), 4),
+    }
+
+
+def run_experiment(
+    settings: ExperimentSettings,
+    reference_settings: ExperimentSettings | None = None,
+) -> dict[str, object]:
+    if (
+        reference_settings is not None
+        and reference_settings.lead_minutes != settings.lead_minutes
+    ):
+        raise ValueError("A/B comparison requires the same lead_minutes")
+    result, latest_observation, latest_background, target = _run_case(settings)
+    lead_index = settings.lead_minutes // FORECAST_STEP_MINUTES - 1
+    valid = result.valid_mask[lead_index].detach().cpu()
+    forecast = result.forecast_dbz[lead_index].detach().cpu()
+    forecast = forecast.masked_fill(~valid, torch.nan)
+    persistence = _persistence(latest_observation, latest_background)
+    common = (
+        torch.isfinite(forecast)
+        & torch.isfinite(persistence)
+        & torch.isfinite(target)
+    )
+    scores = _score_forecast(forecast, persistence, target, common)
+    comparison = None
+    if reference_settings is not None:
+        reference_result, reference_observation, reference_background, _ = _run_case(
+            reference_settings,
+        )
+        reference_valid = reference_result.valid_mask[lead_index].detach().cpu()
+        reference_forecast = reference_result.forecast_dbz[lead_index].detach().cpu()
+        reference_forecast = reference_forecast.masked_fill(~reference_valid, torch.nan)
+        reference_persistence = _persistence(
+            reference_observation, reference_background,
+        )
+        comparison = _compare_forecasts(
+            reference_forecast, forecast, reference_persistence, target,
+        )
+        comparison["settings"] = reference_settings.__dict__
 
     valid_fraction = float(result.valid_mask[lead_index].float().mean())
     background_coverage = float(torch.isfinite(latest_background).float().mean())
@@ -284,6 +369,7 @@ def run_experiment(settings: ExperimentSettings) -> dict[str, object]:
             "background_coverage": round(background_coverage, 4),
         },
         "settings": settings.__dict__,
+        "comparison": comparison,
         "fields": {
             "observation": _json_field(latest_observation),
             "background": _json_field(latest_background),
@@ -291,9 +377,7 @@ def run_experiment(settings: ExperimentSettings) -> dict[str, object]:
             "truth": _json_field(target),
         },
         "metrics": {
-            "forecast_mae_dbz": _round_or_none(forecast_mae),
-            "persistence_mae_dbz": _round_or_none(persistence_mae),
-            "skill_dbz": _round_or_none(skill),
+            **scores,
             "valid_fraction": round(valid_fraction, 4),
             "mean_confidence": _finite_mean(confidence_on_valid),
             "background_contribution_fraction": round(
@@ -341,9 +425,7 @@ def run_experiment(settings: ExperimentSettings) -> dict[str, object]:
             {
                 "name": "공통영역 검증",
                 "detail": (
-                    "persistence 대비 개선"
-                    if math.isfinite(skill) and skill > 0.0
-                    else "persistence 대비 개선 없음"
+                    f"동일 입력 persistence 비교 · {scores['scored_pixels']}화소"
                 ),
             },
         ],
@@ -389,7 +471,12 @@ class LabHandler(BaseHTTPRequestHandler):
                 raise ValueError("request body size is invalid")
             payload = json.loads(self.rfile.read(length))
             settings = ExperimentSettings.from_payload(payload)
-            self._send_json(run_experiment(settings))
+            reference_payload = payload.get("reference")
+            reference = (
+                None if reference_payload is None
+                else ExperimentSettings.from_payload(reference_payload)
+            )
+            self._send_json(run_experiment(settings, reference))
         except (json.JSONDecodeError, ValueError) as error:
             self._send_json({"error": str(error)}, status=400)
 

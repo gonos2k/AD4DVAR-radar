@@ -1335,6 +1335,22 @@ class ForecastRunArtifactTests(unittest.TestCase):
         )
         self.assertEqual(loaded.forecast_run_digest, result.forecast_run_digest)
 
+        for field, value, message in (
+            ("processor_signature_hex", "00" * 64, "signature is invalid"),
+            ("processed_at", "2026-08-09T00:20:30+00:00", "time is not canonical"),
+        ):
+            with self.subTest(field=field):
+                modified = json.loads(input_run.analysis_input_derivation_artifact_json)
+                modified[field] = value
+                with self.assertRaisesRegex(ValueError, message):
+                    replace(
+                        input_run,
+                        analysis_input_derivation_artifact_json=json.dumps(
+                            modified, sort_keys=True, separators=(",", ":"),
+                        ),
+                        analysis_input_derivation_artifact_digest=json_digest(modified),
+                    ).validate_integrity()
+
         incomplete = json.loads(
             input_run.analysis_input_derivation_artifact_json
         )

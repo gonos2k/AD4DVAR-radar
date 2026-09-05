@@ -34,15 +34,16 @@
             <label class="switch-row">
               <span>
                 <strong>배경장 사용</strong>
-                <small>결측 관측을 이전주기 장으로 보완</small>
+                <small>결측 관측을 시각이 정렬된 합성 배경으로 보완</small>
               </span>
               <input id="use-background" name="use_background" type="checkbox" checked>
             </label>
 
             <label class="control-row" for="background-age">
-              <span>배경장 나이</span>
+              <span>배경 나이 메타데이터</span>
               <output id="background-age-value">10분</output>
               <input id="background-age" name="background_age_minutes" type="range" min="0" max="60" step="10" value="10">
+              <small>신뢰도 입력입니다. 배경장 값이나 위치를 노화시키지 않습니다.</small>
             </label>
 
             <label class="control-row" for="shift-y">
@@ -100,7 +101,7 @@
             <figure class="radar-panel">
               <figcaption>
                 <span>초기장</span>
-                <strong id="background-caption">age 10분</strong>
+                <strong id="background-caption">메타데이터 10분</strong>
               </figcaption>
               <canvas id="background-canvas" aria-label="변형된 배경 초기장"></canvas>
             </figure>
@@ -140,7 +141,7 @@
               <dd id="persistence-mae">—</dd>
             </div>
             <div>
-              <dt>개선량</dt>
+              <dt>동일 입력 persistence 대비 개선</dt>
               <dd id="skill">—</dd>
             </div>
             <div>
@@ -148,17 +149,46 @@
               <dd id="valid-fraction">—</dd>
             </div>
             <div>
-              <dt>평균 confidence</dt>
+              <dt>평균 모형 신뢰 지표</dt>
               <dd id="mean-confidence">—</dd>
             </div>
             <div>
               <dt>배경 기여율</dt>
               <dd id="background-fraction">—</dd>
             </div>
+            <div>
+              <dt>실제 평가 화소</dt>
+              <dd id="scored-pixels">—</dd>
+            </div>
+            <div>
+              <dt>실제 평가 비율</dt>
+              <dd id="scored-fraction">—</dd>
+            </div>
           </dl>
+
+          <section class="comparison" aria-labelledby="comparison-title">
+            <h2 id="comparison-title">초기장 A/B 비교</h2>
+            <p>현재 계산 결과를 A로 저장한 뒤 초기장을 바꿔 B를 계산하세요.
+              A의 persistence와 평가영역을 고정합니다. 선행시간은 같아야 합니다.</p>
+            <button id="pin-reference" class="run-button" type="button" disabled>현재 결과를 A로 고정</button>
+            <button id="clear-reference" class="run-button" type="button" disabled>A 해제</button>
+            <p id="reference-description">저장된 A가 없습니다.</p>
+            <div id="comparison-results" hidden>
+              <dl class="metrics">
+                <div><dt>A MAE</dt><dd id="reference-mae">—</dd></div>
+                <div><dt>B MAE</dt><dd id="candidate-mae">—</dd></div>
+                <div><dt>고정 persistence MAE</dt><dd id="fixed-persistence-mae">—</dd></div>
+                <div><dt>A 대비 B 개선</dt><dd id="comparison-improvement">—</dd></div>
+              </dl>
+              <p id="comparison-domain" role="status"></p>
+            </div>
+          </section>
 
           <footer class="method-note">
             MAE는 ADVAR와 persistence가 모두 유효한 같은 화소에서 계산합니다.
+            위의 동일 입력 개선량은 배경에 따라 기준예측과 평가영역도 바뀌므로 실행 사이의 성능 차이로 해석할 수 없습니다.
+            모형 신뢰 지표는 예측이 맞을 확률이 아닙니다.
+            전역 이동·성장 모형은 회전·변형·새 대류 발생을 일반적으로 표현하지 못합니다.
             이 페이지는 초기장 민감도 탐색용이며 실제 레이더 검증이나 배포 승인을 만들지 않습니다.
           </footer>
         </div>
