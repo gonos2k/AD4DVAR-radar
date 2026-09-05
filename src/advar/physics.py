@@ -74,7 +74,10 @@ def remap(
 ) -> Tensor:
     _validate_echo_shape(echo)
     _validate_displacement(displacement_yx)
-    displacement = displacement_yx.to(dtype=echo.dtype, device=echo.device)
+    # Preserve the displacement dtype until after the frozen branch is known.
+    # A finite float64 shift can overflow when cast to a float32 echo even
+    # though its whole-domain remap is still the mathematically zero branch.
+    displacement = displacement_yx.to(device=echo.device)
     cell = freeze_remap_cell(displacement) if cell is None else cell
     validate_remap_cell(displacement, cell)
     return remap_core(echo, displacement, cell)
@@ -163,7 +166,7 @@ def remap_fractions(
     displacement_yx: Tensor,
     cell: RemapCell,
 ) -> tuple[Tensor, Tensor]:
-    displacement = displacement_yx.to(dtype=echo.dtype, device=echo.device)
+    displacement = displacement_yx.to(device=echo.device)
     # Keep the displacement as the differentiable operand.  The cell is a
     # frozen branch coordinate; converting it through float avoids an
     # overflowing Python-int-to-tensor conversion for finite extreme shifts.
@@ -173,7 +176,7 @@ def remap_fractions(
             displacement.new_zeros(()) + float(cell.x),
         )
     )
-    fractions = (displacement - cell_tensor).clamp(0.0, 1.0)
+    fractions = (displacement - cell_tensor).clamp(0.0, 1.0).to(echo)
     fraction_y, fraction_x = fractions.unbind()
     return fraction_y, fraction_x
 

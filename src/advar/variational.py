@@ -9741,6 +9741,7 @@ def validate_analysis_linearization_content(
         linearization.observations,
         linearization.frozen,
     )
+    _validate_control(control, linearization.frozen)
     if tensor_digest(control) != linearization.control_digest:
         raise ValueError("P1 linearization control digest mismatch")
     if (
