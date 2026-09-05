@@ -1624,8 +1624,15 @@ Overlapping common-bias mode는 1회 적용량뿐 아니라
 
 `baseline_dynamics_dbz`는 FFT peak와 pair 선택을 고정한 연구용 채널이다. 결과의
 `baseline_dynamics_branch_status`는 경로 없음, 미인증, 인증, 무효를 구분한다.
+관측 기반 P0 입력 변화가 0일 때만 현재 구현이 경로를 인증한다. 0.5·1.0 배율에서
+분기가 같아도 그 사이 FFT peak·pair 선택이 바뀔 수 있으므로, 비영 변화는
+`unknown`, 검사한 지점에서 차이를 발견하면 `invalid`로 기록한다.
 미인증·무효 경로가 있으면 trusted-total 채널을 생성하지 않으며,
 `require_baseline_dynamics_branch_validity=True`인 계산은 fail-close한다.
+따라서 관측 기반 P0 경향을 바꾸는 물리적 dBZ 개입은 현재 자동학습 승인 대상이
+아니다. 외부·배경 경향처럼 관측 기반 P0 경로가 없는 경우와 탐색용 채널 계산은
+유지한다. full/half 비선형 재해석 검사는 별도로 유지하며, 전 구간 분기 증명을
+대신한다고 해석하지 않는다.
 
 동일한 frozen residual objective에 대해 고정-seed unit Rademacher probe마다 exact
 Hessian-vector product와 GN product를 비교한다. `gauss_newton_diagnostics`에는

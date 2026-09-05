@@ -6782,7 +6782,7 @@ class VariationalFSOTests(unittest.TestCase):
         )
         self.assertIn(
             fsoi.baseline_dynamics_branch_status,
-            ("certified", "invalid"),
+            ("unknown", "invalid"),
         )
         self.assertEqual(
             fsoi.observation.trusted_total is not None,
@@ -7093,13 +7093,13 @@ class VariationalFSOTests(unittest.TestCase):
         )
         self.assertEqual(
             fsoi.baseline_dynamics_branch_status,
-            "certified",
+            "unknown",
         )
         self.assertIsNotNone(
             fsoi.perturbation_diagnostics
             .baseline_dynamics_branch_signature_digest
         )
-        self.assertIsNotNone(
+        self.assertIsNone(
             fsoi.observation.baseline_branch_trusted_total
         )
         crossing = torch.zeros_like(observations.dbz)
@@ -7301,7 +7301,15 @@ class VariationalFSOTests(unittest.TestCase):
             ("algorithm_bundle_not_approved",),
         )
 
-    def test_approved_learning_policy_certifies_physical_branch(self) -> None:
+    @patch(
+        "advar.sensitivity._baseline_dynamics_branch_certification",
+        return_value=("certified", "8" * 64),
+    )
+    def test_approved_learning_policy_with_supplied_branch_certificate(
+        self, _branch_certificate,
+    ) -> None:
+        # Exercise downstream approval/linearity contracts with an explicit
+        # certificate fixture; finite P0 samples cannot supply that proof.
         grid = RadarGridTimeContract(
             valid_times=(
                 "2026-08-05T00:00:00Z",

@@ -16874,7 +16874,10 @@ def _baseline_dynamics_branch_certification(
         changed = observations.dbz + scale * delta_dbz
         if _p0_tendency_branch_signature(changed, frozen) != nominal:
             return "invalid", signature_digest
-    return "certified", signature_digest
+    # Matching samples do not prove that discrete FFT peaks and pair choices
+    # stay fixed between them.  A nonzero P0 input path needs a whole-interval
+    # argument before its frozen derivative can be called certified.
+    return "unknown", signature_digest
 
 
 def _p0_tendency_branch_signature(
