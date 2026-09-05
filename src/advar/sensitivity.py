@@ -10840,8 +10840,10 @@ def _metric_domain_weight(
     verification_finite: Tensor,
     forecast_index: int,
     domain: FSOMetricDomain,
+    *,
+    verification_metric_weight: Tensor | None = None,
 ) -> Tensor:
-    """Freeze the spatial domain/weight used by one forecast metric."""
+    """Freeze one forecast metric weight, including typed verification support."""
 
     if verification_finite.dtype is not torch.bool:
         raise TypeError("verification_finite must be Boolean")
@@ -10858,11 +10860,20 @@ def _metric_domain_weight(
         weight = eligible.to(result.state.echo_linear)
     else:
         raise ValueError("unsupported FSO metric domain")
-    return torch.where(
+    weight = torch.where(
         verification_finite & eligible,
         weight,
         torch.zeros_like(weight),
-    ).detach()
+    )
+    if verification_metric_weight is not None:
+        if verification_metric_weight.shape != weight.shape:
+            raise ValueError(
+                "verification metric weight must match one forecast lead"
+            )
+        if not verification_metric_weight.is_floating_point():
+            raise TypeError("verification metric weight must be floating")
+        weight = weight * verification_metric_weight.to(weight)
+    return weight.detach()
 
 
 def _metric_domain_digest(
@@ -12221,6 +12232,10 @@ def validate_variational_learning_impact(
                 validation.nominal_input_bundle_digest
             ),
         }
+        if evidence.contract == "p1-learning-approval-evidence-v4":
+            expected["nominal_full_analysis_input_digest"] = (
+                validation.nominal_full_analysis_input_digest
+            )
         if any(
             value is None or getattr(evidence, name) != value
             for name, value in expected.items()
@@ -12470,7 +12485,11 @@ def compute_sensitivity_snapshot(
         raise ValueError("forecast valid_mask must match verification shape")
     if not torch.equal(result.valid_mask, issued_valid):
         raise ValueError("forecast valid_mask must match issued finite values")
-    verification_valid = verification_finite & issued_valid
+    verification_valid = (
+        verification_finite
+        & issued_valid
+        & (verification_bundle.metric_weight > 0.0)
+    )
     truth_linear = dbz_to_echo(
         clean_verification,
         min_dbz=nowcast_config.min_dbz,
@@ -12614,6 +12633,9 @@ def compute_sensitivity_snapshot(
             verification_finite[lead_index],
             lead_index,
             sensitivity_config.metric_domain,
+            verification_metric_weight=verification_bundle.metric_weight[
+                lead_index
+            ],
         )
         lead_cell = freeze_remap_cell(
             (lead_index + 1) * state.displacement_yx
@@ -13255,12 +13277,13 @@ def _resolved_forecast_scores(
                 finite_truth[forecast_index],
                 forecast_index,
                 config.metric_domain,
+                verification_metric_weight=verification.metric_weight[
+                    forecast_index
+                ],
             )
             if domain_weights is None
             else domain_weights[lead_index]
         )
-        if domain_weights is None:
-            weight = weight * verification.metric_weight[forecast_index].to(weight)
         for metric_index, name in enumerate(config.metric_names):
             if not _metric_has_support(
                 name,
@@ -13302,8 +13325,10 @@ def _resolved_forecast_domain_weights(
                 finite[forecast_index],
                 forecast_index,
                 config.metric_domain,
+                verification_metric_weight=verification.metric_weight[
+                    forecast_index
+                ],
             )
-            * verification.metric_weight[forecast_index].to(result.state.echo_linear)
         )
     return torch.stack(weights).detach()
 
@@ -14829,6 +14854,9 @@ def _resolve_learning_step(
             finite_truth[forecast_index],
             forecast_index,
             policy.sensitivity_config.metric_domain,
+            verification_metric_weight=verification.metric_weight[
+                forecast_index
+            ],
         )
         changed_weight = (
             nominal_weight
@@ -14838,6 +14866,9 @@ def _resolve_learning_step(
                 finite_truth[forecast_index],
                 forecast_index,
                 policy.sensitivity_config.metric_domain,
+                verification_metric_weight=verification.metric_weight[
+                    forecast_index
+                ],
             )
         )
         if resolved_domain:
@@ -15299,6 +15330,9 @@ def _compute_variational_products(
             verification_finite[forecast_index],
             forecast_index,
             sensitivity_config.metric_domain,
+            verification_metric_weight=verification_bundle.metric_weight[
+                forecast_index
+            ],
         )
         for forecast_index in forecast_indices
     )
