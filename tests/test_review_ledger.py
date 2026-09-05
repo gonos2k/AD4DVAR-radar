@@ -9,6 +9,8 @@ import unittest
 import torch
 
 from advar.ledger import EpisodeLedger, SensitivityEpisode
+from advar.nowcast import NowcastConfig, nowcast
+from advar.sensitivity import SensitivityConfig, compute_sensitivity_snapshot
 from test_ledger import _computed_snapshot, _contract
 
 
@@ -103,6 +105,71 @@ class LedgerReviewRegressionTests(unittest.TestCase):
                         ledger.append(
                             self._episode(snapshot, f"review-inf-{index}")
                         )
+
+    def test_producer_evidence_channels_reject_mixed_nan(self) -> None:
+        config = NowcastConfig()
+        frames = torch.full((3, 2, 2), 20.0, dtype=torch.float64)
+        background = frames - 0.5
+        result = nowcast(
+            frames,
+            config,
+            background_frames_dbz=background,
+            background_age_minutes=10.0,
+        )
+        snapshot = compute_sensitivity_snapshot(
+            frames[-1],
+            result,
+            frames.new_full((config.forecast_steps, 2, 2), 20.5),
+            latest_background_dbz=background[-1],
+            sensitivity_config=SensitivityConfig(
+                metric_names=("log_echo_mse",),
+            ),
+        )
+        channels = (
+            "path_evidence_by_metric",
+            "observation_source_fraction_by_metric",
+            "observation_verified_evidence_by_metric",
+            "background_verified_evidence_by_metric",
+        )
+        for name in channels:
+            self.assertTrue(bool(torch.isfinite(getattr(snapshot, name)).all()))
+
+        ledger, _ = self._append(snapshot, "review-finite-evidence")
+        ledger.verify("review-finite-evidence")
+        loaded = ledger.load("review-finite-evidence")
+        for name in channels:
+            self.assertTrue(bool(torch.isfinite(torch.from_numpy(loaded.arrays[name])).all()))
+
+        for index, name in enumerate(channels):
+            with self.subTest(channel=name):
+                value = getattr(snapshot, name).clone()
+                value[0, 0] = float("nan")
+                mixed = replace(snapshot, **{name: value})
+                with tempfile.TemporaryDirectory() as directory:
+                    ledger = EpisodeLedger(Path(directory))
+                    with self.assertRaisesRegex(ValueError, "evidence"):
+                        ledger.append(
+                            self._episode(mixed, f"review-mixed-evidence-{index}")
+                        )
+
+    def test_available_all_nan_evidence_roundtrips_zero_gradient_snapshot(self) -> None:
+        snapshot = self.snapshot
+        channels = (
+            "path_evidence_by_metric",
+            "observation_source_fraction_by_metric",
+            "observation_verified_evidence_by_metric",
+            "background_verified_evidence_by_metric",
+        )
+        self.assertTrue(bool(torch.any(snapshot.metric_available)))
+        for name in channels:
+            self.assertTrue(bool(torch.isnan(getattr(snapshot, name)).all()))
+
+        ledger, _ = self._append(snapshot, "review-available-all-nan")
+        ledger.verify("review-available-all-nan")
+        loaded = ledger.load("review-available-all-nan")
+        self.assertTrue(bool(loaded.manifest["impact_available"]))
+        for name in channels:
+            self.assertTrue(bool(torch.isnan(torch.from_numpy(loaded.arrays[name])).all()))
 
     def test_trust_components_outside_unit_interval_are_rejected(self) -> None:
         for index, invalid in enumerate((2.0, -1.0, True)):

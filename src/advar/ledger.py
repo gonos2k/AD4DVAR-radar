@@ -22011,25 +22011,25 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         snapshot.observation_verified_evidence_by_metric,
         snapshot.background_verified_evidence_by_metric,
     )
+    # All four ratios share one denominator; absent sensitivity evidence may
+    # leave them all NaN even when the forecast metric itself is available.
+    evidence_available = torch.isfinite(evidence_values[0])
     for value in evidence_values:
         if bool(torch.any(torch.isinf(value))):
             raise ValueError("metric evidence must be finite or unavailable NaN")
         finite = torch.isfinite(value)
+        if not torch.equal(finite, evidence_available):
+            raise ValueError("metric evidence channels must share availability")
         if not bool(torch.all((value[finite] >= 0) & (value[finite] <= 1))):
             raise ValueError("metric evidence must be in [0, 1]")
         if bool(torch.any(finite & ~available)):
             raise ValueError("unavailable metrics cannot retain evidence")
-    joint_evidence_available = (
-        torch.isfinite(snapshot.path_evidence_by_metric)
-        & torch.isfinite(snapshot.observation_verified_evidence_by_metric)
-        & torch.isfinite(snapshot.background_verified_evidence_by_metric)
-    )
     if not torch.allclose(
         (
             snapshot.observation_verified_evidence_by_metric
             + snapshot.background_verified_evidence_by_metric
-        )[joint_evidence_available],
-        snapshot.path_evidence_by_metric[joint_evidence_available],
+        )[evidence_available],
+        snapshot.path_evidence_by_metric[evidence_available],
         rtol=1.0e-5,
         atol=1.0e-7,
     ):

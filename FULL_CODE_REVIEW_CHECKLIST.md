@@ -151,7 +151,7 @@ PyTorch도 유한한 최종값과 중간 연산의 overflow를 구분한다. [�
 
 ## 반영한 개선과 회귀시험
 
-2026-09-05 후속 수정. **새 시험 48개와 영향받는 기존 시험 55개, 고유 시험 합계 103개가 통과했다.** 중복 재실행과 subtest는 합산하지 않는다. 소스 전체 basedpyright는 오류 0이며, 마지막 Boolean 검사 수정 후 해당 ledger 모듈도 오류 0을 확인했다. 정확한 선택자·환경·소스 해시는 [검증 기록](review_artifacts/followup_validation.json)에 보존했다.
+2026-09-05 최초 후속 수정(`965d230`)에서 **새 시험 48개와 영향받는 기존 시험 55개, 고유 시험 합계 103개가 통과했다.** 중복 재실행과 subtest는 합산하지 않는다. 소스 전체 basedpyright는 오류 0이며, 마지막 Boolean 검사 수정 후 해당 ledger 모듈도 오류 0을 확인했다. 정확한 선택자·환경·소스 해시는 [검증 기록](review_artifacts/followup_validation.json)에 보존했다.
 
 | 항목 | 실제 반영 | 직접 검증 |
 | --- | --- | --- |
@@ -170,11 +170,17 @@ PyTorch도 유한한 최종값과 중간 연산의 overflow를 구분한다. [�
 
 이 검증은 CPU 중심의 선택 시험이다. 관측 companion device 경계 시험은 MPS가 있는 환경에서 실행했지만, **전체 MPS P1·CUDA·전체 baseline·실제 레이더 성능·실제 브라우저 렌더링 통과를 의미하지 않는다.** MPS P1 NO-GO, 기존 결측 의미, 구형 audit 복원 및 핵심 수송·PCG 구조를 유지한다. 원보고서 ZIP은 최초 조사 자료로 보존했으며 수정된 소스의 결과로 바꿔 쓰지 않았다.
 
-## 수정 후 재검토: CI 격리 실행 누락
+## 수정 후 재검토: CI 격리 실행과 evidence 공동 결측
 
 - **확정·수정:** `tests/test_review_intervention.py`의 `from tests.test_ledger import ...`가 CI의 `python -I`에서 `ModuleNotFoundError`를 일으켰다. 마지막 로컬 103개 시험은 `PYTHONPATH=src:tests`를 사용했으므로 이 수집 오류를 잡지 못했다. [실패한 CI 실행](https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33948411069)의 Python 3.10·3.12에서 같은 원인을 확인했다.
 - 기존 시험들의 방식인 `from test_ledger import ...`로 수정했다. 제품 수치 코드는 이 수정으로 바뀌지 않는다.
 - 수정 전 로컬 `-I` 수집 실패를 재현했고, 수정 후 같은 격리 모드에서 **901개 시험 수집 성공**, QC 영향 시험 **3개 통과**를 확인했다. 수집은 전체 baseline 실행이 아니며 이 3개는 앞선 103개와 중복이다.
+
+- **확정·수정:** 실제 producer의 유한 evidence 네 채널 중 하나만 NaN으로 바꾼 mixed 상태가 저장·검증·복원을 통과했다. `_metric_evidence_ratios()`는 같은 분모로 네 값을 함께 계산하므로 네 채널의 per-cell 유한값 마스크를 동일하게 검증하고, 그 마스크로 source evidence 합도 확인하도록 보강했다.
+- **오탐 철회:** `metric_available=True`면 evidence가 무조건 유한해야 한다는 지적은 잘못이다. 예측과 정답이 같은 실제 producer는 점수가 0이고 민감도 가중치의 분모가 0이므로 네 채널 모두 NaN이 정상이다. 처음 NaN을 다시 대입한 probe는 no-op이었다. 실제 `truth=20.5 dBZ`로 유한한 네 채널을 생성한 뒤 일부만 NaN으로 바꿔 위 mixed 결함을 별도로 재현했다.
+- 추가한 두 회귀시험까지 포함한 최종 격리 수집은 **903개 성공**이다. 추가한 두 회귀시험과 기존 ledger 시험을 `python -I`에서 실행해 **6개 통과(13 subtests)**를 확인했다. 정상 finite 왕복, available/all-NaN 왕복, unavailable/all-NaN 왕복과 네 mixed 채널 거부를 함께 확인했다. 현재 typed append 검증의 보강이며 legacy loader의 해석은 변경하지 않았다. 해당 모듈 basedpyright는 오류 0이다.
+- Luna 재검토 결과, R03/R04/R07/R08과 GN·MAE/RMSE·좁은 Gaussian 구간의 수정에서는 새 확정 결함이나 정상 입력 과잉 거부를 찾지 못했다. 수치 시험 11개와 계약 시험 19개를 재확인했다. R03의 97.68초 결과는 앞선 실행 근거를 재사용했으며 이번 신규 실행으로 세지 않는다.
+- 이번 검증과 최종 소스 해시는 [최종 재검토 기록](review_artifacts/final_audit_validation.json)에 보존한다. 앞선 103개와 이번 중복 재실행을 합산해 새로운 전체 baseline 통과로 보고하지 않는다.
 
 ## 추가 근거가 필요한 후보
 
