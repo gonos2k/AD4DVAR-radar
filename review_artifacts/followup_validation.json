@@ -114,7 +114,7 @@
     "src/advar/metrics.py": "1363d2162f01bed67ddcac7fa46ca2f589d971d045a5f7ffa1e47fbb3d5d8d4c",
     "src/advar/nowcast.py": "f13d0a049d826eadb5d1e24ec58e1db61c73c70dbede1c37dda4bd81e04fe426",
     "src/advar/promotion.py": "397654b1a370b1ec94c2010f26c1a58b9097816ad779f71662a43ff241e1c07a",
-    "tests/test_review_intervention.py": "4b623d146f88ae2f01d5e3c1d10c68f584742ec581a9e926080f1983bc0c4937",
+    "tests/test_review_intervention.py": "3c7d5b119609629f8814f0b7ff4de3eaf7f504f7b6c3441a127b7daae3691780",
     "tests/test_review_ledger.py": "0b2be98f73e36b6ac7c56096892b85684c836322b539581eb297ee22bb9060dc",
     "tests/test_review_legacy_loaders.py": "294eb2cbdc201ab727a8955f4ef435b73f9039b8bececcb399c4a39d65e8e4ef",
     "tests/test_review_numerics.py": "957dafe8094c0cc6668a6cf6352566e6cdbd53dc67b6809d5c9a4d69ab1f7373",
@@ -122,5 +122,25 @@
     "tests/test_review_promotion_statistics.py": "60addb32336c22ba1770531b14c64c25ec1e1842a21125d2f6f2a567026295dc",
     "tests/test_review_run_identity.py": "dcb6fc6c28fc1995d994258d144cac39c4dcdcfd3c9a0a031d8ad88ed64f0da1",
     "tests/test_run_artifact.py": "fb296a00f8e3b664bb2d13667aebdcb91f53a0fcb45f4ff08e05986b518e4716"
+  },
+  "post_validation_audit": {
+    "source_commit": "965d2307a32e553e6d8b8dfd9f341e5e239ef8db",
+    "ci_run": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33948411069",
+    "finding": "Both CPU CI jobs failed collection under python -I: tests.test_ledger was unavailable; the prior non-isolated local test commands did not expose it.",
+    "fix": "Import test_ledger directly, matching existing test modules.",
+    "before": {
+      "command": ".venv/bin/python -I -m pytest --collect-only -q tests/test_review_intervention.py",
+      "result": "ModuleNotFoundError: No module named tests"
+    },
+    "after": [
+      {
+        "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I -m pytest --collect-only -q",
+        "result": "901 tests collected in 2.60s; no baseline test bodies executed"
+      },
+      {
+        "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I -m pytest -q tests/test_review_intervention.py",
+        "result": "3 passed in 5.70s; already included in the unique 103"
+      }
+    ]
   }
 }

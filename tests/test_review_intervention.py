@@ -9,7 +9,7 @@ from advar.intervention import (
     RealizedInterventionReceipt,
     ReusableInterventionPolicyEvidence,
 )
-from tests.test_ledger import _prospective_run_and_context
+from test_ledger import _prospective_run_and_context
 
 
 class _DeweightQcAction(torch.nn.Module):

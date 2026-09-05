@@ -170,6 +170,12 @@ PyTorch도 유한한 최종값과 중간 연산의 overflow를 구분한다. [�
 
 이 검증은 CPU 중심의 선택 시험이다. 관측 companion device 경계 시험은 MPS가 있는 환경에서 실행했지만, **전체 MPS P1·CUDA·전체 baseline·실제 레이더 성능·실제 브라우저 렌더링 통과를 의미하지 않는다.** MPS P1 NO-GO, 기존 결측 의미, 구형 audit 복원 및 핵심 수송·PCG 구조를 유지한다. 원보고서 ZIP은 최초 조사 자료로 보존했으며 수정된 소스의 결과로 바꿔 쓰지 않았다.
 
+## 수정 후 재검토: CI 격리 실행 누락
+
+- **확정·수정:** `tests/test_review_intervention.py`의 `from tests.test_ledger import ...`가 CI의 `python -I`에서 `ModuleNotFoundError`를 일으켰다. 마지막 로컬 103개 시험은 `PYTHONPATH=src:tests`를 사용했으므로 이 수집 오류를 잡지 못했다. [실패한 CI 실행](https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33948411069)의 Python 3.10·3.12에서 같은 원인을 확인했다.
+- 기존 시험들의 방식인 `from test_ledger import ...`로 수정했다. 제품 수치 코드는 이 수정으로 바뀌지 않는다.
+- 수정 전 로컬 `-I` 수집 실패를 재현했고, 수정 후 같은 격리 모드에서 **901개 시험 수집 성공**, QC 영향 시험 **3개 통과**를 확인했다. 수집은 전체 baseline 실행이 아니며 이 3개는 앞선 103개와 중복이다.
+
 ## 추가 근거가 필요한 후보
 
 다음 항목은 일부 서브에이전트 원보고서의 심각도보다 낮춰 보류했다. 격리 재현을 현재 전체 경로의 실패로 확대하지 않는다.
