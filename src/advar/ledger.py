@@ -8581,8 +8581,8 @@ class EpisodeLedger:
                     shutil.rmtree(temporary)
                 else:
                     os.rename(temporary, target)
-                    _fsync_directory(self.analysis_input_provenance_dir)
                     published_by_this_call = True
+                    _fsync_directory(self.analysis_input_provenance_dir)
                 EpisodeLedger._record_global_sampling_registry_entry(
                     connection,
                     registry_id=global_resolution.registry_id,
@@ -11582,8 +11582,8 @@ class EpisodeLedger:
                     shutil.rmtree(temporary)
                 else:
                     os.rename(temporary, target)
+                    published_by_this_call = True
                     _fsync_directory(self.analysis_input_provenance_dir)
-                published_by_this_call = True
                 for history in raw_resolution.history_entries:
                     self._record_operational_raw_resolution_history(
                         connection,

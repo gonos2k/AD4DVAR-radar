@@ -85,6 +85,9 @@ jobs:
         run: python -I .github/scripts/check_basedpyright.py
 
       - name: Run CPU FP32 and FP64 tests
+        env:
+          OMP_NUM_THREADS: "1"
+          MKL_NUM_THREADS: "1"
         run: python -I -m pytest -q
 
   lab-ui:

@@ -170,13 +170,20 @@ def remap_fractions(
     # Keep the displacement as the differentiable operand.  The cell is a
     # frozen branch coordinate; converting it through float avoids an
     # overflowing Python-int-to-tensor conversion for finite extreme shifts.
+    # Scalar arithmetic also works under MPS function transforms, where
+    # new_tensor with a Python sequence is not supported.
     cell_tensor = torch.stack(
         (
             displacement.new_zeros(()) + float(cell.y),
             displacement.new_zeros(()) + float(cell.x),
         )
     )
-    fractions = (displacement - cell_tensor).clamp(0.0, 1.0).to(echo)
+    fractions = (displacement - cell_tensor).clamp(0.0, 1.0)
+    # MPS cannot widen to FP64, in forward or reverse mode. Move away from
+    # MPS before widening, and narrow on the source before moving to MPS.
+    if fractions.device.type == "mps":
+        fractions = fractions.to(device=echo.device)
+    fractions = fractions.to(dtype=echo.dtype).to(device=echo.device)
     fraction_y, fraction_x = fractions.unbind()
     return fraction_y, fraction_x
 

@@ -297,7 +297,8 @@ def test_metric_domain_weight_detaches_fractional_typed_verification_weight() ->
 
 
 def test_v4_learning_approval_binds_full_analysis_input_digest() -> None:
-    digest = lambda character: character * 64
+    def digest(character: str) -> str:
+        return character * 64
     validation = FirstOrderValidation(
         source_fsoi_digest=digest("b"),
         nominal_forecast_digest=digest("c"),

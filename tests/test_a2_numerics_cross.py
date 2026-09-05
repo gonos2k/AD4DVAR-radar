@@ -82,6 +82,30 @@ def test_mps_float32_echo_accepts_cpu_float64_displacement() -> None:
     assert output.device.type == "mps"
     assert tangent.device.type == "mps"
     assert bool(torch.all(torch.isfinite(tangent)))
+    _, pullback = torch.func.vjp(remap, echo, displacement)
+    field_gradient, motion_gradient = pullback(torch.ones_like(output))
+    torch.testing.assert_close(
+        field_gradient.cpu(),
+        torch.tensor([[1.0, 1.0], [0.0, 0.0]]),
+    )
+    torch.testing.assert_close(
+        motion_gradient,
+        torch.tensor([-1.0, -1.0], dtype=torch.float64),
+    )
+    assert motion_gradient.device.type == "cpu"
+
+
+@pytest.mark.skipif(
+    not torch.backends.mps.is_available(),
+    reason="MPS device is unavailable",
+)
+def test_cpu_float64_echo_accepts_mps_float32_displacement() -> None:
+    echo = torch.arange(4, dtype=torch.float64).reshape(2, 2)
+    displacement = torch.tensor((1.0, 0.0), device="mps")
+    output, pullback = torch.func.vjp(remap, echo, displacement)
+    _, motion_gradient = pullback(torch.ones_like(output))
+    torch.testing.assert_close(output, torch.tensor([[0.0, 0.0], [0.0, 1.0]], dtype=torch.float64))
+    torch.testing.assert_close(motion_gradient.cpu(), torch.tensor([-1.0, -1.0]))
 
 
 def _linearization_fixture() -> tuple[torch.Tensor, variational.AnalysisLinearization]:
