@@ -10104,7 +10104,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             )
             operational_input_plan = replace(
                 plan.input_plans[0],
-                valid_times=("2026-08-12T02:31:00Z",),
+                valid_times=(
+                    "2026-08-12T02:11:00Z",
+                    "2026-08-12T02:21:00Z",
+                    "2026-08-12T02:31:00Z",
+                ),
                 observation_valid_time="2026-08-12T02:31:00Z",
                 input_available_time="2026-08-12T02:32:00Z",
                 decision_deadline="2026-08-12T02:40:00Z",
@@ -18885,7 +18889,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         )
         input_plan = replace(
             self.plan().input_plans[0],
-            valid_times=((before_deadline - timedelta(minutes=2)).isoformat(),),
+            valid_times=tuple(
+                (before_deadline - timedelta(minutes=offset)).isoformat()
+                for offset in (22, 12, 2)
+            ),
             observation_valid_time=(
                 before_deadline - timedelta(minutes=2)
             ).isoformat(),
@@ -18968,7 +18975,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         after = deadline + timedelta(microseconds=1)
         input_plan = replace(
             self.plan().input_plans[0],
-            valid_times=((before - timedelta(minutes=2)).isoformat(),),
+            valid_times=tuple(
+                (before - timedelta(minutes=offset)).isoformat()
+                for offset in (22, 12, 2)
+            ),
             observation_valid_time=(before - timedelta(minutes=2)).isoformat(),
             input_available_time=(before - timedelta(minutes=1)).isoformat(),
             decision_deadline=deadline.isoformat(),
@@ -19051,7 +19061,10 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         after = deadline + timedelta(microseconds=1)
         input_plan = replace(
             self.plan().input_plans[0],
-            valid_times=((before - timedelta(minutes=2)).isoformat(),),
+            valid_times=tuple(
+                (before - timedelta(minutes=offset)).isoformat()
+                for offset in (22, 12, 2)
+            ),
             observation_valid_time=(before - timedelta(minutes=2)).isoformat(),
             input_available_time=(before - timedelta(minutes=1)).isoformat(),
             decision_deadline=deadline.isoformat(),
@@ -20197,7 +20210,11 @@ class NeuralPriorPromotionTests(unittest.TestCase):
 
     def test_fractional_second_chronology_uses_instants_not_strings(self) -> None:
         common = {
-            "valid_times": ("2026-08-09T00:00:00Z",),
+            "valid_times": (
+                "2026-08-08T23:40:00Z",
+                "2026-08-08T23:50:00Z",
+                "2026-08-09T00:00:00Z",
+            ),
             "grid_contract_digest": "1" * 64,
             "radar_product_digest": "2" * 64,
             "qc_pipeline_digest": "3" * 64,

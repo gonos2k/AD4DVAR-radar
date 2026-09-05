@@ -1082,7 +1082,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             ),
         )
         input_plan = NeuralPriorInputPlan(
-            valid_times=(issue,),
+            valid_times=metric_grid.valid_times,
             grid_contract_digest=metric_grid.digest,
             radar_product_digest="2" * 64,
             qc_pipeline_digest="3" * 64,
@@ -1762,15 +1762,19 @@ class EpisodeLedgerTests(unittest.TestCase):
         processor_key = promotion_module.Ed25519PrivateKey.from_private_bytes(
             b"\x25" * 32
         )
-        raw_slot = promotion_module.RawObservationSlotPlan(
-            radar_site_digest=range_geometry.radar_site_digest,
-            acquisition_valid_time=input_plan.observation_valid_time,
-            scan_strategy_rule_digest="5" * 64,
-            source_selection_rule_digest="6" * 64,
-            canonical_geodetic_footprint_digest="6" * 64,
+        raw_slots = tuple(
+            promotion_module.RawObservationSlotPlan(
+                radar_site_digest=range_geometry.radar_site_digest,
+                acquisition_valid_time=valid_time,
+                scan_strategy_rule_digest="5" * 64,
+                source_selection_rule_digest="6" * 64,
+                canonical_geodetic_footprint_digest="6" * 64,
+            )
+            for valid_time in input_plan.valid_times
         )
+        raw_slot_digests = tuple(slot.slot_digest for slot in raw_slots)
         sampling_unit = promotion_module.MeteorologicalSamplingUnit(
-            raw_observation_slot_digests=(raw_slot.slot_digest,),
+            raw_observation_slot_digests=raw_slot_digests,
             canonical_geodetic_footprint_digest="6" * 64,
         )
         cases = (
@@ -1822,7 +1826,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                     winner_selection_rule_digest="5" * 64,
                 )
             ),
-            raw_observation_slot_digests=(raw_slot.slot_digest,),
+            raw_observation_slot_digests=raw_slot_digests,
             registry_id="clock-global-sampling-registry",
             authority_id="clock-sampling-authority",
             authority_private_key=registry_key,
@@ -1839,7 +1843,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             meteorological_sampling_unit_digests=tuple(
                 item.meteorological_sampling_unit_digest for item in cases
             ),
-            raw_observation_slot_digests=(raw_slot.slot_digest,),
+            raw_observation_slot_digests=raw_slot_digests,
             global_sampling_reservation=reservation,
             parent_prior_digest="6" * 64,
             trials=trials,
@@ -1851,7 +1855,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             candidate_family_digests=("7" * 64,),
             cases=cases,
             input_plans=(input_plan,),
-            raw_observation_slot_plans=(raw_slot,),
+            raw_observation_slot_plans=raw_slots,
             meteorological_sampling_units=(sampling_unit,),
             raw_ingestor_trust_store=promotion_module.RawIngestorTrustStore(
                 authorities=((
@@ -1968,7 +1972,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             def now(cls, tz=None):  # type: ignore[no-untyped-def]
                 cls.calls += 1
                 value = (
-                    "2029-12-31T23:59:59+00:00"
+                    "2029-12-31T23:39:59+00:00"
                     if cls.calls == 1
                     else "2030-01-01T00:00:01+00:00"
                 )
@@ -3363,7 +3367,11 @@ class EpisodeLedgerTests(unittest.TestCase):
         self.assertEqual(loaded, audit)
 
         input_plan = NeuralPriorInputPlan(
-            valid_times=("2026-08-08T00:00:00Z",),
+            valid_times=(
+                "2026-08-07T23:40:00Z",
+                "2026-08-07T23:50:00Z",
+                "2026-08-08T00:00:00Z",
+            ),
             grid_contract_digest="8" * 64,
             radar_product_digest="9" * 64,
             qc_pipeline_digest="a" * 64,
@@ -5319,6 +5327,9 @@ class EpisodeLedgerTests(unittest.TestCase):
             )
 
         invalid_joint_path = self.snapshot.path_evidence_by_metric.clone()
+        invalid_joint_source = (
+            self.snapshot.observation_source_fraction_by_metric.clone()
+        )
         invalid_joint_observation = (
             self.snapshot.observation_verified_evidence_by_metric.clone()
         )
@@ -5326,6 +5337,7 @@ class EpisodeLedgerTests(unittest.TestCase):
             self.snapshot.background_verified_evidence_by_metric.clone()
         )
         invalid_joint_path[0, 0] = 0.5
+        invalid_joint_source[0, 0] = 0.5
         invalid_joint_observation[0, 0] = 0.4
         invalid_joint_background[0, 0] = 0.2
         with self.assertRaisesRegex(ValueError, "channels do not close"):
@@ -5335,6 +5347,7 @@ class EpisodeLedgerTests(unittest.TestCase):
                     snapshot=replace(
                         self.snapshot,
                         path_evidence_by_metric=invalid_joint_path,
+                        observation_source_fraction_by_metric=invalid_joint_source,
                         observation_verified_evidence_by_metric=(
                             invalid_joint_observation
                         ),
