@@ -1,0 +1,137 @@
+{
+  "scope": "A3-01 portable millisecond ISO input; no product source changes",
+  "supersedes_test_input_at_commit": "44a5c24cdcac353d8cf5ef2914c3a2d2aa668c15",
+  "base_commit": "3d75242b67421bb3341c7ae3ebc83d8f94702bdd",
+  "source_sha256": {
+    "tests/test_review_promotion_contracts.py": "f10c75c4a6021e58b9f57803f1abc07188e74020bd214c093a0cd50a01e50646",
+    "src/advar/promotion.py": "6e34eb388ee712e640c5bb70cc36a031ce86c997d59bee2ae6a88c118dd7b3c8"
+  },
+  "environments": [
+    {
+      "python": "3.10.11",
+      "torch": "2.13.0",
+      "pytest": "9.1.1",
+      "platform": "macOS",
+      "device": "CPU"
+    },
+    {
+      "python": "3.12.13",
+      "torch": "2.13.0",
+      "platform": "macOS",
+      "device": "CPU"
+    }
+  ],
+  "passing_tests_per_environment": 21,
+  "mutation_checks": "Each Python version rejects the constructor-only and validator-only old denominator: exactly 1 failed, 20 passed per mutation.",
+  "junit_summaries": {
+    "portable_py310.xml": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "21",
+        "time": "0.333",
+        "timestamp": "2026-09-06T00:00:29.446099+09:00",
+        "hostname": "Yongui-MacBookPro.local"
+      }
+    ],
+    "portable_py312.xml": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "21",
+        "time": "1.436",
+        "timestamp": "2026-09-05T23:58:26.586883+09:00",
+        "hostname": "Yongui-MacBookPro.local"
+      }
+    ],
+    "py310_constructor_mutation.xml": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "1",
+        "skipped": "0",
+        "tests": "21",
+        "time": "0.317",
+        "timestamp": "2026-09-06T00:01:12.209238+09:00",
+        "hostname": "Yongui-MacBookPro.local"
+      }
+    ],
+    "py310_validator_mutation.xml": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "1",
+        "skipped": "0",
+        "tests": "21",
+        "time": "0.237",
+        "timestamp": "2026-09-06T00:01:13.522018+09:00",
+        "hostname": "Yongui-MacBookPro.local"
+      }
+    ],
+    "py312_constructor_mutation.xml": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "1",
+        "skipped": "0",
+        "tests": "21",
+        "time": "0.310",
+        "timestamp": "2026-09-06T00:01:14.993711+09:00",
+        "hostname": "Yongui-MacBookPro.local"
+      }
+    ],
+    "py312_validator_mutation.xml": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "1",
+        "skipped": "0",
+        "tests": "21",
+        "time": "0.302",
+        "timestamp": "2026-09-06T00:01:16.292236+09:00",
+        "hostname": "Yongui-MacBookPro.local"
+      }
+    ]
+  },
+  "initial_ci": {
+    "run": 33967843269,
+    "head": "44a5c24cdcac353d8cf5ef2914c3a2d2aa668c15",
+    "py312": "938 passed, 10 skipped",
+    "py310": "4 failed, 934 passed, 10 skipped",
+    "cause": "Python 3.10 rejects one-digit fractional-second ISO input before acceleration validation"
+  },
+  "base_ci": {
+    "run": 33963828991,
+    "result": "success",
+    "each_python_version": "936 passed, 10 skipped, 647 subtests passed"
+  },
+  "documentation": "https://docs.python.org/3.10/library/datetime.html#datetime.datetime.fromisoformat",
+  "final_ci_at_creation": "not started",
+  "evidence_sha256": {
+    "portable_py310.log": "ed10d2d25dff2f33da38bc7a039e706c54be4e28a0e031742f47f65529bc2f00",
+    "portable_py310.xml": "6c020206f5cbdff9c153bc5d1553374e81db77372be908dff6f68aa02aa1f926",
+    "portable_py312.log": "5fe81dd8519e786ff5ef2009fcd3a2bd575caba68c1bb3b1ae96604320568ae9",
+    "portable_py312.xml": "f41d0cbb164bda51106865e6d9918836866ecfaf8a6319445ce39fcd183426b2",
+    "portable_mutation_check.py": "dcf94987dd1cb01f34b966a8feb3965ccc40bdac1cb763dce0070dc6cea9484a",
+    "run_pytest.py": "f6d775cf9abe08241c87202c8b95f39a186bbb1d0280a3a729e72b84cf689231",
+    "py310_mutation_results.json": "1f3561271020bbcfdefd1ab1c71eb1c33049b1c99ba09e3f4275c144ed468651",
+    "py310_constructor_mutation.log": "e9dd0088581408a3a531d74e48d8ca3bcb90e081b3e65be621b0c9795fbbceac",
+    "py310_constructor_mutation.xml": "22cb6d44ad6b1cedfdf1602ac72a51fe9f288d3826fb53833d14f1299e00fe2e",
+    "py310_validator_mutation.log": "f2098a892e2a6c815a20ffe0b28562d9f9f124e957fc85fa15622222fb22a047",
+    "py310_validator_mutation.xml": "7a831c012e4deeb17eabd331b580c6181042b9d210e7d6e6063cdc0b717e21a7",
+    "py312_mutation_results.json": "1f3561271020bbcfdefd1ab1c71eb1c33049b1c99ba09e3f4275c144ed468651",
+    "py312_constructor_mutation.log": "824c72b8dd9a688537854e0032c2345b788af7c1502768d347b7413c8e81bee0",
+    "py312_constructor_mutation.xml": "00816c1276bc039646f5c5a5cbe7b459c3da31bd7fc97ff90f4b843676cde19b",
+    "py312_validator_mutation.log": "1883e087b1a6ea1a8df6760deebbba47b83957d332735a14550179861076f4ff",
+    "py312_validator_mutation.xml": "61c58d1396528a20caecfb2c91ba8cad1b07b7f274c4f6482fd35d25ac22bd0a"
+  },
+  "limitations": [
+    "No repeated full local baseline",
+    "No CUDA or full MPS P1",
+    "No real radar data validation"
+  ]
+}
