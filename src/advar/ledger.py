@@ -8468,7 +8468,7 @@ class EpisodeLedger:
                 dir=self.analysis_input_provenance_dir,
             )
         )
-        published = False
+        published_by_this_call = False
         try:
             arrays_path = temporary / "source_and_derived_arrays.npz"
             numpy_arrays = {
@@ -8582,7 +8582,7 @@ class EpisodeLedger:
                 else:
                     os.rename(temporary, target)
                     _fsync_directory(self.analysis_input_provenance_dir)
-                published = True
+                    published_by_this_call = True
                 EpisodeLedger._record_global_sampling_registry_entry(
                     connection,
                     registry_id=global_resolution.registry_id,
@@ -8763,15 +8763,25 @@ class EpisodeLedger:
         except Exception:
             if temporary.exists():
                 shutil.rmtree(temporary)
-            if published and target.exists():
+            if published_by_this_call and target.exists():
+                # A retry may publish and index this digest after the failed
+                # transaction releases its lock. Reacquire the writer lock
+                # before deciding whether these bytes are ours.
                 with self._connect() as connection:
-                    retained = connection.execute(
-                        "SELECT 1 FROM neural_prior_analysis_input_provenance "
-                        "WHERE artifact_digest = ?",
-                        (derivation.artifact_digest,),
-                    ).fetchone()
-                if retained is None:
-                    shutil.rmtree(target)
+                    connection.execute("BEGIN IMMEDIATE")
+                    try:
+                        retained = connection.execute(
+                            "SELECT 1 FROM analysis_input_provenance_commits "
+                            "WHERE artifact_digest = ?",
+                            (derivation.artifact_digest,),
+                        ).fetchone()
+                        if retained is None and target.exists():
+                            shutil.rmtree(target)
+                            _fsync_directory(self.analysis_input_provenance_dir)
+                        connection.commit()
+                    except Exception:
+                        connection.rollback()
+                        raise
             raise
         return derivation.artifact_digest
 
@@ -11481,7 +11491,7 @@ class EpisodeLedger:
             prefix=f".{derivation.artifact_digest}.",
             dir=self.analysis_input_provenance_dir,
         ))
-        published = False
+        published_by_this_call = False
         try:
             arrays_path = temporary / "source_and_derived_arrays.npz"
             np.savez_compressed(
@@ -11573,7 +11583,7 @@ class EpisodeLedger:
                 else:
                     os.rename(temporary, target)
                     _fsync_directory(self.analysis_input_provenance_dir)
-                published = True
+                published_by_this_call = True
                 for history in raw_resolution.history_entries:
                     self._record_operational_raw_resolution_history(
                         connection,
@@ -11668,15 +11678,25 @@ class EpisodeLedger:
         except Exception:
             if temporary.exists():
                 shutil.rmtree(temporary)
-            if published and target.exists():
+            if published_by_this_call and target.exists():
+                # A retry may publish and index this digest after the failed
+                # transaction releases its lock. Reacquire the writer lock
+                # before deciding whether these bytes are ours.
                 with self._connect() as connection:
-                    retained = connection.execute(
-                        "SELECT 1 FROM analysis_input_provenance_commits "
-                        "WHERE artifact_digest = ?",
-                        (derivation.artifact_digest,),
-                    ).fetchone()
-                if retained is None:
-                    shutil.rmtree(target)
+                    connection.execute("BEGIN IMMEDIATE")
+                    try:
+                        retained = connection.execute(
+                            "SELECT 1 FROM analysis_input_provenance_commits "
+                            "WHERE artifact_digest = ?",
+                            (derivation.artifact_digest,),
+                        ).fetchone()
+                        if retained is None and target.exists():
+                            shutil.rmtree(target)
+                            _fsync_directory(self.analysis_input_provenance_dir)
+                        connection.commit()
+                    except Exception:
+                        connection.rollback()
+                        raise
             raise
         return derivation.artifact_digest
 
