@@ -1,0 +1,100 @@
+{
+  "implementation_base": "fc0dc6d7c6ada07ad1b610b63a0d7daff2c9fc89",
+  "implementation_commit": "95c0ccdc56a997b4770a93008b4b8058f6884fff",
+  "status": "local_scoped_tests_passed_remote_final_ci_pending",
+  "unique_test_cases": 245,
+  "test_runs": [
+    {
+      "name": "root_sensitivity",
+      "case_count": 95,
+      "junit_suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "206",
+          "time": "43.444",
+          "timestamp": "2026-09-05T17:54:23.276348+09:00",
+          "hostname": "Yongui-MacBookPro.local"
+        }
+      ],
+      "log": "............................. [ 30%]\n.............................. [ 62%]\n....................................           [100%]\n=============================== warnings summary ===============================\ntests/test_a2_branch.py: 18 warnings\n  /Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n95 passed, 18 warnings, 111 subtests passed in 43.45s\n"
+    },
+    {
+      "name": "integration",
+      "case_count": 148,
+      "junit_suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "321",
+          "time": "132.114",
+          "timestamp": "2026-09-05T18:06:50.791282+09:00",
+          "hostname": "Yongui-MacBookPro.local"
+        }
+      ],
+      "log": "........................................................................................................................................ [ 91%]\n............                                        [100%]\n=============================== warnings summary ===============================\ntests/test_a2_branch.py: 18 warnings\n  /Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n148 passed, 18 warnings, 173 subtests passed in 132.12s (0:02:12)\n"
+    },
+    {
+      "name": "final_followup",
+      "case_count": 28,
+      "junit_suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "119",
+          "time": "16.351",
+          "timestamp": "2026-09-05T18:18:56.530693+09:00",
+          "hostname": "Yongui-MacBookPro.local"
+        }
+      ],
+      "log": "............................                          [100%]\n=============================== warnings summary ===============================\ntests/test_a2_numerics_cross.py: 18 warnings\n  /Users/yhlee/ADVAR/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1488: DeprecationWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.\n    warnings.warn(\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n28 passed, 18 warnings, 91 subtests passed in 16.35s\n"
+    }
+  ],
+  "file_sha256": {
+    ".github/scripts/build_deployment_bundle.py": "6a6eb685bb88e61a77ff4635216ee9d87b8e0ddae21e77fd451a481c5dc1819e",
+    ".github/workflows/ci.yml": "8c06e690df1cf514a246f27bb26132bf165d9701539891d88a8ddef9dd325c37",
+    "AGENTS.md": "5c00da0f27f1d07110cc06f0a5b3c3ad4af913eb07083d4e6614b2d61902d1bd",
+    "src/advar/cli.py": "2776f52ca5e89745f352dd6f2f6b486d98fd61aa2f27fadbbc07ae202bdb8c56",
+    "src/advar/intervention.py": "a36d082a353b5c63adfc2cba599c1457bd30dd22593434ca0d306599d0bd2ddc",
+    "src/advar/ledger.py": "bf35c2929d467831e5d4b948a03a18500db1d512bfb1f0c05cf92b471f5045b7",
+    "src/advar/nowcast.py": "f82f6d5929a1231df68ae313ba84aef68f274e33f8ba00708e999a498c697e6d",
+    "src/advar/physics.py": "c4335f3f1b1ed47d54121e2ce1942e73065c69f3f918f8fa0f5a1f63de9005f1",
+    "src/advar/promotion.py": "6e34eb388ee712e640c5bb70cc36a031ce86c997d59bee2ae6a88c118dd7b3c8",
+    "src/advar/range_geometry.py": "1aef85f5b565bd5d3b0a9d707e8860c43711df5877d5e52bcca90e985632b465",
+    "src/advar/run_artifact.py": "e0afc202d48ed9c2fe29167b1177cb1efdc131dd315dba303a93c149ec8ef595",
+    "src/advar/sensitivity.py": "7e68519ba0f752a0400e134bc05cea7002dc414b02997ebd56f1e5990cd0def4",
+    "src/advar/variational.py": "00f89058d4dc0e66d0d19285761da7e7aa1e35306b4c625af75ba0a5e1337521",
+    "tests/test_a2_artifacts.py": "b54fdcd3f2d226c305dfa197a22b2e337797483fbdf93c0b190c954e314f5f2c",
+    "tests/test_a2_branch.py": "36abed37bc7fbcbcf1cde6d110908014231517b00fb87859572304ef82659a4b",
+    "tests/test_a2_cli_tools.py": "8b6b6ef0a6553bce39ad83c00ef2d4d9e25caf04187ecb68d4d09a437a784dc5",
+    "tests/test_a2_fso.py": "c2310d2ed509dfabb48b50333696320de6f7cd3888f028af61b2be71310bcc2e",
+    "tests/test_a2_intervention.py": "9def9bc4af6fd60f93bd39a875ee9d3d3cff24abf9d9fe043e071fac86a7ac5f",
+    "tests/test_a2_ledger_io.py": "c68f0332e8f0d723f156e77e4a2db7206185f12dbb38447da5a52f3f403b7f34",
+    "tests/test_a2_ledger_snapshot.py": "8409f38d20a3b3ae348fcbed0ad43d6d98df40cb120b66c231b1f852a79d62d5",
+    "tests/test_a2_numerics.py": "cfb7db65b674ffbe9607a1a4baa091d784f42e069c98b712fded034df1b16e9b",
+    "tests/test_a2_numerics_cross.py": "79f0dd3047814d3e83991337e8fcf167c24e295adee00cac833213cfc9eff534",
+    "tests/test_a2_promotion.py": "c509d5cb05ca7eee6b22b1b2e7ce2d0550c03a549a21a7ced9a8bf8c4eb57c83",
+    "tests/test_sensitivity.py": "c9432df0c9c06141c330044b723e9aa09e58ab1c8579999ac260e0fd79a33050"
+  },
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "python": "3.12.13 (main, Mar  3 2026, 12:39:30) [Clang 17.0.0 (clang-1700.6.3.2)]",
+    "torch": "2.13.0",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "limits": [
+    "No repeated full local baseline",
+    "No CUDA or full MPS P1 claim",
+    "No real radar forecast skill evaluation",
+    "Historical raw audit archives remain immutable",
+    "Final commit CI is tracked in PR checks and KG index"
+  ],
+  "typecheck": "0 errors, 0 warnings, 0 notes\n"
+}

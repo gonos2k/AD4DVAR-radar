@@ -2,7 +2,7 @@
 
 기준 커밋: `94c75d3323c986b6fb2963336b906acc85384e12`.
 
-**조사는 완료했으며, 아래 새 제품 결함은 미수정 상태다.** 이번 변경은 팀 모델 설정, 조사 기록, 기존 수정에서 빠뜨린 CI fixture 보정이다. 수치 알고리즘을 다시 설계하거나 새 인증 계층을 추가하지 않았다.
+**A2-01–A2-23 수정과 영향 시험을 완료했다.** 구현은 `95c0ccd`에 반영했다. 교차 검토에서 드러난 provenance 정리 경쟁 조건(A2-24), 소유권·fsync 순서, CPU↔MPS 수송 미분 경계도 보강했다. [항목별 해결·검증·지원 범위](SECOND_CODE_REVIEW_RESOLUTION.md)를 함께 읽는다. 아래 반례 설명과 행 번호는 원래 조사 기준의 역사적 기록이다.
 
 - [x] 팀 34개를 `gpt-5.6-luna`(`lunar`) / `xhigh`로 가동하고 AGENTS.md에 기록.
 - [x] 코드·시험·UI·CI·설정·lock 71개 파일, 166,618행의 Git blob SHA-256 고정.
@@ -11,7 +11,9 @@
 - [x] 확정 결함, 제한된 입력 경계 문제, 보류·철회 후보 구분.
 - [x] CI에서 확인한 fixture 실패 8개 보정 및 해당 시험 통과 확인.
 - [x] 원보고서·재현 코드·출력·해시 보존.
-- [ ] 아래 새 제품 결함의 수정 및 영향 시험. 조사 완료를 수정 완료로 세지 않는다.
+- [x] A2-01–23 수정, 교차 검토와 고유 선택 시험 245개 통과.
+- [x] 추가 A2-24 정리 경쟁 조건 및 CPU↔MPS 자료형·미분 보강.
+- [x] 최종 제품 소스 basedpyright 오류 0. 원격 전체 CI는 PR의 최종 커밋 checks로 별도 확인.
 
 [파일별 읽기 범위](SECOND_CODE_REVIEW_COVERAGE.md) · [원보고서·프로브·출력 묶음](review_artifacts/team_audit_94c75d3.zip) · [수정 후 검증 기록](review_artifacts/second_audit_validation.json) · [Draft PR #156](https://github.com/gonos2k/AD4DVAR-radar/pull/156).
 
@@ -19,15 +21,15 @@
 
 ## 우선 해결할 수학·수치·기상학 문제
 
-모든 항목은 **OPEN / 미수정**이다. P1은 과학 계산의 주요 오류, P2는 특정 지원 경로의 잘못된 결과·실패, P3는 제한된 자료 경계·진단·도구 문제를 뜻한다. 심각도와 확정 범위는 이 통합 판정을 우선한다.
+아래 항목은 **RESOLVED / 수정·선택 시험 완료**다. 원래 재현과 심각도는 유지한다. P1은 과학 계산의 주요 오류, P2는 특정 지원 경로의 잘못된 결과·실패, P3는 제한된 자료 경계·진단·도구 문제를 뜻한다. 심각도와 확정 범위는 이 통합 판정을 우선한다.
 
 | ID | 판정 | 재현한 문제와 영향 범위 | 가장 작은 수정 방향 |
 | --- | --- | --- | --- |
-| A2-01 | P1 | [M0](src/advar/sensitivity.py#L12610), [P1 FSO/FSOI](src/advar/sensitivity.py#L15296), [learning step](src/advar/sensitivity.py#L14827)이 typed verification의 FSO 가중치를 누락한다. v22에서 제외 화소가 점수·미분·지지영역에 포함된다. | 예측 평가영역 × 검증 가중치를 한 번 구성해 support, 점수, 미분, digest, 학습 재계산에 일관되게 사용. |
-| A2-02 | P2 | [이벤트 연관 판정](src/advar/promotion.py#L8192)이 겹치는 시간 구간에서 인자 순서에 의존한다. 같은 signed event 쌍을 A/B로 넣으면 연관, B/A면 비연관이다. 공개 catalog에서 한 순서만 분할이 통과한다. | 같은 시각의 궤적 비교와 대칭인 연관 규칙을 적용. 어느 순서가 참이어야 하는지는 명시한 기상학적 기준으로 결정. |
-| A2-03 | P2 | [분기 검사](src/advar/sensitivity.py#L16869)가 0.5·1.0에서만 같은 FFT peak를 확인하고 `certified`를 반환한다. 실제 0.25에서 peak가 바뀌었다가 돌아오는 반례가 있다. | 유한 표본 검사를 전 구간 보장으로 표현하지 말 것. 근거 없는 `certified`를 제한하고 기존 full/half 재해석 검사는 유지. |
-| A2-04 | P2 | [동시 불확실성 UCB](src/advar/promotion.py#L21140)의 automatic bounded 방법에도 [사용하지 않은 bootstrap tail gate](src/advar/promotion.py#L22895)가 남아 있다. 표본 횟수만 바꾸면 같은 상한에서 추가 거부 사유가 바뀐다. | 실제 선택한 추론 방법에만 tail gate 적용. 기존 R03의 metric-cell 수정과 별도로 이 경로 정리. |
-| A2-05 | P2 | [현재 run 생성](src/advar/nowcast.py#L4852)·[artifact load](src/advar/run_artifact.py#L1434)가 증거 없는 v5 격자를 받아 current v72로 왕복시킨다. registry는 v5를 audit-only로 명시한다. | 역사적 v5 decoding은 유지하고 현재 issuance/save의 과학적 격자 허용 경계를 명확히 강제. |
+| A2-01 | P1 | [M0](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/sensitivity.py#L12610), [P1 FSO/FSOI](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/sensitivity.py#L15296), [learning step](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/sensitivity.py#L14827)이 typed verification의 FSO 가중치를 누락한다. v22에서 제외 화소가 점수·미분·지지영역에 포함된다. | 예측 평가영역 × 검증 가중치를 한 번 구성해 support, 점수, 미분, digest, 학습 재계산에 일관되게 사용. |
+| A2-02 | P2 | [이벤트 연관 판정](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/promotion.py#L8192)이 겹치는 시간 구간에서 인자 순서에 의존한다. 같은 signed event 쌍을 A/B로 넣으면 연관, B/A면 비연관이다. 공개 catalog에서 한 순서만 분할이 통과한다. | 같은 시각의 궤적 비교와 대칭인 연관 규칙을 적용. 어느 순서가 참이어야 하는지는 명시한 기상학적 기준으로 결정. |
+| A2-03 | P2 | [분기 검사](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/sensitivity.py#L16869)가 0.5·1.0에서만 같은 FFT peak를 확인하고 `certified`를 반환한다. 실제 0.25에서 peak가 바뀌었다가 돌아오는 반례가 있다. | 유한 표본 검사를 전 구간 보장으로 표현하지 말 것. 근거 없는 `certified`를 제한하고 기존 full/half 재해석 검사는 유지. |
+| A2-04 | P2 | [동시 불확실성 UCB](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/promotion.py#L21140)의 automatic bounded 방법에도 [사용하지 않은 bootstrap tail gate](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/promotion.py#L22895)가 남아 있다. 표본 횟수만 바꾸면 같은 상한에서 추가 거부 사유가 바뀐다. | 실제 선택한 추론 방법에만 tail gate 적용. 기존 R03의 metric-cell 수정과 별도로 이 경로 정리. |
+| A2-05 | P2 | [현재 run 생성](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/nowcast.py#L4852)·[artifact load](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/run_artifact.py#L1434)가 증거 없는 v5 격자를 받아 current v72로 왕복시킨다. registry는 v5를 audit-only로 명시한다. | 역사적 v5 decoding은 유지하고 현재 issuance/save의 과학적 격자 허용 경계를 명확히 강제. |
 
 A2-01의 current v22 공개 재현은 다음과 같다. M0는 가중치 0인 미탐지 한 셀 때문에 기대 점수 0 대신 `2.9823176871`, 해당 셀 미분 `0.0086346941`을 반환했다. P1은 평가 가중치 합 48 대신 49, 기대 점수 약 `5.10e-31` 대신 `0.0821876262`를 반환했고 자체 artifact 검증도 통과했다. 별도의 공간 나이 조건에서는 선언된 지지가 0인데도 점수를 계산했다. observation-removal의 `_resolved_forecast_scores()`는 가중치를 적용한다. 처음 나온 “P1은 정상” 판정은 이 다른 호출 경로를 혼동한 것이어서 정정했다. 공개 M0/P1 재현에는 수치 함수나 validator mock이 없다. 학습 단계의 별도 재현은 private helper와 최소 정책 shim을 사용했으며, 자동학습 전체 승인을 실행했다고 주장하지 않는다. ZIP의 `cross_fso.md`와 관련 probe를 참조한다.
 
@@ -39,28 +41,28 @@ A2-05는 v5 helper의 역사적 projected 의미 자체를 결함으로 보지 �
 
 ## 저장·실행 경로의 확정 문제
 
-아래도 모두 **OPEN / 미수정**이다. 합성 자료라도 공개 생성·호출 경로로 재현한 경우와 malformed typed 입력을 구분했다.
+아래도 모두 **RESOLVED / 수정·선택 시험 완료**다. 합성 자료라도 공개 생성·호출 경로로 재현한 경우와 malformed typed 입력을 구분했다.
 
 | ID | 판정 | 위치·재현 | 수정 방향 / 한계 |
 | --- | --- | --- | --- |
-| A2-06 | P2 | [run age 직렬화](src/advar/run_artifact.py#L520): `background_age_minutes=10`은 nowcast/save 성공 뒤 load에서 정수 dtype 때문에 거부된다. | 허용한 분 단위 수치를 float로 정규화. 정상적인 공개 입력 왕복 문제. |
-| A2-07 | P2 | [legacy migration](src/advar/run_artifact.py#L1957): 같은 NaN 위치를 가진 두 예측에 `torch.equal`을 써 v42 복원이 실패한다. | 유효값과 NaN 위치를 함께 비교. 현재 생성물을 v42로 재봉인한 fixture이며 실제 과거 binary 표본은 없다. |
-| A2-08 | P2 | [prospective decision](src/advar/intervention.py#L1824)은 no-op dBZ/QC/override를 채택하지만 [receipt](src/advar/intervention.py#L2579)는 변화가 없다고 거부한다. | decision과 receipt의 변화 조건 일치. QC 공개 ledger probe는 trust-store loader만 fixture로 대체. 물리적으로 위험한 조작을 재현한 것은 아니다. |
-| A2-09 | P2 | [실현 receipt 저장](src/advar/ledger.py#L6380)이 디렉터리를 먼저 공개하고 중복 decision의 SQLite INSERT가 실패하면 orphan 디렉터리를 남긴다. | 중복 확인과 새 디렉터리 rollback 정리. 공개 signed receipt fixture에서 2개 디렉터리/1개 row 재현; loader가 orphan을 승인한 것은 아니다. |
-| A2-10 | P2 | [source coverage 등록](src/advar/ledger.py#L7827)이 preflight에서만 시간을 확인한다. 연결 지연으로 deadline 뒤 INSERT해도 성공한다. | write transaction에서 시각 재확인. 주입 clock으로 지연을 모델링했으며 실제 지연 시간을 측정한 시험은 아니다. |
-| A2-11 | P2 | [idempotent provenance recovery](src/advar/ledger.py#L10411)를 두 worker가 동시에 실행하면 하나는 성공, 하나는 `activation raced` 실패다. | 조건부 갱신 경쟁 후 동일 artifact가 이미 active면 성공 반환. 최종 row는 active/usable이며 손상·유실은 없었다. |
-| A2-12 | P2 | [M0 append 검사](src/advar/ledger.py#L21867)는 임의 context 이름을 허용하지만 자체 [verify](src/advar/ledger.py#L21732)는 거부한다. | 저장 전 현재 context schema 일치 확인. 정상 producer가 아닌 외부 typed snapshot의 입력 경계. |
-| A2-13 | P3 | [tile impact 검사](src/advar/ledger.py#L22153)가 unavailable metric의 finite tile impact `17.0`을 저장·복원한다. | unavailable whole-field/tile missingness 일치. 현재 직접 소비자는 ledger 외에 찾지 못했다. |
-| A2-14 | P3 | [whitened tile norm 검사](src/advar/ledger.py#L22056)가 보존한 direct map=3, std=1인데 norm=999를 허용한다. | 실제 보존한 map이 있는 lead만 재계산 대조. 외부 malformed 진단값이며 정상 계산 오류로 확대하지 않는다. |
-| A2-15 | P3 | [M0 공간 검사](src/advar/ledger.py#L21853)가 모두 unavailable인 0×0 snapshot을 저장한다. | 두 공간 차원의 양수 조건. 정상 producer는 빈 입력을 거부한다. |
-| A2-16 | P3 | [P1 내용 검증](src/advar/variational.py#L9694)이 control과 맞지 않는 재봉인 remap cell을 허용한다. 공개 save/load에서 값은 같지만 dynamics Jacobian 차이 약 199.8. | 기존 `_analysis_remap_cells_match` 관계 검사. digest까지 다시 만든 malformed artifact이며 정상 solver 출력 결함은 아니다. |
-| A2-17 | P3 | [learning 승인 대조](src/advar/sensitivity.py#L12210)가 v4 `nominal_full_analysis_input_digest`를 validation과 비교하지 않는다. | 기존 expected 필드 집합에 같은 lineage 관계 반영. 실제 FSO/FSOI 위에 합성 validation/evidence를 재구성한 validator 경계 probe다. |
-| A2-18 | P3 | [canonical observations 검사](src/advar/variational.py#L8972)가 직접 구성한 NaN dbz를 residual까지 허용한다. | typed canonical 관측의 유한값 검사. raw 입력 정리는 정상이고 solve는 nonfinite objective로 fallback한다. |
-| A2-19 | P3 | [remap cell 변환](src/advar/physics.py#L136)이 유한한 `1e20` px에서 Python int 변환 overflow를 낸다. | 영역 밖 이동의 명시적 처리 또는 지원 범위 거부. configured nowcast에서 도달한 사례는 아니다. |
-| A2-20 | P3 | [range evidence](src/advar/range_geometry.py#L353)가 중복 label을 받아 `mask(label)`이 첫 mask만 반환한다. | label의 비어 있지 않음·유일성 확인. 생성기와 authoritative replay는 추가 검사를 한다. |
-| A2-21 | P2 | [research CLI](src/advar/cli.py#L1039)가 격자 없이 m/s pair threshold를 받아 실제로는 px 기준을 사용한다. | 이 물리 단위 옵션에도 격자 요구. 같은 입력·0.001 m/s에서 격자 유무에 따라 conflict false/true 재현. |
-| A2-22 | P3 | [CLI preflight](src/advar/cli.py#L1038)에 물리 pair 옵션 3개가 빠져 argparse 오류 대신 uncaught ValueError가 발생한다. | 기존 physical-option 집합 완성. 실행은 fail-closed이며 잘못된 예측을 쓰지 않는다. |
-| A2-23 | P3 | [legacy bundle build](.github/scripts/build_deployment_bundle.py#L829)는 Linux ARM을 받아 만들지만 [verify](.github/scripts/build_deployment_bundle.py#L1009)는 x86만 허용한다. | 지원 architecture를 build 시작에서 맞춤. platform mock을 이용한 legacy 도구 시험이며 ARM 실기기 배포는 하지 않았다. |
+| A2-06 | P2 | [run age 직렬화](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/run_artifact.py#L520): `background_age_minutes=10`은 nowcast/save 성공 뒤 load에서 정수 dtype 때문에 거부된다. | 허용한 분 단위 수치를 float로 정규화. 정상적인 공개 입력 왕복 문제. |
+| A2-07 | P2 | [legacy migration](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/run_artifact.py#L1957): 같은 NaN 위치를 가진 두 예측에 `torch.equal`을 써 v42 복원이 실패한다. | 유효값과 NaN 위치를 함께 비교. 현재 생성물을 v42로 재봉인한 fixture이며 실제 과거 binary 표본은 없다. |
+| A2-08 | P2 | [prospective decision](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/intervention.py#L1824)은 no-op dBZ/QC/override를 채택하지만 [receipt](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/intervention.py#L2579)는 변화가 없다고 거부한다. | decision과 receipt의 변화 조건 일치. QC 공개 ledger probe는 trust-store loader만 fixture로 대체. 물리적으로 위험한 조작을 재현한 것은 아니다. |
+| A2-09 | P2 | [실현 receipt 저장](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/ledger.py#L6380)이 디렉터리를 먼저 공개하고 중복 decision의 SQLite INSERT가 실패하면 orphan 디렉터리를 남긴다. | 중복 확인과 새 디렉터리 rollback 정리. 공개 signed receipt fixture에서 2개 디렉터리/1개 row 재현; loader가 orphan을 승인한 것은 아니다. |
+| A2-10 | P2 | [source coverage 등록](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/ledger.py#L7827)이 preflight에서만 시간을 확인한다. 연결 지연으로 deadline 뒤 INSERT해도 성공한다. | write transaction에서 시각 재확인. 주입 clock으로 지연을 모델링했으며 실제 지연 시간을 측정한 시험은 아니다. |
+| A2-11 | P2 | [idempotent provenance recovery](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/ledger.py#L10411)를 두 worker가 동시에 실행하면 하나는 성공, 하나는 `activation raced` 실패다. | 조건부 갱신 경쟁 후 동일 artifact가 이미 active면 성공 반환. 최종 row는 active/usable이며 손상·유실은 없었다. |
+| A2-12 | P2 | [M0 append 검사](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/ledger.py#L21867)는 임의 context 이름을 허용하지만 자체 [verify](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/ledger.py#L21732)는 거부한다. | 저장 전 현재 context schema 일치 확인. 정상 producer가 아닌 외부 typed snapshot의 입력 경계. |
+| A2-13 | P3 | [tile impact 검사](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/ledger.py#L22153)가 unavailable metric의 finite tile impact `17.0`을 저장·복원한다. | unavailable whole-field/tile missingness 일치. 현재 직접 소비자는 ledger 외에 찾지 못했다. |
+| A2-14 | P3 | [whitened tile norm 검사](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/ledger.py#L22056)가 보존한 direct map=3, std=1인데 norm=999를 허용한다. | 실제 보존한 map이 있는 lead만 재계산 대조. 외부 malformed 진단값이며 정상 계산 오류로 확대하지 않는다. |
+| A2-15 | P3 | [M0 공간 검사](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/ledger.py#L21853)가 모두 unavailable인 0×0 snapshot을 저장한다. | 두 공간 차원의 양수 조건. 정상 producer는 빈 입력을 거부한다. |
+| A2-16 | P3 | [P1 내용 검증](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/variational.py#L9694)이 control과 맞지 않는 재봉인 remap cell을 허용한다. 공개 save/load에서 값은 같지만 dynamics Jacobian 차이 약 199.8. | 기존 `_analysis_remap_cells_match` 관계 검사. digest까지 다시 만든 malformed artifact이며 정상 solver 출력 결함은 아니다. |
+| A2-17 | P3 | [learning 승인 대조](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/sensitivity.py#L12210)가 v4 `nominal_full_analysis_input_digest`를 validation과 비교하지 않는다. | 기존 expected 필드 집합에 같은 lineage 관계 반영. 실제 FSO/FSOI 위에 합성 validation/evidence를 재구성한 validator 경계 probe다. |
+| A2-18 | P3 | [canonical observations 검사](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/variational.py#L8972)가 직접 구성한 NaN dbz를 residual까지 허용한다. | typed canonical 관측의 유한값 검사. raw 입력 정리는 정상이고 solve는 nonfinite objective로 fallback한다. |
+| A2-19 | P3 | [remap cell 변환](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/physics.py#L136)이 유한한 `1e20` px에서 Python int 변환 overflow를 낸다. | 영역 밖 이동의 명시적 처리 또는 지원 범위 거부. configured nowcast에서 도달한 사례는 아니다. |
+| A2-20 | P3 | [range evidence](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/range_geometry.py#L353)가 중복 label을 받아 `mask(label)`이 첫 mask만 반환한다. | label의 비어 있지 않음·유일성 확인. 생성기와 authoritative replay는 추가 검사를 한다. |
+| A2-21 | P2 | [research CLI](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/cli.py#L1039)가 격자 없이 m/s pair threshold를 받아 실제로는 px 기준을 사용한다. | 이 물리 단위 옵션에도 격자 요구. 같은 입력·0.001 m/s에서 격자 유무에 따라 conflict false/true 재현. |
+| A2-22 | P3 | [CLI preflight](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/src/advar/cli.py#L1038)에 물리 pair 옵션 3개가 빠져 argparse 오류 대신 uncaught ValueError가 발생한다. | 기존 physical-option 집합 완성. 실행은 fail-closed이며 잘못된 예측을 쓰지 않는다. |
+| A2-23 | P3 | [legacy bundle build](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/.github/scripts/build_deployment_bundle.py#L829)는 Linux ARM을 받아 만들지만 [verify](https://github.com/gonos2k/AD4DVAR-radar/blob/94c75d3323c986b6fb2963336b906acc85384e12/.github/scripts/build_deployment_bundle.py#L1009)는 x86만 허용한다. | 지원 architecture를 build 시작에서 맞춤. platform mock을 이용한 legacy 도구 시험이며 ARM 실기기 배포는 하지 않았다. |
 
 ## 유지할 GREEN
 
@@ -90,15 +92,15 @@ A2-05는 v5 helper의 역사적 projected 의미 자체를 결함으로 보지 �
 
 일부 operational geometry 시험은 현재의 unconditional deployment-unsupported 오류만 확인하므로 geometry 세부 검증의 증거로 사용할 수 없다. prior runner의 mutable-state 시험도 “거부”보다 frozen export 유지에 관한 시험이다. 각각 앞으로 기능이 바뀔 때 oracle·명칭을 정리할 항목이다. 기본 불변량·외부 계약을 검증하는 시험과 구현 세부를 그대로 반복하는 시험을 구분한다.
 
-## 이번에 수정한 누락과 검증
+## 이전 `fc0dc6d`의 fixture 보정과 검증
 
 - [x] `AGENTS.md`: 팀 모델 `gpt-5.6-luna` / `xhigh` 기록.
 - [x] evidence closure fixture: source fraction도 finite로 만들어 원래의 합계 오류까지 검사. 정상 all-NaN evidence와 부분 결측 거부 유지.
 - [x] 7개 시간 관련 fixture: 마지막 관측 시각을 유지한 세 입력 시각. holdout-clock fixture의 raw slots·sampling unit·서명 예약도 같은 세 시각으로 맞추고 최초 clock은 첫 raw slot보다 앞에 둠.
 - [x] CI에서 실패한 8개 시험이 모두 수정 후 로컬 `python -I`에서 통과. 인접 evidence 시험 6개도 통과해 **고유 14개** 확인. 중간 실패와 최종 성공 로그를 함께 보존.
-- [x] `git diff --check` 및 기준 운영 소스 불변 확인. 제품 코드는 `94c75d3`와 같다.
+- [x] 당시 `git diff --check` 및 기준 운영 소스 불변 확인. `fc0dc6d`의 제품 코드는 `94c75d3`와 같았다. 이후 A2 구현은 별도 해결 기록에 정리했다.
 
-기준 커밋의 CI run `33949634139` Python 3.10·3.12는 각각 **887 passed, 8 failed, 8 skipped, 638 subtests passed**로 완료됐다. 두 버전 모두 같은 8개 fixture가 실패했다. Python 3.12 source type 검사와 wheel/CLI·UI job은 성공했다. 수정 커밋의 원격 전체 CPU CI 결과는 별도로 확인해야 하며, 로컬 선택 시험을 전체 CI 성공으로 표현하지 않는다.
+기준 커밋의 CI run `33949634139` Python 3.10·3.12는 각각 **887 passed, 8 failed, 8 skipped, 638 subtests passed**로 완료됐다. 두 버전 모두 같은 8개 fixture가 실패했다. Python 3.12 source type 검사와 wheel/CLI·UI job은 성공했다. 이후 최종 커밋의 원격 전체 CPU CI 결과는 PR checks로 확인하며, 로컬 선택 시험을 전체 CI 성공으로 표현하지 않는다.
 
 전수 읽기와 선택 시험을 수행했지만 로컬 전체 baseline은 반복 실행하지 않았다. 실제 레이더 예측 성능, 전체 P0/P1 실자료 종단 간 평가, CUDA, 전체 MPS P1, 실제 브라우저 렌더링은 이번 검증 범위가 아니다. full MPS P1의 기존 NO-GO는 유지한다. 앞선 `FULL_CODE_REVIEW_*`와 ZIP은 역사적 기록 그대로 보존한다.
 
