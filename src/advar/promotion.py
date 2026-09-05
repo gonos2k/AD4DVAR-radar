@@ -8183,15 +8183,28 @@ def _events_associate(
         first.object_track_artifact,
         second.object_track_artifact,
     )
-    if first_end <= second_start:
+    spatially_overlapping = _event_spatial_iou(
+        first.spatial_envelope_xy_m,
+        second.spatial_envelope_xy_m,
+    ) >= plan.minimum_association_spatial_iou
+    if overlap_distance is not None:
+        # The minimum relative-track distance is evaluated at the same times
+        # for both tracks, so this branch is invariant under argument order.
+        return spatially_overlapping or (
+            overlap_distance <= plan.association_motion_buffer_m
+        )
+
+    # With disjoint observation intervals there is one chronological ordering.
+    # Extrapolate the earlier terminal motion only across the actual gap; the
+    # time threshold remains a separate limit on this association evidence.
+    if first_end < second_start:
         earlier = first
         later = second
-    elif second_end <= first_start:
+    elif second_end < first_start:
         earlier = second
         later = first
     else:
-        earlier = first
-        later = second
+        raise ValueError("event tracks have inconsistent time intervals")
     predicted_x = (
         earlier.end_centroid_xy_m[0]
         + earlier.object_track_artifact.terminal_velocity_xy_mps[0] * gap_seconds
@@ -8204,21 +8217,9 @@ def _events_associate(
         later.start_centroid_xy_m[0] - predicted_x,
         later.start_centroid_xy_m[1] - predicted_y,
     )
-    maximum_motion_distance = plan.association_motion_buffer_m
-    return (
-        gap_seconds <= plan.maximum_association_time_gap_minutes * 60.0
-        and (
-            _event_spatial_iou(
-                first.spatial_envelope_xy_m,
-                second.spatial_envelope_xy_m,
-            )
-            >= plan.minimum_association_spatial_iou
-            or (
-                overlap_distance is not None
-                and overlap_distance <= plan.association_motion_buffer_m
-            )
-            or centroid_distance <= maximum_motion_distance
-        )
+    return gap_seconds <= plan.maximum_association_time_gap_minutes * 60.0 and (
+        spatially_overlapping
+        or centroid_distance <= plan.association_motion_buffer_m
     )
 
 
@@ -21036,6 +21037,46 @@ def _simultaneous_uncertainty_upper_bounds(
     retained = tuple((item, _cluster_means(item)) for item in comparisons)
     if any(not values for _, values in retained):
         raise ValueError("simultaneous inference comparison has no clusters")
+    automatic = not policy.allow_shadow_small_sample_bootstrap
+    alpha = (1.0 - policy.confidence_level) / (2.0 * candidate_family_size)
+    if automatic:
+        # The production method is an analytic bounded-event UCB.  Bootstrap
+        # multipliers are exploratory diagnostics only and must not influence
+        # either these bounds or their acceptance gate.
+        comparison_bounds: dict[
+            tuple[str, tuple[str, str] | None], float
+        ] = {}
+        bounds: dict[str, float] = {}
+        for comparison, _ in retained:
+            bound = _bounded_event_mean_upper_bound(
+                list(comparison.values),
+                list(comparison.clusters),
+                policy,
+                family_size=candidate_family_size * len(comparisons),
+                absolute_bound=_UNCERTAINTY_SCORE_SUPPORT.difference_bound(
+                    comparison.component
+                ),
+            )
+            comparison_bounds[(comparison.component, comparison.group)] = bound
+            bounds[comparison.component] = max(
+                bounds.get(comparison.component, -math.inf),
+                bound,
+            )
+        return _SimultaneousInferenceResult(
+            bounds=bounds,
+            comparison_bounds=comparison_bounds,
+            test_count=candidate_family_size * len(comparisons),
+            method="support_bounded_hybrid",
+            # One deterministic analytic evaluation represents this method;
+            # no random tail has been estimated.
+            effective_replicates=1,
+            critical_quantile=1.0 - alpha,
+            monte_carlo_standard_error=0.0,
+            tail_replicates=0.0,
+            unresolved_unbounded_zero_variance=False,
+            randomized_multiplier=False,
+        )
+
     observed = tuple(
         sum(values.values()) / len(values)
         for _, values in retained
@@ -21083,7 +21124,6 @@ def _simultaneous_uncertainty_upper_bounds(
                 centered / standard_error if standard_error > 0.0 else 0.0
             )
         maximum_statistics.append(max(studentized))
-    alpha = (1.0 - policy.confidence_level) / (2.0 * candidate_family_size)
     ordered = sorted(maximum_statistics)
     index = min(
         len(ordered) - 1,
@@ -21095,25 +21135,13 @@ def _simultaneous_uncertainty_upper_bounds(
         tuple[str, tuple[str, str] | None], float
     ] = {}
     unresolved_unbounded_zero_variance = False
-    automatic = not policy.allow_shadow_small_sample_bootstrap
     for (comparison, _), mean, standard_error in zip(
         retained,
         observed,
         standard_errors,
         strict=True,
     ):
-        if automatic:
-            bound = _bounded_event_mean_upper_bound(
-                list(comparison.values),
-                list(comparison.clusters),
-                policy,
-                family_size=candidate_family_size * len(comparisons),
-                absolute_bound=_UNCERTAINTY_SCORE_SUPPORT.difference_bound(
-                    comparison.component
-                ),
-            )
-        else:
-            bound = mean + critical * standard_error
+        bound = mean + critical * standard_error
         comparison_bounds[(comparison.component, comparison.group)] = bound
         bounds[comparison.component] = max(
             bounds.get(comparison.component, -math.inf),
@@ -21129,7 +21157,7 @@ def _simultaneous_uncertainty_upper_bounds(
         bounds=bounds,
         comparison_bounds=comparison_bounds,
         test_count=candidate_family_size * len(comparisons),
-        method="support_bounded_hybrid" if automatic else method,
+        method=method,
         effective_replicates=effective_replicates,
         critical_quantile=1.0 - alpha,
         monte_carlo_standard_error=monte_carlo_error,
