@@ -21870,6 +21870,8 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         != len(set(snapshot.context_feature_names))
     ):
         raise ValueError("context feature names must be non-empty and unique")
+    if snapshot.context_feature_names != CONTEXT_FEATURE_NAMES:
+        raise ValueError("context feature names must match the current schema")
     if (
         len(set(selected_leads)) != len(selected_leads)
         or not set(selected_leads).issubset(leads)
@@ -21892,6 +21894,10 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
     if snapshot.latest_sensitivity_mask.ndim != 2:
         raise ValueError("latest_sensitivity_mask must be two-dimensional")
     height, width = snapshot.latest_sensitivity_mask.shape
+    if height <= 0 or width <= 0:
+        raise ValueError(
+            "latest_sensitivity_mask must have positive spatial dimensions"
+        )
     lead_count = len(leads)
     metric_count = len(metrics)
     selected_count = len(selected_leads)
@@ -22053,6 +22059,8 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         raise ValueError("tile norms and whole-field norms disagree")
     if not bool(torch.all(torch.isnan(latest_tile_norm[~available]))):
         raise ValueError("unavailable latest-frame tile norms must be NaN")
+    whitened_latest: Tensor | None = None
+    observation_std: Tensor | None = None
     if snapshot.whitened_tile_norm_available:
         whitened_latest = snapshot.direct.whitened_tile_norm
         if whitened_latest is None:
@@ -22104,6 +22112,21 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
                     atol=1.0e-7,
                 ):
                     raise ValueError("direct map and norm disagree")
+                if whitened_latest is not None and observation_std is not None:
+                    expected_whitened_tile_norm = _tile_l2_norm(
+                        direct_map * observation_std,
+                        snapshot.tile_shape_yx,
+                    )
+                    if not torch.allclose(
+                        expected_whitened_tile_norm,
+                        whitened_latest[lead_index, metric_index],
+                        rtol=1.0e-5,
+                        atol=1.0e-7,
+                    ):
+                        raise ValueError(
+                            "whitened tile norms and retained direct maps "
+                            "disagree"
+                        )
             elif not bool(
                 torch.all(torch.isnan(forecast_map))
                 and torch.all(torch.isnan(direct_map))
@@ -22154,6 +22177,8 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             raise ValueError("available latest-frame impacts must be finite")
         if not bool(torch.all(torch.isnan(latest_impact[~available]))):
             raise ValueError("unavailable latest-frame impacts must be NaN")
+        if not bool(torch.all(torch.isnan(latest_tile_impact[~available]))):
+            raise ValueError("unavailable tile impacts must be NaN")
         if not torch.allclose(
             latest_tile_impact.sum(dim=(-1, -2))[available],
             latest_impact[available],
@@ -22180,6 +22205,31 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         abs_tol=1.0e-12,
     ):
         raise ValueError("trust_score must equal the component product")
+
+
+def _tile_l2_norm(value: Tensor, tile_shape_yx: tuple[int, int]) -> Tensor:
+    """Compute padded per-tile L2 norms for one retained spatial map."""
+
+    height, width = value.shape
+    tile_height, tile_width = tile_shape_yx
+    tile_rows = math.ceil(height / tile_height)
+    tile_columns = math.ceil(width / tile_width)
+    padded = torch.nn.functional.pad(
+        value,
+        (
+            0,
+            tile_columns * tile_width - width,
+            0,
+            tile_rows * tile_height - height,
+        ),
+    )
+    tiles = padded.reshape(
+        tile_rows,
+        tile_height,
+        tile_columns,
+        tile_width,
+    ).permute(0, 2, 1, 3)
+    return torch.sqrt(torch.sum(tiles.square(), dim=(-1, -2)))
 
 
 def _require_float_tensor(name: str, value: Any) -> None:
