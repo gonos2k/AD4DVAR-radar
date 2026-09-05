@@ -676,7 +676,11 @@ denial = compute_variational_observation_removal_impact(
 
 EFSO는 deterministic P1 FSOI와 분리된 ensemble API다. 실제 analysis ensemble의
 observation-space perturbation과 forecast-error projection, innovation, 관측오차
-통계를 모두 요구하며 단일 분석에서 가짜 ensemble을 만들지 않는다. 일반 관측오차
+통계를 모두 요구하며 단일 분석에서 가짜 ensemble을 만들지 않는다.
+통계 입력은 FP32 또는 FP64로 통일해야 한다. FP16/BF16은 거부한다.
+섭동과 projection은 관측·선행시간·지표별 자체 크기로 정규화한 평균이 0에
+가까운지 검사하며, 작은 척도에 단위 크기의 절대 허용오차를 적용하지 않는다.
+일반 관측오차
 모델은 caller가 임의의 `R⁻¹d`를 넘기는 대신, content-addressed dense precision과
 covariance artifact를 제공해 `R(R⁻¹d)=d` 잔차와 observation ordering을 검증한다.
 Root-owned trust store는 재사용 가능한 승인 토큰이 아니라 정확한

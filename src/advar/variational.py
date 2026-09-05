@@ -8761,13 +8761,14 @@ def _bounded_vector_update(
 ) -> Tensor:
     if not math.isfinite(limit) or limit <= 0.0:
         raise ValueError("bounded vector update limit must be positive")
-    limit_tensor = background.new_tensor(limit)
+    limit_tensor = torch.as_tensor(limit, dtype=background.dtype, device=background.device)
     epsilon = torch.finfo(background.dtype).eps
     unit_background = background / limit_tensor
+    inside = unit_background.square().sum() < 1.0
+    unit_background = torch.where(inside, unit_background, torch.zeros_like(background))
     background_squared_norm = unit_background.square().sum()
-    inside = background_squared_norm < 1.0
-    unit = limit_tensor.new_tensor(1.0)
-    interior_limit = torch.nextafter(unit, limit_tensor.new_zeros(()))
+    unit = torch.ones_like(limit_tensor)
+    interior_limit = torch.nextafter(unit, torch.zeros_like(limit_tensor))
     background_ratio = torch.sqrt(
         background_squared_norm.clamp_min(epsilon)
     ).clamp(max=interior_limit)
@@ -8779,23 +8780,31 @@ def _bounded_vector_update(
         torch.atanh(background_ratio) / background_ratio,
         1.0 + small_background_norm2 / 3.0 + small_background_norm2.square() / 5.0,
     )
+    latent_control = torch.where(inside, control, torch.zeros_like(control))
     latent = (
         background_factor * unit_background
-        + (scale / limit_tensor) * control
+        + (scale / limit_tensor) * latent_control
     )
-    latent_squared_norm = latent.square().sum()
-    safe_norm = torch.sqrt(latent_squared_norm.clamp_min(epsilon))
+    # Bound the squared norm by two. Near zero the scale is exactly one,
+    # preserving the Taylor branch and its first and second derivatives.
+    latent_scale = latent.abs().amax().clamp_min(1.0)
+    scaled_latent = latent / latent_scale
+    scaled_norm2 = scaled_latent.square().sum()
+    safe_scaled_norm = torch.sqrt(scaled_norm2.clamp_min(epsilon))
     # Keep even the unused Taylor branch finite for large controls.
-    small_latent_norm2 = latent_squared_norm.clamp(max=epsilon)
+    small_latent_norm2 = scaled_norm2.clamp(max=epsilon)
     radial_factor = torch.where(
-        latent_squared_norm > epsilon,
-        torch.tanh(safe_norm) / safe_norm,
+        scaled_norm2 > epsilon,
+        torch.tanh(latent_scale * safe_scaled_norm) / safe_scaled_norm,
         1.0 - small_latent_norm2 / 3.0 + 2.0 * small_latent_norm2.square() / 15.0,
     )
-    updated = limit_tensor * radial_factor * latent
+    updated = limit_tensor * radial_factor * scaled_latent
     candidate = background + scale * control
-    projected = candidate / torch.sqrt(
-        (candidate / limit_tensor).square().sum().clamp_min(1.0)
+    candidate = torch.where(inside, torch.zeros_like(candidate), candidate)
+    candidate_scale = candidate.abs().amax().clamp_min(limit)
+    scaled_candidate = candidate / candidate_scale
+    projected = limit_tensor * scaled_candidate / torch.sqrt(
+        scaled_candidate.square().sum().clamp_min(1.0)
     )
     return torch.where(inside, updated, projected)
 

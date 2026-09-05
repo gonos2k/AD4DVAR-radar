@@ -416,6 +416,7 @@ class EnsembleFSOStatistics:
     ``X_f.T @ C @ (e_analysis + e_background)`` for every lead and metric.
     The class deliberately requires this term instead of inventing an
     ensemble from one deterministic P1 analysis.
+    Inputs must share float32 or float64 precision for the centering check.
     """
 
     precision_evidence: PrecisionWeightedInnovationEvidence
@@ -753,9 +754,12 @@ class EnsembleFSOStatistics:
 
 
 def _require_centered_members(name: str, value: Tensor) -> None:
-    mean = torch.mean(value, dim=0)
-    scale = torch.amax(torch.abs(value), dim=0).clamp_min(1.0)
-    tolerance = 128.0 * torch.finfo(value.dtype).eps * scale
+    if value.dtype not in (torch.float32, torch.float64):
+        raise TypeError(f"{name} must use float32 or float64 precision")
+    scale = torch.amax(torch.abs(value), dim=0)
+    safe_scale = torch.where(scale > 0.0, scale, torch.ones_like(scale))
+    mean = torch.mean(value / safe_scale, dim=0)
+    tolerance = 128.0 * torch.finfo(value.dtype).eps
     if bool(torch.any(torch.abs(mean) > tolerance)):
         raise ValueError(f"{name} must be centered across members")
 

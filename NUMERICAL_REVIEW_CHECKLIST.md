@@ -55,3 +55,45 @@ git diff --check
 - Local tests used CPU PyTorch 2.13.0. Native MPS/CUDA execution was not validated. Existing TorchScript deprecation warnings remain.
 - `basedpyright` was absent from `.venv`; the repository-pinned version `1.39.9` was run through `uvx` without changing project dependencies.
 - The initial promotion selection had one lineage-validation failure while source edits overlapped the test run. The same test passed on fixed modified sources (37.36s) and on isolated HEAD `ca551ea3` (38.92s). No reproducible regression remains; the precise mismatching lineage field in the initial run is unconfirmed. Comparison command, from a temporary `git archive HEAD` extraction: `PYTHONPATH=<archive>/src /Users/yhlee/ADVAR/.venv/bin/python -m pytest tests/test_promotion.py::NeuralPriorPromotionTests::test_unreliable_prior_uncertainty_blocks_promotion -q --tb=short`.
+
+## Post-merge follow-up — `main 8b2229d`
+
+- [x] N05 follow-up: reproduce acceptance of constant FP32 projections at `1e-8` and `1e-5`. Normalize each observation/lead/metric by its own maximum magnitude before checking the mean; zero components use a divisor of one. Validate both observation perturbations and forecast projections through the public factory. Explicitly centered zero projections have zero impact and jackknife uncertainty.
+- [x] Precision boundary: restrict ensemble statistics to FP32/FP64 and document the requirement. The inherited `128 * eps` tolerance equals one for BF16, making its normalized centering test vacuous. FP16/BF16 inputs are now explicitly rejected rather than silently accepted or converted.
+- [x] N01 follow-up: reproduce the incorrect zero velocity at FP32 controls `(2e20, -2e20)` and larger values. Scale latent coordinates by their maximum absolute component (at least one) before squaring. The normalized squared norm stays at most two; the original Taylor branch is unchanged near zero.
+- [x] Apply the same normalization to the fallback projection for saturated/outside backgrounds. Mask inactive branches before their norm arithmetic. Confirm the output direction, limiting magnitude and analytically normalized Jacobian, not just finiteness.
+- [x] MPS follow-up: scalar `new_tensor()` factories inside the transformed vector decoder raised `DispatchKey Undefined doesn't correspond to a device`. Explicit dtype/device constant construction and `ones_like`/`zeros_like` preserve the formula and allow the MPS background/control Jacobian tests to pass.
+- [x] Preserve origin first/second derivatives, rotation equivariance, inward updates from saturated backgrounds, frozen IRLS and final linearization behavior.
+
+The new regression checks failed before implementation for the small-scale
+centering and norm-overflow cases. Final checks:
+
+```sh
+.venv/bin/python -m pytest -q tests/test_numerical_review.py tests/test_ensemble_sensitivity.py --tb=short
+# 29 passed, 28 subtests passed; includes native MPS Jacobian checks.
+
+.venv/bin/python -m pytest -q tests/test_variational.py -k 'radial_velocity or bounded_controls or physical_motion_increment or final_linearization_tracks_remap_branch_changes or frozen_irls_matches_true_robust_gradient' --tb=short
+# 7 passed, 135 deselected, 6 subtests passed.
+
+uvx --from basedpyright==1.39.9 basedpyright --level error --pythonpath .venv/bin/python src/advar/variational.py src/advar/ensemble_sensitivity.py
+# 0 errors, 0 warnings, 0 notes.
+git diff --check
+# PASS.
+```
+
+Independent comparison of 128 normal-scale FP32/FP64 cases found maximum
+old/new differences of `1.91e-6` / `3.55e-15`, with the same bounds for rotation
+equivariance. Eight `gradcheck`/`gradgradcheck` cases covered the origin, tied
+maximum components, the scaling crossover, nonzero backgrounds and outside
+cancellation. Inactive-branch overflow cases also retained finite Jacobians.
+
+Scope remains **norm overflow**, where the vector components themselves are
+representable. Active componentwise multiplication/addition can still overflow
+(for example `scale=2`, `limit=1`, zero background and maximum finite controls).
+This change does not claim support for every finite input combination. CPU
+FP32/FP64 and local MPS Jacobians were checked; full MPS/CUDA analyses and the
+complete baseline were not rerun.
+
+PR #155 is merged. The separate initial-field comparison, scored-pixel display,
+bounded `shift_zero()` allocation and provenance extraction are recorded in
+`SCIENTIFIC_REVIEW_CHECKLIST.md` and carried by PR #156.
