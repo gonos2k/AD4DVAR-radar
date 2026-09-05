@@ -57,6 +57,33 @@ def test_cross_dtype_integer_boundary_keeps_frozen_branch_derivative() -> None:
     assert bool(torch.all(torch.isfinite(tangent)))
 
 
+@pytest.mark.skipif(
+    not torch.backends.mps.is_available(),
+    reason="MPS device is unavailable",
+)
+def test_mps_float32_echo_accepts_cpu_float64_displacement() -> None:
+    echo = torch.arange(4, dtype=torch.float32, device="mps").reshape(2, 2)
+    displacement = torch.tensor((1.0, 0.0), dtype=torch.float64)
+
+    output, tangent = torch.func.jvp(
+        lambda field, motion: remap(field, motion),
+        (echo, displacement),
+        (torch.ones_like(echo), torch.ones_like(displacement)),
+    )
+
+    torch.testing.assert_close(
+        output.cpu(),
+        torch.tensor([[0.0, 0.0], [0.0, 1.0]], dtype=torch.float32),
+    )
+    torch.testing.assert_close(
+        tangent.cpu(),
+        torch.tensor([[0.0, 0.0], [1.0, -1.0]], dtype=torch.float32),
+    )
+    assert output.device.type == "mps"
+    assert tangent.device.type == "mps"
+    assert bool(torch.all(torch.isfinite(tangent)))
+
+
 def _linearization_fixture() -> tuple[torch.Tensor, variational.AnalysisLinearization]:
     frames = torch.stack(
         [torch.full((3, 3), value, dtype=torch.float64) for value in (20.0, 19.0, 18.0)]
