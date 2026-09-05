@@ -64,6 +64,13 @@ class InitialFieldLabTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "lead_minutes"):
             LAB.ExperimentSettings.from_payload({"lead_minutes": 25})
 
+    def test_numeric_settings_reject_huge_integers_and_nonfinite_values(self) -> None:
+        for field in ("background_age_minutes", "intensity_bias_dbz"):
+            for value in (10**400, -(10**400), float("nan"), float("inf"), -float("inf")):
+                with self.subTest(field=field, value=value):
+                    with self.assertRaisesRegex(ValueError, field):
+                        LAB.ExperimentSettings.from_payload({field: value})
+
     def test_age_changes_metadata_without_aging_the_background(self) -> None:
         with patch.object(LAB, "nowcast", wraps=LAB.nowcast) as nowcast_call:
             young = LAB.run_experiment(LAB.ExperimentSettings(background_age_minutes=0))

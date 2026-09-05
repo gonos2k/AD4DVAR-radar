@@ -103,10 +103,9 @@ def _number(
     value = payload.get(name, default)
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{name} must be numeric")
-    result = float(value)
-    if not math.isfinite(result) or not minimum <= result <= maximum:
+    if not minimum <= value <= maximum:
         raise ValueError(f"{name} must be between {minimum:g} and {maximum:g}")
-    return result
+    return float(value)
 
 
 def _integer(

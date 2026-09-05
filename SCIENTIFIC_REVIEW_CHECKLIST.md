@@ -21,7 +21,7 @@
 보존량은 정의된 에코 적분이며 수분 총량이나 강수량 자체가 아니다.
 구조 정리는 입력 출처 검증 한 책임으로 제한하며 전체 계약 계층을 재설계하지 않는다.
 
-## 검증 기록
+## 1차 검증 기록 (`1297b60`)
 
 ### 결과
 
@@ -62,9 +62,45 @@ git diff --check
 
 ### 한계
 
-- Python 3.12.13, PyTorch 2.13.0, CPU 및 Node.js 24.13.1에서 검증했다. MPS/CUDA는 실행하지 않았다.
+- 1차 검증은 Python 3.12.13, PyTorch 2.13.0, CPU 및 Node.js 24.13.1에서 수행했다. 당시 MPS/CUDA는 실행하지 않았으며, 아래 추가 조사에서 MPS 수송을 직접 확인했다.
 - 전체 baseline은 상위 `AGENTS.md`에 따라 반복하지 않았다. 위 37개 Python 시험과 2개 Node 시험은 영향 범위 검증이다.
 - 브라우저 연결 도구가 `No browser is available`, `native pipe startup failed`로 실패했다. 실제 브라우저 렌더링·반응형 배치는 확인하지 못했으며, HTTP·모의 DOM 시험을 시각 검증으로 간주하지 않는다.
 - 기존 TorchScript 폐기 예정 경고가 남아 있다.
 - A를 새로 지정하거나 선행시간을 바꾸면 별도 비교다. 고정 A의 영역 밖에서 B가 추가로 덮은 화소는 A/B 점수에 포함하지 않는다.
 - 구조 정리는 입력 출처 검증 한 책임에 한정했다. `nowcast.py` 전체의 계약·감사 코드 분리가 끝났다는 뜻은 아니다.
+
+## 추가 조사와 수정
+
+- [x] R01 — MPS 역전파 회귀 수정: 영역 밖 이동의 빈 슬라이스 패딩은 MPS에서 순전파·JVP는 통과하지만 역전파·VJP가 실패했다. 보간의 네 성분 중 하나만 영역 밖이어도 영향을 받는다. `echo.clone().zero_()`로 바꿔 출력 크기의 저장공간과 미분 연결을 유지했다. 버려지는 NaN/Inf가 출력으로 새거나 원본이 변경되지 않음도 시험했다.
+- [x] R02 — 큰 정수 입력 처리 수정: 나이·강도에 `10**400`을 POST하면 `float()` 변환이 먼저 오버플로를 내어 연결이 끊어졌다. 원래 값으로 범위를 검사한 뒤 변환하도록 수정했다. 양·음의 큰 정수 4건은 HTTP 400으로 거부되고, 뒤이은 정상 요청은 성공했다. NaN/Inf도 계속 거부한다.
+- [x] R03 — 화면 제어 회귀시험의 CI 누락 해소: 기존 CI의 pytest는 `.cjs` 시험을 실행하지 않았다. 고정 Node.js 버전과 commit SHA로 지정한 setup action을 사용하는 작은 UI 시험 job을 추가했다.
+- [x] A/B 추가 조사: 선행시간 10/30/90/180분과 위치·강도·범위·나이 극단값을 섞은 60사례에서 기준예측과 영역이 유지됐다. 별도 독립 검토의 40사례도 통과했다. 누락이 있는 B는 점수를 내지 않았고, 완전한 B의 개선량은 A/B MAE 차이와 반올림 오차 내에서 일치했다.
+- [x] 출처 모듈의 검증 식, 알고리즘 소스 해시 포함 여부와 패키지 탐색을 재확인했다. 추가 결함을 찾지 못했다.
+
+수정 전 새 회귀시험에서 큰 정수의 `OverflowError`와 MPS의
+`Calculated output H: 0 W: 0` 오류를 직접 재현했다. 수정 후보를 독립적으로
+시험한 CPU/MPS × FP32/FP16/BF16 × 비연속 입력 × 변위 882사례에서 원래
+pad-first 구현과 순전파·역전파가 정확히 일치했고, FP32 294사례의 JVP도 일치했다.
+
+```sh
+.venv/bin/python -m pytest -q tests/test_initial_field_lab.py tests/test_shift_zero.py tests/test_matrix_free.py --tb=short
+# 25 passed, 103 subtests passed. 로컬 MPS 시험도 실제 실행됨.
+
+.venv/bin/python -m pytest -q tests/test_nowcast.py tests/test_variational.py -k 'full_forecast_remaps or long_lead_uses or transport_diagnostics or analysis_can_cross_zero or final_linearization_tracks_remap_branch_changes' --tb=short
+# 6 passed, 303 deselected.
+
+node --test tests/test_initial_field_lab_ui.cjs
+# 2 passed.
+node --check examples/initial_field_lab/app.js
+actionlint .github/workflows/ci.yml
+# PASS.
+
+uvx --from basedpyright==1.39.9 basedpyright --level error --pythonpath .venv/bin/python src/advar/physics.py examples/initial_field_lab/server.py
+# 0 errors, 0 warnings, 0 notes.
+git diff --check
+# PASS.
+```
+
+추가 조사는 수송의 MPS 미분 경로까지 넓혔다. 전체 P0/P1의 MPS 실행,
+CUDA, 실제 브라우저 렌더링 및 전체 baseline 재실행을 수행한 것은 아니다.
+Linux CI에서는 MPS 장치가 없으므로 해당 시험만 명시적으로 건너뛴다.

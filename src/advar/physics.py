@@ -163,8 +163,8 @@ def remap_fractions(
 def shift_zero(echo: Tensor, dy: int, dx: int) -> Tensor:
     height, width = echo.shape[-2:]
     if abs(dy) >= height or abs(dx) >= width:
-        # An empty slice preserves the zero derivative, including backward().
-        return F.pad(echo[..., :0, :0], (0, width, 0, height))
+        # Keep zero derivatives without empty-slice padding, whose MPS VJP fails.
+        return echo.clone().zero_()
     source = echo[
         ...,
         max(0, -dy) : min(height, height - dy),

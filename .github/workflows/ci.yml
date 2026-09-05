@@ -87,6 +87,24 @@ jobs:
       - name: Run CPU FP32 and FP64 tests
         run: python -I -m pytest -q
 
+  lab-ui:
+    name: Initial-field lab UI
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24.13.1"
+
+      - name: Check lab JavaScript and state transitions
+        run: |
+          node --check examples/initial_field_lab/app.js
+          node --test tests/test_initial_field_lab_ui.cjs
+
   package:
     name: Wheel and CLI smoke
     runs-on: ubuntu-latest
