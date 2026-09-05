@@ -4,6 +4,9 @@ import importlib.util
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
+
+import torch
 
 
 LAB_SERVER = Path(__file__).parents[1] / "examples" / "initial_field_lab" / "server.py"
@@ -60,6 +63,85 @@ class InitialFieldLabTest(unittest.TestCase):
     def test_request_rejects_an_unsupported_lead_time(self) -> None:
         with self.assertRaisesRegex(ValueError, "lead_minutes"):
             LAB.ExperimentSettings.from_payload({"lead_minutes": 25})
+
+    def test_numeric_settings_reject_huge_integers_and_nonfinite_values(self) -> None:
+        for field in ("background_age_minutes", "intensity_bias_dbz"):
+            for value in (10**400, -(10**400), float("nan"), float("inf"), -float("inf")):
+                with self.subTest(field=field, value=value):
+                    with self.assertRaisesRegex(ValueError, field):
+                        LAB.ExperimentSettings.from_payload({field: value})
+
+    def test_age_changes_metadata_without_aging_the_background(self) -> None:
+        with patch.object(LAB, "nowcast", wraps=LAB.nowcast) as nowcast_call:
+            young = LAB.run_experiment(LAB.ExperimentSettings(background_age_minutes=0))
+            old = LAB.run_experiment(LAB.ExperimentSettings(background_age_minutes=60))
+        self.assertEqual(young["fields"]["background"], old["fields"]["background"])
+        self.assertEqual(
+            [call.kwargs["background_age_minutes"] for call in nowcast_call.call_args_list],
+            [0, 60],
+        )
+
+    def test_scored_pixels_exclude_missing_persistence_on_valid_forecast(self) -> None:
+        settings = LAB.ExperimentSettings()
+        result, observation, background, target = LAB._run_case(settings)
+        lead = settings.lead_minutes // LAB.FORECAST_STEP_MINUTES - 1
+        # Force persistence to be missing on otherwise valid forecast pixels.
+        valid = result.valid_mask[lead]
+        observation[valid] = torch.nan
+        background[valid] = torch.nan
+        with patch.object(LAB, "_run_case", return_value=(result, observation, background, target)):
+            output = LAB.run_experiment(settings)
+        metrics = output["metrics"]
+        self.assertGreater(metrics["valid_fraction"], 0)
+        self.assertEqual(metrics["scored_pixels"], 0)
+        self.assertEqual(metrics["scored_fraction"], 0)
+        self.assertIsNone(metrics["forecast_mae_dbz"])
+
+    def test_comparison_uses_fixed_reference_and_domain(self) -> None:
+        target = torch.zeros(2, 2)
+        reference = torch.tensor([[2.0, 2.0], [2.0, torch.nan]])
+        persistence = torch.full((2, 2), 3.0)
+        better = LAB._compare_forecasts(reference, torch.ones(2, 2), persistence, target)
+        worse = LAB._compare_forecasts(reference, torch.full((2, 2), 4.0), persistence, target)
+        self.assertEqual(better["domain_pixels"], 3)
+        self.assertEqual(better["domain_fraction"], 0.75)
+        self.assertEqual(worse["reference"], better["reference"])
+        self.assertEqual(better["improvement_dbz"], 1.0)
+        self.assertEqual(worse["improvement_dbz"], -2.0)
+        self.assertEqual(better["candidate"]["persistence_mae_dbz"], 3.0)
+        self.assertEqual(worse["candidate"]["persistence_mae_dbz"], 3.0)
+
+        missing = torch.ones(2, 2)
+        missing[0, 0] = torch.nan
+        incomplete = LAB._compare_forecasts(reference, missing, persistence, target)
+        self.assertEqual(incomplete["domain_pixels"], 3)
+        self.assertEqual(incomplete["candidate"]["missing_pixels"], 1)
+        self.assertEqual(incomplete["candidate"]["scored_pixels"], 0)
+        self.assertIsNone(incomplete["candidate"]["forecast_mae_dbz"])
+        self.assertIsNone(incomplete["improvement_dbz"])
+
+    def test_comparison_without_reference_domain_has_no_score(self) -> None:
+        empty = torch.full((2, 2), torch.nan)
+        finite = torch.zeros(2, 2)
+        comparison = LAB._compare_forecasts(empty, finite, finite, finite)
+        self.assertEqual(comparison["domain_pixels"], 0)
+        self.assertIsNone(comparison["improvement_dbz"])
+
+    def test_run_comparison_keeps_a_when_background_b_changes(self) -> None:
+        reference = LAB.ExperimentSettings()
+        same = LAB.run_experiment(reference, reference)["comparison"]
+        changed = LAB.run_experiment(
+            LAB.ExperimentSettings(use_background=False), reference,
+        )["comparison"]
+        self.assertEqual(same["improvement_dbz"], 0)
+        self.assertEqual(same["reference"], changed["reference"])
+        self.assertEqual(same["domain_pixels"], changed["domain_pixels"])
+        self.assertGreater(changed["candidate"]["missing_pixels"], 0)
+        self.assertIsNone(changed["improvement_dbz"])
+
+    def test_comparison_rejects_different_valid_times(self) -> None:
+        with self.assertRaisesRegex(ValueError, "same lead_minutes"):
+            LAB.run_experiment(LAB.ExperimentSettings(lead_minutes=60), LAB.ExperimentSettings())
 
 
 if __name__ == "__main__":

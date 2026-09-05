@@ -1,0 +1,60 @@
+{
+  "date": "2026-09-05",
+  "reviewed_commit": "965d2307a32e553e6d8b8dfd9f341e5e239ef8db",
+  "isolated_import_fix_commit": "49eb6b1629f6129060f87e51e709dbf406ebb27f",
+  "findings_fixed": [
+    {
+      "finding": "CI collection import failure under python -I",
+      "failed_ci": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33948411069",
+      "fix": "Import test_ledger directly using the existing pytest test directory path."
+    },
+    {
+      "finding": "Mixed finiteness among four jointly produced metric evidence channels survived typed append/verify/load",
+      "fix": "Require equal per-cell finite masks for the four ratios and reuse that mask for the source-evidence closure."
+    }
+  ],
+  "retracted": "Available score does not imply available sensitivity evidence. The zero-error fixture already had all-NaN evidence, so setting one such NaN again was a no-op. All-NaN remains valid even for available scores.",
+  "tests": [
+    {
+      "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I -m pytest --collect-only -q",
+      "result": "Final source: 903 tests collected in 2.24s; no baseline test bodies executed. Earlier import-only fix collected 901 before the two ledger regressions were added."
+    },
+    {
+      "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I -m pytest -q tests/test_review_intervention.py",
+      "result": "3 passed after isolated import fix"
+    },
+    {
+      "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I -m pytest -q tests/test_review_ledger.py",
+      "result": "6 passed, 13 subtests passed after evidence-mask fix; includes two new test methods"
+    },
+    {
+      "scope": "Independent numerical reviewer",
+      "result": "11 numerical tests passed, 8 subtests; no new confirmed defect in scoped GN/metrics/Gaussian changes"
+    },
+    {
+      "scope": "Independent promotion reviewer",
+      "result": "19 contract tests passed; no new confirmed R03/R04/R07/R08 defect; earlier R03 result was reused, not rerun"
+    }
+  ],
+  "typecheck": {
+    "tool": "basedpyright 1.39.9",
+    "scope": "src/advar/ledger.py",
+    "result": "0 errors, 0 warnings, 0 notes"
+  },
+  "environment": {
+    "python": "3.12.13",
+    "pytorch": "2.13.0",
+    "primary_device": "CPU"
+  },
+  "limits": [
+    "No local full baseline execution",
+    "Remote CI is reported separately per commit",
+    "No CUDA or full MPS P1 validation",
+    "No forecast skill claim on real radar data"
+  ],
+  "sha256": {
+    "src/advar/ledger.py": "006afacd0ec2ce32c8f478ddedb3513205718ef1bbe14c225143185c4010fb1c",
+    "tests/test_review_ledger.py": "f9c79bd567cc3e94a3d38347d17364a141548c4f1001a8badb2793fb9d278e6f",
+    "tests/test_review_intervention.py": "3c7d5b119609629f8814f0b7ff4de3eaf7f504f7b6c3441a127b7daae3691780"
+  }
+}

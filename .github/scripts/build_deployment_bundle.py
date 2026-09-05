@@ -851,6 +851,8 @@ def build_bundle(
             runtime_mode=mode,
         )
     )
+    if platform.machine() != "x86_64":
+        raise ValueError("current deployment bundle requires Linux x86_64")
     output.mkdir(mode=0o755, parents=False, exist_ok=False)
     wheel_output = output / wheel.name
     lock_output = output / lock.name

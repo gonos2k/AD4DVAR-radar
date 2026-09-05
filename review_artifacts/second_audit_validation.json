@@ -1,0 +1,138 @@
+{
+  "review_baseline_commit": "94c75d3323c986b6fb2963336b906acc85384e12",
+  "review_agent_model": "gpt-5.6-luna",
+  "reasoning_effort": "xhigh",
+  "team_assignments": 34,
+  "read_coverage": {
+    "files": 71,
+    "lines": 166618,
+    "unread_lines": 0,
+    "per_assignment_complete": true,
+    "baseline_sha256_verified_against_git_blobs": true
+  },
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.13.0",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "validation_device": "cpu",
+    "mps_available": true,
+    "cuda_available": false,
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "current_product_sources_equal_review_baseline": true,
+  "changes": "AGENTS model setting, audit evidence/docs, fixture-only repairs; A2 product findings remain open",
+  "postfix_sha256": {
+    "AGENTS.md": "8f8380e8c1cd2c21ef0ff9e14dc4e5a58e438aa2b2cceefcecb443c85afddda6",
+    "tests/test_ledger.py": "46522365d232ce1b5eece01350a2e5d04b4ffaad5119af855ba479be1505dce0",
+    "tests/test_promotion.py": "3868a64c851912ca554088a761742d5c5f711f41382c14c516a27377010d26cc"
+  },
+  "validation": {
+    "unique_selected_tests_passed": 14,
+    "repaired_ci_tests_passed": [
+      "tests/test_ledger.py::EpisodeLedgerTests::test_holdout_plan_rechecks_clock_before_commit",
+      "tests/test_ledger.py::EpisodeLedgerTests::test_legacy_holdout_plan_loads_as_read_only_audit",
+      "tests/test_ledger.py::EpisodeLedgerTests::test_malformed_or_contradictory_snapshot_is_rejected",
+      "tests/test_promotion.py::NeuralPriorPromotionTests::test_fractional_second_chronology_uses_instants_not_strings",
+      "tests/test_promotion.py::NeuralPriorPromotionTests::test_late_final_operational_row_is_recorded_unusable",
+      "tests/test_promotion.py::NeuralPriorPromotionTests::test_late_publication_is_deactivated_fail_closed",
+      "tests/test_promotion.py::NeuralPriorPromotionTests::test_operational_commit_crossing_deadline_is_rejected",
+      "tests/test_promotion.py::NeuralPriorPromotionTests::test_scoring_replay_reproduces_evaluation_digest"
+    ],
+    "neighboring_tests_passed": [
+      "tests/test_review_ledger.py::LedgerReviewRegressionTests::test_unavailable_nan_evidence_roundtrips",
+      "tests/test_review_ledger.py::LedgerReviewRegressionTests::test_infinite_evidence_is_rejected_for_each_channel",
+      "tests/test_review_ledger.py::LedgerReviewRegressionTests::test_producer_evidence_channels_reject_mixed_nan",
+      "tests/test_review_ledger.py::LedgerReviewRegressionTests::test_available_all_nan_evidence_roundtrips_zero_gradient_snapshot",
+      "tests/test_review_ledger.py::LedgerReviewRegressionTests::test_trust_components_outside_unit_interval_are_rejected",
+      "tests/test_review_ledger.py::LedgerReviewRegressionTests::test_trust_score_tiny_out_of_range_is_rejected"
+    ],
+    "run_records": [
+      {
+        "log": "postfix_ledger_tests.out",
+        "passed": 7,
+        "subtests": 13,
+        "scope": "closure regression + six neighboring evidence/trust tests"
+      },
+      {
+        "log": "postfix_promotion_tests.out",
+        "passed": 4,
+        "subtests": 2,
+        "scope": "four repaired operational/scoring time fixtures"
+      },
+      {
+        "log": "postfix_ci_remaining_tests.out",
+        "passed": 2,
+        "failed_during_iteration": 1,
+        "scope": "legacy audit and fractional-second tests passed; clock fixture needed three raw slots and an earlier preflight clock"
+      },
+      {
+        "log": "postfix_clock_test_final.out",
+        "passed": 1,
+        "subtests": 2,
+        "scope": "final clock fixture including all three raw slots and pre-slot start time"
+      }
+    ],
+    "local_full_baseline_rerun": false,
+    "diff_check": "passed"
+  },
+  "baseline_remote_ci": {
+    "conclusion": "failure",
+    "jobs": [
+      {
+        "conclusion": "success",
+        "databaseId": 101261871977,
+        "name": "Initial-field lab UI",
+        "status": "completed",
+        "url": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33949634139/job/101261871977"
+      },
+      {
+        "conclusion": "failure",
+        "databaseId": 101261872122,
+        "name": "Python 3.10 CPU",
+        "status": "completed",
+        "url": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33949634139/job/101261872122"
+      },
+      {
+        "conclusion": "success",
+        "databaseId": 101261872172,
+        "name": "Wheel and CLI smoke",
+        "status": "completed",
+        "url": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33949634139/job/101261872172"
+      },
+      {
+        "conclusion": "failure",
+        "databaseId": 101261872179,
+        "name": "Python 3.12 CPU",
+        "status": "completed",
+        "url": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33949634139/job/101261872179"
+      }
+    ],
+    "status": "completed",
+    "run_id": 33949634139,
+    "py310_counts": {
+      "passed": 887,
+      "failed": 8,
+      "skipped": 8,
+      "subtests_passed": 638
+    },
+    "py312_counts": {
+      "passed": 887,
+      "failed": 8,
+      "skipped": 8,
+      "subtests_passed": 638
+    }
+  },
+  "limitations": [
+    "New A2 product findings are reviewed but not patched.",
+    "No CUDA, full MPS P1, live radar performance or real browser rendering validation.",
+    "Raw reports contain provisional findings; SECOND_CODE_REVIEW_CHECKLIST.md and cross reports provide final adjudication.",
+    "Postfix CPU tests ran locally on Python 3.12; remote CI for the resulting commit must be checked separately."
+  ],
+  "evidence_bundle": {
+    "path": "review_artifacts/team_audit_94c75d3.zip",
+    "sha256": "1fc9dd454693700f4be6b197172702386581349d95474ab826ae1918936a1b6b",
+    "files": 310,
+    "bytes": 447912
+  }
+}

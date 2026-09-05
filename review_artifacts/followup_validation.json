@@ -1,0 +1,146 @@
+{
+  "date": "2026-09-05",
+  "audit_baseline_commit": "5097dbfd1ddf51483578bef5889ebc809ff024f0",
+  "patch_parent_commit": "e75f1f09deed6086f62abe719a5a877cbcf37e68",
+  "resolved_findings": [
+    "R02",
+    "R03",
+    "R04",
+    "R05",
+    "R06",
+    "R07",
+    "R08",
+    "R09",
+    "R10",
+    "R11"
+  ],
+  "environment": {
+    "python": "3.12.13",
+    "pytorch": "2.13.0",
+    "primary_device": "CPU",
+    "mps": "available; companion-device rejection checked; full P1 remains NO-GO",
+    "cuda": "not tested"
+  },
+  "unique_tests_passed": 103,
+  "counting": "Final passing result for each unique selector; repeated runs and subtests are excluded. Groups ran in scoped batches, not one baseline invocation.",
+  "test_groups": [
+    {
+      "name": "new_regressions",
+      "passed": 48,
+      "selectors": [
+        "tests/test_review_intervention.py",
+        "tests/test_review_ledger.py",
+        "tests/test_review_legacy_loaders.py",
+        "tests/test_review_numerics.py",
+        "tests/test_review_promotion_contracts.py",
+        "tests/test_review_promotion_statistics.py",
+        "tests/test_review_run_identity.py"
+      ],
+      "reproduce": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=src:tests .venv/bin/python -m pytest -q tests/test_review_intervention.py tests/test_review_ledger.py tests/test_review_legacy_loaders.py tests/test_review_numerics.py tests/test_review_promotion_contracts.py tests/test_review_promotion_statistics.py tests/test_review_run_identity.py"
+    },
+    {
+      "name": "existing_numerics",
+      "passed": 41,
+      "selectors": [
+        "tests/test_metrics.py",
+        "tests/test_matrix_free.py",
+        "tests/test_pcg.py",
+        "tests/test_numerical_review.py"
+      ],
+      "reproduce": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=src:tests .venv/bin/python -m pytest -q tests/test_metrics.py tests/test_matrix_free.py tests/test_pcg.py tests/test_numerical_review.py"
+    },
+    {
+      "name": "existing_core",
+      "passed": 5,
+      "selectors": [
+        "tests/test_nowcast.py::NowcastTests::test_motion_improves_an_independent_analytic_gaussian_truth",
+        "tests/test_nowcast.py::NowcastTests::test_all_missing_uses_time_aligned_stale_background",
+        "tests/test_nowcast.py::NowcastTests::test_unused_background_does_not_publish_stale_age",
+        "tests/test_ensemble_sensitivity.py::EnsembleFSOTests::test_full_r_factory_verifies_the_precision_solve",
+        "tests/test_ensemble_sensitivity.py::EnsembleFSOTests::test_full_r_factory_rejects_an_unverified_precision_vector"
+      ],
+      "reproduce": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=src:tests .venv/bin/python -m pytest -q tests/test_nowcast.py::NowcastTests::test_motion_improves_an_independent_analytic_gaussian_truth tests/test_nowcast.py::NowcastTests::test_all_missing_uses_time_aligned_stale_background tests/test_nowcast.py::NowcastTests::test_unused_background_does_not_publish_stale_age tests/test_ensemble_sensitivity.py::EnsembleFSOTests::test_full_r_factory_verifies_the_precision_solve tests/test_ensemble_sensitivity.py::EnsembleFSOTests::test_full_r_factory_rejects_an_unverified_precision_vector"
+    },
+    {
+      "name": "existing_artifact",
+      "passed": 4,
+      "selectors": [
+        "tests/test_run_artifact.py::ForecastRunArtifactTests::test_restart_round_trip_preserves_m0_snapshot",
+        "tests/test_run_artifact.py::ForecastRunArtifactTests::test_input_bundle_digest_covers_all_three_input_times",
+        "tests/test_run_artifact.py::ForecastRunArtifactTests::test_v42_artifact_migrates_without_prior_lineage",
+        "tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_tampered_input_bundle_identity"
+      ],
+      "reproduce": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=src:tests .venv/bin/python -m pytest -q tests/test_run_artifact.py::ForecastRunArtifactTests::test_restart_round_trip_preserves_m0_snapshot tests/test_run_artifact.py::ForecastRunArtifactTests::test_input_bundle_digest_covers_all_three_input_times tests/test_run_artifact.py::ForecastRunArtifactTests::test_v42_artifact_migrates_without_prior_lineage tests/test_run_artifact.py::ForecastRunArtifactTests::test_load_rejects_tampered_input_bundle_identity"
+    },
+    {
+      "name": "existing_promotion",
+      "passed": 5,
+      "selectors": [
+        "tests/test_promotion.py::NeuralPriorPromotionTests::test_truncated_tail_score_is_stable_and_differentiable",
+        "tests/test_promotion.py::NeuralPriorPromotionTests::test_quantized_threshold_bins_form_a_disjoint_partition",
+        "tests/test_promotion.py::NeuralPriorPromotionTests::test_quantized_gaussian_upper_tail_has_finite_large_nll",
+        "tests/test_promotion.py::NeuralPriorPromotionTests::test_range_band_preserves_absolute_candidate_and_parent_scores",
+        "tests/test_promotion.py::NeuralPriorPromotionTests::test_regime_reference_signature_binds_observed_label"
+      ],
+      "reproduce": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONPATH=src:tests .venv/bin/python -m pytest -q tests/test_promotion.py::NeuralPriorPromotionTests::test_truncated_tail_score_is_stable_and_differentiable tests/test_promotion.py::NeuralPriorPromotionTests::test_quantized_threshold_bins_form_a_disjoint_partition tests/test_promotion.py::NeuralPriorPromotionTests::test_quantized_gaussian_upper_tail_has_finite_large_nll tests/test_promotion.py::NeuralPriorPromotionTests::test_range_band_preserves_absolute_candidate_and_parent_scores tests/test_promotion.py::NeuralPriorPromotionTests::test_regime_reference_signature_binds_observed_label"
+    }
+  ],
+  "static_checks": {
+    "basedpyright_version": "1.39.9",
+    "full_src": "0 errors, 0 warnings, 0 notes",
+    "ledger_after_final_boolean_guard": "0 errors, 0 warnings, 0 notes",
+    "diff_check": "passed"
+  },
+  "adjustments_during_validation": [
+    "Narrow-interval finite-difference test was rescaled to the interval width; the numerical implementation did not change for this adjustment.",
+    "Artifact tamper test now expects the earlier canonical input bundle mismatch, rather than the later run identity mismatch.",
+    "Final boundary invocation first used an incorrect unittest class selector; corrected invocation passed 5 tests and 13 subtests.",
+    "RED follow-up found Boolean trust acceptance; explicit Boolean rejection and regression cases were added. The affected ledger module and boundary tests passed afterward."
+  ],
+  "independent_review": "Luna follow-up reviewed R09 values/derivatives and R06/current versus v42 compatibility; no remaining concrete defect in these scoped changes after the Boolean fix.",
+  "limits": [
+    "No full baseline rerun",
+    "No full MPS P1 support claim",
+    "No CUDA validation",
+    "No real radar forecast-skill validation",
+    "No actual browser rendering validation",
+    "Deferred hypotheses remain in FULL_CODE_REVIEW_CHECKLIST.md"
+  ],
+  "sha256": {
+    "src/advar/ensemble_sensitivity.py": "b2fd77fe42f6cc7c5490b027a2330938d76e982d99218a082e8e05d4aa011212",
+    "src/advar/intervention.py": "58bf6f3d4204de37da0f0c9c500929fae3146704d320581577f21241eb864e1e",
+    "src/advar/ledger.py": "525f7d1b0fac6f9e29b797facb0a97703383cb38741602016ddb1ac160c41166",
+    "src/advar/matrix_free.py": "736132bccc24adfeec213afb5ab186a4bc898b10a155524d12de9423e866127d",
+    "src/advar/metrics.py": "1363d2162f01bed67ddcac7fa46ca2f589d971d045a5f7ffa1e47fbb3d5d8d4c",
+    "src/advar/nowcast.py": "f13d0a049d826eadb5d1e24ec58e1db61c73c70dbede1c37dda4bd81e04fe426",
+    "src/advar/promotion.py": "397654b1a370b1ec94c2010f26c1a58b9097816ad779f71662a43ff241e1c07a",
+    "tests/test_review_intervention.py": "3c7d5b119609629f8814f0b7ff4de3eaf7f504f7b6c3441a127b7daae3691780",
+    "tests/test_review_ledger.py": "0b2be98f73e36b6ac7c56096892b85684c836322b539581eb297ee22bb9060dc",
+    "tests/test_review_legacy_loaders.py": "294eb2cbdc201ab727a8955f4ef435b73f9039b8bececcb399c4a39d65e8e4ef",
+    "tests/test_review_numerics.py": "957dafe8094c0cc6668a6cf6352566e6cdbd53dc67b6809d5c9a4d69ab1f7373",
+    "tests/test_review_promotion_contracts.py": "9f3b09f2d7682a5b8935a70e591835847fd549f36b2483b72fd02e26ea723da3",
+    "tests/test_review_promotion_statistics.py": "60addb32336c22ba1770531b14c64c25ec1e1842a21125d2f6f2a567026295dc",
+    "tests/test_review_run_identity.py": "dcb6fc6c28fc1995d994258d144cac39c4dcdcfd3c9a0a031d8ad88ed64f0da1",
+    "tests/test_run_artifact.py": "fb296a00f8e3b664bb2d13667aebdcb91f53a0fcb45f4ff08e05986b518e4716"
+  },
+  "post_validation_audit": {
+    "source_commit": "965d2307a32e553e6d8b8dfd9f341e5e239ef8db",
+    "ci_run": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33948411069",
+    "finding": "Both CPU CI jobs failed collection under python -I: tests.test_ledger was unavailable; the prior non-isolated local test commands did not expose it.",
+    "fix": "Import test_ledger directly, matching existing test modules.",
+    "before": {
+      "command": ".venv/bin/python -I -m pytest --collect-only -q tests/test_review_intervention.py",
+      "result": "ModuleNotFoundError: No module named tests"
+    },
+    "after": [
+      {
+        "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I -m pytest --collect-only -q",
+        "result": "901 tests collected in 2.60s; no baseline test bodies executed"
+      },
+      {
+        "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I -m pytest -q tests/test_review_intervention.py",
+        "result": "3 passed in 5.70s; already included in the unique 103"
+      }
+    ]
+  }
+}

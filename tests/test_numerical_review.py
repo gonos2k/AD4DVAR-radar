@@ -36,20 +36,68 @@ class NumericalReviewTests(unittest.TestCase):
                     )
 
     def test_large_control_has_finite_velocity_jacobian(self) -> None:
-        background = torch.zeros(2, dtype=torch.float32)
-        control = torch.tensor([1e20, -1e20], dtype=torch.float32)
+        for dtype in (torch.float32, torch.float64):
+            for magnitude in (1e20, 2e20, 1e21, torch.finfo(dtype).max):
+                with self.subTest(dtype=dtype, magnitude=magnitude):
+                    background = torch.zeros(2, dtype=dtype)
+                    control = torch.tensor([magnitude, -magnitude], dtype=dtype)
 
-        def decode(value: torch.Tensor) -> torch.Tensor:
-            return variational_module._bounded_vector_update(
-                background, value, scale=1.0, limit=10.0
-            )
+                    def decode(value: torch.Tensor) -> torch.Tensor:
+                        return variational_module._bounded_vector_update(
+                            background, value, scale=1.0, limit=10.0
+                        )
 
-        jacobian = torch.func.jacrev(decode)(control)
-        self.assertTrue(bool(torch.isfinite(jacobian).all()))
-        torch.testing.assert_close(
-            decode(control),
-            control.new_tensor([10 / math.sqrt(2), -10 / math.sqrt(2)]),
-        )
+                    jacobian = torch.func.jacrev(decode)(control)
+                    self.assertTrue(bool(torch.isfinite(jacobian).all()))
+                    torch.testing.assert_close(
+                        decode(control),
+                        control.new_tensor([10 / math.sqrt(2), -10 / math.sqrt(2)]),
+                    )
+                    torch.testing.assert_close(
+                        jacobian * magnitude,
+                        control.new_full((2, 2), 10 / (2 * math.sqrt(2))),
+                    )
+
+    def test_large_background_projection_keeps_direction(self) -> None:
+        for dtype in (torch.float32, torch.float64):
+            with self.subTest(dtype=dtype):
+                maximum = torch.finfo(dtype).max
+                background = torch.tensor([maximum, -maximum], dtype=dtype)
+                control = torch.zeros_like(background)
+
+                def decode(value: torch.Tensor) -> torch.Tensor:
+                    return variational_module._bounded_vector_update(
+                        value, control, scale=1.0, limit=1.0,
+                    )
+
+                torch.testing.assert_close(
+                    decode(background), background.new_tensor([1, -1]) / math.sqrt(2),
+                )
+                self.assertTrue(bool(torch.isfinite(torch.func.jacrev(decode)(background)).all()))
+
+    @unittest.skipUnless(torch.backends.mps.is_available(), "MPS unavailable")
+    def test_mps_velocity_background_and_control_jacobians(self) -> None:
+        for values in ((0.0, 0.0), (0.3, -0.2), (2e20, -2e20)):
+            with self.subTest(control=values):
+                background = torch.zeros(2, device="mps")
+                control = torch.tensor(values, device="mps")
+
+                def decode(baseline, increment):
+                    return variational_module._bounded_vector_update(
+                        baseline, increment, scale=1.0, limit=10.0,
+                    )
+
+                derivative = torch.func.jacrev(decode, argnums=(0, 1))
+                actual = derivative(background, control)
+                expected = derivative(background.cpu(), control.cpu())
+                torch.testing.assert_close(
+                    decode(background, control).cpu(), decode(background.cpu(), control.cpu()),
+                )
+                magnitude = max(1.0, abs(values[0]))
+                for actual_jacobian, expected_jacobian in zip(actual, expected):
+                    torch.testing.assert_close(
+                        actual_jacobian.cpu() * magnitude, expected_jacobian * magnitude,
+                    )
 
     def test_small_float32_residual_cost(self) -> None:
         generator = torch.Generator().manual_seed(23)
@@ -169,6 +217,54 @@ class NumericalReviewTests(unittest.TestCase):
         result = compute_ensemble_fso(statistics(centered))
         self.assertEqual(float(result.total_impact[0, 1]), 0.0)
         self.assertEqual(float(result.total_impact_jackknife_std[0, 1]), 0.0)
+
+    def test_ensemble_centering_rejects_relative_bias_at_small_scales(self) -> None:
+        for dtype in (torch.float32, torch.float64):
+            for magnitude in (1e-8, 1e-5, 1.0, 1e8):
+                with self.subTest(dtype=dtype, magnitude=magnitude):
+                    members = torch.tensor([[-1.0], [0.0], [1.0]], dtype=dtype)
+                    projections = torch.full((3, 1, 1), magnitude, dtype=dtype)
+
+                    def statistics(observations, forecasts):
+                        return EnsembleFSOStatistics.from_diagonal_r(
+                            innovation=torch.ones(1, dtype=dtype),
+                            inverse_observation_variance=torch.ones(1, dtype=dtype),
+                            analysis_observation_perturbations=observations,
+                            forecast_error_projection_by_member=forecasts,
+                            lead_minutes=(60,),
+                            metric_names=("log_echo_mse",),
+                            verification_reference_digest="3" * 64,
+                            observation_error_model_digest="4" * 64,
+                            observation_ids=("o0",),
+                            ensemble_member_ids=("m0", "m1", "m2"),
+                        )
+
+                    with self.assertRaisesRegex(ValueError, "forecast error projection.*centered"):
+                        statistics(members, projections)
+                    with self.assertRaisesRegex(ValueError, "analysis observation perturbations.*centered"):
+                        statistics(torch.full_like(members, magnitude), members[:, None, :])
+                    # Explicit centering removes the constant projection entirely.
+                    zero = projections - projections[0]
+                    result = compute_ensemble_fso(statistics(members * magnitude, zero))
+                    self.assertEqual(float(result.total_impact[0, 0]), 0.0)
+                    self.assertEqual(float(result.total_impact_jackknife_std[0, 0]), 0.0)
+
+    def test_ensemble_statistics_reject_low_precision_members(self) -> None:
+        for dtype in (torch.float16, torch.bfloat16):
+            with self.subTest(dtype=dtype):
+                with self.assertRaisesRegex(TypeError, "float32 or float64"):
+                    EnsembleFSOStatistics.from_diagonal_r(
+                        innovation=torch.ones(1, dtype=dtype),
+                        inverse_observation_variance=torch.ones(1, dtype=dtype),
+                        analysis_observation_perturbations=torch.zeros((3, 1), dtype=dtype),
+                        forecast_error_projection_by_member=torch.zeros((3, 1, 1), dtype=dtype),
+                        lead_minutes=(60,),
+                        metric_names=("log_echo_mse",),
+                        verification_reference_digest="3" * 64,
+                        observation_error_model_digest="4" * 64,
+                        observation_ids=("o0",),
+                        ensemble_member_ids=("m0", "m1", "m2"),
+                    )
 
     def test_float32_transport_without_boundary_echo_has_zero_outflow(self) -> None:
         generator = torch.Generator().manual_seed(0)

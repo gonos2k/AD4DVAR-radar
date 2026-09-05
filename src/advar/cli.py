@@ -1040,7 +1040,11 @@ def _grid_time_contract_from_args(
             args.background_valid_times,
             args.pixel_to_projected_matrix_m,
             args.maximum_motion_speed_mps,
+            args.pair_echo_dilation_m,
+            args.phase_correlation_sidelobe_radius_m,
+            args.maximum_pair_velocity_disagreement_mps,
             args.motion_increment_scale_mps,
+            args.minimum_growth_overlap_area_km2,
             args.causal_support_uncertainty_m,
             args.amplitude_displacement_tolerance_m,
         )

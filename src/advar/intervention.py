@@ -1301,6 +1301,67 @@ def _action_changed_mask(
     return action.override_mask
 
 
+def _canonical_action_input_state(
+    action: InterventionAction,
+    context: InterventionInputContext,
+) -> tuple[Tensor, Tensor, Tensor]:
+    """Return the canonical frame, mask, and quality channels after an action."""
+
+    frames = context._frames_dbz
+    masks = context._observation_masks
+    quality = context._quality_weight
+    if isinstance(action, DbzCorrectionAction):
+        frames = frames + action.delta_dbz.to(frames)
+    elif isinstance(action, QcMaskAction):
+        masks = action.valid_mask_after
+        quality = action.quality_weight_after.to(quality)
+    else:
+        frames = torch.where(
+            action.override_mask,
+            action.replacement_dbz.to(frames),
+            frames,
+        )
+    canonical_frames = canonicalize_action_frames(
+        frames,
+        masks,
+        minimum_dbz=context.min_dbz,
+        maximum_dbz=context.max_dbz,
+        missing_fill_dbz=context.missing_fill_dbz,
+    )
+    canonical_quality = torch.where(
+        masks,
+        quality,
+        torch.zeros_like(quality),
+    )
+    return canonical_frames, masks, canonical_quality
+
+
+def _action_changes_canonical_input(
+    action: InterventionAction,
+    context: InterventionInputContext,
+) -> bool:
+    """Check the realized channels, independent of requested-selection counts."""
+
+    before_frames = canonicalize_action_frames(
+        context._frames_dbz,
+        context._observation_masks,
+        minimum_dbz=context.min_dbz,
+        maximum_dbz=context.max_dbz,
+        missing_fill_dbz=context.missing_fill_dbz,
+    )
+    before_masks = context._observation_masks
+    before_quality = context._quality_weight
+    after_frames, after_masks, after_quality = _canonical_action_input_state(
+        action,
+        context,
+    )
+    return not (
+        torch.equal(before_frames, after_frames)
+        and torch.equal(before_masks, after_masks)
+        and torch.equal(before_quality, after_quality)
+    )
+
+
 def _validate_action_safety(
     action: InterventionAction,
     context: InterventionInputContext,
@@ -1314,7 +1375,7 @@ def _validate_action_safety(
     grid = run.grid_time_contract
     if grid is None:
         raise ValueError("prospective action safety requires a physical grid")
-    return _compute_action_safety(
+    diagnostics = _compute_action_safety(
         action,
         context,
         policy,
@@ -1322,6 +1383,11 @@ def _validate_action_safety(
         maximum_dbz=run.config.max_dbz,
         grid=grid,
     )
+    if not _action_changes_canonical_input(action, context):
+        raise ValueError(
+            "intervention action is a no-op: canonical input context is unchanged"
+        )
+    return diagnostics
 
 
 def _compute_action_safety(
@@ -2577,6 +2643,15 @@ def validate_intervention_action_transition(
         after_quality_weight=after_quality,
     )
     if isinstance(action, QcMaskAction):
+        expected_std = torch.where(
+            after_masks,
+            actual_input_before_context._observation_std_dbz,
+            torch.ones_like(actual_input_before_context._observation_std_dbz),
+        )
+        if not torch.equal(
+            actual_input_after_context._observation_std_dbz, expected_std
+        ):
+            raise ValueError("QC receipt changed observation standard deviation")
         if (
             tensor_digest(before_masks) == tensor_digest(after_masks)
             and tensor_digest(before_quality) == tensor_digest(after_quality)

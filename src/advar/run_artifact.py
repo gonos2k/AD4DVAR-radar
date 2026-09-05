@@ -32,6 +32,7 @@ from .nowcast import (
     StatePathProvenance,
     TendencyPairSelection,
     TendencySource,
+    _validate_current_radar_grid_issuance,
     forecast_evidence_fields,
     forecast_from_state,
 )
@@ -338,6 +339,7 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
     they do not participate in delayed M0 sensitivity.
     """
 
+    _validate_current_radar_grid_issuance(result.run.grid_time_contract)
     result.validate_issuance()
     if any(
         value is None
@@ -520,7 +522,8 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "run_background_age_minutes": np.asarray(
             np.nan
             if result.run.background_age_minutes is None
-            else result.run.background_age_minutes
+            else float(result.run.background_age_minutes),
+            dtype=np.float64,
         ),
         "grid_time_contract_present": np.asarray(
             grid_time_contract is not None
@@ -635,7 +638,8 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "background_age_minutes": np.asarray(
             np.nan
             if metadata.background_age_minutes is None
-            else metadata.background_age_minutes
+            else float(metadata.background_age_minutes),
+            dtype=np.float64,
         ),
         "source_support": _numpy(metadata.source_support),
         "observation_source_support": _numpy(
@@ -716,7 +720,8 @@ def forecast_run_arrays(result: ForecastResult) -> dict[str, Any]:
         "state_path_age_minutes": np.asarray(
             np.nan
             if metadata.state_path_age_minutes is None
-            else metadata.state_path_age_minutes
+            else float(metadata.state_path_age_minutes),
+            dtype=np.float64,
         ),
         **_path_provenance_arrays(
             "observation_path",
@@ -818,7 +823,8 @@ def _path_provenance_arrays(
         f"{prefix}_conflict": np.asarray(path.conflict),
         f"{prefix}_extrapolated": np.asarray(path.extrapolated),
         f"{prefix}_age_minutes": np.asarray(
-            np.nan if path.age_minutes is None else path.age_minutes
+            np.nan if path.age_minutes is None else float(path.age_minutes),
+            dtype=np.float64,
         ),
     }
 
@@ -1434,6 +1440,8 @@ def load_forecast_run(
         grid_time_contract, grid_time_contract_digest = (
             _grid_time_contract(loaded_arrays)
         )
+        if version == FORECAST_RUN_ARTIFACT_VERSION:
+            _validate_current_radar_grid_issuance(grid_time_contract)
         if (
             version == FORECAST_RUN_ARTIFACT_VERSION
             and grid_time_contract is not None
@@ -1954,9 +1962,10 @@ def load_forecast_run(
         )
         if version in _LEGACY_FORECAST_RUN_ARTIFACT_VERSIONS:
             migrated = forecast_from_state(state, metadata, config, run=run)
-            if not torch.equal(migrated.forecast_dbz, forecast_dbz) or not torch.equal(
-                migrated.valid_mask, valid_mask
-            ):
+            if not _torch_equal_with_equivalent_nan_masks(
+                migrated.forecast_dbz,
+                forecast_dbz,
+            ) or not torch.equal(migrated.valid_mask, valid_mask):
                 raise ValueError("legacy forecast payload cannot be migrated")
             result = migrated
     result.validate_issuance()
@@ -2243,6 +2252,21 @@ def _grid_time_contract(
     if contract.digest != digest:
         raise ValueError("grid/time contract digest mismatch")
     return contract, digest
+
+
+def _torch_equal_with_equivalent_nan_masks(left: Tensor, right: Tensor) -> bool:
+    """Compare tensors exactly while treating matching NaNs as equal."""
+
+    if left.shape != right.shape:
+        return False
+    left_nan = torch.isnan(left)
+    right_nan = torch.isnan(right)
+    if not torch.equal(left_nan, right_nan):
+        return False
+    return torch.equal(
+        torch.where(left_nan, torch.zeros_like(left), left),
+        torch.where(right_nan, torch.zeros_like(right), right),
+    )
 
 
 def _validate_displacement_mps(

@@ -165,6 +165,22 @@ h1 {
   accent-color: var(--teal);
 }
 
+.control-row small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.comparison {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.comparison h2 { font-size: 1.2rem; }
+.comparison p { color: var(--muted); font-size: 0.86rem; line-height: 1.55; }
+.comparison .run-button { width: auto; margin-top: 0; }
+
 .run-button {
   width: 100%;
   margin-top: 24px;
@@ -380,7 +396,8 @@ input:focus-visible {
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  row-gap: 22px;
   margin: 26px 0 0;
 }
 
@@ -405,7 +422,7 @@ input:focus-visible {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: clamp(1rem, 1.7vw, 1.5rem);
   font-weight: 700;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .metrics dd.positive {

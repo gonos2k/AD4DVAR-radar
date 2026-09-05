@@ -74,7 +74,10 @@ def remap(
 ) -> Tensor:
     _validate_echo_shape(echo)
     _validate_displacement(displacement_yx)
-    displacement = displacement_yx.to(dtype=echo.dtype, device=echo.device)
+    # Preserve the displacement device and dtype until after the frozen branch
+    # and fractions are known. A CPU float64 shift is valid for an MPS float32
+    # echo, and a giant finite shift must not overflow before the zero branch.
+    displacement = displacement_yx
     cell = freeze_remap_cell(displacement) if cell is None else cell
     validate_remap_cell(displacement, cell)
     return remap_core(echo, displacement, cell)
@@ -133,7 +136,16 @@ def validate_remap_cell(
 ) -> None:
     _validate_displacement(displacement_yx)
     detached = displacement_yx.detach()
-    fractions = detached - detached.new_tensor((cell.y, cell.x))
+    # Convert the frozen integer through Python float before constructing a
+    # tensor.  Tensor scalar arithmetic otherwise attempts to represent large
+    # Python integers in the tensor dtype and can overflow for finite motion.
+    cell_tensor = torch.stack(
+        (
+            detached.new_zeros(()) + float(cell.y),
+            detached.new_zeros(()) + float(cell.x),
+        )
+    )
+    fractions = detached - cell_tensor
     tolerance = 32.0 * min(
         torch.finfo(detached.dtype).eps,
         torch.finfo(torch.float32).eps,
@@ -154,16 +166,40 @@ def remap_fractions(
     displacement_yx: Tensor,
     cell: RemapCell,
 ) -> tuple[Tensor, Tensor]:
-    displacement = displacement_yx.to(dtype=echo.dtype, device=echo.device)
-    fraction_y = (displacement[0] - cell.y).clamp(0.0, 1.0)
-    fraction_x = (displacement[1] - cell.x).clamp(0.0, 1.0)
+    displacement = displacement_yx
+    # Keep the displacement as the differentiable operand.  The cell is a
+    # frozen branch coordinate; converting it through float avoids an
+    # overflowing Python-int-to-tensor conversion for finite extreme shifts.
+    # Scalar arithmetic also works under MPS function transforms, where
+    # new_tensor with a Python sequence is not supported.
+    cell_tensor = torch.stack(
+        (
+            displacement.new_zeros(()) + float(cell.y),
+            displacement.new_zeros(()) + float(cell.x),
+        )
+    )
+    fractions = (displacement - cell_tensor).clamp(0.0, 1.0)
+    # MPS cannot widen to FP64, in forward or reverse mode. Move away from
+    # MPS before widening, and narrow on the source before moving to MPS.
+    if fractions.device.type == "mps":
+        fractions = fractions.to(device=echo.device)
+    fractions = fractions.to(dtype=echo.dtype).to(device=echo.device)
+    fraction_y, fraction_x = fractions.unbind()
     return fraction_y, fraction_x
 
 
 def shift_zero(echo: Tensor, dy: int, dx: int) -> Tensor:
     height, width = echo.shape[-2:]
-    padded = F.pad(
-        echo,
+    if abs(dy) >= height or abs(dx) >= width:
+        # Keep zero derivatives without empty-slice padding, whose MPS VJP fails.
+        return echo.clone().zero_()
+    source = echo[
+        ...,
+        max(0, -dy) : min(height, height - dy),
+        max(0, -dx) : min(width, width - dx),
+    ]
+    return F.pad(
+        source,
         (
             max(dx, 0),
             max(-dx, 0),
@@ -171,13 +207,6 @@ def shift_zero(echo: Tensor, dy: int, dx: int) -> Tensor:
             max(-dy, 0),
         ),
     )
-    start_y = max(-dy, 0)
-    start_x = max(-dx, 0)
-    return padded[
-        ...,
-        start_y : start_y + height,
-        start_x : start_x + width,
-    ]
 
 
 def _validate_echo_shape(echo: Tensor) -> None:

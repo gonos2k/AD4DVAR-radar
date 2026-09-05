@@ -12,8 +12,6 @@ import math
 import re
 from typing import cast
 
-from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 import torch
 from torch import Tensor
 
@@ -22,7 +20,14 @@ from ._contract_registry import (
     CURRENT_RADAR_METRIC_DOMAIN_EVIDENCE_CONTRACT,
     OperationalDeploymentUnsupportedError,
 )
-from ._digest import dataclass_digest, json_digest, tensor_digest
+from ._digest import (
+    dataclass_digest, json_digest, tensor_digest,
+    validate_sha256_digest as _validate_sha256_digest,
+)
+from ._input_derivation import (
+    validate_analysis_input_derivation_lineage as _validate_analysis_input_derivation_lineage,
+    validate_analysis_input_derivation_signature,
+)
 from ._learned_input import learned_radar_input_features
 from .calibration import (
     OperationalCalibrationManifest,
@@ -3548,8 +3553,11 @@ class RadarGridTimeContract:
         self,
         displacement_yx: Tensor,
     ) -> Tensor:
-        if displacement_yx.shape != (2,):
-            raise ValueError("displacement_yx must have shape [2]")
+        if (
+            displacement_yx.shape != (2,)
+            or displacement_yx.dtype not in {torch.float32, torch.float64}
+        ):
+            raise ValueError("displacement_yx must be float32/float64 with shape [2]")
         assert self.pixel_to_projected_matrix_m is not None
         dtype = (
             displacement_yx.dtype
@@ -3689,8 +3697,11 @@ class RadarGridTimeContract:
         self,
         projected_displacement_xy: Tensor,
     ) -> Tensor:
-        if projected_displacement_xy.shape != (2,):
-            raise ValueError("projected_displacement_xy must have shape [2]")
+        if (
+            projected_displacement_xy.shape != (2,)
+            or projected_displacement_xy.dtype not in {torch.float32, torch.float64}
+        ):
+            raise ValueError("projected displacement must be float32/float64 with shape [2]")
         assert self.pixel_to_projected_matrix_m is not None
         dtype = (
             projected_displacement_xy.dtype
@@ -4151,6 +4162,21 @@ def motion_displacement_limits_yx(
     return inward_limits.to(device=reference.device)
 
 
+def _validate_current_radar_grid_issuance(
+    grid_time_contract: RadarGridTimeContract | None,
+) -> None:
+    """Reject the audit-only projected grid from current forecast issuance."""
+
+    if grid_time_contract is None:
+        return
+    capabilities = CONTRACT_CAPABILITIES["radar_spatial_grid_identity"]
+    if grid_time_contract.spatial_grid_contract == capabilities.predecessor:
+        raise ValueError(
+            "current forecast issuance requires "
+            f"{capabilities.current}"
+        )
+
+
 class DataStatus(str, Enum):
     OBSERVED = "OBSERVED"
     PARTIAL = "PARTIAL"
@@ -4275,13 +4301,13 @@ def _validate_background_age(
     *,
     background_present: bool,
     background_age_minutes: float | None,
-) -> None:
+) -> float | None:
     if not background_present:
         if background_age_minutes is not None:
             raise ValueError(
                 "background_age_minutes requires background_frames_dbz"
             )
-        return
+        return None
     if background_age_minutes is None:
         raise ValueError(
             "background_age_minutes is required with background_frames_dbz"
@@ -4292,6 +4318,7 @@ def _validate_background_age(
         )
     if background_age_minutes > config.maximum_background_age_minutes:
         raise ValueError("background exceeds maximum_background_age_minutes")
+    return float(background_age_minutes)
 
 
 @dataclass(frozen=True)
@@ -4747,10 +4774,12 @@ class ForecastRunContract:
         analysis_input_derivation_artifact_digest: str | None = None,
     ) -> ForecastRunContract:
         _validate_frames(frames_dbz)
+        _validate_current_radar_grid_issuance(grid_time_contract)
         latest_frame = frames_dbz[-1]
         if (
             observation_masks.shape != frames_dbz.shape
             or observation_masks.dtype != torch.bool
+            or observation_masks.device != frames_dbz.device
         ):
             raise ValueError(
                 "observation_masks must be boolean with the frame shape"
@@ -4785,6 +4814,7 @@ class ForecastRunContract:
             if (
                 value.shape != frames_dbz.shape
                 or value.dtype != frames_dbz.dtype
+                or value.device != frames_dbz.device
                 or not bool(torch.all(torch.isfinite(value)))
             ):
                 raise ValueError(f"{name} must be finite and match the frames")
@@ -4823,7 +4853,7 @@ class ForecastRunContract:
             torch.full_like(frames_dbz, -10.0),
         )
         background_present = background_frames_dbz is not None
-        _validate_background_age(
+        background_age_minutes = _validate_background_age(
             config,
             background_present=background_present,
             background_age_minutes=background_age_minutes,
@@ -5427,6 +5457,22 @@ class ForecastRunContract:
         if self.observation_masks_digest is not None:
             assert self.observation_quality_weight_digest is not None
             assert self.observation_std_dbz_digest is not None
+            if (self.background_frames_digest is not None) != (
+                self.latest_background_digest is not None
+            ):
+                raise ValueError("background frame digest presence mismatch")
+            expected_bundle = _forecast_input_bundle_digest_from_digests(
+                input_frames_digest=self.input_frames_digest,
+                observation_masks_digest=self.observation_masks_digest,
+                background_frames_digest=self.background_frames_digest,
+                background_age_minutes=self.background_age_minutes,
+                grid_time_contract_digest=self.grid_time_contract_digest,
+                operational_calibration_manifest_digest=self.operational_calibration_manifest_digest,
+                operational_calibration_approval_digest=self.operational_calibration_approval_digest,
+                operational_data_identity_digest=self.operational_data_identity_digest,
+            )
+            if self.input_bundle_digest != expected_bundle:
+                raise ValueError("input bundle digest mismatch")
             expected_fixed_context = _forecast_fixed_input_context_digest(
                 observation_masks_digest=self.observation_masks_digest,
                 observation_quality_weight_digest=(
@@ -5500,18 +5546,39 @@ def _forecast_input_bundle_digest(
         if grid_time_contract is None
         else grid_time_contract.digest
     )
+    return _forecast_input_bundle_digest_from_digests(
+        input_frames_digest=tensor_digest(frames_dbz),
+        observation_masks_digest=tensor_digest(observation_masks),
+        background_frames_digest=(
+            None if background_frames_dbz is None else tensor_digest(background_frames_dbz)
+        ),
+        background_age_minutes=background_age_minutes,
+        grid_time_contract_digest=resolved_grid_digest,
+        operational_calibration_manifest_digest=operational_calibration_manifest_digest,
+        operational_calibration_approval_digest=operational_calibration_approval_digest,
+        operational_data_identity_digest=operational_data_identity_digest,
+    )
+
+
+def _forecast_input_bundle_digest_from_digests(
+    *,
+    input_frames_digest: str,
+    observation_masks_digest: str,
+    background_frames_digest: str | None,
+    background_age_minutes: float | None,
+    grid_time_contract_digest: str | None,
+    operational_calibration_manifest_digest: str | None,
+    operational_calibration_approval_digest: str | None,
+    operational_data_identity_digest: str | None,
+) -> str:
     return json_digest(
         {
             "version": _FORECAST_INPUT_BUNDLE_VERSION,
-            "frames_dbz": tensor_digest(frames_dbz),
-            "observation_masks": tensor_digest(observation_masks),
-            "background_frames_dbz": (
-                None
-                if background_frames_dbz is None
-                else tensor_digest(background_frames_dbz)
-            ),
+            "frames_dbz": input_frames_digest,
+            "observation_masks": observation_masks_digest,
+            "background_frames_dbz": background_frames_digest,
             "background_age_minutes": background_age_minutes,
-            "grid_time_contract_digest": resolved_grid_digest,
+            "grid_time_contract_digest": grid_time_contract_digest,
             "operational_calibration_manifest_digest": (
                 operational_calibration_manifest_digest
             ),
@@ -5633,13 +5700,6 @@ def _forecast_fixed_input_context_digest(
     return json_digest(payload)
 
 
-def _validate_sha256_digest(name: str, value: str) -> None:
-    if not isinstance(value, str) or len(value) != 64 or any(
-        character not in "0123456789abcdef" for character in value
-    ):
-        raise ValueError(f"{name} must be a lowercase SHA-256 digest")
-
-
 def _validate_input_plan_lineage(
     input_plan_json: str | None,
     input_plan_digest: str | None,
@@ -5669,168 +5729,6 @@ def _validate_input_plan_lineage(
         raise ValueError("input plan payload digest mismatch")
 
 
-def _validate_analysis_input_derivation_lineage(
-    artifact_json: str | None,
-    artifact_digest: str | None,
-) -> None:
-    if artifact_json is None and artifact_digest is None:
-        return
-    if artifact_json is None or artifact_digest is None:
-        raise ValueError(
-            "analysis input derivation JSON and digest must be provided together"
-        )
-    _validate_sha256_digest(
-        "analysis_input_derivation_artifact_digest",
-        artifact_digest,
-    )
-    try:
-        payload = json.loads(artifact_json)
-    except json.JSONDecodeError as error:
-        raise ValueError("invalid analysis input derivation JSON") from error
-    if not isinstance(payload, dict):
-        raise ValueError("analysis input derivation payload digest mismatch")
-    contract = payload.get("contract")
-    expected_fields = {
-        "contract",
-        "case_id",
-        "input_plan_digest",
-        "resolved_raw_observation_receipt_digests",
-        "canonical_raw_volume_identity_digests",
-        "global_raw_resolution_receipt_digest",
-        "decoder_version_digest",
-        "qc_algorithm_digest",
-        "qc_policy_digest",
-        "source_selection_evidence_digest",
-        "regrid_algorithm_digest",
-        "grid_contract_digest",
-        "background_cycle_rule_digest",
-        "background_valid_times",
-        "background_source_identity_digest",
-        "background_input_identity_digests",
-        "input_frames_digest",
-        "observation_masks_digest",
-        "observation_quality_weight_digest",
-        "observation_std_dbz_digest",
-        "background_frames_digest",
-        "input_bundle_digest",
-        "full_analysis_input_digest",
-        "processed_at",
-        "processor_id",
-        "processor_public_key_hex",
-        "processor_signature_hex",
-    }
-    if contract == "analysis-input-derivation-artifact-v5":
-        expected_fields.update(
-            {
-                "source_available_mask_digest",
-                "learned_model_input_features_digest",
-            }
-        )
-    digest_fields = expected_fields - {
-        "contract",
-        "case_id",
-        "resolved_raw_observation_receipt_digests",
-        "canonical_raw_volume_identity_digests",
-        "background_valid_times",
-        "background_source_identity_digest",
-        "background_input_identity_digests",
-        "background_frames_digest",
-        "processed_at",
-        "processor_id",
-        "processor_public_key_hex",
-        "processor_signature_hex",
-    }
-    raw_receipts = payload.get("resolved_raw_observation_receipt_digests")
-    raw_identities = payload.get("canonical_raw_volume_identity_digests")
-    background_times = payload.get("background_valid_times")
-    background_identities = payload.get("background_input_identity_digests")
-    if (
-        set(payload) != expected_fields
-        or contract not in (
-            "analysis-input-derivation-artifact-v4",
-            "analysis-input-derivation-artifact-v5",
-        )
-        or not isinstance(payload.get("case_id"), str)
-        or not str(payload.get("case_id", "")).strip()
-        or str(payload.get("case_id")) != str(payload.get("case_id")).strip()
-        or not isinstance(payload.get("processor_id"), str)
-        or not str(payload.get("processor_id", "")).strip()
-        or str(payload.get("processor_id"))
-        != str(payload.get("processor_id")).strip()
-        or not isinstance(raw_receipts, list)
-        or not raw_receipts
-        or raw_receipts != sorted(raw_receipts)
-        or len(set(raw_receipts)) != len(raw_receipts)
-        or not isinstance(raw_identities, list)
-        or not raw_identities
-        or raw_identities != sorted(raw_identities)
-        or len(set(raw_identities)) != len(raw_identities)
-        or not isinstance(background_times, list)
-        or not isinstance(background_identities, list)
-        or len(background_times) != len(background_identities)
-        or any(
-            not isinstance(value, str)
-            for value in (*raw_receipts, *raw_identities, *background_identities)
-        )
-        or any(
-            len(value) != 64
-            or any(character not in "0123456789abcdef" for character in value)
-            for value in (*raw_receipts, *raw_identities, *background_identities)
-        )
-        or any(
-            not isinstance(payload.get(name), str)
-            for name in digest_fields
-        )
-        or any(
-            len(str(payload[name])) != 64
-            or any(character not in "0123456789abcdef" for character in str(payload[name]))
-            for name in digest_fields
-        )
-        or (
-            (payload.get("background_frames_digest") is None)
-            != (not background_times)
-        )
-        or (
-            (payload.get("background_source_identity_digest") is None)
-            != (not background_times)
-        )
-        or json.dumps(payload, sort_keys=True, separators=(",", ":"))
-        != artifact_json
-        or json_digest(payload) != artifact_digest
-    ):
-        raise ValueError("analysis input derivation payload digest mismatch")
-    for value in (
-        payload.get("background_frames_digest"),
-        payload.get("background_source_identity_digest"),
-    ):
-        if value is not None:
-            _validate_sha256_digest("background derivation digest", value)
-    try:
-        processed = datetime.fromisoformat(
-            str(payload["processed_at"]).replace("Z", "+00:00")
-        )
-        if processed.tzinfo is None or (
-            processed.astimezone(timezone.utc)
-            .isoformat()
-            .replace("+00:00", "Z")
-            != payload["processed_at"]
-        ):
-            raise ValueError
-        for value in background_times:
-            parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
-            if parsed.tzinfo is None or (
-                parsed.astimezone(timezone.utc)
-                .isoformat()
-                .replace("+00:00", "Z")
-                != value
-            ):
-                raise ValueError
-    except (TypeError, ValueError) as error:
-        raise ValueError(
-            "analysis input derivation time is not canonical"
-        ) from error
-
-
 def _validate_analysis_input_derivation_against_run(
     artifact_json: str | None,
     *,
@@ -5852,18 +5750,7 @@ def _validate_analysis_input_derivation_against_run(
     if artifact_json is None:
         return
     payload = json.loads(artifact_json)
-    unsigned = dict(payload)
-    signature_hex = unsigned.pop("processor_signature_hex", None)
-    try:
-        key = Ed25519PublicKey.from_public_bytes(
-            bytes.fromhex(str(payload["processor_public_key_hex"]))
-        )
-        key.verify(
-            bytes.fromhex(str(signature_hex)),
-            json_digest(unsigned).encode("ascii"),
-        )
-    except (InvalidSignature, KeyError, TypeError, ValueError) as error:
-        raise ValueError("analysis input derivation signature is invalid") from error
+    validate_analysis_input_derivation_signature(payload)
     background_times = () if grid_time_contract is None else (
         grid_time_contract.background_valid_times or ()
     )
@@ -7452,7 +7339,7 @@ def prepare_input(
     )
     background_frames = torch.full_like(frames_dbz, config.min_dbz)
     background_mask = torch.zeros_like(observed)
-    _validate_background_age(
+    background_age_minutes = _validate_background_age(
         config,
         background_present=background_frames_dbz is not None,
         background_age_minutes=background_age_minutes,
@@ -9971,6 +9858,12 @@ def nowcast(
     audit: bool = False,
 ) -> ForecastResult:
     config = config or NowcastConfig()
+    _validate_current_radar_grid_issuance(grid_time_contract)
+    background_age_minutes = _validate_background_age(
+        config,
+        background_present=background_frames_dbz is not None,
+        background_age_minutes=background_age_minutes,
+    )
     motion_displacement_limits_yx(config, grid_time_contract, frames_dbz)
     if grid_time_contract is not None:
         grid_time_contract.validate_for(
@@ -10367,8 +10260,8 @@ def _validate_frames(frames: Tensor) -> None:
         raise ValueError("frames_dbz must have shape [3, height, width]")
     if frames.shape[1] < 2 or frames.shape[2] < 2:
         raise ValueError("frame height and width must both be at least 2")
-    if not frames.is_floating_point():
-        raise TypeError("frames_dbz must be a floating-point tensor")
+    if frames.dtype not in {torch.float32, torch.float64}:
+        raise TypeError("frames_dbz must be a float32 or float64 tensor")
 
 
 def _aligned_growth_evidence(
