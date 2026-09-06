@@ -1119,8 +1119,10 @@ exact-set accuracy와 false-active-band rate까지 통과한 band만 인증하�
 logit을 높여 near/mid/far를 동시에 활성화하는 classifier는 인증을 얻지 못한다. 각
 weather×range group은 정책이 요구한 metric×lead별 최소 case와 실제 valid 면적뿐 아니라
 그 cell 자체의 common-domain 및 end-to-end mean-degradation UCB와
-harmful-fraction UCB, issuance withdrawal/new-issuance 한계도 통과해야 한다. 자동배포용
-metric cell은 최소 5개 physical event를 요구한다. 따라서 required FSS의 일관된 악화나
+harmful-fraction UCB, issuance withdrawal/new-issuance 한계도 통과해야 한다. Metric cell의
+최소 physical event 수는 개별 요구량, 배포 하한(기본 5), 연속 점수 하한(기본 10)의
+최댓값이다. 사전 점검에 셀별 집계를 명시해도 이 정책 하한을 낮출 수 없다.
+따라서 required FSS의 일관된 악화나
 발행영역 악화를 다른 metric 개선으로 상쇄할 수 없다. `promotion_sample_size_preflight()`는
 family-adjusted finite-sample radius의 best-case event 요구량을 score 계산 전에 산출하며,
 holdout event가 그 수보다 적으면 결과와 무관하게 infeasible로 표시한다.
@@ -1473,7 +1475,8 @@ fraction·면적과 parent 대비 abstention 증가 및 NLL abstention penalty�
 Classifier calibration gate는 weather softmax의 multiclass Brier, conditionally-independent
 Bernoulli range heads의 multilabel Brier, weather unknown probability와 no-active-range
 probability의 binary Brier를 physical event 동일가중 UCB로 판정한다. 기존 joint-min
-surrogate와 ECE는 diagnostic-only다. Sample-size preflight도 known weather/range,
+surrogate와 ECE는 diagnostic-only이며 joint-min 값과 UCB는 gate 및 sample-size
+preflight family에 포함하지 않는다. Sample-size preflight도 known weather/range,
 weather/range OOD와 Brier-valid event subset을 각각 확인한다.
 
 현재 scientific promotion evidence는 v32, candidate manifest는 v19, holdout plan은 v37,
@@ -1747,14 +1750,21 @@ support 밖 제어변수는 PCG 벡터에 만들지 않는다. 무에코 영역�
 support mask로 잠가 레이더 세 장만으로 신규 에코를 만들지 않는다.
 연구용 기본 경로의 운동성분은 `(row, column)` pixel 증분이지만,
 `motion_increment_scale_mps`와 격자계약을 제공하면 두 성분은 projected
-`(x, y)` m/s 증분이다. 두 성분을 하나의 radial `tanh` speed-ball로 decode하여
-모든 finite control이 원형 물리속도 상한 안에 매끄럽게 머문다. 운용모드는 이
+`(x, y)` m/s 증분이다. 내부 배경에서는 두 성분을 radial `tanh`로 decode하고,
+경계 배경에서는 원형 물리속도 상한에 투영한다. 운용모드는 이
 물리 제어를 강제하고 affine 역변환으로 수송코어의 `(row, column)`
 displacement를 만든다. 실제 좌표계와 제약형태는
 `analysis_motion_control_coordinate_system`에 기록한다.
 baseline 운동 또는 성장률이 hard bound에 정확히 닿으면 zero control은 그 값을
 정확히 보존하고 outward update는 투영으로 막되, 관측이 지지하는 inward update는
 허용한다. saturation margin은 baseline에서 0으로 기록한다.
+정확한 속도 경계에는 보통의 미분이 없으므로 내부 쪽 일반화 Jacobian을
+사용한다. 실제 후보의 목적함수와 수용 조건을 다시 확인한다. 물리 운동의
+projected scale, limit 및 scale/limit 비율은 계산 dtype의 정상 유한 범위에
+있어야 하며, 지원 범위 밖의 설정은 준비 단계에서 거부한다.
+`pseudo_huber_delta`도 계산 dtype의 최소 정상 양수 이상이어야 한다. 비용과
+IRLS 가중치는 같은 pseudo-Huber 함수를 척도 정규화해 계산하며, 큰 delta의
+표현 가능한 비용에서는 이차 극한을 유지한다.
 다만 분석창 후반에 탐지된 에코는 baseline 운동으로
 초기시각에 역수송하고, 초기 관측 또는 배경 anchor가 있는 위치만 2 pixel
 범위에서 precursor control로 연다. 이 확장영역은 운동오차를 허용하는
@@ -2445,11 +2455,14 @@ parent directory를 `fsync`한다. 원자교체 이전 기록 실패 시 기존 
 - 전역 이동장 하나만 사용하므로 회전·변형·서로 다른 세포 이동을 표현하지 못한다.
 - 전역 성장률 하나만 사용하므로 국지적 발생·소멸을 예측하지 못한다.
 - 경계 밖 에코 유입 정보가 없으므로 경계는 0으로 둔다.
-- 결정론적 예측이며 불확실성은 가용쌍의 추정 불일치만 진단한다.
+- 예측장은 결정론적이다. P0는 가용쌍의 추정 불일치와 설정된 모델 오차를,
+  P1은 고정된 선형화의 근사 posterior와 모델 오차를 신뢰 지표에 반영한다.
+  이 지표는 예측이 맞을 확률을 뜻하지 않는다.
 - 3시간 동안 새로 발생하는 대류는 외삽만으로 예측할 수 없다.
 
-현재 P1도 전역 이동·성장만 사용한다. 저해상도 운동장, 성장률장,
-보존형 flux 적분기, 약제약 모델오차, 뉴럴 prior는 아직 추가하지 않았다.
+현재 P1도 전역 이동·성장만 사용한다. 선택적인 neural prior는 초기장과
+정규화 정보를 제공하며 이 전역 동역학의 표현 범위를 확장하지 않는다.
+국지 운동장·성장률장과 독립적인 대류 생성항은 구현하지 않았다.
 
 ## M0 민감도 사례 원장
 

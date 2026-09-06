@@ -3819,6 +3819,29 @@ def prepare_analysis(
                 "distance settings"
             )
     _validate_frames(frames_dbz)
+    if analysis_config.pseudo_huber_delta < torch.finfo(frames_dbz.dtype).tiny:
+        raise ValueError(
+            "pseudo_huber_delta must be at least the normal minimum "
+            "for the frame dtype"
+        )
+    if analysis_config.motion_increment_scale_mps is not None:
+        assert grid_time_contract is not None
+        assert nowcast_config.maximum_motion_speed_mps is not None
+        projected_speed_limit = (
+            grid_time_contract.conservative_projected_speed_limit_mps(
+                nowcast_config.maximum_motion_speed_mps
+            )
+        )
+        projected_increment_scale = (
+            grid_time_contract.conservative_projected_speed_limit_mps(
+                analysis_config.motion_increment_scale_mps
+            )
+        )
+        _validate_bounded_vector_update_scales(
+            frames_dbz.dtype,
+            scale=projected_increment_scale,
+            limit=projected_speed_limit,
+        )
     if (
         observation_common_bias_group_index is not None
         and observation_common_bias_mode_weights is not None
@@ -3976,8 +3999,14 @@ def prepare_analysis(
         )
     else:
         causal_dilation_offsets = _rectangular_offsets_yx(
-            analysis_config.causal_support_dilation_px,
-            analysis_config.causal_support_dilation_px,
+            min(
+                analysis_config.causal_support_dilation_px,
+                frames_dbz.shape[1] - 1,
+            ),
+            min(
+                analysis_config.causal_support_dilation_px,
+                frames_dbz.shape[2] - 1,
+            ),
         )
     if analysis_config.amplitude_displacement_tolerance_m is not None:
         if grid_time_contract is None:
@@ -3992,8 +4021,14 @@ def prepare_analysis(
         )
     else:
         amplitude_tolerance_offsets = _rectangular_offsets_yx(
-            analysis_config.amplitude_displacement_tolerance_px,
-            analysis_config.amplitude_displacement_tolerance_px,
+            min(
+                analysis_config.amplitude_displacement_tolerance_px,
+                frames_dbz.shape[1] - 1,
+            ),
+            min(
+                analysis_config.amplitude_displacement_tolerance_px,
+                frames_dbz.shape[2] - 1,
+            ),
         )
     if not (
         nowcast_config.min_dbz
@@ -4917,17 +4952,22 @@ def _apply_tiled_observation_error_whitener(
     temporal_scope: ObservationCommonBiasScope,
 ) -> Tensor:
     frame_count, height, width = values.shape
-    padded_height = ((height + tile_size - 1) // tile_size) * tile_size
-    padded_width = ((width + tile_size - 1) // tile_size) * tile_size
+    # A tile extending beyond an axis contains only zeros beyond that axis.
+    # Removing those empty rows/columns preserves each rank-one block and
+    # bounds the padded area by four times the input, even on skinny grids.
+    tile_height = min(tile_size, height)
+    tile_width = min(tile_size, width)
+    padded_height = ((height + tile_height - 1) // tile_height) * tile_height
+    padded_width = ((width + tile_width - 1) // tile_width) * tile_width
     padding = (0, padded_width - width, 0, padded_height - height)
 
     def blocks(tensor: Tensor) -> Tensor:
         return F.pad(tensor, padding).reshape(
             frame_count,
-            padded_height // tile_size,
-            tile_size,
-            padded_width // tile_size,
-            tile_size,
+            padded_height // tile_height,
+            tile_height,
+            padded_width // tile_width,
+            tile_width,
         ).permute(0, 1, 3, 2, 4)
 
     value_blocks = blocks(values)
@@ -5018,7 +5058,7 @@ def freeze_irls_weights(
         frozen,
     ).detach()
     delta = frozen.analysis_config.pseudo_huber_delta
-    sqrt_weight = torch.pow(1.0 + (residual / delta).square(), -0.25)
+    sqrt_weight = _pseudo_huber_irls_sqrt_weight(residual, delta)
     return replace(
         frozen,
         irls_sqrt_weight=torch.where(
@@ -6106,9 +6146,7 @@ def _robust_objective_from_residual(
 ) -> Tensor:
     config = frozen.analysis_config
     delta = config.pseudo_huber_delta
-    # Rationalize sqrt(1 + (r/delta)^2) - 1 to retain small residual costs.
-    radius = torch.hypot(residual, residual.new_tensor(delta))
-    robust = delta * (residual * (residual / (radius + delta)))
+    robust = _pseudo_huber_cost(residual, delta)
     robust = torch.where(
         observations.valid_mask,
         robust,
@@ -6123,6 +6161,85 @@ def _robust_objective_from_residual(
         )
         + _field_smoothness_prior_cost(control, frozen)
     )
+
+
+def _pseudo_huber_cost(residual: Tensor, delta: float) -> Tensor:
+    """Evaluate pseudo-Huber cost without scale-dependent cancellation.
+
+    For ``|r| <= delta`` the quadratic form ``r * (r / denominator)`` keeps
+    the representable cost when ``delta`` is very large.  For larger
+    residuals, a factored-radius form avoids squaring a large value and keeps
+    its backward factors finite.  The two forms are equal with matching first
+    derivative at the split.
+    """
+
+    dtype_info = torch.finfo(residual.dtype)
+    if delta < dtype_info.tiny:
+        raise ValueError(
+            "pseudo_huber_delta must be at least the normal minimum "
+            "for the residual dtype"
+        )
+    # A Python float can be finite while being unrepresentable in a lower
+    # precision residual tensor.  Saturating the scale to the dtype range
+    # preserves the quadratic limit and keeps both AD branches finite.
+    delta_tensor = residual.new_tensor(delta).clamp(max=dtype_info.max)
+    absolute = residual.abs()
+    small = absolute <= delta_tensor
+
+    # The selected branch has |residual / delta| <= 1.  Masking before the
+    # square also keeps the unused branch finite for extreme residuals.
+    small_residual = torch.where(small, residual, torch.zeros_like(residual))
+    ratio = (small_residual / delta_tensor).clamp(-1.0, 1.0)
+    denominator = torch.sqrt(1.0 + ratio.square()) + 1.0
+    small_cost = small_residual * (small_residual / denominator)
+
+    # On the large branch, factor the radius as
+    # sqrt(|r|) * sqrt(|r| + delta * (delta / |r|)).  This keeps the
+    # derivative finite when the final cost is representable: the square-root
+    # inputs stay near the scale of |r| and the delta*(delta/|r|) term is
+    # bounded on this branch.  Mask delta before the division so an enormous
+    # inactive branch cannot create inf * 0 in torch.where.
+    large_residual = torch.where(small, torch.zeros_like(residual), residual)
+    large_absolute = large_residual.abs()
+    large_delta = torch.where(
+        small,
+        torch.zeros_like(delta_tensor),
+        delta_tensor,
+    )
+    large_scale = torch.where(
+        small,
+        torch.ones_like(large_absolute),
+        large_absolute,
+    )
+    normalized_delta = large_delta / large_scale
+    large_radius = torch.sqrt(large_scale) * torch.sqrt(
+        large_scale + large_delta * normalized_delta
+    )
+    large_cost = large_delta * (large_radius - large_delta)
+    return torch.where(small, small_cost, large_cost)
+
+
+def _pseudo_huber_irls_sqrt_weight(
+    residual: Tensor,
+    delta: float,
+) -> Tensor:
+    """Evaluate the frozen IRLS square-root weight at finite extreme scales."""
+
+    dtype_info = torch.finfo(residual.dtype)
+    if delta < dtype_info.tiny:
+        raise ValueError(
+            "pseudo_huber_delta must be at least the normal minimum "
+            "for the residual dtype"
+        )
+    delta_tensor = residual.new_tensor(delta).clamp(max=dtype_info.max)
+    scale = torch.maximum(residual.abs(), delta_tensor)
+    residual_ratio = residual / scale
+    delta_ratio = delta_tensor / scale
+    # Take the square roots before forming delta/scale.  The ratio can
+    # underflow even when the IRLS weight itself is representable.
+    return (
+        torch.sqrt(delta_tensor) / torch.sqrt(scale)
+    ) / torch.sqrt(torch.hypot(residual_ratio, delta_ratio))
 
 
 def solve_analysis(
@@ -6518,12 +6635,29 @@ def variational_nowcast(
             background_present=background_frames_dbz is not None,
             background_age_minutes=background_age_minutes,
         )
+    accepted_source_available_mask = (
+        torch.ones_like(frames_dbz, dtype=torch.bool)
+        if source_available_mask is None
+        else source_available_mask
+    )
+    if (
+        accepted_source_available_mask.shape != frames_dbz.shape
+        or accepted_source_available_mask.dtype is not torch.bool
+        or accepted_source_available_mask.device != frames_dbz.device
+    ):
+        raise ValueError(
+            "source_available_mask must be boolean with the radar frame shape"
+        )
     observations, frozen = prepare_analysis(
         frames_dbz,
         nowcast_config=nowcast_config,
         analysis_config=analysis_config,
         observation_std_dbz=observation_std_dbz,
-        quality_weight=quality_weight,
+        quality_weight=(
+            accepted_source_available_mask.to(frames_dbz)
+            if quality_weight is None
+            else quality_weight
+        ),
         qc_mask=qc_mask,
         observation_common_bias_group_index=(
             observation_common_bias_group_index
@@ -6536,19 +6670,6 @@ def variational_nowcast(
         grid_time_contract=grid_time_contract,
         neural_prior=neural_prior,
     )
-    accepted_source_available_mask = (
-        torch.ones_like(observations.valid_mask, dtype=torch.bool)
-        if source_available_mask is None
-        else source_available_mask
-    )
-    if (
-        accepted_source_available_mask.shape != frames_dbz.shape
-        or accepted_source_available_mask.dtype is not torch.bool
-        or accepted_source_available_mask.device != frames_dbz.device
-    ):
-        raise ValueError(
-            "source_available_mask must be boolean with the radar frame shape"
-        )
     if (
         analysis_config.execution_mode == "operational"
         and operational_data_identity is not None
@@ -8753,6 +8874,39 @@ def _bounded_update(
     return torch.where(inside, updated, projected)
 
 
+def _validate_bounded_vector_update_scales(
+    dtype: torch.dtype,
+    *,
+    scale: float,
+    limit: float,
+) -> None:
+    """Reject physical vector scales that cannot survive dtype arithmetic."""
+
+    dtype_info = torch.finfo(dtype)
+    if (
+        not math.isfinite(scale)
+        or not math.isfinite(limit)
+        or scale < dtype_info.tiny
+        or scale > dtype_info.max
+        or limit < dtype_info.tiny
+        or limit > dtype_info.max
+    ):
+        raise ValueError(
+            "bounded vector update speed scales must be representable in "
+            "the background dtype"
+        )
+    scale_ratio = scale / limit
+    if (
+        not math.isfinite(scale_ratio)
+        or scale_ratio < dtype_info.tiny
+        or scale_ratio > dtype_info.max
+    ):
+        raise ValueError(
+            "bounded vector update speed scale/limit ratio must be "
+            "representable in the background dtype"
+        )
+
+
 def _bounded_vector_update(
     background: Tensor,
     control: Tensor,
@@ -8761,6 +8915,13 @@ def _bounded_vector_update(
 ) -> Tensor:
     if not math.isfinite(limit) or limit <= 0.0:
         raise ValueError("bounded vector update limit must be positive")
+    if not math.isfinite(scale) or scale <= 0.0:
+        raise ValueError("bounded vector update scale must be positive")
+    _validate_bounded_vector_update_scales(
+        background.dtype,
+        scale=scale,
+        limit=limit,
+    )
     limit_tensor = torch.as_tensor(limit, dtype=background.dtype, device=background.device)
     epsilon = torch.finfo(background.dtype).eps
     unit_background = background / limit_tensor
@@ -8806,7 +8967,22 @@ def _bounded_vector_update(
     projected = limit_tensor * scaled_candidate / torch.sqrt(
         scaled_candidate.square().sum().clamp_min(1.0)
     )
-    return torch.where(inside, updated, projected)
+    candidate_norm_squared = scaled_candidate.square().sum()
+    candidate_is_inside_or_on_boundary = (
+        (candidate.abs().amax() <= limit_tensor)
+        & (candidate_norm_squared <= 1.0)
+    )
+    # Projection onto the closed ball is nonsmooth at exact saturation.  The
+    # strict-outside branch picks the interior-side Clarke element there, so
+    # an inward radial JVP is visible to the solver.  The value remains the
+    # feasible candidate on the boundary and the projected value for every
+    # outside trial; no ordinary derivative is claimed at the split.
+    outside_value = torch.where(
+        candidate_is_inside_or_on_boundary,
+        candidate,
+        projected,
+    )
+    return torch.where(inside, updated, outside_value)
 
 
 def _decode_dynamics(

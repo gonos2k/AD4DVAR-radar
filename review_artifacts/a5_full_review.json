@@ -1,0 +1,921 @@
+{
+  "base_commit": "286c0c9416a645ec4350b24ab9e9faca6584bb56",
+  "reviewed_at_utc": "2026-09-05T23:50:41.767432+00:00",
+  "purpose": "Additional investigation; product fixes remain open in FIFTH_CODE_REVIEW_CHECKLIST.md",
+  "agent_model": "gpt-5.6-luna",
+  "reasoning_effort": "xhigh",
+  "agent_count": 34,
+  "scope": {
+    "git_tracked_files": 78,
+    "source_read_log_lines": 167392,
+    "all_assigned_ranges_covered": true,
+    "coverage_is_not_correctness_proof": true,
+    "not_run": [
+      "whole local baseline",
+      "real radar hindcast",
+      "MPS/CUDA end-to-end"
+    ]
+  },
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.13.0",
+    "probe_backend": "CPU",
+    "package_manifest_unchanged": true
+  },
+  "product_source_changed": false,
+  "original_reports": 34,
+  "status_counts": {
+    "boundary": 25,
+    "confirmed": 12,
+    "unproven": 7,
+    "withdrawn": 1,
+    "known_scope": 1,
+    "source_confirmed": 3,
+    "theory_followup": 1,
+    "test_note": 12,
+    "diagnostic_question": 1,
+    "test_gap": 6,
+    "duplicate": 1
+  },
+  "counts_note": "Reviewer findings are not deduplicated production-bug counts; priorities describe only the stated scope.",
+  "source_manifest": "manifest.json",
+  "coverage": "coverage.json",
+  "ci": {
+    "main_2398e5f": {
+      "conclusion": "success",
+      "headSha": "2398e5fd24a0027219c01d826bf41c80f1d9e894",
+      "jobs": [
+        {
+          "name": "Wheel and CLI smoke",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-09-05T21:40:18Z",
+          "completedAt": "2026-09-05T21:41:21Z",
+          "url": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33993713947/job/101380344427"
+        },
+        {
+          "name": "Python 3.10 CPU",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-09-05T21:40:19Z",
+          "completedAt": "2026-09-05T23:23:24Z",
+          "url": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33993713947/job/101380344576"
+        },
+        {
+          "name": "Python 3.12 CPU",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-09-05T21:40:18Z",
+          "completedAt": "2026-09-05T23:22:54Z",
+          "url": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33993713947/job/101380344596"
+        },
+        {
+          "name": "Initial-field lab UI",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-09-05T21:40:19Z",
+          "completedAt": "2026-09-05T21:40:30Z",
+          "url": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33993713947/job/101380344697"
+        }
+      ],
+      "status": "completed",
+      "url": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33993713947"
+    },
+    "pr158_286c0c9": {
+      "conclusion": "",
+      "headSha": "286c0c9416a645ec4350b24ab9e9faca6584bb56",
+      "jobs": [
+        {
+          "name": "Wheel and CLI smoke",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-09-05T22:48:09Z",
+          "completedAt": "2026-09-05T22:49:07Z",
+          "url": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33996929420/job/101388986987"
+        },
+        {
+          "name": "Python 3.10 CPU",
+          "status": "in_progress",
+          "conclusion": "",
+          "startedAt": "2026-09-05T22:48:10Z",
+          "completedAt": "0001-01-01T00:00:00Z",
+          "url": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33996929420/job/101388987011"
+        },
+        {
+          "name": "Python 3.12 CPU",
+          "status": "in_progress",
+          "conclusion": "",
+          "startedAt": "2026-09-05T22:48:10Z",
+          "completedAt": "0001-01-01T00:00:00Z",
+          "url": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33996929420/job/101388987014"
+        },
+        {
+          "name": "Initial-field lab UI",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAt": "2026-09-05T22:48:09Z",
+          "completedAt": "2026-09-05T22:48:17Z",
+          "url": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33996929420/job/101388987039"
+        }
+      ],
+      "status": "in_progress",
+      "url": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/33996929420"
+    }
+  },
+  "root_reproduced": [
+    "nowcast_1/source_mask_default_quality.py",
+    "root/huber_public_input.py",
+    "root/weighted_loss_probe.py",
+    "sensitivity_1/v16_expected_probe.py",
+    "sensitivity_3/exo_wrong_impact.py",
+    "sensitivity_3/crosscheck_sensitivity_2_same_adjoint.py",
+    "cli/report_collision.py"
+  ],
+  "strengths": [
+    "nonnegative direct remap and explicit boundary outflow",
+    "fixed GN operator and true PCG residual",
+    "scale-normalized ensemble centering and stable core metrics",
+    "separate missing/clear/censored meanings",
+    "fixed A/B baseline domain",
+    "conservative unknown P0 branch status"
+  ],
+  "retracted": [
+    "factor3 for conjunctive intersection-union skill gate",
+    "wrong caller CRS as a new product defect",
+    "learned raw canonical fill must equal physical configurable clamp",
+    "source-time and forecast-time masks can be compared without advection",
+    "same-family rolling raw-slot overlap implies independent duplicate events"
+  ],
+  "adjudications": [
+    {
+      "agent": "artifacts",
+      "finding_index": 1,
+      "title": "P1 loader accepts inconsistent duplicated acceptance metadata",
+      "reviewer_severity": "P3",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Re-signed inconsistent duplicate metadata; nested numerical replay remains valid and downstream FSO rejects the false-negative flag.",
+      "location": "src/advar/linearization_artifact.py:610-725; 727-817",
+      "report": "reports/artifacts.json"
+    },
+    {
+      "agent": "cli",
+      "finding_index": 1,
+      "title": "Acceptance report output can overwrite an input artifact",
+      "reviewer_severity": "P2",
+      "root_status": "confirmed",
+      "root_priority": "P2",
+      "root_note": "Input artifact is overwritten by --report, then revalidation fails; scratch-only public CLI probe.",
+      "location": ".github/scripts/run_real_case_acceptance.py:25-31",
+      "report": "reports/cli.json"
+    },
+    {
+      "agent": "cli",
+      "finding_index": 2,
+      "title": "Acceptance artifact ancestry check is vulnerable to parent symlink replacement",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Forced concurrent parent symlink replacement; not an ordinary immutable input path.",
+      "location": "src/advar/acceptance.py:277-292, 351-367",
+      "report": "reports/cli.json"
+    },
+    {
+      "agent": "cli",
+      "finding_index": 3,
+      "title": "Acceptance manifest permits one artifact path to be counted in multiple cases",
+      "reviewer_severity": "P3",
+      "root_status": "unproven",
+      "root_priority": null,
+      "root_note": "Cross-case shared files can be intentional. No independent-case or uniqueness promise was established.",
+      "location": "src/advar/acceptance.py:148-159, 196-210",
+      "report": "reports/cli.json"
+    },
+    {
+      "agent": "geometry_build",
+      "finding_index": 1,
+      "title": "Caller precondition: range geometry coordinates are projected metre inputs",
+      "reviewer_severity": "info",
+      "root_status": "withdrawn",
+      "root_priority": null,
+      "root_note": "Projected-metre input is a documented caller precondition; the resolver does not certify arbitrary CRS.",
+      "location": "src/advar/range_geometry.py:110-156, 172-323, 432-459, 486-539; src/advar/promotion.py:13760-13825, 28040-28068",
+      "report": "reports/geometry_build.json"
+    },
+    {
+      "agent": "geometry_build",
+      "finding_index": 2,
+      "title": "Known historical scaffold note: builder/product activation genesis digests differ",
+      "reviewer_severity": "info",
+      "root_status": "known_scope",
+      "root_priority": null,
+      "root_note": "Existing DEP-002 in nonauthoritative historical deployment scaffold; not a new P0 current-product defect.",
+      "location": ".github/scripts/build_deployment_bundle.py:39-41, 1464-1477, 1627-1635; src/advar/promotion.py:130-132, 25353-25366, 25459-25467",
+      "report": "reports/geometry_build.json"
+    },
+    {
+      "agent": "intervention",
+      "finding_index": 1,
+      "title": "Intervention context omits source availability and can edit source-unavailable cells at zero physical norm",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P2",
+      "root_note": "Supported separate raw/source masks permit a no-effect raw correction with zero physical norm; normal pre-intersected producers limit occurrence.",
+      "location": "src/advar/intervention.py:705-718,738-934,962-998,1291-1473,1869-2029,2515-2704; src/advar/nowcast.py:4798-4853,4980-4993",
+      "report": "reports/intervention.json"
+    },
+    {
+      "agent": "intervention",
+      "finding_index": 2,
+      "title": "Malformed common-bias metadata is treated as diagonal observation error by the intervention guard",
+      "reviewer_severity": "P3",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Wrong-type raw analysis JSON; typed AnalysisConfig already rejects it.",
+      "location": "src/advar/intervention.py:1365-1374,1569-1583; src/advar/nowcast.py:5162-5166,5847-5869",
+      "report": "reports/intervention.json"
+    },
+    {
+      "agent": "lab_ci",
+      "finding_index": 1,
+      "title": "Benchmark loads verification NPY without an input resource or shape preflight",
+      "reviewer_severity": "P2",
+      "root_status": "unproven",
+      "root_priority": null,
+      "root_note": "Operator benchmark memory preflight opportunity. Post-run RSS/time thresholds are not proven hard input budgets; no OOM exercised.",
+      "location": "benchmarks/benchmark_variational_fso.py:96-103,121-140",
+      "report": "reports/lab_ci.json"
+    },
+    {
+      "agent": "lab_ci",
+      "finding_index": 2,
+      "title": "Manual MPS regression resolves an unpinned PyTorch version",
+      "reviewer_severity": "P2",
+      "root_status": "confirmed",
+      "root_priority": "P3",
+      "root_note": "Optional MPS workflow has unpinned Torch resolution; reproducibility issue, not a demonstrated backend numerical failure.",
+      "location": ".github/workflows/mps-certification.yml:15-18; pyproject.toml:11-16",
+      "report": "reports/lab_ci.json"
+    },
+    {
+      "agent": "ledger_1",
+      "finding_index": 1,
+      "title": "Case-insensitive raw-ingestor keys are accepted but normal receipts are compared by spelling",
+      "reviewer_severity": "P2",
+      "root_status": "confirmed",
+      "root_priority": "P3",
+      "root_note": "Accepted upper-case key hex disagrees with lower-case receipt producer; availability/config normalization.",
+      "location": "src/advar/ledger.py:864-887; src/advar/promotion.py:787-851, 968-1006",
+      "report": "reports/ledger_1.json"
+    },
+    {
+      "agent": "ledger_1",
+      "finding_index": 2,
+      "title": "Episode listing orders timezone-offset strings lexically rather than by instant",
+      "reviewer_severity": "P3",
+      "root_status": "confirmed",
+      "root_priority": "P3",
+      "root_note": "Aware timestamps with different offsets sort incorrectly as raw strings.",
+      "location": "src/advar/ledger.py:1293-1304 and 5080-5101",
+      "report": "reports/ledger_1.json"
+    },
+    {
+      "agent": "ledger_1",
+      "finding_index": 3,
+      "title": "ModelContract runtime type checks are missing for annotated provenance fields",
+      "reviewer_severity": "P3",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Wrong annotated provenance field type; no numerical or compatibility bypass demonstrated.",
+      "location": "src/advar/ledger.py:1248-1279 and 4962-5030",
+      "report": "reports/ledger_1.json"
+    },
+    {
+      "agent": "ledger_2",
+      "finding_index": 1,
+      "title": "Operational mosaic provenance accepts a valid source-coverage artifact from another issuance plan",
+      "reviewer_severity": "P1",
+      "root_status": "boundary",
+      "root_priority": "P2",
+      "root_note": "Cross-plan signed coverage accepted at operational provenance boundary; final normal holdout rechecks plan/mask. Current operational inference unsupported; no full decision fixture.",
+      "location": "src/advar/ledger.py:11342-11380 and 9906-9916",
+      "report": "reports/ledger_2.json"
+    },
+    {
+      "agent": "ledger_2",
+      "finding_index": 2,
+      "title": "Concurrent duplicate operational provenance append fails in the history side effect",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P2",
+      "root_note": "Concurrent identical provenance append fails idempotent history side effect; retry availability, not wrong forecast.",
+      "location": "src/advar/ledger.py:11472-11489, 11518-11599, and 10946-11059",
+      "report": "reports/ledger_2.json"
+    },
+    {
+      "agent": "ledger_3",
+      "finding_index": 1,
+      "title": "Operational issuance has no raw trust checkpoint on its final return",
+      "reviewer_severity": "P2",
+      "root_status": "unproven",
+      "root_priority": null,
+      "root_note": "Static final-check timing hypothesis. A check always has a later return interval; no full public race or linearization-point violation established.",
+      "location": "src/advar/ledger.py:15570-15614, 15778-15853 (resume branch also 14866-14887)",
+      "report": "reports/ledger_3.json"
+    },
+    {
+      "agent": "ledger_3",
+      "finding_index": 2,
+      "title": "A crash after replay-directory publication can permanently wedge retry",
+      "reviewer_severity": "P2",
+      "root_status": "unproven",
+      "root_priority": null,
+      "root_note": "Existing crash/retry candidate; source publication order known, typed process-death/restart reproduction still missing.",
+      "location": "src/advar/ledger.py:12159-12163, 12355-12393, 12403-12414, 22515-22536",
+      "report": "reports/ledger_3.json"
+    },
+    {
+      "agent": "ledger_4",
+      "finding_index": 1,
+      "title": "M0 active-set mask is not enforced against retained direct maps or nonemptiness",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Malformed externally supplied snapshot; normal producer has nonempty active support and masks maps.",
+      "location": "src/advar/ledger.py:22084-22094 and 22289-22328",
+      "report": "reports/ledger_4.json"
+    },
+    {
+      "agent": "ledger_4",
+      "finding_index": 2,
+      "title": "M0 tile L2 summaries are not checked against the corresponding map tiles",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Malformed tile norms can disagree with maps; normal producer derives them correctly.",
+      "location": "src/advar/ledger.py:22238-22255 and 22289-22323",
+      "report": "reports/ledger_4.json"
+    },
+    {
+      "agent": "ledger_4",
+      "finding_index": 3,
+      "title": "M0 direct observation impact is only checked for tile sum, not direct map times innovation",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Malformed impact can disagree with map times innovation; normal producer guarded.",
+      "location": "src/advar/ledger.py:22346-22382",
+      "report": "reports/ledger_4.json"
+    },
+    {
+      "agent": "nowcast_1",
+      "finding_index": 1,
+      "title": "Supplying source availability alone rejects the internally defaulted quality weights",
+      "reviewer_severity": "P2",
+      "root_status": "confirmed",
+      "root_priority": "P2",
+      "root_note": "Root reran public variational_nowcast: omitted quality rejected, explicit source-masked zero quality accepted.",
+      "location": "src/advar/nowcast.py:4787-4837; src/advar/variational.py:4005-4020,6539-6584",
+      "report": "reports/nowcast_1.json"
+    },
+    {
+      "agent": "nowcast_2",
+      "finding_index": 1,
+      "title": "Publication can emit forecasts below the state support-presence threshold",
+      "reviewer_severity": "P3",
+      "root_status": "unproven",
+      "root_priority": "P3",
+      "root_note": "Initial same-coordinate source-time/lead-time comparison invalid. Correct remap found no valid cell composed entirely of undefined state. Only configurable cutoff semantics remains.",
+      "location": "src/advar/nowcast.py:9645-9648, 9931-9954, 300-306, 586-609",
+      "report": "reports/nowcast_2.json"
+    },
+    {
+      "agent": "promotion_1",
+      "finding_index": 1,
+      "title": "Resolved source coverage accepts input and full-analysis digests unrelated to the scored run",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Coverage caller metadata accepted early, but final holdout compares input/full digests (13729-13737); original unguarded-scoring claim narrowed.",
+      "location": "src/advar/promotion.py:2571-2681, 3334-3560, 3592-3736, 3767-3991; src/advar/ledger.py:7847+",
+      "report": "reports/promotion_1.json"
+    },
+    {
+      "agent": "promotion_1",
+      "finding_index": 2,
+      "title": "Operational analysis-input provenance plans permit duplicate site/time slots that later make derivation impossible",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Malformed duplicate site/time plan rejected later by derivation; early-validation consistency.",
+      "location": "src/advar/promotion.py:1805-1860, 2167-2314",
+      "report": "reports/promotion_1.json"
+    },
+    {
+      "agent": "promotion_1",
+      "finding_index": 3,
+      "title": "Weighted training target loss can overflow on supported floating-point inputs",
+      "reviewer_severity": "P3",
+      "root_status": "confirmed",
+      "root_priority": "P2",
+      "root_note": "Root public probes: ordinary FP16 256x256 failure; FP32 representable weighted result becomes inf, masked-out extreme finite prediction produces NaN.",
+      "location": "src/advar/promotion.py:4537-4566, 4685-4717",
+      "report": "reports/promotion_1.json"
+    },
+    {
+      "agent": "promotion_2",
+      "finding_index": 1,
+      "title": "Physical-event catalog membership availability is not bound before scoring",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Availability timestamp mismatch accepted before scoring; final promotion rejects it. No final statistical bypass.",
+      "location": "src/advar/promotion.py:7776-7867, 8226-8356, 12420-12478; src/advar/ledger.py:7758-7845",
+      "report": "reports/promotion_2.json"
+    },
+    {
+      "agent": "promotion_3",
+      "finding_index": 1,
+      "title": "Holdout scoring silently floors off-grid sensitivity leads to another forecast frame",
+      "reviewer_severity": "P1",
+      "root_status": "source_confirmed",
+      "root_priority": "P2",
+      "root_note": "Floor indexing confirmed in helper and caller traced. Full signed public holdout fixture not assembled.",
+      "location": "src/advar/promotion.py:14451-14546, 14745-14749, 17130-17143; src/advar/sensitivity.py:8558-8618, 13270-13285, 13323-13334",
+      "report": "reports/promotion_3.json"
+    },
+    {
+      "agent": "promotion_3",
+      "finding_index": 2,
+      "title": "Top-level issuance-change policy fractions use score support instead of operational publication masks",
+      "reviewer_severity": "P1",
+      "root_status": "source_confirmed",
+      "root_priority": "P2",
+      "root_note": "Publication vs scoring support mismatch confirmed in helper/caller; full signed public promotion not executed.",
+      "location": "src/advar/promotion.py:14454-14472, 14525-14546, 21722-21736; src/advar/sensitivity.py:10838-10876, 13313-13336",
+      "report": "reports/promotion_3.json"
+    },
+    {
+      "agent": "promotion_3",
+      "finding_index": 3,
+      "title": "Prior uncertainty support and clear-sky scoring drops valid below-detection censored cells",
+      "reviewer_severity": "P1",
+      "root_status": "theory_followup",
+      "root_priority": "P2",
+      "root_note": "Point weights exclude all censored samples. Need event-specific interval/threshold semantics; never treat every censored sample as known clear. Full public promotion counterexample absent.",
+      "location": "src/advar/promotion.py:12603-12606, 12717-12720, 14221-14264, 16868-17026; src/advar/sensitivity.py:8341-8380",
+      "report": "reports/promotion_3.json"
+    },
+    {
+      "agent": "promotion_5",
+      "finding_index": 1,
+      "title": "Offline operational decision validation accepts a mismatched authority trust-store digest",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Signed wrong digest accepted offline; ordinary issuer writes current digest and current operational inference unsupported.",
+      "location": "src/advar/promotion.py:27152-27390, 27549-27626",
+      "report": "reports/promotion_5.json"
+    },
+    {
+      "agent": "promotion_5",
+      "finding_index": 2,
+      "title": "Promotion ledger sequence validation allows sequence two to point at genesis",
+      "reviewer_severity": "P3",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Signed sequence-2/genesis inconsistency accepted offline; live ledger checks predecessor.",
+      "location": "src/advar/promotion.py:24361-24399, 24716-24855",
+      "report": "reports/promotion_5.json"
+    },
+    {
+      "agent": "promotion_5",
+      "finding_index": 3,
+      "title": "Runtime activation validation does not enforce runtime expiry at or before release approval expiry",
+      "reviewer_severity": "P3",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Signed expiry pair outside normal issuer contract; runtime closure/file metadata patched in probe. No live deployment claim.",
+      "location": "src/advar/promotion.py:25318-25325, 25407-25475, 25527-25620",
+      "report": "reports/promotion_5.json"
+    },
+    {
+      "agent": "regression_gaps",
+      "finding_index": 1,
+      "title": "Zero-background velocity regression leaves the control update unconstrained",
+      "reviewer_severity": "P2",
+      "root_status": "test_note",
+      "root_priority": null,
+      "root_note": "Local zero-background test weak; other control/JVP tests partly cover mutant.",
+      "location": "tests/test_numerical_review.py:19-36",
+      "report": "reports/regression_gaps.json"
+    },
+    {
+      "agent": "regression_gaps",
+      "finding_index": 2,
+      "title": "Canonical-observation regression checks finiteness without checking that data affects the residual",
+      "reviewer_severity": "P2",
+      "root_status": "test_note",
+      "root_priority": null,
+      "root_note": "Local finite-only test weak; exact observation residual oracles exist elsewhere.",
+      "location": "tests/test_a2_numerics.py:51-67",
+      "report": "reports/regression_gaps.json"
+    },
+    {
+      "agent": "regression_gaps",
+      "finding_index": 3,
+      "title": "Censored FSO score regression has only zero residuals and reuses the score helper as its oracle",
+      "reviewer_severity": "P3",
+      "root_status": "test_note",
+      "root_priority": null,
+      "root_note": "Local zero-residual/self-score test weak; nonuniform nonzero M0 oracles exist elsewhere.",
+      "location": "tests/test_a2_fso.py:89-148; tests/test_a2_fso.py:180-265",
+      "report": "reports/regression_gaps.json"
+    },
+    {
+      "agent": "runtime",
+      "finding_index": 1,
+      "title": "Unresolved ldd dependencies are silently omitted from the sealed native closure",
+      "reviewer_severity": "medium",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Synthetic ldd unresolved-entry omission; known historical native-closure concern, not an actual broken Linux runtime.",
+      "location": "src/advar/runtime_closure.py:167-170",
+      "report": "reports/runtime.json"
+    },
+    {
+      "agent": "runtime",
+      "finding_index": 2,
+      "title": "Runtime closure validation can block indefinitely on a special file",
+      "reviewer_severity": "medium",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "FIFO helper hang reachable from stdlib or metadata-owned files in malformed runtime; normal regular-file wheels unaffected.",
+      "location": "src/advar/runtime_closure.py:51-63",
+      "report": "reports/runtime.json"
+    },
+    {
+      "agent": "runtime",
+      "finding_index": 3,
+      "title": "audit_transport accepts a supplied moved field with a different grid shape",
+      "reviewer_severity": "low",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Explicit moved= wrong-shape diagnostic input; internal normal nowcast constructs the matching grid.",
+      "location": "src/advar/diagnostics.py:91-112",
+      "report": "reports/runtime.json"
+    },
+    {
+      "agent": "sensitivity_1",
+      "finding_index": 1,
+      "title": "Current v16/v22 observation-error replay omits source-composed spatial quality and uncertainty for v15 inputs",
+      "reviewer_severity": "P1",
+      "root_status": "confirmed",
+      "root_priority": "P1",
+      "root_note": "Root reran current v22 public fixture; spatial quality/std omission confirmed. Temporal runtime role requires explicit separation from source-selection certification.",
+      "location": "src/advar/sensitivity.py:6642-6834",
+      "report": "reports/sensitivity_1.json"
+    },
+    {
+      "agent": "sensitivity_2",
+      "finding_index": 1,
+      "title": "Observation mask and error replay validators use torch.equal without enforcing tensor dtype",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "torch.equal dtype-insensitivity at standalone replay boundaries; normal current VerificationBundle dtype guard rejects these mutations.",
+      "location": "src/advar/sensitivity.py:4943-4969, 5028-5046, 5799-5865, 6959-7021",
+      "report": "reports/sensitivity_2.json"
+    },
+    {
+      "agent": "sensitivity_3",
+      "finding_index": 1,
+      "title": "Observation-removal replay drops the nominal neural prior and source-availability input",
+      "reviewer_severity": "P1",
+      "root_status": "confirmed",
+      "root_priority": "P1",
+      "root_note": "Root reran successful public removal vs re-inferred retained prior: scores .04431874046394474 vs .015242213929648809. Separate source-mask omission less fully exercised.",
+      "location": "src/advar/sensitivity.py:13018-13112",
+      "report": "reports/sensitivity_3.json"
+    },
+    {
+      "agent": "sensitivity_4",
+      "finding_index": 1,
+      "title": "Radar-dependent prior fallback is omitted from the physical initial-background derivative",
+      "reviewer_severity": "high",
+      "root_status": "confirmed",
+      "root_priority": "P2",
+      "root_note": "Partial-prior fallback physical channel missing despite +.01 actual initial-state change. Exploratory FSOI uses relaxed curvature tolerance; branch unknown, not certified learning.",
+      "location": "src/advar/variational.py:4182-4192; src/advar/sensitivity.py:16173-16184 and 9315-9322",
+      "report": "reports/sensitivity_4.json"
+    },
+    {
+      "agent": "sensitivity_4",
+      "finding_index": 2,
+      "title": "Zero Taylor probe is accepted and reports perfect linearity",
+      "reviewer_severity": "low",
+      "root_status": "diagnostic_question",
+      "root_priority": "P3",
+      "root_note": "Zero Taylor delta measures no variation; trivial linearity=1 alone is not an independent validation. Config semantics, not forecast arithmetic.",
+      "location": "src/advar/sensitivity.py:8653-8656 and 17961-18011",
+      "report": "reports/sensitivity_4.json"
+    },
+    {
+      "agent": "test_ledger",
+      "finding_index": 1,
+      "title": "Episode-impact schema migration test never verifies that existing rows survive",
+      "reviewer_severity": "P2",
+      "root_status": "test_note",
+      "root_priority": null,
+      "root_note": "Migration fixture has no historical rows; not a reproduced data-loss bug.",
+      "location": "tests/test_ledger.py:5538-5591",
+      "report": "reports/test_ledger.json"
+    },
+    {
+      "agent": "test_ledger",
+      "finding_index": 2,
+      "title": "Holdout-plan clock-crossing test does not assert transaction rollback",
+      "reviewer_severity": "P2",
+      "root_status": "test_note",
+      "root_priority": null,
+      "root_note": "Clock-rejection test lacks rollback assertions; not a reproduced commit-after-rejection.",
+      "location": "tests/test_ledger.py:1968-1995",
+      "report": "reports/test_ledger.json"
+    },
+    {
+      "agent": "test_ledger",
+      "finding_index": 3,
+      "title": "Standalone current promotion-evaluation loader has no row-list binding test",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Standalone decoded evaluation-list binding deserves direct negative test; current main promotion loader does check list/digests.",
+      "location": "src/advar/ledger.py:17440-17459; tests/test_ledger.py:4003-4101",
+      "report": "reports/test_ledger.json"
+    },
+    {
+      "agent": "test_nowcast",
+      "finding_index": 1,
+      "title": "Boolean background ages are accepted as minute counts",
+      "reviewer_severity": "P2",
+      "root_status": "unproven",
+      "root_priority": null,
+      "root_note": "Boolean-as-float permissiveness alone is not a demonstrated numeric failure.",
+      "location": "src/advar/nowcast.py:4299-4321",
+      "report": "reports/test_nowcast.json"
+    },
+    {
+      "agent": "test_nowcast",
+      "finding_index": 2,
+      "title": "Issuance contract does not enforce floating PSR metadata",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Rehashed wrong-type PSR metadata; ordinary metadata producer uses expected type.",
+      "location": "src/advar/nowcast.py:6693-6721",
+      "report": "reports/test_nowcast.json"
+    },
+    {
+      "agent": "test_promotion_1",
+      "finding_index": 1,
+      "title": "Exact product type regression test covers only four of sixteen required products",
+      "reviewer_severity": "P2",
+      "root_status": "test_note",
+      "root_priority": null,
+      "root_note": "Subset of exact-type regression cases; no runtime bypass proven.",
+      "location": "tests/test_promotion.py:5089-5115",
+      "report": "reports/test_promotion_1.json"
+    },
+    {
+      "agent": "test_promotion_1",
+      "finding_index": 2,
+      "title": "Full product promotion smoke test has no independent numerical oracle",
+      "reviewer_severity": "P2",
+      "root_status": "test_note",
+      "root_priority": null,
+      "root_note": "Unpatched end-to-end replay exists. Independent final score oracle remains a narrower opportunity.",
+      "location": "tests/test_promotion.py:3270-5053",
+      "report": "reports/test_promotion_1.json"
+    },
+    {
+      "agent": "test_promotion_1",
+      "finding_index": 3,
+      "title": "Replay dtype/device tests bypass the durable loader and append boundary",
+      "reviewer_severity": "P2",
+      "root_status": "test_note",
+      "root_priority": null,
+      "root_note": "Specific tests stop before persistence; do not infer all durable paths are untested.",
+      "location": "tests/test_promotion.py:3232-3269",
+      "report": "reports/test_promotion_1.json"
+    },
+    {
+      "agent": "test_promotion_2",
+      "finding_index": 1,
+      "title": "Semantic replay regression test replaces the shipped scorer with a fixture lambda",
+      "reviewer_severity": "P1",
+      "root_status": "test_note",
+      "root_priority": null,
+      "root_note": "Named test patches scorer; an unpatched integration test exists at 3270-4880.",
+      "location": "tests/test_promotion.py:8993-9010",
+      "report": "reports/test_promotion_2.json"
+    },
+    {
+      "agent": "test_promotion_2",
+      "finding_index": 2,
+      "title": "Quantized and conditional PIT tests accept constant wrong numerical outputs",
+      "reviewer_severity": "P2",
+      "root_status": "test_gap",
+      "root_priority": "P3",
+      "root_note": "Retain PIT-value oracle gap only. Independent NLL oracles reject constant nll=1.",
+      "location": "tests/test_promotion.py:10523-10554 and 10556-10596",
+      "report": "reports/test_promotion_2.json"
+    },
+    {
+      "agent": "test_promotion_2",
+      "finding_index": 3,
+      "title": "Family-wide simultaneous uncertainty test checks metadata but never checks statistical bounds",
+      "reviewer_severity": "P2",
+      "root_status": "test_gap",
+      "root_priority": "P3",
+      "root_note": "Full family/key oracle weak; other finite-sample bound and bootstrap-invariance tests exist.",
+      "location": "tests/test_promotion.py:10446-10478",
+      "report": "reports/test_promotion_2.json"
+    },
+    {
+      "agent": "test_promotion_3",
+      "finding_index": 1,
+      "title": "Operational geometry and partition tests stop at the permanent unsupported-deployment boundary",
+      "reviewer_severity": "P3",
+      "root_status": "test_note",
+      "root_priority": null,
+      "root_note": "Geometry names hide deliberate unsupported deployment stop; no current unsafe deployment.",
+      "location": "tests/test_promotion.py:10723-10882; fixture helper 8542-8754; src/advar/promotion.py:27407-27417, 28071-28078",
+      "report": "reports/test_promotion_3.json"
+    },
+    {
+      "agent": "test_promotion_3",
+      "finding_index": 2,
+      "title": "Public single-site range resolver accepts a tampered geometry contract without checking its digest",
+      "reviewer_severity": "P3",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Forged frozen single-site geometry contract reaches resolver; ordinary constructors and holdout plan digest guard present.",
+      "location": "src/advar/range_geometry.py:432-483; contrast 486-500; tests/test_promotion.py:10656-10697 and 1324-1328/1383-1387",
+      "report": "reports/test_promotion_3.json"
+    },
+    {
+      "agent": "test_promotion_3",
+      "finding_index": 3,
+      "title": "Candidate event-catalog binding test is tautological",
+      "reviewer_severity": "P3",
+      "root_status": "test_note",
+      "root_priority": null,
+      "root_note": "Tautological positive catalog test; producer has real mismatch checks.",
+      "location": "tests/test_promotion.py:11454-11466; source binding checks src/advar/promotion.py:12040-12063",
+      "report": "reports/test_promotion_3.json"
+    },
+    {
+      "agent": "test_promotion_4",
+      "finding_index": 1,
+      "title": "Legacy joint-min routing Brier is still an acceptance gate despite the diagnostic-only contract",
+      "reviewer_severity": "P2",
+      "root_status": "source_confirmed",
+      "root_priority": "P2",
+      "root_note": "README diagnostic-only joint-min conflicts with current conjunctive gate. Helper numbers/caller confirmed, full signed alternate-probability fixture absent.",
+      "location": "src/advar/promotion.py:20638-20653, 20822-20833, 22078-22208; tests/test_promotion.py:18102-18148",
+      "report": "reports/test_promotion_4.json"
+    },
+    {
+      "agent": "test_promotion_4",
+      "finding_index": 2,
+      "title": "Sample-size preflight accepts incomplete metric and issuance cell maps as feasible",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Explicit empty preflight maps accepted; normal compute path generates complete maps.",
+      "location": "src/advar/promotion.py:20849-20875, 20913-20940; tests/test_promotion.py:13058-13073 (coverage precedent)",
+      "report": "reports/test_promotion_4.json"
+    },
+    {
+      "agent": "test_sensitivity_1",
+      "finding_index": 1,
+      "title": "Current v22 source-composed quality and uncertainty are never asserted by the confirmatory fixture",
+      "reviewer_severity": "P1",
+      "root_status": "duplicate",
+      "root_priority": "P1",
+      "root_note": "Coverage evidence for A5-01; not a second product defect.",
+      "location": "tests/test_sensitivity.py:3912-4119",
+      "report": "reports/test_sensitivity_1.json"
+    },
+    {
+      "agent": "test_sensitivity_1",
+      "finding_index": 2,
+      "title": "M0 observation uncertainty is tested only for availability, so wrong whitening scale remains GREEN",
+      "reviewer_severity": "P3",
+      "root_status": "test_gap",
+      "root_priority": "P3",
+      "root_note": "M0 whitened numerical scale oracle weak, producer test currently availability focused.",
+      "location": "tests/test_sensitivity.py:617-627, 899-900",
+      "report": "reports/test_sensitivity_1.json"
+    },
+    {
+      "agent": "test_sensitivity_1",
+      "finding_index": 3,
+      "title": "Current-generation inverse-variance weighting has no independent numerical oracle in the verification tests",
+      "reviewer_severity": "P3",
+      "root_status": "test_gap",
+      "root_priority": "P3",
+      "root_note": "Current-generation weight composition needs independent numeric expectation; A5-01 is concrete motivating case.",
+      "location": "tests/test_sensitivity.py:2691-2779, 3814-4119",
+      "report": "reports/test_sensitivity_1.json"
+    },
+    {
+      "agent": "test_sensitivity_2",
+      "finding_index": 1,
+      "title": "Frozen P0 dynamics sensitivity drops accepted censored observations",
+      "reviewer_severity": "P1",
+      "root_status": "confirmed",
+      "root_priority": "P2",
+      "root_note": "Root reran same-adjoint crosscheck: 28 accepted censored cells, public map 0 vs unmasked max195673.1732. Nondefault thresholds, frozen branch unknown.",
+      "location": "src/advar/sensitivity.py:16275-16280, 16283-16306, 16376-16381",
+      "report": "reports/test_sensitivity_2.json"
+    },
+    {
+      "agent": "test_sensitivity_2",
+      "finding_index": 2,
+      "title": "VariationalAdjointConfig accepts Boolean values for float trust parameters",
+      "reviewer_severity": "P2",
+      "root_status": "unproven",
+      "root_priority": null,
+      "root_note": "Boolean numeric input permissiveness does not itself establish numerical/learning failure.",
+      "location": "src/advar/sensitivity.py:8891-8901; tests/test_sensitivity.py:5207-5245",
+      "report": "reports/test_sensitivity_2.json"
+    },
+    {
+      "agent": "test_variational",
+      "finding_index": 1,
+      "title": "P1 confidence regression test is self-consistent with a zero posterior",
+      "reviewer_severity": "high",
+      "root_status": "test_gap",
+      "root_priority": "P3",
+      "root_note": "Independent Hessian and zero-information covariance tests exist. Nontrivial public posterior-to-physical conversion remains weak.",
+      "location": "tests/test_variational.py:1907-1976",
+      "report": "reports/test_variational.json"
+    },
+    {
+      "agent": "test_variational",
+      "finding_index": 2,
+      "title": "Final polished stationarity test trusts producer-reported diagnostics",
+      "reviewer_severity": "high",
+      "root_status": "test_gap",
+      "root_priority": "P3",
+      "root_note": "Named polished diagnostic test self-consistent; other robust-gradient and sensitivity stationarity oracles partly cover path.",
+      "location": "tests/test_variational.py:3261-3311",
+      "report": "reports/test_variational.json"
+    },
+    {
+      "agent": "test_variational",
+      "finding_index": 3,
+      "title": "Operational posterior-dynamics saturation fallback has no regression test",
+      "reviewer_severity": "high",
+      "root_status": "test_note",
+      "root_priority": null,
+      "root_note": "Specific saturation rejection test absent; no runtime failure established by test absence alone.",
+      "location": "tests/test_variational.py:6395-6447 (only operational saturation test); src/advar/variational.py:7157-7177",
+      "report": "reports/test_variational.json"
+    },
+    {
+      "agent": "variational_1",
+      "finding_index": 1,
+      "title": "Pixel footprint radii and common-bias tile size have no grid or resource cap",
+      "reviewer_severity": "P2",
+      "root_status": "boundary",
+      "root_priority": "P3",
+      "root_note": "Explicit extreme footprint/tile settings; allocation calls intercepted before OOM, no ordinary-case resource failure.",
+      "location": "src/advar/variational.py:270-275,344-354,3978-3996,4919-4926",
+      "report": "reports/variational_1.json"
+    },
+    {
+      "agent": "variational_1",
+      "finding_index": 2,
+      "title": "Radial physical-motion control has zero AD sensitivity at exact speed saturation",
+      "reviewer_severity": "P2",
+      "root_status": "confirmed",
+      "root_priority": "P2",
+      "root_note": "Crossreview reached exact cap with normal estimator initialization; inward robust objective AD near0 vs finite decrease. One-sided boundary issue, no final solver false acceptance reproduced.",
+      "location": "src/advar/variational.py:8756-8809,8849-8854",
+      "report": "reports/variational_1.json"
+    },
+    {
+      "agent": "variational_2",
+      "finding_index": 1,
+      "title": "Accepted large pseudo Huber deltas collapse finite residual cost and gradient to zero",
+      "reviewer_severity": "P2",
+      "root_status": "confirmed",
+      "root_priority": "P3",
+      "root_note": "Root public raw20/21/20 inputs, FP32delta2e38 orFP64delta1e308: expected quadratic limit1.125, currentcost/gradient0; defaultdelta unaffected.",
+      "location": "src/advar/variational.py:6108-6112",
+      "report": "reports/variational_2.json"
+    }
+  ]
+}

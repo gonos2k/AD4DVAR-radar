@@ -740,6 +740,7 @@ class InterventionInputContext:
 
     _frames_dbz: Tensor
     _observation_masks: Tensor
+    _source_available_mask: Tensor
     _quality_weight: Tensor
     _observation_std_dbz: Tensor
     _background_frames_dbz: Tensor | None
@@ -773,6 +774,7 @@ class InterventionInputContext:
         radar_id: str,
         applicability_mask: Tensor,
         run: ForecastRunContract,
+        source_available_mask: Tensor | None = None,
     ) -> InterventionInputContext:
         run.validate_integrity()
         shape = frames_dbz.shape
@@ -782,6 +784,36 @@ class InterventionInputContext:
             raise ValueError("intervention frames must be floating [T,H,W]")
         if observation_masks.shape != shape or observation_masks.dtype != torch.bool:
             raise ValueError("intervention observation masks must match frames")
+        if source_available_mask is None:
+            source_available_mask = torch.ones_like(
+                observation_masks,
+                dtype=torch.bool,
+            )
+            if run.source_available_mask_digest is not None and (
+                tensor_digest(source_available_mask)
+                != run.source_available_mask_digest
+            ):
+                raise ValueError(
+                    "source availability is required for an unretained mask"
+                )
+        elif (
+            source_available_mask.shape != shape
+            or source_available_mask.dtype is not torch.bool
+            or source_available_mask.device != frames_dbz.device
+        ):
+            raise ValueError(
+                "source_available_mask must be boolean with the frame shape"
+            )
+        if run.source_available_mask_digest is None:
+            if source_available_mask is not None and not bool(
+                torch.all(source_available_mask)
+            ):
+                raise ValueError(
+                    "source availability is not retained by the input run"
+                )
+        elif tensor_digest(source_available_mask) != run.source_available_mask_digest:
+            raise ValueError("source availability disagrees with the input run")
+        effective_observation_mask = observation_masks & source_available_mask
         for name, value in (
             ("quality_weight", quality_weight),
             ("observation_std_dbz", observation_std_dbz),
@@ -794,17 +826,21 @@ class InterventionInputContext:
             raise ValueError("quality_weight must be inside [0, 1]")
         if bool(torch.any(observation_masks & ~torch.isfinite(frames_dbz))):
             raise ValueError("non-finite radar pixels must be observation-invalid")
-        if bool(torch.any(quality_weight.masked_select(~observation_masks) != 0.0)):
+        if bool(
+            torch.any(
+                quality_weight.masked_select(~effective_observation_mask) != 0.0
+            )
+        ):
             raise ValueError("invalid observations must have zero quality weight")
         if bool(torch.any(observation_std_dbz <= 0.0)):
             raise ValueError("observation_std_dbz must be positive")
         canonical_quality_weight = torch.where(
-            observation_masks,
+            effective_observation_mask,
             quality_weight,
             torch.zeros_like(quality_weight),
         )
         canonical_observation_std_dbz = torch.where(
-            observation_masks,
+            effective_observation_mask,
             observation_std_dbz,
             torch.ones_like(observation_std_dbz),
         )
@@ -896,6 +932,10 @@ class InterventionInputContext:
             ("_frames_dbz", frames_dbz.detach().clone()),
             ("_observation_masks", observation_masks.detach().clone()),
             (
+                "_source_available_mask",
+                source_available_mask.detach().clone(),
+            ),
+            (
                 "_quality_weight",
                 canonical_quality_weight.detach().clone(),
             ),
@@ -942,6 +982,14 @@ class InterventionInputContext:
         return self._observation_masks.clone()
 
     @property
+    def source_available_mask(self) -> Tensor:
+        return _source_mask(self).clone()
+
+    @property
+    def effective_observation_mask(self) -> Tensor:
+        return _effective_observation_mask(self).clone()
+
+    @property
     def quality_weight(self) -> Tensor:
         return self._quality_weight.clone()
 
@@ -960,10 +1008,11 @@ class InterventionInputContext:
         return self._applicability_mask.clone()
 
     def generator_tensor(self) -> Tensor:
-        finite_mask = torch.isfinite(self._frames_dbz)
+        effective_mask = _effective_observation_mask(self)
+        finite_mask = torch.isfinite(self._frames_dbz) & effective_mask
         frames = canonicalize_action_frames(
             self._frames_dbz,
-            self._observation_masks,
+            effective_mask,
             minimum_dbz=self.min_dbz,
             maximum_dbz=self.max_dbz,
             missing_fill_dbz=self.missing_fill_dbz,
@@ -987,7 +1036,7 @@ class InterventionInputContext:
         return torch.stack(
             (
                 frames,
-                self._observation_masks.to(frames),
+                effective_mask.to(frames),
                 finite,
                 self._quality_weight,
                 self._observation_std_dbz,
@@ -1301,6 +1350,24 @@ def _action_changed_mask(
     return action.override_mask
 
 
+def _effective_observation_mask(context: InterventionInputContext) -> Tensor:
+    """Return the cells represented by the physical, source-backed input."""
+
+    # Durable pre-source contexts are rebuilt by the legacy ledger loader and
+    # have no retained source channel.  Their historical contract treated all
+    # mask-valid cells as source-backed, so retain that interpretation here.
+    return context._observation_masks & _source_mask(context)
+
+
+def _source_mask(context: InterventionInputContext) -> Tensor:
+    """Return the retained source mask, with the historical all-ones default."""
+
+    source_mask = getattr(context, "_source_available_mask", None)
+    if source_mask is None:
+        return torch.ones_like(context._observation_masks, dtype=torch.bool)
+    return source_mask
+
+
 def _canonical_action_input_state(
     action: InterventionAction,
     context: InterventionInputContext,
@@ -1321,19 +1388,20 @@ def _canonical_action_input_state(
             action.replacement_dbz.to(frames),
             frames,
         )
+    effective_masks = masks & _source_mask(context)
     canonical_frames = canonicalize_action_frames(
         frames,
-        masks,
+        effective_masks,
         minimum_dbz=context.min_dbz,
         maximum_dbz=context.max_dbz,
         missing_fill_dbz=context.missing_fill_dbz,
     )
     canonical_quality = torch.where(
-        masks,
+        effective_masks,
         quality,
         torch.zeros_like(quality),
     )
-    return canonical_frames, masks, canonical_quality
+    return canonical_frames, effective_masks, canonical_quality
 
 
 def _action_changes_canonical_input(
@@ -1344,12 +1412,12 @@ def _action_changes_canonical_input(
 
     before_frames = canonicalize_action_frames(
         context._frames_dbz,
-        context._observation_masks,
+        _effective_observation_mask(context),
         minimum_dbz=context.min_dbz,
         maximum_dbz=context.max_dbz,
         missing_fill_dbz=context.missing_fill_dbz,
     )
-    before_masks = context._observation_masks
+    before_masks = _effective_observation_mask(context)
     before_quality = context._quality_weight
     after_frames, after_masks, after_quality = _canonical_action_input_state(
         action,
@@ -1423,9 +1491,8 @@ def _compute_action_safety(
     count = int(torch.count_nonzero(changed))
     changed_fraction = count / changed.numel()
     union = torch.any(changed, dim=0)
-    changed_invalid = int(
-        torch.count_nonzero(changed & ~context._observation_masks)
-    )
+    effective_mask = _effective_observation_mask(context)
+    changed_invalid = int(torch.count_nonzero(changed & ~effective_mask))
     union_count = int(torch.count_nonzero(union))
     area_km2 = union_count * resolved_cell_area_m2 / 1.0e6
     delta = torch.zeros_like(context._frames_dbz)
@@ -1433,11 +1500,26 @@ def _compute_action_safety(
     if isinstance(action, DbzCorrectionAction):
         delta = action.delta_dbz.to(delta)
     elif isinstance(action, QcMaskAction):
-        if bool(torch.any(action.valid_mask_after & ~context._observation_masks)):
-            raise ValueError("QC action cannot create observations from invalid pixels")
-        if bool(torch.any((action.quality_weight_after < 0.0) | (action.quality_weight_after > 1.0))):
+        if bool(torch.any(action.valid_mask_after & ~effective_mask)):
+            raise ValueError(
+                "QC action cannot create observations from invalid or "
+                "source-unavailable pixels"
+            )
+        if bool(
+            torch.any(
+                (action.quality_weight_after < 0.0)
+                | (action.quality_weight_after > 1.0)
+            )
+        ):
             raise ValueError("QC action quality weights must be inside [0, 1]")
-        if bool(torch.any(action.quality_weight_after.masked_select(~action.valid_mask_after) != 0.0)):
+        if bool(
+            torch.any(
+                action.quality_weight_after.masked_select(
+                    ~(action.valid_mask_after & effective_mask)
+                )
+                != 0.0
+            )
+        ):
             raise ValueError("QC-rejected observations must have zero quality weight")
         if bool(torch.any(action.quality_weight_after > context._quality_weight)):
             raise ValueError("prospective QC may only reject or deweight observations")
@@ -1451,8 +1533,13 @@ def _compute_action_safety(
             action.replacement_dbz.to(delta) - context._frames_dbz,
             torch.zeros_like(delta),
         )
-    if changed_invalid and not isinstance(action, QcMaskAction):
-        raise ValueError("dBZ actions cannot change invalid observations")
+    if changed_invalid:
+        if isinstance(action, QcMaskAction):
+            raise ValueError("QC actions cannot change source-unavailable pixels")
+        raise ValueError(
+            "dBZ actions cannot change invalid observations or source-unavailable "
+            "observations"
+        )
     finite = torch.isfinite(context._frames_dbz)
     if bool(torch.any((delta != 0.0) & ~finite)):
         raise ValueError("dBZ actions must be zero at non-finite observations")
@@ -1539,7 +1626,9 @@ def _compute_action_safety(
                 "generated action exceeds or is uncertain against its "
                 "changed-area safety limit"
             ) from error
-    finite_frames = changed_dbz.masked_select(finite)
+    finite_frames = changed_dbz.masked_select(
+        torch.isfinite(changed_dbz) & effective_mask
+    )
     floor_margin = (
         float(torch.amin(finite_frames - minimum_dbz))
         if finite_frames.numel()
@@ -1575,12 +1664,17 @@ def _run_uses_correlated_observation_error(run: ForecastRunContract) -> bool:
         raise ValueError("prospective action analysis config is invalid") from error
     if not isinstance(config, dict):
         raise ValueError("prospective action analysis config is invalid")
-    bias_std = config.get("observation_common_bias_std_dbz", 0.0)
-    return bool(
-        isinstance(bias_std, (int, float))
-        and not isinstance(bias_std, bool)
-        and bias_std > 0.0
-    )
+    if "observation_common_bias_std_dbz" not in config:
+        return False
+    bias_std = config["observation_common_bias_std_dbz"]
+    if (
+        isinstance(bias_std, bool)
+        or not isinstance(bias_std, (int, float))
+        or not math.isfinite(bias_std)
+        or bias_std < 0.0
+    ):
+        raise ValueError("prospective action analysis config is invalid")
+    return bias_std > 0.0
 
 
 def action_type(action: InterventionAction) -> ObservationInterventionType:
@@ -2566,6 +2660,10 @@ def validate_intervention_action_transition(
         != actual_input_after_context.radar_id
         or actual_input_before_context.context_schema_digest
         != actual_input_after_context.context_schema_digest
+        or not torch.equal(
+            _source_mask(actual_input_before_context),
+            _source_mask(actual_input_after_context),
+        )
         or actual_input_before_context.applicability_region_digest
         != actual_input_after_context.applicability_region_digest
         or not torch.equal(

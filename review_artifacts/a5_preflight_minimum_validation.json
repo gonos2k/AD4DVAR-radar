@@ -1,0 +1,21 @@
+{
+  "base_commit": "0512c2577d94c3e0f6f69a9af91646e78d984ae3",
+  "scope": "Follow-up direct preflight API validation, separate from the original CI fixture failure. No reachable normal producer or deployment bypass is claimed.",
+  "finding": "Complete explicit count maps could supply required=1 below a policy floor of10 and report feasible=True with only5 cell events.",
+  "resolution": "Metric required minimum must be at least max(per-cell requirement, deployment floor, continuous floor); issuance required minimum must be at least per-cell issuance requirement. Greater caller minima remain supported. The normal compute_neural_prior_promotion producer already derives these same floors.",
+  "tests": {
+    "final_related": "14 passed, 26 subtests passed in 80.47s (0:01:20)",
+    "new_oracle": "Four floor sources x four cases: lowered minimum rejected, sparse cell infeasible, exact boundary feasible, stricter minimum feasible.",
+    "counterfactual": "Four failures reproduced with the two original0512c25 validator functions restored in memory and focused fixture plan validation stubbed; see script and stdout.",
+    "typecheck": "0 errors, 0 warnings, 0 notes",
+    "limits": "No full local baseline rerun. Latest remote CI is checked separately."
+  },
+  "source_sha256": {
+    "src/advar/promotion.py": "fbe7b9f7f5d6f4c5dae6456ea5326d9fc8d095a6ecce5758920873a26caa3d47",
+    "tests/test_promotion.py": "ede65a7c253e8493bf45b003f2fc7817141fa29c46fb85e99a814b4d877761c6",
+    "tests/test_a5_loss_stats.py": "44bbc5f03bfc6ae5aadf3d65419e4f0c73c70e0a2662af87dfb57029057b7974",
+    "README.md": "7802acf82a2e5b779ebad25026652ac6a36c7e551fc236119cc73808715a6209"
+  },
+  "review": "Luna gpt-5.6-luna xhigh independent follow-up review, minimum-review.md.",
+  "README": "Clarifies effective metric event floor as max(individual, default deployment5, default continuous10)."
+}

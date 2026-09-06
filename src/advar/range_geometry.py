@@ -437,6 +437,7 @@ def resolve_range_geometry(
 ) -> RangePartitionEvidence:
     """Resolve range bands from projected coordinates without radar-frame values."""
 
+    contract.validate_integrity()
     x = grid_x_m.detach().clone()
     y = grid_y_m.detach().clone()
     if (

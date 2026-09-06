@@ -1,0 +1,13 @@
+{
+  "base_commit": "72bab534294a4e1340ca7f0d71e8eded3c362ca9",
+  "failed_ci": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/34004612074",
+  "failure": "Both CPU jobs stopped at collection: two new tests imported a tests namespace package unavailable under python -I. Wheel/CLI and UI jobs passed.",
+  "fix": "Import existing test modules directly, consistent with pytest tests-directory collection. Product source is unchanged.",
+  "validation": {
+    "before": "Local python -I collect reproduced both missing-tests imports.",
+    "after": "13 passed, 6 subtests passed in 12.86s with python -I.",
+    "collection": "1055 tests collected in 1.90s",
+    "scope": "Collection explicitly targets tracked tests/ because untracked graphify-out contains a separate user review checkout. It was preserved and is absent from GitHub CI.",
+    "latest_full_ci": "Pending next push. Earlier collection failure is not treated as success."
+  }
+}

@@ -4784,11 +4784,6 @@ class ForecastRunContract:
             raise ValueError(
                 "observation_masks must be boolean with the frame shape"
             )
-        accepted_quality_weight = (
-            observation_masks.to(frames_dbz)
-            if observation_quality_weight is None
-            else observation_quality_weight
-        )
         accepted_observation_std = (
             torch.full_like(frames_dbz, 2.0)
             if observation_std_dbz is None
@@ -4807,6 +4802,14 @@ class ForecastRunContract:
             raise ValueError(
                 "source_available_mask must be boolean with the frame shape"
             )
+        effective_observation_mask = (
+            observation_masks & accepted_source_available
+        )
+        accepted_quality_weight = (
+            effective_observation_mask.to(frames_dbz)
+            if observation_quality_weight is None
+            else observation_quality_weight
+        )
         for name, value in (
             ("observation_quality_weight", accepted_quality_weight),
             ("observation_std_dbz", accepted_observation_std),
@@ -4818,9 +4821,6 @@ class ForecastRunContract:
                 or not bool(torch.all(torch.isfinite(value)))
             ):
                 raise ValueError(f"{name} must be finite and match the frames")
-        effective_observation_mask = (
-            observation_masks & accepted_source_available
-        )
         if bool(
             torch.any(
                 (accepted_quality_weight < 0.0)
@@ -6716,6 +6716,7 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         metadata.motion_disagreement_px,
         metadata.motion_disagreement_mps,
         metadata.growth_disagreement,
+        metadata.minimum_phase_correlation_psr,
     )
     if any(value.dtype not in floating for value in float_tensors):
         raise ValueError("forecast run tensors must use float32 or float64")
@@ -6790,6 +6791,8 @@ def _validate_forecast_contract(result: ForecastResult) -> None:
         raise ValueError("motion_disagreement_mps must be scalar")
     if metadata.growth_disagreement.ndim != 0:
         raise ValueError("growth_disagreement must be scalar")
+    if metadata.minimum_phase_correlation_psr.ndim != 0:
+        raise ValueError("minimum_phase_correlation_psr must be scalar")
     if metadata.maximum_growth_saturation_excess.ndim != 0:
         raise ValueError("maximum_growth_saturation_excess must be scalar")
     if metadata.posterior_velocity_uncertainty_mps.ndim != 0:

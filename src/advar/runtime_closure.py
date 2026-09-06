@@ -48,7 +48,18 @@ def _runtime_file_snapshot(
 ) -> tuple[int, str]:
     if deployable:
         _require_deployable_ancestry(path.parent)
+    try:
+        path_metadata = path.lstat()
+    except OSError as error:
+        raise ValueError("deployment runtime file cannot be opened safely") from error
+    if stat.S_ISLNK(path_metadata.st_mode):
+        raise ValueError("deployment runtime file cannot be opened safely")
+    if not stat.S_ISREG(path_metadata.st_mode):
+        raise ValueError("deployment runtime file must be regular")
     flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+    # O_NONBLOCK makes the check bounded even if a concurrent replacement puts a
+    # FIFO at the pathname after lstat; fstat below validates the opened inode.
+    flags |= getattr(os, "O_NONBLOCK", 0)
     flags |= getattr(os, "O_NOFOLLOW", 0)
     try:
         descriptor = os.open(path, flags)
@@ -164,7 +175,14 @@ def _linked_native_libraries(
             raise ValueError(
                 "deployment native library closure is unreadable"
             ) from error
-        for line in completed.stdout.splitlines():
+        output = "\n".join(
+            value for value in (completed.stdout, completed.stderr) if value
+        )
+        for line in output.splitlines():
+            if re.search(r"\bnot found\b", line):
+                raise ValueError(
+                    "deployment native library closure has an unresolved dependency"
+                )
             match = re.search(r"(?:=>\s+)?(/[^\s]+)", line)
             if match is not None:
                 libraries.add(Path(match.group(1)).resolve(strict=True))
