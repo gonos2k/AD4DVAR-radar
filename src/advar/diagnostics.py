@@ -85,14 +85,17 @@ def audit_transport(
     cell: RemapCell | None = None,
     moved: Tensor | None = None,
 ) -> TransportAudit:
+    if echo.ndim != 2:
+        raise ValueError("transport echo must have shape [height, width]")
     echo, _ = validate_physical_echo(echo, name="transport input")
     cell = freeze_remap_cell(displacement_yx) if cell is None else cell
     validate_remap_cell(displacement_yx, cell)
-    moved = (
-        remap(echo, displacement_yx, cell=cell)
-        if moved is None
-        else validate_physical_echo(moved, name="transport output")[0]
-    )
+    if moved is None:
+        moved = remap(echo, displacement_yx, cell=cell)
+    else:
+        if moved.shape != echo.shape:
+            raise ValueError("transport output must have the same grid shape")
+        moved = validate_physical_echo(moved, name="transport output")[0]
     fraction_y, fraction_x = remap_fractions(
         echo,
         displacement_yx,

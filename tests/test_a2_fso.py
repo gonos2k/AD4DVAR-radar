@@ -22,6 +22,7 @@ from advar.sensitivity import (
     LearningApprovalEvidence,
     LearningEligibility,
     SensitivityConfig,
+    VerificationCellState,
     VariationalImpactChannel,
     VariationalLearningImpact,
     VariationalObservationPerturbation,
@@ -117,8 +118,36 @@ def test_current_v22_censored_weight_binds_p1_domain_and_score() -> None:
         config,
     )
 
-    assert float(bundle.fso_metric_weight.sum()) == 48.0
-    assert float(fso.metric_domain_weight_sum[0]) == 48.0
+    quality = bundle.quality_weight
+    observation_std = bundle.observation_std_dbz
+    observation_state = bundle.observation_state_code
+    error_contract = bundle.observation_error_contract
+    assert quality is not None
+    assert observation_std is not None
+    assert observation_state is not None
+    assert error_contract is not None
+    reference_std = error_contract.observation_error_reference_std_dbz
+    inverse_variance = torch.where(
+        bundle.valid_mask,
+        (
+            reference_std
+            / observation_std.clamp_min(torch.finfo(observation_std.dtype).tiny)
+        ).square().clamp(max=1.0),
+        torch.zeros_like(observation_std),
+    )
+    typed_weight = quality * inverse_variance * (
+        observation_state == VerificationCellState.OBSERVED_ECHO
+    )
+    expected_weight = torch.where(
+        bundle.spatial_metric_valid_mask,
+        typed_weight,
+        torch.zeros_like(typed_weight),
+    )
+    assert int(torch.count_nonzero(expected_weight > 0.0)) == 48
+    torch.testing.assert_close(bundle.fso_metric_weight, expected_weight)
+    torch.testing.assert_close(
+        fso.metric_domain_weight_sum[0], expected_weight.sum()
+    )
     assert torch.equal(fso.metric_available, expected_available)
     torch.testing.assert_close(fso.forecast_scores, expected_scores)
     assert fso.forecast_scores[0, 0].abs() < 1.0e-20
@@ -144,7 +173,9 @@ def test_current_v22_censored_weight_binds_p1_domain_and_score() -> None:
         ),
         sensitivity_config=config,
     )
-    assert float(fsoi.fso.metric_domain_weight_sum[0]) == 48.0
+    torch.testing.assert_close(
+        fsoi.fso.metric_domain_weight_sum[0], expected_weight.sum()
+    )
 
 
 def test_current_v22_spatial_gate_produces_no_fso_support() -> None:

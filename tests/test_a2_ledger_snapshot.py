@@ -133,6 +133,8 @@ class LedgerSnapshotA2Tests(unittest.TestCase):
                 norm=norm,
                 tile_norm=tile_norm,
                 whitened_tile_norm=whitened,
+                impact=None,
+                tile_impact=None,
             ),
             observation_std_dbz=std,
         )

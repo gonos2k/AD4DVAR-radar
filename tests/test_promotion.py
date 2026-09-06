@@ -5091,15 +5091,44 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "from_products"):
             promotion_module.ScoringReplayCaseArtifact()
         attacks = {
+            "manifest": SimpleNamespace(),
+            "plan": SimpleNamespace(),
             "candidate_forecast": SimpleNamespace(
                 **case.candidate_forecast.__dict__
             ),
+            "parent_forecast": SimpleNamespace(
+                **case.parent_forecast.__dict__
+            ),
+            "verification": SimpleNamespace(**case.verification.__dict__),
+            "metric_config": SimpleNamespace(**case.metric_config.__dict__),
             "candidate_prior_application": SimpleNamespace(
                 **case.candidate_prior_application.__dict__
             ),
+            "parent_prior_application": SimpleNamespace(
+                **case.parent_prior_application.__dict__
+            ),
             "candidate_prior_runner": SimpleNamespace(),
+            "parent_prior_runner": SimpleNamespace(),
+            "uncertainty_target": SimpleNamespace(
+                **case.uncertainty_target.__dict__
+            ),
+            "state_calibration_target": SimpleNamespace(
+                **case.state_calibration_target.__dict__
+            ),
             "regime_classifier": SimpleNamespace(
                 classifier_digest=case.regime_classifier.classifier_digest
+            ),
+            "regime_classifier_manifest": SimpleNamespace(
+                **case.regime_classifier_manifest.__dict__
+            ),
+            "operational_issuance_domain": SimpleNamespace(
+                **case.operational_issuance_domain.__dict__
+            ),
+            "analysis_input_derivation": SimpleNamespace(
+                **case.analysis_input_derivation.__dict__
+            ),
+            "global_raw_resolution_receipt": SimpleNamespace(
+                **case.global_raw_resolution_receipt.__dict__
             ),
         }
         for name, replacement in attacks.items():
@@ -5113,6 +5142,27 @@ class NeuralPriorPromotionTests(unittest.TestCase):
                         | {name: replacement}
                     )
                 )
+
+        with self.subTest(name="resolved_raw_observations"), self.assertRaisesRegex(
+            TypeError,
+            "exact receipt types",
+        ):
+            promotion_module.ScoringReplayCaseArtifact.from_products(
+                **(
+                    self.replay_case_product_kwargs(case)
+                    | {"resolved_raw_observations": (SimpleNamespace(),)}
+                )
+            )
+        with self.subTest(name="resolved_source_coverage"), self.assertRaisesRegex(
+            TypeError,
+            "exact product type",
+        ):
+            promotion_module.ScoringReplayCaseArtifact.from_products(
+                **(
+                    self.replay_case_product_kwargs(case)
+                    | {"resolved_source_coverage": SimpleNamespace()}
+                )
+            )
 
     def test_semantic_replay_detects_forecast_tensor_after_rehash_attempt(
         self,
@@ -14062,6 +14112,7 @@ class NeuralPriorPromotionTests(unittest.TestCase):
             config=SimpleNamespace(
                 digest="3" * 64,
                 interval_minutes=10,
+                horizon_minutes=60,
                 min_dbz=-10.0,
                 max_dbz=70.0,
             ),

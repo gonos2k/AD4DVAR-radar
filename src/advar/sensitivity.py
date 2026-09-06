@@ -4962,7 +4962,7 @@ class VerificationObservationMaskDerivationArtifact:
             or (
                 left is not None
                 and right is not None
-                and not bool(torch.equal(left, right))
+                and not _tensor_replay_matches(left, right)
             )
             for left, right in zip(expected, actual)
         ):
@@ -5038,7 +5038,7 @@ class VerificationObservationMaskDerivationArtifact:
                 or (
                     left is not None
                     and right is not None
-                    and not bool(torch.equal(left, right))
+                    and not _tensor_replay_matches(left, right)
                 )
                 for left, right in zip(expected, self._output_tensors)
             )
@@ -5437,7 +5437,7 @@ class VerificationObservationDerivationInputs:
                     or (
                         expected is not None
                         and actual is not None
-                        and not bool(torch.equal(expected, actual))
+                        and not _tensor_replay_matches(expected, actual)
                     )
                     for expected, actual in zip(
                         derived_values,
@@ -5560,7 +5560,7 @@ class VerificationObservationDerivationInputs:
                 or (
                     expected is not None
                     and actual is not None
-                    and not bool(torch.equal(expected, actual))
+                    and not _tensor_replay_matches(expected, actual)
                 )
                 for expected, actual in zip(expected_values, actual_values)
             ):
@@ -5784,6 +5784,17 @@ class VerificationCellState(IntEnum):
     STALE_ACQUISITION = 7
 
 
+def _tensor_replay_matches(expected: Tensor, actual: Tensor) -> bool:
+    """Require tensor structure as well as values for replay evidence."""
+
+    return (
+        expected.shape == actual.shape
+        and expected.dtype == actual.dtype
+        and expected.device == actual.device
+        and bool(torch.equal(expected, actual))
+    )
+
+
 def _validate_verification_cell_states(
     *,
     frames_dbz: Tensor,
@@ -5802,6 +5813,20 @@ def _validate_verification_cell_states(
         or observation_state_code.device != frames_dbz.device
     ):
         raise ValueError("verification observation-state tensor is invalid")
+    if (
+        valid_mask.dtype is not torch.bool
+        or valid_mask.shape != frames_dbz.shape
+        or valid_mask.device != frames_dbz.device
+    ):
+        raise ValueError("verification valid-mask tensor is invalid")
+    for tensor in (quality_weight, observation_std_dbz):
+        if (
+            not tensor.is_floating_point()
+            or tensor.dtype != frames_dbz.dtype
+            or tensor.shape != frames_dbz.shape
+            or tensor.device != frames_dbz.device
+        ):
+            raise ValueError("verification observation-error tensor is invalid")
     detection_threshold = (
         torch.full_like(frames_dbz, minimum_detectable_echo_dbz)
         if detection_limit_dbz is None
@@ -6750,6 +6775,7 @@ def _derive_verification_observation_error_tensors(
         "verification-observation-derivation-inputs-v12",
         "verification-observation-derivation-inputs-v13",
         "verification-observation-derivation-inputs-v14",
+        "verification-observation-derivation-inputs-v15",
     }:
         mask_derivation = cast(
             VerificationObservationMaskDerivationArtifact,
@@ -6816,6 +6842,9 @@ def _derive_verification_observation_error_tensors(
         )
         baseline_quality = baseline_quality * spatial_quality
         baseline_std = baseline_std * spatial_std_multiplier
+        # Source selection v5 uses the analytic temporal codomain only for
+        # certification.  The selected source still receives the separately
+        # declared runtime age quality and representativeness-error terms.
         acquisition_age = cast(Tensor, raw_inputs.acquisition_age_seconds)
         temporal_decay = torch.exp(
             -torch.pow(
@@ -6973,7 +7002,7 @@ class ObservationErrorDerivationArtifact:
             or (
                 expected is not None
                 and actual is not None
-                and not bool(torch.equal(expected, actual))
+                and not _tensor_replay_matches(expected, actual)
             )
             for expected, actual in zip(derived, supplied)
         ):
@@ -7013,7 +7042,7 @@ class ObservationErrorDerivationArtifact:
                 or (
                     expected is not None
                     and actual is not None
-                    and not bool(torch.equal(expected, actual))
+                    and not _tensor_replay_matches(expected, actual)
                 )
                 for expected, actual in zip(derived, current)
             )
@@ -8654,6 +8683,8 @@ class SensitivityConfig:
             math.isfinite(value) for value in self.linearity_delta
         ):
             raise ValueError("linearity_delta must contain three finite values")
+        if not any(value != 0.0 for value in self.linearity_delta):
+            raise ValueError("linearity_delta must define a nonzero probe")
         if (
             not math.isfinite(self.pair_conflict_trust_penalty)
             or not 0.0 < self.pair_conflict_trust_penalty <= 1.0
@@ -9304,21 +9335,39 @@ def _physical_radar_channels(
             delta_dbz[0],
             torch.zeros_like(delta_dbz[0]),
         )
-    elif frozen.neural_prior_dependency == "radar_dependent":
-        if neural_prior_runner is None:
-            raise ValueError("radar-dependent prior perturbation requires a runner")
-        _validate_retained_prior_runner(
-            frozen,
-            neural_prior_runner,
-            neural_prior_application,
+    elif frozen.neural_prior_dependency is not None:
+        prior_valid = _neural_prior_derivative_mask(frozen)
+        fallback = (
+            observations.detected_mask[0]
+            & frozen.observed_mask[0]
+            & ~prior_valid
         )
-        background[0] = torch.where(
-            _neural_prior_derivative_mask(frozen),
-            neural_prior_runner.jvp(
-                _require_bound_neural_prior_input(frozen),
-                delta_dbz,
-            ),
-            torch.zeros_like(background[0]),
+        prior_background = torch.zeros_like(background[0])
+        if frozen.neural_prior_dependency == "radar_dependent":
+            if neural_prior_runner is None:
+                raise ValueError(
+                    "radar-dependent prior perturbation requires a runner"
+                )
+            _validate_retained_prior_runner(
+                frozen,
+                neural_prior_runner,
+                neural_prior_application,
+            )
+            prior_background = torch.where(
+                prior_valid,
+                neural_prior_runner.jvp(
+                    _require_bound_neural_prior_input(frozen),
+                    delta_dbz,
+                ),
+                prior_background,
+            )
+        # A missing/unsupported prior cell consumes the observation-derived
+        # first-frame value.  Its physical input derivative is therefore the
+        # identity even when neighboring cells use the neural prior.
+        background[0] = prior_background + torch.where(
+            fallback,
+            delta_dbz[0],
+            torch.zeros_like(delta_dbz[0]),
         )
     dynamics = torch.zeros_like(delta_dbz)
     if frozen.baseline_metadata.tendency_source is TendencySource.OBSERVATION:
@@ -13015,6 +13064,167 @@ def compute_variational_fsoi(
     )
 
 
+def _removal_source_available_mask(
+    result: ForecastResult,
+    observation_shape: torch.Size,
+    supplied: Tensor | None,
+) -> Tensor | None:
+    """Recover source availability only when the nominal run can bind it."""
+
+    expected_digest = result.run.source_available_mask_digest
+    if supplied is None:
+        if expected_digest is None:
+            return None
+        all_available = torch.ones(
+            observation_shape,
+            dtype=torch.bool,
+            device=result.run.latest_frame_dbz.device,
+        )
+        if expected_digest != tensor_digest(all_available):
+            raise ValueError(
+                "observation removal requires the nominal source availability mask"
+            )
+        return all_available
+    if (
+        supplied.shape != observation_shape
+        or supplied.dtype is not torch.bool
+        or supplied.device != result.run.latest_frame_dbz.device
+    ):
+        raise ValueError(
+            "source_available_mask must be Boolean with the observation grid shape"
+        )
+    if expected_digest is None or tensor_digest(supplied) != expected_digest:
+        raise ValueError(
+            "source_available_mask does not match the nominal forecast run"
+        )
+    return supplied.detach().clone()
+
+
+def _removal_neural_prior(
+    result: ForecastResult,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    *,
+    changed_qc: Tensor,
+    source_available_mask: Tensor | None,
+    neural_prior_runner: NeuralPriorInferenceRunner | None,
+    neural_prior_application: NeuralPriorApplication | None,
+) -> NeuralPriorApplication | None:
+    """Reapply the nominal prior model at the removal-input evaluation point."""
+
+    dependency = frozen.neural_prior_dependency
+    if dependency is None:
+        if neural_prior_runner is not None or neural_prior_application is not None:
+            raise ValueError("observation removal received an unexpected neural prior")
+        return None
+    if neural_prior_runner is None:
+        raise ValueError(
+            "observation removal requires the nominal neural-prior inference runner"
+        )
+    if frozen.neural_prior_role not in ("candidate", "parent"):
+        raise ValueError("retained neural-prior role is missing")
+    if frozen.neural_prior_execution_contract_digest is None:
+        raise ValueError("retained neural-prior execution contract is missing")
+    if (
+        neural_prior_runner.execution_contract_digest
+        != frozen.neural_prior_execution_contract_digest
+    ):
+        raise ValueError("neural-prior runner does not match the nominal model")
+    if neural_prior_runner.dependency != dependency:
+        raise ValueError("neural-prior runner dependency disagrees with the nominal run")
+    deployment_selection = None
+    if neural_prior_application is not None:
+        neural_prior_application.validate_integrity()
+        if (
+            neural_prior_application.application_digest
+            != frozen.neural_prior_application_digest
+            or neural_prior_application.dependency != dependency
+            or neural_prior_application.role != frozen.neural_prior_role
+            or neural_prior_application.inference_evidence.execution_contract_digest
+            != frozen.neural_prior_execution_contract_digest
+        ):
+            raise ValueError("nominal neural-prior application does not match the P1")
+        deployment_selection = neural_prior_application.deployment_selection
+    if deployment_selection is not None:
+        raise ValueError(
+            "observation removal cannot re-infer an operational neural-prior deployment"
+        )
+    analysis_values = (
+        None
+        if result.run.analysis_config_json is None
+        else json.loads(result.run.analysis_config_json)
+    )
+    if isinstance(analysis_values, dict) and analysis_values.get(
+        "execution_mode"
+    ) == "operational":
+        raise ValueError(
+            "observation removal cannot re-infer an operational neural prior"
+        )
+    changed_valid = observations.valid_mask & changed_qc
+    effective_valid = (
+        changed_valid
+        if source_available_mask is None
+        else changed_valid & source_available_mask
+    )
+    changed_quality = observations.quality_weight * effective_valid.to(
+        observations.quality_weight
+    )
+    changed_std = torch.where(
+        effective_valid,
+        observations.std_dbz,
+        torch.ones_like(observations.std_dbz),
+    )
+    run = result.run
+    input_run = ForecastRunContract.from_inputs(
+        frozen.nowcast_config,
+        frozen.input_frames_dbz,
+        changed_valid,
+        frozen.background_frames_dbz,
+        frozen.background_age_minutes,
+        observation_quality_weight=changed_quality,
+        observation_std_dbz=changed_std,
+        source_available_mask=source_available_mask,
+        grid_time_contract=frozen.grid_time_contract,
+        analysis_config_json=run.analysis_config_json,
+        analysis_config_digest=run.analysis_config_digest,
+        analysis_input_digest=run.analysis_input_digest,
+        operational_calibration_manifest_json=(
+            run.operational_calibration_manifest_json
+        ),
+        operational_calibration_manifest_digest=(
+            run.operational_calibration_manifest_digest
+        ),
+        operational_calibration_approval_digest=(
+            run.operational_calibration_approval_digest
+        ),
+        operational_data_identity_json=run.operational_data_identity_json,
+        operational_data_identity_digest=run.operational_data_identity_digest,
+        input_plan_json=run.input_plan_json,
+        input_plan_digest=run.input_plan_digest,
+    )
+    if neural_prior_runner.learned_input_feature_contract is None:
+        return neural_prior_runner.infer(
+            frozen.input_frames_dbz,
+            input_run=input_run,
+            role=cast(Literal["candidate", "parent"], frozen.neural_prior_role),
+            deployment_selection=deployment_selection,
+        )
+    return neural_prior_runner.infer(
+        frozen.input_frames_dbz,
+        input_run=input_run,
+        role=cast(Literal["candidate", "parent"], frozen.neural_prior_role),
+        deployment_selection=deployment_selection,
+        qc_valid_mask=changed_valid,
+        quality_weight=changed_quality,
+        observation_std_dbz=changed_std,
+        source_available_mask=(
+            torch.ones_like(changed_valid, dtype=torch.bool)
+            if source_available_mask is None
+            else source_available_mask
+        ),
+    )
+
+
 def compute_variational_observation_removal_impact(
     result: ForecastResult,
     analysis: AnalysisResult | P1LinearizationState,
@@ -13023,6 +13233,9 @@ def compute_variational_observation_removal_impact(
     *,
     sensitivity_config: SensitivityConfig | None = None,
     removal_config: ObservationRemovalConfig | None = None,
+    neural_prior_runner: NeuralPriorInferenceRunner | None = None,
+    neural_prior_application: NeuralPriorApplication | None = None,
+    source_available_mask: Tensor | None = None,
 ) -> ObservationRemovalImpact:
     """Rebuild P0/P1 and forecast after removing accepted observations.
 
@@ -13047,6 +13260,11 @@ def compute_variational_observation_removal_impact(
         raise ValueError("removal mask must match the observation grid")
     if bool(torch.any(mask & ~observations.valid_mask)):
         raise ValueError("only accepted observations can be removed")
+    source_mask = _removal_source_available_mask(
+        result,
+        observations.valid_mask.shape,
+        source_available_mask,
+    )
     removal = removal_config or ObservationRemovalConfig()
     removed_count = int(torch.count_nonzero(mask))
     valid_count = int(torch.count_nonzero(observations.valid_mask))
@@ -13079,6 +13297,28 @@ def compute_variational_observation_removal_impact(
 
     original_qc = ~observations.qc_rejected_mask
     changed_qc = original_qc & ~mask
+    changed_valid = observations.valid_mask & changed_qc
+    changed_quality = observations.quality_weight * changed_valid.to(
+        observations.quality_weight
+    )
+    if source_mask is not None:
+        changed_quality = changed_quality * source_mask.to(changed_quality)
+    changed_std = torch.where(
+        changed_valid
+        if source_mask is None
+        else changed_valid & source_mask,
+        observations.std_dbz,
+        torch.ones_like(observations.std_dbz),
+    )
+    removed_prior = _removal_neural_prior(
+        result,
+        observations,
+        frozen,
+        changed_qc=changed_qc,
+        source_available_mask=source_mask,
+        neural_prior_runner=neural_prior_runner,
+        neural_prior_application=neural_prior_application,
+    )
     manifest = _operational_manifest_from_run(result)
     identity = _operational_identity_from_run(result)
     operations_per_apply = _observation_whitener_operations_per_apply(
@@ -13092,9 +13332,10 @@ def compute_variational_observation_removal_impact(
             frozen.input_frames_dbz,
             nowcast_config=frozen.nowcast_config,
             analysis_config=frozen.analysis_config,
-            observation_std_dbz=observations.std_dbz,
-            quality_weight=observations.quality_weight,
+            observation_std_dbz=changed_std,
+            quality_weight=changed_quality,
             qc_mask=changed_qc,
+            source_available_mask=source_mask,
             observation_common_bias_group_index=(
                 observations.common_bias_group_index
             ),
@@ -13109,6 +13350,7 @@ def compute_variational_observation_removal_impact(
                 result.run.operational_calibration_approval_digest
             ),
             operational_data_identity=identity,
+            neural_prior=removed_prior,
         )
     removed_linearization = removed_analysis.linearization
     if (
@@ -13267,9 +13509,16 @@ def _resolved_forecast_scores(
         float("nan"),
     )
     available = torch.zeros_like(scores, dtype=torch.bool)
-    for lead_index, minutes in enumerate(leads):
-        step = minutes // nowcast.interval_minutes
-        forecast_index = step - 1
+    issued_leads = tuple(
+        range(
+            nowcast.interval_minutes,
+            nowcast.horizon_minutes + 1,
+            nowcast.interval_minutes,
+        )
+    )
+    forecast_indices = _full_map_indices(leads, issued_leads)
+    for lead_index, forecast_index in enumerate(forecast_indices):
+        step = forecast_index + 1
         forecast, _ = _freeze_output_cap(
             forecast_linear_at_step(state, step, nowcast),
             nowcast,
@@ -13319,9 +13568,16 @@ def _resolved_forecast_domain_weights(
     """Return one frozen metric-domain weight per requested lead."""
 
     finite = verification.valid_mask & torch.isfinite(verification.frames_dbz)
+    issued_leads = tuple(
+        range(
+            result.run.config.interval_minutes,
+            result.run.config.horizon_minutes + 1,
+            result.run.config.interval_minutes,
+        )
+    )
+    forecast_indices = _full_map_indices(leads, issued_leads)
     weights = []
-    for minutes in leads:
-        forecast_index = minutes // result.run.config.interval_minutes - 1
+    for forecast_index in forecast_indices:
         weights.append(
             _metric_domain_weight(
                 result,
@@ -15596,7 +15852,8 @@ def _compute_variational_products(
             if adjoint_config.warm_start_by_metric:
                 warm_solutions[metric_index] = adjoint_solve.solution
             observation_sensitivity = adjoint_solve.sensitivity
-            background_sensitivity = (
+            background_sensitivity, background_field_sensitivity = cast(
+                tuple[Tensor, Tensor],
                 _frozen_initial_background_observation_sensitivity(
                     adjoint_solve.solution,
                     control,
@@ -15610,18 +15867,30 @@ def _compute_variational_products(
                     valid=valid,
                     nowcast_config=nowcast_config,
                     sensitivity_config=sensitivity_config,
-                )
+                    return_field_sensitivity=True,
+                ),
             )
             prior_input_sensitivity = background_sensitivity
-            if frozen.neural_prior_dependency == "exogenous":
-                prior_input_sensitivity = torch.zeros_like(background_sensitivity)
-            elif frozen.neural_prior_dependency == "radar_dependent":
-                assert neural_prior_runner is not None
-                assert validated_prior_input is not None
-                prior_cotangent = torch.where(
-                    _neural_prior_derivative_mask(frozen),
+            prior_valid: Tensor | None = None
+            fallback = torch.zeros_like(background_sensitivity)
+            if frozen.neural_prior_dependency is not None:
+                prior_valid = _neural_prior_derivative_mask(frozen)
+                fallback[0] = torch.where(
+                    observations.valid_mask[0]
+                    & frozen.observed_mask[0]
+                    & ~prior_valid,
                     background_sensitivity[0],
                     torch.zeros_like(background_sensitivity[0]),
+                )
+                prior_input_sensitivity = fallback
+            if frozen.neural_prior_dependency == "radar_dependent":
+                assert neural_prior_runner is not None
+                assert validated_prior_input is not None
+                assert prior_valid is not None
+                prior_cotangent = torch.where(
+                    prior_valid,
+                    background_field_sensitivity[0],
+                    torch.zeros_like(background_field_sensitivity[0]),
                 )
                 prior_log_std_cotangent = (
                     _frozen_neural_prior_log_std_sensitivity(
@@ -15642,10 +15911,13 @@ def _compute_variational_products(
                             prior_log_std_cotangent,
                         ),
                     )
-                    prior_input_sensitivity = neural_prior_runner.vjp_components(
-                        derivative_input,
-                        prior_cotangent,
-                        prior_log_std_cotangent,
+                    prior_input_sensitivity = (
+                        fallback
+                        + neural_prior_runner.vjp_components(
+                            derivative_input,
+                            prior_cotangent,
+                            prior_log_std_cotangent,
+                        )
                     )
             dynamics_sensitivity = (
                 _frozen_baseline_dynamics_observation_sensitivity(
@@ -16118,7 +16390,8 @@ def _frozen_initial_background_observation_sensitivity(
     valid: Tensor,
     nowcast_config: NowcastConfig,
     sensitivity_config: SensitivityConfig,
-) -> Tensor:
+    return_field_sensitivity: bool = False,
+) -> Tensor | tuple[Tensor, Tensor]:
     """Differentiate accepted first-frame values through the P1 background.
 
     The active field, P0-derived baseline dynamics, remap cells, observation
@@ -16176,19 +16449,28 @@ def _frozen_initial_background_observation_sensitivity(
     if not frozen.observation_derived_initial_background:
         if frozen.neural_prior_valid_mask is None:
             raise ValueError("neural-prior background validity is missing")
-        accepted_first_frame = frozen.neural_prior_valid_mask
+        prior_valid = frozen.neural_prior_valid_mask
+        accepted_first_frame = prior_valid | (
+            observations.valid_mask[0]
+            & frozen.observed_mask[0]
+            & ~prior_valid
+        )
+    field_sensitivity = direct + implicit
     first_frame = torch.where(
         accepted_first_frame,
-        direct + implicit,
+        field_sensitivity,
         torch.zeros_like(initial_background),
     )
-    return torch.cat(
+    observation_sensitivity = torch.cat(
         (
             first_frame.unsqueeze(0),
             torch.zeros_like(observations.dbz[1:]),
         ),
         dim=0,
     ).detach()
+    if return_field_sensitivity:
+        return observation_sensitivity, field_sensitivity.detach()
+    return observation_sensitivity
 
 
 def _frozen_neural_prior_log_std_sensitivity(
@@ -16272,7 +16554,7 @@ def _prepare_frozen_baseline_dynamics_path(
         raise ValueError(
             "frozen P0 dynamics path does not reproduce the baseline state"
         )
-    active = observations.detected_mask & frozen.observed_mask
+    active = observations.valid_mask & frozen.observed_mask
     return _FrozenBaselineDynamicsPath(
         active_mask=active,
         nominal_dynamics=nominal_dynamics.detach(),
@@ -16540,6 +16822,11 @@ def _validate_variational_observation_perturbation(
             if frozen.neural_prior_valid_mask is None:
                 raise ValueError("neural-prior perturbation lacks a valid mask")
             active[0] = frozen.neural_prior_valid_mask
+            active[0] |= (
+                observations.valid_mask[0]
+                & frozen.observed_mask[0]
+                & ~frozen.neural_prior_valid_mask
+            )
         else:
             active[0] = observations.valid_mask[0] & frozen.observed_mask[0]
         _validate_perturbation_tensor(

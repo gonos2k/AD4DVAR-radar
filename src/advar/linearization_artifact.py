@@ -665,13 +665,14 @@ def _validate_loaded_state(state: P1LinearizationState) -> None:
     ):
         raise ValueError("P1 artifact stationarity diagnostics mismatch")
     config = linearization.frozen.analysis_config
-    if not _stationarity_is_acceptable(
+    final_linearization_stationary = _stationarity_is_acceptable(
         stationarity,
         block_tolerance=(
             config.final_linearization_relative_stationarity_tolerance
         ),
         field_max_tolerance=config.final_field_gradient_max_tolerance,
-    ):
+    )
+    if not final_linearization_stationary:
         raise ValueError("P1 artifact final linearization is not stationary")
     robust = _robust_stationarity(
         state.control,
@@ -713,15 +714,89 @@ def _validate_loaded_state(state: P1LinearizationState) -> None:
         for left, right in zip(robust_stored, robust_actual, strict=True)
     ):
         raise ValueError("P1 artifact robust diagnostics mismatch")
-    if (
-        not _stationarity_is_acceptable(
+    final_robust_stationary = _stationarity_is_acceptable(
+        robust,
+        block_tolerance=config.final_robust_relative_stationarity_tolerance,
+        field_max_tolerance=config.final_field_gradient_max_tolerance,
+    )
+    final_irls_fixed_point = (
+        math.isfinite(weight_change)
+        and weight_change <= config.final_irls_relative_weight_tolerance
+    )
+    if not final_robust_stationary or not final_irls_fixed_point:
+        raise ValueError("P1 artifact is not a robust IRLS fixed point")
+
+    # These values are duplicated in the compact state for callers that do
+    # not inspect the nested linearization.  Replay determines the predicates
+    # below; accepting a conflicting copy would make the artifact's public
+    # eligibility metadata depend on which representation a caller trusts.
+    duplicated_diagnostics = (
+        ("linearization_residual_norm", linearization.residual_norm),
+        ("linearization_gradient_norm", linearization.gradient_norm),
+        ("linearization_field_gradient_rms", linearization.field_gradient_rms),
+        ("linearization_field_gradient_max", linearization.field_gradient_max),
+        (
+            "linearization_dynamics_gradient_max",
+            linearization.dynamics_gradient_max,
+        ),
+        (
+            "linearization_relative_stationarity",
+            linearization.relative_stationarity,
+        ),
+        ("robust_gradient_norm", linearization.robust_gradient_norm),
+        (
+            "robust_field_gradient_rms",
+            linearization.robust_field_gradient_rms,
+        ),
+        ("robust_field_gradient_max", linearization.robust_field_gradient_max),
+        (
+            "robust_dynamics_gradient_max",
+            linearization.robust_dynamics_gradient_max,
+        ),
+        (
+            "robust_relative_stationarity",
+            linearization.robust_relative_stationarity,
+        ),
+        (
+            "irls_relative_weight_change",
+            linearization.irls_relative_weight_change,
+        ),
+        ("linearization_polish_iterations", linearization.polish_iterations),
+    )
+    if any(
+        getattr(state, name) != expected
+        for name, expected in duplicated_diagnostics
+    ):
+        raise ValueError("P1 artifact duplicated diagnostics mismatch")
+
+    expected_converged = (
+        final_linearization_stationary
+        and _stationarity_is_acceptable(
             robust,
             block_tolerance=config.final_robust_relative_stationarity_tolerance,
             field_max_tolerance=config.final_field_gradient_max_tolerance,
         )
-        or weight_change > config.final_irls_relative_weight_tolerance
+        and final_irls_fixed_point
+    )
+    expected_flags = (
+        ("converged", expected_converged),
+        ("used_fallback", False),
+        ("degraded", False),
+        ("final_linearization_stationary", final_linearization_stationary),
+        ("final_robust_stationary", final_robust_stationary),
+        ("final_irls_fixed_point", final_irls_fixed_point),
+    )
+    expected_eligibility = expected_converged
+    expected_flags += (
+        ("p1_forecast_eligible", expected_eligibility),
+        ("posterior_eligible", expected_eligibility),
+        ("fso_eligible", expected_eligibility),
+    )
+    if any(
+        type(getattr(state, name)) is not bool or getattr(state, name) != expected
+        for name, expected in expected_flags
     ):
-        raise ValueError("P1 artifact is not a robust IRLS fixed point")
+        raise ValueError("P1 artifact acceptance flags mismatch")
 
 
 def load_p1_linearization(

@@ -80,33 +80,26 @@ def _safe_relative_path(value: str) -> PurePosixPath:
     return candidate
 
 
-def _read_single_snapshot(path: Path, *, maximum_bytes: int) -> bytes:
-    flags = os.O_RDONLY
-    if hasattr(os, "O_NOFOLLOW"):
-        flags |= os.O_NOFOLLOW
-    descriptor = os.open(path, flags)
-    try:
-        before = os.fstat(descriptor)
-        if not stat.S_ISREG(before.st_mode) or before.st_mode & 0o022:
-            raise ValueError("acceptance artifact must be regular and non-writable")
-        if before.st_size <= 0 or before.st_size > maximum_bytes:
-            raise ValueError("acceptance artifact size is invalid")
-        data = bytearray()
-        while len(data) < before.st_size:
-            block = os.read(descriptor, min(1024 * 1024, before.st_size - len(data)))
-            if not block:
-                break
-            data.extend(block)
-        after = os.fstat(descriptor)
-        if (
-            len(data) != before.st_size
-            or (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
-            != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns)
-        ):
-            raise ValueError("acceptance artifact changed during validation")
-        return bytes(data)
-    finally:
-        os.close(descriptor)
+def _read_snapshot_descriptor(descriptor: int, *, maximum_bytes: int) -> bytes:
+    before = os.fstat(descriptor)
+    if not stat.S_ISREG(before.st_mode) or before.st_mode & 0o022:
+        raise ValueError("acceptance artifact must be regular and non-writable")
+    if before.st_size <= 0 or before.st_size > maximum_bytes:
+        raise ValueError("acceptance artifact size is invalid")
+    data = bytearray()
+    while len(data) < before.st_size:
+        block = os.read(descriptor, min(1024 * 1024, before.st_size - len(data)))
+        if not block:
+            break
+        data.extend(block)
+    after = os.fstat(descriptor)
+    if (
+        len(data) != before.st_size
+        or (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
+        != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns)
+    ):
+        raise ValueError("acceptance artifact changed during validation")
+    return bytes(data)
 
 
 @dataclass(frozen=True)
@@ -274,22 +267,74 @@ class RealCaseAcceptanceManifest:
         return manifest
 
 
-def _artifact_path(root: Path, relative_path: str) -> Path:
+def _read_artifact_snapshot(
+    root: Path,
+    relative_path: str,
+    *,
+    maximum_bytes: int,
+) -> bytes:
+    """Read a relative artifact through one bound directory-fd chain.
+
+    Checking parent paths and then opening a pathname leaves a replacement of a
+    checked directory free to redirect the read.  Directory descriptors bind
+    each component before the next component is resolved, while O_NOFOLLOW and
+    the descriptor type checks reject symlink or special-file substitutions.
+    """
+
     relative = _safe_relative_path(relative_path)
-    retained = root
-    root_metadata = retained.lstat()
-    if not stat.S_ISDIR(root_metadata.st_mode) or root_metadata.st_mode & 0o022:
-        raise ValueError("acceptance artifact root must be non-writable")
-    for part in relative.parts[:-1]:
-        retained = retained / part
-        metadata = retained.lstat()
-        if (
-            not stat.S_ISDIR(metadata.st_mode)
-            or stat.S_ISLNK(metadata.st_mode)
-            or metadata.st_mode & 0o022
-        ):
-            raise ValueError("acceptance artifact ancestry is unsafe")
-    return retained / relative.parts[-1]
+    directory_flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    retained_descriptors: list[int] = []
+    try:
+        root_descriptor = os.open(root, directory_flags)
+        retained_descriptors.append(root_descriptor)
+        root_metadata = os.fstat(root_descriptor)
+        if not stat.S_ISDIR(root_metadata.st_mode) or root_metadata.st_mode & 0o022:
+            raise ValueError("acceptance artifact root must be non-writable")
+        parent_descriptor = root_descriptor
+        for part in relative.parts[:-1]:
+            child_descriptor = os.open(
+                part,
+                directory_flags,
+                dir_fd=parent_descriptor,
+            )
+            retained_descriptors.append(child_descriptor)
+            child_metadata = os.fstat(child_descriptor)
+            if (
+                not stat.S_ISDIR(child_metadata.st_mode)
+                or child_metadata.st_mode & 0o022
+            ):
+                raise ValueError("acceptance artifact ancestry is unsafe")
+            parent_descriptor = child_descriptor
+
+        file_flags = (
+            os.O_RDONLY
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NONBLOCK", 0)
+        )
+        if hasattr(os, "O_NOFOLLOW"):
+            file_flags |= os.O_NOFOLLOW
+        descriptor = os.open(
+            relative.parts[-1],
+            file_flags,
+            dir_fd=parent_descriptor,
+        )
+        try:
+            return _read_snapshot_descriptor(
+                descriptor,
+                maximum_bytes=maximum_bytes,
+            )
+        finally:
+            os.close(descriptor)
+    except OSError as error:
+        raise ValueError("acceptance artifact cannot be opened safely") from error
+    finally:
+        for descriptor in reversed(retained_descriptors):
+            os.close(descriptor)
 
 
 def _load_sample_size_preflight(
@@ -300,8 +345,11 @@ def _load_sample_size_preflight(
 ) -> tuple[int, str]:
     from .promotion import PromotionSampleSizePreflight
 
-    path = _artifact_path(root, manifest.sample_size_preflight_relative_path)
-    data = _read_single_snapshot(path, maximum_bytes=maximum_artifact_bytes)
+    data = _read_artifact_snapshot(
+        root,
+        manifest.sample_size_preflight_relative_path,
+        maximum_bytes=maximum_artifact_bytes,
+    )
     file_digest = sha256(data).hexdigest()
     if file_digest != manifest.sample_size_preflight_file_sha256:
         raise ValueError("sample-size preflight file digest mismatch")
@@ -363,8 +411,11 @@ def verify_real_case_acceptance(
     verified_files: list[dict[str, object]] = []
     for case in manifest.cases:
         for reference in case.artifacts:
-            path = _artifact_path(root, reference.relative_path)
-            data = _read_single_snapshot(path, maximum_bytes=maximum_artifact_bytes)
+            data = _read_artifact_snapshot(
+                root,
+                reference.relative_path,
+                maximum_bytes=maximum_artifact_bytes,
+            )
             digest = sha256(data).hexdigest()
             if digest != reference.file_sha256:
                 raise ValueError("acceptance artifact file digest mismatch")

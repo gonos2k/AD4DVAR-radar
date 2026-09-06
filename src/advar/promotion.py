@@ -95,6 +95,7 @@ from .sensitivity import (
     _load_learning_policy_trust_store,
     _metric_domain_weight,
     _resolve_verification,
+    _full_map_indices,
     _resolved_forecast_domain_weights,
     _resolved_forecast_scores,
     _validate_current_verification_projected_grid,
@@ -880,6 +881,17 @@ class RawIngestorTrustStore:
         return None
 
 
+def _same_public_key_hex(first: object, second: object) -> bool:
+    """Compare equivalent hexadecimal spellings of one public key."""
+
+    if not isinstance(first, str) or not isinstance(second, str):
+        return False
+    try:
+        return bytes.fromhex(first) == bytes.fromhex(second)
+    except (TypeError, ValueError):
+        return False
+
+
 @dataclass(frozen=True)
 class ResolvedRawObservationReceipt:
     """Post-ingest binding of one planned slot to canonical raw content."""
@@ -959,17 +971,20 @@ class ResolvedRawObservationReceipt:
     ) -> None:
         identity = self.raw_volume_identity
         attestation = self.raw_volume_attestation
+        approved_key = trust_store.approved_key(
+            attestation.raw_ingestor_id,
+            at=attestation.received_at,
+        )
         if (
             self.slot_plan_digest != slot.slot_digest
             or identity.radar_site_digest != slot.radar_site_digest
             or identity.acquisition_valid_time != slot.acquisition_valid_time
             or identity.canonical_scan_identity_digest
             != slot.scan_strategy_rule_digest
-            or trust_store.approved_key(
-                attestation.raw_ingestor_id,
-                at=attestation.received_at,
+            or not _same_public_key_hex(
+                approved_key,
+                attestation.raw_ingestor_public_key_hex,
             )
-            != attestation.raw_ingestor_public_key_hex
         ):
             raise ValueError("resolved raw observation disagrees with its slot")
 
@@ -1109,12 +1124,18 @@ class MissingRawObservationReceipt:
         slot: RawObservationSlotPlan,
         trust_store: RawIngestorTrustStore,
     ) -> None:
+        approved_key = trust_store.approved_key(
+            self.authority_id,
+            at=self.observed_at,
+        )
         if (
             self.slot_plan_digest != slot.slot_digest
             or self.radar_site_digest != slot.radar_site_digest
             or self.acquisition_valid_time != slot.acquisition_valid_time
-            or trust_store.approved_key(self.authority_id, at=self.observed_at)
-            != self.authority_public_key_hex
+            or not _same_public_key_hex(
+                approved_key,
+                self.authority_public_key_hex,
+            )
         ):
             raise ValueError("missing observation disagrees with its slot")
 
@@ -1838,6 +1859,17 @@ class OperationalAnalysisInputProvenancePlan:
                 raise ValueError(
                     "single-site operational provenance topology disagrees"
                 )
+            expected_slot_keys = {
+                (valid_time, geometry.radar_site_digest)
+                for valid_time in self.input_plan.valid_times
+            }
+            if {
+                (item.acquisition_valid_time, item.radar_site_digest)
+                for item in slots
+            } != expected_slot_keys or len(slots) != len(expected_slot_keys):
+                raise ValueError(
+                    "single-site operational provenance slots are not one per time"
+                )
         else:
             mosaic = cast(MosaicRangeGeometryContract, geometry)
             if issuance.radar_source_kind != "mosaic":
@@ -1853,6 +1885,18 @@ class OperationalAnalysisInputProvenancePlan:
                     raise ValueError(
                         "mosaic operational provenance topology disagrees"
                     )
+            expected_slot_keys = {
+                (valid_time, radar_site_digest)
+                for valid_time in self.input_plan.valid_times
+                for radar_site_digest in mosaic.radar_site_digests
+            }
+            if {
+                (item.acquisition_valid_time, item.radar_site_digest)
+                for item in slots
+            } != expected_slot_keys or len(slots) != len(expected_slot_keys):
+                raise ValueError(
+                    "mosaic operational provenance slots are not one per site and time"
+                )
             if {item.source_selection_rule_digest for item in slots} != {
                 mosaic.source_selection_policy_digest
             }:
@@ -4676,7 +4720,12 @@ def _validate_training_target_snapshot(
         or not bool(torch.all((quality >= 0.0) & (quality <= 1.0)))
         or not bool(torch.any(valid_mask))
         or bool(torch.any(quality.masked_select(~valid_mask) != 0.0))
-        or float(quality.masked_select(valid_mask).sum()) <= 0.0
+        or float(
+            quality.masked_select(valid_mask)
+            .to(torch.promote_types(quality.dtype, torch.float32))
+            .sum()
+            .detach()
+        ) <= 0.0
         or bool(torch.any(target.masked_select(~valid_mask) != 0.0))
     ):
         raise ValueError("training target snapshot semantics are invalid")
@@ -4690,7 +4739,13 @@ def weighted_training_target_loss(
     *,
     sample_weight: float = 1.0,
 ) -> Tensor:
-    """Return the product-owned mask-first, quality-weighted squared loss."""
+    """Return the mask-first, quality-weighted squared loss.
+
+    Accumulation promotes half inputs to float32 and otherwise keeps the
+    common floating dtype (at least float32); the returned loss has that
+    accumulator dtype. The target mask and quality are fixed snapshot
+    metadata; the differentiated training variable is ``prediction``.
+    """
 
     if (
         not isinstance(prediction, Tensor)
@@ -4707,14 +4762,56 @@ def weighted_training_target_loss(
         quality,
         expected_shape=tuple(target.shape),
     )
-    effective_weight = (
-        valid_mask.to(dtype=quality.dtype) * quality * sample_weight
+    # The scalar sample weight is applied to both terms of this per-sample
+    # weighted mean, so it cancels mathematically.  Keep validating it above,
+    # but omit it from the arithmetic to avoid overflow of an otherwise
+    # representable ratio for very large finite scalars.
+    accumulator_dtype = torch.promote_types(prediction.dtype, torch.float32)
+    accumulator_dtype = torch.promote_types(accumulator_dtype, target.dtype)
+    accumulator_dtype = torch.promote_types(accumulator_dtype, quality.dtype)
+    safe_quality = quality.to(accumulator_dtype)
+    active = valid_mask & (quality > 0.0)
+    active_quality = torch.where(
+        active,
+        safe_quality,
+        torch.zeros_like(safe_quality),
     )
-    denominator = effective_weight.sum()
-    if not bool(torch.isfinite(denominator)) or float(denominator) <= 0.0:
+    quality_scale = torch.amax(active_quality)
+    if not bool(torch.isfinite(quality_scale)) or float(quality_scale.detach()) <= 0.0:
         raise ValueError("training target effective weight is zero")
-    squared_error = (prediction - target).square()
-    return (effective_weight * squared_error).sum() / denominator
+    normalized_quality = active_quality / quality_scale
+    normalized_sum = normalized_quality.sum()
+    if not bool(torch.isfinite(normalized_sum)) or float(
+        normalized_sum.detach()
+    ) <= 0.0:
+        raise ValueError("training target effective weight is zero")
+    positive_quality = normalized_quality > 0.0
+    sqrt_quality = torch.sqrt(
+        torch.where(
+            positive_quality,
+            normalized_quality,
+            torch.ones_like(normalized_quality),
+        )
+    )
+    root_weight = torch.where(
+        positive_quality,
+        sqrt_quality,
+        torch.zeros_like(sqrt_quality),
+    ) / torch.sqrt(normalized_sum)
+    # Replace inactive predictions before arithmetic.  This keeps an excluded
+    # finite value whose square overflows from creating 0 * inf = NaN.  Halving
+    # both operands before subtraction also keeps opposite finite extrema in
+    # range; the casts retain the prediction graph.
+    safe_prediction = prediction.to(accumulator_dtype)
+    safe_target = target.to(accumulator_dtype)
+    masked_prediction = torch.where(active, safe_prediction, safe_target)
+    weighted_half_error = (
+        (0.5 * masked_prediction - 0.5 * safe_target) * root_weight
+    )
+    loss = (2.0 * weighted_half_error).square().sum()
+    if not bool(torch.isfinite(loss)):
+        raise ValueError("training target weighted loss is not finite")
+    return loss
 
 
 def encode_training_tensor_archive(tensors: dict[str, Tensor]) -> str:
@@ -12525,6 +12622,68 @@ def _validate_physical_event_catalogs_against_plan(
         raise ValueError("candidate scoring receipt family disagrees with holdout plan")
 
 
+def _verification_event_weight(
+    verification: VerificationBundle,
+    index: int,
+    *,
+    support_threshold_dbz: float,
+) -> Tensor:
+    """Return quality/inverse-variance weight for known support events.
+
+    Point-observation weights intentionally exclude censored cells.  A
+    censored interval is nevertheless a known non-event when the support
+    threshold lies strictly above its detection limit; below that boundary
+    the interval overlaps both support outcomes and contributes no event
+    evidence.
+    """
+
+    point_weight = verification.metric_weight[index].to(verification.frames_dbz)
+    if verification.quality_weight is None:
+        return point_weight
+    quality = cast(Tensor, verification.quality_weight)[index]
+    observation_std = cast(Tensor, verification.observation_std_dbz)[index]
+    error_contract = cast(
+        Any,
+        verification.observation_error_contract,
+    )
+    reference = observation_std.new_tensor(
+        error_contract.observation_error_reference_std_dbz
+    )
+    inverse_variance = torch.where(
+        verification.valid_mask[index],
+        (reference / observation_std.clamp_min(
+            torch.finfo(observation_std.dtype).tiny
+        )).square().clamp(max=1.0),
+        torch.zeros_like(observation_std),
+    )
+    event_weight = quality * inverse_variance
+    state = cast(Tensor, verification.observation_state_code)[index]
+    detection_limit = (
+        cast(Tensor, verification.detection_limit_dbz)[index]
+        if verification.detection_limit_dbz is not None
+        else observation_std.new_full(
+            observation_std.shape,
+            error_contract.minimum_detectable_echo_dbz,
+        )
+    )
+    censored = state == VerificationCellState.BELOW_DETECTION_CENSORED
+    threshold = detection_limit.new_tensor(support_threshold_dbz)
+    # Detection limits are derived through several floating-point geometric
+    # operations.  Treat a representational ulp at the support boundary as
+    # equality; otherwise a nominal threshold of -10 dBZ could accidentally
+    # turn an interval ending at -10 dBZ into a known clear event.
+    scale = torch.maximum(
+        torch.ones_like(detection_limit),
+        torch.maximum(detection_limit.abs(), threshold.abs()),
+    )
+    boundary_tolerance = 8.0 * torch.finfo(detection_limit.dtype).eps * scale
+    known_censored_clear = censored & (
+        threshold > detection_limit + boundary_tolerance
+    )
+    known_event = ~censored | known_censored_clear
+    return torch.where(known_event, event_weight, torch.zeros_like(event_weight))
+
+
 @dataclass(frozen=True, init=False)
 class PriorUncertaintyTarget:
     """Independent, withheld target used only for uncertainty calibration."""
@@ -12585,7 +12744,12 @@ class PriorUncertaintyTarget:
         index = matches[0]
         target_dbz = verification.frames_dbz[index]
         valid_mask = verification.valid_mask[index]
-        echo_support = valid_mask & (target_dbz >= plan.support_threshold_dbz)
+        observation_state = cast(Tensor, verification.observation_state_code)[index]
+        echo_support = (
+            valid_mask
+            & (observation_state == VerificationCellState.OBSERVED_ECHO)
+            & (target_dbz >= plan.support_threshold_dbz)
+        )
         target_plan_digest = plan.plan_digest
         source_digest = verification.content_digest
         independence_evidence_digest = plan.independence_evidence_digest
@@ -12602,7 +12766,11 @@ class PriorUncertaintyTarget:
             raise ValueError("prior uncertainty target tensors are invalid")
         target = target_dbz.detach().clone()
         valid = valid_mask.detach().clone()
-        quality = verification.metric_weight[index].to(target).detach().clone()
+        quality = _verification_event_weight(
+            verification,
+            index,
+            support_threshold_dbz=plan.support_threshold_dbz,
+        ).to(target).detach().clone()
         support = echo_support.detach().clone()
         target_digest = json_digest(
             {
@@ -12716,8 +12884,17 @@ class NeuralPriorStateCalibrationTarget:
         index = matches[0]
         target = verification.frames_dbz[index].detach().clone()
         valid = verification.valid_mask[index].detach().clone()
-        quality = verification.metric_weight[index].to(target).detach().clone()
-        support = valid & (target >= plan.support_threshold_dbz)
+        quality = _verification_event_weight(
+            verification,
+            index,
+            support_threshold_dbz=plan.support_threshold_dbz,
+        ).to(target).detach().clone()
+        observation_state = cast(Tensor, verification.observation_state_code)[index]
+        support = (
+            valid
+            & (observation_state == VerificationCellState.OBSERVED_ECHO)
+            & (target >= plan.support_threshold_dbz)
+        )
         if (
             target.ndim != 2
             or not target.is_floating_point()
@@ -13177,6 +13354,50 @@ class RangeBandEvaluation:
 
     def parent_component_score(self, component: str) -> float | None:
         return dict(self.parent_uncertainty_component_scores).get(component)
+
+
+def _issuance_change_fractions(
+    candidate_mask: Tensor,
+    parent_mask: Tensor,
+    eligible_mask: Tensor,
+) -> tuple[Tensor, Tensor]:
+    """Compute new-issuance and withdrawal rates on the eligible domain.
+
+    The three inputs are selected full-lead boolean masks with shape
+    ``(lead, y, x)``. New issuance uses the operational-domain cell count;
+    withdrawal uses the corresponding parent-issued count. A zero
+    denominator contributes zero because no event is estimable for that
+    lead, matching the typed evaluation contract.
+    """
+
+    masks = (candidate_mask, parent_mask, eligible_mask)
+    if (
+        any(mask.dtype is not torch.bool or mask.ndim != 3 for mask in masks)
+        or any(
+            mask.shape != candidate_mask.shape
+            or mask.device != candidate_mask.device
+            for mask in masks[1:]
+        )
+    ):
+        raise ValueError("issuance masks must be aligned full-lead booleans")
+    candidate_issued = candidate_mask & eligible_mask
+    parent_issued = parent_mask & eligible_mask
+    domain_count = torch.count_nonzero(eligible_mask, dim=(-2, -1))
+    parent_count = torch.count_nonzero(parent_issued, dim=(-2, -1))
+    newly_count = torch.count_nonzero(
+        candidate_issued & ~parent_issued,
+        dim=(-2, -1),
+    )
+    withdrawn_count = torch.count_nonzero(
+        parent_issued & ~candidate_issued,
+        dim=(-2, -1),
+    )
+    return (
+        newly_count.to(torch.float64)
+        / domain_count.clamp_min(1).to(torch.float64),
+        withdrawn_count.to(torch.float64)
+        / parent_count.clamp_min(1).to(torch.float64),
+    )
 
 
 @dataclass(frozen=True, init=False)
@@ -14449,6 +14670,14 @@ class PriorHoldoutEvaluation:
         if metric_config.digest != case.metric_contract_digest:
             raise ValueError("metric contract is not registered by the holdout plan")
         leads = metric_config.full_map_lead_minutes
+        issued_leads = tuple(
+            range(
+                candidate_forecast.run.config.interval_minutes,
+                candidate_forecast.run.config.horizon_minutes + 1,
+                candidate_forecast.run.config.interval_minutes,
+            )
+        )
+        forecast_indices = _full_map_indices(leads, issued_leads)
         if operational_issuance_domain.lead_minutes != leads:
             raise ValueError("operational issuance domain has the wrong leads")
         issuance_mask = operational_issuance_domain.eligible_mask
@@ -14525,25 +14754,22 @@ class PriorHoldoutEvaluation:
         finite = resolved_candidate.valid_mask & torch.isfinite(
             resolved_candidate.frames_dbz
         )
-        denominators = torch.stack(
-            [
-                torch.count_nonzero(
-                    finite[minutes // candidate_forecast.run.config.interval_minutes - 1]
-                ).clamp_min(1)
-                for minutes in leads
-            ]
+        metric_denominators = torch.stack(
+            [torch.count_nonzero(finite[index]).clamp_min(1) for index in forecast_indices]
         ).to(common_weights)
         common_coverage = torch.count_nonzero(
             common_weights > 0, dim=(-2, -1)
-        ).to(common_weights) / denominators
-        candidate_support = candidate_weights > 0
-        parent_support = parent_weights > 0
-        newly_issued = torch.count_nonzero(
-            candidate_support & ~parent_support, dim=(-2, -1)
-        ).to(common_weights) / denominators
-        withdrawn = torch.count_nonzero(
-            parent_support & ~candidate_support, dim=(-2, -1)
-        ).to(common_weights) / denominators
+        ).to(common_weights) / metric_denominators
+        operational_domain = issuance_mask.to(candidate_forecast.valid_mask.device)
+        if operational_domain.device != parent_forecast.valid_mask.device:
+            raise ValueError("operational issuance domain device disagrees")
+        newly_issued, withdrawn = _issuance_change_fractions(
+            candidate_forecast.valid_mask[list(forecast_indices)],
+            parent_forecast.valid_mask[list(forecast_indices)],
+            operational_domain,
+        )
+        newly_issued = newly_issued.to(common_weights)
+        withdrawn = withdrawn.to(common_weights)
         range_band_evaluations: list[RangeBandEvaluation] = []
         for range_regime in reference_active_range_regimes:
             range_mask = range_band_masks[range_regime]
@@ -14743,10 +14969,6 @@ class PriorHoldoutEvaluation:
             ):
                 raise ValueError("range-band object domains disagree")
             cell_area_km2 = grid.cell_area_interval_m2[0] / 1.0e6
-            forecast_indices = tuple(
-                minutes // candidate_forecast.run.config.interval_minutes - 1
-                for minutes in leads
-            )
             operational_domain = (
                 lead_mask.to(candidate_forecast.valid_mask.device)
                 & issuance_mask.to(candidate_forecast.valid_mask.device)
@@ -16775,15 +16997,24 @@ def _state_calibration_scores(
 ) -> _StateCalibrationScores:
     if (
         evaluation_weight.shape != evaluation_mask.shape
+        or evaluation_weight.device != evaluation_mask.device
         or not evaluation_weight.is_floating_point()
         or not bool(torch.all(torch.isfinite(evaluation_weight)))
         or not bool(torch.all(evaluation_weight >= 0.0))
         or not bool(torch.all(evaluation_weight.masked_select(~evaluation_mask) == 0.0))
-        or float(evaluation_weight.masked_select(evaluation_mask).sum()) <= 0.0
     ):
         raise ValueError("state calibration weights are invalid")
+    evaluation_weight_sum = evaluation_weight.masked_select(
+        evaluation_mask
+    ).to(torch.float64).sum()
+    if not bool(torch.isfinite(evaluation_weight_sum)) or float(
+        evaluation_weight_sum
+    ) <= 0.0:
+        raise ValueError("state calibration weights are invalid")
+
     def weighted_mean(values: Tensor, weights: Tensor) -> Tensor:
-        normalized = weights / weights.sum()
+        weight64 = weights.to(torch.float64)
+        normalized = weight64 / weight64.sum()
         return torch.sum(values.to(torch.float64) * normalized)
 
     def unit_interval_weighted_mean(values: Tensor, weights: Tensor) -> float:
@@ -16796,6 +17027,10 @@ def _state_calibration_scores(
     if echo_count == 0:
         raise ValueError("state calibration has no echo intensity samples")
     echo_weight = evaluation_weight.masked_select(echo_mask).to(torch.float64)
+    if not bool(torch.isfinite(echo_weight.sum())) or float(
+        echo_weight.sum()
+    ) <= 0.0:
+        raise ValueError("state calibration has no weighted echo samples")
     selected_weight = evaluation_weight.masked_select(evaluation_mask).to(
         torch.float64
     )
@@ -16953,16 +17188,24 @@ def _prior_uncertainty_scores(
 
     if (
         evaluation_weight.shape != evaluation_mask.shape
+        or evaluation_weight.device != evaluation_mask.device
         or not evaluation_weight.is_floating_point()
         or not bool(torch.all(torch.isfinite(evaluation_weight)))
         or not bool(torch.all(evaluation_weight >= 0.0))
         or not bool(torch.all(evaluation_weight.masked_select(~evaluation_mask) == 0.0))
-        or float(evaluation_weight.masked_select(evaluation_mask).sum()) <= 0.0
     ):
+        raise ValueError("prior uncertainty weights are invalid")
+    evaluation_weight_sum = evaluation_weight.masked_select(
+        evaluation_mask
+    ).to(torch.float64).sum()
+    if not bool(torch.isfinite(evaluation_weight_sum)) or float(
+        evaluation_weight_sum
+    ) <= 0.0:
         raise ValueError("prior uncertainty weights are invalid")
 
     def weighted_mean(values: Tensor, weights: Tensor) -> Tensor:
-        normalized = weights.to(torch.float64) / weights.sum().to(torch.float64)
+        weight64 = weights.to(torch.float64)
+        normalized = weight64 / weight64.sum()
         return torch.sum(values.to(torch.float64) * normalized)
 
     echo_mask = evaluation_mask & support_target.to(
@@ -16997,6 +17240,10 @@ def _prior_uncertainty_scores(
             max=_UNCERTAINTY_SCORE_SUPPORT.maximum_pit_residual_abs
         )
         echo_weight = evaluation_weight.masked_select(echo_mask)
+        if not bool(torch.isfinite(echo_weight.sum())) or float(
+            echo_weight.sum()
+        ) <= 0.0:
+            raise ValueError("prior uncertainty has no weighted echo samples")
         mean_absolute = float(weighted_mean(absolute, echo_weight).detach())
         underdispersion = float(
             weighted_mean((absolute > 2.0).to(absolute), echo_weight).detach()
@@ -20645,7 +20892,6 @@ _CLASSIFIER_SIMULTANEOUS_ENDPOINTS = (
     "false_active_band",
     "weather_ood_abstention",
     "range_ood_abstention",
-    "legacy_routing_brier",
     "weather_multiclass_brier",
     "range_multilabel_brier",
     "weather_ood_brier",
@@ -20723,6 +20969,81 @@ def _required_bounded_mean_events(
             6.0 * absolute_bound * math.log(3.0 / alpha) / threshold
         ),
     )
+
+
+def _validate_explicit_metric_cell_event_counts(
+    counts: tuple[tuple[str, str, str, int, int, int], ...],
+    policy: NeuralPriorPromotionPolicy,
+) -> None:
+    """Require one valid count row for every preregistered metric cell."""
+
+    expected_keys = {
+        (
+            item.weather_regime,
+            item.range_regime,
+            item.metric_name,
+            item.lead_minutes,
+        )
+        for item in policy.required_range_metrics
+    }
+    if not isinstance(counts, tuple):
+        raise ValueError("metric cell preflight counts are invalid")
+    keys: list[tuple[str, str, str, int]] = []
+    for item in counts:
+        if not isinstance(item, tuple) or len(item) != 6:
+            raise ValueError("metric cell preflight counts are invalid")
+        for value in item[:3]:
+            if not isinstance(value, str):
+                raise ValueError("metric cell preflight counts are invalid")
+            if not value or value.strip() != value:
+                raise ValueError("metric cell preflight counts are invalid")
+        if (
+            type(item[3]) is not int
+            or item[3] <= 0
+            or type(item[4]) is not int
+            or item[4] < 0
+            or type(item[5]) is not int
+            or item[5] <= 0
+        ):
+            raise ValueError("metric cell preflight counts are invalid")
+        keys.append(cast(tuple[str, str, str, int], item[:4]))
+    if len(keys) != len(set(keys)) or set(keys) != expected_keys:
+        raise ValueError("metric cell preflight counts are incomplete")
+
+
+def _validate_explicit_issuance_cell_event_counts(
+    counts: tuple[tuple[str, str, int, int, int], ...],
+    policy: NeuralPriorPromotionPolicy,
+) -> None:
+    """Require one valid count row for every preregistered issuance cell."""
+
+    expected_keys = {
+        (item.weather_regime, item.range_regime, item.lead_minutes)
+        for item in policy.required_range_issuance
+    }
+    if not isinstance(counts, tuple):
+        raise ValueError("issuance cell preflight counts are invalid")
+    keys: list[tuple[str, str, int]] = []
+    for item in counts:
+        if not isinstance(item, tuple) or len(item) != 5:
+            raise ValueError("issuance cell preflight counts are invalid")
+        for value in item[:2]:
+            if not isinstance(value, str):
+                raise ValueError("issuance cell preflight counts are invalid")
+            if not value or value.strip() != value:
+                raise ValueError("issuance cell preflight counts are invalid")
+        if (
+            type(item[2]) is not int
+            or item[2] <= 0
+            or type(item[3]) is not int
+            or item[3] < 0
+            or type(item[4]) is not int
+            or item[4] <= 0
+        ):
+            raise ValueError("issuance cell preflight counts are invalid")
+        keys.append(cast(tuple[str, str, int], item[:3]))
+    if len(keys) != len(set(keys)) or set(keys) != expected_keys:
+        raise ValueError("issuance cell preflight counts are incomplete")
 
 
 def promotion_sample_size_preflight(
@@ -20821,7 +21142,6 @@ def promotion_sample_size_preflight(
     )
     proper_brier_events = _required_bounded_mean_events(
         threshold=min(
-            policy.maximum_regime_classifier_brier_score_upper_bound,
             policy.maximum_weather_multiclass_brier_score_upper_bound,
             policy.maximum_range_multilabel_brier_score_upper_bound,
             policy.maximum_weather_ood_brier_score_upper_bound,
@@ -20862,6 +21182,11 @@ def promotion_sample_size_preflight(
             )
             for item in policy.required_range_metrics
         )
+    else:
+        _validate_explicit_metric_cell_event_counts(
+            metric_cell_event_counts,
+            policy,
+        )
     if issuance_cell_event_counts is None:
         issuance_cell_event_counts = tuple(
             (
@@ -20872,6 +21197,11 @@ def promotion_sample_size_preflight(
                 item.minimum_physical_events,
             )
             for item in policy.required_range_issuance
+        )
+    else:
+        _validate_explicit_issuance_cell_event_counts(
+            issuance_cell_event_counts,
+            policy,
         )
     weather_strata, range_strata = _registered_classifier_strata(plan, policy)
     required_classifier_subsets = {
@@ -22108,6 +22438,8 @@ def compute_neural_prior_promotion(
         if classifier_brier_values
         else 1.0
     )
+    # Keep the historical joint-min score in evidence for audit diagnostics;
+    # proper head-wise scores below are the classifier acceptance criteria.
     weather_brier_values: list[float] = []
     range_brier_values: list[float] = []
     weather_ood_brier_values: list[float] = []
@@ -22192,8 +22524,6 @@ def compute_neural_prior_promotion(
         >= policy.minimum_regime_classifier_accuracy_lower_bound
         and minimum_classifier_recall_lower_bound
         >= policy.minimum_regime_classifier_recall_lower_bound
-        and classifier_brier_score_upper_bound
-        <= policy.maximum_regime_classifier_brier_score_upper_bound
         and weather_brier_upper
         <= policy.maximum_weather_multiclass_brier_score_upper_bound
         and range_brier_upper
@@ -24372,9 +24702,13 @@ def _validate_ledger_issuance_receipt(
         or _canonical_datetime(receipt.issued_at)
         > datetime.now(timezone.utc)
         or (
-            receipt.sequence_number == 1
-            and receipt.previous_certificate_digest
-            != PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST
+            (
+                receipt.sequence_number == 1
+            )
+            != (
+                receipt.previous_certificate_digest
+                == PROMOTION_DEPLOYMENT_CERTIFICATE_GENESIS_DIGEST
+            )
         )
         or receipt.checkpoint_digest
         != _ledger_checkpoint_digest(
@@ -25468,6 +25802,7 @@ def _validate_deployment_runtime_activation_receipt(
         or receipt.activated_at != _canonical_time(receipt.activated_at)
         or receipt.expires_at != _canonical_time(receipt.expires_at)
         or activated >= expiry
+        or expiry > _canonical_datetime(release_approval.expires_at)
         or activated > datetime.now(timezone.utc)
         or (required is not None and activated > required)
         or (required is not None and required > expiry)
@@ -27285,6 +27620,8 @@ def _validate_operational_deployment_decision_certificate(
         != selection.get("selected_prior_digest")
         or certificate.selected_role != selection.get("selected_role")
         or certificate.fallback_reason != selection.get("fallback_reason")
+        or certificate.authority_trust_store_digest
+        != authority_trust_store.content_digest
         or certificate.issued_at != _canonical_time(certificate.issued_at)
     ):
         raise ValueError("operational decision certificate integrity is invalid")

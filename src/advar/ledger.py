@@ -191,6 +191,7 @@ from .promotion import (
     OperationalIssuanceDomainArtifact,
     ResolvedSourceCoverageArtifact,
     validate_resolved_source_coverage_artifact,
+    _same_public_key_hex,
     _derive_analysis_inputs_from_raw_products,
     _background_input_identity_digests,
     RangeGeometryContract,
@@ -871,11 +872,11 @@ def _validate_current_raw_ingestor_receipt(
     """Require the plan-pinned key and the current revocation view."""
 
     pinned_keys = {
-        (authority_id, public_key_hex)
+        (authority_id, bytes.fromhex(public_key_hex))
         for authority_id, public_key_hex, *_ in pinned_trust_store.authorities
     }
     current_keys = {
-        (authority_id, public_key_hex)
+        (authority_id, bytes.fromhex(public_key_hex))
         for authority_id, public_key_hex, *_ in current_trust_store.authorities
     }
     if pinned_keys != current_keys:
@@ -884,6 +885,60 @@ def _validate_current_raw_ingestor_receipt(
         )
     receipt.validate_against(slot, pinned_trust_store)
     receipt.validate_against(slot, current_trust_store)
+
+
+def _validate_operational_source_coverage_binding(
+    coverage: ResolvedSourceCoverageArtifact,
+    *,
+    issuance_plan: OperationalIssuanceDomainPlan,
+    input_plan: NeuralPriorInputPlan,
+    expected_case_id: str,
+    expected_input_bundle_digest: str | None = None,
+    expected_full_analysis_input_digest: str | None = None,
+    expected_site_digests: tuple[str, ...] | None = None,
+) -> None:
+    """Bind one signed mosaic resolution to its exact operational lineage."""
+
+    validate_resolved_source_coverage_artifact(coverage)
+    if (
+        issuance_plan.radar_source_kind != "mosaic"
+        or coverage.issuance_domain_plan_digest != issuance_plan.plan_digest
+        or coverage.case_id != expected_case_id
+        or issuance_plan.case_id != expected_case_id
+        or coverage.grid_contract_digest != input_plan.grid_contract_digest
+        or coverage.grid_contract_digest != issuance_plan.grid_contract_digest
+        or coverage.radar_source_contract_digest
+        != issuance_plan.radar_source_contract_digest
+        or coverage.source_coverage_policy_digest
+        != issuance_plan.source_coverage_policy_digest
+        or coverage.input_available_at != input_plan.input_available_time
+        or coverage.decision_deadline != input_plan.decision_deadline
+        or coverage.publication_time != input_plan.publication_time
+        or coverage.source_radar_registry_digest
+        != issuance_plan.source_radar_registry_digest
+        or coverage.source_radar_count != issuance_plan.source_radar_count
+        or coverage.data_ingestor_id != issuance_plan.data_ingestor_id
+        or not _same_public_key_hex(
+            coverage.data_ingestor_public_key_hex,
+            issuance_plan.data_ingestor_public_key_hex,
+        )
+        or coverage.nominal_source_coverage_mask_digest
+        != issuance_plan.source_coverage_mask_digest
+        or (
+            expected_site_digests is not None
+            and coverage.source_radar_site_digests != expected_site_digests
+        )
+        or (
+            expected_input_bundle_digest is not None
+            and coverage.input_bundle_digest != expected_input_bundle_digest
+        )
+        or (
+            expected_full_analysis_input_digest is not None
+            and coverage.full_analysis_input_digest
+            != expected_full_analysis_input_digest
+        )
+    ):
+        raise ValueError("resolved source coverage disagrees with its operational plan")
 
 
 def _raw_resolution_encoded_arrays(
@@ -1054,6 +1109,26 @@ def _intervention_context_tensor(
     )
 
 
+def _durable_intervention_source_mask(
+    manifest: dict[str, object],
+    tensors: dict[str, Tensor],
+    *,
+    prefix: str,
+) -> Tensor:
+    """Rebuild only the historical all-source mask retained by the archive."""
+
+    source_mask = torch.ones_like(
+        tensors[f"{prefix}_masks"],
+        dtype=torch.bool,
+    )
+    retained_digest = manifest.get(f"{prefix}_source_available_mask_digest")
+    if retained_digest is not None and retained_digest != tensor_digest(source_mask):
+        raise ValueError(
+            "durable intervention source availability is not retained"
+        )
+    return source_mask
+
+
 def _artifact_intervention_context(
     manifest: dict[str, object],
     tensors: dict[str, Tensor],
@@ -1064,9 +1139,15 @@ def _artifact_intervention_context(
     """Rebuild the immutable action context from its durable tensor members."""
 
     result = object.__new__(InterventionInputContext)
+    source_mask = _durable_intervention_source_mask(
+        manifest,
+        tensors,
+        prefix=prefix,
+    )
     values: tuple[tuple[str, object], ...] = (
         ("_frames_dbz", tensors[f"{prefix}_frames"]),
         ("_observation_masks", tensors[f"{prefix}_masks"]),
+        ("_source_available_mask", source_mask),
         ("_quality_weight", tensors[f"{prefix}_quality"]),
         ("_observation_std_dbz", tensors[f"{prefix}_std"]),
         ("_background_frames_dbz", background),
@@ -1262,11 +1343,15 @@ class ModelContract:
     def __post_init__(self) -> None:
         required = asdict(self)
         grid_digest = required.pop("grid_time_contract_digest")
-        if not all(required.values()):
+        if any(
+            type(value) is not str or not value
+            for value in required.values()
+        ):
             raise ValueError("all model contract fields must be non-empty")
-        if grid_digest is not None and re.fullmatch(
-            r"[0-9a-f]{64}", grid_digest
-        ) is None:
+        if grid_digest is not None and (
+            type(grid_digest) is not str
+            or re.fullmatch(r"[0-9a-f]{64}", grid_digest) is None
+        ):
             raise ValueError(
                 "grid_time_contract_digest must be a SHA-256 digest"
             )
@@ -5097,12 +5182,18 @@ class EpisodeLedger:
         if contract_hash is not None:
             query += " AND contract_hash = ?"
             parameters.append(contract_hash)
-        query += " ORDER BY issue_time DESC"
-
         with self._connect() as connection:
             connection.row_factory = sqlite3.Row
             rows = connection.execute(query, parameters).fetchall()
-        return [dict(row) for row in rows]
+        result = [dict(row) for row in rows]
+        result.sort(
+            key=lambda row: (
+                _canonical_utc_datetime(row["issue_time"], "issue_time"),
+                row["issue_time"],
+            ),
+            reverse=True,
+        )
+        return result
 
     def list_impacts(self, episode_id: str) -> list[dict[str, Any]]:
         """Return scalar lead/metric/input summaries for one episode."""
@@ -5373,6 +5464,24 @@ class EpisodeLedger:
         after: InterventionInputContext,
         after_run: ForecastRunContract,
     ) -> bool:
+        for prefix, run, context in (
+            ("before", before_run, before),
+            ("after", after_run, after),
+        ):
+            source_mask = getattr(context, "_source_available_mask", None)
+            if source_mask is not None and not bool(torch.all(source_mask)):
+                raise ValueError(
+                    "durable intervention source availability is not retained"
+                )
+            _durable_intervention_source_mask(
+                {
+                    f"{prefix}_source_available_mask_digest": (
+                        run.source_available_mask_digest
+                    )
+                },
+                {f"{prefix}_masks": context._observation_masks},
+                prefix=prefix,
+            )
         target = self.interventions_dir / receipt.receipt_digest
         if target.exists():
             self._replay_intervention_action_artifact(
@@ -5966,6 +6075,12 @@ class EpisodeLedger:
                     f"{prefix}_analysis_input_identity_digest"
                 ]:
                     raise ValueError("durable analysis input identity changed")
+        for prefix in ("before", "after"):
+            _durable_intervention_source_mask(
+                manifest,
+                tensors,
+                prefix=prefix,
+            )
         context_tensor = _intervention_context_tensor(
             tensors["before_frames"],
             tensors["before_masks"],
@@ -7773,6 +7888,21 @@ class EpisodeLedger:
             result,
             catalog_plan,
         )
+        if isinstance(plan, NeuralPriorHoldoutPlan):
+            input_plans = {
+                item.plan_digest: item for item in plan.input_plans
+            }
+            for membership in result.case_spatial_membership_evidences:
+                planned_case = plan.case(membership.case_id)
+                input_plan = input_plans.get(planned_case.input_plan_digest)
+                if (
+                    input_plan is None
+                    or membership.input_available_time
+                    != input_plan.input_available_time
+                ):
+                    raise ValueError(
+                        "physical event member input availability disagrees with its plan"
+                    )
         result_json = json.dumps(
             result.payload | {"result_digest": result.result_digest},
             sort_keys=True,
@@ -7854,6 +7984,12 @@ class EpisodeLedger:
         """Pre-issue append of trusted input-time mosaic source resolution."""
 
         validate_resolved_source_coverage_artifact(resolved)
+        _validate_operational_source_coverage_binding(
+            resolved,
+            issuance_plan=plan,
+            input_plan=input_plan,
+            expected_case_id=plan.case_id,
+        )
         if (
             plan.radar_source_kind != "mosaic"
             or resolved.issuance_domain_plan_digest != plan.plan_digest
@@ -9914,6 +10050,25 @@ class EpisodeLedger:
                 != coverage.artifact_digest
             ):
                 raise ValueError("analysis mosaic source coverage changed")
+            if provenance_kind == "operational":
+                operational_plan = cast(
+                    OperationalAnalysisInputProvenancePlan,
+                    provenance_plan,
+                )
+                mosaic = cast(MosaicRangeGeometryContract, geometry)
+                _validate_operational_source_coverage_binding(
+                    coverage,
+                    issuance_plan=(
+                        operational_plan.operational_issuance_domain_plan
+                    ),
+                    input_plan=input_plan,
+                    expected_case_id=case_id,
+                    expected_input_bundle_digest=derivation.input_bundle_digest,
+                    expected_full_analysis_input_digest=(
+                        derivation.full_analysis_input_digest
+                    ),
+                    expected_site_digests=mosaic.radar_site_digests,
+                )
         elif (
             type(geometry) is not RangeGeometryContract
             or derivation.source_selection_evidence_digest
@@ -10955,6 +11110,26 @@ class EpisodeLedger:
         issued = _canonical_utc_datetime(entry.issued_at, "issued_at")
         if issued > recorded:
             raise ValueError("operational raw-resolution history is future-dated")
+        if retained is not None:
+            (
+                _retained_sequence,
+                retained_entry,
+                retained_receipt_digest,
+            ) = EpisodeLedger._validate_operational_raw_history_row(
+                connection,
+                retained,
+                fallback_authority_id=expected_authority_id,
+                fallback_authority_public_key_hex=(
+                    expected_authority_public_key_hex
+                ),
+            )
+            if retained_entry.entry_digest == entry.entry_digest:
+                if (
+                    retained_entry != entry
+                    or retained_receipt_digest != raw_resolution_receipt_digest
+                ):
+                    raise ValueError("operational raw-resolution history changed")
+                return
         if retained is None:
             sequence_number = 1
             legacy_anchor = connection.execute(
@@ -11372,6 +11547,15 @@ class EpisodeLedger:
             ):
                 raise ValueError("mosaic operational provenance disagrees")
             validate_resolved_source_coverage_artifact(resolved_source_coverage)
+            _validate_operational_source_coverage_binding(
+                resolved_source_coverage,
+                issuance_plan=plan.operational_issuance_domain_plan,
+                input_plan=input_plan,
+                expected_case_id=plan.plan_id,
+                expected_input_bundle_digest=run.input_bundle_digest,
+                expected_full_analysis_input_digest=run.full_analysis_input_digest,
+                expected_site_digests=mosaic.radar_site_digests,
+            )
             if (
                 resolved_source_coverage.case_id != plan.plan_id
                 or derivation.source_selection_evidence_digest
@@ -11584,89 +11768,109 @@ class EpisodeLedger:
                     os.rename(temporary, target)
                     published_by_this_call = True
                     _fsync_directory(self.analysis_input_provenance_dir)
-                for history in raw_resolution.history_entries:
-                    self._record_operational_raw_resolution_history(
-                        connection,
-                        entry=history,
-                        raw_resolution_receipt_digest=(
-                            raw_resolution.receipt_digest
-                        ),
-                        recorded_at=now.isoformat(),
-                        expected_authority_id=plan.analysis_processor_id,
-                        expected_authority_public_key_hex=(
-                            plan.analysis_processor_public_key_hex
-                        ),
-                    )
-                ledger_instance_digest = (
-                    self._analysis_provenance_ledger_instance_digest(connection)
-                )
-                side_effect_digest = _json_digest(
-                    {
-                        "contract": (
-                            "analysis-provenance-ledger-side-effects-v1"
-                        ),
-                        "provenance_kind": "operational",
-                        "raw_resolution_receipt_digest": (
-                            raw_resolution.receipt_digest
-                        ),
-                        "history_entry_digests": sorted(
-                            item.entry_digest
-                            for item in raw_resolution.history_entries
-                        ),
-                    }
-                )
-                (
-                    preparation_receipt_json,
-                    preparation_receipt_digest,
-                ) = self._issue_analysis_provenance_preparation_receipt(
-                    artifact_digest=derivation.artifact_digest,
-                    provenance_kind="operational",
-                    provenance_plan_digest=plan.plan_digest,
-                    input_plan_digest=input_plan.plan_digest,
-                    raw_resolution_receipt_digest=(
-                        raw_resolution.receipt_digest
-                    ),
-                    payload_json=canonical_payload,
-                    payload_committed_at=now.isoformat(),
-                    deadline=input_plan.decision_deadline,
-                    ledger_instance_digest=ledger_instance_digest,
-                    side_effect_digest=side_effect_digest,
-                    authority_trust_store=analysis_trust,
-                    signer=provenance_commit_signer,
-                )
-                if datetime.now(timezone.utc) > deadline:
-                    raise ValueError(
-                        "operational provenance ledger receipt missed its deadline"
-                    )
-                connection.execute(
-                    "INSERT INTO analysis_input_provenance_commits "
-                    "(artifact_digest,provenance_kind,provenance_plan_digest,"
-                    "case_id,input_plan_digest,raw_resolution_receipt_digest,"
-                    "payload_json,arrays_sha256,metadata_sha256,path,"
-                    "raw_ingestor_trust_store_digest,raw_trust_validated_at,"
-                    "committed_at,usable,status,payload_committed_at,"
-                    "preparation_receipt_json,preparation_receipt_digest,"
-                    "activated_at,expired_at) "
-                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,NULL,?,0,'prepared',?,"
-                    "?,?,NULL,NULL)",
-                    (
-                        derivation.artifact_digest,
+                retained_commit = connection.execute(
+                    "SELECT provenance_kind,payload_json,arrays_sha256,"
+                    "metadata_sha256,path,input_plan_digest,"
+                    "raw_resolution_receipt_digest FROM "
+                    "analysis_input_provenance_commits WHERE artifact_digest = ?",
+                    (derivation.artifact_digest,),
+                ).fetchone()
+                if retained_commit is not None:
+                    expected_commit = (
                         "operational",
-                        plan.plan_digest,
-                        plan.plan_id,
-                        input_plan.plan_digest,
-                        raw_resolution.receipt_digest,
                         canonical_payload,
                         checksums["source_and_derived_arrays.npz"],
                         checksums["provenance.json"],
                         str(target),
-                        final_raw_trust.content_digest,
-                        now.isoformat(),
-                        now.isoformat(),
+                        input_plan.plan_digest,
+                        raw_resolution.receipt_digest,
+                    )
+                    if tuple(retained_commit) != expected_commit:
+                        raise ValueError("operational provenance commit equivocated")
+                else:
+                    for history in raw_resolution.history_entries:
+                        self._record_operational_raw_resolution_history(
+                            connection,
+                            entry=history,
+                            raw_resolution_receipt_digest=(
+                                raw_resolution.receipt_digest
+                            ),
+                            recorded_at=now.isoformat(),
+                            expected_authority_id=plan.analysis_processor_id,
+                            expected_authority_public_key_hex=(
+                                plan.analysis_processor_public_key_hex
+                            ),
+                        )
+                    ledger_instance_digest = (
+                        self._analysis_provenance_ledger_instance_digest(connection)
+                    )
+                    side_effect_digest = _json_digest(
+                        {
+                            "contract": (
+                                "analysis-provenance-ledger-side-effects-v1"
+                            ),
+                            "provenance_kind": "operational",
+                            "raw_resolution_receipt_digest": (
+                                raw_resolution.receipt_digest
+                            ),
+                            "history_entry_digests": sorted(
+                                item.entry_digest
+                                for item in raw_resolution.history_entries
+                            ),
+                        }
+                    )
+                    (
                         preparation_receipt_json,
                         preparation_receipt_digest,
-                    ),
-                )
+                    ) = self._issue_analysis_provenance_preparation_receipt(
+                        artifact_digest=derivation.artifact_digest,
+                        provenance_kind="operational",
+                        provenance_plan_digest=plan.plan_digest,
+                        input_plan_digest=input_plan.plan_digest,
+                        raw_resolution_receipt_digest=(
+                            raw_resolution.receipt_digest
+                        ),
+                        payload_json=canonical_payload,
+                        payload_committed_at=now.isoformat(),
+                        deadline=input_plan.decision_deadline,
+                        ledger_instance_digest=ledger_instance_digest,
+                        side_effect_digest=side_effect_digest,
+                        authority_trust_store=analysis_trust,
+                        signer=provenance_commit_signer,
+                    )
+                    if datetime.now(timezone.utc) > deadline:
+                        raise ValueError(
+                            "operational provenance ledger receipt missed its deadline"
+                        )
+                    connection.execute(
+                        "INSERT INTO analysis_input_provenance_commits "
+                        "(artifact_digest,provenance_kind,provenance_plan_digest,"
+                        "case_id,input_plan_digest,raw_resolution_receipt_digest,"
+                        "payload_json,arrays_sha256,metadata_sha256,path,"
+                        "raw_ingestor_trust_store_digest,raw_trust_validated_at,"
+                        "committed_at,usable,status,payload_committed_at,"
+                        "preparation_receipt_json,preparation_receipt_digest,"
+                        "activated_at,expired_at) "
+                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,NULL,?,0,'prepared',?,"
+                        "?,?,NULL,NULL)",
+                        (
+                            derivation.artifact_digest,
+                            "operational",
+                            plan.plan_digest,
+                            plan.plan_id,
+                            input_plan.plan_digest,
+                            raw_resolution.receipt_digest,
+                            canonical_payload,
+                            checksums["source_and_derived_arrays.npz"],
+                            checksums["provenance.json"],
+                            str(target),
+                            final_raw_trust.content_digest,
+                            now.isoformat(),
+                            now.isoformat(),
+                            preparation_receipt_json,
+                            preparation_receipt_digest,
+                        ),
+                    )
             self.reconcile_prepared_analysis_input_provenance(
                 derivation.artifact_digest,
                 raw_ingestor_trust_store_path=raw_ingestor_trust_store_path,
@@ -12157,10 +12361,28 @@ class EpisodeLedger:
                 encoding="utf-8",
             )
             target = self.scoring_replays_dir / manifest.bundle_digest
-            if target.exists():
-                raise FileExistsError("scoring replay bundle already exists")
             with self._connect() as connection:
                 connection.execute("BEGIN IMMEDIATE")
+                # The directory rename is deliberately before the row insert so
+                # readers never observe an indexed bundle with missing bytes.
+                # If the process dies in that interval, retry owns the same
+                # SQLite writer lock before removing the unindexed target.  A
+                # target without a row is never loadable, and the retry below
+                # rebuilds the exact content-addressed bytes from its typed
+                # inputs.
+                indexed = connection.execute(
+                    "SELECT 1 FROM neural_prior_scoring_replay_bundles "
+                    "WHERE bundle_digest = ?",
+                    (manifest.bundle_digest,),
+                ).fetchone()
+                if indexed is not None:
+                    raise FileExistsError("scoring replay bundle already exists")
+                if target.exists() or target.is_symlink():
+                    if target.is_symlink() or not target.is_dir():
+                        target.unlink()
+                    else:
+                        shutil.rmtree(target)
+                    _fsync_directory(self.scoring_replays_dir)
                 final_scoring_raw_trust = _validate_current_scoring_raw_ingestor_receipts(
                     ordered_cases,
                     raw_ingestor_trust_store_path=(
@@ -12401,13 +12623,30 @@ class EpisodeLedger:
             )
             return manifest
         except Exception:
-            if (
-                published
-                and not registered
-                and target is not None
-                and target.exists()
-            ):
-                shutil.rmtree(target)
+            if published and not registered and target is not None:
+                # Do not remove bytes after a competing retry has indexed
+                # them.  Reconcile the orphan while holding the same writer
+                # lock used by the commit path.
+                with self._connect() as connection:
+                    connection.execute("BEGIN IMMEDIATE")
+                    try:
+                        retained = connection.execute(
+                            "SELECT 1 FROM neural_prior_scoring_replay_bundles "
+                            "WHERE bundle_digest = ?",
+                            (target.name,),
+                        ).fetchone()
+                        if retained is None and (
+                            target.exists() or target.is_symlink()
+                        ):
+                            if target.is_symlink() or not target.is_dir():
+                                target.unlink()
+                            else:
+                                shutil.rmtree(target)
+                            _fsync_directory(self.scoring_replays_dir)
+                        connection.commit()
+                    except Exception:
+                        connection.rollback()
+                        raise
             raise
         finally:
             if temporary.exists():
@@ -17448,7 +17687,8 @@ class EpisodeLedger:
 
         with self._connect() as connection:
             row = connection.execute(
-                "SELECT evaluation_payloads_json FROM neural_prior_promotions "
+                "SELECT evaluation_payloads_json,evaluation_digests_json "
+                "FROM neural_prior_promotions "
                 "WHERE promotion_evidence_digest = ?",
                 (promotion_evidence_digest,),
             ).fetchone()
@@ -17456,7 +17696,14 @@ class EpisodeLedger:
             raise KeyError(
                 f"unknown neural-prior promotion: {promotion_evidence_digest}"
             )
-        return _decode_evaluation_audit_payloads(json.loads(row[0]))
+        evaluations = _decode_evaluation_audit_payloads(json.loads(row[0]))
+        try:
+            declared_digests = tuple(json.loads(row[1]))
+        except (TypeError, json.JSONDecodeError) as error:
+            raise ValueError("neural-prior promotion evaluation list is invalid") from error
+        if tuple(item.evaluation_digest for item in evaluations) != declared_digests:
+            raise ValueError("neural-prior promotion evaluation audit mismatch")
+        return evaluations
 
     def _initialize_index(self) -> None:
         with self._connect() as connection:
@@ -22092,6 +22339,8 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         raise ValueError(
             "latest_sensitivity_mask must have positive spatial dimensions"
         )
+    if not bool(torch.any(snapshot.latest_sensitivity_mask)):
+        raise ValueError("latest_sensitivity_mask must retain active support")
     lead_count = len(leads)
     metric_count = len(metrics)
     selected_count = len(selected_leads)
@@ -22241,6 +22490,10 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         raise ValueError("available latest-frame norms must be finite")
     if not bool(torch.all(torch.isnan(latest_norm[~available]))):
         raise ValueError("unavailable latest-frame norms must be NaN")
+    if not bool(torch.all(torch.isfinite(latest_tile_norm[available]))):
+        raise ValueError("available latest-frame tile norms must be finite")
+    if not bool(torch.all(latest_tile_norm[available] >= 0)):
+        raise ValueError("available latest-frame tile norms must be nonnegative")
     combined_tile_norm = torch.sqrt(
         torch.sum(latest_tile_norm.square(), dim=(-1, -2))
     )
@@ -22280,6 +22533,8 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             raise ValueError("observation_std_dbz must be positive")
         if not bool(torch.all(torch.isfinite(whitened_latest[available]))):
             raise ValueError("available whitened tile norms must be finite")
+        if not bool(torch.all(whitened_latest[available] >= 0)):
+            raise ValueError("available whitened tile norms must be nonnegative")
         if not bool(torch.all(torch.isnan(whitened_latest[~available]))):
             raise ValueError("unavailable whitened tile norms must be NaN")
     elif snapshot.observation_std_dbz is not None:
@@ -22297,6 +22552,10 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             if is_available:
                 _require_finite("forecast sensitivity map", forecast_map)
                 _require_finite("direct sensitivity map", direct_map)
+                if bool(torch.any(direct_map[~snapshot.latest_sensitivity_mask] != 0)):
+                    raise ValueError(
+                        "direct sensitivity map retains values outside active support"
+                    )
                 expected_norm = torch.linalg.vector_norm(direct_map)
                 stored_norm = latest_norm[lead_index, metric_index]
                 if not torch.allclose(
@@ -22321,6 +22580,20 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
                             "whitened tile norms and retained direct maps "
                             "disagree"
                         )
+
+                expected_tile_norm = _tile_l2_norm(
+                    direct_map,
+                    snapshot.tile_shape_yx,
+                )
+                if not torch.allclose(
+                    expected_tile_norm,
+                    latest_tile_norm[lead_index, metric_index],
+                    rtol=1.0e-5,
+                    atol=1.0e-7,
+                ):
+                    raise ValueError(
+                        "tile norms and retained direct maps disagree"
+                    )
             elif not bool(
                 torch.all(torch.isnan(forecast_map))
                 and torch.all(torch.isnan(direct_map))
@@ -22369,6 +22642,8 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
         )
         if not bool(torch.all(torch.isfinite(latest_impact[available]))):
             raise ValueError("available latest-frame impacts must be finite")
+        if not bool(torch.all(torch.isfinite(latest_tile_impact[available]))):
+            raise ValueError("available latest-frame tile impacts must be finite")
         if not bool(torch.all(torch.isnan(latest_impact[~available]))):
             raise ValueError("unavailable latest-frame impacts must be NaN")
         if not bool(torch.all(torch.isnan(latest_tile_impact[~available]))):
@@ -22380,6 +22655,41 @@ def _validate_m0_snapshot(snapshot: SensitivitySnapshot) -> None:
             atol=1.0e-7,
         ):
             raise ValueError("tile impacts and whole-field impacts disagree")
+        if innovation is not None and innovation_mask is not None:
+            valid_innovation = innovation_mask & snapshot.latest_sensitivity_mask
+            safe_innovation = torch.where(
+                innovation_mask,
+                innovation,
+                torch.zeros_like(innovation),
+            )
+            for position, lead in enumerate(selected_leads):
+                lead_index = leads.index(lead)
+                for metric_index in range(metric_count):
+                    if not bool(available[lead_index, metric_index]):
+                        continue
+                    direct_map = snapshot.direct.maps[position, metric_index]
+                    expected_contribution = torch.where(
+                        valid_innovation,
+                        direct_map * safe_innovation,
+                        torch.zeros_like(direct_map),
+                    )
+                    if not torch.allclose(
+                        expected_contribution.sum(),
+                        latest_impact[lead_index, metric_index],
+                        rtol=1.0e-5,
+                        atol=1.0e-7,
+                    ) or not torch.allclose(
+                        _tile_sum(
+                            expected_contribution,
+                            snapshot.tile_shape_yx,
+                        ),
+                        latest_tile_impact[lead_index, metric_index],
+                        rtol=1.0e-5,
+                        atol=1.0e-7,
+                    ):
+                        raise ValueError(
+                            "direct impact disagrees with sensitivity and innovation"
+                        )
     elif snapshot.direct.tile_impact is not None:
         raise ValueError("tile impact cannot exist without direct impact")
     if any(
@@ -22424,6 +22734,31 @@ def _tile_l2_norm(value: Tensor, tile_shape_yx: tuple[int, int]) -> Tensor:
         tile_width,
     ).permute(0, 2, 1, 3)
     return torch.sqrt(torch.sum(tiles.square(), dim=(-1, -2)))
+
+
+def _tile_sum(value: Tensor, tile_shape_yx: tuple[int, int]) -> Tensor:
+    """Compute padded per-tile sums for one retained spatial map."""
+
+    height, width = value.shape
+    tile_height, tile_width = tile_shape_yx
+    tile_rows = math.ceil(height / tile_height)
+    tile_columns = math.ceil(width / tile_width)
+    padded = torch.nn.functional.pad(
+        value,
+        (
+            0,
+            tile_columns * tile_width - width,
+            0,
+            tile_rows * tile_height - height,
+        ),
+    )
+    tiles = padded.reshape(
+        tile_rows,
+        tile_height,
+        tile_columns,
+        tile_width,
+    ).permute(0, 2, 1, 3)
+    return torch.sum(tiles, dim=(-1, -2))
 
 
 def _require_float_tensor(name: str, value: Any) -> None:
