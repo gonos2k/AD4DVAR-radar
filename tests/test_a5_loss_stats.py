@@ -438,6 +438,54 @@ class A5LossAndStatisticsTests(unittest.TestCase):
                     classifier_subset_event_counts=classifier_counts,
                 )
 
+    def test_explicit_preflight_minima_cannot_lower_policy_floors(self) -> None:
+        for source in (
+            "metric",
+            "minimum_deployment_metric_cell_events",
+            "minimum_continuous_metric_cell_events",
+            "issuance",
+        ):
+            plan, policy, classifier_counts = _preflight_fixture()
+            if source == "metric":
+                policy.required_range_metrics[0].minimum_physical_events = 10
+            elif source == "issuance":
+                policy.required_range_issuance[0].minimum_physical_events = 10
+            else:
+                setattr(policy, source, 10)
+
+            for available, required, expected in (
+                (5, 1, None),
+                (5, 10, False),
+                (10, 10, True),
+                (12, 12, True),
+            ):
+                metric = ("convective", "near_range", "log_echo_mse", 60, 10_000, 1)
+                issuance = ("convective", "near_range", 60, 10_000, 1)
+                if source == "issuance":
+                    issuance = (*issuance[:3], available, required)
+                else:
+                    metric = (*metric[:4], available, required)
+                arguments = dict(
+                    available_physical_events=10_000,
+                    metric_cell_event_counts=(metric,),
+                    issuance_cell_event_counts=(issuance,),
+                    classifier_subset_event_counts=classifier_counts,
+                )
+                with self.subTest(
+                    source=source, available=available, required=required,
+                ), patch.object(promotion_module, "validate_neural_prior_holdout_plan"):
+                    if expected is None:
+                        with self.assertRaisesRegex(ValueError, "below the policy floor"):
+                            promotion_module.promotion_sample_size_preflight(
+                                plan, policy, **arguments,
+                            )
+                    else:
+                        result = promotion_module.promotion_sample_size_preflight(
+                            plan, policy, **arguments,
+                        )
+                        self.assertEqual(result.cell_feasible, expected)
+                        self.assertEqual(result.feasible, expected)
+
 
 if __name__ == "__main__":
     unittest.main()

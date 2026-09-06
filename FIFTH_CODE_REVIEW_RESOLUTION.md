@@ -117,3 +117,38 @@ Wheel/CLI·UI가 성공했지만 CPU 두 작업은 새 시험 두 개의 import 
 [보정 증거](review_artifacts/a5_ci_compatibility_validation.zip)와
 [범위 기록](review_artifacts/a5_ci_compatibility_validation.json)을 보존했다.
 최종 커밋의 전체 CI는 PR의 최신 실행을 확인한다.
+
+## 사전 표본 수 시험 CI 보정
+
+`0512c25`의 [CI 34004837723](https://github.com/gonos2k/AD4DVAR-radar/actions/runs/34004837723)는
+CPU 3.10·3.12에서 각각 **1044 passed, 1 failed, 10 skipped, 689 subtests passed**로
+끝났다. 두 버전 모두 실패는 `test_sample_preflight_fails_a_sparse_metric_cell` 하나다.
+Wheel/CLI·UI는 성공했다. 앞선 수집 오류는 해결됐지만 전체 성공은 아니었다.
+
+기존 시험은 정책에 등록된 두 영역 중 한 영역만 제공하여, 표본 부족 판정에 도달하기
+전에 완전성 검사에서 거부됐다. 두 영역을 모두 제공하고 정책 최소 표본 수를 10으로
+고정했다. 표본 5개에서는 cell infeasible, 10개에서는 cell feasible을 확인한다.
+제품의 누락·중복 영역 거부 규칙은 유지한다.
+
+격리 모드의 관련 사전 점검 시험 4개와 A5 손실·입력 검사 11개를 실행했다.
+정확한 결과·기존 실패·Luna xhigh 독립 검토는
+[검증 JSON](review_artifacts/a5_preflight_ci_validation.json)과
+[재현 묶음](review_artifacts/a5_preflight_ci_validation.zip)에 보존한다.
+이 보정은 시험만 변경하며 전체 CI의 성공은 최신 PR 실행에서 별도로 확인한다.
+
+## 명시적 표본 집계의 정책 하한
+
+CI 보정의 교차 검토에서 직접 API 호출의 별도 검사 누락을 확인해 함께 닫았다.
+정책 최소 표본 수가 10인데 셀 집계에 `required=1, available=5`를 적으면 적격을
+보고할 수 있었다. 정상 promotion 계산은 원래 정책으로 최소값을 계산하므로,
+그 경로의 배포 우회나 예측 코어 결함을 재현한 것은 아니다.
+
+명시적 metric 집계도 개별 요구량·배포 하한·연속 점수 하한의 최댓값 이상을 요구한다.
+issuance 집계는 해당 셀의 정책 최소값 이상이어야 한다. 더 엄격한 값은 허용한다.
+README도 기본 배포 하한 5와 연속 점수 하한 10을 결합하는 규칙으로 명확히 했다.
+
+네 하한 근거마다 잘못 낮춘 값의 거부, 부족한 표본의 부적격, 정확한 경계와 더 엄격한
+값의 적격을 확인했다. 수정 전 검사 함수로는 네 반례가 재현된다. 최종 관련 시험은
+**14 passed, 26 subtests passed**, 타입 검사 오류·경고는 0이다.
+[별도 범위·수치 기록](review_artifacts/a5_preflight_minimum_validation.json)과
+[재현 자료](review_artifacts/a5_preflight_minimum_validation.zip)에 보존한다.

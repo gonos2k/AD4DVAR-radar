@@ -1,0 +1,21 @@
+{
+  "base_commit": "0512c2577d94c3e0f6f69a9af91646e78d984ae3",
+  "failed_ci": "https://github.com/gonos2k/AD4DVAR-radar/actions/runs/34004837723",
+  "ci_result": {
+    "Python 3.10 CPU": "1 failed, 1044 passed, 10 skipped, 689 subtests passed",
+    "Python 3.12 CPU": "1 failed, 1044 passed, 10 skipped, 689 subtests passed",
+    "Wheel and CLI smoke": "success",
+    "Initial-field lab UI": "success"
+  },
+  "cause": "The sparse-cell test provided only convective/near_range rows even though its policy registers convective/near_range and stratiform/far_range. The complete-map guard rejected the fixture before its sample-count assertion.",
+  "change": "Test-only: supply both registered metric and issuance cells. Bind metric minimum 10 to the policy and verify cell_feasible is false for 5 events, true at 10; sparse overall feasibility remains false. Product completeness validation is unchanged.",
+  "local_validation": {
+    "before": "1 failed in 37.08s",
+    "related": "4 passed, 234 deselected, 2 subtests passed in 167.11s (0:02:47)",
+    "guards": "11 passed, 8 subtests passed in 2.78s",
+    "environment": "Existing Python 3.12.13 / Torch 2.13.0, -I mode, one CPU thread; no shared environment or lock changes.",
+    "scope": "No local full-baseline rerun; full CPU validation belongs to latest PR CI."
+  },
+  "review": "Luna xhigh independent contract review; see review.md in evidence archive.",
+  "latest_ci": "Pending next push; preceding failure is preserved."
+}

@@ -13106,21 +13106,31 @@ class NeuralPriorPromotionTests(unittest.TestCase):
         self.assertGreater(bound, -0.01)
 
     def test_sample_preflight_fails_a_sparse_metric_cell(self) -> None:
-        preflight = promotion_module.promotion_sample_size_preflight(
-            self.plan(),
-            self.policy(),
-            available_physical_events=200,
-            metric_cell_event_counts=(
-                ("convective", "near_range", "log_echo_mse", 60, 5, 10),
-            ),
-            issuance_cell_event_counts=(
-                ("convective", "near_range", 60, 200, 1),
-            ),
-            classifier_subset_event_counts=self.classifier_subset_counts(200),
-        )
+        plan = self.plan()
+        policy = replace(self.policy(), minimum_deployment_metric_cell_events=10)
+        for convective_events in (5, 10):
+            with self.subTest(convective_events=convective_events):
+                preflight = promotion_module.promotion_sample_size_preflight(
+                    plan,
+                    policy,
+                    available_physical_events=200,
+                    metric_cell_event_counts=(
+                        (
+                            "convective", "near_range", "log_echo_mse", 60,
+                            convective_events, 10,
+                        ),
+                        ("stratiform", "far_range", "log_echo_mse", 60, 200, 10),
+                    ),
+                    issuance_cell_event_counts=(
+                        ("convective", "near_range", 60, 200, 1),
+                        ("stratiform", "far_range", 60, 200, 1),
+                    ),
+                    classifier_subset_event_counts=self.classifier_subset_counts(200),
+                )
 
-        self.assertFalse(preflight.cell_feasible)
-        self.assertFalse(preflight.feasible)
+                self.assertEqual(preflight.cell_feasible, convective_events >= 10)
+                if convective_events < 10:
+                    self.assertFalse(preflight.feasible)
 
     def test_metric_cell_event_minimum_is_bound_into_policy_digest(self) -> None:
         policy = self.policy()

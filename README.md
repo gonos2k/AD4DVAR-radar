@@ -1119,8 +1119,10 @@ exact-set accuracy와 false-active-band rate까지 통과한 band만 인증하�
 logit을 높여 near/mid/far를 동시에 활성화하는 classifier는 인증을 얻지 못한다. 각
 weather×range group은 정책이 요구한 metric×lead별 최소 case와 실제 valid 면적뿐 아니라
 그 cell 자체의 common-domain 및 end-to-end mean-degradation UCB와
-harmful-fraction UCB, issuance withdrawal/new-issuance 한계도 통과해야 한다. 자동배포용
-metric cell은 최소 5개 physical event를 요구한다. 따라서 required FSS의 일관된 악화나
+harmful-fraction UCB, issuance withdrawal/new-issuance 한계도 통과해야 한다. Metric cell의
+최소 physical event 수는 개별 요구량, 배포 하한(기본 5), 연속 점수 하한(기본 10)의
+최댓값이다. 사전 점검에 셀별 집계를 명시해도 이 정책 하한을 낮출 수 없다.
+따라서 required FSS의 일관된 악화나
 발행영역 악화를 다른 metric 개선으로 상쇄할 수 없다. `promotion_sample_size_preflight()`는
 family-adjusted finite-sample radius의 best-case event 요구량을 score 계산 전에 산출하며,
 holdout event가 그 수보다 적으면 결과와 무관하게 infeasible로 표시한다.

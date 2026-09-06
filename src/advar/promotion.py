@@ -20977,12 +20977,16 @@ def _validate_explicit_metric_cell_event_counts(
 ) -> None:
     """Require one valid count row for every preregistered metric cell."""
 
-    expected_keys = {
+    required_minima = {
         (
             item.weather_regime,
             item.range_regime,
             item.metric_name,
             item.lead_minutes,
+        ): max(
+            item.minimum_physical_events,
+            policy.minimum_deployment_metric_cell_events,
+            policy.minimum_continuous_metric_cell_events,
         )
         for item in policy.required_range_metrics
     }
@@ -21007,8 +21011,13 @@ def _validate_explicit_metric_cell_event_counts(
         ):
             raise ValueError("metric cell preflight counts are invalid")
         keys.append(cast(tuple[str, str, str, int], item[:4]))
-    if len(keys) != len(set(keys)) or set(keys) != expected_keys:
+    if len(keys) != len(set(keys)) or set(keys) != set(required_minima):
         raise ValueError("metric cell preflight counts are incomplete")
+    if any(
+        item[-1] < required_minima[key]
+        for item, key in zip(counts, keys, strict=True)
+    ):
+        raise ValueError("metric cell preflight minimum is below the policy floor")
 
 
 def _validate_explicit_issuance_cell_event_counts(
@@ -21017,8 +21026,10 @@ def _validate_explicit_issuance_cell_event_counts(
 ) -> None:
     """Require one valid count row for every preregistered issuance cell."""
 
-    expected_keys = {
-        (item.weather_regime, item.range_regime, item.lead_minutes)
+    required_minima = {
+        (item.weather_regime, item.range_regime, item.lead_minutes): (
+            item.minimum_physical_events
+        )
         for item in policy.required_range_issuance
     }
     if not isinstance(counts, tuple):
@@ -21042,8 +21053,13 @@ def _validate_explicit_issuance_cell_event_counts(
         ):
             raise ValueError("issuance cell preflight counts are invalid")
         keys.append(cast(tuple[str, str, int], item[:3]))
-    if len(keys) != len(set(keys)) or set(keys) != expected_keys:
+    if len(keys) != len(set(keys)) or set(keys) != set(required_minima):
         raise ValueError("issuance cell preflight counts are incomplete")
+    if any(
+        item[-1] < required_minima[key]
+        for item, key in zip(counts, keys, strict=True)
+    ):
+        raise ValueError("issuance cell preflight minimum is below the policy floor")
 
 
 def promotion_sample_size_preflight(
