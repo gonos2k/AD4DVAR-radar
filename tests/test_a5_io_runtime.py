@@ -15,7 +15,7 @@ import advar.acceptance as acceptance
 import advar.runtime_closure as runtime_closure
 from advar.acceptance import RealCaseAcceptanceManifest
 from advar.diagnostics import audit_transport
-from tests import test_acceptance as acceptance_fixtures
+import test_acceptance as acceptance_fixtures
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]

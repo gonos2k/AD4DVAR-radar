@@ -14,7 +14,7 @@ from advar.sensitivity import (
     VerificationObservationErrorContract,
 )
 
-from tests.test_sensitivity import _current_verification_bundle
+from test_sensitivity import _current_verification_bundle
 
 
 class A5VerificationTests(unittest.TestCase):

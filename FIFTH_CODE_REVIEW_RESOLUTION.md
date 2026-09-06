@@ -104,3 +104,16 @@ Luna xhigh 구현 담당과 독립 교차 검토가 변경을 분담했다. 공�
 
 실제 레이더 hindcast와 CUDA 종단 간 검증은 이번 작업 범위에서 실행하지 않았다.
 MPS의 작은 가중 손실 probe는 P0/P1 전체 검증을 대신하지 않는다.
+
+## 격리 모드 CI 보정
+
+첫 A5 커밋 `72bab53`의 [CI 34004612074](https://github.com/gonos2k/AD4DVAR-radar/actions/runs/34004612074)는
+Wheel/CLI·UI가 성공했지만 CPU 두 작업은 새 시험 두 개의 import 오류로 수집 단계에서
+중단됐다. `python -I`에서 존재하지 않는 `tests` 패키지를 참조한 것이 원인이다.
+기존 시험 모듈을 직접 가져오도록 두 줄을 고쳤고 제품 소스는 변경하지 않았다.
+
+같은 격리 모드에서 해당 **13 passed, 6 subtests passed**, 추적 `tests/` 전체
+**1055개 수집 성공**을 확인했다. 이것은 전체 시험 실행의 성공을 뜻하지 않는다.
+[보정 증거](review_artifacts/a5_ci_compatibility_validation.zip)와
+[범위 기록](review_artifacts/a5_ci_compatibility_validation.json)을 보존했다.
+최종 커밋의 전체 CI는 PR의 최신 실행을 확인한다.
