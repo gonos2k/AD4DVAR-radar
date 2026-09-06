@@ -15852,6 +15852,7 @@ def _compute_variational_products(
             if adjoint_config.warm_start_by_metric:
                 warm_solutions[metric_index] = adjoint_solve.solution
             observation_sensitivity = adjoint_solve.sensitivity
+            # The observation channel is [3, H, W]; the field gradient is [H, W].
             background_sensitivity, background_field_sensitivity = cast(
                 tuple[Tensor, Tensor],
                 _frozen_initial_background_observation_sensitivity(
@@ -15889,8 +15890,8 @@ def _compute_variational_products(
                 assert prior_valid is not None
                 prior_cotangent = torch.where(
                     prior_valid,
-                    background_field_sensitivity[0],
-                    torch.zeros_like(background_field_sensitivity[0]),
+                    background_field_sensitivity,
+                    torch.zeros_like(background_field_sensitivity),
                 )
                 prior_log_std_cotangent = (
                     _frozen_neural_prior_log_std_sensitivity(
@@ -16397,7 +16398,8 @@ def _frozen_initial_background_observation_sensitivity(
     The active field, P0-derived baseline dynamics, remap cells, observation
     classes, and every other frozen structure remain fixed. The result has the
     observation shape and is nonzero only where the first frame supplied the
-    P1 initial background.
+    P1 initial background. With ``return_field_sensitivity``, also return the
+    unmasked [H, W] background-field gradient, without a time dimension.
     """
 
     initial_background = frozen.initial_background_dbz.detach()
