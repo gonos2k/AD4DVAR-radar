@@ -1,0 +1,326 @@
+{
+  "builder": {
+    "path": "/private/tmp/advar-phase1-completion/build_evidence.py",
+    "sha256": "8416c30ddc87d997081c83f1ea7a434ca3b4e5006a0277bee0b07945d86de183"
+  },
+  "captured_commands_and_results": [
+    {
+      "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I -m pytest -q tests/test_phase1_theoretical_demonstration.py",
+      "result": "2 passed",
+      "selector": "tests/test_phase1_theoretical_demonstration.py"
+    },
+    {
+      "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I -m pytest -q tests/test_nowcast.py::NowcastTests::test_motion_improves_an_independent_analytic_gaussian_truth",
+      "result": "1 passed",
+      "selector": "tests/test_nowcast.py::NowcastTests::test_motion_improves_an_independent_analytic_gaussian_truth"
+    }
+  ],
+  "ci": {
+    "reason": "PR CI remains pending and is not represented as passed.",
+    "status": "pending"
+  },
+  "code_and_test_hashes": [
+    {
+      "bytes": 3555,
+      "path": "AGENTS.md",
+      "present": true,
+      "required": true,
+      "sha256": "65c6e0423da169f6b90971935dddacb90124ebc9395b5d9696568433fbc41568"
+    },
+    {
+      "bytes": 6739,
+      "path": "src/advar/physics.py",
+      "present": true,
+      "required": true,
+      "sha256": "c4335f3f1b1ed47d54121e2ce1942e73065c69f3f918f8fa0f5a1f63de9005f1"
+    },
+    {
+      "bytes": 393235,
+      "path": "src/advar/nowcast.py",
+      "present": true,
+      "required": true,
+      "sha256": "391612bb8714c33d82f426f2225cf8869b2cb45679d362f95f2a2fb7191da63b"
+    },
+    {
+      "bytes": 743224,
+      "path": "src/advar/sensitivity.py",
+      "present": true,
+      "required": true,
+      "sha256": "9d53811e64599522d08b2f8c1b3dd0faa0b56c475067b00c0679d31c8d9a3e29"
+    },
+    {
+      "bytes": 374797,
+      "path": "src/advar/variational.py",
+      "present": true,
+      "required": true,
+      "sha256": "a50e3a651259362b7b75acac796540dff981615b4d34175393f020b3e311c279"
+    },
+    {
+      "bytes": 174630,
+      "path": "README.md",
+      "present": true,
+      "required": true,
+      "sha256": "6d64336b3a6de18aa126415fa32483e747e542ae8d0f69432e0d01975b5b0f60"
+    },
+    {
+      "bytes": 4868,
+      "path": "PHASE1_COMPLETION_CHECKLIST.md",
+      "present": true,
+      "required": true,
+      "sha256": "79a173e72a8ca48b48f818173a3bdb2df985079ae2d8d8d2d55ecf5f16e777b1"
+    },
+    {
+      "bytes": 4394,
+      "path": "SIXTH_CODE_REVIEW_CHECKLIST.md",
+      "present": true,
+      "required": true,
+      "sha256": "04e8472e286b841d20ac3bad8550f8e9311c7e33c573280d9e7379742c2992e0"
+    },
+    {
+      "bytes": 7509,
+      "path": "tests/test_phase1_theoretical_demonstration.py",
+      "present": true,
+      "required": true,
+      "sha256": "2bb32d16568a695ede40844bb390e7f2ecaec4201690a0cc87418db5a7c7b2b0"
+    },
+    {
+      "bytes": 15617,
+      "path": "tests/test_phase1_learning_demonstration.py",
+      "present": true,
+      "required": false,
+      "sha256": "44664c97e93ce5878746f4bfd3faf8f38cdec9aa5db7be34da23371d993dc086"
+    }
+  ],
+  "contract": "phase1-theoretical-validation-bundle-v1",
+  "existing_evidence_selectors": [
+    "tests/test_nowcast.py::NowcastTests::test_motion_improves_an_independent_analytic_gaussian_truth",
+    "tests/test_a5_uncertainty_oracles.py::A5UncertaintyOracleTests::test_physical_posterior_metadata_matches_independent_covariance",
+    "tests/test_promotion.py::NeuralPriorPromotionTests::test_event_weighted_estimand_is_invariant_to_case_replication"
+  ],
+  "final_focused_evidence": {
+    "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I -m pytest -q tests/test_phase1_theoretical_demonstration.py tests/test_phase1_learning_demonstration.py --junitxml=/tmp/advar-phase1-completion/final_focused.xml",
+    "log": "/tmp/advar-phase1-completion/final_focused.log",
+    "status": "captured_result",
+    "summary": {
+      "elapsed_seconds": 5.88,
+      "failed": 0,
+      "raw_tail": null,
+      "skipped": 0,
+      "status": "captured_result",
+      "subtests_passed": 0,
+      "tests_passed": 4,
+      "warnings": 18
+    },
+    "xml": "/tmp/advar-phase1-completion/final_focused.xml",
+    "xml_errors": 0,
+    "xml_failures": 0,
+    "xml_tests_attribute": 4
+  },
+  "full_suite": {
+    "reason": "No full-repository baseline result is an input to this bundle.",
+    "status": "not_claimed"
+  },
+  "generated_at_utc": "2026-09-06T13:04:20.841236+00:00",
+  "learning_evidence": {
+    "external_trust_boundary_fixture": {
+      "interpretation": "No learning eligibility or fixture pass is inferred from the review text or an absent trust-store file.",
+      "kind": "policy trust-store loader",
+      "path": "/tmp/advar-phase1-completion/learning-policies.json",
+      "present": false,
+      "status": "declared_boundary_only"
+    },
+    "probe_script": "/tmp/advar-phase1-completion/learn_probe.py",
+    "probe_script_present": true,
+    "result_status": "captured_report_status_requires_review",
+    "review_file": "/tmp/advar-phase1-completion/learning_contract_review.md",
+    "review_file_present": true,
+    "status": "captured_report",
+    "summary": {
+      "analysis_stationarity_tolerances": "AnalysisConfig defaults (not overridden)",
+      "baseline_dynamics_branch_status": "not_applicable",
+      "delta_dbz": -0.1,
+      "fixture": "synthetic_16x16_background_tendency_radar_dependent_prior",
+      "full_step_prediction": -6.487573174912796e-06,
+      "full_step_resolved_metric_change": -6.301509549479223e-06,
+      "full_step_valid": true,
+      "gauss_newton_gate": "VariationalAdjointConfig default 0.25 (not overridden)",
+      "half_step_prediction": -3.243786587456398e-06,
+      "half_step_resolved_metric_change": -3.195151618774067e-06,
+      "half_step_valid": true,
+      "material_metric_count": 1,
+      "maximum_gauss_newton_relative_curvature_defect": 0.11051546849207589,
+      "no_material_delta_dbz": 1e-06,
+      "no_material_reason": "no_material_learning_signal",
+      "numeric_precision": "float64 values recorded from the latest strict run",
+      "prior_dependency": "radar_dependent",
+      "prior_heads": "mean_std_valid_support_probability_truncated_location_scale",
+      "prior_initial_background_effect_l2": 5.104091405118943e-06,
+      "radar_dynamics_anchored_support_cells": 169,
+      "status": "eligible",
+      "verification_command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -m pytest -q tests/test_phase1_learning_demonstration.py"
+    },
+    "summary_file": "/tmp/advar-phase1-completion/learning_completion_summary.json"
+  },
+  "optional_future_inputs": {
+    "final_ci": {
+      "path": null,
+      "status": "not_supplied"
+    },
+    "final_log": {
+      "bytes": 530,
+      "path": "/tmp/advar-phase1-completion/final_focused.log",
+      "sha256": "23870c3a3c445177819f298c855b67968d6573aba29b1a24fd5c04137feab30f",
+      "status": "captured_input_not_interpreted"
+    },
+    "final_xml": {
+      "bytes": 908,
+      "path": "/tmp/advar-phase1-completion/final_focused.xml",
+      "sha256": "8a9c1611fccda1989b38299aab13aed1185154f463872658951924427da02d4b",
+      "status": "captured_input_not_interpreted"
+    },
+    "interpretation": "Optional inputs are hash-recorded only; a reviewer must interpret their result and update status explicitly.",
+    "learning_report": {
+      "bytes": 1271,
+      "path": "/tmp/advar-phase1-completion/learning_completion_summary.json",
+      "sha256": "2e2135a65b24c3b35f6edd56a1ee650c37f52a653ff5907c38ab89a9823b62e8",
+      "status": "captured_input_not_interpreted"
+    }
+  },
+  "runtime": {
+    "executable": "/Users/yhlee/ADVAR/.venv/bin/python",
+    "machine": "arm64",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "python_implementation": "CPython",
+    "python_version": "3.12.13 (main, Mar  3 2026, 12:39:30) [Clang 17.0.0 (clang-1700.6.3.2)]",
+    "torch_distribution_version": "2.13.0"
+  },
+  "scope": {
+    "real_data": "excluded",
+    "status": "theoretical_synthetic_only",
+    "universal_p0_p1_skill": "not_claimed"
+  },
+  "scoped_core_evidence": {
+    "captured_log": "/tmp/advar-phase1-completion/core.log",
+    "captured_xml": "/tmp/advar-phase1-completion/core.xml",
+    "collection_error": {
+      "interpretation": "The initial collection used a nonexistent PromotionTests class; the corrected NeuralPriorPromotionTests selectors are included in the successful command.",
+      "path": "/tmp/advar-phase1-completion/core_collection_error.log",
+      "present": true,
+      "product_test_failure": false,
+      "status": "corrected_selector_collection_attempt",
+      "text": "ERROR: not found: /Users/yhlee/ADVAR/tests/test_promotion.py::PromotionTests::test_event_weighted_estimand_is_invariant_to_case_replication\n(no match in any of [<Module test_promotion.py>])\n\n\nno tests ran in 0.99s"
+    },
+    "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I -m pytest -q tests/test_matrix_free.py tests/test_pcg.py tests/test_numerical_review.py tests/test_shift_zero.py tests/test_m0_linearity_weights.py tests/test_prior_spatial_cotangent.py tests/test_a5_uncertainty_oracles.py tests/test_a5_loss_stats.py tests/test_promotion.py::NeuralPriorPromotionTests::test_event_weighted_estimand_is_invariant_to_case_replication tests/test_promotion.py::NeuralPriorPromotionTests::test_same_physical_storm_across_days_and_radars_is_one_cluster --junitxml=/tmp/advar-phase1-completion/core.xml",
+    "command_status": "captured_from_reproduction_record",
+    "interpretation": "Scoped core evidence only; this is not a full-repository or CI result.",
+    "summary": {
+      "elapsed_seconds": 18.12,
+      "status": "captured_passed",
+      "subtests_passed": 148,
+      "tests_passed": 81,
+      "warnings": 18
+    },
+    "xml": {
+      "suites": [
+        {
+          "errors": 0,
+          "failures": 0,
+          "hostname": "Yongui-MacBookPro.local",
+          "name": "pytest",
+          "skipped": 0,
+          "testcase_elements": 81,
+          "tests_attribute": 229,
+          "timestamp": "2026-09-06T21:32:25.705796+09:00"
+        }
+      ]
+    }
+  },
+  "synthetic_oracle": {
+    "cases": [
+      {
+        "boundary_outflow_lead1": 67.19999999999999,
+        "boundary_outflow_lead18": 201.6,
+        "displacement_yx": [
+          1.0,
+          -1.0
+        ],
+        "lead18_maximum_forecast_echo": 0.0,
+        "log_growth_per_step": "ln(1.08)",
+        "maximum_absolute_error": 0.0,
+        "minimum_forecast_echo": 0.0,
+        "name": "integer"
+      },
+      {
+        "boundary_outflow_lead1": 30.873437499999994,
+        "boundary_outflow_lead18": 201.6,
+        "displacement_yx": [
+          0.375,
+          -0.625
+        ],
+        "lead18_maximum_forecast_echo": 0.0,
+        "log_growth_per_step": "-ln(1.06)",
+        "maximum_absolute_error": 8.881784197001252e-16,
+        "minimum_forecast_echo": 0.0,
+        "name": "fractional"
+      },
+      {
+        "boundary_outflow_lead1": 0.0,
+        "boundary_outflow_lead18": 0.0,
+        "displacement_yx": [
+          0.0,
+          0.0
+        ],
+        "lead18_maximum_forecast_echo": 9.057566886892374,
+        "log_growth_per_step": "ln(1.07)",
+        "maximum_absolute_error": 1.7763568394002505e-15,
+        "minimum_forecast_echo": 0.10700000000000001,
+        "name": "stationary_growth"
+      }
+    ],
+    "commands": [
+      {
+        "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I -m pytest -q tests/test_phase1_theoretical_demonstration.py",
+        "result": "2 passed",
+        "selector": "tests/test_phase1_theoretical_demonstration.py"
+      },
+      {
+        "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 .venv/bin/python -I -m pytest -q tests/test_nowcast.py::NowcastTests::test_motion_improves_an_independent_analytic_gaussian_truth",
+        "result": "1 passed",
+        "selector": "tests/test_nowcast.py::NowcastTests::test_motion_improves_an_independent_analytic_gaussian_truth"
+      }
+    ],
+    "config": {
+      "forecast_steps": 18,
+      "grid_shape_yx": [
+        7,
+        9
+      ],
+      "growth_decay_minutes": 50.0,
+      "interval_minutes": 10,
+      "oracle_absolute_tolerance_linear_echo": 1e-12,
+      "reference": "independent Python/NumPy destination scatter"
+    },
+    "contract": "phase1-synthetic-full-horizon-oracle-v1",
+    "frozen_metric_weight_check": {
+      "domain": "issued",
+      "issued_cells_at_lead18": 63,
+      "maximum_absolute_error": 0.0,
+      "output_detached_from_requires_grad_input": true,
+      "positive_frozen_weight_cells": 61,
+      "positive_weight_range": [
+        0.21290322580645163,
+        0.9870967741935484
+      ]
+    },
+    "limitations": [
+      "No real radar data or universal P0/P1-versus-persistence claim.",
+      "The local constant-displacement, damped-growth equations are tested on a small known lattice; branch-wide nonlinear optimality is outside scope."
+    ],
+    "related_existing_selectors": [
+      "tests/test_nowcast.py::NowcastTests::test_motion_improves_an_independent_analytic_gaussian_truth",
+      "tests/test_a5_uncertainty_oracles.py::A5UncertaintyOracleTests::test_physical_posterior_metadata_matches_independent_covariance",
+      "tests/test_promotion.py::NeuralPriorPromotionTests::test_event_weighted_estimand_is_invariant_to_case_replication"
+    ],
+    "scope": "CPU binary64 synthetic lattice only"
+  }
+}

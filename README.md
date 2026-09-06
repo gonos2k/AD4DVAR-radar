@@ -7,6 +7,14 @@ bundle 및 activation 도구는 과거 artifact를 읽기 위한 비권위적 en
 scaffold이며 required PR CI나 과학적 claim의 근거가 아니다. Shadow·canary·
 state-advancing LIVE는 승인하지 않는다.
 
+개발은 두 단계로 나눈다. **현재 1차 목표는 이론적 실증**이며, 모형의 가정·수식·
+구현을 독립 합성 시험으로 대조하고 CPU에서 재현 가능한 실행 증거를 남긴다.
+**2차 목표는 실자료를 활용한 체계**이며, 실제 레이더 사례의 예측 성능·보정·자료
+규모 검증은 그 단계에서 수행한다. 실자료의 부재는 1차 미완료 사유로 세지 않는다.
+1차의 완료 항목과 근거는 [이론 실증 체크리스트](PHASE1_COMPLETION_CHECKLIST.md)에
+기록한다. 완료율은 이 체크리스트의 충족률이며 모든 비선형 문제·입력·실행 환경에
+대한 정확성을 보장하는 비율은 아니다.
+
 ### 현재 계약 capability
 
 아래 표는 `src/advar/_contract_registry.py`에서 생성·검증된다. Runtime registry는
