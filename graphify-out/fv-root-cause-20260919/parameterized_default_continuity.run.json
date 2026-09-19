@@ -1,0 +1,10 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "graphify-out/fv-root-cause-20260919/check_parameterized_default_continuity.py"
+  ],
+  "returncode": 0,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 334446592,
+  "elapsed_seconds": 31.282611624978017
+}

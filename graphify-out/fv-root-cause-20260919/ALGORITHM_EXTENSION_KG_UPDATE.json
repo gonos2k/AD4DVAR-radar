@@ -25,7 +25,15 @@
     ],
     "central_240_relative_error": 4.397427966050047e-05,
     "central_240_evidence": "rotation240_stable_central_0.0005.json",
-    "html_response_panel": "original index.html; actual3x240x240tensor; desktop1440 and390pxiframe CSSviewport"
+    "html_response_panel": "original index.html; actual3x240x240tensor; desktop1440 and390pxiframe CSSviewport",
+    "partial_observation_preparation": "known initial support/boundaries only; missing/QC/quality masks end-to-end and zero excluded sensitivity",
+    "parameterized_background_mean": "nonzero/nonidentity B(y,theta), dense+FD tests; fixed support/precision; not typed prior",
+    "long_horizon_prescribed_flow": "fv_grid_convergence_180min.json: 32/64/128,18leads; converges but128JVPerrors31.11/20.05/13.45percent",
+    "finite_impact_relative_to_actual": [
+      0.5793733755,
+      0.4078444504,
+      2.213712683
+    ]
   },
   "failed": {
     "first_240_impact_step_dbz": 0.01,
@@ -37,19 +45,28 @@
     "second_evidence": "rotation240_impacts_small_steps_resource.json"
   },
   "remaining": [
-    "general FV/D7 integration",
-    "typed learned-background integration distinct from external composition proof"
+    "typed background mean/precision/support chain",
+    "partial observations and grid/time/public output integration",
+    "finite-impact validity domain",
+    "long-horizon field/JVP convergence and whole-chain D7 resource evidence"
   ],
-  "ci": "deferred by user; run35411573920 attempt2 found in progress and confirmed cancelled at13:16JST",
+  "ci": "Manual run35424239984 on0eb2a9d cancelled at user request; UI/package/typecheck passed, whole CPU suite incomplete. Tested tree equals merge5d4666c: dc06c91484ae24fae659bb253cffed1dd2678c8f. No full CI restarted.",
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6471,
-    "edges": 64694,
-    "communities": 233,
+    "nodes": 6498,
+    "edges": 64760,
+    "communities": 221,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
   "external_background_holdout": "tiny worsening, no improvement claim",
-  "pending_diagnostic": "fixed-support learned-background API design; typed prior remains unsupported"
+  "pending_diagnostic": "typed mean/precision/support integration remains; high long-horizon donorcell errors need low-diffusion design/derivative evidence",
+  "pr_state": {
+    "state": "merged",
+    "commit": "5d4666c0279ea597ec7d7439642ac9e738eac168",
+    "merged_at": "2026-09-19T14:33:15+09:00"
+  },
+  "followup_checklist": "POST_MERGE_REVIEW_CHECKLIST.md",
+  "followup_results": "REVIEW_FOLLOWUP_RESULTS.md"
 }

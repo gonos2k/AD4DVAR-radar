@@ -10,15 +10,18 @@ import json
 import math
 from pathlib import Path
 import re
+import subprocess
 
 import torch
 
 
 ROOT = Path(__file__).resolve().parents[2]
+MEASURED_REVISION = "ce6e36a2dcfb2f823647e7cabb5369dca3c9f200"
 HERE = Path(__file__).resolve().parent
 REPORT_PATH = HERE / "rotation240_stable_response_18.json"
 RESPONSE_PATH = HERE / "rotation240_stable_response_18.pt"
 CENTRAL_PATH = HERE / "rotation240_stable_central_0.0005.json"
+LONG_HORIZON_PATH = HERE / "fv_grid_convergence_180min.json"
 MAP_PATHS = tuple(HERE / f"rotation240_stable_response_18_sensitivity_{i}.svg" for i in range(3))
 
 
@@ -35,8 +38,11 @@ def _load_final_report():
     if hashlib.sha256((HERE / "rotation240_stable_refined.pt").read_bytes()).hexdigest() != report["refined_checkpoint_sha256"]:
         raise SystemExit("refined checkpoint differs from the measured artifact")
     for name, expected in report["source_hashes"].items():
-        if hashlib.sha256((ROOT / name).read_bytes()).hexdigest() != expected:
-            raise SystemExit(f"source changed since the measured response: {name}")
+        measured_source = subprocess.check_output(
+            ["git", "show", f"{MEASURED_REVISION}:{name}"], cwd=ROOT
+        )
+        if hashlib.sha256(measured_source).hexdigest() != expected:
+            raise SystemExit(f"measured revision does not match response source: {name}")
     if report.get("leads") != 18 or report.get("curvature") != "exact_robust_hessian":
         raise SystemExit("response report is not the requested 18-lead exact-Hessian result")
     impacts = report.get("impacts")
@@ -66,8 +72,11 @@ def _load_optional_central(report):
     if any(not _finite(central.get(name)) for name in required):
         raise SystemExit("central check has incomplete or nonfinite slope evidence")
     for side in ("positive", "negative"):
-        if not _finite(central.get(side, {}).get("gradient_max")):
-            raise SystemExit(f"central check has no finite {side} gradient maximum")
+        for name in ("actual_change", "linear_prediction", "taylor_error", "gradient_max", "face_margin"):
+            if not _finite(central.get(side, {}).get(name)):
+                raise SystemExit(f"central check has no finite {side} {name}")
+    if not _finite(central.get("step")) or central["step"] <= 0:
+        raise SystemExit("central check requires a positive step")
     adjoint = float(central["directional_slope"])
     central_slope = float(central["central_slope"])
     relative_error = (
@@ -81,6 +90,7 @@ def _load_optional_central(report):
         "relative_error": relative_error,
         "positive_gradient_max": float(central["positive"]["gradient_max"]),
         "negative_gradient_max": float(central["negative"]["gradient_max"]),
+        "negative_impact": {**central["negative"], "step": -central["step"]},
     }
 
 
@@ -139,10 +149,13 @@ def _write_sensitivity_map():
 
 def _panel(report, scale, central):
     impact_rows = []
-    for impact in report["impacts"]:
-        prediction = abs(impact["linear_prediction"])
-        relative_error = impact["taylor_error"] / prediction if prediction else None
-        relative_cell = f"<td>{relative_error:.3e}</td>" if relative_error is not None else "<td>N/A</td>"
+    impacts = list(report["impacts"])
+    if central is not None:
+        impacts.append(central["negative_impact"])
+    for impact in impacts:
+        actual = abs(impact["actual_change"])
+        relative_error = abs(impact["actual_change"] - impact["linear_prediction"]) / actual if actual else None
+        relative_cell = f"<td>{relative_error:.2%}</td>" if relative_error is not None else "<td>N/A (실제 변화 0)</td>"
         impact_rows.append(
             "<tr>"
             f"<td>{impact['step']:.3g}</td>"
@@ -176,6 +189,28 @@ def _panel(report, scale, central):
             f"{central['negative_gradient_max']:.3e}."
         )
         central_link = ' · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_central_0.0005.json">중앙 차분 JSON</a>'
+    long_horizon = ""
+    if LONG_HORIZON_PATH.is_file():
+        convergence = json.loads(LONG_HORIZON_PATH.read_text())
+        if convergence["leads"] != 18 or convergence["sizes"] != [32, 64, 128]:
+            raise SystemExit("long-horizon report must cover 18 leads and grids 32/64/128")
+        labels = {"translation": "병진", "rotation": "회전", "area_preserving_strain": "면적보존 변형"}
+        rows = "".join(
+            f"<tr><td>{labels[row['case']]}</td>"
+            f"<td>{row['leads'][-1]['relative_echo_l2']:.2%}</td>"
+            f"<td>{row['derivative']['jvp_relative_to_independent_oracle']:.2%}</td></tr>"
+            for row in convergence["results"] if row["size"] == 128
+        )
+        long_horizon = (
+            '<h3>별도 3시간 처방 유동 정확도 검사</h3>'
+            '<p>48km 영역·32/64/128 격자·알려진 영 경계의 donor-cell 시험입니다. '
+            '격자를 세분하면 오차가 감소하지만 아래 128격자 오차가 남습니다. '
+            '이산 수반의 일치가 연속 방정식에 대한 고정밀 민감도를 뜻하지 않습니다.</p>'
+            '<table style="border-spacing:12px 6px"><thead><tr><th>유동</th><th>에코 상대 L₂ 오차</th>'
+            f'<th>독립 기준 대비 JVP 오차</th></tr></thead><tbody>{rows}</tbody></table>'
+            '<p>처방 유동의 장시간 수치확산 검사이며, 240×240 역문제나 전체 D7 비용 검증이 아닙니다. '
+            '<a href="../../graphify-out/fv-root-cause-20260919/fv_grid_convergence_180min.json">3시간 원시 결과·소스 해시</a></p>'
+        )
     return f'''  <details class="learn" id="fvResponseEvidence">
     <summary>240×240 FV 관측 민감도·유한 섭동 연구 검증</summary>
     <div class="lesson-body">
@@ -189,11 +224,13 @@ def _panel(report, scale, central):
         </div>
         <figcaption style="margin-top:8px;color:var(--muted);font-size:.82rem">첫 관측 −20분 · 중간 관측 −10분 · 최근 관측 0분 · 세 지도 공통 색상 정규화 · 실제 3D 값은 원시 tensor 파일에 보존</figcaption>
       </figure>
-      <p>작은 성장량의 지수 증가분을 보존하는 계산식에서 분석 상태를 보정하고 수반을 새로 계산했습니다. 결과 JSON에 소스·응답 텐서·분석 체크포인트 해시를 기록했습니다.</p>
+      <p>측정 소스 커밋 <code>{MEASURED_REVISION[:7]}</code>의 저장 결과입니다. 작은 성장량을 보존하는 계산식에서 분석 상태를 보정하고 수반을 계산했습니다. 소스·응답 텐서·분석 체크포인트 해시를 확인해 재사용했으며, 현재 코드에서 다시 계산한 결과는 아닙니다.</p>
       <p>응답 score {report['score']:.8e}, sensitivity norm {report['sensitivity_norm']:.8e}, gradient max {report['gradient_max']:.3e}, adjoint relative residual {report['adjoint_relative_residual']:.3e}, face margin {report['face_margin']:.3e}.</p>
-      <div class="table-scroll" style="max-width:100%;overflow-x:auto"><table style="border-collapse:separate;border-spacing:10px 6px;white-space:nowrap"><thead><tr><th>h (dBZ)</th><th>실제 Δscore</th><th>1차 예측 h·s</th><th>절대 잔차</th><th>max |gradient|</th><th>분기 여유</th><th>상대 잔차</th></tr></thead><tbody>{''.join(impact_rows)}</tbody></table></div>
+      <div class="table-scroll" style="max-width:100%;overflow-x:auto"><table style="border-collapse:separate;border-spacing:10px 6px;white-space:nowrap"><thead><tr><th>h (dBZ)</th><th>실제 Δscore</th><th>1차 예측 h·s</th><th>절대 잔차</th><th>max |gradient|</th><th>분기 여유</th><th>실제 변화 대비 오차</th></tr></thead><tbody>{''.join(impact_rows)}</tbody></table></div>
+      <p>상대오차 = |실제 변화 − 1차 예측| / |실제 변화|. 실제 변화가 작으면 상대오차가 커질 수 있으므로 절대 잔차와 함께 해석합니다. 허용 가능한 유한 섭동 범위는 아직 검증하지 않았습니다.</p>
       <p>각 actual 값은 perturbed observations를 다시 자료동화해 얻은 값이고, h·s는 저장 응답의 signed linear prediction입니다. 두 양의 h에서 Taylor error 비는 <strong>{taylor_ratio:.9f}</strong>로 측정됐습니다. h를 절반으로 줄이자 오차가 약 4분의 1이 되어 2차 Taylor 잔차와 일치합니다. 다만 이 크기의 섭동에서는 1차 예측에 비해 잔차가 큽니다. 국소 미분 검증과 유한 변화량의 근사 정확도는 구분해야 합니다.</p>
       <p>{central_text}</p>
+      {long_horizon}
       <p><a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.json">최종 응답 JSON</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.pt">응답 tensor</a>{central_link} · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_0.svg">민감도 −20분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_1.svg">−10분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_2.svg">0분</a></p>
     </div>
   </details>

@@ -170,6 +170,369 @@ def _inputs():
     return observations, frozen, control, kwargs
 
 
+def _spatial_background(y, theta):
+    height, width = y.shape[-2:]
+    yy = torch.linspace(-1.0, 1.0, height, dtype=y.dtype)[:, None]
+    xx = torch.linspace(-0.5, 0.5, width, dtype=y.dtype)[None, :]
+    pattern = yy + 0.5 * xx + 0.1 * y[1]
+    return y[0] + theta * pattern
+
+
+@pytest.fixture(scope="module")
+def parameterized_refined_case(refined_case):
+    observations, frozen, _, boundary_echo, boundary_support = refined_case
+    theta = observations.dbz.new_tensor(0.02)
+    parameterized_frozen = replace(
+        frozen,
+        initial_background_dbz=_spatial_background(observations.dbz, theta),
+    )
+    result = solve_analysis(observations, parameterized_frozen)
+    control, _ = refine_fv_stationarity(
+        result.control,
+        observations,
+        parameterized_frozen,
+        gradient_tolerance=1.0e-10,
+        maximum_iterations=4,
+        maximum_normal_products=96,
+    )
+    gradient = torch.func.grad(
+        lambda value: robust_objective(
+            value, observations, parameterized_frozen
+        )
+    )(control)
+    assert torch.max(torch.abs(gradient)) < 1.0e-8
+    return (
+        observations,
+        parameterized_frozen,
+        control,
+        boundary_echo,
+        boundary_support,
+        theta,
+    )
+
+
+def _parameterized_response_kwargs(
+    observations, boundary_echo, boundary_support, theta
+):
+    return {
+        **_response_kwargs(observations, boundary_echo, boundary_support),
+        "background_dependency": "parameterized",
+        "background_parameter": theta,
+        "background_builder": _spatial_background,
+        "curvature": "exact_robust_hessian",
+    }
+
+
+def _forecast_score(control, frozen, boundary_echo, boundary_support):
+    trajectory = forecast_fv_analysis(
+        control,
+        frozen,
+        leads=2,
+        boundary_start_interval=2,
+        boundary_echo=boundary_echo,
+        boundary_support=boundary_support,
+    )
+    prediction = echo_to_dbz(
+        trajectory.frames_linear[1:], min_dbz=frozen.nowcast_config.min_dbz
+    )
+    return prediction.square().mean()
+
+
+def _dense_stationary_sensitivity(objective, score, control, parameter):
+    """Independent small-control oracle with a checked dense solve."""
+    gradient = torch.func.grad(objective, argnums=0)
+    hessian = _PROBE.dense_hessian(gradient, control, parameter)
+    rhs, direct = torch.func.grad(score, argnums=(0, 1))(control, parameter)
+    adjoint = torch.linalg.solve(hessian.T, rhs)
+    residual = hessian.T @ adjoint - rhs
+    # For a <=32 dimensional FP64 solve, this is the standard O(n eps)
+    # backward-error scale; it keeps the oracle check independent of PCG.
+    residual_scale = (
+        torch.linalg.matrix_norm(hessian.T, ord=2)
+        * torch.linalg.vector_norm(adjoint)
+        + torch.linalg.vector_norm(rhs)
+    )
+    residual_norm = torch.linalg.vector_norm(residual)
+    bound = 512.0 * torch.finfo(control.dtype).eps * residual_scale
+    assert residual_norm <= bound
+    _, pullback = torch.func.vjp(
+        lambda value: gradient(control, value), parameter
+    )
+    return (
+        direct - pullback(adjoint)[0],
+        residual_norm,
+        residual_scale,
+        hessian,
+        rhs,
+    )
+
+
+def _parameter_jacobian(gradient, control, parameter):
+    """Jacobian by scalar JVPs; FV recomputation has no vmap rule."""
+    columns = []
+    for basis in torch.eye(parameter.numel(), dtype=parameter.dtype):
+        tangent = basis.reshape_as(parameter)
+        columns.append(
+            torch.func.jvp(
+                lambda value: gradient(control, value),
+                (parameter,),
+                (tangent,),
+            )[1]
+        )
+    return torch.stack(columns, dim=1).reshape(control.numel(), -1)
+
+
+def _assert_response_matches_dense(
+    response_value,
+    expected,
+    response_relative_residual,
+    dense_residual,
+    hessian,
+    rhs,
+    gradient,
+    control,
+    parameter,
+):
+    cross = _parameter_jacobian(gradient, control, parameter)
+    amplification = torch.linalg.matrix_norm(
+        torch.linalg.solve(hessian, cross), ord=2
+    )
+    # The response exposes a freshly recomputed true residual.  This is the
+    # normwise perturbation bound for its PCG adjoint, plus the dense solve
+    # residual, with a small FP64 reduction guard.
+    solver_error = amplification * (
+        response_relative_residual * torch.linalg.vector_norm(rhs)
+        + dense_residual
+    )
+    roundoff = 4096.0 * torch.finfo(control.dtype).eps * (
+        torch.linalg.vector_norm(expected)
+        + torch.linalg.vector_norm(response_value)
+    )
+    bound = 4.0 * solver_error + roundoff
+    difference = torch.linalg.vector_norm(response_value - expected)
+    assert difference <= bound, (
+        f"dense response discrepancy {difference} exceeds "
+        f"residual/roundoff bound {bound}"
+    )
+
+
+def _polished_parameterized_score(
+    observations, frozen, parameter, boundary_echo, boundary_support
+):
+    shifted_frozen = replace(
+        frozen,
+        initial_background_dbz=_spatial_background(
+            observations.dbz, parameter
+        ),
+    )
+    result = solve_analysis(observations, shifted_frozen)
+    polished, _ = refine_fv_stationarity(
+        result.control,
+        observations,
+        shifted_frozen,
+        gradient_tolerance=1.0e-10,
+        maximum_iterations=4,
+        maximum_normal_products=96,
+    )
+    return _forecast_score(
+        polished, shifted_frozen, boundary_echo, boundary_support
+    )
+
+
+def test_parameterized_background_matches_external_exact_oracle(
+    parameterized_refined_case,
+):
+    (
+        observations,
+        frozen,
+        control,
+        boundary_echo,
+        boundary_support,
+        theta,
+    ) = parameterized_refined_case
+    kwargs = _parameterized_response_kwargs(
+        observations, boundary_echo, boundary_support, theta
+    )
+    response = compute_fv_observation_response(
+        control, observations, frozen, **kwargs
+    )
+    assert response.sensitivity_theta is not None
+
+    def objective_theta(value, parameter):
+        shifted = replace(
+            frozen,
+            initial_background_dbz=_spatial_background(
+                observations.dbz, parameter
+            ),
+        )
+        return robust_objective(value, observations, shifted)
+
+    def score_theta(value, parameter):
+        shifted = replace(
+            frozen,
+            initial_background_dbz=_spatial_background(
+                observations.dbz, parameter
+            ),
+        )
+        return _forecast_score(
+            value, shifted, boundary_echo, boundary_support
+        )
+
+    expected_theta, theta_residual, _, theta_hessian, theta_rhs = _dense_stationary_sensitivity(
+        objective_theta, score_theta, control, theta
+    )
+    theta_gradient = torch.func.grad(objective_theta, argnums=0)
+    _assert_response_matches_dense(
+        response.sensitivity_theta,
+        expected_theta,
+        response.adjoint_relative_residual,
+        theta_residual,
+        theta_hessian,
+        theta_rhs,
+        theta_gradient,
+        control,
+        theta,
+    )
+
+    def objective_y(value, y):
+        shifted = replace(
+            frozen,
+            initial_background_dbz=_spatial_background(y, theta),
+        )
+        return robust_objective(value, replace(observations, dbz=y), shifted)
+
+    def score_y(value, y):
+        shifted = replace(
+            frozen,
+            initial_background_dbz=_spatial_background(y, theta),
+        )
+        return _forecast_score(
+            value, shifted, boundary_echo, boundary_support
+        )
+
+    expected_y, y_residual, _, y_hessian, y_rhs = _dense_stationary_sensitivity(
+        objective_y, score_y, control, observations.dbz
+    )
+    y_gradient = torch.func.grad(objective_y, argnums=0)
+    _assert_response_matches_dense(
+        response.sensitivity_dbz,
+        expected_y,
+        response.adjoint_relative_residual,
+        y_residual,
+        y_hessian,
+        y_rhs,
+        y_gradient,
+        control,
+        observations.dbz,
+    )
+
+
+def test_parameterized_background_matches_polished_centered_reanalysis(
+    parameterized_refined_case,
+):
+    (
+        observations,
+        frozen,
+        control,
+        boundary_echo,
+        boundary_support,
+        theta,
+    ) = parameterized_refined_case
+    kwargs = _parameterized_response_kwargs(
+        observations, boundary_echo, boundary_support, theta
+    )
+    response = compute_fv_observation_response(
+        control, observations, frozen, **kwargs
+    )
+    assert response.sensitivity_theta is not None
+    direction = torch.zeros_like(observations.dbz)
+    detected = observations.detected_mask
+    direction[detected] = torch.linspace(
+        -1.0, 1.0, int(detected.sum()), dtype=direction.dtype
+    )
+    direction = direction / torch.linalg.vector_norm(direction)
+    step = observations.dbz.new_tensor(1.0e-4)
+    plus_y = replace(observations, dbz=observations.dbz + step * direction)
+    minus_y = replace(observations, dbz=observations.dbz - step * direction)
+    centered_y = (
+        _polished_parameterized_score(
+            plus_y, frozen, theta, boundary_echo, boundary_support
+        )
+        - _polished_parameterized_score(
+            minus_y, frozen, theta, boundary_echo, boundary_support
+        )
+    ) / (2 * step)
+    centered_theta = (
+        _polished_parameterized_score(
+            observations, frozen, theta + step, boundary_echo, boundary_support
+        )
+        - _polished_parameterized_score(
+            observations, frozen, theta - step, boundary_echo, boundary_support
+        )
+    ) / (2 * step)
+    torch.testing.assert_close(
+        (response.sensitivity_dbz * direction).sum(),
+        centered_y,
+        rtol=1.0e-7,
+        atol=2.0e-9,
+    )
+    torch.testing.assert_close(
+        response.sensitivity_theta.reshape(()),
+        centered_theta,
+        rtol=1.0e-7,
+        atol=2.0e-9,
+    )
+
+
+def test_parameterized_background_requires_exact_frozen_baseline(
+    parameterized_refined_case,
+):
+    observations, frozen, control, boundary_echo, boundary_support, theta = (
+        parameterized_refined_case
+    )
+    kwargs = _parameterized_response_kwargs(
+        observations, boundary_echo, boundary_support, theta
+    )
+    with pytest.raises(ValueError, match="match frozen background"):
+        compute_fv_observation_response(
+            control,
+            observations,
+            replace(
+                frozen,
+                initial_background_dbz=frozen.initial_background_dbz + 0.1,
+            ),
+            **kwargs,
+        )
+
+
+def test_parameterized_background_keeps_typed_prior_gate(
+    parameterized_refined_case,
+):
+    observations, frozen, control, boundary_echo, boundary_support, theta = (
+        parameterized_refined_case
+    )
+    kwargs = _parameterized_response_kwargs(
+        observations, boundary_echo, boundary_support, theta
+    )
+    with pytest.raises(
+        ValueError, match="observation-derived state cannot retain a prior"
+    ):
+        compute_fv_observation_response(
+            control,
+            observations,
+            replace(
+                frozen,
+                neural_prior_valid_mask=torch.ones_like(
+                    frozen.initial_background_dbz, dtype=torch.bool
+                ),
+                neural_prior_std_dbz=torch.ones_like(
+                    frozen.initial_background_dbz
+                ),
+            ),
+            **kwargs,
+        )
+
+
 def test_response_rejects_non_donorcell_before_stationarity():
     observations, frozen, control, kwargs = _inputs()
     fv = frozen.fv_transport

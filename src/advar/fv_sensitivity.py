@@ -52,6 +52,7 @@ class FVObservationResponse:
     curvature: Literal["irls_gauss_newton", "exact_robust_hessian"] = (
         "irls_gauss_newton"
     )
+    sensitivity_theta: Tensor | None = None
 
 
 def _face_rows(frozen: FrozenOuterState) -> Tensor:
@@ -521,7 +522,11 @@ def compute_fv_observation_response(
     boundary_start_interval: int,
     boundary_echo: BoundarySchedule,
     boundary_support: BoundarySchedule,
-    background_dependency: Literal["frozen", "first_observation"],
+    background_dependency: Literal[
+        "frozen", "first_observation", "parameterized"
+    ],
+    background_parameter: Tensor | None = None,
+    background_builder: Callable[[Tensor, Tensor], Tensor] | None = None,
     maximum_normal_products: int = 128,
     curvature: Literal["irls_gauss_newton", "exact_robust_hessian"] = (
         "irls_gauss_newton"
@@ -539,7 +544,19 @@ def compute_fv_observation_response(
     path. The weighted future dBZ MSE is fixed throughout the calculation.
 
     ``first_observation`` includes B(y)=y[0] and its direct forecast term;
-    ``frozen`` holds the initial background fixed. Masks and all other prepared
+    ``frozen`` holds the initial background fixed. The explicit
+    ``parameterized`` dependency enables a research-only differentiable
+    B(y, theta) path when both ``background_builder`` and
+    ``background_parameter`` are supplied. The builder must be deterministic,
+    reentrant, and free of hidden state mutation; it receives only analysis
+    observations and the explicit parameter. Invalid observation slots use the
+    same fixed min-dBZ placeholder as preparation, with zero observation
+    derivative; this placeholder does not mark them as observed clear sky.
+    Its baseline output must equal
+    the frozen initial background exactly and remain strictly inside the dBZ
+    bounds on initially supported cells; support masks, precisions, weights,
+    and boundary traces remain fixed. This is a data-dependent regularization
+    response, not a typed neural-prior promotion path. Masks and all other prepared
     inputs remain fixed. Requires-grad tensors for verification/weights/future
     boundaries are rejected. Detached dependencies cannot be inferred from raw
     tensors: their exogenous meaning remains the caller's responsibility.
@@ -550,8 +567,8 @@ def compute_fv_observation_response(
     ``curvature="exact_robust_hessian"`` uses matrix-free HVPs of the robust
     objective and rejects any non-positive curvature encountered by the solve,
     or any failed solve.  This is
-    a first-order research response, not a differentiated training API, an
-    exact implicit FSO, or a finite impact.
+    a local first-order research response, not a differentiated training API,
+    legacy FSO/FSOI eligibility, or a finite-impact certificate.
 
     The budget counts normal products, including true-residual checks, not
     total runtime/memory or every derivative. Budget 1 with a nonzero RHS fails
@@ -575,6 +592,59 @@ def compute_fv_observation_response(
         or frozen.neural_prior_valid_mask is not None
     ):
         raise ValueError("FV GN response requires the identity control prior")
+    if frozen.initial_support_mask.dtype is not torch.bool:
+        raise ValueError("FV response requires a fixed boolean initial support mask")
+
+    def build_background(y: Tensor, theta: Tensor) -> Tensor:
+        assert background_builder is not None
+        builder_input = torch.where(
+            observations.valid_mask, y, y.new_full((), frozen.nowcast_config.min_dbz)
+        )
+        return background_builder(builder_input, theta)
+
+    if background_dependency == "parameterized":
+        if background_builder is None or background_parameter is None:
+            raise ValueError(
+                "parameterized dependency requires background_builder and "
+                "background_parameter"
+            )
+        if not callable(background_builder):
+            raise TypeError("background_builder must be callable")
+        if (
+            background_parameter.dtype != control.dtype
+            or background_parameter.device != control.device
+            or not bool(torch.isfinite(background_parameter).all())
+        ):
+            raise ValueError("background_parameter must be finite CPU FP64")
+        baseline_background = build_background(
+            observations.dbz, background_parameter
+        )
+        initial_support = frozen.initial_support_mask
+        if (
+            not isinstance(baseline_background, Tensor)
+            or baseline_background.shape != frozen.initial_background_dbz.shape
+            or baseline_background.dtype != control.dtype
+            or baseline_background.device != control.device
+            or not bool(torch.isfinite(baseline_background).all())
+            or not torch.equal(
+                baseline_background, frozen.initial_background_dbz
+            )
+            or not bool(
+                (
+                    (baseline_background > frozen.nowcast_config.min_dbz)
+                    & (baseline_background < frozen.nowcast_config.max_dbz)
+                )[initial_support]
+                .all()
+            )
+        ):
+            raise ValueError(
+                "parameterized background baseline must match frozen background "
+                "and remain strictly inside dBZ bounds"
+            )
+    elif background_builder is not None or background_parameter is not None:
+        raise ValueError(
+            "background_builder and background_parameter require parameterized dependency"
+        )
     if not bool(observations.valid_mask.any()):
         raise ValueError("FV observation response requires at least one valid observation")
     detected = observations.valid_mask & observations.detected_mask
@@ -590,9 +660,6 @@ def compute_fv_observation_response(
         raise ValueError(
             "detected observations must be strictly inside detection and dBZ limits"
         )
-    if frozen.initial_support_mask.dtype is not torch.bool:
-        raise ValueError("FV response requires a fixed boolean initial support mask")
-
     def validate_support_schedule(schedule: BoundarySchedule, name: str) -> None:
         for stages in schedule:
             for edges in stages:
@@ -606,7 +673,9 @@ def compute_fv_observation_response(
 
     validate_support_schedule(fv.boundary_support, "FV prescribed support")
     validate_support_schedule(boundary_support, "future prescribed support")
-    if background_dependency not in ("frozen", "first_observation"):
+    if background_dependency not in (
+        "frozen", "first_observation", "parameterized"
+    ):
         raise ValueError("unknown background_dependency")
     if background_dependency == "first_observation" and not bool(
         observations.detected_mask[0].all()
@@ -692,20 +761,34 @@ def compute_fv_observation_response(
     weights = weights / weights.sum()
     if bool(((metric_weight > 0) & (weights == 0)).any()):
         raise ValueError("metric_weight dynamic range underflows during normalization")
-    def contract(y: Tensor) -> FrozenOuterState:
+    parameterized_background = background_dependency == "parameterized"
+    response_parameter = (
+        background_parameter
+        if background_parameter is not None
+        else observations.dbz.new_zeros(())
+    )
+
+    def contract(y: Tensor, theta: Tensor) -> FrozenOuterState:
+        if parameterized_background:
+            return replace(
+                frozen,
+                initial_background_dbz=build_background(y, theta),
+            )
         return (
             replace(frozen, initial_background_dbz=y[0])
             if background_dependency == "first_observation"
             else frozen
         )
 
-    def objective(c: Tensor, y: Tensor) -> Tensor:
-        return robust_objective(c, replace(observations, dbz=y), contract(y))
+    def objective(c: Tensor, y: Tensor, theta: Tensor) -> Tensor:
+        return robust_objective(
+            c, replace(observations, dbz=y), contract(y, theta)
+        )
 
-    def score(c: Tensor, y: Tensor) -> Tensor:
+    def score(c: Tensor, y: Tensor, theta: Tensor) -> Tensor:
         trajectory = forecast_fv_analysis(
             c,
-            contract(y),
+            contract(y, theta),
             leads=leads,
             boundary_start_interval=boundary_start_interval,
             boundary_echo=boundary_echo,
@@ -720,15 +803,19 @@ def compute_fv_observation_response(
         return (weights * difference.square()).sum()
 
     gradient = torch.func.grad(objective, argnums=0)
-    g = gradient(control, observations.dbz)
+    g = gradient(control, observations.dbz, response_parameter)
     gradient_max = float(g.abs().max())
     if not bool(torch.isfinite(g).all()) or gradient_max > 1e-8:
         raise ValueError("FV response requires a refined robust stationary point")
-    metric_value = score(control, observations.dbz)
+    metric_value = score(control, observations.dbz, response_parameter)
     if not bool(torch.isfinite(metric_value)):
         raise ValueError("nonfinite FV score")
-    rhs, direct = torch.func.grad(score, argnums=(0, 1))(control, observations.dbz)
-    if not bool(torch.isfinite(metric_value)) or not bool(torch.isfinite(direct).all()):
+    rhs, direct, direct_theta = torch.func.grad(score, argnums=(0, 1, 2))(
+        control, observations.dbz, response_parameter
+    )
+    if not bool(torch.isfinite(direct).all()) or not bool(
+        torch.isfinite(direct_theta).all()
+    ):
         raise ValueError("nonfinite FV score or direct sensitivity")
     products = 0
 
@@ -758,8 +845,12 @@ def compute_fv_observation_response(
             products += 1
             hessian = torch.func.jvp(
                 gradient,
-                (control, observations.dbz),
-                (direction, torch.zeros_like(observations.dbz)),
+                (control, observations.dbz, response_parameter),
+                (
+                    direction,
+                    torch.zeros_like(observations.dbz),
+                    torch.zeros_like(response_parameter),
+                ),
             )[1]
             # H(0)=0 is valid; a zero direction carries no curvature
             # information and must not be treated as a positive-definiteness
@@ -783,12 +874,20 @@ def compute_fv_observation_response(
     )
     if not adjoint.converged:
         raise ValueError("FV curvature adjoint did not converge")
-    observation_pullback = cast(
-        Callable[[Tensor], tuple[Tensor]],
-        torch.func.vjp(lambda y: gradient(control, y), observations.dbz)[1],
+    observation_pullback = torch.func.vjp(
+        lambda y, theta: gradient(control, y, theta),
+        observations.dbz,
+        response_parameter,
+    )[1]
+    pullback_y, pullback_theta = observation_pullback(adjoint.solution)
+    sensitivity = direct - pullback_y
+    sensitivity_theta = (
+        direct_theta - pullback_theta if parameterized_background else None
     )
-    sensitivity = direct - observation_pullback(adjoint.solution)[0]
-    if not bool(torch.isfinite(sensitivity).all()):
+    if not bool(torch.isfinite(sensitivity).all()) or (
+        sensitivity_theta is not None
+        and not bool(torch.isfinite(sensitivity_theta).all())
+    ):
         raise ValueError("nonfinite FV observation sensitivity")
     return FVObservationResponse(
         sensitivity_dbz=sensitivity,
@@ -799,4 +898,5 @@ def compute_fv_observation_response(
         adjoint_relative_residual=adjoint.relative_residual,
         face_margin=face_margin,
         curvature=curvature,
+        sensitivity_theta=sensitivity_theta,
     )

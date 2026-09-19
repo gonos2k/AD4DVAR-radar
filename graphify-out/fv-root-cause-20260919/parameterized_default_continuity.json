@@ -1,0 +1,32 @@
+{
+  "scope": "4x5 exact before/after comparison; not a repeated 240-grid run",
+  "measured_revision": "ce6e36a2dcfb2f823647e7cabb5369dca3c9f200",
+  "baseline_source_sha256": "78cf5819bd135af1eadd92996acc68ba979b195181f1ac0065d1eb11ec521646",
+  "current_source_sha256": "ef06f8a5dca3548d010be15e06549b884673446eec4fab43f754fe209c5a2d6b",
+  "records": [
+    {
+      "dependency": "frozen",
+      "curvature": "irls_gauss_newton",
+      "sensitivity_max_difference": 0.0,
+      "all_existing_fields_equal": true
+    },
+    {
+      "dependency": "frozen",
+      "curvature": "exact_robust_hessian",
+      "sensitivity_max_difference": 0.0,
+      "all_existing_fields_equal": true
+    },
+    {
+      "dependency": "first_observation",
+      "curvature": "irls_gauss_newton",
+      "sensitivity_max_difference": 0.0,
+      "all_existing_fields_equal": true
+    },
+    {
+      "dependency": "first_observation",
+      "curvature": "exact_robust_hessian",
+      "sensitivity_max_difference": 0.0,
+      "all_existing_fields_equal": true
+    }
+  ]
+}

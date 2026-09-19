@@ -16,7 +16,7 @@
 
 ## Required before considering general completion
 
-- Deferred by user: CI/deployment checks follow algorithm completion. Cancelled run 35411573920; local focused numerical checks do not establish full CI success.
+- Full Python 3.12 CI was subsequently requested. Run 35424239984 checks final PR head 0eb2a9d; record its actual conclusion separately from skipped automatic jobs. Deployment remains deferred.
 - [x] Fixed missing/detection masks, conservative known-support stencil and sensitive-face refusal; partial-support reanalysis FD includes B=y[0] consistently.
 - [x] Declared 240×240 rotation: unchanged stationarity gate, matrix-free adjoint actual residual, one-sided Taylor refinement and matched central reanalysis. Global Hessian conditioning and arbitrary perturbations are not certified.
 - [ ] Integrate a background neural prior with its mean/support/residual derivatives; the existing small NN changes observation-error statistics instead.
@@ -25,9 +25,9 @@
 
 These are substantive extensions, not permission to loosen gates or reinterpret a
 local first-order flag. The user approved larger-token/compute expansion and then
-deferred CI/deployment until algorithms are finished. PR #160 is open (not draft);
-preserve its existing state while completing numerical work. Merge/close remains
-separate from local algorithm verification. See ALGORITHM_EXTENSION_PLAN.md.
+deferred deployment. PR #160 was merged at 2026-09-19 14:33:15 KST/JST as
+5d4666c. Merge is not evidence of general FV completion or full CPU success.
+See ALGORITHM_EXTENSION_PLAN.md and POST_MERGE_REVIEW_CHECKLIST.md.
 
 ## Additional executed evidence
 
@@ -57,4 +57,5 @@ CI follow-up: attempt 2 of run 35411573920 was found running at 13:15 JST; cance
 Manual runs use Python 3.12 only; the Python 3.10 option and version matrix were
 removed at the user's request. Automatic runs retain only the lightweight UI check.
 The workflow passed actionlint; no CI or numerical suite was launched for this
-configuration change. This local change takes effect remotely after push.
+configuration change. The workflow changes were pushed and merged in PR #160;
+the user subsequently requested the manual run recorded above.

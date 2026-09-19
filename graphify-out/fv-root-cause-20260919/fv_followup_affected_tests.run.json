@@ -1,0 +1,16 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-I",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_fv_variational_residual.py",
+    "tests/test_fv_analysis_forecast.py",
+    "tests/test_fv_grid_convergence_probe.py"
+  ],
+  "returncode": 0,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 341164032,
+  "elapsed_seconds": 23.20555804198375
+}
