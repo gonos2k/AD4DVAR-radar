@@ -79,3 +79,14 @@ on held-out outcomes or relax stationarity gates to obtain a pass.
 - [ ] General control-dependent relevance classifier and finite-path branch proof.
 - [ ] General minmod response API, typed mean/precision/support learning, valid
   finite-impact range and whole-chain D7 remain open.
+
+## PR165 spatial inverse follow-up
+
+- [x] Validate archived 3x3 stationarity, adjoint residual, positive curvature,
+  branch margin and arithmetic error consistency before rendering. Bind the
+  canonical report (including source hashes) to the measured PR165 artifact.
+- [x] Preserve per-cell limiter choices and per-face signs; regression must
+  distinguish spatial layouts collapsed by the former `.all()` signature.
+- [ ] Run the 4x5/26-control inverse with endpoint controls, scores, gradients,
+  signatures and phase costs, then compare the default product GN tolerances.
+  Local response and optimizer convergence are separate completion conditions.

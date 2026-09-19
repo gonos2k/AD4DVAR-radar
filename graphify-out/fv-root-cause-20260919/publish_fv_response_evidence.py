@@ -150,6 +150,48 @@ def _validate_transport_comparison(reports):
         raise SystemExit("transport comparison sources do not match the measured revision")
 
 
+def _validate_joint_inverse(joint):
+    """Validate the archived 3x3 result, not a newly generated inverse report.
+
+    Canonical report identity is from PR165/855aab5, including its producer
+    hashes. It does not assert that today's producer is the measured source.
+    """
+    expected_rows = {(direction, h) for direction in ("observation", "background_parameter")
+                     for h in (.001, .0005)}
+    if (joint["controls"] != 12 or joint["substeps_per_interval"] != 9
+            or joint["stationary_branch"]["euler_stages"] != 54
+            or joint["general_minmod_response_eligible"] is not False
+            or joint["finite_path_certified"] is not False
+            or len(joint["reanalysis"]) != 4
+            or {(r["direction"], r["h"]) for r in joint["reanalysis"]} != expected_rows):
+        raise SystemExit("joint minmod report scope or reanalysis mismatch")
+    # The oracle uses 1e-10 stationarity; require a resolved adjoint and strict
+    # positive curvature/limiter margins before publishing this local result.
+    for name in ("gradient_max", "adjoint_relative_residual"):
+        value = joint.get(name)
+        if not _finite(value) or not 0 <= value <= 1e-10:
+            raise SystemExit(f"joint minmod invalid {name}")
+    eigenvalue = joint.get("hessian_min_eigenvalue")
+    margin = joint["stationary_branch"].get("minimum_scaled_slope_margin")
+    if not _finite(eigenvalue) or eigenvalue <= 0:
+        raise SystemExit("joint minmod invalid Hessian curvature")
+    if not _finite(margin) or margin <= 128*math.ulp(1.0):
+        raise SystemExit("joint minmod invalid branch margin")
+    for row in joint["reanalysis"]:
+        adjoint, central, error = (row.get(k) for k in
+                                  ("adjoint", "central_reanalysis", "absolute_error"))
+        if not all(_finite(v) for v in (adjoint, central, error)) or error < 0:
+            raise SystemExit("joint minmod invalid reanalysis numbers")
+        expected = abs(adjoint-central)
+        if not math.isclose(error, expected, rel_tol=1e-12,
+                            abs_tol=8*math.ulp(max(abs(adjoint), abs(central)))):
+            raise SystemExit("joint minmod inconsistent absolute_error")
+    fingerprint = hashlib.sha256(json.dumps(joint, sort_keys=True,
+                                            separators=(",", ":")).encode()).hexdigest()
+    if fingerprint != "eb1b676c9b80996d197ca344d3ff9a23d9aa7b83919c1c81172ac15f7a87d950":
+        raise SystemExit("joint minmod archived report/source identity mismatch")
+
+
 def _colour(value, scale):
     """Symmetric blue-paper-red colour for a normalized sensitivity value."""
     t = max(-1.0, min(1.0, float(value) / scale))
@@ -306,17 +348,7 @@ def _panel(report, scale, central):
     joint_path = HERE / "minmod_joint_inverse_final.json"
     if joint_path.is_file():
         joint = json.loads(joint_path.read_text())
-        expected_rows = {(direction, h) for direction in ("observation", "background_parameter")
-                         for h in (.001, .0005)}
-        if (joint["controls"] != 12 or joint["substeps_per_interval"] != 9
-                or joint["stationary_branch"]["euler_stages"] != 54
-                or joint["general_minmod_response_eligible"] is not False
-                or joint["finite_path_certified"] is not False
-                or len(joint["reanalysis"]) != 4
-                or {(r["direction"], r["h"]) for r in joint["reanalysis"]} != expected_rows
-                or not all(math.isfinite(r[k]) for r in joint["reanalysis"]
-                           for k in ("adjoint", "central_reanalysis", "absolute_error"))):
-            raise SystemExit("joint minmod report scope or reanalysis mismatch")
+        _validate_joint_inverse(joint)
         rows = "".join(
             f"<tr><td>{row['direction']}</td><td>{row['h']:.4g}</td>"
             f"<td>{row['adjoint']:.8e}</td><td>{row['central_reanalysis']:.8e}</td>"

@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "examples/weather_scenarios/fv_minmod_inverse_probe.py",
+    "--spatial",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/minmod_spatial_inverse.json"
+  ],
+  "returncode": 1,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 343048192,
+  "elapsed_seconds": 271.2747013749904
+}
