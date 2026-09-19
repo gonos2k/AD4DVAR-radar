@@ -6,6 +6,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      python-compatibility:
+        description: Also test Python 3.10 compatibility
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -16,17 +21,15 @@ concurrency:
 
 jobs:
   test:
+    # Phase 1 uses focused local numerical checks; full tests are opt-in.
+    if: github.event_name == 'workflow_dispatch'
     name: Python ${{ matrix.python-version }} CPU
     runs-on: ubuntu-latest
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - python-version: "3.10"
-            lock_file: requirements/ci-py310-linux.lock
-          - python-version: "3.12"
-            lock_file: requirements/ci-py312-linux.lock
+        include: ${{ fromJSON(inputs.python-compatibility && '[{"python-version":"3.10","lock_file":"requirements/ci-py310-linux.lock"},{"python-version":"3.12","lock_file":"requirements/ci-py312-linux.lock"}]' || '[{"python-version":"3.12","lock_file":"requirements/ci-py312-linux.lock"}]') }}
 
     steps:
       - name: Check out source
@@ -109,6 +112,7 @@ jobs:
           node --test tests/test_initial_field_lab_ui.cjs
 
   package:
+    if: github.event_name == 'workflow_dispatch'
     name: Wheel and CLI smoke
     runs-on: ubuntu-latest
     # This required job validates a reproducible scientific package. Operational

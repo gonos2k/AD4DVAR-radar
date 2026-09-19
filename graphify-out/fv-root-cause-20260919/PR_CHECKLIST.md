@@ -52,3 +52,9 @@ reanalysis values; original embedded forecast arrays are unchanged. These are
 case-specific local derivative results, not general typed-prior completion.
 
 CI follow-up: attempt 2 of run 35411573920 was found running at 13:15 JST; cancellation was requested and GitHub confirmed completed/cancelled. No new full CI was started.
+
+2026-09-19 CI policy: full CPU tests and packaging are manual-only during phase 1.
+Manual runs default to Python 3.12; the `python-compatibility` input additionally
+enables Python 3.10. Automatic runs retain only the lightweight UI check.
+The workflow passed actionlint; no CI or numerical suite was launched for this
+configuration change. This local change takes effect remotely after push.
