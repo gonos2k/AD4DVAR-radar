@@ -31,3 +31,14 @@ Retain donor-cell exact-response limits unless a separately verified limiter
 path is introduced. Keep exact-boundary numerical tests separate from synthetic
 forecasts that use only boundary information available at issuance. Do not tune
 on held-out outcomes or relax stationarity gates to obtain a pass.
+
+## PR161 observation/branch follow-up
+
+- [x] Normalize parameterized builder inputs by detected/censored/invalid status;
+  censored numeric placeholders must not become continuous observations via B.
+- [x] Reject the initial-transform clamp join in both B-dependent response modes;
+  retain the equation and both smooth branches. This is not finite-path certification.
+- [ ] Complete the same-duration low-diffusion comparison before changing the
+  exact-response transport backend. See BACKGROUND_CONTRACT_REVIEW.md for metrics
+  and branch/derivative checkpoints; increasing substeps alone does not remove
+  donor-cell spatial diffusion.

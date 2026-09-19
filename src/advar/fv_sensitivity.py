@@ -549,13 +549,20 @@ def compute_fv_observation_response(
     B(y, theta) path when both ``background_builder`` and
     ``background_parameter`` are supplied. The builder must be deterministic,
     reentrant, and free of hidden state mutation; it receives only analysis
-    observations and the explicit parameter. Invalid observation slots use the
-    same fixed min-dBZ placeholder as preparation, with zero observation
-    derivative; this placeholder does not mark them as observed clear sky.
+    observations and the explicit parameter. Detected callback inputs retain
+    raw dBZ values, censored inputs use the fixed detection-limit
+    representative, and invalid slots use the same fixed min-dBZ placeholder
+    as preparation; censored and invalid branches therefore have zero
+    observation derivative and their masks remain distinct.
     Its baseline output must equal
     the frozen initial background exactly and remain strictly inside the dBZ
     bounds on initially supported cells; support masks, precisions, weights,
-    and boundary traces remain fixed. This is a data-dependent regularization
+    and boundary traces remain fixed. The initial transform clamp join is
+    rejected within floating-point resolution; either open branch is allowed.
+    Below the join, the initial field is locally constant with respect to B.
+    The builder itself must be locally twice differentiable. This local check
+    does not certify a finite perturbation interval or arbitrary builder branches.
+    This is a data-dependent regularization
     response, not a typed neural-prior promotion path. Masks and all other prepared
     inputs remain fixed. Requires-grad tensors for verification/weights/future
     boundaries are rejected. Detached dependencies cannot be inferred from raw
@@ -597,8 +604,14 @@ def compute_fv_observation_response(
 
     def build_background(y: Tensor, theta: Tensor) -> Tensor:
         assert background_builder is not None
+        detection_limit = y.new_full(
+            (), frozen.analysis_config.detection_limit_dbz
+        )
+        min_dbz = y.new_full((), frozen.nowcast_config.min_dbz)
         builder_input = torch.where(
-            observations.valid_mask, y, y.new_full((), frozen.nowcast_config.min_dbz)
+            observations.detected_mask,
+            y,
+            torch.where(observations.censored_mask, detection_limit, min_dbz),
         )
         return background_builder(builder_input, theta)
 
@@ -687,6 +700,22 @@ def compute_fv_observation_response(
         frozen.initial_background_dbz, observations.dbz[0]
     ):
         raise ValueError("first_observation requires initial background B=y[0]")
+    if background_dependency in ("first_observation", "parameterized"):
+        background = frozen.initial_background_dbz
+        floor = frozen.nowcast_config.min_dbz
+        scale = frozen.analysis_config.echo_transform_scale_dbz
+        epsilon = frozen.analysis_config.transform_epsilon
+        offset = (background - floor) / scale
+        # Bound cancellation/rounding in the dimensionless clamp argument.
+        # Both open branches are smooth; the join has no two-sided derivative.
+        margin = 64 * torch.finfo(control.dtype).eps * (
+            (background.abs() + abs(floor)) / scale + epsilon
+        )
+        near_join = (offset - epsilon).abs() <= margin
+        if bool(near_join[frozen.initial_support_mask].any()):
+            raise ValueError(
+                "background is at the initial transform clamp boundary"
+            )
     if type(maximum_normal_products) is not int or maximum_normal_products <= 0:
         raise ValueError("maximum_normal_products must be a positive integer")
     if curvature not in ("irls_gauss_newton", "exact_robust_hessian"):

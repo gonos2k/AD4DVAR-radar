@@ -1039,3 +1039,81 @@ def test_response_rejects_narrow_observation_shape_without_broadcasting():
     )
     with pytest.raises(ValueError, match="frozen CPU FP64 analysis grid"):
         compute_fv_observation_response(control, narrowed, frozen, **kwargs)
+
+
+@pytest.mark.parametrize("neighbor", [-1, 0, 1])
+def test_parameterized_background_rejects_transform_join(neighbor):
+    observations, frozen, boundary_echo, boundary_support = _PROBE.make_case()
+    epsilon = 2.0 ** -20
+    value = torch.tensor(epsilon, dtype=torch.float64)
+    if neighbor:
+        value = torch.nextafter(value, value.new_tensor(
+            float("inf") if neighbor > 0 else 0.0
+        ))
+    background = value.expand_as(frozen.initial_background_dbz).clone()
+    frozen = replace(
+        frozen,
+        nowcast_config=replace(frozen.nowcast_config, min_dbz=0.0),
+        analysis_config=replace(
+            frozen.analysis_config, echo_transform_scale_dbz=1.0,
+            transform_epsilon=epsilon,
+        ),
+        initial_background_dbz=background,
+    )
+    kwargs = _response_kwargs(observations, boundary_echo, boundary_support)
+    kwargs.update(
+        background_dependency="parameterized",
+        background_parameter=torch.tensor(0.0, dtype=torch.float64),
+        background_builder=lambda y, theta: background + theta,
+    )
+    with pytest.raises(ValueError, match="initial transform clamp boundary"):
+        compute_fv_observation_response(
+            initial_control(frozen), observations, frozen, **kwargs
+        )
+
+
+@pytest.mark.parametrize("factor", [0.5, 2.0])
+def test_initial_transform_open_branches_match_two_sided_derivatives(factor):
+    from advar.variational import _initial_analysis_dbz
+
+    _, frozen, _, _ = _PROBE.make_case()
+    epsilon = 2.0 ** -20
+    frozen = replace(
+        frozen,
+        nowcast_config=replace(frozen.nowcast_config, min_dbz=0.0),
+        analysis_config=replace(
+            frozen.analysis_config, echo_transform_scale_dbz=1.0,
+            transform_epsilon=epsilon,
+        ),
+    )
+    background = torch.full_like(frozen.initial_background_dbz, factor * epsilon)
+    field = torch.zeros_like(background)
+
+    def transform(value):
+        return _initial_analysis_dbz(
+            field, replace(frozen, initial_background_dbz=value)
+        )
+
+    direction = torch.ones_like(background)
+    primal, derivative = torch.func.jvp(transform, (background,), (direction,))
+    expected = torch.full_like(background, float(factor > 1))
+    torch.testing.assert_close(derivative, expected, rtol=1e-12, atol=1e-12)
+    step = epsilon * 1e-3
+    for sign in (-1, 1):
+        difference = (transform(background + sign * step) - primal) / (sign * step)
+        torch.testing.assert_close(difference, derivative, rtol=1e-8, atol=1e-10)
+
+
+def test_first_observation_rejects_initial_transform_join():
+    observations, frozen, boundary_echo, boundary_support = _PROBE.make_case()
+    offset = (
+        frozen.initial_background_dbz - frozen.nowcast_config.min_dbz
+    ) / frozen.analysis_config.echo_transform_scale_dbz
+    frozen = replace(frozen, analysis_config=replace(
+        frozen.analysis_config, transform_epsilon=float(offset[0, 0])
+    ))
+    with pytest.raises(ValueError, match="initial transform clamp boundary"):
+        compute_fv_observation_response(
+            initial_control(frozen), observations, frozen,
+            **_response_kwargs(observations, boundary_echo, boundary_support),
+        )
