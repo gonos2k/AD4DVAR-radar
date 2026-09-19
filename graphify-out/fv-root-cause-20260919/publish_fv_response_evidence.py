@@ -302,6 +302,43 @@ def _panel(report, scale, central):
             '<a href="../../graphify-out/fv-root-cause-20260919/fv_comparison_minmod_180min.json">minmod 원시 결과</a> · '
             '<a href="../../graphify-out/fv-root-cause-20260919/REGRESSION_AND_TRANSPORT_COMPARISON.md">검증 범위·폭·면적·비용</a></p>'
         )
+    joint_inverse = ""
+    joint_path = HERE / "minmod_joint_inverse_final.json"
+    if joint_path.is_file():
+        joint = json.loads(joint_path.read_text())
+        expected_rows = {(direction, h) for direction in ("observation", "background_parameter")
+                         for h in (.001, .0005)}
+        if (joint["controls"] != 12 or joint["substeps_per_interval"] != 9
+                or joint["stationary_branch"]["euler_stages"] != 54
+                or joint["general_minmod_response_eligible"] is not False
+                or joint["finite_path_certified"] is not False
+                or len(joint["reanalysis"]) != 4
+                or {(r["direction"], r["h"]) for r in joint["reanalysis"]} != expected_rows
+                or not all(math.isfinite(r[k]) for r in joint["reanalysis"]
+                           for k in ("adjoint", "central_reanalysis", "absolute_error"))):
+            raise SystemExit("joint minmod report scope or reanalysis mismatch")
+        rows = "".join(
+            f"<tr><td>{row['direction']}</td><td>{row['h']:.4g}</td>"
+            f"<td>{row['adjoint']:.8e}</td><td>{row['central_reanalysis']:.8e}</td>"
+            f"<td>{row['absolute_error']:.3e}</td></tr>"
+            for row in joint["reanalysis"]
+        )
+        joint_inverse = (
+            '<h3 id="fvMinmodJointInverse">작은 minmod 공동 역문제: 실제 재분석 대조</h3>'
+            '<p>3×3 초기장 9개 값·유동 계수 2개·성장을 같은 minmod 목적함수로 함께 추정했습니다. '
+            '고정된 알려진 경계, FP64, 구간당 9 substep의 별도 국소 실험입니다. '
+            '검증장은 기준 분석 예측에 합성 오차를 더한 뒤 고정했습니다. '
+            '독립 예측 성능 검증이나 위 애니메이션을 바꾼 결과가 아닙니다.</p>'
+            f'<p>정상점 max |gradient| {joint["gradient_max"]:.3e}, '
+            f'수반 상대잔차 {joint["adjoint_relative_residual"]:.3e}. '
+            '각 RK 단계의 엄격한 분기를 검사하고 관측과 배경 파라미터를 각각 바꿔 다시 풀었습니다.</p>'
+            '<div style="max-width:100%;overflow-x:auto"><table style="border-spacing:12px 6px;white-space:nowrap">'
+            '<thead><tr><th>방향</th><th>h</th><th>수반 방향미분</th><th>중앙 재분석 차분</th><th>절대 차이</th></tr></thead>'
+            f'<tbody>{rows}</tbody></table></div>'
+            '<p>유한 섭동 구간 전체 인증·일반 minmod FSOI·신경망 학습 완료를 뜻하지 않습니다. '
+            '공개 정확 응답의 donor-cell 제한은 유지합니다. '
+            '<a href="../../graphify-out/fv-root-cause-20260919/minmod_joint_inverse_final.json">원시 결과·측정 소스</a></p>'
+        )
     return f'''  <details class="learn" id="fvResponseEvidence">
     <summary>240×240 FV 관측 민감도·유한 섭동 연구 검증</summary>
     <div class="lesson-body">
@@ -323,6 +360,7 @@ def _panel(report, scale, central):
       <p>{central_text}</p>
       {long_horizon}
       {comparison}
+      {joint_inverse}
       <p><a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.json">최종 응답 JSON</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.pt">응답 tensor</a>{central_link} · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_0.svg">민감도 −20분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_1.svg">−10분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_2.svg">0분</a></p>
     </div>
   </details>

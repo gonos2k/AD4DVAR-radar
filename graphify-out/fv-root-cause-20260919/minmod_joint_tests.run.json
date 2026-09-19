@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/yhlee/ADVAR/.venv/bin/python",
+    "-I",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_fv_minmod_joint_derivatives.py",
+    "tests/test_fv_minmod_inverse_probe.py",
+    "tests/test_fv_minmod_derivative_branches.py",
+    "tests/test_fv_grid_convergence_probe.py",
+    "tests/test_fv_comparison_publisher.py"
+  ],
+  "returncode": 0,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 348585984,
+  "elapsed_seconds": 9.123991166998167
+}

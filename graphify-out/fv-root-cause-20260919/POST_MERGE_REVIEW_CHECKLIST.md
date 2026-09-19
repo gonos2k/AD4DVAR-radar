@@ -66,3 +66,16 @@ on held-out outcomes or relax stationarity gates to obtain a pass.
 - [ ] General RK-stage relevance/branch analysis across initial/flow/growth
   controls, mixed/replay verification and small inverse minmod response.
   See MINMOD_BRANCH_AND_PUBLISHER_REVIEW.md; no donorcell gate was removed.
+
+## PR164 joint derivative and inverse follow-up
+
+- [x] Exercise joint initial/flow/growth directions, two-sided state and gradient
+  differences, mixed blocks and replay across the eight-substep tape boundary.
+- [x] Solve a small **minmod** robust objective for all 12 controls; inspect all
+  54 analysis/forecast RK stages and compare observation/parameter adjoints with
+  actual plus/minus reanalysis. See MINMOD_JOINT_INVERSE_REVIEW.md.
+- [x] Preserve the public donorcell-only response restriction and original demo
+  arrays; display the small inverse as separate evidence.
+- [ ] General control-dependent relevance classifier and finite-path branch proof.
+- [ ] General minmod response API, typed mean/precision/support learning, valid
+  finite-impact range and whole-chain D7 remain open.

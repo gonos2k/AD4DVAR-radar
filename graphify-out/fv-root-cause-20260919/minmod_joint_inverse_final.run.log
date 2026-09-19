@@ -1,0 +1,514 @@
+Nominal minmod stationary solve complete
+{"direction": "observation", "h": 0.001, "adjoint": -0.004010003046517519, "central_reanalysis": -0.004009973112178912, "absolute_error": 2.993433860683237e-08}
+{"direction": "observation", "h": 0.0005, "adjoint": -0.004010003046517519, "central_reanalysis": -0.004009995563191045, "absolute_error": 7.483326474114205e-09}
+{"direction": "background_parameter", "h": 0.001, "adjoint": 1.057564908885783e-06, "central_reanalysis": 1.05756490183565e-06, "absolute_error": 7.050133046804241e-15}
+{"direction": "background_parameter", "h": 0.0005, "adjoint": 1.057564908885783e-06, "central_reanalysis": 1.0575650123429564e-06, "absolute_error": 1.034571733837808e-13}
+{
+  "scope": "3x3 local minmod robust inverse; fixed complete support/boundaries; dense oracle",
+  "controls": 12,
+  "substeps_per_interval": 9,
+  "initial_branch": {
+    "euler_stages": 54,
+    "minimum_scaled_slope_margin": 0.07139734896033073,
+    "choices": [
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ]
+    ]
+  },
+  "stationary_branch": {
+    "euler_stages": 54,
+    "minimum_scaled_slope_margin": 0.07253920626894629,
+    "choices": [
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ],
+      [
+        true,
+        true
+      ]
+    ]
+  },
+  "gradient_max": 6.565685495285578e-12,
+  "hessian_min_eigenvalue": 4.510888369314073,
+  "adjoint_relative_residual": 1.2201763294981718e-15,
+  "reanalysis": [
+    {
+      "direction": "observation",
+      "h": 0.001,
+      "adjoint": -0.004010003046517519,
+      "central_reanalysis": -0.004009973112178912,
+      "absolute_error": 2.993433860683237e-08
+    },
+    {
+      "direction": "observation",
+      "h": 0.0005,
+      "adjoint": -0.004010003046517519,
+      "central_reanalysis": -0.004009995563191045,
+      "absolute_error": 7.483326474114205e-09
+    },
+    {
+      "direction": "background_parameter",
+      "h": 0.001,
+      "adjoint": 1.057564908885783e-06,
+      "central_reanalysis": 1.05756490183565e-06,
+      "absolute_error": 7.050133046804241e-15
+    },
+    {
+      "direction": "background_parameter",
+      "h": 0.0005,
+      "adjoint": 1.057564908885783e-06,
+      "central_reanalysis": 1.0575650123429564e-06,
+      "absolute_error": 1.034571733837808e-13
+    }
+  ],
+  "elapsed_seconds": 303.45617408299586,
+  "control": [
+    0.0023697645260593292,
+    0.0008380509087712883,
+    0.00017001193043654774,
+    0.0009011666938879338,
+    -0.0014862873535688677,
+    -0.0009003781140691037,
+    -0.00018137183097652443,
+    -0.0015881265110840564,
+    -0.0024103960822689802,
+    0.23364953876939196,
+    0.18062636452856076,
+    0.022229525030995234
+  ],
+  "general_minmod_response_eligible": false,
+  "finite_path_certified": false,
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.13.0"
+  },
+  "source_sha256": {
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_minmod_inverse_probe.py": "9e654f72525429173f964780f9859a31ba067c0c6b3b63ece490b64a9bf519da",
+    "/Users/yhlee/ADVAR/src/advar/transport.py": "d81f409970046bd86b2838339948e01c4840b2be2b613f1e66551bc70a468264",
+    "/Users/yhlee/ADVAR/src/advar/variational.py": "e871557463090abf185f6f29ef73c3813cf503497cac25d10a4f500f31f1824a",
+    "/Users/yhlee/ADVAR/examples/weather_scenarios/fv_sensitivity_probe.py": "919c6d94717fd96dd68d2f63d73b4c15d5e96e5d3d65efccf4deecdc7dce2b4f"
+  }
+}
