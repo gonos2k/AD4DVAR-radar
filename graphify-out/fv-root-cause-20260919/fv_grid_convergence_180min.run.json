@@ -1,0 +1,15 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-I",
+    "examples/weather_scenarios/fv_grid_convergence_probe.py",
+    "--leads",
+    "18",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/fv_grid_convergence_180min.json"
+  ],
+  "returncode": 0,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 327385088,
+  "elapsed_seconds": 35.30705441697501
+}

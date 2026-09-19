@@ -4259,8 +4259,8 @@ def prepare_analysis(
     )
     quality = _quality_weight(frames_dbz, quality_weight)
     valid = finite & qc & (quality > 0)
-    if fv_transport is not None and not bool(torch.all(valid)):
-        raise ValueError("C4a FV transport requires fully valid observations")
+    if fv_transport is not None and not bool(torch.any(valid)):
+        raise ValueError("FV transport requires at least one valid observation")
     if (
         common_bias_group_index is not None
         and not bool(torch.any((common_bias_group_index >= 0) & valid))

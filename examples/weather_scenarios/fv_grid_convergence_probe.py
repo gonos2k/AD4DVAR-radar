@@ -138,15 +138,15 @@ def _relative(a: torch.Tensor, b: torch.Tensor) -> float:
 
 
 def _derivative_record(case: dict, size: int, qx: torch.Tensor, qy: torch.Tensor,
-                       substeps: int, dt: float) -> dict:
+                       substeps: int, dt: float, leads: int) -> dict:
     """Compare core JVP with the independent characteristic/affine derivative."""
-    total_time = LEADS * INTERVAL
+    total_time = leads * INTERVAL
     initial = _oracle(case, size, 0.0)
 
     def trajectory(amplitude: torch.Tensor) -> torch.Tensor:
         # The branch decisions (face signs and schedule) are fixed at the
         # nominal amplitude; this is the differentiable local model being checked.
-        return _advance(initial, amplitude * qx, amplitude * qy, substeps * LEADS,
+        return _advance(initial, amplitude * qx, amplitude * qy, substeps * leads,
                         dt, float(case.get("growth_rate", case.get("growth_per_second", 0.0))))
 
     nominal = torch.ones((), dtype=torch.float64, requires_grad=True)
@@ -162,7 +162,7 @@ def _derivative_record(case: dict, size: int, qx: torch.Tensor, qy: torch.Tensor
     }
 
 
-def run_case(case: dict, size: int) -> dict:
+def run_case(case: dict, size: int, leads: int = LEADS) -> dict:
     spacing = SIDE / size
     qx, qy = _flow(case, size)
     substeps, dt, actual_cfl = _schedule(qx, qy, size, case["speed_bound_mps"])
@@ -173,7 +173,7 @@ def run_case(case: dict, size: int) -> dict:
     started = time.perf_counter()
     zeros = tuple(torch.zeros(size, dtype=torch.float64) for _ in range(4))
     ones = tuple(torch.ones(size, dtype=torch.float64) for _ in range(4))
-    for lead in range(1, LEADS + 1):
+    for lead in range(1, leads + 1):
         lead_start_mass = float(echo.sum()) * spacing**2
         transformed_outflow = 0.0
         for substep in range(substeps):
@@ -199,7 +199,7 @@ def run_case(case: dict, size: int) -> dict:
             "minimum_echo": float(echo.min()),
             "transformed_budget_residual": lead_residual,
         })
-    derivative = _derivative_record(case, size, qx, qy, substeps, dt)
+    derivative = _derivative_record(case, size, qx, qy, substeps, dt, leads)
     return {
         "case": case["name"], "size": size, "spacing_m": spacing,
         "substeps_per_lead": substeps, "actual_max_cfl": actual_cfl,
@@ -209,17 +209,19 @@ def run_case(case: dict, size: int) -> dict:
     }
 
 
-def run_probe(sizes: tuple[int, ...] = (32, 64, 128)) -> dict:
+def run_probe(sizes: tuple[int, ...] = (32, 64, 128), *, leads: int = LEADS) -> dict:
+    if type(leads) is not int or not 1 <= leads <= 18:
+        raise ValueError("leads must be an integer in [1, 18]")
     started = time.perf_counter()
     with torch.no_grad():
-        results = [run_case(case, size) for size in sizes for case in CASES]
+        results = [run_case(case, size, leads) for size in sizes for case in CASES]
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     return {
         "status": "complete", "scope": "prescribed-flow FV PDE grid/JVP convergence only; no P1/FSO/FSOI, learning, or forecast-skill claim",
         "boundary_condition": "known-zero exterior with complete known initial field",
         "oracle": "existing characteristic cell_averages plus existing CP3b affine_cell_averages for area-preserving strain",
         "cases": [case["name"] for case in CASES], "sizes": list(sizes),
-        "domain_side_m": SIDE, "interval_seconds": INTERVAL, "leads": LEADS,
+        "domain_side_m": SIDE, "interval_seconds": INTERVAL, "leads": leads,
         "max_courant": MAX_COURANT, "scheme": "current donorcell SSPRK2",
         "python": platform.python_version(), "torch": torch.__version__,
         "device": "cpu", "dtype": "float64", "threads": torch.get_num_threads(),
@@ -235,11 +237,14 @@ def run_probe(sizes: tuple[int, ...] = (32, 64, 128)) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sizes", nargs="+", type=int, default=[32, 64, 128])
+    parser.add_argument("--leads", type=int, default=LEADS)
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     if any(size < 16 or size > 128 for size in args.sizes):
         parser.error("sizes must be in [16, 128]")
-    report = run_probe(tuple(args.sizes))
+    if not 1 <= args.leads <= 18:
+        parser.error("leads must be in [1, 18]")
+    report = run_probe(tuple(args.sizes), leads=args.leads)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n")
     print(args.output)

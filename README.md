@@ -43,9 +43,10 @@ state-advancing LIVE는 승인하지 않는다.
 | neural_prior_holdout_plan | neural-prior-holdout-plan-v37 | neural-prior-holdout-plan-v36 | neural-prior-holdout-plan-v37 | neural-prior-holdout-plan-v36, neural-prior-holdout-plan-v37 | neural-prior-holdout-plan-v37 | ∅ |
 <!-- CONTRACT_CAPABILITY_TABLE:END -->
 
-`main`과 pull request는 GitHub Actions에서 Python 3.10·3.12 CPU 전체
-시험을 실행하고, Python 3.12 환경에서 product source basedpyright를
-검사한다. 별도 package job은 sdist와 wheel을 빌드한 뒤 격리 환경에 wheel을
+`main`과 pull request의 자동 GitHub Actions는 가벼운 UI 검사만 실행한다.
+전체 CPU 시험과 product source basedpyright 검사는 Python 3.12에서 수동으로
+실행한다. 자동 검사에서 CPU job이 skipped인 것은 전체 시험 통과가 아니다.
+수동 package job은 sdist와 wheel을 빌드한 뒤 격리 환경에 wheel을
 설치하여 `advar-nowcast` CLI와 NPZ 출력계약을 smoke-test한다. Required package
 job은 hash-locked Linux CPU dependency wheelhouse의 offline 설치와 CLI 결과 확인에서
 끝난다. Signed deployment bundle, release approval, host runtime activation과
@@ -179,7 +180,8 @@ from advar.run_artifact import load_forecast_run
 ```
 
 재현 가능한 연구 패키지와 필수 CI는 일반 resolver 설치를 사용하지 않는다. Linux x86-64 CPU용
-Python 3.10/3.12 runtime closure와 test/build closure를 각각
+Python 3.12 runtime closure와 test/build closure를 현재 CI에서 사용하며,
+과거 Python 3.10 lock은 재현 기록으로 남긴다. 각 closure는
 `requirements/*-linux.lock`에 exact version과 distribution SHA-256으로 보존한다.
 검증된 direct runtime version은 `requirements/runtime.in`에 고정한다.
 CI는 PyTorch CPU index를 명시하고 `--require-hashes --only-binary=:all:`로만
