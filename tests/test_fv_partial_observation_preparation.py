@@ -20,6 +20,7 @@ from advar.physics import echo_to_dbz
 from advar.variational import (
     forecast_fv_analysis,
     prepare_analysis,
+    robust_objective,
     solve_analysis,
 )
 
@@ -248,6 +249,173 @@ def test_parameterized_background_masks_invalid_observation_dependency():
     changed_response = compute_fv_observation_response(
         control, changed, configured, **kwargs
     )
+    torch.testing.assert_close(
+        response.sensitivity_dbz,
+        changed_response.sensitivity_dbz,
+        rtol=0.0,
+        atol=0.0,
+    )
+    torch.testing.assert_close(
+        response.sensitivity_theta,
+        changed_response.sensitivity_theta,
+        rtol=0.0,
+        atol=0.0,
+    )
+
+
+def test_parameterized_background_uses_fixed_censored_representative():
+    original, baseline, future_echo, future_support = _PROBE.make_case()
+    index = (1, 0, 0)
+    first_frames = original.dbz.clone()
+    changed_frames = first_frames.clone()
+    first_frames[index] = 0.0
+    changed_frames[index] = 4.0
+    observations, frozen = _prepare(first_frames, baseline.fv_transport)
+    changed_observations, changed_frozen = _prepare(
+        changed_frames, baseline.fv_transport
+    )
+    assert bool(observations.valid_mask[index])
+    assert bool(observations.censored_mask[index])
+    assert not bool(observations.detected_mask[index])
+    assert bool(changed_observations.censored_mask[index])
+    assert observations.dbz[index] != changed_observations.dbz[index]
+    for name in (
+        "valid_mask",
+        "detected_mask",
+        "censored_mask",
+        "missing_mask",
+        "qc_rejected_mask",
+    ):
+        assert torch.equal(
+            getattr(observations, name), getattr(changed_observations, name)
+        )
+    torch.testing.assert_close(
+        frozen.initial_background_dbz,
+        changed_frozen.initial_background_dbz,
+        rtol=0.0,
+        atol=0.0,
+    )
+
+    configured = replace(
+        frozen,
+        analysis_config=replace(
+            frozen.analysis_config,
+            maximum_outer_iterations=16,
+            maximum_pcg_iterations=96,
+            gradient_tolerance=1.0e-10,
+            step_tolerance=1.0e-12,
+            pcg_relative_tolerance=1.0e-10,
+        ),
+    )
+    result = solve_analysis(observations, configured)
+    control, _ = refine_fv_stationarity(
+        result.control,
+        observations,
+        configured,
+        gradient_tolerance=1.0e-10,
+        maximum_iterations=4,
+        maximum_normal_products=96,
+    )
+    changed_result = solve_analysis(
+        changed_observations, configured
+    )
+    changed_control, _ = refine_fv_stationarity(
+        changed_result.control,
+        changed_observations,
+        configured,
+        gradient_tolerance=1.0e-10,
+        maximum_iterations=4,
+        maximum_normal_products=96,
+    )
+    torch.testing.assert_close(
+        control, changed_control, rtol=0.0, atol=0.0
+    )
+    forecast = forecast_fv_analysis(
+        control,
+        configured,
+        leads=2,
+        boundary_start_interval=2,
+        boundary_echo=future_echo,
+        boundary_support=future_support,
+    )
+    changed_forecast = forecast_fv_analysis(
+        changed_control,
+        configured,
+        leads=2,
+        boundary_start_interval=2,
+        boundary_echo=future_echo,
+        boundary_support=future_support,
+    )
+    assert torch.isfinite(forecast.frames_linear).all()
+    torch.testing.assert_close(
+        forecast.frames_linear,
+        changed_forecast.frames_linear,
+        rtol=0.0,
+        atol=0.0,
+    )
+    gradient = torch.func.grad(
+        lambda value: robust_objective(value, observations, configured)
+    )(control)
+    changed_gradient = torch.func.grad(
+        lambda value: robust_objective(value, changed_observations, configured)
+    )(control)
+    torch.testing.assert_close(
+        gradient, changed_gradient, rtol=0.0, atol=0.0
+    )
+
+    theta0 = observations.dbz.new_tensor(0.02)
+    detection_limit = observations.dbz.new_full(
+        (), configured.analysis_config.detection_limit_dbz
+    )
+    minimum = observations.dbz.new_full((), configured.nowcast_config.min_dbz)
+    canonical_y0 = torch.where(
+        observations.detected_mask,
+        observations.dbz,
+        torch.where(observations.censored_mask, detection_limit, minimum),
+    )
+    height, width = observations.dbz.shape[-2:]
+    yy, xx = torch.meshgrid(
+        torch.arange(height, dtype=observations.dbz.dtype),
+        torch.arange(width, dtype=observations.dbz.dtype),
+        indexing="ij",
+    )
+    direction = 0.01 * (yy - yy.mean()) + 0.02 * (xx - xx.mean())
+    baseline_background = configured.initial_background_dbz
+
+    def builder(canonical_y, theta):
+        return (
+            baseline_background
+            + (theta - theta0) * direction
+            + 0.2 * (canonical_y[1] - canonical_y0[1])
+        )
+
+    kwargs = dict(
+        verification_dbz=torch.zeros((2, height, width), dtype=torch.float64),
+        metric_weight=torch.ones((2, height, width), dtype=torch.float64),
+        leads=2,
+        boundary_start_interval=2,
+        boundary_echo=future_echo,
+        boundary_support=future_support,
+        background_dependency="parameterized",
+        background_parameter=theta0,
+        background_builder=builder,
+        curvature="exact_robust_hessian",
+        maximum_normal_products=96,
+    )
+    response = compute_fv_observation_response(
+        control, observations, configured, **kwargs
+    )
+    changed_response = compute_fv_observation_response(
+        control, changed_observations, configured, **kwargs
+    )
+    assert response.sensitivity_theta is not None
+    assert changed_response.sensitivity_theta is not None
+    assert torch.equal(
+        response.sensitivity_dbz[index], response.sensitivity_dbz.new_zeros(())
+    )
+    detected = observations.detected_mask
+    assert bool((response.sensitivity_dbz[detected].abs() > 0).any())
+    assert bool(response.sensitivity_theta.abs().max() > 0)
     torch.testing.assert_close(
         response.sensitivity_dbz,
         changed_response.sensitivity_dbz,

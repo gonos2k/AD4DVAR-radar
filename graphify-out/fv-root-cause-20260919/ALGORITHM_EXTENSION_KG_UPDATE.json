@@ -54,9 +54,9 @@
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6498,
-    "edges": 64760,
-    "communities": 221,
+    "nodes": 6502,
+    "edges": 64776,
+    "communities": 234,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
@@ -68,5 +68,13 @@
     "merged_at": "2026-09-19T14:33:15+09:00"
   },
   "followup_checklist": "POST_MERGE_REVIEW_CHECKLIST.md",
-  "followup_results": "REVIEW_FOLLOWUP_RESULTS.md"
+  "followup_results": "REVIEW_FOLLOWUP_RESULTS.md",
+  "pr161_followup": {
+    "baseline": "merged main 2de675c; PR161 head c6e606d",
+    "observation_policy": "detected raw, censored fixed detection limit, invalid min_dbz; masks fixed and distinct",
+    "branch_policy": "roundoff-scaled initial-transform join rejection for first_observation and parameterized; both smooth branches allowed",
+    "limits": "local only; caller builder must be twice differentiable; no finite perturbation certificate",
+    "record": "BACKGROUND_CONTRACT_REVIEW.md",
+    "validation": "13 distinct focused cases passed across runs; censored reanalysis/forecast and y/theta response invariant; typecheck0 errors0 warnings; GREEN/RED complete; no full CI"
+  }
 }
