@@ -1,0 +1,11 @@
+{
+  "scope": "whole HTML bytes unchanged after comparison validation; no browser rerun needed",
+  "before_sha256": {
+    "template.html": "5729d5b1636da426a207cf90145d451ea4453f4dd9bcb1101fc04ddb749cc1f5",
+    "index.html": "ca38cc01e43568fbc56b6a742bed5989340b60bed61ba95306fb8e9dd1413feb"
+  },
+  "after_sha256": {
+    "template.html": "5729d5b1636da426a207cf90145d451ea4453f4dd9bcb1101fc04ddb749cc1f5",
+    "index.html": "ca38cc01e43568fbc56b6a742bed5989340b60bed61ba95306fb8e9dd1413feb"
+  }
+}

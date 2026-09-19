@@ -55,3 +55,14 @@ on held-out outcomes or relax stationarity gates to obtain a pass.
 - [ ] Certify limiter branches and discrete derivatives before an inverse
   minmod response/reanalysis or any donorcell-only gate change. The comparison
   improves field-error evidence, not general FV/FSOI or typed-prior completion.
+
+## PR163 engineering gates and branch counterexamples
+
+- [x] Direct minmod forward/JVP option propagation and metadata regression.
+- [x] Compare scheme/domain/time/threshold/case-grid coverage/CFL/producer identity
+  before rendering; reject a donorcell report under a minmod filename.
+- [x] Preserve actual-step tie counterexample, smooth directional check, and
+  fixed-zero-flow identity case in repository tests.
+- [ ] General RK-stage relevance/branch analysis across initial/flow/growth
+  controls, mixed/replay verification and small inverse minmod response.
+  See MINMOD_BRANCH_AND_PUBLISHER_REVIEW.md; no donorcell gate was removed.

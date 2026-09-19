@@ -54,9 +54,9 @@
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6508,
-    "edges": 64786,
-    "communities": 238,
+    "nodes": 6530,
+    "edges": 64812,
+    "communities": 231,
     "semantic_llm_tokens": 0
   },
   "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
@@ -86,5 +86,13 @@
     "record": "REGRESSION_AND_TRANSPORT_COMPARISON.md",
     "html": "original demo arrays preserved; new separate comparison table verified in Aside desktop DOM/screenshot",
     "ci": "no full CI restarted"
+  },
+  "pr163_followup": {
+    "baseline": "main5723161a",
+    "closed": "minmod primal/JVP forwarding regression; comparison identity and condition validation including rendering entrypoint",
+    "science": "actual step ramp AD.835/right.895/left.810; innerproduct0 does not imply two-sided derivative; smooth and fixed-zero-flow checks pass",
+    "tests": "25 distinct focused cases passed; full HTML bytes unchanged; no full CI or longrun repeated",
+    "scope": "initial-field directions in small fixed-flow examples; RK all-parameter branch classifier, replay/mixed/inverse remain open",
+    "record": "MINMOD_BRANCH_AND_PUBLISHER_REVIEW.md"
   }
 }
