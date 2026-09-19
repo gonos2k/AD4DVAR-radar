@@ -237,3 +237,33 @@ The large response probe requires the locally retained `rotation240_refined.pt`;
 large field checkpoints and generated HTML are deliberately not Git artifacts.
 CI and deployment checks are deferred until algorithm completion. Real-data and
 operational validation belong to Phase 2.
+
+### 240×240 local response follow-up
+
+The original HTML now has a separate **240×240 FV 관측 민감도·유한 섭동 연구 검증**
+panel. It uses the refined state and actual saved adjoint/reanalysis values;
+original forecast arrays remain unchanged. At ±0.0005 dBZ the central slope
+agrees with the adjoint to 4.39743e-5 relative. Positive-step Taylor remainders
+reduce by 3.99975 when the step is halved. The finite first-order remainder is
+still large at those steps, and this one-direction synthetic result does not
+establish general FV or typed-prior learning eligibility.
+
+With the existing local `rotation240_refined.pt` checkpoint, the reproduction
+entry points are below. Large solves should use the existing `run_bounded.py`
+wrapper (600–1000 seconds, 4 GiB per child). The refinement writes a separate
+stable checkpoint; do not overwrite the historical input.
+
+```sh
+.venv/bin/python graphify-out/fv-root-cause-20260919/refine_rotation240.py
+.venv/bin/python -I examples/weather_scenarios/fv_large_response_probe.py --prefix rotation240_stable --leads 18
+.venv/bin/python -I examples/weather_scenarios/fv_large_response_probe.py --prefix rotation240_stable --leads 18 --impacts
+.venv/bin/python graphify-out/fv-root-cause-20260919/check_rotation240_central.py
+.venv/bin/python graphify-out/fv-root-cause-20260919/publish_fv_response_evidence.py
+```
+
+The recorded positive run reused `--warm-start` from a saved matching candidate;
+each reused/interpolated state was independently refined or checked against the
+unchanged stationary-point gate. The publisher checks source and artifact hashes.
+JSON evidence and SVG maps are versioned; raw tensors/generated index.html remain
+local. See `GROWTH_SCALING_RESULTS.md` and `FV_RESPONSE_HTML_REVIEW.md` in
+`graphify-out/fv-root-cause-20260919/` for scope, resources and browser checks.

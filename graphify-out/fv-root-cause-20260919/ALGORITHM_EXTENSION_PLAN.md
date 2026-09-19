@@ -90,7 +90,7 @@ observation-error update nor its replay removes the existing prior-support gate.
   supports consistency but is not high-accuracy or general P1 evidence.
 
 
-## Source and regression continuity
+## Historical source and regression continuity (before small-growth correction)
 
 The measured nominal response is retained as historical evidence with its exact
 source in `nominal_source/fv_sensitivity.py` (SHA-256 `69bbf85a...`). An AST
@@ -120,3 +120,23 @@ A nonzero-theta external learned background verifies a nonidentity cotangent
 contribution and the complete fixed-support chain. Its heldout score worsened
 by 2.16e-16 after the fixed update: no improvement claim is made. This does not
 extend the typed neural-prior or legacy FSOI contract.
+
+
+## Small-growth follow-up
+
+The growth equation is unchanged. Physical products use q+q*expm1(g) via
+addcmul for |g|<1/8, retaining the original exponential guards and fallback.
+This resolves the independent sub-ULP zero-flux counterexample without relaxing
+the stationary response gate. See GROWTH_SCALING_RESULTS.md and
+GROWTH_SCALING_REVIEW.md for the candidate history and affected regressions.
+Current nominal response: max gradient 5.73043e-10, actual adjoint residual
+4.28392e-11, 41 products, 490.42 s / 1.947 GB. Finite reanalysis is checked
+separately; an accepted root alone is not sufficient evidence of FSOI accuracy.
+
+Next learned-background checkpoint: reuse the existing response solver for an
+explicit differentiable B(y,theta), with fixed support and precision and both
+direct and implicit y/theta terms. Do not duplicate the Hessian solver or remove
+typed-prior gates. The typed path snapshots outputs and also carries support
+and uncertainty semantics; these dependencies must be represented before
+claiming that path is integrated. External composition evidence remains valid
+only within its stated fixed-support/precision scope.

@@ -18,7 +18,7 @@
 
 - Deferred by user: CI/deployment checks follow algorithm completion. Cancelled run 35411573920; local focused numerical checks do not establish full CI success.
 - [x] Fixed missing/detection masks, conservative known-support stencil and sensitive-face refusal; partial-support reanalysis FD includes B=y[0] consistently.
-- [ ] Tighten the 240×240 state to the exact-response gradient gate and verify large-grid adjoint conditioning, residual and perturbation response.
+- [x] Declared 240×240 rotation: unchanged stationarity gate, matrix-free adjoint actual residual, one-sided Taylor refinement and matched central reanalysis. Global Hessian conditioning and arbitrary perturbations are not certified.
 - [ ] Integrate a background neural prior with its mean/support/residual derivatives; the existing small NN changes observation-error statistics instead.
 - [x] Verify bounded persistent observation-error learning with checkpoint resume.
 - [x] Prescribed translation, rotation and strain: 32/64/128 grid refinement decreases field and JVP errors; this does not establish general P1 completion.
@@ -41,3 +41,14 @@ External learned-mean composition (fixed nonzero theta) now has chain-rule and
 finite-reanalysis evidence, with exact checkpoint reload. Its held-out score
 worsened by 2.16e-16, so no improvement claim is made. Typed prior/legacy FSOI
 integration remains separate and incomplete. See FV_EXTERNAL_BACKGROUND_PHASE1_RESULTS.md.
+
+
+Current small-growth arithmetic supersedes the historical nominal numbers above:
+max gradient 5.73043e-10, adjoint residual 4.28392e-11. Positive steps 0.001/0.0005
+have remainder ratio 3.999751567; matched central slope at 0.0005 differs from
+the adjoint by 4.39743e-5 relative. The positive/negative endpoints have maximum
+gradients 1.42878e-10/2.93110e-10. Original HTML now displays actual maps and
+reanalysis values; original embedded forecast arrays are unchanged. These are
+case-specific local derivative results, not general typed-prior completion.
+
+CI follow-up: attempt 2 of run 35411573920 was found running at 13:15 JST; cancellation was requested and GitHub confirmed completed/cancelled. No new full CI was started.

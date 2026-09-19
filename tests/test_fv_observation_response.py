@@ -7,7 +7,10 @@ from pathlib import Path
 import pytest
 import torch
 
-from advar.fv_sensitivity import compute_fv_observation_response
+from advar.fv_sensitivity import (
+    compute_fv_observation_response,
+    refine_fv_stationarity,
+)
 from advar.variational import (
     forecast_fv_analysis,
     initial_control,
@@ -537,12 +540,20 @@ def test_exact_response_matches_reanalysis_fd_with_missing_and_partial_support(
         shifted = replace(observations, dbz=value)
         shifted_frozen = replace(frozen, initial_background_dbz=value[0])
         analyzed = solve_analysis(shifted, shifted_frozen)
+        analyzed_control, _ = refine_fv_stationarity(
+            analyzed.control,
+            shifted,
+            shifted_frozen,
+            gradient_tolerance=1.0e-10,
+            maximum_iterations=4,
+            maximum_normal_products=96,
+        )
         gradient = torch.func.grad(
             lambda candidate: robust_objective(candidate, shifted, shifted_frozen)
-        )(analyzed.control)
+        )(analyzed_control)
         assert torch.max(torch.abs(gradient)) < 1.0e-8
         trajectory = forecast_fv_analysis(
-            analyzed.control,
+            analyzed_control,
             shifted_frozen,
             leads=2,
             boundary_start_interval=2,
@@ -565,8 +576,7 @@ def test_exact_response_matches_reanalysis_fd_with_missing_and_partial_support(
     torch.testing.assert_close(
         directional_response,
         finite_difference,
-        # At h=1e-4 both endpoint gradients are below 1e-8; the measured
-        # slope discrepancy is 1.1e-9 absolute on this scale.
+        # Polish endpoints: differencing amplifies their solve error by 1/h.
         rtol=1.0e-9,
         atol=2.0e-9,
     )

@@ -34,6 +34,7 @@ BoundarySchedule = Tuple[BoundaryStages, ...]
 
 _Edges = BoundaryEdges
 _BoundaryStages = BoundaryStages
+_SMALL_LOG_GROWTH = 0.125
 
 
 def _check_tensor(name: str, value: object, *, dtype: Optional[torch.dtype] = None) -> Tensor:
@@ -109,6 +110,13 @@ def _volume_parts(volume_flux: Tensor) -> Tuple[Tensor, Tensor]:
     # also preserves subnormal fluxes that would vanish when multiplied by 0.5.
     zero = torch.zeros_like(volume_flux)
     return torch.maximum(volume_flux, zero), torch.minimum(volume_flux, zero)
+
+
+def _scale_by_growth(value: Tensor, log_growth: Tensor) -> Tensor:
+    """Scale a transported value without rounding a small integrating factor."""
+    if bool(torch.abs(log_growth) < _SMALL_LOG_GROWTH):
+        return torch.addcmul(value, value, torch.expm1(log_growth))
+    return torch.exp(log_growth) * value
 
 
 def _euler_donorcell(
@@ -484,7 +492,7 @@ def finite_volume_step(
     if not bool(torch.isfinite(dt)) or not bool(dt > 0):
         raise ValueError("dt_seconds is not representable in the input dtype")
     euler = _euler_donorcell if reconstruction == "donorcell" else _euler_minmod
-    grown_echo = growth * echo
+    grown_echo = _scale_by_growth(echo, growth_log)
     _check_tensor("grown echo", grown_echo, dtype=echo.dtype)
     # T(a*q, a*b) = a*T(q, b) for a > 0 for both reconstructions.
     # Amplify before transport to retain tiny incoming contributions; apply
@@ -504,10 +512,10 @@ def finite_volume_step(
             torch.where(scalable[3], top, torch.zeros_like(top)),
         )
         grown_edges = (
-            growth * small_edges[0],
-            growth * small_edges[1],
-            growth * small_edges[2],
-            growth * small_edges[3],
+            _scale_by_growth(small_edges[0], growth_log),
+            _scale_by_growth(small_edges[1], growth_log),
+            _scale_by_growth(small_edges[2], growth_log),
+            _scale_by_growth(small_edges[3], growth_log),
         )
         stage1 = euler(grown_echo, qx, qy, grown_edges, dt, area)
         if not all(bool(mask.all()) for mask in scalable):
@@ -520,13 +528,13 @@ def finite_volume_step(
                 torch.where(scalable[2], torch.zeros_like(bottom), bottom),
                 torch.where(scalable[3], torch.zeros_like(top), top),
             )
-            stage1 = stage1 + growth * euler(
+            stage1 = stage1 + _scale_by_growth(euler(
                 torch.zeros_like(echo), qx, qy, large_edges, dt, area
-            )
+            ), growth_log)
         transformed_stage1 = stage1
     else:
         transformed_stage1 = euler(echo, qx, qy, echo_edges[0], dt, area)
-        stage1 = growth * transformed_stage1
+        stage1 = _scale_by_growth(transformed_stage1, growth_log)
     _check_tensor("stage-1 echo", stage1, dtype=echo.dtype)
     _check_nonnegative("stage-1 echo", stage1)
     stage2 = euler(stage1, qx, qy, echo_edges[1], dt, area)

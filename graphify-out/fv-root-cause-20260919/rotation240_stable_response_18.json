@@ -1,0 +1,78 @@
+{
+  "scope": "240x240 exact local response; fixed analytic boundaries and verification",
+  "leads": 18,
+  "curvature": "exact_robust_hessian",
+  "gradient_max": 5.730426691431985e-10,
+  "adjoint_relative_residual": 4.283915245750008e-11,
+  "normal_products": 41,
+  "face_margin": 0.2756305101374659,
+  "score": 0.0008456228942333736,
+  "sensitivity_norm": 0.0004361701326820241,
+  "source_hashes": {
+    "src/advar/fv_sensitivity.py": "78cf5819bd135af1eadd92996acc68ba979b195181f1ac0065d1eb11ec521646",
+    "src/advar/variational.py": "daff731193324b2df43eeedda13c373558fab65e6f511d7a65ec2707e16d8020",
+    "src/advar/transport.py": "d81f409970046bd86b2838339948e01c4840b2be2b613f1e66551bc70a468264",
+    "examples/weather_scenarios/fv_large_response_probe.py": "97ca15664b0080d5868a0bdbf85a3769ea0fe9a238738ae69d705ad82b0f0f8d"
+  },
+  "response_tensor_sha256": "29379cebde6e321e701c4ca0d2c1544c152d306ebf7633faf7e01bb86d6136ec",
+  "refined_checkpoint_sha256": "98684981144a3a9a9c975758935d71fa67cda5fb8448954e5e662a27348e222b",
+  "impact_source_hashes": {
+    "src/advar/fv_sensitivity.py": "78cf5819bd135af1eadd92996acc68ba979b195181f1ac0065d1eb11ec521646",
+    "src/advar/variational.py": "daff731193324b2df43eeedda13c373558fab65e6f511d7a65ec2707e16d8020",
+    "src/advar/transport.py": "d81f409970046bd86b2838339948e01c4840b2be2b613f1e66551bc70a468264",
+    "examples/weather_scenarios/fv_large_response_probe.py": "97ca15664b0080d5868a0bdbf85a3769ea0fe9a238738ae69d705ad82b0f0f8d"
+  },
+  "directional_slope": 0.0022684523069402378,
+  "perturbation": "fixed smooth nonuniform positive dBZ bias; temporal amplitudes 0.5, 0.75, 1; spatial 0.5+0.5*cos(2*pi*x/W)*cos(2*pi*y/H)",
+  "impacts": [
+    {
+      "step": 0.001,
+      "actual_change": 5.393030718365264e-06,
+      "linear_prediction": 2.268452306940238e-06,
+      "taylor_error": 3.124578411425026e-06,
+      "gradient_norm": 1.4027777670484249e-08,
+      "gradient_max": 9.467479538944994e-09,
+      "resumed": false,
+      "warm_start": "saved candidate; stationarity rechecked under current operator",
+      "face_margin": 0.2731275754022726,
+      "refinement": []
+    },
+    {
+      "step": 0.0005,
+      "actual_change": 1.915419274854755e-06,
+      "linear_prediction": 1.134226153470119e-06,
+      "taylor_error": 7.811931213846361e-07,
+      "gradient_norm": 5.200153189265376e-10,
+      "gradient_max": 1.4287835530587406e-10,
+      "resumed": false,
+      "warm_start": "interpolated previous reanalysis; stationarity rechecked",
+      "face_margin": 0.27449965280465594,
+      "refinement": [
+        {
+          "iteration": 0,
+          "gradient_before": 0.0006209286807026159,
+          "gradient_after": 3.3741630294936316e-08,
+          "gradient_max_before": 0.0006204674550682743,
+          "gradient_max_after": 2.345495684979125e-08,
+          "step_scale": 1.0,
+          "normal_products": 24,
+          "linear_relative_residual": 7.358446202821581e-07,
+          "linear_absolute_tolerance": 1e-09,
+          "face_margin": 0.274404467100803
+        },
+        {
+          "iteration": 1,
+          "gradient_before": 3.3741630294936316e-08,
+          "gradient_after": 5.200153189265376e-10,
+          "gradient_max_before": 2.345495684979125e-08,
+          "gradient_max_after": 1.4287835530587406e-10,
+          "step_scale": 1.0,
+          "normal_products": 5,
+          "linear_relative_residual": 0.014651044203896485,
+          "linear_absolute_tolerance": 1e-09,
+          "face_margin": 0.2745275203383228
+        }
+      ]
+    }
+  ]
+}

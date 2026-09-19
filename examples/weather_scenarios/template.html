@@ -144,6 +144,27 @@
       <p><a href="../../graphify-out/fv-root-cause-20260919/fv_learning.json">학습 원시 결과</a> · <a href="../../graphify-out/fv-root-cause-20260919/fv_persistent_learning.json">지속 학습 원시 결과</a> · <a href="../../graphify-out/fv-root-cause-20260919/refine_failed_endpoint.json">정상점 원시 결과</a> · <a href="../../graphify-out/fv-root-cause-20260919/STATIONARITY_PROGRESS.md">검증 범위</a></p>
     </div>
   </details>
+  <details class="learn" id="fvResponseEvidence">
+    <summary>240×240 FV 관측 민감도·유한 섭동 연구 검증</summary>
+    <div class="lesson-body">
+      <p><strong>기존 화면의 원래 forecast·analysis 자료와 새 응답 계산을 구분합니다.</strong> 원래 demo-data 배열은 그대로 두고, 저장된 refined 분석 제어값에서 exact robust Hessian 응답을 계산한 별도 진단입니다. 전역 최적점, 운영 FSO/FSOI 적격성, 일반 FV를 주장하지 않습니다.</p>
+      <p>민감도 지도는 저장된 <strong>[3, 240, 240]</strong> 응답 텐서에서 만들었습니다. 값은 <strong>d(weighted mean dBZ²) / d(observation dBZ)</strong> 단위이며, 세 관측 시각에 하나의 최대 절대값 1.044280e-05을 적용해 대칭 정규화한 [-1, 1]입니다. 파랑은 음수, 종이색은 0, 빨강은 양수입니다.</p>
+      <figure style="margin:12px 0 18px;background:var(--paper2);padding:10px;border:1px solid var(--rule)">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px;max-width:100%">
+          <img src="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_0.svg" alt="첫 관측 −20분의 240×240 exact FV observation sensitivity map" style="display:block;max-width:100%;width:100%;height:auto;image-rendering:pixelated">
+          <img src="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_1.svg" alt="중간 관측 −10분의 240×240 exact FV observation sensitivity map" style="display:block;max-width:100%;width:100%;height:auto;image-rendering:pixelated">
+          <img src="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_2.svg" alt="최근 관측 0분의 240×240 exact FV observation sensitivity map" style="display:block;max-width:100%;width:100%;height:auto;image-rendering:pixelated">
+        </div>
+        <figcaption style="margin-top:8px;color:var(--muted);font-size:.82rem">첫 관측 −20분 · 중간 관측 −10분 · 최근 관측 0분 · 세 지도 공통 색상 정규화 · 실제 3D 값은 원시 tensor 파일에 보존</figcaption>
+      </figure>
+      <p>작은 성장량의 지수 증가분을 보존하는 계산식에서 분석 상태를 보정하고 수반을 새로 계산했습니다. 결과 JSON에 소스·응답 텐서·분석 체크포인트 해시를 기록했습니다.</p>
+      <p>응답 score 8.45622894e-04, sensitivity norm 4.36170133e-04, gradient max 5.730e-10, adjoint relative residual 4.284e-11, face margin 2.756e-01.</p>
+      <div class="table-scroll" style="max-width:100%;overflow-x:auto"><table style="border-collapse:separate;border-spacing:10px 6px;white-space:nowrap"><thead><tr><th>h (dBZ)</th><th>실제 Δscore</th><th>1차 예측 h·s</th><th>절대 잔차</th><th>max |gradient|</th><th>분기 여유</th><th>상대 잔차</th></tr></thead><tbody><tr><td>0.001</td><td>5.39303072e-06</td><td>2.26845231e-06</td><td>3.125e-06</td><td>9.467e-09</td><td>2.731e-01</td><td>1.377e+00</td></tr><tr><td>0.0005</td><td>1.91541927e-06</td><td>1.13422615e-06</td><td>7.812e-07</td><td>1.429e-10</td><td>2.745e-01</td><td>6.887e-01</td></tr></tbody></table></div>
+      <p>각 actual 값은 perturbed observations를 다시 자료동화해 얻은 값이고, h·s는 저장 응답의 signed linear prediction입니다. 두 양의 h에서 Taylor error 비는 <strong>3.999751567</strong>로 측정됐습니다. h를 절반으로 줄이자 오차가 약 4분의 1이 되어 2차 Taylor 잔차와 일치합니다. 다만 이 크기의 섭동에서는 1차 예측에 비해 잔차가 큽니다. 국소 미분 검증과 유한 변화량의 근사 정확도는 구분해야 합니다.</p>
+      <p>중앙 차분 slope 2.26835255e-03, 수반 slope 2.26845231e-03, 상대 오차 4.397e-05; 양의/음의 endpoint max |gradient| 1.429e-10 / 2.931e-10.</p>
+      <p><a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.json">최종 응답 JSON</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18.pt">응답 tensor</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_central_0.0005.json">중앙 차분 JSON</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_0.svg">민감도 −20분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_1.svg">−10분</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stable_response_18_sensitivity_2.svg">0분</a></p>
+    </div>
+  </details>
   <p class="foot">ADVAR Phase 1 · 간격 <span id="intervalLabel">10</span>분 · source <span id="footerCommit">—</span></p>
 </main>
 

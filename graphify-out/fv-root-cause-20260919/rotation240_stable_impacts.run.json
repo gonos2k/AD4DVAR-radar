@@ -1,0 +1,18 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-I",
+    "examples/weather_scenarios/fv_large_response_probe.py",
+    "--prefix",
+    "rotation240_stable",
+    "--leads",
+    "18",
+    "--impacts",
+    "--warm-start",
+    "graphify-out/fv-root-cause-20260919/rotation240_stable_warm_start.pt"
+  ],
+  "returncode": 0,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 1927053312,
+  "elapsed_seconds": 353.5002630840172
+}

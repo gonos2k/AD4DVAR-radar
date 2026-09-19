@@ -111,6 +111,50 @@ def test_growth_branch_has_the_analytic_first_and_second_derivatives(scheme, log
     torch.testing.assert_close(second, expected, rtol=1e-13, atol=0)
 
 
+def test_zero_flux_small_growth_resolves_sub_ulp_integrating_factor():
+    # exp(g) rounds to one here, while q + q*expm1(g) is representable.
+    q = torch.tensor([[1.5]], dtype=torch.float64)
+    log_growth = q.new_tensor(0.49 * torch.finfo(q.dtype).eps, requires_grad=True)
+    zero_qx = q.new_zeros(1, 2)
+    zero_qy = q.new_zeros(2, 1)
+    zero_edges = tuple(q.new_zeros(1) for _ in range(4))
+    one_edges = tuple(q.new_ones(1) for _ in range(4))
+    result = finite_volume_step(
+        q, torch.ones_like(q), zero_qx, zero_qy,
+        dt_seconds=1.0, spacing_yx=(1.0, 1.0), log_growth=log_growth,
+        boundary_echo=(zero_edges, zero_edges),
+        boundary_support=(one_edges, one_edges),
+    )
+    with localcontext() as context:
+        context.prec = 100
+        expected = float(
+            Decimal.from_float(q.item()) * Decimal.from_float(log_growth.item()).exp()
+        )
+    assert math.exp(log_growth.item()) == 1.0
+    assert result.echo.item() > q.item()
+    torch.testing.assert_close(result.echo, q.new_tensor([[expected]]), rtol=0, atol=0)
+    first, = torch.autograd.grad(result.echo.sum(), log_growth, create_graph=True)
+    second, = torch.autograd.grad(first, log_growth)
+    expected_derivative = q.item() * math.exp(log_growth.item())
+    torch.testing.assert_close(first, log_growth.new_tensor(expected_derivative), rtol=4e-16, atol=0)
+    torch.testing.assert_close(second, log_growth.new_tensor(expected_derivative), rtol=4e-16, atol=0)
+
+
+@pytest.mark.parametrize("log_growth", [-0.125, 0.125])
+def test_growth_product_uses_exp_fallback_at_small_log_boundary(log_growth):
+    q = torch.tensor([[1.5]], dtype=torch.float64)
+    zero_edges = tuple(q.new_zeros(1) for _ in range(4))
+    one_edges = tuple(q.new_ones(1) for _ in range(4))
+    result = finite_volume_step(
+        q, torch.ones_like(q), q.new_zeros(1, 2), q.new_zeros(2, 1),
+        dt_seconds=1.0, spacing_yx=(1.0, 1.0), log_growth=log_growth,
+        boundary_echo=(zero_edges, zero_edges),
+        boundary_support=(one_edges, one_edges),
+    )
+    expected = q * math.exp(log_growth)
+    torch.testing.assert_close(result.echo, expected, rtol=0, atol=0)
+
+
 @pytest.mark.parametrize("scheme", ["donorcell", "minmod"])
 @pytest.mark.parametrize("growth", [-80., 80.])
 def test_large_unused_boundary_does_not_erase_tiny_inflow(scheme, growth):

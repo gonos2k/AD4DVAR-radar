@@ -5,8 +5,8 @@
   "status": "in_progress",
   "pr": "https://github.com/gonos2k/AD4DVAR-radar/pull/160",
   "verified": {
-    "nominal_240_gradient_max": 3.84035164688e-09,
-    "nominal_240_adjoint_relative_residual": 4.2839033131967104e-11,
+    "nominal_240_gradient_max": 5.730426691431985e-10,
+    "nominal_240_adjoint_relative_residual": 4.283915245750008e-11,
     "nominal_240_hessian_products": 41,
     "persistent_sigma_learning_steps": 3,
     "persistent_resume_max_difference": 0,
@@ -14,28 +14,42 @@
       32,
       64,
       128
-    ]
+    ],
+    "external_background_chain": "nonzero theta, fixed support/sigma; not typed prior",
+    "nominal_240_evidence": "rotation240_stable_response_18.json",
+    "small_growth": "expm1 product; original equation, boundaries, and response gate preserved",
+    "positive_240_taylor_error_ratio": 3.999751567047628,
+    "positive_240_steps_dbz": [
+      0.001,
+      0.0005
+    ],
+    "central_240_relative_error": 4.397427966050047e-05,
+    "central_240_evidence": "rotation240_stable_central_0.0005.json",
+    "html_response_panel": "original index.html; actual3x240x240tensor; desktop1440 and390pxiframe CSSviewport"
   },
   "failed": {
     "first_240_impact_step_dbz": 0.01,
     "gradient_l2_at_stall": 1.3584006223631322e-08,
     "gradient_max": "not retained",
-    "evidence": "rotation240_impacts_large_step_failure.json"
+    "evidence": "rotation240_impacts_large_step_failure.json",
+    "second_240_impact_step_dbz": 0.001,
+    "second_gradient_max": 1.3057776778032867e-08,
+    "second_evidence": "rotation240_impacts_small_steps_resource.json"
   },
   "remaining": [
-    "240 finite-reanalysis Taylor verification",
     "general FV/D7 integration",
-    "typed learned-background integration distinct from external composition proof",
-    "HTML evidence for completed extensions"
+    "typed learned-background integration distinct from external composition proof"
   ],
-  "ci": "deferred by user until algorithms completed; prior run cancelled",
+  "ci": "deferred by user; run35411573920 attempt2 found in progress and confirmed cancelled at13:16JST",
   "phase2": "real-data and operational validation deferred",
   "graphify": {
     "mode": "code-only cached update",
-    "nodes": 6465,
-    "edges": 64684,
+    "nodes": 6471,
+    "edges": 64694,
     "communities": 233,
     "semantic_llm_tokens": 0
   },
-  "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope."
+  "historical_completion_records": "Earlier PR159 phase1 completion does not cover the expanded FV scope.",
+  "external_background_holdout": "tiny worsening, no improvement claim",
+  "pending_diagnostic": "fixed-support learned-background API design; typed prior remains unsupported"
 }
