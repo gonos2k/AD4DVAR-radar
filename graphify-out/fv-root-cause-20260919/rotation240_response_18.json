@@ -1,0 +1,17 @@
+{
+  "scope": "240x240 exact local response; fixed analytic boundaries and verification",
+  "leads": 18,
+  "curvature": "exact_robust_hessian",
+  "gradient_max": 3.8403516468775954e-09,
+  "adjoint_relative_residual": 4.2839033131967104e-11,
+  "normal_products": 41,
+  "face_margin": 0.2756305101374659,
+  "score": 0.0008456228942333927,
+  "sensitivity_norm": 0.00043617013268205376,
+  "source_hashes": {
+    "src/advar/fv_sensitivity.py": "69bbf85a48a5b26815eac15935cdc1bd3b39155164f87eadf8e8dccff0b42549",
+    "src/advar/variational.py": "daff731193324b2df43eeedda13c373558fab65e6f511d7a65ec2707e16d8020",
+    "src/advar/transport.py": "db5c032539adba4439395e78958e8f8ae0ff928121985ad1dd89110eba5021fa",
+    "examples/weather_scenarios/fv_large_response_probe.py": "0d8adcc92a2749e3f9c3e5769bcd0f7d24cb11fdc728a04327e5a54369b42817"
+  }
+}

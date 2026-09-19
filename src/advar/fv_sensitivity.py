@@ -8,6 +8,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 import math
+import logging
 from typing import Literal, cast
 
 import torch
@@ -21,6 +22,7 @@ from .variational import (
     FVAnalysisResult,
     FrozenOuterState,
     _evaluate_control,
+    _initial_analysis_dbz,
     _validate_control,
     _validate_observations,
     forecast_fv_analysis,
@@ -130,6 +132,210 @@ def face_branch_margin(start: Tensor, stop: Tensor, frozen: FrozenOuterState) ->
     if not bool(torch.isfinite(margin).all()) or bool((margin[variable] <= 0).any()):
         raise ValueError("latent box can cross a coefficient-sensitive face sign")
     return float(margin[variable].min())
+
+
+def _known_donorcell_step(
+    known: Tensor,
+    qx: Tensor,
+    qy: Tensor,
+    support_edges: tuple[Tensor, Tensor, Tensor, Tensor],
+) -> Tensor:
+    """Propagate a conservative fixed-known mask through one donorcell step."""
+    left, right, bottom, top = support_edges
+    incoming = known.clone()
+    positive_x = qx > 0
+    negative_x = qx < 0
+    positive_y = qy > 0
+    negative_y = qy < 0
+    incoming[:, 1:] &= (~positive_x[:, 1:-1]) | known[:, :-1]
+    incoming[:, :-1] &= (~negative_x[:, 1:-1]) | known[:, 1:]
+    incoming[1:, :] &= (~positive_y[1:-1, :]) | known[:-1, :]
+    incoming[:-1, :] &= (~negative_y[1:-1, :]) | known[1:, :]
+    # A fractional trace remains an unknown contribution even when it is
+    # within roundoff of one; only the exact fixed value one is known.
+    incoming[:, 0] &= (~positive_x[:, 0]) | (left == 1)
+    incoming[:, -1] &= (~negative_x[:, -1]) | (right == 1)
+    incoming[0, :] &= (~positive_y[0, :]) | (bottom == 1)
+    incoming[-1, :] &= (~negative_y[-1, :]) | (top == 1)
+    return incoming
+
+
+def _known_support_frames(
+    frozen: FrozenOuterState,
+    *,
+    leads: int,
+    boundary_support: BoundarySchedule,
+    psi_coefficients: Tensor,
+) -> Tensor:
+    """Return support cells stable under the current donorcell sign stencil."""
+    assert frozen.fv_transport is not None
+    qx, qy = face_volume_fluxes(
+        torch.einsum("k,kij->ij", psi_coefficients, frozen.fv_transport.psi_basis)
+    )
+    known = frozen.initial_support_mask.clone()
+    substeps = frozen.fv_transport.substeps_per_interval
+
+    def advance(schedule: BoundarySchedule, known_state: Tensor) -> Tensor:
+        state = known_state
+        for stages in schedule:
+            stage0, stage1 = stages
+            state1 = _known_donorcell_step(state, qx, qy, stage0)
+            state2 = _known_donorcell_step(state1, qx, qy, stage1)
+            state = state & state2
+        return state
+
+    frames = [known]
+    analysis_interval = substeps
+    for interval in range(2):
+        start = interval * analysis_interval
+        stop = start + analysis_interval
+        known = advance(frozen.fv_transport.boundary_support[start:stop], known)
+        frames.append(known)
+    for lead in range(leads):
+        start = lead * substeps
+        stop = start + substeps
+        known = advance(boundary_support[start:stop], known)
+        frames.append(known)
+    return torch.stack(frames)
+
+
+def _initial_observation_diagonal(
+    control: Tensor, observations: AnalysisObservations, frozen: FrozenOuterState
+) -> Tensor:
+    """Positive initial-observation scaling, not an approximation used in J.
+
+    The initial field transform is pointwise, so a ones JVP is its diagonal.
+    Later observations, robust weights and error correlations remain in the
+    exact operator; this cheap preconditioner need not reproduce them.
+    """
+    index = frozen.active_field_index
+    field = torch.zeros_like(frozen.initial_background_dbz).flatten().scatter(
+        0, index, control[:index.numel()]).reshape_as(frozen.initial_background_dbz)
+    derivative = torch.func.jvp(lambda x: _initial_analysis_dbz(x, frozen),
+                                (field,), (torch.ones_like(field),))[1]
+    active = observations.valid_mask[0] & observations.detected_mask[0]
+    sigma = torch.where(active, observations.std_dbz[0], torch.ones_like(derivative))
+    derivative = torch.where(active, derivative, torch.zeros_like(derivative))
+    precision = 1 + (derivative / sigma).square() * observations.quality_weight[0]
+    diagonal = torch.ones_like(control)
+    diagonal[:index.numel()] = precision.flatten()[index]
+    if not bool(torch.isfinite(diagonal).all()) or not bool((diagonal > 0).all()):
+        raise ValueError("nonfinite FV initial-observation preconditioner")
+    return diagonal.detach()
+
+
+def refine_fv_stationarity(
+    control: Tensor,
+    observations: AnalysisObservations,
+    frozen: FrozenOuterState,
+    *,
+    gradient_tolerance: float = 1e-9,
+    maximum_iterations: int = 4,
+    maximum_normal_products: int = 64,
+    on_step: Callable[[Tensor, dict[str, float | int]], None] | None = None,
+) -> tuple[Tensor, list[dict[str, float | int]]]:
+    """Refine a nearby FV stationary point using exact matrix-free Newton steps.
+
+    Stop on max(abs(grad J)), matching the observation-response API gate.
+    Acceptance decreases ||grad J||, so it remains meaningful when changes in
+    separately evaluated objective values cannot be resolved. This is a local
+    root solve, not a global minimum or implicit-path certificate.
+    """
+    if control.dtype != torch.float64 or control.device.type != "cpu":
+        raise ValueError("FV root refinement requires CPU FP64")
+    if not math.isfinite(gradient_tolerance) or gradient_tolerance <= 0:
+        raise ValueError("gradient_tolerance must be positive and finite")
+    if maximum_iterations <= 0 or maximum_normal_products < 3:
+        raise ValueError("FV root refinement requires positive iteration budgets")
+    _validate_control(control, frozen)
+    _validate_observations(observations)
+    current = control.detach().clone()
+    face_branch_margin(current, current, frozen)
+    gradient = torch.func.grad(lambda c: robust_objective(c, observations, frozen))
+    records: list[dict[str, float | int]] = []
+    for iteration in range(maximum_iterations + 1):
+        cost, _ = _evaluate_control(current, observations, frozen)
+        g = gradient(current)
+        norm = float(torch.linalg.vector_norm(g))
+        gradient_max = float(g.abs().max())
+        logging.getLogger(__name__).info(
+            "FV root iteration %d: gradient max %.17g; gradient norm %.17g",
+            iteration,
+            gradient_max,
+            norm,
+        )
+        if (
+            not bool(torch.isfinite(cost))
+            or not math.isfinite(norm)
+            or not math.isfinite(gradient_max)
+        ):
+            raise ValueError("nonfinite FV stationary residual")
+        if gradient_max <= gradient_tolerance:
+            return current, records
+        if iteration == maximum_iterations:
+            break
+        products = 0
+
+        def normal(direction: Tensor) -> Tensor:
+            nonlocal products
+            if products >= maximum_normal_products:
+                raise RuntimeError("FV refinement normal-product budget exhausted")
+            products += 1
+            return torch.func.jvp(gradient, (current,), (direction,))[1]
+
+        # Resolve the Newton equation more tightly than the requested outer
+        # residual, without solving tiny right-hand sides to an unrelated scale.
+        linear_atol = 0.1 * gradient_tolerance
+        diagonal = _initial_observation_diagonal(current, observations, frozen)
+        step = pcg(normal, -g, preconditioner=lambda x: x/diagonal,
+                   rtol=1e-6, atol=linear_atol,
+                   max_iterations=maximum_normal_products - 2)
+        if not step.converged:
+            raise ValueError("FV stationary Newton system did not converge")
+        trial_norm = math.inf
+        for backtrack in range(12):
+            alpha = 0.5 ** backtrack
+            candidate = current + alpha * step.solution
+            # An unknown implicit curve is not enclosed by this trial-step box.
+            try:
+                margin = face_branch_margin(current, candidate, frozen)
+                candidate_cost, _ = _evaluate_control(candidate, observations, frozen)
+            except ValueError:
+                continue
+            trial_gradient = gradient(candidate)
+            trial_norm = float(torch.linalg.vector_norm(trial_gradient))
+            trial_gradient_max = float(trial_gradient.abs().max())
+            if (
+                bool(torch.isfinite(candidate_cost))
+                and math.isfinite(trial_norm)
+                and math.isfinite(trial_gradient_max)
+                and trial_norm <= (1 - 1e-4 * alpha) * norm
+            ):
+                record = dict(
+                    iteration=iteration,
+                    gradient_before=norm,
+                    gradient_after=trial_norm,
+                    gradient_max_before=gradient_max,
+                    gradient_max_after=trial_gradient_max,
+                    step_scale=alpha,
+                    normal_products=products,
+                    linear_relative_residual=step.relative_residual,
+                    linear_absolute_tolerance=linear_atol,
+                    face_margin=margin,
+                )
+                records.append(record)
+                current = candidate.detach()
+                if on_step is not None:
+                    on_step(current.detach().clone(), record)
+                break
+        else:
+            raise ValueError(
+                f"FV stationary residual did not decrease: gradient_norm={norm}; "
+                f"last_trial_norm={trial_norm}; steps={records}"
+            )
+    raise ValueError(
+        f"FV stationary refinement iteration budget exhausted: gradient_norm={norm}; steps={records}"
+    )
 
 
 def verify_fv_stationarity(
@@ -322,8 +528,11 @@ def compute_fv_observation_response(
 ) -> FVObservationResponse:
     """Compute ``E_y - (D_y grad_c J)^T A^-T E_c`` for local curvature ``A``.
 
-    CPU FP64, donorcell, fully detected interior observations, full support,
-    fixed geometry/error statistics/prescribed boundaries, no neural prior.
+    CPU FP64 and donorcell with fixed geometry/error statistics, masks, and
+    prescribed boundaries. Missing observations and censored observations are
+    permitted; detected values must remain in the strict finite interior and
+    at least one valid sample is required. Partial support is permitted for
+    donorcell when every fixed support trace remains in [0, 1].
     The dimensionless robust control gradient must be <= 1e-8. This numerical
     gate is not a proof of an exact stationary point or a regular optimizer
     path. The weighted future dBZ MSE is fixed throughout the calculation.
@@ -333,6 +542,9 @@ def compute_fv_observation_response(
     inputs remain fixed. Requires-grad tensors for verification/weights/future
     boundaries are rejected. Detached dependencies cannot be inferred from raw
     tensors: their exogenous meaning remains the caller's responsibility.
+    Positive metric weights must also exclude future cells whose base
+    trajectory support is below the fixed-known threshold. Partial support is
+    a fixed known-contribution policy, not a physical forecast.
     ``curvature="irls_gauss_newton"`` uses the frozen-IRLS normal operator.
     ``curvature="exact_robust_hessian"`` uses matrix-free HVPs of the robust
     objective and rejects any non-positive curvature encountered by the solve,
@@ -362,30 +574,45 @@ def compute_fv_observation_response(
         or frozen.neural_prior_valid_mask is not None
     ):
         raise ValueError("FV GN response requires the identity control prior")
-    if not bool(observations.detected_mask.all() & observations.valid_mask.all()):
-        raise ValueError("FV observation response requires fully detected observations")
-    if not bool(
+    if not bool(observations.valid_mask.any()):
+        raise ValueError("FV observation response requires at least one valid observation")
+    detected = observations.valid_mask & observations.detected_mask
+    if bool(detected.any()) and not bool(
         (
-            (observations.dbz > frozen.analysis_config.detection_limit_dbz)
-            & (observations.dbz > frozen.nowcast_config.min_dbz)
-            & (observations.dbz < frozen.nowcast_config.max_dbz)
+            (
+                (observations.dbz > frozen.analysis_config.detection_limit_dbz)
+                & (observations.dbz > frozen.nowcast_config.min_dbz)
+                & (observations.dbz < frozen.nowcast_config.max_dbz)
+            )[detected]
         ).all()
     ):
         raise ValueError(
-            "observations must be strictly inside detection and dBZ limits"
+            "detected observations must be strictly inside detection and dBZ limits"
         )
-    if not bool(frozen.initial_support_mask.all()):
-        raise ValueError("FV response requires full initial support")
-    for schedule in (fv.boundary_support, boundary_support):
-        if any(
-            not bool((edge == 1).all())
-            for stages in schedule
-            for edges in stages
-            for edge in edges
-        ):
-            raise ValueError("FV response requires full prescribed boundary support")
+    if frozen.initial_support_mask.dtype is not torch.bool:
+        raise ValueError("FV response requires a fixed boolean initial support mask")
+
+    def validate_support_schedule(schedule: BoundarySchedule, name: str) -> None:
+        for stages in schedule:
+            for edges in stages:
+                for edge in edges:
+                    if not bool(torch.isfinite(edge).all()) or bool(
+                        (edge < 0).any() | (edge > 1).any()
+                    ):
+                        raise ValueError(
+                            f"{name} must remain in the fixed support range [0, 1]"
+                        )
+
+    validate_support_schedule(fv.boundary_support, "FV prescribed support")
+    validate_support_schedule(boundary_support, "future prescribed support")
     if background_dependency not in ("frozen", "first_observation"):
         raise ValueError("unknown background_dependency")
+    if background_dependency == "first_observation" and not bool(
+        observations.detected_mask[0].all()
+    ):
+        raise ValueError(
+            "first_observation requires a fully detected initial background"
+        )
     if background_dependency == "first_observation" and not torch.equal(
         frozen.initial_background_dbz, observations.dbz[0]
     ):
@@ -424,13 +651,46 @@ def compute_fv_observation_response(
         raise ValueError(
             "verification, weights and future boundaries must be fixed tensors"
         )
+    if observations.std_dbz.requires_grad or observations.quality_weight.requires_grad:
+        raise ValueError("observation scales and weights must be fixed tensors")
+    support_check = forecast_fv_analysis(
+        control,
+        frozen,
+        leads=leads,
+        boundary_start_interval=boundary_start_interval,
+        boundary_echo=boundary_echo,
+        boundary_support=boundary_support,
+    )
+    if support_check.support_frames is None:
+        raise ValueError("FV response requires fixed support diagnostics")
+    support_known = support_check.support_frames[1:] >= (
+        1 - 128 * torch.finfo(control.dtype).eps
+    )
+    face_margin = face_branch_margin(control, control, frozen)
+    if support_check.psi_coefficients is None:
+        raise ValueError("FV response requires fixed transport coefficients")
+    stencil_known = _known_support_frames(
+        frozen,
+        leads=leads,
+        boundary_support=boundary_support,
+        psi_coefficients=support_check.psi_coefficients,
+    )
+    active_observation = observations.valid_mask & (
+        observations.quality_weight > 0
+    )
+    if bool((active_observation & ~stencil_known[:3]).any()):
+        raise ValueError(
+            "active observations must lie in the fixed known support domain"
+        )
+    if bool(((metric_weight > 0) & (~support_known | ~stencil_known[3:])).any()):
+        raise ValueError(
+            "metric_weight must exclude future cells without fixed known support"
+        )
     # Normalize fixed weights before their sum, avoiding overflow from units.
     weights = metric_weight / metric_weight.max()
     weights = weights / weights.sum()
     if bool(((metric_weight > 0) & (weights == 0)).any()):
         raise ValueError("metric_weight dynamic range underflows during normalization")
-    face_margin = face_branch_margin(control, control, frozen)
-
     def contract(y: Tensor) -> FrozenOuterState:
         return (
             replace(frozen, initial_background_dbz=y[0])
@@ -515,8 +775,10 @@ def compute_fv_observation_response(
     # The identity control-prior rows guarantee A=J.T J >= I in GN mode.
     # Exact mode checks positive curvature on each HVP direction.  Reserve a
     # final product; true-residual checks remain inside the same hard budget.
+    diagonal = _initial_observation_diagonal(control, observations, frozen)
     adjoint = pcg(
-        normal, rhs, rtol=1e-10, max_iterations=max(1, maximum_normal_products - 1)
+        normal, rhs, preconditioner=lambda x: x / diagonal,
+        rtol=1e-10, max_iterations=max(1, maximum_normal_products - 1)
     )
     if not adjoint.converged:
         raise ValueError("FV curvature adjoint did not converge")

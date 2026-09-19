@@ -62,10 +62,48 @@ def refined_case():
     return _refined_case()
 
 
+@pytest.fixture(scope="module")
+def partial_refined_case():
+    observations, frozen, boundary_echo, boundary_support = _PROBE.make_case()
+    detected = observations.detected_mask.clone()
+    valid = observations.valid_mask.clone()
+    missing = observations.missing_mask.clone()
+    detected[1, 0, 0] = False
+    valid[1, 0, 0] = False
+    missing[1, 0, 0] = True
+    observations = replace(
+        observations,
+        detected_mask=detected,
+        valid_mask=valid,
+        missing_mask=missing,
+    )
+    configured = replace(
+        frozen,
+        analysis_config=replace(
+            frozen.analysis_config,
+            maximum_outer_iterations=16,
+            maximum_pcg_iterations=96,
+            gradient_tolerance=1.0e-10,
+            step_tolerance=1.0e-12,
+            pcg_relative_tolerance=1.0e-10,
+        ),
+    )
+    result = solve_analysis(observations, configured)
+    gradient = torch.func.grad(
+        lambda control: robust_objective(control, observations, configured)
+    )(result.control)
+    assert torch.max(torch.abs(gradient)) < 1.0e-8
+    return observations, configured, result.control, boundary_echo, boundary_support
+
+
 def _replace_first_edge(schedule, edge):
+    return _replace_stage_edge(schedule, 0, edge)
+
+
+def _replace_stage_edge(schedule, edge_index, edge):
     stages = list(schedule[0])
     edges = list(stages[0])
-    edges[0] = edge
+    edges[edge_index] = edge
     stages[0] = tuple(edges)
     updated = list(schedule)
     updated[0] = tuple(stages)
@@ -84,6 +122,27 @@ def _response_kwargs(observations, boundary_echo, boundary_support):
         background_dependency="first_observation",
         maximum_normal_products=128,
     )
+
+
+def _mask_unknown_support_weights(
+    control, frozen, boundary_echo, boundary_support, weights
+):
+    trajectory = forecast_fv_analysis(
+        control,
+        frozen,
+        leads=2,
+        boundary_start_interval=2,
+        boundary_echo=boundary_echo,
+        boundary_support=boundary_support,
+    )
+    assert trajectory.support_frames is not None
+    known = trajectory.support_frames[1:] >= (
+        1 - 128 * torch.finfo(control.dtype).eps
+    )
+    result = weights.clone()
+    result[~known] = 0.0
+    assert torch.any(result > 0)
+    return result
 
 
 def _inputs():
@@ -146,6 +205,29 @@ def test_response_requires_the_declared_first_observation_background():
         )
 
 
+def test_response_rejects_missing_first_observation_background():
+    observations, frozen, control, kwargs = _inputs()
+    detected = observations.detected_mask.clone()
+    valid = observations.valid_mask.clone()
+    missing = observations.missing_mask.clone()
+    detected[0, 0, 0] = False
+    valid[0, 0, 0] = False
+    missing[0, 0, 0] = True
+    missing_observation = replace(
+        observations,
+        detected_mask=detected,
+        valid_mask=valid,
+        missing_mask=missing,
+    )
+    with pytest.raises(ValueError, match="fully detected initial background"):
+        compute_fv_observation_response(
+            control,
+            missing_observation,
+            frozen,
+            **{**kwargs, "background_dependency": "first_observation"},
+        )
+
+
 @pytest.mark.parametrize(
     "metric_weight, message",
     [
@@ -182,17 +264,108 @@ def test_zero_flow_control_is_rejected_as_a_sensitive_face_tie():
         compute_fv_observation_response(zero, observations, frozen, **kwargs)
 
 
-def test_response_requires_full_future_boundary_support():
-    observations, frozen, control, kwargs = _inputs()
+def test_response_accepts_partial_future_boundary_support(refined_case):
+    observations, frozen, control, boundary_echo, boundary_support = refined_case
+    kwargs = _response_kwargs(observations, boundary_echo, boundary_support)
     support = kwargs["boundary_support"]
     bad_edge = support[0][0][0].clone()
     bad_edge[0] = 0.5
-    with pytest.raises(ValueError, match="full prescribed boundary support"):
+    weights = _mask_unknown_support_weights(
+        control,
+        frozen,
+        boundary_echo,
+        _replace_first_edge(support, bad_edge),
+        kwargs["metric_weight"],
+    )
+    response = compute_fv_observation_response(
+        control,
+        observations,
+        frozen,
+        **{
+            **kwargs,
+            "metric_weight": weights,
+            "boundary_support": _replace_first_edge(support, bad_edge),
+        },
+    )
+    assert torch.isfinite(response.sensitivity_dbz).all()
+
+
+def test_response_rejects_support_outside_fixed_unit_interval(refined_case):
+    observations, frozen, control, boundary_echo, boundary_support = refined_case
+    kwargs = _response_kwargs(observations, boundary_echo, boundary_support)
+    bad_edge = boundary_support[0][0][0].clone()
+    bad_edge[0] = 1.0 + 1.0e-12
+    with pytest.raises(ValueError, match="fixed support range"):
         compute_fv_observation_response(
             control,
             observations,
             frozen,
-            **{**kwargs, "boundary_support": _replace_first_edge(support, bad_edge)},
+            **{**kwargs, "boundary_support": _replace_first_edge(boundary_support, bad_edge)},
+        )
+
+
+def test_response_rejects_near_one_fractional_support(refined_case):
+    observations, frozen, control, boundary_echo, boundary_support = refined_case
+    kwargs = _response_kwargs(observations, boundary_echo, boundary_support)
+    near_one = boundary_support[0][0][0].clone()
+    near_one[0] = torch.nextafter(
+        near_one.new_tensor(1.0), near_one.new_tensor(0.0)
+    )
+    with pytest.raises(ValueError, match="without fixed known support"):
+        compute_fv_observation_response(
+            control,
+            observations,
+            frozen,
+            **{
+                **kwargs,
+                "boundary_support": _replace_first_edge(boundary_support, near_one),
+            },
+        )
+
+
+def test_response_accepts_partial_outflow_analysis_support_with_missing_data(
+    partial_refined_case,
+):
+    observations, frozen, control, boundary_echo, boundary_support = (
+        partial_refined_case
+    )
+    fv = frozen.fv_transport
+    assert fv is not None
+    partial_edge = fv.boundary_support[0][0][1].clone()
+    partial_edge[0] = 0.5
+    partial_fv = replace(
+        fv,
+        boundary_support=_replace_stage_edge(fv.boundary_support, 1, partial_edge),
+    )
+    partial_frozen = replace(frozen, fv_transport=partial_fv)
+    kwargs = _response_kwargs(observations, boundary_echo, boundary_support)
+    response = compute_fv_observation_response(
+        control,
+        observations,
+        partial_frozen,
+        **{**kwargs, "background_dependency": "frozen"},
+    )
+    assert torch.isfinite(response.sensitivity_dbz).all()
+
+
+def test_response_rejects_active_observations_outside_known_support(refined_case):
+    observations, frozen, control, boundary_echo, boundary_support = refined_case
+    fv = frozen.fv_transport
+    assert fv is not None
+    near_one = fv.boundary_support[0][0][0].clone()
+    near_one[0] = 1.0 - 1.0e-12
+    partial_fv = replace(
+        fv,
+        boundary_support=_replace_first_edge(fv.boundary_support, near_one),
+    )
+    partial_frozen = replace(frozen, fv_transport=partial_fv)
+    kwargs = _response_kwargs(observations, boundary_echo, boundary_support)
+    with pytest.raises(ValueError, match="active observations"):
+        compute_fv_observation_response(
+            control,
+            observations,
+            partial_frozen,
+            **{**kwargs, "background_dependency": "frozen"},
         )
 
 
@@ -326,6 +499,76 @@ def test_exact_robust_hessian_matches_dense_small_oracle(refined_case):
         expected,
         rtol=2e-8,
         atol=2e-10,
+    )
+
+
+def test_exact_response_matches_reanalysis_fd_with_missing_and_partial_support(
+    partial_refined_case,
+):
+    observations, frozen, control, boundary_echo, boundary_support = (
+        partial_refined_case
+    )
+    partial_edge = boundary_support[0][0][0].clone()
+    partial_edge[0] = 0.5
+    boundary_support = _replace_first_edge(boundary_support, partial_edge)
+    metric_weight = torch.arange(1, 41, dtype=torch.float64).reshape(2, 4, 5)
+    metric_weight = _mask_unknown_support_weights(
+        control,
+        frozen,
+        boundary_echo,
+        boundary_support,
+        metric_weight,
+    )
+    kwargs = _response_kwargs(observations, boundary_echo, boundary_support)
+    kwargs.update(metric_weight=metric_weight, curvature="exact_robust_hessian")
+    response = compute_fv_observation_response(
+        control, observations, frozen, **kwargs
+    )
+
+    direction = torch.zeros_like(observations.dbz)
+    detected = observations.detected_mask
+    direction[detected] = torch.linspace(
+        -1.0, 1.0, int(detected.sum()), dtype=direction.dtype
+    )
+    direction = direction / torch.linalg.vector_norm(direction)
+    step = 1.0e-4
+
+    def reanalyzed_score(value):
+        shifted = replace(observations, dbz=value)
+        shifted_frozen = replace(frozen, initial_background_dbz=value[0])
+        analyzed = solve_analysis(shifted, shifted_frozen)
+        gradient = torch.func.grad(
+            lambda candidate: robust_objective(candidate, shifted, shifted_frozen)
+        )(analyzed.control)
+        assert torch.max(torch.abs(gradient)) < 1.0e-8
+        trajectory = forecast_fv_analysis(
+            analyzed.control,
+            shifted_frozen,
+            leads=2,
+            boundary_start_interval=2,
+            boundary_echo=boundary_echo,
+            boundary_support=boundary_support,
+        )
+        prediction = echo_to_dbz(
+            trajectory.frames_linear[1:],
+            min_dbz=frozen.nowcast_config.min_dbz,
+        )
+        normalized = metric_weight / metric_weight.max()
+        normalized = normalized / normalized.sum()
+        return (normalized * (prediction - kwargs["verification_dbz"]).square()).sum()
+
+    finite_difference = (
+        reanalyzed_score(observations.dbz + step * direction)
+        - reanalyzed_score(observations.dbz - step * direction)
+    ) / (2.0 * step)
+    directional_response = (response.sensitivity_dbz * direction).sum()
+    torch.testing.assert_close(
+        directional_response,
+        finite_difference,
+        # At h=1e-4 both endpoint gradients are below 1e-8; the measured
+        # slope discrepancy is 1.1e-9 absolute on this scale.
+        rtol=1.0e-9,
+        atol=2.0e-9,
     )
 
 

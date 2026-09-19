@@ -38,9 +38,14 @@ J_c_theta is evaluated directly, rather than chaining an observation calibration
 - [x] Actual three-parameter neural error-model update and held-out replay.
 - [x] Total fixed-NN observation response including features and B=y[0].
 - [x] Original HTML, GREEN/RED integrity review, code graph and source manifest.
-- [ ] Independently resolve the tiny NN-specific observation contribution.
+- [x] Resolve the isolated NN feature-to-standard-deviation path; full
+  observation-input attribution remains unresolved.
 - [ ] General FV boundary/support/nonsmooth contracts and large-grid exact adjoint.
-- [ ] Background neural-prior integration and persistent learning.
+- [x] Bounded persistent observation-error learning with checkpoint resume.
+- [ ] Background neural-prior integration with complete dependency derivatives.
+
+Operational persistent learning and real-data validation belong to Phase 2; they
+are not Phase 1 completion gates.
 
 See LOCAL_VERIFICATION_RESULTS.md for the executed evidence and why these local
 results do not establish general eligibility or Phase 2 real-data performance.

@@ -1,0 +1,15 @@
+{
+  "command": [
+    ".venv/bin/python",
+    "-I",
+    "examples/weather_scenarios/fv_persistent_learning_probe.py",
+    "--checkpoint",
+    "graphify-out/fv-root-cause-20260919/fv_persistent_learning_step1.pt",
+    "--output",
+    "graphify-out/fv-root-cause-20260919/fv_persistent_learning.json"
+  ],
+  "returncode": 0,
+  "limit_reason": null,
+  "sampled_peak_rss_bytes": 333185024,
+  "elapsed_seconds": 538.8041237499856
+}

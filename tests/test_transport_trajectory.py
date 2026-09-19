@@ -38,12 +38,12 @@ def test_one_cell_trajectory_matches_time_dependent_boundary_recurrence(replay):
     torch.testing.assert_close(support, torch.ones_like(support), rtol=1e-13, atol=0)
 
 
-def _case(dtype=torch.float64):
+def _case(dtype=torch.float64, substeps=2):
     q = torch.tensor([[.3, .8, .6, 1.2], [.5, .9, 1.4, .7],
                       [1.1, .4, .9, 1.5]], dtype=dtype)
     y, x = torch.meshgrid(torch.arange(4, dtype=dtype), torch.arange(5, dtype=dtype), indexing="ij")
     basis = torch.stack((y, -x))
-    boundaries = torch.linspace(.3, 1.3, 4*2*14, dtype=dtype).reshape(4, 2, 14)
+    boundaries = torch.linspace(.3, 1.3, 2*substeps*2*14, dtype=dtype).reshape(2*substeps, 2, 14)
     inputs = (q, q.new_tensor([.13, .07]), q.new_tensor(.03), boundaries)
     return basis, inputs
 
@@ -52,7 +52,7 @@ def _run(basis, inputs, replay, scheme):
     q, coefficients, growth, boundary = inputs
     return finite_volume_trajectory(
         q, torch.ones_like(q), coefficients, growth, psi_basis=basis,
-        leads=2, substeps_per_interval=2, interval_seconds=.4, spacing_yx=(1.5, 2.),
+        leads=2, substeps_per_interval=boundary.shape[0]//2, interval_seconds=.4, spacing_yx=(1.5, 2.),
         boundary_echo=_schedule(boundary, 3, 4),
         boundary_support=_schedule(torch.ones_like(boundary), 3, 4),
         replay=replay, reconstruction=scheme,
@@ -99,8 +99,9 @@ def test_forecast_continuation_uses_the_same_discrete_trajectory(scheme):
 
 
 @pytest.mark.parametrize("scheme", ["donorcell", "minmod"])
-def test_replay_value_jvp_vjp_and_mixed_second_derivative(scheme):
-    basis, inputs = _case()
+@pytest.mark.parametrize("substeps", [2, 9])
+def test_replay_value_jvp_vjp_and_mixed_second_derivative(scheme, substeps):
+    basis, inputs = _case(substeps=substeps)
     directions = tuple(.01 * torch.cos(torch.arange(v.numel(), dtype=v.dtype)).reshape(v.shape)
                        for v in inputs)
 

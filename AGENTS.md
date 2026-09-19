@@ -30,6 +30,9 @@
 
 ## Implementation
 
+- Always use the Graphify skill for code improvement work. Consult the existing
+  structural graph before making changes and incrementally refresh changed code
+  afterward. Reuse cached evidence; avoid full semantic rebuilds unless needed.
 - Code must be simple, clear, concise, and intuitive.
 - Choose the smallest theoretically consistent change. Avoid unrelated refactoring,
   unnecessary abstractions, duplicate logic, and unnecessary or redundant validation

@@ -120,6 +120,18 @@
       <details class="lesson-block"><summary>한계 · 이 실험이 말하지 않는 것</summary><div class="lesson-body"><p><strong id="lessonLimit">실자료의 운영 성능과 전역 최적성은 이 화면의 범위가 아닙니다.</strong></p><p>작은 합성 격자에서 방정식과 구현의 정합성을 살피는 1차 이론 실증입니다. 시나리오마다 표시되는 한계 문장을 먼저 읽고, 점수의 적용 범위를 정하세요.</p></div></details>
     </div>
   </details>
+  <details class="learn" id="fvNeuralEvidence">
+    <summary>실제 신경망 학습·FSOI 수치 검증 — 별도 4×5 합성 실험</summary>
+    <div class="lesson-body">
+      <p>현재 240×240 회전 분석은 국소 1차 정상성 검사를 통과했습니다. 아래 학습은 별도의 작은 FV 실험이며, 240×240 학습이나 배경장 neural prior 검증 결과가 아닙니다.</p>
+      <p>3개 매개변수의 실제 신경망이 관측오차 표준편차를 출력합니다. 정확한 Hessian과 혼합 미분으로 한 번 갱신한 뒤, 다른 초기장·잡음의 자료를 다시 동화했습니다.</p>
+      <p>별도 자료의 dBZ MSE: 0.00019917512618196 → 0.00019917472238659. 감소 4.03795e-10 (0.000203%). 국소 오차 추정 척도 6.76332e-13 (엄밀한 상한 아님). 모델 저장·재적재 후 제어값·예측장·점수 차이 모두 0.</p>
+      <p>고정된 학습 모델에서 관측→특징 정규화→오차 가중치와 초기 배경장 B=y[0] 경로를 함께 미분했습니다. 전체 관측 민감도 방향값 -7.801787329e-04; 재동화 중앙차분 오차 7.101e-10 → 1.776e-10.</p>
+      <p>신경망 경로만의 추가 영향 4.162e-11는 가장 작은 차분 오차보다 작아 전체 관측 경로에서는 독립 판별되지 않았습니다. 분리된 특징→오차통계 경로는 별도 시험으로 확인했으며, 배경장 neural prior·실자료 성능·일반 FV 운영 적격성은 미검증입니다.</p>
+      <p>후속 분리 시험: 원관측·배경장·점수를 고정하고 특징→신경망 오차 경로만 변화시킨 재동화에서 민감도 -4.16155391e-11, 중앙차분 오차 1.937e-15로 이 국소 경로를 확인했습니다. 전체 관측을 변화시키는 실험과는 구분합니다. <a href="../../graphify-out/fv-root-cause-20260919/fv_neural_observation_path.json">분리 시험 원시 결과</a></p>
+      <p><a href="../../graphify-out/fv-root-cause-20260919/fv_neural_learning.json">신경망 학습 원시 결과</a> · <a href="../../graphify-out/fv-root-cause-20260919/fv_neural_observation.json">전체 관측 민감도</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stationarity.json">240×240 국소 정상성</a> · <a href="../../graphify-out/fv-root-cause-20260919/LOCAL_VERIFICATION_RESULTS.md">검증 범위와 미완료 항목</a></p>
+    </div>
+  </details>
   <details class="learn" id="fvLearningEvidence">
     <summary>정상점·민감도·학습 검증 — 별도 4×5 합성 실험</summary>
     <div class="lesson-body">
@@ -128,19 +140,8 @@
       <p>학습 매개변수 θ = log(관측오차 배율). 정확한 매개변수 민감도 6.1843434e-05. 관측 민감도와 이 매개변수 미분을 구분합니다.</p>
       <p>고정된 별도 검증 자료의 가중 dBZ MSE: 0.000199175126182 → 0.000199174605188. 개선율 0.000262%. 재적재 점수 차이 0.000e+00. 국소 수치 오차 추정치 8.161e-13 (엄밀한 오차 상한 아님). 판정: 통과.</p>
       <p>작은 유한 섭동의 관측 영향은 재동화 Taylor 시험으로 검증했습니다. 현재 학습은 양의 오차 크기 한 개의 갱신이며, 전역 최적성이나 실자료 일반화를 증명하지 않습니다.</p>
-      <p><a href="../../graphify-out/fv-root-cause-20260919/fv_learning.json">학습 원시 결과</a> · <a href="../../graphify-out/fv-root-cause-20260919/refine_failed_endpoint.json">정상점 원시 결과</a> · <a href="../../graphify-out/fv-root-cause-20260919/STATIONARITY_PROGRESS.md">검증 범위</a></p>
-    </div>
-  </details>
-  <details class="learn" id="fvNeuralEvidence">
-    <summary>실제 신경망 학습·FSOI 수치 검증 — 별도 4×5 합성 실험</summary>
-    <div class="lesson-body">
-      <p>현재 240×240 회전 분석은 국소 1차 정상성 검사를 통과했습니다. 아래 학습은 별도의 작은 FV 실험이며, 240×240 학습이나 배경장 neural prior 검증 결과가 아닙니다.</p>
-      <p>3개 매개변수의 실제 신경망이 관측오차 표준편차를 출력합니다. 정확한 Hessian과 혼합 미분으로 한 번 갱신한 뒤, 다른 초기장·잡음의 자료를 다시 동화했습니다.</p>
-      <p>별도 자료의 dBZ MSE: 0.00019917512618196 → 0.00019917472238659. 감소 4.03795e-10 (0.000203%). 국소 오차 추정 척도 6.76332e-13 (엄밀한 상한 아님). 모델 저장·재적재 후 제어값·예측장·점수 차이 모두 0.</p>
-      <p>고정된 학습 모델에서 관측→특징 정규화→오차 가중치와 초기 배경장 B=y[0] 경로를 함께 미분했습니다. 전체 관측 민감도 방향값 -7.801787329e-04; 재동화 중앙차분 오차 7.101e-10 → 1.776e-10.</p>
-      <p>신경망 경로만의 추가 영향 4.162e-11는 가장 작은 차분 오차보다 작아 독립 판별되지 않았습니다. 작은 합성 실험의 학습·재적재 증거이며, 지속 학습·실자료 성능·일반 FV 운영 적격성은 미검증입니다.</p>
-      <p>후속 분리 시험: 원관측·배경장·점수를 고정하고 특징→신경망 오차 경로만 변화시킨 재동화에서 민감도 -4.16155391e-11, 중앙차분 오차 1.937e-15로 이 국소 경로를 확인했습니다. 전체 관측을 변화시키는 실험과는 구분합니다. <a href="../../graphify-out/fv-root-cause-20260919/fv_neural_observation_path.json">분리 시험 원시 결과</a></p>
-      <p><a href="../../graphify-out/fv-root-cause-20260919/fv_neural_learning.json">신경망 학습 원시 결과</a> · <a href="../../graphify-out/fv-root-cause-20260919/fv_neural_observation.json">전체 관측 민감도</a> · <a href="../../graphify-out/fv-root-cause-20260919/rotation240_stationarity.json">240×240 국소 정상성</a> · <a href="../../graphify-out/fv-root-cause-20260919/LOCAL_VERIFICATION_RESULTS.md">검증 범위와 미완료 항목</a></p>
+      <p>추가로 관측오차 표준편차를 출력하는 별도의 3개 매개변수 신경망에서, 고정된 두 학습 창을 번갈아 사용해 세 번 갱신했습니다. step 1에서 저장한 모델·SGD 상태를 새 객체로 재개한 최종 신경망 매개변수·옵티마이저 상태·검증 예측장은 모두 차이 0입니다. 홀드아웃은 갱신에 사용하지 않았고, 재동화 MSE는 0.000199175126182 → 0.000199174011886 (개선 1.11430e-09)였습니다. 이득이 FP64 점수 roundoff 척도보다 크다는 비교일 뿐 엄밀한 오차 상한이나 통계적 유의성은 아닙니다.</p>
+      <p><a href="../../graphify-out/fv-root-cause-20260919/fv_learning.json">학습 원시 결과</a> · <a href="../../graphify-out/fv-root-cause-20260919/fv_persistent_learning.json">지속 학습 원시 결과</a> · <a href="../../graphify-out/fv-root-cause-20260919/refine_failed_endpoint.json">정상점 원시 결과</a> · <a href="../../graphify-out/fv-root-cause-20260919/STATIONARITY_PROGRESS.md">검증 범위</a></p>
     </div>
   </details>
   <p class="foot">ADVAR Phase 1 · 간격 <span id="intervalLabel">10</span>분 · source <span id="footerCommit">—</span></p>

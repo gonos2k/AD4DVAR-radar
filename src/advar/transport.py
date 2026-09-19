@@ -869,12 +869,12 @@ def finite_volume_trajectory(
         block_growth: Tensor,
         *boundary_tensors: Tensor,
     ) -> Tensor:
-        expected_boundary_count = 16 * substeps_per_interval
-        if len(boundary_tensors) != expected_boundary_count:
+        if not boundary_tensors or len(boundary_tensors) % 16:
             raise RuntimeError("trajectory interval boundary tensor count mismatch")
+        block_steps = len(boundary_tensors) // 16
         echo, support = state.unbind(0)
         growth_per_step = block_growth / substeps_per_interval
-        for substep in range(substeps_per_interval):
+        for substep in range(block_steps):
             offset = 16 * substep
             echo_edges = (
                 tuple(boundary_tensors[offset : offset + 4]),
@@ -907,30 +907,23 @@ def finite_volume_trajectory(
     for lead in range(leads):
         start = lead * substeps_per_interval
         stop = start + substeps_per_interval
-        boundary_tensors = _flatten_step_boundaries(
-            echo_schedule,
-            support_schedule,
-            start=start,
-            stop=stop,
-        )
-        if replay:
-            recomputed_state = recompute(
-                interval_block,
-                state,
-                qx,
-                qy,
-                log_growth_per_interval,
-                *boundary_tensors,
+        # Bound the differentiable replay tape independently of interval length.
+        # Splitting does not alter a substep, its stage traces, or growth/dt.
+        block_size = min(8, substeps_per_interval) if replay else substeps_per_interval
+        for block_start in range(start, stop, block_size):
+            boundary_tensors = _flatten_step_boundaries(
+                echo_schedule, support_schedule, start=block_start,
+                stop=min(block_start + block_size, stop),
             )
-            state = cast(Tensor, recomputed_state)
-        else:
-            state = interval_block(
-                state,
-                qx,
-                qy,
-                log_growth_per_interval,
-                *boundary_tensors,
-            )
+            if replay:
+                state = cast(Tensor, recompute(
+                    interval_block, state, qx, qy, log_growth_per_interval,
+                    *boundary_tensors,
+                ))
+            else:
+                state = interval_block(
+                    state, qx, qy, log_growth_per_interval, *boundary_tensors,
+                )
         echo_frames.append(state[0])
         support_frames.append(state[1])
 

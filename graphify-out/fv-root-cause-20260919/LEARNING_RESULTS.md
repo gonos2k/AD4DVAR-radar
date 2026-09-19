@@ -42,6 +42,27 @@ not a rigorous neighborhood bound or statistical uncertainty. Improvement is
 small and does not establish practical forecasting skill. Pointwise curvature
 and checked trial boxes do not enclose an unknown stationary solution path.
 
+## Persistent observation-error learning
+
+`fv_persistent_learning_probe.py` performs three fixed SGD updates over two
+distinct training windows (`train_a -> train_b -> train_a`) using the exact
+stationary response as the parameter gradient. Each update has a central
+reanalysis direction check, positive local Hessian, descent check, and donorcell
+face margins. The held-out window is immutable and is scored only after the
+updates.
+
+- Holdout MSE: `0.00019917512618195977 -> 0.0001991740118858421`; gain
+  `1.1142961177e-9`.
+- The gain exceeds the reported FP64 score-roundoff scale. This comparison is
+  not a rigorous numerical error bound, statistical significance test, or
+  production-learning approval.
+- A step-1 checkpoint containing model and SGD state was loaded into freshly
+  constructed objects. Uninterrupted versus resumed final parameters,
+  optimizer state, and holdout forecast all matched exactly (`0.0` maximum
+  difference).
+- Bounded run: 538.8 s, sampled peak RSS 333 MB; evidence is in
+  `fv_persistent_learning.json` and its adjacent resource record.
+
 ## Reused and new execution evidence
 
 - Full existing stationary-sensitivity regression with the new root merit:
@@ -71,8 +92,10 @@ its limitation on pointwise error estimates is retained explicitly. Production
 HTML under “정상점·민감도·학습 검증 — 별도 4×5 합성 실험”. Embedded scenario JSON is
 unchanged (SHA256 6416025107f7141021cba4d3d7c9ab9d6dc23c809b7febbb1260bbe2689372cc).
 The 240×240 demo does not inherit these results. General FV stationarity eligibility,
-large-grid exact sensitivity, neural/persistent learning and real-data validation
-remain open; no all-case or Phase 1 100% completion is asserted.
+large-grid exact sensitivity, background neural-prior integration and real-data
+validation remain open; this bounded observation-error experiment does not
+establish neural-prior or production-learning eligibility. No all-case or Phase 1
+100% completion is asserted.
 
 Aside browser verification: the original page loaded through a loopback HTTP
 server, the new disclosure opened by clicking its summary, and its displayed
