@@ -86,3 +86,22 @@ def test_panel_cannot_bypass_scheme_validation(reports, tmp_path, monkeypatch):
     response = json.loads((EVIDENCE / 'rotation240_stable_response_18.json').read_text())
     with pytest.raises(SystemExit, match='scheme/domain/time/boundary'):
         PUBLISHER._panel(response, 1.0, None)
+
+
+@pytest.mark.parametrize('corrupt', [False, True])
+def test_joint_inverse_panel_preserves_local_scope(tmp_path, monkeypatch, corrupt):
+    joint = json.loads((EVIDENCE / 'minmod_joint_inverse_final.json').read_text())
+    if corrupt:
+        joint['general_minmod_response_eligible'] = True
+    (tmp_path / 'minmod_joint_inverse_final.json').write_text(json.dumps(joint))
+    monkeypatch.setattr(PUBLISHER, 'HERE', tmp_path)
+    monkeypatch.setattr(PUBLISHER, 'LONG_HORIZON_PATH', tmp_path / 'absent.json')
+    response = json.loads((EVIDENCE / 'rotation240_stable_response_18.json').read_text())
+    if corrupt:
+        with pytest.raises(SystemExit, match='joint minmod report scope'):
+            PUBLISHER._panel(response, 1.0, None)
+    else:
+        panel = PUBLISHER._panel(response, 1.0, None)
+        assert 'fvMinmodJointInverse' in panel
+        assert '일반 minmod FSOI' in panel
+        assert 'background_parameter' in panel

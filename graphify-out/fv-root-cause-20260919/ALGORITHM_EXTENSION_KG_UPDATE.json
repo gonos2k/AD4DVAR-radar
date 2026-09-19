@@ -94,5 +94,17 @@
     "tests": "25 distinct focused cases passed; full HTML bytes unchanged; no full CI or longrun repeated",
     "scope": "initial-field directions in small fixed-flow examples; RK all-parameter branch classifier, replay/mixed/inverse remain open",
     "record": "MINMOD_BRANCH_AND_PUBLISHER_REVIEW.md"
+  },
+  "pr164_followup": {
+    "baseline": "main c5d3f28c",
+    "joint_derivatives": "4x5 signed nonzero flows; 9 substeps; six individual/joint directions; both-sign state/gradient differences, replay gradient/HVP and nonzero mixed blocks",
+    "inverse": "3x3 actual minmod robust objective, 12 jointly estimated controls; local dense Newton oracle, same analysis/forecast operator; B=y0+theta*pattern",
+    "gradient_max": 6.565685495285578e-12,
+    "adjoint_relative_residual": 1.2201763294981718e-15,
+    "branch": "54 Euler stages per analysis+forecast, strict interior limiter inequalities, positive controlled flow/growth; perimeter slopes structurally zero",
+    "reanalysis": "observation central errors2.9934e-8 and7.4833e-9; parameter errors7.05e-15 and1.03e-13",
+    "cost": "completed304.54s340426752bytes; earlier180s timeout retained, not a numerical failure or completion",
+    "limits": "local endpoints only, no finite-path certificate; no generic classifier, production minmod response, typed prior learning, general D7, or full CI",
+    "record": "MINMOD_JOINT_INVERSE_REVIEW.md"
   }
 }
