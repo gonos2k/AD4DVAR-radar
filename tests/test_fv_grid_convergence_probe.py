@@ -2,14 +2,24 @@
 
 from __future__ import annotations
 
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
+
 import pytest
 
-from examples.weather_scenarios.fv_grid_convergence_probe import run_probe
+_SPEC = spec_from_file_location(
+    "fv_grid_convergence_probe",
+    Path(__file__).parents[1] / "examples/weather_scenarios/fv_grid_convergence_probe.py",
+)
+if _SPEC is None or _SPEC.loader is None:
+    raise RuntimeError("FV grid convergence probe module is unavailable")
+_PROBE = module_from_spec(_SPEC)
+_SPEC.loader.exec_module(_PROBE)
 
 
 @pytest.fixture(scope="module")
 def convergence_report() -> dict:
-    return run_probe((32, 64))
+    return _PROBE.run_probe((32, 64))
 
 
 @pytest.mark.parametrize("case_name", ["translation", "rotation", "area_preserving_strain"])
